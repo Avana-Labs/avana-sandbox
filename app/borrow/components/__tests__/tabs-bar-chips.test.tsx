@@ -8,13 +8,7 @@ afterEach(() => cleanup())
 function renderTabsBar(overrides: Partial<Parameters<typeof TabsBar>[0]> = {}) {
   const onTabChange = vi.fn()
   const utils = render(
-    <TabsBar
-      currentTab="all"
-      onTabChange={onTabChange}
-      search=""
-      onSearchChange={() => {}}
-      {...overrides}
-    />,
+    <TabsBar currentTab="all" onTabChange={onTabChange} search="" onSearchChange={() => {}} {...overrides} />,
   )
   return { onTabChange, ...utils }
 }

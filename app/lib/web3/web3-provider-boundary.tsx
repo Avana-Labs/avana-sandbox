@@ -13,10 +13,9 @@ import { useWalletGate } from "@/app/lib/web3/wallet-gate"
  * The gate flips `active` only after this module has already been imported (see
  * `wallet-gate.tsx`), so this component mounts against a warm cache — no blank-while-loading.
  */
-const LazyWeb3Provider = dynamic(
-  () => import("@/app/lib/web3/web3-provider").then((m) => m.Web3Provider),
-  { ssr: false },
-)
+const LazyWeb3Provider = dynamic(() => import("@/app/lib/web3/web3-provider").then((m) => m.Web3Provider), {
+  ssr: false,
+})
 
 export function Web3ProviderBoundary({ children }: { children: ReactNode }) {
   const { active } = useWalletGate()

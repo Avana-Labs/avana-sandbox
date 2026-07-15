@@ -12,8 +12,7 @@ import { useWrongNetwork } from "@/app/lib/web3/use-wrong-network"
  */
 export function WrongNetworkBannerInner() {
   const { t } = useTranslation()
-  const { isWrongNetwork, targetChainName, isSwitching, switchError, switchToTargetChain } =
-    useWrongNetwork()
+  const { isWrongNetwork, targetChainName, isSwitching, switchError, switchToTargetChain } = useWrongNetwork()
 
   if (!isWrongNetwork) return null
 
@@ -31,9 +30,7 @@ export function WrongNetworkBannerInner() {
         <div className="mt-0.5 text-[13px] leading-relaxed opacity-90">
           {t("Switch your wallet to {chain} to continue.").replace("{chain}", targetChainName)}
         </div>
-        {switchError ? (
-          <div className="mt-1 text-[12px] text-rose-600 dark:text-rose-300">{switchError}</div>
-        ) : null}
+        {switchError ? <div className="mt-1 text-[12px] text-rose-600 dark:text-rose-300">{switchError}</div> : null}
       </div>
       <button
         type="button"

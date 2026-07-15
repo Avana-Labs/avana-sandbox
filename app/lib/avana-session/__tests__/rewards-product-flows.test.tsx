@@ -19,7 +19,9 @@ describe("Avana rewards product flows", () => {
     }
     writeLendSessionState(walletId, seededLendState)
 
-    const wrapper = ({ children }: { children: React.ReactNode }) => <AvanaSessionsProvider>{children}</AvanaSessionsProvider>
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <AvanaSessionsProvider>{children}</AvanaSessionsProvider>
+    )
     const { result } = renderHook(() => useAvanaSessions(), { wrapper })
 
     let borrowMarketId = ""
@@ -102,7 +104,9 @@ describe("Avana rewards product flows", () => {
         await result.current.borrow.executeTransaction(repayIntent)
       }
 
-      const multiplyPositionId = Object.values(result.current.multiply.state.positions).find((position) => position.walletId === result.current.walletId)?.id
+      const multiplyPositionId = Object.values(result.current.multiply.state.positions).find(
+        (position) => position.walletId === result.current.walletId,
+      )?.id
       expect(multiplyPositionId).toBeDefined()
 
       const firstDeleverageIntent = result.current.multiply.createIntent({

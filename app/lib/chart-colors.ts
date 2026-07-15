@@ -10,21 +10,14 @@ type ResolveChartAccentArgs = {
   symbols?: string[]
 }
 
-export function resolveChartAccent({
-  theme,
-  tone = "neutral",
-  accentClassName,
-  symbols = [],
-}: ResolveChartAccentArgs) {
+export function resolveChartAccent({ theme, tone = "neutral", accentClassName, symbols = [] }: ResolveChartAccentArgs) {
   const classNames = [
     ...(Array.isArray(accentClassName) ? accentClassName : accentClassName ? [accentClassName] : []),
     ...symbols.map((symbol) => getTokenIconMeta(symbol).textClass),
   ]
 
   const classAccent = blendHexColors(
-    classNames
-      .map((name) => resolveTailwindTextColor(name, theme))
-      .filter((value): value is string => Boolean(value)),
+    classNames.map((name) => resolveTailwindTextColor(name, theme)).filter((value): value is string => Boolean(value)),
   )
   if (classAccent) return classAccent
 
@@ -81,9 +74,7 @@ function blendHexColors(colors: string[]) {
   if (colors.length === 0) return null
   if (colors.length === 1) return colors[0]
 
-  const rgb = colors
-    .map(hexToRgb)
-    .filter((value): value is { r: number; g: number; b: number } => Boolean(value))
+  const rgb = colors.map(hexToRgb).filter((value): value is { r: number; g: number; b: number } => Boolean(value))
   if (rgb.length === 0) return null
 
   const total = rgb.reduce(
@@ -95,11 +86,7 @@ function blendHexColors(colors: string[]) {
     { r: 0, g: 0, b: 0 },
   )
 
-  return rgbToHex(
-    Math.round(total.r / rgb.length),
-    Math.round(total.g / rgb.length),
-    Math.round(total.b / rgb.length),
-  )
+  return rgbToHex(Math.round(total.r / rgb.length), Math.round(total.g / rgb.length), Math.round(total.b / rgb.length))
 }
 
 function hexToRgb(hex: string) {
@@ -113,9 +100,7 @@ function hexToRgb(hex: string) {
 }
 
 function rgbToHex(r: number, g: number, b: number) {
-  return `#${[r, g, b]
-    .map((value) => value.toString(16).padStart(2, "0"))
-    .join("")}`
+  return `#${[r, g, b].map((value) => value.toString(16).padStart(2, "0")).join("")}`
 }
 
 const TAILWIND_HEX: Record<string, Partial<Record<300 | 400 | 500 | 600 | 700, string>>> = {

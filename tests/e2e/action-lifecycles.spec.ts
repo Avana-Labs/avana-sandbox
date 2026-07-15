@@ -50,10 +50,7 @@ for (const lifecycle of lifecycles) {
     await expect(success).toBeVisible({ timeout: 15_000 })
     await expect(success.getByText("Quote", { exact: true })).toBeVisible()
 
-    await success
-      .getByTestId("action-footer")
-      .locator(`a[href$="#${lifecycle.dashboardSection}"]`)
-      .click()
+    await success.getByTestId("action-footer").locator(`a[href$="#${lifecycle.dashboardSection}"]`).click()
     await expect(page.locator(`#${lifecycle.dashboardSection}`)).toBeVisible({ timeout: 15_000 })
     await expect(page).toHaveURL(new RegExp(`#${lifecycle.dashboardSection}$`))
   })

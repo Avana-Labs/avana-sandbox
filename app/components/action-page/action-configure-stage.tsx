@@ -161,8 +161,8 @@ export function ActionConfigureAmountSection({
       assetLabel={pillLabel}
       unitLabel={amountUnitLabel}
       footer={amountFooter}
-      balanceLabel={showBalance ? balanceLabel ?? preview?.balanceLabel : undefined}
-      balanceValue={showBalance ? balanceValue ?? preview?.balanceValue : undefined}
+      balanceLabel={showBalance ? (balanceLabel ?? preview?.balanceLabel) : undefined}
+      balanceValue={showBalance ? (balanceValue ?? preview?.balanceValue) : undefined}
       onMax={showBalance ? onMax : undefined}
       assetSymbol={assetSymbol ?? pillLabel}
       borrowSymbol={borrowSymbol}
@@ -240,7 +240,9 @@ export function ActionConfigureStage({
   const blockedReason = preview?.blockedReason ?? null
   // Only reasons the label mapper flags as "redirect" (e.g. no collateral) turn
   // the CTA into an active navigation; every other block leaves it disabled.
-  const blockedRedirects = blockedReason ? Boolean(blockedCtaLabel(blockedReason, { symbol: assetSymbol }).redirect) : false
+  const blockedRedirects = blockedReason
+    ? Boolean(blockedCtaLabel(blockedReason, { symbol: assetSymbol }).redirect)
+    : false
   const isRedirectBlock = Boolean(blockedReason && blockedRedirectHref && blockedRedirects)
   const primaryLabel = primaryCtaLabel({
     stage: configureStage,
@@ -280,8 +282,7 @@ export function ActionConfigureStage({
     ? undefined
     : preview?.metrics.find((row) => isHealthFactorMetric(row.label, row.id))
   const healthFactorValue = parseHealthFactorValue(healthFactorRow?.after ?? healthFactorRow?.value)
-  const showConfigureHealthFactor =
-    homeLayout && isConfigureVisibleStage(configureStage) && healthFactorRow != null
+  const showConfigureHealthFactor = homeLayout && isConfigureVisibleStage(configureStage) && healthFactorRow != null
   const [previewMounted, setPreviewMounted] = useState(false)
 
   useEffect(() => {
@@ -337,7 +338,9 @@ export function ActionConfigureStage({
 
       {showStandaloneLeverage ? (
         <div>
-          {leverageHint ? <p className="mb-3 text-[12px] leading-5 text-muted-foreground">{t(String(leverageHint))}</p> : null}
+          {leverageHint ? (
+            <p className="mb-3 text-[12px] leading-5 text-muted-foreground">{t(String(leverageHint))}</p>
+          ) : null}
           <ActionLeverageRuler
             value={multiplier ?? "3"}
             onChange={onMultiplierChange!}
@@ -364,7 +367,9 @@ export function ActionConfigureStage({
       {homeLayout && claimSummary && preview ? (
         <div className={cn(previewMotionClassName, "space-y-3")} data-testid="action-claim-summary">
           <ActionCard>
-            {preview.rateLabel ? <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="fee" /> : null}
+            {preview.rateLabel ? (
+              <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="fee" />
+            ) : null}
             {preview.marketValue ? <ActionInfoRow label="Market" value={preview.marketValue} tooltip="market" /> : null}
           </ActionCard>
           {preview.metrics.length > 0 ? <ActionMetricsBlock rows={preview.metrics} /> : null}

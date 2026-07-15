@@ -78,7 +78,12 @@ export function assetHeroChips(detail: AssetDetail, range: TimeRangeId): AssetCh
     return {
       id,
       label: ASSET_CHART_LABELS[id],
-      hint: id === "price" ? formatPrice(last) : id === "utilization" || id === "apy" ? formatPct(last, 2) : formatCompactUsd(last),
+      hint:
+        id === "price"
+          ? formatPrice(last)
+          : id === "utilization" || id === "apy"
+            ? formatPct(last, 2)
+            : formatCompactUsd(last),
     }
   })
 }

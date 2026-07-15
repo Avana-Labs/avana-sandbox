@@ -54,7 +54,10 @@ export async function fetchBorrowPage(
     operation: "getBorrowPageData",
     context,
     schema: borrowPageSchema,
-    load: (pageSource, requestContext) => pageSource.getBorrowPageData(requestContext) as Promise<import("@/app/lib/data/core/source-runtime").DataSourceResponse<unknown>>,
+    load: (pageSource, requestContext) =>
+      pageSource.getBorrowPageData(requestContext) as Promise<
+        import("@/app/lib/data/core/source-runtime").DataSourceResponse<unknown>
+      >,
   })
 
   return response.data as unknown as BorrowPageData

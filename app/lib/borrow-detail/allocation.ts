@@ -133,19 +133,21 @@ export function computeAssetAllocation(
   pools: BorrowPoolRow[] = BORROW_POOL_CATALOG,
   limit = 6,
 ): AllocationRow[] {
-  return computeAssetAllocationRows(asset, pools, limit).map(({ pool, sharePct, valueUsd, utilizationPct, borrowAprPct }) => {
-    const visuals: [BorrowAssetVisual, BorrowAssetVisual] = pool.visuals
-    return {
-      id: `${asset.id}-${pool.id}`,
-      poolName: pool.name,
-      venueLabel: allocationVenueLabel(pool),
-      visuals,
-      sharePct,
-      valueUsd,
-      utilizationPct,
-      borrowAprPct,
-    }
-  })
+  return computeAssetAllocationRows(asset, pools, limit).map(
+    ({ pool, sharePct, valueUsd, utilizationPct, borrowAprPct }) => {
+      const visuals: [BorrowAssetVisual, BorrowAssetVisual] = pool.visuals
+      return {
+        id: `${asset.id}-${pool.id}`,
+        poolName: pool.name,
+        venueLabel: allocationVenueLabel(pool),
+        visuals,
+        sharePct,
+        valueUsd,
+        utilizationPct,
+        borrowAprPct,
+      }
+    },
+  )
 }
 
 // -------------------------------------------------------------------------

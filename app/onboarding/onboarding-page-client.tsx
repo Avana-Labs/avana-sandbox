@@ -19,7 +19,8 @@ export function OnboardingPageClient() {
     <main className="min-h-[calc(100vh-4rem)] px-5 py-6 sm:px-8">
       {!hasConvexClient ? (
         <div className="mx-auto w-full max-w-md rounded-radius-lg border border-border bg-surface p-7 text-center text-[14px] text-muted-foreground">
-          {t("Sandbox onboarding requires a Convex connection. Set")} <code>NEXT_PUBLIC_CONVEX_URL</code> {t("to continue.")}
+          {t("Sandbox onboarding requires a Convex connection. Set")} <code>NEXT_PUBLIC_CONVEX_URL</code>{" "}
+          {t("to continue.")}
         </div>
       ) : isSignedIn && authedWallet ? (
         <OnboardingPageConnected wallet={authedWallet} />

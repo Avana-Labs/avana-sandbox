@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { parseActionPercentBps, parsePositiveActionAmount, sanitizeDecimalInput } from "@/app/lib/action-system/amount-input"
+import {
+  parseActionPercentBps,
+  parsePositiveActionAmount,
+  sanitizeDecimalInput,
+} from "@/app/lib/action-system/amount-input"
 import { parseFixed } from "@/app/lib/credit-engine"
 
 describe("action amount parsing", () => {

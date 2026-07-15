@@ -28,7 +28,10 @@ export function PoolBorrowSidebar({ detail, className }: Props) {
 export function PoolBorrowActions({ detail, className }: Props) {
   const { t } = useTranslation()
   return (
-    <div className={cn("flex w-full flex-col gap-4", className)} aria-label={t("Manage {name}").replace("{name}", detail.hero.name)}>
+    <div
+      className={cn("flex w-full flex-col gap-4", className)}
+      aria-label={t("Manage {name}").replace("{name}", detail.hero.name)}
+    >
       <PoolActionRail detail={detail} />
     </div>
   )
@@ -51,7 +54,7 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
 
   return (
     <div className={cn("flex w-full flex-col", className)}>
-        <ActionWorkspaceTabs
+      <ActionWorkspaceTabs
         items={[
           { id: "pledge", label: t("Pledge") },
           { id: "claim", label: t("Claim") },
@@ -62,36 +65,25 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
       />
 
       <div className="mt-3">
-          {tab === "pledge" ? (
-            embedActions ? (
-              <ResponsiveBorrowAction
-                kind="supply"
-                market={pool.id}
-                closeHref={closeHref}
-                sidebar
-              />
-            ) : (
-              <ActionPageLaunchCta
-                product="borrow"
-                kind="supply"
-                market={pool.id}
-                returnTo={closeHref}
-              />
-            )
-          ) : null}
+        {tab === "pledge" ? (
+          embedActions ? (
+            <ResponsiveBorrowAction kind="supply" market={pool.id} closeHref={closeHref} sidebar />
+          ) : (
+            <ActionPageLaunchCta product="borrow" kind="supply" market={pool.id} returnTo={closeHref} />
+          )
+        ) : null}
 
-          {tab === "claim" ? (
-            embedActions ? (
-              <ResponsiveBorrowAction kind="claim" market={pool.id} closeHref={closeHref} sidebar />
-            ) : (
-              <ActionPageLaunchCta product="borrow" kind="claim" market={pool.id} returnTo={closeHref} />
-            )
-          ) : null}
+        {tab === "claim" ? (
+          embedActions ? (
+            <ResponsiveBorrowAction kind="claim" market={pool.id} closeHref={closeHref} sidebar />
+          ) : (
+            <ActionPageLaunchCta product="borrow" kind="claim" market={pool.id} returnTo={closeHref} />
+          )
+        ) : null}
       </div>
     </div>
   )
 }
-
 
 function resolvePool(detail: PoolDetail): HomeCollateralPool {
   const fallback = getPoolById(detail.id)

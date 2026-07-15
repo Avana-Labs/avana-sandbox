@@ -3,7 +3,11 @@ import { calculateHealthFactorWad, currentDebtValueUsd6, formatFixed, parseFixed
 import { applyBorrowAction } from "@/app/lib/credit-engine/actions"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import { selectBorrowableAssets } from "@/app/lib/borrow-system/selectors"
-import { selectBorrowSnapshot, selectPortfolioDebtRows, selectPortfolioSupplyRows } from "@/app/lib/borrow-system/dashboard-selectors"
+import {
+  selectBorrowSnapshot,
+  selectPortfolioDebtRows,
+  selectPortfolioSupplyRows,
+} from "@/app/lib/borrow-system/dashboard-selectors"
 
 describe("borrow dashboard selectors", () => {
   it("projects canonical borrow session state into dashboard row contexts", () => {
@@ -51,9 +55,7 @@ describe("borrow dashboard selectors", () => {
       // Dashboard debt APR must equal the borrowable-asset (action page) APR for the same asset/market.
       expect(row.borrowApr).toBeCloseTo(marketAsset.borrowApr, 6)
       // Seeded positions store only the base rate; the displayed APR includes the risk premium.
-      expect(row.borrowApr).toBeGreaterThanOrEqual(
-        Number.parseFloat(formatFixed(position.borrowRateWad, 18)) * 100,
-      )
+      expect(row.borrowApr).toBeGreaterThanOrEqual(Number.parseFloat(formatFixed(position.borrowRateWad, 18)) * 100)
     }
   })
 

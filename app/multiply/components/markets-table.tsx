@@ -73,7 +73,8 @@ export function MarketsTable({
       <div className="mb-3 flex items-baseline justify-between gap-2">
         <h2 className="text-[14px] font-medium tracking-tight text-foreground">Markets</h2>
         <span className="text-[11px] text-muted-foreground">
-          Avana 24h volume <span className="font-data tabular-nums text-foreground">{currency.compact(totalVolume)}</span>
+          Avana 24h volume{" "}
+          <span className="font-data tabular-nums text-foreground">{currency.compact(totalVolume)}</span>
         </span>
       </div>
       <Card className="border-border bg-surface-raised shadow-elev-1 overflow-hidden">

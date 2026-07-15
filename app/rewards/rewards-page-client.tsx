@@ -15,10 +15,7 @@ import type { RewardsPageData } from "@/app/lib/data/providers/rewards"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useRewardsSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { RewardTask, UserRewardProgress } from "@/app/lib/rewards-engine"
-import {
-  calculateRewardSummary,
-  evaluateAllTasksForUser,
-} from "@/app/lib/rewards-engine"
+import { calculateRewardSummary, evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
 import {
   canRunTaskAction,
   findTaskById,
@@ -36,7 +33,12 @@ import { RewardsTabs } from "./rewards-tabs"
 import { MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
 import Link from "next/link"
-import { RewardsEducationDialog, RewardsFavoriteDialog, RewardsReferralDialog, RewardsSimulateDialog } from "./rewards-task-dialogs"
+import {
+  RewardsEducationDialog,
+  RewardsFavoriteDialog,
+  RewardsReferralDialog,
+  RewardsSimulateDialog,
+} from "./rewards-task-dialogs"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 
@@ -106,7 +108,14 @@ function isReferralClaimCta(task: RewardTask, t: (key: string) => string) {
   return t("Claim {amount} AVA").replace("{amount}", String(task.rewardAmount))
 }
 
-function buildProgressLabel(task: RewardTask, progress: UserRewardProgress, firstLoginAt: number, now: number, t: (key: string) => string, exact: (usd: number) => string) {
+function buildProgressLabel(
+  task: RewardTask,
+  progress: UserRewardProgress,
+  firstLoginAt: number,
+  now: number,
+  t: (key: string) => string,
+  exact: (usd: number) => string,
+) {
   if (progress.status === "claimed") return t("Claimed")
   if (progress.status === "claimable") return t("Ready to claim")
   if (progress.status === "expired") return t("Expired")
@@ -258,17 +267,12 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
     if (!snapshot) return emptyRewardsQuestsByTab<RewardCardViewModel>()
 
     const progressByTaskId = new Map(snapshot.progress.map((item) => [item.taskId, item]))
-    const grouped = tasks.reduce<Record<RewardsPromoTabId, RewardCardViewModel[]>>(
-      (accumulator, task) => {
-        const progress = progressByTaskId.get(task.id)
-        if (!progress) return accumulator
-        accumulator[resolveRewardsPromoTab(task)].push(
-          mapTaskToQuest(task, progress, state.firstLoginAt, now, t, exact),
-        )
-        return accumulator
-      },
-      emptyRewardsQuestsByTab<RewardCardViewModel>(),
-    )
+    const grouped = tasks.reduce<Record<RewardsPromoTabId, RewardCardViewModel[]>>((accumulator, task) => {
+      const progress = progressByTaskId.get(task.id)
+      if (!progress) return accumulator
+      accumulator[resolveRewardsPromoTab(task)].push(mapTaskToQuest(task, progress, state.firstLoginAt, now, t, exact))
+      return accumulator
+    }, emptyRewardsQuestsByTab<RewardCardViewModel>())
 
     // Show at most 6 cards per tab (catalog order). Any extra claimable quests
     // stay claimable through the sidebar / mobile claim rail.
@@ -278,14 +282,11 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
     return grouped
   }, [tasks, snapshot, state.firstLoginAt, now, t, exact])
 
-  const runReferralActivations = useCallback(
-    async () => {
-      await runReferralSandboxStep("activate")
-    },
-    [runReferralSandboxStep],
-  )
+  const runReferralActivations = useCallback(async () => {
+    await runReferralSandboxStep("activate")
+  }, [runReferralSandboxStep])
 
-  const referralTask = referralTaskId ? tasks.find((task) => task.id === referralTaskId) ?? null : null
+  const referralTask = referralTaskId ? (tasks.find((task) => task.id === referralTaskId) ?? null) : null
   const referralProgress = snapshot?.progress.find((item) => item.taskId === referralTaskId) ?? null
 
   const openReferralDialog = useCallback((taskId: string) => {
@@ -453,7 +454,11 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
             {t("Claim rewards")}
           </Link>
         ) : (
-          <button type="button" disabled className={primaryCtaClass({ size: "compact", disabled: true, className: "w-full" })}>
+          <button
+            type="button"
+            disabled
+            className={primaryCtaClass({ size: "compact", disabled: true, className: "w-full" })}
+          >
             {t("No rewards ready")}
           </button>
         )}
@@ -477,11 +482,7 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
         }}
       />
 
-      <RewardsSimulateDialog
-        open={simulateOpen}
-        onOpenChange={setSimulateOpen}
-        onSimulate={handleSimulate}
-      />
+      <RewardsSimulateDialog open={simulateOpen} onOpenChange={setSimulateOpen} onSimulate={handleSimulate} />
 
       <RewardsReferralDialog
         open={referralOpen}

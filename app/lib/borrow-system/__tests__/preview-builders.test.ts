@@ -1,7 +1,26 @@
 import { describe, expect, it } from "vitest"
-import { formatFixed, parseFixed, simulateBorrow, simulateDeposit, simulateLiquidation, simulateRepay, simulateWithdraw } from "@/app/lib/credit-engine"
-import { buildBorrowPreviewModel, buildDepositPreviewModel, buildLiquidationPreviewModel, buildRepayPreviewModel, buildWithdrawPreviewModel } from "@/app/lib/borrow-system/preview-builders"
-import { EXAMPLE_UNI_MARKET_ID, EXAMPLE_UNI_USDC_ASSET_ID, EXAMPLE_WALLET_1_DEBT_ID, makeExampleBorrowSystemState } from "@/app/lib/credit-engine/__tests__/fixtures"
+import {
+  formatFixed,
+  parseFixed,
+  simulateBorrow,
+  simulateDeposit,
+  simulateLiquidation,
+  simulateRepay,
+  simulateWithdraw,
+} from "@/app/lib/credit-engine"
+import {
+  buildBorrowPreviewModel,
+  buildDepositPreviewModel,
+  buildLiquidationPreviewModel,
+  buildRepayPreviewModel,
+  buildWithdrawPreviewModel,
+} from "@/app/lib/borrow-system/preview-builders"
+import {
+  EXAMPLE_UNI_MARKET_ID,
+  EXAMPLE_UNI_USDC_ASSET_ID,
+  EXAMPLE_WALLET_1_DEBT_ID,
+  makeExampleBorrowSystemState,
+} from "@/app/lib/credit-engine/__tests__/fixtures"
 
 describe("borrow preview builders", () => {
   it("matches engine borrow simulations", () => {
@@ -16,7 +35,9 @@ describe("borrow preview builders", () => {
     })
 
     expect(model.isValid).toBe(simulation.allowed)
-    expect(model.remainingBorrowPowerUsd).toBe(Number.parseFloat(formatFixed(simulation.after.metrics.availableBorrowCapacityUsd6, 6)))
+    expect(model.remainingBorrowPowerUsd).toBe(
+      Number.parseFloat(formatFixed(simulation.after.metrics.availableBorrowCapacityUsd6, 6)),
+    )
   })
 
   it("matches engine repay simulations", () => {
@@ -46,7 +67,12 @@ describe("borrow preview builders", () => {
 
     expect(model.isValid).toBe(simulation.allowed)
     expect(model.borrowPowerDeltaUsd).toBeCloseTo(
-      Number.parseFloat(formatFixed(simulation.after.metrics.availableBorrowCapacityUsd6 - simulation.before.metrics.availableBorrowCapacityUsd6, 6)),
+      Number.parseFloat(
+        formatFixed(
+          simulation.after.metrics.availableBorrowCapacityUsd6 - simulation.before.metrics.availableBorrowCapacityUsd6,
+          6,
+        ),
+      ),
       2,
     )
   })

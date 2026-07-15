@@ -22,10 +22,7 @@ async function installAuthToken(page: import("@playwright/test").Page, token: st
   return wallet
 }
 
-async function attachStateScreenshot(
-  locator: import("@playwright/test").Locator,
-  name: string,
-) {
+async function attachStateScreenshot(locator: import("@playwright/test").Locator, name: string) {
   await test.info().attach(name, {
     body: await locator.screenshot({ animations: "disabled" }),
     contentType: "image/png",

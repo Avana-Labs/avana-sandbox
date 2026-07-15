@@ -48,8 +48,7 @@ export const mockRewardsPageSource: RewardsPageSource = {
   adapter: mockRewardsPageAdapter,
   async getRewardsPageData(input) {
     const homeSnapshot = buildHomeSnapshot()
-    const rewardPools = BORROW_POOL_CATALOG
-      .filter((pool) => pool.visuals.every((visual) => Boolean(visual.iconUrl)))
+    const rewardPools = BORROW_POOL_CATALOG.filter((pool) => pool.visuals.every((visual) => Boolean(visual.iconUrl)))
       .sort((left, right) => right.tvlUsd - left.tvlUsd)
       .slice(0, 2)
       .map((pool) => ({
@@ -73,7 +72,10 @@ export const mockRewardsPageSource: RewardsPageSource = {
         balanceTotal: mockRewardsSharedSource.getBalanceTotal(),
         rewardPools,
         promoTabs: mockRewardsSharedSource.getPromoTabs(),
-        questsByTab: mockRewardsSharedSource.getAllQuests() as Record<RewardsPromoTabId, ReturnType<typeof mockRewardsSharedSource.getQuests>>,
+        questsByTab: mockRewardsSharedSource.getAllQuests() as Record<
+          RewardsPromoTabId,
+          ReturnType<typeof mockRewardsSharedSource.getQuests>
+        >,
       },
     }
   },
@@ -129,23 +131,20 @@ export const liveRewardsPageSource: RewardsPageSource = {
       if (tag === "mastery") return "trophy"
       return "wallet"
     }
-    const questsByTab = tasks.reduce<RewardsPageData["questsByTab"]>(
-      (result, task) => {
-        const tab = resolveRewardsPromoTab(task)
-        const taskProgress = progressByTask.get(task.id)
-        result[tab].push({
-          id: task.id,
-          title: task.title,
-          description: task.description,
-          reward: `${task.rewardAmount} ${task.rewardSymbol}`,
-          cta: taskProgress?.status === "claimed" ? "Claimed" : task.actionLabel,
-          category: task.tag,
-          iconId: iconForTag(task.tag),
-        })
-        return result
-      },
-      emptyRewardsQuestsByTab(),
-    )
+    const questsByTab = tasks.reduce<RewardsPageData["questsByTab"]>((result, task) => {
+      const tab = resolveRewardsPromoTab(task)
+      const taskProgress = progressByTask.get(task.id)
+      result[tab].push({
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        reward: `${task.rewardAmount} ${task.rewardSymbol}`,
+        cta: taskProgress?.status === "claimed" ? "Claimed" : task.actionLabel,
+        category: task.tag,
+        iconId: iconForTag(task.tag),
+      })
+      return result
+    }, emptyRewardsQuestsByTab())
 
     return {
       fetchedAt: new Date().toISOString(),

@@ -108,11 +108,7 @@ export function RevealSentinel({
 }) {
   const { t } = useTranslation()
   return (
-    <div
-      ref={sentinelRef}
-      aria-hidden={!active}
-      className={className ?? "flex items-center justify-center py-8"}
-    >
+    <div ref={sentinelRef} aria-hidden={!active} className={className ?? "flex items-center justify-center py-8"}>
       {active ? (
         <span className="flex items-center gap-2 text-[13px] text-muted-foreground">
           <span className="size-4 animate-spin rounded-full border-2 border-border border-t-foreground/70" />

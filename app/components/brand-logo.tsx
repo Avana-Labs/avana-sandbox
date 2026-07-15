@@ -21,14 +21,10 @@ export function BrandLogo({ mobileOnly = false, className }: BrandLogoProps) {
         width={220}
         height={86}
         loading="lazy"
-        className={
-          cn(
-            mobileOnly
-              ? "h-[56px] w-auto scale-[1.08] origin-left"
-              : "h-[44px] w-auto origin-left md:h-[44px]",
-            className,
-          )
-        }
+        className={cn(
+          mobileOnly ? "h-[56px] w-auto scale-[1.08] origin-left" : "h-[44px] w-auto origin-left md:h-[44px]",
+          className,
+        )}
       />
     </span>
   )

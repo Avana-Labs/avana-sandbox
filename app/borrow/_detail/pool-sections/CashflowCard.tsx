@@ -16,11 +16,7 @@ export function CashflowCard({ detail }: Props) {
   const { t } = useTranslation()
 
   return (
-    <SectionCard
-      title={t("Cashflow breakdown")}
-      chrome="plain"
-      bodyClassName="p-0"
-    >
+    <SectionCard title={t("Cashflow breakdown")} chrome="plain" bodyClassName="p-0">
       <div className="overflow-x-auto">
         <table className="w-full text-[13px]">
           <thead>
@@ -34,21 +30,14 @@ export function CashflowCard({ detail }: Props) {
             {cashflow.rows.map((row, i) => (
               <tr
                 key={i}
-                className={cn(
-                  "transition-colors hover:bg-hover",
-                  row.highlighted ? "bg-surface-inset/40" : undefined,
-                )}
+                className={cn("transition-colors hover:bg-hover", row.highlighted ? "bg-surface-inset/40" : undefined)}
               >
                 <th scope="row" className="py-2.5 pl-5 text-left font-medium text-foreground">
                   {t(row.label)}
                 </th>
-                <td className="py-2.5 text-right font-data font-medium tabular-nums text-foreground">
-                  {row.reported}
-                </td>
+                <td className="py-2.5 text-right font-data font-medium tabular-nums text-foreground">{row.reported}</td>
                 <td className="py-2.5 pr-5 text-right">
-                  {row.yoy ? (
-                    <DeltaPill value={row.yoy.value} format="percent" digits={1} hideZero={false} />
-                  ) : null}
+                  {row.yoy ? <DeltaPill value={row.yoy.value} format="percent" digits={1} hideZero={false} /> : null}
                 </td>
               </tr>
             ))}

@@ -10,13 +10,15 @@ const multiplyActionSurfaces = [
 
 describe("multiply architecture final gate", () => {
   it("keeps requirements matrix and session tests present", () => {
-    expect(readFileSync(path.join(process.cwd(), "app/lib/multiply-engine/__tests__/validation.test.ts"), "utf8")).toContain(
-      "validateMultiplyAction",
-    )
-    expect(readFileSync(path.join(process.cwd(), "app/lib/multiply-system/__tests__/use-multiply-session.test.tsx"), "utf8")).toContain(
-      "useMultiplySession",
-    )
-    expect(readFileSync(path.join(process.cwd(), "app/lib/multiply-engine/__tests__/requirements-matrix.test.ts"), "utf8")).not.toContain("it.todo")
+    expect(
+      readFileSync(path.join(process.cwd(), "app/lib/multiply-engine/__tests__/validation.test.ts"), "utf8"),
+    ).toContain("validateMultiplyAction")
+    expect(
+      readFileSync(path.join(process.cwd(), "app/lib/multiply-system/__tests__/use-multiply-session.test.tsx"), "utf8"),
+    ).toContain("useMultiplySession")
+    expect(
+      readFileSync(path.join(process.cwd(), "app/lib/multiply-engine/__tests__/requirements-matrix.test.ts"), "utf8"),
+    ).not.toContain("it.todo")
   })
 
   it("routes multiply UI through shared avana session context", () => {
@@ -38,7 +40,10 @@ describe("multiply architecture final gate", () => {
   })
 
   it("keeps production multiply adapters behind explicit source guards", () => {
-    const readAdapter = readFileSync(path.join(process.cwd(), "app/lib/multiply-system/production-read-adapter.ts"), "utf8")
+    const readAdapter = readFileSync(
+      path.join(process.cwd(), "app/lib/multiply-system/production-read-adapter.ts"),
+      "utf8",
+    )
     const txAdapter = readFileSync(
       path.join(process.cwd(), "app/lib/multiply-system/production-transaction-adapter.ts"),
       "utf8",

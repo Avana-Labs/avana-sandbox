@@ -32,7 +32,9 @@ describe("page providers", () => {
     expect(data.explore.trendingCollateral).toHaveLength(3)
     expect(data.explore.highApyPools).toHaveLength(3)
     expect(data.explore.topMarkets).toHaveLength(3)
-    expect(data.explore.trendingCollateral[0]!.availableUsd).toBeGreaterThanOrEqual(data.explore.trendingCollateral[1]!.availableUsd)
+    expect(data.explore.trendingCollateral[0]!.availableUsd).toBeGreaterThanOrEqual(
+      data.explore.trendingCollateral[1]!.availableUsd,
+    )
     expect((data.explore.highApyPools[0]!.aprMin + data.explore.highApyPools[0]!.aprMax) / 2).toBeGreaterThanOrEqual(
       (data.explore.highApyPools[1]!.aprMin + data.explore.highApyPools[1]!.aprMax) / 2,
     )
@@ -45,7 +47,7 @@ describe("page providers", () => {
         return {
           data: {
             walletId: "wallet-override",
-            borrowSessionSeed: "{\"stub\":true}",
+            borrowSessionSeed: '{"stub":true}',
             poolCatalog: [
               {
                 id: "custom-eth-usdc",
@@ -149,9 +151,39 @@ describe("page providers", () => {
       async getLendPageData() {
         return {
           data: {
-            tokens: [{ symbol: "USDC", name: "USD Coin", balance: 1, price: 1, color: "blue", bg: "bg", apy: 5, earned: 1, daily: 1, utilization: 10 }] as unknown as LendPageData["tokens"],
-            markets: [{ symbol: "DAI", name: "Dai", apy: 4, apyChange24h: 0.2, tvl: "$1.0M", utilization: 50, type: "Liquid", protocol: "Maker", color: "orange", bg: "bg", soon: false, event: null }] as unknown as LendPageData["markets"],
-            activity: [{ type: "deposit", asset: "USDC", amount: "+10", date: "Today" }] as unknown as LendPageData["activity"],
+            tokens: [
+              {
+                symbol: "USDC",
+                name: "USD Coin",
+                balance: 1,
+                price: 1,
+                color: "blue",
+                bg: "bg",
+                apy: 5,
+                earned: 1,
+                daily: 1,
+                utilization: 10,
+              },
+            ] as unknown as LendPageData["tokens"],
+            markets: [
+              {
+                symbol: "DAI",
+                name: "Dai",
+                apy: 4,
+                apyChange24h: 0.2,
+                tvl: "$1.0M",
+                utilization: 50,
+                type: "Liquid",
+                protocol: "Maker",
+                color: "orange",
+                bg: "bg",
+                soon: false,
+                event: null,
+              },
+            ] as unknown as LendPageData["markets"],
+            activity: [
+              { type: "deposit", asset: "USDC", amount: "+10", date: "Today" },
+            ] as unknown as LendPageData["activity"],
             chartSeries: [{ time: "00:00", value: 1 }],
             featuredAssets: {
               usdc: {
@@ -168,7 +200,9 @@ describe("page providers", () => {
             featuredSequence: ["usdc"] as unknown as LendPageData["featuredSequence"],
             featuredSnapshots: [{ marketId: "usdc", symbol: "USDC", href: "/lend/markets/usdc", apyLabel: "3.20%" }],
             marketRows: [{ marketId: "usdc", asset: "USDC", href: "/lend/markets/usdc" }],
-            assetGroups: [{ title: "Stablecoins", rows: [{ symbol: "USDC", name: "USD Coin", apy: "3.2%" }] }] as unknown as LendPageData["assetGroups"],
+            assetGroups: [
+              { title: "Stablecoins", rows: [{ symbol: "USDC", name: "USD Coin", apy: "3.2%" }] },
+            ] as unknown as LendPageData["assetGroups"],
           },
         }
       },
@@ -193,9 +227,33 @@ describe("page providers", () => {
       async getMultiplyPageData() {
         return {
           data: {
-            markets: [{ symbol: "ETH", name: "Ethereum", price: 3000, funding: 0.01, change: 1, volume: 1000, maxLeverage: 10, longOi: 60, shortOi: 40 }] as unknown as MultiplyPageData["markets"],
+            markets: [
+              {
+                symbol: "ETH",
+                name: "Ethereum",
+                price: 3000,
+                funding: 0.01,
+                change: 1,
+                volume: 1000,
+                maxLeverage: 10,
+                longOi: 60,
+                shortOi: 40,
+              },
+            ] as unknown as MultiplyPageData["markets"],
             heroMetrics: { totalLiquidityUsd: 1000, marketCount: 1, averageMaxApy: 0.075, averageMaxLeverage: 10 },
-            lendRows: [{ href: "/multiply/markets/eth-usdc", protocol: "ETH", protocolLogo: "https://example.com/eth.png", asset: "USDC", kind: "Loop", apy: "7.50%", apyLabel: "Custom", collateralFactor: 0.8, liquidationThreshold: 0.85 }] as unknown as MultiplyPageData["lendRows"],
+            lendRows: [
+              {
+                href: "/multiply/markets/eth-usdc",
+                protocol: "ETH",
+                protocolLogo: "https://example.com/eth.png",
+                asset: "USDC",
+                kind: "Loop",
+                apy: "7.50%",
+                apyLabel: "Custom",
+                collateralFactor: 0.8,
+                liquidationThreshold: 0.85,
+              },
+            ] as unknown as MultiplyPageData["lendRows"],
             trendingSnapshots: [],
             pageSize: 24,
             tokenBorrowApys: { USDC: "5.00%" } as unknown as MultiplyPageData["tokenBorrowApys"],

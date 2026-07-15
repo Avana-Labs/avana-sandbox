@@ -73,7 +73,9 @@ function AudFlag() {
       <rect width="10" height="10" fill="#163a8a" />
       <path d="M0 0h10v2.2H0zm0 7.8h10V10H0zM3.9 0h2.2v10H3.9z" fill="#fff" />
       <path d="M0 4.4h10v1.2H0zm4.4 0V0h1.2v10H4.4z" fill="#ef4444" />
-      {[15.5, 18.4, 20.3].map((x, i) => <circle key={i} cx={x} cy={6 + i * 4.2} r="1.1" fill="#fff" />)}
+      {[15.5, 18.4, 20.3].map((x, i) => (
+        <circle key={i} cx={x} cy={6 + i * 4.2} r="1.1" fill="#fff" />
+      ))}
     </>
   )
 }
@@ -137,7 +139,10 @@ function GbpFlag() {
     <>
       <rect width="24" height="24" fill="#1f3d95" />
       <path d="M0 3l3-3 21 21-3 3zM21 0l3 3L3 24l-3-3z" fill="#fff" />
-      <path d="M0 4.4L4.4 0h2.3L0 6.7zm17.3 19.6L24 17.3v-2.3L15 24zM24 6.7L17.3 0H15l9 9zm-19.6 17.3L0 19.6V17.3L6.7 24z" fill="#ef4444" />
+      <path
+        d="M0 4.4L4.4 0h2.3L0 6.7zm17.3 19.6L24 17.3v-2.3L15 24zM24 6.7L17.3 0H15l9 9zm-19.6 17.3L0 19.6V17.3L6.7 24z"
+        fill="#ef4444"
+      />
       <rect x="9" width="6" height="24" fill="#fff" />
       <rect y="9" width="24" height="6" fill="#fff" />
       <rect x="10.2" width="3.6" height="24" fill="#ef4444" />

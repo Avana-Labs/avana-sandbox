@@ -18,7 +18,5 @@ export function isAnalyticsBeaconRejection(reason: unknown): boolean {
 
   if (!/failed to fetch|networkerror|load failed/i.test(message)) return false
 
-  return /analytics sdk|analyticssdkapierror|_vercel\/insights|@vercel\/analytics|speed[- ]?insights/i.test(
-    message,
-  )
+  return /analytics sdk|analyticssdkapierror|_vercel\/insights|@vercel\/analytics|speed[- ]?insights/i.test(message)
 }

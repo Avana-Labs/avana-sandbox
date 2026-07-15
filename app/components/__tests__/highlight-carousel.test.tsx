@@ -42,9 +42,7 @@ describe("HighlightCarousel", () => {
   }
 
   it("preserves the original distance and duration calculation", () => {
-    const { container } = render(
-      <HighlightCarousel durationSeconds={38} renderSequence={() => <div>Market</div>} />,
-    )
+    const { container } = render(<HighlightCarousel durationSeconds={38} renderSequence={() => <div>Market</div>} />)
     const viewport = container.firstElementChild as HTMLDivElement
     const track = viewport.firstElementChild as HTMLDivElement
 
@@ -55,9 +53,7 @@ describe("HighlightCarousel", () => {
   })
 
   it("stops scheduling frames while hovered and resumes from the same position", () => {
-    const { container } = render(
-      <HighlightCarousel durationSeconds={38} renderSequence={() => <div>Market</div>} />,
-    )
+    const { container } = render(<HighlightCarousel durationSeconds={38} renderSequence={() => <div>Market</div>} />)
     const viewport = container.firstElementChild as HTMLDivElement
     const track = viewport.firstElementChild as HTMLDivElement
 

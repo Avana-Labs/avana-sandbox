@@ -10,7 +10,14 @@ import {
   type BorrowSystemState,
 } from "@/app/lib/credit-engine"
 import { resolveBorrowAssetId } from "@/app/lib/action-system/resolve-borrow-context"
-import type { SandboxActionResult, TransactionActionType, TransactionAdapter, TransactionHistoryItem, TransactionIntent, TransactionPreview } from "./contracts"
+import type {
+  SandboxActionResult,
+  TransactionActionType,
+  TransactionAdapter,
+  TransactionHistoryItem,
+  TransactionIntent,
+  TransactionPreview,
+} from "./contracts"
 
 type SandboxAdapterOptions = {
   readState: () => BorrowSystemState
@@ -169,7 +176,9 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
     if (previewState && previewState !== current) {
       this.previewCache.delete(intent.id)
       this.previewStateByIntent.delete(intent.id)
-      throw new Error("Quote is stale because the account or market changed. Review the refreshed quote before submitting.")
+      throw new Error(
+        "Quote is stale because the account or market changed. Review the refreshed quote before submitting.",
+      )
     }
     const preview = await this.previewTransaction(intent)
     const timestamp = this.now()
@@ -266,14 +275,14 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
       walletId: intent.walletId,
       marketId: intent.marketId,
       assetId: intent.assetId,
-        kind: intent.actionType,
-        status: "success",
-        requestedAmountUsd6: intent.amountUsd6,
-        executedAmountUsd6: executedAmountFromPreview(action, preview),
-        simulated: true,
-        timestamp,
-        hash: localReceipt.hash,
-      }
+      kind: intent.actionType,
+      status: "success",
+      requestedAmountUsd6: intent.amountUsd6,
+      executedAmountUsd6: executedAmountFromPreview(action, preview),
+      simulated: true,
+      timestamp,
+      hash: localReceipt.hash,
+    }
 
     const localResult: SandboxActionResult = {
       preview,

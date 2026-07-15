@@ -36,9 +36,13 @@ describe("SandboxLendReadAdapter", () => {
     const state = buildMockLendSystemState("demo-wallet")
     const walletAssets = getWalletLendAssets("demo-wallet")
 
-    expect(state.walletBalances["demo-wallet"]?.usdc).toBe(walletAssets.find((asset) => asset.symbol === "USDC")?.balance)
+    expect(state.walletBalances["demo-wallet"]?.usdc).toBe(
+      walletAssets.find((asset) => asset.symbol === "USDC")?.balance,
+    )
     expect(state.walletBalances["demo-wallet"]?.eth).toBe(walletAssets.find((asset) => asset.symbol === "ETH")?.balance)
-    expect(state.walletBalances["demo-wallet"]?.usdt).toBe(walletAssets.find((asset) => asset.symbol === "USDT")?.balance)
+    expect(state.walletBalances["demo-wallet"]?.usdt).toBe(
+      walletAssets.find((asset) => asset.symbol === "USDT")?.balance,
+    )
   })
 })
 

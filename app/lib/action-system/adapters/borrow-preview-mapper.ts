@@ -114,7 +114,7 @@ export function mapBorrowTransactionPreviewToActionUi(
   const blockedReason =
     !preview.allowed && options.amountUsd > maxBorrowUsd
       ? `Maximum safe borrow is ${formatActionUsd(maxBorrowUsd, { exact: true })}, limited by ${limitingCondition}.`
-      : humanizeBlockedReason(rawBlockedReason) ?? "Action unavailable"
+      : (humanizeBlockedReason(rawBlockedReason) ?? "Action unavailable")
 
   return {
     quoteId: preview.intent.id,
@@ -257,7 +257,7 @@ export function mapBorrowRepayPreviewToActionUi(
       ? null
       : exceedsDebt
         ? `Amount exceeds outstanding debt. Maximum repay is ${formatActionUsd(beforeDebt, { exact: true })}.`
-        : humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable",
+        : (humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable"),
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,
   }
@@ -338,7 +338,9 @@ export function mapBorrowSupplyPreviewToActionUi(
     ],
     networkFeeLabel: formatActionFeeSummary(options.amountUsd, 0.04),
     risk: null,
-    blockedReason: preview.allowed ? null : humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable",
+    blockedReason: preview.allowed
+      ? null
+      : (humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable"),
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,
   }
@@ -421,7 +423,9 @@ export function mapBorrowRemovePreviewToActionUi(
     ],
     networkFeeLabel: formatActionFeeSummary(removeUsd, 0.04),
     risk: riskFromPreview(preview, hfToNumber(preview.after.healthFactorWad)),
-    blockedReason: preview.allowed ? null : humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable",
+    blockedReason: preview.allowed
+      ? null
+      : (humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable"),
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,
   }
@@ -506,7 +510,10 @@ export function mapBorrowSuccessToActionUi(options: {
   metrics: ActionPreviewUi["metrics"]
   href: string
   primaryCtaLabel?: string
-  preview?: Pick<ActionPreviewUi, "quoteId" | "amountLabel" | "amountUsd" | "rateLabel" | "rateValue" | "marketValue"> | null
+  preview?: Pick<
+    ActionPreviewUi,
+    "quoteId" | "amountLabel" | "amountUsd" | "rateLabel" | "rateValue" | "marketValue"
+  > | null
   verb?: string
 }): ActionSuccessUi {
   return {

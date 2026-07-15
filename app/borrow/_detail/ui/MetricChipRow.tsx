@@ -32,10 +32,7 @@ export function MetricChipRow<T extends string>({
       <div
         role="tablist"
         aria-label={ariaLabel}
-        className={cn(
-          "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5",
-          className,
-        )}
+        className={cn("grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5", className)}
       >
         {chips.map((chip) => {
           const active = chip.id === value
@@ -48,12 +45,12 @@ export function MetricChipRow<T extends string>({
               onClick={() => onChange(chip.id)}
               className={cn(
                 "flex flex-col items-start gap-1 rounded-radius-sm border p-3 text-left transition-colors",
-                active
-                  ? "border-border bg-surface-inset"
-                  : "border-transparent bg-transparent hover:bg-hover",
+                active ? "border-border bg-surface-inset" : "border-transparent bg-transparent hover:bg-hover",
               )}
             >
-              <span className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{chip.label}</span>
+              <span className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+                {chip.label}
+              </span>
               {chip.hint ? (
                 <span
                   className={cn(
@@ -96,10 +93,7 @@ export function MetricChipRow<T extends string>({
             <span>{chip.label}</span>
             {chip.hint ? (
               <span
-                className={cn(
-                  "text-[11.5px] tabular-nums",
-                  active ? "text-foreground/70" : "text-muted-foreground/70",
-                )}
+                className={cn("text-[11.5px] tabular-nums", active ? "text-foreground/70" : "text-muted-foreground/70")}
               >
                 {chip.hint}
               </span>

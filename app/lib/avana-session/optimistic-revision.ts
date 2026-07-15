@@ -67,7 +67,11 @@ export function advanceRevisionOnSuccess(map: Map<string, number>, key: string |
  * expectedRevision and the server rejected it with REVISION_REQUIRED (M-12). Seeding from the
  * server value keeps the map correct in every case.
  */
-export function seedRevisionFromReceipt(map: Map<string, number>, key: string | null, revision: number | null | undefined): void {
+export function seedRevisionFromReceipt(
+  map: Map<string, number>,
+  key: string | null,
+  revision: number | null | undefined,
+): void {
   if (!key || revision == null) return
   map.set(key, revision)
 }

@@ -39,5 +39,13 @@ export type BorrowPageData = {
 
 export type BorrowWorkspaceData = Pick<
   BorrowPageData,
-  "walletId" | "borrowSessionSeed" | "poolCatalog" | "borrowableAssets" | "pendingRows" | "dexes" | "collateralPools" | "initialDebts" | "borrowSnapshot"
+  | "walletId"
+  | "borrowSessionSeed"
+  | "poolCatalog"
+  | "borrowableAssets"
+  | "pendingRows"
+  | "dexes"
+  | "collateralPools"
+  | "initialDebts"
+  | "borrowSnapshot"
 >

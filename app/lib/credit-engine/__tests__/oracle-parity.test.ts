@@ -17,7 +17,9 @@ describe("credit-engine oracle parity", () => {
     const indexRay = RAY + parseFixed("0.0635", WAD_DECIMALS) * (RAY / WAD)
 
     expect(assetsToShares(assets, indexRay)).toBe(oracleAssetsToShares(assets, indexRay))
-    expect(sharesToAssets(assetsToShares(assets, indexRay), indexRay)).toBe(oracleSharesToAssets(oracleAssetsToShares(assets, indexRay), indexRay))
+    expect(sharesToAssets(assetsToShares(assets, indexRay), indexRay)).toBe(
+      oracleSharesToAssets(oracleAssetsToShares(assets, indexRay), indexRay),
+    )
   })
 
   it("matches the decimal oracle for linear interest accrual", () => {

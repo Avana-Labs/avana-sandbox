@@ -2,7 +2,12 @@ import { z } from "zod"
 import { executeSourceLoad, type DataSourceRequestContext } from "@/app/lib/data/core/source-runtime"
 import { loadWithAuthFallback } from "@/app/lib/data/providers/live-auth-fallback"
 import { resolveDataSourceMode } from "../source-mode"
-import { liveRewardsPageSource, mockRewardsPageSource, type FetchRewardsPageInput, type RewardsPageSource } from "./source"
+import {
+  liveRewardsPageSource,
+  mockRewardsPageSource,
+  type FetchRewardsPageInput,
+  type RewardsPageSource,
+} from "./source"
 import type { RewardsPageData } from "./types"
 
 const rewardsPageSchema = z.object({
@@ -12,20 +17,33 @@ const rewardsPageSchema = z.object({
   progressPercentage: z.number().nonnegative(),
   balanceTotal: z.number().nonnegative(),
   rewardPools: z.array(
-    z.object({
-      id: z.string(),
-      href: z.string(),
-      title: z.string(),
-      subtitle: z.string(),
-      value: z.string(),
-      delta: z.string(),
-      deltaClassName: z.string(),
-    }).passthrough(),
+    z
+      .object({
+        id: z.string(),
+        href: z.string(),
+        title: z.string(),
+        subtitle: z.string(),
+        value: z.string(),
+        delta: z.string(),
+        deltaClassName: z.string(),
+      })
+      .passthrough(),
   ),
   promoTabs: z.array(z.object({ id: z.string(), label: z.string() })),
   questsByTab: z.record(
     z.string(),
-    z.array(z.object({ id: z.string(), title: z.string(), description: z.string(), reward: z.string(), cta: z.string(), category: z.string() }).passthrough()),
+    z.array(
+      z
+        .object({
+          id: z.string(),
+          title: z.string(),
+          description: z.string(),
+          reward: z.string(),
+          cta: z.string(),
+          category: z.string(),
+        })
+        .passthrough(),
+    ),
   ),
 })
 
@@ -53,7 +71,9 @@ export async function fetchRewardsPage(
       context,
       schema: rewardsPageSchema,
       load: (resolvedSource, requestContext) =>
-        resolvedSource.getRewardsPageData(input, requestContext) as Promise<import("@/app/lib/data/core/source-runtime").DataSourceResponse<unknown>>,
+        resolvedSource.getRewardsPageData(input, requestContext) as Promise<
+          import("@/app/lib/data/core/source-runtime").DataSourceResponse<unknown>
+        >,
     })
 
   const primarySource = getRewardsPageSource(source)

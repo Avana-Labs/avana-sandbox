@@ -1,11 +1,5 @@
 import Decimal from "decimal.js"
-import {
-  RAY_DECIMALS,
-  TOKEN_DECIMALS,
-  USD_DECIMALS,
-  WAD_DECIMALS,
-  formatFixed,
-} from "@/app/lib/credit-engine"
+import { RAY_DECIMALS, TOKEN_DECIMALS, USD_DECIMALS, WAD_DECIMALS, formatFixed } from "@/app/lib/credit-engine"
 
 Decimal.set({
   precision: 80,

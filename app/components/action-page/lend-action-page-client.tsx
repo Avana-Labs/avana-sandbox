@@ -9,7 +9,10 @@ import { getWalletBalanceForLendMarket } from "@/app/lib/lend-system/wallet-bala
 import { getLendMarketById } from "@/app/lib/lend-system/catalog"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor, actionPagePath } from "@/app/lib/action-system/contracts"
-import { mapLendDepositPreviewToActionUi, mapLendWithdrawPreviewToActionUi } from "@/app/lib/action-system/adapters/lend-preview-mapper"
+import {
+  mapLendDepositPreviewToActionUi,
+  mapLendWithdrawPreviewToActionUi,
+} from "@/app/lib/action-system/adapters/lend-preview-mapper"
 import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
@@ -17,7 +20,10 @@ import { ActionSuccessStage } from "@/app/components/action-page/action-success-
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionSelectStage } from "@/app/components/action-page/action-select-stage"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
-import { ActionSessionLoading, shouldShowActionSessionLoading } from "@/app/components/action-page/action-session-loading"
+import {
+  ActionSessionLoading,
+  shouldShowActionSessionLoading,
+} from "@/app/components/action-page/action-session-loading"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
@@ -352,7 +358,23 @@ export function LendActionPageClient({
     } finally {
       setIsPending(false)
     }
-  }, [amount, closeHref, descriptor.primaryVerb, exact, isPending, kind, market, position, previewUi, router, session, stage, successUi, t, walletId])
+  }, [
+    amount,
+    closeHref,
+    descriptor.primaryVerb,
+    exact,
+    isPending,
+    kind,
+    market,
+    position,
+    previewUi,
+    router,
+    session,
+    stage,
+    successUi,
+    t,
+    walletId,
+  ])
 
   if (shouldShowActionSessionLoading(session.isHydrated)) {
     return (

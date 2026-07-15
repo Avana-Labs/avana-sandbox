@@ -3,10 +3,7 @@ import { cleanup, fireEvent, render, screen, within } from "@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { HomePageClient } from "@/app/components/home-page-client"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
-import {
-  selectAllAvailableCollateralPools,
-  selectBorrowCollateralPools,
-} from "@/app/lib/borrow-system/selectors"
+import { selectAllAvailableCollateralPools, selectBorrowCollateralPools } from "@/app/lib/borrow-system/selectors"
 
 const walletId = "demo-wallet"
 let state = buildMockBorrowSystemState(walletId)

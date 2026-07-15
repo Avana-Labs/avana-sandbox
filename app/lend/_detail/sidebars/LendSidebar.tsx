@@ -19,7 +19,10 @@ const LEND_TAB_ITEMS = [
 export function LendSidebar({ detail, className }: Props) {
   const { t } = useTranslation()
   return (
-    <aside className={cn("flex w-full flex-col gap-12", className)} aria-label={t("Lend {name}").replace("{name}", detail.hero.name)}>
+    <aside
+      className={cn("flex w-full flex-col gap-12", className)}
+      aria-label={t("Lend {name}").replace("{name}", detail.hero.name)}
+    >
       <LendActionRail detail={detail} className="mt-6" />
     </aside>
   )

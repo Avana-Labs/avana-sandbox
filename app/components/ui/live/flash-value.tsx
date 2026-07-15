@@ -94,11 +94,7 @@ export function FlashValue({
     const direction = compare(prev, value)
     previousRef.current = value
     if (!direction) return
-    if (
-      typeof prev === "number" &&
-      typeof value === "number" &&
-      Math.abs(value - prev) < minDelta
-    ) {
+    if (typeof prev === "number" && typeof value === "number" && Math.abs(value - prev) < minDelta) {
       return
     }
     if (!requestFlashBudget()) return
@@ -108,11 +104,7 @@ export function FlashValue({
   }, [value, durationMs, minDelta])
 
   const isGood = flash ? flash === goodDirection : false
-  const tint = flash
-    ? isGood
-      ? "bg-emerald-500/10"
-      : "bg-rose-500/10"
-    : "bg-transparent"
+  const tint = flash ? (isGood ? "bg-emerald-500/10" : "bg-rose-500/10") : "bg-transparent"
 
   return (
     <span

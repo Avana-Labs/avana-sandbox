@@ -29,7 +29,7 @@ export const getForAsset = query({
       .order("desc")
       .take(64)
 
-    const latestByPool = new Map<string, typeof rows[number]>()
+    const latestByPool = new Map<string, (typeof rows)[number]>()
     for (const row of rows) {
       if (!latestByPool.has(row.poolId)) latestByPool.set(row.poolId, row)
     }

@@ -1,7 +1,12 @@
 "use client"
 
 import Link from "next/link"
-import { actionPagePath, getActionDescriptor, type ActionKind, type ActionProduct } from "@/app/lib/action-system/contracts"
+import {
+  actionPagePath,
+  getActionDescriptor,
+  type ActionKind,
+  type ActionProduct,
+} from "@/app/lib/action-system/contracts"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
@@ -36,10 +41,7 @@ export function ActionPageLaunchCta({
   if (returnTo) params.return = returnTo
 
   return (
-    <Link
-      href={actionPagePath(product, kind, params)}
-      className={primaryCtaClass({ className })}
-    >
+    <Link href={actionPagePath(product, kind, params)} className={primaryCtaClass({ className })}>
       {t(label ?? descriptor.primaryVerb)}
     </Link>
   )

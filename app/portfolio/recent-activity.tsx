@@ -118,11 +118,7 @@ function getTxnHref(txHash: string) {
 function TxnLink({ txHash, className }: { txHash: string; className?: string }) {
   const external = !isSimulatedTxHash(txHash)
   return (
-    <a
-      href={getTxnHref(txHash)}
-      {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
-      className={className}
-    >
+    <a href={getTxnHref(txHash)} {...(external ? { target: "_blank", rel: "noreferrer" } : {})} className={className}>
       {shortHash(txHash)}
     </a>
   )
@@ -268,9 +264,24 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
         >
           {t("All")}
         </button>
-        <FilterMenu label={t("Product")} options={PRODUCT_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))} values={products} onChange={setProducts} />
-        <FilterMenu label={t("Action")} options={ACTION_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))} values={kinds} onChange={setKinds} />
-        <FilterMenu label={t("Status")} options={STATUS_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))} values={statuses} onChange={setStatuses} />
+        <FilterMenu
+          label={t("Product")}
+          options={PRODUCT_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
+          values={products}
+          onChange={setProducts}
+        />
+        <FilterMenu
+          label={t("Action")}
+          options={ACTION_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
+          values={kinds}
+          onChange={setKinds}
+        />
+        <FilterMenu
+          label={t("Status")}
+          options={STATUS_OPTIONS.map((option) => ({ ...option, label: t(option.label) }))}
+          values={statuses}
+          onChange={setStatuses}
+        />
       </div>
 
       {/* Mobile: card list (the wide table is unusable on phones) */}
@@ -294,9 +305,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
                 <div className="truncate text-[12px] text-muted-foreground">{row.secondaryLabel}</div>
               </div>
               <div className="mt-2.5 flex items-center justify-between gap-3">
-                <span className="font-data text-[14px] font-medium tabular-nums text-foreground">
-                  {amount(row)}
-                </span>
+                <span className="font-data text-[14px] font-medium tabular-nums text-foreground">{amount(row)}</span>
                 <div className="flex items-center gap-2.5">
                   <span
                     className={cn(
@@ -378,7 +387,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
                           STATUS_TONE[row.status],
                         )}
                       >
-                          {t(STATUS_OPTIONS.find((option) => option.id === row.status)?.label ?? row.status)}
+                        {t(STATUS_OPTIONS.find((option) => option.id === row.status)?.label ?? row.status)}
                       </span>
                     </td>
                     <td className="px-5 py-4 align-middle text-right font-data text-[13px] tabular-nums text-foreground">

@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { buildMultiplyPageData, catalogMarketToRow, buildMultiplyTrendingSnapshots } from "@/app/lib/multiply-system/read-model"
+import {
+  buildMultiplyPageData,
+  catalogMarketToRow,
+  buildMultiplyTrendingSnapshots,
+} from "@/app/lib/multiply-system/read-model"
 import { MULTIPLY_MARKET_CATALOG } from "@/app/lib/multiply-system/catalog"
 import { resolveMultiplyMarketDisplayMaxLeverage } from "@/app/lib/multiply-system/leverage-limits"
 

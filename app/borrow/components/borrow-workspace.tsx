@@ -2,12 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import {
-  filterPools,
-  groupByDex,
-  type BorrowPoolRow,
-  type BorrowableAsset,
-} from "@/app/lib/data/borrow-domain"
+import { filterPools, groupByDex, type BorrowPoolRow, type BorrowableAsset } from "@/app/lib/data/borrow-domain"
 import type { BorrowWorkspaceData } from "@/app/lib/data/providers/borrow"
 import type { SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import { selectPortfolioSupplyRows } from "@/app/lib/borrow-system/dashboard-selectors"
@@ -77,7 +72,6 @@ function poolMatchesAnyCoreTab(pool: BorrowPoolRow) {
     poolHasCategory(pool, "utility")
   )
 }
-
 
 export type BorrowWorkspaceProps = {
   pageData: BorrowWorkspaceData
@@ -182,11 +176,11 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
         return Number.isFinite(row.healthFactor ?? NaN) || row.borrowedUsd === 0
       })
       const best = sameSpokeSupplies.reduce<SupplyRowContext | null>((acc, row) => {
-          if (!acc) return row
-          const rowScore = Number.isFinite(row.healthFactor ?? NaN) ? (row.healthFactor as number) : 99
-          const accScore = Number.isFinite(acc.healthFactor ?? NaN) ? (acc.healthFactor as number) : 99
-          return rowScore >= accScore ? row : acc
-        }, null)
+        if (!acc) return row
+        const rowScore = Number.isFinite(row.healthFactor ?? NaN) ? (row.healthFactor as number) : 99
+        const accScore = Number.isFinite(acc.healthFactor ?? NaN) ? (acc.healthFactor as number) : 99
+        return rowScore >= accScore ? row : acc
+      }, null)
       if (!best) {
         triggerPageLoading()
         router.push(borrowAssetDetailPath(asset.id))
@@ -214,50 +208,40 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
 
       <div className="pt-3 pb-6">
         <TokenPricesProvider>
-        {isPoolTab(currentTab) ? (
-          visiblePools.length === 0 ? (
-            <NoMarketsState query={search.trim()} hasFilters={hasActiveFilters} onClear={clearFilters} />
-          ) : isDesktop ? (
-            <CollateralPoolsTable
-              groups={poolGroups}
-              borrowAssetsBySpoke={borrowAssetsBySpoke}
-              pending={pendingRows}
-              onViewMarket={handleMarketDetail}
-              onUseAsCollateral={handlePoolsSupply}
-              onBorrowAssetDesktop={handleAssetBorrowDesktop}
-              onBorrowAssetMobile={handleAssetBorrowMobile}
-            />
-          ) : (
-            <CollateralPoolsList
-              groups={poolGroups}
-              borrowAssetsBySpoke={borrowAssetsBySpoke}
-              pending={pendingRows}
-              onViewMarket={handleMarketDetail}
-              onUseAsCollateral={handlePoolsSupply}
-              onBorrowAssetDesktop={handleAssetBorrowDesktop}
-              onBorrowAssetMobile={handleAssetBorrowMobile}
-            />
-          )
-        ) : null}
+          {isPoolTab(currentTab) ? (
+            visiblePools.length === 0 ? (
+              <NoMarketsState query={search.trim()} hasFilters={hasActiveFilters} onClear={clearFilters} />
+            ) : isDesktop ? (
+              <CollateralPoolsTable
+                groups={poolGroups}
+                borrowAssetsBySpoke={borrowAssetsBySpoke}
+                pending={pendingRows}
+                onViewMarket={handleMarketDetail}
+                onUseAsCollateral={handlePoolsSupply}
+                onBorrowAssetDesktop={handleAssetBorrowDesktop}
+                onBorrowAssetMobile={handleAssetBorrowMobile}
+              />
+            ) : (
+              <CollateralPoolsList
+                groups={poolGroups}
+                borrowAssetsBySpoke={borrowAssetsBySpoke}
+                pending={pendingRows}
+                onViewMarket={handleMarketDetail}
+                onUseAsCollateral={handlePoolsSupply}
+                onBorrowAssetDesktop={handleAssetBorrowDesktop}
+                onBorrowAssetMobile={handleAssetBorrowMobile}
+              />
+            )
+          ) : null}
         </TokenPricesProvider>
       </div>
 
-      {isPoolTab(currentTab) && hasMore ? (
-        <RevealSentinel sentinelRef={sentinelRef} active={isRevealing} />
-      ) : null}
+      {isPoolTab(currentTab) && hasMore ? <RevealSentinel sentinelRef={sentinelRef} active={isRevealing} /> : null}
     </section>
   )
 }
 
-function NoMarketsState({
-  query,
-  hasFilters,
-  onClear,
-}: {
-  query: string
-  hasFilters: boolean
-  onClear: () => void
-}) {
+function NoMarketsState({ query, hasFilters, onClear }: { query: string; hasFilters: boolean; onClear: () => void }) {
   const { t } = useTranslation()
   return (
     <div

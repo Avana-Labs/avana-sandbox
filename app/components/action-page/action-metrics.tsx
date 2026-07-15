@@ -10,7 +10,11 @@ import { AnimatedTextValue } from "@/app/components/action-page/action-live-valu
 import type { ActionMetricRow, ActionMetricTone } from "@/app/lib/action-system/contracts"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { ACTION_INFO_TOOLTIPS, resolveMetricTooltip } from "@/app/lib/action-system/metric-tooltips"
-import { isHealthFactorMetric, parseHealthFactorValue, resolveMetricTone } from "@/app/lib/action-system/health-factor-ui"
+import {
+  isHealthFactorMetric,
+  parseHealthFactorValue,
+  resolveMetricTone,
+} from "@/app/lib/action-system/health-factor-ui"
 
 export function ActionCard({
   children,
@@ -21,7 +25,10 @@ export function ActionCard({
   className?: string
 } & ComponentPropsWithoutRef<"div">) {
   return (
-    <div className={cn("rounded-radius-md border border-border bg-card text-card-foreground shadow-elev-1", className)} {...props}>
+    <div
+      className={cn("rounded-radius-md border border-border bg-card text-card-foreground shadow-elev-1", className)}
+      {...props}
+    >
       {children}
     </div>
   )
@@ -39,9 +46,14 @@ export function ActionInfoRow({
   className?: string
 }) {
   const { t } = useTranslation()
-  const tip = tooltip ? ACTION_INFO_TOOLTIPS[tooltip] ?? tooltip : undefined
+  const tip = tooltip ? (ACTION_INFO_TOOLTIPS[tooltip] ?? tooltip) : undefined
   return (
-    <div className={cn("flex items-center justify-between gap-4 px-4 py-3.5 text-[15px] max-[360px]:flex-col max-[360px]:items-start max-[360px]:gap-1.5", className)}>
+    <div
+      className={cn(
+        "flex items-center justify-between gap-4 px-4 py-3.5 text-[15px] max-[360px]:flex-col max-[360px]:items-start max-[360px]:gap-1.5",
+        className,
+      )}
+    >
       <div className="flex items-center gap-1.5 text-[14px] text-muted-foreground">
         <span>{t(label)}</span>
         {tip ? <ActionMetricHelp text={tip} topic={label} /> : null}
@@ -106,7 +118,9 @@ function MetricValue({
         <span className="text-muted-foreground">{before}</span>
         <span className="text-muted-foreground/70">→</span>
         <span className={cn("inline-flex items-center gap-1", toneClassName(resolvedTone))}>
-          {showHeart ? <Heart className={cn("size-3.5", resolvedTone === "positive" && "fill-emerald-500")} aria-hidden /> : null}
+          {showHeart ? (
+            <Heart className={cn("size-3.5", resolvedTone === "positive" && "fill-emerald-500")} aria-hidden />
+          ) : null}
           <AnimatedTextValue text={after} animateOnMount />
         </span>
       </div>
@@ -115,7 +129,9 @@ function MetricValue({
 
   return (
     <div className={cn("inline-flex items-center gap-1 font-medium tabular-nums", toneClassName(resolvedTone))}>
-      {showHeart ? <Heart className={cn("size-3.5", resolvedTone === "positive" && "fill-emerald-500")} aria-hidden /> : null}
+      {showHeart ? (
+        <Heart className={cn("size-3.5", resolvedTone === "positive" && "fill-emerald-500")} aria-hidden />
+      ) : null}
       <AnimatedTextValue text={value} animateOnMount />
     </div>
   )
@@ -141,7 +157,15 @@ export function ActionMetricRow({
           {tip ? <ActionMetricHelp text={tip} topic={label} /> : null}
         </div>
         <div className="max-[360px]:w-full">
-          <MetricValue label={label} value={value} before={before} after={after} tone={tone} id={id} tokenSymbols={tokenSymbols} />
+          <MetricValue
+            label={label}
+            value={value}
+            before={before}
+            after={after}
+            tone={tone}
+            id={id}
+            tokenSymbols={tokenSymbols}
+          />
         </div>
       </div>
     </div>

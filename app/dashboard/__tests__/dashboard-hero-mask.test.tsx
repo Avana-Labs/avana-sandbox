@@ -34,12 +34,7 @@ vi.mock("@/app/portfolio/hero/portfolio-hero-actions", () => ({
 describe("DashboardHero privacy mask (lending tab)", () => {
   it("masks the chart axis/tooltip when dollar amounts are hidden", () => {
     render(
-      <DashboardHero
-        tab="lending"
-        statOneValue="4.92%"
-        statTwoValue="+$12.46"
-        rangeData={buildRangeData(880, 14)}
-      />,
+      <DashboardHero tab="lending" statOneValue="4.92%" statTwoValue="+$12.46" rangeData={buildRangeData(880, 14)} />,
     )
 
     // The lending hero no longer renders stat tiles or a balance headline, so the

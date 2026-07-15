@@ -43,7 +43,13 @@ describe("DebtsPanel", () => {
     const { container } = render(
       <DebtsPanel
         rows={[usdtDebt]}
-        totals={{ totalBorrowed: 6_200, totalCollateral: 10_000, averageHf: 1.8, accruedInterest: 33.6, dailyInterest: 0.94 }}
+        totals={{
+          totalBorrowed: 6_200,
+          totalCollateral: 10_000,
+          averageHf: 1.8,
+          accruedInterest: 33.6,
+          dailyInterest: 0.94,
+        }}
         onRepay={vi.fn()}
         onManage={vi.fn()}
         showSummary={false}

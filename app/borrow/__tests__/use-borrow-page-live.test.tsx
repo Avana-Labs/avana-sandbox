@@ -34,10 +34,9 @@ describe("useBorrowPageLive", () => {
       transactionHistory: [] as unknown[],
     }
 
-    const { result, rerender } = renderHook(
-      ({ session }) => useBorrowPageLive("demo-wallet", session as never),
-      { initialProps: { session: borrowSession } },
-    )
+    const { result, rerender } = renderHook(({ session }) => useBorrowPageLive("demo-wallet", session as never), {
+      initialProps: { session: borrowSession },
+    })
 
     await waitFor(() => expect(result.current?.heroMetrics.totalCollateralUsd).toBe(80_000_000))
     expect(readBorrowPage).toHaveBeenCalledTimes(1)

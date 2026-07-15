@@ -13,10 +13,7 @@ export {
   type RouteHeroSelector,
 } from "@/app/lib/performance/route-budgets.data"
 
-import {
-  ACTION_LIGHTHOUSE_ROUTES,
-  LIGHTHOUSE_ROUTES,
-} from "@/app/lib/performance/route-budgets.data"
+import { ACTION_LIGHTHOUSE_ROUTES, LIGHTHOUSE_ROUTES } from "@/app/lib/performance/route-budgets.data"
 
 export const ALL_LIGHTHOUSE_ROUTE_PATHS = [
   ...LIGHTHOUSE_ROUTES,

@@ -118,11 +118,14 @@ export function buildMultiplyPageData(_walletId: string, state?: MultiplySystemS
   // row — so the headline reconciles with the table instead of showing a fraction.
   const totalLiquidityUsd = markets.reduce((sum, market) => sum + market.economics.availableLiquidityUsd, 0)
   const marketCount = markets.length
-  const averageMaxApy = marketCount > 0 ? markets.reduce((sum, market) => sum + market.economics.estimatedMaxApy, 0) / marketCount : 0
+  const averageMaxApy =
+    marketCount > 0 ? markets.reduce((sum, market) => sum + market.economics.estimatedMaxApy, 0) / marketCount : 0
   const averageMaxLeverage =
     marketCount > 0
-      ? markets.reduce((sum, market) => sum + resolveMultiplyMarketDisplayMaxLeverage(market.risk.publicMaxMultiplier), 0) /
-        marketCount
+      ? markets.reduce(
+          (sum, market) => sum + resolveMultiplyMarketDisplayMaxLeverage(market.risk.publicMaxMultiplier),
+          0,
+        ) / marketCount
       : 0
 
   return {
@@ -271,7 +274,9 @@ export function buildMultiplyWalletSnapshot(
           : 0,
     },
     riskSnapshots: buildMockMultiplyRiskSnapshots(state).filter((snapshot) =>
-      Object.values(state.positions).some((position) => position.walletId === walletId && position.marketId === snapshot.marketId),
+      Object.values(state.positions).some(
+        (position) => position.walletId === walletId && position.marketId === snapshot.marketId,
+      ),
     ),
   }
 }

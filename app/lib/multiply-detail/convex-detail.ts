@@ -88,12 +88,15 @@ export async function getMultiplyMarketDetailFromConvex(id: string): Promise<Mul
     fetchMultiplyContent(slug),
   ])
 
-  return applyDetailContentOverlay({
-    ...detail,
-    quickStats: mergeConvexQuickStats(detail.quickStats, quickStats),
-    heroFeed: buildHeroFeedFromConvexSeries(supplyPoints, "usdCompact") ?? detail.heroFeed,
-    cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
-    transactions: mapConvexTransactions(transactions) ?? detail.transactions,
-    risk: (risk as typeof detail.risk) ?? detail.risk,
-  }, content)
+  return applyDetailContentOverlay(
+    {
+      ...detail,
+      quickStats: mergeConvexQuickStats(detail.quickStats, quickStats),
+      heroFeed: buildHeroFeedFromConvexSeries(supplyPoints, "usdCompact") ?? detail.heroFeed,
+      cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
+      transactions: mapConvexTransactions(transactions) ?? detail.transactions,
+      risk: (risk as typeof detail.risk) ?? detail.risk,
+    },
+    content,
+  )
 }

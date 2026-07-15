@@ -92,9 +92,9 @@ export function ActionAmountCard({
   const useDialogPicker = assetPickerVariant === "dialog" && Boolean(pickerTokens && pickerTokens.length > 1)
   const switchable = Boolean(
     !hideAssetSelector &&
-      onAssetSelect &&
-      !readOnly &&
-      (useDialogPicker ? pickerTokens!.length > 1 : assetOptions && assetOptions.length > 1),
+    onAssetSelect &&
+    !readOnly &&
+    (useDialogPicker ? pickerTokens!.length > 1 : assetOptions && assetOptions.length > 1),
   )
   // When gated (no wallet / no collateral), the pill still renders as an interactive
   // control so it can dim and route a click to the blocked handler (e.g. Connect).
@@ -228,9 +228,7 @@ export function ActionAmountCard({
               </span>
             </button>
           ) : (
-            <div
-              className="inline-flex cursor-default items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground"
-            >
+            <div className="inline-flex cursor-default items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground">
               {borrowSymbol ? (
                 <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
               ) : isAssetPlaceholder ? null : (
@@ -302,7 +300,11 @@ export function ActionAmountCard({
         <DialogHeader className="px-4 pb-2 pt-3 text-left space-y-0">
           <DialogTitle className="text-[13px] font-medium">{t("Select asset")}</DialogTitle>
         </DialogHeader>
-        <div role="listbox" aria-label={t("Select asset")} className="max-h-[60dvh] overflow-y-auto px-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        <div
+          role="listbox"
+          aria-label={t("Select asset")}
+          className="max-h-[60dvh] overflow-y-auto px-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"
+        >
           {assetOptions?.map((option) => renderAssetOption(option))}
         </div>
       </DialogContent>
@@ -322,28 +324,33 @@ export function ActionAmountCard({
           {usdRow}
           {gatedHintRow}
           {balanceRow}
-        {showReceiveWethToggle ? (
-          <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3 text-[14px]">
-            <div className="flex items-center gap-1.5 text-muted-foreground">
-              <span>{t("Receive WETH")}</span>
-              <ActionMetricHelp topic="Receive WETH" text="Get wrapped ETH (WETH) instead of native ETH." />
+          {showReceiveWethToggle ? (
+            <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3 text-[14px]">
+              <div className="flex items-center gap-1.5 text-muted-foreground">
+                <span>{t("Receive WETH")}</span>
+                <ActionMetricHelp topic="Receive WETH" text="Get wrapped ETH (WETH) instead of native ETH." />
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-label={t("Receive WETH")}
+                aria-checked={receiveWeth}
+                onClick={() => onReceiveWethChange?.(!receiveWeth)}
+                className={cn(
+                  "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                  receiveWeth ? "bg-foreground" : "bg-muted",
+                )}
+              >
+                <span
+                  className={cn(
+                    "inline-block size-5 rounded-full bg-background transition-transform",
+                    receiveWeth ? "translate-x-5" : "translate-x-0.5",
+                  )}
+                />
+              </button>
             </div>
-            <button
-              type="button"
-              role="switch"
-              aria-label={t("Receive WETH")}
-              aria-checked={receiveWeth}
-              onClick={() => onReceiveWethChange?.(!receiveWeth)}
-              className={cn(
-                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-                receiveWeth ? "bg-foreground" : "bg-muted",
-              )}
-            >
-              <span className={cn("inline-block size-5 rounded-full bg-background transition-transform", receiveWeth ? "translate-x-5" : "translate-x-0.5")} />
-            </button>
-          </div>
-        ) : null}
-        {footer ? <div className="mt-3 border-t border-border/60 pt-3">{footer}</div> : null}
+          ) : null}
+          {footer ? <div className="mt-3 border-t border-border/60 pt-3">{footer}</div> : null}
         </SwapStyleField>
         {assetPickerDialog}
         {menuSheet}
@@ -357,40 +364,45 @@ export function ActionAmountCard({
         className="rounded-radius-xl border border-transparent bg-field-bottom text-card-foreground"
         data-testid="action-amount-card"
       >
-      <div className="px-4 pb-4 pt-4">
-        <div className="text-[14px] font-medium text-muted-foreground">{t(label)}</div>
-        {amountRow}
-        {usdRow}
-        {gatedHintRow}
-        {balanceRow}
-      </div>
-
-      {showReceiveWethToggle ? (
-        <div className="flex items-center justify-between border-t border-border px-4 py-3 text-[14px]">
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <span>{t("Receive WETH")}</span>
-            <ActionMetricHelp
-              topic="Receive WETH"
-              text="Receive borrowed ETH as WETH instead of native ETH when repaying or withdrawing."
-            />
-          </div>
-          <button
-            type="button"
-            role="switch"
-            aria-label={t("Receive WETH")}
-            aria-checked={receiveWeth}
-            onClick={() => onReceiveWethChange?.(!receiveWeth)}
-            className={cn(
-              "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-              receiveWeth ? "bg-foreground" : "bg-muted",
-            )}
-          >
-            <span className={cn("inline-block size-5 rounded-full bg-background transition-transform", receiveWeth ? "translate-x-5" : "translate-x-0.5")} />
-          </button>
+        <div className="px-4 pb-4 pt-4">
+          <div className="text-[14px] font-medium text-muted-foreground">{t(label)}</div>
+          {amountRow}
+          {usdRow}
+          {gatedHintRow}
+          {balanceRow}
         </div>
-      ) : null}
 
-      {footer ? <div className="border-t border-border">{footer}</div> : null}
+        {showReceiveWethToggle ? (
+          <div className="flex items-center justify-between border-t border-border px-4 py-3 text-[14px]">
+            <div className="flex items-center gap-1.5 text-muted-foreground">
+              <span>{t("Receive WETH")}</span>
+              <ActionMetricHelp
+                topic="Receive WETH"
+                text="Receive borrowed ETH as WETH instead of native ETH when repaying or withdrawing."
+              />
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-label={t("Receive WETH")}
+              aria-checked={receiveWeth}
+              onClick={() => onReceiveWethChange?.(!receiveWeth)}
+              className={cn(
+                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                receiveWeth ? "bg-foreground" : "bg-muted",
+              )}
+            >
+              <span
+                className={cn(
+                  "inline-block size-5 rounded-full bg-background transition-transform",
+                  receiveWeth ? "translate-x-5" : "translate-x-0.5",
+                )}
+              />
+            </button>
+          </div>
+        ) : null}
+
+        {footer ? <div className="border-t border-border">{footer}</div> : null}
       </div>
       {assetPickerDialog}
       {menuSheet}
@@ -456,7 +468,12 @@ export function ActionFooter({
           {primaryPending ? t("Processing…") : primaryText}
         </Link>
       ) : (
-        <button type="button" onClick={onPrimary} disabled={primaryDisabled || primaryPending} className={primaryClassName}>
+        <button
+          type="button"
+          onClick={onPrimary}
+          disabled={primaryDisabled || primaryPending}
+          className={primaryClassName}
+        >
           {primaryPending ? t("Processing…") : primaryText}
         </button>
       )}

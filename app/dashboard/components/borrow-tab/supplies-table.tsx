@@ -62,13 +62,17 @@ export function SuppliesPanel({
         <div className="text-[20px] font-medium leading-snug tracking-tight text-brand">
           {t("Nothing supplied yet")}
         </div>
-        <div className="mt-1 text-[15px] leading-snug">{t("To borrow you need to supply any LPs to be used as collateral")}</div>
+        <div className="mt-1 text-[15px] leading-snug">
+          {t("To borrow you need to supply any LPs to be used as collateral")}
+        </div>
       </div>
     )
   }
   return (
     <section className="mb-2">
-      {showSummary ? <SuppliesHealthFactorCard averageHealthFactor={totals.averageHf} showBalance={showBalance} /> : null}
+      {showSummary ? (
+        <SuppliesHealthFactorCard averageHealthFactor={totals.averageHf} showBalance={showBalance} />
+      ) : null}
       {showHeading ? (
         <div className="mb-3">
           <h3 className="text-[14px] font-medium tracking-tight">{t("My LP Collaterals")}</h3>
@@ -118,12 +122,21 @@ export function SuppliesPanel({
                       onClick={() => router.push(detailHref)}
                     >
                       <td className={`py-3 pl-5 ${TABLE_ROW_HOVER_LEFT}`}>
-                        <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="md" />
+                        <TokenPairCell
+                          visuals={visuals}
+                          name={row.pool.name}
+                          subtitle={meta?.venue ?? row.pool.venue}
+                          size="md"
+                        />
                       </td>
-                      <td className={`py-3 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}>
+                      <td
+                        className={`py-3 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}
+                      >
                         {m(compact(row.pool.collateralUsd))}
                       </td>
-                      <td className={`py-3 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}>
+                      <td
+                        className={`py-3 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}
+                      >
                         {m(compact(row.remainingBorrowPowerUsd))}
                       </td>
                       <td className={`py-3 text-right ${TABLE_ROW_HOVER_BG}`}>
@@ -142,10 +155,14 @@ export function SuppliesPanel({
                               // wherever the panel was launched from (e.g. the dashboard), not the
                               // market detail page. Fall back to the detail page if unwired.
                               if (onAddCollateral) onAddCollateral(row)
-                              else router.push(actionPagePath("borrow", "supply", { market: row.pool.id, return: detailHref }))
+                              else
+                                router.push(
+                                  actionPagePath("borrow", "supply", { market: row.pool.id, return: detailHref }),
+                                )
                             }}
                           >
-                            <ActionIcon label="Pledge" />{t("Pledge")}
+                            <ActionIcon label="Pledge" />
+                            {t("Pledge")}
                           </Button>
                           <Button
                             type="button"
@@ -157,7 +174,8 @@ export function SuppliesPanel({
                               onBorrowMore(row)
                             }}
                           >
-                            <ActionIcon label="Borrow" />{t("Borrow")}
+                            <ActionIcon label="Borrow" />
+                            {t("Borrow")}
                           </Button>
                         </HoverActionGroup>
                       </td>
@@ -173,7 +191,10 @@ export function SuppliesPanel({
       <ul className="space-y-5 md:hidden">
         {rows.map((row) => {
           const spoke = getSpokeById(homePoolSpoke(row.pool.category))
-          const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [ReturnType<typeof homeVisualToBorrowVisual>, ReturnType<typeof homeVisualToBorrowVisual>]
+          const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [
+            ReturnType<typeof homeVisualToBorrowVisual>,
+            ReturnType<typeof homeVisualToBorrowVisual>,
+          ]
           const hf = row.healthFactor
           // Single-source the label through formatHealthFactor so the mobile card
           // caps/formats health identically to the desktop table and the hero card.
@@ -218,7 +239,9 @@ export function SuppliesPanel({
               <div className="space-y-2.5 rounded-radius-sm border border-border bg-surface-inset px-3 py-3">
                 <div className="flex items-center justify-between">
                   <span className="text-[12.5px] font-medium text-foreground">{t("Scope Health Factor")}</span>
-                  <span className={cn("font-data text-[22px] font-medium leading-none tabular-nums", hfTone.text)}>{m(hfLabel)}</span>
+                  <span className={cn("font-data text-[22px] font-medium leading-none tabular-nums", hfTone.text)}>
+                    {m(hfLabel)}
+                  </span>
                 </div>
                 <HealthFactorPositionBar
                   value={hf}
@@ -240,20 +263,13 @@ export function SuppliesPanel({
               </div>
 
               <div className="grid grid-cols-3 divide-x divide-border overflow-hidden rounded-radius-sm border border-border bg-surface-inset">
-                <SupplyStatCell
-                  value={m(exact(row.borrowedUsd))}
-                  label={t("Borrowed")}
-                  valueTone="text-rose-500"
-                />
+                <SupplyStatCell value={m(exact(row.borrowedUsd))} label={t("Borrowed")} valueTone="text-rose-500" />
                 <SupplyStatCell
                   value={m(compact(row.remainingBorrowPowerUsd))}
                   label={t("Borrow Power")}
                   valueTone="text-success"
                 />
-                <SupplyStatCell
-                  value={formatApy(row.pairApr)}
-                  label={t("LP APR")}
-                />
+                <SupplyStatCell value={formatApy(row.pairApr)} label={t("LP APR")} />
               </div>
 
               <div className="flex items-stretch gap-2">
@@ -264,10 +280,17 @@ export function SuppliesPanel({
                   onClick={(event) => {
                     event.stopPropagation()
                     if (onAddCollateral) onAddCollateral(row)
-                    else router.push(actionPagePath("borrow", "supply", { market: row.pool.id, return: `/borrow/markets/${row.pool.id}` }))
+                    else
+                      router.push(
+                        actionPagePath("borrow", "supply", {
+                          market: row.pool.id,
+                          return: `/borrow/markets/${row.pool.id}`,
+                        }),
+                      )
                   }}
                 >
-                  <ActionIcon label="Pledge" />{t("Pledge")}
+                  <ActionIcon label="Pledge" />
+                  {t("Pledge")}
                 </Button>
                 <Button
                   type="button"
@@ -278,7 +301,8 @@ export function SuppliesPanel({
                     onBorrowMore(row)
                   }}
                 >
-                  <ActionIcon label="Borrow" />{t("Borrow")}
+                  <ActionIcon label="Borrow" />
+                  {t("Borrow")}
                 </Button>
               </div>
             </MarketMobileCard>
@@ -293,11 +317,12 @@ function SupplyStatCell({ value, label, valueTone }: { value: string; label: str
   return (
     <div className="flex flex-col items-center justify-center px-2 py-2.5">
       <span className={cn("font-data text-[14px] font-medium tabular-nums text-foreground", valueTone)}>{value}</span>
-      <span className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</span>
+      <span className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+        {label}
+      </span>
     </div>
   )
 }
-
 
 export function SuppliesHealthFactorCard({
   averageHealthFactor,
@@ -322,7 +347,9 @@ export function SuppliesHealthFactorCard({
           <span className="text-[13px] font-semibold text-foreground">{t("Credit Health")}</span>
           <ActionMetricHelp
             topic="Credit Health"
-            text={t("Wallet-wide health factor: total liquidation value divided by total borrowed. 2.5 and above is comfortable; below 1.2 risks liquidation.")}
+            text={t(
+              "Wallet-wide health factor: total liquidation value divided by total borrowed. 2.5 and above is comfortable; below 1.2 risks liquidation.",
+            )}
           />
         </div>
         <span

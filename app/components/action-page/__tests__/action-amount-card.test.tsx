@@ -34,13 +34,7 @@ describe("ActionAmountCard", () => {
 
   it("keeps the asset chip labeled when switching is disabled in embedded layouts", () => {
     const { container } = render(
-      <ActionAmountCard
-        {...baseProps}
-        assetLabel="AAVE"
-        assetSymbol="AAVE"
-        borrowSymbol="GHO"
-        variant="raised"
-      />,
+      <ActionAmountCard {...baseProps} assetLabel="AAVE" assetSymbol="AAVE" borrowSymbol="GHO" variant="raised" />,
     )
 
     expect(screen.queryByRole("listbox")).toBeNull()

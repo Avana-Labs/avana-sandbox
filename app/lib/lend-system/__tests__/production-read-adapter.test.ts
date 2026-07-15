@@ -28,9 +28,13 @@ describe("ProductionLendReadAdapter", () => {
   it("keeps throwing intentionally until real production readers are provided", async () => {
     const adapter = new ProductionLendReadAdapter()
 
-    await expect(adapter.readWalletSnapshot("wallet-1")).rejects.toThrow("Production lend read adapter is not implemented")
+    await expect(adapter.readWalletSnapshot("wallet-1")).rejects.toThrow(
+      "Production lend read adapter is not implemented",
+    )
     await expect(adapter.readMarkets()).rejects.toThrow("Production lend read adapter is not implemented")
     await expect(adapter.readLendPage("wallet-1")).rejects.toThrow("Production lend read adapter is not implemented")
-    await expect(adapter.readPortfolioLend("wallet-1")).rejects.toThrow("Production lend read adapter is not implemented")
+    await expect(adapter.readPortfolioLend("wallet-1")).rejects.toThrow(
+      "Production lend read adapter is not implemented",
+    )
   })
 })

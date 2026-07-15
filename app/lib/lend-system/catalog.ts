@@ -100,8 +100,7 @@ function buildMarketFromRow(
   const totalSupplied = suppliedUsd / assetPriceUsd
   const availableTokens = availableUsd / assetPriceUsd
   const totalBorrowed = Math.max(0, totalSupplied - availableTokens)
-  const utilization =
-    SPEC_UTILIZATION[symbol] ?? calculateUtilization(totalBorrowed, totalSupplied)
+  const utilization = SPEC_UTILIZATION[symbol] ?? calculateUtilization(totalBorrowed, totalSupplied)
   const rewardsApy = SPEC_REWARDS_APY[symbol] ?? 0
   const totalDisplayApy = row.apyValue / 100
   const supplyApy = SPEC_SUPPLY_APY[symbol] ?? Math.max(0, totalDisplayApy - rewardsApy)

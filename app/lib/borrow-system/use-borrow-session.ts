@@ -325,22 +325,22 @@ export function useBorrowSession({
     [walletId],
   )
 
-  const transactionAdapter = useMemo(
-    () => {
-      if (injectedTransactionAdapter) return injectedTransactionAdapter
-      return new SandboxTransactionAdapter({
-        readState: () => stateRef.current,
-        writeState: (nextState) => {
-          stateRef.current = nextState
-          setState(nextState)
-        },
-        persistResult: persistTransaction,
-      })
-    },
-    [injectedTransactionAdapter, persistTransaction],
-  )
+  const transactionAdapter = useMemo(() => {
+    if (injectedTransactionAdapter) return injectedTransactionAdapter
+    return new SandboxTransactionAdapter({
+      readState: () => stateRef.current,
+      writeState: (nextState) => {
+        stateRef.current = nextState
+        setState(nextState)
+      },
+      persistResult: persistTransaction,
+    })
+  }, [injectedTransactionAdapter, persistTransaction])
 
-  const createIntent = useCallback((action: BorrowAction) => transactionAdapter.createIntent(action), [transactionAdapter])
+  const createIntent = useCallback(
+    (action: BorrowAction) => transactionAdapter.createIntent(action),
+    [transactionAdapter],
+  )
   const previewTransaction = useCallback(
     (intent: TransactionIntent) => transactionAdapter.previewTransaction(intent),
     [transactionAdapter],
@@ -373,25 +373,19 @@ export function useBorrowSession({
     },
     [transactionAdapter],
   )
-  const readAdapter = useMemo(
-    () => {
-      if (injectedReadAdapter) return injectedReadAdapter
-      return new SandboxBorrowReadAdapter({
-        state,
-        transactionHistory,
-      })
-    },
-    [injectedReadAdapter, state, transactionHistory],
-  )
+  const readAdapter = useMemo(() => {
+    if (injectedReadAdapter) return injectedReadAdapter
+    return new SandboxBorrowReadAdapter({
+      state,
+      transactionHistory,
+    })
+  }, [injectedReadAdapter, state, transactionHistory])
 
   const metrics = useMemo(() => calculateCreditMetrics(state, walletId), [state, walletId])
   const marketSummaries = useMemo(() => selectBorrowMarketSummaries(state, walletId), [state, walletId])
   const borrowableAssets = useMemo(() => selectBorrowableAssets(state, walletId), [state, walletId])
   const collateralPools = useMemo(() => selectBorrowCollateralPools(state, walletId), [state, walletId])
-  const availableCollateralPools = useMemo(
-    () => selectAllAvailableCollateralPools(state, walletId),
-    [state, walletId],
-  )
+  const availableCollateralPools = useMemo(() => selectAllAvailableCollateralPools(state, walletId), [state, walletId])
   const initialDebts = useMemo(() => selectInitialBorrowDebts(state, walletId), [state, walletId])
   const walletSnapshot = useMemo(() => selectWalletBorrowSnapshot(state, walletId), [state, walletId])
 

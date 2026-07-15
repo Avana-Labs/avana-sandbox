@@ -57,7 +57,9 @@ describe("credit overview Net Value stays flat on net-neutral actions", () => {
     })
     const after = buildBorrowDashboardMetrics(next, "wallet-1").overview.netValueUsd
 
-    expect(next.accounts["wallet-1"]!.collateralPositions.some((position) => position.id === "wallet-1:curve-eth-usdt")).toBe(false)
+    expect(
+      next.accounts["wallet-1"]!.collateralPositions.some((position) => position.id === "wallet-1:curve-eth-usdt"),
+    ).toBe(false)
     expect(Math.abs(after - before)).toBeLessThanOrEqual(TOLERANCE)
   })
 

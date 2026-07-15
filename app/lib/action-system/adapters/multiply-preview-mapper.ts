@@ -25,13 +25,7 @@ function hfNumber(value: number | "infinity") {
   return value === "infinity" ? Number.POSITIVE_INFINITY : value
 }
 
-function metricBeforeAfter(
-  id: string,
-  label: string,
-  before: string,
-  after: string,
-  tone?: ActionMetricTone,
-) {
+function metricBeforeAfter(id: string, label: string, before: string, after: string, tone?: ActionMetricTone) {
   return {
     id,
     label,
@@ -42,12 +36,7 @@ function metricBeforeAfter(
   }
 }
 
-function metricValue(
-  id: string,
-  label: string,
-  value: string,
-  tone?: ActionMetricTone,
-) {
+function metricValue(id: string, label: string, value: string, tone?: ActionMetricTone) {
   return {
     id,
     label,
@@ -97,8 +86,7 @@ export function mapMultiplyPreviewToActionUi(
   )
   const maxBorrowUsd = scaleUsd(preview.after.collateralValueUsd * options.maxLtv)
   const borrowCapacityRatio = maxBorrowUsd > 0 ? borrowCapacityUsd / maxBorrowUsd : 1
-  const borrowCapacityTone =
-    borrowCapacityRatio < 0.1 ? "danger" : borrowCapacityRatio < 0.25 ? "warning" : "positive"
+  const borrowCapacityTone = borrowCapacityRatio < 0.1 ? "danger" : borrowCapacityRatio < 0.25 ? "warning" : "positive"
   const metrics = [
     metricValue(
       "collateral-supplied",
@@ -113,17 +101,8 @@ export function mapMultiplyPreviewToActionUi(
     metricValue("target-leverage", "Target leverage", `${options.multiplier.toFixed(2)}x`),
     metricValue("looped-exposure", "Looped exposure", formatActionUsd(addedExposureUsd)),
     metricValue("borrowed-amount", `${options.borrowSymbol} borrowed`, formatActionUsd(addedDebtUsd)),
-    metricValue(
-      "borrow-capacity",
-      "Borrow capacity remaining",
-      formatActionUsd(borrowCapacityUsd),
-      borrowCapacityTone,
-    ),
-    metricValue(
-      "ltv",
-      hasExistingPosition ? "Projected LTV" : "LTV",
-      formatActionRatioPercent(preview.after.ltv),
-    ),
+    metricValue("borrow-capacity", "Borrow capacity remaining", formatActionUsd(borrowCapacityUsd), borrowCapacityTone),
+    metricValue("ltv", hasExistingPosition ? "Projected LTV" : "LTV", formatActionRatioPercent(preview.after.ltv)),
     metricValue(
       "hf",
       hasExistingPosition ? "Projected health factor" : "Health factor",

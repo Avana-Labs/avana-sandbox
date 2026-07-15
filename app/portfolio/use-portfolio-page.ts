@@ -1,7 +1,11 @@
 "use client"
 
 import * as React from "react"
-import { fetchPortfolioPage, type FetchPortfolioPageInput, type PortfolioPageData } from "@/app/lib/data/providers/portfolio"
+import {
+  fetchPortfolioPage,
+  type FetchPortfolioPageInput,
+  type PortfolioPageData,
+} from "@/app/lib/data/providers/portfolio"
 
 type State = {
   data: PortfolioPageData | null
@@ -13,7 +17,10 @@ type UsePortfolioPageResult = State & {
   retry: () => void
 }
 
-export function usePortfolioPage(input: FetchPortfolioPageInput, initialData?: PortfolioPageData | null): UsePortfolioPageResult {
+export function usePortfolioPage(
+  input: FetchPortfolioPageInput,
+  initialData?: PortfolioPageData | null,
+): UsePortfolioPageResult {
   const [state, setState] = React.useState<State>({
     data: initialData ?? null,
     error: null,

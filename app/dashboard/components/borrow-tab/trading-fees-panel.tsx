@@ -24,13 +24,7 @@ const MASK = "••••"
 const HEADER_CLASS =
   "whitespace-nowrap bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70"
 
-export function TradingFeesPanel({
-  showBalance = true,
-  returnHref,
-}: {
-  showBalance?: boolean
-  returnHref?: string
-}) {
+export function TradingFeesPanel({ showBalance = true, returnHref }: { showBalance?: boolean; returnHref?: string }) {
   const { t } = useTranslation()
   const router = useRouter()
   const { exact } = useCurrency()
@@ -39,7 +33,11 @@ export function TradingFeesPanel({
 
   const plPositive = summary.unrealizedPlPct >= 0
   const summaryMetrics: SummaryMetric[] = [
-    { label: "Unclaimed Fees", value: m(exact(summary.unclaimedFeesUsd)), help: "Fees earned but not yet collected across your pools." },
+    {
+      label: "Unclaimed Fees",
+      value: m(exact(summary.unclaimedFeesUsd)),
+      help: "Fees earned but not yet collected across your pools.",
+    },
     { label: "Fees Claimed", value: m(exact(summary.feesClaimedUsd)), help: "Trading fees you've already collected." },
     {
       label: "Unrealized P/L",
@@ -109,7 +107,12 @@ export function TradingFeesPanel({
                     onClick={() => router.push(detailHref(row.marketId))}
                   >
                     <td className={cn("py-3.5 pl-5", TABLE_ROW_HOVER_LEFT)}>
-                      <PoolIdentity token0={row.token0} token1={row.token1} label={row.poolLabel} protocol={row.protocol} />
+                      <PoolIdentity
+                        token0={row.token0}
+                        token1={row.token1}
+                        label={row.poolLabel}
+                        protocol={row.protocol}
+                      />
                     </td>
                     <td className={cn("py-3.5 pl-4", TABLE_ROW_HOVER_BG)}>
                       <RangeStatus inRange={row.inRange} />
@@ -117,7 +120,12 @@ export function TradingFeesPanel({
                     <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
                       <TokenUsdCell token={m(row.depositedToken)} usd={m(exact(row.depositedUsd))} />
                     </td>
-                    <td className={cn("py-3.5 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white", TABLE_ROW_HOVER_BG)}>
+                    <td
+                      className={cn(
+                        "py-3.5 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white",
+                        TABLE_ROW_HOVER_BG,
+                      )}
+                    >
                       {row.apyPct.toFixed(2)}%
                     </td>
                     <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
@@ -199,7 +207,9 @@ function PoolIdentity({
         </span>
       </span>
       <div className="flex min-w-0 flex-col">
-        <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">{label}</span>
+        <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+          {label}
+        </span>
         <span className="text-[11px] text-muted-foreground">{protocol}</span>
       </div>
     </div>
@@ -258,7 +268,9 @@ function TradingFeeMobileCard({
               </span>
             </span>
             <div className="min-w-0">
-              <div className="text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">{row.poolLabel}</div>
+              <div className="text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                {row.poolLabel}
+              </div>
               <div className="text-[11px] text-muted-foreground">{row.protocol}</div>
             </div>
           </div>

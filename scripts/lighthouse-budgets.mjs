@@ -22,7 +22,9 @@ const budgets = {
   seo: Number(process.env.LH_SEO_MIN ?? LIGHTHOUSE_CATEGORY_BUDGETS.seo),
 }
 const runCount = Math.max(1, Number(process.env.LH_RUNS ?? 3))
-const requestedRoutes = process.env.LH_ROUTES?.split(",").map((route) => route.trim()).filter(Boolean)
+const requestedRoutes = process.env.LH_ROUTES?.split(",")
+  .map((route) => route.trim())
+  .filter(Boolean)
 const routes = requestedRoutes?.length ? requestedRoutes : LIGHTHOUSE_ROUTES
 const unknownRoutes = routes.filter((route) => !LIGHTHOUSE_ROUTES.includes(route))
 if (unknownRoutes.length > 0) {
@@ -110,7 +112,9 @@ const outputDir = requestedOutputDir
   ? path.resolve(requestedOutputDir)
   : await fs.mkdtemp(path.join(os.tmpdir(), "avana-lighthouse-"))
 await fs.mkdir(outputDir, { recursive: true })
-process.stdout.write(`${JSON.stringify({ lighthouseOutputDir: outputDir, gpuEnabled: process.env.LH_ENABLE_GPU === "1" })}\n`)
+process.stdout.write(
+  `${JSON.stringify({ lighthouseOutputDir: outputDir, gpuEnabled: process.env.LH_ENABLE_GPU === "1" })}\n`,
+)
 const failures = []
 
 for (const route of routes) {

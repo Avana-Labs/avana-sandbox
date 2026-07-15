@@ -82,7 +82,9 @@ export function lendPreviewFixture(overrides: Partial<LendTransactionPreview> = 
   }
 }
 
-export function multiplyPreviewFixture(overrides: Partial<MultiplyTransactionPreview> = {}): MultiplyTransactionPreview {
+export function multiplyPreviewFixture(
+  overrides: Partial<MultiplyTransactionPreview> = {},
+): MultiplyTransactionPreview {
   const before = {
     collateralValueUsd: 10_000,
     debtValueUsd: 5_000,

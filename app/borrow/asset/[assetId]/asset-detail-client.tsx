@@ -5,11 +5,13 @@ import Link from "next/link"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
-import { DeferredDetailContent, DetailPageNotice, DetailPageWidth, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import {
-  AssetHero,
-  AssetHeroIdentity,
-} from "@/app/borrow/_detail/asset-sections"
+  DeferredDetailContent,
+  DetailPageNotice,
+  DetailPageWidth,
+  MobileDetailActionBar,
+} from "@/app/components/detail-page-primitives"
+import { AssetHero, AssetHeroIdentity } from "@/app/borrow/_detail/asset-sections"
 import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { AssetTokenSidebar } from "@/app/borrow/_detail/sidebars"
@@ -63,11 +65,16 @@ export function AssetDetailClient({ detail }: Props) {
       <main className="pb-24 pt-8 md:pb-12">
         <div className="container mx-auto px-4">
           <DetailPageWidth>
-            <nav aria-label={t("Breadcrumb")} className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]">
+            <nav
+              aria-label={t("Breadcrumb")}
+              className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]"
+            >
               <Link href="/borrow" className="transition-colors hover:text-foreground">
                 {t("Borrow")}
               </Link>
-              <span aria-hidden className="text-border">›</span>
+              <span aria-hidden className="text-border">
+                ›
+              </span>
               <span className="font-normal text-foreground">{detail.hero.name}</span>
             </nav>
 
@@ -87,7 +94,9 @@ export function AssetDetailClient({ detail }: Props) {
                 />
 
                 <section aria-label={t("Asset analytics")} className="space-y-12 pt-12">
-                  <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">Asset data</h2>
+                  <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
+                    Asset data
+                  </h2>
                   <QuickStatsGrid detail={detail} />
                   <DeferredDetailContent>
                     <div className="space-y-12">
@@ -100,10 +109,7 @@ export function AssetDetailClient({ detail }: Props) {
                         title={t("General FAQs")}
                         items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
                       />
-                      <TransactionHistoryCard
-                        transactions={detail.transactions}
-                        assetSymbol={detail.hero.symbol}
-                      />
+                      <TransactionHistoryCard transactions={detail.transactions} assetSymbol={detail.hero.symbol} />
                       <RelatedAssetsRow detail={detail} />
                       <DetailPageNotice />
                     </div>

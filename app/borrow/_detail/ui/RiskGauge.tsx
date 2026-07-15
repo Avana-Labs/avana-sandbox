@@ -35,14 +35,7 @@ const LEVEL_STROKE: Record<RiskLevel, string> = {
  * Half-circle tick-mark gauge. Renders N radial ticks across a 180° arc and
  * fills those up to `score` with the level color; remaining ticks are muted.
  */
-export function RiskGauge({
-  score,
-  level,
-  label,
-  size = 220,
-  ticks = 44,
-  className,
-}: RiskGaugeProps) {
+export function RiskGauge({ score, level, label, size = 220, ticks = 44, className }: RiskGaugeProps) {
   const clamped = Number.isFinite(score) ? Math.max(0, Math.min(100, score)) : 0
 
   // SVG coordinate system
@@ -58,8 +51,7 @@ export function RiskGauge({
 
   // Angles sweep from 180° (left, 0 score) to 0° (right, 100 score).
   const angleFor = (i: number) => Math.PI * (1 - i / (ticks - 1))
-  const toXY = (angle: number, r: number) =>
-    [cx + Math.cos(angle) * r, cy - Math.sin(angle) * r] as const
+  const toXY = (angle: number, r: number) => [cx + Math.cos(angle) * r, cy - Math.sin(angle) * r] as const
 
   return (
     <figure
@@ -69,12 +61,7 @@ export function RiskGauge({
       data-risk-score={clamped}
       data-risk-level={level}
     >
-      <svg
-        width={size}
-        height={(size * H) / W}
-        viewBox={`0 0 ${W} ${H}`}
-        className="overflow-visible"
-      >
+      <svg width={size} height={(size * H) / W} viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
         {Array.from({ length: ticks }).map((_, i) => {
           const a = angleFor(i)
           const [x1, y1] = toXY(a, rInner)
@@ -89,10 +76,7 @@ export function RiskGauge({
               y2={y2.toFixed(2)}
               strokeWidth={tickW}
               strokeLinecap="round"
-              className={cn(
-                "transition-colors",
-                active ? LEVEL_STROKE[level] : "stroke-muted-foreground/15",
-              )}
+              className={cn("transition-colors", active ? LEVEL_STROKE[level] : "stroke-muted-foreground/15")}
             />
           )
         })}
@@ -137,13 +121,7 @@ export function RiskGauge({
           100
         </text>
       </svg>
-      {label ? (
-        <figcaption
-          className={cn("-mt-1 text-xs font-medium", LEVEL_COLOR[level])}
-        >
-          {label}
-        </figcaption>
-      ) : null}
+      {label ? <figcaption className={cn("-mt-1 text-xs font-medium", LEVEL_COLOR[level])}>{label}</figcaption> : null}
     </figure>
   )
 }

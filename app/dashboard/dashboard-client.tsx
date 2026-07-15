@@ -52,24 +52,22 @@ import { useAmountDisplayPreferences } from "@/app/components/display-preference
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { RouteErrorFallback } from "@/app/components/route-error-fallback"
 
-const CollateralPositionsPanel = lazy(
-  async () => ({ default: (await import("@/app/dashboard/components/borrow-tab/collateral-positions-panel")).CollateralPositionsPanel }),
-)
-const DebtPositionsPanel = lazy(
-  async () => ({ default: (await import("@/app/dashboard/components/borrow-tab/debt-positions-panel")).DebtPositionsPanel }),
-)
-const TradingFeesPanel = lazy(
-  async () => ({ default: (await import("@/app/dashboard/components/borrow-tab/trading-fees-panel")).TradingFeesPanel }),
-)
-const MultiplyCollateralTable = lazy(
-  async () => ({ default: (await import("@/app/portfolio/multiply-collateral-table")).MultiplyCollateralTable }),
-)
-const LendLearnSection = lazy(
-  async () => ({ default: (await import("./components/lend-learn-section")).LendLearnSection }),
-)
-const RecentActivity = lazy(
-  async () => ({ default: (await import("@/app/portfolio/recent-activity")).RecentActivity }),
-)
+const CollateralPositionsPanel = lazy(async () => ({
+  default: (await import("@/app/dashboard/components/borrow-tab/collateral-positions-panel")).CollateralPositionsPanel,
+}))
+const DebtPositionsPanel = lazy(async () => ({
+  default: (await import("@/app/dashboard/components/borrow-tab/debt-positions-panel")).DebtPositionsPanel,
+}))
+const TradingFeesPanel = lazy(async () => ({
+  default: (await import("@/app/dashboard/components/borrow-tab/trading-fees-panel")).TradingFeesPanel,
+}))
+const MultiplyCollateralTable = lazy(async () => ({
+  default: (await import("@/app/portfolio/multiply-collateral-table")).MultiplyCollateralTable,
+}))
+const LendLearnSection = lazy(async () => ({
+  default: (await import("./components/lend-learn-section")).LendLearnSection,
+}))
+const RecentActivity = lazy(async () => ({ default: (await import("@/app/portfolio/recent-activity")).RecentActivity }))
 
 function DashboardModulePlaceholder() {
   return <Skeleton className="h-64 w-full rounded-radius-md" />
@@ -636,54 +634,56 @@ export function DashboardClient({
 
             {/* Multiply sections (moved from the former Multiply tab) */}
             <div id="dashboard-multiply-account" tabIndex={-1} className="scroll-mt-24 outline-none">
-            {multiplyTabData.lpCollaterals.length === 0 ? (
-              // Real empty state — no fabricated health/risk metrics computed over $0.
-              <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-[13px] text-muted-foreground">
-                {t("No multiply positions yet. Open a loop to leverage your collateral.")}
-              </div>
-            ) : (
-              <div>
-                <div className="flex flex-col gap-3 border-b border-border/50 pb-px md:flex-row md:items-end md:justify-between md:border-b-0 md:pb-0">
-                  <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">
-                    {t("Multiply Account")}
-                  </h2>
-                  <SectionTabStrip
-                    items={LOOPING_SUB_TABS}
-                    value={loopingSubTab}
-                    onChange={setLoopingSubTab}
-                    ariaLabel={t("Multiply sections")}
-                  />
+              {multiplyTabData.lpCollaterals.length === 0 ? (
+                // Real empty state — no fabricated health/risk metrics computed over $0.
+                <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-[13px] text-muted-foreground">
+                  {t("No multiply positions yet. Open a loop to leverage your collateral.")}
                 </div>
-                <div className="mt-8">
-                  {loopingSubTab === "overview" ? (
-                    <div className="space-y-8">
-                      <DashboardOverviewSection
-                        hideHeading
-                        title={t("Multiply Overview")}
-                        metrics={multiplyDashboardMetrics.overview}
-                      />
-                      <div className="grid gap-4 xl:grid-cols-2">
-                        <SuppliesHealthFactorCard
-                          averageHealthFactor={multiplySnapshot.averageHealthFactor}
-                          showBalance={showDollarAmounts}
+              ) : (
+                <div>
+                  <div className="flex flex-col gap-3 border-b border-border/50 pb-px md:flex-row md:items-end md:justify-between md:border-b-0 md:pb-0">
+                    <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">
+                      {t("Multiply Account")}
+                    </h2>
+                    <SectionTabStrip
+                      items={LOOPING_SUB_TABS}
+                      value={loopingSubTab}
+                      onChange={setLoopingSubTab}
+                      ariaLabel={t("Multiply sections")}
+                    />
+                  </div>
+                  <div className="mt-8">
+                    {loopingSubTab === "overview" ? (
+                      <div className="space-y-8">
+                        <DashboardOverviewSection
+                          hideHeading
+                          title={t("Multiply Overview")}
+                          metrics={multiplyDashboardMetrics.overview}
                         />
-                        <CurrentLtvCard
-                          borrowedUsd={multiplySnapshot.totalBorrowedUsd}
-                          collateralUsd={multiplySnapshot.totalCollateralUsd}
-                          showBalance={showDollarAmounts}
-                        />
+                        <div className="grid gap-4 xl:grid-cols-2">
+                          <SuppliesHealthFactorCard
+                            averageHealthFactor={multiplySnapshot.averageHealthFactor}
+                            showBalance={showDollarAmounts}
+                          />
+                          <CurrentLtvCard
+                            borrowedUsd={multiplySnapshot.totalBorrowedUsd}
+                            collateralUsd={multiplySnapshot.totalCollateralUsd}
+                            showBalance={showDollarAmounts}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <DashboardModuleBoundary>
-                      <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} returnHref={dashboardReturnHref} />
-                    </DashboardModuleBoundary>
-                  )}
+                    ) : (
+                      <DashboardModuleBoundary>
+                        <MultiplyCollateralTable
+                          rows={multiplyTabData.lpCollaterals}
+                          returnHref={dashboardReturnHref}
+                        />
+                      </DashboardModuleBoundary>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
             </div>
-
           </DeferredDashboardContent>
 
           <DeferredDashboardContent>

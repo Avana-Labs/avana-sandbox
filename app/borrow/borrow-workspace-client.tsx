@@ -6,7 +6,13 @@ import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-sessi
 import { BorrowWorkspaceShell } from "./borrow-workspace-shell"
 import { useBorrowPageLive } from "./use-borrow-page-live"
 
-export function BorrowWorkspaceClient({ pageData, initialIsDesktop = true }: { pageData: BorrowPageData; initialIsDesktop?: boolean }) {
+export function BorrowWorkspaceClient({
+  pageData,
+  initialIsDesktop = true,
+}: {
+  pageData: BorrowPageData
+  initialIsDesktop?: boolean
+}) {
   const { walletId } = useAvanaIdentity()
   const session = useBorrowSessionContext()
   const livePageData = useBorrowPageLive(walletId, session)

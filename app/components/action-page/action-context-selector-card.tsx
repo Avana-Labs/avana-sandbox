@@ -24,12 +24,7 @@ export function ActionContextSelectorCard({
 }) {
   const { t } = useTranslation()
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full text-left"
-      data-testid="action-context-selector-card"
-    >
+    <button type="button" onClick={onClick} className="w-full text-left" data-testid="action-context-selector-card">
       <div
         className={cn(
           workspace

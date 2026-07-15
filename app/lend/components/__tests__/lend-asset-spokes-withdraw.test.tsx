@@ -23,7 +23,7 @@ describe("LendAssetSpokes withdrawal availability", () => {
   it("disables Withdraw when the wallet has no supplied position", () => {
     const group = LEND_ASSET_GROUPS[0]!
     const rows = group.rows.slice(0, 2)
-    const firstRow = rows[0]! as typeof rows[number] & { marketId?: string }
+    const firstRow = rows[0]! as (typeof rows)[number] & { marketId?: string }
     const withdrawableId = firstRow.marketId ?? firstRow.symbol.toLowerCase()
 
     render(

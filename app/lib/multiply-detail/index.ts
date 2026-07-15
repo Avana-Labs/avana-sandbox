@@ -94,7 +94,14 @@ function deltaUp(pct: number): DeltaStat {
 function pickChain(collateral: string, borrowable: string) {
   const pair = `${collateral} ${borrowable}`.toLowerCase()
   if (pair.includes("wbtc") || pair.includes("cbbtc")) return "Bitcoin"
-  if (pair.includes("usdc") || pair.includes("usdt") || pair.includes("dai") || pair.includes("gho") || pair.includes("crvusd")) return "Ethereum"
+  if (
+    pair.includes("usdc") ||
+    pair.includes("usdt") ||
+    pair.includes("dai") ||
+    pair.includes("gho") ||
+    pair.includes("crvusd")
+  )
+    return "Ethereum"
   if (pair.includes("aave") || pair.includes("uni") || pair.includes("crv")) return "Ethereum"
   return "Ethereum"
 }
@@ -120,10 +127,7 @@ function buildQuickStats(row: MultiplyMarketRow): QuickStat[] {
 
 function buildHero(row: MultiplyMarketRow): MultiplyMarketHero {
   return {
-    visuals: [
-      getVisual(row.protocol),
-      getVisual(row.asset),
-    ],
+    visuals: [getVisual(row.protocol), getVisual(row.asset)],
     name: `${row.protocol} / ${row.asset}`,
     venue: "Avana Multiply",
     subtitle: `Use ${row.protocol} as collateral to multiply ${row.asset} exposure without changing the underlying structure.`,
@@ -186,8 +190,14 @@ function buildCashflow(seedBase: string, liquidityUsd: number, borrowApy: number
   const rewards = liquidityUsd * 0.004
   return {
     bars: [
-      { ...buildSeries(`${seedBase}:cf:interest`, Math.max(1, annualInterest / 12), Math.max(1, annualInterest / 120)), label: "Interest" },
-      { ...buildSeries(`${seedBase}:cf:rewards`, Math.max(1, rewards / 12), Math.max(1, rewards / 60)), label: "Rewards" },
+      {
+        ...buildSeries(`${seedBase}:cf:interest`, Math.max(1, annualInterest / 12), Math.max(1, annualInterest / 120)),
+        label: "Interest",
+      },
+      {
+        ...buildSeries(`${seedBase}:cf:rewards`, Math.max(1, rewards / 12), Math.max(1, rewards / 60)),
+        label: "Rewards",
+      },
     ],
     periodLabel: "Last 12 months",
     rows: [
@@ -269,7 +279,11 @@ function buildAbout(row: MultiplyMarketRow): AboutCard {
     ],
     history: [
       { date: "2025-08-12", title: "Market listed", description: `${row.protocol}/${row.asset} added to Multiply.` },
-      { date: "2026-01-18", title: "Risk limits refreshed", description: "Updated leverage and availability parameters." },
+      {
+        date: "2026-01-18",
+        title: "Risk limits refreshed",
+        description: "Updated leverage and availability parameters.",
+      },
     ],
   }
 }
@@ -287,7 +301,17 @@ function buildTransactions(row: MultiplyMarketRow): MultiplyTxHistoryRow[] {
     const ageMs = i * 34_000 + Math.floor(seed() * 8_000)
     const at = new Date(now - ageMs).toISOString()
     const prefix = kind === "reduce" || kind === "close" ? "-" : "+"
-    const walletAddress = `0x${Math.floor(seed() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(seed() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(seed() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(seed() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(seed() * 0xffffffff).toString(16).padStart(8, "0")}`
+    const walletAddress = `0x${Math.floor(seed() * 0xffffffff)
+      .toString(16)
+      .padStart(8, "0")}${Math.floor(seed() * 0xffffffff)
+      .toString(16)
+      .padStart(8, "0")}${Math.floor(seed() * 0xffffffff)
+      .toString(16)
+      .padStart(8, "0")}${Math.floor(seed() * 0xffffffff)
+      .toString(16)
+      .padStart(8, "0")}${Math.floor(seed() * 0xffffffff)
+      .toString(16)
+      .padStart(8, "0")}`
     out.push({
       id: `${row.protocol}-${row.asset}-tx-${i}`,
       at,
@@ -297,7 +321,11 @@ function buildTransactions(row: MultiplyMarketRow): MultiplyTxHistoryRow[] {
       counterpartyLabel: kind === "open" ? `${row.protocol} collateral` : undefined,
       walletLabel: `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
       walletHref: `https://etherscan.io/address/${walletAddress}`,
-      txHashShort: `0x${Math.floor(seed() * 0xffffff).toString(16).padStart(6, "0")}…${Math.floor(seed() * 0xffff).toString(16).padStart(4, "0")}`,
+      txHashShort: `0x${Math.floor(seed() * 0xffffff)
+        .toString(16)
+        .padStart(6, "0")}…${Math.floor(seed() * 0xffff)
+        .toString(16)
+        .padStart(4, "0")}`,
     })
   }
 
@@ -332,16 +360,14 @@ function buildRelated(row: MultiplyMarketRow): MultiplyMarketRelatedSummary[] {
   const catalogRows = MULTIPLY_MARKET_CATALOG.map(catalogMarketToRow)
   const sameCollateral = catalogRows.filter((other) => other.protocol === row.protocol && other.asset !== row.asset)
   const sameBorrowable = catalogRows.filter((other) => other.asset === row.asset && other.protocol !== row.protocol)
-  return [...sameCollateral, ...sameBorrowable]
-    .slice(0, 4)
-    .map((other) => ({
-      id: `${other.protocol}-${other.asset}`,
-      name: `${other.protocol} / ${other.asset}`,
-      venue: "Avana Multiply",
-      visuals: [getVisual(other.protocol), getVisual(other.asset)],
-      maxApyLabel: other.apy,
-      availableLabel: other.points ?? "—",
-    }))
+  return [...sameCollateral, ...sameBorrowable].slice(0, 4).map((other) => ({
+    id: `${other.protocol}-${other.asset}`,
+    name: `${other.protocol} / ${other.asset}`,
+    venue: "Avana Multiply",
+    visuals: [getVisual(other.protocol), getVisual(other.asset)],
+    maxApyLabel: other.apy,
+    availableLabel: other.points ?? "—",
+  }))
 }
 
 export function getMultiplyMarketDetail(id: string): MultiplyMarketDetail | null {

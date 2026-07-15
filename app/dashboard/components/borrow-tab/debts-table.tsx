@@ -59,14 +59,20 @@ export function DebtsPanel({
         <div className="text-[20px] font-medium leading-snug tracking-tight text-brand">
           {t("Nothing borrowed yet")}
         </div>
-        <div className="mt-1 text-[15px] leading-snug">{t("To borrow you need to supply any LPs to be used as collateral")}</div>
+        <div className="mt-1 text-[15px] leading-snug">
+          {t("To borrow you need to supply any LPs to be used as collateral")}
+        </div>
       </div>
     )
   }
   return (
     <section className="mb-2">
       {showSummary ? (
-        <CurrentLtvCard borrowedUsd={totals.totalBorrowed} collateralUsd={totals.totalCollateral} showBalance={showBalance} />
+        <CurrentLtvCard
+          borrowedUsd={totals.totalBorrowed}
+          collateralUsd={totals.totalCollateral}
+          showBalance={showBalance}
+        />
       ) : null}
       {showHeading ? (
         <div className="mb-3">
@@ -118,10 +124,17 @@ export function DebtsPanel({
                       onClick={() => router.push(detailHref)}
                     >
                       <td className={`py-3 pl-5 ${TABLE_ROW_HOVER_LEFT}`}>
-                        <TokenPairCell visuals={visuals} name={row.pool.name} subtitle={meta?.venue ?? row.pool.venue} size="md" />
+                        <TokenPairCell
+                          visuals={visuals}
+                          name={row.pool.name}
+                          subtitle={meta?.venue ?? row.pool.venue}
+                          size="md"
+                        />
                       </td>
                       <td className={`py-3 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
-                        <div className="font-data text-[13px] tabular-nums text-foreground">{m(compact(row.borrowedUsd))}</div>
+                        <div className="font-data text-[13px] tabular-nums text-foreground">
+                          {m(compact(row.borrowedUsd))}
+                        </div>
                         <div className="text-[11px] text-muted-foreground">
                           {showBalance ? `${row.borrowedUsd.toFixed(0)} ${debtSymbol}` : MASK}
                         </div>
@@ -130,7 +143,9 @@ export function DebtsPanel({
                         <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
                       </td>
                       <td className={`py-3 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
-                        <div className="font-data text-[13px] tabular-nums text-foreground">{m(exact(row.liquidationThresholdUsd))}</div>
+                        <div className="font-data text-[13px] tabular-nums text-foreground">
+                          {m(exact(row.liquidationThresholdUsd))}
+                        </div>
                         <div className="text-[11px] text-muted-foreground">{t("collateral value")}</div>
                       </td>
                       <td className={`py-3 pl-4 pr-5 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
@@ -145,7 +160,8 @@ export function DebtsPanel({
                               onRepay(row)
                             }}
                           >
-                            <ActionIcon label="Repay" />{t("Repay")}
+                            <ActionIcon label="Repay" />
+                            {t("Repay")}
                           </Button>
                           <Button
                             type="button"
@@ -157,7 +173,8 @@ export function DebtsPanel({
                               onManage(row)
                             }}
                           >
-                            <ActionIcon label="Borrow" />{t("Borrow")}
+                            <ActionIcon label="Borrow" />
+                            {t("Borrow")}
                           </Button>
                         </HoverActionGroup>
                       </td>
@@ -172,14 +189,22 @@ export function DebtsPanel({
 
       <ul className="space-y-5 md:hidden">
         {rows.map((row, index) => {
-          const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [ReturnType<typeof homeVisualToBorrowVisual>, ReturnType<typeof homeVisualToBorrowVisual>]
+          const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [
+            ReturnType<typeof homeVisualToBorrowVisual>,
+            ReturnType<typeof homeVisualToBorrowVisual>,
+          ]
           const meta = BORROW_SUPPLY_META[row.pool.id]
           const pairLabel = `${row.pool.visuals[0].symbol} / ${row.pool.visuals[1].symbol} LP`
           const rowKey = row.id ?? `${row.pool.id}-${index}`
           return (
-            <li key={rowKey} className="space-y-3 rounded-radius-md border border-border bg-card px-4 py-4 shadow-elev-1">
+            <li
+              key={rowKey}
+              className="space-y-3 rounded-radius-md border border-border bg-card px-4 py-4 shadow-elev-1"
+            >
               <div>
-                <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{t("Active debt")}</div>
+                <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+                  {t("Active debt")}
+                </div>
                 <div className="mt-1 flex items-baseline gap-2">
                   <span className="font-data text-[28px] font-medium leading-none tracking-tight text-rose-500">
                     {m(exact(row.borrowedUsd))}
@@ -225,7 +250,8 @@ export function DebtsPanel({
                     onRepay(row)
                   }}
                 >
-                  <ActionIcon label="Repay" />{t("Repay")}
+                  <ActionIcon label="Repay" />
+                  {t("Repay")}
                 </Button>
                 <Button
                   type="button"
@@ -236,7 +262,8 @@ export function DebtsPanel({
                     onManage(row)
                   }}
                 >
-                  <ActionIcon label="Borrow" />{t("Borrow")}
+                  <ActionIcon label="Borrow" />
+                  {t("Borrow")}
                 </Button>
               </div>
             </li>
@@ -283,11 +310,15 @@ export function CurrentLtvCard({
     <div className="mb-4 rounded-radius-md border border-border bg-background px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
       <div className="flex h-6 items-center justify-between gap-3">
         <div className="flex min-w-0 items-baseline gap-2">
-          <span className="font-data text-[20px] font-bold leading-none tracking-tight text-foreground">{borrowingPowerLabel}</span>
+          <span className="font-data text-[20px] font-bold leading-none tracking-tight text-foreground">
+            {borrowingPowerLabel}
+          </span>
           <span className="text-[13px] font-semibold text-foreground">{t("Borrowing Power")}</span>
           <ActionMetricHelp
             topic="Borrowing Power"
-            text={t("Remaining room to borrow before your position approaches liquidation, based on current collateral and outstanding debt.")}
+            text={t(
+              "Remaining room to borrow before your position approaches liquidation, based on current collateral and outstanding debt.",
+            )}
           />
         </div>
         <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-success">
@@ -332,7 +363,9 @@ export function CurrentLtvCard({
           <span>
             {t("Liq. max")} <span className="font-semibold text-foreground">{maxLabel}</span>
           </span>
-          <span className="text-rose-500">{masked ? "••" : t("{percent}% of liq. max").replace("{percent}", liqUtilizationPct.toFixed(0))}</span>
+          <span className="text-rose-500">
+            {masked ? "••" : t("{percent}% of liq. max").replace("{percent}", liqUtilizationPct.toFixed(0))}
+          </span>
         </span>
       </div>
     </div>

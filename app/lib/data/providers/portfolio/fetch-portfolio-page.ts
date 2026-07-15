@@ -10,7 +10,12 @@ import { mapPortfolioPage } from "./map-portfolio-page"
 import type { PortfolioPageSource } from "./source"
 import type { FetchPortfolioPageInput, PortfolioPageData } from "./types"
 
-type FetchOptions = { signal?: AbortSignal; source?: PortfolioPageSource; cursor?: DataSourceRequestContext["cursor"]; limit?: number }
+type FetchOptions = {
+  signal?: AbortSignal
+  source?: PortfolioPageSource
+  cursor?: DataSourceRequestContext["cursor"]
+  limit?: number
+}
 
 async function loadFromSource(
   source: PortfolioPageSource,
@@ -43,7 +48,8 @@ export async function fetchPortfolioPage(
 }
 
 export async function resolvePortfolioWalletProfileId(source?: PortfolioPageSource) {
-  const primarySource = source ??
+  const primarySource =
+    source ??
     (resolveDataSourceMode() === "mock"
       ? mockPortfolioPageSource
       : (await import("./live-source")).livePortfolioPageSource)

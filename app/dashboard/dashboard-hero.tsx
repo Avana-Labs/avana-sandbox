@@ -4,10 +4,7 @@ import type { ReactNode } from "react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { CircleArrowDown, CircleArrowUp, Download, HandCoins, Info, LogIn, LogOut, Receipt } from "lucide-react"
-import {
-  buildRangeData,
-  resolveSeriesTone,
-} from "@/app/components/charts/chart-data"
+import { buildRangeData, resolveSeriesTone } from "@/app/components/charts/chart-data"
 import type { ChartRangeData, ChartRangeOption } from "@/app/components/charts/types"
 import { HeroChartSection } from "@/app/components/charts/hero-chart-section"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
@@ -139,7 +136,8 @@ function buildActions({
 
   return labels.map((label, index) => {
     const href = resolveHref(label)
-    const actionHref = href && returnHref ? `${href}${href.includes("?") ? "&" : "?"}return=${encodeURIComponent(returnHref)}` : href
+    const actionHref =
+      href && returnHref ? `${href}${href.includes("?") ? "&" : "?"}return=${encodeURIComponent(returnHref)}` : href
     return {
       id: `${index}-${label.toLowerCase().replace(/\s+/g, "-")}`,
       label: t(label),
@@ -160,7 +158,17 @@ function InfoTip({ text }: { text: string }) {
 
 const MASKED_VALUE = "••••••••"
 
-function StatCard({ label, value, helpText, hidden = false }: { label: string; value: string; helpText: string; hidden?: boolean }) {
+function StatCard({
+  label,
+  value,
+  helpText,
+  hidden = false,
+}: {
+  label: string
+  value: string
+  helpText: string
+  hidden?: boolean
+}) {
   return (
     <div className="bg-background p-3.5 dark:bg-card">
       <div className="mb-0.5 flex items-center gap-1 text-[12px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
@@ -194,7 +202,7 @@ export function DashboardHero({
   const showChart = !isBorrowOverview && !uiConfig.hideChart
   const showActions = !uiConfig.hideActions
   const showStats = !uiConfig.hideStats
-  const displayRangeData = showChart ? rangeData ?? DEFAULT_RANGE_DATA : null
+  const displayRangeData = showChart ? (rangeData ?? DEFAULT_RANGE_DATA) : null
 
   // Chart color tracks the active range's real trend, so a dip turns red.
   const activePoints = displayRangeData?.[activeRange] ?? []
@@ -219,7 +227,13 @@ export function DashboardHero({
       {tabs ? <div className="mt-6">{tabs}</div> : null}
 
       {isBorrowOverview || isLoopingOverview ? null : showBalance ? (
-        <div className={showChart || showActions || showStats ? "mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start lg:gap-x-8" : "mt-5"}>
+        <div
+          className={
+            showChart || showActions || showStats
+              ? "mt-5 grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start lg:gap-x-8"
+              : "mt-5"
+          }
+        >
           <div className="min-w-0 space-y-2.5 sm:space-y-3">
             {showChart ? (
               <HeroChartSection
@@ -246,8 +260,18 @@ export function DashboardHero({
               statTwoValue &&
               uiConfig.statTwoHelpText ? (
                 <div className="grid grid-cols-2 gap-px overflow-hidden rounded-radius-md border border-border bg-border/80 dark:border-white/10 dark:bg-card/10">
-                  <StatCard label={t(uiConfig.statOneLabel)} value={statOneValue} helpText={t(uiConfig.statOneHelpText)} hidden={!showDollarAmounts} />
-                  <StatCard label={t(uiConfig.statTwoLabel)} value={statTwoValue} helpText={t(uiConfig.statTwoHelpText)} hidden={!showDollarAmounts} />
+                  <StatCard
+                    label={t(uiConfig.statOneLabel)}
+                    value={statOneValue}
+                    helpText={t(uiConfig.statOneHelpText)}
+                    hidden={!showDollarAmounts}
+                  />
+                  <StatCard
+                    label={t(uiConfig.statTwoLabel)}
+                    value={statTwoValue}
+                    helpText={t(uiConfig.statTwoHelpText)}
+                    hidden={!showDollarAmounts}
+                  />
                 </div>
               ) : null}
             </div>

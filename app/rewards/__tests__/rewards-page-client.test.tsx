@@ -24,13 +24,17 @@ const borrowPreviewTransaction = vi.fn(async () => ({ allowed: true }))
 const multiplyCreateIntent = vi.fn(() => ({ id: "multiply-intent" }))
 const multiplyPreviewTransaction = vi.fn(async () => ({ allowed: true }))
 const now = Date.UTC(2026, 5, 19)
-const rewardsState = { events: [] as Array<Record<string, unknown>>, claims: [] as Array<Record<string, unknown>>, referralProfiles: {}, relationships: [], firstLoginAt: now, favoriteMarketIds: [] }
+const rewardsState = {
+  events: [] as Array<Record<string, unknown>>,
+  claims: [] as Array<Record<string, unknown>>,
+  referralProfiles: {},
+  relationships: [],
+  firstLoginAt: now,
+  favoriteMarketIds: [],
+}
 const tasks = buildDefaultRewardsCatalog(now)
 
-function resetRewardsState(
-  events: Array<Record<string, unknown>> = [],
-  claims: Array<Record<string, unknown>> = [],
-) {
+function resetRewardsState(events: Array<Record<string, unknown>> = [], claims: Array<Record<string, unknown>> = []) {
   rewardsState.events = events
   rewardsState.claims = claims
   rewardsState.referralProfiles = {}
@@ -39,12 +43,7 @@ function resetRewardsState(
   rewardsState.firstLoginAt = now
 }
 
-function rewardEvent(
-  id: string,
-  type: string,
-  product: string,
-  extra: Record<string, unknown> = {},
-) {
+function rewardEvent(id: string, type: string, product: string, extra: Record<string, unknown> = {}) {
   return { id, wallet: "demo-wallet", product, type, timestamp: now, ...extra }
 }
 
@@ -175,9 +174,7 @@ describe("RewardsPageClient", () => {
     multiplyCreateIntent.mockClear()
     multiplyPreviewTransaction.mockClear()
 
-    resetRewardsState([
-      rewardEvent("borrow-first", "borrow_opened", "borrow", { amountUsd: 100, marketId: "pool-a" }),
-    ])
+    resetRewardsState([rewardEvent("borrow-first", "borrow_opened", "borrow", { amountUsd: 100, marketId: "pool-a" })])
     createReferralCode.mockResolvedValue({
       wallet: "demo-wallet",
       referralCode: "AVA-DEMO",
@@ -282,21 +279,23 @@ describe("RewardsPageClient", () => {
 
     await openReferralTab()
     await clickQuestAction("Send invite")
-    await waitFor(() => expect(screen.getAllByRole("button", { name: "Send sandbox invite" }).length).toBeGreaterThan(0))
+    await waitFor(() =>
+      expect(screen.getAllByRole("button", { name: "Send sandbox invite" }).length).toBeGreaterThan(0),
+    )
     await clickQuestAction("Send sandbox invite")
 
     expect(runReferralSandboxStep).toHaveBeenCalledWith("invite")
   })
 
   it("runs the referral activate action through its dialog flow", async () => {
-    resetRewardsState([
-      rewardEvent("ref-active-1", "referral_activated", "referral", { referredWallet: "friend-1" }),
-    ])
+    resetRewardsState([rewardEvent("ref-active-1", "referral_activated", "referral", { referredWallet: "friend-1" })])
     renderRewardsPage()
 
     await openReferralTab()
     await clickQuestAction("Activate")
-    await waitFor(() => expect(screen.getAllByRole("button", { name: "Activate next friend" }).length).toBeGreaterThan(0))
+    await waitFor(() =>
+      expect(screen.getAllByRole("button", { name: "Activate next friend" }).length).toBeGreaterThan(0),
+    )
     await clickQuestAction("Activate next friend")
 
     expect(runReferralSandboxStep).toHaveBeenCalledWith("activate")
@@ -307,7 +306,9 @@ describe("RewardsPageClient", () => {
 
     await openReferralTab()
     await clickQuestAction("Mark funded")
-    await waitFor(() => expect(screen.getAllByRole("button", { name: "Mark next friend funded" }).length).toBeGreaterThan(0))
+    await waitFor(() =>
+      expect(screen.getAllByRole("button", { name: "Mark next friend funded" }).length).toBeGreaterThan(0),
+    )
     await clickQuestAction("Mark next friend funded")
 
     expect(runReferralSandboxStep).toHaveBeenCalledWith("fund")

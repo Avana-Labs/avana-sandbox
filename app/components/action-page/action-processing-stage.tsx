@@ -46,7 +46,9 @@ export function ActionProcessingStage({
 
           <div className="flex flex-col items-center py-6 text-center">
             <ActionTokenIcon symbol={symbol} className="size-14" />
-            <h2 className="mt-4 text-[1.25rem] font-medium tracking-[-0.03em]">{t(getProcessingTitle(verb, symbol))}</h2>
+            <h2 className="mt-4 text-[1.25rem] font-medium tracking-[-0.03em]">
+              {t(getProcessingTitle(verb, symbol))}
+            </h2>
           </div>
 
           <ProcessingNarration verb={verb} />
@@ -57,9 +59,18 @@ export function ActionProcessingStage({
                 const completed = stage === "confirmed" || stage === "refreshing_position" || stage === "reconciled"
                 const active = !completed && index === 0
                 return (
-                  <li key={step.id} className="flex items-center gap-3 rounded-radius-md bg-surface-inset px-3 py-2 text-[13px]">
+                  <li
+                    key={step.id}
+                    className="flex items-center gap-3 rounded-radius-md bg-surface-inset px-3 py-2 text-[13px]"
+                  >
                     <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-border text-[11px]">
-                      {completed ? <Check className="size-3 text-success" /> : active ? <LoaderCircle className="size-3 animate-spin" /> : index + 1}
+                      {completed ? (
+                        <Check className="size-3 text-success" />
+                      ) : active ? (
+                        <LoaderCircle className="size-3 animate-spin" />
+                      ) : (
+                        index + 1
+                      )}
                     </span>
                     <span className={completed ? "text-foreground" : "text-muted-foreground"}>{t(step.label)}</span>
                   </li>

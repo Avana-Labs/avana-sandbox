@@ -63,7 +63,11 @@ function deleverageRiskLabel(simulation: ReturnType<typeof simulateDeleverage>):
   return "safe"
 }
 
-function toPreview(state: MultiplySystemState, action: MultiplyAction, intent: MultiplyTransactionIntent): MultiplyTransactionPreview {
+function toPreview(
+  state: MultiplySystemState,
+  action: MultiplyAction,
+  intent: MultiplyTransactionIntent,
+): MultiplyTransactionPreview {
   if (action.type === "multiply") {
     const market = state.markets[action.marketId]
     if (!market) throw new Error(`Unknown market ${action.marketId}`)
@@ -90,11 +94,7 @@ function toPreview(state: MultiplySystemState, action: MultiplyAction, intent: M
         multiplier: simulation.before.multiplier,
         ltv: simulation.before.ltv,
         healthFactor: simulation.before.healthFactor,
-        netApy: netApyForPositionState(
-          market,
-          simulation.before.collateralValueUsd,
-          simulation.before.debtValueUsd,
-        ),
+        netApy: netApyForPositionState(market, simulation.before.collateralValueUsd, simulation.before.debtValueUsd),
       },
       after: {
         collateralValueUsd: simulation.after.collateralValueUsd,
@@ -251,7 +251,10 @@ export class SandboxMultiplyTransactionAdapter implements MultiplyTransactionAda
         positionId: intent.positionId,
         kind: intent.actionType,
         status: "failed",
-        amountUsd: action.type === "multiply" ? Math.max(0, preview.after.collateralValueUsd - preview.before.collateralValueUsd) : 0,
+        amountUsd:
+          action.type === "multiply"
+            ? Math.max(0, preview.after.collateralValueUsd - preview.before.collateralValueUsd)
+            : 0,
         multiplierBefore: preview.before.multiplier,
         multiplierAfter: preview.after.multiplier,
         simulated: true,
@@ -273,9 +276,7 @@ export class SandboxMultiplyTransactionAdapter implements MultiplyTransactionAda
     // Capture the market id before applying the action: a close removes the position
     // from state, so it cannot be resolved from the post-action positions map.
     const resolvedMarketId =
-      action.type === "multiply"
-        ? action.marketId
-        : priorState.positions[action.positionId]?.marketId
+      action.type === "multiply" ? action.marketId : priorState.positions[action.positionId]?.marketId
     const nextState = applyMultiplyAction(priorState, { ...action, at: this.now() })
 
     const localReceipt = {

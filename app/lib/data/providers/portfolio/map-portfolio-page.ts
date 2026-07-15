@@ -1,4 +1,9 @@
-import { CHART_RANGE_LABELS, type ChartPoint, type ChartRangeData, type ChartRangeOption } from "@/app/components/charts"
+import {
+  CHART_RANGE_LABELS,
+  type ChartPoint,
+  type ChartRangeData,
+  type ChartRangeOption,
+} from "@/app/components/charts"
 import { assertStableRecordIds, dedupeByStableId } from "@/app/lib/data/core/source-runtime"
 import { getPortfolioHeroFeed } from "@/app/lib/chart-feeds"
 import { toActive, withCurrencySymbol } from "@/app/lib/currency/active-rate"
@@ -84,7 +89,12 @@ function interpolateSeries(anchorValues: number[], count: number): number[] {
   })
 }
 
-function enrichInterpolatedSeries(anchorValues: number[], count: number, seedKey: string, range: ChartRangeOption): number[] {
+function enrichInterpolatedSeries(
+  anchorValues: number[],
+  count: number,
+  seedKey: string,
+  range: ChartRangeOption,
+): number[] {
   const baseline = interpolateSeries(anchorValues, count)
   if (!baseline.length) return []
 
@@ -92,7 +102,8 @@ function enrichInterpolatedSeries(anchorValues: number[], count: number, seedKey
   const random = seededRandom(seed)
   const volatility =
     baseline.length > 1
-      ? baseline.slice(1).reduce((sum, value, index) => sum + Math.abs(value - baseline[index]), 0) / (baseline.length - 1)
+      ? baseline.slice(1).reduce((sum, value, index) => sum + Math.abs(value - baseline[index]), 0) /
+        (baseline.length - 1)
       : Math.max(Math.abs(baseline[0]) * 0.015, 12)
   const noiseScale = Math.max(volatility * (range === "1D" ? 0.85 : 1.1), Math.abs(baseline[0]) * 0.004)
 
@@ -130,7 +141,11 @@ function attachLabels(values: number[], range: ChartRangeOption): ChartPoint[] {
   })
 }
 
-function pickAnchorValues(snapshots: PortfolioSnapshotRecord[], selector: (snapshot: PortfolioSnapshotRecord) => number, range: ChartRangeOption) {
+function pickAnchorValues(
+  snapshots: PortfolioSnapshotRecord[],
+  selector: (snapshot: PortfolioSnapshotRecord) => number,
+  range: ChartRangeOption,
+) {
   const values = snapshots.map(selector)
   if (range === "1D") return values.slice(-6)
   if (range === "1W") return values.slice(-8)
@@ -140,10 +155,20 @@ function pickAnchorValues(snapshots: PortfolioSnapshotRecord[], selector: (snaps
   return values
 }
 
-function buildAllRangeFromSnapshots(snapshots: PortfolioSnapshotRecord[], selector: (snapshot: PortfolioSnapshotRecord) => number): ChartPoint[] {
+function buildAllRangeFromSnapshots(
+  snapshots: PortfolioSnapshotRecord[],
+  selector: (snapshot: PortfolioSnapshotRecord) => number,
+): ChartPoint[] {
   const anchorValues = snapshots.map(selector)
-  const series = enrichInterpolatedSeries(anchorValues, RANGE_LENGTH.All, `${snapshots[0]?.walletProfileId ?? "wallet"}:all`, "All")
-  const anchorIndexes = snapshots.map((_, index) => Math.round((index / Math.max(snapshots.length - 1, 1)) * (series.length - 1)))
+  const series = enrichInterpolatedSeries(
+    anchorValues,
+    RANGE_LENGTH.All,
+    `${snapshots[0]?.walletProfileId ?? "wallet"}:all`,
+    "All",
+  )
+  const anchorIndexes = snapshots.map((_, index) =>
+    Math.round((index / Math.max(snapshots.length - 1, 1)) * (series.length - 1)),
+  )
 
   return series.map((value, index) => {
     const labelIndex = anchorIndexes.findIndex((anchorIndex, anchorPosition) => {
@@ -155,10 +180,9 @@ function buildAllRangeFromSnapshots(snapshots: PortfolioSnapshotRecord[], select
     return {
       time: index,
       value,
-      label:
-        snapshot
-          ? new Date(snapshot.timestamp).toLocaleDateString(undefined, { month: "short", day: "numeric" })
-          : CHART_RANGE_LABELS.All[CHART_RANGE_LABELS.All.length - 1],
+      label: snapshot
+        ? new Date(snapshot.timestamp).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+        : CHART_RANGE_LABELS.All[CHART_RANGE_LABELS.All.length - 1],
     }
   })
 }
@@ -169,11 +193,26 @@ function buildRangeDataFromSnapshots(
   seedKey: string,
 ): ChartRangeData {
   return {
-    "1D": attachLabels(enrichInterpolatedSeries(pickAnchorValues(snapshots, selector, "1D"), RANGE_LENGTH["1D"], seedKey, "1D"), "1D"),
-    "1W": attachLabels(enrichInterpolatedSeries(pickAnchorValues(snapshots, selector, "1W"), RANGE_LENGTH["1W"], seedKey, "1W"), "1W"),
-    "1M": attachLabels(enrichInterpolatedSeries(pickAnchorValues(snapshots, selector, "1M"), RANGE_LENGTH["1M"], seedKey, "1M"), "1M"),
-    "3M": attachLabels(enrichInterpolatedSeries(pickAnchorValues(snapshots, selector, "3M"), RANGE_LENGTH["3M"], seedKey, "3M"), "3M"),
-    "1Y": attachLabels(enrichInterpolatedSeries(pickAnchorValues(snapshots, selector, "1Y"), RANGE_LENGTH["1Y"], seedKey, "1Y"), "1Y"),
+    "1D": attachLabels(
+      enrichInterpolatedSeries(pickAnchorValues(snapshots, selector, "1D"), RANGE_LENGTH["1D"], seedKey, "1D"),
+      "1D",
+    ),
+    "1W": attachLabels(
+      enrichInterpolatedSeries(pickAnchorValues(snapshots, selector, "1W"), RANGE_LENGTH["1W"], seedKey, "1W"),
+      "1W",
+    ),
+    "1M": attachLabels(
+      enrichInterpolatedSeries(pickAnchorValues(snapshots, selector, "1M"), RANGE_LENGTH["1M"], seedKey, "1M"),
+      "1M",
+    ),
+    "3M": attachLabels(
+      enrichInterpolatedSeries(pickAnchorValues(snapshots, selector, "3M"), RANGE_LENGTH["3M"], seedKey, "3M"),
+      "3M",
+    ),
+    "1Y": attachLabels(
+      enrichInterpolatedSeries(pickAnchorValues(snapshots, selector, "1Y"), RANGE_LENGTH["1Y"], seedKey, "1Y"),
+      "1Y",
+    ),
     All: buildAllRangeFromSnapshots(snapshots, selector),
   }
 }
@@ -200,20 +239,39 @@ function getRangeData(
 }
 
 export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageData {
-  const { walletProfile, snapshots, supplies, debts, collaterals, multiplyCreditLines, multiplyCollaterals, multiplyPositions, openOrders, twapOrders, activity, strategies, rewards } =
-    records
+  const {
+    walletProfile,
+    snapshots,
+    supplies,
+    debts,
+    collaterals,
+    multiplyCreditLines,
+    multiplyCollaterals,
+    multiplyPositions,
+    openOrders,
+    twapOrders,
+    activity,
+    strategies,
+    rewards,
+  } = records
   const stripId = <T extends { id: string }>(record: T): Omit<T, "id"> => {
     const { id, ...rest } = record
     void id
     return rest
   }
   const walletSnapshots = dedupeByStableId(
-    snapshots.map((snapshot, index) => ({ ...snapshot, id: `${snapshot.walletProfileId}:${snapshot.timestamp}:${index}` })),
+    snapshots.map((snapshot, index) => ({
+      ...snapshot,
+      id: `${snapshot.walletProfileId}:${snapshot.timestamp}:${index}`,
+    })),
     "portfolio snapshots",
   ).map(stripId)
   const walletSupplies = assertStableRecordIds(dedupeByStableId(supplies, "portfolio supplies"), "portfolio supplies")
   const walletDebts = assertStableRecordIds(dedupeByStableId(debts, "portfolio debts"), "portfolio debts")
-  const walletCollaterals = assertStableRecordIds(dedupeByStableId(collaterals, "portfolio collaterals"), "portfolio collaterals")
+  const walletCollaterals = assertStableRecordIds(
+    dedupeByStableId(collaterals, "portfolio collaterals"),
+    "portfolio collaterals",
+  )
   const walletMultiplyCollaterals = assertStableRecordIds(
     dedupeByStableId(multiplyCollaterals, "portfolio multiply collaterals"),
     "portfolio multiply collaterals",
@@ -222,8 +280,14 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
     dedupeByStableId(multiplyPositions, "portfolio multiply positions"),
     "portfolio multiply positions",
   )
-  const walletOpenOrders = assertStableRecordIds(dedupeByStableId(openOrders, "portfolio open orders"), "portfolio open orders")
-  const walletTwapOrders = assertStableRecordIds(dedupeByStableId(twapOrders, "portfolio twap orders"), "portfolio twap orders")
+  const walletOpenOrders = assertStableRecordIds(
+    dedupeByStableId(openOrders, "portfolio open orders"),
+    "portfolio open orders",
+  )
+  const walletTwapOrders = assertStableRecordIds(
+    dedupeByStableId(twapOrders, "portfolio twap orders"),
+    "portfolio twap orders",
+  )
   const walletActivity = assertStableRecordIds(dedupeByStableId(activity, "portfolio activity"), "portfolio activity")
   const walletStrategies = dedupeByStableId(
     strategies.map((strategy) => ({ ...strategy, id: strategy.title })),
@@ -232,7 +296,10 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
 
   const totalCollateralUsd = walletCollaterals.reduce((sum, row) => sum + row.pool.collateralUsd, 0)
   const totalDebtUsd = walletDebts.reduce((sum, row) => sum + row.borrowedUsd, 0)
-  const availableToBorrowUsd = walletCollaterals.reduce((sum, row) => sum + Math.max(0, row.pool.borrowPowerUsd - row.borrowedUsd), 0)
+  const availableToBorrowUsd = walletCollaterals.reduce(
+    (sum, row) => sum + Math.max(0, row.pool.borrowPowerUsd - row.borrowedUsd),
+    0,
+  )
   const liquidationThresholdUsd = calculateLiquidationNumberUsd(
     walletCollaterals.map((row) => ({
       borrowedUsd: row.borrowedUsd,
@@ -250,14 +317,22 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
   const averageHealthFactor = totalDebtUsd > 0 ? liquidationThresholdUsd / totalDebtUsd : null
   const totalSuppliedUsd = walletSupplies.reduce((sum, row) => sum + row.suppliedUsd, 0)
   const totalEarnedUsd = walletSupplies.reduce((sum, row) => sum + row.earnedUsd, 0)
-  const averageApyPct = walletSupplies.length ? walletSupplies.reduce((sum, row) => sum + row.apyPct, 0) / walletSupplies.length : 0
+  const averageApyPct = walletSupplies.length
+    ? walletSupplies.reduce((sum, row) => sum + row.apyPct, 0) / walletSupplies.length
+    : 0
   const heroByTab: Record<PortfolioTabKey, PortfolioHeroData> = {
     overview: buildHero(undefined, {
       headlineValue: formatUsd(availableToBorrowUsd),
       headlineDelta: `▲ ${currentLtvPct.toFixed(2)}% current LTV`,
     }),
     lending: buildHero(
-      getRangeData(walletSnapshots, (snapshot) => snapshot.totalSuppliedUsd, totalSuppliedUsd || 964, 42, `${walletProfile.id}:lending`),
+      getRangeData(
+        walletSnapshots,
+        (snapshot) => snapshot.totalSuppliedUsd,
+        totalSuppliedUsd || 964,
+        42,
+        `${walletProfile.id}:lending`,
+      ),
       {
         headlineValue: formatUsd(totalSuppliedUsd),
         headlineDelta: `${formatUsd(totalEarnedUsd)} earned this month`,
@@ -266,7 +341,13 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
       },
     ),
     looping: buildHero(
-      getRangeData(walletSnapshots, (snapshot) => snapshot.totalMultiplyExposureUsd, multiplyCreditLines.approvedUsd || 198, 18, `${walletProfile.id}:looping`),
+      getRangeData(
+        walletSnapshots,
+        (snapshot) => snapshot.totalMultiplyExposureUsd,
+        multiplyCreditLines.approvedUsd || 198,
+        18,
+        `${walletProfile.id}:looping`,
+      ),
       {
         headlineValue: formatUsd(multiplyCreditLines.approvedUsd),
         headlineDelta: `${multiplyCreditLines.averageHealthFactor?.toFixed(2) ?? "—"} health factor`,
@@ -275,7 +356,13 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
       },
     ),
     activity: buildHero(
-      getRangeData(walletSnapshots, (snapshot) => snapshot.totalEarnedUsd, Math.max(walletActivity.length, 1), 6, `${walletProfile.id}:activity`),
+      getRangeData(
+        walletSnapshots,
+        (snapshot) => snapshot.totalEarnedUsd,
+        Math.max(walletActivity.length, 1),
+        6,
+        `${walletProfile.id}:activity`,
+      ),
     ),
   }
 
@@ -369,7 +456,8 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
         collateralUsd: record.collateralUsd,
         borrowPowerUsd: record.borrowPowerUsd,
         debtUsd: record.collateralUsd - record.borrowPowerUsd,
-        ltvPct: record.collateralUsd > 0 ? ((record.collateralUsd - record.borrowPowerUsd) / record.collateralUsd) * 100 : 0,
+        ltvPct:
+          record.collateralUsd > 0 ? ((record.collateralUsd - record.borrowPowerUsd) / record.collateralUsd) * 100 : 0,
         liquidationPriceUsd: null,
         netApyPct: 0,
         status: "open" as const,

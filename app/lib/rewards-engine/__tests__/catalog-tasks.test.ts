@@ -80,13 +80,25 @@ describe("full rewards catalog", () => {
   for (const task of tasks.filter((entry) => entry.requirement.type !== "wait_since_login")) {
     it(`defines a completable sandbox path for ${task.id}`, () => {
       const bootstrap = [
-        { id: `${wallet}:connect`, wallet, product: "profile" as const, type: "wallet_connected" as const, timestamp: now },
-        { id: `${wallet}:profile`, wallet, product: "profile" as const, type: "profile_completed" as const, timestamp: now + 1 },
+        {
+          id: `${wallet}:connect`,
+          wallet,
+          product: "profile" as const,
+          type: "wallet_connected" as const,
+          timestamp: now,
+        },
+        {
+          id: `${wallet}:profile`,
+          wallet,
+          product: "profile" as const,
+          type: "profile_completed" as const,
+          timestamp: now + 1,
+        },
       ]
-      const state = bootstrap.reduce(
-        (next, event) => applyActivityEvent(next, event),
-        { events: [], claims: [] } as RewardsEngineState,
-      )
+      const state = bootstrap.reduce((next, event) => applyActivityEvent(next, event), {
+        events: [],
+        claims: [],
+      } as RewardsEngineState)
       const evaluationNow = task.expiresAt ? task.expiresAt - DAY_MS : now + 30 * DAY_MS
       const progress = evaluateTaskProgress({
         task,

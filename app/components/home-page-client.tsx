@@ -40,18 +40,10 @@ function HomePageWorkspace() {
   return (
     <div className="reveal-in bg-background">
       <HomeWorkspaceCard mode={mode} onModeChange={setMode}>
-        {mode === "borrow" ? (
-          <BorrowActionPageClient kind="borrow" embedded layout="home" closeHref="/" />
-        ) : null}
-        {mode === "repay" ? (
-          <BorrowActionPageClient kind="repay" embedded layout="home" closeHref="/" />
-        ) : null}
-        {mode === "claim" ? (
-          <BorrowActionPageClient kind="claim" embedded layout="home" closeHref="/" />
-        ) : null}
-        {mode === "remove" ? (
-          <BorrowActionPageClient kind="remove" embedded layout="home" closeHref="/" />
-        ) : null}
+        {mode === "borrow" ? <BorrowActionPageClient kind="borrow" embedded layout="home" closeHref="/" /> : null}
+        {mode === "repay" ? <BorrowActionPageClient kind="repay" embedded layout="home" closeHref="/" /> : null}
+        {mode === "claim" ? <BorrowActionPageClient kind="claim" embedded layout="home" closeHref="/" /> : null}
+        {mode === "remove" ? <BorrowActionPageClient kind="remove" embedded layout="home" closeHref="/" /> : null}
       </HomeWorkspaceCard>
     </div>
   )

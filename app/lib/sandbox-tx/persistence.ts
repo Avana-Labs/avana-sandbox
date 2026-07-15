@@ -101,7 +101,9 @@ export function lendResultToRecordArgs(result: LendSandboxActionResult, wallet: 
 
 export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, wallet: string): RecordTransactionArgs {
   const item = result.historyItem
-  const positionId = item.positionId ?? Object.keys(result.state.positions).find((id) => result.state.positions[id]?.marketId === item.marketId)
+  const positionId =
+    item.positionId ??
+    Object.keys(result.state.positions).find((id) => result.state.positions[id]?.marketId === item.marketId)
   const position = positionId ? result.state.positions[positionId] : undefined
   const marketSlug = position?.marketId ?? item.marketId
 

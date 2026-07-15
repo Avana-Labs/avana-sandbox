@@ -103,8 +103,12 @@ describe("transaction adapter contracts", () => {
       simulated: false,
     }
 
-    await expect(adapter.previewTransaction(intent)).rejects.toThrow("Production transaction adapter is not implemented")
-    await expect(adapter.executeTransaction(intent)).rejects.toThrow("Production transaction adapter is not implemented")
+    await expect(adapter.previewTransaction(intent)).rejects.toThrow(
+      "Production transaction adapter is not implemented",
+    )
+    await expect(adapter.executeTransaction(intent)).rejects.toThrow(
+      "Production transaction adapter is not implemented",
+    )
   })
 
   it("creates live intents and delegates production preview and execution", async () => {

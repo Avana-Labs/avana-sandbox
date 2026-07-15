@@ -8,10 +8,7 @@
  * Swap `buildAssetDetail` for a live fetch in `index.ts` when ready.
  */
 
-import {
-  BORROW_POOL_CATALOG,
-  formatCompactUsd,
-} from "@/app/lib/borrow-sim"
+import { BORROW_POOL_CATALOG, formatCompactUsd } from "@/app/lib/borrow-sim"
 import {
   listSpokeBorrowables,
   resolveSpokeBorrowable,
@@ -74,7 +71,8 @@ const ASSET_FIXTURES: Record<string, AssetFixture> = {
     xUrl: "https://x.com/circle",
     baseSuppliedUsd: 205_670_000,
     baseBorrowedUsd: 166_240_000,
-    subtitle: "The deepest stablecoin on the protocol — borrowed to lever up LP collateral and for stable-to-stable carry.",
+    subtitle:
+      "The deepest stablecoin on the protocol — borrowed to lever up LP collateral and for stable-to-stable carry.",
     quickStats: {
       supplied: { value: "$205.67M", delta: { value: 2.1, direction: "up", label: "+2.1%" } },
       borrowed: { value: "$166.24M", delta: { value: 1.4, direction: "up", label: "+1.4%" } },
@@ -88,8 +86,16 @@ const ASSET_FIXTURES: Record<string, AssetFixture> = {
       stats: [],
       history: [
         { date: "2024-04-01", title: "Launch", description: "USDC listed day-1 with 80% borrow cap." },
-        { date: "2025-03-09", title: "De-peg drill", description: "Simulated 2023-style de-peg; guardrails paused borrows for 18m." },
-        { date: "2026-01-22", title: "Cap raised", description: "Supply cap raised to $250M after utilization sustained >75% for 30 days." },
+        {
+          date: "2025-03-09",
+          title: "De-peg drill",
+          description: "Simulated 2023-style de-peg; guardrails paused borrows for 18m.",
+        },
+        {
+          date: "2026-01-22",
+          title: "Cap raised",
+          description: "Supply cap raised to $250M after utilization sustained >75% for 30 days.",
+        },
       ],
     },
     risk: {
@@ -97,12 +103,37 @@ const ASSET_FIXTURES: Record<string, AssetFixture> = {
       level: "low",
       score: 14,
       headline: "Low risk · +0.25% premium",
-      summary: "USDC is the benchmark stable. Depeg tail is the dominant risk; monitored by deviation guards and Circle attestations.",
+      summary:
+        "USDC is the benchmark stable. Depeg tail is the dominant risk; monitored by deviation guards and Circle attestations.",
       breakdown: [
-        { id: "depeg", label: "De-peg tail", bps: 12, level: "low", description: "Guardrails pause borrows on >50bps Chainlink deviation for 5m." },
-        { id: "issuer", label: "Issuer solvency", bps: 6, level: "low", description: "Weekly Circle attestations ingested into the oracle pipeline." },
-        { id: "bridge", label: "Bridge surface", bps: 4, level: "low", description: "Canonical bridge only; non-canonical deployments are blocked." },
-        { id: "sc", label: "Smart-contract surface", bps: 3, level: "low", description: "Standard ERC-20 implementation." },
+        {
+          id: "depeg",
+          label: "De-peg tail",
+          bps: 12,
+          level: "low",
+          description: "Guardrails pause borrows on >50bps Chainlink deviation for 5m.",
+        },
+        {
+          id: "issuer",
+          label: "Issuer solvency",
+          bps: 6,
+          level: "low",
+          description: "Weekly Circle attestations ingested into the oracle pipeline.",
+        },
+        {
+          id: "bridge",
+          label: "Bridge surface",
+          bps: 4,
+          level: "low",
+          description: "Canonical bridge only; non-canonical deployments are blocked.",
+        },
+        {
+          id: "sc",
+          label: "Smart-contract surface",
+          bps: 3,
+          level: "low",
+          description: "Standard ERC-20 implementation.",
+        },
       ],
       metrics: [
         { id: "peg", label: "30d peg deviation (max)", value: "7 bps" },
@@ -150,8 +181,18 @@ const ASSET_FIXTURES: Record<string, AssetFixture> = {
         { date: "2022-09-15", title: "The Merge", description: "Proof-of-stake consensus activated." },
       ],
       news: [
-        { time: "2025-01-14", title: "Onboarded", description: "Added to the Uniswap v2 LPs.", source: "Latest update" },
-        { time: "2025-06-02", title: "Parameters refreshed", description: "Quarterly risk review — no changes to LTV.", source: "Protocol note" },
+        {
+          time: "2025-01-14",
+          title: "Onboarded",
+          description: "Added to the Uniswap v2 LPs.",
+          source: "Latest update",
+        },
+        {
+          time: "2025-06-02",
+          title: "Parameters refreshed",
+          description: "Quarterly risk review — no changes to LTV.",
+          source: "Protocol note",
+        },
       ],
     },
   },
@@ -209,11 +250,15 @@ function buildHero(asset: SpokeBorrowableRecord, fixture: AssetFixture | undefin
   }
 }
 
-function buildQuickStats(asset: SpokeBorrowableRecord, supplied: number, borrowed: number, fixture: AssetFixture | undefined): QuickStat[] {
+function buildQuickStats(
+  asset: SpokeBorrowableRecord,
+  supplied: number,
+  borrowed: number,
+  fixture: AssetFixture | undefined,
+): QuickStat[] {
   const utilization = borrowed / supplied
   const heroPriceUsd =
-    fixture?.heroPriceUsd ??
-    (asset.category === "stable" ? 1 : asset.category === "btc" ? 68422.18 : 2019.96)
+    fixture?.heroPriceUsd ?? (asset.category === "stable" ? 1 : asset.category === "btc" ? 68422.18 : 2019.96)
   const dexLiquidityUsd = BORROW_POOL_CATALOG.filter((pool) => asset.marketIds.includes(pool.id)).reduce(
     (sum, pool) => sum + pool.availableUsd,
     0,
@@ -224,7 +269,12 @@ function buildQuickStats(asset: SpokeBorrowableRecord, supplied: number, borrowe
     { id: "supplied", label: "Total Supplied", value: formatCompactUsd(supplied), delta: deltaFromPct(1.8) },
     { id: "borrowed", label: "Total Borrowed", value: formatCompactUsd(borrowed), delta: deltaFromPct(1.1) },
     { id: "utilization", label: "Utilization", value: formatPct(utilization * 100, 2), delta: deltaFromPct(-0.6) },
-    { id: "supplyApy", label: "Supply APY", value: `${(asset.borrowApr * 0.85).toFixed(2)}%`, delta: deltaFromPct(0.1) },
+    {
+      id: "supplyApy",
+      label: "Supply APY",
+      value: `${(asset.borrowApr * 0.85).toFixed(2)}%`,
+      delta: deltaFromPct(0.1),
+    },
     { id: "supplyApy90d", label: "Supply APY (90D Avg)", value: `${(asset.borrowApr * 0.83).toFixed(2)}%` },
     { id: "borrowApy", label: "Borrow APY", value: `${asset.borrowApr.toFixed(2)}%`, delta: deltaFromPct(0.08) },
   ]
@@ -247,8 +297,7 @@ function buildHeroSeries(
   const utilizationBase = Math.max(1, Math.min(95, (borrowed / supplied) * 100))
   const apyBase = asset.borrowApr
   const priceBase =
-    fixture?.heroPriceUsd ??
-    (asset.category === "stable" ? 1 : asset.category === "btc" ? 68422.18 : 2019.96)
+    fixture?.heroPriceUsd ?? (asset.category === "stable" ? 1 : asset.category === "btc" ? 68422.18 : 2019.96)
   const curatedPrice = buildCuratedPriceFamily(asset.baseAssetId, "Price")
   return {
     price:
@@ -261,17 +310,57 @@ function buildHeroSeries(
         nonNegative: true,
         roundTo: 2,
       }),
-    supply: buildSeriesFamily(`${asset.id}:supply`, "Total Supplied", { base: supplied, driftMultiplier: 1.08, noise: 0.03, wave: 0.05, nonNegative: true, roundTo: 0 }),
-    borrow: buildSeriesFamily(`${asset.id}:borrow`, "Total Borrowed", { base: borrowed, driftMultiplier: 1.06, noise: 0.04, wave: 0.06, nonNegative: true, roundTo: 0 }),
-    utilization: buildSeriesFamily(`${asset.id}:util`, "Utilization", { base: utilizationBase, driftMultiplier: 1.02, noise: 0.05, wave: 0.08, nonNegative: true, roundTo: 2 }),
-    apy: buildSeriesFamily(`${asset.id}:apy`, "Borrow APY", { base: apyBase, driftMultiplier: 1.04, noise: 0.08, wave: 0.1, nonNegative: true, roundTo: 2 }),
+    supply: buildSeriesFamily(`${asset.id}:supply`, "Total Supplied", {
+      base: supplied,
+      driftMultiplier: 1.08,
+      noise: 0.03,
+      wave: 0.05,
+      nonNegative: true,
+      roundTo: 0,
+    }),
+    borrow: buildSeriesFamily(`${asset.id}:borrow`, "Total Borrowed", {
+      base: borrowed,
+      driftMultiplier: 1.06,
+      noise: 0.04,
+      wave: 0.06,
+      nonNegative: true,
+      roundTo: 0,
+    }),
+    utilization: buildSeriesFamily(`${asset.id}:util`, "Utilization", {
+      base: utilizationBase,
+      driftMultiplier: 1.02,
+      noise: 0.05,
+      wave: 0.08,
+      nonNegative: true,
+      roundTo: 2,
+    }),
+    apy: buildSeriesFamily(`${asset.id}:apy`, "Borrow APY", {
+      base: apyBase,
+      driftMultiplier: 1.04,
+      noise: 0.08,
+      wave: 0.1,
+      nonNegative: true,
+      roundTo: 2,
+    }),
   }
 }
 
 function buildSupplyBorrow(asset: SpokeBorrowableRecord, supplied: number, borrowed: number) {
   return {
-    supplied: buildSeries(`${asset.id}:sb:supply`, "1Y", "Supplied", { base: supplied, driftMultiplier: 1.12, noise: 0.04, nonNegative: true, roundTo: 0 }),
-    borrowed: buildSeries(`${asset.id}:sb:borrow`, "1Y", "Borrowed", { base: borrowed, driftMultiplier: 1.09, noise: 0.05, nonNegative: true, roundTo: 0 }),
+    supplied: buildSeries(`${asset.id}:sb:supply`, "1Y", "Supplied", {
+      base: supplied,
+      driftMultiplier: 1.12,
+      noise: 0.04,
+      nonNegative: true,
+      roundTo: 0,
+    }),
+    borrowed: buildSeries(`${asset.id}:sb:borrow`, "1Y", "Borrowed", {
+      base: borrowed,
+      driftMultiplier: 1.09,
+      noise: 0.05,
+      nonNegative: true,
+      roundTo: 0,
+    }),
     utilization: buildSeries(`${asset.id}:sb:util`, "1Y", "Utilization", {
       base: Math.max(1, Math.min(95, (borrowed / supplied) * 100)),
       driftMultiplier: 1.02,
@@ -288,7 +377,7 @@ function buildInterestGenerated(asset: SpokeBorrowableRecord, borrowed: number):
     monthly: { scale: 30, label: "30d" },
     quarterly: { scale: 90, label: "90d" },
   }
-  const dailyInterest = borrowed * (asset.borrowApr / 100) / 365
+  const dailyInterest = (borrowed * (asset.borrowApr / 100)) / 365
   const out = {} as Record<PerfPeriod, PerfTabDataset>
   for (const period of ALL_PERF_PERIODS) {
     const { scale, label } = periods[period]
@@ -296,7 +385,13 @@ function buildInterestGenerated(asset: SpokeBorrowableRecord, borrowed: number):
     out[period] = {
       headline: formatCompactUsd(base),
       subLabel: `vs previous ${label} ${deltaForPeriod(asset.id, period)}`,
-      series: buildSeries(`${asset.id}:int:${period}`, "1M", "Interest", { base: dailyInterest, driftMultiplier: 1.06, noise: 0.18, nonNegative: true, roundTo: 0 }),
+      series: buildSeries(`${asset.id}:int:${period}`, "1M", "Interest", {
+        base: dailyInterest,
+        driftMultiplier: 1.06,
+        noise: 0.18,
+        nonNegative: true,
+        roundTo: 0,
+      }),
       breakdown: [
         { label: "To suppliers", value: formatCompactUsd(base * 0.9), delta: deltaFromPct(3.2) },
         { label: "Reserve", value: formatCompactUsd(base * 0.1), delta: deltaFromPct(3.2) },
@@ -312,19 +407,35 @@ function deltaForPeriod(id: string, period: PerfPeriod): string {
   return `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`
 }
 
-function buildAssetKeyMetrics(asset: SpokeBorrowableRecord, supplied: number, borrowed: number): Record<KeyMetricId, Record<TimeRangeId, Series>> {
+function buildAssetKeyMetrics(
+  asset: SpokeBorrowableRecord,
+  supplied: number,
+  borrowed: number,
+): Record<KeyMetricId, Record<TimeRangeId, Series>> {
   const utilization = Math.min(95, (borrowed / supplied) * 100)
   const shapes: Record<KeyMetricId, Parameters<typeof buildSeriesFamily>[2]> = {
     tvl: { base: supplied, driftMultiplier: 1.08, noise: 0.04, nonNegative: true, roundTo: 0 },
     volume: { base: borrowed * 0.2, driftMultiplier: 1.08, noise: 0.12, nonNegative: true, roundTo: 0 },
-    fees: { base: borrowed * asset.borrowApr * 0.0001, driftMultiplier: 1.06, noise: 0.14, nonNegative: true, roundTo: 0 },
+    fees: {
+      base: borrowed * asset.borrowApr * 0.0001,
+      driftMultiplier: 1.06,
+      noise: 0.14,
+      nonNegative: true,
+      roundTo: 0,
+    },
     feesApr: { base: asset.borrowApr * 0.85, driftMultiplier: 1.02, noise: 0.06, nonNegative: true, roundTo: 2 },
     rewards: { base: borrowed * 0.002, driftMultiplier: 1.05, noise: 0.18, nonNegative: true, roundTo: 0 },
     utilization: { base: utilization, driftMultiplier: 1.02, noise: 0.05, nonNegative: true, roundTo: 1 },
     borrowApr: { base: asset.borrowApr, driftMultiplier: 1.04, noise: 0.06, nonNegative: true, roundTo: 2 },
     incentives: { base: borrowed * 0.001, driftMultiplier: 1.05, noise: 0.2, nonNegative: true, roundTo: 0 },
     depth2pct: { base: supplied * 0.05, driftMultiplier: 1.01, noise: 0.06, nonNegative: true, roundTo: 0 },
-    volatility30d: { base: asset.category === "stable" ? 1.2 : 48, driftMultiplier: 0.98, noise: 0.12, nonNegative: true, roundTo: 2 },
+    volatility30d: {
+      base: asset.category === "stable" ? 1.2 : 48,
+      driftMultiplier: 0.98,
+      noise: 0.12,
+      nonNegative: true,
+      roundTo: 2,
+    },
     impermanentLoss: { base: 0.1, driftMultiplier: 1.04, noise: 0.3, nonNegative: true, roundTo: 2 },
     oraclePremium: { base: 0.08, driftMultiplier: 1.02, noise: 0.2, nonNegative: true, roundTo: 2 },
   }
@@ -336,18 +447,40 @@ function buildAssetKeyMetrics(asset: SpokeBorrowableRecord, supplied: number, bo
 }
 
 function buildAssetCashflow(asset: SpokeBorrowableRecord, supplied: number, borrowed: number): CashflowCard {
-  const annualInterest = borrowed * asset.borrowApr / 100
-  const feesSeries = buildSeries(`${asset.id}:cf:interest`, "1Y", "Interest", { base: annualInterest / 12, driftMultiplier: 1.04, noise: 0.08, nonNegative: true, roundTo: 0 })
-  const rewardsSeries = buildSeries(`${asset.id}:cf:rewards`, "1Y", "Rewards", { base: supplied * 0.002 / 12, driftMultiplier: 1.05, noise: 0.18, nonNegative: true, roundTo: 0 })
+  const annualInterest = (borrowed * asset.borrowApr) / 100
+  const feesSeries = buildSeries(`${asset.id}:cf:interest`, "1Y", "Interest", {
+    base: annualInterest / 12,
+    driftMultiplier: 1.04,
+    noise: 0.08,
+    nonNegative: true,
+    roundTo: 0,
+  })
+  const rewardsSeries = buildSeries(`${asset.id}:cf:rewards`, "1Y", "Rewards", {
+    base: (supplied * 0.002) / 12,
+    driftMultiplier: 1.05,
+    noise: 0.18,
+    nonNegative: true,
+    roundTo: 0,
+  })
   return {
     bars: [feesSeries, rewardsSeries],
     periodLabel: "Last 12 months",
     rows: [
-      { label: "Interest paid by borrowers", reported: formatCompactUsd(annualInterest), yoy: deltaFromPct(14.2), highlighted: true },
+      {
+        label: "Interest paid by borrowers",
+        reported: formatCompactUsd(annualInterest),
+        yoy: deltaFromPct(14.2),
+        highlighted: true,
+      },
       { label: "To suppliers", reported: formatCompactUsd(annualInterest * 0.9), yoy: deltaFromPct(13.8) },
       { label: "Reserve", reported: formatCompactUsd(annualInterest * 0.1), yoy: deltaFromPct(16.4) },
       { label: "Rewards distributed", reported: formatCompactUsd(supplied * 0.002), yoy: deltaFromPct(4.1) },
-      { label: "Net to suppliers", reported: formatCompactUsd(annualInterest * 0.9 + supplied * 0.002), yoy: deltaFromPct(12.8), highlighted: true },
+      {
+        label: "Net to suppliers",
+        reported: formatCompactUsd(annualInterest * 0.9 + supplied * 0.002),
+        yoy: deltaFromPct(12.8),
+        highlighted: true,
+      },
     ],
   }
 }
@@ -420,7 +553,11 @@ function buildAboutStats(asset: SpokeBorrowableRecord, fixture?: AssetFixture): 
   return [
     { label: "Vault Contract Address", value: vaultHash.short, href: `https://etherscan.io/address/${vaultHash.full}` },
     { label: "Token Contract Address", value: tokenLabel, href: tokenExplorer },
-    { label: "Staking Contract Address", value: stakingHash.short, href: `https://etherscan.io/address/${stakingHash.full}` },
+    {
+      label: "Staking Contract Address",
+      value: stakingHash.short,
+      href: `https://etherscan.io/address/${stakingHash.full}`,
+    },
     { label: "Deployed On", value: asset.category === "stable" ? "March 18, 2024" : "October 7, 2024" },
   ]
 }
@@ -463,7 +600,17 @@ function buildTransactions(asset: SpokeBorrowableRecord): TxHistoryRow[] {
     const amount = Math.round((10_000 + rand() * 240_000) / 100) * 100
     const ageMs = i * 28_000 + Math.floor(rand() * 6_000)
     const at = new Date(now - ageMs).toISOString()
-    const walletAddress = `0x${Math.floor(rand() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(rand() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(rand() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(rand() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(rand() * 0xffffffff).toString(16).padStart(8, "0")}`
+    const walletAddress = `0x${Math.floor(rand() * 0xffffffff)
+      .toString(16)
+      .padStart(8, "0")}${Math.floor(rand() * 0xffffffff)
+      .toString(16)
+      .padStart(8, "0")}${Math.floor(rand() * 0xffffffff)
+      .toString(16)
+      .padStart(8, "0")}${Math.floor(rand() * 0xffffffff)
+      .toString(16)
+      .padStart(8, "0")}${Math.floor(rand() * 0xffffffff)
+      .toString(16)
+      .padStart(8, "0")}`
     const walletLabel = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
     out.push({
       id: `${asset.id}-tx-${i}`,
@@ -474,7 +621,11 @@ function buildTransactions(asset: SpokeBorrowableRecord): TxHistoryRow[] {
       counterpartyLabel: kind === "liquidation" ? "Liquidator" : undefined,
       walletLabel,
       walletHref: `https://etherscan.io/address/${walletAddress}`,
-      txHashShort: `0x${Math.floor(rand() * 0xffffff).toString(16).padStart(6, "0")}…${Math.floor(rand() * 0xffff).toString(16).padStart(4, "0")}`,
+      txHashShort: `0x${Math.floor(rand() * 0xffffff)
+        .toString(16)
+        .padStart(6, "0")}…${Math.floor(rand() * 0xffff)
+        .toString(16)
+        .padStart(4, "0")}`,
     })
   }
   return out
@@ -502,15 +653,17 @@ export function buildAssetDetail(asset: SpokeBorrowableRecord): AssetDetail {
   const borrowed = fixture?.baseBorrowedUsd ?? asset.totalBorrowedUsd
   const allocation: AllocationRow[] = computeAssetAllocation(asset, BORROW_POOL_CATALOG)
   const heroPriceUsd =
-    fixture?.heroPriceUsd ??
-    (asset.category === "stable" ? 1 : asset.category === "btc" ? 68422.18 : 2019.96)
+    fixture?.heroPriceUsd ?? (asset.category === "stable" ? 1 : asset.category === "btc" ? 68422.18 : 2019.96)
   const heroPriceChangePct = fixture?.heroPriceChangePct ?? -2.14
   return {
     id: asset.id,
     hero: buildHero(asset, fixture),
     heroMetric: {
       metricId: "price",
-      valueLabel: heroPriceUsd >= 100 ? `$${heroPriceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : `$${heroPriceUsd.toFixed(2)}`,
+      valueLabel:
+        heroPriceUsd >= 100
+          ? `$${heroPriceUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+          : `$${heroPriceUsd.toFixed(2)}`,
       delta: deltaFromPct(heroPriceChangePct),
       series: buildHeroSeries(asset, supplied, borrowed, fixture),
     },

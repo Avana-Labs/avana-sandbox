@@ -8,7 +8,12 @@ describe("lend engine simulation and validation", () => {
   const market = buildMockLendMarket("eth")
 
   it("simulates deposit with before/after metrics", () => {
-    const simulation = simulateDeposit({ market, depositAmount: 1000, walletBalance: 5000, now: market.lastAccrualTimestamp })
+    const simulation = simulateDeposit({
+      market,
+      depositAmount: 1000,
+      walletBalance: 5000,
+      now: market.lastAccrualTimestamp,
+    })
 
     expect(simulation.before.suppliedAmount).toBe(0)
     expect(simulation.after.suppliedAmount).toBe(1000)

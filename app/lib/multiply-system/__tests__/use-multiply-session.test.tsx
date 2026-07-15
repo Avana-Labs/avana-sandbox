@@ -200,19 +200,19 @@ describe("useMultiplySession", () => {
       executeTransaction: () => new Promise((resolve) => (resolveExecute = resolve)),
     }
 
-    const { result } = renderHook(() =>
-      useMultiplySession({ walletId, sessionSeed, transactionAdapter }),
-    )
+    const { result } = renderHook(() => useMultiplySession({ walletId, sessionSeed, transactionAdapter }))
     expect(result.current.isPending).toBe(false)
 
     act(() => {
-      void result.current.executeTransaction(result.current.createIntent({
-        type: "multiply",
-        walletId,
-        marketId: "usdc-gho",
-        collateralAmount: 500,
-        selectedMultiplier: 2,
-      }))
+      void result.current.executeTransaction(
+        result.current.createIntent({
+          type: "multiply",
+          walletId,
+          marketId: "usdc-gho",
+          collateralAmount: 500,
+          selectedMultiplier: 2,
+        }),
+      )
     })
 
     await waitFor(() => expect(result.current.isPending).toBe(true))

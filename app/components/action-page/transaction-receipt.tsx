@@ -94,10 +94,7 @@ export function TransactionReceipt({ data, className }: { data: TransactionRecei
   ) : null
 
   return (
-    <div
-      data-testid="transaction-receipt"
-      className={cn("space-y-4", className)}
-    >
+    <div data-testid="transaction-receipt" className={cn("space-y-4", className)}>
       <ActionCard
         className={cn(
           "overflow-hidden border-t-2 border-t-emerald-500/70",
@@ -150,7 +147,9 @@ export function TransactionReceipt({ data, className }: { data: TransactionRecei
               <ActionInfoRow label="Network fee" value={exact(data.networkFeeUsd)} />
             ) : null}
             {data.block != null ? <ActionInfoRow label="Block" value={String(data.block)} /> : null}
-            {data.dateMs != null ? <ActionInfoRow label="Transaction date" value={formatReceiptDate(data.dateMs)} /> : null}
+            {data.dateMs != null ? (
+              <ActionInfoRow label="Transaction date" value={formatReceiptDate(data.dateMs)} />
+            ) : null}
           </div>
 
           {data.hash ? (

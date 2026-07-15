@@ -9,11 +9,7 @@ type DeferredRenderProps = {
 }
 
 /** Mounts expensive UI only after the section approaches the viewport. */
-export function DeferredRender({
-  children,
-  fallback,
-  rootMargin = "200px 0px",
-}: DeferredRenderProps) {
+export function DeferredRender({ children, fallback, rootMargin = "200px 0px" }: DeferredRenderProps) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [shouldRender, setShouldRender] = useState(false)
 

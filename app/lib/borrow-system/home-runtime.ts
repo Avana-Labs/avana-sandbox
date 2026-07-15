@@ -24,7 +24,12 @@ import {
   type RemovePreview,
   type RepayPreview,
 } from "@/app/lib/home-sim"
-import { buildBorrowPreviewModel, buildDepositPreviewModel, buildRepayPreviewModel, buildWithdrawPreviewModel } from "./preview-builders"
+import {
+  buildBorrowPreviewModel,
+  buildDepositPreviewModel,
+  buildRepayPreviewModel,
+  buildWithdrawPreviewModel,
+} from "./preview-builders"
 import { selectBorrowCollateralPools, selectBorrowableAssets } from "./selectors"
 
 function fixedToNumber(value: bigint, decimals: number) {
@@ -63,7 +68,11 @@ function tokenFromAssetId(state: BorrowSystemState, assetId: string): HomeBorrow
   }
 }
 
-function collateralPositionForMarket(state: BorrowSystemState, walletId: string, marketId: string): UserCollateralPosition | null {
+function collateralPositionForMarket(
+  state: BorrowSystemState,
+  walletId: string,
+  marketId: string,
+): UserCollateralPosition | null {
   return state.accounts[walletId]?.collateralPositions.find((position) => position.marketId === marketId) ?? null
 }
 
@@ -72,20 +81,29 @@ function debtPositionsForSpoke(state: BorrowSystemState, walletId: string, spoke
 }
 
 function totalSpokeDebtUsd(state: BorrowSystemState, walletId: string, spokeId: string) {
-  return debtPositionsForSpoke(state, walletId, spokeId).reduce((sum, position) => sum + fixedToNumber(currentDebtValueUsd6(position), 6), 0)
+  return debtPositionsForSpoke(state, walletId, spokeId).reduce(
+    (sum, position) => sum + fixedToNumber(currentDebtValueUsd6(position), 6),
+    0,
+  )
 }
 
-function selectPrimaryDebtPosition(state: BorrowSystemState, walletId: string, marketId: string): UserDebtPosition | null {
+function selectPrimaryDebtPosition(
+  state: BorrowSystemState,
+  walletId: string,
+  marketId: string,
+): UserDebtPosition | null {
   const spokeId = state.markets[marketId]?.spokeId
   if (!spokeId) return null
-  return debtPositionsForSpoke(state, walletId, spokeId)
-    .slice()
-    .sort((left, right) => {
-      const rightDebt = currentDebtValueUsd6(right)
-      const leftDebt = currentDebtValueUsd6(left)
-      if (rightDebt === leftDebt) return 0
-      return rightDebt > leftDebt ? 1 : -1
-    })[0] ?? null
+  return (
+    debtPositionsForSpoke(state, walletId, spokeId)
+      .slice()
+      .sort((left, right) => {
+        const rightDebt = currentDebtValueUsd6(right)
+        const leftDebt = currentDebtValueUsd6(left)
+        if (rightDebt === leftDebt) return 0
+        return rightDebt > leftDebt ? 1 : -1
+      })[0] ?? null
+  )
 }
 
 export function selectHomeBorrowTokensForMarket(
@@ -218,7 +236,9 @@ export function buildHomeBorrowPreview(
           : "Borrow unavailable"
         : null,
     warningMessage: model.warningMessage,
-    ctaLabel: model.isValid ? `Borrow ${amountUsd.toFixed(0)} ${state.assets[assetId]?.symbol ?? "tokens"}` : userMessageFromError(model.warningMessage ?? "Action unavailable"),
+    ctaLabel: model.isValid
+      ? `Borrow ${amountUsd.toFixed(0)} ${state.assets[assetId]?.symbol ?? "tokens"}`
+      : userMessageFromError(model.warningMessage ?? "Action unavailable"),
   }
 }
 
@@ -229,12 +249,14 @@ export function buildHomeRepayPreview(
   amountUsd: number,
 ): RepayPreview {
   const debtPosition = debtPositionId
-    ? state.accounts[walletId]?.debtPositions.find((position) => position.id === debtPositionId) ?? null
+    ? (state.accounts[walletId]?.debtPositions.find((position) => position.id === debtPositionId) ?? null)
     : null
   const currentDebtUsd = debtPosition ? fixedToNumber(currentDebtValueUsd6(debtPosition), 6) : 0
   const spokeId = debtPosition?.spokeId
   const currentMetrics = spokeId ? calculateSpokeCreditMetrics(state, walletId, spokeId) : null
-  const currentHealthFactor = currentMetrics ? healthFactorToNumber(currentMetrics.healthFactorWad) : Number.POSITIVE_INFINITY
+  const currentHealthFactor = currentMetrics
+    ? healthFactorToNumber(currentMetrics.healthFactorWad)
+    : Number.POSITIVE_INFINITY
   const exceedsDebt = amountUsd > currentDebtUsd
 
   if (amountUsd <= 0) {
@@ -280,13 +302,16 @@ export function buildHomeRepayPreview(
     isValid: model.isValid,
     exceedsDebt: model.exceedsDebt,
     remainingDebtUsd: model.remainingDebtUsd,
-    remainingDebtLabel: `${formatCompactUsd(model.remainingDebtUsd)} ${state.assets[debtPosition.assetId]?.symbol ?? ""}`.trim(),
+    remainingDebtLabel:
+      `${formatCompactUsd(model.remainingDebtUsd)} ${state.assets[debtPosition.assetId]?.symbol ?? ""}`.trim(),
     healthFactorAfter,
     healthFactorAfterLabel: formatHealthFactor(healthFactorAfter),
     oldHealthFactorLabel: formatHealthFactor(currentHealthFactor),
     riskTone: getRiskTone(healthFactorAfter),
     yearlyInterestSavedUsd: model.yearlyInterestSavedUsd,
-    ctaLabel: model.isValid ? `Repay ${formatCompactUsd(Math.min(amountUsd, currentDebtUsd))} ${state.assets[debtPosition.assetId]?.symbol ?? ""}`.trim() : userMessageFromError(model.warningMessage ?? "Action unavailable"),
+    ctaLabel: model.isValid
+      ? `Repay ${formatCompactUsd(Math.min(amountUsd, currentDebtUsd))} ${state.assets[debtPosition.assetId]?.symbol ?? ""}`.trim()
+      : userMessageFromError(model.warningMessage ?? "Action unavailable"),
   }
 }
 
@@ -325,9 +350,15 @@ export function buildHomeRemovePreview(
     currentMetrics.totalBorrowedUsd6 > 0n
       ? mulDiv(liquidationHeadroomUsd6, parseFixed("1", 18), market.riskConfig.liquidationThresholdWad)
       : currentCollateralValueUsd6(position, market)
-  const safePercent = currentValueUsd > 0 ? Math.max(0, Math.min(100, Math.floor((fixedToNumber(maxRemoveUsd6, 6) / currentValueUsd) * 100))) : 0
+  const safePercent =
+    currentValueUsd > 0
+      ? Math.max(0, Math.min(100, Math.floor((fixedToNumber(maxRemoveUsd6, 6) / currentValueUsd) * 100)))
+      : 0
   if (percent <= 0) {
-    const currentHealthFactor = currentMetrics.totalBorrowedUsd6 > 0n ? healthFactorToNumber(currentMetrics.healthFactorWad) : Number.POSITIVE_INFINITY
+    const currentHealthFactor =
+      currentMetrics.totalBorrowedUsd6 > 0n
+        ? healthFactorToNumber(currentMetrics.healthFactorWad)
+        : Number.POSITIVE_INFINITY
     return {
       percent,
       safePercent,
@@ -344,7 +375,10 @@ export function buildHomeRemovePreview(
 
   const model = buildWithdrawPreviewModel(state, walletId, marketId, percent)
   const healthFactorAfter =
-    model.healthFactorAfter ?? (currentMetrics.totalBorrowedUsd6 > 0n ? healthFactorToNumber(currentMetrics.healthFactorWad) : Number.POSITIVE_INFINITY)
+    model.healthFactorAfter ??
+    (currentMetrics.totalBorrowedUsd6 > 0n
+      ? healthFactorToNumber(currentMetrics.healthFactorWad)
+      : Number.POSITIVE_INFINITY)
 
   return {
     percent,

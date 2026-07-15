@@ -4,8 +4,7 @@ import { LazyMotion, useReducedMotion } from "framer-motion"
 import * as m from "framer-motion/m"
 import { cn } from "@/lib/utils"
 
-const loadMotionFeatures = () =>
-  import("@/app/lib/framer-dom-animation").then((module) => module.default)
+const loadMotionFeatures = () => import("@/app/lib/framer-dom-animation").then((module) => module.default)
 
 type SharedTabItem<T extends string> = {
   id: T
@@ -88,7 +87,10 @@ export function UnderlineTabStrip<T extends string>({
       <div
         role="tablist"
         aria-label={ariaLabel}
-        className={cn("flex h-auto w-full justify-between gap-2 border-0 bg-transparent p-0 sm:inline-flex sm:w-max sm:min-w-max sm:justify-start sm:gap-9", listClassName)}
+        className={cn(
+          "flex h-auto w-full justify-between gap-2 border-0 bg-transparent p-0 sm:inline-flex sm:w-max sm:min-w-max sm:justify-start sm:gap-9",
+          listClassName,
+        )}
       >
         {items.map((item) => {
           const active = item.id === value

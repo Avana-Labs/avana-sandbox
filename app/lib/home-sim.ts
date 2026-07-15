@@ -474,7 +474,11 @@ export function healthFactorBarPct(hf: number | null): number {
 export const MAX_LTV = 0.8
 export const LIQUIDATION_LTV = 0.83
 
-export function calculateBorrowPreview(pool: HomeCollateralPool, amountUsd: number, tokenSymbol: string): BorrowPreview {
+export function calculateBorrowPreview(
+  pool: HomeCollateralPool,
+  amountUsd: number,
+  tokenSymbol: string,
+): BorrowPreview {
   if (amountUsd <= 0) {
     return {
       amountUsd,
@@ -527,7 +531,12 @@ export function calculateBorrowPreview(pool: HomeCollateralPool, amountUsd: numb
   }
 }
 
-export function calculateRepayPreview(pool: HomeCollateralPool, currentDebtUsd: number, amountUsd: number, borrowApr: number): RepayPreview {
+export function calculateRepayPreview(
+  pool: HomeCollateralPool,
+  currentDebtUsd: number,
+  amountUsd: number,
+  borrowApr: number,
+): RepayPreview {
   if (amountUsd <= 0) {
     return {
       amountUsd,
@@ -536,12 +545,14 @@ export function calculateRepayPreview(pool: HomeCollateralPool, currentDebtUsd: 
       exceedsDebt: false,
       remainingDebtUsd: currentDebtUsd,
       remainingDebtLabel: formatCompactUsd(currentDebtUsd),
-      healthFactorAfter: currentDebtUsd > 0 ? (pool.collateralUsd * (pool.maxLtv / 100)) / currentDebtUsd : Number.POSITIVE_INFINITY,
+      healthFactorAfter:
+        currentDebtUsd > 0 ? (pool.collateralUsd * (pool.maxLtv / 100)) / currentDebtUsd : Number.POSITIVE_INFINITY,
       healthFactorAfterLabel:
         currentDebtUsd > 0 ? formatHealthFactor((pool.collateralUsd * (pool.maxLtv / 100)) / currentDebtUsd) : "∞",
       oldHealthFactorLabel:
         currentDebtUsd > 0 ? formatHealthFactor((pool.collateralUsd * (pool.maxLtv / 100)) / currentDebtUsd) : "∞",
-      riskTone: currentDebtUsd > 0 ? getRiskTone((pool.collateralUsd * (pool.maxLtv / 100)) / currentDebtUsd) : "positive",
+      riskTone:
+        currentDebtUsd > 0 ? getRiskTone((pool.collateralUsd * (pool.maxLtv / 100)) / currentDebtUsd) : "positive",
       yearlyInterestSavedUsd: 0,
       ctaLabel: "Enter an amount",
     }
@@ -614,10 +625,17 @@ function calculateSafeRemovePercent(pool: HomeCollateralPool, currentDebtUsd: nu
     return 100
   }
 
-  return Math.max(0, Math.min(100, Math.floor((1 - currentDebtUsd / ((pool.collateralUsd * (pool.maxLtv / 100)) / 1.5)) * 100)))
+  return Math.max(
+    0,
+    Math.min(100, Math.floor((1 - currentDebtUsd / ((pool.collateralUsd * (pool.maxLtv / 100)) / 1.5)) * 100)),
+  )
 }
 
-export function calculateRemovePreview(pool: HomeCollateralPool, currentDebtUsd: number, percent: number): RemovePreview {
+export function calculateRemovePreview(
+  pool: HomeCollateralPool,
+  currentDebtUsd: number,
+  percent: number,
+): RemovePreview {
   const removeUsd = Math.round((pool.collateralUsd * percent) / 100)
   const afterCollateralUsd = pool.collateralUsd - removeUsd
   const healthFactorAfter =

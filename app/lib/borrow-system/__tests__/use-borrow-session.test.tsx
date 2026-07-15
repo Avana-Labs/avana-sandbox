@@ -38,7 +38,9 @@ describe("useBorrowSession", () => {
     })
 
     expect(result.current.walletSnapshot.totalCollateralUsd).toBeGreaterThan(initialCollateral)
-    expect(result.current.marketSummaries.find((market) => market.id === "uni-v3-bluechip-weth-usdc")?.collateralExampleUsd).toBeGreaterThan(0)
+    expect(
+      result.current.marketSummaries.find((market) => market.id === "uni-v3-bluechip-weth-usdc")?.collateralExampleUsd,
+    ).toBeGreaterThan(0)
   })
 
   it("keeps borrow updates visible through the same wallet-scoped session", async () => {

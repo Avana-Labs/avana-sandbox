@@ -11,9 +11,7 @@ const bannedScripts = ["_qa-mint.mjs", "_qa-seed.mjs"]
 
 describe("no committed QA token-minting scripts (#138)", () => {
   it("does not track any _qa-*.mjs helper that could mint tokens from the JWK", () => {
-    const tracked = execSync("git ls-files", { cwd: repoRoot, encoding: "utf8" })
-      .split("\n")
-      .filter(Boolean)
+    const tracked = execSync("git ls-files", { cwd: repoRoot, encoding: "utf8" }).split("\n").filter(Boolean)
     const offenders = tracked.filter((f) => /(^|\/)_qa-.*\.mjs$/.test(f))
     expect(offenders).toEqual([])
   })

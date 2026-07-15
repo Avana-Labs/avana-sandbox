@@ -22,27 +22,50 @@ describe("multiply engine input guards", () => {
   it.each(badAmounts)("rejects collateralAmount=%s", (collateralAmount) => {
     const state = buildMockMultiplySystemState("guard")
     expect(() =>
-      applyMultiplyAction(state, { type: "multiply", walletId: "guard", marketId: MULTIPLY_MARKET, collateralAmount, selectedMultiplier: 2 }),
+      applyMultiplyAction(state, {
+        type: "multiply",
+        walletId: "guard",
+        marketId: MULTIPLY_MARKET,
+        collateralAmount,
+        selectedMultiplier: 2,
+      }),
     ).toThrow()
   })
 
   it.each(badMultipliers)("rejects selectedMultiplier=%s", (selectedMultiplier) => {
     const state = buildMockMultiplySystemState("guard")
     expect(() =>
-      applyMultiplyAction(state, { type: "multiply", walletId: "guard", marketId: MULTIPLY_MARKET, collateralAmount: 1, selectedMultiplier }),
+      applyMultiplyAction(state, {
+        type: "multiply",
+        walletId: "guard",
+        marketId: MULTIPLY_MARKET,
+        collateralAmount: 1,
+        selectedMultiplier,
+      }),
     ).toThrow()
   })
 
   it("rejects non-finite deleverage target", () => {
     const state = buildMockMultiplySystemState("guard")
     expect(() =>
-      applyMultiplyAction(state, { type: "deleverage", walletId: "guard", positionId: "guard:eth-usdt", targetMultiplier: Number.NaN }),
+      applyMultiplyAction(state, {
+        type: "deleverage",
+        walletId: "guard",
+        positionId: "guard:eth-usdt",
+        targetMultiplier: Number.NaN,
+      }),
     ).toThrow()
   })
 
   it("accepts a well-formed multiply and persists a finite position", () => {
     const state = buildMockMultiplySystemState("guard")
-    const next = applyMultiplyAction(state, { type: "multiply", walletId: "guard", marketId: MULTIPLY_MARKET, collateralAmount: 1, selectedMultiplier: 2 })
+    const next = applyMultiplyAction(state, {
+      type: "multiply",
+      walletId: "guard",
+      marketId: MULTIPLY_MARKET,
+      collateralAmount: 1,
+      selectedMultiplier: 2,
+    })
     const position = next.positions["guard:eth-usdt"]
     expect(position).toBeTruthy()
     expect(Number.isFinite(position!.ltv)).toBe(true)
@@ -56,19 +79,37 @@ describe("lend engine input guards", () => {
 
   it.each(badAmounts)("ignores deposit with depositAmount=%s", (depositAmount) => {
     const state = buildMockLendSystemState("guard")
-    const next = applyLendAction(state, { type: "deposit", walletId: "guard", marketId: LEND_MARKET, depositAmount, walletBalance: 1e9 }, ids)
+    const next = applyLendAction(
+      state,
+      { type: "deposit", walletId: "guard", marketId: LEND_MARKET, depositAmount, walletBalance: 1e9 },
+      ids,
+    )
     expect(next).toBe(state)
   })
 
   it("ignores withdraw with non-finite amount", () => {
     const state = buildMockLendSystemState("guard")
-    const next = applyLendAction(state, { type: "withdraw", walletId: "guard", marketId: LEND_MARKET, positionId: "x", withdrawAmount: Number.POSITIVE_INFINITY }, ids)
+    const next = applyLendAction(
+      state,
+      {
+        type: "withdraw",
+        walletId: "guard",
+        marketId: LEND_MARKET,
+        positionId: "x",
+        withdrawAmount: Number.POSITIVE_INFINITY,
+      },
+      ids,
+    )
     expect(next).toBe(state)
   })
 
   it("accepts a well-formed deposit", () => {
     const state = buildMockLendSystemState("guard")
-    const next = applyLendAction(state, { type: "deposit", walletId: "guard", marketId: LEND_MARKET, depositAmount: 1, walletBalance: 1e9 }, ids)
+    const next = applyLendAction(
+      state,
+      { type: "deposit", walletId: "guard", marketId: LEND_MARKET, depositAmount: 1, walletBalance: 1e9 },
+      ids,
+    )
     expect(next).not.toBe(state)
   })
 })

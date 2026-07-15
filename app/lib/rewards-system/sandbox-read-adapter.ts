@@ -1,4 +1,9 @@
-import { buildDefaultRewardsCatalog, calculateRewardSummary, evaluateAllTasksForUser, type RewardTask } from "@/app/lib/rewards-engine"
+import {
+  buildDefaultRewardsCatalog,
+  calculateRewardSummary,
+  evaluateAllTasksForUser,
+  type RewardTask,
+} from "@/app/lib/rewards-engine"
 import type { RewardsReadAdapter } from "./contracts"
 import type { RewardsSessionState } from "./contracts"
 
@@ -60,7 +65,10 @@ export class SandboxRewardsReadAdapter implements RewardsReadAdapter {
   }
 
   async readRecentActivity(wallet: string, limit = 25) {
-    return this.getState().events.filter((event) => event.wallet === wallet).slice(-limit).reverse()
+    return this.getState()
+      .events.filter((event) => event.wallet === wallet)
+      .slice(-limit)
+      .reverse()
   }
 
   async readSnapshot(wallet: string) {

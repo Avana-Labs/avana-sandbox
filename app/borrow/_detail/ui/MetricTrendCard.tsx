@@ -48,10 +48,15 @@ export function MetricTrendCard({
     <section id={id} className={cn("min-w-0", className)}>
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <div className="min-w-0">
-          <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">{t(title)}</h2>
+          <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
+            {t(title)}
+          </h2>
           <p className="mt-0.5 text-[11.5px] text-muted-foreground">{t(subtitle)}</p>
         </div>
-        <div role="tablist" className="inline-flex items-center gap-0.5 rounded-xs border border-border bg-surface-inset p-0.5">
+        <div
+          role="tablist"
+          className="inline-flex items-center gap-0.5 rounded-xs border border-border bg-surface-inset p-0.5"
+        >
           {(Object.keys(DEFAULT_VIEW_LABEL) as MetricTrendView[]).map((entry) => (
             <button
               key={entry}
@@ -61,7 +66,9 @@ export function MetricTrendCard({
               onClick={() => setView(entry)}
               className={cn(
                 "h-6 rounded-xs px-2 text-[11px] font-medium tabular-nums transition-colors",
-                view === entry ? "bg-surface-raised text-foreground shadow-elev-1" : "text-muted-foreground hover:text-foreground",
+                view === entry
+                  ? "bg-surface-raised text-foreground shadow-elev-1"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               {t(labels[entry])}

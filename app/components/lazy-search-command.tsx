@@ -11,11 +11,7 @@ export function SearchCommandPlaceholder() {
   const { t } = useTranslation()
 
   return (
-    <button
-      type="button"
-      aria-label={t("Search Avana")}
-      className={searchCommandLoadingButtonClassName}
-    >
+    <button type="button" aria-label={t("Search Avana")} className={searchCommandLoadingButtonClassName}>
       <Search className="h-4 w-4 shrink-0 text-brand-readable lg:h-[17px] lg:w-[17px]" />
       <span className="min-w-0 flex-1 truncate">{t("Search pools, borrow, lend, and more")}</span>
       <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-radius-sm border border-border bg-muted px-1 text-[10px] font-normal text-brand-readable lg:h-[22px] lg:min-w-[22px] lg:text-[11px]">
@@ -25,13 +21,10 @@ export function SearchCommandPlaceholder() {
   )
 }
 
-const SearchCommand = dynamic(
-  () => import("./search-command").then((mod) => mod.SearchCommand),
-  {
-    ssr: false,
-    loading: () => <SearchCommandPlaceholder />,
-  },
-)
+const SearchCommand = dynamic(() => import("./search-command").then((mod) => mod.SearchCommand), {
+  ssr: false,
+  loading: () => <SearchCommandPlaceholder />,
+})
 
 export function SearchCommandIconPlaceholder() {
   const { t } = useTranslation()

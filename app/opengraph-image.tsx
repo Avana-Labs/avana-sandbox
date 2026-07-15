@@ -14,74 +14,72 @@ const PAPER = "#EEF0F4"
 
 export default function OpengraphImage() {
   return new ImageResponse(
-    (
-      <div
-        style={{
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          padding: "80px",
-          background: PAPER,
-          color: INK,
-          fontFamily: "sans-serif",
-        }}
-      >
-        {/* brand mark */}
-        <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
-          <div
-            style={{
-              width: 84,
-              height: 84,
-              borderRadius: 22,
-              background: BRAND,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "#fff",
-              fontSize: 56,
-              fontWeight: 800,
-            }}
-          >
-            A
-          </div>
-          <div style={{ fontSize: 64, fontWeight: 800, letterSpacing: "-0.04em" }}>avana</div>
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        padding: "80px",
+        background: PAPER,
+        color: INK,
+        fontFamily: "sans-serif",
+      }}
+    >
+      {/* brand mark */}
+      <div style={{ display: "flex", alignItems: "center", gap: 24 }}>
+        <div
+          style={{
+            width: 84,
+            height: 84,
+            borderRadius: 22,
+            background: BRAND,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#fff",
+            fontSize: 56,
+            fontWeight: 800,
+          }}
+        >
+          A
         </div>
+        <div style={{ fontSize: 64, fontWeight: 800, letterSpacing: "-0.04em" }}>avana</div>
+      </div>
 
-        {/* headline */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div style={{ fontSize: 68, fontWeight: 700, lineHeight: 1.08, letterSpacing: "-0.03em", maxWidth: 960 }}>
-            A new Aave v4 lending market built for AMM markets.
-          </div>
-          <div style={{ fontSize: 34, color: "#566", fontWeight: 500, maxWidth: 920 }}>
-            Borrow against AMM LP positions, lend, and loop — all risk-free in the sandbox.
-          </div>
+      {/* headline */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+        <div style={{ fontSize: 68, fontWeight: 700, lineHeight: 1.08, letterSpacing: "-0.03em", maxWidth: 960 }}>
+          A new Aave v4 lending market built for AMM markets.
         </div>
-
-        {/* footer pills */}
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          {["Borrow", "Lend", "Multiply"].map((label) => (
-            <div
-              key={label}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                padding: "14px 30px",
-                borderRadius: 999,
-                background: "#fff",
-                fontSize: 30,
-                fontWeight: 600,
-                color: INK,
-              }}
-            >
-              {label}
-            </div>
-          ))}
-          <div style={{ marginLeft: "auto", fontSize: 30, fontWeight: 600, color: BRAND }}>app.avana.cc</div>
+        <div style={{ fontSize: 34, color: "#566", fontWeight: 500, maxWidth: 920 }}>
+          Borrow against AMM LP positions, lend, and loop — all risk-free in the sandbox.
         </div>
       </div>
-    ),
+
+      {/* footer pills */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        {["Borrow", "Lend", "Multiply"].map((label) => (
+          <div
+            key={label}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              padding: "14px 30px",
+              borderRadius: 999,
+              background: "#fff",
+              fontSize: 30,
+              fontWeight: 600,
+              color: INK,
+            }}
+          >
+            {label}
+          </div>
+        ))}
+        <div style={{ marginLeft: "auto", fontSize: 30, fontWeight: 600, color: BRAND }}>app.avana.cc</div>
+      </div>
+    </div>,
     { ...size },
   )
 }
