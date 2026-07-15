@@ -5,6 +5,16 @@ import { buildMockLendSystemState } from "@/app/lib/lend-system/mock"
 import { WALLET_STRATEGY_BUCKETS } from "@/app/lib/data/mock/wallet/portfolio/strategies"
 
 describe("buildLendStrategyBuckets", () => {
+  it("labels markets without incentive APY as having no rewards", () => {
+    const state = buildMockLendSystemState("demo-wallet")
+    const market = Object.values(state.markets).find((entry) => entry.rewardsApy === 0)!
+
+    const page = buildLendPageData("demo-wallet", state)
+    const row = page.marketRows.find((entry) => entry.marketId === market.marketId)
+
+    expect(row?.rewardsApyLabel).toBe("No rewards")
+  })
+
   it("uses live market balances in catalog rows and preserves positive dust", () => {
     const state = buildMockLendSystemState("demo-wallet")
     const market = Object.values(state.markets)[0]!
