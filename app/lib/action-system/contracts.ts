@@ -43,6 +43,7 @@ export type ActionPreviewUi = {
   amountLabel: string
   amountTitle?: string
   amountValue?: string
+  amountUnitLabel?: string
   assetLabel?: string
   assetSymbol?: string
   borrowSymbol?: string

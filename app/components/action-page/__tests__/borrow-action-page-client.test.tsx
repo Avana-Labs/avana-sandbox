@@ -50,7 +50,7 @@ describe("BorrowActionPageClient", () => {
       { timeout: 8000 },
     )
 
-    expect(screen.getByText("$1,050 processed.")).toBeInTheDocument()
+    expect(screen.getByText("$1,050.00 processed.")).toBeInTheDocument()
   })
 
   it("starts Remove on the wallet collateral selector", async () => {

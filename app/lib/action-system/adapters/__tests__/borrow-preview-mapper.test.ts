@@ -154,7 +154,11 @@ describe("borrow preview mappers", () => {
   })
 
   it("maps remove metrics", () => {
-    const ui = mapBorrowRemovePreviewToActionUi(preview, {
+    const removePreview = {
+      ...preview,
+      after: { ...preview.after, collateralValueUsd6: 7_500_000_000n },
+    }
+    const ui = mapBorrowRemovePreviewToActionUi(removePreview, {
       percent: 25,
       safePercent: 60,
       removeUsd: 2500,
@@ -165,13 +169,18 @@ describe("borrow preview mappers", () => {
 
     expect(ui.metrics.map((row) => row.label)).toEqual([
       "Credit scope",
-      "Position APY",
       "Annual earnings",
       "Borrowing power in scope",
       "Net balance in scope",
       "Net collateral in scope",
       "Health factor in scope",
     ])
+    expect(ui.amountUsd).toBe(2500)
+    expect(ui.amountValue).toBe("25")
+    expect(ui.amountUnitLabel).toBe("%")
+    expect(ui.assetLabel).toBe("%")
+    expect(ui.amountUsdLabel).toBe("$2,500.00")
+    expect(ui.balanceValue).toBe("$2,500.00")
     expect(ui.maxAmount).toBe(60)
   })
 })

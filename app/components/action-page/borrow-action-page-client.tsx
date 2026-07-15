@@ -167,6 +167,7 @@ export function BorrowActionPageClient({
   // preview, so defer it too and drag stays smooth without an engine call per pointer move.
   const deferredPercent = useDeferredValue(percent)
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
+  const [reviewPreviewUi, setReviewPreviewUi] = useState<ActionPreviewUi | null>(null)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [claimPositionId, setClaimPositionId] = useState(initialPositionId ?? "")
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
@@ -748,6 +749,7 @@ export function BorrowActionPageClient({
 
   const handleBack = useCallback(() => {
     if (stage === "review") {
+      setReviewPreviewUi(null)
       setStage("configure")
       setOutcome(null)
       return
@@ -760,17 +762,19 @@ export function BorrowActionPageClient({
   }, [canGoBackToSelect, closeHref, kind, router, stage])
 
   const handlePrimary = useCallback(async () => {
+    const submittedPreviewUi = reviewPreviewUi ?? previewUi
     if (stage === "success") {
       router.push(successUi?.primaryCtaHref ?? dashboardHrefForProduct("borrow"))
       return
     }
     if (stage === "configure") {
       if (!previewUi?.allowed) return
+      setReviewPreviewUi(previewUi)
       setStage("review")
       return
     }
     if (stage !== "review" && stage !== "error") return // allow in-place retry from error
-    if (!previewUi?.allowed) return
+    if (!submittedPreviewUi?.allowed) return
     if (isPending) return // guard against double-submit (rapid double-click)
     if (networkGuardRef.current.isWrongNetwork) {
       // Hard gate: never submit against a chain the app doesn't support (the banner alone
@@ -845,16 +849,24 @@ export function BorrowActionPageClient({
 
       if (result.receipt.status !== "success") throw new Error(humanizeBlockedReason(result.receipt.error) ?? "Transaction failed")
       const executedAmountUsd = usd6ToNumber(result.historyItem.executedAmountUsd6)
+      const executedPreview =
+        kind === "remove"
+          ? {
+              ...submittedPreviewUi,
+              amountUsd: executedAmountUsd,
+              amountUsdLabel: formatActionUsd(executedAmountUsd, { exact: true }),
+            }
+          : submittedPreviewUi
 
       setSuccessUi(
         mapBorrowSuccessToActionUi({
           title: `${descriptor.primaryVerb} successful`,
-          description: `${formatActionUsd(executedAmountUsd)} processed.`,
+          description: `${formatActionUsd(executedAmountUsd, { exact: true })} processed.`,
           receiptHash: result.receipt.hash ?? null,
-          metrics: previewUi.metrics,
+          metrics: submittedPreviewUi.metrics,
           href: dashboardHrefForProduct("borrow"),
           primaryCtaLabel: successDashboardCtaLabel("borrow"),
-          preview: previewUi,
+          preview: executedPreview,
           verb: descriptor.primaryVerb,
         }),
       )
@@ -873,7 +885,7 @@ export function BorrowActionPageClient({
     } finally {
       setIsPending(false)
     }
-  }, [activeMarketId, amount, closeHref, debtPosition, descriptor.primaryVerb, isPending, kind, marketId, percent, previewUi, resolvedBorrowAssetId, router, session, stage, successUi, walletId])
+  }, [activeMarketId, amount, closeHref, debtPosition, descriptor.primaryVerb, isPending, kind, marketId, percent, previewUi, resolvedBorrowAssetId, reviewPreviewUi, router, session, stage, successUi, walletId])
 
   // Borrow surfaces a Max that fills the safe borrow cap (collateral-factor bound).
   const showBorrowMax = kind === "borrow"
@@ -1075,15 +1087,15 @@ export function BorrowActionPageClient({
       ) : null}
 
       {stage === "processing" ? (
-        <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} />
+        <ActionProcessingStage verb={descriptor.primaryVerb} preview={reviewPreviewUi ?? previewUi} closeHref={closeHref} />
       ) : null}
 
-      {stage === "review" && previewUi ? (
+      {stage === "review" && reviewPreviewUi ? (
         <ActionReviewStage
           title={reviewStageTitle(descriptor.primaryVerb)}
           subtitle="Confirm the details below before signing."
           hideHeader={embedded}
-          preview={previewUi}
+          preview={reviewPreviewUi}
           primaryLabel={descriptor.primaryVerb}
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
