@@ -244,7 +244,7 @@ function DeferredDashboardContent({ children }: { children: ReactNode }) {
         mount()
         observer.disconnect()
       },
-      { rootMargin: "400px 0px", threshold: 0 },
+      { rootMargin: "100px 0px", threshold: 0 },
     )
     observer.observe(container)
     document.addEventListener("keydown", mount, { once: true })
@@ -661,10 +661,10 @@ export function DashboardClient({
               </div>
             )}
 
-            {/* Learn */}
-            <LendLearnSection />
+          </DeferredDashboardContent>
 
-            {/* Activity (merged in from the former Activity tab) */}
+          <DeferredDashboardContent>
+            <LendLearnSection />
             <RecentActivity rows={activityRows} />
           </DeferredDashboardContent>
         </div>
