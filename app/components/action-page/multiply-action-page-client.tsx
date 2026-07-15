@@ -598,6 +598,11 @@ export function MultiplyActionPageClient({
             }}
             min={multiplierMin}
             max={effectiveMultiplierMax}
+            recommendedMax={
+              kind === "multiply"
+                ? Math.min(effectiveMultiplierMax, market.risk.recommendedMaxMultiplier)
+                : undefined
+            }
             step={0.1}
             label="Target leverage"
             exposureBaseUsd={leverageExposureBaseUsd}
@@ -671,6 +676,11 @@ export function MultiplyActionPageClient({
           }
           multiplierMin={multiplierMin}
           multiplierMax={effectiveMultiplierMax}
+          multiplierRecommendedMax={
+            kind === "multiply"
+              ? Math.min(effectiveMultiplierMax, market.risk.recommendedMaxMultiplier)
+              : undefined
+          }
           multiplierLabel="Target leverage"
           multiplierExposureBaseUsd={leverageExposureBaseUsd}
           onPrimary={() => void handlePrimary()}

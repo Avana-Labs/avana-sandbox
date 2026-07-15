@@ -48,6 +48,7 @@ type ActionConfigureStageProps = {
   onMultiplierChange?: (value: string) => void
   multiplierMin?: number
   multiplierMax?: number
+  multiplierRecommendedMax?: number
   multiplierStep?: number
   multiplierLabel?: string
   /** USD value of the position at 1.0x, forwarded to the leverage ruler so its ends
@@ -206,6 +207,7 @@ export function ActionConfigureStage({
   onMultiplierChange,
   multiplierMin = 1,
   multiplierMax = 20,
+  multiplierRecommendedMax,
   multiplierStep = 0.1,
   multiplierLabel = "Leverage",
   multiplierExposureBaseUsd,
@@ -341,6 +343,7 @@ export function ActionConfigureStage({
             onChange={onMultiplierChange!}
             min={multiplierMin}
             max={multiplierMax}
+            recommendedMax={multiplierRecommendedMax}
             step={multiplierStep}
             label={multiplierLabel}
             exposureBaseUsd={multiplierExposureBaseUsd}

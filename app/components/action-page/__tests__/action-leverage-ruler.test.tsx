@@ -42,4 +42,11 @@ describe("ActionLeverageRuler", () => {
     expect(input).toHaveAttribute("min", "1.1")
     expect(input).toHaveAttribute("max", "5")
   })
+
+  it("distinguishes the recommended limit from the protocol maximum", () => {
+    render(<ActionLeverageRuler value="2" onChange={() => {}} min={1.1} max={5} recommendedMax={3.5} />)
+
+    expect(screen.getByText("Recommended up to 3.5x")).toBeInTheDocument()
+    expect(screen.getByText("5x")).toBeInTheDocument()
+  })
 })

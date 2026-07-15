@@ -36,6 +36,7 @@ export function ActionLeverageRuler({
   label = "Leverage",
   variant = "card",
   exposureBaseUsd,
+  recommendedMax,
 }: {
   value: string
   onChange: (value: string) => void
@@ -51,6 +52,7 @@ export function ActionLeverageRuler({
    * bounds themselves (e.g. "1.0x … 10x").
    */
   exposureBaseUsd?: number
+  recommendedMax?: number
 }) {
   const { t } = useTranslation()
   const { ctx, convert } = useCurrency()
@@ -60,6 +62,8 @@ export function ActionLeverageRuler({
   // Thumb centre travels within the track's inner width (the px-2 gutter is 0.5rem
   // per side), so the value bubble and endpoint math both key off (100% - 1rem).
   const thumbLeft = `calc(0.5rem + (100% - 1rem) * ${fillPct / 100})`
+  const recommendedPct =
+    recommendedMax != null && max > min ? clamp(((recommendedMax - min) / (max - min)) * 100, 0, 100) : null
 
   const formatEndpoint = useCallback(
     (leverage: number) => {
@@ -105,6 +109,13 @@ export function ActionLeverageRuler({
           style={{ width: `calc((100% - 1rem) * ${fillPct / 100})` }}
           aria-hidden
         />
+        {recommendedPct != null ? (
+          <div
+            className="pointer-events-none absolute top-1/2 z-10 h-5 w-px -translate-x-1/2 -translate-y-1/2 bg-emerald-500"
+            style={{ left: `calc(0.5rem + (100% - 1rem) * ${recommendedPct / 100})` }}
+            aria-hidden
+          />
+        ) : null}
         <div
           className="pointer-events-none absolute bottom-[calc(50%+1rem)] z-30 -translate-x-1/2 font-data text-[15px] font-semibold leading-none tracking-[-0.02em] text-foreground transition-[left] duration-150 ease-out"
           style={{ left: thumbLeft }}
@@ -126,6 +137,11 @@ export function ActionLeverageRuler({
 
       <div className="mt-3 flex items-center justify-between px-1 font-data text-[13px] font-medium text-muted-foreground">
         <span>{formatEndpoint(min)}</span>
+        {recommendedMax != null ? (
+          <span className="text-emerald-600 dark:text-emerald-400">
+            {t("Recommended up to {value}").replace("{value}", formatMultiplier(recommendedMax))}
+          </span>
+        ) : null}
         <span>{formatEndpoint(max)}</span>
       </div>
     </div>
