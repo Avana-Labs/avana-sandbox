@@ -17,7 +17,7 @@ import { ActionSuccessStage } from "@/app/components/action-page/action-success-
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionSelectStage } from "@/app/components/action-page/action-select-stage"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
-import { ActionSessionLoading } from "@/app/components/action-page/action-session-loading"
+import { ActionSessionLoading, shouldShowActionSessionLoading } from "@/app/components/action-page/action-session-loading"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
@@ -354,7 +354,7 @@ export function LendActionPageClient({
     }
   }, [amount, closeHref, descriptor.primaryVerb, exact, isPending, kind, market, position, previewUi, router, session, stage, successUi, t, walletId])
 
-  if (session.isHydrated === false) {
+  if (shouldShowActionSessionLoading(session.isHydrated)) {
     return (
       <ActionPageShell title={descriptor.title} subtitle={descriptor.subtitle} closeHref={closeHref} simulated>
         <ActionSessionLoading />
