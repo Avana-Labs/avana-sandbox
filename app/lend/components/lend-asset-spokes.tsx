@@ -116,7 +116,7 @@ function AssetRowView({
             <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
               {row.name}
             </div>
-            <div className="mt-0.5 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[13px]">
+            <div className="mt-0.5 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground md:text-[13px]">
               <AssetSubLabel symbol={row.symbol} />
             </div>
           </div>
@@ -131,7 +131,7 @@ function AssetRowView({
         <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
           <span className="tabular-nums">{row.totalDepositsLabel ?? row.totalDepositsPrimary}</span>
         </div>
-        <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+        <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
           {row.totalDepositsSecondaryLabel ?? row.totalDepositsSecondary}
         </div>
       </td>
@@ -144,7 +144,7 @@ function AssetRowView({
         <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
           <span className="tabular-nums">{row.availableLiquidityLabel ?? row.availableLiquidityPrimary}</span>
         </div>
-        <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+        <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
           {row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary}
         </div>
       </td>
@@ -204,7 +204,7 @@ function AssetCardView({
             <AssetIcon row={row} />
             <div className="min-w-0">
               <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">{row.name}</div>
-              <div className="mt-0.5 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
+              <div className="mt-0.5 text-[12px] tracking-[-0.03em] text-muted-foreground">
                 <AssetSubLabel symbol={row.symbol} />
               </div>
             </div>
@@ -218,7 +218,7 @@ function AssetCardView({
           value={
             <span>
               {row.totalDepositsLabel ?? row.totalDepositsPrimary}
-              <span className="ml-2 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
+              <span className="ml-2 text-[12px] tracking-[-0.03em] text-muted-foreground">
                 {row.totalDepositsSecondaryLabel ?? row.totalDepositsSecondary}
               </span>
             </span>
@@ -230,7 +230,7 @@ function AssetCardView({
           value={
             <span>
               {row.availableLiquidityLabel ?? row.availableLiquidityPrimary}
-              <span className="ml-2 text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">
+              <span className="ml-2 text-[12px] tracking-[-0.03em] text-muted-foreground">
                 {row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary}
               </span>
             </span>

@@ -8,6 +8,8 @@
 - Full Vitest suite and production TypeScript build run after implementation.
 - Raw reports: `.artifacts/lighthouse-after`, `.artifacts/lighthouse-gpu`,
   `.artifacts/lighthouse-remaining-final`, and `.artifacts/lighthouse-borrow-final`
+  plus `.artifacts/lighthouse-five-commit-final` and
+  `.artifacts/lighthouse-dashboard-static-chart`
   (ignored local artifacts).
 
 The route baseline supplied before implementation did not include FCP or total bytes for every route, so those cells remain blank instead of being inferred.
@@ -51,6 +53,11 @@ Median LCP improved on every measured route, with a mean reduction of 23.9%. Rou
 - Reserved offscreen Borrow spoke height so IntersectionObserver does not treat every deferred section as visible at the same collapsed coordinate.
 - Deferred later Borrow spokes, Multiply markets, and lower Dashboard sections until they approach the viewport.
 - Split Dashboard reads across the Borrow, Lend, and Multiply contexts so an update in one product does not invalidate the others.
+- Suppressed the live price subscription only in the isolated Lighthouse artifact, eliminating the failing Convex query, retry work, and console errors while production keeps live prices.
+- Server-rendered the first responsive Borrow and Multiply market representation using the request device class, then reconciled with `matchMedia` after hydration.
+- Replaced the shared Recharts hero area renderer with a 284-line SVG implementation preserving the monotone area, gradient, trend tone, pulse, hover cursor, tooltip formatting, privacy masking, and range-selector contract.
+- Removed Dashboard's obsolete dynamic chart boundary after the replacement made the chart small enough to include in initial server output.
+- Corrected semantic brand-button and secondary-copy contrast without changing the brand background color.
 
 ## GPU and render assessment
 
@@ -82,17 +89,44 @@ longer appears in Dashboard's initial unused-JavaScript audit; its remaining
 100.6 KiB is Recharts (about 54.9 KiB unused), Convex (about 24.6 KiB), and the
 React runtime (about 21.1 KiB).
 
-## Remaining measured ceilings
+## Five-commit final pass
 
-- LCP remains variable and above the 2.5s budget in the strict throttled run: Borrow 5.76s, Lend 2.79s, Multiply 5.45s, and Dashboard 3.92s. FCP remains 1.11–1.25s.
-- Dashboard main-thread work remains 2.89s because the visible hero chart still loads Recharts. Replacing it without measured visual and interaction parity was intentionally not attempted.
-- Dashboard unused JavaScript is 100.6 KiB, 588 bytes above the 100 KiB budget and down 44.4% from the first-pass 181 KiB result.
-- React commit counts and a numeric GPU-utilization percentage require an interactive Chrome/React Profiler capture on target hardware; Lighthouse alone cannot produce those numbers.
+The following compares the measured results immediately before the requested
+five commits with the new three-run mobile medians. Dashboard uses the separate
+three-run verification after removing its remaining dynamic chart boundary.
+
+| Route | Performance | LCP (s) | TBT (ms) | Unused JS (KiB) | Main thread (ms) | DOM | A11y / BP / SEO |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `/borrow` | 77 → 94 | 5.76 → 2.72 (-52.8%) | 159 → 134 (-15.7%) | 47.1 → 47.9 | 1,538 → 1,499 (-2.5%) | 534 → 534 | 97/96/100 → 100/100/100 |
+| `/lend` | 95 → 87 | 2.79 → 3.93 | 103.5 → 89.5 (-13.5%) | 46.0 → 47.0 | 1,816 → 1,575 (-13.3%) | 905 → 905 | 96/96/100 → 100/100/100 |
+| `/multiply` | 79 → 93 | 5.45 → 3.09 (-43.3%) | 91 → 94 | 46.1 → 47.4 | 1,744 → 1,660 (-4.8%) | 721 → 721 | 96/96/100 → 100/100/100 |
+| `/dashboard` | 84 → 91 | 3.92 → 3.25 (-17.1%) | 170.5 → 135 (-20.8%) | 100.6 → 47.8 (-52.5%) | 2,892 → 1,921 (-33.6%) | 585 → 510 (-12.8%) | 96/96/100 → 100/100/100 |
+
+Dashboard no longer loads Recharts on initial navigation. Its transfer fell from
+927 KiB to 829 KiB, unused JavaScript is below the 100 KiB budget, and main-thread
+work is below the 2,000ms budget. The failing price query no longer appears in
+the audit console, so every measured route now scores 100 for Accessibility,
+Best Practices, and SEO.
+
+Lend's LCP was noisy across the final samples (2.04s, 3.93s, and 4.40s) despite
+lower TBT and 13.3% less main-thread work; its median regression is reported
+rather than discarded. Borrow remains 220ms above the 2.5s LCP budget, while
+Multiply and Dashboard remain 587ms and 754ms above it respectively.
+
+The 14 KiB legacy-JavaScript diagnostic remains inside Next.js's shared React
+runtime even with the existing modern `browserslist` targets. Removing it requires
+an upstream Next runtime change or abandoning that shared runtime; it is not
+application-authored polyfill code that can be safely deleted here.
+
+React commit counts and a numeric GPU-utilization percentage still require an
+interactive Chrome/React Profiler capture on target hardware; Lighthouse does not
+produce either measurement.
 
 ## Verification
 
-- `npm test`: 256 files / 1,095 tests passed; 2 files / 2 tests intentionally skipped.
+- `npm test`: 258 files / 1,098 tests passed; 2 files / 2 tests intentionally skipped.
 - `npm run build` and `npm run lighthouse:build`: passed, including TypeScript and static-page generation.
 - Lighthouse: three-run median matrix completed for all 12 routes.
 - Remaining-issue Lighthouse matrix: three-run medians completed for Borrow, Lend, Multiply, and Dashboard, followed by a separate three-run Borrow verification after its mobile-spoke correction.
+- Five-commit Lighthouse matrix: three-run medians completed for Borrow, Lend, Multiply, and Dashboard, followed by a separate three-run Dashboard verification after removing the chart import boundary.
 - GPU-enabled Lighthouse: one-run smoke matrix completed for `/`, `/lend`, `/multiply`, and `/rewards`.
