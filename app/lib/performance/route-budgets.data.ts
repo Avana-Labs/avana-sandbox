@@ -71,7 +71,7 @@ export const ROUTE_HERO_SELECTORS: RouteHeroSelector[] = [
   { route: "/borrow/assets/uni-v3-bluechip%3Ausdc", heroText: "Asset data" },
   { route: "/lend", heroText: "Total TVL" },
   { route: "/lend/markets/usdc", heroText: "Supply APY" },
-  { route: "/multiply", heroText: "Total TVL" },
+  { route: "/multiply", heroText: "Total Liquidity" },
   { route: "/multiply/markets/aave-gho", heroText: "Market data" },
   { route: "/dashboard", heroText: "Borrow", heroRole: "tab" },
   { route: "/rewards", heroText: "AVA balance" },
