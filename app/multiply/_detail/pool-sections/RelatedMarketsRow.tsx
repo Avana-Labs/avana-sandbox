@@ -62,7 +62,7 @@ export function RelatedMarketsRow({ detail }: Props) {
                 </div>
                 <div className="mt-auto grid grid-cols-2 gap-2 pt-2">
                   <div>
-                    <div className="text-[10px] text-muted-foreground">Max APY</div>
+                    <div className="text-[10px] text-muted-foreground">APY at max leverage</div>
                     <div className="mt-0.5 text-[12px] tabular-nums text-foreground">{rel.maxApyLabel}</div>
                   </div>
                   <div>
