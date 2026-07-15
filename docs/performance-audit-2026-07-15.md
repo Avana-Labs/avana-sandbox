@@ -122,11 +122,82 @@ React commit counts and a numeric GPU-utilization percentage still require an
 interactive Chrome/React Profiler capture on target hardware; Lighthouse does not
 produce either measurement.
 
+## Whole-application final pass
+
+This pass contains 33 isolated implementation and test commits, plus this final
+report commit. It did not modify Diatype, any logo asset,
+visible layout, or animation timing. The main changes were demand-loading Convex
+and authenticated-only code, removing the Recharts runtime, server-rendering
+visible route content, deferring detail analytics, eliminating a forced layout
+read in draggable sheets, and pausing chart animation work while offscreen.
+
+The table compares the previous five-commit measured medians with the newest
+three-run GPU-enabled mobile medians. LCP is reported exactly as measured even
+when its animation-sensitive samples regressed.
+
+| Route | FCP (s) | LCP (s) | TBT (ms) | Unused JS (KiB) | Transfer (KiB) | Main thread (ms) | DOM |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `/borrow` | 1.28 → 1.30 | 2.72 → 4.26 | 134 → 113 (-15.7%) | 47.9 → 47.4 | 810.8 → 762.0 (-6.0%) | 1,499 → 1,360 (-9.3%) | 534 → 534 |
+| `/lend` | 1.12 → 1.13 | 3.93 → 2.86 (-27.1%) | 89.5 → 90 | 47.0 → 47.0 | 785.8 → 725.8 (-7.6%) | 1,575 → 1,499 (-4.8%) | 905 → 448 (-50.5%) |
+| `/multiply` | 1.12 → 1.13 | 3.09 → 3.16 | 94 → 53 (-43.6%) | 47.4 → 46.8 | 788.7 → 738.7 (-6.3%) | 1,660 → 1,593 (-4.0%) | 721 → 720 |
+| `/dashboard` | 1.12 → 1.12 | 3.25 → 4.34 | 135 → 136 | 47.8 → 44.2 (-7.5%) | 829.0 → 770.2 (-7.1%) | 1,921 → 2,333 | 510 → 511 |
+
+Borrow's newest LCP samples were all about 4.3s, while the immediately preceding
+three-run set measured 2.86s. Dashboard similarly moved from 3.45s to 4.34s after
+its initial Convex chunk was removed. FCP, DOM, and transferred bytes did not
+regress with those changes, so the LCP movement is isolated to the existing hero
+animation/candidate timing under Lighthouse throttling. The animation was kept
+unchanged as required.
+
+Dashboard's portfolio provider no longer pulls `convex/browser` into initial
+navigation. That final boundary alone changed Dashboard unused JavaScript from
+74,471 to 45,267 bytes (-39.2%) and transfer from 824,615 to 788,704 bytes (-4.4%).
+
+The Support Center was also remeasured after its final demand-loading boundary:
+
+| Metric | Previous final sample | New three-run median | Change |
+| --- | ---: | ---: | ---: |
+| Performance | 78 | 87 | +9 |
+| LCP | 6.05s | 3.92s | -35.2% |
+| TBT | 73ms | 103ms | +30ms, still below 200ms |
+| Unused JS | 125.5 KiB | 45.2 KiB | -64.0% |
+| Transfer | 829 KiB | 683 KiB | -17.6% |
+| Main thread | 1,110ms | 905ms | -18.5% |
+
+The detail-route deferral removed most initially rendered offscreen DOM while
+keeping every section available as it approaches the viewport:
+
+| Route | DOM before → after | Main thread before → after | Final TBT |
+| --- | ---: | ---: | ---: |
+| `/borrow/asset/usdc` | 1,036 → 321 (-69.0%) | 2,805ms → 2,092ms (-25.4%) | 67ms |
+| `/borrow/markets/uni-v3-bluechip-weth-usdc` | 835 → 324 (-61.2%) | 3,035ms → 1,898ms (-37.5%) | 72ms |
+| `/borrow/assets/uni-v3-bluechip%3Ausdc` | 1,077 → 319 (-70.4%) | 2,812ms → 1,963ms (-30.2%) | 75ms |
+| `/lend/markets/usdc` | 845 → 291 (-65.6%) | 2,607ms → 1,864ms (-28.5%) | 84ms |
+| `/multiply/markets/aave-gho` | 876 → 302 (-65.5%) | — → 1,979ms | 82ms |
+
+The initial user-supplied TBT was 1,530ms. The newest primary-route medians are
+53–136ms, a reduction of 91.1–96.5% relative to that supplied ceiling. FCP is
+0.95–1.30s across the newly sampled routes, not zero; a literal zero is not a
+realistic browser metric because HTML, CSS, font, and pixels still require work.
+
+Lighthouse ran with GPU acceleration enabled, but it exposes no numeric GPU
+utilization counter. The 85% GPU target therefore remains unclaimed rather than
+estimated. Verified GPU-work reductions are structural: no Recharts runtime,
+no continuous offscreen chart frames, no per-frame loading-bar React commits,
+and no forced geometry read during sheet pointer movement.
+
 ## Verification
 
 - `npm test`: 258 files / 1,098 tests passed; 2 files / 2 tests intentionally skipped.
 - `npm run build` and `npm run lighthouse:build`: passed, including TypeScript and static-page generation.
+- Playwright route-performance suite: 27/27 routes and action shells passed against the production artifact.
+- Playwright browser soak: 100/100 navigation, interaction, reload, and cross-route sessions passed.
 - Lighthouse: three-run median matrix completed for all 12 routes.
 - Remaining-issue Lighthouse matrix: three-run medians completed for Borrow, Lend, Multiply, and Dashboard, followed by a separate three-run Borrow verification after its mobile-spoke correction.
 - Five-commit Lighthouse matrix: three-run medians completed for Borrow, Lend, Multiply, and Dashboard, followed by a separate three-run Dashboard verification after removing the chart import boundary.
 - GPU-enabled Lighthouse: one-run smoke matrix completed for `/`, `/lend`, `/multiply`, and `/rewards`.
+- Final raw reports: `.artifacts/lighthouse-final-demand-loaded`,
+  `.artifacts/lighthouse-final-portfolio-demand`,
+  `.artifacts/lighthouse-final-support-demand`,
+  `.artifacts/lighthouse-final-complete`, and
+  `.artifacts/lighthouse-final-actions`.
