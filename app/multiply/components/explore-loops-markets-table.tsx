@@ -22,6 +22,7 @@ import { useCurrency } from "@/app/lib/currency/use-currency"
 import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar"
 import { CATEGORY_CHIPS, categorizeMarket, type CategoryChip } from "@/app/lib/markets/category"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { useMediaQuery } from "@/app/lib/use-media-query"
 
 const BTC_SYMBOLS = new Set(["WBTC", "CBBTC", "BTC"])
 const ETH_SYMBOLS = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH", "WEETH"])
@@ -253,6 +254,7 @@ function LoopMarketsSection({
 }) {
   const { t } = useTranslation()
   const { compact } = useCurrency()
+  const isDesktop = useMediaQuery("(min-width: 768px)", true)
   const [sortKey, setSortKey] = React.useState<LoopSortKey>("protocol")
   const [sortDirection, setSortDirection] = React.useState<"asc" | "desc">("asc")
 
@@ -308,7 +310,7 @@ function LoopMarketsSection({
       </div>
 
       <DesktopTableSurface className="rounded-radius-md [contain-intrinsic-size:auto_640px] [content-visibility:auto]">
-        <div className="space-y-4 md:hidden">
+        {!isDesktop ? <div className="space-y-4">
           {sortedRows.length ? (
             sortedRows.map((row, index) => (
               <MobileLoopCard
@@ -328,9 +330,9 @@ function LoopMarketsSection({
               {t("No loops in this category yet.")}
             </div>
           )}
-        </div>
+        </div> : null}
 
-        <div className="hidden md:block">
+        {isDesktop ? <div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[920px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
               <colgroup>
@@ -439,7 +441,7 @@ function LoopMarketsSection({
               </tbody>
             </table>
           </div>
-        </div>
+        </div> : null}
       </DesktopTableSurface>
     </section>
   )
