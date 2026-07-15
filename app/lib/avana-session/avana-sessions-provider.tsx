@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from "react"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
-import { hasConvexClient, useMarketLiquidity } from "@/app/lib/convex/market-liquidity-provider"
+import { useMarketLiquidity } from "@/app/lib/convex/market-liquidity-provider"
 import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
 import type { LendConvexSnapshot } from "@/app/lib/lend-system/market-hydration"
 import type { MultiplyConvexSnapshot } from "@/app/lib/multiply-system/market-hydration"
@@ -369,7 +369,7 @@ export function AvanaSessionsProvider({
           <MultiplySessionContext.Provider value={multiply}>
             <LendSessionContext.Provider value={lend}>
               <RewardsSessionContext.Provider value={rewards}>
-                {hasConvexClient ? (
+                {!persistLocalState ? (
                   <>
                     <MarketHydrator
                       hydrateBorrow={borrow.hydrateMarketData}
