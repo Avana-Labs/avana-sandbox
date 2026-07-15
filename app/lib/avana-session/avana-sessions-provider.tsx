@@ -265,6 +265,10 @@ export type AvanaSessions = {
 }
 
 const AvanaSessionsContext = createContext<AvanaSessions | null>(null)
+const BorrowSessionContext = createContext<BorrowSession | null>(null)
+const MultiplySessionContext = createContext<MultiplySession | null>(null)
+const LendSessionContext = createContext<LendSession | null>(null)
+const RewardsSessionContext = createContext<RewardsSession | null>(null)
 
 export function AvanaSessionsProvider({
   walletId,
@@ -349,28 +353,36 @@ export function AvanaSessionsProvider({
 
   return (
     <AvanaSessionsContext.Provider value={value}>
-      {hasConvexClient ? (
-        <>
-          <MarketHydrator
-            hydrateBorrow={borrow.hydrateMarketData}
-            hydrateLend={lend.hydrateMarketData}
-            hydrateMultiply={multiply.hydrateMarketData}
-          />
-          {!persistLocalState ? (
-            <WalletHydrator
-              walletId={avana.walletId}
-              borrow={borrow}
-              lend={lend}
-              multiply={multiply}
-              hydrateBorrow={borrow.hydrateWalletData}
-              hydrateLend={lend.hydrateWalletData}
-              hydrateMultiply={multiply.hydrateWalletData}
-              onWalletHydrated={onWalletHydrated}
-            />
-          ) : null}
-        </>
-      ) : null}
-      {children}
+      <BorrowSessionContext.Provider value={borrow}>
+        <MultiplySessionContext.Provider value={multiply}>
+          <LendSessionContext.Provider value={lend}>
+            <RewardsSessionContext.Provider value={rewards}>
+              {hasConvexClient ? (
+                <>
+                  <MarketHydrator
+                    hydrateBorrow={borrow.hydrateMarketData}
+                    hydrateLend={lend.hydrateMarketData}
+                    hydrateMultiply={multiply.hydrateMarketData}
+                  />
+                  {!persistLocalState ? (
+                    <WalletHydrator
+                      walletId={avana.walletId}
+                      borrow={borrow}
+                      lend={lend}
+                      multiply={multiply}
+                      hydrateBorrow={borrow.hydrateWalletData}
+                      hydrateLend={lend.hydrateWalletData}
+                      hydrateMultiply={multiply.hydrateWalletData}
+                      onWalletHydrated={onWalletHydrated}
+                    />
+                  ) : null}
+                </>
+              ) : null}
+              {children}
+            </RewardsSessionContext.Provider>
+          </LendSessionContext.Provider>
+        </MultiplySessionContext.Provider>
+      </BorrowSessionContext.Provider>
     </AvanaSessionsContext.Provider>
   )
 }
@@ -486,17 +498,33 @@ export function useOptionalAvanaSessions() {
 }
 
 export function useBorrowSessionContext() {
-  return useAvanaSessions().borrow
+  const context = useContext(BorrowSessionContext)
+  if (!context) {
+    throw new Error("useBorrowSessionContext must be used within AvanaSessionsProvider")
+  }
+  return context
 }
 
 export function useMultiplySessionContext() {
-  return useAvanaSessions().multiply
+  const context = useContext(MultiplySessionContext)
+  if (!context) {
+    throw new Error("useMultiplySessionContext must be used within AvanaSessionsProvider")
+  }
+  return context
 }
 
 export function useLendSessionContext() {
-  return useAvanaSessions().lend
+  const context = useContext(LendSessionContext)
+  if (!context) {
+    throw new Error("useLendSessionContext must be used within AvanaSessionsProvider")
+  }
+  return context
 }
 
 export function useRewardsSessionContext() {
-  return useAvanaSessions().rewards
+  const context = useContext(RewardsSessionContext)
+  if (!context) {
+    throw new Error("useRewardsSessionContext must be used within AvanaSessionsProvider")
+  }
+  return context
 }
