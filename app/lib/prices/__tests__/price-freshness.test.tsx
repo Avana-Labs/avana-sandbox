@@ -7,12 +7,12 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 vi.mock("@/app/lib/convex/market-liquidity-provider", () => ({ hasConvexClient: true }))
 
 // Route each useQuery by its function path (convex refs are NOT identity-stable, so we
-// can't compare by reference). getPriceStatus drives the freshness signal.
+// can't compare by reference). getPriceSnapshot drives prices and freshness together.
 const statusResult = { current: undefined as unknown }
 vi.mock("convex/react", () => ({
   useQuery: (ref: unknown) => {
     const name = getFunctionName(ref as never)
-    const value = name === "prices:getPriceStatus" ? statusResult.current : []
+    const value = name === "prices:getPriceSnapshot" ? statusResult.current : undefined
     // Convex's real useQuery re-throws server errors during render; model that so we can
     // assert the provider's error boundary keeps a prices outage from crashing the app.
     if (value instanceof Error) throw value
@@ -35,7 +35,7 @@ function Probe() {
 }
 
 function renderWithStatus(status: unknown) {
-  statusResult.current = status
+  statusResult.current = status === undefined || status instanceof Error ? status : { prices: [], status }
   render(
     <TokenPricesProvider>
       <Probe />
@@ -82,7 +82,7 @@ describe("usePriceFreshness", () => {
     // render with neutral freshness instead.
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
     try {
-      renderWithStatus(new Error("[CONVEX Q(prices:getPriceStatus)] Server Error"))
+      renderWithStatus(new Error("[CONVEX Q(prices:getPriceSnapshot)] Server Error"))
       expect(screen.getByTestId("stale").textContent).toBe("false")
       expect(screen.getByTestId("updatedAt").textContent).toBe("null")
     } finally {

@@ -80,8 +80,9 @@ export function TokenPricesProvider({ children }: { children: React.ReactNode })
 }
 
 function ConvexTokenPrices({ children }: { children: React.ReactNode }) {
-  const rows = useQuery(api.prices.getPrices, {})
-  const status = useQuery(api.prices.getPriceStatus, {})
+  const snapshot = useQuery(api.prices.getPriceSnapshot, {})
+  const rows = snapshot?.prices
+  const status = snapshot?.status
   const map = React.useMemo(() => {
     const next: Record<string, number> = {}
     for (const row of rows ?? []) next[priceKey(row.symbol)] = row.priceUsd

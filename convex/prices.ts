@@ -85,6 +85,26 @@ export const getPriceStatus = query({
   },
 })
 
+/** Prices and freshness from one reactive table read for client-wide consumers. */
+export const getPriceSnapshot = query({
+  args: {},
+  handler: async (ctx) => {
+    const rows = await ctx.db.query("tokenPrices").collect()
+    const prices = rows.map((r) => ({
+      symbol: r.symbol,
+      priceUsd: r.priceUsd,
+      confidence: r.confidence,
+      source: r.source,
+      updatedAt: r.updatedAt,
+    }))
+    const updatedAt = rows.length === 0 ? null : Math.min(...rows.map((r) => r.updatedAt))
+    return {
+      prices,
+      status: { updatedAt, staleAfterMs: PRICE_STALE_AFTER_MS, count: rows.length },
+    }
+  },
+})
+
 /** Upsert price rows by symbol. Called by the refresh action; not a public write. */
 export const upsertPrices = internalMutation({
   args: {
