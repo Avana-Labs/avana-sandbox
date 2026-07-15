@@ -10,7 +10,7 @@ import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
 import {
   CURRENCY_OPTIONS,
   LANGUAGE_OPTIONS,
-  useOptionalDisplayPreferences,
+  useOptionalLocaleDisplayPreferences,
   type CurrencyCode,
 } from "@/app/components/display-preferences"
 import { CurrencyFlag } from "@/app/components/currency-flag"
@@ -445,7 +445,7 @@ function PersonalizeStep({
 }) {
   const { t } = useTranslation()
   const savePreferences = useMutation(api.sandbox.onboarding.savePreferences)
-  const prefs = useOptionalDisplayPreferences()
+  const prefs = useOptionalLocaleDisplayPreferences()
   const themeCtx = useThemeOptional()
   const setTheme = themeCtx?.setTheme ?? (() => {})
   const [name, setName] = useState(existing?.preferences?.name ?? "")
