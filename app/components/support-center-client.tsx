@@ -1,7 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useRef, useState } from "react"
-import dynamic from "next/dynamic"
+import { lazy, Suspense, useCallback, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -549,9 +548,8 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
   )
 }
 
-const SupportCenterSubmissionBridge = dynamic(
-  () => import("./support-center-submission-bridge").then((mod) => mod.SupportCenterSubmissionBridge),
-  { ssr: false },
+const SupportCenterSubmissionBridge = lazy(
+  async () => ({ default: (await import("./support-center-submission-bridge")).SupportCenterSubmissionBridge }),
 )
 
 /**
@@ -568,7 +566,9 @@ export function SupportCenterClient() {
 
   return (
     <>
-      <SupportCenterSubmissionBridge onReady={handleConnectedSubmit} />
+      <Suspense fallback={null}>
+        <SupportCenterSubmissionBridge onReady={handleConnectedSubmit} />
+      </Suspense>
       <SupportCenterForm submit={submit} />
     </>
   )
