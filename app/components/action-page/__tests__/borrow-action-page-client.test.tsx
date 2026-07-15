@@ -53,6 +53,21 @@ describe("BorrowActionPageClient", () => {
     expect(screen.getByText("$1,050 processed.")).toBeInTheDocument()
   })
 
+  it("starts Remove on the wallet collateral selector", async () => {
+    renderWithProviders(
+      <AvanaSessionsProvider>
+        <BorrowActionPageClient kind="remove" />
+      </AvanaSessionsProvider>,
+    )
+
+    expect(await screen.findByText("Choose collateral to remove.")).toBeInTheDocument()
+    expect(screen.getByPlaceholderText("Search pools")).toBeInTheDocument()
+    expect(screen.getAllByText("WETH / USDC").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("Uniswap · 0.30%").length).toBeGreaterThan(0)
+    expect(screen.queryByText("Choose the asset to borrow.")).not.toBeInTheDocument()
+    expect(screen.queryByPlaceholderText("Find an asset")).not.toBeInTheDocument()
+  })
+
   it("keeps a token picker selection after closing the dialog", async () => {
     renderWithProviders(
       <AvanaSessionsProvider>
