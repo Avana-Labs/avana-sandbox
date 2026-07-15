@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import type { TransactionAdapter, TransactionIntent, TransactionPreview } from "@/app/lib/borrow-system/contracts"
 import { ProductionTransactionAdapter } from "@/app/lib/borrow-system/production-transaction-adapter"
 import { parseFixed } from "@/app/lib/credit-engine"
@@ -105,5 +105,30 @@ describe("transaction adapter contracts", () => {
 
     await expect(adapter.previewTransaction(intent)).rejects.toThrow("Production transaction adapter is not implemented")
     await expect(adapter.executeTransaction(intent)).rejects.toThrow("Production transaction adapter is not implemented")
+  })
+
+  it("creates live intents and delegates production preview and execution", async () => {
+    const previewTransaction = vi.fn(async (intent: TransactionIntent) => ({ intent }) as TransactionPreview)
+    const executeTransaction = vi.fn(async () => null as never)
+    const adapter = new ProductionTransactionAdapter({
+      previewTransaction,
+      executeTransaction,
+      now: () => 123,
+      generateId: () => "intent-live",
+    })
+    const intent = adapter.createIntent({
+      type: "borrow",
+      walletId: "wallet-1",
+      marketId: "market-1",
+      assetId: "asset-1",
+      amountUsd6: 500_000_000n,
+    })
+
+    expect(intent).toMatchObject({ id: "intent-live", requestedAt: 123, simulated: false, actionType: "borrow" })
+    expect(intent.payload).toMatchObject({ type: "borrow", assetId: "asset-1" })
+    await adapter.previewTransaction(intent)
+    await adapter.executeTransaction(intent)
+    expect(previewTransaction).toHaveBeenCalledWith(intent)
+    expect(executeTransaction).toHaveBeenCalledWith(intent)
   })
 })

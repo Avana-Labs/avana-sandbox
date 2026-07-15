@@ -6,30 +6,47 @@ import type { ProductionReadAdapter, WalletReadSnapshot } from "./contracts"
 
 const NOT_IMPLEMENTED = "Production read adapter is not implemented"
 
+export type ProductionBorrowReadSource = Partial<{
+  readWalletSnapshot: (walletId: string) => Promise<WalletReadSnapshot>
+  readMarkets: () => Promise<BorrowMarketRecord[]>
+  readBorrowPage: (walletId: string) => Promise<BorrowPageData>
+  readPortfolioBorrow: (walletId: string) => Promise<PortfolioBorrowTabData>
+  readPoolDetail: (poolId: string) => Promise<PoolDetail | null>
+  readAssetDetail: (assetId: string) => Promise<AssetDetail | null>
+}>
+
 export class ProductionBorrowReadAdapter implements ProductionReadAdapter {
   readonly mode = "production" as const
 
-  async readWalletSnapshot(_walletId: string): Promise<WalletReadSnapshot> {
-    throw new Error(NOT_IMPLEMENTED)
+  constructor(private readonly source: ProductionBorrowReadSource = {}) {}
+
+  async readWalletSnapshot(walletId: string): Promise<WalletReadSnapshot> {
+    if (!this.source.readWalletSnapshot) throw new Error(NOT_IMPLEMENTED)
+    return this.source.readWalletSnapshot(walletId)
   }
 
   async readMarkets(): Promise<BorrowMarketRecord[]> {
-    throw new Error(NOT_IMPLEMENTED)
+    if (!this.source.readMarkets) throw new Error(NOT_IMPLEMENTED)
+    return this.source.readMarkets()
   }
 
-  async readBorrowPage(_walletId: string): Promise<BorrowPageData> {
-    throw new Error(NOT_IMPLEMENTED)
+  async readBorrowPage(walletId: string): Promise<BorrowPageData> {
+    if (!this.source.readBorrowPage) throw new Error(NOT_IMPLEMENTED)
+    return this.source.readBorrowPage(walletId)
   }
 
-  async readPortfolioBorrow(_walletId: string): Promise<PortfolioBorrowTabData> {
-    throw new Error(NOT_IMPLEMENTED)
+  async readPortfolioBorrow(walletId: string): Promise<PortfolioBorrowTabData> {
+    if (!this.source.readPortfolioBorrow) throw new Error(NOT_IMPLEMENTED)
+    return this.source.readPortfolioBorrow(walletId)
   }
 
-  async readPoolDetail(_poolId: string): Promise<PoolDetail | null> {
-    throw new Error(NOT_IMPLEMENTED)
+  async readPoolDetail(poolId: string): Promise<PoolDetail | null> {
+    if (!this.source.readPoolDetail) throw new Error(NOT_IMPLEMENTED)
+    return this.source.readPoolDetail(poolId)
   }
 
-  async readAssetDetail(_assetId: string): Promise<AssetDetail | null> {
-    throw new Error(NOT_IMPLEMENTED)
+  async readAssetDetail(assetId: string): Promise<AssetDetail | null> {
+    if (!this.source.readAssetDetail) throw new Error(NOT_IMPLEMENTED)
+    return this.source.readAssetDetail(assetId)
   }
 }
