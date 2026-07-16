@@ -359,6 +359,8 @@ const dict: TranslationDictionary = {
   ASSET: "АКТИВ",
   "Asset actions": "Действия с активом",
   "AVA balance": "Баланс AVA",
+  "Back to portfolio": "Назад к портфелю",
+  "Open portfolio": "Открыть портфель",
   Portfolio: "Портфель",
   "Quick actions": "Быстрые действия",
   "Total Fees earned": "Всего заработанных комиссий",

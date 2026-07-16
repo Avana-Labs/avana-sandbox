@@ -135,6 +135,8 @@ const dict: TranslationDictionary = {
   "Claim {amount} AVA": "领取 {amount} AVA",
   "No rewards ready": "暂无可领取奖励",
   "AVA balance": "AVA 余额",
+  "Back to portfolio": "返回投资组合",
+  "Open portfolio": "打开投资组合",
   Portfolio: "投资组合",
   "Quick actions": "快捷操作",
   "Total Fees earned": "已赚取费用总额",

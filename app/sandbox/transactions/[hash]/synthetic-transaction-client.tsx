@@ -91,9 +91,9 @@ export function SyntheticTransactionClient({ hash }: { hash: string }) {
       )}
       <Link
         className="mt-8 inline-flex rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background"
-        href="/dashboard"
+        href="/portfolio"
       >
-        {t("Back to dashboard")}
+        {t("Back to portfolio")}
       </Link>
     </main>
   )

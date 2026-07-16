@@ -81,8 +81,8 @@ describe("OnboardingPageClient — already-onboarded wallet (issue #140)", () =>
     walletStateMock.mockReturnValue(walletState("done"))
     render(<OnboardingPageConnected wallet={WALLET} />)
 
-    // A completed wallet is sent straight to the dashboard, not shown any onboarding UI.
-    expect(routerReplaceMock).toHaveBeenCalledWith("/dashboard")
+    // A completed wallet is sent straight to the portfolio, not shown any onboarding UI.
+    expect(routerReplaceMock).toHaveBeenCalledWith("/portfolio")
     expect(screen.queryByRole("button", { name: /Claim your allocation/i })).not.toBeInTheDocument()
     expect(screen.queryByText(/Fund my sandbox/i)).not.toBeInTheDocument()
   })
