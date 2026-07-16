@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 
 const ICON_SIZES = {
   sm: { box: "size-7", text: "text-[9px]", px: 28, container: "h-7 w-[46px]", offset: "left-[18px]" },
-  md: { box: "size-10", text: "text-[11px]", px: TOKEN_ICON_TABLE_PX, container: "h-10 w-[62px]", offset: "left-5" },
+  md: { box: "size-12", text: "text-[12px]", px: TOKEN_ICON_TABLE_PX, container: "h-12 w-[72px]", offset: "left-6" },
 } as const
 
 function ActionTokenIconBase({

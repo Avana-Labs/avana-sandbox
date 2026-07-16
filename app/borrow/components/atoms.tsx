@@ -13,7 +13,7 @@ const BUBBLE_DIMENSIONS: Record<TokenBubbleSize, { box: string; text: string; px
   xs: { box: "size-4", text: "text-[7px]", px: 16 },
   sm: { box: "size-5", text: "text-[8px]", px: 20 },
   md: { box: "size-7", text: "text-[9px]", px: 28 },
-  table: { box: "size-10", text: "text-[11px]", px: TOKEN_ICON_TABLE_PX },
+  table: { box: "size-12", text: "text-[12px]", px: TOKEN_ICON_TABLE_PX },
   lg: { box: "size-9", text: "text-[10px]", px: 36 },
   xl: { box: "size-11", text: "text-[11px]", px: 44 },
 }

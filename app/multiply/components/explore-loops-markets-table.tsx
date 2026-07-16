@@ -548,7 +548,7 @@ function LoopTableRow({
                 src={row.protocolLogo}
                 alt=""
                 aria-hidden="true"
-                className="size-10 shrink-0 rounded-full bg-card object-cover"
+                className="size-12 shrink-0 rounded-full bg-card object-cover"
               />
             </>
           ) : null}
@@ -571,7 +571,7 @@ function LoopTableRow({
                 src={assetLogo}
                 alt=""
                 aria-hidden="true"
-                className="size-10 shrink-0 rounded-full bg-card object-cover"
+                className="size-12 shrink-0 rounded-full bg-card object-cover"
               />
             </>
           ) : null}
@@ -700,15 +700,15 @@ function MobileLoopCard({
           identity={
             <div className="min-w-0">
               <div className="flex items-center gap-3">
-                <div className="relative flex h-10 w-[62px] items-center">
+                <div className="relative flex h-12 w-[72px] items-center">
                   {protocolLogo ? (
-                    <div className="absolute left-0 top-0 z-10 flex size-10 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+                    <div className="absolute left-0 top-0 z-10 flex size-12 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={protocolLogo} alt="" aria-hidden="true" className="size-full object-cover" />
                     </div>
                   ) : null}
                   {assetLogo ? (
-                    <div className="absolute left-5 top-0 flex size-10 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+                    <div className="absolute left-6 top-0 flex size-12 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={assetLogo} alt="" aria-hidden="true" className="size-full object-cover" />
                     </div>
