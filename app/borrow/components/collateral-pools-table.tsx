@@ -468,7 +468,6 @@ function SpokeDesktopSection({
     <section ref={sectionRef} className="mb-2">
       <div className="mt-4 rounded-radius-xl bg-transparent md:shadow-none">
         <div className="sticky top-16 z-20 flex items-center justify-between gap-3 rounded-t-radius-xl bg-background px-1 py-2 md:px-4 md:py-3">
-          <h3 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{spoke.label}</h3>
           <SectionTabs
             activeTab={activeTab}
             onTabChange={(tab) => {
@@ -476,6 +475,7 @@ function SpokeDesktopSection({
               setActiveTab(tab)
             }}
           />
+          <h3 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{spoke.label}</h3>
         </div>
         <div className="bg-transparent">
           {!contentMounted ? (
