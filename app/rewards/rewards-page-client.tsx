@@ -26,8 +26,7 @@ import {
 } from "@/app/lib/rewards-engine/task-actions"
 import { RewardsPageSkeleton } from "@/app/components/loading-states"
 import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
-import { RewardsBalanceHero } from "./rewards-balance-hero"
-import { RewardsClaimSidebar } from "./rewards-claim-sidebar"
+import { RewardsBalanceHero, PortfolioRewardsCards } from "./rewards-balance-hero"
 import { PortfolioQuickActions } from "./portfolio-quick-actions"
 import { LendOpportunity } from "./lend-opportunity"
 import { LearnSection } from "./learn-section"
@@ -457,6 +456,11 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
     <>
       <RewardsBalanceHero claimHref={claimHref} />
 
+      {/* Mobile: quick actions right after the hero chart (desktop shows them in the sidebar). */}
+      <div className="mb-8 lg:hidden">
+        <PortfolioQuickActions />
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-x-8">
         <div className="min-w-0">
           <RewardsTabs
@@ -467,7 +471,6 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
         </div>
 
         <aside className="hidden space-y-8 lg:block lg:self-start">
-          <RewardsClaimSidebar />
           <PortfolioQuickActions />
           <LendOpportunity />
         </aside>
@@ -475,6 +478,12 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
 
       <div className="mb-8 md:mb-10">
         <LearnSection />
+      </div>
+
+      {/* Mobile: rewards cards + lend opportunity near the end (desktop shows these in the hero/sidebar). */}
+      <div className="mb-8 space-y-8 lg:hidden">
+        <PortfolioRewardsCards claimHref={claimHref} />
+        <LendOpportunity />
       </div>
 
       <div className="pb-24 lg:pb-0">

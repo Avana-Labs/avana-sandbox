@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react"
 import dynamic from "next/dynamic"
 import Image from "next/image"
 import Link from "next/link"
-import { CircleDollarSign, Info } from "@/app/components/icons"
+import { CircleDollarSign, Eye, EyeOff, Info } from "@/app/components/icons"
 import { Button } from "@/components/ui/button"
 import { HeroBalanceDisplay } from "@/app/components/charts/hero-balance-display"
 import { formatChartValue, type ChartPoint } from "@/app/components/charts"
@@ -121,9 +121,44 @@ function FeeCard({
   )
 }
 
-export function RewardsBalanceHero({ claimHref }: { claimHref?: string }) {
+/**
+ * The rewards cards (Total Rewards earned / Claimable Rewards + Claim Rewards).
+ * Rendered as the hero's right column on desktop and inline near the bottom of
+ * the page on mobile, so it's reachable on small screens too.
+ */
+export function PortfolioRewardsCards({ claimHref }: { claimHref?: string }) {
   const { t } = useTranslation()
   const { showDollarAmounts } = useAmountDisplayPreferences()
+  return (
+    <section className="min-w-0 space-y-3">
+      <FeeCard label={t("Total Rewards earned")} value={TOTAL_FEES_EARNED} hidden={!showDollarAmounts} />
+      <FeeCard
+        label={t("Claimable Rewards")}
+        value={CLAIMABLE_FEES}
+        hidden={!showDollarAmounts}
+        action={
+          claimHref ? (
+            <Button asChild size="sm" className="shrink-0 gap-1.5">
+              <Link href={claimHref}>
+                <CircleDollarSign className="size-4" />
+                {t("Claim Rewards")}
+              </Link>
+            </Button>
+          ) : (
+            <Button type="button" size="sm" disabled className="shrink-0 gap-1.5">
+              <CircleDollarSign className="size-4" />
+              {t("Claim Rewards")}
+            </Button>
+          )
+        }
+      />
+    </section>
+  )
+}
+
+export function RewardsBalanceHero({ claimHref }: { claimHref?: string }) {
+  const { t } = useTranslation()
+  const { showDollarAmounts, toggleShowDollarAmounts } = useAmountDisplayPreferences()
   // The headline follows the cursor across the chart, mirroring the detail heroes.
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const hoverPoint = hoverIndex != null ? PORTFOLIO_SERIES[hoverIndex] : null
@@ -136,7 +171,7 @@ export function RewardsBalanceHero({ claimHref }: { claimHref?: string }) {
   const balanceTone: "positive" | "negative" = hoverPoint ? (hoverPct >= 0 ? "positive" : "negative") : "negative"
 
   return (
-    <div className="mb-6 grid gap-5 md:mb-8 md:gap-7 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] xl:items-start">
+    <div className="mb-6 grid gap-5 md:mb-8 md:gap-7 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] lg:items-start">
       <section className="relative overflow-hidden rounded-radius-md border-0 bg-card px-4 py-4 sm:px-5">
         <div className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle,rgba(148,163,184,0.16)_1px,transparent_1.2px)] [background-position:18px_18px] [background-size:16px_16px] dark:opacity-35 dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.1)_1px,transparent_1.2px)]" />
 
@@ -149,6 +184,17 @@ export function RewardsBalanceHero({ claimHref }: { claimHref?: string }) {
               deltaTone={balanceTone}
               meta={balanceMeta}
               hidden={!showDollarAmounts}
+              valueSuffix={
+                <button
+                  type="button"
+                  onClick={toggleShowDollarAmounts}
+                  aria-label={t("Dollar amounts")}
+                  aria-pressed={showDollarAmounts}
+                  className="inline-flex shrink-0 items-center text-brand-readable transition-opacity hover:opacity-80"
+                >
+                  {showDollarAmounts ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
+                </button>
+              }
             />
           </div>
 
@@ -168,29 +214,11 @@ export function RewardsBalanceHero({ claimHref }: { claimHref?: string }) {
         </div>
       </section>
 
-      <section className="hidden min-w-0 space-y-3 md:block">
-        <FeeCard label={t("Total Fees earned")} value={TOTAL_FEES_EARNED} hidden={!showDollarAmounts} />
-        <FeeCard
-          label={t("Claimable Fees")}
-          value={CLAIMABLE_FEES}
-          hidden={!showDollarAmounts}
-          action={
-            claimHref ? (
-              <Button asChild size="sm" className="shrink-0 gap-1.5">
-                <Link href={claimHref}>
-                  <CircleDollarSign className="size-4" />
-                  {t("Claim Fees")}
-                </Link>
-              </Button>
-            ) : (
-              <Button type="button" size="sm" disabled className="shrink-0 gap-1.5">
-                <CircleDollarSign className="size-4" />
-                {t("Claim Fees")}
-              </Button>
-            )
-          }
-        />
-      </section>
+      {/* Desktop: rewards cards as the hero's right column. On mobile they render
+          near the bottom of the page instead (see the portfolio page). */}
+      <div className="hidden lg:block">
+        <PortfolioRewardsCards claimHref={claimHref} />
+      </div>
     </div>
   )
 }
