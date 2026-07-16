@@ -133,7 +133,7 @@ export function BorrowableAssetsPanel({
 
                       <MarketMobileStatList className="mt-4">
                         <MarketMobileStatRow label={t("Total Borrows")} value={compact(asset.totalBorrowedUsd)} />
-                        <MarketMobileStatRow label={t("Liquidity")} value={compact(asset.availableUsd)} />
+                        <MarketMobileStatRow label={t("Available")} value={compact(asset.availableUsd)} />
                         <MarketMobileStatRow
                           label={t("Utilization")}
                           value={formatUtilizationPct(asset.utilization)}
@@ -282,7 +282,7 @@ function LoanAssetsSection({
                     : "text-muted-foreground/70 dark:text-white/42",
                 )}
               >
-                <span>{t("LIQUIDITY")}</span>
+                <span>{t("AVAILABLE")}</span>
                 <SortIcon />
               </button>
             </th>
