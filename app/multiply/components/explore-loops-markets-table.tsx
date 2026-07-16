@@ -350,7 +350,7 @@ function LoopMarketsSection({
         </div>
       </div>
 
-      <DesktopTableSurface className="rounded-radius-md [contain-intrinsic-size:auto_640px] [content-visibility:auto]">
+      <DesktopTableSurface className="!rounded-none [contain-intrinsic-size:auto_640px] [content-visibility:auto]">
         {!isDesktop ? (
           <div className="space-y-4">
             {sortedRows.length ? (
@@ -511,24 +511,10 @@ function LoopMarketsSection({
   )
 }
 
-// Market collateral/borrow symbols are stored uppercase (e.g. "CRVUSD") while the
-// APY maps are keyed by their display casing (e.g. "crvUSD"), so match the token
-// logo resolver and look these up case-insensitively — otherwise the cell falls
-// back to "—" for any symbol whose casing differs from the map key.
-function lookupTokenApy(map: Record<string, string | undefined>, symbol: string): string | undefined {
-  const direct = map[symbol]
-  if (direct) return direct
-  const target = symbol.trim().toLowerCase()
-  const key = Object.keys(map).find((candidate) => candidate.toLowerCase() === target)
-  return key ? map[key] : undefined
-}
-
 function LoopTableRow({
   row,
   index,
   tokenLogos,
-  tokenSupplyApys,
-  tokenBorrowApys,
 }: {
   row: MultiplyPageData["lendRows"][number]
   index: number
@@ -540,8 +526,6 @@ function LoopTableRow({
   const { t } = useTranslation()
   const { compact } = useCurrency()
   const assetLogo = tokenLogos[row.asset as keyof typeof tokenLogos]
-  const supplyApy = lookupTokenApy(tokenSupplyApys as Record<string, string | undefined>, row.protocol)
-  const borrowApy = lookupTokenApy(tokenBorrowApys as Record<string, string | undefined>, row.asset)
   const hasNegativeApy = isNegativeMultiplyApy(row.apy)
 
   return (
@@ -570,11 +554,10 @@ function LoopTableRow({
           ) : null}
           <span className="min-w-0">
             <span className="block truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
-              {row.protocol}
+              {row.protocolName ?? row.protocol}
             </span>
-            <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[13px] font-normal tracking-[-0.03em]">
-              <span className="text-muted-foreground">{t("APY")}</span>
-              <span className="font-data tabular-nums text-muted-foreground">{supplyApy ?? "—"}</span>
+            <span className="mt-0.5 block truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground">
+              {row.protocol}
             </span>
           </span>
         </CellLink>
@@ -593,12 +576,11 @@ function LoopTableRow({
             </>
           ) : null}
           <span className="min-w-0">
-            <span className="block text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
-              {row.asset}
+            <span className="block truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+              {row.assetName ?? row.asset}
             </span>
-            <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[13px] font-normal tracking-[-0.03em]">
-              <span className="text-muted-foreground">{t("APY")}</span>
-              <span className="font-data tabular-nums text-muted-foreground">{borrowApy ?? "—"}</span>
+            <span className="mt-0.5 block truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground">
+              {row.asset}
             </span>
           </span>
         </CellLink>
@@ -632,7 +614,7 @@ function LoopTableRow({
           </span>
         </CellLink>
       </td>
-      <td className={`py-3 px-4 pr-6 ${TABLE_ROW_HOVER_RIGHT}`}>
+      <td className={`py-3 px-4 pr-6 ${TABLE_ROW_HOVER_BG}`}>
         {row.waitlistHref ? (
           <div className="inline-flex items-center">
             <Button asChild size="sm" className="h-6 rounded-xs px-2.5 text-[11px]">

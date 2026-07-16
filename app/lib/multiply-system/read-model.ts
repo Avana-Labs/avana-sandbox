@@ -84,8 +84,10 @@ export function catalogMarketToRow(market: MultiplyMarketRecord): MultiplyMarket
   return {
     href: `/multiply/markets/${market.id}`,
     protocol: collateralSymbol,
+    protocolName: market.collateralAsset.name,
     protocolLogo: collateralLogo,
     asset: borrowSymbol,
+    assetName: market.borrowAsset.name,
     kind: "Loop",
     apy: formatPct(market.economics.estimatedMaxApy),
     apyLabel: "Estimated max APY at public max multiplier",
