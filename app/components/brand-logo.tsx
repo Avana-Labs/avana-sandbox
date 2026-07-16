@@ -20,7 +20,8 @@ export function BrandLogo({ mobileOnly = false, className }: BrandLogoProps) {
         alt={`${SITE_NAME} logo`}
         width={220}
         height={86}
-        loading="lazy"
+        loading="eager"
+        fetchPriority="high"
         className={cn(
           mobileOnly ? "h-[56px] w-auto scale-[1.08] origin-left" : "h-[44px] w-auto origin-left md:h-[44px]",
           className,
@@ -43,7 +44,8 @@ export function BrandIcon({ className }: BrandIconProps) {
         alt="Avana logo"
         width={58}
         height={64}
-        loading="lazy"
+        loading="eager"
+        fetchPriority="high"
         className={cn("h-8 w-8 object-cover", className)}
       />
     </span>
