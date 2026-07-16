@@ -75,8 +75,12 @@ export function formatActionFeeSummary(amountUsd: number, networkFeeUsd: number,
 
 export function formatActionAmount(assetAmount: number, symbol: string, digits = 6) {
   if (!Number.isFinite(assetAmount)) return `0 ${symbol}`
+  // Strip trailing zeros in both branches so whole amounts read "12500" not
+  // "12500.00" while fractional amounts keep their significant digits.
   const rounded =
-    assetAmount >= 100 ? assetAmount.toFixed(2) : assetAmount.toFixed(Math.min(digits, 6)).replace(/\.?0+$/, "")
+    assetAmount >= 100
+      ? assetAmount.toFixed(2).replace(/\.?0+$/, "")
+      : assetAmount.toFixed(Math.min(digits, 6)).replace(/\.?0+$/, "")
   return `${rounded} ${symbol}`
 }
 
