@@ -1,33 +1,80 @@
 "use client"
 
+import type { ReactNode } from "react"
 import Image from "next/image"
-import { Info } from "lucide-react"
-import { HeroMarketCard } from "@/app/borrow/borrow-hero-market-card"
+import { CircleDollarSign, Info } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { HeroBalanceDisplay } from "@/app/components/charts/hero-balance-display"
 import { Progress } from "@/components/ui/progress"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import type { RewardsHeroPoolRow } from "@/app/lib/data/providers/rewards"
-import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/language-html-lang"
 
-function formatBalanceAmount(value: number, locale: string) {
-  return value.toLocaleString(locale, { maximumFractionDigits: 0 })
+// TODO(backend): wire these to the user's real Avana balance (mirrors the portfolio hero).
+const AVANA_BALANCE = "$14,400.00"
+const AVANA_BALANCE_DELTA = "-$312.96 (-3.80%)"
+
+// TODO(backend): wire these to real fee accrual once fees ship.
+const TOTAL_FEES_EARNED = "$0"
+const CLAIMABLE_FEES = "$0"
+
+function AvanaCoin() {
+  return (
+    <div
+      className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand ring-1 ring-brand/20"
+      aria-hidden
+    >
+      <Image
+        src="/avana-icon.png"
+        alt=""
+        width={38}
+        height={38}
+        className="h-[38px] w-[38px] scale-[1.68] object-contain brightness-0 invert"
+        priority
+      />
+    </div>
+  )
+}
+
+function FeeCard({
+  label,
+  value,
+  hidden,
+  action,
+}: {
+  label: string
+  value: string
+  hidden: boolean
+  action?: ReactNode
+}) {
+  return (
+    <div className="rounded-radius-md border-0 bg-card px-4 py-4">
+      <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+        {label}
+        <Info className="h-3 w-3" />
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <AvanaCoin />
+          <span className="truncate text-[24px] font-normal leading-none tracking-[-0.03em] text-foreground sm:text-[26px]">
+            {hidden ? "••••" : value}
+          </span>
+        </div>
+        {action}
+      </div>
+    </div>
+  )
 }
 
 export function RewardsBalanceHero({
-  rewardPools,
-  balanceTotal,
   completedCount,
   totalCount,
   progressPercentage,
 }: {
-  rewardPools: RewardsHeroPoolRow[]
-  balanceTotal: number
   completedCount: number
   totalCount: number
   progressPercentage: number
 }) {
-  const { t, language } = useTranslation()
-  const locale = LANGUAGE_HTML_LANG[language] ?? "en"
+  const { t } = useTranslation()
   const { showDollarAmounts } = useAmountDisplayPreferences()
 
   return (
@@ -45,33 +92,15 @@ export function RewardsBalanceHero({
         <div className="relative flex flex-col gap-4 md:min-h-[142px] md:justify-between">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <span className="text-[24px] font-normal leading-none tracking-[-0.03em] text-foreground sm:text-[28px] md:text-[30px]">
-                  {showDollarAmounts ? formatBalanceAmount(balanceTotal, locale) : "••••••••"}
-                  <span className="ml-2 align-middle text-[0.78em]">AVA</span>
-                </span>
-
-                <div
-                  className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand ring-1 ring-brand/20"
-                  aria-hidden
-                >
-                  <Image
-                    src="/avana-icon.png"
-                    alt=""
-                    width={38}
-                    height={38}
-                    className="h-[38px] w-[38px] scale-[1.68] object-contain brightness-0 invert"
-                    priority
-                  />
-                </div>
-              </div>
-
-              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-normal tracking-[0.14em] text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5">
-                  {t("AVA balance")}
-                  <Info className="h-3 w-3" />
-                </span>
-              </div>
+              <span className="sr-only">{t("AVA balance")}</span>
+              <HeroBalanceDisplay
+                value={AVANA_BALANCE}
+                delta={AVANA_BALANCE_DELTA}
+                deltaTone="negative"
+                meta="Today"
+                hidden={!showDollarAmounts}
+                valueSuffix={<AvanaCoin />}
+              />
             </div>
           </div>
 
@@ -95,8 +124,19 @@ export function RewardsBalanceHero({
         </div>
       </section>
 
-      <section className="hidden min-w-0 md:block">
-        <HeroMarketCard title={t("Rewards Pools")} rows={rewardPools} />
+      <section className="hidden min-w-0 space-y-3 md:block">
+        <FeeCard label={t("Total Fees earned")} value={TOTAL_FEES_EARNED} hidden={!showDollarAmounts} />
+        <FeeCard
+          label={t("Claimable Fees")}
+          value={CLAIMABLE_FEES}
+          hidden={!showDollarAmounts}
+          action={
+            <Button type="button" size="sm" disabled className="shrink-0 gap-1.5">
+              <CircleDollarSign className="size-4" />
+              {t("Claim Fees")}
+            </Button>
+          }
+        />
       </section>
     </div>
   )
