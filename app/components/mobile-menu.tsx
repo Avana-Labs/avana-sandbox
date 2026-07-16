@@ -169,10 +169,6 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       label: "Multiply",
     },
     {
-      href: "/dashboard",
-      label: "Dashboard",
-    },
-    {
       href: "/portfolio",
       label: "Portfolio",
     },

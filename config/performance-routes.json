@@ -9,7 +9,6 @@
     { "route": "/lend/markets/usdc", "heroText": "Supply APY", "marker": "Supply APY" },
     { "route": "/multiply", "heroText": "Total Liquidity", "marker": "Multiply | Avana" },
     { "route": "/multiply/markets/aave-gho", "heroText": "Total value locked", "marker": "Total value locked" },
-    { "route": "/dashboard", "heroText": "Lend Account", "marker": "Lend Account" },
     { "route": "/portfolio", "heroText": "AVA balance", "marker": "AVA balance" },
     { "route": "/support-center", "heroText": "How can we help?", "heroRole": "heading", "marker": "How can we help?" }
   ],

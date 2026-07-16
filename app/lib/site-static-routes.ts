@@ -10,6 +10,5 @@ export const SITE_STATIC_ROUTES: SiteRoute[] = [
   { route: "/lend", priority: 0.85 },
   { route: "/multiply", priority: 0.85 },
   { route: "/portfolio", priority: 0.72 },
-  { route: "/dashboard", priority: 0.65 },
   { route: "/support-center", priority: 0.45 },
 ]
