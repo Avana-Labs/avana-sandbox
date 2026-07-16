@@ -541,6 +541,7 @@ const dict: TranslationDictionary = {
   "Credit Performance": "クレジットパフォーマンス",
   "Lending Positions": "貸出ポジション",
   "Lending Performance": "貸出パフォーマンス",
+  "Lend Rewards": "貸出リワード",
   "Multiply Overview": "ループ概要",
   "Multiply Positions": "ループポジション",
   "Loading your portfolio": "ポートフォリオを読み込んでいます",

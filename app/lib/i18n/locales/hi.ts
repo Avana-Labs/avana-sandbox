@@ -554,6 +554,7 @@ const dict: TranslationDictionary = {
   "Credit Performance": "क्रेडिट प्रदर्शन",
   "Lending Positions": "लेंडिंग पोज़िशन",
   "Lending Performance": "लेंडिंग प्रदर्शन",
+  "Lend Rewards": "लेंडिंग रिवॉर्ड्स",
   "Multiply Overview": "लूपिंग अवलोकन",
   "Multiply Positions": "लूपिंग पोज़िशन",
   "Loading your portfolio": "आपका पोर्टफोलियो लोड हो रहा है",

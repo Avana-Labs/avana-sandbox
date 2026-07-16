@@ -549,6 +549,7 @@ const dict: TranslationDictionary = {
   "Credit Performance": "أداء الائتمان",
   "Lending Positions": "مراكز الإقراض",
   "Lending Performance": "أداء الإقراض",
+  "Lend Rewards": "مكافآت الإقراض",
   "Multiply Overview": "نظرة عامة على المضاعفة",
   "Multiply Positions": "مراكز المضاعفة",
   "Loading your portfolio": "جارٍ تحميل محفظتك",

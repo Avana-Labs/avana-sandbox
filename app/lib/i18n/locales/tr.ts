@@ -556,6 +556,7 @@ const dict: TranslationDictionary = {
   "Credit Performance": "Kredi Performansı",
   "Lending Positions": "Borç Verme Pozisyonları",
   "Lending Performance": "Borç Verme Performansı",
+  "Lend Rewards": "Borç Verme Ödülleri",
   "Multiply Overview": "Kaldıraç Genel Bakışı",
   "Multiply Positions": "Kaldıraç Pozisyonları",
   "Loading your portfolio": "Portföyünüz yükleniyor",

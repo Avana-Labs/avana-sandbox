@@ -37,7 +37,6 @@ export function LendAccountSection() {
 
   return (
     <section className="space-y-5">
-      <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{t("Lend Account")}</h2>
       <DashboardLendPerformanceSection title={t("Lending Performance")} metrics={metrics} hideHeading />
       <PortfolioInvestments
         investments={lendTabData.investments}
@@ -47,6 +46,7 @@ export function LendAccountSection() {
         showHeading={false}
         returnHref="/rewards"
       />
+      <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{t("Lend Rewards")}</h2>
     </section>
   )
 }
