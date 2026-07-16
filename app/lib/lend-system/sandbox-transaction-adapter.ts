@@ -1,4 +1,10 @@
-import { applyLendAction, simulateDeposit, simulateWithdraw, type LendAction, type LendSystemState } from "@/app/lib/lend-engine"
+import {
+  applyLendAction,
+  simulateDeposit,
+  simulateWithdraw,
+  type LendAction,
+  type LendSystemState,
+} from "@/app/lib/lend-engine"
 import { getWalletBalanceForLendMarket } from "@/app/lib/lend-system/wallet-balances"
 import { buildLendWalletSnapshot } from "./read-model"
 import type {
@@ -211,7 +217,8 @@ export class SandboxLendTransactionAdapter implements LendTransactionAdapter {
         ? action.positionId
         : action.type === "claim"
           ? `${action.walletId}:rewards`
-        : findWalletPosition(state, action.walletId, action.marketId)?.positionId ?? `${action.walletId}:${action.marketId}`
+          : (findWalletPosition(state, action.walletId, action.marketId)?.positionId ??
+            `${action.walletId}:${action.marketId}`)
     const transactionId = this.generateId("tx")
     const nextState = applyLendAction(state, action, { positionId, transactionId })
     // The engine may sweep a sub-cent remainder into a full withdraw and record the swept total
@@ -236,8 +243,13 @@ export class SandboxLendTransactionAdapter implements LendTransactionAdapter {
       positionId,
       kind: action.type,
       status: "success",
-      asset: action.type === "claim" ? "Rewards" : state.markets[action.marketId]?.asset.symbol ?? "",
-      amount: action.type === "deposit" ? action.depositAmount : action.type === "withdraw" ? engineTxAmount ?? action.withdrawAmount : preview.before.rewardsEarnedUsd,
+      asset: action.type === "claim" ? "Rewards" : (state.markets[action.marketId]?.asset.symbol ?? ""),
+      amount:
+        action.type === "deposit"
+          ? action.depositAmount
+          : action.type === "withdraw"
+            ? (engineTxAmount ?? action.withdrawAmount)
+            : preview.before.rewardsEarnedUsd,
       simulated: true,
       timestamp: localReceipt.timestamp,
       hash: localReceipt.hash,
@@ -297,7 +309,7 @@ export class SandboxLendTransactionAdapter implements LendTransactionAdapter {
       positionId: intent.positionId,
       kind: intent.actionType,
       status: "failed",
-      asset: intent.actionType === "claim" ? "Rewards" : state.markets[intent.marketId]?.asset.symbol ?? "",
+      asset: intent.actionType === "claim" ? "Rewards" : (state.markets[intent.marketId]?.asset.symbol ?? ""),
       amount: 0,
       simulated: true,
       timestamp,

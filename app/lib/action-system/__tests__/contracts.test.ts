@@ -26,7 +26,9 @@ describe("action-system contracts", () => {
     expect(resolveActionCloseHref("multiply")).toBe("/multiply")
     expect(resolveActionCloseHref("borrow", "//evil.example")).toBe("/borrow")
     expect(resolveActionCloseHref("multiply", "/multiply/market/aave-gho")).toBe("/multiply/markets/aave-gho")
-    expect(resolveActionCloseHref("borrow", "/borrow/pool/uni-v3-bluechip-weth-usdc")).toBe("/borrow/markets/uni-v3-bluechip-weth-usdc")
+    expect(resolveActionCloseHref("borrow", "/borrow/pool/uni-v3-bluechip-weth-usdc")).toBe(
+      "/borrow/markets/uni-v3-bluechip-weth-usdc",
+    )
     expect(resolveActionCloseHref("borrow", "/borrow/asset/usdc")).toBe("/borrow/assets/usdc")
   })
 

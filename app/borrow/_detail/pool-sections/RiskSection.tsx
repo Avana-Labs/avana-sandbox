@@ -37,7 +37,9 @@ export function RiskSection({ detail }: Props) {
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div className="min-w-0">
-            <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{t("Risk premium")}</div>
+            <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+              {t("Risk premium")}
+            </div>
             <div className="mt-1 flex items-baseline gap-2">
               <span className="font-data text-[26px] font-medium tabular-nums text-foreground md:text-[30px]">
                 {formatBpsAsPct(risk.premiumBps)}
@@ -89,9 +91,20 @@ export function RiskSection({ detail }: Props) {
                         height="12"
                         viewBox="0 0 14 14"
                         aria-hidden
-                        className={open ? "rotate-180 text-muted-foreground transition-transform" : "text-muted-foreground transition-transform"}
+                        className={
+                          open
+                            ? "rotate-180 text-muted-foreground transition-transform"
+                            : "text-muted-foreground transition-transform"
+                        }
                       >
-                        <path d="M3 5 L7 9 L11 5" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+                        <path
+                          d="M3 5 L7 9 L11 5"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={1.5}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
                       </svg>
                     </div>
                   </button>

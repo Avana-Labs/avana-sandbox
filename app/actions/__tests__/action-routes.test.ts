@@ -11,6 +11,7 @@ const ACTION_ROUTES = [
   ["lend", "withdraw"],
   ["multiply", "multiply"],
   ["multiply", "deleverage"],
+  ["multiply", "close"],
   ["rewards", "claim"],
 ] as const
 

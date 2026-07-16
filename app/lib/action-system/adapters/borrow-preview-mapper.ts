@@ -105,8 +105,19 @@ export function mapBorrowTransactionPreviewToActionUi(
   // Max borrow is capped by the COLLATERAL FACTOR (available credit), never the
   // liquidation threshold — mirror the credit engine so Max lands at the safe cap.
   const maxBorrowUsd = options.maxBorrowUsd ?? borrowingPowerUsd(preview, "before")
+  const rawBlockedReason = preview.validationErrors[0] ?? ""
+  const limitingCondition = /liquidity/i.test(rawBlockedReason)
+    ? "available market liquidity"
+    : options.creditScopeLabel
+      ? `borrowing power in ${options.creditScopeLabel}`
+      : "available borrowing power"
+  const blockedReason =
+    !preview.allowed && options.amountUsd > maxBorrowUsd
+      ? `Maximum safe borrow is ${formatActionUsd(maxBorrowUsd, { exact: true })}, limited by ${limitingCondition}.`
+      : (humanizeBlockedReason(rawBlockedReason) ?? "Action unavailable")
 
   return {
+    quoteId: preview.intent.id,
     allowed: preview.allowed,
     amountLabel: formatActionAmount(options.amountUsd, options.symbol, 2),
     amountUsd: options.amountUsd,
@@ -175,7 +186,7 @@ export function mapBorrowTransactionPreviewToActionUi(
     ],
     networkFeeLabel: formatActionFeeSummary(options.amountUsd, 0.04),
     risk: riskFromPreview(preview, healthAfter),
-    blockedReason: preview.allowed ? null : humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable",
+    blockedReason: preview.allowed ? null : blockedReason,
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,
   }
@@ -204,6 +215,7 @@ export function mapBorrowRepayPreviewToActionUi(
   const allowed = preview.allowed && !exceedsDebt
 
   return {
+    quoteId: preview.intent.id,
     allowed,
     amountLabel: formatActionAmount(options.amountUsd, options.symbol, 2),
     amountUsd: options.amountUsd,
@@ -212,8 +224,8 @@ export function mapBorrowRepayPreviewToActionUi(
     rateValue: formatActionUsd(options.amountUsd),
     marketLabel: "Market",
     marketValue: options.marketLabel,
-    balanceLabel: "Remaining debt",
-    balanceValue: formatActionUsd(options.remainingDebtUsd),
+    balanceLabel: "Outstanding debt",
+    balanceValue: formatActionUsd(beforeDebt, { exact: true }),
     maxAmount: beforeDebt,
     metrics: [
       ...creditScopeMetric(options.creditScopeLabel),
@@ -244,8 +256,8 @@ export function mapBorrowRepayPreviewToActionUi(
     blockedReason: allowed
       ? null
       : exceedsDebt
-        ? "Amount exceeds outstanding debt"
-        : humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable",
+        ? `Amount exceeds outstanding debt. Maximum repay is ${formatActionUsd(beforeDebt, { exact: true })}.`
+        : (humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable"),
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,
   }
@@ -273,6 +285,7 @@ export function mapBorrowSupplyPreviewToActionUi(
   const healthAfter = hfToNumber(preview.after.healthFactorWad)
 
   return {
+    quoteId: preview.intent.id,
     allowed: preview.allowed,
     amountLabel: formatActionUsd(options.amountUsd),
     amountValue: formatActionInputAmount(options.amountUsd, 2),
@@ -325,7 +338,9 @@ export function mapBorrowSupplyPreviewToActionUi(
     ],
     networkFeeLabel: formatActionFeeSummary(options.amountUsd, 0.04),
     risk: null,
-    blockedReason: preview.allowed ? null : humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable",
+    blockedReason: preview.allowed
+      ? null
+      : (humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable"),
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,
   }
@@ -344,30 +359,31 @@ export function mapBorrowRemovePreviewToActionUi(
 ): ActionPreviewUi {
   const beforeCollateral = fixedToNumber(preview.before.collateralValueUsd6, 6)
   const afterCollateral = fixedToNumber(preview.after.collateralValueUsd6, 6)
+  const removeUsd = Math.max(0, beforeCollateral - afterCollateral)
   const annualBefore = (beforeCollateral * options.positionApyPct) / 100
   const annualAfter = (afterCollateral * options.positionApyPct) / 100
   const healthBefore = hfToNumber(preview.before.healthFactorWad)
   const healthAfter = hfToNumber(preview.after.healthFactorWad)
 
   return {
+    quoteId: preview.intent.id,
     allowed: preview.allowed,
     amountLabel: `${options.percent}%`,
-    amountUsd: options.removeUsd,
-    amountUsdLabel: formatActionApproxUsd(options.removeUsd),
+    amountValue: String(options.percent),
+    amountUnitLabel: "%",
+    assetLabel: "%",
+    assetSymbol: "%",
+    amountUsd: removeUsd,
+    amountUsdLabel: formatActionUsd(removeUsd, { exact: true }),
     rateLabel: "Position APY",
     rateValue: formatActionPercent(options.positionApyPct),
     marketLabel: "Market",
     marketValue: options.marketLabel,
     balanceLabel: "Removing",
-    balanceValue: formatActionUsd(options.removeUsd),
+    balanceValue: formatActionUsd(removeUsd, { exact: true }),
     maxAmount: options.safePercent,
     metrics: [
       ...creditScopeMetric(options.creditScopeLabel),
-      {
-        id: "position-apy",
-        label: "Position APY",
-        value: formatActionPercent(options.positionApyPct),
-      },
       {
         id: "annual-earnings",
         label: "Annual earnings",
@@ -405,9 +421,11 @@ export function mapBorrowRemovePreviewToActionUi(
         tone: hfTone(healthAfter),
       },
     ],
-    networkFeeLabel: formatActionFeeSummary(options.removeUsd, 0.04),
+    networkFeeLabel: formatActionFeeSummary(removeUsd, 0.04),
     risk: riskFromPreview(preview, hfToNumber(preview.after.healthFactorWad)),
-    blockedReason: preview.allowed ? null : humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable",
+    blockedReason: preview.allowed
+      ? null
+      : (humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable"),
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,
   }
@@ -492,10 +510,14 @@ export function mapBorrowSuccessToActionUi(options: {
   metrics: ActionPreviewUi["metrics"]
   href: string
   primaryCtaLabel?: string
-  preview?: Pick<ActionPreviewUi, "amountLabel" | "amountUsd" | "rateLabel" | "rateValue" | "marketValue"> | null
+  preview?: Pick<
+    ActionPreviewUi,
+    "quoteId" | "amountLabel" | "amountUsd" | "rateLabel" | "rateValue" | "marketValue"
+  > | null
   verb?: string
 }): ActionSuccessUi {
   return {
+    quoteId: options.preview?.quoteId,
     title: options.title,
     description: options.description,
     receiptHash: options.receiptHash,

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Heart } from "lucide-react"
+import { Heart } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
@@ -26,7 +26,9 @@ export function HealthFactorPositionBar({
   trackClassName?: string
   heightClassName?: string
 }) {
-  const [displayValue, setDisplayValue] = useState<number | null>(() => (value == null || Number.isNaN(value) ? null : 0))
+  const [displayValue, setDisplayValue] = useState<number | null>(() =>
+    value == null || Number.isNaN(value) ? null : 0,
+  )
   const firstPaintRef = useRef(true)
 
   useEffect(() => {
@@ -58,7 +60,10 @@ export function HealthFactorPositionBar({
       {hasValue ? (
         <>
           <div
-            className={cn("absolute inset-y-0 left-0 rounded-full transition-[width,left] duration-500 ease-out", barTone.fill)}
+            className={cn(
+              "absolute inset-y-0 left-0 rounded-full transition-[width,left] duration-500 ease-out",
+              barTone.fill,
+            )}
             style={{ width: `${fillPct}%` }}
             aria-hidden
           />
@@ -121,7 +126,11 @@ export function ActionHealthFactorBar({
         </span>
       </div>
 
-      <div className="font-data text-[20px] font-semibold leading-none tracking-tight text-foreground" aria-live="polite" aria-atomic="true">
+      <div
+        className="font-data text-[20px] font-semibold leading-none tracking-tight text-foreground"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         <AnimatedTextValue text={valueLabel} animateOnMount />
       </div>
 
@@ -129,8 +138,13 @@ export function ActionHealthFactorBar({
 
       <div className="flex items-center justify-between text-[12px] font-medium text-muted-foreground">
         {HF_ZONES.map((zone, index) => (
-          <span key={zone.id} className={cn("inline-flex items-center gap-1.5", index === activeZoneIdx && "text-foreground")}>
-            <span className={cn("size-2 rounded-full", index === activeZoneIdx ? zone.color : "bg-muted-foreground/50")} />
+          <span
+            key={zone.id}
+            className={cn("inline-flex items-center gap-1.5", index === activeZoneIdx && "text-foreground")}
+          >
+            <span
+              className={cn("size-2 rounded-full", index === activeZoneIdx ? zone.color : "bg-muted-foreground/50")}
+            />
             {t(zone.label)}
           </span>
         ))}

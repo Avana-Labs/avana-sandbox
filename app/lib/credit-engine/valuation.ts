@@ -1,5 +1,12 @@
 import { TOKEN_SCALE, mulDiv, sharesToAssets } from "./units"
-import type { BorrowAccountState, BorrowAssetRecord, BorrowMarketRecord, BorrowSystemState, UserCollateralPosition, UserDebtPosition } from "./types"
+import type {
+  BorrowAccountState,
+  BorrowAssetRecord,
+  BorrowMarketRecord,
+  BorrowSystemState,
+  UserCollateralPosition,
+  UserDebtPosition,
+} from "./types"
 
 export function tokenAmountToUsd6(tokenAmount: bigint, priceUsd6: bigint) {
   return mulDiv(tokenAmount, priceUsd6, TOKEN_SCALE)
@@ -15,7 +22,8 @@ export function currentCollateralValueUsd6(position: UserCollateralPosition, mar
 
 export function collateralInterestEarnedUsd6(position: UserCollateralPosition, market: BorrowMarketRecord) {
   const currentAmount = currentCollateralTokenAmount(position, market)
-  const earnedAmount = currentAmount > position.principalTokenAmount ? currentAmount - position.principalTokenAmount : 0n
+  const earnedAmount =
+    currentAmount > position.principalTokenAmount ? currentAmount - position.principalTokenAmount : 0n
   return tokenAmountToUsd6(earnedAmount, market.snapshot.lpTokenPriceUsd6)
 }
 

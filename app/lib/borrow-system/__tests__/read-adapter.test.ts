@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { getDefaultWalletProfileId } from "@/app/lib/data/mock/wallet/portfolio/profiles"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import { SandboxBorrowReadAdapter } from "@/app/lib/borrow-system/sandbox-read-adapter"
@@ -79,5 +79,40 @@ describe("borrow read adapters", () => {
     await expect(adapter.readPortfolioBorrow("wallet-1")).rejects.toThrow("Production read adapter is not implemented")
     await expect(adapter.readPoolDetail("pool-1")).rejects.toThrow("Production read adapter is not implemented")
     await expect(adapter.readAssetDetail("asset-1")).rejects.toThrow("Production read adapter is not implemented")
+  })
+
+  it("delegates production reads to the configured source", async () => {
+    const walletId = getDefaultWalletProfileId()
+    const sandbox = new SandboxBorrowReadAdapter({ state: buildMockBorrowSystemState(walletId) })
+    const readWalletSnapshot = vi.fn((id: string) => sandbox.readWalletSnapshot(id))
+    const readMarkets = vi.fn(() => sandbox.readMarkets())
+    const readBorrowPage = vi.fn((id: string) => sandbox.readBorrowPage(id))
+    const readPortfolioBorrow = vi.fn((id: string) => sandbox.readPortfolioBorrow(id))
+    const readPoolDetail = vi.fn((id: string) => sandbox.readPoolDetail(id))
+    const readAssetDetail = vi.fn((id: string) => sandbox.readAssetDetail(id))
+    const adapter = new ProductionBorrowReadAdapter({
+      readWalletSnapshot,
+      readMarkets,
+      readBorrowPage,
+      readPortfolioBorrow,
+      readPoolDetail,
+      readAssetDetail,
+    })
+
+    await Promise.all([
+      adapter.readWalletSnapshot(walletId),
+      adapter.readMarkets(),
+      adapter.readBorrowPage(walletId),
+      adapter.readPortfolioBorrow(walletId),
+      adapter.readPoolDetail("eth-usdc"),
+      adapter.readAssetDetail("uni-v3-stable:usdc"),
+    ])
+
+    expect(readWalletSnapshot).toHaveBeenCalledWith(walletId)
+    expect(readMarkets).toHaveBeenCalledOnce()
+    expect(readBorrowPage).toHaveBeenCalledWith(walletId)
+    expect(readPortfolioBorrow).toHaveBeenCalledWith(walletId)
+    expect(readPoolDetail).toHaveBeenCalledWith("eth-usdc")
+    expect(readAssetDetail).toHaveBeenCalledWith("uni-v3-stable:usdc")
   })
 })

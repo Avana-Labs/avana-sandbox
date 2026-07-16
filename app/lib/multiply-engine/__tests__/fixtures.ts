@@ -28,7 +28,7 @@ export function makeExampleMultiplySystemState(): MultiplySystemState {
         debtValueUsd,
         multiplier,
         ltv: debtValueUsd / (collateralValueUsd * multiplier),
-        healthFactor: ((collateralValueUsd * multiplier) * market.risk.liquidationThreshold) / debtValueUsd,
+        healthFactor: (collateralValueUsd * multiplier * market.risk.liquidationThreshold) / debtValueUsd,
         liquidationPrice: debtValueUsd / (collateralAmount * multiplier * market.risk.liquidationThreshold),
         netApy: 0.03,
         openedAt: Date.UTC(2026, 5, 1),

@@ -7,11 +7,20 @@ import type { LendPageData } from "./types"
 const lendPageSchema = z.object({
   tokens: z.array(z.object({ symbol: z.string(), name: z.string() }).passthrough()),
   markets: z.array(z.object({ symbol: z.string(), name: z.string() }).passthrough()),
-  activity: z.array(z.object({ type: z.string(), asset: z.string(), amount: z.string(), date: z.string() }).passthrough()),
+  activity: z.array(
+    z.object({ type: z.string(), asset: z.string(), amount: z.string(), date: z.string() }).passthrough(),
+  ),
   chartSeries: z.array(z.object({ time: z.string(), value: z.number() })),
   featuredAssets: z.record(
     z.string(),
-    z.object({ id: z.string(), symbol: z.string(), displayName: z.string(), apy: z.number(), iconUrl: z.string(), path: z.string() }),
+    z.object({
+      id: z.string(),
+      symbol: z.string(),
+      displayName: z.string(),
+      apy: z.number(),
+      iconUrl: z.string(),
+      path: z.string(),
+    }),
   ),
   featuredSequence: z.array(z.string()),
   featuredSnapshots: z.array(
@@ -61,7 +70,10 @@ export async function fetchLendPage(
     operation: "getLendPageData",
     context,
     schema: lendPageSchema,
-    load: (pageSource, requestContext) => pageSource.getLendPageData(requestContext) as Promise<import("@/app/lib/data/core/source-runtime").DataSourceResponse<unknown>>,
+    load: (pageSource, requestContext) =>
+      pageSource.getLendPageData(requestContext) as Promise<
+        import("@/app/lib/data/core/source-runtime").DataSourceResponse<unknown>
+      >,
   })
 
   return response.data as unknown as LendPageData

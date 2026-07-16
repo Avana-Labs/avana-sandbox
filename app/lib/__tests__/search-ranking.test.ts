@@ -24,10 +24,7 @@ describe("search ranking", () => {
   })
 
   it("drops results that do not match the query at all", () => {
-    const results = [
-      make({ title: "ETH Pool", keywords: "eth weth" }),
-      make({ title: "USDC Pool", keywords: "usdc" }),
-    ]
+    const results = [make({ title: "ETH Pool", keywords: "eth weth" }), make({ title: "USDC Pool", keywords: "usdc" })]
 
     const ranked = rankResults(results, "usdc")
 
@@ -53,10 +50,7 @@ describe("search ranking", () => {
   })
 
   it("keeps original order for equal-score ties (stable sort)", () => {
-    const results = [
-      make({ title: "usdc alpha" }),
-      make({ title: "usdc beta" }),
-    ]
+    const results = [make({ title: "usdc alpha" }), make({ title: "usdc beta" })]
     const ranked = rankResults(results, "usdc")
     expect(ranked.map((r) => r.title)).toEqual(["usdc alpha", "usdc beta"])
   })

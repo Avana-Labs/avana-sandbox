@@ -30,7 +30,7 @@ vi.mock("@/app/borrow/borrow-workspace-shell", () => ({
 
 const basePageData = {
   walletId: "wallet-1",
-  borrowSessionSeed: "{\"stub\":true}",
+  borrowSessionSeed: '{"stub":true}',
   poolCatalog: [
     {
       id: "market-1",
@@ -48,7 +48,13 @@ const basePageData = {
       aprMax: 5.9,
       riskPremiumBps: 70,
       visuals: [
-        { symbol: "WETH", shortLabel: "W", bgClass: "bg-indigo-100", textClass: "text-indigo-700", iconUrl: "/weth.png" },
+        {
+          symbol: "WETH",
+          shortLabel: "W",
+          bgClass: "bg-indigo-100",
+          textClass: "text-indigo-700",
+          iconUrl: "/weth.png",
+        },
         { symbol: "USDC", shortLabel: "U", bgClass: "bg-sky-100", textClass: "text-sky-700", iconUrl: "/usdc.png" },
       ],
       collateralExampleUsd: 1000,
@@ -81,7 +87,13 @@ const basePageData = {
         aprMax: 5.9,
         riskPremiumBps: 70,
         visuals: [
-          { symbol: "WETH", shortLabel: "W", bgClass: "bg-indigo-100", textClass: "text-indigo-700", iconUrl: "/weth.png" },
+          {
+            symbol: "WETH",
+            shortLabel: "W",
+            bgClass: "bg-indigo-100",
+            textClass: "text-indigo-700",
+            iconUrl: "/weth.png",
+          },
           { symbol: "USDC", shortLabel: "U", bgClass: "bg-sky-100", textClass: "text-sky-700", iconUrl: "/usdc.png" },
         ],
         collateralExampleUsd: 1000,

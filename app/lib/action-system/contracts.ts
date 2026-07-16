@@ -2,14 +2,10 @@ export type ActionProduct = "borrow" | "lend" | "multiply" | "rewards"
 
 export type BorrowActionKind = "borrow" | "repay" | "supply" | "remove" | "claim"
 export type LendActionKind = "deposit" | "withdraw"
-export type MultiplyActionKind = "multiply" | "deleverage"
+export type MultiplyActionKind = "multiply" | "deleverage" | "close"
 export type RewardsActionKind = "claim"
 
-export type ActionKind =
-  | BorrowActionKind
-  | LendActionKind
-  | MultiplyActionKind
-  | RewardsActionKind
+export type ActionKind = BorrowActionKind | LendActionKind | MultiplyActionKind | RewardsActionKind
 
 export type ActionPageMode = "page" | "overlay" | "embedded"
 
@@ -20,6 +16,10 @@ export type ActionStage =
   | "approve_allowance"
   | "wallet_sign"
   | "processing"
+  | "submitted"
+  | "confirmed"
+  | "refreshing_position"
+  | "reconciled"
   | "success"
   | "error"
 
@@ -39,10 +39,14 @@ export type ActionMetricRow = {
 export type ActionRiskLevel = "safe" | "warning" | "danger"
 
 export type ActionPreviewUi = {
+  quoteId?: string
+  loopCount?: number
+  executionSteps?: Array<{ id: string; label: string }>
   allowed: boolean
   amountLabel: string
   amountTitle?: string
   amountValue?: string
+  amountUnitLabel?: string
   assetLabel?: string
   assetSymbol?: string
   borrowSymbol?: string
@@ -72,6 +76,7 @@ export type ActionPreviewUi = {
 }
 
 export type ActionSuccessUi = {
+  quoteId?: string
   title: string
   description: string
   receiptHash: string | null
@@ -166,6 +171,13 @@ export const ACTION_DESCRIPTORS: Record<ActionProduct, Partial<Record<ActionKind
       subtitle: "Configure and review your unwind.",
       primaryVerb: "Deleverage",
     },
+    close: {
+      product: "multiply",
+      kind: "close",
+      title: "Close position",
+      subtitle: "Review the full unwind and collateral withdrawal.",
+      primaryVerb: "Close",
+    },
   },
   rewards: {
     claim: {
@@ -204,7 +216,7 @@ const ACTION_CLOSE_HREF: Record<ActionProduct, string> = {
   borrow: "/borrow",
   lend: "/lend",
   multiply: "/multiply",
-  rewards: "/rewards",
+  rewards: "/portfolio",
 }
 
 function normalizeReturnHref(returnHref: string) {

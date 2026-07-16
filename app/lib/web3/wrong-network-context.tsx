@@ -38,13 +38,7 @@ const INERT: WrongNetworkState = {
 
 const WrongNetworkContext = createContext<WrongNetworkState | null>(null)
 
-export function WrongNetworkStateProvider({
-  value,
-  children,
-}: {
-  value: WrongNetworkState
-  children: ReactNode
-}) {
+export function WrongNetworkStateProvider({ value, children }: { value: WrongNetworkState; children: ReactNode }) {
   return <WrongNetworkContext.Provider value={value}>{children}</WrongNetworkContext.Provider>
 }
 

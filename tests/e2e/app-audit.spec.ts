@@ -145,7 +145,11 @@ async function browseRoute(page: Page, viewport: string, route: string, options?
 }
 
 async function toggleTheme(page: Page, viewport: string, route: string) {
-  const themeToggle = page.locator('[aria-label*="theme" i], [aria-label*="dark" i], [aria-label*="light" i], button:has-text("Dark"), button:has-text("Light")').first()
+  const themeToggle = page
+    .locator(
+      '[aria-label*="theme" i], [aria-label*="dark" i], [aria-label*="light" i], button:has-text("Dark"), button:has-text("Light")',
+    )
+    .first()
   if (await themeToggle.isVisible().catch(() => false)) {
     await themeToggle.click()
     await page.waitForTimeout(400)
@@ -207,7 +211,12 @@ test.describe("Borrow pages", () => {
     })
     const mobileCategoryDropdown = page.locator(".flex.md\\:hidden button[aria-haspopup='listbox']").first()
 
-    if (await desktopCategoryTabs.first().isVisible().catch(() => false)) {
+    if (
+      await desktopCategoryTabs
+        .first()
+        .isVisible()
+        .catch(() => false)
+    ) {
       const count = await desktopCategoryTabs.count()
       for (let i = 0; i < count; i++) {
         await desktopCategoryTabs.nth(i).click()
@@ -292,8 +301,8 @@ test.describe("Multiply pages", () => {
 test.describe("Dashboard", () => {
   test("browse all dashboard tabs", async ({ page }, testInfo) => {
     const viewport = testInfo.project.name
-    await browseRoute(page, viewport, "/dashboard", { clickTabs: true })
-    await toggleTheme(page, viewport, "/dashboard")
+    await browseRoute(page, viewport, "/portfolio", { clickTabs: true })
+    await toggleTheme(page, viewport, "/portfolio")
   })
 })
 
@@ -308,7 +317,10 @@ test.describe("Rewards", () => {
     const promoTabs = page.locator("#rewards-tabs button[role='tab']")
     const count = await promoTabs.count()
     for (let i = 0; i < count; i++) {
-      await promoTabs.nth(i).click().catch(() => {})
+      await promoTabs
+        .nth(i)
+        .click()
+        .catch(() => {})
       await page.waitForTimeout(300)
     }
 
@@ -357,8 +369,9 @@ test.afterAll(async () => {
 
 // Fail test if critical console errors found (for CI)
 test("no critical console errors across audit", async () => {
-  const critical = auditIssues.filter(
-    (i) => i.category === "console" && !isBenignConsoleError(i.message),
-  )
-  expect(critical, `Found ${critical.length} console errors:\n${critical.map((i) => i.message).join("\n")}`).toHaveLength(0)
+  const critical = auditIssues.filter((i) => i.category === "console" && !isBenignConsoleError(i.message))
+  expect(
+    critical,
+    `Found ${critical.length} console errors:\n${critical.map((i) => i.message).join("\n")}`,
+  ).toHaveLength(0)
 })

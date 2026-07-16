@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest"
 import { simulateBorrow, parseFixed } from "@/app/lib/credit-engine"
-import { deserializeBorrowSystemState, normalizeBorrowSystemState, serializeBorrowSystemState } from "@/app/lib/borrow-system/codec"
-import { EXAMPLE_UNI_MARKET_ID, EXAMPLE_UNI_USDC_ASSET_ID, makeExampleBorrowSystemState } from "@/app/lib/credit-engine/__tests__/fixtures"
+import {
+  deserializeBorrowSystemState,
+  normalizeBorrowSystemState,
+  serializeBorrowSystemState,
+} from "@/app/lib/borrow-system/codec"
+import {
+  EXAMPLE_UNI_MARKET_ID,
+  EXAMPLE_UNI_USDC_ASSET_ID,
+  makeExampleBorrowSystemState,
+} from "@/app/lib/credit-engine/__tests__/fixtures"
 
 describe("borrow session codec", () => {
   it("normalizes legacy accounts missing rewardPositions", () => {

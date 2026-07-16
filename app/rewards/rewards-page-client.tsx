@@ -15,10 +15,7 @@ import type { RewardsPageData } from "@/app/lib/data/providers/rewards"
 import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useRewardsSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { RewardTask, UserRewardProgress } from "@/app/lib/rewards-engine"
-import {
-  calculateRewardSummary,
-  evaluateAllTasksForUser,
-} from "@/app/lib/rewards-engine"
+import { calculateRewardSummary, evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
 import {
   canRunTaskAction,
   findTaskById,
@@ -29,14 +26,24 @@ import {
 } from "@/app/lib/rewards-engine/task-actions"
 import { RewardsPageSkeleton } from "@/app/components/loading-states"
 import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
-import { RewardsBalanceHero } from "./rewards-balance-hero"
-import { RewardsClaimSidebar } from "./rewards-claim-sidebar"
-import { RewardDistributionHistory } from "./reward-distribution-history"
+import { RewardsBalanceHero, PortfolioRewardsCards } from "./rewards-balance-hero"
+import { PortfolioQuickActions } from "./portfolio-quick-actions"
+import { LendOpportunity } from "./lend-opportunity"
+import { LearnSection } from "./learn-section"
+import { RecentActivity } from "@/app/portfolio/recent-activity"
+import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
+import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
+import { usePortfolioPage } from "@/app/portfolio/use-portfolio-page"
 import { RewardsTabs } from "./rewards-tabs"
 import { MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
 import Link from "next/link"
-import { RewardsEducationDialog, RewardsFavoriteDialog, RewardsReferralDialog, RewardsSimulateDialog } from "./rewards-task-dialogs"
+import {
+  RewardsEducationDialog,
+  RewardsFavoriteDialog,
+  RewardsReferralDialog,
+  RewardsSimulateDialog,
+} from "./rewards-task-dialogs"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 
@@ -106,7 +113,14 @@ function isReferralClaimCta(task: RewardTask, t: (key: string) => string) {
   return t("Claim {amount} AVA").replace("{amount}", String(task.rewardAmount))
 }
 
-function buildProgressLabel(task: RewardTask, progress: UserRewardProgress, firstLoginAt: number, now: number, t: (key: string) => string, exact: (usd: number) => string) {
+function buildProgressLabel(
+  task: RewardTask,
+  progress: UserRewardProgress,
+  firstLoginAt: number,
+  now: number,
+  t: (key: string) => string,
+  exact: (usd: number) => string,
+) {
   if (progress.status === "claimed") return t("Claimed")
   if (progress.status === "claimable") return t("Ready to claim")
   if (progress.status === "expired") return t("Expired")
@@ -207,6 +221,8 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
     createReferralCode,
     recordReferralLinkCopied,
   } = useRewardsSessionContext()
+  // Full portfolio recent activity (all products) so the rewards table isn't claims-only.
+  const { data: portfolioData } = usePortfolioPage({ walletProfileId: walletId })
 
   const [now, setNow] = useState(0)
   const [isClaiming, setIsClaiming] = useState(false)
@@ -258,17 +274,16 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
     if (!snapshot) return emptyRewardsQuestsByTab<RewardCardViewModel>()
 
     const progressByTaskId = new Map(snapshot.progress.map((item) => [item.taskId, item]))
-    const grouped = tasks.reduce<Record<RewardsPromoTabId, RewardCardViewModel[]>>(
-      (accumulator, task) => {
-        const progress = progressByTaskId.get(task.id)
-        if (!progress) return accumulator
-        accumulator[resolveRewardsPromoTab(task)].push(
-          mapTaskToQuest(task, progress, state.firstLoginAt, now, t, exact),
-        )
-        return accumulator
-      },
-      emptyRewardsQuestsByTab<RewardCardViewModel>(),
-    )
+    const grouped = tasks.reduce<Record<RewardsPromoTabId, RewardCardViewModel[]>>((accumulator, task) => {
+      const progress = progressByTaskId.get(task.id)
+      if (!progress) return accumulator
+      accumulator[resolveRewardsPromoTab(task)].push(mapTaskToQuest(task, progress, state.firstLoginAt, now, t, exact))
+      return accumulator
+    }, emptyRewardsQuestsByTab<RewardCardViewModel>())
+
+    // "Getting started" is no longer its own tab — its quests now lead the Lend tab.
+    grouped.lend = [...grouped["getting-started"], ...grouped.lend]
+    grouped["getting-started"] = []
 
     // Show at most 6 cards per tab (catalog order). Any extra claimable quests
     // stay claimable through the sidebar / mobile claim rail.
@@ -278,14 +293,11 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
     return grouped
   }, [tasks, snapshot, state.firstLoginAt, now, t, exact])
 
-  const runReferralActivations = useCallback(
-    async () => {
-      await runReferralSandboxStep("activate")
-    },
-    [runReferralSandboxStep],
-  )
+  const runReferralActivations = useCallback(async () => {
+    await runReferralSandboxStep("activate")
+  }, [runReferralSandboxStep])
 
-  const referralTask = referralTaskId ? tasks.find((task) => task.id === referralTaskId) ?? null : null
+  const referralTask = referralTaskId ? (tasks.find((task) => task.id === referralTaskId) ?? null) : null
   const referralProgress = snapshot?.progress.find((item) => item.taskId === referralTaskId) ?? null
 
   const openReferralDialog = useCallback((taskId: string) => {
@@ -412,22 +424,42 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
     return <RewardsPageSkeleton />
   }
 
-  const progressPercentage = Math.round(
-    (snapshot.summary.completedTaskCount / Math.max(1, snapshot.summary.totalTaskCount)) * 100,
-  )
-
   const claimHref = snapshot.summary.claimableTaskCount > 0 ? "/actions/rewards/claim" : undefined
   const rewardActivityRows = buildRewardsActivityHistory(walletId, state.claims, tasks)
+  // One combined "recent activity" table: live session actions + the full portfolio
+  // activity (all products) + reward claims, deduped by tx hash (session rows win).
+  const combinedActivityRows = [
+    ...mapTransactionHistoryToActivityRows(avana.borrow.transactionHistory, avana.borrow.state.markets),
+    ...avana.multiply.transactionHistory.map((item) => ({
+      id: item.id,
+      at: new Date(item.timestamp).toISOString(),
+      product: "multiply" as const,
+      kind: item.kind === "multiply" ? ("open" as const) : ("reduce" as const),
+      status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
+      amountUsd: item.kind === "multiply" ? item.amountUsd : -item.amountUsd,
+      primaryLabel: item.kind === "multiply" ? "Simulated multiply" : "Simulated deleverage",
+      secondaryLabel: `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
+      txHash: item.hash,
+    })),
+    ...buildLendActivityHistory(avana.lend.walletId, avana.lend.transactionHistory, avana.lend.state),
+    ...(portfolioData?.activity.rows ?? []),
+    ...rewardActivityRows,
+  ]
+  const seenTxHashes = new Set<string>()
+  const allActivityRows = combinedActivityRows.filter((row) => {
+    if (seenTxHashes.has(row.txHash)) return false
+    seenTxHashes.add(row.txHash)
+    return true
+  })
 
   return (
     <>
-      <RewardsBalanceHero
-        rewardPools={pageData?.rewardPools ?? []}
-        balanceTotal={snapshot.summary.totalClaimedAmount}
-        completedCount={snapshot.summary.completedTaskCount}
-        totalCount={snapshot.summary.totalTaskCount}
-        progressPercentage={progressPercentage}
-      />
+      <RewardsBalanceHero claimHref={claimHref} />
+
+      {/* Mobile: quick actions right after the hero chart (desktop shows them in the sidebar). */}
+      <div className="mb-8 lg:hidden">
+        <PortfolioQuickActions />
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-x-8">
         <div className="min-w-0">
@@ -438,13 +470,24 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
           />
         </div>
 
-        <aside className="hidden lg:block lg:self-start">
-          <RewardsClaimSidebar />
+        <aside className="hidden space-y-8 lg:block lg:self-start">
+          <PortfolioQuickActions />
+          <LendOpportunity />
         </aside>
       </div>
 
+      <div className="mb-8 md:mb-10">
+        <LearnSection />
+      </div>
+
+      {/* Mobile: rewards cards + lend opportunity near the end (desktop shows these in the hero/sidebar). */}
+      <div className="mb-8 space-y-8 lg:hidden">
+        <PortfolioRewardsCards claimHref={claimHref} />
+        <LendOpportunity />
+      </div>
+
       <div className="pb-24 lg:pb-0">
-        <RewardDistributionHistory rows={rewardActivityRows} />
+        <RecentActivity rows={allActivityRows} />
       </div>
 
       <MobileDetailActionBar>
@@ -453,7 +496,11 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
             {t("Claim rewards")}
           </Link>
         ) : (
-          <button type="button" disabled className={primaryCtaClass({ size: "compact", disabled: true, className: "w-full" })}>
+          <button
+            type="button"
+            disabled
+            className={primaryCtaClass({ size: "compact", disabled: true, className: "w-full" })}
+          >
             {t("No rewards ready")}
           </button>
         )}
@@ -477,11 +524,7 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
         }}
       />
 
-      <RewardsSimulateDialog
-        open={simulateOpen}
-        onOpenChange={setSimulateOpen}
-        onSimulate={handleSimulate}
-      />
+      <RewardsSimulateDialog open={simulateOpen} onOpenChange={setSimulateOpen} onSimulate={handleSimulate} />
 
       <RewardsReferralDialog
         open={referralOpen}

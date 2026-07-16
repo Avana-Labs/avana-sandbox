@@ -7,6 +7,7 @@ export const MULTIPLY_CATALOG_LEVERAGE_SCALE = 1
 /** Multiply action modal slider range (independent of per-market public caps). */
 export const MULTIPLY_ACTION_MIN_LEVERAGE = 1
 export const MULTIPLY_ACTION_MAX_LEVERAGE = 10
+export const MULTIPLY_DEFAULT_LEVERAGE = 1.1
 
 /**
  * Resolve the per-market public cap into the action slider's max, clamped to the
@@ -32,6 +33,17 @@ export function resolveMultiplyMarketDisplayMaxLeverage(publicMaxMultiplier: num
     return 1
   }
   return publicMaxMultiplier
+}
+
+export function resolveDefaultMultiplyLeverage(
+  publicMaxMultiplier: number | undefined,
+  recommendedMaxMultiplier?: number,
+) {
+  const publicMax = resolveMultiplyMarketMaxLeverage(publicMaxMultiplier)
+  const recommendedMax = Number.isFinite(recommendedMaxMultiplier)
+    ? Math.max(MULTIPLY_ACTION_MIN_LEVERAGE, recommendedMaxMultiplier!)
+    : publicMax
+  return Math.min(publicMax, recommendedMax, MULTIPLY_DEFAULT_LEVERAGE)
 }
 
 export function getDefaultDeleverageMultiplier(currentMultiplier: number) {

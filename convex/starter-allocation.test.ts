@@ -31,12 +31,7 @@ function pricedCatalog(): StarterPricedMarket[] {
   ]
 }
 
-const MARKETS = [
-  ...catalog("asset", 64),
-  ...catalog("pool", 64),
-  ...catalog("lend", 25),
-  ...catalog("multiply", 20),
-]
+const MARKETS = [...catalog("asset", 64), ...catalog("pool", 64), ...catalog("lend", 25), ...catalog("multiply", 20)]
 
 describe("starter allocation planner", () => {
   test("allocates exactly $1M across the configured diversified buckets", () => {
@@ -46,10 +41,14 @@ describe("starter allocation planner", () => {
     expect(plan.collateral).toHaveLength(STARTER_BUCKETS.collateral.count)
     expect(plan.lend).toHaveLength(STARTER_BUCKETS.lend.count)
     expect(plan.multiply).toHaveLength(STARTER_BUCKETS.multiply.count)
-    expect(Math.round([...plan.liquid, ...plan.collateral, ...plan.lend, ...plan.multiply].reduce(
-      (sum, leg) => sum + leg.amountUsd,
-      0,
-    ) * 100)).toBe(STARTER_EQUITY_USD * 100)
+    expect(
+      Math.round(
+        [...plan.liquid, ...plan.collateral, ...plan.lend, ...plan.multiply].reduce(
+          (sum, leg) => sum + leg.amountUsd,
+          0,
+        ) * 100,
+      ),
+    ).toBe(STARTER_EQUITY_USD * 100)
   })
 
   test("is deterministic and changes selection for another wallet", () => {
@@ -72,10 +71,16 @@ describe("starter allocation planner", () => {
   test("redistributes (never hard-fails) when a market scope is missing", () => {
     // Onboarding must complete even on a partial seed — the missing scope's budget is
     // spread over the buckets that do have markets, keeping the total at $1M.
-    const plan = buildStarterAllocationPlan("0xabc", MARKETS.filter((market) => market.scope !== "multiply"))
+    const plan = buildStarterAllocationPlan(
+      "0xabc",
+      MARKETS.filter((market) => market.scope !== "multiply"),
+    )
     expect(plan.multiply).toHaveLength(0)
     expect(plan.liquid.length).toBeGreaterThan(0)
-    const total = [...plan.liquid, ...plan.collateral, ...plan.lend, ...plan.multiply].reduce((sum, leg) => sum + leg.amountUsd, 0)
+    const total = [...plan.liquid, ...plan.collateral, ...plan.lend, ...plan.multiply].reduce(
+      (sum, leg) => sum + leg.amountUsd,
+      0,
+    )
     expect(Math.round(total * 100)).toBe(STARTER_EQUITY_USD * 100)
   })
 

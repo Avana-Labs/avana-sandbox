@@ -6,11 +6,7 @@ export const metadata: Metadata = {
   description: "View an authenticated Avana synthetic transaction receipt.",
 }
 
-export default async function SyntheticTransactionPage({
-  params,
-}: {
-  params: Promise<{ hash: string }>
-}) {
+export default async function SyntheticTransactionPage({ params }: { params: Promise<{ hash: string }> }) {
   const { hash } = await params
   return <SyntheticTransactionClient hash={decodeURIComponent(hash)} />
 }

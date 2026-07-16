@@ -31,9 +31,19 @@ type Props = {
 export function NewsCard({ items, title = "Risk Stewards", plain = false, viewAllHref, itemHrefFallback }: Props) {
   const { t } = useTranslation()
   return (
-    <section className={plain ? "space-y-2" : "overflow-hidden rounded-radius-lg border border-border bg-surface-raised shadow-elev-1"}>
-      <div className={plain ? "flex items-center justify-between gap-3" : "flex items-center justify-between gap-3 px-4 py-3"}>
-        <h2 className="truncate text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">{t(title)}</h2>
+    <section
+      className={
+        plain ? "space-y-2" : "overflow-hidden rounded-radius-lg border border-border bg-surface-raised shadow-elev-1"
+      }
+    >
+      <div
+        className={
+          plain ? "flex items-center justify-between gap-3" : "flex items-center justify-between gap-3 px-4 py-3"
+        }
+      >
+        <h2 className="truncate text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
+          {t(title)}
+        </h2>
         {viewAllHref ? (
           <Link
             href={viewAllHref}

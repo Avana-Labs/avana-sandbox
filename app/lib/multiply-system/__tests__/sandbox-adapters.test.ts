@@ -163,12 +163,17 @@ describe("SandboxMultiplyTransactionAdapter", () => {
     })
     const result = await adapter.executeTransaction(intent)
     const updated = multiplyState.positions[existing.id]!
-    const readAdapter = new SandboxMultiplyReadAdapter({ state: multiplyState, transactionHistory: [result.historyItem] })
+    const readAdapter = new SandboxMultiplyReadAdapter({
+      state: multiplyState,
+      transactionHistory: [result.historyItem],
+    })
     const portfolio = await readAdapter.readPortfolioMultiply(existing.walletId)
 
     expect(updated.collateralValueUsd).toBeGreaterThan(existing.collateralValueUsd)
     expect(updated.debtValueUsd).toBeGreaterThan(existing.debtValueUsd)
-    expect(result.historyItem.amountUsd).toBeCloseTo(result.preview.after.collateralValueUsd - result.preview.before.collateralValueUsd)
+    expect(result.historyItem.amountUsd).toBeCloseTo(
+      result.preview.after.collateralValueUsd - result.preview.before.collateralValueUsd,
+    )
     expect(portfolio.creditLines.totalCollateralUsd).toBeCloseTo(updated.collateralValueUsd)
     expect(portfolio.creditLines.totalBorrowedUsd).toBeCloseTo(updated.debtValueUsd)
     expect(multiplyState.markets[existing.marketId]!.economics.availableLiquidityUsd).toBeCloseTo(

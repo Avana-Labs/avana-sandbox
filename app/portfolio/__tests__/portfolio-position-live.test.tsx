@@ -7,14 +7,14 @@ vi.mock("@/app/components/display-preferences", () => ({
   useOptionalLocaleDisplayPreferences: () => ({ currency: "USD", language: "EN" }),
 }))
 
-vi.mock("@/app/dashboard/components/borrow-tab/supplies-table", () => ({
+vi.mock("@/app/portfolio/borrow-tab/supplies-table", () => ({
   SuppliesHealthFactorCard: () => null,
   SuppliesPanel: ({ rows }: { rows: Array<{ remainingBorrowPowerUsd: number }> }) => (
     <div>remaining:{rows[0]?.remainingBorrowPowerUsd ?? 0}</div>
   ),
 }))
 
-vi.mock("@/app/dashboard/components/borrow-tab/debts-table", () => ({
+vi.mock("@/app/portfolio/borrow-tab/debts-table", () => ({
   CurrentLtvCard: () => null,
   DebtsPanel: ({ rows }: { rows: Array<{ borrowedUsd: number }> }) => <div>borrowed:{rows[0]?.borrowedUsd ?? 0}</div>,
 }))

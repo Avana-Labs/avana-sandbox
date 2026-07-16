@@ -115,7 +115,10 @@ export const MULTIPLY_LIQUIDATION_THRESHOLDS: Partial<Record<keyof typeof MULTIP
   CRV: 0.68,
 }
 
-export const MULTIPLY_LOOP_DEFINITIONS: Array<{ collateral: keyof typeof MULTIPLY_TOKEN_LOGOS; borrowable: keyof typeof MULTIPLY_TOKEN_LOGOS }> = [
+export const MULTIPLY_LOOP_DEFINITIONS: Array<{
+  collateral: keyof typeof MULTIPLY_TOKEN_LOGOS
+  borrowable: keyof typeof MULTIPLY_TOKEN_LOGOS
+}> = [
   { collateral: "wstETH", borrowable: "ETH" },
   { collateral: "stETH", borrowable: "ETH" },
   { collateral: "rETH", borrowable: "ETH" },
@@ -146,13 +149,17 @@ export type MultiplyRewardRow = {
 export type MultiplyMarketRow = {
   href: string
   protocol: string
+  protocolName?: string
   protocolLogo: string
   asset: string
+  assetName?: string
   kind: "Loop"
   apy: string
   apyLabel: string
   partnerRewards?: string
   points?: string
+  availablePrimary?: string
+  availableSecondary?: string
   rewardRows?: MultiplyRewardRow[]
   waitlistHref?: string
   collateralFactor: number
@@ -197,7 +204,12 @@ function buildMultiplyMarketRow(
     apy: formatPct(maxLoopApy),
     apyLabel: "APY derived from supply and borrow APRs",
     points: formatCompactUsd(availableUsd),
-    rewardRows: [{ label: `CF ${Math.round(cf * 100)}% · LT ${Math.round(lt * 100)}%`, value: formatFactor(maxLeverage) }],
+    rewardRows: [
+      {
+        label: `Collateral factor ${Math.round(cf * 100)}% · Liquidation threshold ${Math.round(lt * 100)}%`,
+        value: formatFactor(maxLeverage),
+      },
+    ],
     collateralFactor: cf,
     liquidationThreshold: lt,
   }
@@ -208,5 +220,9 @@ export const MULTIPLY_MARKET_ROWS: MultiplyMarketRow[] = MULTIPLY_LOOP_DEFINITIO
 ).filter((row): row is MultiplyMarketRow => Boolean(row))
 
 export function getMultiplyMarketRow(id: string): MultiplyMarketRow | null {
-  return MULTIPLY_MARKET_ROWS.find((row) => row.href.endsWith(`/multiply/markets/${id}`) || `${row.protocol}-${row.asset}` === id) ?? null
+  return (
+    MULTIPLY_MARKET_ROWS.find(
+      (row) => row.href.endsWith(`/multiply/markets/${id}`) || `${row.protocol}-${row.asset}` === id,
+    ) ?? null
+  )
 }

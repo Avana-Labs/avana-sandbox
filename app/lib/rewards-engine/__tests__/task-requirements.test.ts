@@ -75,7 +75,9 @@ const taskSpecs: TaskSpec[] = [
   },
   {
     taskId: "first-deleverage",
-    completeEvents: [event("deleverage-first", "multiply_deleveraged", "multiply", { amountUsd: 50, marketId: "eth-usdt" })],
+    completeEvents: [
+      event("deleverage-first", "multiply_deleveraged", "multiply", { amountUsd: 50, marketId: "eth-usdt" }),
+    ],
   },
   {
     taskId: "first-reward-claim",
@@ -116,7 +118,11 @@ const taskSpecs: TaskSpec[] = [
     completeEvents: [
       event("use-lend", "lend_deposited", "lend", { amountUsd: 100, marketId: "gho" }),
       event("use-borrow", "borrow_opened", "borrow", { amountUsd: 100, marketId: "pool-a", timestamp: now + 1 }),
-      event("use-multiply", "multiply_opened", "multiply", { amountUsd: 100, marketId: "eth-usdt", timestamp: now + 2 }),
+      event("use-multiply", "multiply_opened", "multiply", {
+        amountUsd: 100,
+        marketId: "eth-usdt",
+        timestamp: now + 2,
+      }),
     ],
     beforeStatus: "in_progress",
   },
@@ -126,7 +132,9 @@ const taskSpecs: TaskSpec[] = [
   },
   {
     taskId: "use-uniswap-v4-position",
-    completeEvents: [event("uniswap-tour", "sandbox_tour_completed", "borrow", { marketId: "uniswap-v4-sandbox-tour" })],
+    completeEvents: [
+      event("uniswap-tour", "sandbox_tour_completed", "borrow", { marketId: "uniswap-v4-sandbox-tour" }),
+    ],
   },
   {
     taskId: "maintain-hf-above-2",
@@ -154,7 +162,11 @@ const taskSpecs: TaskSpec[] = [
     partialEvents: [event("deleverage-1", "multiply_deleveraged", "multiply", { amountUsd: 50, marketId: "eth-usdt" })],
     completeEvents: [
       event("deleverage-1", "multiply_deleveraged", "multiply", { amountUsd: 50, marketId: "eth-usdt" }),
-      event("deleverage-2", "multiply_deleveraged", "multiply", { amountUsd: 50, marketId: "btc-usdc", timestamp: now + 1 }),
+      event("deleverage-2", "multiply_deleveraged", "multiply", {
+        amountUsd: 50,
+        marketId: "btc-usdc",
+        timestamp: now + 1,
+      }),
     ],
     beforeStatus: "in_progress",
   },
@@ -233,7 +245,9 @@ const taskSpecs: TaskSpec[] = [
   },
   {
     taskId: "first-funded-referral",
-    completeEvents: [event("ref-funded", "referral_funded", "referral", { referredWallet: "friend-1", amountUsd: 250 })],
+    completeEvents: [
+      event("ref-funded", "referral_funded", "referral", { referredWallet: "friend-1", amountUsd: 250 }),
+    ],
   },
   {
     taskId: "bring-3-active-users",
@@ -266,10 +280,16 @@ const taskSpecs: TaskSpec[] = [
   },
   {
     taskId: "referral-cohort-25k",
-    partialEvents: [event("ref-cohort-250", "referral_funded", "referral", { referredWallet: "friend-1", amountUsd: 250 })],
+    partialEvents: [
+      event("ref-cohort-250", "referral_funded", "referral", { referredWallet: "friend-1", amountUsd: 250 }),
+    ],
     completeEvents: [
       event("ref-cohort-250", "referral_funded", "referral", { referredWallet: "friend-1", amountUsd: 250 }),
-      event("ref-cohort-250b", "referral_funded", "referral", { referredWallet: "friend-2", amountUsd: 250, timestamp: now + 1 }),
+      event("ref-cohort-250b", "referral_funded", "referral", {
+        referredWallet: "friend-2",
+        amountUsd: 250,
+        timestamp: now + 1,
+      }),
     ],
     beforeStatus: "in_progress",
   },
@@ -409,7 +429,11 @@ describe("rewards task requirements", () => {
     const distinctMarketEvents = [
       event("lend-one", "lend_deposited", "lend", { amountUsd: 100, marketId: "gho" }),
       event("borrow-one", "borrow_opened", "borrow", { amountUsd: 100, marketId: "pool-a", timestamp: now + 1 }),
-      event("multiply-one", "multiply_opened", "multiply", { amountUsd: 100, marketId: "eth-usdt", timestamp: now + 2 }),
+      event("multiply-one", "multiply_opened", "multiply", {
+        amountUsd: 100,
+        marketId: "eth-usdt",
+        timestamp: now + 2,
+      }),
     ]
 
     const repeated = evaluate(task, repeatedMarketEvents, now + DAY_MS)

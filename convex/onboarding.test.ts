@@ -44,7 +44,9 @@ describe("sandbox onboarding + economy caps", () => {
 
     await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
     expect(await asUser.mutation(api.sandbox.onboarding.beginClaim, { wallet: WALLET })).toBe("claimPending")
-    expect((await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })).onboardingStep).toBe("claimPending")
+    expect((await asUser.query(api.sandbox.onboarding.getState, { wallet: WALLET })).onboardingStep).toBe(
+      "claimPending",
+    )
     const result = await asUser.mutation(api.sandbox.onboarding.claim, { wallet: WALLET })
 
     expect(result.status).toBe("done")
@@ -206,7 +208,9 @@ describe("sandbox onboarding + economy caps", () => {
 
     // getState surfaces the summed live count to the client.
     const lastWallet = `0x${N.toString(16).padStart(40, "0")}`
-    const state = await t.withIdentity({ subject: lastWallet }).query(api.sandbox.onboarding.getState, { wallet: lastWallet })
+    const state = await t
+      .withIdentity({ subject: lastWallet })
+      .query(api.sandbox.onboarding.getState, { wallet: lastWallet })
     expect(state.economy.userCount).toBe(N)
   })
 
@@ -368,21 +372,63 @@ describe("sandbox onboarding + economy caps", () => {
       // asset + multiply: single-token symbols the live oracle covers (tokenPrices rows).
       for (let i = 0; i < 12; i++) {
         const symbol = i === 0 ? "USDC" : `ASSET${i}`
-        await ctx.db.insert("markets", { scope: "asset", slug: `asset-${i}`, name: `Asset ${i}`, symbol, chainId: 1, createdAt: 0 })
-        await ctx.db.insert("tokenPrices", { symbol: symbol.toLowerCase(), llamaId: `t:${symbol}`, priceUsd: starterTestPriceFor(symbol), source: "test", updatedAt: 0 })
+        await ctx.db.insert("markets", {
+          scope: "asset",
+          slug: `asset-${i}`,
+          name: `Asset ${i}`,
+          symbol,
+          chainId: 1,
+          createdAt: 0,
+        })
+        await ctx.db.insert("tokenPrices", {
+          symbol: symbol.toLowerCase(),
+          llamaId: `t:${symbol}`,
+          priceUsd: starterTestPriceFor(symbol),
+          source: "test",
+          updatedAt: 0,
+        })
       }
       for (let i = 0; i < 6; i++) {
         const symbol = `MULT${i}`
-        await ctx.db.insert("markets", { scope: "multiply", slug: `multiply-${i}`, name: `Multiply ${i}`, symbol, chainId: 1, createdAt: 0 })
-        await ctx.db.insert("tokenPrices", { symbol: symbol.toLowerCase(), llamaId: `t:${symbol}`, priceUsd: starterTestPriceFor(symbol), source: "test", updatedAt: 0 })
+        await ctx.db.insert("markets", {
+          scope: "multiply",
+          slug: `multiply-${i}`,
+          name: `Multiply ${i}`,
+          symbol,
+          chainId: 1,
+          createdAt: 0,
+        })
+        await ctx.db.insert("tokenPrices", {
+          symbol: symbol.toLowerCase(),
+          llamaId: `t:${symbol}`,
+          priceUsd: starterTestPriceFor(symbol),
+          source: "test",
+          updatedAt: 0,
+        })
       }
       // pool: LP-PAIR symbols with NO tokenPrices row — priced only by markets.priceUsd.
       for (let i = 0; i < 8; i++) {
-        await ctx.db.insert("markets", { scope: "pool", slug: `pool-${i}`, name: `Pool ${i}`, symbol: `TKA${i}/TKB${i}`, priceUsd: 1, chainId: 1, createdAt: 0 })
+        await ctx.db.insert("markets", {
+          scope: "pool",
+          slug: `pool-${i}`,
+          name: `Pool ${i}`,
+          symbol: `TKA${i}/TKB${i}`,
+          priceUsd: 1,
+          chainId: 1,
+          createdAt: 0,
+        })
       }
       // lend: chain-name symbols with NO tokenPrices row — priced only by markets.priceUsd.
       for (let i = 0; i < 8; i++) {
-        await ctx.db.insert("markets", { scope: "lend", slug: `lend-${i}`, name: `Lend ${i}`, symbol: `CHAIN${i}`, priceUsd: 1.42, chainId: 1, createdAt: 0 })
+        await ctx.db.insert("markets", {
+          scope: "lend",
+          slug: `lend-${i}`,
+          name: `Lend ${i}`,
+          symbol: `CHAIN${i}`,
+          priceUsd: 1.42,
+          chainId: 1,
+          createdAt: 0,
+        })
       }
     })
     await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
@@ -426,9 +472,9 @@ describe("sandbox onboarding + economy caps", () => {
     await expect(
       asUser.query(api.sandbox.onboarding.getWalletOnboardingState, { wallet: "0xdifferent" }),
     ).rejects.toThrow(/WALLET_MISMATCH/)
-    await expect(
-      asUser.query(api.sandbox.onboarding.getEconomyStatus, { wallet: "0xdifferent" }),
-    ).rejects.toThrow(/WALLET_MISMATCH/)
+    await expect(asUser.query(api.sandbox.onboarding.getEconomyStatus, { wallet: "0xdifferent" })).rejects.toThrow(
+      /WALLET_MISMATCH/,
+    )
   })
 
   test("savePreferences caps the name at 10 chars, sanitizes DEX sources, and merges", async () => {

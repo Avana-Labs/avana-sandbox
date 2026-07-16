@@ -2,12 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import {
-  filterPools,
-  groupByDex,
-  type BorrowPoolRow,
-  type BorrowableAsset,
-} from "@/app/lib/data/borrow-domain"
+import { filterPools, groupByDex, type BorrowPoolRow, type BorrowableAsset } from "@/app/lib/data/borrow-domain"
 import type { BorrowWorkspaceData } from "@/app/lib/data/providers/borrow"
 import type { SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import { selectPortfolioSupplyRows } from "@/app/lib/borrow-system/dashboard-selectors"
@@ -23,6 +18,7 @@ import { TokenPricesProvider } from "@/app/lib/prices/token-prices-context"
 import { useMediaQuery } from "@/app/lib/use-media-query"
 import { categorizeMarket, type MarketCategory } from "@/app/lib/markets/category"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { RevealSentinel, useProgressiveReveal } from "@/app/lib/ui/use-progressive-reveal"
 
 // Curated (protocol-strategy) spokes that belong in "smart" regardless of their tokens.
 const SMART_SPOKES = new Set<string>([
@@ -35,6 +31,14 @@ const SMART_SPOKES = new Set<string>([
   "bal-reclamm",
   "aero-slipstream-bluechip",
 ])
+
+const BORROW_MARKETS_PAGE_SIZE = 12
+
+export function paginateBorrowMarkets<T>(rows: readonly T[], page: number, pageSize = BORROW_MARKETS_PAGE_SIZE) {
+  const safeSize = Math.max(1, pageSize)
+  const start = Math.max(0, page) * safeSize
+  return rows.slice(start, start + safeSize)
+}
 
 // Borrow pools carry multiple token visuals; categorise via the shared taxonomy so
 // filtering stays consistent with Lend / Multiply. A pool matches btc/eth/utility
@@ -69,7 +73,6 @@ function poolMatchesAnyCoreTab(pool: BorrowPoolRow) {
   )
 }
 
-
 export type BorrowWorkspaceProps = {
   pageData: BorrowWorkspaceData
   onTabChange?: (tab: BorrowTabId) => void
@@ -103,7 +106,15 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
     return filteredPools.filter((pool) => poolMatchesTab(pool, currentTab))
   }, [currentTab, filteredPools])
 
-  const poolGroups = useMemo(() => groupByDex(visiblePools), [visiblePools])
+  // Reveal markets on scroll instead of paginating: the first chunk renders up
+  // front, then the sentinel eases in the rest as the user scrolls down.
+  const { visibleCount, hasMore, isRevealing, sentinelRef } = useProgressiveReveal({
+    total: visiblePools.length,
+    chunkSize: BORROW_MARKETS_PAGE_SIZE,
+    resetKey: `${currentTab}|${search.trim().toLowerCase()}`,
+  })
+  const revealedPools = useMemo(() => visiblePools.slice(0, visibleCount), [visiblePools, visibleCount])
+  const poolGroups = useMemo(() => groupByDex(revealedPools), [revealedPools])
   // The "Borrowable" tab in the UI (labelled "Assets"→"Borrowable") is fed from here:
   // borrowAssetsBySpoke maps each spoke to its borrowable assets. To change what shows
   // under "Borrowable", start at session.getBorrowableAssetsForMarket + BorrowableAssetsPanel.
@@ -165,11 +176,11 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
         return Number.isFinite(row.healthFactor ?? NaN) || row.borrowedUsd === 0
       })
       const best = sameSpokeSupplies.reduce<SupplyRowContext | null>((acc, row) => {
-          if (!acc) return row
-          const rowScore = Number.isFinite(row.healthFactor ?? NaN) ? (row.healthFactor as number) : 99
-          const accScore = Number.isFinite(acc.healthFactor ?? NaN) ? (acc.healthFactor as number) : 99
-          return rowScore >= accScore ? row : acc
-        }, null)
+        if (!acc) return row
+        const rowScore = Number.isFinite(row.healthFactor ?? NaN) ? (row.healthFactor as number) : 99
+        const accScore = Number.isFinite(acc.healthFactor ?? NaN) ? (acc.healthFactor as number) : 99
+        return rowScore >= accScore ? row : acc
+      }, null)
       if (!best) {
         triggerPageLoading()
         router.push(borrowAssetDetailPath(asset.id))
@@ -197,46 +208,40 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
 
       <div className="pt-3 pb-6">
         <TokenPricesProvider>
-        {isPoolTab(currentTab) ? (
-          visiblePools.length === 0 ? (
-            <NoMarketsState query={search.trim()} hasFilters={hasActiveFilters} onClear={clearFilters} />
-          ) : isDesktop ? (
-            <CollateralPoolsTable
-              groups={poolGroups}
-              borrowAssetsBySpoke={borrowAssetsBySpoke}
-              pending={pendingRows}
-              onViewMarket={handleMarketDetail}
-              onUseAsCollateral={handlePoolsSupply}
-              onBorrowAssetDesktop={handleAssetBorrowDesktop}
-              onBorrowAssetMobile={handleAssetBorrowMobile}
-            />
-          ) : (
-            <CollateralPoolsList
-              groups={poolGroups}
-              borrowAssetsBySpoke={borrowAssetsBySpoke}
-              pending={pendingRows}
-              onViewMarket={handleMarketDetail}
-              onUseAsCollateral={handlePoolsSupply}
-              onBorrowAssetDesktop={handleAssetBorrowDesktop}
-              onBorrowAssetMobile={handleAssetBorrowMobile}
-            />
-          )
-        ) : null}
+          {isPoolTab(currentTab) ? (
+            visiblePools.length === 0 ? (
+              <NoMarketsState query={search.trim()} hasFilters={hasActiveFilters} onClear={clearFilters} />
+            ) : isDesktop ? (
+              <CollateralPoolsTable
+                groups={poolGroups}
+                borrowAssetsBySpoke={borrowAssetsBySpoke}
+                pending={pendingRows}
+                onViewMarket={handleMarketDetail}
+                onUseAsCollateral={handlePoolsSupply}
+                onBorrowAssetDesktop={handleAssetBorrowDesktop}
+                onBorrowAssetMobile={handleAssetBorrowMobile}
+              />
+            ) : (
+              <CollateralPoolsList
+                groups={poolGroups}
+                borrowAssetsBySpoke={borrowAssetsBySpoke}
+                pending={pendingRows}
+                onViewMarket={handleMarketDetail}
+                onUseAsCollateral={handlePoolsSupply}
+                onBorrowAssetDesktop={handleAssetBorrowDesktop}
+                onBorrowAssetMobile={handleAssetBorrowMobile}
+              />
+            )
+          ) : null}
         </TokenPricesProvider>
       </div>
+
+      {isPoolTab(currentTab) && hasMore ? <RevealSentinel sentinelRef={sentinelRef} active={isRevealing} /> : null}
     </section>
   )
 }
 
-function NoMarketsState({
-  query,
-  hasFilters,
-  onClear,
-}: {
-  query: string
-  hasFilters: boolean
-  onClear: () => void
-}) {
+function NoMarketsState({ query, hasFilters, onClear }: { query: string; hasFilters: boolean; onClear: () => void }) {
   const { t } = useTranslation()
   return (
     <div

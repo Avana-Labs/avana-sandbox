@@ -1,5 +1,5 @@
-import { cleanup, render, screen } from "@testing-library/react"
-import { afterEach, describe, expect, it } from "vitest"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { ActionLeverageRuler } from "@/app/components/action-page/action-leverage-ruler"
 
 afterEach(() => cleanup())
@@ -16,9 +16,7 @@ describe("ActionLeverageRuler", () => {
   })
 
   it("labels the ends with the exposure range (base × min … base × max)", () => {
-    render(
-      <ActionLeverageRuler value="3" onChange={() => {}} min={1} max={10} exposureBaseUsd={1645} />,
-    )
+    render(<ActionLeverageRuler value="3" onChange={() => {}} min={1} max={10} exposureBaseUsd={1645} />)
 
     // Left end = base × min (1645 × 1), right end = base × max (1645 × 10).
     expect(screen.getByText("$1,645 USD")).toBeInTheDocument()
@@ -29,5 +27,24 @@ describe("ActionLeverageRuler", () => {
     render(<ActionLeverageRuler value="2" onChange={() => {}} min={1} max={5} label="Target leverage" />)
 
     expect(screen.getByRole("slider", { name: "Target leverage multiplier" })).toBeInTheDocument()
+  })
+
+  it("accepts a precise custom leverage value", () => {
+    const onChange = vi.fn()
+    render(<ActionLeverageRuler value="2" onChange={onChange} min={1.1} max={5} label="Target leverage" />)
+
+    const input = screen.getByRole("spinbutton", { name: "Custom Target leverage" })
+    fireEvent.change(input, { target: { value: "2.7" } })
+
+    expect(onChange).toHaveBeenCalledWith("2.7")
+    expect(input).toHaveAttribute("min", "1.1")
+    expect(input).toHaveAttribute("max", "5")
+  })
+
+  it("distinguishes the recommended limit from the protocol maximum", () => {
+    render(<ActionLeverageRuler value="2" onChange={() => {}} min={1.1} max={5} recommendedMax={3.5} />)
+
+    expect(screen.getByText("Recommended up to 3.5x")).toBeInTheDocument()
+    expect(screen.getByText("5x")).toBeInTheDocument()
   })
 })

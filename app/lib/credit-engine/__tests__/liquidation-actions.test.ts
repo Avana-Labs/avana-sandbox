@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { assertBorrowSystemInvariants, calculateCreditMetrics, currentDebtValueUsd6, parseFixed } from "@/app/lib/credit-engine"
+import {
+  assertBorrowSystemInvariants,
+  calculateCreditMetrics,
+  currentDebtValueUsd6,
+  parseFixed,
+} from "@/app/lib/credit-engine"
 import { applyBorrowAction } from "@/app/lib/credit-engine/actions"
 import { EXAMPLE_WALLET_1_DEBT_ID, makeExampleBorrowSystemState } from "./fixtures"
 
@@ -64,7 +69,9 @@ describe("borrow liquidation actions", () => {
       repayAmountUsd6: parseFixed("1000", 6),
     })
 
-    const remaining = next.accounts["wallet-1"]!.debtPositions.find((position) => position.id === EXAMPLE_WALLET_1_DEBT_ID)
+    const remaining = next.accounts["wallet-1"]!.debtPositions.find(
+      (position) => position.id === EXAMPLE_WALLET_1_DEBT_ID,
+    )
     expect(remaining).toBeDefined()
     expect(remaining?.principalBorrowedUsd6).toBe(0n)
     expect(remaining?.debtSharesUsd6).toBe(parseFixed("19000", 6))

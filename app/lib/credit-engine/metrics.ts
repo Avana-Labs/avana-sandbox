@@ -50,12 +50,18 @@ function weightedBaseBorrowAprWad(account: BorrowAccountState, state: BorrowSyst
   return numerator / totalBorrowedUsd6
 }
 
-function scopeAccountBySpoke(state: BorrowSystemState, account: BorrowAccountState, spokeId?: BorrowSpokeId): BorrowAccountState {
+function scopeAccountBySpoke(
+  state: BorrowSystemState,
+  account: BorrowAccountState,
+  spokeId?: BorrowSpokeId,
+): BorrowAccountState {
   if (!spokeId) return account
 
   return {
     ...account,
-    collateralPositions: account.collateralPositions.filter((position) => state.markets[position.marketId]?.spokeId === spokeId),
+    collateralPositions: account.collateralPositions.filter(
+      (position) => state.markets[position.marketId]?.spokeId === spokeId,
+    ),
     debtPositions: account.debtPositions.filter((position) => position.spokeId === spokeId),
   }
 }
@@ -93,7 +99,9 @@ function calculateMetricsForAccount(state: BorrowSystemState, account: BorrowAcc
   const healthFactorWad = totalBorrowedUsd6 > 0n ? mulDiv(liquidationValueUsd6, WAD, totalBorrowedUsd6) : 0n
   const liquidationBufferUsd6 = liquidationValueUsd6 - totalBorrowedUsd6
   const liquidationBufferPercentWad =
-    liquidationValueUsd6 > 0n ? mulDiv(liquidationBufferUsd6 > 0n ? liquidationBufferUsd6 : 0n, WAD, liquidationValueUsd6) : 0n
+    liquidationValueUsd6 > 0n
+      ? mulDiv(liquidationBufferUsd6 > 0n ? liquidationBufferUsd6 : 0n, WAD, liquidationValueUsd6)
+      : 0n
   const weightedCollateralRiskWad = poolCollateralValueUsd6 > 0n ? weightedRiskNumerator / poolCollateralValueUsd6 : 0n
   const utilizationWad = creditLimitUsd6 > 0n ? mulDiv(totalBorrowedUsd6, WAD, creditLimitUsd6) : 0n
   const collateralRiskPremiumWad = mulDiv(weightedCollateralRiskWad, COLLATERAL_RISK_MULTIPLIER_WAD, WAD)
@@ -152,7 +160,9 @@ export function calculateSpokeCreditMetrics(
 }
 
 export function calculateBorrowCapacityUsd6(state: BorrowSystemState, walletId: string, spokeId?: BorrowSpokeId) {
-  const metrics = spokeId ? calculateSpokeCreditMetrics(state, walletId, spokeId) : calculateCreditMetrics(state, walletId)
+  const metrics = spokeId
+    ? calculateSpokeCreditMetrics(state, walletId, spokeId)
+    : calculateCreditMetrics(state, walletId)
   const collateralValueUsd6 = spokeId
     ? totalCollateralValueUsd6(scopeAccountBySpoke(state, state.accounts[walletId]!, spokeId), state.markets)
     : calculateCollateralValueUsd6(state, walletId)
@@ -160,12 +170,16 @@ export function calculateBorrowCapacityUsd6(state: BorrowSystemState, walletId: 
 }
 
 export function calculateCurrentLtvWad(state: BorrowSystemState, walletId: string, spokeId?: BorrowSpokeId) {
-  const metrics = spokeId ? calculateSpokeCreditMetrics(state, walletId, spokeId) : calculateCreditMetrics(state, walletId)
+  const metrics = spokeId
+    ? calculateSpokeCreditMetrics(state, walletId, spokeId)
+    : calculateCreditMetrics(state, walletId)
   if (metrics.poolCollateralValueUsd6 <= 0n || metrics.totalBorrowedUsd6 <= 0n) return 0n
   return mulDiv(metrics.totalBorrowedUsd6, WAD, metrics.poolCollateralValueUsd6)
 }
 
 export function calculateHealthFactorWad(state: BorrowSystemState, walletId: string, spokeId?: BorrowSpokeId) {
-  const metrics = spokeId ? calculateSpokeCreditMetrics(state, walletId, spokeId) : calculateCreditMetrics(state, walletId)
+  const metrics = spokeId
+    ? calculateSpokeCreditMetrics(state, walletId, spokeId)
+    : calculateCreditMetrics(state, walletId)
   return metrics.totalBorrowedUsd6 > 0n ? metrics.healthFactorWad : null
 }

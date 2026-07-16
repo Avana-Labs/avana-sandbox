@@ -1,4 +1,5 @@
 // @vitest-environment edge-runtime
+/* eslint-disable @typescript-eslint/no-explicit-any -- convex-test's t.run(ctx) is loosely typed; the ctx casts in this harness test are intentional. */
 import { convexTest } from "convex-test"
 import { describe, expect, test } from "vitest"
 import schema from "../schema"
@@ -12,12 +13,11 @@ const DAY = "2026-06-30"
 
 /** Seed one market + one latest daily-stats row; return the market id. */
 async function seedMarket(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: any,
   slug: string,
   overrides: Partial<{ suppliedUsd: number; borrowedUsd: number }> = {},
 ): Promise<Id<"markets">> {
-  return t.run(async (ctx: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+  return t.run(async (ctx: any) => {
     const marketId = await ctx.db.insert("markets", {
       scope: "asset" as const,
       slug,
@@ -54,9 +54,7 @@ describe("listMarketSnapshots reads a single precomputed cache doc", () => {
     await seedMarket(t, "usdc", { suppliedUsd: 1000, borrowedUsd: 400 })
 
     // No cache row written yet — the query must still return the computed snapshot.
-    const cacheBefore = await t.run(async (ctx: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
-      ctx.db.query("marketSnapshotsCache").collect(),
-    )
+    const cacheBefore = await t.run(async (ctx: any) => ctx.db.query("marketSnapshotsCache").collect())
     expect(cacheBefore).toHaveLength(0)
 
     const rows = await t.query(api.markets.listMarketSnapshots, {})
@@ -74,9 +72,7 @@ describe("listMarketSnapshots reads a single precomputed cache doc", () => {
     expect(res.markets).toBe(2)
 
     // Exactly ONE cache document holds the whole folded array (O(1) subscribed read).
-    const cacheDocs = await t.run(async (ctx: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
-      ctx.db.query("marketSnapshotsCache").collect(),
-    )
+    const cacheDocs = await t.run(async (ctx: any) => ctx.db.query("marketSnapshotsCache").collect())
     expect(cacheDocs).toHaveLength(1)
     expect(cacheDocs[0].rows).toHaveLength(2)
 
@@ -106,9 +102,7 @@ describe("listMarketSnapshots reads a single precomputed cache doc", () => {
     expect(fresh.map((r) => r.slug).sort()).toEqual(["dai", "usdc"])
 
     // Rebuild is idempotent — still exactly one cache row after a second run.
-    const cacheDocs = await t.run(async (ctx: any) => // eslint-disable-line @typescript-eslint/no-explicit-any
-      ctx.db.query("marketSnapshotsCache").collect(),
-    )
+    const cacheDocs = await t.run(async (ctx: any) => ctx.db.query("marketSnapshotsCache").collect())
     expect(cacheDocs).toHaveLength(1)
   })
 })

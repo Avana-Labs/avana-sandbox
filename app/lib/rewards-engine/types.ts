@@ -1,12 +1,6 @@
 export type RewardTaskCategory = "new_user" | "challenge" | "referral"
 
-export type RewardTaskStatus =
-  | "locked"
-  | "available"
-  | "in_progress"
-  | "claimable"
-  | "claimed"
-  | "expired"
+export type RewardTaskStatus = "locked" | "available" | "in_progress" | "claimable" | "claimed" | "expired"
 
 export type RewardTaskTag =
   | "setup"
@@ -25,14 +19,7 @@ export type RewardTaskTag =
   | "product"
   | "activity"
 
-export type RewardProduct =
-  | "profile"
-  | "borrow"
-  | "multiply"
-  | "lend"
-  | "rewards"
-  | "referral"
-  | "education"
+export type RewardProduct = "profile" | "borrow" | "multiply" | "lend" | "rewards" | "referral" | "education"
 
 export type RewardActivityType =
   | "wallet_connected"

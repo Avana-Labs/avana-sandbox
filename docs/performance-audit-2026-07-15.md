@@ -16,20 +16,20 @@ The route baseline supplied before implementation did not include FCP or total b
 
 ## Before and after
 
-| Route | FCP (s) | LCP (s) | TBT (ms) | Unused JS (KiB) | Transfer (KiB) |
-| --- | ---: | ---: | ---: | ---: | ---: |
-| `/` | — → 0.96 | 4.52 → 4.24 (-6.2%) | 106 → 81 | 129 → 127 | — |
-| `/borrow` | — → 1.25 | 8.19 → 5.90 (-27.9%) | 213 → 392 | 128 → 128 | — |
-| `/borrow/asset/usdc` | — → 1.41 | 9.15 → 7.16 (-21.7%) | 184 → 214 | 186 → 184 | — |
-| `/borrow/markets/uni-v3-bluechip-weth-usdc` | — → 1.26 | 5.41 → 2.72 (-49.8%) | 179.5 → 186 | 185 → 185 | — |
-| `/borrow/assets/uni-v3-bluechip%3Ausdc` | — → 1.27 | 8.11 → 6.99 (-13.9%) | 160.5 → 186 | 185 → 184 | — |
-| `/lend` | — → 1.12 | 5.64 → 4.53 (-19.7%) | 145.5 → 120 | 126 → 127 | — |
-| `/lend/markets/usdc` | — → 1.13 | 5.11 → 4.25 (-16.9%) | 204 → 219 | 183 → 183 | — |
-| `/multiply` | 1.14 → 1.12 | 5.64 → 4.04 (-28.4%) | 103 → 110 | 126 → 127 | 1,114 → 890 |
-| `/multiply/markets/aave-gho` | 1.15 → 1.14 | 5.26 → 4.00 (-24.0%) | 198.5 → 202 | 183 → 183 | 1,271 → 1,048 |
-| `/dashboard` | 1.13 → 1.13 | 6.09 → 4.00 (-34.3%) | 190.5 → 232 | 182 → 181 | 1,255 → 1,032 |
-| `/rewards` | 1.14 → 1.12 | 8.04 → 6.30 (-21.7%) | 147 → 122 | 127 → 127 | 1,100 → 888 |
-| `/support-center` | 0.96 → 0.96 | 4.37 → 3.40 (-22.3%) | 103 → 93 | 129 → 128 | 1,053 → 830 |
+| Route                                       |     FCP (s) |              LCP (s) |    TBT (ms) | Unused JS (KiB) | Transfer (KiB) |
+| ------------------------------------------- | ----------: | -------------------: | ----------: | --------------: | -------------: |
+| `/`                                         |    — → 0.96 |  4.52 → 4.24 (-6.2%) |    106 → 81 |       129 → 127 |              — |
+| `/borrow`                                   |    — → 1.25 | 8.19 → 5.90 (-27.9%) |   213 → 392 |       128 → 128 |              — |
+| `/borrow/asset/usdc`                        |    — → 1.41 | 9.15 → 7.16 (-21.7%) |   184 → 214 |       186 → 184 |              — |
+| `/borrow/markets/uni-v3-bluechip-weth-usdc` |    — → 1.26 | 5.41 → 2.72 (-49.8%) | 179.5 → 186 |       185 → 185 |              — |
+| `/borrow/assets/uni-v3-bluechip%3Ausdc`     |    — → 1.27 | 8.11 → 6.99 (-13.9%) | 160.5 → 186 |       185 → 184 |              — |
+| `/lend`                                     |    — → 1.12 | 5.64 → 4.53 (-19.7%) | 145.5 → 120 |       126 → 127 |              — |
+| `/lend/markets/usdc`                        |    — → 1.13 | 5.11 → 4.25 (-16.9%) |   204 → 219 |       183 → 183 |              — |
+| `/multiply`                                 | 1.14 → 1.12 | 5.64 → 4.04 (-28.4%) |   103 → 110 |       126 → 127 |    1,114 → 890 |
+| `/multiply/markets/aave-gho`                | 1.15 → 1.14 | 5.26 → 4.00 (-24.0%) | 198.5 → 202 |       183 → 183 |  1,271 → 1,048 |
+| `/dashboard`                                | 1.13 → 1.13 | 6.09 → 4.00 (-34.3%) | 190.5 → 232 |       182 → 181 |  1,255 → 1,032 |
+| `/rewards`                                  | 1.14 → 1.12 | 8.04 → 6.30 (-21.7%) |   147 → 122 |       127 → 127 |    1,100 → 888 |
+| `/support-center`                           | 0.96 → 0.96 | 4.37 → 3.40 (-22.3%) |    103 → 93 |       129 → 128 |    1,053 → 830 |
 
 Median LCP improved on every measured route, with a mean reduction of 23.9%. Routes with a supplied transfer baseline dropped by 212–225 KiB.
 
@@ -76,11 +76,11 @@ This second pass specifically remeasured the four ceilings called out after the
 first implementation pass. Values are three-run Lighthouse mobile medians from
 the fresh audit build.
 
-| Route | TBT (ms) | DOM nodes | Unused JS (KiB) | Main-thread work (ms) |
-| --- | ---: | ---: | ---: | ---: |
-| `/borrow` | 392 → 159 (-59.4%) | 2,597 → 534 (-79.4%) | 128 → 47.1 (-63.2%) | 1,975 → 1,538 (-22.1%) |
-| `/lend` | 120 → 103.5 (-13.8%) | 1,936 → 905 (-53.3%) | 127 → 46.0 (-63.8%) | 1,848 → 1,816 (-1.7%) |
-| `/multiply` | 109.5 → 91 (-16.9%) | 1,723 → 721 (-58.2%) | 127 → 46.1 (-63.7%) | 1,968 → 1,744 (-11.4%) |
+| Route        |             TBT (ms) |            DOM nodes |      Unused JS (KiB) |  Main-thread work (ms) |
+| ------------ | -------------------: | -------------------: | -------------------: | ---------------------: |
+| `/borrow`    |   392 → 159 (-59.4%) | 2,597 → 534 (-79.4%) |  128 → 47.1 (-63.2%) | 1,975 → 1,538 (-22.1%) |
+| `/lend`      | 120 → 103.5 (-13.8%) | 1,936 → 905 (-53.3%) |  127 → 46.0 (-63.8%) |  1,848 → 1,816 (-1.7%) |
+| `/multiply`  |  109.5 → 91 (-16.9%) | 1,723 → 721 (-58.2%) |  127 → 46.1 (-63.7%) | 1,968 → 1,744 (-11.4%) |
 | `/dashboard` | 232 → 170.5 (-26.5%) | 1,146 → 585 (-49.0%) | 181 → 100.6 (-44.4%) | 3,217 → 2,892 (-10.1%) |
 
 The annotated TBT and responsive duplicate-DOM failures are resolved: all four
@@ -95,12 +95,12 @@ The following compares the measured results immediately before the requested
 five commits with the new three-run mobile medians. Dashboard uses the separate
 three-run verification after removing its remaining dynamic chart boundary.
 
-| Route | Performance | LCP (s) | TBT (ms) | Unused JS (KiB) | Main thread (ms) | DOM | A11y / BP / SEO |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `/borrow` | 77 → 94 | 5.76 → 2.72 (-52.8%) | 159 → 134 (-15.7%) | 47.1 → 47.9 | 1,538 → 1,499 (-2.5%) | 534 → 534 | 97/96/100 → 100/100/100 |
-| `/lend` | 95 → 87 | 2.79 → 3.93 | 103.5 → 89.5 (-13.5%) | 46.0 → 47.0 | 1,816 → 1,575 (-13.3%) | 905 → 905 | 96/96/100 → 100/100/100 |
-| `/multiply` | 79 → 93 | 5.45 → 3.09 (-43.3%) | 91 → 94 | 46.1 → 47.4 | 1,744 → 1,660 (-4.8%) | 721 → 721 | 96/96/100 → 100/100/100 |
-| `/dashboard` | 84 → 91 | 3.92 → 3.25 (-17.1%) | 170.5 → 135 (-20.8%) | 100.6 → 47.8 (-52.5%) | 2,892 → 1,921 (-33.6%) | 585 → 510 (-12.8%) | 96/96/100 → 100/100/100 |
+| Route        | Performance |              LCP (s) |              TBT (ms) |       Unused JS (KiB) |       Main thread (ms) |                DOM |         A11y / BP / SEO |
+| ------------ | ----------: | -------------------: | --------------------: | --------------------: | ---------------------: | -----------------: | ----------------------: |
+| `/borrow`    |     77 → 94 | 5.76 → 2.72 (-52.8%) |    159 → 134 (-15.7%) |           47.1 → 47.9 |  1,538 → 1,499 (-2.5%) |          534 → 534 | 97/96/100 → 100/100/100 |
+| `/lend`      |     95 → 87 |          2.79 → 3.93 | 103.5 → 89.5 (-13.5%) |           46.0 → 47.0 | 1,816 → 1,575 (-13.3%) |          905 → 905 | 96/96/100 → 100/100/100 |
+| `/multiply`  |     79 → 93 | 5.45 → 3.09 (-43.3%) |               91 → 94 |           46.1 → 47.4 |  1,744 → 1,660 (-4.8%) |          721 → 721 | 96/96/100 → 100/100/100 |
+| `/dashboard` |     84 → 91 | 3.92 → 3.25 (-17.1%) |  170.5 → 135 (-20.8%) | 100.6 → 47.8 (-52.5%) | 2,892 → 1,921 (-33.6%) | 585 → 510 (-12.8%) | 96/96/100 → 100/100/100 |
 
 Dashboard no longer loads Recharts on initial navigation. Its transfer fell from
 927 KiB to 829 KiB, unused JavaScript is below the 100 KiB budget, and main-thread
@@ -135,12 +135,12 @@ The table compares the previous five-commit measured medians with the newest
 three-run GPU-enabled mobile medians. LCP is reported exactly as measured even
 when its animation-sensitive samples regressed.
 
-| Route | FCP (s) | LCP (s) | TBT (ms) | Unused JS (KiB) | Transfer (KiB) | Main thread (ms) | DOM |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| `/borrow` | 1.28 → 1.30 | 2.72 → 4.26 | 134 → 113 (-15.7%) | 47.9 → 47.4 | 810.8 → 762.0 (-6.0%) | 1,499 → 1,360 (-9.3%) | 534 → 534 |
-| `/lend` | 1.12 → 1.13 | 3.93 → 2.86 (-27.1%) | 89.5 → 90 | 47.0 → 47.0 | 785.8 → 725.8 (-7.6%) | 1,575 → 1,499 (-4.8%) | 905 → 448 (-50.5%) |
-| `/multiply` | 1.12 → 1.13 | 3.09 → 3.16 | 94 → 53 (-43.6%) | 47.4 → 46.8 | 788.7 → 738.7 (-6.3%) | 1,660 → 1,593 (-4.0%) | 721 → 720 |
-| `/dashboard` | 1.12 → 1.12 | 3.25 → 4.34 | 135 → 136 | 47.8 → 44.2 (-7.5%) | 829.0 → 770.2 (-7.1%) | 1,921 → 2,333 | 510 → 511 |
+| Route        |     FCP (s) |              LCP (s) |           TBT (ms) |     Unused JS (KiB) |        Transfer (KiB) |      Main thread (ms) |                DOM |
+| ------------ | ----------: | -------------------: | -----------------: | ------------------: | --------------------: | --------------------: | -----------------: |
+| `/borrow`    | 1.28 → 1.30 |          2.72 → 4.26 | 134 → 113 (-15.7%) |         47.9 → 47.4 | 810.8 → 762.0 (-6.0%) | 1,499 → 1,360 (-9.3%) |          534 → 534 |
+| `/lend`      | 1.12 → 1.13 | 3.93 → 2.86 (-27.1%) |          89.5 → 90 |         47.0 → 47.0 | 785.8 → 725.8 (-7.6%) | 1,575 → 1,499 (-4.8%) | 905 → 448 (-50.5%) |
+| `/multiply`  | 1.12 → 1.13 |          3.09 → 3.16 |   94 → 53 (-43.6%) |         47.4 → 46.8 | 788.7 → 738.7 (-6.3%) | 1,660 → 1,593 (-4.0%) |          721 → 720 |
+| `/dashboard` | 1.12 → 1.12 |          3.25 → 4.34 |          135 → 136 | 47.8 → 44.2 (-7.5%) | 829.0 → 770.2 (-7.1%) |         1,921 → 2,333 |          510 → 511 |
 
 Borrow's newest LCP samples were all about 4.3s, while the immediately preceding
 three-run set measured 2.86s. Dashboard similarly moved from 3.45s to 4.34s after
@@ -155,25 +155,25 @@ navigation. That final boundary alone changed Dashboard unused JavaScript from
 
 The Support Center was also remeasured after its final demand-loading boundary:
 
-| Metric | Previous final sample | New three-run median | Change |
-| --- | ---: | ---: | ---: |
-| Performance | 78 | 87 | +9 |
-| LCP | 6.05s | 3.92s | -35.2% |
-| TBT | 73ms | 103ms | +30ms, still below 200ms |
-| Unused JS | 125.5 KiB | 45.2 KiB | -64.0% |
-| Transfer | 829 KiB | 683 KiB | -17.6% |
-| Main thread | 1,110ms | 905ms | -18.5% |
+| Metric      | Previous final sample | New three-run median |                   Change |
+| ----------- | --------------------: | -------------------: | -----------------------: |
+| Performance |                    78 |                   87 |                       +9 |
+| LCP         |                 6.05s |                3.92s |                   -35.2% |
+| TBT         |                  73ms |                103ms | +30ms, still below 200ms |
+| Unused JS   |             125.5 KiB |             45.2 KiB |                   -64.0% |
+| Transfer    |               829 KiB |              683 KiB |                   -17.6% |
+| Main thread |               1,110ms |                905ms |                   -18.5% |
 
 The detail-route deferral removed most initially rendered offscreen DOM while
 keeping every section available as it approaches the viewport:
 
-| Route | DOM before → after | Main thread before → after | Final TBT |
-| --- | ---: | ---: | ---: |
-| `/borrow/asset/usdc` | 1,036 → 321 (-69.0%) | 2,805ms → 2,092ms (-25.4%) | 67ms |
-| `/borrow/markets/uni-v3-bluechip-weth-usdc` | 835 → 324 (-61.2%) | 3,035ms → 1,898ms (-37.5%) | 72ms |
-| `/borrow/assets/uni-v3-bluechip%3Ausdc` | 1,077 → 319 (-70.4%) | 2,812ms → 1,963ms (-30.2%) | 75ms |
-| `/lend/markets/usdc` | 845 → 291 (-65.6%) | 2,607ms → 1,864ms (-28.5%) | 84ms |
-| `/multiply/markets/aave-gho` | 876 → 302 (-65.5%) | — → 1,979ms | 82ms |
+| Route                                       |   DOM before → after | Main thread before → after | Final TBT |
+| ------------------------------------------- | -------------------: | -------------------------: | --------: |
+| `/borrow/asset/usdc`                        | 1,036 → 321 (-69.0%) | 2,805ms → 2,092ms (-25.4%) |      67ms |
+| `/borrow/markets/uni-v3-bluechip-weth-usdc` |   835 → 324 (-61.2%) | 3,035ms → 1,898ms (-37.5%) |      72ms |
+| `/borrow/assets/uni-v3-bluechip%3Ausdc`     | 1,077 → 319 (-70.4%) | 2,812ms → 1,963ms (-30.2%) |      75ms |
+| `/lend/markets/usdc`                        |   845 → 291 (-65.6%) | 2,607ms → 1,864ms (-28.5%) |      84ms |
+| `/multiply/markets/aave-gho`                |   876 → 302 (-65.5%) |                — → 1,979ms |      82ms |
 
 The initial user-supplied TBT was 1,530ms. The newest primary-route medians are
 53–136ms, a reduction of 91.1–96.5% relative to that supplied ceiling. FCP is

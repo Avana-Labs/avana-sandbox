@@ -88,6 +88,7 @@ export function useMultiplySession({
   const seededState = useMemo(() => deserializeMultiplySystemState(sessionSeed), [sessionSeed])
   const [state, setState] = useState<MultiplySystemState>(seededState)
   const [hasHydratedStorage, setHasHydratedStorage] = useState(false)
+  const [hydratedWalletId, setHydratedWalletId] = useState<string | null>(null)
   const [transactionHistory, setTransactionHistory] = useState<MultiplyTransactionHistoryItem[]>(
     () => readMultiplySessionMetadata(walletId).transactionHistory,
   )
@@ -108,13 +109,13 @@ export function useMultiplySession({
       setTransactionHistory([])
       setTransactionReceipts([])
       setHasHydratedStorage(true)
+      setHydratedWalletId(walletId)
       return
     }
     const persistedState = readMultiplySessionState(walletId, sessionSeed)
     const metadata = readMultiplySessionMetadata(walletId)
     const nextState =
-      metadata.transactionHistory.length === 0 &&
-      isLegacySeedOnlyMultiplyState(persistedState, walletId)
+      metadata.transactionHistory.length === 0 && isLegacySeedOnlyMultiplyState(persistedState, walletId)
         ? seededState
         : persistedState
     lastPersistedStateRef.current = serializeMultiplySystemState(nextState)
@@ -124,8 +125,11 @@ export function useMultiplySession({
     })
     setState(nextState)
     setTransactionHistory(metadata.transactionHistory)
-    setTransactionReceipts(metadata.receipts.length > 0 ? metadata.receipts : buildSyntheticReceipts(metadata.transactionHistory))
+    setTransactionReceipts(
+      metadata.receipts.length > 0 ? metadata.receipts : buildSyntheticReceipts(metadata.transactionHistory),
+    )
     setHasHydratedStorage(true)
+    setHydratedWalletId(walletId)
   }, [seededState, sessionSeed, shouldPersistState, walletId])
 
   useEffect(() => {
@@ -177,7 +181,9 @@ export function useMultiplySession({
       lastPersistedMetadataRef.current = serializedMetadata
       setState(nextState)
       setTransactionHistory(metadata.transactionHistory)
-      setTransactionReceipts(metadata.receipts.length > 0 ? metadata.receipts : buildSyntheticReceipts(metadata.transactionHistory))
+      setTransactionReceipts(
+        metadata.receipts.length > 0 ? metadata.receipts : buildSyntheticReceipts(metadata.transactionHistory),
+      )
     }
 
     const handleStorage = (event: StorageEvent) => {
@@ -199,20 +205,17 @@ export function useMultiplySession({
     }
   }, [sessionSeed, shouldPersistState, walletId])
 
-  const transactionAdapter = useMemo(
-    () => {
-      if (injectedTransactionAdapter) return injectedTransactionAdapter
-      return new SandboxMultiplyTransactionAdapter({
-        readState: () => stateRef.current,
-        writeState: (nextState) => {
-          stateRef.current = nextState
-          setState(nextState)
-        },
-        persistResult: persistTransaction,
-      })
-    },
-    [injectedTransactionAdapter, persistTransaction],
-  )
+  const transactionAdapter = useMemo(() => {
+    if (injectedTransactionAdapter) return injectedTransactionAdapter
+    return new SandboxMultiplyTransactionAdapter({
+      readState: () => stateRef.current,
+      writeState: (nextState) => {
+        stateRef.current = nextState
+        setState(nextState)
+      },
+      persistResult: persistTransaction,
+    })
+  }, [injectedTransactionAdapter, persistTransaction])
 
   const readAdapter = useMemo(
     () => injectedReadAdapter ?? new SandboxMultiplyReadAdapter({ state, transactionHistory }),
@@ -249,9 +252,7 @@ export function useMultiplySession({
       // (they never match — the prior code looked positions up by `transaction._id`, so
       // multiplierAfter was always the fallback of 1). Prefer the linked positionId; fall
       // back to the still-open position for the same market.
-      const positionByMarket = new Map(
-        Object.values(positions).map((position) => [position.marketId, position]),
-      )
+      const positionByMarket = new Map(Object.values(positions).map((position) => [position.marketId, position]))
       const history: MultiplyTransactionHistoryItem[] = data.transactions
         .filter((transaction) => transaction.product === "multiply")
         .map((transaction) => {
@@ -345,5 +346,6 @@ export function useMultiplySession({
     executeTransaction,
     reset,
     isPending,
+    isHydrated: hasHydratedStorage && hydratedWalletId === walletId,
   }
 }

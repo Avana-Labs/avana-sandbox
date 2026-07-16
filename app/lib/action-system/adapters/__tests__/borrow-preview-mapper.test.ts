@@ -23,6 +23,8 @@ describe("borrow preview mappers", () => {
       creditScopeLabel: "Uniswap Bluechip",
     })
 
+    expect(ui.quoteId).toBe(preview.intent.id)
+
     expect(ui.metrics.map((row) => row.label)).toEqual([
       "Credit scope",
       "Position APY",
@@ -86,7 +88,7 @@ describe("borrow preview mappers", () => {
     })
 
     expect(ui.allowed).toBe(false)
-    expect(ui.blockedReason).toBe("Amount exceeds outstanding debt")
+    expect(ui.blockedReason).toBe("Amount exceeds outstanding debt. Maximum repay is $2,500.00.")
   })
 
   it("allows a repay within the outstanding debt", () => {
@@ -145,16 +147,20 @@ describe("borrow preview mappers", () => {
       ratePct: 5.2,
       balanceLabel: "Available to Borrow",
       balanceUsd: 5000,
+      maxBorrowUsd: 5000,
+      creditScopeLabel: "Uniswap Bluechip",
     })
 
-    expect(ui.blockedReason).toBe(
-      "You don't have enough borrowing power for this amount. Lower the amount or add collateral.",
-    )
+    expect(ui.blockedReason).toBe("Maximum safe borrow is $5,000.00, limited by borrowing power in Uniswap Bluechip.")
     expect(ui.blockedReason).not.toMatch(/spoke|wallet-1|insolvent/i)
   })
 
   it("maps remove metrics", () => {
-    const ui = mapBorrowRemovePreviewToActionUi(preview, {
+    const removePreview = {
+      ...preview,
+      after: { ...preview.after, collateralValueUsd6: 7_500_000_000n },
+    }
+    const ui = mapBorrowRemovePreviewToActionUi(removePreview, {
       percent: 25,
       safePercent: 60,
       removeUsd: 2500,
@@ -165,13 +171,18 @@ describe("borrow preview mappers", () => {
 
     expect(ui.metrics.map((row) => row.label)).toEqual([
       "Credit scope",
-      "Position APY",
       "Annual earnings",
       "Borrowing power in scope",
       "Net balance in scope",
       "Net collateral in scope",
       "Health factor in scope",
     ])
+    expect(ui.amountUsd).toBe(2500)
+    expect(ui.amountValue).toBe("25")
+    expect(ui.amountUnitLabel).toBe("%")
+    expect(ui.assetLabel).toBe("%")
+    expect(ui.amountUsdLabel).toBe("$2,500.00")
+    expect(ui.balanceValue).toBe("$2,500.00")
     expect(ui.maxAmount).toBe(60)
   })
 })

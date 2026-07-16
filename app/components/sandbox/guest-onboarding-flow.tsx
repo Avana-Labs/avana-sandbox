@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Check } from "lucide-react"
+import { Check } from "@/app/components/icons"
 import { WalletControl } from "@/app/components/wallet-control"
 import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -34,7 +34,9 @@ export function GuestOnboardingFlow() {
               {t("Welcome to the Avana Sandbox")}
             </h1>
             <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">
-              {t("This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.")}
+              {t(
+                "This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.",
+              )}
             </p>
             <ul className="mt-7 space-y-2.5">
               {["Unlimited practice funds", "No transactions to sign", "No real assets involved"].map((perk) => (
@@ -60,11 +62,21 @@ export function GuestOnboardingFlow() {
             </div>
             <p className="mt-8 max-w-[430px] text-[13px] leading-5 text-muted-foreground">
               {t("By connecting your wallet, you agree to the")}{" "}
-              <a className="text-foreground underline underline-offset-2 hover:text-brand" href={AVANA_EXTERNAL_LINKS.terms} target="_blank" rel="noreferrer">
+              <a
+                className="text-foreground underline underline-offset-2 hover:text-brand"
+                href={AVANA_EXTERNAL_LINKS.terms}
+                target="_blank"
+                rel="noreferrer"
+              >
                 {t("Terms & Conditions")}
               </a>{" "}
               {t("and")}{" "}
-              <a className="text-foreground underline underline-offset-2 hover:text-brand" href={AVANA_EXTERNAL_LINKS.privacy} target="_blank" rel="noreferrer">
+              <a
+                className="text-foreground underline underline-offset-2 hover:text-brand"
+                href={AVANA_EXTERNAL_LINKS.privacy}
+                target="_blank"
+                rel="noreferrer"
+              >
                 {t("Privacy Policy")}
               </a>
               .

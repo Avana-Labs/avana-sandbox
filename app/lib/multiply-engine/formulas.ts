@@ -139,8 +139,7 @@ export function simulateCollateralLoop(params: {
     const target = params.targetMultiplier
     const swapEfficiency = params.swapEfficiency
     const denominator = swapEfficiency - target * (swapEfficiency - 1)
-    const idealBorrowUsd =
-      denominator > epsilon ? (target * equityNow - collateral) / denominator : borrowPower
+    const idealBorrowUsd = denominator > epsilon ? (target * equityNow - collateral) / denominator : borrowPower
     const borrowUsd = Math.min(borrowPower, Math.max(0, idealBorrowUsd))
 
     if (borrowUsd <= epsilon) break

@@ -18,7 +18,13 @@ import { formatBorrowLpSymbolLabel } from "@/app/lib/borrow-system/market-labels
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
 import { listSpokeBorrowables } from "@/app/lib/borrow-system/registry"
 import type { TransactionHistoryItem, TransactionMetricsSnapshot, WalletReadSnapshot } from "./contracts"
-import { selectBorrowCollateralPools, selectBorrowMarketSummaries, selectBorrowableAssets, selectInitialBorrowDebts, selectWalletBorrowSnapshot } from "./selectors"
+import {
+  selectBorrowCollateralPools,
+  selectBorrowMarketSummaries,
+  selectBorrowableAssets,
+  selectInitialBorrowDebts,
+  selectWalletBorrowSnapshot,
+} from "./selectors"
 import { selectBorrowSnapshot, selectPortfolioDebtRows, selectPortfolioSupplyRows } from "./dashboard-selectors"
 import { BORROW_DEXES, BORROW_PENDING_ROWS } from "@/app/lib/data/catalog/borrow"
 import { serializeBorrowSystemState } from "./codec"
@@ -98,14 +104,13 @@ const BORROW_KIND_LABEL: Record<TransactionHistoryItem["kind"], string> = {
 
 type MarketDisplayLookup = Record<string, { display?: { visuals?: Array<{ symbol: string }>; name?: string } }>
 
-export function mapTransactionHistoryToActivityRows(
-  history: TransactionHistoryItem[],
-  markets?: MarketDisplayLookup,
-) {
+export function mapTransactionHistoryToActivityRows(history: TransactionHistoryItem[], markets?: MarketDisplayLookup) {
   return history.map((item) => {
     const amountUsd = Number.parseFloat(formatFixed(item.executedAmountUsd6, 6))
     const signedAmount =
-      item.kind === "borrow" || item.kind === "withdraw" || item.kind === "liquidate" ? -Math.abs(amountUsd) : Math.abs(amountUsd)
+      item.kind === "borrow" || item.kind === "withdraw" || item.kind === "liquidate"
+        ? -Math.abs(amountUsd)
+        : Math.abs(amountUsd)
 
     // Prefer the market's friendly pair label (e.g. "WETH / USDC") over the raw
     // market id, falling back to a readable action label when the catalog is absent.
@@ -117,7 +122,12 @@ export function mapTransactionHistoryToActivityRows(
       at: new Date(item.timestamp).toISOString(),
       product: "borrow" as const,
       kind: historyKindToActivityKind(item.kind),
-      status: item.status === "success" ? ("confirmed" as const) : item.status === "failed" ? ("failed" as const) : ("pending" as const),
+      status:
+        item.status === "success"
+          ? ("confirmed" as const)
+          : item.status === "failed"
+            ? ("failed" as const)
+            : ("pending" as const),
       amountUsd: signedAmount,
       primaryLabel,
       secondaryLabel: item.simulated ? "Simulated transaction" : "On-chain transaction",
@@ -219,7 +229,11 @@ export function buildPortfolioBorrowData(
   }
 }
 
-export function resolvePoolDetailFromState(state: BorrowSystemState, walletId: string, poolId: string): PoolDetail | null {
+export function resolvePoolDetailFromState(
+  state: BorrowSystemState,
+  walletId: string,
+  poolId: string,
+): PoolDetail | null {
   const resolvedId = HOME_POOL_TO_MARKET_ID[poolId] ?? poolId
   const row = selectBorrowMarketSummaries(state, walletId).find((candidate) => candidate.id === resolvedId)
   if (!row) return null

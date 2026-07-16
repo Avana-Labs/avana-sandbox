@@ -1,11 +1,14 @@
-import { cleanup, render } from "@testing-library/react"
+import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { QuickStatsGrid } from "../QuickStatsGrid"
 
 const currencyRef = { current: "USD" as string }
 
 vi.mock("@/app/components/display-preferences", () => ({
-  useOptionalLocaleDisplayPreferences: () => ({ currency: currencyRef.current, language: "EN" }),
+  useOptionalLocaleDisplayPreferences: () => ({
+    currency: currencyRef.current,
+    language: "EN",
+  }),
 }))
 
 afterEach(cleanup)
@@ -24,6 +27,16 @@ describe("QuickStatsGrid currency conversion", () => {
     expect(getByText("$312.4M")).toBeInTheDocument()
     // Non-money stats are never touched.
     expect(getByText("62.1%")).toBeInTheDocument()
+  })
+
+  it("explains reserve metrics on hover", () => {
+    render(<QuickStatsGrid detail={detail} />)
+
+    expect(
+      screen.getByRole("button", {
+        name: "More information about Utilization",
+      }),
+    ).toHaveAttribute("title", "Percentage of deposited assets currently being borrowed")
   })
 
   it("re-denominates the money stat when the active currency is not USD", () => {

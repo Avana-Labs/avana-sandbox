@@ -11,9 +11,7 @@ describe("buildLendFeaturedSnapshots", () => {
     expect(snapshots).toHaveLength(LEND_FEATURED_SEQUENCE.length)
 
     for (const snapshot of snapshots) {
-      const market = markets.find(
-        (entry) => entry.asset.symbol.toUpperCase() === snapshot.symbol.toUpperCase(),
-      )
+      const market = markets.find((entry) => entry.asset.symbol.toUpperCase() === snapshot.symbol.toUpperCase())
       expect(market).toBeDefined()
 
       const row = catalogMarketToRow(market!)

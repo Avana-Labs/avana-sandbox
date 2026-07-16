@@ -1,5 +1,3 @@
-/* global console, process */
-
 import { chromium } from "@playwright/test"
 import { mkdirSync, writeFileSync } from "node:fs"
 import { join } from "node:path"
@@ -82,7 +80,9 @@ async function verifyFlow(browser, viewport, flow) {
     record.steps.push({ step: "success", status: (await page.getByText("Confirmed").isVisible()) ? "pass" : "fail" })
     await snap(page, `${tag}-05-success.png`)
 
-    const dashboardCta = page.getByRole("link", { name: flow.dashboardCta }).or(page.getByRole("button", { name: flow.dashboardCta }))
+    const dashboardCta = page
+      .getByRole("link", { name: flow.dashboardCta })
+      .or(page.getByRole("button", { name: flow.dashboardCta }))
     await dashboardCta.waitFor({ state: "visible", timeout: 10_000 })
     const href = await dashboardCta.getAttribute("href")
     const hrefOk = href === `/dashboard?tab=${flow.dashboardTab}`
@@ -132,7 +132,9 @@ async function verifyBorrowSelectBack(browser, viewport) {
 
   try {
     await page.goto(`${BASE}/actions/borrow/borrow`, { waitUntil: "networkidle", timeout: 120_000 })
-    await page.waitForSelector('[data-testid="action-select-stage"], [data-testid="action-amount-card"]', { timeout: 60_000 })
+    await page.waitForSelector('[data-testid="action-select-stage"], [data-testid="action-amount-card"]', {
+      timeout: 60_000,
+    })
     const onSelect = await page.locator('[data-testid="action-select-stage"]').isVisible()
     if (!onSelect) {
       record.steps.push({ step: "select-stage", status: "skipped-single-asset" })
@@ -175,5 +177,7 @@ writeFileSync(join(OUT, "results.json"), JSON.stringify(results, null, 2))
 console.log(JSON.stringify(results, null, 2))
 
 const failed = results.filter((r) => !r.ok)
-console.log(`\n=== SUMMARY ===\nTotal: ${results.length}, Passed: ${results.length - failed.length}, Failed: ${failed.length}`)
+console.log(
+  `\n=== SUMMARY ===\nTotal: ${results.length}, Passed: ${results.length - failed.length}, Failed: ${failed.length}`,
+)
 if (failed.length) process.exit(1)

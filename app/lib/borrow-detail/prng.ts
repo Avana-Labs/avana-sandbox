@@ -89,12 +89,7 @@ type SeriesShape = {
 }
 
 /** Produces a deterministic `Series` for the given seed + range + shape. */
-export function buildSeries(
-  seed: string,
-  range: TimeRangeId,
-  label: string,
-  shape: SeriesShape,
-): Series {
+export function buildSeries(seed: string, range: TimeRangeId, label: string, shape: SeriesShape): Series {
   const rand = prngFromString(`${seed}:${range}`)
   const samples = SAMPLES_BY_RANGE[range]
   const days = DAYS_BY_RANGE[range]
@@ -128,11 +123,7 @@ export function buildSeries(
 }
 
 /** Generates a series family keyed by TimeRangeId (one series per range). */
-export function buildSeriesFamily(
-  seed: string,
-  label: string,
-  shape: SeriesShape,
-): Record<TimeRangeId, Series> {
+export function buildSeriesFamily(seed: string, label: string, shape: SeriesShape): Record<TimeRangeId, Series> {
   const out = {} as Record<TimeRangeId, Series>
   for (const range of ["1D", "1W", "1M", "3M", "1Y", "ALL"] as TimeRangeId[]) {
     out[range] = buildSeries(`${seed}:${range}`, range, label, shape)

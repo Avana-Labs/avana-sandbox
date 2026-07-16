@@ -1,15 +1,12 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { CircleHelp } from "lucide-react"
+import { CircleHelp } from "@/app/components/icons"
 import { useState } from "react"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 const loadDesktopHelpBubble = () => import("./desktop-help-bubble").then((mod) => mod.DesktopHelpBubble)
-const DesktopHelpBubble = dynamic(
-  loadDesktopHelpBubble,
-  { ssr: false },
-)
+const DesktopHelpBubble = dynamic(loadDesktopHelpBubble, { ssr: false })
 
 export function DeferredGlobalChrome() {
   const [helpRequested, setHelpRequested] = useState(false)
@@ -18,10 +15,7 @@ export function DeferredGlobalChrome() {
   if (helpRequested) return <DesktopHelpBubble initialOpen />
 
   return (
-    <div
-      className="fixed bottom-4 left-4 z-50 hidden md:block"
-      style={{ width: "min(16rem, calc(100vw - 2rem))" }}
-    >
+    <div className="fixed bottom-4 left-4 z-50 hidden md:block" style={{ width: "min(16rem, calc(100vw - 2rem))" }}>
       <button
         type="button"
         aria-label={t("Open help menu")}

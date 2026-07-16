@@ -1,7 +1,7 @@
 "use client"
 
 import { Children, Fragment } from "react"
-import { ArrowDown } from "lucide-react"
+import { ArrowDown } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { ComponentPropsWithoutRef, ReactNode } from "react"
 

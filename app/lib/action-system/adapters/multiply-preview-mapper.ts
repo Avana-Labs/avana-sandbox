@@ -25,13 +25,7 @@ function hfNumber(value: number | "infinity") {
   return value === "infinity" ? Number.POSITIVE_INFINITY : value
 }
 
-function metricBeforeAfter(
-  id: string,
-  label: string,
-  before: string,
-  after: string,
-  tone?: ActionMetricTone,
-) {
+function metricBeforeAfter(id: string, label: string, before: string, after: string, tone?: ActionMetricTone) {
   return {
     id,
     label,
@@ -42,12 +36,7 @@ function metricBeforeAfter(
   }
 }
 
-function metricValue(
-  id: string,
-  label: string,
-  value: string,
-  tone?: ActionMetricTone,
-) {
+function metricValue(id: string, label: string, value: string, tone?: ActionMetricTone) {
   return {
     id,
     label,
@@ -88,6 +77,7 @@ export function mapMultiplyPreviewToActionUi(
     preview.warnings[0] ??
     "This leverage reduces your safety buffer."
   const hasExistingPosition = preview.before.collateralValueUsd > 0 || preview.before.debtValueUsd > 0
+  const loopCount = Math.max(0, preview.simulationSummary?.loopCount ?? 0)
   const addedExposureUsd = scaleUsd(addedValue(preview.after.collateralValueUsd, preview.before.collateralValueUsd))
   const addedDebtUsd = scaleUsd(addedValue(preview.after.debtValueUsd, preview.before.debtValueUsd))
   const borrowCapacityUsd = Math.max(
@@ -96,8 +86,7 @@ export function mapMultiplyPreviewToActionUi(
   )
   const maxBorrowUsd = scaleUsd(preview.after.collateralValueUsd * options.maxLtv)
   const borrowCapacityRatio = maxBorrowUsd > 0 ? borrowCapacityUsd / maxBorrowUsd : 1
-  const borrowCapacityTone =
-    borrowCapacityRatio < 0.1 ? "danger" : borrowCapacityRatio < 0.25 ? "warning" : "positive"
+  const borrowCapacityTone = borrowCapacityRatio < 0.1 ? "danger" : borrowCapacityRatio < 0.25 ? "warning" : "positive"
   const metrics = [
     metricValue(
       "collateral-supplied",
@@ -112,17 +101,8 @@ export function mapMultiplyPreviewToActionUi(
     metricValue("target-leverage", "Target leverage", `${options.multiplier.toFixed(2)}x`),
     metricValue("looped-exposure", "Looped exposure", formatActionUsd(addedExposureUsd)),
     metricValue("borrowed-amount", `${options.borrowSymbol} borrowed`, formatActionUsd(addedDebtUsd)),
-    metricValue(
-      "borrow-capacity",
-      "Borrow capacity remaining",
-      formatActionUsd(borrowCapacityUsd),
-      borrowCapacityTone,
-    ),
-    metricValue(
-      "ltv",
-      hasExistingPosition ? "Projected LTV" : "LTV",
-      formatActionRatioPercent(preview.after.ltv),
-    ),
+    metricValue("borrow-capacity", "Borrow capacity remaining", formatActionUsd(borrowCapacityUsd), borrowCapacityTone),
+    metricValue("ltv", hasExistingPosition ? "Projected LTV" : "LTV", formatActionRatioPercent(preview.after.ltv)),
     metricValue(
       "hf",
       hasExistingPosition ? "Projected health factor" : "Health factor",
@@ -142,6 +122,16 @@ export function mapMultiplyPreviewToActionUi(
   ]
 
   return {
+    quoteId: preview.intent.id,
+    loopCount,
+    executionSteps: [
+      { id: "supply-initial", label: "Supply initial collateral" },
+      ...Array.from({ length: loopCount }, (_, index) => [
+        { id: `borrow-${index + 1}`, label: `Loop ${index + 1}: Borrow` },
+        { id: `swap-${index + 1}`, label: `Loop ${index + 1}: Swap to collateral` },
+        { id: `resupply-${index + 1}`, label: `Loop ${index + 1}: Resupply collateral` },
+      ]).flat(),
+    ],
     allowed: preview.allowed,
     amountTitle: "Collateral",
     amountLabel: formatActionAmount(options.collateralAmount, options.collateralSymbol, 6),
@@ -203,6 +193,13 @@ export function mapDeleveragePreviewToActionUi(
   const liqPrice = preview.simulationSummary?.liquidationPrice
 
   return {
+    quoteId: preview.intent.id,
+    executionSteps: [
+      { id: "unwind", label: "Withdraw looped collateral" },
+      { id: "swap", label: "Swap collateral for debt asset" },
+      { id: "repay", label: "Repay debt" },
+      { id: "resupply", label: "Resupply remaining collateral" },
+    ],
     allowed: preview.allowed,
     amountLabel: `${options.targetMultiplier.toFixed(2)}x ${options.collateralSymbol}`,
     amountValue: `${options.targetMultiplier.toFixed(2)}x`,
@@ -267,5 +264,61 @@ export function mapDeleveragePreviewToActionUi(
     blockedReason: preview.allowed ? null : (preview.validationErrors[0] ?? "Action unavailable"),
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,
+  }
+}
+
+export function mapClosePreviewToActionUi(
+  preview: MultiplyTransactionPreview,
+  options: { marketLabel: string; collateralSymbol: string },
+): ActionPreviewUi {
+  const equityUsd = Math.max(0, preview.before.collateralValueUsd - preview.before.debtValueUsd)
+  const priceImpactPct = Math.max(0, preview.simulationSummary?.priceImpactPct ?? 0)
+  const swapLossUsd = preview.before.debtValueUsd * (priceImpactPct / 100)
+  const minimumReceivedUsd = Math.max(0, equityUsd - swapLossUsd)
+  const base = mapDeleveragePreviewToActionUi(preview, {
+    marketLabel: options.marketLabel,
+    targetMultiplier: 1,
+    collateralSymbol: options.collateralSymbol,
+  })
+  return {
+    ...base,
+    amountLabel: `Full close ${options.collateralSymbol}`,
+    amountValue: "Full close",
+    amountUsd: minimumReceivedUsd,
+    amountUsdLabel: formatActionUsd(minimumReceivedUsd, { exact: true }),
+    rateLabel: "Final withdrawal",
+    rateValue: formatActionUsd(minimumReceivedUsd, { exact: true }),
+    balanceLabel: "Remaining dust",
+    balanceValue: formatActionUsd(0, { exact: true }),
+    metrics: [
+      {
+        id: "debt-repaid",
+        label: "Debt repaid",
+        value: formatActionUsd(preview.before.debtValueUsd, { exact: true }),
+      },
+      {
+        id: "collateral-sold",
+        label: "Collateral unwound",
+        value: formatActionUsd(preview.before.collateralValueUsd, { exact: true }),
+      },
+      {
+        id: "swap-loss",
+        label: "Estimated swap loss",
+        value: formatActionUsd(swapLossUsd, { exact: true }),
+        tone: swapLossUsd > 0 ? "warning" : "default",
+      },
+      {
+        id: "minimum-received",
+        label: "Minimum received",
+        value: formatActionUsd(minimumReceivedUsd, { exact: true }),
+        tone: "positive",
+      },
+      {
+        id: "remaining-dust",
+        label: "Remaining dust",
+        value: formatActionUsd(0, { exact: true }),
+      },
+    ],
+    risk: null,
   }
 }

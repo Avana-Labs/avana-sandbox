@@ -134,7 +134,11 @@ export function createUnsupportedSourceError(
   })
 }
 
-export function normalizeDataSourceError(error: unknown, adapter: DataSourceAdapter, operation: string): DataSourceError {
+export function normalizeDataSourceError(
+  error: unknown,
+  adapter: DataSourceAdapter,
+  operation: string,
+): DataSourceError {
   if (error instanceof DataSourceError) {
     return error
   }
@@ -183,7 +187,12 @@ export function normalizeDataSourceError(error: unknown, adapter: DataSourceAdap
 }
 
 export function shouldFallbackFromError(error: DataSourceError) {
-  return error.code === "unsupported" || error.code === "unavailable" || error.code === "timeout" || error.code === "rate_limited"
+  return (
+    error.code === "unsupported" ||
+    error.code === "unavailable" ||
+    error.code === "timeout" ||
+    error.code === "rate_limited"
+  )
 }
 
 function parseSourcePayload<T>(payload: DataSourceResponse<unknown>, schema?: ZodType<T>) {
@@ -231,7 +240,12 @@ export async function executeSourceLoad<TSource extends { adapter: DataSourceAda
     const primaryAdapter = primary.adapter
     const normalizedPrimaryError = normalizeDataSourceError(error, primaryAdapter, operation)
 
-    if (!fallback || fallback === primary || !primaryAdapter.supportsFallback || !shouldFallbackFromError(normalizedPrimaryError)) {
+    if (
+      !fallback ||
+      fallback === primary ||
+      !primaryAdapter.supportsFallback ||
+      !shouldFallbackFromError(normalizedPrimaryError)
+    ) {
       throw normalizedPrimaryError
     }
 

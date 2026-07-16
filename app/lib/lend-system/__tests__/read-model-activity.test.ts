@@ -68,10 +68,7 @@ describe("buildPortfolioLendData", () => {
     // Without state the value collapses to $0 (the dashboard regression).
     expect(buildLendActivityHistory("wallet-1", history)[0]?.amountUsd).toBe(0)
     // With state the deposit resolves to its real USD value.
-    expect(buildLendActivityHistory("wallet-1", history, state)[0]?.amountUsd).toBeCloseTo(
-      2 * market.assetPriceUsd,
-      6,
-    )
+    expect(buildLendActivityHistory("wallet-1", history, state)[0]?.amountUsd).toBeCloseTo(2 * market.assetPriceUsd, 6)
   })
 
   it("labels a lend deposit as Supply (not Open) and a withdraw as Withdraw", () => {

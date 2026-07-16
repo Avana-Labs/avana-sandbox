@@ -5,9 +5,9 @@ import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import type { SupportSubmit } from "./support-center-client"
 
-const ConvexSupportSubmissionBridge = lazy(
-  async () => ({ default: (await import("./support-center-connected")).ConvexSupportSubmissionBridge }),
-)
+const ConvexSupportSubmissionBridge = lazy(async () => ({
+  default: (await import("./support-center-connected")).ConvexSupportSubmissionBridge,
+}))
 
 export function SupportCenterSubmissionBridge({ onReady }: { onReady: (submit: SupportSubmit | null) => void }) {
   const { authedWallet, isSignedIn } = useSiweAuth()

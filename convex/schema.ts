@@ -21,14 +21,7 @@ import { defineSchema, defineTable } from "convex/server"
 import { v } from "convex/values"
 
 /** Wallet actions that make a user "engaged" with a market. */
-export const WALLET_EVENT_KINDS = [
-  "supply",
-  "withdraw",
-  "borrow",
-  "repay",
-  "liquidation",
-  "rewardsClaim",
-] as const
+export const WALLET_EVENT_KINDS = ["supply", "withdraw", "borrow", "repay", "liquidation", "rewardsClaim"] as const
 
 const walletEventKind = v.union(
   v.literal("supply"),
@@ -46,12 +39,7 @@ export const MARKET_SCOPES = ["asset", "pool", "lend", "multiply"] as const
 const marketScope = v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply"))
 
 /** Risk buckets mirror `RiskLevel` in `app/lib/borrow-detail/types.ts`. */
-const riskLevel = v.union(
-  v.literal("low"),
-  v.literal("moderate"),
-  v.literal("elevated"),
-  v.literal("high"),
-)
+const riskLevel = v.union(v.literal("low"), v.literal("moderate"), v.literal("elevated"), v.literal("high"))
 
 export default defineSchema({
   /**
@@ -165,8 +153,7 @@ export default defineSchema({
     /** Current caps / parameters (useful for key metrics card). */
     supplyCapUsd: v.optional(v.number()),
     borrowCapUsd: v.optional(v.number()),
-  })
-    .index("by_market_day", ["marketId", "day"]),
+  }).index("by_market_day", ["marketId", "day"]),
 
   /**
    * Precomputed reference-snapshot cache for `listMarketSnapshots`. That query is
@@ -242,8 +229,7 @@ export default defineSchema({
     rewardsDistributedUsd: v.number(),
     /** Swap fees (pools only). */
     swapFeesUsd: v.number(),
-  })
-    .index("by_market_day", ["marketId", "day"]),
+  }).index("by_market_day", ["marketId", "day"]),
 
   /**
    * Daily snapshot of how an asset's liquidity is split across pools.
@@ -295,8 +281,7 @@ export default defineSchema({
         hint: v.optional(v.string()),
       }),
     ),
-  })
-    .index("by_market_assessed_at", ["marketId", "assessedAt"]),
+  }).index("by_market_assessed_at", ["marketId", "assessedAt"]),
 
   /**
    * Shared, multi-user market liquidity ledger. Every borrow / repay / supply /
@@ -657,6 +642,7 @@ export default defineSchema({
     debtValueUsd6: v.optional(v.string()),
     suppliedUsd6: v.optional(v.string()),
     earnedUsd6: v.optional(v.string()),
+    supplyApyPct: v.optional(v.number()),
     // multiply (number-native — see app/lib/multiply-engine/types.ts MultiplyPosition)
     collateralAmount: v.optional(v.number()),
     collateralValueUsd: v.optional(v.number()),

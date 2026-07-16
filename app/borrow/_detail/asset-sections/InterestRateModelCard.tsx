@@ -117,7 +117,9 @@ export function InterestRateModelCard({ detail, className }: Props) {
     <section className={cn("min-w-0", className)}>
       <div className="min-w-0">
         <div className="min-w-0">
-          <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">{t("Interest rate model")}</h2>
+          <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
+            {t("Interest rate model")}
+          </h2>
           <p className="mt-1 text-[11.5px] text-muted-foreground">
             {t("Borrow APR rises as utilization increases and steepens past the optimal threshold.")}
           </p>
@@ -171,7 +173,6 @@ export function InterestRateModelCard({ detail, className }: Props) {
               {t("Optimal {value}%").replace("{value}", String(optimalUtilization))}
             </div>
           </div>
-
         </div>
       </div>
     </section>

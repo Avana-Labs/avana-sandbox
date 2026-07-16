@@ -249,6 +249,11 @@
     font-weight: 400;
     line-height: 1.4;
     letter-spacing: -0.01em;
+    /* Render text with grayscale antialiasing instead of the browser default
+       (subpixel), which makes white-on-dark text look heavier/bolder than it is.
+       This gives the lighter, crisper weight seen in comparable dashboards. */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   :where(h1, h2, h3, h4, h5, h6, strong, b, th, button, label) {
@@ -562,32 +567,6 @@ button,
   }
 }
 
-@keyframes processing-dot {
-  0%,
-  100% {
-    transform: translateY(0);
-    opacity: 0.55;
-  }
-
-  50% {
-    transform: translateY(-3px);
-    opacity: 1;
-  }
-}
-
-@keyframes sparkle {
-  0%,
-  100% {
-    transform: scale(0.85);
-    opacity: 0.35;
-  }
-
-  50% {
-    transform: scale(1.15);
-    opacity: 1;
-  }
-}
-
 @keyframes asset-swap {
   0% {
     opacity: 0;
@@ -683,20 +662,4 @@ button,
 /* Premium depth: flat cards — tone steps only, no borders/shadows */
 .surface-elevated {
   box-shadow: none;
-}
-
-@keyframes marquee {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(-25%);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [class*="animate-[marquee"] {
-    animation: none !important;
-  }
 }

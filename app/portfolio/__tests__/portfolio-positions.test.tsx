@@ -51,7 +51,7 @@ vi.mock("@/app/components/display-preferences", () => ({
   useOptionalLocaleDisplayPreferences: () => ({ currency: "USD", language: "EN" }),
 }))
 
-vi.mock("@/app/dashboard/components/borrow-tab/supplies-table", () => ({
+vi.mock("@/app/portfolio/borrow-tab/supplies-table", () => ({
   SuppliesHealthFactorCard: () => null,
   SuppliesPanel: ({
     rows,
@@ -78,7 +78,7 @@ vi.mock("@/app/dashboard/components/borrow-tab/supplies-table", () => ({
   ),
 }))
 
-vi.mock("@/app/dashboard/components/borrow-tab/debts-table", () => ({
+vi.mock("@/app/portfolio/borrow-tab/debts-table", () => ({
   CurrentLtvCard: () => null,
   DebtsPanel: ({
     rows,
@@ -106,35 +106,25 @@ describe("DashboardBorrowTab", () => {
   })
 
   it("routes portfolio supply actions to shared action pages", () => {
-    render(<DashboardBorrowTab section="supplies" collateralPositions={[supplyRow] as never} returnHref="/dashboard?tab=overview" />)
+    render(<DashboardBorrowTab section="supplies" collateralPositions={[supplyRow] as never} returnHref="/portfolio" />)
 
     fireEvent.click(screen.getByText("open-borrow"))
-    expect(push).toHaveBeenCalledWith(
-      "/actions/borrow/borrow?market=uni-v3-bluechip-weth-usdc&return=%2Fdashboard%3Ftab%3Doverview",
-    )
+    expect(push).toHaveBeenCalledWith("/actions/borrow/borrow?market=uni-v3-bluechip-weth-usdc&return=%2Fportfolio")
 
     fireEvent.click(screen.getByText("open-supply"))
-    expect(push).toHaveBeenCalledWith(
-      "/actions/borrow/supply?market=uni-v3-bluechip-weth-usdc&return=%2Fdashboard%3Ftab%3Doverview",
-    )
+    expect(push).toHaveBeenCalledWith("/actions/borrow/supply?market=uni-v3-bluechip-weth-usdc&return=%2Fportfolio")
 
     fireEvent.click(screen.getByText("open-remove"))
-    expect(push).toHaveBeenCalledWith(
-      "/actions/borrow/remove?market=uni-v3-bluechip-weth-usdc&return=%2Fdashboard%3Ftab%3Doverview",
-    )
+    expect(push).toHaveBeenCalledWith("/actions/borrow/remove?market=uni-v3-bluechip-weth-usdc&return=%2Fportfolio")
   })
 
   it("routes portfolio debt actions to shared action pages", () => {
-    render(<DashboardBorrowTab section="debts" debtPositions={[debtRow] as never} returnHref="/dashboard?tab=overview" />)
+    render(<DashboardBorrowTab section="debts" debtPositions={[debtRow] as never} returnHref="/portfolio" />)
 
     fireEvent.click(screen.getByText("open-repay"))
-    expect(push).toHaveBeenCalledWith(
-      "/actions/borrow/repay?market=uni-v3-bluechip-weth-usdc&return=%2Fdashboard%3Ftab%3Doverview",
-    )
+    expect(push).toHaveBeenCalledWith("/actions/borrow/repay?market=uni-v3-bluechip-weth-usdc&return=%2Fportfolio")
 
     fireEvent.click(screen.getByText("open-manage"))
-    expect(push).toHaveBeenCalledWith(
-      "/actions/borrow/borrow?market=uni-v3-bluechip-weth-usdc&return=%2Fdashboard%3Ftab%3Doverview",
-    )
+    expect(push).toHaveBeenCalledWith("/actions/borrow/borrow?market=uni-v3-bluechip-weth-usdc&return=%2Fportfolio")
   })
 })

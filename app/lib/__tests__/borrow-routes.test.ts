@@ -23,6 +23,8 @@ describe("borrow market routes", () => {
   })
 
   it("builds market detail paths", () => {
-    expect(borrowMarketDetailPath("aero-basic-volatile-well-weth")).toBe("/borrow/markets/aero-basic-volatile-well-weth")
+    expect(borrowMarketDetailPath("aero-basic-volatile-well-weth")).toBe(
+      "/borrow/markets/aero-basic-volatile-well-weth",
+    )
   })
 })

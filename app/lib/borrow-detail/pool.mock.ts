@@ -118,7 +118,11 @@ const CURATED_FIXTURES: Record<string, FixtureOverride> = {
       stats: [],
       history: [
         { date: "2024-05-07", title: "Spoke launched", description: "Uni v3 Bluechip added as collateral source." },
-        { date: "2024-11-19", title: "LTV raised to 70%", description: "Risk council bumped the ceiling from 65% to 70%." },
+        {
+          date: "2024-11-19",
+          title: "LTV raised to 70%",
+          description: "Risk council bumped the ceiling from 65% to 70%.",
+        },
         { date: "2025-08-02", title: "Oracle window shortened", description: "Switched from 60m to 30m TWAP." },
       ],
     },
@@ -130,11 +134,41 @@ const CURATED_FIXTURES: Record<string, FixtureOverride> = {
       summary:
         "ETH/USDC on Uniswap v3 is deep and battle-tested but exposes LPs to ETH volatility. Risk is dominated by impermanent loss and, to a lesser degree, oracle latency during fast moves.",
       breakdown: [
-        { id: "vol", label: "ETH volatility", bps: 32, level: "moderate", description: "30d realized σ ≈ 58% annualized — the single biggest contributor to impermanent loss." },
-        { id: "depth", label: "Liquidity depth", bps: 8, level: "low", description: "$4.1M of 2% depth across all tiers — ample for liquidations." },
-        { id: "oracle", label: "Oracle latency", bps: 18, level: "moderate", description: "30-minute TWAP can lag during sharp moves; mitigated by kink in the risk curve." },
-        { id: "smart-contract", label: "Smart-contract surface", bps: 8, level: "low", description: "Uniswap v3 core + NonFungiblePositionManager, both heavily audited and live for 4 years." },
-        { id: "il", label: "Expected IL", bps: 4, level: "low", description: "Rolling 90d IL averages 23bps per week for the 0.30% tier." },
+        {
+          id: "vol",
+          label: "ETH volatility",
+          bps: 32,
+          level: "moderate",
+          description: "30d realized σ ≈ 58% annualized — the single biggest contributor to impermanent loss.",
+        },
+        {
+          id: "depth",
+          label: "Liquidity depth",
+          bps: 8,
+          level: "low",
+          description: "$4.1M of 2% depth across all tiers — ample for liquidations.",
+        },
+        {
+          id: "oracle",
+          label: "Oracle latency",
+          bps: 18,
+          level: "moderate",
+          description: "30-minute TWAP can lag during sharp moves; mitigated by kink in the risk curve.",
+        },
+        {
+          id: "smart-contract",
+          label: "Smart-contract surface",
+          bps: 8,
+          level: "low",
+          description: "Uniswap v3 core + NonFungiblePositionManager, both heavily audited and live for 4 years.",
+        },
+        {
+          id: "il",
+          label: "Expected IL",
+          bps: 4,
+          level: "low",
+          description: "Rolling 90d IL averages 23bps per week for the 0.30% tier.",
+        },
       ],
       metrics: [
         { id: "sigma", label: "σ 30d (annualized)", value: "58.4%" },
@@ -165,7 +199,11 @@ const CURATED_FIXTURES: Record<string, FixtureOverride> = {
       stats: [],
       history: [
         { date: "2024-07-22", title: "Pool onboarded", description: "WBTC/WETH added to the Bluechip spoke." },
-        { date: "2025-02-14", title: "Dual-oracle", description: "Added Chainlink feed alongside the TWAP for resilience." },
+        {
+          date: "2025-02-14",
+          title: "Dual-oracle",
+          description: "Added Chainlink feed alongside the TWAP for resilience.",
+        },
       ],
     },
     risk: {
@@ -176,11 +214,35 @@ const CURATED_FIXTURES: Record<string, FixtureOverride> = {
       summary:
         "WBTC carries BitGo custody risk on top of BTC volatility. The pair's depth is comfortable and the dual-oracle setup mitigates single-feed failure modes.",
       breakdown: [
-        { id: "vol", label: "BTC volatility", bps: 28, level: "moderate", description: "30d realized σ ≈ 48% annualized." },
-        { id: "custody", label: "WBTC custody", bps: 30, level: "elevated", description: "WBTC depends on BitGo custody — reviewed monthly by the risk council." },
-        { id: "oracle", label: "Oracle", bps: 14, level: "low", description: "Chainlink feed + 30m TWAP with deviation guardrails." },
+        {
+          id: "vol",
+          label: "BTC volatility",
+          bps: 28,
+          level: "moderate",
+          description: "30d realized σ ≈ 48% annualized.",
+        },
+        {
+          id: "custody",
+          label: "WBTC custody",
+          bps: 30,
+          level: "elevated",
+          description: "WBTC depends on BitGo custody — reviewed monthly by the risk council.",
+        },
+        {
+          id: "oracle",
+          label: "Oracle",
+          bps: 14,
+          level: "low",
+          description: "Chainlink feed + 30m TWAP with deviation guardrails.",
+        },
         { id: "depth", label: "Liquidity depth", bps: 8, level: "low", description: "$2.6M of 2% depth." },
-        { id: "il", label: "Expected IL", bps: 5, level: "low", description: "BTC/ETH is highly correlated — IL is usually <15bps/week." },
+        {
+          id: "il",
+          label: "Expected IL",
+          bps: 5,
+          level: "low",
+          description: "BTC/ETH is highly correlated — IL is usually <15bps/week.",
+        },
       ],
       metrics: [
         { id: "sigma", label: "σ 30d (annualized)", value: "48.1%" },
@@ -201,11 +263,25 @@ const CURATED_FIXTURES: Record<string, FixtureOverride> = {
       stats: [],
       history: [
         { date: "2025-01-14", title: "Onboarded", description: "Added to the Uniswap v2 LPs." },
-        { date: "2025-06-02", title: "Parameters refreshed", description: "Quarterly risk review — no changes to LTV." },
+        {
+          date: "2025-06-02",
+          title: "Parameters refreshed",
+          description: "Quarterly risk review — no changes to LTV.",
+        },
       ],
       news: [
-        { time: "2025-01-14", title: "Onboarded", description: "Added to the Uniswap v2 LPs.", source: "Latest update" },
-        { time: "2025-06-02", title: "Parameters refreshed", description: "Quarterly risk review — no changes to LTV.", source: "Protocol note" },
+        {
+          time: "2025-01-14",
+          title: "Onboarded",
+          description: "Added to the Uniswap v2 LPs.",
+          source: "Latest update",
+        },
+        {
+          time: "2025-06-02",
+          title: "Parameters refreshed",
+          description: "Quarterly risk review — no changes to LTV.",
+          source: "Protocol note",
+        },
       ],
     },
   },
@@ -229,7 +305,11 @@ const CURATED_FIXTURES: Record<string, FixtureOverride> = {
       stats: [],
       history: [
         { date: "2024-04-15", title: "Stable spoke launch", description: "USDC/USDT included from day 1." },
-        { date: "2025-03-09", title: "De-peg drill", description: "Circuit-breaker simulated during USDC March 2023 re-run — no forced liquidations." },
+        {
+          date: "2025-03-09",
+          title: "De-peg drill",
+          description: "Circuit-breaker simulated during USDC March 2023 re-run — no forced liquidations.",
+        },
       ],
     },
     risk: {
@@ -240,11 +320,29 @@ const CURATED_FIXTURES: Record<string, FixtureOverride> = {
       summary:
         "Peg-to-peg correlation keeps impermanent loss negligible. The only tail scenarios involve a USDC or USDT de-peg; both are paused automatically by our oracle deviation guard.",
       breakdown: [
-        { id: "depeg", label: "De-peg tail", bps: 12, level: "low", description: "Guardrails pause new borrows if the Chainlink feed deviates >50bps for 5m." },
-        { id: "issuer", label: "Issuer solvency", bps: 6, level: "low", description: "Circle + Tether attestations ingested weekly." },
+        {
+          id: "depeg",
+          label: "De-peg tail",
+          bps: 12,
+          level: "low",
+          description: "Guardrails pause new borrows if the Chainlink feed deviates >50bps for 5m.",
+        },
+        {
+          id: "issuer",
+          label: "Issuer solvency",
+          bps: 6,
+          level: "low",
+          description: "Circle + Tether attestations ingested weekly.",
+        },
         { id: "depth", label: "Liquidity depth", bps: 2, level: "low", description: "$18M of 2% depth." },
         { id: "sc", label: "Smart-contract surface", bps: 3, level: "low", description: "Uniswap v3 + LP NFT only." },
-        { id: "il", label: "Expected IL", bps: 2, level: "low", description: "Correlated assets → IL near zero in normal conditions." },
+        {
+          id: "il",
+          label: "Expected IL",
+          bps: 2,
+          level: "low",
+          description: "Correlated assets → IL near zero in normal conditions.",
+        },
       ],
       metrics: [
         { id: "sigma", label: "σ 30d (annualized)", value: "1.4%" },
@@ -328,10 +426,38 @@ function buildHeroMetricSeries(
     // TVL is a level, not a trending flow — keep the series close to the stated base
     // (no systematic +8% drift) so the hero headline reconciles with the overview
     // "Total Supplied" stat instead of ending materially higher/lower.
-    tvl: buildSeriesFamily(`${row.id}:tvl`, "TVL", { base: baseTvl, driftMultiplier: 1.0, noise: 0.02, wave: 0.04, nonNegative: true, roundTo: 0 }),
-    volume: buildSeriesFamily(`${row.id}:volume`, "Volume", { base: baseVol, driftMultiplier: 1.12, noise: 0.15, wave: 0.22, nonNegative: true, roundTo: 0 }),
-    fees: buildSeriesFamily(`${row.id}:fees`, "Fees", { base: baseFees, driftMultiplier: 1.1, noise: 0.18, wave: 0.22, nonNegative: true, roundTo: 0 }),
-    price: buildSeriesFamily(`${row.id}:price`, "Price", { base: basePrice, driftMultiplier: 1.04, noise: 0.02, wave: 0.06, nonNegative: true, roundTo: 4 }),
+    tvl: buildSeriesFamily(`${row.id}:tvl`, "TVL", {
+      base: baseTvl,
+      driftMultiplier: 1.0,
+      noise: 0.02,
+      wave: 0.04,
+      nonNegative: true,
+      roundTo: 0,
+    }),
+    volume: buildSeriesFamily(`${row.id}:volume`, "Volume", {
+      base: baseVol,
+      driftMultiplier: 1.12,
+      noise: 0.15,
+      wave: 0.22,
+      nonNegative: true,
+      roundTo: 0,
+    }),
+    fees: buildSeriesFamily(`${row.id}:fees`, "Fees", {
+      base: baseFees,
+      driftMultiplier: 1.1,
+      noise: 0.18,
+      wave: 0.22,
+      nonNegative: true,
+      roundTo: 0,
+    }),
+    price: buildSeriesFamily(`${row.id}:price`, "Price", {
+      base: basePrice,
+      driftMultiplier: 1.04,
+      noise: 0.02,
+      wave: 0.06,
+      nonNegative: true,
+      roundTo: 4,
+    }),
   }
 }
 
@@ -347,7 +473,10 @@ function pairReferencePrice(row: BorrowPoolRow): number {
   return 1
 }
 
-function buildKeyMetrics(row: BorrowPoolRow, fixture: FixtureOverride | undefined): Record<KeyMetricId, Record<TimeRangeId, Series>> {
+function buildKeyMetrics(
+  row: BorrowPoolRow,
+  fixture: FixtureOverride | undefined,
+): Record<KeyMetricId, Record<TimeRangeId, Series>> {
   const spoke = getSpokeById(row.spoke)
   const tvl = fixture?.baseTvlUsd ?? spoke.liquidityUsd
   const vol = fixture?.baseVolumeUsd ?? Math.round(tvl * 0.12)
@@ -359,7 +488,13 @@ function buildKeyMetrics(row: BorrowPoolRow, fixture: FixtureOverride | undefine
     feesApr: { base: row.aprMin + 0.5, driftMultiplier: 1.05, noise: 0.08, nonNegative: true, roundTo: 2 },
     rewards: { base: fees * 0.4, driftMultiplier: 1.04, noise: 0.12, nonNegative: true, roundTo: 0 },
     utilization: { base: spoke.maxLtv * 0.82, driftMultiplier: 1.02, noise: 0.04, nonNegative: true, roundTo: 1 },
-    borrowApr: { base: (row.aprMin + row.aprMax) / 2, driftMultiplier: 1.04, noise: 0.05, nonNegative: true, roundTo: 2 },
+    borrowApr: {
+      base: (row.aprMin + row.aprMax) / 2,
+      driftMultiplier: 1.04,
+      noise: 0.05,
+      nonNegative: true,
+      roundTo: 2,
+    },
     incentives: { base: fees * 0.2, driftMultiplier: 1.05, noise: 0.2, nonNegative: true, roundTo: 0 },
     depth2pct: { base: tvl * 0.02, driftMultiplier: 1.01, noise: 0.06, nonNegative: true, roundTo: 0 },
     volatility30d: { base: 42, driftMultiplier: 0.96, noise: 0.12, nonNegative: true, roundTo: 2 },
@@ -373,7 +508,10 @@ function buildKeyMetrics(row: BorrowPoolRow, fixture: FixtureOverride | undefine
   return out
 }
 
-function buildPerformance(row: BorrowPoolRow, fixture: FixtureOverride | undefined): Record<PerfTab, Record<PerfPeriod, PerfTabDataset>> {
+function buildPerformance(
+  row: BorrowPoolRow,
+  fixture: FixtureOverride | undefined,
+): Record<PerfTab, Record<PerfPeriod, PerfTabDataset>> {
   const tvl = fixture?.baseTvlUsd ?? getSpokeById(row.spoke).liquidityUsd
   const vol = fixture?.baseVolumeUsd ?? Math.round(tvl * 0.12)
   const fees = fixture?.baseFeesUsd ?? Math.round(vol * 0.003)
@@ -448,7 +586,11 @@ function buildPerfBreakdown(tab: PerfTab, total: number, fmt: (n: number) => str
   } else {
     rows.push(
       { label: "Protocol rewards", value: fmt(total * 0.72), delta: { value: 2.1, direction: "up", label: "+2.1%" } },
-      { label: "External incentives", value: fmt(total * 0.28), delta: { value: -0.4, direction: "down", label: "-0.4%" } },
+      {
+        label: "External incentives",
+        value: fmt(total * 0.28),
+        delta: { value: -0.4, direction: "down", label: "-0.4%" },
+      },
     )
   }
   return rows
@@ -458,17 +600,51 @@ function buildCashflow(row: BorrowPoolRow, fixture: FixtureOverride | undefined)
   const tvl = fixture?.baseTvlUsd ?? getSpokeById(row.spoke).liquidityUsd
   const vol = fixture?.baseVolumeUsd ?? Math.round(tvl * 0.12)
   const fees = fixture?.baseFeesUsd ?? Math.round(vol * 0.003)
-  const feesSeries = buildSeriesFamily(`${row.id}:cashflow:fees`, "Fees", { base: fees * 30, driftMultiplier: 1.04, noise: 0.1, nonNegative: true, roundTo: 0 })["1Y"]
-  const incentivesSeries = buildSeriesFamily(`${row.id}:cashflow:incentives`, "Incentives", { base: fees * 12, driftMultiplier: 1.06, noise: 0.2, nonNegative: true, roundTo: 0 })["1Y"]
+  const feesSeries = buildSeriesFamily(`${row.id}:cashflow:fees`, "Fees", {
+    base: fees * 30,
+    driftMultiplier: 1.04,
+    noise: 0.1,
+    nonNegative: true,
+    roundTo: 0,
+  })["1Y"]
+  const incentivesSeries = buildSeriesFamily(`${row.id}:cashflow:incentives`, "Incentives", {
+    base: fees * 12,
+    driftMultiplier: 1.06,
+    noise: 0.2,
+    nonNegative: true,
+    roundTo: 0,
+  })["1Y"]
   return {
     bars: [feesSeries, incentivesSeries],
     periodLabel: "Last 12 months",
     rows: [
-      { label: "Swap fees", reported: formatCompactUsd(fees * 365 * 0.78), yoy: { value: 12.4, direction: "up", label: "+12.4%" }, highlighted: true },
-      { label: "LP incentives", reported: formatCompactUsd(fees * 365 * 0.18), yoy: { value: 8.1, direction: "up", label: "+8.1%" } },
-      { label: "Protocol revenue", reported: formatCompactUsd(fees * 365 * 0.04), yoy: { value: -1.1, direction: "down", label: "-1.1%" } },
-      { label: "Rewards emitted", reported: formatCompactUsd(fees * 365 * 0.12), yoy: { value: 2.8, direction: "up", label: "+2.8%" } },
-      { label: "Net to suppliers", reported: formatCompactUsd(fees * 365 * 0.9), yoy: { value: 10.2, direction: "up", label: "+10.2%" }, highlighted: true },
+      {
+        label: "Swap fees",
+        reported: formatCompactUsd(fees * 365 * 0.78),
+        yoy: { value: 12.4, direction: "up", label: "+12.4%" },
+        highlighted: true,
+      },
+      {
+        label: "LP incentives",
+        reported: formatCompactUsd(fees * 365 * 0.18),
+        yoy: { value: 8.1, direction: "up", label: "+8.1%" },
+      },
+      {
+        label: "Protocol revenue",
+        reported: formatCompactUsd(fees * 365 * 0.04),
+        yoy: { value: -1.1, direction: "down", label: "-1.1%" },
+      },
+      {
+        label: "Rewards emitted",
+        reported: formatCompactUsd(fees * 365 * 0.12),
+        yoy: { value: 2.8, direction: "up", label: "+2.8%" },
+      },
+      {
+        label: "Net to suppliers",
+        reported: formatCompactUsd(fees * 365 * 0.9),
+        yoy: { value: 10.2, direction: "up", label: "+10.2%" },
+        highlighted: true,
+      },
     ],
   }
 }
@@ -508,7 +684,11 @@ function buildAboutStats(row: BorrowPoolRow): AboutCard["stats"] {
   return [
     { label: "Vault Contract Address", value: vaultHash.short, href: `https://etherscan.io/address/${vaultHash.full}` },
     { label: "Token Contract Address", value: tokenHash.short, href: `https://etherscan.io/address/${tokenHash.full}` },
-    { label: "Staking Contract Address", value: stakingHash.short, href: `https://etherscan.io/address/${stakingHash.full}` },
+    {
+      label: "Staking Contract Address",
+      value: stakingHash.short,
+      href: `https://etherscan.io/address/${stakingHash.full}`,
+    },
     { label: "Deployed On", value: "March 18, 2024" },
   ]
 }
@@ -546,14 +726,8 @@ function buildCollateralHistory(row: BorrowPoolRow): TxHistoryRow[] {
   const now = Date.now()
   const token0Symbol = row.visuals[0].symbol.toUpperCase()
   const token1Symbol = row.visuals[1].symbol.toUpperCase()
-  const token0Usd =
-    token0Symbol.includes("BTC") ? 68_400
-    : token0Symbol.includes("ETH") ? 3_450
-    : 1
-  const token1Usd =
-    token1Symbol.includes("BTC") ? 68_400
-    : token1Symbol.includes("ETH") ? 3_450
-    : 1
+  const token0Usd = token0Symbol.includes("BTC") ? 68_400 : token0Symbol.includes("ETH") ? 3_450 : 1
+  const token1Usd = token1Symbol.includes("BTC") ? 68_400 : token1Symbol.includes("ETH") ? 3_450 : 1
 
   for (let i = 0; i < 12; i++) {
     const kind = kinds[i % kinds.length]
@@ -562,12 +736,22 @@ function buildCollateralHistory(row: BorrowPoolRow): TxHistoryRow[] {
     const ageMs = i * 30_000 + Math.floor(seed() * 5_000)
     const at = new Date(now - ageMs).toISOString()
     const prefix = kind === "withdraw" ? "-" : "+"
-    const walletAddress = `0x${Math.floor(seed() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(seed() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(seed() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(seed() * 0xffffffff).toString(16).padStart(8, "0")}${Math.floor(seed() * 0xffffffff).toString(16).padStart(8, "0")}`
+    const walletAddress = `0x${Math.floor(seed() * 0xffffffff)
+      .toString(16)
+      .padStart(8, "0")}${Math.floor(seed() * 0xffffffff)
+      .toString(16)
+      .padStart(8, "0")}${Math.floor(seed() * 0xffffffff)
+      .toString(16)
+      .padStart(8, "0")}${Math.floor(seed() * 0xffffffff)
+      .toString(16)
+      .padStart(8, "0")}${Math.floor(seed() * 0xffffffff)
+      .toString(16)
+      .padStart(8, "0")}`
     const walletLabel = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
     const token0Share = kind === "rewards" ? 0 : 0.48 + seed() * 0.14
     const token1Share = 1 - token0Share
-    const token0Amount = amount * token0Share / token0Usd
-    const token1Amount = amount * token1Share / token1Usd
+    const token0Amount = (amount * token0Share) / token0Usd
+    const token1Amount = (amount * token1Share) / token1Usd
     out.push({
       id: `${row.id}-tx-${i}`,
       at,
@@ -579,7 +763,11 @@ function buildCollateralHistory(row: BorrowPoolRow): TxHistoryRow[] {
       counterpartyLabel: undefined,
       walletLabel,
       walletHref: `https://etherscan.io/address/${walletAddress}`,
-      txHashShort: `0x${Math.floor(seed() * 0xffffff).toString(16).padStart(6, "0")}…${Math.floor(seed() * 0xffff).toString(16).padStart(4, "0")}`,
+      txHashShort: `0x${Math.floor(seed() * 0xffffff)
+        .toString(16)
+        .padStart(6, "0")}…${Math.floor(seed() * 0xffff)
+        .toString(16)
+        .padStart(4, "0")}`,
     })
   }
 
@@ -628,7 +816,11 @@ export function buildPoolDetail(row: BorrowPoolRow): PoolDetail {
     related: buildRelated(row),
     governanceNotes: [
       { title: "Risk council", body: "Quarterly risk review touches every active pool.", tone: "info" },
-      { title: "Fee-split", body: "90% of swap fees flow to suppliers, 10% to the protocol treasury.", tone: "positive" },
+      {
+        title: "Fee-split",
+        body: "90% of swap fees flow to suppliers, 10% to the protocol treasury.",
+        tone: "positive",
+      },
     ],
     row,
   }

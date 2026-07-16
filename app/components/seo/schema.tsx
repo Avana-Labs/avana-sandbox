@@ -4,11 +4,7 @@ export function SchemaMarkup({ data }: { data: JsonValue | JsonValue[] }) {
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
 }
 
-export function buildWebPageSchema(input: {
-  name: string
-  description: string
-  url: string
-}) {
+export function buildWebPageSchema(input: { name: string; description: string; url: string }) {
   return {
     "@context": "https://schema.org",
     "@type": "WebPage",

@@ -4,11 +4,7 @@ import { useRouter } from "next/navigation"
 import { ActionIcon } from "@/app/components/action-icon"
 import { Button } from "@/components/ui/button"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
-import {
-  DesktopTableSurface,
-  HoverActionGroup,
-  SilentActionHeader,
-} from "@/app/components/market-table-primitives"
+import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
   MarketMobileCardHeader,
@@ -113,7 +109,9 @@ export function PortfolioInvestments({
                         #
                       </th>
                     ) : null}
-                    <th className={`${showIndexColumn ? "" : "rounded-l-radius-lg"} bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70`}>
+                    <th
+                      className={`${showIndexColumn ? "" : "rounded-l-radius-lg"} bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70`}
+                    >
                       Asset
                     </th>
                     <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
@@ -136,7 +134,9 @@ export function PortfolioInvestments({
                         onClick={() => router.push(detailHref)}
                       >
                         {showIndexColumn ? (
-                          <td className={`py-3.5 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}>
+                          <td
+                            className={`py-3.5 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
+                          >
                             {index + 1}
                           </td>
                         ) : null}
@@ -144,8 +144,12 @@ export function PortfolioInvestments({
                           <div className="flex items-center gap-2.5">
                             <TokenIcon symbol={token.symbol} size="table" />
                             <div className="flex min-w-0 flex-col">
-                              <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">{token.name}</span>
-                              <span className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">{token.symbol}</span>
+                              <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                                {token.name}
+                              </span>
+                              <span className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
+                                {token.symbol}
+                              </span>
                             </div>
                           </div>
                         </td>
@@ -166,32 +170,44 @@ export function PortfolioInvestments({
                           </div>
                         </td>
                         <td className={`py-3.5 pr-5 ${TABLE_ROW_HOVER_RIGHT}`}>
-                        <HoverActionGroup className="justify-end gap-2">
-                          <Button
-                            type="button"
-                            size="table"
-                            variant="table-primary"
-                            className="w-auto"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              router.push(actionPagePath("lend", "deposit", { market: marketId, return: returnHref ?? detailHref }))
-                            }}
-                          >
-                            <ActionIcon label="Deposit" />Deposit
-                          </Button>
-                          <Button
-                            type="button"
-                            size="table"
-                            variant="table-secondary"
-                            className="w-auto"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              router.push(actionPagePath("lend", "withdraw", { market: marketId, return: returnHref ?? detailHref }))
-                            }}
-                          >
-                            <ActionIcon label="Withdraw" />Withdraw
-                          </Button>
-                        </HoverActionGroup>
+                          <HoverActionGroup className="justify-end gap-2">
+                            <Button
+                              type="button"
+                              size="table"
+                              variant="table-primary"
+                              className="w-auto"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                router.push(
+                                  actionPagePath("lend", "deposit", {
+                                    market: marketId,
+                                    return: returnHref ?? detailHref,
+                                  }),
+                                )
+                              }}
+                            >
+                              <ActionIcon label="Deposit" />
+                              Deposit
+                            </Button>
+                            <Button
+                              type="button"
+                              size="table"
+                              variant="table-secondary"
+                              className="w-auto"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                router.push(
+                                  actionPagePath("lend", "withdraw", {
+                                    market: marketId,
+                                    return: returnHref ?? detailHref,
+                                  }),
+                                )
+                              }}
+                            >
+                              <ActionIcon label="Withdraw" />
+                              Withdraw
+                            </Button>
+                          </HoverActionGroup>
                         </td>
                       </tr>
                     )
@@ -255,10 +271,13 @@ export function PortfolioInvestments({
                       className="h-10 rounded-radius-sm px-4 text-[13px]"
                       onClick={(event) => {
                         event.stopPropagation()
-                        router.push(actionPagePath("lend", "deposit", { market: marketId, return: returnHref ?? detailHref }))
+                        router.push(
+                          actionPagePath("lend", "deposit", { market: marketId, return: returnHref ?? detailHref }),
+                        )
                       }}
                     >
-                      <ActionIcon label="Deposit" />Deposit
+                      <ActionIcon label="Deposit" />
+                      Deposit
                     </Button>
                     <Button
                       type="button"
@@ -266,10 +285,13 @@ export function PortfolioInvestments({
                       className="h-10 rounded-radius-sm px-4 text-[13px]"
                       onClick={(event) => {
                         event.stopPropagation()
-                        router.push(actionPagePath("lend", "withdraw", { market: marketId, return: returnHref ?? detailHref }))
+                        router.push(
+                          actionPagePath("lend", "withdraw", { market: marketId, return: returnHref ?? detailHref }),
+                        )
                       }}
                     >
-                      <ActionIcon label="Withdraw" />Withdraw
+                      <ActionIcon label="Withdraw" />
+                      Withdraw
                     </Button>
                   </div>
                 </MarketMobileCard>

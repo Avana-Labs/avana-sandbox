@@ -42,16 +42,16 @@ export function AssetDepositSidebar({ detail, className, embedded = false }: Pro
       <aside
         className={cn(
           "flex w-full flex-col gap-4",
-          embedded
-            ? "p-0"
-            : "rounded-radius-md border border-border bg-surface-raised p-4 shadow-elev-1",
+          embedded ? "p-0" : "rounded-radius-md border border-border bg-surface-raised p-4 shadow-elev-1",
           className,
         )}
         aria-label={t("Deposit {symbol}").replace("{symbol}", detail.hero.symbol)}
       >
         <header className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{t("Your deposits")}</div>
+            <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+              {t("Your deposits")}
+            </div>
             <div className="mt-1 font-data text-[22px] font-medium tabular-nums text-foreground">{suppliedLabel}</div>
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-xs border border-emerald-200/70 bg-emerald-500/10 px-1.5 py-0.5 text-[10.5px] font-medium text-emerald-700 dark:border-emerald-900/50 dark:text-emerald-400">

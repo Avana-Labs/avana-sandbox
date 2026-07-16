@@ -52,7 +52,11 @@ export function calculateMaxWithdrawable(currentSuppliedBalance: number, availab
   return Math.min(currentSuppliedBalance, availableLiquidity)
 }
 
-export function calculateSimpleInterestAccrued(principalAmount: number, totalApy: number, elapsedYears: number): number {
+export function calculateSimpleInterestAccrued(
+  principalAmount: number,
+  totalApy: number,
+  elapsedYears: number,
+): number {
   return principalAmount * totalApy * elapsedYears
 }
 

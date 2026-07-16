@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest"
-import { buildMultiplyPageData, catalogMarketToRow, buildMultiplyTrendingSnapshots } from "@/app/lib/multiply-system/read-model"
+import {
+  buildMultiplyPageData,
+  catalogMarketToRow,
+  buildMultiplyTrendingSnapshots,
+} from "@/app/lib/multiply-system/read-model"
 import { MULTIPLY_MARKET_CATALOG } from "@/app/lib/multiply-system/catalog"
 import { resolveMultiplyMarketDisplayMaxLeverage } from "@/app/lib/multiply-system/leverage-limits"
 
@@ -31,6 +35,12 @@ describe("multiply max-leverage single source (#95)", () => {
       const expected = resolveMultiplyMarketDisplayMaxLeverage(market.risk.publicMaxMultiplier)
       expect(snapshot.maxLeverageLabel).toBe(formatFactor(expected))
     }
+  })
+
+  it("spells out collateral and liquidation parameters", () => {
+    const row = buildMultiplyPageData("demo-wallet").lendRows[0]!
+    expect(row.rewardRows?.[0]?.label).toMatch(/^Collateral factor \d+% · Liquidation threshold \d+%$/)
+    expect(row.rewardRows?.[0]?.label).not.toMatch(/\b(?:CF|LT)\b/)
   })
 
   it("the aave-gho market shows one leverage (1.80x), not 1.76x on some surfaces", () => {

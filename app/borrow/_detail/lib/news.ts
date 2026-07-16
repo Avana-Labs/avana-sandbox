@@ -9,11 +9,7 @@ export type NewsCardItem = {
   imageLabel?: string
 }
 
-export function buildNewsItems(
-  about: AboutCard,
-  _imageUrl?: string,
-  imageLabel?: string,
-): NewsCardItem[] {
+export function buildNewsItems(about: AboutCard, _imageUrl?: string, imageLabel?: string): NewsCardItem[] {
   const items =
     about.news ??
     about.history.slice(0, 3).map((entry, index) => ({

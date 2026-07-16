@@ -1,10 +1,6 @@
 import type { MultiplySystemState } from "@/app/lib/multiply-engine"
 import type { MultiplyReadAdapter } from "./contracts"
-import {
-  buildMultiplyPageData,
-  buildMultiplyWalletSnapshot,
-  buildPortfolioMultiplyData,
-} from "./read-model"
+import { buildMultiplyPageData, buildMultiplyWalletSnapshot, buildPortfolioMultiplyData } from "./read-model"
 
 export class SandboxMultiplyReadAdapter implements MultiplyReadAdapter {
   readonly mode = "sandbox" as const

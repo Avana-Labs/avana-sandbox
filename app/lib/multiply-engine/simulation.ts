@@ -37,19 +37,13 @@ export function revalueMultiplyPosition(
   collateralPriceOverrideUsd?: number,
 ): MultiplyPosition {
   const collateralPriceUsd =
-    collateralPriceOverrideUsd != null &&
-    Number.isFinite(collateralPriceOverrideUsd) &&
-    collateralPriceOverrideUsd > 0
+    collateralPriceOverrideUsd != null && Number.isFinite(collateralPriceOverrideUsd) && collateralPriceOverrideUsd > 0
       ? collateralPriceOverrideUsd
       : market.collateralAsset.priceUsd
   const collateralValueUsd = position.collateralAmount * collateralPriceUsd
   const debtValueUsd = position.debtValueUsd
   const ltv = calculateMultiplyLtv(debtValueUsd, collateralValueUsd)
-  const healthFactor = calculateMultiplyHealthFactor(
-    collateralValueUsd,
-    debtValueUsd,
-    market.risk.liquidationThreshold,
-  )
+  const healthFactor = calculateMultiplyHealthFactor(collateralValueUsd, debtValueUsd, market.risk.liquidationThreshold)
   const liquidationPrice = calculateLiquidationPrice({
     debtValueUsd,
     collateralAmount: position.collateralAmount,
@@ -118,8 +112,7 @@ export function simulateMultiply(params: {
   const existingDebtValueUsd = existingPosition?.debtValueUsd ?? 0
   const finalCollateralValueUsd = existingCollateralValueUsd + newCollateralValueUsd
   const debtValueUsd = existingDebtValueUsd + newDebtValueUsd
-  const finalCollateralAmount =
-    (existingPosition?.collateralAmount ?? 0) + newCollateralValueUsd / collateralPriceUsd
+  const finalCollateralAmount = (existingPosition?.collateralAmount ?? 0) + newCollateralValueUsd / collateralPriceUsd
   const equityValueUsd = finalCollateralValueUsd - debtValueUsd
   const effectiveMultiplier = equityValueUsd > 0 ? finalCollateralValueUsd / equityValueUsd : loop.achievedMultiplier
   const ltv = calculateMultiplyLtv(debtValueUsd, finalCollateralValueUsd)
@@ -182,6 +175,7 @@ export function simulateMultiply(params: {
 
   return {
     action: "multiply",
+    loopCount: loop.loops,
     input: { collateralAmount, selectedMultiplier },
     before,
     after: {

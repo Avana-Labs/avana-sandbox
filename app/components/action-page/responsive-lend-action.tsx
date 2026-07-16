@@ -17,7 +17,14 @@ export function ResponsiveLendAction({
   sidebar?: boolean
 }) {
   return (
-    <ResponsiveDetailAction product="lend" kind={kind} market={market} closeHref={closeHref} label={label} sidebar={sidebar}>
+    <ResponsiveDetailAction
+      product="lend"
+      kind={kind}
+      market={market}
+      closeHref={closeHref}
+      label={label}
+      sidebar={sidebar}
+    >
       <LendActionPageClient
         kind={kind}
         embedded

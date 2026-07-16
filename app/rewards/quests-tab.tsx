@@ -16,14 +16,13 @@ import {
   Target,
   Trophy,
   Wallet,
-} from "lucide-react"
-import {
-  type RewardsPromoTabId,
-  type RewardsQuestIconId,
-  type RewardsQuest,
-} from "@/app/lib/data/rewards/catalog"
+} from "@/app/components/icons"
+import { type RewardsPromoTabId, type RewardsQuestIconId, type RewardsQuest } from "@/app/lib/data/rewards/catalog"
 import { UnderlineTabStrip } from "@/app/components/tab-primitives"
 import { Card } from "@/components/ui/card"
+import { LendAccountSection } from "./lend-account-section"
+import { BorrowAccountSection } from "./borrow-account-section"
+import { MultiplyAccountSection } from "./multiply-account-section"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 const QUEST_ICON_MAP: Record<RewardsQuestIconId, typeof Wallet> = {
@@ -55,7 +54,8 @@ function AvanaQuestCard({
   const Icon = QUEST_ICON_MAP[quest.iconId]
   const isClaimable = quest.status === "claimable"
   const isDisabled = quest.status === "claimed" || quest.status === "expired" || quest.cta === t("Waiting")
-  const canAct = isClaimable || (quest.status === "available" || quest.status === "in_progress") && quest.cta !== t("Waiting")
+  const canAct =
+    isClaimable || ((quest.status === "available" || quest.status === "in_progress") && quest.cta !== t("Waiting"))
 
   return (
     <Card className="flex h-full flex-col overflow-hidden rounded-radius-md border-0 bg-card shadow-none">
@@ -73,7 +73,9 @@ function AvanaQuestCard({
           <h3 className="line-clamp-3 text-[14px] leading-5 tracking-[-0.03em] text-foreground md:text-[15px]">
             {t(quest.title)}
           </h3>
-          <p className={`line-clamp-2 text-[12px] font-normal leading-5 ${accent === "challenge" ? "text-foreground/75" : "text-muted-foreground"}`}>
+          <p
+            className={`line-clamp-2 text-[12px] font-normal leading-5 ${accent === "challenge" ? "text-foreground/75" : "text-muted-foreground"}`}
+          >
             {t(quest.description)}
           </p>
           {"progressLabel" in quest && quest.progressLabel ? (
@@ -86,7 +88,9 @@ function AvanaQuestCard({
           {quest.expiration ? (
             <div className="mb-3.5 flex items-center justify-between gap-3 border-t border-dashed border-border pt-3">
               <span className="text-[10px] font-normal text-muted-foreground">{t("Expiration")}</span>
-              <span className="font-data text-[10px] font-normal tracking-tight text-foreground">{quest.expiration}</span>
+              <span className="font-data text-[10px] font-normal tracking-tight text-foreground">
+                {quest.expiration}
+              </span>
             </div>
           ) : null}
 
@@ -135,8 +139,12 @@ function RewardsPromoPanel({
         value={activePromoTab}
         onChange={setActivePromoTab}
         ariaLabel={t("Rewards quest categories")}
-        listClassName="w-max min-w-full gap-6 sm:gap-9"
+        listClassName="w-max min-w-full gap-6 px-2 sm:gap-9 sm:px-0"
       />
+
+      {activePromoTab === "lend" ? <LendAccountSection /> : null}
+      {activePromoTab === "borrow" ? <BorrowAccountSection /> : null}
+      {activePromoTab === "multiply" ? <MultiplyAccountSection /> : null}
 
       {activeQuests.length > 0 ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">

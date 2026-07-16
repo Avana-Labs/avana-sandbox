@@ -106,7 +106,8 @@ const securityHeaders = [
   },
   {
     key: "Permissions-Policy",
-    value: "accelerometer=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), publickey-credentials-get=(), usb=()",
+    value:
+      "accelerometer=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), midi=(), payment=(), publickey-credentials-get=(), usb=()",
   },
   {
     key: "X-Content-Type-Options",
@@ -117,6 +118,10 @@ const securityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   poweredByHeader: false,
+  // Playwright and local mobile-device testing use the loopback host while the
+  // dev server may bind as localhost. Next otherwise blocks the client chunks/HMR
+  // request and leaves client-only session hydration at its server skeleton.
+  allowedDevOrigins: isDev ? ["127.0.0.1"] : undefined,
   experimental: {
     // Inline the route's critical CSS into the initial document. This removes the
     // shared stylesheet from the first-paint dependency chain while retaining
@@ -137,6 +142,12 @@ const nextConfig = {
       // /express was a client-rendered page that only ever did redirect("/"). Serve the
       // same redirect at the edge instead — no React render, one fewer route in the bundle.
       { source: "/express", destination: "/", permanent: true },
+      // The Rewards page was renamed to Portfolio and moved to /portfolio. Redirect the
+      // old path (and any external referral links that point at /rewards) at the edge.
+      { source: "/rewards", destination: "/portfolio", permanent: true },
+      // The dashboard was removed; its accounts, activity, and quests all live on
+      // the portfolio page now. Redirect old links/bookmarks instead of 404ing.
+      { source: "/dashboard", destination: "/portfolio", permanent: true },
     ]
   },
   async rewrites() {

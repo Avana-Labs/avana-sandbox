@@ -376,7 +376,13 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                 <div className="rounded-radius-md border border-border bg-card p-6 sm:p-8">
                   <div className="flex size-11 items-center justify-center rounded-full bg-brand/12 text-brand">
                     <svg viewBox="0 0 24 24" fill="none" className="size-6" aria-hidden>
-                      <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path
+                        d="M5 13l4 4L19 7"
+                        stroke="currentColor"
+                        strokeWidth="2.2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </div>
                   <h2 className="mt-4 text-[22px] font-medium tracking-[-0.03em] text-foreground sm:text-[24px]">
@@ -384,7 +390,9 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                   </h2>
                   <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
                     {t("Thanks — we’ve logged your message about")}{" "}
-                    <span className="font-medium text-foreground">{selectedTopic?.label ? t(selectedTopic.label) : selectedTopic?.label}</span>{" "}
+                    <span className="font-medium text-foreground">
+                      {selectedTopic?.label ? t(selectedTopic.label) : selectedTopic?.label}
+                    </span>{" "}
                     {t("and the Avana team will follow up. You can submit another request any time.")}
                   </p>
                   <Button
@@ -421,7 +429,11 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                       </SelectTrigger>
                       <SelectContent className="max-h-[420px]">
                         {SUPPORT_CATEGORIES.map((category) => (
-                          <SelectItem key={category.value} value={category.value} className="py-3 text-[15px] font-normal">
+                          <SelectItem
+                            key={category.value}
+                            value={category.value}
+                            className="py-3 text-[15px] font-normal"
+                          >
                             {t(category.label)}
                           </SelectItem>
                         ))}
@@ -458,14 +470,8 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                     <h3 className="text-[15px] font-semibold text-foreground">{t("Recommended articles")}</h3>
                     <div className="mt-3 divide-y divide-border">
                       {selectedTopic?.articles.map((article) => (
-                        <button
-                          key={article.title}
-                          type="button"
-                          className="block w-full py-3 text-left"
-                        >
-                          <div className="text-[15px] font-medium text-brand">
-                            {t(article.title)}
-                          </div>
+                        <button key={article.title} type="button" className="block w-full py-3 text-left">
+                          <div className="text-[15px] font-medium text-brand">{t(article.title)}</div>
                           <p className="mt-1 max-w-[56ch] text-[13px] leading-5 text-muted-foreground">
                             {t(article.body)}
                           </p>
@@ -483,18 +489,25 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                   </h2>
                   <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
                     {t("Tell us more about")}{" "}
-                    <span className="font-medium text-foreground">{selectedTopic?.label ? t(selectedTopic.label) : selectedTopic?.label}</span>.
+                    <span className="font-medium text-foreground">
+                      {selectedTopic?.label ? t(selectedTopic.label) : selectedTopic?.label}
+                    </span>
+                    .
                   </p>
                 </div>
 
                 <dl className="grid gap-x-6 gap-y-3 text-[13px] sm:grid-cols-2">
                   <div>
                     <dt className="font-medium text-muted-foreground">{t("Category")}</dt>
-                    <dd className="mt-1 text-foreground">{selectedCategory?.label ? t(selectedCategory.label) : selectedCategory?.label}</dd>
+                    <dd className="mt-1 text-foreground">
+                      {selectedCategory?.label ? t(selectedCategory.label) : selectedCategory?.label}
+                    </dd>
                   </div>
                   <div>
                     <dt className="font-medium text-muted-foreground">{t("Topic")}</dt>
-                    <dd className="mt-1 text-foreground">{selectedTopic?.label ? t(selectedTopic.label) : selectedTopic?.label}</dd>
+                    <dd className="mt-1 text-foreground">
+                      {selectedTopic?.label ? t(selectedTopic.label) : selectedTopic?.label}
+                    </dd>
                   </div>
                 </dl>
 
@@ -507,7 +520,9 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                     value={message}
                     onChange={(event) => setMessage(event.target.value)}
                     className="h-[220px] w-full resize-none rounded-radius-sm border border-border bg-background px-3.5 py-3 text-[16px] leading-6 text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-brand focus:ring-2 focus:ring-brand/15 sm:h-[260px] sm:text-[15px]"
-                    placeholder={t("Include what you were trying to do, what happened, and any transaction or market details that may help.")}
+                    placeholder={t(
+                      "Include what you were trying to do, what happened, and any transaction or market details that may help.",
+                    )}
                   />
                 </div>
               </div>
@@ -549,9 +564,9 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
   )
 }
 
-const SupportCenterSubmissionBridge = lazy(
-  async () => ({ default: (await import("./support-center-submission-bridge")).SupportCenterSubmissionBridge }),
-)
+const SupportCenterSubmissionBridge = lazy(async () => ({
+  default: (await import("./support-center-submission-bridge")).SupportCenterSubmissionBridge,
+}))
 
 /**
  * Public entry. Uses the Convex-backed submitter when a Convex client is

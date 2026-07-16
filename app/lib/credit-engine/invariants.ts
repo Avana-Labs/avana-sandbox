@@ -99,7 +99,10 @@ function assertAccountState(account: BorrowAccountState, system: BorrowSystemSta
 export function assertBorrowSystemInvariants(system: BorrowSystemState) {
   assertUnique(Object.values(system.markets), "market")
   assertUnique(Object.values(system.assets), "asset")
-  assertUnique(Object.values(system.accounts).map((account) => ({ id: account.walletId })), "account")
+  assertUnique(
+    Object.values(system.accounts).map((account) => ({ id: account.walletId })),
+    "account",
+  )
 
   for (const market of Object.values(system.markets)) {
     assertMarketRecord(market)
@@ -142,10 +145,18 @@ export function assertBorrowSystemInvariants(system: BorrowSystemState) {
     if (transaction.assetId && !system.assets[transaction.assetId]) {
       throw new Error(`Transaction ${transaction.id} references unknown asset ${transaction.assetId}`)
     }
-    if (transaction.assetId && transaction.spokeId && system.assets[transaction.assetId]!.spokeId !== transaction.spokeId) {
+    if (
+      transaction.assetId &&
+      transaction.spokeId &&
+      system.assets[transaction.assetId]!.spokeId !== transaction.spokeId
+    ) {
       throw new Error(`Transaction ${transaction.id} references asset from the wrong spoke`)
     }
-    if (transaction.marketId && transaction.spokeId && system.markets[transaction.marketId]!.spokeId !== transaction.spokeId) {
+    if (
+      transaction.marketId &&
+      transaction.spokeId &&
+      system.markets[transaction.marketId]!.spokeId !== transaction.spokeId
+    ) {
       throw new Error(`Transaction ${transaction.id} references market from the wrong spoke`)
     }
   }

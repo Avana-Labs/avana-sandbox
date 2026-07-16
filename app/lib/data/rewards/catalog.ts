@@ -27,7 +27,6 @@ export type RewardsQuest = {
 }
 
 export const REWARDS_PROMO_TABS = [
-  { id: "getting-started", label: "Getting started" },
   { id: "lend", label: "Lend" },
   { id: "borrow", label: "Borrow" },
   { id: "multiply", label: "Multiply" },

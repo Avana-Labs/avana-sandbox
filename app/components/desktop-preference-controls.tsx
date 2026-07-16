@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, ChevronLeft, ChevronRight, MoonStar, MoreHorizontal, SunMedium } from "lucide-react"
+import { Check, ChevronLeft, ChevronRight, MoonStar, MoreHorizontal, SunMedium } from "@/app/components/icons"
 import {
   DropdownMenu,
   DropdownMenuContent,

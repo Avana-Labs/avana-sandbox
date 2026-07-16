@@ -27,10 +27,7 @@ export function validateDepositAction(params: {
   const totalApy = params.market.supplyApy + params.market.rewardsApy
   if (totalApy < 0.001) warnings.push("Total APY is very low.")
   if (params.market.utilization >= 0.9) warnings.push("Market utilization is very high.")
-  if (
-    params.market.supplyCap !== undefined &&
-    params.market.totalSupplied / params.market.supplyCap >= 0.9
-  ) {
+  if (params.market.supplyCap !== undefined && params.market.totalSupplied / params.market.supplyCap >= 0.9) {
     warnings.push("Market is close to its supply cap.")
   }
   if (params.priceStale) warnings.push("Asset price data is stale.")

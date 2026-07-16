@@ -120,6 +120,7 @@ export function useBorrowSession({
   const shouldPersistState = persistState ?? adapterMode === "sandbox"
   const seededState = useMemo(() => deserializeBorrowSystemState(sessionSeed), [sessionSeed])
   const [state, setState] = useState<BorrowSystemState>(seededState)
+  const [hydratedWalletId, setHydratedWalletId] = useState<string | null>(null)
   const [transactionHistory, setTransactionHistory] = useState<TransactionHistoryItem[]>(() =>
     buildLegacyTransactionHistory(seededState, walletId),
   )
@@ -144,6 +145,7 @@ export function useBorrowSession({
       setState(seededState)
       setTransactionHistory([])
       setTransactionReceipts([])
+      setHydratedWalletId(walletId)
       return
     }
     const nextState = readBorrowSessionState(walletId, sessionSeed)
@@ -153,6 +155,7 @@ export function useBorrowSession({
     setState(nextState)
     setTransactionHistory(metadata.transactionHistory.length > 0 ? metadata.transactionHistory : fallbackHistory)
     setTransactionReceipts(metadata.receipts.length > 0 ? metadata.receipts : buildSyntheticReceipts(fallbackHistory))
+    setHydratedWalletId(walletId)
   }, [seededState, sessionSeed, shouldPersistState, walletId])
 
   useEffect(() => {
@@ -322,22 +325,22 @@ export function useBorrowSession({
     [walletId],
   )
 
-  const transactionAdapter = useMemo(
-    () => {
-      if (injectedTransactionAdapter) return injectedTransactionAdapter
-      return new SandboxTransactionAdapter({
-        readState: () => stateRef.current,
-        writeState: (nextState) => {
-          stateRef.current = nextState
-          setState(nextState)
-        },
-        persistResult: persistTransaction,
-      })
-    },
-    [injectedTransactionAdapter, persistTransaction],
-  )
+  const transactionAdapter = useMemo(() => {
+    if (injectedTransactionAdapter) return injectedTransactionAdapter
+    return new SandboxTransactionAdapter({
+      readState: () => stateRef.current,
+      writeState: (nextState) => {
+        stateRef.current = nextState
+        setState(nextState)
+      },
+      persistResult: persistTransaction,
+    })
+  }, [injectedTransactionAdapter, persistTransaction])
 
-  const createIntent = useCallback((action: BorrowAction) => transactionAdapter.createIntent(action), [transactionAdapter])
+  const createIntent = useCallback(
+    (action: BorrowAction) => transactionAdapter.createIntent(action),
+    [transactionAdapter],
+  )
   const previewTransaction = useCallback(
     (intent: TransactionIntent) => transactionAdapter.previewTransaction(intent),
     [transactionAdapter],
@@ -370,25 +373,19 @@ export function useBorrowSession({
     },
     [transactionAdapter],
   )
-  const readAdapter = useMemo(
-    () => {
-      if (injectedReadAdapter) return injectedReadAdapter
-      return new SandboxBorrowReadAdapter({
-        state,
-        transactionHistory,
-      })
-    },
-    [injectedReadAdapter, state, transactionHistory],
-  )
+  const readAdapter = useMemo(() => {
+    if (injectedReadAdapter) return injectedReadAdapter
+    return new SandboxBorrowReadAdapter({
+      state,
+      transactionHistory,
+    })
+  }, [injectedReadAdapter, state, transactionHistory])
 
   const metrics = useMemo(() => calculateCreditMetrics(state, walletId), [state, walletId])
   const marketSummaries = useMemo(() => selectBorrowMarketSummaries(state, walletId), [state, walletId])
   const borrowableAssets = useMemo(() => selectBorrowableAssets(state, walletId), [state, walletId])
   const collateralPools = useMemo(() => selectBorrowCollateralPools(state, walletId), [state, walletId])
-  const availableCollateralPools = useMemo(
-    () => selectAllAvailableCollateralPools(state, walletId),
-    [state, walletId],
-  )
+  const availableCollateralPools = useMemo(() => selectAllAvailableCollateralPools(state, walletId), [state, walletId])
   const initialDebts = useMemo(() => selectInitialBorrowDebts(state, walletId), [state, walletId])
   const walletSnapshot = useMemo(() => selectWalletBorrowSnapshot(state, walletId), [state, walletId])
 
@@ -410,6 +407,7 @@ export function useBorrowSession({
     transactionReceipts,
     lastReceipt: transactionReceipts[0] ?? null,
     isPending,
+    isHydrated: hydratedWalletId === walletId,
     getBorrowableAssetsForMarket,
     readAdapter,
     createIntent,

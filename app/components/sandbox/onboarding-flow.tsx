@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { Check, ChevronDown, LoaderCircle, MoveUpRight } from "lucide-react"
+import { Check, ChevronDown, LoaderCircle, MoveUpRight } from "@/app/components/icons"
 import { useMutation } from "convex/react"
 import { WalletControl } from "@/app/components/wallet-control"
 import { api } from "@/convex/_generated/api"
@@ -16,12 +16,7 @@ import {
 import { CurrencyFlag } from "@/app/components/currency-flag"
 import { useThemeOptional } from "@/app/components/theme-provider"
 import styles from "./onboarding-flow.module.css"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 /** Display-name cap — kept in sync with the server clamp in `savePreferences`. */
@@ -57,14 +52,7 @@ type BasketClaim = { tokenId: string; amount: number; priceUsdAtClaim: number }
 
 export type OnboardingGateState = {
   onboardingStep:
-    | "wallet"
-    | "analyzing"
-    | "eligible"
-    | "xPending"
-    | "xConfirmed"
-    | "claimPending"
-    | "done"
-    | "waitlisted"
+    "wallet" | "analyzing" | "eligible" | "xPending" | "xConfirmed" | "claimPending" | "done" | "waitlisted"
   profile: {
     eligibilityTier?: number
     allocatedUsd?: number
@@ -123,8 +111,7 @@ function buildShareText(config: OnboardingGateState["config"] | null | undefined
   const mention = handle ? `\n@${handle.replace(/^@/, "")}` : ""
   return `${template}${mention}\nTry it 👉 ${SHARE_URL}`
 }
-const xIntentHref = (shareText: string) =>
-  `https://x.com/intent/post?text=${encodeURIComponent(shareText)}`
+const xIntentHref = (shareText: string) => `https://x.com/intent/post?text=${encodeURIComponent(shareText)}`
 
 // Onboarding progress (%) per phase — drives the animated rail + AnimatePresence key.
 const PROGRESS: Record<string, number> = {
@@ -290,7 +277,9 @@ function ThinkingSteps({ muted, active, steps }: { muted?: string; active: strin
                   <Check className="size-[18px] text-emerald-500" strokeWidth={2.75} />
                 </span>
               ) : (
-                <LoaderCircle className={`size-[18px] ${state === "active" ? "animate-spin text-brand" : "text-muted-foreground/40"}`} />
+                <LoaderCircle
+                  className={`size-[18px] ${state === "active" ? "animate-spin text-brand" : "text-muted-foreground/40"}`}
+                />
               )}
               <span className={state === "pending" ? "text-muted-foreground" : "text-foreground"}>{t(label)}</span>
             </li>
@@ -301,13 +290,7 @@ function ThinkingSteps({ muted, active, steps }: { muted?: string; active: strin
   )
 }
 
-function BasketPanel({
-  busy,
-  onClaim,
-}: {
-  busy: boolean
-  onClaim: () => void
-}) {
+function BasketPanel({ busy, onClaim }: { busy: boolean; onClaim: () => void }) {
   const { t } = useTranslation()
   const buckets = [
     { label: t("Liquid assets"), detail: t("Hold & swap tokens") },
@@ -768,168 +751,185 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
           pinned to hydration completion (~4s on throttled mobile). Step changes swap
           instantly; a CSS-only fade could be added later without an opacity:0 start. */}
       <div key={viewPhase} data-onboarding-phase={viewPhase}>
-      {!wallet && !hasStarted ? (
-        <>
-          <Headline
-            active={t("Welcome to the Avana Sandbox")}
-            size="hero"
+        {!wallet && !hasStarted ? (
+          <>
+            <Headline active={t("Welcome to the Avana Sandbox")} size="hero" />
+            <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">
+              {t(
+                "This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.",
+              )}
+            </p>
+            <ul className="mt-7 space-y-2.5">
+              {["Unlimited practice funds", "No transactions to sign", "No real assets involved"].map((perk) => (
+                <li className="flex items-center gap-2.5 text-[15px] font-medium" key={perk}>
+                  <Check className="size-4 shrink-0 text-emerald-500" strokeWidth={2.75} />
+                  {t(perk)}
+                </li>
+              ))}
+            </ul>
+            <button className={`${PRIMARY} mt-9`} onClick={() => setHasStarted(true)} type="button">
+              {t("Get started")}
+            </button>
+          </>
+        ) : !wallet || !state ? (
+          <>
+            <Headline
+              muted={t("Connect an EVM wallet.")}
+              active={t("We'll set up your sandbox and scope it to your address.")}
+            />
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              {/* One control: connect → sign in → account, all via the ConnectKit modal. */}
+              <WalletControl size="desktop" />
+            </div>
+            <p className="mt-8 max-w-[430px] text-[13px] leading-5 text-muted-foreground">
+              {t("By connecting your wallet, you agree to the")}{" "}
+              <a
+                className="text-foreground underline underline-offset-2 hover:text-brand"
+                href={AVANA_EXTERNAL_LINKS.terms}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {t("Terms & Conditions")}
+              </a>{" "}
+              {t("and")}{" "}
+              <a
+                className="text-foreground underline underline-offset-2 hover:text-brand"
+                href={AVANA_EXTERNAL_LINKS.privacy}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {t("Privacy Policy")}
+              </a>
+              .
+            </p>
+          </>
+        ) : economy.status === "closed" && step !== "done" ? (
+          <>
+            <Headline muted={t("This allocation round is full.")} active={t("Your wallet is on the waitlist.")} />
+            <p className="mt-7 text-muted-foreground">
+              {claimedSeats.toLocaleString()} {t("wallets onboarded.")}
+            </p>
+          </>
+        ) : step === "wallet" && prefStep === "personalize" ? (
+          <PersonalizeStep wallet={wallet!} existing={state.profile} onContinue={() => setPrefStep("dexSources")} />
+        ) : step === "wallet" && prefStep === "dexSources" ? (
+          <LiquiditySourceStep
+            wallet={wallet!}
+            existing={state.profile}
+            onBack={() => setPrefStep("personalize")}
+            onContinue={() => setPrefStep("fund")}
           />
-          <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">
-            {t("This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.")}
-          </p>
-          <ul className="mt-7 space-y-2.5">
-            {["Unlimited practice funds", "No transactions to sign", "No real assets involved"].map((perk) => (
-              <li className="flex items-center gap-2.5 text-[15px] font-medium" key={perk}>
-                <Check className="size-4 shrink-0 text-emerald-500" strokeWidth={2.75} />
-                {t(perk)}
-              </li>
-            ))}
-          </ul>
-          <button className={`${PRIMARY} mt-9`} onClick={() => setHasStarted(true)} type="button">
-            {t("Get started")}
-          </button>
-        </>
-      ) : !wallet || !state ? (
-        <>
-          <Headline muted={t("Connect an EVM wallet.")} active={t("We'll set up your sandbox and scope it to your address.")} />
-          <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-            {/* One control: connect → sign in → account, all via the ConnectKit modal. */}
-            <WalletControl size="desktop" />
-          </div>
-          <p className="mt-8 max-w-[430px] text-[13px] leading-5 text-muted-foreground">
-            {t("By connecting your wallet, you agree to the")}{" "}
-            <a className="text-foreground underline underline-offset-2 hover:text-brand" href={AVANA_EXTERNAL_LINKS.terms} target="_blank" rel="noreferrer">
-              {t("Terms & Conditions")}
-            </a>{" "}
-            {t("and")}{" "}
-            <a className="text-foreground underline underline-offset-2 hover:text-brand" href={AVANA_EXTERNAL_LINKS.privacy} target="_blank" rel="noreferrer">
-              {t("Privacy Policy")}
-            </a>
-            .
-          </p>
-        </>
-      ) : economy.status === "closed" && step !== "done" ? (
-        <>
-          <Headline muted={t("This allocation round is full.")} active={t("Your wallet is on the waitlist.")} />
-          <p className="mt-7 text-muted-foreground">{claimedSeats.toLocaleString()} {t("wallets onboarded.")}</p>
-        </>
-      ) : step === "wallet" && prefStep === "personalize" ? (
-        <PersonalizeStep wallet={wallet!} existing={state.profile} onContinue={() => setPrefStep("dexSources")} />
-      ) : step === "wallet" && prefStep === "dexSources" ? (
-        <LiquiditySourceStep
-          wallet={wallet!}
-          existing={state.profile}
-          onBack={() => setPrefStep("personalize")}
-          onContinue={() => setPrefStep("fund")}
-        />
-      ) : step === "wallet" ? (
-        <>
-          <Headline muted={t("Last step.")} active={t("Let's fund your sandbox.")} />
-          <p className="mt-6 max-w-lg text-[15px] leading-6 text-muted-foreground">
-            {t("We'll spread practice funds across markets so you can lend, borrow, and loop with zero risk.")}
-          </p>
-          <button className={`${PRIMARY} mt-7`} onClick={analyze} type="button">
-            {t("Fund my sandbox")}
-          </button>
-          <ErrorMessage error={error} />
-        </>
-      ) : step === "analyzing" ? (
-        <>
-          <ThinkingSteps muted="One moment." active="Analyzing your wallet…" steps={ANALYSIS_STEPS} />
-          <LoadingRecovery error={error} onResume={resume} />
-        </>
-      ) : step === "eligible" ? (
-        <>
-          <Headline
-            muted={t("Good news, you're in.")}
-            active={t("Your practice portfolio is ready.")}
-          />
-          <p className="mt-6 text-sm text-muted-foreground">
-            <span className="font-semibold text-foreground">{claimedSeats.toLocaleString()}</span> {t("of")}{" "}
-            {economy.userCap.toLocaleString()} {t("sandbox seats already claimed.")}
-          </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <button
-              className={PRIMARY}
-              disabled={busy != null}
-              onClick={() => run("sharing", () => skipTweet({ wallet }))}
-              type="button"
-            >
-              {t("Continue to allocation")}
+        ) : step === "wallet" ? (
+          <>
+            <Headline muted={t("Last step.")} active={t("Let's fund your sandbox.")} />
+            <p className="mt-6 max-w-lg text-[15px] leading-6 text-muted-foreground">
+              {t("We'll spread practice funds across markets so you can lend, borrow, and loop with zero risk.")}
+            </p>
+            <button className={`${PRIMARY} mt-7`} onClick={analyze} type="button">
+              {t("Fund my sandbox")}
             </button>
-            <button
-              className={SECONDARY}
-              disabled={busy != null}
-              onClick={() => run("sharing", () => startTweet({ wallet }))}
-              type="button"
+            <ErrorMessage error={error} />
+          </>
+        ) : step === "analyzing" ? (
+          <>
+            <ThinkingSteps muted="One moment." active="Analyzing your wallet…" steps={ANALYSIS_STEPS} />
+            <LoadingRecovery error={error} onResume={resume} />
+          </>
+        ) : step === "eligible" ? (
+          <>
+            <Headline muted={t("Good news, you're in.")} active={t("Your practice portfolio is ready.")} />
+            <p className="mt-6 text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground">{claimedSeats.toLocaleString()}</span> {t("of")}{" "}
+              {economy.userCap.toLocaleString()} {t("sandbox seats already claimed.")}
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <button
+                className={PRIMARY}
+                disabled={busy != null}
+                onClick={() => run("sharing", () => skipTweet({ wallet }))}
+                type="button"
+              >
+                {t("Continue to allocation")}
+              </button>
+              <button
+                className={SECONDARY}
+                disabled={busy != null}
+                onClick={() => run("sharing", () => startTweet({ wallet }))}
+                type="button"
+              >
+                {t("Share on X first")}
+              </button>
+            </div>
+            <ErrorMessage error={error} />
+          </>
+        ) : step === "xPending" ? (
+          <>
+            <Headline muted={t("Tell your network about Avana.")} active={t("Post the prepared message on X.")} />
+            <div className="mt-8 max-w-2xl whitespace-pre-line rounded-3xl border border-border p-5 text-[15px] leading-7 sm:p-7">
+              {shareText}
+            </div>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+              <a className={PRIMARY} href={intentHref} rel="noreferrer" target="_blank">
+                {t("Open X")} <MoveUpRight className="ml-2 size-4" />
+              </a>
+              <button
+                className={SECONDARY}
+                disabled={busy != null}
+                onClick={() => run("sharing", () => confirmTweet({ wallet }))}
+                type="button"
+              >
+                {t("I posted it")}
+              </button>
+              <button
+                className={SECONDARY}
+                disabled={busy != null}
+                onClick={() => run("sharing", () => skipTweet({ wallet }))}
+                type="button"
+              >
+                {t("Skip")}
+              </button>
+            </div>
+            <ErrorMessage error={error} />
+          </>
+        ) : step === "xConfirmed" ? (
+          <>
+            <Headline active={t("Here's what you'll get.")} />
+            <BasketPanel busy={busy === "claiming"} onClaim={claimAllocation} />
+            <ErrorMessage error={error} />
+          </>
+        ) : step === "claimPending" ? (
+          <>
+            <ThinkingSteps muted="Hang tight." active="Funding your sandbox…" steps={CLAIM_STEPS} />
+            <LoadingRecovery error={error} onResume={resume} />
+          </>
+        ) : step === "waitlisted" ? (
+          <>
+            <Headline muted={t("The allocation cap was reached.")} active={t("Your wallet is on the waitlist.")} />
+            <p className="mt-7 text-muted-foreground">
+              {claimedSeats.toLocaleString()} {t("wallets onboarded.")}
+            </p>
+          </>
+        ) : step === "done" ? (
+          <>
+            <div
+              className={`mb-7 flex size-12 items-center justify-center rounded-full bg-emerald-500 text-white ${styles.reveal}`}
             >
-              {t("Share on X first")}
-            </button>
-          </div>
-          <ErrorMessage error={error} />
-        </>
-      ) : step === "xPending" ? (
-        <>
-          <Headline muted={t("Tell your network about Avana.")} active={t("Post the prepared message on X.")} />
-          <div className="mt-8 max-w-2xl whitespace-pre-line rounded-3xl border border-border p-5 text-[15px] leading-7 sm:p-7">
-            {shareText}
-          </div>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <a className={PRIMARY} href={intentHref} rel="noreferrer" target="_blank">
-              {t("Open X")} <MoveUpRight className="ml-2 size-4" />
-            </a>
-            <button
-              className={SECONDARY}
-              disabled={busy != null}
-              onClick={() => run("sharing", () => confirmTweet({ wallet }))}
-              type="button"
-            >
-              {t("I posted it")}
-            </button>
-            <button
-              className={SECONDARY}
-              disabled={busy != null}
-              onClick={() => run("sharing", () => skipTweet({ wallet }))}
-              type="button"
-            >
-              {t("Skip")}
-            </button>
-          </div>
-          <ErrorMessage error={error} />
-        </>
-      ) : step === "xConfirmed" ? (
-        <>
-          <Headline active={t("Here's what you'll get.")} />
-          <BasketPanel busy={busy === "claiming"} onClaim={claimAllocation} />
-          <ErrorMessage error={error} />
-        </>
-      ) : step === "claimPending" ? (
-        <>
-          <ThinkingSteps muted="Hang tight." active="Funding your sandbox…" steps={CLAIM_STEPS} />
-          <LoadingRecovery error={error} onResume={resume} />
-        </>
-      ) : step === "waitlisted" ? (
-        <>
-          <Headline muted={t("The allocation cap was reached.")} active={t("Your wallet is on the waitlist.")} />
-          <p className="mt-7 text-muted-foreground">{claimedSeats.toLocaleString()} {t("wallets onboarded.")}</p>
-        </>
-      ) : step === "done" ? (
-        <>
-          <div className={`mb-7 flex size-12 items-center justify-center rounded-full bg-emerald-500 text-white ${styles.reveal}`}>
-            <Check className="size-6" strokeWidth={3} />
-          </div>
-          <Headline muted={t("You're all set.")} active={t("Your sandbox is live.")} />
-          <p className="mt-4 max-w-md text-pretty text-[15px] leading-6 text-muted-foreground">
-            {t("Everything's funded and waiting. Dive in whenever you're ready.")}
-          </p>
-          <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-            <Link className={PRIMARY} href="/dashboard">{t("Open dashboard")}</Link>
-            <a className={SECONDARY} href={intentHref} rel="noreferrer" target="_blank">
-              {t("Share on X")} <MoveUpRight className="ml-2 size-4" />
-            </a>
-          </div>
-        </>
-      ) : null}
+              <Check className="size-6" strokeWidth={3} />
+            </div>
+            <Headline muted={t("You're all set.")} active={t("Your sandbox is live.")} />
+            <p className="mt-4 max-w-md text-pretty text-[15px] leading-6 text-muted-foreground">
+              {t("Everything's funded and waiting. Dive in whenever you're ready.")}
+            </p>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <Link className={PRIMARY} href="/portfolio">
+                {t("Open portfolio")}
+              </Link>
+              <a className={SECONDARY} href={intentHref} rel="noreferrer" target="_blank">
+                {t("Share on X")} <MoveUpRight className="ml-2 size-4" />
+              </a>
+            </div>
+          </>
+        ) : null}
       </div>
     </div>
   )

@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it } from "vitest"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
-import { clearBorrowSessionState, readBorrowSessionState, writeBorrowSessionState } from "@/app/lib/borrow-system/storage"
+import {
+  clearBorrowSessionState,
+  readBorrowSessionState,
+  writeBorrowSessionState,
+} from "@/app/lib/borrow-system/storage"
 import { serializeBorrowSystemState } from "@/app/lib/borrow-system/codec"
 
 describe("borrow session storage", () => {

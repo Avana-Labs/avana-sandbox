@@ -15,7 +15,10 @@ export function AssetCashflowCard({ detail }: Props) {
   return (
     <SectionCard
       title={t("Interest & rewards")}
-      subtitle={t("{period} · borrower interest, LP incentives and reserve take.").replace("{period}", cashflow.periodLabel)}
+      subtitle={t("{period} · borrower interest, LP incentives and reserve take.").replace(
+        "{period}",
+        cashflow.periodLabel,
+      )}
       bodyClassName="p-0"
     >
       <div className="overflow-x-auto">
@@ -31,21 +34,14 @@ export function AssetCashflowCard({ detail }: Props) {
             {cashflow.rows.map((row, i) => (
               <tr
                 key={i}
-                className={cn(
-                  "transition-colors hover:bg-hover",
-                  row.highlighted ? "bg-surface-inset/40" : undefined,
-                )}
+                className={cn("transition-colors hover:bg-hover", row.highlighted ? "bg-surface-inset/40" : undefined)}
               >
                 <th scope="row" className="py-2.5 pl-5 text-left font-medium text-foreground">
                   {t(row.label)}
                 </th>
-                <td className="py-2.5 text-right font-data font-medium tabular-nums text-foreground">
-                  {row.reported}
-                </td>
+                <td className="py-2.5 text-right font-data font-medium tabular-nums text-foreground">{row.reported}</td>
                 <td className="py-2.5 pr-5 text-right">
-                  {row.yoy ? (
-                    <DeltaPill value={row.yoy.value} format="percent" digits={1} hideZero={false} />
-                  ) : null}
+                  {row.yoy ? <DeltaPill value={row.yoy.value} format="percent" digits={1} hideZero={false} /> : null}
                 </td>
               </tr>
             ))}

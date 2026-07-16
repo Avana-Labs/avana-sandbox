@@ -91,7 +91,9 @@ describe("borrow engine multi-user simulation", () => {
     expect(preview.actionType).toBe("borrow")
     expect(preview.after.metrics.totalBorrowedUsd6).toBeGreaterThan(preview.before.metrics.totalBorrowedUsd6)
     expect(preview.after.metrics.borrowCapacityUsd6).toBe(preview.before.metrics.borrowCapacityUsd6)
-    expect(preview.after.metrics.availableBorrowCapacityUsd6).toBeLessThan(preview.before.metrics.availableBorrowCapacityUsd6)
+    expect(preview.after.metrics.availableBorrowCapacityUsd6).toBeLessThan(
+      preview.before.metrics.availableBorrowCapacityUsd6,
+    )
     expect(preview.after.metrics.healthFactorWad).toBeLessThan(preview.before.metrics.healthFactorWad)
     expect(preview.after.state.transactions.at(-1)?.kind).toBe("borrow")
     expect(preview.before.metrics).toMatchObject({

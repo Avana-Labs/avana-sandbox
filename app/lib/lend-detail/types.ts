@@ -19,14 +19,7 @@
 
 import type { ChartFeed } from "@/app/components/charts"
 import type { LendMarket } from "@/app/lib/lend-engine/types"
-import type {
-  AboutCard,
-  CashflowCard,
-  QuickStat,
-  RiskAssessment,
-  Series,
-  TxHistoryRow,
-} from "@/app/lib/borrow-detail"
+import type { AboutCard, CashflowCard, QuickStat, RiskAssessment, Series, TxHistoryRow } from "@/app/lib/borrow-detail"
 import type { FaqContent } from "@/app/lib/borrow-detail/content-model"
 
 /** Single-asset visual for the lend hero / related cards. */

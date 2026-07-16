@@ -253,8 +253,12 @@ export function RewardsReferralDialog({
           {actionKind === "copy_referral" ? (
             <div className="space-y-2 rounded-radius-md border border-border bg-surface-inset p-3">
               <div className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{t("Invite link")}</div>
-              <div className="break-all font-data text-[12px] text-foreground">{referralLink || t("Generating link...")}</div>
-              <div className="text-[11px] text-muted-foreground">{t("Code")}: {referralCode || "—"}</div>
+              <div className="break-all font-data text-[12px] text-foreground">
+                {referralLink || t("Generating link...")}
+              </div>
+              <div className="text-[11px] text-muted-foreground">
+                {t("Code")}: {referralCode || "—"}
+              </div>
             </div>
           ) : null}
 

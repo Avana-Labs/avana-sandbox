@@ -2,7 +2,18 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { ArrowUpRight, Check, ChevronLeft, ChevronRight, CircleHelp, Coins, Globe2, Menu, Shield, SunMedium } from "lucide-react"
+import {
+  ArrowUpRight,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  CircleHelp,
+  Coins,
+  Globe2,
+  Menu,
+  Shield,
+  SunMedium,
+} from "@/app/components/icons"
 import type { ReactNode } from "react"
 import { useEffect, useRef, useState } from "react"
 import { Switch } from "@/components/ui/switch"
@@ -132,7 +143,8 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
   }
 
   const onOpen = () => {
-    restoreFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : menuButtonRef.current
+    restoreFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : menuButtonRef.current
     setRenderMenu(true)
     window.requestAnimationFrame(() => {
       setOpen(true)
@@ -157,12 +169,8 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       label: "Multiply",
     },
     {
-      href: "/dashboard",
-      label: "Dashboard",
-    },
-    {
-      href: "/rewards",
-      label: "Rewards",
+      href: "/portfolio",
+      label: "Portfolio",
     },
   ] as const
 
@@ -293,10 +301,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
         </ol>
 
         <ul className="mt-8 space-y-5">
-          <li
-            className="translate-y-0 opacity-100"
-            style={settingsIntroStyle(mainLinks.length)}
-          >
+          <li className="translate-y-0 opacity-100" style={settingsIntroStyle(mainLinks.length)}>
             <button type="button" onClick={() => setView("language")} className={rootSettingsClass}>
               <span className={rootSettingsLabelClass}>
                 <Globe2 className={rootSettingsIconClass} />
@@ -308,10 +313,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
               </span>
             </button>
           </li>
-          <li
-            className="translate-y-0 opacity-100"
-            style={settingsIntroStyle(mainLinks.length + 1)}
-          >
+          <li className="translate-y-0 opacity-100" style={settingsIntroStyle(mainLinks.length + 1)}>
             <button type="button" onClick={() => setView("currency")} className={rootSettingsClass}>
               <span className={rootSettingsLabelClass}>
                 <Coins className={rootSettingsIconClass} />
@@ -323,10 +325,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
               </span>
             </button>
           </li>
-          <li
-            className="translate-y-0 opacity-100"
-            style={settingsIntroStyle(mainLinks.length + 2)}
-          >
+          <li className="translate-y-0 opacity-100" style={settingsIntroStyle(mainLinks.length + 2)}>
             <div className={rootSettingsClass}>
               <span className={rootSettingsLabelClass}>
                 <SunMedium className={rootSettingsIconClass} />
@@ -340,10 +339,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
               />
             </div>
           </li>
-          <li
-            className="translate-y-0 opacity-100"
-            style={settingsIntroStyle(mainLinks.length + 3)}
-          >
+          <li className="translate-y-0 opacity-100" style={settingsIntroStyle(mainLinks.length + 3)}>
             <Link href="/support-center" prefetch={false} onClick={onClose} className={rootSettingsClass}>
               <span className={rootSettingsLabelClass}>
                 <CircleHelp className={rootSettingsIconClass} />
@@ -352,10 +348,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
               <ArrowUpRight className="h-[1.1rem] w-[1.1rem] text-[#01AACF]" />
             </Link>
           </li>
-          <li
-            className="translate-y-0 opacity-100"
-            style={settingsIntroStyle(mainLinks.length + 4)}
-          >
+          <li className="translate-y-0 opacity-100" style={settingsIntroStyle(mainLinks.length + 4)}>
             <a
               href={AVANA_EXTERNAL_LINKS.privacy}
               target="_blank"
@@ -404,7 +397,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
           type="button"
           aria-label={t("Close {title} sheet").replace("{title}", title.toLowerCase())}
           onClick={closeSelectorSheet}
-          className={`absolute inset-0 bg-black/40 backdrop-blur-xl transition-opacity duration-200 ${
+          className={`absolute inset-0 bg-black/25 backdrop-blur-sm transition-opacity duration-200 ${
             isSelectorSheetOpen ? "opacity-100" : "opacity-0"
           }`}
         />
@@ -443,21 +436,21 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       "Language",
       "root",
       <ul className="space-y-1">
-          {LANGUAGE_OPTIONS.map((option) => (
-            <li key={option.code}>
-              <button
-                type="button"
-                onClick={() => {
-                  setLanguage(option.code)
-                  closeSelectorSheet()
-                }}
-                className="flex w-full items-center justify-between gap-4 rounded-radius-lg px-3 py-4 text-left"
-              >
-                <span className="text-[1.15rem] font-medium leading-tight text-foreground">{option.label}</span>
-                {option.code === language ? <Check className="h-6 w-6 text-brand" /> : null}
-              </button>
-            </li>
-          ))}
+        {LANGUAGE_OPTIONS.map((option) => (
+          <li key={option.code}>
+            <button
+              type="button"
+              onClick={() => {
+                setLanguage(option.code)
+                closeSelectorSheet()
+              }}
+              className="flex w-full items-center justify-between gap-4 rounded-radius-lg px-3 py-4 text-left"
+            >
+              <span className="text-[1.15rem] font-medium leading-tight text-foreground">{option.label}</span>
+              {option.code === language ? <Check className="h-6 w-6 text-brand" /> : null}
+            </button>
+          </li>
+        ))}
       </ul>,
     )
   }
@@ -467,24 +460,24 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       "Currency",
       "root",
       <ul className="space-y-1">
-          {CURRENCY_OPTIONS.map((option) => (
-            <li key={option.code}>
-              <button
-                type="button"
-                onClick={() => {
-                  setCurrency(option.code)
-                  closeSelectorSheet()
-                }}
-                className="flex w-full items-center justify-between gap-4 rounded-radius-lg px-3 py-4 text-left"
-              >
-                <span className="flex items-center gap-4">
-                  <CurrencyFlag code={option.code} className="h-6 w-6" />
-                  <span className="text-[1.15rem] font-medium leading-tight text-foreground">{option.label}</span>
-                </span>
-                {option.code === currency ? <Check className="h-6 w-6 text-brand" /> : null}
-              </button>
-            </li>
-          ))}
+        {CURRENCY_OPTIONS.map((option) => (
+          <li key={option.code}>
+            <button
+              type="button"
+              onClick={() => {
+                setCurrency(option.code)
+                closeSelectorSheet()
+              }}
+              className="flex w-full items-center justify-between gap-4 rounded-radius-lg px-3 py-4 text-left"
+            >
+              <span className="flex items-center gap-4">
+                <CurrencyFlag code={option.code} className="h-6 w-6" />
+                <span className="text-[1.15rem] font-medium leading-tight text-foreground">{option.label}</span>
+              </span>
+              {option.code === currency ? <Check className="h-6 w-6 text-brand" /> : null}
+            </button>
+          </li>
+        ))}
       </ul>,
     )
   }

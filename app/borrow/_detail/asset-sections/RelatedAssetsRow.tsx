@@ -15,7 +15,9 @@ export function RelatedAssetsRow({ detail }: Props) {
   return (
     <section id="related-markets" className="min-w-0">
       <div className="mb-3">
-        <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">{t("Related markets")}</h2>
+        <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
+          {t("Related markets")}
+        </h2>
       </div>
       <ul className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {detail.related.map((rel) => (
@@ -66,13 +68,13 @@ export function RelatedAssetsRow({ detail }: Props) {
                 </div>
                 <div className="mt-auto grid grid-cols-2 gap-2 pt-2">
                   <div>
-                  <div className="text-[10px] text-muted-foreground">{t("Borrow APY")}</div>
-                  <div className="mt-0.5 text-[12px] tabular-nums text-foreground">{rel.aprLabel}</div>
-                </div>
-                <div>
-                  <div className="text-[10px] text-muted-foreground">{t("Available")}</div>
-                  <div className="mt-0.5 text-[12px] tabular-nums text-foreground">{rel.availableLabel}</div>
-                </div>
+                    <div className="text-[10px] text-muted-foreground">{t("Borrow APY")}</div>
+                    <div className="mt-0.5 text-[12px] tabular-nums text-foreground">{rel.aprLabel}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-muted-foreground">{t("Available")}</div>
+                    <div className="mt-0.5 text-[12px] tabular-nums text-foreground">{rel.availableLabel}</div>
+                  </div>
                 </div>
               </div>
             </Link>
