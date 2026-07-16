@@ -15,12 +15,10 @@ import {
 import { personalDesktopHeaderLinks } from "./site-nav"
 import { WalletControl } from "@/app/components/wallet-control"
 import { DesktopPreferenceControls } from "./desktop-preference-controls"
-import { useWalletGate } from "@/app/lib/web3/wallet-gate"
 
 export function Header() {
   const pathname = usePathname()
   const { t } = useTranslation()
-  const { modalOpen: walletModalOpen } = useWalletGate()
   const desktopLinks = personalDesktopHeaderLinks
   const [mounted, setMounted] = useState(false)
   const [showDivider, setShowDivider] = useState(false)
@@ -90,9 +88,9 @@ export function Header() {
   return (
     <header
       ref={headerRef}
-      className={`sticky top-0 z-40 bg-background/95 text-foreground transition-[box-shadow] duration-200 ${
-        walletModalOpen ? "" : "backdrop-blur"
-      } ${mounted && showDivider ? "shadow-[inset_0_-1px_0_hsl(var(--border))]" : "shadow-none"}`}
+      className={`sticky top-0 z-40 bg-background text-foreground transition-[box-shadow] duration-200 ${
+        mounted && showDivider ? "shadow-[inset_0_-1px_0_hsl(var(--border))]" : "shadow-none"
+      }`}
     >
       <div className="hidden lg:block">
         <div className="grid h-[68px] w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-3 px-3 sm:px-4 lg:px-5 xl:grid-cols-[minmax(0,1fr)_minmax(280px,410px)_minmax(0,1fr)] xl:gap-4 xl:px-6 2xl:px-8">
