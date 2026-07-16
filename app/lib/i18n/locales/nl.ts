@@ -357,6 +357,8 @@ const dict: TranslationDictionary = {
   ASSET: "ASSET",
   "Asset actions": "Asset-acties",
   "AVA balance": "AVA-saldo",
+  "Total Rewards earned": "Totaal verdiende beloningen",
+  "Claim Rewards": "Beloningen claimen",
   "Back to portfolio": "Terug naar portefeuille",
   "Open portfolio": "Portefeuille openen",
   Portfolio: "Portefeuille",

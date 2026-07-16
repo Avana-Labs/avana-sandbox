@@ -353,6 +353,8 @@ const dict: TranslationDictionary = {
   ASSET: "資産",
   "Asset actions": "資産の操作",
   "AVA balance": "AVA 残高",
+  "Total Rewards earned": "獲得リワード合計",
+  "Claim Rewards": "リワードを請求",
   "Back to portfolio": "ポートフォリオに戻る",
   "Open portfolio": "ポートフォリオを開く",
   Portfolio: "ポートフォリオ",
