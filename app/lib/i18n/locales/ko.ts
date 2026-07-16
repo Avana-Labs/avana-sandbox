@@ -352,6 +352,8 @@ const dict: TranslationDictionary = {
   ASSET: "자산",
   "Asset actions": "자산 작업",
   "AVA balance": "AVA 잔액",
+  "Back to portfolio": "포트폴리오로 돌아가기",
+  "Open portfolio": "포트폴리오 열기",
   Portfolio: "포트폴리오",
   "Quick actions": "빠른 작업",
   "Total Fees earned": "총 획득 수수료",

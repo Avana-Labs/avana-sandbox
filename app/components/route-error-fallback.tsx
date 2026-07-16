@@ -10,8 +10,8 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
  */
 export function RouteErrorFallback({
   onRetry,
-  homeHref = "/dashboard",
-  homeLabel = "Back to dashboard",
+  homeHref = "/portfolio",
+  homeLabel = "Back to portfolio",
   title = "Something went wrong",
   message,
   error,

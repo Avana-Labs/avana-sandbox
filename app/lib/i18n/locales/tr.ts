@@ -367,6 +367,8 @@ const dict: TranslationDictionary = {
   ASSET: "VARLIK",
   "Asset actions": "Varlık işlemleri",
   "AVA balance": "AVA bakiyesi",
+  "Back to portfolio": "Portföye dön",
+  "Open portfolio": "Portföyü aç",
   Portfolio: "Portföy",
   "Quick actions": "Hızlı işlemler",
   "Total Fees earned": "Kazanılan toplam ücret",

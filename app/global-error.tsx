@@ -63,7 +63,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
             Try again
           </button>
           <a
-            href="/dashboard"
+            href="/portfolio"
             style={{
               borderRadius: "9999px",
               padding: "0.75rem 1.5rem",
@@ -74,7 +74,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
               textDecoration: "none",
             }}
           >
-            Back to dashboard
+            Back to portfolio
           </a>
         </div>
       </body>

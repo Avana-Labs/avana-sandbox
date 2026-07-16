@@ -17,7 +17,7 @@ export function OnboardingPageConnected({ wallet }: { wallet: string }) {
   ) as OnboardingGateState["economy"] | undefined
 
   useEffect(() => {
-    if (isDone) router.replace("/dashboard")
+    if (isDone) router.replace("/portfolio")
   }, [isDone, router])
   if (isDone) return null
 

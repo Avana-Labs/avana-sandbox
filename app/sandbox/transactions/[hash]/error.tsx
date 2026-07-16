@@ -36,9 +36,9 @@ export default function SyntheticTransactionError({ error, reset }: { error: Err
         </button>
         <Link
           className="inline-flex rounded-full bg-muted px-6 py-3 text-sm font-semibold text-foreground"
-          href="/dashboard"
+          href="/portfolio"
         >
-          {t("Back to dashboard")}
+          {t("Back to portfolio")}
         </Link>
       </div>
     </main>

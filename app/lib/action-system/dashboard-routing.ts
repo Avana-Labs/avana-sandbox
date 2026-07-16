@@ -16,24 +16,18 @@ const TAB_LABELS: Record<DashboardTabKey, string> = {
   activity: "Activity",
 }
 
-const TAB_SECTION: Partial<Record<DashboardTabKey, string>> = {
-  // The Lend Account section moved to the rewards page, so the lending tab no
-  // longer has a dashboard section to scroll to — just its hero.
-  overview: "dashboard-borrow-account",
-  looping: "dashboard-multiply-account",
-}
-
 export function dashboardTabForProduct(product: ActionProduct): DashboardTabKey {
   return PRODUCT_TAB[product]
 }
 
-export function dashboardHrefForProduct(product: ActionProduct): string {
-  return dashboardHrefForTab(dashboardTabForProduct(product))
+// The per-product account overviews now all live on the portfolio page, which
+// doesn't deep-link to a specific tab via the URL — so every product returns there.
+export function dashboardHrefForProduct(_product: ActionProduct): string {
+  return "/portfolio"
 }
 
-export function dashboardHrefForTab(tab: DashboardTabKey): string {
-  const section = TAB_SECTION[tab]
-  return `/dashboard?tab=${tab}${section ? `#${section}` : ""}`
+export function dashboardHrefForTab(_tab: DashboardTabKey): string {
+  return "/portfolio"
 }
 
 export function dashboardTabLabel(tab: DashboardTabKey): string {
@@ -48,6 +42,6 @@ export function parseDashboardTab(value: string | null | undefined): DashboardTa
   return null
 }
 
-export function successDashboardCtaLabel(product: ActionProduct): string {
-  return `View ${dashboardTabLabel(dashboardTabForProduct(product))} dashboard`
+export function successDashboardCtaLabel(_product: ActionProduct): string {
+  return "View portfolio"
 }
