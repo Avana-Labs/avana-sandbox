@@ -253,7 +253,7 @@ function LoanAssetsSection({
                   sortKey === "apy" ? "text-foreground dark:text-white" : "text-muted-foreground/70 dark:text-white/42",
                 )}
               >
-                <span>{t("BASE APY")}</span>
+                <span>{t("BORROW APY")}</span>
                 <SortIcon />
               </button>
             </th>
