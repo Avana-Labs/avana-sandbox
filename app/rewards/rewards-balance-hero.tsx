@@ -5,7 +5,6 @@ import Image from "next/image"
 import { CircleDollarSign, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { HeroBalanceDisplay } from "@/app/components/charts/hero-balance-display"
-import { Progress } from "@/components/ui/progress"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
@@ -65,15 +64,7 @@ function FeeCard({
   )
 }
 
-export function RewardsBalanceHero({
-  completedCount,
-  totalCount,
-  progressPercentage,
-}: {
-  completedCount: number
-  totalCount: number
-  progressPercentage: number
-}) {
+export function RewardsBalanceHero() {
   const { t } = useTranslation()
   const { showDollarAmounts } = useAmountDisplayPreferences()
 
@@ -102,24 +93,6 @@ export function RewardsBalanceHero({
                 valueSuffix={<AvanaCoin />}
               />
             </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-[11px] font-normal uppercase tracking-[0.14em] text-muted-foreground">
-                {t("Your progress")}
-              </span>
-              <span className="text-[11px] font-normal text-muted-foreground">
-                {t("{completed}/{total} completed")
-                  .replace("{completed}", String(completedCount))
-                  .replace("{total}", String(totalCount))}
-              </span>
-            </div>
-            <Progress
-              value={progressPercentage}
-              className="h-1.5"
-              aria-label={t("Overall quest completion progress")}
-            />
           </div>
         </div>
       </section>
