@@ -21,7 +21,7 @@ import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export function RewardsActionPageClient({
-  closeHref = "/rewards",
+  closeHref = "/portfolio",
   embedded = false,
   sidebar = false,
 }: {

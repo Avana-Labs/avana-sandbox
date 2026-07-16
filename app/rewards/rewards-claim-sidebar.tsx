@@ -22,7 +22,7 @@ export function RewardsClaimSidebar() {
       />
       <div className="mt-3">
         <DetailSidebarActionCard>
-          <RewardsActionPageClient embedded sidebar closeHref="/rewards" />
+          <RewardsActionPageClient embedded sidebar closeHref="/portfolio" />
         </DetailSidebarActionCard>
       </div>
     </aside>

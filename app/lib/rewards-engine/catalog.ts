@@ -515,7 +515,7 @@ export const REWARD_TASK_DEEP_LINKS: Record<string, string> = {
   "first-repay": "/borrow",
   "first-deleverage": "/multiply",
   "use-3-products": "/lend",
-  "claim-rewards-5-times": "/rewards",
+  "claim-rewards-5-times": "/portfolio",
   "grow-portfolio-10k": "/lend",
   "open-8-active-positions": "/lend",
   "supply-5k-lend": "/lend",

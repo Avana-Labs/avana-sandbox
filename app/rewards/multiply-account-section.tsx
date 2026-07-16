@@ -19,7 +19,7 @@ const MultiplyCollateralTable = lazy(async () => ({
   default: (await import("@/app/portfolio/multiply-collateral-table")).MultiplyCollateralTable,
 }))
 
-const RETURN_HREF = "/rewards"
+const RETURN_HREF = "/portfolio"
 
 type LoopingSubTab = "overview" | "positions"
 const LOOPING_SUB_TABS: readonly { id: LoopingSubTab; label: string }[] = [
