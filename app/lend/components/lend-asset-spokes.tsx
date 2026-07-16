@@ -398,15 +398,15 @@ function AssetSection({
           ) : null}
           {isDesktop ? (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1080px] table-fixed border-separate border-spacing-0 text-[12px]">
+              <table className="w-full min-w-[1120px] table-fixed border-separate border-spacing-0 text-[12px]">
                 <colgroup>
-                  <col className="w-[5%]" />
-                  <col className="w-[22%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[19%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[20%]" />
-                  <col className="w-[10%]" />
+                  <col className="w-[4%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[24%]" />
                 </colgroup>
                 <thead>
                   <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
