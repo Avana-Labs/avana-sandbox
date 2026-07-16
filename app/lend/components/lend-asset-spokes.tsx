@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { Button } from "@/components/ui/button"
-import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
+import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
   MarketMobileCardHeader,
@@ -409,11 +409,11 @@ function AssetSection({
                   <col className="w-[24%]" />
                 </colgroup>
                 <thead>
-                  <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                    <th className="rounded-l-radius-lg bg-table-header px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <tr className="bg-table-header text-left text-muted-foreground">
+                    <th className="bg-table-header pb-3 pl-6 pr-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       #
                     </th>
-                    <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("asset")}
@@ -421,14 +421,14 @@ function AssetSection({
                           "flex items-center gap-2 transition-colors",
                           sortKey === "asset"
                             ? "text-foreground dark:text-white"
-                            : "text-foreground/70 dark:text-white/70",
+                            : "text-muted-foreground/70 dark:text-white/42",
                         )}
                       >
                         <span>{t("ASSET")}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("supplyApy")}
@@ -436,14 +436,14 @@ function AssetSection({
                           "flex items-center gap-2 transition-colors",
                           sortKey === "supplyApy"
                             ? "text-foreground dark:text-white"
-                            : "text-foreground/70 dark:text-white/70",
+                            : "text-muted-foreground/70 dark:text-white/42",
                         )}
                       >
                         <span>{t("SUPPLY APY")}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("totalDeposits")}
@@ -451,14 +451,14 @@ function AssetSection({
                           "flex items-center gap-2 transition-colors",
                           sortKey === "totalDeposits"
                             ? "text-foreground dark:text-white"
-                            : "text-foreground/70 dark:text-white/70",
+                            : "text-muted-foreground/70 dark:text-white/42",
                         )}
                       >
                         <span>{t("TOTAL DEPOSITS")}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("utilization")}
@@ -466,29 +466,29 @@ function AssetSection({
                           "flex items-center gap-2 transition-colors",
                           sortKey === "utilization"
                             ? "text-foreground dark:text-white"
-                            : "text-foreground/70 dark:text-white/70",
+                            : "text-muted-foreground/70 dark:text-white/42",
                         )}
                       >
                         <span>{t("UTILIZATION")}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                    <th className="bg-table-header px-4 pb-3 pr-6 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("availableLiquidity")}
                         className={cn(
-                          "flex items-center gap-2 transition-colors",
+                          "flex w-full items-center gap-2 transition-colors",
                           sortKey === "availableLiquidity"
                             ? "text-foreground dark:text-white"
-                            : "text-foreground/70 dark:text-white/70",
+                            : "text-muted-foreground/70 dark:text-white/42",
                         )}
                       >
                         <span>{t("AVAILABLE LIQUIDITY")}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <SilentActionHeader />
+                    <th className="bg-table-header px-4 pb-3 pr-5 pt-4 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
                   </tr>
                 </thead>
                 <tbody
