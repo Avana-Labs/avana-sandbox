@@ -1,6 +1,6 @@
 "use client"
 
-import { CircleArrowDown, CircleArrowUp, LogIn, LogOut } from "lucide-react"
+import { CircleArrowDown, CircleArrowUp, LogIn, LogOut } from "@/app/components/icons"
 import { PortfolioHeroActions } from "@/app/portfolio/hero/portfolio-hero-actions"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { useTranslation } from "@/app/lib/i18n/use-translation"

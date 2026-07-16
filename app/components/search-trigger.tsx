@@ -1,6 +1,6 @@
 "use client"
 
-import { Search } from "lucide-react"
+import { Search } from "@/app/components/icons"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 // The single source of truth for the header search trigger's markup. Both the

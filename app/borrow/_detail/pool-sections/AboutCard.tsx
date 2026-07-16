@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ArrowUpRight, Info } from "lucide-react"
+import { ArrowUpRight, Info } from "@/app/components/icons"
 import type { AboutCard as AboutCardData } from "@/app/lib/borrow-detail"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 

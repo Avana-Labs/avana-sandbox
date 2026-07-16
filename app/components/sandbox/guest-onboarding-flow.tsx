@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Check } from "lucide-react"
+import { Check } from "@/app/components/icons"
 import { WalletControl } from "@/app/components/wallet-control"
 import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
 import { useTranslation } from "@/app/lib/i18n/use-translation"

@@ -22,7 +22,7 @@ import {
   Shield,
   Sun,
   type LucideIcon,
-} from "lucide-react"
+} from "@/app/components/icons"
 import { useTheme } from "./theme-provider"
 import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"

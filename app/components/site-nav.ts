@@ -1,5 +1,5 @@
-import type { LucideIcon } from "lucide-react"
-import { PieChart } from "lucide-react"
+import type { LucideIcon } from "@/app/components/icons"
+import { PieChart } from "@/app/components/icons"
 
 export type DesktopHeaderLink = {
   href: string

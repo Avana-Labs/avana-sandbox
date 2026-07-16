@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { Check, ChevronDown, LoaderCircle, MoveUpRight } from "lucide-react"
+import { Check, ChevronDown, LoaderCircle, MoveUpRight } from "@/app/components/icons"
 import { useMutation } from "convex/react"
 import { WalletControl } from "@/app/components/wallet-control"
 import { api } from "@/convex/_generated/api"

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { Heart } from "lucide-react"
+import { Heart } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"

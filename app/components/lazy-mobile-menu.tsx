@@ -1,7 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { Menu } from "lucide-react"
+import { Menu } from "@/app/components/icons"
 import type { ReactNode } from "react"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 

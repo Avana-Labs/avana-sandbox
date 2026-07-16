@@ -1,7 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { CircleHelp } from "lucide-react"
+import { CircleHelp } from "@/app/components/icons"
 import { useState } from "react"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 

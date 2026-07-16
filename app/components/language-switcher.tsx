@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, Globe2 } from "lucide-react"
+import { Check, Globe2 } from "@/app/components/icons"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { LANGUAGE_OPTIONS, useLocaleDisplayPreferences } from "./display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"

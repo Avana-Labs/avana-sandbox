@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ChevronDown } from "lucide-react"
+import { ChevronDown } from "@/app/components/icons"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
