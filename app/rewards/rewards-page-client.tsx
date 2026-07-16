@@ -28,10 +28,12 @@ import { RewardsPageSkeleton } from "@/app/components/loading-states"
 import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
 import { RewardsBalanceHero } from "./rewards-balance-hero"
 import { RewardsClaimSidebar } from "./rewards-claim-sidebar"
+import { LendOpportunity } from "./lend-opportunity"
 import { LearnSection } from "./learn-section"
 import { RecentActivity } from "@/app/portfolio/recent-activity"
 import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
+import { usePortfolioPage } from "@/app/portfolio/use-portfolio-page"
 import { RewardsTabs } from "./rewards-tabs"
 import { MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
@@ -219,6 +221,8 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
     createReferralCode,
     recordReferralLinkCopied,
   } = useRewardsSessionContext()
+  // Full portfolio recent activity (all products) so the rewards table isn't claims-only.
+  const { data: portfolioData } = usePortfolioPage({ walletProfileId: walletId })
 
   const [now, setNow] = useState(0)
   const [isClaiming, setIsClaiming] = useState(false)
@@ -422,8 +426,9 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
 
   const claimHref = snapshot.summary.claimableTaskCount > 0 ? "/actions/rewards/claim" : undefined
   const rewardActivityRows = buildRewardsActivityHistory(walletId, state.claims, tasks)
-  // Reward claims and all product transactions now share one table on this page.
-  const allActivityRows = [
+  // One combined "recent activity" table: live session actions + the full portfolio
+  // activity (all products) + reward claims, deduped by tx hash (session rows win).
+  const combinedActivityRows = [
     ...mapTransactionHistoryToActivityRows(avana.borrow.transactionHistory, avana.borrow.state.markets),
     ...avana.multiply.transactionHistory.map((item) => ({
       id: item.id,
@@ -437,8 +442,15 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
       txHash: item.hash,
     })),
     ...buildLendActivityHistory(avana.lend.walletId, avana.lend.transactionHistory, avana.lend.state),
+    ...(portfolioData?.activity.rows ?? []),
     ...rewardActivityRows,
   ]
+  const seenTxHashes = new Set<string>()
+  const allActivityRows = combinedActivityRows.filter((row) => {
+    if (seenTxHashes.has(row.txHash)) return false
+    seenTxHashes.add(row.txHash)
+    return true
+  })
 
   return (
     <>
@@ -453,8 +465,9 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
           />
         </div>
 
-        <aside className="hidden lg:block lg:self-start">
+        <aside className="hidden space-y-8 lg:block lg:self-start">
           <RewardsClaimSidebar />
+          <LendOpportunity />
         </aside>
       </div>
 
