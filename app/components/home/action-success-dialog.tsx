@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowUpRight, Check } from "lucide-react"
+import { ArrowUpRight, Check } from "@/app/components/icons"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,

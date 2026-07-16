@@ -16,7 +16,7 @@ import {
   Target,
   Trophy,
   Wallet,
-} from "lucide-react"
+} from "@/app/components/icons"
 import { type RewardsPromoTabId, type RewardsQuestIconId, type RewardsQuest } from "@/app/lib/data/rewards/catalog"
 import { UnderlineTabStrip } from "@/app/components/tab-primitives"
 import { Card } from "@/components/ui/card"

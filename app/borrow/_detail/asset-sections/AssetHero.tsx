@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { BadgeCheck, Copy, Globe, MessageSquare, Search } from "lucide-react"
+import { BadgeCheck, Copy, Globe, MessageSquare, Search } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"

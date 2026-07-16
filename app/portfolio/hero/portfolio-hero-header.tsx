@@ -1,6 +1,6 @@
 "use client"
 
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff } from "@/app/components/icons"
 import { HeroBalanceDisplay } from "@/app/components/charts/hero-balance-display"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"

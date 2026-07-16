@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import Image from "next/image"
-import { ArrowUpRight, BadgeDollarSign, Layers3, Search, Sparkles } from "lucide-react"
+import { ArrowUpRight, BadgeDollarSign, Layers3, Search, Sparkles } from "@/app/components/icons"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { SearchTrigger } from "./search-trigger"
 import { triggerPageLoading } from "@/app/lib/page-loading"

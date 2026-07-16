@@ -13,7 +13,7 @@ import {
   Menu,
   Shield,
   SunMedium,
-} from "lucide-react"
+} from "@/app/components/icons"
 import type { ReactNode } from "react"
 import { useEffect, useRef, useState } from "react"
 import { Switch } from "@/components/ui/switch"

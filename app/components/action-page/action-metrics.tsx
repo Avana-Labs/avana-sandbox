@@ -1,7 +1,7 @@
 "use client"
 
 import type { ComponentPropsWithoutRef, ReactNode } from "react"
-import { Heart } from "lucide-react"
+import { Heart } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import { ActionHealthFactorBar } from "@/app/components/action-page/action-health-factor-bar"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"

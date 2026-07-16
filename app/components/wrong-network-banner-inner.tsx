@@ -1,6 +1,6 @@
 "use client"
 
-import { AlertTriangle } from "lucide-react"
+import { AlertTriangle } from "@/app/components/icons"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useWrongNetwork } from "@/app/lib/web3/use-wrong-network"
 

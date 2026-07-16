@@ -1,6 +1,6 @@
 "use client"
 
-import { Check } from "lucide-react"
+import { Check } from "@/app/components/icons"
 import { getHealthStatus, type HomeCollateralPool } from "@/app/lib/home-sim"
 import { PairVisual } from "@/app/components/home-workspace-primitives"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"

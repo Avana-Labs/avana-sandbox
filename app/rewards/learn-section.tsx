@@ -1,7 +1,16 @@
 "use client"
 
-import type { LucideIcon } from "lucide-react"
-import { ArrowUpRight, ChevronRight, Compass, GraduationCap, Repeat, Sparkles, Umbrella, Unlock } from "lucide-react"
+import type { LucideIcon } from "@/app/components/icons"
+import {
+  ArrowUpRight,
+  ChevronRight,
+  Compass,
+  GraduationCap,
+  Repeat,
+  Sparkles,
+  Umbrella,
+  Unlock,
+} from "@/app/components/icons"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 // The blog lives on the marketing deployment, not this webapp, so cards link out

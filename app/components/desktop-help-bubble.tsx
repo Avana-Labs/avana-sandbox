@@ -3,7 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
-import { ArrowUpRight, BookOpen, CircleHelp, FileText, LifeBuoy, Mail, ShieldCheck } from "lucide-react"
+import { ArrowUpRight, BookOpen, CircleHelp, FileText, LifeBuoy, Mail, ShieldCheck } from "@/app/components/icons"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { AVANA_EXTERNAL_LINKS } from "./external-links"
 

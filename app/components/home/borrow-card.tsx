@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronDown } from "lucide-react"
+import { ChevronDown } from "@/app/components/icons"
 import { calculateBorrowPreview, type HomeBorrowToken, type HomeCollateralPool } from "@/app/lib/home-sim"
 import { sanitizeNumericInput } from "@/app/lib/numeric-input"
 import { PairVisual, TokenBubble } from "@/app/components/home-workspace-primitives"

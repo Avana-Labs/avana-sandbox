@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { CheckCircle2, ExternalLink } from "lucide-react"
+import { CheckCircle2, ExternalLink } from "@/app/components/icons"
 import type { ActionMetricRow } from "@/app/lib/action-system/contracts"
 import { ActionCard, ActionInfoRow, ActionMetricsBlock } from "@/app/components/action-page/action-metrics"
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
