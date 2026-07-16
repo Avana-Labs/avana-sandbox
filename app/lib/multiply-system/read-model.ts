@@ -1,4 +1,5 @@
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
+import { formatTokenQuantity } from "@/app/lib/currency/format"
 import type { MultiplyMarketRecord, MultiplySystemState } from "@/app/lib/multiply-engine"
 import { calculateMaxLeverageApy } from "@/app/lib/multiply-engine"
 import { resolveMultiplyMarketDisplayMaxLeverage } from "@/app/lib/multiply-system/leverage-limits"
@@ -84,23 +85,30 @@ export function catalogMarketToRow(market: MultiplyMarketRecord): MultiplyMarket
   return {
     href: `/multiply/markets/${market.id}`,
     protocol: collateralSymbol,
+    protocolName: market.collateralAsset.name,
     protocolLogo: collateralLogo,
     asset: borrowSymbol,
+    assetName: market.borrowAsset.name,
     kind: "Loop",
     apy: formatPct(market.economics.estimatedMaxApy),
     apyLabel: "Estimated max APY at public max multiplier",
     points: formatCompactUsd(market.economics.availableLiquidityUsd),
+    availablePrimary: formatTokenQuantity(
+      market.economics.availableLiquidityUsd / market.borrowAsset.priceUsd,
+      borrowSymbol,
+    ),
+    availableSecondary: formatCompactUsd(market.economics.availableLiquidityUsd),
     // The explore table renders the primary reward row under its MAX LEVERAGE
     // header, so that row must carry the single-sourced public max — the same
     // number the trending card, hero average and markets table show — not the
     // recommended cap (which lives in the secondary row for context).
     rewardRows: [
       {
-        label: `CF ${Math.round(market.risk.collateralFactor * 100)}% · LT ${Math.round(market.risk.liquidationThreshold * 100)}%`,
+        label: `Collateral factor ${Math.round(market.risk.collateralFactor * 100)}% · Liquidation threshold ${Math.round(market.risk.liquidationThreshold * 100)}%`,
         value: `Recommended max ${formatFactor(market.risk.recommendedMaxMultiplier)}`,
       },
       {
-        label: `CF ${Math.round(market.risk.collateralFactor * 100)}% · LT ${Math.round(market.risk.liquidationThreshold * 100)}%`,
+        label: `Collateral factor ${Math.round(market.risk.collateralFactor * 100)}% · Liquidation threshold ${Math.round(market.risk.liquidationThreshold * 100)}%`,
         value: formatFactor(maxLeverage),
       },
     ],
@@ -118,11 +126,14 @@ export function buildMultiplyPageData(_walletId: string, state?: MultiplySystemS
   // row — so the headline reconciles with the table instead of showing a fraction.
   const totalLiquidityUsd = markets.reduce((sum, market) => sum + market.economics.availableLiquidityUsd, 0)
   const marketCount = markets.length
-  const averageMaxApy = marketCount > 0 ? markets.reduce((sum, market) => sum + market.economics.estimatedMaxApy, 0) / marketCount : 0
+  const averageMaxApy =
+    marketCount > 0 ? markets.reduce((sum, market) => sum + market.economics.estimatedMaxApy, 0) / marketCount : 0
   const averageMaxLeverage =
     marketCount > 0
-      ? markets.reduce((sum, market) => sum + resolveMultiplyMarketDisplayMaxLeverage(market.risk.publicMaxMultiplier), 0) /
-        marketCount
+      ? markets.reduce(
+          (sum, market) => sum + resolveMultiplyMarketDisplayMaxLeverage(market.risk.publicMaxMultiplier),
+          0,
+        ) / marketCount
       : 0
 
   return {
@@ -271,7 +282,9 @@ export function buildMultiplyWalletSnapshot(
           : 0,
     },
     riskSnapshots: buildMockMultiplyRiskSnapshots(state).filter((snapshot) =>
-      Object.values(state.positions).some((position) => position.walletId === walletId && position.marketId === snapshot.marketId),
+      Object.values(state.positions).some(
+        (position) => position.walletId === walletId && position.marketId === snapshot.marketId,
+      ),
     ),
   }
 }

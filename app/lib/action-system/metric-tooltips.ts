@@ -1,6 +1,5 @@
 const METRIC_TOOLTIPS_BY_ID: Record<string, string> = {
-  exposure:
-    "Total collateral value after leverage, including supplied assets and looped positions.",
+  exposure: "Total collateral value after leverage, including supplied assets and looped positions.",
   debt: "Outstanding borrowed amount you would owe after this transaction.",
   ltv: "Loan-to-value ratio — borrowed value divided by collateral value. Higher LTV means less buffer before liquidation.",
   hf: "Health factor estimates how far your position is from liquidation. Above 1.0 is solvent; below 1.0 can be liquidated.",

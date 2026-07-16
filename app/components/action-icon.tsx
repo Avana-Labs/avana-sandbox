@@ -1,5 +1,5 @@
-import type { LucideIcon } from "lucide-react"
-import { CircleArrowDown, CircleArrowUp, HandCoins, LogIn, LogOut } from "lucide-react"
+import type { LucideIcon } from "@/app/components/icons"
+import { CircleArrowDown, CircleArrowUp, HandCoins, LogIn, LogOut } from "@/app/components/icons"
 
 // Aave-style action glyphs: deposit/supply flows down-into (circled down arrow),
 // borrow flows up-out (circled up arrow), repay is money going back in (LogIn),

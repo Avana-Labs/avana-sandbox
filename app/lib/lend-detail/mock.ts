@@ -19,25 +19,10 @@ import { SANDBOX_NOW } from "@/app/lib/deterministic"
 import { buildLendRiskAssessment } from "@/app/lib/borrow-detail/risk-model"
 import { buildLendFaqs } from "@/app/lib/borrow-detail/content-model"
 import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
-import {
-  LEND_MARKET_CATALOG,
-  getLendMarketById,
-  resolveLendMarketId,
-} from "@/app/lib/lend-system/catalog"
+import { LEND_MARKET_CATALOG, getLendMarketById, resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import type { LendMarket } from "@/app/lib/lend-engine/types"
-import type {
-  AboutCard,
-  CashflowCard,
-  DeltaStat,
-  QuickStat,
-  TxHistoryRow,
-} from "@/app/lib/borrow-detail"
-import type {
-  LendMarketDetail,
-  LendMarketHero,
-  LendMarketRelatedSummary,
-  LendTokenVisual,
-} from "./types"
+import type { AboutCard, CashflowCard, DeltaStat, QuickStat, TxHistoryRow } from "@/app/lib/borrow-detail"
+import type { LendMarketDetail, LendMarketHero, LendMarketRelatedSummary, LendTokenVisual } from "./types"
 
 /** Reference values from a Convex snapshot, threaded into the headline numbers. */
 export type LendDetailOverrides = {
@@ -130,10 +115,19 @@ function buildQuickStats(market: LendMarket, ref: Reference): QuickStat[] {
     { id: "price", label: "Price", value: formatUsdPrice(ref.price), delta: deltaFromPct(0.1) },
     { id: "supplied", label: "Total Supplied", value: formatCompactUsd(ref.suppliedUsd), delta: deltaFromPct(1.8) },
     { id: "borrowed", label: "Total Borrowed", value: formatCompactUsd(ref.borrowedUsd), delta: deltaFromPct(1.1) },
-    { id: "available", label: "Available Liquidity", value: formatCompactUsd(ref.availableUsd), delta: deltaFromPct(0.6) },
+    {
+      id: "available",
+      label: "Available Liquidity",
+      value: formatCompactUsd(ref.availableUsd),
+      delta: deltaFromPct(0.6),
+    },
     { id: "utilization", label: "Utilization", value: formatPct(ref.utilizationPct, 2), delta: deltaFromPct(-0.4) },
     { id: "supplyApy", label: "Supply APY", value: formatPct(ref.supplyApyPct, 2), delta: deltaFromPct(0.1) },
-    { id: "rewardsApy", label: "Rewards APY", value: formatPct(ref.rewardsApyPct, 2) },
+    {
+      id: "rewardsApy",
+      label: "Rewards APY",
+      value: ref.rewardsApyPct > 0 ? formatPct(ref.rewardsApyPct, 2) : "No rewards",
+    },
     { id: "borrowApy", label: "Borrow APY", value: formatPct(ref.borrowAprPct, 2), delta: deltaFromPct(0.08) },
     { id: "reserveFactor", label: "Reserve Factor", value: formatPct(ref.reserveFactorPct, 0) },
   ]
@@ -194,11 +188,21 @@ function buildCashflow(market: LendMarket, ref: Reference): CashflowCard {
     bars: [feesSeries, rewardsSeries],
     periodLabel: "Last 12 months",
     rows: [
-      { label: "Interest paid by borrowers", reported: formatCompactUsd(annualInterest), yoy: deltaFromPct(13.4), highlighted: true },
+      {
+        label: "Interest paid by borrowers",
+        reported: formatCompactUsd(annualInterest),
+        yoy: deltaFromPct(13.4),
+        highlighted: true,
+      },
       { label: "To suppliers", reported: formatCompactUsd(toSuppliers), yoy: deltaFromPct(12.9) },
       { label: "Reserve", reported: formatCompactUsd(reserve), yoy: deltaFromPct(15.2) },
       { label: "Rewards distributed", reported: formatCompactUsd(rewards), yoy: deltaFromPct(4.1) },
-      { label: "Net to suppliers", reported: formatCompactUsd(toSuppliers + rewards), yoy: deltaFromPct(11.8), highlighted: true },
+      {
+        label: "Net to suppliers",
+        reported: formatCompactUsd(toSuppliers + rewards),
+        yoy: deltaFromPct(11.8),
+        highlighted: true,
+      },
     ],
   }
 }
@@ -263,14 +267,24 @@ function buildAbout(market: LendMarket): AboutCard {
         isStable ? "stablecoin" : "tier-" + market.riskTier
       } market.`,
     stats: [
-      { label: "Risk tier", value: market.riskTier === "low" ? "Low" : market.riskTier === "medium" ? "Medium" : "High" },
+      {
+        label: "Risk tier",
+        value: market.riskTier === "low" ? "Low" : market.riskTier === "medium" ? "Medium" : "High",
+      },
       { label: "Reserve factor", value: `${(market.reserveFactor * 100).toFixed(0)}%` },
-      { label: "Status", value: market.status === "active" ? "Active" : market.status === "capped" ? "Capped" : "Paused" },
+      {
+        label: "Status",
+        value: market.status === "active" ? "Active" : market.status === "capped" ? "Capped" : "Paused",
+      },
       { label: "Chain", value: "Ethereum" },
     ],
     history: [
       { date: "2025-01-20", title: "Listed", description: `${market.asset.symbol} supply market opened.` },
-      { date: "2025-09-08", title: "Parameters reviewed", description: "Quarterly risk review — reserve factor unchanged." },
+      {
+        date: "2025-09-08",
+        title: "Parameters reviewed",
+        description: "Quarterly risk review — reserve factor unchanged.",
+      },
     ],
   }
 }

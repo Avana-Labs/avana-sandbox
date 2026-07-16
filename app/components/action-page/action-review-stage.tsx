@@ -41,9 +41,7 @@ export function ActionReviewStage({
   // The risk banner already surfaces warnings[0] for leveraged actions, so suppress the
   // duplicate "Note" row when it repeats the message the banner is showing.
   const noteWarning =
-    preview.warnings[0] && !(riskShown && preview.warnings[0] === preview.risk?.message)
-      ? preview.warnings[0]
-      : null
+    preview.warnings[0] && !(riskShown && preview.warnings[0] === preview.risk?.message) ? preview.warnings[0] : null
 
   return (
     <div className="space-y-4" data-testid="action-review-stage">
@@ -68,11 +66,14 @@ export function ActionReviewStage({
           assetLabel={amountDisplay.assetLabel}
           assetSymbol={amountDisplay.assetSymbol}
           borrowSymbol={amountDisplay.borrowSymbol}
+          unitLabel={preview.amountUnitLabel}
           readOnly
         />
       )}
 
-      {isClaimReview ? null : (preview.rateLabel && preview.rateValue) || preview.marketBreakdown || preview.marketValue ? (
+      {isClaimReview ? null : (preview.rateLabel && preview.rateValue) ||
+        preview.marketBreakdown ||
+        preview.marketValue ? (
         <ActionCard>
           {preview.rateLabel && preview.rateValue ? (
             <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" />
@@ -110,6 +111,7 @@ export function ActionReviewStage({
 
       <ActionCard>
         <ActionInfoRow label="Avana Fee" value={preview.networkFeeLabel} tooltip="fee" />
+        {preview.quoteId ? <ActionInfoRow label="Quote" value={preview.quoteId} /> : null}
       </ActionCard>
 
       {blockedReason ? <ActionOutcomeBanner tone="error" title="Action unavailable" message={blockedReason} /> : null}

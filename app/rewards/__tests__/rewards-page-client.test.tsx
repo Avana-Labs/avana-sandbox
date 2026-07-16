@@ -5,6 +5,7 @@ import { DisplayPreferencesProvider } from "@/app/components/display-preferences
 import { REWARDS_PROMO_TABS } from "@/app/lib/data/rewards/catalog"
 import { buildDefaultRewardsCatalog, evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
 import { RewardsPageClient } from "@/app/rewards/rewards-page-client"
+import { parseFixed } from "@/app/lib/credit-engine"
 
 const push = vi.fn()
 const claimReward = vi.fn()
@@ -23,14 +24,21 @@ const borrowCreateIntent = vi.fn(() => ({ id: "borrow-intent" }))
 const borrowPreviewTransaction = vi.fn(async () => ({ allowed: true }))
 const multiplyCreateIntent = vi.fn(() => ({ id: "multiply-intent" }))
 const multiplyPreviewTransaction = vi.fn(async () => ({ allowed: true }))
+// Injectable product transaction history for the combined activity table.
+let borrowTxHistory: Array<Record<string, unknown>> = []
+let multiplyTxHistory: Array<Record<string, unknown>> = []
 const now = Date.UTC(2026, 5, 19)
-const rewardsState = { events: [] as Array<Record<string, unknown>>, claims: [] as Array<Record<string, unknown>>, referralProfiles: {}, relationships: [], firstLoginAt: now, favoriteMarketIds: [] }
+const rewardsState = {
+  events: [] as Array<Record<string, unknown>>,
+  claims: [] as Array<Record<string, unknown>>,
+  referralProfiles: {},
+  relationships: [],
+  firstLoginAt: now,
+  favoriteMarketIds: [],
+}
 const tasks = buildDefaultRewardsCatalog(now)
 
-function resetRewardsState(
-  events: Array<Record<string, unknown>> = [],
-  claims: Array<Record<string, unknown>> = [],
-) {
+function resetRewardsState(events: Array<Record<string, unknown>> = [], claims: Array<Record<string, unknown>> = []) {
   rewardsState.events = events
   rewardsState.claims = claims
   rewardsState.referralProfiles = {}
@@ -39,12 +47,7 @@ function resetRewardsState(
   rewardsState.firstLoginAt = now
 }
 
-function rewardEvent(
-  id: string,
-  type: string,
-  product: string,
-  extra: Record<string, unknown> = {},
-) {
+function rewardEvent(id: string, type: string, product: string, extra: Record<string, unknown> = {}) {
   return { id, wallet: "demo-wallet", product, type, timestamp: now, ...extra }
 }
 
@@ -76,26 +79,106 @@ vi.mock("next/navigation", () => ({
   }),
 }))
 
+const lendSessionContext = {
+  walletId: "demo-wallet",
+  state: { markets: {} },
+  transactionHistory: [],
+  claimRewards: vi.fn(async () => {}),
+  readAdapter: {
+    readPortfolioLend: vi.fn(async () => ({ investments: [], positions: [], strategyBuckets: [], history: [] })),
+  },
+}
+
 vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
   useRewardsSessionContext: () => rewardsSessionContext,
   useAvanaIdentity: () => ({ walletId: "demo-wallet" }),
+  useLendSessionContext: () => lendSessionContext,
+  useBorrowSessionContext: () => borrowSessionContext,
+  useMultiplySessionContext: () => multiplySessionContext,
   useAvanaSessions: () => ({
     walletId: "demo-wallet",
     lend: {
+      walletId: "demo-wallet",
+      transactionHistory: [],
+      state: { markets: {} },
       createIntent: lendCreateIntent,
       previewTransaction: lendPreviewTransaction,
     },
     borrow: {
       collateralPools: [{ id: "uni-v3-bluechip-weth-usdc" }],
       getBorrowableAssetsForMarket: () => [{ id: "uni-v3-bluechip:usdc" }],
+      get transactionHistory() {
+        return borrowTxHistory
+      },
+      state: { markets: {} },
       createIntent: borrowCreateIntent,
       previewTransaction: borrowPreviewTransaction,
     },
     multiply: {
+      get transactionHistory() {
+        return multiplyTxHistory
+      },
       createIntent: multiplyCreateIntent,
       previewTransaction: multiplyPreviewTransaction,
     },
   }),
+}))
+
+const EMPTY_CREDIT_LINES = {
+  approvedUsd: 0,
+  liquidationThresholdUsd: 0,
+  averageHealthFactor: null,
+  currentLtvPct: 0,
+  totalBorrowedUsd: 0,
+  totalCollateralUsd: 0,
+}
+const borrowSessionContext = {
+  state: { accounts: {}, markets: {} },
+  transactionHistory: [],
+  readAdapter: {
+    readPortfolioBorrow: vi.fn(async () => ({
+      creditLines: EMPTY_CREDIT_LINES,
+      collateralPositions: [],
+      debtPositions: [],
+    })),
+  },
+}
+const multiplySessionContext = {
+  state: { accounts: {}, markets: {}, positions: {} },
+  transactionHistory: [],
+  readAdapter: {
+    readPortfolioMultiply: vi.fn(async () => ({
+      creditLines: EMPTY_CREDIT_LINES,
+      lpCollaterals: [],
+      positions: [],
+      openOrders: [],
+      twapOrders: [],
+      history: [],
+    })),
+  },
+}
+
+vi.mock("@/app/portfolio/use-portfolio-page", () => ({
+  usePortfolioPage: () => ({ data: null, error: null, isLoading: false, retry: () => {} }),
+}))
+
+// Inspect the raw rows fed into the combined activity table.
+vi.mock("@/app/portfolio/recent-activity", () => ({
+  RecentActivity: ({
+    rows,
+  }: {
+    rows: Array<{ id: string; txHash?: string; secondaryLabel?: string; amountUsd?: number }>
+  }) => (
+    <div>
+      {rows.map((row) => (
+        <div key={row.id}>
+          <span>{row.txHash}</span>
+          <span>{row.secondaryLabel}</span>
+          <span>{row.amountUsd}</span>
+        </div>
+      ))}
+    </div>
+  ),
 }))
 
 function renderRewardsPage() {
@@ -174,10 +257,10 @@ describe("RewardsPageClient", () => {
     borrowPreviewTransaction.mockClear()
     multiplyCreateIntent.mockClear()
     multiplyPreviewTransaction.mockClear()
+    borrowTxHistory = []
+    multiplyTxHistory = []
 
-    resetRewardsState([
-      rewardEvent("borrow-first", "borrow_opened", "borrow", { amountUsd: 100, marketId: "pool-a" }),
-    ])
+    resetRewardsState([rewardEvent("borrow-first", "borrow_opened", "borrow", { amountUsd: 100, marketId: "pool-a" })])
     createReferralCode.mockResolvedValue({
       wallet: "demo-wallet",
       referralCode: "AVA-DEMO",
@@ -240,9 +323,9 @@ describe("RewardsPageClient", () => {
   it("routes deep-link tasks into the correct product surfaces", async () => {
     renderRewardsPage()
 
-    await openProductTab("Lend")
-    await clickQuestAction("Go to Lend")
-    expect(push).toHaveBeenCalledWith("/lend")
+    await openProductTab("Borrow")
+    await clickQuestAction("Borrow more")
+    expect(push).toHaveBeenCalledWith("/borrow")
   })
 
   it("records daily check-ins from challenge tasks", async () => {
@@ -282,21 +365,23 @@ describe("RewardsPageClient", () => {
 
     await openReferralTab()
     await clickQuestAction("Send invite")
-    await waitFor(() => expect(screen.getAllByRole("button", { name: "Send sandbox invite" }).length).toBeGreaterThan(0))
+    await waitFor(() =>
+      expect(screen.getAllByRole("button", { name: "Send sandbox invite" }).length).toBeGreaterThan(0),
+    )
     await clickQuestAction("Send sandbox invite")
 
     expect(runReferralSandboxStep).toHaveBeenCalledWith("invite")
   })
 
   it("runs the referral activate action through its dialog flow", async () => {
-    resetRewardsState([
-      rewardEvent("ref-active-1", "referral_activated", "referral", { referredWallet: "friend-1" }),
-    ])
+    resetRewardsState([rewardEvent("ref-active-1", "referral_activated", "referral", { referredWallet: "friend-1" })])
     renderRewardsPage()
 
     await openReferralTab()
     await clickQuestAction("Activate")
-    await waitFor(() => expect(screen.getAllByRole("button", { name: "Activate next friend" }).length).toBeGreaterThan(0))
+    await waitFor(() =>
+      expect(screen.getAllByRole("button", { name: "Activate next friend" }).length).toBeGreaterThan(0),
+    )
     await clickQuestAction("Activate next friend")
 
     expect(runReferralSandboxStep).toHaveBeenCalledWith("activate")
@@ -307,7 +392,9 @@ describe("RewardsPageClient", () => {
 
     await openReferralTab()
     await clickQuestAction("Mark funded")
-    await waitFor(() => expect(screen.getAllByRole("button", { name: "Mark next friend funded" }).length).toBeGreaterThan(0))
+    await waitFor(() =>
+      expect(screen.getAllByRole("button", { name: "Mark next friend funded" }).length).toBeGreaterThan(0),
+    )
     await clickQuestAction("Mark next friend funded")
 
     expect(runReferralSandboxStep).toHaveBeenCalledWith("fund")
@@ -341,5 +428,49 @@ describe("RewardsPageClient", () => {
     await clickQuestAction("Claim 140 AVA")
 
     expect(claimReward).toHaveBeenCalledWith("bring-3-active-users")
+  })
+
+  it("feeds product transactions into the combined activity table", async () => {
+    borrowTxHistory = [
+      {
+        id: "history-1",
+        intentId: "intent-1",
+        walletId: "demo-wallet",
+        marketId: "uni-v3-bluechip-weth-usdc",
+        assetId: "uni-v3-bluechip:usdc",
+        kind: "borrow",
+        status: "success",
+        requestedAmountUsd6: parseFixed("250", 6),
+        executedAmountUsd6: parseFixed("250", 6),
+        simulated: true,
+        timestamp: now,
+        hash: "sim_abc123",
+      },
+    ]
+    multiplyTxHistory = [
+      {
+        id: "multiply-1",
+        intentId: "intent-multiply-1",
+        walletId: "demo-wallet",
+        marketId: "eth-usdc",
+        kind: "multiply",
+        status: "success",
+        amountUsd: 1250,
+        multiplierBefore: 1,
+        multiplierAfter: 2.5,
+        simulated: true,
+        timestamp: now,
+        hash: "0xmultiply",
+      },
+    ]
+
+    renderRewardsPage()
+
+    // The dashboard's old "All Transactions" table now lives on the rewards page,
+    // fed by borrow + multiply + lend + reward-claim rows.
+    await waitFor(() => expect(screen.getByText("sim_abc123")).toBeInTheDocument())
+    expect(screen.getByText("Simulated transaction")).toBeInTheDocument()
+    expect(screen.getByText("0xmultiply")).toBeInTheDocument()
+    expect(screen.getByText("1250")).toBeInTheDocument()
   })
 })

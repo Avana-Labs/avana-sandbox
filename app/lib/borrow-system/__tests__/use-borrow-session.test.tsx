@@ -38,7 +38,9 @@ describe("useBorrowSession", () => {
     })
 
     expect(result.current.walletSnapshot.totalCollateralUsd).toBeGreaterThan(initialCollateral)
-    expect(result.current.marketSummaries.find((market) => market.id === "uni-v3-bluechip-weth-usdc")?.collateralExampleUsd).toBeGreaterThan(0)
+    expect(
+      result.current.marketSummaries.find((market) => market.id === "uni-v3-bluechip-weth-usdc")?.collateralExampleUsd,
+    ).toBeGreaterThan(0)
   })
 
   it("keeps borrow updates visible through the same wallet-scoped session", async () => {
@@ -198,8 +200,9 @@ describe("useBorrowSession", () => {
       amountUsd6: parseFixed("50", 6),
     })
 
+    let execution!: ReturnType<(typeof result.current)["executeTransaction"]>
     act(() => {
-      void result.current.executeTransaction(intent)
+      execution = result.current.executeTransaction(intent)
     })
 
     await waitFor(() => {
@@ -207,7 +210,7 @@ describe("useBorrowSession", () => {
     })
 
     await act(async () => {
-      await result.current.executeTransaction(intent)
+      await execution
     })
 
     expect(result.current.isPending).toBe(false)

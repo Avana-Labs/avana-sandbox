@@ -9,7 +9,10 @@ import { getWalletBalanceForLendMarket } from "@/app/lib/lend-system/wallet-bala
 import { getLendMarketById } from "@/app/lib/lend-system/catalog"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor, actionPagePath } from "@/app/lib/action-system/contracts"
-import { mapLendDepositPreviewToActionUi, mapLendWithdrawPreviewToActionUi } from "@/app/lib/action-system/adapters/lend-preview-mapper"
+import {
+  mapLendDepositPreviewToActionUi,
+  mapLendWithdrawPreviewToActionUi,
+} from "@/app/lib/action-system/adapters/lend-preview-mapper"
 import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
@@ -17,13 +20,17 @@ import { ActionSuccessStage } from "@/app/components/action-page/action-success-
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionSelectStage } from "@/app/components/action-page/action-select-stage"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
+import {
+  ActionSessionLoading,
+  shouldShowActionSessionLoading,
+} from "@/app/components/action-page/action-session-loading"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { lendDepositSelectItems, lendWithdrawSelectItems } from "@/app/lib/action-system/resolve-lend-context"
 import { formatLendMarketDropdownSublabel, formatLendMarketValueLabel } from "@/app/lib/lend-system/market-labels"
-import { formatActionFeeSummary } from "@/app/lib/action-system/formatters"
-import { isConfigureVisibleStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
+import { formatActionAmount, formatActionFeeSummary } from "@/app/lib/action-system/formatters"
+import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
@@ -204,6 +211,7 @@ export function LendActionPageClient({
             marketLabel: formatLendMarketValueLabel(market.asset.symbol),
             balanceAmount: position?.currentSuppliedAmount ?? 0,
             assetPriceUsd,
+            poolAvailableLiquidity: market.availableLiquidity,
           }),
         )
       })
@@ -229,12 +237,26 @@ export function LendActionPageClient({
     if (kind === "deposit") return depositItems.length > 1
     return false
   }, [depositItems.length, embedded, initialMarketId, kind, withdrawItems.length])
+  // Balance shown on the amount card (and the click-to-max source) — surfaced
+  // directly so it's visible before any amount is typed, not only once a preview
+  // exists. Deposit → wallet balance; withdraw → currently supplied.
+  const spendableBalanceAmount = useMemo(() => {
+    if (!market) return 0
+    return kind === "deposit"
+      ? getWalletBalanceForLendMarket(session.state, walletId, market)
+      : (position?.currentSuppliedAmount ?? 0)
+  }, [kind, market, position, session.state, walletId])
+  const spendableBalanceLabel = kind === "deposit" ? "Balance" : "Deposited"
+  const spendableBalanceValue = market ? formatActionAmount(spendableBalanceAmount, market.asset.symbol, 4) : undefined
+
   // Max fills the relevant balance: wallet balance for deposit, max withdrawable
-  // for withdraw. Both are already surfaced as preview.maxAmount by the mapper.
+  // for withdraw. previewUi.maxAmount is the capped figure once a preview exists;
+  // fall back to the raw balance so Max works before an amount is entered.
   const handleMax = useCallback(() => {
-    if (previewUi?.maxAmount == null || previewUi.maxAmount <= 0) return
-    setAmount(String(Number(previewUi.maxAmount.toFixed(6))))
-  }, [previewUi?.maxAmount])
+    const max = previewUi?.maxAmount ?? spendableBalanceAmount
+    if (max == null || max <= 0) return
+    setAmount(String(Number(max.toFixed(6))))
+  }, [previewUi?.maxAmount, spendableBalanceAmount])
 
   const handleBack = useCallback(() => {
     if (stage === "review") {
@@ -296,6 +318,24 @@ export function LendActionPageClient({
       const intent = session.createIntent(action)
       const preview = await session.previewTransaction(intent)
       if (!preview.allowed) throw new Error(preview.validationErrors[0] ?? t("Action unavailable"))
+      const executionPreviewUi =
+        kind === "deposit"
+          ? mapLendDepositPreviewToActionUi(preview, {
+              symbol: market.asset.symbol,
+              amount: parsed,
+              marketLabel: formatLendMarketValueLabel(market.asset.symbol),
+              balanceAmount: getWalletBalanceForLendMarket(session.state, walletId, market),
+              rewardsApy: market.rewardsApy,
+              assetPriceUsd,
+            })
+          : mapLendWithdrawPreviewToActionUi(preview, {
+              symbol: market.asset.symbol,
+              amount: parsed,
+              marketLabel: formatLendMarketValueLabel(market.asset.symbol),
+              balanceAmount: position?.currentSuppliedAmount ?? 0,
+              assetPriceUsd,
+              poolAvailableLiquidity: market.availableLiquidity,
+            })
 
       const simulated = session.readAdapter.mode === "sandbox"
       const result = await runActionSubmitFlow({
@@ -311,10 +351,10 @@ export function LendActionPageClient({
           title: `${descriptor.primaryVerb} successful`,
           description: `${parsed.toFixed(4)} ${market.asset.symbol} processed.`,
           receiptHash: result.receipt.hash ?? null,
-          metrics: previewUi.metrics,
+          metrics: executionPreviewUi.metrics,
           href: dashboardHrefForProduct("lend"),
           primaryCtaLabel: successDashboardCtaLabel("lend"),
-          preview: previewUi,
+          preview: executionPreviewUi,
           verb: descriptor.primaryVerb,
         }),
       )
@@ -332,21 +372,45 @@ export function LendActionPageClient({
     } finally {
       setIsPending(false)
     }
-  }, [amount, closeHref, descriptor.primaryVerb, exact, isPending, kind, market, position, previewUi, router, session, stage, successUi, t, walletId])
+  }, [
+    amount,
+    closeHref,
+    descriptor.primaryVerb,
+    exact,
+    isPending,
+    kind,
+    market,
+    position,
+    previewUi,
+    router,
+    session,
+    stage,
+    successUi,
+    t,
+    walletId,
+  ])
+
+  if (shouldShowActionSessionLoading(session.isHydrated)) {
+    return (
+      <ActionPageShell title={descriptor.title} subtitle={descriptor.subtitle} closeHref={closeHref} simulated>
+        <ActionSessionLoading />
+      </ActionPageShell>
+    )
+  }
 
   // Never dead-end on "Market unavailable": an unknown id routes to the picker
   // (stage "select") above. This only guards the impossible no-market/non-select
   // case and renders nothing rather than an error card.
   if (!market && stage !== "select") return null
 
-  const hideTitle = embedded || stage === "success" || stage === "processing" || stage === "review"
+  const hideTitle = embedded || stage === "success" || isProcessingStage(stage) || stage === "review"
   const isHomeLayout = embedded && layout === "home"
   const shellSubtitle =
     stage === "select" && kind === "withdraw"
       ? t("Choose the market to withdraw from.")
       : stage === "select" && kind === "deposit"
         ? t("Choose the asset to deposit.")
-        : stage === "success" || stage === "processing" || stage === "review"
+        : stage === "success" || isProcessingStage(stage) || stage === "review"
           ? undefined
           : descriptor.subtitle
 
@@ -378,8 +442,8 @@ export function LendActionPageClient({
         />
       ) : null}
 
-      {stage === "processing" ? (
-        <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} />
+      {isProcessingStage(stage) ? (
+        <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} stage={stage} />
       ) : null}
 
       {stage === "review" && previewUi ? (
@@ -421,6 +485,8 @@ export function LendActionPageClient({
           singlePrimaryCta={sidebar}
           hideAssetSelector={isHomeLayout && Boolean(initialMarketId)}
           showBalance
+          balanceLabel={spendableBalanceLabel}
+          balanceValue={spendableBalanceValue}
           onMax={handleMax}
         />
       ) : null}

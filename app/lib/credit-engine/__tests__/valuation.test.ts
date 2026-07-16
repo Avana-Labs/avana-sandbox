@@ -75,7 +75,9 @@ describe("borrow valuation helpers", () => {
   it("values multiple LP collateral positions independently and sums wallet total", () => {
     const state = makeExampleBorrowSystemState()
     const account = state.accounts["wallet-1"]!
-    const uniPosition = account.collateralPositions.find((position) => position.marketId === "uni-v3-bluechip-weth-usdc")!
+    const uniPosition = account.collateralPositions.find(
+      (position) => position.marketId === "uni-v3-bluechip-weth-usdc",
+    )!
     const curvePosition = account.collateralPositions.find((position) => position.marketId === "curve-eth-usdt")!
     const uniMarket = state.markets["uni-v3-bluechip-weth-usdc"]!
     const curveMarket = state.markets["curve-eth-usdt"]!
@@ -89,15 +91,19 @@ describe("borrow valuation helpers", () => {
 
   it("ignores disabled collateral positions when calculating wallet collateral value", () => {
     const state = makeExampleBorrowSystemState()
-    state.accounts["wallet-1"]!.collateralPositions = state.accounts["wallet-1"]!.collateralPositions.map((position, index) => ({
-      ...position,
-      collateralEnabled: index === 0,
-    }))
+    state.accounts["wallet-1"]!.collateralPositions = state.accounts["wallet-1"]!.collateralPositions.map(
+      (position, index) => ({
+        ...position,
+        collateralEnabled: index === 0,
+      }),
+    )
 
     const enabledPosition = state.accounts["wallet-1"]!.collateralPositions[0]!
     const enabledMarket = state.markets[enabledPosition.marketId]!
 
-    expect(calculateCollateralValueUsd6(state, "wallet-1")).toBe(currentCollateralValueUsd6(enabledPosition, enabledMarket))
+    expect(calculateCollateralValueUsd6(state, "wallet-1")).toBe(
+      currentCollateralValueUsd6(enabledPosition, enabledMarket),
+    )
   })
 
   it("returns zero collateral value when all LP prices are zero", () => {

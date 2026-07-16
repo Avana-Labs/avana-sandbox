@@ -46,7 +46,14 @@ describe("seed.getCounts is internal-only and bounded", () => {
     const { idsBySlug } = (await t.mutation(internal.seed.upsertMarkets, {
       rows: [
         { scope: "asset", slug: "uni-v2:usdc", chainId: 1, name: "USDC", symbol: "USDC", createdAt: 1 },
-        { scope: "pool", slug: "uni-v3-bluechip-weth-usdc", chainId: 1, name: "WETH/USDC", symbol: "WETH-USDC", createdAt: 1 },
+        {
+          scope: "pool",
+          slug: "uni-v3-bluechip-weth-usdc",
+          chainId: 1,
+          name: "WETH/USDC",
+          symbol: "WETH-USDC",
+          createdAt: 1,
+        },
       ],
     })) as { idsBySlug: Record<string, string> }
 

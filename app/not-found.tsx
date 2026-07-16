@@ -36,11 +36,17 @@ export default function NotFound() {
               <Link href="/lend" className="text-sm font-medium text-foreground transition hover:text-brand-readable">
                 {t("Lend")}
               </Link>
-              <Link href="/multiply" className="text-sm font-medium text-foreground transition hover:text-brand-readable">
+              <Link
+                href="/multiply"
+                className="text-sm font-medium text-foreground transition hover:text-brand-readable"
+              >
                 {t("Multiply")}
               </Link>
-              <Link href="/dashboard" className="text-sm font-medium text-foreground transition hover:text-brand-readable">
-                {t("Dashboard")}
+              <Link
+                href="/portfolio"
+                className="text-sm font-medium text-foreground transition hover:text-brand-readable"
+              >
+                {t("Portfolio")}
               </Link>
             </nav>
           </div>

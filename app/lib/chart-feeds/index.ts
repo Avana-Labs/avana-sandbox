@@ -72,7 +72,7 @@ export function getPoolHeroFeed(poolId: string): ChartFeed {
   // Base TVL between ~$40M and ~$760M, deterministic per pool.
   const base = 40_000_000 + (seed % 720) * 1_000_000
   const variance = base * 0.05
-  const pct = ((seed % 900) / 100 - 4) // ~ -4%..+5%
+  const pct = (seed % 900) / 100 - 4 // ~ -4%..+5%
   const format: ChartValueFormat = "usdCompact"
 
   return {
@@ -94,7 +94,7 @@ export function getMultiplyMarketHeroFeed(marketId: string): ChartFeed {
   const seed = hashString(`multiply:${marketId}`)
   const base = 2_000_000 + (seed % 280) * 150_000
   const variance = base * 0.065
-  const pct = ((seed % 1_100) / 100 - 5.5)
+  const pct = (seed % 1_100) / 100 - 5.5
 
   return {
     headlineValue: formatChartValue("usdCompact", base),
@@ -116,7 +116,7 @@ export function getLendMarketHeroFeed(marketId: string): ChartFeed {
   // Base supplied between ~$3M and ~$120M, deterministic per market.
   const base = 3_000_000 + (seed % 780) * 150_000
   const variance = base * 0.05
-  const pct = ((seed % 800) / 100 - 3.5) // ~ -3.5%..+4.5%
+  const pct = (seed % 800) / 100 - 3.5 // ~ -3.5%..+4.5%
 
   return {
     headlineValue: formatChartValue("usdCompact", base),
@@ -182,9 +182,16 @@ export function getAssetHeroFeed(assetId: string): ChartFeed {
   const seed = hashString(assetId)
   // Spread bases so different assets look distinct (stables ~$1, blue chips higher).
   const tier = seed % 4
-  const base = tier === 0 ? 1 + (seed % 50) / 1000 : tier === 1 ? 20 + (seed % 400) : tier === 2 ? 1500 + (seed % 1200) : 60_000 + (seed % 9000)
+  const base =
+    tier === 0
+      ? 1 + (seed % 50) / 1000
+      : tier === 1
+        ? 20 + (seed % 400)
+        : tier === 2
+          ? 1500 + (seed % 1200)
+          : 60_000 + (seed % 9000)
   const variance = base * 0.045
-  const pct = ((seed % 700) / 100 - 3)
+  const pct = (seed % 700) / 100 - 3
   const format: ChartValueFormat = "price"
 
   return {

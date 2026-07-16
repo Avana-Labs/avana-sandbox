@@ -35,6 +35,19 @@ export function formatCompactCurrency(usd: number, ctx: CurrencyContext): string
   return `${sign}${ctx.symbol}${abs.toLocaleString("en-US", { maximumFractionDigits: decimals })}`
 }
 
+/**
+ * Token-denominated quantity with its symbol, e.g. "29.46M frxUSD". Used for the
+ * primary line of a two-number table cell (the matching USD value sits below it),
+ * mirroring the Lend table's TOTAL DEPOSITS / AVAILABLE columns.
+ */
+export function formatTokenQuantity(value: number, symbol: string): string {
+  if (!Number.isFinite(value)) return `— ${symbol}`
+  if (value > 0 && value < 0.01) return `<0.01 ${symbol}`
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(2)}M ${symbol}`
+  if (value >= 1_000) return `${(value / 1_000).toFixed(2)}K ${symbol}`
+  return `${value.toLocaleString("en-US", { maximumFractionDigits: 2 })} ${symbol}`
+}
+
 /** Exact currency formatting from a USD value, with currency-appropriate decimals. */
 export function formatExactCurrency(usd: number, ctx: CurrencyContext): string {
   const value = convertFromUsd(usd, ctx)
@@ -49,7 +62,7 @@ export function formatExactCurrency(usd: number, ctx: CurrencyContext): string {
 // optional sign, "$", digits (with optional thousands separators / decimals),
 // and an optional B/M/K suffix. Anything else (percentages, plain text, prices
 // with cents) is left untouched.
-const COMPACT_USD_RE = /^(-?)\$([\d,]+(?:\.\d+)?)([BMK]?)$/
+const COMPACT_USD_RE = /^(<?)(-?)\$([\d,]+(?:\.\d+)?)([BMK]?)$/
 
 /**
  * Re-denominate an already-formatted compact USD string (e.g. "$312.4M") into the
@@ -62,7 +75,10 @@ export function redenominateCompactUsd(value: string, ctx: CurrencyContext): str
   if (ctx.currency === "USD") return value
   const match = COMPACT_USD_RE.exec(value.trim())
   if (!match) return value
-  const [, sign, digits, suffix] = match
+  const [, lessThan, sign, digits, suffix] = match
+  if (lessThan) {
+    return `<${ctx.symbol}${ZERO_DECIMAL_CURRENCIES.has(ctx.currency) ? "1" : "0.01"}`
+  }
   const multiplier = suffix === "B" ? 1_000_000_000 : suffix === "M" ? 1_000_000 : suffix === "K" ? 1_000 : 1
   const usd = Number(digits.replace(/,/g, "")) * multiplier
   if (!Number.isFinite(usd)) return value

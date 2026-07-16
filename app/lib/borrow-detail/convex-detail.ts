@@ -174,20 +174,23 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
     fetchContent("pool", detail.row.id),
   ])
   const effectiveRisk = (risk as typeof detail.risk) ?? detail.risk
-  return applyDetailContentOverlay({
-    ...detail,
-    quickStats: injectPoolOraclePrice(
-      syncQuickStatsRiskPremium(mergeConvexQuickStats(detail.quickStats, quickStats), effectiveRisk.premiumBps),
-      prices,
-      detail.row.visuals[0].symbol,
-      detail.row.visuals[1].symbol,
-    ),
-    related: syncRelatedAvailable(detail.related, snapshots),
-    heroFeed: buildHeroFeedFromConvexSeries(tvlPoints, "usdCompact") ?? detail.heroFeed,
-    cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
-    transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
-    risk: effectiveRisk,
-  }, content)
+  return applyDetailContentOverlay(
+    {
+      ...detail,
+      quickStats: injectPoolOraclePrice(
+        syncQuickStatsRiskPremium(mergeConvexQuickStats(detail.quickStats, quickStats), effectiveRisk.premiumBps),
+        prices,
+        detail.row.visuals[0].symbol,
+        detail.row.visuals[1].symbol,
+      ),
+      related: syncRelatedAvailable(detail.related, snapshots),
+      heroFeed: buildHeroFeedFromConvexSeries(tvlPoints, "usdCompact") ?? detail.heroFeed,
+      cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
+      transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
+      risk: effectiveRisk,
+    },
+    content,
+  )
 }
 
 export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail | null> {
@@ -215,29 +218,33 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
   )
   if (!detail) return null
 
-  const [borrowPoints, cashflow, cashflowTrend, transactions, allocation, risk, quickStats, prices, content] = await Promise.all([
-    fetchAssetBorrowSeries(slug),
-    fetchCashflowBreakdown("asset", slug),
-    fetchAssetCashflowTrend(slug),
-    fetchRecentTransactions("asset", slug),
-    fetchAllocation(slug),
-    fetchRisk("asset", slug),
-    fetchQuickStats("asset", slug),
-    fetchTokenPrices(),
-    fetchContent("asset", slug),
-  ])
-  return applyDetailContentOverlay({
-    ...detail,
-    quickStats: injectDexLiquidity(
-      injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, record.baseAssetId),
-      snapshots,
-      record.marketIds,
-    ),
-    heroFeed: buildHeroFeedFromConvexSeries(borrowPoints, "usdCompact") ?? detail.heroFeed,
-    cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
-    cashflowTrend: (cashflowTrend as typeof detail.cashflowTrend) ?? detail.cashflowTrend,
-    transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
-    allocation: allocation ?? detail.allocation,
-    risk: (risk as typeof detail.risk) ?? detail.risk,
-  }, content)
+  const [borrowPoints, cashflow, cashflowTrend, transactions, allocation, risk, quickStats, prices, content] =
+    await Promise.all([
+      fetchAssetBorrowSeries(slug),
+      fetchCashflowBreakdown("asset", slug),
+      fetchAssetCashflowTrend(slug),
+      fetchRecentTransactions("asset", slug),
+      fetchAllocation(slug),
+      fetchRisk("asset", slug),
+      fetchQuickStats("asset", slug),
+      fetchTokenPrices(),
+      fetchContent("asset", slug),
+    ])
+  return applyDetailContentOverlay(
+    {
+      ...detail,
+      quickStats: injectDexLiquidity(
+        injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, record.baseAssetId),
+        snapshots,
+        record.marketIds,
+      ),
+      heroFeed: buildHeroFeedFromConvexSeries(borrowPoints, "usdCompact") ?? detail.heroFeed,
+      cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
+      cashflowTrend: (cashflowTrend as typeof detail.cashflowTrend) ?? detail.cashflowTrend,
+      transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
+      allocation: allocation ?? detail.allocation,
+      risk: (risk as typeof detail.risk) ?? detail.risk,
+    },
+    content,
+  )
 }

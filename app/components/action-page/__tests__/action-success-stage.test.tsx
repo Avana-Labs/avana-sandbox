@@ -8,8 +8,9 @@ import { DisplayPreferencesProvider } from "@/app/components/display-preferences
 // animations (AnimatedTextValue) never settle. Drive rAF with a far-future
 // timestamp so the animation completes in a single frame.
 beforeEach(() => {
-  vi.stubGlobal("requestAnimationFrame", (cb: FrameRequestCallback) =>
-    setTimeout(() => cb(performance.now() + 100000), 0) as unknown as number,
+  vi.stubGlobal(
+    "requestAnimationFrame",
+    (cb: FrameRequestCallback) => setTimeout(() => cb(performance.now() + 100000), 0) as unknown as number,
   )
   vi.stubGlobal("cancelAnimationFrame", (id: number) => clearTimeout(id as unknown as ReturnType<typeof setTimeout>))
 })

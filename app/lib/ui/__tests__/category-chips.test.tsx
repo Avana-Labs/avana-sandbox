@@ -19,9 +19,7 @@ describe("CategoryChips (shared category filter, #103)", () => {
 
   it("reports the shared category id (not a product-specific id) when a chip is clicked", () => {
     const onChange = vi.fn()
-    const { getByRole } = render(
-      <CategoryChips chips={CATEGORY_CHIPS.borrow} value="all" onChange={onChange} />,
-    )
+    const { getByRole } = render(<CategoryChips chips={CATEGORY_CHIPS.borrow} value="all" onChange={onChange} />)
 
     fireEvent.click(getByRole("tab", { name: "Utility Based" }))
     expect(onChange).toHaveBeenCalledWith("utility")

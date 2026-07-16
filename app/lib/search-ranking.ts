@@ -43,6 +43,6 @@ export function rankResults<T extends RankableResult>(results: readonly T[], raw
   return results
     .map((result, index) => ({ result, index, score: scoreResult(result, query) }))
     .filter((entry) => entry.score > 0)
-    .sort((a, b) => (b.score - a.score) || (a.index - b.index))
+    .sort((a, b) => b.score - a.score || a.index - b.index)
     .map((entry) => entry.result)
 }

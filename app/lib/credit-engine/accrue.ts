@@ -38,7 +38,11 @@ export function accrueBorrowSystemState(state: BorrowSystemState, nextNow: numbe
   }
 }
 
-export function accrueBorrowSystemStateForWallet(state: BorrowSystemState, walletId: string, nextNow: number): BorrowSystemState {
+export function accrueBorrowSystemStateForWallet(
+  state: BorrowSystemState,
+  walletId: string,
+  nextNow: number,
+): BorrowSystemState {
   if (nextNow <= state.now) return state
 
   const elapsedSeconds = BigInt(Math.floor((nextNow - state.now) / 1000))

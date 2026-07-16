@@ -77,7 +77,12 @@ export {
   riskLevelLabel,
   riskScoreFromBps,
 } from "./allocation"
-export { borrowAssetDetailPath, borrowMarketDetailPath, normalizeBorrowAssetRouteId, normalizeBorrowMarketRouteId } from "@/app/lib/borrow-routes"
+export {
+  borrowAssetDetailPath,
+  borrowMarketDetailPath,
+  normalizeBorrowAssetRouteId,
+  normalizeBorrowMarketRouteId,
+} from "@/app/lib/borrow-routes"
 export { HOME_POOL_TO_MARKET_ID as HOME_POOL_ID_MAP } from "@/app/lib/borrow-system/mock"
 
 /**

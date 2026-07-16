@@ -29,7 +29,9 @@ const legacyModalFiles = [
 
 describe("borrow architecture final gate", () => {
   it("keeps requirements matrix green", () => {
-    expect(readFileSync(path.join(process.cwd(), "app/lib/credit-engine/__tests__/requirements-matrix.test.ts"), "utf8")).not.toContain("it.todo")
+    expect(
+      readFileSync(path.join(process.cwd(), "app/lib/credit-engine/__tests__/requirements-matrix.test.ts"), "utf8"),
+    ).not.toContain("it.todo")
   })
 
   it("removes legacy home-sim preview math from action surfaces", () => {
@@ -57,16 +59,27 @@ describe("borrow architecture final gate", () => {
   it("routes borrow surfaces through action page launch CTAs", () => {
     const homeSource = readFileSync(path.join(process.cwd(), "app/components/home-page-client.tsx"), "utf8")
     expect(homeSource).toContain("BorrowActionPageClient")
-    expect(homeSource).toContain('embedded')
+    expect(homeSource).toContain("embedded")
     expect(homeSource).not.toContain("EmbeddedActionPage")
     // Asset details (/borrow/assets) are scoped to Borrow + Repay only — the Lend/Withdraw
     // tabs (and ResponsiveLendAction) were intentionally removed in aa8b4269 ("scope
     // detail-page actions to two correct buttons"), so only ResponsiveBorrowAction is expected here.
-    expect(readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/AssetTokenSidebar.tsx"), "utf8")).toContain("ResponsiveBorrowAction")
-    expect(readFileSync(path.join(process.cwd(), "app/portfolio/dashboard-borrow-tab.tsx"), "utf8")).toContain("actionPagePath")
-    expect(readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/PoolBorrowSidebar.tsx"), "utf8")).toContain("ResponsiveBorrowAction")
-    expect(readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/PoolBorrowSidebar.tsx"), "utf8")).toContain("embedActions")
-    const poolSidebarSource = readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/PoolBorrowSidebar.tsx"), "utf8")
+    expect(
+      readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/AssetTokenSidebar.tsx"), "utf8"),
+    ).toContain("ResponsiveBorrowAction")
+    expect(readFileSync(path.join(process.cwd(), "app/portfolio/dashboard-borrow-tab.tsx"), "utf8")).toContain(
+      "actionPagePath",
+    )
+    expect(
+      readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/PoolBorrowSidebar.tsx"), "utf8"),
+    ).toContain("ResponsiveBorrowAction")
+    expect(
+      readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/PoolBorrowSidebar.tsx"), "utf8"),
+    ).toContain("embedActions")
+    const poolSidebarSource = readFileSync(
+      path.join(process.cwd(), "app/borrow/_detail/sidebars/PoolBorrowSidebar.tsx"),
+      "utf8",
+    )
     expect(poolSidebarSource).toMatch(/PoolBorrowActions[\s\S]*ActionPageLaunchCta/)
   })
 

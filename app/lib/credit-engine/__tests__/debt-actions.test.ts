@@ -55,7 +55,9 @@ describe("borrow debt actions", () => {
       amountUsd6: parseFixed("100", 6),
     })
 
-    const remaining = next.accounts["wallet-1"]!.debtPositions.find((position) => position.id === EXAMPLE_WALLET_1_DEBT_ID)
+    const remaining = next.accounts["wallet-1"]!.debtPositions.find(
+      (position) => position.id === EXAMPLE_WALLET_1_DEBT_ID,
+    )
     expect(remaining).toBeDefined()
     expect(remaining?.principalBorrowedUsd6).toBe(0n)
     expect(remaining?.debtSharesUsd6).toBe(parseFixed("100", 6))
@@ -113,7 +115,9 @@ describe("borrow debt actions", () => {
       amountUsd6: parseFixed("300", 6),
     })
 
-    const curveDebt = next.accounts["wallet-1"]!.debtPositions.find((position) => position.assetId === EXAMPLE_CURVE_USDT_ASSET_ID)
+    const curveDebt = next.accounts["wallet-1"]!.debtPositions.find(
+      (position) => position.assetId === EXAMPLE_CURVE_USDT_ASSET_ID,
+    )
     expect(curveDebt?.debtIndexRay).toBe(RAY)
     expect(curveDebt?.debtSharesUsd6).toBe(assetsToShares(parseFixed("300", 6), RAY))
   })

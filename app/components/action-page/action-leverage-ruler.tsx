@@ -36,6 +36,7 @@ export function ActionLeverageRuler({
   label = "Leverage",
   variant = "card",
   exposureBaseUsd,
+  recommendedMax,
 }: {
   value: string
   onChange: (value: string) => void
@@ -51,6 +52,7 @@ export function ActionLeverageRuler({
    * bounds themselves (e.g. "1.0x … 10x").
    */
   exposureBaseUsd?: number
+  recommendedMax?: number
 }) {
   const { t } = useTranslation()
   const { ctx, convert } = useCurrency()
@@ -60,6 +62,8 @@ export function ActionLeverageRuler({
   // Thumb centre travels within the track's inner width (the px-2 gutter is 0.5rem
   // per side), so the value bubble and endpoint math both key off (100% - 1rem).
   const thumbLeft = `calc(0.5rem + (100% - 1rem) * ${fillPct / 100})`
+  const recommendedPct =
+    recommendedMax != null && max > min ? clamp(((recommendedMax - min) / (max - min)) * 100, 0, 100) : null
 
   const formatEndpoint = useCallback(
     (leverage: number) => {
@@ -79,15 +83,47 @@ export function ActionLeverageRuler({
 
   const ruler = (
     <div data-testid="action-leverage-ruler">
-      <div className="text-[14px] font-medium text-muted-foreground">{t(label)}</div>
+      <div className="flex items-center justify-between gap-4">
+        <div className="text-[14px] font-medium text-muted-foreground">{t(label)}</div>
+        <label className="relative block">
+          <span className="sr-only">{t("Custom {label}").replace("{label}", t(label))}</span>
+          <input
+            type="number"
+            inputMode="decimal"
+            min={min}
+            max={max}
+            step={step}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            aria-label={t("Custom {label}").replace("{label}", t(label))}
+            className="h-9 w-20 rounded-full border border-border bg-background pl-3 pr-7 text-right font-data text-[14px] font-medium tabular-nums text-foreground outline-none focus:border-brand"
+          />
+          <span
+            aria-hidden
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-muted-foreground"
+          >
+            x
+          </span>
+        </label>
+      </div>
 
       <div className={variant === "embedded" ? "relative mt-9 px-2" : "relative mt-10 px-2"}>
-        <div className="pointer-events-none absolute inset-x-2 top-1/2 z-0 h-1.5 -translate-y-1/2 rounded-full bg-border/70" aria-hidden />
+        <div
+          className="pointer-events-none absolute inset-x-2 top-1/2 z-0 h-1.5 -translate-y-1/2 rounded-full bg-border/70"
+          aria-hidden
+        />
         <div
           className="pointer-events-none absolute left-2 top-1/2 z-[5] h-1.5 -translate-y-1/2 rounded-full bg-brand transition-[width] duration-150 ease-out"
           style={{ width: `calc((100% - 1rem) * ${fillPct / 100})` }}
           aria-hidden
         />
+        {recommendedPct != null ? (
+          <div
+            className="pointer-events-none absolute top-1/2 z-10 h-5 w-px -translate-x-1/2 -translate-y-1/2 bg-emerald-500"
+            style={{ left: `calc(0.5rem + (100% - 1rem) * ${recommendedPct / 100})` }}
+            aria-hidden
+          />
+        ) : null}
         <div
           className="pointer-events-none absolute bottom-[calc(50%+1rem)] z-30 -translate-x-1/2 font-data text-[15px] font-semibold leading-none tracking-[-0.02em] text-foreground transition-[left] duration-150 ease-out"
           style={{ left: thumbLeft }}
@@ -109,6 +145,11 @@ export function ActionLeverageRuler({
 
       <div className="mt-3 flex items-center justify-between px-1 font-data text-[13px] font-medium text-muted-foreground">
         <span>{formatEndpoint(min)}</span>
+        {recommendedMax != null ? (
+          <span className="text-emerald-600 dark:text-emerald-400">
+            {t("Recommended up to {value}").replace("{value}", formatMultiplier(recommendedMax))}
+          </span>
+        ) : null}
         <span>{formatEndpoint(max)}</span>
       </div>
     </div>

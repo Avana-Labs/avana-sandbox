@@ -69,6 +69,7 @@ describe("MultiplyActionPageClient", () => {
     expect(screen.queryByTestId("action-metrics-block")).not.toBeInTheDocument()
     expect(screen.queryByTestId("action-risk-banner")).not.toBeInTheDocument()
     expect(screen.getByText("$0.00")).toBeInTheDocument()
+    expect(screen.getByText("1.1x")).toBeInTheDocument()
   })
 
   it("clamps the leverage multiplier to the selected market public maximum", async () => {
@@ -86,11 +87,7 @@ describe("MultiplyActionPageClient", () => {
   it("previews a fresh-wallet multiply without merging a ghost position", async () => {
     renderWithProviders(
       <AvanaSessionsProvider>
-        <MultiplyActionPageClient
-          kind="multiply"
-          initialMarketId="eth-usdt"
-          initialMultiplier="2"
-        />
+        <MultiplyActionPageClient kind="multiply" initialMarketId="eth-usdt" initialMultiplier="2" />
       </AvanaSessionsProvider>,
     )
 
@@ -148,10 +145,10 @@ describe("MultiplyActionPageClient", () => {
     )
 
     const input = (await screen.findByLabelText("Collateral amount")) as HTMLInputElement
-    // Scope to the amount card's Max button (balance-cap fill), distinct from the
-    // leverage ruler below it.
+    // Scope to the amount card's balance shortcut (clicking the balance fills the
+    // balance-cap amount), distinct from the leverage ruler below it.
     const amountCard = within(screen.getByTestId("action-amount-card"))
-    fireEvent.click(amountCard.getByRole("button", { name: "Max" }))
+    fireEvent.click(amountCard.getByRole("button", { name: /Balance:/ }))
 
     // Max fills the wallet's spendable balance ($12,500 budget / ETH price), not the
     // pool's multi-million liquidity; the filled value must be within the cap so it

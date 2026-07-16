@@ -10,7 +10,14 @@ import {
   type BorrowSystemState,
 } from "@/app/lib/credit-engine"
 import { resolveBorrowAssetId } from "@/app/lib/action-system/resolve-borrow-context"
-import type { SandboxActionResult, TransactionActionType, TransactionAdapter, TransactionHistoryItem, TransactionIntent, TransactionPreview } from "./contracts"
+import type {
+  SandboxActionResult,
+  TransactionActionType,
+  TransactionAdapter,
+  TransactionHistoryItem,
+  TransactionIntent,
+  TransactionPreview,
+} from "./contracts"
 
 type SandboxAdapterOptions = {
   readState: () => BorrowSystemState
@@ -113,6 +120,7 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
   private readonly generateId: (prefix: string) => string
   private readonly seed: BorrowSystemState
   private readonly previewCache = new Map<string, TransactionPreview>()
+  private readonly previewStateByIntent = new Map<string, BorrowSystemState>()
 
   constructor(options: SandboxAdapterOptions) {
     this.readStateImpl = options.readState
@@ -150,8 +158,10 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
     if (!action) {
       throw new Error("Sandbox transaction intent is missing its borrow action payload")
     }
-    const preview = toPreview(this.readStateImpl(), action, intent)
+    const state = this.readStateImpl()
+    const preview = toPreview(state, action, intent)
     this.previewCache.set(intent.id, preview)
+    this.previewStateByIntent.set(intent.id, state)
     return preview
   }
 
@@ -162,6 +172,14 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
     }
 
     const current = this.readStateImpl()
+    const previewState = this.previewStateByIntent.get(intent.id)
+    if (previewState && previewState !== current) {
+      this.previewCache.delete(intent.id)
+      this.previewStateByIntent.delete(intent.id)
+      throw new Error(
+        "Quote is stale because the account or market changed. Review the refreshed quote before submitting.",
+      )
+    }
     const preview = await this.previewTransaction(intent)
     const timestamp = this.now()
 
@@ -257,14 +275,14 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
       walletId: intent.walletId,
       marketId: intent.marketId,
       assetId: intent.assetId,
-        kind: intent.actionType,
-        status: "success",
-        requestedAmountUsd6: intent.amountUsd6,
-        executedAmountUsd6: executedAmountFromPreview(action, preview),
-        simulated: true,
-        timestamp,
-        hash: localReceipt.hash,
-      }
+      kind: intent.actionType,
+      status: "success",
+      requestedAmountUsd6: intent.amountUsd6,
+      executedAmountUsd6: executedAmountFromPreview(action, preview),
+      simulated: true,
+      timestamp,
+      hash: localReceipt.hash,
+    }
 
     const localResult: SandboxActionResult = {
       preview,

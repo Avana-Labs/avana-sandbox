@@ -26,7 +26,7 @@ function parseAnimatedValue(text: string, locale: string): ParsedValue | null {
   const numeric = Number.parseFloat(numericText.replace(/,/g, ""))
   if (!Number.isFinite(numeric)) return null
 
-  const decimals = numericText.includes(".") ? numericText.split(".")[1]?.length ?? 0 : 0
+  const decimals = numericText.includes(".") ? (numericText.split(".")[1]?.length ?? 0) : 0
 
   return { prefix, numeric, suffix, decimals, locale }
 }

@@ -2,8 +2,16 @@ import { createDataSourceAdapter } from "@/app/lib/data/core/source-runtime"
 import { api } from "@/convex/_generated/api"
 import { getAuthenticatedConvexClient } from "@/app/lib/data/providers/live-convex-client"
 import { MULTIPLY_LIQUIDATION_THRESHOLD_FACTOR, worstMultiplyHealthFactor } from "@/app/lib/multiply-system/read-model"
-import type { PortfolioActivityKind, PortfolioActivityRecord, PortfolioCollateralRecord, PortfolioDebtRecord, PortfolioPageRecords, PortfolioSupplyRecord } from "./records"
+import type {
+  PortfolioActivityKind,
+  PortfolioActivityRecord,
+  PortfolioCollateralRecord,
+  PortfolioDebtRecord,
+  PortfolioPageRecords,
+  PortfolioSupplyRecord,
+} from "./records"
 import type { PortfolioPageSource } from "./source"
+import { allocateDebtByCollateral, calculateLiveBorrowDebt, calculateLiveMultiplyPosition } from "./live-accounting"
 
 export const livePortfolioPageAdapter = createDataSourceAdapter({
   id: "portfolio-live",
@@ -28,7 +36,10 @@ export const livePortfolioPageSource: PortfolioPageSource = {
     const poolBySlug = new Map(state.pools.map((pool) => [pool.slug, pool]))
     const toUsd = (value?: string) => Number(BigInt(value ?? "0")) / 1_000_000
     const multiplyPositions = state.positions.filter((position) => position.product === "multiply")
-    const totalMultiplyCollateral = multiplyPositions.reduce((sum, position) => sum + (position.collateralValueUsd ?? 0), 0)
+    const totalMultiplyCollateral = multiplyPositions.reduce(
+      (sum, position) => sum + (position.collateralValueUsd ?? 0),
+      0,
+    )
     const totalMultiplyDebt = multiplyPositions.reduce((sum, position) => sum + (position.debtValueUsd ?? 0), 0)
     const healthFactors = multiplyPositions
       .map((position) => position.healthFactor)
@@ -44,7 +55,8 @@ export const livePortfolioPageSource: PortfolioPageSource = {
         const market = marketBySlug.get(position.marketSlug)
         const suppliedUsd = toUsd(position.suppliedUsd6)
         const earnedUsd = toUsd(position.earnedUsd6)
-        const priceUsd = 1
+        const priceUsd = market?.priceUsd && market.priceUsd > 0 ? market.priceUsd : 1
+        const apyPct = Math.max(0, position.supplyApyPct ?? 0)
         return {
           id: String(position._id),
           walletProfileId: wallet,
@@ -54,25 +66,35 @@ export const livePortfolioPageSource: PortfolioPageSource = {
           priceUsd,
           suppliedUsd,
           earnedUsd,
-          dailyEarnedUsd: 0,
-          apyPct: 0,
+          dailyEarnedUsd: (suppliedUsd * apyPct) / 100 / 365,
+          apyPct,
         }
       })
 
     const collaterals: PortfolioCollateralRecord[] = state.positions
       .filter((position) => position.product === "borrow")
-      .flatMap((position) =>
-        position.collateral.map((collateral) => {
+      .flatMap((position) => {
+        const positionBorrowedUsd = position.debt.reduce(
+          (sum, debt) => sum + calculateLiveBorrowDebt(debt).borrowedUsd,
+          0,
+        )
+        const totalCollateralUsd = position.collateral.reduce(
+          (sum, collateral) => sum + toUsd(collateral.collateralValueUsd6),
+          0,
+        )
+        return position.collateral.map((collateral) => {
           const pool = poolBySlug.get(collateral.marketSlug)
           const collateralUsd = toUsd(collateral.collateralValueUsd6)
-          const borrowedUsd = position.debt.reduce(
-            (sum, debt) => sum + Number((BigInt(debt.debtSharesUsd6) * BigInt(debt.debtIndexRay)) / 10n ** 27n) / 1_000_000,
-            0,
-          )
+          const borrowedUsd = allocateDebtByCollateral(positionBorrowedUsd, collateralUsd, totalCollateralUsd)
           const maxLtv = pool?.maxLtvPct ?? 0
           const liquidationUsd = collateralUsd * ((pool?.liquidationThresholdPct ?? maxLtv) / 100)
           const visuals = pool?.visuals?.slice(0, 2) ?? []
-          const fallbackVisual = { symbol: "AVA", shortLabel: "A", bgClassName: "bg-brand", textClassName: "text-brand-foreground" }
+          const fallbackVisual = {
+            symbol: "AVA",
+            shortLabel: "A",
+            bgClassName: "bg-brand",
+            textClassName: "text-brand-foreground",
+          }
           return {
             id: String(collateral._id),
             walletProfileId: wallet,
@@ -93,22 +115,22 @@ export const livePortfolioPageSource: PortfolioPageSource = {
             pairApr: pool?.pairAprPct ?? 0,
             feesUsd: 0,
           }
-        }),
-      )
+        })
+      })
 
     const debts: PortfolioDebtRecord[] = state.positions
       .filter((position) => position.product === "borrow")
       .flatMap((position) =>
-        position.debt.map((debt) => ({
-          id: String(debt._id),
-          walletProfileId: wallet,
-          poolId: debt.marketSlug ?? position.marketSlug,
-          debtAssetSymbol: debt.baseAssetId.toUpperCase(),
-          borrowedUsd: Number((BigInt(debt.debtSharesUsd6) * BigInt(debt.debtIndexRay)) / 10n ** 27n) / 1_000_000,
-          borrowAprPct: Number(BigInt(debt.borrowRateWad)) / 10 ** 16,
-          accruedInterestUsd: 0,
-          dailyInterestUsd: 0,
-        })),
+        position.debt.map((debt) => {
+          const accounting = calculateLiveBorrowDebt(debt)
+          return {
+            id: String(debt._id),
+            walletProfileId: wallet,
+            poolId: debt.marketSlug ?? position.marketSlug,
+            debtAssetSymbol: debt.baseAssetId.toUpperCase(),
+            ...accounting,
+          }
+        }),
       )
 
     const activity: PortfolioActivityRecord[] = state.transactions.map((transaction) => ({
@@ -172,19 +194,29 @@ export const livePortfolioPageSource: PortfolioPageSource = {
           borrowPowerUsd: Math.max(0, (position.collateralValueUsd ?? 0) - (position.debtValueUsd ?? 0)),
         }
       }),
-      multiplyPositions: multiplyPositions.map((position) => ({
-        id: String(position._id),
-        walletProfileId: wallet,
-        symbol: marketBySlug.get(position.marketSlug)?.symbol ?? position.marketSlug,
-        label: marketBySlug.get(position.marketSlug)?.name ?? position.marketSlug,
-        side: "long",
-        leverage: position.multiplier ?? 1,
-        collateralUsd: position.collateralValueUsd ?? 0,
-        exposureUsd: (position.collateralValueUsd ?? 0) * (position.multiplier ?? 1),
-        pnlUsd: 0,
-        pnlPct: 0,
-        status: position.status,
-      })),
+      multiplyPositions: multiplyPositions.map((position) => {
+        const collateralUsd = position.collateralValueUsd ?? 0
+        const accounting = calculateLiveMultiplyPosition({
+          collateralUsd,
+          debtUsd: position.debtValueUsd ?? 0,
+          netApyPct: position.netApyPct ?? 0,
+          openedAt: position.openedAt,
+          now: Date.now(),
+        })
+        return {
+          id: String(position._id),
+          walletProfileId: wallet,
+          symbol: marketBySlug.get(position.marketSlug)?.symbol ?? position.marketSlug,
+          label: marketBySlug.get(position.marketSlug)?.name ?? position.marketSlug,
+          side: "long",
+          leverage: position.multiplier ?? 1,
+          collateralUsd,
+          exposureUsd: accounting.exposureUsd,
+          pnlUsd: accounting.pnlUsd,
+          pnlPct: accounting.pnlPct,
+          status: position.status,
+        }
+      }),
       openOrders: [],
       twapOrders: [],
       activity,

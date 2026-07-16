@@ -45,6 +45,7 @@ const positionPayload = v.object({
   debtValueUsd6: v.optional(v.string()),
   suppliedUsd6: v.optional(v.string()),
   earnedUsd6: v.optional(v.string()),
+  supplyApyPct: v.optional(v.number()),
   collateralAmount: v.optional(v.number()),
   collateralValueUsd: v.optional(v.number()),
   debtValueUsd: v.optional(v.number()),
@@ -203,9 +204,7 @@ async function assertBorrowSolvent(
   for (const row of collateralRows) {
     const valueUsd = usd6Number(row.collateralValueUsd6)
     if (valueUsd <= 0) {
-      throw new Error(
-        `INVALID_TRANSITION: collateral ${row.marketSlug} has no server-verifiable value.`,
-      )
+      throw new Error(`INVALID_TRANSITION: collateral ${row.marketSlug} has no server-verifiable value.`)
     }
     const pool = await ctx.db
       .query("pools")
@@ -258,8 +257,14 @@ function canonicalLedgerDelta(
 
 export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, now: number) {
   const [positions, balances] = await Promise.all([
-    ctx.db.query("positions").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
-    ctx.db.query("sandboxBalances").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
+    ctx.db
+      .query("positions")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("sandboxBalances")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
   ])
   const open = positions.filter((position) => position.status === "open")
   const liquid = balances.reduce((sum, balance) => sum + balance.valueUsd, 0)
@@ -366,9 +371,7 @@ async function applyRewardClaims(
     requireUnsignedInteger(claim.remainingUsd6, "remainingUsd6")
     const existing = await ctx.db
       .query("sandboxRewardClaims")
-      .withIndex("by_wallet_position", (q) =>
-        q.eq("wallet", wallet).eq("rewardPositionId", claim.rewardPositionId),
-      )
+      .withIndex("by_wallet_position", (q) => q.eq("wallet", wallet).eq("rewardPositionId", claim.rewardPositionId))
       .unique()
     if (existing) {
       await ctx.db.patch(existing._id, { remainingUsd6: claim.remainingUsd6, updatedAt: now })
@@ -416,9 +419,7 @@ export const recordTransaction = mutation({
     expectedRevision: v.optional(v.number()),
     /** Remaining claimable per borrow LP-fee reward position after this claim (usd6 decimal
      *  strings). Sent only for a borrow "claim"; persisted so claimable survives reload. */
-    rewardClaims: v.optional(
-      v.array(v.object({ rewardPositionId: v.string(), remainingUsd6: v.string() })),
-    ),
+    rewardClaims: v.optional(v.array(v.object({ rewardPositionId: v.string(), remainingUsd6: v.string() }))),
     // NOTE: there is intentionally no client `ledger` arg. The aggregate market-liquidity
     // delta is recomputed server-side (canonicalLedgerDelta) so a client can never dictate
     // the shared ledger.
@@ -443,7 +444,13 @@ export const recordTransaction = mutation({
         transactionId: prior._id,
         positionId: prior.positionId ?? null,
         revision: priorPosition?.revision ?? null,
-        receipt: { id: prior._id, hash: prior.syntheticTxHash, status: prior.status, simulated: prior.simulated, timestamp: prior.at },
+        receipt: {
+          id: prior._id,
+          hash: prior.syntheticTxHash,
+          status: prior.status,
+          simulated: prior.simulated,
+          timestamp: prior.at,
+        },
       }
     }
 
@@ -504,6 +511,7 @@ export const recordTransaction = mutation({
         debtValueUsd6: args.position.debtValueUsd6,
         suppliedUsd6: args.position.suppliedUsd6,
         earnedUsd6: args.position.earnedUsd6,
+        supplyApyPct: args.position.supplyApyPct,
         collateralAmount: args.position.collateralAmount,
         collateralValueUsd: args.position.collateralValueUsd,
         debtValueUsd: args.position.debtValueUsd,
@@ -533,8 +541,14 @@ export const recordTransaction = mutation({
 
       if (args.product === "borrow" && positionId) {
         const [existingCollateral, existingDebt] = await Promise.all([
-          ctx.db.query("positionCollateral").withIndex("by_position", (q) => q.eq("positionId", positionId!)).collect(),
-          ctx.db.query("positionDebt").withIndex("by_position", (q) => q.eq("positionId", positionId!)).collect(),
+          ctx.db
+            .query("positionCollateral")
+            .withIndex("by_position", (q) => q.eq("positionId", positionId!))
+            .collect(),
+          ctx.db
+            .query("positionDebt")
+            .withIndex("by_position", (q) => q.eq("positionId", positionId!))
+            .collect(),
         ])
         for (const row of existingCollateral) await ctx.db.delete(row._id)
         for (const row of existingDebt) await ctx.db.delete(row._id)
@@ -594,13 +608,7 @@ export const recordTransaction = mutation({
         existingPosition,
       )
       if (ledger) {
-        await applyLedgerDelta(
-          ctx,
-          ledger.marketSlug,
-          ledger.borrowedDeltaUsd,
-          ledger.suppliedDeltaUsd,
-          now,
-        )
+        await applyLedgerDelta(ctx, ledger.marketSlug, ledger.borrowedDeltaUsd, ledger.suppliedDeltaUsd, now)
       }
       if (args.product === "borrow" && args.kind === "claim" && args.rewardClaims?.length) {
         await applyRewardClaims(ctx, wallet, args.rewardClaims, now)
@@ -722,8 +730,14 @@ export const getPositions = query({
     const out = []
     for (const p of positions) {
       const [collateral, debt] = await Promise.all([
-        ctx.db.query("positionCollateral").withIndex("by_position", (q) => q.eq("positionId", p._id)).collect(),
-        ctx.db.query("positionDebt").withIndex("by_position", (q) => q.eq("positionId", p._id)).collect(),
+        ctx.db
+          .query("positionCollateral")
+          .withIndex("by_position", (q) => q.eq("positionId", p._id))
+          .collect(),
+        ctx.db
+          .query("positionDebt")
+          .withIndex("by_position", (q) => q.eq("positionId", p._id))
+          .collect(),
       ])
       out.push({ ...p, collateral, debt })
     }
@@ -737,22 +751,40 @@ export const getSessionState = query({
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
     const [positions, transactions, balances, starterAllocation, rewardClaims] = await Promise.all([
-      ctx.db.query("positions").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
+      ctx.db
+        .query("positions")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect(),
       ctx.db
         .query("transactions")
         .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
         .order("desc")
         .take(500),
-      ctx.db.query("sandboxBalances").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
-      ctx.db.query("starterAllocations").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique(),
-      ctx.db.query("sandboxRewardClaims").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
+      ctx.db
+        .query("sandboxBalances")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect(),
+      ctx.db
+        .query("starterAllocations")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .unique(),
+      ctx.db
+        .query("sandboxRewardClaims")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect(),
     ])
     // Hydrate collateral/debt in parallel (was a sequential per-position await loop).
     const hydratedPositions = await Promise.all(
       positions.map(async (position) => {
         const [collateral, debt] = await Promise.all([
-          ctx.db.query("positionCollateral").withIndex("by_position", (q) => q.eq("positionId", position._id)).collect(),
-          ctx.db.query("positionDebt").withIndex("by_position", (q) => q.eq("positionId", position._id)).collect(),
+          ctx.db
+            .query("positionCollateral")
+            .withIndex("by_position", (q) => q.eq("positionId", position._id))
+            .collect(),
+          ctx.db
+            .query("positionDebt")
+            .withIndex("by_position", (q) => q.eq("positionId", position._id))
+            .collect(),
         ])
         return { ...position, collateral, debt }
       }),
@@ -775,14 +807,23 @@ export const getPortfolioPageState = query({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
-    const positions = await ctx.db.query("positions").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect()
+    const positions = await ctx.db
+      .query("positions")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect()
 
     // Hydrate collateral/debt in parallel (was a sequential per-position loop).
     const hydratedPositions = await Promise.all(
       positions.map(async (position) => {
         const [collateral, debt] = await Promise.all([
-          ctx.db.query("positionCollateral").withIndex("by_position", (q) => q.eq("positionId", position._id)).collect(),
-          ctx.db.query("positionDebt").withIndex("by_position", (q) => q.eq("positionId", position._id)).collect(),
+          ctx.db
+            .query("positionCollateral")
+            .withIndex("by_position", (q) => q.eq("positionId", position._id))
+            .collect(),
+          ctx.db
+            .query("positionDebt")
+            .withIndex("by_position", (q) => q.eq("positionId", position._id))
+            .collect(),
         ])
         return { ...position, collateral, debt }
       }),
@@ -797,31 +838,63 @@ export const getPortfolioPageState = query({
       if (position.product === "borrow") {
         for (const c of position.collateral) poolSlugs.add(c.marketSlug)
       } else if (position.product === "lend" || position.product === "multiply") {
-        marketRefs.set(`${position.product}:${position.marketSlug}`, { scope: position.product, slug: position.marketSlug })
+        marketRefs.set(`${position.product}:${position.marketSlug}`, {
+          scope: position.product,
+          slug: position.marketSlug,
+        })
       }
     }
 
-    const [transactions, snapshotRows, current, risk, rewards, balances, starterAllocation, poolRows, marketRows] = await Promise.all([
-      ctx.db.query("transactions").withIndex("by_wallet_at", (q) => q.eq("wallet", wallet)).order("desc").take(500),
-      ctx.db
-        .query("portfolioSnapshots")
-        .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
-        .order("desc")
-        .take(MAX_PORTFOLIO_HISTORY_ROWS),
-      ctx.db.query("portfolioCurrent").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique(),
-      ctx.db.query("riskSnapshots").withIndex("by_wallet_at", (q) => q.eq("wallet", wallet)).order("desc").first(),
-      ctx.db.query("sandboxRewards").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique(),
-      ctx.db.query("sandboxBalances").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
-      ctx.db.query("starterAllocations").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique(),
-      Promise.all(
-        [...poolSlugs].map((slug) => ctx.db.query("pools").withIndex("by_slug", (q) => q.eq("slug", slug)).unique()),
-      ),
-      Promise.all(
-        [...marketRefs.values()].map((ref) =>
-          ctx.db.query("markets").withIndex("by_scope_slug", (q) => q.eq("scope", ref.scope).eq("slug", ref.slug)).unique(),
+    const [transactions, snapshotRows, current, risk, rewards, balances, starterAllocation, poolRows, marketRows] =
+      await Promise.all([
+        ctx.db
+          .query("transactions")
+          .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+          .order("desc")
+          .take(500),
+        ctx.db
+          .query("portfolioSnapshots")
+          .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+          .order("desc")
+          .take(MAX_PORTFOLIO_HISTORY_ROWS),
+        ctx.db
+          .query("portfolioCurrent")
+          .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+          .unique(),
+        ctx.db
+          .query("riskSnapshots")
+          .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+          .order("desc")
+          .first(),
+        ctx.db
+          .query("sandboxRewards")
+          .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+          .unique(),
+        ctx.db
+          .query("sandboxBalances")
+          .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+          .collect(),
+        ctx.db
+          .query("starterAllocations")
+          .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+          .unique(),
+        Promise.all(
+          [...poolSlugs].map((slug) =>
+            ctx.db
+              .query("pools")
+              .withIndex("by_slug", (q) => q.eq("slug", slug))
+              .unique(),
+          ),
         ),
-      ),
-    ])
+        Promise.all(
+          [...marketRefs.values()].map((ref) =>
+            ctx.db
+              .query("markets")
+              .withIndex("by_scope_slug", (q) => q.eq("scope", ref.scope).eq("slug", ref.slug))
+              .unique(),
+          ),
+        ),
+      ])
     const pools = poolRows.filter((row): row is NonNullable<typeof row> => row !== null)
     const markets = marketRows.filter((row): row is NonNullable<typeof row> => row !== null)
     const snapshots = snapshotRows.reverse()
@@ -830,7 +903,17 @@ export const getPortfolioPageState = query({
     // past the nominal _id mismatch (runtime-identical to the prior push; keeps `tsc --noEmit`
     // green, which CI gates on).
     if (current && snapshots.at(-1)?.at !== current.at) snapshots.push(current as unknown as (typeof snapshots)[number])
-    return { positions: hydratedPositions, transactions, snapshots, risk, pools, markets, rewards, balances, starterAllocation }
+    return {
+      positions: hydratedPositions,
+      transactions,
+      snapshots,
+      risk,
+      pools,
+      markets,
+      rewards,
+      balances,
+      starterAllocation,
+    }
   },
 })
 
@@ -845,8 +928,14 @@ export const getPortfolio = query({
         .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
         .order("desc")
         .take(MAX_PORTFOLIO_HISTORY_ROWS),
-      ctx.db.query("portfolioCurrent").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique(),
-      ctx.db.query("positions").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect(),
+      ctx.db
+        .query("portfolioCurrent")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .unique(),
+      ctx.db
+        .query("positions")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect(),
     ])
     const snapshots = snapshotRows.reverse()
     const latest = current ?? snapshots.at(-1) ?? null

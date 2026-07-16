@@ -7,6 +7,7 @@
 /.next/
 /.next-dev/
 /.next-prod/
+/.next-check/
 /.next-dev.lock.json
 /.next-prod.lock.json
 /out/

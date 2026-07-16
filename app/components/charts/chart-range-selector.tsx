@@ -17,7 +17,12 @@ function formatRangeLabel(range: ChartRangeOption): string {
   return range === "All" ? "ALL" : range
 }
 
-export function ChartRangeSelector({ activeRange, onRangeChange, className, ranges = CHART_RANGE_OPTIONS }: ChartRangeSelectorProps) {
+export function ChartRangeSelector({
+  activeRange,
+  onRangeChange,
+  className,
+  ranges = CHART_RANGE_OPTIONS,
+}: ChartRangeSelectorProps) {
   const { t } = useTranslation()
   return (
     <div

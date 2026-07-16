@@ -68,7 +68,7 @@ export function BipolarBar({
     return (
       <div className={cn("relative w-full", className)}>
         {bar}
-        {(leftLabel || rightLabel) ? (
+        {leftLabel || rightLabel ? (
           <div className="pointer-events-none mt-1 flex items-center justify-between font-data text-[10.5px] font-medium tabular-nums">
             <span className={cn(leftLabelClass)}>{leftLabel}</span>
             <span className={cn(rightLabelClass)}>{rightLabel}</span>
@@ -81,7 +81,7 @@ export function BipolarBar({
   return (
     <div className={cn("w-full", className)}>
       {bar}
-      {(leftLabel || rightLabel) ? (
+      {leftLabel || rightLabel ? (
         <div className="mt-1 flex items-center justify-between font-data text-[10.5px] font-medium tabular-nums">
           <span className={cn(leftLabelClass)}>{leftLabel}</span>
           <span className={cn(rightLabelClass)}>{rightLabel}</span>

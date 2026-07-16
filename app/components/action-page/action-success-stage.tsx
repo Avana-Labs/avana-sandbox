@@ -48,6 +48,7 @@ export function ActionSuccessStage({
     hash,
     hashHref,
     metrics: success.metrics,
+    quoteId: success.quoteId,
   }
 
   return (

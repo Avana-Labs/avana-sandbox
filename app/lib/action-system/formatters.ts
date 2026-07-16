@@ -5,7 +5,7 @@ export function formatActionInputAmount(value: number, maxDecimals = 6) {
   return String(Number(value.toFixed(maxDecimals)))
 }
 
-export function formatActionUsd(usdValue: number, options?: { compact?: boolean }) {
+export function formatActionUsd(usdValue: number, options?: { compact?: boolean; exact?: boolean }) {
   if (!Number.isFinite(usdValue)) return "—"
   // Action amounts are computed in USD; convert into the active display currency.
   const { rate, zeroDecimal } = getActiveCurrency()
@@ -18,7 +18,7 @@ export function formatActionUsd(usdValue: number, options?: { compact?: boolean 
     if (abs >= 1_000_000) return withCurrencySymbol(value, `${(abs / 1_000_000).toFixed(1)}M`)
     if (abs >= 1_000) return withCurrencySymbol(value, `${(abs / 1_000).toFixed(1)}K`)
   }
-  const fractionDigits = zeroDecimal ? 0 : abs >= 100 ? 0 : 2
+  const fractionDigits = zeroDecimal ? 0 : options?.exact || abs < 100 ? 2 : 0
   return withCurrencySymbol(
     value,
     abs.toLocaleString("en-US", { minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits }),
@@ -75,7 +75,12 @@ export function formatActionFeeSummary(amountUsd: number, networkFeeUsd: number,
 
 export function formatActionAmount(assetAmount: number, symbol: string, digits = 6) {
   if (!Number.isFinite(assetAmount)) return `0 ${symbol}`
-  const rounded = assetAmount >= 100 ? assetAmount.toFixed(2) : assetAmount.toFixed(Math.min(digits, 6)).replace(/\.?0+$/, "")
+  // Strip trailing zeros in both branches so whole amounts read "12500" not
+  // "12500.00" while fractional amounts keep their significant digits.
+  const rounded =
+    assetAmount >= 100
+      ? assetAmount.toFixed(2).replace(/\.?0+$/, "")
+      : assetAmount.toFixed(Math.min(digits, 6)).replace(/\.?0+$/, "")
   return `${rounded} ${symbol}`
 }
 

@@ -17,13 +17,16 @@ describe("lend preview mappers", () => {
       rewardsApy: 1.2,
     })
 
+    expect(ui.quoteId).toBe(preview.intent.id)
+
     expect(ui.metrics.map((row) => row.label)).toEqual([
       "Supplied value",
       "APY",
       "Rewards APY",
       "Rewards earned",
-      "Total earned",
+      "Lifetime earnings",
     ])
+    expect(ui.metrics.find((row) => row.id === "total-earned")).toMatchObject({ value: "$10.50" })
     expect(ui.amountUsdLabel).toBe("$50.00")
   })
 
@@ -45,9 +48,20 @@ describe("lend preview mappers", () => {
       amount: 25,
       marketLabel: "GHO · Core",
       balanceAmount: 150,
+      poolAvailableLiquidity: 80,
     })
 
-    expect(ui.metrics.map((row) => row.label)).toEqual(["Supplied remaining", "APY impact", "Total earned"])
+    expect(ui.metrics.map((row) => row.label)).toEqual([
+      "Supplied remaining",
+      "APY impact",
+      "Accrued earnings",
+      "Wallet withdrawable",
+      "Pool liquidity",
+      "Accrued interest",
+    ])
+    expect(ui.metrics.find((row) => row.id === "withdrawable-balance")?.value).toBe("10 GHO")
+    expect(ui.metrics.find((row) => row.id === "pool-liquidity")?.value).toBe("80 GHO")
+    expect(ui.metrics.find((row) => row.id === "interest-inclusion")?.value).toBe("Included in supplied balance")
     expect(ui.rateLabel).toBe("Remaining supply")
     expect(ui.amountUsdLabel).toBe("$25.00")
     expect(ui.maxAmount).toBe(10)

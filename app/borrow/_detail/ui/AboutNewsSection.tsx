@@ -39,7 +39,13 @@ export function AboutNewsSection({
     <div className={cn("space-y-12 pt-10", className)}>
       <AboutCard about={about} title={aboutTitle} compact={compactAboutTitle} plain />
       {newsItems.length > 0 ? (
-        <NewsCard items={newsItems} title={newsTitle} viewAllHref={governanceUrl} itemHrefFallback={governanceUrl} plain />
+        <NewsCard
+          items={newsItems}
+          title={newsTitle}
+          viewAllHref={governanceUrl}
+          itemHrefFallback={governanceUrl}
+          plain
+        />
       ) : null}
     </div>
   )

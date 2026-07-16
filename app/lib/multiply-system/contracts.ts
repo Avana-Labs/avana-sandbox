@@ -38,6 +38,7 @@ export type MultiplyTransactionPreview = {
     liquidationPrice: number | null
     priceImpactPct: number
     maxLeverageApy?: number
+    loopCount?: number
   }
 }
 

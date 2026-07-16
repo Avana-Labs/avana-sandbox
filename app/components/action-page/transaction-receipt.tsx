@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { CheckCircle2, ExternalLink } from "lucide-react"
+import { CheckCircle2, ExternalLink } from "@/app/components/icons"
 import type { ActionMetricRow } from "@/app/lib/action-system/contracts"
 import { ActionCard, ActionInfoRow, ActionMetricsBlock } from "@/app/components/action-page/action-metrics"
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
@@ -35,6 +35,7 @@ export type TransactionReceiptData = {
   rateLabel?: string | null
   rateValue?: string | null
   marketValue?: string | null
+  quoteId?: string | null
   /** Raw USD network fee; rendered as a currency-reactive "Network fee" row when present. */
   networkFeeUsd?: number | null
   block?: number | string | null
@@ -93,10 +94,7 @@ export function TransactionReceipt({ data, className }: { data: TransactionRecei
   ) : null
 
   return (
-    <div
-      data-testid="transaction-receipt"
-      className={cn("space-y-4", className)}
-    >
+    <div data-testid="transaction-receipt" className={cn("space-y-4", className)}>
       <ActionCard
         className={cn(
           "overflow-hidden border-t-2 border-t-emerald-500/70",
@@ -144,11 +142,14 @@ export function TransactionReceipt({ data, className }: { data: TransactionRecei
               <ActionInfoRow label={data.rateLabel} value={data.rateValue} tooltip="rate" />
             ) : null}
             {data.marketValue ? <ActionInfoRow label="Market" value={data.marketValue} tooltip="market" /> : null}
+            {data.quoteId ? <ActionInfoRow label="Quote" value={data.quoteId} /> : null}
             {typeof data.networkFeeUsd === "number" ? (
               <ActionInfoRow label="Network fee" value={exact(data.networkFeeUsd)} />
             ) : null}
             {data.block != null ? <ActionInfoRow label="Block" value={String(data.block)} /> : null}
-            {data.dateMs != null ? <ActionInfoRow label="Transaction date" value={formatReceiptDate(data.dateMs)} /> : null}
+            {data.dateMs != null ? (
+              <ActionInfoRow label="Transaction date" value={formatReceiptDate(data.dateMs)} />
+            ) : null}
           </div>
 
           {data.hash ? (

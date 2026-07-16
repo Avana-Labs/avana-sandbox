@@ -1,10 +1,10 @@
-'use client'
+"use client"
 
-import * as React from 'react'
-import * as TabsPrimitive from '@radix-ui/react-tabs'
+import * as React from "react"
+import * as TabsPrimitive from "@radix-ui/react-tabs"
 
-import { pillTabTriggerClassName } from '@/components/ui/pill-tab-button'
-import { cn } from '@/lib/utils'
+import { pillTabTriggerClassName } from "@/components/ui/pill-tab-button"
+import { cn } from "@/lib/utils"
 
 const Tabs = TabsPrimitive.Root
 
@@ -15,7 +15,7 @@ const TabsList = React.forwardRef<
   <TabsPrimitive.List
     ref={ref}
     className={cn(
-      'no-scrollbar inline-flex h-auto min-h-0 items-center gap-0 border-b border-border bg-transparent p-0',
+      "no-scrollbar inline-flex h-auto min-h-0 items-center gap-0 border-b border-border bg-transparent p-0",
       className,
     )}
     {...props}
@@ -27,11 +27,7 @@ const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
 >(({ className, ...props }, ref) => (
-  <TabsPrimitive.Trigger
-    ref={ref}
-    className={cn(pillTabTriggerClassName, className)}
-    {...props}
-  />
+  <TabsPrimitive.Trigger ref={ref} className={cn(pillTabTriggerClassName, className)} {...props} />
 ))
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
 
@@ -42,7 +38,7 @@ const TabsContent = React.forwardRef<
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
-      'mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+      "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
       className,
     )}
     {...props}

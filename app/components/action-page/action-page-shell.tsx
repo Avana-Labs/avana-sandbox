@@ -1,6 +1,6 @@
 "use client"
 
-import { X } from "lucide-react"
+import { X } from "@/app/components/icons"
 import { useRouter } from "next/navigation"
 import { useEffect, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
@@ -97,8 +97,12 @@ export function ActionPageShell({
       >
         {showTitleBlock ? (
           <div className="pb-5">
-            <h1 className="text-[1.5rem] font-semibold tracking-[-0.03em] text-foreground sm:text-[1.625rem]">{t(title)}</h1>
-            {subtitle ? <p className="mt-1.5 text-[15px] leading-relaxed text-muted-foreground">{t(subtitle)}</p> : null}
+            <h1 className="text-[1.5rem] font-semibold tracking-[-0.03em] text-foreground sm:text-[1.625rem]">
+              {t(title)}
+            </h1>
+            {subtitle ? (
+              <p className="mt-1.5 text-[15px] leading-relaxed text-muted-foreground">{t(subtitle)}</p>
+            ) : null}
           </div>
         ) : null}
 

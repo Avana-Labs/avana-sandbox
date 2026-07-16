@@ -51,7 +51,10 @@ export async function fetchMultiplyPage(
     operation: "getMultiplyPageData",
     context,
     schema: multiplyPageSchema,
-    load: (pageSource, requestContext) => pageSource.getMultiplyPageData(requestContext) as Promise<import("@/app/lib/data/core/source-runtime").DataSourceResponse<unknown>>,
+    load: (pageSource, requestContext) =>
+      pageSource.getMultiplyPageData(requestContext) as Promise<
+        import("@/app/lib/data/core/source-runtime").DataSourceResponse<unknown>
+      >,
   })
 
   return response.data as unknown as MultiplyPageData

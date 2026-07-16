@@ -136,7 +136,10 @@ function applyBorrowDebtAction(state: BorrowSystemState, action: Extract<BorrowA
   return state
 }
 
-function applySupplyCollateralAction(state: BorrowSystemState, action: Extract<BorrowAction, { type: "supplyCollateral" }>) {
+function applySupplyCollateralAction(
+  state: BorrowSystemState,
+  action: Extract<BorrowAction, { type: "supplyCollateral" }>,
+) {
   const market = state.markets[action.marketId]
   const account = state.accounts[action.walletId]
 
@@ -211,19 +214,26 @@ function applyRepayAction(state: BorrowSystemState, action: Extract<BorrowAction
     throw new Error(`Wallet ${action.walletId} has insufficient balance to repay`)
   }
   const interestOwedUsd6 = debtInterestOwedUsd6(position)
-  const sharesToBurn = repayAmountUsd6 === currentDebtUsd6 ? position.debtSharesUsd6 : assetsToShares(repayAmountUsd6, position.debtIndexRay)
+  const sharesToBurn =
+    repayAmountUsd6 === currentDebtUsd6
+      ? position.debtSharesUsd6
+      : assetsToShares(repayAmountUsd6, position.debtIndexRay)
   const principalReductionUsd6 = repayAmountUsd6 > interestOwedUsd6 ? repayAmountUsd6 - interestOwedUsd6 : 0n
 
   position.debtSharesUsd6 = position.debtSharesUsd6 > sharesToBurn ? position.debtSharesUsd6 - sharesToBurn : 0n
   position.principalBorrowedUsd6 =
-    position.principalBorrowedUsd6 > principalReductionUsd6 ? position.principalBorrowedUsd6 - principalReductionUsd6 : 0n
+    position.principalBorrowedUsd6 > principalReductionUsd6
+      ? position.principalBorrowedUsd6 - principalReductionUsd6
+      : 0n
 
   // Repaying spends wallet balance.
   account.walletBalanceUsd6 -= repayAmountUsd6
 
   asset.snapshot.availableLiquidityUsd6 += repayAmountUsd6
-  asset.snapshot.totalBorrowedUsd6 = asset.snapshot.totalBorrowedUsd6 > repayAmountUsd6 ? asset.snapshot.totalBorrowedUsd6 - repayAmountUsd6 : 0n
-  asset.snapshot.totalDebtSharesUsd6 = asset.snapshot.totalDebtSharesUsd6 > sharesToBurn ? asset.snapshot.totalDebtSharesUsd6 - sharesToBurn : 0n
+  asset.snapshot.totalBorrowedUsd6 =
+    asset.snapshot.totalBorrowedUsd6 > repayAmountUsd6 ? asset.snapshot.totalBorrowedUsd6 - repayAmountUsd6 : 0n
+  asset.snapshot.totalDebtSharesUsd6 =
+    asset.snapshot.totalDebtSharesUsd6 > sharesToBurn ? asset.snapshot.totalDebtSharesUsd6 - sharesToBurn : 0n
 
   if (position.debtSharesUsd6 === 0n) {
     account.debtPositions.splice(debtIndex, 1)
@@ -244,7 +254,10 @@ function applyRepayAction(state: BorrowSystemState, action: Extract<BorrowAction
   return state
 }
 
-function applyRemoveCollateralAction(state: BorrowSystemState, action: Extract<BorrowAction, { type: "removeCollateral" }>) {
+function applyRemoveCollateralAction(
+  state: BorrowSystemState,
+  action: Extract<BorrowAction, { type: "removeCollateral" }>,
+) {
   const account = state.accounts[action.walletId]
   if (!account) throw new Error(`Unknown wallet ${action.walletId}`)
 
@@ -259,23 +272,34 @@ function applyRemoveCollateralAction(state: BorrowSystemState, action: Extract<B
   const percentBps = action.percentBps ?? 0
   if (percentBps < 0 || percentBps > 10_000) throw new Error("Remove percent must be between 0 and 10000 basis points")
 
-  const requestedUsd6 = action.amountUsd6 ?? (percentBps > 0 ? mulDiv(currentValueUsd6, BigInt(percentBps), 10_000n) : 0n)
+  const requestedUsd6 =
+    action.amountUsd6 ?? (percentBps > 0 ? mulDiv(currentValueUsd6, BigInt(percentBps), 10_000n) : 0n)
   const removeUsd6 = requestedUsd6 > currentValueUsd6 ? currentValueUsd6 : requestedUsd6
   if (removeUsd6 <= 0n) throw new Error("Remove amount must be positive")
 
   const tokenAmount = usd6ToTokenAmount(removeUsd6, market.snapshot.lpTokenPriceUsd6)
-  const collateralShares = removeUsd6 >= currentValueUsd6 ? position.collateralShares : assetsToShares(tokenAmount, market.snapshot.supplyIndexRay)
+  const collateralShares =
+    removeUsd6 >= currentValueUsd6
+      ? position.collateralShares
+      : assetsToShares(tokenAmount, market.snapshot.supplyIndexRay)
   const principalReduction =
-    position.collateralShares > 0n ? mulDiv(position.principalTokenAmount, collateralShares, position.collateralShares) : 0n
+    position.collateralShares > 0n
+      ? mulDiv(position.principalTokenAmount, collateralShares, position.collateralShares)
+      : 0n
 
-  position.collateralShares = position.collateralShares > collateralShares ? position.collateralShares - collateralShares : 0n
+  position.collateralShares =
+    position.collateralShares > collateralShares ? position.collateralShares - collateralShares : 0n
   position.principalTokenAmount =
     position.principalTokenAmount > principalReduction ? position.principalTokenAmount - principalReduction : 0n
 
   market.snapshot.totalCollateralShares =
-    market.snapshot.totalCollateralShares > collateralShares ? market.snapshot.totalCollateralShares - collateralShares : 0n
-  market.snapshot.totalLiquidityUsd6 = market.snapshot.totalLiquidityUsd6 > removeUsd6 ? market.snapshot.totalLiquidityUsd6 - removeUsd6 : 0n
-  market.snapshot.availableUsd6 = market.snapshot.availableUsd6 > removeUsd6 ? market.snapshot.availableUsd6 - removeUsd6 : 0n
+    market.snapshot.totalCollateralShares > collateralShares
+      ? market.snapshot.totalCollateralShares - collateralShares
+      : 0n
+  market.snapshot.totalLiquidityUsd6 =
+    market.snapshot.totalLiquidityUsd6 > removeUsd6 ? market.snapshot.totalLiquidityUsd6 - removeUsd6 : 0n
+  market.snapshot.availableUsd6 =
+    market.snapshot.availableUsd6 > removeUsd6 ? market.snapshot.availableUsd6 - removeUsd6 : 0n
   account.walletLpBalancesUsd6[position.marketId] = (account.walletLpBalancesUsd6[position.marketId] ?? 0n) + removeUsd6
   account.walletReturnedLpBalancesUsd6 = {
     ...(account.walletReturnedLpBalancesUsd6 ?? {}),
@@ -350,33 +374,54 @@ function applyLiquidationAction(state: BorrowSystemState, action: Extract<Borrow
 
   const seizedTokenAmount = usd6ToTokenAmount(actualRepayUsd6, market.snapshot.lpTokenPriceUsd6)
   const seizedCollateralShares =
-    actualRepayUsd6 >= currentCollateralUsd6 ? collateralPosition.collateralShares : assetsToShares(seizedTokenAmount, market.snapshot.supplyIndexRay)
+    actualRepayUsd6 >= currentCollateralUsd6
+      ? collateralPosition.collateralShares
+      : assetsToShares(seizedTokenAmount, market.snapshot.supplyIndexRay)
   const principalReduction =
     scopedCollateralPosition.collateralShares > 0n
-      ? mulDiv(scopedCollateralPosition.principalTokenAmount, seizedCollateralShares, scopedCollateralPosition.collateralShares)
+      ? mulDiv(
+          scopedCollateralPosition.principalTokenAmount,
+          seizedCollateralShares,
+          scopedCollateralPosition.collateralShares,
+        )
       : 0n
   const interestOwedUsd6 = debtInterestOwedUsd6(debtPosition)
-  const sharesToBurn = actualRepayUsd6 === currentDebtUsd6 ? debtPosition.debtSharesUsd6 : assetsToShares(actualRepayUsd6, debtPosition.debtIndexRay)
+  const sharesToBurn =
+    actualRepayUsd6 === currentDebtUsd6
+      ? debtPosition.debtSharesUsd6
+      : assetsToShares(actualRepayUsd6, debtPosition.debtIndexRay)
   const principalReductionUsd6 = actualRepayUsd6 > interestOwedUsd6 ? actualRepayUsd6 - interestOwedUsd6 : 0n
 
   scopedCollateralPosition.collateralShares =
-    scopedCollateralPosition.collateralShares > seizedCollateralShares ? scopedCollateralPosition.collateralShares - seizedCollateralShares : 0n
+    scopedCollateralPosition.collateralShares > seizedCollateralShares
+      ? scopedCollateralPosition.collateralShares - seizedCollateralShares
+      : 0n
   scopedCollateralPosition.principalTokenAmount =
-    scopedCollateralPosition.principalTokenAmount > principalReduction ? scopedCollateralPosition.principalTokenAmount - principalReduction : 0n
+    scopedCollateralPosition.principalTokenAmount > principalReduction
+      ? scopedCollateralPosition.principalTokenAmount - principalReduction
+      : 0n
 
   market.snapshot.totalCollateralShares =
-    market.snapshot.totalCollateralShares > seizedCollateralShares ? market.snapshot.totalCollateralShares - seizedCollateralShares : 0n
+    market.snapshot.totalCollateralShares > seizedCollateralShares
+      ? market.snapshot.totalCollateralShares - seizedCollateralShares
+      : 0n
   market.snapshot.totalLiquidityUsd6 =
     market.snapshot.totalLiquidityUsd6 > actualRepayUsd6 ? market.snapshot.totalLiquidityUsd6 - actualRepayUsd6 : 0n
-  market.snapshot.availableUsd6 = market.snapshot.availableUsd6 > actualRepayUsd6 ? market.snapshot.availableUsd6 - actualRepayUsd6 : 0n
+  market.snapshot.availableUsd6 =
+    market.snapshot.availableUsd6 > actualRepayUsd6 ? market.snapshot.availableUsd6 - actualRepayUsd6 : 0n
 
-  debtPosition.debtSharesUsd6 = debtPosition.debtSharesUsd6 > sharesToBurn ? debtPosition.debtSharesUsd6 - sharesToBurn : 0n
+  debtPosition.debtSharesUsd6 =
+    debtPosition.debtSharesUsd6 > sharesToBurn ? debtPosition.debtSharesUsd6 - sharesToBurn : 0n
   debtPosition.principalBorrowedUsd6 =
-    debtPosition.principalBorrowedUsd6 > principalReductionUsd6 ? debtPosition.principalBorrowedUsd6 - principalReductionUsd6 : 0n
+    debtPosition.principalBorrowedUsd6 > principalReductionUsd6
+      ? debtPosition.principalBorrowedUsd6 - principalReductionUsd6
+      : 0n
 
   asset.snapshot.availableLiquidityUsd6 += actualRepayUsd6
-  asset.snapshot.totalBorrowedUsd6 = asset.snapshot.totalBorrowedUsd6 > actualRepayUsd6 ? asset.snapshot.totalBorrowedUsd6 - actualRepayUsd6 : 0n
-  asset.snapshot.totalDebtSharesUsd6 = asset.snapshot.totalDebtSharesUsd6 > sharesToBurn ? asset.snapshot.totalDebtSharesUsd6 - sharesToBurn : 0n
+  asset.snapshot.totalBorrowedUsd6 =
+    asset.snapshot.totalBorrowedUsd6 > actualRepayUsd6 ? asset.snapshot.totalBorrowedUsd6 - actualRepayUsd6 : 0n
+  asset.snapshot.totalDebtSharesUsd6 =
+    asset.snapshot.totalDebtSharesUsd6 > sharesToBurn ? asset.snapshot.totalDebtSharesUsd6 - sharesToBurn : 0n
 
   if (scopedCollateralPosition.collateralShares === 0n) {
     account.collateralPositions.splice(positionIndex, 1)
@@ -462,10 +507,9 @@ export function applyBorrowAction(state: BorrowSystemState, action: BorrowAction
       return applyLiquidationAction(next, action)
     case "claim":
       return applyClaimAction(next, action)
-    default:
-      {
-        const exhaustiveAction: never = action
-        throw new Error(`Unsupported action: ${String(exhaustiveAction)}`)
-      }
+    default: {
+      const exhaustiveAction: never = action
+      throw new Error(`Unsupported action: ${String(exhaustiveAction)}`)
+    }
   }
 }

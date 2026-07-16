@@ -115,7 +115,11 @@ function resolveBorrowSelectionInMarket(session: BorrowContextSession, tokenId: 
   }
 }
 
-export function resolveBorrowMarketForAsset(session: BorrowContextSession, assetId: string, preferredMarketId?: string) {
+export function resolveBorrowMarketForAsset(
+  session: BorrowContextSession,
+  assetId: string,
+  preferredMarketId?: string,
+) {
   for (const marketId of borrowMarketCandidates(session, preferredMarketId)) {
     if (resolveBorrowSelectionInMarket(session, assetId, marketId)) {
       return marketId
@@ -124,14 +128,20 @@ export function resolveBorrowMarketForAsset(session: BorrowContextSession, asset
 
   const resolvedAssetId = resolveBorrowAssetId(session.state, assetId)
   if (resolvedAssetId) {
-    const market = Object.values(session.state.markets).find((entry) => entry.relations.supportedBorrowAssetIds.includes(resolvedAssetId))
+    const market = Object.values(session.state.markets).find((entry) =>
+      entry.relations.supportedBorrowAssetIds.includes(resolvedAssetId),
+    )
     if (market) return market.id
   }
 
   return preferredMarketId ?? session.collateralPools[0]?.id ?? ""
 }
 
-export function resolveBorrowTokenSelection(session: BorrowContextSession, tokenId: string, preferredMarketId?: string) {
+export function resolveBorrowTokenSelection(
+  session: BorrowContextSession,
+  tokenId: string,
+  preferredMarketId?: string,
+) {
   for (const marketId of borrowMarketCandidates(session, preferredMarketId)) {
     const selection = resolveBorrowSelectionInMarket(session, tokenId, marketId)
     if (selection) return selection
@@ -177,7 +187,9 @@ export function borrowSelectItemsForMarket(
       name: asset.name,
       symbol: asset.symbol,
       trailingLabel:
-        liquidityUsd != null ? `${formatActionUsd(liquidityUsd, { compact: true })} available` : `${asset.borrowApr.toFixed(2)}% APY`,
+        liquidityUsd != null
+          ? `${formatActionUsd(liquidityUsd, { compact: true })} available`
+          : `${asset.borrowApr.toFixed(2)}% APY`,
     }
   })
 }

@@ -866,15 +866,13 @@ function buildPoolCatalog(): BorrowPoolRow[] {
       // peg-to-peg exposure should always rank as low risk.
       // Everything else: wide, deterministic per-pool jitter (~±25% of base)
       // so no two pools collapse to the same gauge score.
-      const jitterRange = stablePair
-        ? 8
-        : Math.max(18, Math.round(spoke.riskPremiumBps * 0.25))
+      const jitterRange = stablePair ? 8 : Math.max(18, Math.round(spoke.riskPremiumBps * 0.25))
       const riskJitter = Math.round((seededUnit(id) - 0.5) * 2 * jitterRange)
       const riskPremiumBps = stablePair
         ? Math.min(32, Math.max(10, 18 + riskJitter))
         : Math.max(5, spoke.riskPremiumBps + riskJitter)
       const feeTier = seed.feeTier ?? SPOKE_DEFAULT_FEE_TIER[spoke.id] ?? "0.30%"
-      const tvlUsd = Math.round((shareOfLiquidity / totalSeeds) * (1.6 + ((index % 4) * 0.18)) / 10000) * 10000
+      const tvlUsd = Math.round(((shareOfLiquidity / totalSeeds) * (1.6 + (index % 4) * 0.18)) / 10000) * 10000
       rows.push({
         id,
         name,
@@ -1177,7 +1175,14 @@ export function getBorrowAssetsForSpoke(spokeId: BorrowSpokeId): BorrowableAsset
 
 export const BORROW_SUPPLY_META: Record<
   string,
-  { venue: string; feesLabel: string; feesUsd: number; feesBreakdown: string; accruedInterestUsd: number; openedLabel: string }
+  {
+    venue: string
+    feesLabel: string
+    feesUsd: number
+    feesBreakdown: string
+    accruedInterestUsd: number
+    openedLabel: string
+  }
 > = {
   "eth-usdc": {
     venue: "Uni v3 · 0.3% · In Range",
@@ -1257,7 +1262,10 @@ export type PoolFilterOptions = {
   eModeOnly?: boolean
 }
 
-export function filterPools(rows: BorrowPoolRow[], { text = "", dexes, spokes, eModeOnly }: PoolFilterOptions = {}): BorrowPoolRow[] {
+export function filterPools(
+  rows: BorrowPoolRow[],
+  { text = "", dexes, spokes, eModeOnly }: PoolFilterOptions = {},
+): BorrowPoolRow[] {
   const needle = text.trim().toLowerCase()
   const activeDexes = dexes && dexes.size > 0 ? dexes : null
   const activeSpokes = spokes && spokes.size > 0 ? spokes : null
@@ -1341,7 +1349,11 @@ function poolSortValue(row: BorrowPoolRow, key: PoolSortKey): number {
   }
 }
 
-export function sortAssets(rows: BorrowableAsset[], key: AssetSortKey, direction: BorrowSortDirection): BorrowableAsset[] {
+export function sortAssets(
+  rows: BorrowableAsset[],
+  key: AssetSortKey,
+  direction: BorrowSortDirection,
+): BorrowableAsset[] {
   const copy = [...rows]
   copy.sort((left, right) => {
     const leftValue = assetSortValue(left, key)
@@ -1383,7 +1395,12 @@ export function healthFactorToneClass(hf: number | null): string {
   return healthFactorBand(hf).textClass
 }
 
-export function homeVisualToBorrowVisual(visual: { symbol: string; shortLabel: string; bgClassName: string; textClassName: string }): BorrowAssetVisual {
+export function homeVisualToBorrowVisual(visual: {
+  symbol: string
+  shortLabel: string
+  bgClassName: string
+  textClassName: string
+}): BorrowAssetVisual {
   return {
     symbol: visual.symbol,
     shortLabel: visual.shortLabel,
@@ -1400,6 +1417,7 @@ export function homePoolSpoke(category: string): BorrowSpokeId {
   return "aero-basic-volatile"
 }
 
-export const BORROWABLE_TOKEN_OPTIONS: Array<{ id: string; symbol: string }> = BORROWABLE_ASSETS.map(
-  (asset) => ({ id: asset.id, symbol: asset.symbol }),
-)
+export const BORROWABLE_TOKEN_OPTIONS: Array<{ id: string; symbol: string }> = BORROWABLE_ASSETS.map((asset) => ({
+  id: asset.id,
+  symbol: asset.symbol,
+}))

@@ -38,7 +38,11 @@ export function ResponsiveDetailAction({
   sidebar?: boolean
   children: ReactNode
 }) {
-  const isDesktop = useMediaQuery("(min-width: 768px)", true)
+  // Hydrate from the server-selected default (desktop) on the first client
+  // render, then reconcile the real media query in an effect — otherwise the
+  // first client render reads the live viewport and diverges from SSR, which
+  // hydration-mismatches the action rail (embedded card vs launch CTA).
+  const isDesktop = useMediaQuery("(min-width: 768px)", true, true)
 
   if (!isDesktop) {
     return (

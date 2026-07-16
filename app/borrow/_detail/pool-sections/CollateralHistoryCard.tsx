@@ -54,10 +54,7 @@ const ROW_HOVER_BG = "transition-colors group-hover:bg-hover"
 const ROW_HOVER_LEFT = `${ROW_HOVER_BG} group-hover:rounded-l-radius-lg`
 const ROW_HOVER_RIGHT = `${ROW_HOVER_BG} group-hover:rounded-r-radius-lg`
 
-export function CollateralHistoryCard({
-  transactions,
-  title = "Transactions",
-}: Props) {
+export function CollateralHistoryCard({ transactions, title = "Transactions" }: Props) {
   const { t, language } = useTranslation()
   const locale = LANGUAGE_HTML_LANG[language] ?? "en"
   const [activeFilter, setActiveFilter] = React.useState<(typeof FILTERS)[number]["id"]>("all")
@@ -78,125 +75,147 @@ export function CollateralHistoryCard({
       </div>
 
       <div className="overflow-hidden">
-          <div className="hidden md:block">
-            <table className="w-full table-fixed border-separate border-spacing-0 text-[13px]">
-              <colgroup>
-                <col className="w-[96px]" />
-                <col className="w-[118px]" />
-                <col className="w-[140px]" />
-                <col />
-              </colgroup>
-              <thead>
-                <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                  <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    {t("Time")}
-                  </th>
-                  <th className="bg-table-header px-3 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    {t("Type")}
-                  </th>
-                  <th className="bg-table-header px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    USD
-                  </th>
-                  <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    {t("Wallet")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleTransactions.map((tx) => (
-                  <tr key={tx.id} className="group transition-colors">
-                    <td className={`px-5 py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground ${ROW_HOVER_LEFT}`}>
-                      {tx.timeLabel ?? formatRelativeTime(tx.at, locale)}
-                    </td>
-                    <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
-                      <span className={cn("inline-block whitespace-nowrap text-[15px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
-                        {t(KIND_LABEL[tx.kind])}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
-                      {tx.amountLabel.replace(/^\+/, "")}
-                    </td>
-                    <td className={`px-5 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
-                      {tx.walletHref ? (
-                        <a
-                          href={tx.walletHref}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-block max-w-full truncate whitespace-nowrap align-middle text-foreground underline-offset-2 hover:underline"
-                        >
-                          {tx.walletLabel ?? tx.txHashShort}
-                        </a>
-                      ) : (
-                        <span className="inline-block max-w-full truncate whitespace-nowrap align-middle">
-                          {tx.walletLabel ?? tx.txHashShort}
-                        </span>
+        <div className="hidden md:block">
+          <table className="w-full table-fixed border-separate border-spacing-0 text-[13px]">
+            <colgroup>
+              <col className="w-[96px]" />
+              <col className="w-[118px]" />
+              <col className="w-[140px]" />
+              <col />
+            </colgroup>
+            <thead>
+              <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+                <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  {t("Time")}
+                </th>
+                <th className="bg-table-header px-3 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  {t("Type")}
+                </th>
+                <th className="bg-table-header px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  USD
+                </th>
+                <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  {t("Wallet")}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleTransactions.map((tx) => (
+                <tr key={tx.id} className="group transition-colors">
+                  <td
+                    className={`px-5 py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground ${ROW_HOVER_LEFT}`}
+                  >
+                    {tx.timeLabel ?? formatRelativeTime(tx.at, locale)}
+                  </td>
+                  <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
+                    <span
+                      className={cn(
+                        "inline-block whitespace-nowrap text-[15px] font-medium tracking-[-0.03em]",
+                        KIND_TONE[tx.kind],
                       )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    >
+                      {t(KIND_LABEL[tx.kind])}
+                    </span>
+                  </td>
+                  <td
+                    className={`px-3 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}
+                  >
+                    {tx.amountLabel.replace(/^\+/, "")}
+                  </td>
+                  <td
+                    className={`px-5 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}
+                  >
+                    {tx.walletHref ? (
+                      <a
+                        href={tx.walletHref}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-block max-w-full truncate whitespace-nowrap align-middle text-foreground underline-offset-2 hover:underline"
+                      >
+                        {tx.walletLabel ?? tx.txHashShort}
+                      </a>
+                    ) : (
+                      <span className="inline-block max-w-full truncate whitespace-nowrap align-middle">
+                        {tx.walletLabel ?? tx.txHashShort}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-          <div className="overflow-x-auto md:hidden">
-            <table className="w-full min-w-[480px] table-fixed border-separate border-spacing-0 text-[13px]">
-              <colgroup>
-                <col className="w-[96px]" />
-                <col className="w-[118px]" />
-                <col className="w-[140px]" />
-                <col />
-              </colgroup>
-              <thead>
-                <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                  <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    {t("Time")}
-                  </th>
-                  <th className="bg-table-header px-3 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    {t("Type")}
-                  </th>
-                  <th className="bg-table-header px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    USD
-                  </th>
-                  <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    {t("Wallet")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleTransactions.map((tx) => (
-                  <tr key={tx.id} className="group transition-colors">
-                    <td className={`px-5 py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground ${ROW_HOVER_LEFT}`}>
-                      {tx.timeLabel ?? formatRelativeTime(tx.at, locale)}
-                    </td>
-                    <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
-                      <span className={cn("inline-block whitespace-nowrap text-[15px] font-medium tracking-[-0.03em]", KIND_TONE[tx.kind])}>
-                        {t(KIND_LABEL[tx.kind])}
-                      </span>
-                    </td>
-                    <td className={`px-3 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}>
-                      {tx.amountLabel.replace(/^\+/, "")}
-                    </td>
-                    <td className={`px-5 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}>
-                      {tx.walletHref ? (
-                        <a
-                          href={tx.walletHref}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-block max-w-full truncate whitespace-nowrap align-middle text-foreground underline-offset-2 hover:underline"
-                        >
-                          {tx.walletLabel ?? tx.txHashShort}
-                        </a>
-                      ) : (
-                        <span className="inline-block max-w-full truncate whitespace-nowrap align-middle">
-                          {tx.walletLabel ?? tx.txHashShort}
-                        </span>
+        <div className="overflow-x-auto md:hidden">
+          <table className="w-full min-w-[480px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <colgroup>
+              <col className="w-[96px]" />
+              <col className="w-[118px]" />
+              <col className="w-[140px]" />
+              <col />
+            </colgroup>
+            <thead>
+              <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+                <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  {t("Time")}
+                </th>
+                <th className="bg-table-header px-3 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  {t("Type")}
+                </th>
+                <th className="bg-table-header px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  USD
+                </th>
+                <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  {t("Wallet")}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleTransactions.map((tx) => (
+                <tr key={tx.id} className="group transition-colors">
+                  <td
+                    className={`px-5 py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground ${ROW_HOVER_LEFT}`}
+                  >
+                    {tx.timeLabel ?? formatRelativeTime(tx.at, locale)}
+                  </td>
+                  <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
+                    <span
+                      className={cn(
+                        "inline-block whitespace-nowrap text-[15px] font-medium tracking-[-0.03em]",
+                        KIND_TONE[tx.kind],
                       )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    >
+                      {t(KIND_LABEL[tx.kind])}
+                    </span>
+                  </td>
+                  <td
+                    className={`px-3 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}
+                  >
+                    {tx.amountLabel.replace(/^\+/, "")}
+                  </td>
+                  <td
+                    className={`px-5 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}
+                  >
+                    {tx.walletHref ? (
+                      <a
+                        href={tx.walletHref}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-block max-w-full truncate whitespace-nowrap align-middle text-foreground underline-offset-2 hover:underline"
+                      >
+                        {tx.walletLabel ?? tx.txHashShort}
+                      </a>
+                    ) : (
+                      <span className="inline-block max-w-full truncate whitespace-nowrap align-middle">
+                        {tx.walletLabel ?? tx.txHashShort}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
   )

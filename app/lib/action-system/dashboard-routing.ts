@@ -20,12 +20,14 @@ export function dashboardTabForProduct(product: ActionProduct): DashboardTabKey 
   return PRODUCT_TAB[product]
 }
 
-export function dashboardHrefForProduct(product: ActionProduct): string {
-  return `/dashboard?tab=${dashboardTabForProduct(product)}`
+// The per-product account overviews now all live on the portfolio page, which
+// doesn't deep-link to a specific tab via the URL — so every product returns there.
+export function dashboardHrefForProduct(_product: ActionProduct): string {
+  return "/portfolio"
 }
 
-export function dashboardHrefForTab(tab: DashboardTabKey): string {
-  return `/dashboard?tab=${tab}`
+export function dashboardHrefForTab(_tab: DashboardTabKey): string {
+  return "/portfolio"
 }
 
 export function dashboardTabLabel(tab: DashboardTabKey): string {
@@ -40,6 +42,6 @@ export function parseDashboardTab(value: string | null | undefined): DashboardTa
   return null
 }
 
-export function successDashboardCtaLabel(product: ActionProduct): string {
-  return `View ${dashboardTabLabel(dashboardTabForProduct(product))} dashboard`
+export function successDashboardCtaLabel(_product: ActionProduct): string {
+  return "View portfolio"
 }

@@ -1,6 +1,6 @@
 "use client"
 
-import { Info } from "lucide-react"
+import { Info } from "@/app/components/icons"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export function ActionMetricHelp({ text, topic }: { text: string; topic?: string }) {

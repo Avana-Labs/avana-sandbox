@@ -1,6 +1,6 @@
 "use client"
 
-import { ArrowUpRight, Check } from "lucide-react"
+import { ArrowUpRight, Check } from "@/app/components/icons"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -14,13 +14,7 @@ import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { HomeSuccessState } from "./types"
 
-export function ActionSuccessDialog({
-  state,
-  onClose,
-}: {
-  state: HomeSuccessState | null
-  onClose: () => void
-}) {
+export function ActionSuccessDialog({ state, onClose }: { state: HomeSuccessState | null; onClose: () => void }) {
   const { t } = useTranslation()
   return (
     <Dialog open={Boolean(state)} onOpenChange={(open) => !open && onClose()}>
@@ -33,9 +27,7 @@ export function ActionSuccessDialog({
                   <Check className="h-4 w-4 text-accent-emphasis" strokeWidth={2.25} />
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <DialogTitle className="text-[14px] font-medium text-foreground">
-                    {state.title}
-                  </DialogTitle>
+                  <DialogTitle className="text-[14px] font-medium text-foreground">{state.title}</DialogTitle>
                   <DialogDescription className="text-[12px] text-muted-foreground">
                     {state.description}
                   </DialogDescription>
@@ -48,9 +40,7 @@ export function ActionSuccessDialog({
                 <span className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                   {t("Amount")}
                 </span>
-                <span className="font-data text-[22px] font-medium tracking-tight text-foreground">
-                  {state.amount}
-                </span>
+                <span className="font-data text-[22px] font-medium tracking-tight text-foreground">{state.amount}</span>
               </div>
 
               {state.rows.length > 0 ? (

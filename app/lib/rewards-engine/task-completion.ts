@@ -47,13 +47,30 @@ function buildNewUserCompletionEvents(taskId: string, context: CompletionContext
     case "first-lend-deposit":
       return [event(context, "lend_deposited", "lend", "lend_deposited", { amountUsd: 500, marketId: "gho" })]
     case "first-borrow":
-      return [event(context, "borrow_opened", "borrow", "borrow_opened", { amountUsd: 1_000, marketId: "uni-v3-bluechip-weth-usdc" })]
+      return [
+        event(context, "borrow_opened", "borrow", "borrow_opened", {
+          amountUsd: 1_000,
+          marketId: "uni-v3-bluechip-weth-usdc",
+        }),
+      ]
     case "first-multiply":
-      return [event(context, "multiply_opened", "multiply", "multiply_opened", { amountUsd: 1_000, marketId: "eth-usdt" })]
+      return [
+        event(context, "multiply_opened", "multiply", "multiply_opened", { amountUsd: 1_000, marketId: "eth-usdt" }),
+      ]
     case "first-repay":
-      return [event(context, "borrow_repaid", "borrow", "borrow_repaid", { amountUsd: 250, marketId: "uni-v3-bluechip-weth-usdc" })]
+      return [
+        event(context, "borrow_repaid", "borrow", "borrow_repaid", {
+          amountUsd: 250,
+          marketId: "uni-v3-bluechip-weth-usdc",
+        }),
+      ]
     case "first-deleverage":
-      return [event(context, "multiply_deleveraged", "multiply", "multiply_deleveraged", { amountUsd: 500, marketId: "eth-usdt" })]
+      return [
+        event(context, "multiply_deleveraged", "multiply", "multiply_deleveraged", {
+          amountUsd: 500,
+          marketId: "eth-usdt",
+        }),
+      ]
     case "first-reward-claim":
       return [event(context, "reward_claimed", "rewards", "reward_claimed", { amountUsd: 25 })]
     case "maintain-safe-account":
@@ -72,17 +89,29 @@ function buildChallengeCompletionEvents(taskId: string, context: CompletionConte
     case "borrow-2k":
       return [event(context, "borrow_200", "borrow", "borrow_opened", { amountUsd: 200, marketId: "borrow-1" })]
     case "open-2x-multiply":
-      return [event(context, "multiply_2x", "multiply", "multiply_opened", { amountUsd: 2_500, marketId: "multiply-1" })]
+      return [
+        event(context, "multiply_2x", "multiply", "multiply_opened", { amountUsd: 2_500, marketId: "multiply-1" }),
+      ]
     case "use-3-products":
       return [
         event(context, "lend_product", "lend", "lend_deposited", { amountUsd: 100, marketId: "gho", timestamp: now }),
-        event(context, "borrow_product", "borrow", "borrow_opened", { amountUsd: 100, marketId: "borrow-1", timestamp: now + 1 }),
-        event(context, "multiply_product", "multiply", "multiply_opened", { amountUsd: 100, marketId: "multiply-1", timestamp: now + 2 }),
+        event(context, "borrow_product", "borrow", "borrow_opened", {
+          amountUsd: 100,
+          marketId: "borrow-1",
+          timestamp: now + 1,
+        }),
+        event(context, "multiply_product", "multiply", "multiply_opened", {
+          amountUsd: 100,
+          marketId: "multiply-1",
+          timestamp: now + 2,
+        }),
       ]
     case "use-curve-position":
       return [event(context, "curve_tour", "borrow", "sandbox_tour_completed", { marketId: "curve-sandbox-tour" })]
     case "use-uniswap-v4-position":
-      return [event(context, "uni_v4_tour", "borrow", "sandbox_tour_completed", { marketId: "uniswap-v4-sandbox-tour" })]
+      return [
+        event(context, "uni_v4_tour", "borrow", "sandbox_tour_completed", { marketId: "uniswap-v4-sandbox-tour" }),
+      ]
     case "maintain-hf-above-2":
       return []
     case "keep-multiply-safe":
@@ -126,8 +155,16 @@ function buildChallengeCompletionEvents(taskId: string, context: CompletionConte
     case "grow-portfolio-10k":
       return [
         event(context, "grow_lend", "lend", "lend_deposited", { amountUsd: 400, marketId: "gho", timestamp: now }),
-        event(context, "grow_borrow", "borrow", "borrow_opened", { amountUsd: 300, marketId: "borrow-1", timestamp: now + 1 }),
-        event(context, "grow_multiply", "multiply", "multiply_opened", { amountUsd: 350, marketId: "multiply-1", timestamp: now + 2 }),
+        event(context, "grow_borrow", "borrow", "borrow_opened", {
+          amountUsd: 300,
+          marketId: "borrow-1",
+          timestamp: now + 1,
+        }),
+        event(context, "grow_multiply", "multiply", "multiply_opened", {
+          amountUsd: 350,
+          marketId: "multiply-1",
+          timestamp: now + 2,
+        }),
       ]
     case "open-8-active-positions":
       return Array.from({ length: 3 }, (_, index) => {
@@ -212,11 +249,7 @@ function buildReferralCompletionEvents(taskId: string, context: CompletionContex
   }
 }
 
-export function buildSandboxCompletionEvents(
-  taskId: string,
-  wallet: string,
-  now = Date.now(),
-): RewardActivityEvent[] {
+export function buildSandboxCompletionEvents(taskId: string, wallet: string, now = Date.now()): RewardActivityEvent[] {
   const context: CompletionContext = { wallet, now }
   const task = buildDefaultRewardsCatalog(now).find((entry) => entry.id === taskId)
   if (!task) return []

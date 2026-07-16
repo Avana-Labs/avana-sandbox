@@ -1,9 +1,34 @@
 import { describe, expect, it } from "vitest"
-import { buildLendStrategyBuckets, buildPortfolioLendData } from "@/app/lib/lend-system/read-model"
+import { buildLendPageData, buildLendStrategyBuckets, buildPortfolioLendData } from "@/app/lib/lend-system/read-model"
+import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { buildMockLendSystemState } from "@/app/lib/lend-system/mock"
 import { WALLET_STRATEGY_BUCKETS } from "@/app/lib/data/mock/wallet/portfolio/strategies"
 
 describe("buildLendStrategyBuckets", () => {
+  it("labels markets without incentive APY as having no rewards", () => {
+    const state = buildMockLendSystemState("demo-wallet")
+    const market = Object.values(state.markets).find((entry) => entry.rewardsApy === 0)!
+
+    const page = buildLendPageData("demo-wallet", state)
+    const row = page.marketRows.find((entry) => entry.marketId === market.marketId)
+
+    expect(row?.rewardsApyLabel).toBe("No rewards")
+  })
+
+  it("uses live market balances in catalog rows and preserves positive dust", () => {
+    const state = buildMockLendSystemState("demo-wallet")
+    const market = Object.values(state.markets)[0]!
+    market.totalSupplied = 123.45
+    market.availableLiquidity = 0.005 / market.assetPriceUsd
+
+    const page = buildLendPageData("demo-wallet", state)
+    const row = page.assetGroups.flatMap((group) => group.rows).find((entry) => entry.symbol === market.asset.symbol)
+
+    expect(row?.totalDepositsLabel).toBe(`123.45 ${market.asset.symbol}`)
+    expect(row?.totalDepositsSecondaryLabel).toBe(formatCompactUsd(123.45 * market.assetPriceUsd))
+    expect(row?.availableLiquidityLabel).toBe(`<0.01 ${market.asset.symbol}`)
+    expect(row?.availableLiquiditySecondaryLabel).toBe("<$0.01")
+  })
   it("derives opportunity buckets from the live markets, not the static catalog", () => {
     const markets = Object.values(buildMockLendSystemState("demo-wallet").markets)
     const buckets = buildLendStrategyBuckets(markets)
@@ -40,8 +65,7 @@ describe("buildLendStrategyBuckets", () => {
       const apys = bucket.pools.map((pool) => pool.apyPct)
       const min = Math.min(...apys)
       const max = Math.max(...apys)
-      const expected =
-        min === max ? `${max.toFixed(1)}% APY` : `${min.toFixed(1)}-${max.toFixed(1)}% APY range`
+      const expected = min === max ? `${max.toFixed(1)}% APY` : `${min.toFixed(1)}-${max.toFixed(1)}% APY range`
       expect(bucket.apyRangeLabel).toBe(expected)
     }
   })
@@ -80,6 +104,6 @@ describe("buildLendStrategyBuckets", () => {
     // The figure is the annualized run-rate divided by 365 — a projection, so it is
     // non-zero even though the seconds-old position has accrued nothing yet.
     expect(seeded!.earnedUsd).toBe(0)
-    expect(seeded!.dailyEarnedUsd).toBeCloseTo((seeded!.suppliedUsd * (market.totalApy)) / 365, 6)
+    expect(seeded!.dailyEarnedUsd).toBeCloseTo((seeded!.suppliedUsd * market.totalApy) / 365, 6)
   })
 })

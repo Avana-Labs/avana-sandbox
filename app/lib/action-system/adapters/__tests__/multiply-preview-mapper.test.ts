@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  mapClosePreviewToActionUi,
   mapDeleveragePreviewToActionUi,
   mapMultiplyPreviewToActionUi,
 } from "@/app/lib/action-system/adapters/multiply-preview-mapper"
@@ -20,6 +21,18 @@ describe("multiply preview mappers", () => {
       multiplier: 2.5,
       maxLtv: 0.8,
     })
+
+    expect(ui.quoteId).toBe(preview.intent.id)
+    expect(ui.loopCount).toBe(2)
+    expect(ui.executionSteps?.map((step) => step.label)).toEqual([
+      "Supply initial collateral",
+      "Loop 1: Borrow",
+      "Loop 1: Swap to collateral",
+      "Loop 1: Resupply collateral",
+      "Loop 2: Borrow",
+      "Loop 2: Swap to collateral",
+      "Loop 2: Resupply collateral",
+    ])
 
     expect(ui.marketBreakdown).toEqual({
       collateral: { symbol: "WETH", apy: "3.82%" },
@@ -85,5 +98,23 @@ describe("multiply preview mappers", () => {
     expect(ui.amountLabel).toBe("1.50x WETH")
     expect(ui.amountValue).toBe("1.50x")
     expect(ui.assetSymbol).toBe("WETH")
+  })
+
+  it("maps a full close into an explicit unwind receipt", () => {
+    const ui = mapClosePreviewToActionUi(preview, {
+      marketLabel: "WETH · USDC",
+      collateralSymbol: "WETH",
+    })
+
+    expect(ui.amountLabel).toBe("Full close WETH")
+    expect(ui.rateLabel).toBe("Final withdrawal")
+    expect(ui.metrics.map((row) => row.label)).toEqual([
+      "Debt repaid",
+      "Collateral unwound",
+      "Estimated swap loss",
+      "Minimum received",
+      "Remaining dust",
+    ])
+    expect(ui.metrics.find((row) => row.id === "remaining-dust")?.value).toBe("$0.00")
   })
 })

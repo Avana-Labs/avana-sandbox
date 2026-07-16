@@ -6,10 +6,10 @@ import { useAmountDisplayPreferences } from "@/app/components/display-preference
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
-import { CurrentLtvCard, DebtsPanel } from "@/app/dashboard/components/borrow-tab/debts-table"
-import { SuppliesHealthFactorCard, SuppliesPanel } from "@/app/dashboard/components/borrow-tab/supplies-table"
-import { CollateralPositionsPanel } from "@/app/dashboard/components/borrow-tab/collateral-positions-panel"
-import { DebtPositionsPanel } from "@/app/dashboard/components/borrow-tab/debt-positions-panel"
+import { CurrentLtvCard, DebtsPanel } from "@/app/portfolio/borrow-tab/debts-table"
+import { SuppliesHealthFactorCard, SuppliesPanel } from "@/app/portfolio/borrow-tab/supplies-table"
+import { CollateralPositionsPanel } from "@/app/portfolio/borrow-tab/collateral-positions-panel"
+import { DebtPositionsPanel } from "@/app/portfolio/borrow-tab/debt-positions-panel"
 
 // Aggregate wallet-wide health factor: total liquidation value / total debt — the same
 // definition used by the hero (map-portfolio-page / selectWalletBorrowSnapshot), rather
@@ -112,7 +112,11 @@ export function DashboardBorrowTab({
           {showSummary ? (
             <div className="grid gap-4 xl:grid-cols-2">
               <SuppliesHealthFactorCard averageHealthFactor={supplyTotals.averageHf} showBalance={showDollarAmounts} />
-              <CurrentLtvCard borrowedUsd={debtTotals.totalBorrowed} collateralUsd={debtTotals.totalCollateral} showBalance={showDollarAmounts} />
+              <CurrentLtvCard
+                borrowedUsd={debtTotals.totalBorrowed}
+                collateralUsd={debtTotals.totalCollateral}
+                showBalance={showDollarAmounts}
+              />
             </div>
           ) : null}
 
@@ -121,11 +125,15 @@ export function DashboardBorrowTab({
               and expandable opportunities. */}
           <div className="space-y-10">
             <div>
-              <h3 className="mb-4 text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{t("Collateral Positions")}</h3>
+              <h3 className="mb-4 text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">
+                {t("Collateral Positions")}
+              </h3>
               <CollateralPositionsPanel showBalance={showDollarAmounts} returnHref={returnHref} />
             </div>
             <div>
-              <h3 className="mb-4 text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{t("Debt Positions")}</h3>
+              <h3 className="mb-4 text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">
+                {t("Debt Positions")}
+              </h3>
               <DebtPositionsPanel showBalance={showDollarAmounts} returnHref={returnHref} />
             </div>
           </div>

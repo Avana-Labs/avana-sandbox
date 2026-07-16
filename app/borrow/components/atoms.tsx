@@ -13,7 +13,7 @@ const BUBBLE_DIMENSIONS: Record<TokenBubbleSize, { box: string; text: string; px
   xs: { box: "size-4", text: "text-[7px]", px: 16 },
   sm: { box: "size-5", text: "text-[8px]", px: 20 },
   md: { box: "size-7", text: "text-[9px]", px: 28 },
-  table: { box: "size-10", text: "text-[11px]", px: TOKEN_ICON_TABLE_PX },
+  table: { box: "size-12", text: "text-[12px]", px: TOKEN_ICON_TABLE_PX },
   lg: { box: "size-9", text: "text-[10px]", px: 36 },
   xl: { box: "size-11", text: "text-[11px]", px: 44 },
 }
@@ -89,9 +89,7 @@ export function TokenPairCell({
       </div>
       <div className="min-w-0">
         <div className={cn("font-medium leading-tight text-foreground", nameCls)}>{name}</div>
-        {subtitle ? (
-          <div className={cn("mt-0.5 truncate text-muted-foreground", subtitleCls)}>{subtitle}</div>
-        ) : null}
+        {subtitle ? <div className={cn("mt-0.5 truncate text-muted-foreground", subtitleCls)}>{subtitle}</div> : null}
       </div>
     </div>
   )
@@ -116,15 +114,23 @@ export function TokenSingleCell({
       <TokenBubble visual={visual} size={bubbleSize} />
       <div className="min-w-0">
         <div className={cn("font-medium leading-tight text-foreground", nameCls)}>{name}</div>
-        {subtitle ? (
-          <div className={cn("mt-0.5 truncate text-muted-foreground", subtitleCls)}>{subtitle}</div>
-        ) : null}
+        {subtitle ? <div className={cn("mt-0.5 truncate text-muted-foreground", subtitleCls)}>{subtitle}</div> : null}
       </div>
     </div>
   )
 }
 
-export function SpokeDot({ spoke, label, withLabel = true, className }: { spoke: BorrowSpoke; label?: string; withLabel?: boolean; className?: string }) {
+export function SpokeDot({
+  spoke,
+  label,
+  withLabel = true,
+  className,
+}: {
+  spoke: BorrowSpoke
+  label?: string
+  withLabel?: boolean
+  className?: string
+}) {
   return (
     <span className={cn("inline-flex items-center gap-1.5", className)}>
       <span className={cn("size-1.5 shrink-0 rounded-full", spoke.dotClass)} aria-hidden />
@@ -283,7 +289,13 @@ export function StatsStrip({ items }: { items: Array<{ label: string; value: str
 
 export function SpokeTag({ spoke }: { spoke: BorrowSpoke }) {
   return (
-    <span className={cn("inline-flex items-center gap-1.5 rounded-xs px-1.5 py-0.5 text-[11px] font-medium", spoke.pillBgClass, spoke.pillTextClass)}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-xs px-1.5 py-0.5 text-[11px] font-medium",
+        spoke.pillBgClass,
+        spoke.pillTextClass,
+      )}
+    >
       <span className={cn("size-1.5 rounded-full", spoke.dotClass)} aria-hidden />
       {spoke.label}
     </span>

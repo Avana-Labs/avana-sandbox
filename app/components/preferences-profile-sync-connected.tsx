@@ -52,11 +52,13 @@ function serializePreferences(preferences: StoredPreferences): string {
 
 export function PreferencesProfileSyncConnected({ wallet }: { wallet: string }) {
   const { theme, setTheme } = useTheme()
-  const { language, setLanguage, currency, setCurrency, showDollarAmounts, setShowDollarAmounts } = useDisplayPreferences()
+  const { language, setLanguage, currency, setCurrency, showDollarAmounts, setShowDollarAmounts } =
+    useDisplayPreferences()
   const state = useQuery(api.sandbox.onboarding.getWalletOnboardingState, { wallet }) as
-    | { profile?: { preferences?: StoredPreferences } }
-    | undefined
-  const savePreferences = useMutation((api as typeof api & { sandbox: { onboarding: { savePreferences: unknown } } }).sandbox.onboarding.savePreferences)
+    { profile?: { preferences?: StoredPreferences } } | undefined
+  const savePreferences = useMutation(
+    (api as typeof api & { sandbox: { onboarding: { savePreferences: unknown } } }).sandbox.onboarding.savePreferences,
+  )
   const initializedWalletRef = useRef<string | null>(null)
   const lastSavedKeyRef = useRef<string | null>(null)
 
@@ -82,7 +84,19 @@ export function PreferencesProfileSyncConnected({ wallet }: { wallet: string }) 
       })
     }
     initializedWalletRef.current = wallet
-  }, [currency, language, savePreferences, setCurrency, setLanguage, setShowDollarAmounts, setTheme, showDollarAmounts, state, theme, wallet])
+  }, [
+    currency,
+    language,
+    savePreferences,
+    setCurrency,
+    setLanguage,
+    setShowDollarAmounts,
+    setTheme,
+    showDollarAmounts,
+    state,
+    theme,
+    wallet,
+  ])
 
   useEffect(() => {
     if (initializedWalletRef.current !== wallet) return

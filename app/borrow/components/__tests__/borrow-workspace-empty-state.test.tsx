@@ -19,7 +19,13 @@ const market = {
   riskPremiumBps: 25,
   visuals: [
     { symbol: "WETH", shortLabel: "WETH", bgClassName: "bg-black", textClassName: "text-white", iconUrl: "/weth.svg" },
-    { symbol: "USDC", shortLabel: "USDC", bgClassName: "bg-blue-500", textClassName: "text-white", iconUrl: "/usdc.svg" },
+    {
+      symbol: "USDC",
+      shortLabel: "USDC",
+      bgClassName: "bg-blue-500",
+      textClassName: "text-white",
+      iconUrl: "/usdc.svg",
+    },
   ],
   collateralExampleUsd: 12000,
   trendUp: true,
@@ -54,11 +60,7 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
 // Expose the real search callback so the test can drive the page-local search.
 vi.mock("@/app/borrow/components/tabs-bar", () => ({
   TabsBar: ({ search, onSearchChange }: { search: string; onSearchChange: (v: string) => void }) => (
-    <input
-      aria-label="market-search"
-      value={search}
-      onChange={(event) => onSearchChange(event.target.value)}
-    />
+    <input aria-label="market-search" value={search} onChange={(event) => onSearchChange(event.target.value)} />
   ),
   isPoolTab: () => true,
 }))

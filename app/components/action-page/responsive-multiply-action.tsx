@@ -20,7 +20,14 @@ export function ResponsiveMultiplyAction({
   initialMultiplier?: string
 }) {
   return (
-    <ResponsiveDetailAction product="multiply" kind={kind} market={market} closeHref={closeHref} label={label} sidebar={sidebar}>
+    <ResponsiveDetailAction
+      product="multiply"
+      kind={kind}
+      market={market}
+      closeHref={closeHref}
+      label={label}
+      sidebar={sidebar}
+    >
       <MultiplyActionPageClient
         kind={kind}
         embedded

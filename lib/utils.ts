@@ -14,4 +14,3 @@ export function cn(...inputs: ClassValue[]) {
 export const formatNumber = (number: number): string => {
   return Intl.NumberFormat().format(number)
 }
-

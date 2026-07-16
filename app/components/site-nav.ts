@@ -1,5 +1,5 @@
-import type { LucideIcon } from "lucide-react"
-import { Gift, LayoutGrid } from "lucide-react"
+import type { LucideIcon } from "@/app/components/icons"
+import { PieChart } from "@/app/components/icons"
 
 export type DesktopHeaderLink = {
   href: string
@@ -13,6 +13,5 @@ export const personalDesktopHeaderLinks: DesktopHeaderLink[] = [
   { href: "/lend", label: "Lend" },
   { href: "/borrow", label: "Borrow" },
   { href: "/multiply", label: "Multiply" },
-  { href: "/dashboard", label: "Dashboard", icon: LayoutGrid },
-  { href: "/rewards", label: "Rewards", icon: Gift },
+  { href: "/portfolio", label: "Portfolio", icon: PieChart },
 ]

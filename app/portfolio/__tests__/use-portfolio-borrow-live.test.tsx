@@ -7,12 +7,26 @@ describe("usePortfolioBorrowLive", () => {
     const readPortfolioBorrow = vi
       .fn()
       .mockResolvedValueOnce({
-        creditLines: { approvedUsd: 100, liquidationThresholdUsd: 80, averageHealthFactor: 2, currentLtvPct: 40, totalBorrowedUsd: 50, totalCollateralUsd: 100 },
+        creditLines: {
+          approvedUsd: 100,
+          liquidationThresholdUsd: 80,
+          averageHealthFactor: 2,
+          currentLtvPct: 40,
+          totalBorrowedUsd: 50,
+          totalCollateralUsd: 100,
+        },
         collateralPositions: [],
         debtPositions: [],
       })
       .mockResolvedValueOnce({
-        creditLines: { approvedUsd: 200, liquidationThresholdUsd: 160, averageHealthFactor: 2.5, currentLtvPct: 30, totalBorrowedUsd: 75, totalCollateralUsd: 250 },
+        creditLines: {
+          approvedUsd: 200,
+          liquidationThresholdUsd: 160,
+          averageHealthFactor: 2.5,
+          currentLtvPct: 30,
+          totalBorrowedUsd: 75,
+          totalCollateralUsd: 250,
+        },
         collateralPositions: [],
         debtPositions: [],
       })
@@ -23,10 +37,9 @@ describe("usePortfolioBorrowLive", () => {
       transactionHistory: [] as unknown[],
     }
 
-    const { result, rerender } = renderHook(
-      ({ session }) => usePortfolioBorrowLive("demo-wallet", session),
-      { initialProps: { session: borrowSession } },
-    )
+    const { result, rerender } = renderHook(({ session }) => usePortfolioBorrowLive("demo-wallet", session), {
+      initialProps: { session: borrowSession },
+    })
 
     await waitFor(() => expect(result.current?.creditLines.approvedUsd).toBe(100))
     expect(readPortfolioBorrow).toHaveBeenCalledTimes(1)
@@ -46,14 +59,50 @@ describe("usePortfolioBorrowLive", () => {
     const readPortfolioBorrow = vi
       .fn()
       .mockResolvedValueOnce({
-        creditLines: { approvedUsd: 100, liquidationThresholdUsd: 80, averageHealthFactor: 2, currentLtvPct: 40, totalBorrowedUsd: 50, totalCollateralUsd: 100 },
+        creditLines: {
+          approvedUsd: 100,
+          liquidationThresholdUsd: 80,
+          averageHealthFactor: 2,
+          currentLtvPct: 40,
+          totalBorrowedUsd: 50,
+          totalCollateralUsd: 100,
+        },
         collateralPositions: [],
-        debtPositions: [{ id: "debt-a", pool: { id: "pool-a" }, borrowedUsd: 50, liquidationThresholdUsd: 0, healthFactor: 2, borrowApr: 4, accruedInterestUsd: 0, dailyInterestUsd: 0 }],
+        debtPositions: [
+          {
+            id: "debt-a",
+            pool: { id: "pool-a" },
+            borrowedUsd: 50,
+            liquidationThresholdUsd: 0,
+            healthFactor: 2,
+            borrowApr: 4,
+            accruedInterestUsd: 0,
+            dailyInterestUsd: 0,
+          },
+        ],
       })
       .mockResolvedValueOnce({
-        creditLines: { approvedUsd: 100, liquidationThresholdUsd: 80, averageHealthFactor: 1.7, currentLtvPct: 60, totalBorrowedUsd: 300, totalCollateralUsd: 100 },
+        creditLines: {
+          approvedUsd: 100,
+          liquidationThresholdUsd: 80,
+          averageHealthFactor: 1.7,
+          currentLtvPct: 60,
+          totalBorrowedUsd: 300,
+          totalCollateralUsd: 100,
+        },
         collateralPositions: [],
-        debtPositions: [{ id: "debt-a", pool: { id: "pool-a" }, borrowedUsd: 300, liquidationThresholdUsd: 0, healthFactor: 1.7, borrowApr: 4, accruedInterestUsd: 0, dailyInterestUsd: 0 }],
+        debtPositions: [
+          {
+            id: "debt-a",
+            pool: { id: "pool-a" },
+            borrowedUsd: 300,
+            liquidationThresholdUsd: 0,
+            healthFactor: 1.7,
+            borrowApr: 4,
+            accruedInterestUsd: 0,
+            dailyInterestUsd: 0,
+          },
+        ],
       })
 
     const borrowSession = {
@@ -62,10 +111,9 @@ describe("usePortfolioBorrowLive", () => {
       transactionHistory: [] as unknown[],
     }
 
-    const { result, rerender } = renderHook(
-      ({ session }) => usePortfolioBorrowLive("demo-wallet", session),
-      { initialProps: { session: borrowSession } },
-    )
+    const { result, rerender } = renderHook(({ session }) => usePortfolioBorrowLive("demo-wallet", session), {
+      initialProps: { session: borrowSession },
+    })
 
     await waitFor(() => expect(result.current?.debtPositions[0]?.borrowedUsd).toBe(50))
 

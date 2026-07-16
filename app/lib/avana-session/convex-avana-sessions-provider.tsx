@@ -85,7 +85,11 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
 
   const persistBorrowTransaction = useCallback(
     async (result: SandboxActionResult) => {
-      const { args, key } = withExpectedRevision(borrowResultToRecordArgs(result, walletId), "borrow", revisionByKeyRef.current)
+      const { args, key } = withExpectedRevision(
+        borrowResultToRecordArgs(result, walletId),
+        "borrow",
+        revisionByKeyRef.current,
+      )
       const persisted = await recordTransaction(args)
       if (persisted.revision != null) seedRevisionFromReceipt(revisionByKeyRef.current, key, persisted.revision)
       else advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
@@ -101,7 +105,11 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
   )
   const persistLendTransaction = useCallback(
     async (result: LendSandboxActionResult): Promise<LendTransactionResult> => {
-      const { args, key } = withExpectedRevision(lendResultToRecordArgs(result, walletId), "lend", revisionByKeyRef.current)
+      const { args, key } = withExpectedRevision(
+        lendResultToRecordArgs(result, walletId),
+        "lend",
+        revisionByKeyRef.current,
+      )
       const persisted = await recordTransaction(args)
       if (persisted.revision != null) seedRevisionFromReceipt(revisionByKeyRef.current, key, persisted.revision)
       else advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
@@ -118,7 +126,11 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
   )
   const persistMultiplyTransaction = useCallback(
     async (result: MultiplySandboxActionResult): Promise<MultiplyTransactionResult> => {
-      const { args, key } = withExpectedRevision(multiplyResultToRecordArgs(result, walletId), "multiply", revisionByKeyRef.current)
+      const { args, key } = withExpectedRevision(
+        multiplyResultToRecordArgs(result, walletId),
+        "multiply",
+        revisionByKeyRef.current,
+      )
       const persisted = await recordTransaction(args)
       if (persisted.revision != null) seedRevisionFromReceipt(revisionByKeyRef.current, key, persisted.revision)
       else advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)

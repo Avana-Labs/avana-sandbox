@@ -1,96 +1,224 @@
 "use client"
 
+import { useState, type ReactNode } from "react"
+import dynamic from "next/dynamic"
 import Image from "next/image"
-import { Info } from "lucide-react"
-import { HeroMarketCard } from "@/app/borrow/borrow-hero-market-card"
-import { Progress } from "@/components/ui/progress"
+import Link from "next/link"
+import { CircleDollarSign, Eye, EyeOff, Info } from "@/app/components/icons"
+import { Button } from "@/components/ui/button"
+import { HeroBalanceDisplay } from "@/app/components/charts/hero-balance-display"
+import { formatChartValue, type ChartPoint } from "@/app/components/charts"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import type { RewardsHeroPoolRow } from "@/app/lib/data/providers/rewards"
-import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/language-html-lang"
 
-function formatBalanceAmount(value: number, locale: string) {
-  return value.toLocaleString(locale, { maximumFractionDigits: 0 })
+const HeroAreaChart = dynamic(
+  () => import("@/app/components/charts/hero-area-chart").then((mod) => mod.HeroAreaChart),
+  {
+    ssr: false,
+    loading: () => <div aria-hidden className="h-[128px] w-full" />,
+  },
+)
+
+// TODO(backend): wire these to the user's real Avana balance (mirrors the portfolio hero).
+const AVANA_BALANCE = "$14,400.00"
+const AVANA_BALANCE_DELTA = "-$312.96 (-3.80%)"
+
+// TODO(backend): wire these to real fee accrual once fees ship.
+const TOTAL_FEES_EARNED = "$0"
+const CLAIMABLE_FEES = "$0"
+
+const PORTFOLIO_TIME_LABELS = ["6:00 AM", "9:00 AM", "12:00 PM", "3:00 PM", "6:00 PM", "9:00 PM", "Now"]
+
+function seededRandom(seed: number): () => number {
+  let state = seed % 2147483647
+  if (state <= 0) state += 2147483646
+  return () => {
+    state = (state * 16807) % 2147483647
+    return (state - 1) / 2147483646
+  }
 }
 
-export function RewardsBalanceHero({
-  rewardPools,
-  balanceTotal,
-  completedCount,
-  totalCount,
-  progressPercentage,
+/**
+ * Deterministic, rich-looking portfolio-value series for the balance chart.
+ * A mean-reverting walk that drifts from ~$14,968 down to exactly $14,400 (the
+ * headline), so the resting -3.80% delta and the red trend line agree. Seeded so
+ * SSR and the client render the identical path — no hydration mismatch.
+ * TODO(backend): replace with the wallet's real balance history.
+ */
+function buildPortfolioSeries(): ChartPoint[] {
+  const COUNT = 64
+  const start = 14_968.8
+  const end = 14_400
+  const random = seededRandom(20_260_716)
+  const values: number[] = []
+  let value = start
+  let velocity = 0
+  for (let index = 0; index < COUNT; index += 1) {
+    const progress = index / (COUNT - 1)
+    const target = start + (end - start) * progress
+    const meanReversion = (target - value) * 0.12
+    velocity = velocity * 0.78 + meanReversion + (random() - 0.5) * start * 0.006
+    value += velocity
+    values.push(Math.round(value * 100) / 100)
+  }
+  // Pin the endpoints so the first/last points anchor the delta and headline.
+  values[0] = start
+  values[COUNT - 1] = end
+  return values.map((point, index) => ({
+    time: index,
+    value: point,
+    label: PORTFOLIO_TIME_LABELS[Math.round((index / (COUNT - 1)) * (PORTFOLIO_TIME_LABELS.length - 1))],
+  }))
+}
+
+const PORTFOLIO_SERIES = buildPortfolioSeries()
+
+function AvanaCoin() {
+  return (
+    <div
+      className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand ring-1 ring-brand/20"
+      aria-hidden
+    >
+      <Image
+        src="/avana-icon.png"
+        alt=""
+        width={38}
+        height={38}
+        className="h-[38px] w-[38px] scale-[1.68] object-contain brightness-0 invert"
+        priority
+      />
+    </div>
+  )
+}
+
+function FeeCard({
+  label,
+  value,
+  hidden,
+  action,
 }: {
-  rewardPools: RewardsHeroPoolRow[]
-  balanceTotal: number
-  completedCount: number
-  totalCount: number
-  progressPercentage: number
+  label: string
+  value: string
+  hidden: boolean
+  action?: ReactNode
 }) {
-  const { t, language } = useTranslation()
-  const locale = LANGUAGE_HTML_LANG[language] ?? "en"
+  return (
+    <div className="rounded-radius-md border-0 bg-card px-4 py-4">
+      <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+        {label}
+        <Info className="h-3 w-3" />
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <AvanaCoin />
+          <span className="truncate text-[24px] font-normal leading-none tracking-[-0.03em] text-foreground sm:text-[26px]">
+            {hidden ? "••••" : value}
+          </span>
+        </div>
+        {action}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * The rewards cards (Total Rewards earned / Claimable Rewards + Claim Rewards).
+ * Rendered as the hero's right column on desktop and inline near the bottom of
+ * the page on mobile, so it's reachable on small screens too.
+ */
+export function PortfolioRewardsCards({ claimHref }: { claimHref?: string }) {
+  const { t } = useTranslation()
   const { showDollarAmounts } = useAmountDisplayPreferences()
+  return (
+    <section className="min-w-0 space-y-3">
+      <FeeCard label={t("Total Rewards earned")} value={TOTAL_FEES_EARNED} hidden={!showDollarAmounts} />
+      <FeeCard
+        label={t("Claimable Rewards")}
+        value={CLAIMABLE_FEES}
+        hidden={!showDollarAmounts}
+        action={
+          claimHref ? (
+            <Button asChild size="sm" className="shrink-0 gap-1.5">
+              <Link href={claimHref}>
+                <CircleDollarSign className="size-4" />
+                {t("Claim Rewards")}
+              </Link>
+            </Button>
+          ) : (
+            <Button type="button" size="sm" disabled className="shrink-0 gap-1.5">
+              <CircleDollarSign className="size-4" />
+              {t("Claim Rewards")}
+            </Button>
+          )
+        }
+      />
+    </section>
+  )
+}
+
+export function RewardsBalanceHero({ claimHref }: { claimHref?: string }) {
+  const { t } = useTranslation()
+  const { showDollarAmounts, toggleShowDollarAmounts } = useAmountDisplayPreferences()
+  // The headline follows the cursor across the chart, mirroring the detail heroes.
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null)
+  const hoverPoint = hoverIndex != null ? PORTFOLIO_SERIES[hoverIndex] : null
+
+  const firstValue = PORTFOLIO_SERIES[0]?.value ?? 0
+  const hoverPct = hoverPoint && firstValue ? ((hoverPoint.value - firstValue) / firstValue) * 100 : 0
+  const balanceValue = hoverPoint ? formatChartValue("usd", hoverPoint.value) : AVANA_BALANCE
+  const balanceDelta = hoverPoint ? `${Math.abs(hoverPct).toFixed(2)}%` : AVANA_BALANCE_DELTA
+  const balanceMeta = hoverPoint ? hoverPoint.label : undefined
+  const balanceTone: "positive" | "negative" = hoverPoint ? (hoverPct >= 0 ? "positive" : "negative") : "negative"
 
   return (
-    <div className="mb-6 grid gap-5 md:mb-8 md:gap-7 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] xl:items-start">
-      <section className="relative overflow-hidden rounded-radius-md border-0 bg-card px-4 py-4 sm:px-5 md:min-h-[174px]">
+    <div className="mb-6 grid gap-5 md:mb-8 md:gap-7 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] lg:items-start">
+      <section className="relative overflow-hidden rounded-radius-md border-0 bg-card px-4 py-4 sm:px-5">
         <div className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle,rgba(148,163,184,0.16)_1px,transparent_1.2px)] [background-position:18px_18px] [background-size:16px_16px] dark:opacity-35 dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.1)_1px,transparent_1.2px)]" />
-        <div className="pointer-events-none absolute inset-y-0 -right-12 flex items-center md:-right-20">
-          <div
-            aria-hidden="true"
-            className="size-48 bg-contain bg-center bg-no-repeat opacity-[0.08] brightness-0 dark:invert dark:opacity-[0.06] sm:size-64 md:size-[20rem] md:opacity-[0.09] md:dark:opacity-[0.07]"
-            style={{ backgroundImage: "url('/avana-icon.png')" }}
-          />
-        </div>
 
-        <div className="relative flex flex-col gap-4 md:min-h-[142px] md:justify-between">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <span className="text-[24px] font-normal leading-none tracking-[-0.03em] text-foreground sm:text-[28px] md:text-[30px]">
-                  {showDollarAmounts ? formatBalanceAmount(balanceTotal, locale) : "••••••••"}
-                  <span className="ml-2 align-middle text-[0.78em]">AVA</span>
-                </span>
-
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand ring-1 ring-brand/20" aria-hidden>
-                  <Image
-                    src="/avana-icon.png"
-                    alt=""
-                    width={38}
-                    height={38}
-                    className="h-[38px] w-[38px] scale-[1.68] object-contain brightness-0 invert"
-                    priority
-                  />
-                </div>
-              </div>
-
-              <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-normal tracking-[0.14em] text-muted-foreground">
-                <span className="inline-flex items-center gap-1.5">
-                  {t("AVA balance")}
-                  <Info className="h-3 w-3" />
-                </span>
-              </div>
-            </div>
+        <div className="relative flex flex-col gap-3">
+          <div className="min-w-0">
+            <span className="sr-only">{t("AVA balance")}</span>
+            <HeroBalanceDisplay
+              value={balanceValue}
+              delta={balanceDelta}
+              deltaTone={balanceTone}
+              meta={balanceMeta}
+              hidden={!showDollarAmounts}
+              valueSuffix={
+                <button
+                  type="button"
+                  onClick={toggleShowDollarAmounts}
+                  aria-label={t("Dollar amounts")}
+                  aria-pressed={showDollarAmounts}
+                  className="inline-flex shrink-0 items-center text-brand-readable transition-opacity hover:opacity-80"
+                >
+                  {showDollarAmounts ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
+                </button>
+              }
+            />
           </div>
 
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-[11px] font-normal uppercase tracking-[0.14em] text-muted-foreground">
-                {t("Your progress")}
-              </span>
-              <span className="text-[11px] font-normal text-muted-foreground">
-                {t("{completed}/{total} completed")
-                  .replace("{completed}", String(completedCount))
-                  .replace("{total}", String(totalCount))}
-              </span>
-            </div>
-            <Progress value={progressPercentage} className="h-1.5" aria-label={t("Overall quest completion progress")} />
+          {/* Height tuned so the card bottom aligns with the right column's fee cards. */}
+          <div className="-mx-4 -mb-4 mt-1 sm:-mx-5">
+            <HeroAreaChart
+              data={PORTFOLIO_SERIES}
+              activeRange="1D"
+              height={116}
+              gradientId="rewardsBalanceFill"
+              className="relative w-full"
+              tone={balanceTone}
+              formatValue={(v) => (showDollarAmounts ? formatChartValue("usd", v) : "••••")}
+              onActiveIndexChange={setHoverIndex}
+            />
           </div>
         </div>
       </section>
 
-      <section className="hidden min-w-0 md:block">
-        <HeroMarketCard title={t("Rewards Pools")} rows={rewardPools} />
-      </section>
+      {/* Desktop: rewards cards as the hero's right column. On mobile they render
+          near the bottom of the page instead (see the portfolio page). */}
+      <div className="hidden lg:block">
+        <PortfolioRewardsCards claimHref={claimHref} />
+      </div>
     </div>
   )
 }

@@ -90,7 +90,8 @@ export function selectPortfolioDebtRows(state: BorrowSystemState, walletId: stri
     const asset = state.assets[position.assetId]
     const borrowRateWad =
       asset != null
-        ? asset.borrowConfig.baseBorrowAprWad + calculateSpokeCreditMetrics(state, walletId, position.spokeId).riskPremiumWad
+        ? asset.borrowConfig.baseBorrowAprWad +
+          calculateSpokeCreditMetrics(state, walletId, position.spokeId).riskPremiumWad
         : position.borrowRateWad
     rows.push({
       id: position.id,
@@ -131,8 +132,7 @@ export function selectBorrowSnapshot(state: BorrowSystemState, walletId: string)
   const spokeBreakdown = ownedSpokes
     .map((spokeId) => {
       const metrics = calculateSpokeCreditMetrics(state, walletId, spokeId)
-      const label =
-        Object.values(state.markets).find((market) => market.spokeId === spokeId)?.display.venue ?? spokeId
+      const label = Object.values(state.markets).find((market) => market.spokeId === spokeId)?.display.venue ?? spokeId
 
       return {
         spokeId,

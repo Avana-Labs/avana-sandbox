@@ -45,7 +45,11 @@ export function HomeActionContextBar({
           </div>
           <div className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium max-[360px]:self-end">
             {pool ? (
-              <ActionTokenPairIcon collateralSymbol={collateralSymbol ?? "LP"} borrowSymbol={borrowSymbol ?? "LP"} size="md" />
+              <ActionTokenPairIcon
+                collateralSymbol={collateralSymbol ?? "LP"}
+                borrowSymbol={borrowSymbol ?? "LP"}
+                size="md"
+              />
             ) : (
               <span>{t("Select Pool")}</span>
             )}

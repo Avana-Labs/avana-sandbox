@@ -5,7 +5,7 @@ const INTERACTION_DELAY_MS = Number(process.env.BROWSER_SOAK_INTERACTION_DELAY_M
 const BASE_URL = process.env.BROWSER_SOAK_BASE_URL ?? "http://localhost:3000"
 const WAIT_UNTIL = process.env.BROWSER_SOAK_WAIT_UNTIL === "domcontentloaded" ? "domcontentloaded" : "load"
 
-const routes = ["/borrow", "/lend", "/multiply", "/dashboard"] as const
+const routes = ["/borrow", "/lend", "/multiply", "/portfolio"] as const
 
 test.describe.configure({ mode: "parallel" })
 
@@ -20,7 +20,7 @@ for (let sessionIndex = 0; sessionIndex < SESSION_COUNT; sessionIndex += 1) {
       await page.waitForTimeout(INTERACTION_DELAY_MS)
     }
 
-    const targetTabName = route === "/multiply" ? "BTC Loops" : route === "/dashboard" ? "1W" : null
+    const targetTabName = route === "/multiply" ? "BTC Loops" : route === "/portfolio" ? "Borrow" : null
     if (targetTabName) {
       const target = page.getByRole("tab", { name: targetTabName, exact: true })
       await target.click()

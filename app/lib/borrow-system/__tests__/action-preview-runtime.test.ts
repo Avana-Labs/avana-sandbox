@@ -26,7 +26,10 @@ describe("action preview runtime", () => {
     })
 
     expect(preview.isValid).toBe(engine.allowed)
-    expect(preview.healthFactor).toBeCloseTo(Number.parseFloat(engine.after.metrics.healthFactorWad?.toString() ?? "0") / 1e18, 2)
+    expect(preview.healthFactor).toBeCloseTo(
+      Number.parseFloat(engine.after.metrics.healthFactorWad?.toString() ?? "0") / 1e18,
+      2,
+    )
   })
 
   it("buildHomeRepayPreview reduces debt in preview metrics", () => {

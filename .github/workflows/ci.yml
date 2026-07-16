@@ -3,6 +3,8 @@ name: CI
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -34,15 +36,72 @@ jobs:
           node -e "require.resolve('@rolldown/binding-linux-x64-gnu')" \
             || npm install --no-save @rolldown/binding-linux-x64-gnu@$(node -p "require('./package.json').optionalDependencies['@rolldown/binding-linux-x64-gnu'] || require('./package-lock.json').packages['node_modules/@rolldown/binding-linux-x64-gnu'].version")
 
+      - name: Format check
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
       - name: Typecheck
         run: npx tsc --noEmit
 
       - name: Unit tests
         run: npm test
 
-# NOTE: The Playwright e2e (app-audit / route-performance) suites are intentionally not
-# run in CI. They drive the authenticated app, which requires a running Convex backend and
-# a signed-in wallet (the onboarding gate blocks unauthenticated routes) — neither of which
-# CI provisions. Run them locally against `npm run dev` (NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1
-# + a SIWE token + a local `npx convex dev`). CI keeps the deterministic gates: typecheck
-# + the full unit/integration suite (`npm test`).
+  e2e-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure rolldown Linux binding
+        run: |
+          node -e "require.resolve('@rolldown/binding-linux-x64-gnu')" \
+            || npm install --no-save @rolldown/binding-linux-x64-gnu@$(node -p "require('./package.json').optionalDependencies['@rolldown/binding-linux-x64-gnu'] || require('./package-lock.json').packages['node_modules/@rolldown/binding-linux-x64-gnu'].version")
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      # Playwright's webServer (playwright.config.ts) boots `npm run dev` with
+      # NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1, which opens the onboarding gate,
+      # injects the test wallet, and serves mock data — so this needs neither a
+      # Convex deployment nor a SIWE token. Scoped to the deterministic specs:
+      #   - portfolio-routing: the portfolio page renders its product account tabs,
+      #     and the old /dashboard and /rewards routes redirect to /portfolio.
+      #   - borrow-detail-routes: every borrow detail route family renders without
+      #     a runtime error (guards the hydration regression fixed in
+      #     responsive-detail-action.tsx).
+      # Both are JSON-import-free (the JSON fixture in action-pages/route-performance
+      # trips Playwright's transform hook) and free of timing/pixel assertions.
+      # onboarding.spec.ts stays out (needs real auth + Convex).
+      - name: E2E smoke (test-mode routes render)
+        run: npx playwright test --project=chromium tests/e2e/portfolio-routing.spec.ts tests/e2e/borrow-detail-routes.spec.ts
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore
+
+# NOTE: CI's required gate is the `test` job — lint + typecheck + the full
+# unit/integration suite (`npm test`) — run on every PR into main and on push to
+# main. `e2e-smoke` is a scoped Playwright smoke (see the step comment) kept as a
+# separate, non-required job for now; promote it to a required check once it has
+# proven stable. The timing/pixel-sensitive e2e suites (route-performance,
+# app-audit) and onboarding.spec.ts remain local-only: they need a running Convex
+# backend and/or a signed-in wallet, which CI does not provision. Run them against
+# `npm run dev` (NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1 + a SIWE token + `npx convex dev`).

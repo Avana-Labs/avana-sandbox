@@ -70,6 +70,11 @@ describe("lend detail contract", () => {
     expect(detail.about.stats.length).toBeGreaterThan(0)
   })
 
+  it("labels a zero incentive APY as no rewards", () => {
+    const detail = getLendMarketDetail("eurc")!
+    expect(detail.quickStats.find((stat) => stat.id === "rewardsApy")?.value).toBe("No rewards")
+  })
+
   it("is deterministic — same id in, same detail out", () => {
     const a = getLendMarketDetail("usdc")!
     const b = getLendMarketDetail("usdc")!

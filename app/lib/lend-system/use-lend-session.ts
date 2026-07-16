@@ -40,6 +40,7 @@ export type ConvexLendWalletData = {
     status: "open" | "closed"
     suppliedUsd6?: string
     earnedUsd6?: string
+    supplyApyPct?: number
     openedAt: number
     lastUpdatedAt: number
   }>
@@ -76,11 +77,12 @@ export function useLendSession({
   const shouldPersistState = persistState ?? adapterMode === "sandbox"
   const seededState = useMemo(() => deserializeLendSystemState(sessionSeed), [sessionSeed])
   const [state, setState] = useState<LendSystemState>(seededState)
-  const [transactionHistory, setTransactionHistory] = useState<LendTransactionHistoryItem[]>(
-    () => (shouldPersistState ? readLendSessionMetadata(walletId).transactionHistory : []),
+  const [hydratedWalletId, setHydratedWalletId] = useState<string | null>(null)
+  const [transactionHistory, setTransactionHistory] = useState<LendTransactionHistoryItem[]>(() =>
+    shouldPersistState ? readLendSessionMetadata(walletId).transactionHistory : [],
   )
-  const [transactionReceipts, setTransactionReceipts] = useState<LendTransactionResult[]>(
-    () => (shouldPersistState ? readLendSessionMetadata(walletId).receipts : []),
+  const [transactionReceipts, setTransactionReceipts] = useState<LendTransactionResult[]>(() =>
+    shouldPersistState ? readLendSessionMetadata(walletId).receipts : [],
   )
   const stateRef = useRef(state)
   stateRef.current = state
@@ -99,6 +101,7 @@ export function useLendSession({
       setState(seededState)
       setTransactionHistory([])
       setTransactionReceipts([])
+      setHydratedWalletId(walletId)
       return
     }
     const nextState = readLendSessionState(walletId, sessionSeed)
@@ -111,6 +114,7 @@ export function useLendSession({
     setState(nextState)
     setTransactionHistory(metadata.transactionHistory)
     setTransactionReceipts(metadata.receipts)
+    setHydratedWalletId(walletId)
   }, [seededState, sessionSeed, shouldPersistState, walletId])
 
   useEffect(() => {
@@ -225,28 +229,22 @@ export function useLendSession({
     }
   }, [shouldPersistState])
 
-  const transactionAdapter = useMemo(
-    () => {
-      if (injectedTransactionAdapter) return injectedTransactionAdapter
-      return new SandboxLendTransactionAdapter({
-        readState: () => stateRef.current,
-        writeState: (nextState) => {
-          stateRef.current = nextState
-          setState(nextState)
-        },
-        persistResult: persistTransaction,
-      })
-    },
-    [injectedTransactionAdapter, persistTransaction],
-  )
+  const transactionAdapter = useMemo(() => {
+    if (injectedTransactionAdapter) return injectedTransactionAdapter
+    return new SandboxLendTransactionAdapter({
+      readState: () => stateRef.current,
+      writeState: (nextState) => {
+        stateRef.current = nextState
+        setState(nextState)
+      },
+      persistResult: persistTransaction,
+    })
+  }, [injectedTransactionAdapter, persistTransaction])
 
-  const readAdapter = useMemo(
-    () => {
-      if (injectedReadAdapter) return injectedReadAdapter
-      return new SandboxLendReadAdapter({ state, transactionHistory })
-    },
-    [injectedReadAdapter, state, transactionHistory],
-  )
+  const readAdapter = useMemo(() => {
+    if (injectedReadAdapter) return injectedReadAdapter
+    return new SandboxLendReadAdapter({ state, transactionHistory })
+  }, [injectedReadAdapter, state, transactionHistory])
 
   const hydrateMarketData = useCallback((snapshots: readonly LendConvexSnapshot[]) => {
     setState((prev) => mergeConvexLendSnapshots(prev, snapshots))
@@ -310,7 +308,10 @@ export function useLendSession({
     [walletId],
   )
 
-  const createIntent = useCallback((action: LendAction) => transactionAdapter.createIntent(action), [transactionAdapter])
+  const createIntent = useCallback(
+    (action: LendAction) => transactionAdapter.createIntent(action),
+    [transactionAdapter],
+  )
 
   const previewTransaction = useCallback(
     (intent: LendTransactionIntent) => transactionAdapter.previewTransaction(intent),
@@ -367,5 +368,6 @@ export function useLendSession({
     claimRewards,
     reset,
     isPending,
+    isHydrated: hydratedWalletId === walletId,
   }
 }

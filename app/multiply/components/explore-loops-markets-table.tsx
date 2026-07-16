@@ -4,7 +4,7 @@ import * as React from "react"
 import { ActionIcon } from "@/app/components/action-icon"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
+import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
   MarketMobileCardHeader,
@@ -23,6 +23,7 @@ import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar"
 import { CATEGORY_CHIPS, categorizeMarket, type CategoryChip } from "@/app/lib/markets/category"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useMediaQuery } from "@/app/lib/use-media-query"
+import { RevealSentinel, useProgressiveReveal } from "@/app/lib/ui/use-progressive-reveal"
 
 const BTC_SYMBOLS = new Set(["WBTC", "CBBTC", "BTC"])
 const ETH_SYMBOLS = new Set(["ETH", "WETH", "STETH", "WSTETH", "RETH", "CBETH", "WEETH"])
@@ -87,7 +88,7 @@ import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from 
 
 type MultiplyCategoryTabId = CategoryChip["id"]
 
-type LoopSortKey = "protocol" | "asset" | "apy" | "rewards" | "points"
+type LoopSortKey = "protocol" | "asset" | "apy" | "rewards" | "cf" | "points"
 
 function parseCompactUsdLabel(value?: string) {
   if (!value) return null
@@ -114,8 +115,21 @@ type ExploreLoopsMarketsTableProps = {
   onOpenMultiply?: (href: string) => void
 }
 
+export function paginateMultiplyRows<T>(rows: readonly T[], page: number, pageSize: number) {
+  const safeSize = Math.max(1, pageSize)
+  const start = Math.max(0, page) * safeSize
+  return rows.slice(start, start + safeSize)
+}
+
+export function isNegativeMultiplyApy(apy?: string) {
+  if (!apy) return false
+  const value = Number.parseFloat(apy.replace(/[^0-9.-]/g, ""))
+  return Number.isFinite(value) && value < 0
+}
+
 export function ExploreLoopsMarketsTable({
   initialIsDesktop = true,
+  pageSize,
   rows,
   trendingSnapshots,
   tokenBorrowApys,
@@ -166,9 +180,19 @@ export function ExploreLoopsMarketsTable({
     return categoryFilteredRows.filter((row) => (searchTextByRow.get(row) ?? "").includes(searchQuery))
   }, [categoryFilteredRows, searchQuery, searchTextByRow])
 
-  // Bucket the filtered rows into the ordered collateral-family groups, dropping
-  // any empty group — the same grouped-table treatment the Lend page uses. No
-  // pagination: every market in a group is shown under its own sortable table.
+  const effectivePageSize = Math.max(1, pageSize || 12)
+
+  // Reveal rows on scroll instead of paginating: only the first chunk renders up
+  // front, then the sentinel eases in the rest as the user scrolls down.
+  const { visibleCount, hasMore, isRevealing, sentinelRef } = useProgressiveReveal({
+    total: filteredRows.length,
+    chunkSize: effectivePageSize,
+    resetKey: `${currentTab}|${searchQuery}`,
+  })
+  const revealedRows = React.useMemo(() => filteredRows.slice(0, visibleCount), [filteredRows, visibleCount])
+
+  // Bucket the revealed rows into the ordered collateral-family groups, dropping
+  // any empty group — the same grouped-table treatment the Lend page uses.
   const groupedSections = React.useMemo(() => {
     const buckets: Record<LoopGroupKey, Array<MultiplyPageData["lendRows"][number]>> = {
       forex: [],
@@ -176,17 +200,19 @@ export function ExploreLoopsMarketsTable({
       btc: [],
       other: [],
     }
-    for (const row of filteredRows) buckets[loopGroupKey(row.protocol)].push(row)
+    for (const row of revealedRows) buckets[loopGroupKey(row.protocol)].push(row)
     return LOOP_GROUP_ORDER.map((group) => ({ title: group.title, rows: buckets[group.key] })).filter(
       (group) => group.rows.length > 0,
     )
-  }, [filteredRows])
+  }, [revealedRows])
 
   return (
     <section className="mt-7">
       <div>
         <div>
-          <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">{t("Trending")}</h2>
+          <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">
+            {t("Trending")}
+          </h2>
         </div>
       </div>
 
@@ -238,6 +264,14 @@ export function ExploreLoopsMarketsTable({
           </div>
         )}
       </div>
+
+      {hasMore ? (
+        <RevealSentinel
+          sentinelRef={sentinelRef}
+          active={isRevealing}
+          className="mt-10 flex items-center justify-center py-8"
+        />
+      ) : null}
     </section>
   )
 }
@@ -293,6 +327,8 @@ function LoopMarketsSection({
               parseValue(b.rewardRows?.[1]?.value ?? b.rewardRows?.[0]?.value ?? b.partnerRewards)) *
             direction
           )
+        case "cf":
+          return (a.collateralFactor - b.collateralFactor) * direction
         case "points":
           return (parseValue(a.points) - parseValue(b.points)) * direction
         case "protocol":
@@ -314,139 +350,162 @@ function LoopMarketsSection({
         </div>
       </div>
 
-      <DesktopTableSurface className="rounded-radius-md [contain-intrinsic-size:auto_640px] [content-visibility:auto]">
-        {!isDesktop ? <div className="space-y-4">
-          {sortedRows.length ? (
-            sortedRows.map((row, index) => (
-              <MobileLoopCard
-                key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
-                row={row}
-                protocolLogo={getResolvedLogo(row.protocolLogo)}
-                assetLogo={getResolvedLogo(tokenLogos[row.asset as keyof typeof tokenLogos])}
-                availableLabel={
-                  parseCompactUsdLabel(row.points) == null
-                    ? (row.points ?? "—")
-                    : compact(parseCompactUsdLabel(row.points) as number)
-                }
-              />
-            ))
-          ) : (
-            <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground shadow-elev-1">
-              {t("No loops in this category yet.")}
-            </div>
-          )}
-        </div> : null}
-
-        {isDesktop ? <div>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[920px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
-              <colgroup>
-                <col className="w-[5%]" />
-                <col className="w-[20%]" />
-                <col className="w-[18%]" />
-                <col className="w-[15%]" />
-                <col className="w-[15%]" />
-                <col className="w-[15%]" />
-                <col className="w-[12%]" />
-              </colgroup>
-              <thead>
-                <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                  <th className="rounded-l-radius-lg bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    #
-                  </th>
-                  <th className="bg-table-header px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    <button
-                      type="button"
-                      onClick={() => toggleSort("protocol")}
-                      className={cn(
-                        "flex items-center gap-2 whitespace-nowrap transition-colors",
-                        sortKey === "protocol"
-                          ? "text-foreground dark:text-white"
-                          : "text-foreground/70 dark:text-white/70",
-                      )}
-                    >
-                      <span>{t("COLLATERAL")}</span>
-                      <SortIcon />
-                    </button>
-                  </th>
-                  <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    <button
-                      type="button"
-                      onClick={() => toggleSort("asset")}
-                      className={cn(
-                        "flex items-center gap-2 whitespace-nowrap transition-colors",
-                        sortKey === "asset"
-                          ? "text-foreground dark:text-white"
-                          : "text-foreground/70 dark:text-white/70",
-                      )}
-                    >
-                      <span>{t("BORROWABLE")}</span>
-                      <SortIcon />
-                    </button>
-                  </th>
-                  <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    <button
-                      type="button"
-                      onClick={() => toggleSort("apy")}
-                      className={cn(
-                        "flex items-center gap-2 whitespace-nowrap transition-colors",
-                        sortKey === "apy"
-                          ? "text-foreground dark:text-white"
-                          : "text-foreground/70 dark:text-white/70",
-                      )}
-                    >
-                      <span>{t("MAX APY")}</span>
-                      <SortIcon />
-                    </button>
-                  </th>
-                  <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    <button
-                      type="button"
-                      onClick={() => toggleSort("rewards")}
-                      className={cn(
-                        "flex items-center gap-2 whitespace-nowrap transition-colors",
-                        sortKey === "rewards"
-                          ? "text-foreground dark:text-white"
-                          : "text-foreground/70 dark:text-white/70",
-                      )}
-                    >
-                      <span>{t("MAX LEVERAGE")}</span>
-                      <SortIcon />
-                    </button>
-                  </th>
-                  <th className="bg-table-header px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-                    <button
-                      type="button"
-                      onClick={() => toggleSort("points")}
-                      className={cn(
-                        "flex items-center gap-2 whitespace-nowrap transition-colors",
-                        sortKey === "points"
-                          ? "text-foreground dark:text-white"
-                          : "text-foreground/70 dark:text-white/70",
-                      )}
-                    >
-                      <span>{t("AVAILABLE")}</span>
-                      <SortIcon />
-                    </button>
-                  </th>
-                  <SilentActionHeader />
-                </tr>
-              </thead>
-              <tbody key={`${title}-${sortKey}-${sortDirection}`} className="divide-y divide-border dark:divide-white/6">
-                {sortedRows.map((row, index) => (
-                  <LoopTableRow
-                    key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
-                    row={row}
-                    index={index}
-                    tokenLogos={tokenLogos}
-                    tokenSupplyApys={tokenSupplyApys}
-                    tokenBorrowApys={tokenBorrowApys}
-                  />
-                ))}
-              </tbody>
-            </table>
+      <DesktopTableSurface className="!rounded-none [contain-intrinsic-size:auto_640px] [content-visibility:auto]">
+        {!isDesktop ? (
+          <div className="space-y-4">
+            {sortedRows.length ? (
+              sortedRows.map((row, index) => (
+                <MobileLoopCard
+                  key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
+                  row={row}
+                  protocolLogo={getResolvedLogo(row.protocolLogo)}
+                  assetLogo={getResolvedLogo(tokenLogos[row.asset as keyof typeof tokenLogos])}
+                  availableLabel={
+                    parseCompactUsdLabel(row.points) == null
+                      ? (row.points ?? "—")
+                      : compact(parseCompactUsdLabel(row.points) as number)
+                  }
+                />
+              ))
+            ) : (
+              <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground shadow-elev-1">
+                {t("No loops in this category yet.")}
+              </div>
+            )}
           </div>
-        </div> : null}
+        ) : null}
+
+        {isDesktop ? (
+          <div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1040px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
+                <colgroup>
+                  <col className="w-[4%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[13%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[22%]" />
+                </colgroup>
+                <thead>
+                  <tr className="bg-table-header text-left text-muted-foreground">
+                    <th className="bg-table-header pb-3 pl-6 pr-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                      #
+                    </th>
+                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                      <button
+                        type="button"
+                        onClick={() => toggleSort("protocol")}
+                        className={cn(
+                          "flex items-center gap-2 whitespace-nowrap transition-colors",
+                          sortKey === "protocol"
+                            ? "text-foreground dark:text-white"
+                            : "text-muted-foreground/70 dark:text-white/42",
+                        )}
+                      >
+                        <span>{t("COLLATERAL")}</span>
+                        <SortIcon />
+                      </button>
+                    </th>
+                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                      <button
+                        type="button"
+                        onClick={() => toggleSort("asset")}
+                        className={cn(
+                          "flex items-center gap-2 whitespace-nowrap transition-colors",
+                          sortKey === "asset"
+                            ? "text-foreground dark:text-white"
+                            : "text-muted-foreground/70 dark:text-white/42",
+                        )}
+                      >
+                        <span>{t("BORROWABLE")}</span>
+                        <SortIcon />
+                      </button>
+                    </th>
+                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                      <button
+                        type="button"
+                        onClick={() => toggleSort("apy")}
+                        className={cn(
+                          "flex items-center gap-2 whitespace-nowrap transition-colors",
+                          sortKey === "apy"
+                            ? "text-foreground dark:text-white"
+                            : "text-muted-foreground/70 dark:text-white/42",
+                        )}
+                      >
+                        <span>{t("LOOP APY")}</span>
+                        <SortIcon />
+                      </button>
+                    </th>
+                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                      <button
+                        type="button"
+                        onClick={() => toggleSort("rewards")}
+                        className={cn(
+                          "flex items-center gap-2 whitespace-nowrap transition-colors",
+                          sortKey === "rewards"
+                            ? "text-foreground dark:text-white"
+                            : "text-muted-foreground/70 dark:text-white/42",
+                        )}
+                      >
+                        <span>{t("LEVERAGE")}</span>
+                        <SortIcon />
+                      </button>
+                    </th>
+                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                      <button
+                        type="button"
+                        onClick={() => toggleSort("cf")}
+                        className={cn(
+                          "flex items-center gap-2 whitespace-nowrap transition-colors",
+                          sortKey === "cf"
+                            ? "text-foreground dark:text-white"
+                            : "text-muted-foreground/70 dark:text-white/42",
+                        )}
+                      >
+                        <span>{t("CF")}</span>
+                        <SortIcon />
+                      </button>
+                    </th>
+                    <th className="bg-table-header px-4 pb-3 pr-6 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                      <button
+                        type="button"
+                        onClick={() => toggleSort("points")}
+                        className={cn(
+                          "flex w-full items-center gap-2 whitespace-nowrap transition-colors",
+                          sortKey === "points"
+                            ? "text-foreground dark:text-white"
+                            : "text-muted-foreground/70 dark:text-white/42",
+                        )}
+                      >
+                        <span>{t("AVAILABLE")}</span>
+                        <SortIcon />
+                      </button>
+                    </th>
+                    <th className="bg-table-header px-4 pb-3 pr-5 pt-4 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+                  </tr>
+                </thead>
+                <tbody
+                  key={`${title}-${sortKey}-${sortDirection}`}
+                  className="divide-y divide-border dark:divide-white/6"
+                >
+                  {sortedRows.map((row, index) => (
+                    <LoopTableRow
+                      key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
+                      row={row}
+                      index={index}
+                      tokenLogos={tokenLogos}
+                      tokenSupplyApys={tokenSupplyApys}
+                      tokenBorrowApys={tokenBorrowApys}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : null}
       </DesktopTableSurface>
     </section>
   )
@@ -456,8 +515,6 @@ function LoopTableRow({
   row,
   index,
   tokenLogos,
-  tokenSupplyApys,
-  tokenBorrowApys,
 }: {
   row: MultiplyPageData["lendRows"][number]
   index: number
@@ -469,8 +526,7 @@ function LoopTableRow({
   const { t } = useTranslation()
   const { compact } = useCurrency()
   const assetLogo = tokenLogos[row.asset as keyof typeof tokenLogos]
-  const supplyApy = tokenSupplyApys[row.protocol as keyof typeof tokenSupplyApys]
-  const borrowApy = tokenBorrowApys[row.asset as keyof typeof tokenBorrowApys]
+  const hasNegativeApy = isNegativeMultiplyApy(row.apy)
 
   return (
     <tr
@@ -492,17 +548,16 @@ function LoopTableRow({
                 src={row.protocolLogo}
                 alt=""
                 aria-hidden="true"
-                className="size-10 shrink-0 rounded-full bg-card object-cover"
+                className="size-12 shrink-0 rounded-full bg-card object-cover"
               />
             </>
           ) : null}
           <span className="min-w-0">
             <span className="block truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
-              {row.protocol}
+              {row.protocolName ?? row.protocol}
             </span>
-            <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[13px] font-normal tracking-[-0.03em]">
-              <span className="text-muted-foreground">{t("APY")}</span>
-              <span className="font-data tabular-nums text-success">{supplyApy ?? "—"}</span>
+            <span className="mt-0.5 block truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground">
+              {row.protocol}
             </span>
           </span>
         </CellLink>
@@ -516,17 +571,16 @@ function LoopTableRow({
                 src={assetLogo}
                 alt=""
                 aria-hidden="true"
-                className="size-10 shrink-0 rounded-full bg-card object-cover"
+                className="size-12 shrink-0 rounded-full bg-card object-cover"
               />
             </>
           ) : null}
           <span className="min-w-0">
-            <span className="block text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
-              {row.asset}
+            <span className="block truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+              {row.assetName ?? row.asset}
             </span>
-            <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[13px] font-normal tracking-[-0.03em]">
-              <span className="text-muted-foreground">{t("APY")}</span>
-              <span className="font-data tabular-nums text-rose-600 dark:text-rose-400">{borrowApy ?? "—"}</span>
+            <span className="mt-0.5 block truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground">
+              {row.asset}
             </span>
           </span>
         </CellLink>
@@ -536,48 +590,31 @@ function LoopTableRow({
           href={row.href}
           className={cn(
             "font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums",
-            row.apy
-              ? row.apy.startsWith("-")
-                ? "text-rose-600 dark:text-rose-400"
-                : "text-success"
-              : "text-muted-foreground",
+            row.apy ? "text-foreground dark:text-white" : "text-muted-foreground",
           )}
         >
           {row.apy || "—"}
         </CellLink>
       </td>
       <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <CellLink href={row.href} className="text-foreground">
-          {row.rewardRows?.[1] ? (
-            <span className="block">
-              <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
-                {row.rewardRows[1].value}
-              </span>
-              <span className="mt-0.5 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground">
-                {row.rewardRows[1].label}
-              </span>
-            </span>
-          ) : row.rewardRows?.[0] ? (
-            <span className="block">
-              <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
-                {row.rewardRows[0].value}
-              </span>
-              <span className="mt-0.5 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground">
-                {row.rewardRows[0].label}
-              </span>
-            </span>
-          ) : row.partnerRewards ? (
-            <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
-              {row.partnerRewards}
-            </span>
-          ) : (
-            <span className="block text-[15px] font-normal tracking-[-0.03em] text-muted-foreground">
-              —
-            </span>
-          )}
+        <CellLink
+          href={row.href}
+          className="block font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white"
+        >
+          {row.rewardRows?.[1]?.value ?? row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"}
         </CellLink>
       </td>
-      <td className={`py-3 px-4 pr-6 ${TABLE_ROW_HOVER_RIGHT}`}>
+      <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
+        <CellLink href={row.href} className="block">
+          <span className="block font-data text-[15px] font-normal tabular-nums text-foreground dark:text-white">
+            {Math.round(row.collateralFactor * 100)}%
+          </span>
+          <span className="mt-0.5 block font-data text-[12px] tabular-nums text-muted-foreground">
+            {t("LT")}: {Math.round(row.liquidationThreshold * 100)}%
+          </span>
+        </CellLink>
+      </td>
+      <td className={`py-3 px-4 pr-6 ${TABLE_ROW_HOVER_BG}`}>
         {row.waitlistHref ? (
           <div className="inline-flex items-center">
             <Button asChild size="sm" className="h-6 rounded-xs px-2.5 text-[11px]">
@@ -587,15 +624,20 @@ function LoopTableRow({
             </Button>
           </div>
         ) : (
-          <CellLink
-            href={row.href}
-            className="inline-flex items-center text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white"
-          >
-            <span>
-              {parseCompactUsdLabel(row.points) == null
-                ? (row.points ?? "—")
-                : compact(parseCompactUsdLabel(row.points) as number)}
+          <CellLink href={row.href} className="block text-foreground">
+            <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+              {row.availablePrimary ??
+                (parseCompactUsdLabel(row.points) == null
+                  ? (row.points ?? "—")
+                  : compact(parseCompactUsdLabel(row.points) as number))}
             </span>
+            {row.availableSecondary ? (
+              <span className="mt-0.5 block text-[13px] tracking-[-0.03em] text-muted-foreground">
+                {parseCompactUsdLabel(row.availableSecondary) == null
+                  ? row.availableSecondary
+                  : compact(parseCompactUsdLabel(row.availableSecondary) as number)}
+              </span>
+            ) : null}
           </CellLink>
         )}
       </td>
@@ -605,7 +647,7 @@ function LoopTableRow({
             <Button
               type="button"
               size="table"
-              variant="table-primary"
+              variant={hasNegativeApy ? "table-secondary" : "table-primary"}
               className="w-auto"
               onClick={(event) => {
                 event.stopPropagation()
@@ -614,7 +656,8 @@ function LoopTableRow({
                 router.push(actionPagePath("multiply", "multiply", { market: marketId, return: row.href }))
               }}
             >
-              <ActionIcon label="Multiply" />{t("Multiply")}
+              <ActionIcon label={hasNegativeApy ? "Review risk" : "Multiply"} />
+              {t(hasNegativeApy ? "Review risk" : "Multiply")}
             </Button>
             <Button
               type="button"
@@ -628,7 +671,8 @@ function LoopTableRow({
                 router.push(actionPagePath("multiply", "deleverage", { market: marketId, return: row.href }))
               }}
             >
-              <ActionIcon label="Deleverage" />{t("Deleverage")}
+              <ActionIcon label="Deleverage" />
+              {t("Deleverage")}
             </Button>
           </HoverActionGroup>
         </div>
@@ -656,23 +700,27 @@ function MobileLoopCard({
           identity={
             <div className="min-w-0">
               <div className="flex items-center gap-3">
-                <div className="relative flex h-10 w-[62px] items-center">
+                <div className="relative flex h-12 w-[72px] items-center">
                   {protocolLogo ? (
-                    <div className="absolute left-0 top-0 z-10 flex size-10 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+                    <div className="absolute left-0 top-0 z-10 flex size-12 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={protocolLogo} alt="" aria-hidden="true" className="size-full object-cover" />
                     </div>
                   ) : null}
                   {assetLogo ? (
-                    <div className="absolute left-5 top-0 flex size-10 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+                    <div className="absolute left-6 top-0 flex size-12 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={assetLogo} alt="" aria-hidden="true" className="size-full object-cover" />
                     </div>
                   ) : null}
                 </div>
                 <div className="min-w-0">
-                  <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">{row.protocol}</div>
-                  <div className="mt-0.5 truncate text-[12px] tracking-[-0.03em] text-muted-foreground">{row.asset}</div>
+                  <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                    {row.protocol}
+                  </div>
+                  <div className="mt-0.5 truncate text-[12px] tracking-[-0.03em] text-muted-foreground">
+                    {row.asset}
+                  </div>
                 </div>
               </div>
             </div>
@@ -680,15 +728,17 @@ function MobileLoopCard({
           metric={
             <MarketMobileMetric
               value={row.apy || "—"}
-              label={t("Max APY")}
-              valueClassName={row.apy ? (row.apy.startsWith("-") ? "text-rose-600 dark:text-rose-400" : "text-success") : undefined}
+              label={t("APY at {leverage}").replace("{leverage}", row.rewardRows?.[1]?.value ?? "max leverage")}
             />
           }
         />
 
         <MarketMobileStatList className="mt-4">
-          <MarketMobileStatRow label={t("Max Leverage")} value={row.rewardRows?.[1]?.value ?? row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"} />
-          <MarketMobileStatRow label={t("Liquidity")} value={availableLabel} />
+          <MarketMobileStatRow
+            label={t("Max Leverage")}
+            value={row.rewardRows?.[1]?.value ?? row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"}
+          />
+          <MarketMobileStatRow label={t("Available")} value={availableLabel} />
         </MarketMobileStatList>
       </MarketMobileCard>
     </Link>
@@ -735,7 +785,7 @@ function TrendingLoopCard({
 
         <div className="shrink-0 text-right">
           <div className="font-data text-[15px] font-medium tracking-[-0.03em] text-success">{snapshot.apyLabel}</div>
-          <div className="mt-1 text-[13px] text-muted-foreground dark:text-white/48">{t("APY")}</div>
+          <div className="mt-1 text-[13px] text-muted-foreground dark:text-white/48">{t("LOOP APY")}</div>
         </div>
       </div>
     </>

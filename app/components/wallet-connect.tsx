@@ -9,7 +9,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
-import { ArrowUpRight, CircleUserRound, Code2, Eye, EyeOff, FileText, LifeBuoy, Mail, Moon, Shield, Sun, type LucideIcon } from "lucide-react"
+import {
+  ArrowUpRight,
+  CircleUserRound,
+  Code2,
+  Eye,
+  EyeOff,
+  FileText,
+  LifeBuoy,
+  Mail,
+  Moon,
+  Shield,
+  Sun,
+  type LucideIcon,
+} from "@/app/components/icons"
 import { useTheme } from "./theme-provider"
 import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
@@ -151,9 +164,7 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
             title={t("Resources and support")}
             className={cn(
               "flex size-8 appearance-none select-none items-center justify-center rounded-xs transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-emphasis/25",
-              isResourcesActive
-                ? "text-foreground"
-                : "text-muted-foreground hover:bg-hover hover:text-foreground",
+              isResourcesActive ? "text-foreground" : "text-muted-foreground hover:bg-hover hover:text-foreground",
             )}
           >
             <AppsGridIcon className="h-4 w-4" />
@@ -212,11 +223,15 @@ export function WalletConnect({ isResourcesActive = false }: { isResourcesActive
           </div>
           <DropdownMenuItem className="cursor-pointer justify-between gap-2 text-[12px] text-muted-foreground">
             <span>{t("Language")}</span>
-            <span className="font-medium text-foreground">{t("English")} <span className="ml-1 opacity-50">&gt;</span></span>
+            <span className="font-medium text-foreground">
+              {t("English")} <span className="ml-1 opacity-50">&gt;</span>
+            </span>
           </DropdownMenuItem>
           <DropdownMenuItem className="cursor-pointer justify-between gap-2 text-[12px] text-muted-foreground">
             <span>{t("Currency")}</span>
-            <span className="font-medium text-foreground">{t("USD")} <span className="ml-1 opacity-50">&gt;</span></span>
+            <span className="font-medium text-foreground">
+              {t("USD")} <span className="ml-1 opacity-50">&gt;</span>
+            </span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuLabel>{t("Resources")}</DropdownMenuLabel>

@@ -6,8 +6,7 @@ async function resolveConnectSrc() {
   vi.resetModules()
   const mod = await import("../../next.config.mjs")
   const headers = await mod.default.headers()
-  const csp = headers[0].headers.find((h: { key: string }) => h.key === "Content-Security-Policy")
-    .value as string
+  const csp = headers[0].headers.find((h: { key: string }) => h.key === "Content-Security-Policy").value as string
   const directive = csp.split("; ").find((d) => d.startsWith("connect-src")) as string
   return directive.slice("connect-src ".length).split(" ")
 }

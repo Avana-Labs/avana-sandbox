@@ -19,10 +19,10 @@ describe("recordTransaction — idempotency + ledger property", () => {
   test("ledger == Σ first-seen amounts; rows == unique intentIds", async () => {
     await fc.assert(
       fc.asyncProperty(
-        fc.array(
-          fc.record({ intentKey: fc.integer({ min: 0, max: 4 }), amount: fc.integer({ min: 1, max: 1000 }) }),
-          { minLength: 1, maxLength: 12 },
-        ),
+        fc.array(fc.record({ intentKey: fc.integer({ min: 0, max: 4 }), amount: fc.integer({ min: 1, max: 1000 }) }), {
+          minLength: 1,
+          maxLength: 12,
+        }),
         async (actions) => {
           const t = convexTest(schema, modules)
           const asUser = t.withIdentity({ subject: WALLET })

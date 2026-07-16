@@ -1,22 +1,14 @@
 import { createPublicClient, http, recoverMessageAddress, type Address, type Hex } from "viem"
 import { mainnet } from "viem/chains"
 
-type VerifySmartAccountSignature = (input: {
-  address: Address
-  message: string
-  signature: Hex
-}) => Promise<boolean>
+type VerifySmartAccountSignature = (input: { address: Address; message: string; signature: Hex }) => Promise<boolean>
 
 const mainnetClient = createPublicClient({
   chain: mainnet,
   transport: http(),
 })
 
-async function verifySmartAccountSignature(input: {
-  address: Address
-  message: string
-  signature: Hex
-}) {
+async function verifySmartAccountSignature(input: { address: Address; message: string; signature: Hex }) {
   return mainnetClient.verifyMessage(input)
 }
 

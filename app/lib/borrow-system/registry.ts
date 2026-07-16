@@ -93,17 +93,29 @@ function buildBaseAssetDefinitions() {
   }))
 }
 
-function buildSpokeBorrowableRecord(spoke: BorrowSpoke, baseAsset: BorrowBaseAssetDefinition, marketIds: string[]): SpokeBorrowableRecord {
+function buildSpokeBorrowableRecord(
+  spoke: BorrowSpoke,
+  baseAsset: BorrowBaseAssetDefinition,
+  marketIds: string[],
+): SpokeBorrowableRecord {
   const id = `${spoke.id}:${baseAsset.id}`
   const availabilitySeed = seededUnit(`${id}:available`)
   const borrowSeed = seededUnit(`${id}:borrow`)
   const aprSeed = seededUnit(`${id}:apr`)
   const trendSeed = seededUnit(`${id}:trend`)
-  const spokeMarkets = BORROW_POOL_CATALOG.filter((market) => market.spoke === spoke.id && marketIds.includes(market.id))
+  const spokeMarkets = BORROW_POOL_CATALOG.filter(
+    (market) => market.spoke === spoke.id && marketIds.includes(market.id),
+  )
   const spokeLiquidityUsd = spokeMarkets.reduce((sum, market) => sum + market.availableUsd, 0)
-  const avgLiquidityUsd = spokeMarkets.length > 0 ? spokeLiquidityUsd / spokeMarkets.length : spoke.liquidityUsd / Math.max(marketIds.length, 1)
+  const avgLiquidityUsd =
+    spokeMarkets.length > 0
+      ? spokeLiquidityUsd / spokeMarkets.length
+      : spoke.liquidityUsd / Math.max(marketIds.length, 1)
   const totalCapacityUsd = roundUsd(avgLiquidityUsd * (0.9 + availabilitySeed * 0.8))
-  const utilization = Math.min(94, Math.max(16, Math.round(baseAsset.category === "stable" ? 54 + borrowSeed * 28 : 38 + borrowSeed * 42)))
+  const utilization = Math.min(
+    94,
+    Math.max(16, Math.round(baseAsset.category === "stable" ? 54 + borrowSeed * 28 : 38 + borrowSeed * 42)),
+  )
   const totalBorrowedUsd = roundUsd(totalCapacityUsd * (utilization / 100))
   const availableUsd = roundUsd(totalCapacityUsd)
   const borrowApr = roundRate(

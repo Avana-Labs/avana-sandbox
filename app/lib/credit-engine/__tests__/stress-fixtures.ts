@@ -129,7 +129,8 @@ export function makeHeterogeneousStressBorrowSystemState(userCount = 10_000): Bo
     const primaryMarketId = marketIds[index % marketIds.length]!
     const secondaryMarketId = marketIds[(index + 1) % marketIds.length]!
     const primaryMarket = state.markets[primaryMarketId]!
-    const primaryAssetId = primaryMarket.relations.supportedBorrowAssetIds[index % primaryMarket.relations.supportedBorrowAssetIds.length]!
+    const primaryAssetId =
+      primaryMarket.relations.supportedBorrowAssetIds[index % primaryMarket.relations.supportedBorrowAssetIds.length]!
     const primaryAsset = state.assets[primaryAssetId]!
     const isWhale = index % 125 === 0
     const multiSpoke = index % 2 === 0
@@ -190,7 +191,10 @@ export function makeHeterogeneousStressBorrowSystemState(userCount = 10_000): Bo
   }
 }
 
-export function makeHeterogeneousStressBorrowActions(state: BorrowSystemState, activeWalletCount = Object.keys(state.accounts).length): BorrowAction[] {
+export function makeHeterogeneousStressBorrowActions(
+  state: BorrowSystemState,
+  activeWalletCount = Object.keys(state.accounts).length,
+): BorrowAction[] {
   const actions: BorrowAction[] = []
   const walletIds = Object.keys(state.accounts).slice(0, activeWalletCount)
 

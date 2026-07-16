@@ -14,7 +14,7 @@ export function makeStressLendSystemState(userCount = 100): LendSystemState {
     if (!hasPosition) continue
 
     const isWhale = index % 20 === 0
-    const principalAmount = isWhale ? 500 + index % 10 : 25 + (index % 8) * 5
+    const principalAmount = isWhale ? 500 + (index % 10) : 25 + (index % 8) * 5
     const positionId = `${walletId}:${marketId}`
 
     positions[positionId] = {
@@ -43,12 +43,7 @@ export function makeStressLendSystemState(userCount = 100): LendSystemState {
       ...Object.fromEntries(
         Array.from({ length: userCount }, (_, index) => {
           const walletId = `wallet-lend-stress-${index}`
-          return [
-            walletId,
-            Object.fromEntries(
-              Object.keys(base.markets).map((marketId) => [marketId, 10_000]),
-            ),
-          ]
+          return [walletId, Object.fromEntries(Object.keys(base.markets).map((marketId) => [marketId, 10_000]))]
         }),
       ),
     },

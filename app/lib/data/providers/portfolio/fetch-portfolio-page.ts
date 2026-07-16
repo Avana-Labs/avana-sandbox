@@ -4,13 +4,18 @@ import {
   type DataSourceRequestContext,
 } from "@/app/lib/data/core/source-runtime"
 import { mockPortfolioPageSource } from "@/app/lib/data/mock/wallet/portfolio/source"
-import { loadWithAuthFallback, resolveDefaultWithAuthFallback } from "@/app/lib/data/providers/live-auth-fallback"
+import { resolveDefaultWithAuthFallback } from "@/app/lib/data/providers/live-auth-fallback"
 import { resolveDataSourceMode } from "../source-mode"
 import { mapPortfolioPage } from "./map-portfolio-page"
 import type { PortfolioPageSource } from "./source"
 import type { FetchPortfolioPageInput, PortfolioPageData } from "./types"
 
-type FetchOptions = { signal?: AbortSignal; source?: PortfolioPageSource; cursor?: DataSourceRequestContext["cursor"]; limit?: number }
+type FetchOptions = {
+  signal?: AbortSignal
+  source?: PortfolioPageSource
+  cursor?: DataSourceRequestContext["cursor"]
+  limit?: number
+}
 
 async function loadFromSource(
   source: PortfolioPageSource,
@@ -39,15 +44,12 @@ export async function fetchPortfolioPage(
   if (options?.source) return loadFromSource(options.source, input, options)
   if (resolveDataSourceMode() === "mock") return loadFromSource(mockPortfolioPageSource, input, options)
   const { livePortfolioPageSource } = await import("./live-source")
-  return loadWithAuthFallback({
-    allowFallback: true,
-    loadPrimary: () => loadFromSource(livePortfolioPageSource, input, options),
-    loadFallback: () => loadFromSource(mockPortfolioPageSource, input, options),
-  })
+  return loadFromSource(livePortfolioPageSource, input, options)
 }
 
 export async function resolvePortfolioWalletProfileId(source?: PortfolioPageSource) {
-  const primarySource = source ??
+  const primarySource =
+    source ??
     (resolveDataSourceMode() === "mock"
       ? mockPortfolioPageSource
       : (await import("./live-source")).livePortfolioPageSource)

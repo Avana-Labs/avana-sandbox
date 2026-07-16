@@ -25,7 +25,10 @@ function normalizeMarketId(id: string) {
 export function MarketSidebar({ detail, className, hideActions = false }: Props) {
   const { t } = useTranslation()
   return (
-    <aside className={cn("flex w-full flex-col gap-12", className)} aria-label={t("Multiply {name}").replace("{name}", detail.hero.name)}>
+    <aside
+      className={cn("flex w-full flex-col gap-12", className)}
+      aria-label={t("Multiply {name}").replace("{name}", detail.hero.name)}
+    >
       {hideActions ? null : <MarketActionRail detail={detail} className="mt-6" embedActions />}
     </aside>
   )
@@ -35,11 +38,7 @@ export function MarketMultiplyActions({ detail, className }: Props) {
   return <MarketActionRail detail={detail} className={className} />
 }
 
-function MarketActionRail({
-  detail,
-  className,
-  embedActions = false,
-}: Props & { embedActions?: boolean }) {
+function MarketActionRail({ detail, className, embedActions = false }: Props & { embedActions?: boolean }) {
   const { t } = useTranslation()
   const marketId = normalizeMarketId(detail.id)
   const market = getMultiplyMarketById(marketId)
@@ -60,7 +59,13 @@ function MarketActionRail({
         <p className="text-[15px] leading-6 text-muted-foreground">
           {t("Open a looped position in {name}.").replace("{name}", detail.hero.name)}
         </p>
-        <ActionPageLaunchCta product="multiply" kind="multiply" market={marketId} className="mt-3 w-full" label="Multiply" />
+        <ActionPageLaunchCta
+          product="multiply"
+          kind="multiply"
+          market={marketId}
+          className="mt-3 w-full"
+          label="Multiply"
+        />
       </div>
     )
   }
@@ -85,12 +90,7 @@ function MarketActionRail({
 
         {tab === "deleverage" ? (
           embedActions ? (
-            <ResponsiveMultiplyAction
-              kind="deleverage"
-              market={marketId}
-              closeHref={closeHref}
-              sidebar
-            />
+            <ResponsiveMultiplyAction kind="deleverage" market={marketId} closeHref={closeHref} sidebar />
           ) : (
             <ActionPageLaunchCta product="multiply" kind="deleverage" market={marketId} returnTo={closeHref} />
           )

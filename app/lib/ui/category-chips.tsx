@@ -25,7 +25,10 @@ export function CategoryChips({
     <div
       role="tablist"
       aria-label={t("Filter by category")}
-      className={cn("flex items-center gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden", className)}
+      className={cn(
+        "flex items-center gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        className,
+      )}
     >
       {chips.map((chip) => {
         const active = chip.id === value

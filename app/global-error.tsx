@@ -36,9 +36,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
         }}
       >
         <p style={{ fontSize: "0.875rem", opacity: 0.7 }}>Avana</p>
-        <h1 style={{ margin: 0, fontSize: "2rem", fontWeight: 500, letterSpacing: "-0.04em" }}>
-          Something went wrong
-        </h1>
+        <h1 style={{ margin: 0, fontSize: "2rem", fontWeight: 500, letterSpacing: "-0.04em" }}>Something went wrong</h1>
         <p style={{ margin: 0, maxWidth: "34rem", opacity: 0.8 }}>
           The app hit an unexpected error. Try again — if it keeps happening, please let us know.
         </p>
@@ -65,7 +63,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
             Try again
           </button>
           <a
-            href="/dashboard"
+            href="/portfolio"
             style={{
               borderRadius: "9999px",
               padding: "0.75rem 1.5rem",
@@ -76,7 +74,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
               textDecoration: "none",
             }}
           >
-            Back to dashboard
+            Back to portfolio
           </a>
         </div>
       </body>

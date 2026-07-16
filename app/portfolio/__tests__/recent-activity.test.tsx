@@ -50,16 +50,10 @@ describe("RecentActivity txn links", () => {
     }
     expect(links.some((link) => hostOf(link) === "etherscan.io")).toBe(false)
     // Each simulated hash points to the sandbox receipt page.
-    expect(hrefFor(container, "sim_lend_abc123")?.getAttribute("href")).toBe(
-      "/sandbox/transactions/sim_lend_abc123",
-    )
-    expect(hrefFor(container, "sim-def456")?.getAttribute("href")).toBe(
-      "/sandbox/transactions/sim-def456",
-    )
+    expect(hrefFor(container, "sim_lend_abc123")?.getAttribute("href")).toBe("/sandbox/transactions/sim_lend_abc123")
+    expect(hrefFor(container, "sim-def456")?.getAttribute("href")).toBe("/sandbox/transactions/sim-def456")
     // A 0xsim… multiply hash is not a real 66-char hash → sandbox page.
-    expect(hrefFor(container, "0xsim9f8e7d")?.getAttribute("href")).toBe(
-      "/sandbox/transactions/0xsim9f8e7d",
-    )
+    expect(hrefFor(container, "0xsim9f8e7d")?.getAttribute("href")).toBe("/sandbox/transactions/0xsim9f8e7d")
     // Internal links do not open in a new tab.
     expect(view.queryByText(/etherscan/i)).not.toBeInTheDocument()
   })

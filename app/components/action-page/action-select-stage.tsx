@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { ChevronRight, Search } from "lucide-react"
+import { ChevronRight, Search } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { ActionTokenIcon, ActionTokenPairIcon } from "@/app/components/action-page/action-token-icon"
@@ -78,7 +78,11 @@ export function ActionSelectStage({
             >
               <div className="flex min-w-0 items-center gap-3">
                 {item.pairSymbols ? (
-                  <ActionTokenPairIcon collateralSymbol={item.pairSymbols[0]} borrowSymbol={item.pairSymbols[1]} size="md" />
+                  <ActionTokenPairIcon
+                    collateralSymbol={item.pairSymbols[0]}
+                    borrowSymbol={item.pairSymbols[1]}
+                    size="md"
+                  />
                 ) : (
                   <ActionTokenIcon symbol={item.symbol} />
                 )}

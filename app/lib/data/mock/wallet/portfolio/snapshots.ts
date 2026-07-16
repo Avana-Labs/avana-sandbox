@@ -134,7 +134,7 @@ export const PORTFOLIO_SNAPSHOTS: PortfolioSnapshotRecord[] = [
 ]
 
 export function getWalletSnapshots(walletProfileId: string) {
-  return PORTFOLIO_SNAPSHOTS.filter((snapshot) => snapshot.walletProfileId === walletProfileId).sort(
-    (left, right) => left.timestamp.localeCompare(right.timestamp),
+  return PORTFOLIO_SNAPSHOTS.filter((snapshot) => snapshot.walletProfileId === walletProfileId).sort((left, right) =>
+    left.timestamp.localeCompare(right.timestamp),
   )
 }

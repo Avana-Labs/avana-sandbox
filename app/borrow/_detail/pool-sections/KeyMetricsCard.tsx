@@ -53,7 +53,14 @@ export function KeyMetricsCard({ detail }: Props) {
     >
       <div className="flex flex-col">
         <div className="px-6 pb-4 pt-6">
-          <MetricChipRow chips={chips} value={metric} onChange={setMetric} ariaLabel={t("Deeper metric")} variant="cards" className="grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3" />
+          <MetricChipRow
+            chips={chips}
+            value={metric}
+            onChange={setMetric}
+            ariaLabel={t("Deeper metric")}
+            variant="cards"
+            className="grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3"
+          />
         </div>
         <div className="h-[280px] w-full pt-2">
           <LightweightChart
@@ -61,7 +68,9 @@ export function KeyMetricsCard({ detail }: Props) {
             type="area"
             height={280}
             accentClassName={detail.hero.visuals.map((visual) => visual.textClass)}
-            ariaLabel={t("{metric} over {range}").replace("{metric}", t(labelForKeyMetric(metric))).replace("{range}", range)}
+            ariaLabel={t("{metric} over {range}")
+              .replace("{metric}", t(labelForKeyMetric(metric)))
+              .replace("{range}", range)}
             formatValue={(v) => (PCT_METRICS.has(metric) ? formatPct(v, 2) : formatCompactUsd(v))}
           />
         </div>

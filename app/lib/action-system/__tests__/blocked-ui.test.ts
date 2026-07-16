@@ -29,15 +29,11 @@ describe("blockedCtaLabel", () => {
     expect(blockedCtaLabel("There isn't enough liquidity for this amount right now.").label).toBe(
       "Insufficient liquidity",
     )
-    expect(blockedCtaLabel("You don't have enough borrowing power for this amount.").label).toBe(
-      "Try a smaller amount",
-    )
+    expect(blockedCtaLabel("You don't have enough borrowing power for this amount.").label).toBe("Try a smaller amount")
     expect(blockedCtaLabel("Borrowing unavailable").label).toBe("Borrowing unavailable")
     expect(blockedCtaLabel("Market is paused.").label).toBe("Market paused")
     expect(blockedCtaLabel("Deposit would exceed the market supply cap.").label).toBe("Supply cap reached")
-    expect(blockedCtaLabel("You don't have enough LP in your wallet for this deposit.").label).toBe(
-      "Insufficient LP",
-    )
+    expect(blockedCtaLabel("You don't have enough LP in your wallet for this deposit.").label).toBe("Insufficient LP")
   })
 
   it("handles claim and empty-amount reasons", () => {

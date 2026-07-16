@@ -18,7 +18,12 @@ const position: HomeClaimPosition = {
 
 describe("calculateClaimPreview", () => {
   it("itemized breakdown reconciles with the headline claim total (fees included)", () => {
-    const preview = calculateClaimPreview([position], { [position.id]: position.totalUsd }, { [position.id]: true }, null)
+    const preview = calculateClaimPreview(
+      [position],
+      { [position.id]: position.totalUsd },
+      { [position.id]: true },
+      null,
+    )
 
     const rowsSum = Object.values(preview.tokenTotals).reduce((sum, value) => sum + value, 0)
     // Previously the "Fees" line was dropped from the breakdown, so the rows summed
@@ -31,7 +36,12 @@ describe("calculateClaimPreview", () => {
   })
 
   it("excludes unselected positions", () => {
-    const preview = calculateClaimPreview([position], { [position.id]: position.totalUsd }, { [position.id]: false }, null)
+    const preview = calculateClaimPreview(
+      [position],
+      { [position.id]: position.totalUsd },
+      { [position.id]: false },
+      null,
+    )
     expect(preview.hasSelection).toBe(false)
     expect(preview.selectedTotalUsd).toBe(0)
     expect(Object.keys(preview.tokenTotals)).toHaveLength(0)

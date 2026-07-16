@@ -89,8 +89,11 @@ export function DisplayPreferencesProvider({ children }: { children: ReactNode }
     if (storedValue === "true") {
       setShowDollarAmountsState(true)
     }
-    const migratedLanguage =
-      storedLanguage?.startsWith("ES-") ? "ES" : storedLanguage?.startsWith("ZH-") ? "ZH" : storedLanguage
+    const migratedLanguage = storedLanguage?.startsWith("ES-")
+      ? "ES"
+      : storedLanguage?.startsWith("ZH-")
+        ? "ZH"
+        : storedLanguage
     if (migratedLanguage && LANGUAGE_OPTIONS.some((option) => option.code === migratedLanguage)) {
       setLanguageState(migratedLanguage as LanguageCode)
     }
@@ -185,13 +188,7 @@ export function DisplayPreferencesProvider({ children }: { children: ReactNode }
       setCurrency,
       ratesVersion,
     }),
-    [
-      currency,
-      language,
-      ratesVersion,
-      setCurrency,
-      setLanguage,
-    ],
+    [currency, language, ratesVersion, setCurrency, setLanguage],
   )
 
   return (

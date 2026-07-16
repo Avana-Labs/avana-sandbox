@@ -34,13 +34,7 @@ describe("ActionAmountCard", () => {
 
   it("keeps the asset chip labeled when switching is disabled in embedded layouts", () => {
     const { container } = render(
-      <ActionAmountCard
-        {...baseProps}
-        assetLabel="AAVE"
-        assetSymbol="AAVE"
-        borrowSymbol="GHO"
-        variant="raised"
-      />,
+      <ActionAmountCard {...baseProps} assetLabel="AAVE" assetSymbol="AAVE" borrowSymbol="GHO" variant="raised" />,
     )
 
     expect(screen.queryByRole("listbox")).toBeNull()
@@ -81,21 +75,21 @@ describe("ActionAmountCard", () => {
     expect(screen.queryByRole("button", { name: /change asset/i })).toBeNull()
   })
 
-  it("shows the balance and a Max button that fills the balance", () => {
+  it("shows the balance as a clickable shortcut that fills the balance", () => {
     const onMax = vi.fn()
     render(<ActionAmountCard {...baseProps} balanceLabel="Balance" balanceValue="1.28 ETH" onMax={onMax} />)
 
-    expect(screen.getByText(/1\.28 ETH/)).toBeInTheDocument()
-    const maxButton = screen.getByRole("button", { name: "Max" })
-    // min-h-10 keeps the Max shortcut at the >=40px mobile tap-target floor.
-    expect(maxButton.className).toContain("min-h-10")
-    fireEvent.click(maxButton)
+    // The ticker is dropped from the displayed value (shown in the picker instead).
+    expect(screen.getByText("1.28")).toBeInTheDocument()
+    const balanceButton = screen.getByRole("button", { name: /Balance: 1\.28/ })
+    fireEvent.click(balanceButton)
     expect(onMax).toHaveBeenCalledTimes(1)
   })
 
-  it("hides the Max button in read-only review mode", () => {
+  it("renders the balance as static text (not clickable) in read-only review mode", () => {
     render(<ActionAmountCard {...baseProps} balanceLabel="Balance" balanceValue="1.28 ETH" onMax={() => {}} readOnly />)
 
-    expect(screen.queryByRole("button", { name: "Max" })).toBeNull()
+    expect(screen.getByText("1.28")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /Balance: 1\.28/ })).toBeNull()
   })
 })

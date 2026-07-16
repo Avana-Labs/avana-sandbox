@@ -6,7 +6,10 @@ export const getState = query({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
-    return ctx.db.query("sandboxRewards").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique()
+    return ctx.db
+      .query("sandboxRewards")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .unique()
   },
 })
 
@@ -20,7 +23,10 @@ export const saveState = mutation({
     } catch {
       throw new Error("INVALID_REWARDS_STATE")
     }
-    const existing = await ctx.db.query("sandboxRewards").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).unique()
+    const existing = await ctx.db
+      .query("sandboxRewards")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .unique()
     const updatedAt = Date.now()
     if (existing) {
       await ctx.db.patch(existing._id, { stateJson: args.stateJson, updatedAt })
