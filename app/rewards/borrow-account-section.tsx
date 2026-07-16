@@ -11,8 +11,8 @@ import {
   type DashboardTabMetrics,
 } from "@/app/portfolio/dashboard-tab-metrics"
 import { DashboardCreditOverviewSection } from "@/app/portfolio/dashboard-metric-section"
-import { SuppliesHealthFactorCard } from "@/app/dashboard/components/borrow-tab/supplies-table"
-import { CurrentLtvCard } from "@/app/dashboard/components/borrow-tab/debts-table"
+import { SuppliesHealthFactorCard } from "@/app/portfolio/borrow-tab/supplies-table"
+import { CurrentLtvCard } from "@/app/portfolio/borrow-tab/debts-table"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
@@ -20,13 +20,13 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { SectionTabStrip, AccountModuleBoundary } from "./account-sections-shared"
 
 const CollateralPositionsPanel = lazy(async () => ({
-  default: (await import("@/app/dashboard/components/borrow-tab/collateral-positions-panel")).CollateralPositionsPanel,
+  default: (await import("@/app/portfolio/borrow-tab/collateral-positions-panel")).CollateralPositionsPanel,
 }))
 const DebtPositionsPanel = lazy(async () => ({
-  default: (await import("@/app/dashboard/components/borrow-tab/debt-positions-panel")).DebtPositionsPanel,
+  default: (await import("@/app/portfolio/borrow-tab/debt-positions-panel")).DebtPositionsPanel,
 }))
 const TradingFeesPanel = lazy(async () => ({
-  default: (await import("@/app/dashboard/components/borrow-tab/trading-fees-panel")).TradingFeesPanel,
+  default: (await import("@/app/portfolio/borrow-tab/trading-fees-panel")).TradingFeesPanel,
 }))
 
 const RETURN_HREF = "/portfolio"

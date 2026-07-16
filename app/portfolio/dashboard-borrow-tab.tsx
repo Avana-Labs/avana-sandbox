@@ -6,10 +6,10 @@ import { useAmountDisplayPreferences } from "@/app/components/display-preference
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
-import { CurrentLtvCard, DebtsPanel } from "@/app/dashboard/components/borrow-tab/debts-table"
-import { SuppliesHealthFactorCard, SuppliesPanel } from "@/app/dashboard/components/borrow-tab/supplies-table"
-import { CollateralPositionsPanel } from "@/app/dashboard/components/borrow-tab/collateral-positions-panel"
-import { DebtPositionsPanel } from "@/app/dashboard/components/borrow-tab/debt-positions-panel"
+import { CurrentLtvCard, DebtsPanel } from "@/app/portfolio/borrow-tab/debts-table"
+import { SuppliesHealthFactorCard, SuppliesPanel } from "@/app/portfolio/borrow-tab/supplies-table"
+import { CollateralPositionsPanel } from "@/app/portfolio/borrow-tab/collateral-positions-panel"
+import { DebtPositionsPanel } from "@/app/portfolio/borrow-tab/debt-positions-panel"
 
 // Aggregate wallet-wide health factor: total liquidation value / total debt — the same
 // definition used by the hero (map-portfolio-page / selectWalletBorrowSnapshot), rather

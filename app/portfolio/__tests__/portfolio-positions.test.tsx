@@ -51,7 +51,7 @@ vi.mock("@/app/components/display-preferences", () => ({
   useOptionalLocaleDisplayPreferences: () => ({ currency: "USD", language: "EN" }),
 }))
 
-vi.mock("@/app/dashboard/components/borrow-tab/supplies-table", () => ({
+vi.mock("@/app/portfolio/borrow-tab/supplies-table", () => ({
   SuppliesHealthFactorCard: () => null,
   SuppliesPanel: ({
     rows,
@@ -78,7 +78,7 @@ vi.mock("@/app/dashboard/components/borrow-tab/supplies-table", () => ({
   ),
 }))
 
-vi.mock("@/app/dashboard/components/borrow-tab/debts-table", () => ({
+vi.mock("@/app/portfolio/borrow-tab/debts-table", () => ({
   CurrentLtvCard: () => null,
   DebtsPanel: ({
     rows,
