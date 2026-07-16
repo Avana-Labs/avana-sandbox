@@ -32,7 +32,7 @@ export function RelatedMarketsRow({ detail }: Props) {
                     aria-hidden="true"
                     width="160"
                     height="160"
-                    className="pointer-events-none absolute -left-12 -top-12 size-[320px] rounded-full object-cover opacity-20 blur-3xl saturate-150 mix-blend-screen"
+                    className="pointer-events-none absolute -left-12 -top-12 size-[320px] rounded-full object-cover opacity-20 blur-2xl saturate-150"
                     loading="lazy"
                     decoding="async"
                     src={backgroundSrc}
