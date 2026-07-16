@@ -28,6 +28,7 @@ import { RewardsPageSkeleton } from "@/app/components/loading-states"
 import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
 import { RewardsBalanceHero } from "./rewards-balance-hero"
 import { RewardsClaimSidebar } from "./rewards-claim-sidebar"
+import { PortfolioQuickActions } from "./portfolio-quick-actions"
 import { LendOpportunity } from "./lend-opportunity"
 import { LearnSection } from "./learn-section"
 import { RecentActivity } from "@/app/portfolio/recent-activity"
@@ -467,6 +468,7 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
 
         <aside className="hidden space-y-8 lg:block lg:self-start">
           <RewardsClaimSidebar />
+          <PortfolioQuickActions />
           <LendOpportunity />
         </aside>
       </div>
