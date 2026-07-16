@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test"
 
+// The lend account section moved to the rewards page, so the dashboard only
+// focuses the borrow and multiply account sections now.
 const cases = [
-  { tab: "lending", sectionId: "dashboard-lend-account", heading: "Lend Account" },
   { tab: "overview", sectionId: "dashboard-borrow-account", heading: "Borrow Account" },
   { tab: "looping", sectionId: "dashboard-multiply-account", heading: "Multiply Account" },
 ]

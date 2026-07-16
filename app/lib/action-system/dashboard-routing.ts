@@ -17,7 +17,8 @@ const TAB_LABELS: Record<DashboardTabKey, string> = {
 }
 
 const TAB_SECTION: Partial<Record<DashboardTabKey, string>> = {
-  lending: "dashboard-lend-account",
+  // The Lend Account section moved to the rewards page, so the lending tab no
+  // longer has a dashboard section to scroll to — just its hero.
   overview: "dashboard-borrow-account",
   looping: "dashboard-multiply-account",
 }

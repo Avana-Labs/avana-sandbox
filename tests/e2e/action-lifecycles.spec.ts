@@ -7,11 +7,6 @@ const lifecycles = [
     dashboardSection: "dashboard-borrow-account",
   },
   {
-    name: "lend deposit",
-    path: "/actions/lend/deposit?market=usdc&amount=1",
-    dashboardSection: "dashboard-lend-account",
-  },
-  {
     name: "multiply open",
     path: "/actions/multiply/multiply?market=aave-gho&multiplier=2&amount=1",
     dashboardSection: "dashboard-multiply-account",
@@ -22,11 +17,8 @@ const lifecycles = [
     dashboardSection: "dashboard-borrow-account",
     selectName: "USD Coin USDC $1,200 owed",
   },
-  {
-    name: "lend withdraw",
-    path: "/actions/lend/withdraw?market=gho&amount=1",
-    dashboardSection: "dashboard-lend-account",
-  },
+  // Lend deposit/withdraw no longer reconcile on the dashboard — the lend account
+  // section moved to the rewards page (LendAccountSection returns to /rewards).
 ] as const
 
 for (const lifecycle of lifecycles) {

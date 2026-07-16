@@ -605,6 +605,11 @@ export function DashboardClient({
               )}
             </div>
           </DeferredDashboardContent>
+
+          {/* Scroll headroom so the last product section can align to the top when a
+              tab focuses it (the Learn / All Transactions sections that used to sit
+              below moved to the rewards page). */}
+          <div aria-hidden className="h-[45vh]" />
         </div>
       ) : null}
     </>

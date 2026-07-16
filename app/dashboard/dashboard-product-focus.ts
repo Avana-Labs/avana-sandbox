@@ -1,7 +1,8 @@
 import type { DashboardTabKey } from "@/app/lib/action-system/dashboard-routing"
 
 const SECTION_ID_BY_TAB: Partial<Record<DashboardTabKey, string>> = {
-  lending: "dashboard-lend-account",
+  // The lend account section moved to the rewards page — the lending tab has no
+  // dashboard section to focus anymore.
   overview: "dashboard-borrow-account",
   looping: "dashboard-multiply-account",
 }
