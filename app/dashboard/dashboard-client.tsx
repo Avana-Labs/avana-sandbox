@@ -36,8 +36,8 @@ import { usePortfolioBorrowLive } from "@/app/portfolio/use-portfolio-borrow-liv
 import { usePortfolioLendLive } from "@/app/portfolio/use-portfolio-lend-live"
 import { usePortfolioMultiplyLive } from "@/app/portfolio/use-portfolio-multiply-live"
 import { DashboardTabs, type DashboardTab } from "./dashboard-tabs"
-import { SuppliesHealthFactorCard } from "@/app/dashboard/components/borrow-tab/supplies-table"
-import { CurrentLtvCard } from "@/app/dashboard/components/borrow-tab/debts-table"
+import { SuppliesHealthFactorCard } from "@/app/portfolio/borrow-tab/supplies-table"
+import { CurrentLtvCard } from "@/app/portfolio/borrow-tab/debts-table"
 import { cn } from "@/lib/utils"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
@@ -45,13 +45,13 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { RouteErrorFallback } from "@/app/components/route-error-fallback"
 
 const CollateralPositionsPanel = lazy(async () => ({
-  default: (await import("@/app/dashboard/components/borrow-tab/collateral-positions-panel")).CollateralPositionsPanel,
+  default: (await import("@/app/portfolio/borrow-tab/collateral-positions-panel")).CollateralPositionsPanel,
 }))
 const DebtPositionsPanel = lazy(async () => ({
-  default: (await import("@/app/dashboard/components/borrow-tab/debt-positions-panel")).DebtPositionsPanel,
+  default: (await import("@/app/portfolio/borrow-tab/debt-positions-panel")).DebtPositionsPanel,
 }))
 const TradingFeesPanel = lazy(async () => ({
-  default: (await import("@/app/dashboard/components/borrow-tab/trading-fees-panel")).TradingFeesPanel,
+  default: (await import("@/app/portfolio/borrow-tab/trading-fees-panel")).TradingFeesPanel,
 }))
 const MultiplyCollateralTable = lazy(async () => ({
   default: (await import("@/app/portfolio/multiply-collateral-table")).MultiplyCollateralTable,
