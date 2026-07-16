@@ -128,7 +128,7 @@ export function RewardsBalanceHero() {
   const hoverPct = hoverPoint && firstValue ? ((hoverPoint.value - firstValue) / firstValue) * 100 : 0
   const balanceValue = hoverPoint ? formatChartValue("usd", hoverPoint.value) : AVANA_BALANCE
   const balanceDelta = hoverPoint ? `${Math.abs(hoverPct).toFixed(2)}%` : AVANA_BALANCE_DELTA
-  const balanceMeta = hoverPoint ? hoverPoint.label : "Today"
+  const balanceMeta = hoverPoint ? hoverPoint.label : undefined
   const balanceTone: "positive" | "negative" = hoverPoint ? (hoverPct >= 0 ? "positive" : "negative") : "negative"
 
   return (
@@ -152,7 +152,6 @@ export function RewardsBalanceHero() {
               deltaTone={balanceTone}
               meta={balanceMeta}
               hidden={!showDollarAmounts}
-              valueSuffix={<AvanaCoin />}
             />
           </div>
 
