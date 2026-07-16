@@ -435,7 +435,7 @@ function LoopMarketsSection({
                             : "text-muted-foreground/70 dark:text-white/42",
                         )}
                       >
-                        <span>{t("APY")}</span>
+                        <span>{t("LOOP APY")}</span>
                         <SortIcon />
                       </button>
                     </th>
