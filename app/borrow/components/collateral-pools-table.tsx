@@ -158,6 +158,14 @@ function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
   )
 }
 
+// Borrow pools store a single risk ratio (max LTV, which is the collateral
+// factor). Real lending markets sit the liquidation threshold a few points above
+// the collateral factor, so derive a display LT that way — this lets the CF column
+// read like the multiply table's (CF on top, small "LT:" below).
+function poolLiquidationThresholdPct(pool: BorrowPoolRow) {
+  return Math.min(97, Math.round(pool.ltv) + 5)
+}
+
 function CollateralDesktopTable({
   rows,
   pending,
@@ -174,7 +182,7 @@ function CollateralDesktopTable({
   const router = useRouter()
   const { compact } = useCurrency()
   const { t } = useTranslation()
-  const [sortKey, setSortKey] = useState<"asset" | "apy" | "ltv" | "risk" | "supplied">("asset")
+  const [sortKey, setSortKey] = useState<"asset" | "apy" | "ltv" | "cf" | "risk" | "supplied">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
   const toggleSort = (nextKey: typeof sortKey) => {
@@ -195,6 +203,7 @@ function CollateralDesktopTable({
         case "apy":
           return ((a.aprMin + a.aprMax) / 2 - (b.aprMin + b.aprMax) / 2) * direction
         case "ltv":
+        case "cf":
           return (a.ltv - b.ltv) * direction
         case "risk":
           return (a.riskPremiumBps - b.riskPremiumBps) * direction
@@ -213,7 +222,7 @@ function CollateralDesktopTable({
 
   const table = (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[1020px] text-[12px]">
+      <table className="w-full min-w-[1120px] text-[12px]">
         <thead>
           <tr className="bg-table-header text-left text-muted-foreground">
             <th className="pb-3 pt-4 pl-6 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
@@ -257,6 +266,19 @@ function CollateralDesktopTable({
                 )}
               >
                 <span>{t("MAX LTV")}</span>
+                <SortIcon />
+              </button>
+            </th>
+            <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <button
+                type="button"
+                onClick={() => toggleSort("cf")}
+                className={cn(
+                  "flex items-center gap-2 transition-colors",
+                  sortKey === "cf" ? "text-foreground dark:text-white" : "text-muted-foreground/70 dark:text-white/42",
+                )}
+              >
+                <span>{t("CF")}</span>
                 <SortIcon />
               </button>
             </th>
@@ -319,6 +341,14 @@ function CollateralDesktopTable({
               >
                 <span className="tabular-nums">{pool.ltv}%</span>
               </td>
+              <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
+                <div className="font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white">
+                  {Math.round(pool.ltv)}%
+                </div>
+                <div className="mt-0.5 font-data text-[12px] tabular-nums text-muted-foreground">
+                  {t("LT")}: {poolLiquidationThresholdPct(pool)}%
+                </div>
+              </td>
               <td
                 className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
               >
@@ -370,7 +400,7 @@ function CollateralDesktopTable({
           ))}
           {pending.map((row) => (
             <tr key={row.id}>
-              <td className="px-6 py-2.5 text-[12px] text-muted-foreground" colSpan={7}>
+              <td className="px-6 py-2.5 text-[12px] text-muted-foreground" colSpan={8}>
                 {row.label}
                 <span className="ml-2 text-[12px] text-muted-foreground">· {row.subLabel}</span>
               </td>
