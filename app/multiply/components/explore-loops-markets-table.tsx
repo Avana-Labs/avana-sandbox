@@ -381,11 +381,11 @@ function LoopMarketsSection({
               <table className="w-full min-w-[1040px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
                 <colgroup>
                   <col className="w-[4%]" />
-                  <col className="w-[17%]" />
-                  <col className="w-[15%]" />
-                  <col className="w-[11%]" />
-                  <col className="w-[9%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[14%]" />
                   <col className="w-[10%]" />
+                  <col className="w-[13%]" />
+                  <col className="w-[11%]" />
                   <col className="w-[12%]" />
                   <col className="w-[22%]" />
                 </colgroup>
@@ -511,6 +511,18 @@ function LoopMarketsSection({
   )
 }
 
+// Market collateral/borrow symbols are stored uppercase (e.g. "CRVUSD") while the
+// APY maps are keyed by their display casing (e.g. "crvUSD"), so match the token
+// logo resolver and look these up case-insensitively — otherwise the cell falls
+// back to "—" for any symbol whose casing differs from the map key.
+function lookupTokenApy(map: Record<string, string | undefined>, symbol: string): string | undefined {
+  const direct = map[symbol]
+  if (direct) return direct
+  const target = symbol.trim().toLowerCase()
+  const key = Object.keys(map).find((candidate) => candidate.toLowerCase() === target)
+  return key ? map[key] : undefined
+}
+
 function LoopTableRow({
   row,
   index,
@@ -528,16 +540,13 @@ function LoopTableRow({
   const { t } = useTranslation()
   const { compact } = useCurrency()
   const assetLogo = tokenLogos[row.asset as keyof typeof tokenLogos]
-  const supplyApy = tokenSupplyApys[row.protocol as keyof typeof tokenSupplyApys]
-  const borrowApy = tokenBorrowApys[row.asset as keyof typeof tokenBorrowApys]
+  const supplyApy = lookupTokenApy(tokenSupplyApys as Record<string, string | undefined>, row.protocol)
+  const borrowApy = lookupTokenApy(tokenBorrowApys as Record<string, string | undefined>, row.asset)
   const hasNegativeApy = isNegativeMultiplyApy(row.apy)
 
   return (
     <tr
-      className={cn(
-        "group asset-swap cursor-pointer transition-colors",
-        hasNegativeApy && "bg-rose-500/[0.035] dark:bg-rose-500/[0.06]",
-      )}
+      className="group asset-swap cursor-pointer transition-colors"
       onClick={() => router.push(row.href)}
       style={{ animationDelay: `${index * 40}ms` }}
     >
@@ -565,7 +574,7 @@ function LoopTableRow({
             </span>
             <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[13px] font-normal tracking-[-0.03em]">
               <span className="text-muted-foreground">{t("APY")}</span>
-              <span className="font-data tabular-nums text-success">{supplyApy ?? "—"}</span>
+              <span className="font-data tabular-nums text-muted-foreground">{supplyApy ?? "—"}</span>
             </span>
           </span>
         </CellLink>
@@ -589,7 +598,7 @@ function LoopTableRow({
             </span>
             <span className="mt-0.5 inline-flex items-center gap-1 truncate text-[13px] font-normal tracking-[-0.03em]">
               <span className="text-muted-foreground">{t("APY")}</span>
-              <span className="font-data tabular-nums text-rose-600 dark:text-rose-400">{borrowApy ?? "—"}</span>
+              <span className="font-data tabular-nums text-muted-foreground">{borrowApy ?? "—"}</span>
             </span>
           </span>
         </CellLink>
@@ -599,11 +608,7 @@ function LoopTableRow({
           href={row.href}
           className={cn(
             "font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums",
-            row.apy
-              ? row.apy.startsWith("-")
-                ? "text-rose-600 dark:text-rose-400"
-                : "text-success"
-              : "text-muted-foreground",
+            row.apy ? "text-foreground dark:text-white" : "text-muted-foreground",
           )}
         >
           {row.apy || "—"}
@@ -737,9 +742,6 @@ function MobileLoopCard({
             <MarketMobileMetric
               value={row.apy || "—"}
               label={t("APY at {leverage}").replace("{leverage}", row.rewardRows?.[1]?.value ?? "max leverage")}
-              valueClassName={
-                row.apy ? (row.apy.startsWith("-") ? "text-rose-600 dark:text-rose-400" : "text-success") : undefined
-              }
             />
           }
         />
