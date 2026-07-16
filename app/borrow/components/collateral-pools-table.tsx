@@ -180,9 +180,9 @@ function CollateralDesktopTable({
   embedded?: boolean
 }) {
   const router = useRouter()
-  const { compact } = useCurrency()
+  const { compact, ctx, convert } = useCurrency()
   const { t } = useTranslation()
-  const [sortKey, setSortKey] = useState<"asset" | "apy" | "ltv" | "cf" | "risk" | "supplied">("asset")
+  const [sortKey, setSortKey] = useState<"asset" | "apy" | "deposits" | "cf" | "risk" | "supplied">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
 
   const toggleSort = (nextKey: typeof sortKey) => {
@@ -202,9 +202,10 @@ function CollateralDesktopTable({
       switch (sortKey) {
         case "apy":
           return ((a.aprMin + a.aprMax) / 2 - (b.aprMin + b.aprMax) / 2) * direction
-        case "ltv":
         case "cf":
           return (a.ltv - b.ltv) * direction
+        case "deposits":
+          return (a.tvlUsd - b.tvlUsd) * direction
         case "risk":
           return (a.riskPremiumBps - b.riskPremiumBps) * direction
         case "supplied":
@@ -259,13 +260,15 @@ function CollateralDesktopTable({
             <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
-                onClick={() => toggleSort("ltv")}
+                onClick={() => toggleSort("deposits")}
                 className={cn(
                   "flex items-center gap-2 transition-colors",
-                  sortKey === "ltv" ? "text-foreground dark:text-white" : "text-muted-foreground/70 dark:text-white/42",
+                  sortKey === "deposits"
+                    ? "text-foreground dark:text-white"
+                    : "text-muted-foreground/70 dark:text-white/42",
                 )}
               >
-                <span>{t("MAX LTV")}</span>
+                <span>{t("TOTAL DEPOSITS")}</span>
                 <SortIcon />
               </button>
             </th>
@@ -336,10 +339,13 @@ function CollateralDesktopTable({
               >
                 <span className="tabular-nums">{formatApy((pool.aprMin + pool.aprMax) / 2)}</span>
               </td>
-              <td
-                className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
-              >
-                <span className="tabular-nums">{pool.ltv}%</span>
+              <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
+                <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+                  <span className="tabular-nums">{compact(pool.tvlUsd)}</span>
+                </div>
+                <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
+                  <span className="tabular-nums">{`${ctx.symbol}${Math.round(convert(pool.tvlUsd)).toLocaleString("en-US")}`}</span>
+                </div>
               </td>
               <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
                 <div className="font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white">

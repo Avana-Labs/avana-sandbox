@@ -4,6 +4,7 @@ import { useMemo, useState } from "react"
 import { ActionIcon } from "@/app/components/action-icon"
 import { useRouter } from "next/navigation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
+import { formatTokenQuantity } from "@/app/lib/currency/format"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
@@ -325,7 +326,12 @@ function LoanAssetsSection({
               </td>
               <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
                 <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
-                  {compact(asset.totalBorrowedUsd)}
+                  <span className="tabular-nums">
+                    {formatTokenQuantity(asset.totalBorrowedUsd / (priceFor(asset.symbol) ?? 1), asset.symbol)}
+                  </span>
+                </div>
+                <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
+                  <span className="tabular-nums">{compact(asset.totalBorrowedUsd)}</span>
                 </div>
               </td>
               <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
