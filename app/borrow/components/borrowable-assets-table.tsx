@@ -311,10 +311,7 @@ function LoanAssetsSection({
                       {asset.name}
                     </div>
                     <div className="mt-1 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[13px]">
-                      {(() => {
-                        const price = priceFor(asset.symbol)
-                        return price !== undefined ? formatTokenPrice(price) : asset.symbol
-                      })()}
+                      {asset.symbol}
                     </div>
                   </div>
                 </div>

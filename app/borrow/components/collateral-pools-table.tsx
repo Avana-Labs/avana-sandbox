@@ -497,7 +497,7 @@ function SpokeDesktopSection({
   return (
     <section ref={sectionRef} className="mb-2">
       <div className="mt-4 rounded-radius-xl bg-transparent md:shadow-none">
-        <div className="sticky top-16 z-20 flex items-center justify-between gap-3 rounded-t-radius-xl bg-background px-1 py-2 md:px-4 md:py-3">
+        <div className="sticky top-16 z-20 flex items-center justify-between gap-3 rounded-t-radius-xl bg-background py-2 md:py-3">
           <SectionTabs
             activeTab={activeTab}
             onTabChange={(tab) => {
