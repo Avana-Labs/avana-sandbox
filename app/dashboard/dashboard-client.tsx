@@ -23,17 +23,11 @@ import { shouldUseOpenGateSession } from "@/app/lib/test-mode"
 import {
   buildBorrowDashboardMetrics,
   buildBorrowDashboardMetricsFromSnapshot,
-  buildLendDashboardMetrics,
   buildMultiplyDashboardMetrics,
   type DashboardTabMetrics,
 } from "@/app/portfolio/dashboard-tab-metrics"
-import {
-  DashboardCreditOverviewSection,
-  DashboardLendPerformanceSection,
-  DashboardOverviewSection,
-} from "@/app/portfolio/dashboard-metric-section"
+import { DashboardCreditOverviewSection, DashboardOverviewSection } from "@/app/portfolio/dashboard-metric-section"
 import { buildMultiplyHeroData, buildMultiplySnapshotFromTabData } from "@/app/portfolio/multiply-hero-state"
-import { PortfolioInvestments } from "@/app/portfolio/portfolio-investments"
 import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
 import { buildLendSnapshotFromTabData } from "@/app/portfolio/lend-hero-state"
 import { usePortfolioPage } from "@/app/portfolio/use-portfolio-page"
@@ -288,7 +282,6 @@ export function DashboardClient({
   const [creditSubTab, setCreditSubTab] = useState<CreditSubTab>("overview")
   const [loopingSubTab, setLoopingSubTab] = useState<LoopingSubTab>("overview")
   const dashboardReturnHref = dashboardHrefForTab(activeTab)
-  const [isClaimingLendRewards, setIsClaimingLendRewards] = useState(false)
   const portfolioBorrow = usePortfolioBorrowLive(walletId, borrowSession)
   const sessionBorrowTab = useMemo(() => {
     if (!hasMounted || !walletId || !borrowSession.state.accounts[walletId]) return null
@@ -369,16 +362,6 @@ export function DashboardClient({
 
   const lendSnapshot = useMemo(() => buildLendSnapshotFromTabData(lendTabData), [lendTabData])
 
-  const handleClaimLendRewards = async () => {
-    if (isClaimingLendRewards) return
-    setIsClaimingLendRewards(true)
-    try {
-      await lendSession.claimRewards()
-    } finally {
-      setIsClaimingLendRewards(false)
-    }
-  }
-
   const multiplyTabDataRaw = useMemo(() => {
     if (!pageData) {
       return hasMounted
@@ -431,8 +414,6 @@ export function DashboardClient({
     }
     return buildMultiplyDashboardMetrics(multiplySession.state, walletId ?? "", multiplyTabData)
   }, [hasMounted, multiplySession.state, multiplyTabData, pageData?.multiply, walletId])
-
-  const lendDashboardMetrics = useMemo(() => buildLendDashboardMetrics(lendTabData), [lendTabData])
 
   const multiplyHero = useMemo(() => {
     const template = pageData?.heroByTab.looping ?? {}
@@ -519,30 +500,8 @@ export function DashboardClient({
 
       {activeTab !== "activity" ? (
         <div className="mt-12 space-y-12">
-          {/* Lending Positions + Lend Opportunity sidebar (mirrors the hero grid) */}
-          <section
-            id="dashboard-lend-account"
-            tabIndex={-1}
-            className="scroll-mt-24 grid gap-6 outline-none lg:grid-cols-[minmax(0,1fr)_420px] lg:items-start lg:gap-x-8"
-          >
-            <div className="min-w-0 space-y-5">
-              <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">
-                {t("Lend Account")}
-              </h2>
-              <DashboardLendPerformanceSection
-                title={t("Lending Performance")}
-                metrics={lendDashboardMetrics}
-                hideHeading
-              />
-              <PortfolioInvestments
-                investments={lendTabData.investments}
-                rewardsSummary={lendTabData.rewardsSummary}
-                onClaimRewards={handleClaimLendRewards}
-                isClaimingRewards={isClaimingLendRewards}
-                showHeading={false}
-                returnHref={dashboardReturnHref}
-              />
-            </div>
+          {/* Lend Opportunity (the Lend Account overview moved to the rewards Lend tab) */}
+          <section id="dashboard-lend-account" tabIndex={-1} className="scroll-mt-24 outline-none">
             <LendOpportunityCarousel />
           </section>
 

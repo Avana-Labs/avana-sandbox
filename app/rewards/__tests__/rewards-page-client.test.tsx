@@ -75,9 +75,20 @@ vi.mock("next/navigation", () => ({
   }),
 }))
 
+const lendSessionContext = {
+  walletId: "demo-wallet",
+  state: { markets: {} },
+  transactionHistory: [],
+  claimRewards: vi.fn(async () => {}),
+  readAdapter: {
+    readPortfolioLend: vi.fn(async () => ({ investments: [], positions: [], strategyBuckets: [], history: [] })),
+  },
+}
+
 vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
   useRewardsSessionContext: () => rewardsSessionContext,
   useAvanaIdentity: () => ({ walletId: "demo-wallet" }),
+  useLendSessionContext: () => lendSessionContext,
   useAvanaSessions: () => ({
     walletId: "demo-wallet",
     lend: {
