@@ -137,7 +137,7 @@ function RewardsPromoPanel({
         value={activePromoTab}
         onChange={setActivePromoTab}
         ariaLabel={t("Rewards quest categories")}
-        listClassName="w-max min-w-full gap-6 sm:gap-9"
+        listClassName="w-max min-w-full gap-6 px-2 sm:gap-9 sm:px-0"
       />
 
       {activePromoTab === "lend" ? <LendAccountSection /> : null}
