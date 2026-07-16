@@ -22,6 +22,7 @@ import { UnderlineTabStrip } from "@/app/components/tab-primitives"
 import { Card } from "@/components/ui/card"
 import { LendAccountSection } from "./lend-account-section"
 import { BorrowAccountSection } from "./borrow-account-section"
+import { MultiplyAccountSection } from "./multiply-account-section"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 const QUEST_ICON_MAP: Record<RewardsQuestIconId, typeof Wallet> = {
@@ -143,6 +144,7 @@ function RewardsPromoPanel({
 
       {activePromoTab === "lend" ? <LendAccountSection /> : null}
       {activePromoTab === "borrow" ? <BorrowAccountSection /> : null}
+      {activePromoTab === "multiply" ? <MultiplyAccountSection /> : null}
 
       {activeQuests.length > 0 ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
