@@ -1,29 +1,29 @@
 import type { Metadata } from "next"
 import { SchemaMarkup, buildWebPageSchema } from "@/app/components/seo/schema"
-import { RewardsPageClient } from "./rewards-page-client"
+import { RewardsPageClient } from "@/app/rewards/rewards-page-client"
 import { fetchRewardsPage } from "@/app/lib/data/providers/rewards"
 import { resolvePortfolioWalletProfileId } from "@/app/lib/data/providers/portfolio"
 import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 
 export const metadata: Metadata = buildSeoMetadata({
-  title: "Rewards",
-  description: "Track quest progress, points, and protocol metrics across Avana rewards.",
-  path: "/rewards",
-  keywords: ["Avana rewards", "quests", "points", "protocol metrics"],
+  title: "Portfolio",
+  description: "Track your accounts, positions, quest progress, and activity across Avana.",
+  path: "/portfolio",
+  keywords: ["Avana portfolio", "positions", "quests", "activity", "rewards"],
 })
 
-export default async function RewardsPage() {
+const PORTFOLIO_SCHEMA = buildWebPageSchema({
+  name: "Portfolio",
+  description: "Track your accounts, positions, quest progress, and activity across Avana.",
+  url: "https://avana.cc/portfolio",
+})
+
+export default async function PortfolioPage() {
   if (resolveDataSourceMode() === "live") {
     return (
       <>
-        <SchemaMarkup
-          data={buildWebPageSchema({
-            name: "Rewards",
-            description: "Track quest progress, points, and protocol metrics across Avana rewards.",
-            url: "https://avana.cc/rewards",
-          })}
-        />
+        <SchemaMarkup data={PORTFOLIO_SCHEMA} />
         <div className="bg-background">
           <main className="container mx-auto px-3 py-6 sm:px-4 md:py-10">
             <div className="mx-auto max-w-[1152px]">
@@ -39,13 +39,7 @@ export default async function RewardsPage() {
 
   return (
     <>
-      <SchemaMarkup
-        data={buildWebPageSchema({
-          name: "Rewards",
-          description: "Track quest progress, points, and protocol metrics across Avana rewards.",
-          url: "https://avana.cc/rewards",
-        })}
-      />
+      <SchemaMarkup data={PORTFOLIO_SCHEMA} />
       <div className="bg-background">
         <main className="container mx-auto px-3 py-6 sm:px-4 md:py-10">
           <div className="mx-auto max-w-[1152px]">

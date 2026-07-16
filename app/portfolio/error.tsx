@@ -9,5 +9,5 @@ export default function PortfolioError({ error, reset }: { error: Error; reset: 
     if (process.env.NODE_ENV !== "production") console.error(error)
   }, [error])
 
-  return <RouteErrorFallback onRetry={reset} error={error} />
+  return <RouteErrorFallback onRetry={reset} error={error} homeHref="/portfolio" homeLabel="Back to portfolio" />
 }
