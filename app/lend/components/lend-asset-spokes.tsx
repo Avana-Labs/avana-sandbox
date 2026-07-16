@@ -384,7 +384,7 @@ function AssetSection({
       {!contentMounted ? (
         <div aria-hidden className="min-h-[640px] rounded-radius-md bg-table-row" />
       ) : (
-        <DesktopTableSurface className="rounded-radius-md [contain-intrinsic-size:auto_640px] [content-visibility:auto]">
+        <DesktopTableSurface className="!rounded-none [contain-intrinsic-size:auto_640px] [content-visibility:auto]">
           {!isDesktop ? (
             <div className="space-y-4">
               {sortedRows.length > 0 ? (
