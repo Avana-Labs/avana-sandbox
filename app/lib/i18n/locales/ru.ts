@@ -140,7 +140,7 @@ const dict: TranslationDictionary = {
   COLLATERAL: "ОБЕСПЕЧЕНИЕ",
   BORROWABLE: "ДОСТУПНО В ЗАЁМ",
   "MAX APY": "МАКС. APY",
-  "LEVERAGE": "ПЛЕЧО",
+  LEVERAGE: "ПЛЕЧО",
   AVAILABLE: "ДОСТУПНО",
   "Join waitlist": "Записаться в лист ожидания",
   "Previous page": "Предыдущая страница",

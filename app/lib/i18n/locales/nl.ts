@@ -140,7 +140,7 @@ const dict: TranslationDictionary = {
   COLLATERAL: "ONDERPAND",
   BORROWABLE: "LEENBAAR",
   "MAX APY": "MAX. APY",
-  "LEVERAGE": "HEFBOOM",
+  LEVERAGE: "HEFBOOM",
   AVAILABLE: "BESCHIKBAAR",
   "Join waitlist": "Aanmelden voor wachtlijst",
   "Previous page": "Vorige pagina",

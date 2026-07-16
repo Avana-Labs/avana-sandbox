@@ -139,7 +139,7 @@ const dict: TranslationDictionary = {
   COLLATERAL: "담보",
   BORROWABLE: "대출 가능",
   "MAX APY": "최대 APY",
-  "LEVERAGE": "레버리지",
+  LEVERAGE: "레버리지",
   AVAILABLE: "가용",
   "Join waitlist": "대기자 명단 등록",
   "Previous page": "이전 페이지",

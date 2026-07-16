@@ -151,7 +151,7 @@ const dict: TranslationDictionary = {
   COLLATERAL: "TEMİNAT",
   BORROWABLE: "ÖDÜNÇ ALINABİLİR",
   "MAX APY": "MAKS. APY",
-  "LEVERAGE": "KALDIRAÇ",
+  LEVERAGE: "KALDIRAÇ",
   AVAILABLE: "MEVCUT",
   "Join waitlist": "Bekleme listesine katıl",
   "Previous page": "Önceki sayfa",
