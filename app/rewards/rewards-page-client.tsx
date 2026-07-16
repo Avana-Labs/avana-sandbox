@@ -442,7 +442,7 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
 
   return (
     <>
-      <RewardsBalanceHero />
+      <RewardsBalanceHero claimHref={claimHref} />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-x-8">
         <div className="min-w-0">
