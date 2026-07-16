@@ -420,10 +420,6 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
     return <RewardsPageSkeleton />
   }
 
-  const progressPercentage = Math.round(
-    (snapshot.summary.completedTaskCount / Math.max(1, snapshot.summary.totalTaskCount)) * 100,
-  )
-
   const claimHref = snapshot.summary.claimableTaskCount > 0 ? "/actions/rewards/claim" : undefined
   const rewardActivityRows = buildRewardsActivityHistory(walletId, state.claims, tasks)
   // Reward claims and all product transactions now share one table on this page.
@@ -446,11 +442,7 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
 
   return (
     <>
-      <RewardsBalanceHero
-        completedCount={snapshot.summary.completedTaskCount}
-        totalCount={snapshot.summary.totalTaskCount}
-        progressPercentage={progressPercentage}
-      />
+      <RewardsBalanceHero />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-x-8">
         <div className="min-w-0">
