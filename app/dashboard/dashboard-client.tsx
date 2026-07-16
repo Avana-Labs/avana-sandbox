@@ -38,7 +38,6 @@ import { usePortfolioMultiplyLive } from "@/app/portfolio/use-portfolio-multiply
 import { DashboardTabs, type DashboardTab } from "./dashboard-tabs"
 import { SuppliesHealthFactorCard } from "@/app/dashboard/components/borrow-tab/supplies-table"
 import { CurrentLtvCard } from "@/app/dashboard/components/borrow-tab/debts-table"
-import { LendOpportunityCarousel } from "./components/lend-opportunity-carousel"
 import { cn } from "@/lib/utils"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
@@ -500,11 +499,6 @@ export function DashboardClient({
 
       {activeTab !== "activity" ? (
         <div className="mt-12 space-y-12">
-          {/* Lend Opportunity (the Lend Account overview moved to the rewards Lend tab) */}
-          <section id="dashboard-lend-account" tabIndex={-1} className="scroll-mt-24 outline-none">
-            <LendOpportunityCarousel />
-          </section>
-
           <DeferredDashboardContent eager={activeTab === "overview" || activeTab === "looping"}>
             {/* Borrow sections (moved from the former Borrow tab) */}
             <div id="dashboard-borrow-account" tabIndex={-1} className="scroll-mt-24 outline-none">

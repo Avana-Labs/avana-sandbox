@@ -65,7 +65,11 @@ function ChangePill({ change }: { change: number }) {
   )
 }
 
-export function LendOpportunityCarousel() {
+/**
+ * Lend opportunities as a compact card grid — the mobile card design, used on the
+ * rewards sidebar beneath the claim action (moved off the dashboard).
+ */
+export function LendOpportunity() {
   const { t } = useTranslation()
   const opportunities = buildOpportunities()
 
@@ -75,14 +79,13 @@ export function LendOpportunityCarousel() {
         {t("Lend Opportunity")}
       </h3>
 
-      {/* Mobile: horizontal carousel of compact cards */}
-      <div className="flex gap-3 overflow-x-auto overscroll-x-contain pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:hidden">
+      <div className="grid grid-cols-2 gap-3">
         {opportunities.map((opportunity) => {
           const positive = opportunity.change24hPct >= 0
           return (
             <article
               key={opportunity.marketId}
-              className="flex w-[150px] shrink-0 flex-col gap-2.5 rounded-radius-lg border border-border bg-card p-3.5"
+              className="flex flex-col gap-2.5 rounded-radius-lg border border-border bg-card p-3.5"
             >
               <div className="flex items-start justify-between">
                 <TokenIcon symbol={opportunity.symbol} size="md" />
@@ -102,42 +105,6 @@ export function LendOpportunityCarousel() {
                 <span className="align-top text-[13px]">%</span>
               </div>
               <ChangePill change={opportunity.change24hPct} />
-            </article>
-          )
-        })}
-      </div>
-
-      {/* Desktop: vertical stack of full-width rows */}
-      <div className="hidden lg:flex lg:flex-col lg:gap-2.5">
-        {opportunities.map((opportunity) => {
-          const positive = opportunity.change24hPct >= 0
-          return (
-            <article
-              key={opportunity.marketId}
-              className="flex items-center gap-3 rounded-radius-lg border border-border bg-transparent px-3.5 py-3 transition-colors hover:bg-surface-hover"
-            >
-              <TokenIcon symbol={opportunity.symbol} size="table" />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-1.5">
-                    <span className="truncate text-[15px] font-semibold text-foreground">{opportunity.symbol}</span>
-                    {opportunity.hot ? <HotBadge /> : null}
-                  </div>
-                  <span
-                    className={cn(
-                      "shrink-0 text-[15px] font-semibold tracking-[-0.03em]",
-                      positive ? "text-brand dark:text-[#7DDCFF]" : "text-rose-500",
-                    )}
-                  >
-                    {opportunity.apyPct.toFixed(2)}
-                    <span className="text-[12px]">%</span>
-                  </span>
-                </div>
-                <div className="mt-1 flex items-center justify-between gap-2">
-                  <span className="truncate text-[12px] text-muted-foreground">{opportunity.name}</span>
-                  <ChangePill change={opportunity.change24hPct} />
-                </div>
-              </div>
             </article>
           )
         })}

@@ -122,6 +122,10 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
   }),
 }))
 
+vi.mock("@/app/portfolio/use-portfolio-page", () => ({
+  usePortfolioPage: () => ({ data: null, error: null, isLoading: false, retry: () => {} }),
+}))
+
 // Inspect the raw rows fed into the combined activity table.
 vi.mock("@/app/portfolio/recent-activity", () => ({
   RecentActivity: ({
