@@ -77,8 +77,8 @@ jobs:
       # NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1, which opens the onboarding gate,
       # injects the test wallet, and serves mock data — so this needs neither a
       # Convex deployment nor a SIWE token. Scoped to the deterministic specs:
-      #   - dashboard-product-routing: dashboard focuses the right account section
-      #     for the borrow/lend/multiply routes.
+      #   - portfolio-routing: the portfolio page renders its product account tabs,
+      #     and the old /dashboard and /rewards routes redirect to /portfolio.
       #   - borrow-detail-routes: every borrow detail route family renders without
       #     a runtime error (guards the hydration regression fixed in
       #     responsive-detail-action.tsx).
@@ -86,7 +86,7 @@ jobs:
       # trips Playwright's transform hook) and free of timing/pixel assertions.
       # onboarding.spec.ts stays out (needs real auth + Convex).
       - name: E2E smoke (test-mode routes render)
-        run: npx playwright test --project=chromium tests/e2e/dashboard-product-routing.spec.ts tests/e2e/borrow-detail-routes.spec.ts
+        run: npx playwright test --project=chromium tests/e2e/portfolio-routing.spec.ts tests/e2e/borrow-detail-routes.spec.ts
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
