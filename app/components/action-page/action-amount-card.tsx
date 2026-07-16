@@ -161,8 +161,28 @@ export function ActionAmountCard({
     </button>
   )
 
+  // Wallet balance shown under the token picker. Clicking it fills the max amount
+  // (replaces the separate "Max" button).
+  const balanceInline =
+    balanceValue != null ? (
+      onMax && !readOnly ? (
+        <button
+          type="button"
+          onClick={onMax}
+          title={t("Use max")}
+          className="max-w-full truncate text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+        >
+          {t(balanceLabel ?? "Balance")}: <span className="text-foreground">{balanceValue}</span>
+        </button>
+      ) : (
+        <div className="max-w-full truncate text-[13px] text-muted-foreground">
+          {t(balanceLabel ?? "Balance")}: <span className="text-foreground">{balanceValue}</span>
+        </div>
+      )
+    ) : null
+
   const amountRow = (
-    <div className="mt-1.5 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
+    <div className="mt-1.5 flex items-start justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
       {readOnly ? (
         <div className="min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
           {amount || "0"}
@@ -188,7 +208,8 @@ export function ActionAmountCard({
         </label>
       )}
       {!hideAssetSelector ? (
-        <div className="relative shrink-0 max-[360px]:self-end" ref={switchable ? menuRef : undefined}>
+        <div className="flex shrink-0 flex-col items-end gap-1.5 max-[360px]:self-end">
+          <div className="relative" ref={switchable ? menuRef : undefined}>
           {unitLabel ? (
             <div className="inline-flex cursor-default items-center rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground">
               <span>{unitLabel}</span>
@@ -246,6 +267,8 @@ export function ActionAmountCard({
               {assetOptions!.map((option) => renderAssetOption(option))}
             </div>
           ) : null}
+          </div>
+          {balanceInline}
         </div>
       ) : null}
     </div>
@@ -260,24 +283,6 @@ export function ActionAmountCard({
   const gatedHintRow =
     gated && assetPickerHint ? (
       <div className="mt-1.5 text-[13px] text-muted-foreground">{t(assetPickerHint)}</div>
-    ) : null
-
-  const balanceRow =
-    balanceValue != null ? (
-      <div className="mt-2 flex items-center justify-between gap-2 px-4 text-[13px] text-muted-foreground">
-        <span className="min-w-0 truncate">
-          {t(balanceLabel ?? "Balance")}: <span className="text-foreground">{balanceValue}</span>
-        </span>
-        {onMax && !readOnly ? (
-          <button
-            type="button"
-            onClick={onMax}
-            className="inline-flex min-h-10 shrink-0 items-center rounded-full border border-border bg-surface-raised px-3 py-1 text-[12px] font-medium text-foreground transition-colors hover:bg-surface-hover"
-          >
-            {t("Max")}
-          </button>
-        ) : null}
-      </div>
     ) : null
 
   const assetPickerDialog =
@@ -314,7 +319,6 @@ export function ActionAmountCard({
   if (variant === "inset" || variant === "raised") {
     return (
       <>
-        <div>
         <SwapStyleField
           label={t(label)}
           tone={variant === "raised" ? "raised" : "inset"}
@@ -324,6 +328,7 @@ export function ActionAmountCard({
           {amountRow}
           {usdRow}
           {gatedHintRow}
+          {hideAssetSelector && balanceInline ? <div className="mt-2 flex justify-end">{balanceInline}</div> : null}
           {showReceiveWethToggle ? (
             <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3 text-[14px]">
               <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -352,8 +357,6 @@ export function ActionAmountCard({
           ) : null}
           {footer ? <div className="mt-3 border-t border-border/60 pt-3">{footer}</div> : null}
         </SwapStyleField>
-        {balanceRow}
-        </div>
         {assetPickerDialog}
         {menuSheet}
       </>
@@ -362,7 +365,6 @@ export function ActionAmountCard({
 
   return (
     <>
-      <div>
       <div
         className="rounded-radius-xl border border-transparent bg-field-bottom text-card-foreground"
         data-testid="action-amount-card"
@@ -372,6 +374,7 @@ export function ActionAmountCard({
           {amountRow}
           {usdRow}
           {gatedHintRow}
+          {hideAssetSelector && balanceInline ? <div className="mt-2 flex justify-end">{balanceInline}</div> : null}
         </div>
 
         {showReceiveWethToggle ? (
@@ -405,8 +408,6 @@ export function ActionAmountCard({
         ) : null}
 
         {footer ? <div className="border-t border-border">{footer}</div> : null}
-      </div>
-      {balanceRow}
       </div>
       {assetPickerDialog}
       {menuSheet}
