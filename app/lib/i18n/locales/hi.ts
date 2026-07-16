@@ -366,6 +366,8 @@ const dict: TranslationDictionary = {
   ASSET: "एसेट",
   "Asset actions": "एसेट कार्रवाइयाँ",
   "AVA balance": "AVA बैलेंस",
+  Portfolio: "पोर्टफोलियो",
+  "Quick actions": "त्वरित क्रियाएँ",
   "Total Fees earned": "कुल अर्जित शुल्क",
   "Claimable Fees": "दावा योग्य शुल्क",
   "Claim Fees": "शुल्क का दावा करें",

@@ -28,7 +28,7 @@ describe("performance route budgets", () => {
   })
 
   it("maps each primary route to an early-visible hero marker", () => {
-    const primaryRoutes = ["/", "/borrow", "/lend", "/multiply", "/dashboard", "/rewards", "/support-center"]
+    const primaryRoutes = ["/", "/borrow", "/lend", "/multiply", "/dashboard", "/portfolio", "/support-center"]
 
     for (const route of primaryRoutes) {
       expect(ROUTE_HERO_SELECTORS.some((entry) => entry.route === route)).toBe(true)

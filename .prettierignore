@@ -3,6 +3,7 @@
 .next-dev/
 .next-prod/
 .next-lighthouse/
+.next-check/
 out/
 dist/
 

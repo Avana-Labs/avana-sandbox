@@ -368,6 +368,8 @@ const dict: TranslationDictionary = {
   ASSET: "ASSET",
   "Asset actions": "Asset-Aktionen",
   "AVA balance": "AVA-Guthaben",
+  Portfolio: "Portfolio",
+  "Quick actions": "Schnellaktionen",
   "Total Fees earned": "Verdiente Gebühren gesamt",
   "Claimable Fees": "Beanspruchbare Gebühren",
   "Claim Fees": "Gebühren beanspruchen",

@@ -129,7 +129,11 @@ export function MultiplyAccountSection() {
       <div className="mt-8">
         {loopingSubTab === "overview" ? (
           <div className="space-y-8">
-            <DashboardOverviewSection hideHeading title={t("Multiply Overview")} metrics={multiplyDashboardMetrics.overview} />
+            <DashboardOverviewSection
+              hideHeading
+              title={t("Multiply Overview")}
+              metrics={multiplyDashboardMetrics.overview}
+            />
             <div className="grid gap-4 xl:grid-cols-2">
               <SuppliesHealthFactorCard
                 averageHealthFactor={multiplySnapshot.averageHealthFactor}
