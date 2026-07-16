@@ -72,5 +72,5 @@ export function ActionPageClient({
     )
   }
 
-  return <RewardsActionPageClient closeHref={closeHref ?? "/rewards"} />
+  return <RewardsActionPageClient closeHref={closeHref ?? "/portfolio"} />
 }

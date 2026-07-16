@@ -91,7 +91,7 @@ describe("rewards catalog audit", () => {
     expect(getTaskDeepLink("use-3-products")).toBe("/lend")
     expect(getTaskDeepLink("grow-portfolio-10k")).toBe("/lend")
     expect(getTaskDeepLink("open-8-active-positions")).toBe("/lend")
-    expect(getTaskDeepLink("claim-rewards-5-times")).toBe("/rewards")
+    expect(getTaskDeepLink("claim-rewards-5-times")).toBe("/portfolio")
   })
 
   it("completes every non-timer task through its sandbox audit fixture", () => {

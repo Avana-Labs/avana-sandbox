@@ -5,7 +5,7 @@ import { PortfolioHeroActions } from "@/app/portfolio/hero/portfolio-hero-action
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
-const RETURN_HREF = "/rewards"
+const RETURN_HREF = "/portfolio"
 
 function withReturn(href: string) {
   return `${href}${href.includes("?") ? "&" : "?"}return=${encodeURIComponent(RETURN_HREF)}`

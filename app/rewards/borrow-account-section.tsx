@@ -29,7 +29,7 @@ const TradingFeesPanel = lazy(async () => ({
   default: (await import("@/app/dashboard/components/borrow-tab/trading-fees-panel")).TradingFeesPanel,
 }))
 
-const RETURN_HREF = "/rewards"
+const RETURN_HREF = "/portfolio"
 
 type CreditSubTab = "overview" | "collateral" | "debt" | "fees"
 const CREDIT_SUB_TABS: readonly { id: CreditSubTab; label: string }[] = [

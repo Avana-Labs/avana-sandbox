@@ -44,7 +44,7 @@ export function LendAccountSection() {
         onClaimRewards={handleClaimRewards}
         isClaimingRewards={isClaiming}
         showHeading={false}
-        returnHref="/rewards"
+        returnHref="/portfolio"
       />
       <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{t("Lend Rewards")}</h2>
     </section>
