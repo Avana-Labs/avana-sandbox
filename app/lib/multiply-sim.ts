@@ -149,8 +149,10 @@ export type MultiplyRewardRow = {
 export type MultiplyMarketRow = {
   href: string
   protocol: string
+  protocolName?: string
   protocolLogo: string
   asset: string
+  assetName?: string
   kind: "Loop"
   apy: string
   apyLabel: string
