@@ -237,9 +237,9 @@ describe("RewardsPageClient", () => {
   it("routes deep-link tasks into the correct product surfaces", async () => {
     renderRewardsPage()
 
-    await openProductTab("Lend")
-    await clickQuestAction("Go to Lend")
-    expect(push).toHaveBeenCalledWith("/lend")
+    await openProductTab("Borrow")
+    await clickQuestAction("Borrow more")
+    expect(push).toHaveBeenCalledWith("/borrow")
   })
 
   it("records daily check-ins from challenge tasks", async () => {

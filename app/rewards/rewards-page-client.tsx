@@ -274,6 +274,10 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
       return accumulator
     }, emptyRewardsQuestsByTab<RewardCardViewModel>())
 
+    // "Getting started" is no longer its own tab — its quests now lead the Lend tab.
+    grouped.lend = [...grouped["getting-started"], ...grouped.lend]
+    grouped["getting-started"] = []
+
     // Show at most 6 cards per tab (catalog order). Any extra claimable quests
     // stay claimable through the sidebar / mobile claim rail.
     for (const key of Object.keys(grouped) as RewardsPromoTabId[]) {
@@ -423,8 +427,6 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
   return (
     <>
       <RewardsBalanceHero
-        rewardPools={pageData?.rewardPools ?? []}
-        balanceTotal={snapshot.summary.totalClaimedAmount}
         completedCount={snapshot.summary.completedTaskCount}
         totalCount={snapshot.summary.totalTaskCount}
         progressPercentage={progressPercentage}
