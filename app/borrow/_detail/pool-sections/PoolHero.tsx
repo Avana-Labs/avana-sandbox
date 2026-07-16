@@ -132,7 +132,7 @@ function TokenAvatar({ visual }: { visual: PoolDetail["hero"]["visuals"][number]
   return (
     <span
       role="img"
-      className={cn("inline-flex size-12 items-center justify-center", visual.textClass)}
+      className={cn("inline-flex size-16 items-center justify-center", visual.textClass)}
       aria-label={visual.symbol}
     >
       {visual.iconUrl ? (
@@ -140,9 +140,9 @@ function TokenAvatar({ visual }: { visual: PoolDetail["hero"]["visuals"][number]
         <img
           src={visual.iconUrl}
           alt=""
-          className="size-12 object-contain"
-          width={48}
-          height={48}
+          className="size-16 object-contain"
+          width={64}
+          height={64}
           fetchPriority="high"
         />
       ) : (

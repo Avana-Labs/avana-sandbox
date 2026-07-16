@@ -39,16 +39,16 @@ export function AssetHeroIdentity({
             <span
               role="img"
               aria-label={detail.hero.symbol}
-              className={cn("inline-flex size-14 items-center justify-center", detail.hero.visual.textClass)}
+              className={cn("inline-flex size-16 items-center justify-center", detail.hero.visual.textClass)}
             >
               {detail.hero.visual.iconUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={detail.hero.visual.iconUrl}
                   alt=""
-                  className="size-14 object-contain"
-                  width={56}
-                  height={56}
+                  className="size-16 object-contain"
+                  width={64}
+                  height={64}
                   fetchPriority="high"
                 />
               ) : (
