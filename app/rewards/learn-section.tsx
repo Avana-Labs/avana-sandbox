@@ -29,7 +29,7 @@ const LEARN_CARDS: LearnCard[] = [
   },
 ]
 
-export function LendLearnSection() {
+export function LearnSection() {
   const { t } = useTranslation()
 
   return (

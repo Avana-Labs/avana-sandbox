@@ -63,9 +63,6 @@ const TradingFeesPanel = lazy(async () => ({
 const MultiplyCollateralTable = lazy(async () => ({
   default: (await import("@/app/portfolio/multiply-collateral-table")).MultiplyCollateralTable,
 }))
-const LendLearnSection = lazy(async () => ({
-  default: (await import("./components/lend-learn-section")).LendLearnSection,
-}))
 
 function DashboardModulePlaceholder() {
   return <Skeleton className="h-64 w-full rounded-radius-md" />
@@ -654,12 +651,6 @@ export function DashboardClient({
                 </div>
               )}
             </div>
-          </DeferredDashboardContent>
-
-          <DeferredDashboardContent>
-            <DashboardModuleBoundary>
-              <LendLearnSection />
-            </DashboardModuleBoundary>
           </DeferredDashboardContent>
         </div>
       ) : null}
