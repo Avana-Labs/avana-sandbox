@@ -7,7 +7,6 @@ afterEach(() => {
 
 describe("focusDashboardProduct", () => {
   it.each([
-    ["lending", "dashboard-lend-account"],
     ["overview", "dashboard-borrow-account"],
     ["looping", "dashboard-multiply-account"],
   ] as const)("focuses and scrolls the %s dashboard section", (tab, id) => {
@@ -20,5 +19,9 @@ describe("focusDashboardProduct", () => {
     expect(focusDashboardProduct(tab)).toBe(true)
     expect(section.scrollIntoView).toHaveBeenCalledWith({ block: "start" })
     expect(document.activeElement).toBe(section)
+  })
+
+  it("returns false for the lending tab (its section moved to the rewards page)", () => {
+    expect(focusDashboardProduct("lending")).toBe(false)
   })
 })

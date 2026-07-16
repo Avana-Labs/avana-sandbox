@@ -11,10 +11,13 @@ import { formatChartValue, type ChartPoint } from "@/app/components/charts"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
-const HeroAreaChart = dynamic(() => import("@/app/components/charts/hero-area-chart").then((mod) => mod.HeroAreaChart), {
-  ssr: false,
-  loading: () => <div aria-hidden className="h-[128px] w-full" />,
-})
+const HeroAreaChart = dynamic(
+  () => import("@/app/components/charts/hero-area-chart").then((mod) => mod.HeroAreaChart),
+  {
+    ssr: false,
+    loading: () => <div aria-hidden className="h-[128px] w-full" />,
+  },
+)
 
 // TODO(backend): wire these to the user's real Avana balance (mirrors the portfolio hero).
 const AVANA_BALANCE = "$14,400.00"
