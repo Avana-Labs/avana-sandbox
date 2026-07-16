@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import { readFileSync } from "node:fs"
 import path from "node:path"
 
-const lendActionSurfaces = ["app/lend/lend-client.tsx", "app/dashboard/dashboard-client.tsx"]
+const lendActionSurfaces = ["app/lend/lend-client.tsx", "app/rewards/lend-account-section.tsx"]
 
 describe("lend architecture final gate", () => {
   it("keeps lend engine and session tests present", () => {

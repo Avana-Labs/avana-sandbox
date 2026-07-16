@@ -301,8 +301,8 @@ test.describe("Multiply pages", () => {
 test.describe("Dashboard", () => {
   test("browse all dashboard tabs", async ({ page }, testInfo) => {
     const viewport = testInfo.project.name
-    await browseRoute(page, viewport, "/dashboard", { clickTabs: true })
-    await toggleTheme(page, viewport, "/dashboard")
+    await browseRoute(page, viewport, "/portfolio", { clickTabs: true })
+    await toggleTheme(page, viewport, "/portfolio")
   })
 })
 
