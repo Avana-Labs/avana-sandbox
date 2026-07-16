@@ -323,7 +323,6 @@ export function ActionAmountCard({
           {amountRow}
           {usdRow}
           {gatedHintRow}
-          {balanceRow}
           {showReceiveWethToggle ? (
             <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3 text-[14px]">
               <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -352,6 +351,7 @@ export function ActionAmountCard({
           ) : null}
           {footer ? <div className="mt-3 border-t border-border/60 pt-3">{footer}</div> : null}
         </SwapStyleField>
+        {balanceRow}
         {assetPickerDialog}
         {menuSheet}
       </>
@@ -369,7 +369,6 @@ export function ActionAmountCard({
           {amountRow}
           {usdRow}
           {gatedHintRow}
-          {balanceRow}
         </div>
 
         {showReceiveWethToggle ? (
@@ -404,6 +403,7 @@ export function ActionAmountCard({
 
         {footer ? <div className="border-t border-border">{footer}</div> : null}
       </div>
+      {balanceRow}
       {assetPickerDialog}
       {menuSheet}
     </>
