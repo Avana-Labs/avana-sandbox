@@ -558,6 +558,7 @@ const dict: TranslationDictionary = {
   "Credit Performance": "Kredit-Performance",
   "Lending Positions": "Verleihpositionen",
   "Lending Performance": "Verleih-Performance",
+  "Lend Rewards": "Verleih-Prämien",
   "Multiply Overview": "Multiply-Übersicht",
   "Multiply Positions": "Multiply-Positionen",
   "Loading your portfolio": "Dein Portfolio wird geladen",

@@ -539,6 +539,7 @@ const dict: TranslationDictionary = {
   "Credit Performance": "크레딧 성과",
   "Lending Positions": "대출 포지션",
   "Lending Performance": "대출 성과",
+  "Lend Rewards": "대출 리워드",
   "Multiply Overview": "루핑 개요",
   "Multiply Positions": "루핑 포지션",
   "Loading your portfolio": "포트폴리오 불러오는 중",

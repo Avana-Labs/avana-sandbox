@@ -548,6 +548,7 @@ const dict: TranslationDictionary = {
   "Credit Performance": "Kinerja Kredit",
   "Lending Positions": "Posisi Pinjaman",
   "Lending Performance": "Kinerja Pinjaman",
+  "Lend Rewards": "Hadiah Pinjaman",
   "Multiply Overview": "Ikhtisar Multiply",
   "Multiply Positions": "Posisi Multiply",
   "Loading your portfolio": "Memuat portofolio Anda",

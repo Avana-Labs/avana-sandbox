@@ -655,6 +655,7 @@ const dict: TranslationDictionary = {
   "Credit Performance": "信贷表现",
   "Lending Positions": "借出头寸",
   "Lending Performance": "借出表现",
+  "Lend Rewards": "借出奖励",
   "Multiply Overview": "循环概览",
   "Multiply Positions": "循环头寸",
   "Loading your portfolio": "正在加载您的投资组合",
