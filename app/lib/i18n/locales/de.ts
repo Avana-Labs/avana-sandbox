@@ -149,7 +149,7 @@ const dict: TranslationDictionary = {
   COLLATERAL: "SICHERHEIT",
   BORROWABLE: "LEIHBAR",
   "MAX APY": "MAX. APY",
-  "MAX LEVERAGE": "MAX. HEBEL",
+  "LEVERAGE": "HEBEL",
   AVAILABLE: "VERFÜGBAR",
   "Join waitlist": "Warteliste beitreten",
   "Previous page": "Vorherige Seite",

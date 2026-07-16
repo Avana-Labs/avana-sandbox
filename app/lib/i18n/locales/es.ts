@@ -443,7 +443,7 @@ const dict: TranslationDictionary = {
   COLLATERAL: "GARANTÍA",
   BORROWABLE: "PRESTABLE",
   "MAX APY": "APY MÁX",
-  "MAX LEVERAGE": "APALANC. MÁX",
+  "LEVERAGE": "APALANC.",
   "Join waitlist": "Unirse a la lista de espera",
   "Previous page": "Página anterior",
   "Next page": "Página siguiente",

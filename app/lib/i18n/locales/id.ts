@@ -140,7 +140,7 @@ const dict: TranslationDictionary = {
   COLLATERAL: "JAMINAN",
   BORROWABLE: "DAPAT DIPINJAM",
   "MAX APY": "APY MAKS",
-  "MAX LEVERAGE": "LEVERAGE MAKS",
+  "LEVERAGE": "LEVERAGE",
   AVAILABLE: "TERSEDIA",
   "Join waitlist": "Gabung daftar tunggu",
   "Previous page": "Halaman sebelumnya",

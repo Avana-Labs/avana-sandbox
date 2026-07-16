@@ -433,7 +433,7 @@ const dict: TranslationDictionary = {
   COLLATERAL: "抵押品",
   BORROWABLE: "可借",
   "MAX APY": "最高 APY",
-  "MAX LEVERAGE": "最高杠杆",
+  "LEVERAGE": "杠杆",
   "Join waitlist": "加入候补名单",
   "Previous page": "上一页",
   "Next page": "下一页",
