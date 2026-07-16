@@ -90,13 +90,13 @@ function SortIcon() {
 function AssetIcon({ row }: { row: AssetRow }) {
   if (row.logoSrc) {
     return (
-      <span className="relative flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-transparent">
+      <span className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-transparent">
         <Image
           alt={row.logoAlt ?? `${row.symbol} logo`}
           src={row.logoSrc}
-          width={40}
-          height={40}
-          sizes="40px"
+          width={48}
+          height={48}
+          sizes="48px"
           className="h-full w-full object-contain"
           unoptimized
         />
