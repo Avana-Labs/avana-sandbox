@@ -93,6 +93,8 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
   useRewardsSessionContext: () => rewardsSessionContext,
   useAvanaIdentity: () => ({ walletId: "demo-wallet" }),
   useLendSessionContext: () => lendSessionContext,
+  useBorrowSessionContext: () => borrowSessionContext,
+  useMultiplySessionContext: () => multiplySessionContext,
   useAvanaSessions: () => ({
     walletId: "demo-wallet",
     lend: {
@@ -121,6 +123,40 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
     },
   }),
 }))
+
+const EMPTY_CREDIT_LINES = {
+  approvedUsd: 0,
+  liquidationThresholdUsd: 0,
+  averageHealthFactor: null,
+  currentLtvPct: 0,
+  totalBorrowedUsd: 0,
+  totalCollateralUsd: 0,
+}
+const borrowSessionContext = {
+  state: { accounts: {}, markets: {} },
+  transactionHistory: [],
+  readAdapter: {
+    readPortfolioBorrow: vi.fn(async () => ({
+      creditLines: EMPTY_CREDIT_LINES,
+      collateralPositions: [],
+      debtPositions: [],
+    })),
+  },
+}
+const multiplySessionContext = {
+  state: { accounts: {}, markets: {}, positions: {} },
+  transactionHistory: [],
+  readAdapter: {
+    readPortfolioMultiply: vi.fn(async () => ({
+      creditLines: EMPTY_CREDIT_LINES,
+      lpCollaterals: [],
+      positions: [],
+      openOrders: [],
+      twapOrders: [],
+      history: [],
+    })),
+  },
+}
 
 vi.mock("@/app/portfolio/use-portfolio-page", () => ({
   usePortfolioPage: () => ({ data: null, error: null, isLoading: false, retry: () => {} }),
