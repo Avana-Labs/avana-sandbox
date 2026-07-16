@@ -139,7 +139,7 @@ const dict: TranslationDictionary = {
   COLLATERAL: "担保",
   BORROWABLE: "借入可能",
   "MAX APY": "最大 APY",
-  "MAX LEVERAGE": "最大レバレッジ",
+  "LEVERAGE": "レバレッジ",
   AVAILABLE: "利用可能",
   "Join waitlist": "ウェイトリストに参加",
   "Previous page": "前のページ",

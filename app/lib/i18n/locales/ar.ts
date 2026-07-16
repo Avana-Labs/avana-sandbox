@@ -148,7 +148,7 @@ const dict: TranslationDictionary = {
   COLLATERAL: "الضمان",
   BORROWABLE: "قابل للاقتراض",
   "MAX APY": "أقصى عائد سنوي",
-  "MAX LEVERAGE": "أقصى رافعة",
+  "LEVERAGE": "رافعة",
   AVAILABLE: "متاح",
   "Join waitlist": "الانضمام إلى قائمة الانتظار",
   "Previous page": "الصفحة السابقة",

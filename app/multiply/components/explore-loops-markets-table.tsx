@@ -4,7 +4,7 @@ import * as React from "react"
 import { ActionIcon } from "@/app/components/action-icon"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
+import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
   MarketMobileCardHeader,
@@ -88,7 +88,7 @@ import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from 
 
 type MultiplyCategoryTabId = CategoryChip["id"]
 
-type LoopSortKey = "protocol" | "asset" | "apy" | "rewards" | "points"
+type LoopSortKey = "protocol" | "asset" | "apy" | "rewards" | "cf" | "points"
 
 function parseCompactUsdLabel(value?: string) {
   if (!value) return null
@@ -327,6 +327,8 @@ function LoopMarketsSection({
               parseValue(b.rewardRows?.[1]?.value ?? b.rewardRows?.[0]?.value ?? b.partnerRewards)) *
             direction
           )
+        case "cf":
+          return (a.collateralFactor - b.collateralFactor) * direction
         case "points":
           return (parseValue(a.points) - parseValue(b.points)) * direction
         case "protocol":
@@ -376,22 +378,23 @@ function LoopMarketsSection({
         {isDesktop ? (
           <div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[920px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
+              <table className="w-full min-w-[1040px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
                 <colgroup>
-                  <col className="w-[5%]" />
-                  <col className="w-[20%]" />
-                  <col className="w-[18%]" />
+                  <col className="w-[4%]" />
+                  <col className="w-[17%]" />
                   <col className="w-[15%]" />
-                  <col className="w-[15%]" />
-                  <col className="w-[15%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[9%]" />
+                  <col className="w-[10%]" />
                   <col className="w-[12%]" />
+                  <col className="w-[22%]" />
                 </colgroup>
                 <thead>
-                  <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                    <th className="rounded-l-radius-lg bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <tr className="bg-table-header text-left text-muted-foreground">
+                    <th className="bg-table-header pb-3 pl-6 pr-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       #
                     </th>
-                    <th className="bg-table-header px-6 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("protocol")}
@@ -399,14 +402,14 @@ function LoopMarketsSection({
                           "flex items-center gap-2 whitespace-nowrap transition-colors",
                           sortKey === "protocol"
                             ? "text-foreground dark:text-white"
-                            : "text-foreground/70 dark:text-white/70",
+                            : "text-muted-foreground/70 dark:text-white/42",
                         )}
                       >
                         <span>{t("COLLATERAL")}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("asset")}
@@ -414,14 +417,14 @@ function LoopMarketsSection({
                           "flex items-center gap-2 whitespace-nowrap transition-colors",
                           sortKey === "asset"
                             ? "text-foreground dark:text-white"
-                            : "text-foreground/70 dark:text-white/70",
+                            : "text-muted-foreground/70 dark:text-white/42",
                         )}
                       >
                         <span>{t("BORROWABLE")}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("apy")}
@@ -429,14 +432,14 @@ function LoopMarketsSection({
                           "flex items-center gap-2 whitespace-nowrap transition-colors",
                           sortKey === "apy"
                             ? "text-foreground dark:text-white"
-                            : "text-foreground/70 dark:text-white/70",
+                            : "text-muted-foreground/70 dark:text-white/42",
                         )}
                       >
-                        <span>{t("APY AT MAX LEVERAGE")}</span>
+                        <span>{t("APY")}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("rewards")}
@@ -444,29 +447,44 @@ function LoopMarketsSection({
                           "flex items-center gap-2 whitespace-nowrap transition-colors",
                           sortKey === "rewards"
                             ? "text-foreground dark:text-white"
-                            : "text-foreground/70 dark:text-white/70",
+                            : "text-muted-foreground/70 dark:text-white/42",
                         )}
                       >
-                        <span>{t("MAX LEVERAGE")}</span>
+                        <span>{t("LEVERAGE")}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 py-3.5 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                      <button
+                        type="button"
+                        onClick={() => toggleSort("cf")}
+                        className={cn(
+                          "flex items-center gap-2 whitespace-nowrap transition-colors",
+                          sortKey === "cf"
+                            ? "text-foreground dark:text-white"
+                            : "text-muted-foreground/70 dark:text-white/42",
+                        )}
+                      >
+                        <span>{t("CF")}</span>
+                        <SortIcon />
+                      </button>
+                    </th>
+                    <th className="bg-table-header px-4 pb-3 pr-6 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("points")}
                         className={cn(
-                          "flex items-center gap-2 whitespace-nowrap transition-colors",
+                          "flex w-full items-center gap-2 whitespace-nowrap transition-colors",
                           sortKey === "points"
                             ? "text-foreground dark:text-white"
-                            : "text-foreground/70 dark:text-white/70",
+                            : "text-muted-foreground/70 dark:text-white/42",
                         )}
                       >
                         <span>{t("AVAILABLE")}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <SilentActionHeader />
+                    <th className="bg-table-header px-4 pb-3 pr-5 pt-4 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
                   </tr>
                 </thead>
                 <tbody
@@ -592,32 +610,21 @@ function LoopTableRow({
         </CellLink>
       </td>
       <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <CellLink href={row.href} className="text-foreground">
-          {row.rewardRows?.[1] ? (
-            <span className="block">
-              <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
-                {row.rewardRows[1].value}
-              </span>
-              <span className="mt-0.5 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground">
-                {row.rewardRows[1].label}
-              </span>
-            </span>
-          ) : row.rewardRows?.[0] ? (
-            <span className="block">
-              <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
-                {row.rewardRows[0].value}
-              </span>
-              <span className="mt-0.5 block text-[13px] font-normal tracking-[-0.03em] text-muted-foreground">
-                {row.rewardRows[0].label}
-              </span>
-            </span>
-          ) : row.partnerRewards ? (
-            <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
-              {row.partnerRewards}
-            </span>
-          ) : (
-            <span className="block text-[15px] font-normal tracking-[-0.03em] text-muted-foreground">—</span>
-          )}
+        <CellLink
+          href={row.href}
+          className="block font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white"
+        >
+          {row.rewardRows?.[1]?.value ?? row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"}
+        </CellLink>
+      </td>
+      <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
+        <CellLink href={row.href} className="block">
+          <span className="block font-data text-[15px] font-normal tabular-nums text-foreground dark:text-white">
+            {Math.round(row.collateralFactor * 100)}%
+          </span>
+          <span className="mt-0.5 block font-data text-[12px] tabular-nums text-muted-foreground">
+            {t("LT")}: {Math.round(row.liquidationThreshold * 100)}%
+          </span>
         </CellLink>
       </td>
       <td className={`py-3 px-4 pr-6 ${TABLE_ROW_HOVER_RIGHT}`}>
