@@ -150,7 +150,7 @@ const dict: TranslationDictionary = {
   COLLATERAL: "कोलैटरल",
   BORROWABLE: "उधार-योग्य",
   "MAX APY": "अधिकतम APY",
-  "LEVERAGE": "लीवरेज",
+  LEVERAGE: "लीवरेज",
   AVAILABLE: "उपलब्ध",
   "Join waitlist": "वेटलिस्ट में शामिल हों",
   "Previous page": "पिछला पृष्ठ",
