@@ -264,7 +264,7 @@ export function ActionAmountCard({
 
   const balanceRow =
     balanceValue != null ? (
-      <div className="mt-3 flex items-center justify-between gap-2 text-[13px] text-muted-foreground">
+      <div className="mt-2 flex items-center justify-between gap-2 px-4 text-[13px] text-muted-foreground">
         <span className="min-w-0 truncate">
           {t(balanceLabel ?? "Balance")}: <span className="text-foreground">{balanceValue}</span>
         </span>
@@ -314,6 +314,7 @@ export function ActionAmountCard({
   if (variant === "inset" || variant === "raised") {
     return (
       <>
+        <div>
         <SwapStyleField
           label={t(label)}
           tone={variant === "raised" ? "raised" : "inset"}
@@ -352,6 +353,7 @@ export function ActionAmountCard({
           {footer ? <div className="mt-3 border-t border-border/60 pt-3">{footer}</div> : null}
         </SwapStyleField>
         {balanceRow}
+        </div>
         {assetPickerDialog}
         {menuSheet}
       </>
@@ -360,6 +362,7 @@ export function ActionAmountCard({
 
   return (
     <>
+      <div>
       <div
         className="rounded-radius-xl border border-transparent bg-field-bottom text-card-foreground"
         data-testid="action-amount-card"
@@ -404,6 +407,7 @@ export function ActionAmountCard({
         {footer ? <div className="border-t border-border">{footer}</div> : null}
       </div>
       {balanceRow}
+      </div>
       {assetPickerDialog}
       {menuSheet}
     </>
