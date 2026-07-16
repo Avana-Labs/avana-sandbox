@@ -5,6 +5,7 @@ import { DisplayPreferencesProvider } from "@/app/components/display-preferences
 import { REWARDS_PROMO_TABS } from "@/app/lib/data/rewards/catalog"
 import { buildDefaultRewardsCatalog, evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
 import { RewardsPageClient } from "@/app/rewards/rewards-page-client"
+import { parseFixed } from "@/app/lib/credit-engine"
 
 const push = vi.fn()
 const claimReward = vi.fn()
@@ -23,6 +24,9 @@ const borrowCreateIntent = vi.fn(() => ({ id: "borrow-intent" }))
 const borrowPreviewTransaction = vi.fn(async () => ({ allowed: true }))
 const multiplyCreateIntent = vi.fn(() => ({ id: "multiply-intent" }))
 const multiplyPreviewTransaction = vi.fn(async () => ({ allowed: true }))
+// Injectable product transaction history for the combined activity table.
+let borrowTxHistory: Array<Record<string, unknown>> = []
+let multiplyTxHistory: Array<Record<string, unknown>> = []
 const now = Date.UTC(2026, 5, 19)
 const rewardsState = {
   events: [] as Array<Record<string, unknown>>,
@@ -101,17 +105,40 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
     borrow: {
       collateralPools: [{ id: "uni-v3-bluechip-weth-usdc" }],
       getBorrowableAssetsForMarket: () => [{ id: "uni-v3-bluechip:usdc" }],
-      transactionHistory: [],
+      get transactionHistory() {
+        return borrowTxHistory
+      },
       state: { markets: {} },
       createIntent: borrowCreateIntent,
       previewTransaction: borrowPreviewTransaction,
     },
     multiply: {
-      transactionHistory: [],
+      get transactionHistory() {
+        return multiplyTxHistory
+      },
       createIntent: multiplyCreateIntent,
       previewTransaction: multiplyPreviewTransaction,
     },
   }),
+}))
+
+// Inspect the raw rows fed into the combined activity table.
+vi.mock("@/app/portfolio/recent-activity", () => ({
+  RecentActivity: ({
+    rows,
+  }: {
+    rows: Array<{ id: string; txHash?: string; secondaryLabel?: string; amountUsd?: number }>
+  }) => (
+    <div>
+      {rows.map((row) => (
+        <div key={row.id}>
+          <span>{row.txHash}</span>
+          <span>{row.secondaryLabel}</span>
+          <span>{row.amountUsd}</span>
+        </div>
+      ))}
+    </div>
+  ),
 }))
 
 function renderRewardsPage() {
@@ -190,6 +217,8 @@ describe("RewardsPageClient", () => {
     borrowPreviewTransaction.mockClear()
     multiplyCreateIntent.mockClear()
     multiplyPreviewTransaction.mockClear()
+    borrowTxHistory = []
+    multiplyTxHistory = []
 
     resetRewardsState([rewardEvent("borrow-first", "borrow_opened", "borrow", { amountUsd: 100, marketId: "pool-a" })])
     createReferralCode.mockResolvedValue({
@@ -359,5 +388,49 @@ describe("RewardsPageClient", () => {
     await clickQuestAction("Claim 140 AVA")
 
     expect(claimReward).toHaveBeenCalledWith("bring-3-active-users")
+  })
+
+  it("feeds product transactions into the combined activity table", async () => {
+    borrowTxHistory = [
+      {
+        id: "history-1",
+        intentId: "intent-1",
+        walletId: "demo-wallet",
+        marketId: "uni-v3-bluechip-weth-usdc",
+        assetId: "uni-v3-bluechip:usdc",
+        kind: "borrow",
+        status: "success",
+        requestedAmountUsd6: parseFixed("250", 6),
+        executedAmountUsd6: parseFixed("250", 6),
+        simulated: true,
+        timestamp: now,
+        hash: "sim_abc123",
+      },
+    ]
+    multiplyTxHistory = [
+      {
+        id: "multiply-1",
+        intentId: "intent-multiply-1",
+        walletId: "demo-wallet",
+        marketId: "eth-usdc",
+        kind: "multiply",
+        status: "success",
+        amountUsd: 1250,
+        multiplierBefore: 1,
+        multiplierAfter: 2.5,
+        simulated: true,
+        timestamp: now,
+        hash: "0xmultiply",
+      },
+    ]
+
+    renderRewardsPage()
+
+    // The dashboard's old "All Transactions" table now lives on the rewards page,
+    // fed by borrow + multiply + lend + reward-claim rows.
+    await waitFor(() => expect(screen.getByText("sim_abc123")).toBeInTheDocument())
+    expect(screen.getByText("Simulated transaction")).toBeInTheDocument()
+    expect(screen.getByText("0xmultiply")).toBeInTheDocument()
+    expect(screen.getByText("1250")).toBeInTheDocument()
   })
 })
