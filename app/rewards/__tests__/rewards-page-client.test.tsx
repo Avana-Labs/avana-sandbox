@@ -81,16 +81,22 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
   useAvanaSessions: () => ({
     walletId: "demo-wallet",
     lend: {
+      walletId: "demo-wallet",
+      transactionHistory: [],
+      state: { markets: {} },
       createIntent: lendCreateIntent,
       previewTransaction: lendPreviewTransaction,
     },
     borrow: {
       collateralPools: [{ id: "uni-v3-bluechip-weth-usdc" }],
       getBorrowableAssetsForMarket: () => [{ id: "uni-v3-bluechip:usdc" }],
+      transactionHistory: [],
+      state: { markets: {} },
       createIntent: borrowCreateIntent,
       previewTransaction: borrowPreviewTransaction,
     },
     multiply: {
+      transactionHistory: [],
       createIntent: multiplyCreateIntent,
       previewTransaction: multiplyPreviewTransaction,
     },

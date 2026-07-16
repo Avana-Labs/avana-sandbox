@@ -12,7 +12,7 @@ import {
   useMultiplySessionContext,
 } from "@/app/lib/avana-session/avana-sessions-provider"
 import { selectBorrowSnapshot } from "@/app/lib/borrow-system/dashboard-selectors"
-import { buildPortfolioBorrowData, mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
+import { buildPortfolioBorrowData } from "@/app/lib/borrow-system/read-model"
 import type {
   PortfolioLendTabData,
   PortfolioMultiplyCollateral,
@@ -20,7 +20,6 @@ import type {
   PortfolioPageData,
 } from "@/app/lib/data/providers/portfolio"
 import { shouldUseOpenGateSession } from "@/app/lib/test-mode"
-import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
 import {
   buildBorrowDashboardMetrics,
   buildBorrowDashboardMetricsFromSnapshot,
@@ -67,7 +66,6 @@ const MultiplyCollateralTable = lazy(async () => ({
 const LendLearnSection = lazy(async () => ({
   default: (await import("./components/lend-learn-section")).LendLearnSection,
 }))
-const RecentActivity = lazy(async () => ({ default: (await import("@/app/portfolio/recent-activity")).RecentActivity }))
 
 function DashboardModulePlaceholder() {
   return <Skeleton className="h-64 w-full rounded-radius-md" />
@@ -359,34 +357,6 @@ export function DashboardClient({
 
   const collateralPositions = liveBorrowTab?.collateralPositions ?? pageData?.borrow.collateralPositions ?? []
   const debtPositions = liveBorrowTab?.debtPositions ?? pageData?.borrow.debtPositions ?? []
-  const activityRows = useMemo(
-    () => [
-      ...mapTransactionHistoryToActivityRows(borrowSession.transactionHistory, borrowSession.state.markets),
-      ...multiplySession.transactionHistory.map((item) => ({
-        id: item.id,
-        at: new Date(item.timestamp).toISOString(),
-        product: "multiply" as const,
-        kind: item.kind === "multiply" ? ("open" as const) : ("reduce" as const),
-        status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
-        amountUsd: item.kind === "multiply" ? item.amountUsd : -item.amountUsd,
-        primaryLabel: item.kind === "multiply" ? "Simulated multiply" : "Simulated deleverage",
-        secondaryLabel: `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
-        txHash: item.hash,
-      })),
-      ...buildLendActivityHistory(lendSession.walletId, lendSession.transactionHistory, lendSession.state),
-      // Reward claims live on the rewards page (Reward Distribution History), not here.
-      ...(pageData?.activity.rows ?? []),
-    ],
-    [
-      borrowSession.transactionHistory,
-      lendSession.state,
-      lendSession.transactionHistory,
-      lendSession.walletId,
-      multiplySession.transactionHistory,
-      pageData?.activity.rows,
-    ],
-  )
-
   const lendTabData = useMemo(() => {
     if (!pageData)
       return hasMounted
@@ -689,9 +659,6 @@ export function DashboardClient({
           <DeferredDashboardContent>
             <DashboardModuleBoundary>
               <LendLearnSection />
-            </DashboardModuleBoundary>
-            <DashboardModuleBoundary>
-              <RecentActivity rows={activityRows} />
             </DashboardModuleBoundary>
           </DeferredDashboardContent>
         </div>

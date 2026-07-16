@@ -28,7 +28,9 @@ import { RewardsPageSkeleton } from "@/app/components/loading-states"
 import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
 import { RewardsBalanceHero } from "./rewards-balance-hero"
 import { RewardsClaimSidebar } from "./rewards-claim-sidebar"
-import { RewardDistributionHistory } from "./reward-distribution-history"
+import { RecentActivity } from "@/app/portfolio/recent-activity"
+import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
+import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
 import { RewardsTabs } from "./rewards-tabs"
 import { MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
@@ -423,6 +425,23 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
 
   const claimHref = snapshot.summary.claimableTaskCount > 0 ? "/actions/rewards/claim" : undefined
   const rewardActivityRows = buildRewardsActivityHistory(walletId, state.claims, tasks)
+  // Reward claims and all product transactions now share one table on this page.
+  const allActivityRows = [
+    ...mapTransactionHistoryToActivityRows(avana.borrow.transactionHistory, avana.borrow.state.markets),
+    ...avana.multiply.transactionHistory.map((item) => ({
+      id: item.id,
+      at: new Date(item.timestamp).toISOString(),
+      product: "multiply" as const,
+      kind: item.kind === "multiply" ? ("open" as const) : ("reduce" as const),
+      status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
+      amountUsd: item.kind === "multiply" ? item.amountUsd : -item.amountUsd,
+      primaryLabel: item.kind === "multiply" ? "Simulated multiply" : "Simulated deleverage",
+      secondaryLabel: `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
+      txHash: item.hash,
+    })),
+    ...buildLendActivityHistory(avana.lend.walletId, avana.lend.transactionHistory, avana.lend.state),
+    ...rewardActivityRows,
+  ]
 
   return (
     <>
@@ -447,7 +466,7 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
       </div>
 
       <div className="pb-24 lg:pb-0">
-        <RewardDistributionHistory rows={rewardActivityRows} />
+        <RecentActivity rows={allActivityRows} />
       </div>
 
       <MobileDetailActionBar>
