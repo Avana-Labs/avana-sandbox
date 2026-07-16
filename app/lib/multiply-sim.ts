@@ -158,6 +158,8 @@ export type MultiplyMarketRow = {
   apyLabel: string
   partnerRewards?: string
   points?: string
+  availablePrimary?: string
+  availableSecondary?: string
   rewardRows?: MultiplyRewardRow[]
   waitlistHref?: string
   collateralFactor: number
