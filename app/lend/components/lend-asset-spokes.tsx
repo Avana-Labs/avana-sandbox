@@ -265,7 +265,7 @@ function AssetCardView({ row, index }: { row: AssetRow; index: number }) {
         />
         <MarketMobileStatRow label={t("Utilization")} value={row.utilizationLabel ?? "—"} />
         <MarketMobileStatRow
-          label={t("Available Liquidity")}
+          label={t("Available")}
           value={
             <span>
               {row.availableLiquidityLabel ?? row.availableLiquidityPrimary}
@@ -484,7 +484,7 @@ function AssetSection({
                             : "text-muted-foreground/70 dark:text-white/42",
                         )}
                       >
-                        <span>{t("AVAILABLE LIQUIDITY")}</span>
+                        <span>{t("AVAILABLE")}</span>
                         <SortIcon />
                       </button>
                     </th>

@@ -681,7 +681,7 @@ function SpokeMobileSection({
                       />
                     </div>
                     <MarketMobileStatList className="mt-3">
-                      <MarketMobileStatRow label={t("Liquidity")} value={compact(pool.availableUsd)} />
+                      <MarketMobileStatRow label={t("Available")} value={compact(pool.availableUsd)} />
                       <MarketMobileStatRow label={t("Max LTV")} value={`${pool.ltv}%`} />
                       <MarketMobileStatRow label={t("Risk Premium")} value={formatRiskPremium(pool.riskPremiumBps)} />
                     </MarketMobileStatList>

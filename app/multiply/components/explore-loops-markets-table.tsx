@@ -751,7 +751,7 @@ function MobileLoopCard({
             label={t("Max Leverage")}
             value={row.rewardRows?.[1]?.value ?? row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"}
           />
-          <MarketMobileStatRow label={t("Liquidity")} value={availableLabel} />
+          <MarketMobileStatRow label={t("Available")} value={availableLabel} />
         </MarketMobileStatList>
       </MarketMobileCard>
     </Link>
