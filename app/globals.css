@@ -562,32 +562,6 @@ button,
   }
 }
 
-@keyframes processing-dot {
-  0%,
-  100% {
-    transform: translateY(0);
-    opacity: 0.55;
-  }
-
-  50% {
-    transform: translateY(-3px);
-    opacity: 1;
-  }
-}
-
-@keyframes sparkle {
-  0%,
-  100% {
-    transform: scale(0.85);
-    opacity: 0.35;
-  }
-
-  50% {
-    transform: scale(1.15);
-    opacity: 1;
-  }
-}
-
 @keyframes asset-swap {
   0% {
     opacity: 0;
@@ -683,20 +657,4 @@ button,
 /* Premium depth: flat cards — tone steps only, no borders/shadows */
 .surface-elevated {
   box-shadow: none;
-}
-
-@keyframes marquee {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(-25%);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [class*="animate-[marquee"] {
-    animation: none !important;
-  }
 }
