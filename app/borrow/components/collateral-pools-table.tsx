@@ -475,7 +475,9 @@ function SpokeDesktopSection({
               setActiveTab(tab)
             }}
           />
-          <h3 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{spoke.label}</h3>
+          <h3 className="text-[22px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[24px]">
+            {spoke.label}
+          </h3>
         </div>
         <div className="bg-transparent">
           {!contentMounted ? (
