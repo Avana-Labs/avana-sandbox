@@ -249,6 +249,11 @@
     font-weight: 400;
     line-height: 1.4;
     letter-spacing: -0.01em;
+    /* Render text with grayscale antialiasing instead of the browser default
+       (subpixel), which makes white-on-dark text look heavier/bolder than it is.
+       This gives the lighter, crisper weight seen in comparable dashboards. */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   :where(h1, h2, h3, h4, h5, h6, strong, b, th, button, label) {
