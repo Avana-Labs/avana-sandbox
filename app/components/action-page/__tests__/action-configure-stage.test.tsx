@@ -49,7 +49,7 @@ describe("ActionConfigureStage", () => {
     expect(screen.queryByRole("button", { name: "Max" })).not.toBeInTheDocument()
   })
 
-  it("shows the balance and a Max button that fills the balance when showBalance is set", async () => {
+  it("shows the balance as a clickable shortcut that fills the balance when showBalance is set", async () => {
     const onMax = vi.fn()
     render(
       <ActionConfigureStage
@@ -65,7 +65,7 @@ describe("ActionConfigureStage", () => {
     )
 
     expect(screen.getByText(/1\.28 ETH/)).toBeInTheDocument()
-    await userEvent.setup().click(screen.getByRole("button", { name: "Max" }))
+    await userEvent.setup().click(screen.getByRole("button", { name: /Balance: 1\.28 ETH/ }))
     expect(onMax).toHaveBeenCalledTimes(1)
   })
 
