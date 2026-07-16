@@ -624,15 +624,20 @@ function LoopTableRow({
             </Button>
           </div>
         ) : (
-          <CellLink
-            href={row.href}
-            className="inline-flex items-center text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white"
-          >
-            <span>
-              {parseCompactUsdLabel(row.points) == null
-                ? (row.points ?? "—")
-                : compact(parseCompactUsdLabel(row.points) as number)}
+          <CellLink href={row.href} className="block text-foreground">
+            <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+              {row.availablePrimary ??
+                (parseCompactUsdLabel(row.points) == null
+                  ? (row.points ?? "—")
+                  : compact(parseCompactUsdLabel(row.points) as number))}
             </span>
+            {row.availableSecondary ? (
+              <span className="mt-0.5 block text-[13px] tracking-[-0.03em] text-muted-foreground">
+                {parseCompactUsdLabel(row.availableSecondary) == null
+                  ? row.availableSecondary
+                  : compact(parseCompactUsdLabel(row.availableSecondary) as number)}
+              </span>
+            ) : null}
           </CellLink>
         )}
       </td>

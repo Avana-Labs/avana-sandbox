@@ -1,4 +1,5 @@
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
+import { formatTokenQuantity } from "@/app/lib/currency/format"
 import type { MultiplyMarketRecord, MultiplySystemState } from "@/app/lib/multiply-engine"
 import { calculateMaxLeverageApy } from "@/app/lib/multiply-engine"
 import { resolveMultiplyMarketDisplayMaxLeverage } from "@/app/lib/multiply-system/leverage-limits"
@@ -92,6 +93,11 @@ export function catalogMarketToRow(market: MultiplyMarketRecord): MultiplyMarket
     apy: formatPct(market.economics.estimatedMaxApy),
     apyLabel: "Estimated max APY at public max multiplier",
     points: formatCompactUsd(market.economics.availableLiquidityUsd),
+    availablePrimary: formatTokenQuantity(
+      market.economics.availableLiquidityUsd / market.borrowAsset.priceUsd,
+      borrowSymbol,
+    ),
+    availableSecondary: formatCompactUsd(market.economics.availableLiquidityUsd),
     // The explore table renders the primary reward row under its MAX LEVERAGE
     // header, so that row must carry the single-sourced public max — the same
     // number the trending card, hero average and markets table show — not the

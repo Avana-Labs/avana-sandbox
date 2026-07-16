@@ -364,6 +364,9 @@ function CollateralDesktopTable({
                 <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                   <span className="tabular-nums">{compact(pool.availableUsd)}</span>
                 </div>
+                <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
+                  <span className="tabular-nums">{`${ctx.symbol}${Math.round(convert(pool.availableUsd)).toLocaleString("en-US")}`}</span>
+                </div>
               </td>
               <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
                 <HoverActionGroup className="gap-2">

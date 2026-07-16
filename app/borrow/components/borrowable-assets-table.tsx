@@ -336,7 +336,12 @@ function LoanAssetsSection({
               </td>
               <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
                 <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
-                  {compact(asset.availableUsd)}
+                  <span className="tabular-nums">
+                    {formatTokenQuantity(asset.availableUsd / (priceFor(asset.symbol) ?? 1), asset.symbol)}
+                  </span>
+                </div>
+                <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
+                  <span className="tabular-nums">{compact(asset.availableUsd)}</span>
                 </div>
               </td>
               <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
