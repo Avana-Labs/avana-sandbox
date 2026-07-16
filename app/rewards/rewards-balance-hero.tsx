@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react"
 import dynamic from "next/dynamic"
 import Image from "next/image"
+import Link from "next/link"
 import { CircleDollarSign, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { HeroBalanceDisplay } from "@/app/components/charts/hero-balance-display"
@@ -117,7 +118,7 @@ function FeeCard({
   )
 }
 
-export function RewardsBalanceHero() {
+export function RewardsBalanceHero({ claimHref }: { claimHref?: string }) {
   const { t } = useTranslation()
   const { showDollarAmounts } = useAmountDisplayPreferences()
   // The headline follows the cursor across the chart, mirroring the detail heroes.
@@ -135,13 +136,6 @@ export function RewardsBalanceHero() {
     <div className="mb-6 grid gap-5 md:mb-8 md:gap-7 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] xl:items-start">
       <section className="relative overflow-hidden rounded-radius-md border-0 bg-card px-4 py-4 sm:px-5">
         <div className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle,rgba(148,163,184,0.16)_1px,transparent_1.2px)] [background-position:18px_18px] [background-size:16px_16px] dark:opacity-35 dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.1)_1px,transparent_1.2px)]" />
-        <div className="pointer-events-none absolute inset-y-0 -right-12 flex items-center md:-right-20">
-          <div
-            aria-hidden="true"
-            className="size-48 bg-contain bg-center bg-no-repeat opacity-[0.08] brightness-0 dark:invert dark:opacity-[0.06] sm:size-64 md:size-[20rem] md:opacity-[0.09] md:dark:opacity-[0.07]"
-            style={{ backgroundImage: "url('/avana-icon.png')" }}
-          />
-        </div>
 
         <div className="relative flex flex-col gap-3">
           <div className="min-w-0">
@@ -155,16 +149,19 @@ export function RewardsBalanceHero() {
             />
           </div>
 
-          <HeroAreaChart
-            data={PORTFOLIO_SERIES}
-            activeRange="1D"
-            height={128}
-            gradientId="rewardsBalanceFill"
-            className="relative w-full"
-            tone={balanceTone}
-            formatValue={(v) => (showDollarAmounts ? formatChartValue("usd", v) : "••••")}
-            onActiveIndexChange={setHoverIndex}
-          />
+          {/* Height tuned so the card bottom aligns with the right column's fee cards. */}
+          <div className="-mx-4 -mb-4 mt-1 sm:-mx-5">
+            <HeroAreaChart
+              data={PORTFOLIO_SERIES}
+              activeRange="1D"
+              height={116}
+              gradientId="rewardsBalanceFill"
+              className="relative w-full"
+              tone={balanceTone}
+              formatValue={(v) => (showDollarAmounts ? formatChartValue("usd", v) : "••••")}
+              onActiveIndexChange={setHoverIndex}
+            />
+          </div>
         </div>
       </section>
 
@@ -175,10 +172,19 @@ export function RewardsBalanceHero() {
           value={CLAIMABLE_FEES}
           hidden={!showDollarAmounts}
           action={
-            <Button type="button" size="sm" disabled className="shrink-0 gap-1.5">
-              <CircleDollarSign className="size-4" />
-              {t("Claim Fees")}
-            </Button>
+            claimHref ? (
+              <Button asChild size="sm" className="shrink-0 gap-1.5">
+                <Link href={claimHref}>
+                  <CircleDollarSign className="size-4" />
+                  {t("Claim Fees")}
+                </Link>
+              </Button>
+            ) : (
+              <Button type="button" size="sm" disabled className="shrink-0 gap-1.5">
+                <CircleDollarSign className="size-4" />
+                {t("Claim Fees")}
+              </Button>
+            )
           }
         />
       </section>
