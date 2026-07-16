@@ -785,7 +785,7 @@ function TrendingLoopCard({
 
         <div className="shrink-0 text-right">
           <div className="font-data text-[15px] font-medium tracking-[-0.03em] text-success">{snapshot.apyLabel}</div>
-          <div className="mt-1 text-[13px] text-muted-foreground dark:text-white/48">{t("APY")}</div>
+          <div className="mt-1 text-[13px] text-muted-foreground dark:text-white/48">{t("LOOP APY")}</div>
         </div>
       </div>
     </>
