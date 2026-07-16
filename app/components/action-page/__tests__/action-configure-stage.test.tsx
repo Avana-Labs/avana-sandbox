@@ -64,8 +64,8 @@ describe("ActionConfigureStage", () => {
       />,
     )
 
-    expect(screen.getByText(/1\.28 ETH/)).toBeInTheDocument()
-    await userEvent.setup().click(screen.getByRole("button", { name: /Balance: 1\.28 ETH/ }))
+    expect(screen.getByText("1.28")).toBeInTheDocument()
+    await userEvent.setup().click(screen.getByRole("button", { name: /Balance: 1\.28/ }))
     expect(onMax).toHaveBeenCalledTimes(1)
   })
 
