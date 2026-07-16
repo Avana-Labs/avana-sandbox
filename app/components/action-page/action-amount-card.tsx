@@ -161,8 +161,11 @@ export function ActionAmountCard({
     </button>
   )
 
-  // Wallet balance shown under the token picker. Clicking it fills the max amount
-  // (replaces the separate "Max" button).
+  // Wallet balance shown beside the "$0.00" line. Clicking it fills the max amount
+  // (replaces the separate "Max" button). The token ticker is dropped from the
+  // value — it's already shown in the picker right above it, so repeating it here
+  // ("12500 CRVUSD") is redundant.
+  const balanceDisplay = balanceValue?.replace(/\s+[A-Za-z][\w.]*$/, "") ?? balanceValue
   const balanceInline =
     balanceValue != null ? (
       onMax && !readOnly ? (
@@ -170,19 +173,19 @@ export function ActionAmountCard({
           type="button"
           onClick={onMax}
           title={t("Use max")}
-          className="max-w-full truncate text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+          className="max-w-full shrink-0 truncate text-[13px] text-muted-foreground transition-colors hover:text-foreground"
         >
-          {t(balanceLabel ?? "Balance")}: <span className="text-foreground">{balanceValue}</span>
+          {t(balanceLabel ?? "Balance")}: <span className="text-foreground">{balanceDisplay}</span>
         </button>
       ) : (
-        <div className="max-w-full truncate text-[13px] text-muted-foreground">
-          {t(balanceLabel ?? "Balance")}: <span className="text-foreground">{balanceValue}</span>
+        <div className="max-w-full shrink-0 truncate text-[13px] text-muted-foreground">
+          {t(balanceLabel ?? "Balance")}: <span className="text-foreground">{balanceDisplay}</span>
         </div>
       )
     ) : null
 
   const amountRow = (
-    <div className="mt-1.5 flex items-start justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
+    <div className="mt-1.5 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
       {readOnly ? (
         <div className="min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
           {amount || "0"}
@@ -208,8 +211,7 @@ export function ActionAmountCard({
         </label>
       )}
       {!hideAssetSelector ? (
-        <div className="flex shrink-0 flex-col items-end gap-1.5 max-[360px]:self-end">
-          <div className="relative" ref={switchable ? menuRef : undefined}>
+        <div className="relative shrink-0 max-[360px]:self-end" ref={switchable ? menuRef : undefined}>
           {unitLabel ? (
             <div className="inline-flex cursor-default items-center rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground">
               <span>{unitLabel}</span>
@@ -267,16 +269,17 @@ export function ActionAmountCard({
               {assetOptions!.map((option) => renderAssetOption(option))}
             </div>
           ) : null}
-          </div>
-          {balanceInline}
         </div>
       ) : null}
     </div>
   )
 
   const usdRow = (
-    <div className="mt-1 text-[14px] text-foreground/60">
-      <AnimatedTextValue text={approxUsdLabel} />
+    <div className="mt-1 flex items-center justify-between gap-3 text-[14px]">
+      <div className="min-w-0 truncate text-foreground/60">
+        <AnimatedTextValue text={approxUsdLabel} />
+      </div>
+      {balanceInline}
     </div>
   )
 
@@ -328,7 +331,6 @@ export function ActionAmountCard({
           {amountRow}
           {usdRow}
           {gatedHintRow}
-          {hideAssetSelector && balanceInline ? <div className="mt-2 flex justify-end">{balanceInline}</div> : null}
           {showReceiveWethToggle ? (
             <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3 text-[14px]">
               <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -374,7 +376,6 @@ export function ActionAmountCard({
           {amountRow}
           {usdRow}
           {gatedHintRow}
-          {hideAssetSelector && balanceInline ? <div className="mt-2 flex justify-end">{balanceInline}</div> : null}
         </div>
 
         {showReceiveWethToggle ? (

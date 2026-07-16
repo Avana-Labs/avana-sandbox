@@ -29,7 +29,7 @@ import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { lendDepositSelectItems, lendWithdrawSelectItems } from "@/app/lib/action-system/resolve-lend-context"
 import { formatLendMarketDropdownSublabel, formatLendMarketValueLabel } from "@/app/lib/lend-system/market-labels"
-import { formatActionFeeSummary } from "@/app/lib/action-system/formatters"
+import { formatActionAmount, formatActionFeeSummary } from "@/app/lib/action-system/formatters"
 import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
@@ -237,12 +237,26 @@ export function LendActionPageClient({
     if (kind === "deposit") return depositItems.length > 1
     return false
   }, [depositItems.length, embedded, initialMarketId, kind, withdrawItems.length])
+  // Balance shown on the amount card (and the click-to-max source) — surfaced
+  // directly so it's visible before any amount is typed, not only once a preview
+  // exists. Deposit → wallet balance; withdraw → currently supplied.
+  const spendableBalanceAmount = useMemo(() => {
+    if (!market) return 0
+    return kind === "deposit"
+      ? getWalletBalanceForLendMarket(session.state, walletId, market)
+      : (position?.currentSuppliedAmount ?? 0)
+  }, [kind, market, position, session.state, walletId])
+  const spendableBalanceLabel = kind === "deposit" ? "Balance" : "Deposited"
+  const spendableBalanceValue = market ? formatActionAmount(spendableBalanceAmount, market.asset.symbol, 4) : undefined
+
   // Max fills the relevant balance: wallet balance for deposit, max withdrawable
-  // for withdraw. Both are already surfaced as preview.maxAmount by the mapper.
+  // for withdraw. previewUi.maxAmount is the capped figure once a preview exists;
+  // fall back to the raw balance so Max works before an amount is entered.
   const handleMax = useCallback(() => {
-    if (previewUi?.maxAmount == null || previewUi.maxAmount <= 0) return
-    setAmount(String(Number(previewUi.maxAmount.toFixed(6))))
-  }, [previewUi?.maxAmount])
+    const max = previewUi?.maxAmount ?? spendableBalanceAmount
+    if (max == null || max <= 0) return
+    setAmount(String(Number(max.toFixed(6))))
+  }, [previewUi?.maxAmount, spendableBalanceAmount])
 
   const handleBack = useCallback(() => {
     if (stage === "review") {
@@ -471,6 +485,8 @@ export function LendActionPageClient({
           singlePrimaryCta={sidebar}
           hideAssetSelector={isHomeLayout && Boolean(initialMarketId)}
           showBalance
+          balanceLabel={spendableBalanceLabel}
+          balanceValue={spendableBalanceValue}
           onMax={handleMax}
         />
       ) : null}

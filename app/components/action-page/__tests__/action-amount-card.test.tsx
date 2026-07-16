@@ -79,8 +79,9 @@ describe("ActionAmountCard", () => {
     const onMax = vi.fn()
     render(<ActionAmountCard {...baseProps} balanceLabel="Balance" balanceValue="1.28 ETH" onMax={onMax} />)
 
-    expect(screen.getByText(/1\.28 ETH/)).toBeInTheDocument()
-    const balanceButton = screen.getByRole("button", { name: /Balance: 1\.28 ETH/ })
+    // The ticker is dropped from the displayed value (shown in the picker instead).
+    expect(screen.getByText("1.28")).toBeInTheDocument()
+    const balanceButton = screen.getByRole("button", { name: /Balance: 1\.28/ })
     fireEvent.click(balanceButton)
     expect(onMax).toHaveBeenCalledTimes(1)
   })
@@ -88,7 +89,7 @@ describe("ActionAmountCard", () => {
   it("renders the balance as static text (not clickable) in read-only review mode", () => {
     render(<ActionAmountCard {...baseProps} balanceLabel="Balance" balanceValue="1.28 ETH" onMax={() => {}} readOnly />)
 
-    expect(screen.getByText(/1\.28 ETH/)).toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: /Balance: 1\.28 ETH/ })).toBeNull()
+    expect(screen.getByText("1.28")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /Balance: 1\.28/ })).toBeNull()
   })
 })
