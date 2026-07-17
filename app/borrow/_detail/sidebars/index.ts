@@ -1,5 +1,4 @@
 export { PoolBorrowSidebar } from "./PoolBorrowSidebar"
 export { PoolBorrowActions } from "./PoolBorrowSidebar"
-export { AssetDepositSidebar } from "./AssetDepositSidebar"
 export { AssetTokenSidebar } from "./AssetTokenSidebar"
 export { AssetTokenActions } from "./AssetTokenSidebar"
