@@ -1,83 +1,46 @@
 "use client"
 
-import Link from "next/link"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
 import { TokenPairCell } from "@/app/borrow/components/atoms"
 import { resolveImageSrc } from "@/lib/image-src"
+import { RelatedItemsRow } from "@/app/components/detail/related-items-row"
 
 type Props = { detail: MultiplyMarketDetail }
 
 export function RelatedMarketsRow({ detail }: Props) {
-  if (detail.related.length === 0) return null
   return (
-    <section id="related-markets" className="min-w-0">
-      <div className="mb-3">
-        <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
-          Related markets
-        </h2>
-      </div>
-      <ul className="flex gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        {detail.related.map((rel) => {
-          const backgroundSrc = resolveImageSrc(rel.visuals[0].iconUrl, rel.visuals[1].iconUrl)
-          return (
-            <li key={rel.id} className="shrink-0">
-              <Link
-                href={`/multiply/markets/${rel.id}`}
-                className="group relative flex h-[120px] w-60 flex-col overflow-hidden rounded-radius-lg border border-border bg-surface-raised p-3 shadow-elev-1 transition-all hover:border-border/80 hover:shadow-elev-2"
-              >
-                {backgroundSrc ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    alt=""
-                    aria-hidden="true"
-                    width="160"
-                    height="160"
-                    className="pointer-events-none absolute -left-12 -top-12 size-[320px] rounded-full object-cover opacity-20 blur-2xl saturate-150"
-                    loading="lazy"
-                    decoding="async"
-                    src={backgroundSrc}
-                  />
-                ) : null}
-
-                <div className="pointer-events-none absolute right-2 top-2 flex size-7 items-center justify-center rounded-full border border-border bg-background/80 shadow-sm backdrop-blur-sm opacity-0 transition-opacity group-hover:opacity-100">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4 text-text-extra-low transition-colors group-hover:text-text-low"
-                    aria-hidden="true"
-                  >
-                    <path d="M7 7h10v10" />
-                    <path d="M7 17 17 7" />
-                  </svg>
-                </div>
-
-                <div className="relative z-10 flex h-full flex-col">
-                  <div className="flex items-start gap-3">
-                    <TokenPairCell visuals={rel.visuals} name={rel.name} size="md" />
-                  </div>
-                  <div className="mt-auto grid grid-cols-2 gap-2 pt-2">
-                    <div>
-                      <div className="text-[10px] text-muted-foreground">APY at max leverage</div>
-                      <div className="mt-0.5 text-[12px] tabular-nums text-foreground">{rel.maxApyLabel}</div>
-                    </div>
-                    <div>
-                      <div className="text-[10px] text-muted-foreground">Available</div>
-                      <div className="mt-0.5 text-[12px] tabular-nums text-foreground">{rel.availableLabel}</div>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            </li>
-          )
-        })}
-      </ul>
-    </section>
+    <RelatedItemsRow
+      sectionId="related-markets"
+      heading="Related markets"
+      items={detail.related.map((rel) => {
+        const backgroundSrc = resolveImageSrc(rel.visuals[0].iconUrl, rel.visuals[1].iconUrl)
+        return {
+          key: rel.id,
+          href: `/multiply/markets/${rel.id}`,
+          background: backgroundSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              alt=""
+              aria-hidden="true"
+              width="160"
+              height="160"
+              className="pointer-events-none absolute -left-12 -top-12 size-[320px] rounded-full object-cover opacity-20 blur-2xl saturate-150"
+              loading="lazy"
+              decoding="async"
+              src={backgroundSrc}
+            />
+          ) : null,
+          identity: (
+            <div className="flex items-start gap-3">
+              <TokenPairCell visuals={rel.visuals} name={rel.name} size="md" />
+            </div>
+          ),
+          metrics: [
+            { label: "APY at max leverage", value: rel.maxApyLabel },
+            { label: "Available", value: rel.availableLabel },
+          ],
+        }
+      })}
+    />
   )
 }

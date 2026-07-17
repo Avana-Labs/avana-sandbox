@@ -26,7 +26,6 @@ import {
 } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { mapBorrowRewardsClaimPreviewToActionUi } from "@/app/lib/action-system/adapters/rewards-preview-mapper"
 import { ActionBorrowContextBar } from "@/app/components/action-page/action-borrow-context-bar"
-import { ActionSupplyContextBar } from "@/app/components/action-page/action-supply-context-bar"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionConfigureStage, ActionConfigureAmountSection } from "@/app/components/action-page/action-configure-stage"
 import { ActionSelectStage } from "@/app/components/action-page/action-select-stage"
@@ -1121,7 +1120,8 @@ export function BorrowActionPageClient({
       simulated={session.readAdapter.mode === "sandbox"}
     >
       {useSupplyWorkspace && activePool ? (
-        <ActionSupplyContextBar
+        <ActionBorrowContextBar
+          kind="supply"
           pool={activePool}
           pools={collateralPoolOptions}
           debts={debts}
@@ -1129,6 +1129,7 @@ export function BorrowActionPageClient({
             setMarketId(poolId)
             setAmount("")
           }}
+          variant="inset"
           amountField={stackedAmountField}
           switchable={!initialMarketId && Boolean(supplyAssetOptions)}
         />

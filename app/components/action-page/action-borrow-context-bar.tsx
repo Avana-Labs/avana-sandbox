@@ -8,7 +8,7 @@ import { SwapStyleFieldStack } from "@/app/components/action-page/swap-style-fie
 import type { PoolDialogMode } from "@/app/components/home/types"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
-function poolDialogModeForKind(kind: "borrow" | "repay" | "remove" | "claim"): PoolDialogMode {
+function poolDialogModeForKind(kind: "supply" | "borrow" | "repay" | "remove" | "claim"): PoolDialogMode {
   if (kind === "repay") return "repay"
   if (kind === "remove") return "remove"
   return "borrow"
@@ -25,7 +25,7 @@ export function ActionBorrowContextBar({
   amountField,
   switchable = true,
 }: {
-  kind: "borrow" | "repay" | "remove" | "claim"
+  kind: "supply" | "borrow" | "repay" | "remove" | "claim"
   pool: HomeCollateralPool | null
   pools: HomeCollateralPool[]
   debts: Record<string, number>
@@ -66,18 +66,20 @@ export function ActionBorrowContextBar({
         poolField
       )}
 
-      <PoolPickerDialog
-        open={poolDialogOpen}
-        onOpenChange={setPoolDialogOpen}
-        selectedPoolId={pool?.id ?? ""}
-        onSelect={(poolId) => {
-          onPoolChange(poolId)
-          setPoolDialogOpen(false)
-        }}
-        mode={poolDialogMode}
-        pools={pools}
-        debts={debts}
-      />
+      {switchable ? (
+        <PoolPickerDialog
+          open={poolDialogOpen}
+          onOpenChange={setPoolDialogOpen}
+          selectedPoolId={pool?.id ?? ""}
+          onSelect={(poolId) => {
+            onPoolChange(poolId)
+            setPoolDialogOpen(false)
+          }}
+          mode={poolDialogMode}
+          pools={pools}
+          debts={debts}
+        />
+      ) : null}
     </>
   )
 }
