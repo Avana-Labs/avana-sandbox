@@ -1,14 +1,21 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { useState } from "react"
 import type { HomeMode } from "@/app/lib/home-sim"
-import { BorrowActionPageClient } from "@/app/components/action-page/borrow-action-page-client"
 import { HomeWorkspaceCard } from "@/app/components/home/home-workspace-card"
 import { HomeWorkspaceSkeleton } from "@/app/components/loading-states"
 import { AvanaSessionsProvider, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 
 const HOME_WORKSPACE_WALLET_ID = "home-demo-wallet"
+const BorrowActionPageClient = dynamic(
+  () => import("@/app/components/action-page/borrow-action-page-client").then((mod) => mod.BorrowActionPageClient),
+  {
+    ssr: false,
+    loading: () => <HomeWorkspaceSkeleton />,
+  },
+)
 
 export function HomePageClient() {
   const { isSignedIn } = useSiweAuth()

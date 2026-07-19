@@ -49,25 +49,26 @@ describe("HomePageClient", () => {
     state = buildMockBorrowSystemState(walletId)
   })
 
-  it("embeds borrow actions in the home workspace card", () => {
+  it("embeds borrow actions in the home workspace card", async () => {
     render(<HomePageClient />)
 
     expect(screen.getByTestId("home-workspace-card")).toBeInTheDocument()
-    expect(screen.getByTestId("embedded-borrow-action-borrow")).toHaveAttribute("data-embedded", "true")
-    expect(screen.getByTestId("embedded-borrow-action-borrow")).toHaveAttribute("data-layout", "home")
+    const borrowAction = await screen.findByTestId("embedded-borrow-action-borrow")
+    expect(borrowAction).toHaveAttribute("data-embedded", "true")
+    expect(borrowAction).toHaveAttribute("data-layout", "home")
   })
 
-  it("switches tabs to embedded repay, claim, and remove actions", () => {
+  it("switches tabs to embedded repay, claim, and remove actions", async () => {
     render(<HomePageClient />)
     const card = screen.getByTestId("home-workspace-card")
 
     fireEvent.click(within(card).getByRole("tab", { name: "Repay" }))
-    expect(screen.getByTestId("embedded-borrow-action-repay")).toBeInTheDocument()
+    expect(await screen.findByTestId("embedded-borrow-action-repay")).toBeInTheDocument()
 
     fireEvent.click(within(card).getByRole("tab", { name: "Claim" }))
-    expect(screen.getByTestId("embedded-borrow-action-claim")).toBeInTheDocument()
+    expect(await screen.findByTestId("embedded-borrow-action-claim")).toBeInTheDocument()
 
     fireEvent.click(within(card).getByRole("tab", { name: "Remove" }))
-    expect(screen.getByTestId("embedded-borrow-action-remove")).toHaveAttribute("data-initial-amount", "")
+    expect(await screen.findByTestId("embedded-borrow-action-remove")).toHaveAttribute("data-initial-amount", "")
   })
 })
