@@ -183,18 +183,56 @@ function forwardSignal(signal) {
   }
 }
 
+function suppressSlowFilesystemAdvisory(stream, writer) {
+  let pending = ""
+  let skipping = false
+
+  stream.on("data", (chunk) => {
+    pending += chunk.toString()
+    const lines = pending.split(/\r?\n/)
+    pending = lines.pop() ?? ""
+
+    for (const line of lines) {
+      if (line.includes("Slow filesystem detected.")) {
+        skipping = true
+        continue
+      }
+
+      if (skipping) {
+        if (line.includes("See more: https://nextjs.org/docs/app/guides/local-development")) {
+          skipping = false
+        }
+        continue
+      }
+
+      writer.write(`${line}\n`)
+    }
+  })
+
+  stream.on("end", () => {
+    if (pending && !pending.includes("Slow filesystem detected.") && !skipping) {
+      writer.write(pending)
+    }
+  })
+}
+
 process.on("SIGINT", () => forwardSignal("SIGINT"))
 process.on("SIGTERM", () => forwardSignal("SIGTERM"))
 process.on("exit", clearLock)
 
 child = spawn(process.execPath, [nextBin, mode, ...forwardArgs], {
   cwd: root,
-  stdio: "inherit",
+  stdio: mode === "dev" ? ["inherit", "pipe", "pipe"] : "inherit",
   env: {
     ...process.env,
     AVANA_NEXT_DIST_DIR: config.distDir,
   },
 })
+
+if (mode === "dev") {
+  suppressSlowFilesystemAdvisory(child.stdout, process.stdout)
+  suppressSlowFilesystemAdvisory(child.stderr, process.stderr)
+}
 
 child.on("exit", (code, signal) => {
   clearLock()
