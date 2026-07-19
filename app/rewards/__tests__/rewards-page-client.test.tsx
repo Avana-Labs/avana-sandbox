@@ -27,6 +27,7 @@ const multiplyPreviewTransaction = vi.fn(async () => ({ allowed: true }))
 // Injectable product transaction history for the combined activity table.
 let borrowTxHistory: Array<Record<string, unknown>> = []
 let multiplyTxHistory: Array<Record<string, unknown>> = []
+let dateNowSpy: ReturnType<typeof vi.spyOn> | null = null
 const now = Date.UTC(2026, 5, 19)
 const rewardsState = {
   events: [] as Array<Record<string, unknown>>,
@@ -220,6 +221,7 @@ async function clickQuestAction(name: string | RegExp) {
   })
   const buttons = screen.getAllByRole("button", { name })
   const target = buttons.find((button) => !(button as HTMLButtonElement).disabled) ?? buttons[buttons.length - 1]!
+  expect(target).not.toBeDisabled()
   fireEvent.click(target)
 }
 
@@ -237,9 +239,12 @@ async function openReferralTab() {
 describe("RewardsPageClient", () => {
   afterEach(() => {
     cleanup()
+    dateNowSpy?.mockRestore()
+    dateNowSpy = null
   })
 
   beforeEach(() => {
+    dateNowSpy = vi.spyOn(Date, "now").mockReturnValue(now)
     push.mockReset()
     claimReward.mockReset()
     claimAllRewards.mockReset()
@@ -325,7 +330,7 @@ describe("RewardsPageClient", () => {
 
     await openProductTab("Borrow")
     await clickQuestAction("Borrow more")
-    expect(push).toHaveBeenCalledWith("/borrow")
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/borrow"))
   })
 
   it("records daily check-ins from challenge tasks", async () => {
@@ -335,7 +340,7 @@ describe("RewardsPageClient", () => {
     await waitFor(() => expect(screen.getAllByRole("button", { name: "Check in" }).length).toBeGreaterThan(0))
     await clickQuestAction("Check in")
 
-    expect(recordDailyCheckin).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(recordDailyCheckin).toHaveBeenCalledTimes(1))
   })
 
   it("records sandbox tours and routes users to the tour surface", async () => {
@@ -345,8 +350,8 @@ describe("RewardsPageClient", () => {
     await waitFor(() => expect(screen.getAllByRole("button", { name: "Start tour" }).length).toBeGreaterThan(0))
     await clickQuestAction("Start tour")
 
-    expect(recordSandboxTour).toHaveBeenCalledWith("use-curve-position")
-    expect(push).toHaveBeenCalledWith("/borrow")
+    await waitFor(() => expect(recordSandboxTour).toHaveBeenCalledWith("use-curve-position"))
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/borrow"))
   })
 
   it("runs the referral copy-link flow through the dialog and tracked action", async () => {
