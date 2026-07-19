@@ -52,7 +52,7 @@ describe("HomePageClient", () => {
   it("embeds borrow actions in the home workspace card", async () => {
     render(<HomePageClient />)
 
-    expect(screen.getByTestId("home-workspace-card")).toBeInTheDocument()
+    expect(await screen.findByTestId("home-workspace-card")).toBeInTheDocument()
     const borrowAction = await screen.findByTestId("embedded-borrow-action-borrow")
     expect(borrowAction).toHaveAttribute("data-embedded", "true")
     expect(borrowAction).toHaveAttribute("data-layout", "home")
@@ -60,7 +60,7 @@ describe("HomePageClient", () => {
 
   it("switches tabs to embedded repay, claim, and remove actions", async () => {
     render(<HomePageClient />)
-    const card = screen.getByTestId("home-workspace-card")
+    const card = await screen.findByTestId("home-workspace-card")
 
     fireEvent.click(within(card).getByRole("tab", { name: "Repay" }))
     expect(await screen.findByTestId("embedded-borrow-action-repay")).toBeInTheDocument()
