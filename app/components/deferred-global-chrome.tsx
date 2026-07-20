@@ -24,7 +24,7 @@ export function DeferredGlobalChrome() {
         onPointerEnter={() => void loadDesktopHelpBubble()}
         onFocus={() => void loadDesktopHelpBubble()}
         onClick={() => setHelpRequested(true)}
-        className="inline-flex size-10 items-center justify-center rounded-none bg-transparent text-brand transition-transform duration-[160ms] hover:scale-[1.05] active:scale-[0.92] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-emphasis/25 dark:text-white"
+        className="inline-flex size-10 items-center justify-center rounded-none bg-transparent text-brand transition-transform duration-150 hover:scale-[1.05] active:scale-[0.92] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-emphasis/25 dark:text-white"
       >
         <CircleHelp className="h-6 w-6" strokeWidth={2.3} />
       </button>

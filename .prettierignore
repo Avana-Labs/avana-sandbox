@@ -1,25 +1,17 @@
-# Build output
-.next/
-.next-dev/
-.next-prod/
-.next-lighthouse/
-.next-check/
-out/
-dist/
-
-# Dependencies
-node_modules/
-
-# Convex-generated code (owned by `convex codegen`) and local deployment state
-convex/_generated/
-.convex/
+# Prettier already respects .gitignore, so only list paths NOT covered there.
 
 # Lockfile (never reformat)
 package-lock.json
 
-# Reports & test artifacts
+# Convex-generated code (owned by `convex codegen`)
+convex/_generated/
+
+# Local Convex deployment state (ignored via nested .convex/.gitignore, which
+# Prettier does not read — the root .gitignore alone does not cover this).
+.convex/
+
+# Build/report artifacts not in .gitignore
+.next-lighthouse/
+dist/
 .reports/
-.artifacts/
 coverage/
-playwright-report/
-test-results/

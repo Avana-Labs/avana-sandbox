@@ -219,21 +219,3 @@ export function mapLendWithdrawPreviewToActionUi(
     risk: null,
   }
 }
-
-/** @deprecated Use mapLendDepositPreviewToActionUi or mapLendWithdrawPreviewToActionUi */
-export function mapLendPreviewToActionUi(
-  preview: LendTransactionPreview,
-  options: {
-    symbol: string
-    amount: number
-    marketLabel: string
-    balanceLabel: string
-    balanceAmount: number
-    rateLabel: string
-  },
-): ActionPreviewUi {
-  if (options.rateLabel === "Withdrawal") {
-    return mapLendWithdrawPreviewToActionUi(preview, options)
-  }
-  return mapLendDepositPreviewToActionUi(preview, { ...options, rewardsApy: 0 })
-}
