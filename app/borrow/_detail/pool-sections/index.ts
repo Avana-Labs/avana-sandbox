@@ -1,6 +1,5 @@
 export { PoolHero, PoolHeroIdentity } from "./PoolHero"
 export { QuickStatsGrid } from "./QuickStatsGrid"
-export { KeyMetricsCard } from "./KeyMetricsCard"
 export { CashflowCard } from "./CashflowCard"
 export { RiskSection } from "./RiskSection"
 export { AboutCard } from "./AboutCard"

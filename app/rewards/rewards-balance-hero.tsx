@@ -85,6 +85,7 @@ function AvanaCoin() {
         width={38}
         height={38}
         className="h-[38px] w-[38px] scale-[1.68] object-contain brightness-0 invert"
+        style={{ width: 38, height: 38 }}
         priority
       />
     </div>
