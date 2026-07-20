@@ -1,7 +1,0 @@
-.convex/
-.next/
-.next-dev/
-coverage/
-node_modules/
-playwright-report/
-test-results/
