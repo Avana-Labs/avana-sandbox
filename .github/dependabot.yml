@@ -13,6 +13,13 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      # wagmi major (2 -> 3) is blocked by ConnectKit, which still pins
+      # wagmi@2.x and calls hooks renamed in v3. Revisit when ConnectKit
+      # ships wagmi 3 support. Minor/patch wagmi bumps still flow through.
+      - dependency-name: "wagmi"
+        update-types:
+          - "version-update:semver-major"
 
   # Keep GitHub Actions themselves current (checkout, setup-node, etc.).
   - package-ecosystem: github-actions
