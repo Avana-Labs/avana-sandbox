@@ -11,15 +11,13 @@ import { ThemeProvider } from "./components/theme-provider"
 import { DisplayPreferencesProvider } from "./components/display-preferences"
 import { WalletGateProvider } from "./lib/web3/wallet-gate"
 import { Web3ProviderBoundary } from "./lib/web3/web3-provider-boundary"
-import { AvanaSessionProviders } from "./components/avana-session-providers"
 import { PageLoadingBar } from "./components/page-loading-bar"
 import { ScrollResetOnNavigate } from "./components/scroll-reset-on-navigate"
 import { DeferredGlobalChrome } from "./components/deferred-global-chrome"
 import { ConditionalSiteChrome } from "./components/conditional-site-chrome"
 import { SandboxGate } from "./components/sandbox/sandbox-gate"
 import { CurrencyDisplayBoundary } from "./components/currency-display-boundary"
-import { PreferencesProfileSync } from "./components/preferences-profile-sync"
-import { TokenPricesProvider } from "./lib/prices/token-prices-context"
+import { ProductRuntimeProviders } from "./components/product-runtime-providers"
 // Only load Vercel Analytics / Speed Insights when actually running on Vercel — their
 // scripts are served by Vercel's edge (/_vercel/*), so a local `next start` build 404s
 // on them and logs console errors (a Lighthouse best-practices failure). On Vercel the
@@ -115,28 +113,22 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <DisplayPreferencesProvider>
             <WalletGateProvider>
-              <AvanaSessionProviders>
-                <Web3ProviderBoundary>
-                  <SandboxGate>
-                    {/* These subscriptions are useful only inside the unlocked product UI.
-                        Keeping them behind the gate avoids starting price/profile work while
-                        the guest onboarding screen is the only visible surface. */}
-                    <PreferencesProfileSync />
-                    <TokenPricesProvider>
-                      <CurrencyDisplayBoundary>
-                        <ConditionalSiteChrome>
-                          <Suspense fallback={null}>
-                            <PageLoadingBar />
-                          </Suspense>
-                          <ScrollResetOnNavigate />
-                          {children}
-                        </ConditionalSiteChrome>
-                        <DeferredGlobalChrome />
-                      </CurrencyDisplayBoundary>
-                    </TokenPricesProvider>
-                  </SandboxGate>
-                </Web3ProviderBoundary>
-              </AvanaSessionProviders>
+              <Web3ProviderBoundary>
+                <SandboxGate>
+                  <ProductRuntimeProviders>
+                    <CurrencyDisplayBoundary>
+                      <ConditionalSiteChrome>
+                        <Suspense fallback={null}>
+                          <PageLoadingBar />
+                        </Suspense>
+                        <ScrollResetOnNavigate />
+                        {children}
+                      </ConditionalSiteChrome>
+                      <DeferredGlobalChrome />
+                    </CurrencyDisplayBoundary>
+                  </ProductRuntimeProviders>
+                </SandboxGate>
+              </Web3ProviderBoundary>
             </WalletGateProvider>
           </DisplayPreferencesProvider>
         </ThemeProvider>

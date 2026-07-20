@@ -129,13 +129,7 @@ const nextConfig = {
     inlineCss: true,
     // Tree-shake heavy barrel packages so a 2-icon import doesn't pull the whole library.
     // @fluentui/react-icons especially ships thousands of icons behind one barrel.
-    optimizePackageImports: [
-      "lucide-react",
-      "sonner",
-      "@fluentui/react-icons",
-      "framer-motion",
-      "@radix-ui/react-icons",
-    ],
+    optimizePackageImports: ["framer-motion"],
   },
   async redirects() {
     return [

@@ -4,7 +4,6 @@ import {
   type DataSourceResponse,
 } from "@/app/lib/data/core/source-runtime"
 import { createCatalogPageSources } from "@/app/lib/data/providers/catalog-page-source"
-import type { LendReadAdapter } from "@/app/lib/lend-system/contracts"
 import { buildLendCatalogBaselineState } from "@/app/lib/lend-system/mock"
 import { SandboxLendReadAdapter } from "@/app/lib/lend-system/sandbox-read-adapter"
 import { mergeConvexLendSnapshots } from "@/app/lib/lend-system/market-hydration"
@@ -14,27 +13,6 @@ import type { LendPageData } from "./types"
 export type LendPageSource = {
   adapter: DataSourceAdapter
   getLendPageData(context?: DataSourceRequestContext): Promise<DataSourceResponse<LendPageData>>
-}
-
-function createLendPageSource({
-  adapter,
-  walletId = "demo-wallet",
-  readAdapter,
-}: {
-  adapter: DataSourceAdapter
-  walletId?: string
-  readAdapter: LendReadAdapter
-}): LendPageSource {
-  return {
-    adapter,
-    async getLendPageData() {
-      const data = await readAdapter.readLendPage(walletId)
-      return {
-        fetchedAt: new Date().toISOString(),
-        data,
-      }
-    },
-  }
 }
 
 const catalogSources = createCatalogPageSources({
@@ -60,5 +38,3 @@ export const liveLendPageSource: LendPageSource = {
   adapter: liveLendPageAdapter,
   getLendPageData: (context) => catalogSources.liveSource.getPageData(context),
 }
-
-export { createLendPageSource }
