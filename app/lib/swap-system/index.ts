@@ -1,4 +1,5 @@
 export * from "./catalog"
 export * from "./contracts"
 export * from "./eligibility"
+export * from "./quote-provider"
 export * from "./wallet-balances"
