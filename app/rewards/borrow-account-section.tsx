@@ -1,6 +1,6 @@
 "use client"
 
-import { lazy, useMemo, useState } from "react"
+import { lazy, useMemo } from "react"
 import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useDashboardBorrowLive } from "@/app/dashboard/use-dashboard-borrow-live"
 import { selectBorrowSnapshot } from "@/app/lib/borrow-system/dashboard-selectors"
@@ -17,7 +17,7 @@ import type { BorrowSnapshot } from "@/app/dashboard/borrow-hero-state"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { SectionTabStrip, AccountModuleBoundary } from "./account-sections-shared"
+import { AccountModuleBoundary } from "./account-sections-shared"
 
 const CollateralPositionsPanel = lazy(async () => ({
   default: (await import("@/app/dashboard/borrow-tab/collateral-positions-panel")).CollateralPositionsPanel,
@@ -29,14 +29,6 @@ const TradingFeesPanel = lazy(async () => ({
   default: (await import("@/app/dashboard/borrow-tab/trading-fees-panel")).TradingFeesPanel,
 }))
 
-type CreditSubTab = "overview" | "collateral" | "debt" | "fees"
-const CREDIT_SUB_TABS: readonly { id: CreditSubTab; label: string }[] = [
-  { id: "overview", label: "Borrow Overview" },
-  { id: "collateral", label: "Collateral Positions" },
-  { id: "debt", label: "Debt Positions" },
-  { id: "fees", label: "Trading Fees" },
-]
-
 /**
  * The borrow account overview + positions that used to live on the dashboard.
  * Self-contained: reads the live borrow session directly, no props.
@@ -47,7 +39,6 @@ export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref
   const hasMounted = useHasMounted()
   const { walletId } = useAvanaIdentity()
   const borrowSession = useBorrowSessionContext()
-  const [creditSubTab, setCreditSubTab] = useState<CreditSubTab>("overview")
 
   const dashboardBorrow = useDashboardBorrowLive(walletId, borrowSession)
   const sessionBorrowTab = useMemo(() => {
@@ -86,51 +77,37 @@ export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref
 
   return (
     <section id="dashboard-borrow-account" className="scroll-mt-24">
-      <div className="flex flex-col gap-3 border-b border-border/50 pb-px md:flex-row md:items-end md:justify-between md:border-b-0 md:pb-0">
-        <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{t("Borrow Account")}</h2>
-        <SectionTabStrip
-          items={CREDIT_SUB_TABS}
-          value={creditSubTab}
-          onChange={setCreditSubTab}
-          ariaLabel={t("Credit sections")}
-        />
-      </div>
-      <div className="mt-8">
-        {creditSubTab === "overview" ? (
-          <div className="space-y-8">
-            <DashboardCreditOverviewSection
-              hideHeading
-              title={t("Borrow Overview")}
-              approvedCreditUsd={borrowSnapshot.approvedUsd}
-              totalBorrowedUsd={borrowDashboardMetrics.overview.totalBorrowedUsd}
-              netApyPct={borrowDashboardMetrics.performance.netApyPct}
-              totalCollateralUsd={borrowDashboardMetrics.performance.poolCollateralUsd}
+      <div className="space-y-8">
+        <div className="space-y-8">
+          <DashboardCreditOverviewSection
+            title={t("Borrow Balance")}
+            approvedCreditUsd={borrowSnapshot.approvedUsd}
+            totalBorrowedUsd={borrowDashboardMetrics.overview.totalBorrowedUsd}
+            netApyPct={borrowDashboardMetrics.performance.netApyPct}
+            totalCollateralUsd={borrowDashboardMetrics.performance.poolCollateralUsd}
+          />
+          <div className="grid gap-4 xl:grid-cols-2">
+            <SuppliesHealthFactorCard
+              averageHealthFactor={borrowSnapshot.averageHealthFactor}
+              showBalance={showDollarAmounts}
             />
-            <div className="grid gap-4 xl:grid-cols-2">
-              <SuppliesHealthFactorCard
-                averageHealthFactor={borrowSnapshot.averageHealthFactor}
-                showBalance={showDollarAmounts}
-              />
-              <CurrentLtvCard
-                borrowedUsd={borrowSnapshot.totalBorrowedUsd}
-                collateralUsd={borrowSnapshot.totalCollateralUsd}
-                showBalance={showDollarAmounts}
-              />
-            </div>
+            <CurrentLtvCard
+              borrowedUsd={borrowSnapshot.totalBorrowedUsd}
+              collateralUsd={borrowSnapshot.totalCollateralUsd}
+              showBalance={showDollarAmounts}
+            />
           </div>
-        ) : creditSubTab === "collateral" ? (
-          <AccountModuleBoundary>
-            <CollateralPositionsPanel showBalance={showDollarAmounts} returnHref={returnHref} />
-          </AccountModuleBoundary>
-        ) : creditSubTab === "debt" ? (
-          <AccountModuleBoundary>
-            <DebtPositionsPanel showBalance={showDollarAmounts} returnHref={returnHref} />
-          </AccountModuleBoundary>
-        ) : (
-          <AccountModuleBoundary>
-            <TradingFeesPanel showBalance={showDollarAmounts} returnHref={returnHref} />
-          </AccountModuleBoundary>
-        )}
+        </div>
+
+        <AccountModuleBoundary>
+          <CollateralPositionsPanel showBalance={showDollarAmounts} returnHref={returnHref} />
+        </AccountModuleBoundary>
+        <AccountModuleBoundary>
+          <DebtPositionsPanel showBalance={showDollarAmounts} returnHref={returnHref} />
+        </AccountModuleBoundary>
+        <AccountModuleBoundary>
+          <TradingFeesPanel showBalance={showDollarAmounts} returnHref={returnHref} />
+        </AccountModuleBoundary>
       </div>
     </section>
   )
