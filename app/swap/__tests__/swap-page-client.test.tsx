@@ -54,7 +54,7 @@ describe("SwapPageClient", () => {
     fireEvent.click(screen.getByRole("button", { name: "Review swap" }))
     expect(screen.getByRole("heading", { name: "Review swap" })).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("button", { name: "Confirm swap" }))
+    fireEvent.click(screen.getByRole("button", { name: "Swap" }))
     await waitFor(() => {
       expect(screen.getByText("Swap successful.")).toBeInTheDocument()
     })

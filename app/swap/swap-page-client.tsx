@@ -1,16 +1,20 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { ArrowDown } from "@/app/components/icons"
 import { TokenIcon } from "@/app/components/token-icon"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
+import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
+import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
+import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { SWAP_ASSETS, SWAP_CHAIN_ID, getMaxSwapInputAmount, validateSwapInputAmount } from "@/app/lib/swap-system"
 import { useSwapSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
+import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import type { SwapQuote } from "@/app/lib/swap-system"
 
 type SwapPageClientProps = {
@@ -31,18 +35,28 @@ function formatAmount(value: number) {
   return value.toLocaleString(undefined, { maximumFractionDigits: 6 })
 }
 
-export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", returnHref = "/dashboard?tab=wallet" }: SwapPageClientProps) {
+export function SwapPageClient({
+  initialFrom,
+  initialTo,
+  origin = "wallet",
+  returnHref = "/dashboard?tab=wallet",
+}: SwapPageClientProps) {
   const { t } = useTranslation()
   const { exact } = useCurrency()
   const swap = useSwapSessionContext()
   const swappableAssets = SWAP_ASSETS.filter((asset) => asset.isSwapEnabled && !asset.isLpToken)
   const [inputAssetId, setInputAssetId] = useState(initialFrom ?? "eth")
-  const [outputAssetId, setOutputAssetId] = useState(initialTo && initialTo !== inputAssetId ? initialTo : fallbackOutput(inputAssetId))
+  const [outputAssetId, setOutputAssetId] = useState(
+    initialTo && initialTo !== inputAssetId ? initialTo : fallbackOutput(inputAssetId),
+  )
   const [amount, setAmount] = useState("")
   const [slippageBps, setSlippageBps] = useState(50)
   const [quote, setQuote] = useState<SwapQuote | null>(null)
   const [quoteState, setQuoteState] = useState<"idle" | "loading" | "valid" | "error">("idle")
-  const [reviewOpen, setReviewOpen] = useState(false)
+  const [quoteRetry, setQuoteRetry] = useState(0)
+  const [stage, setStage] = useState<ActionStage>("configure")
+  const [isPending, setIsPending] = useState(false)
+  const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [outcome, setOutcome] = useState<{ tone: "success" | "error"; message: string } | null>(null)
 
   const inputAsset = SWAP_ASSETS.find((asset) => asset.id === inputAssetId) ?? swappableAssets[0]!
@@ -66,6 +80,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
   )
   const approvalRequired = validation.valid && swap.requiresApproval(inputAsset.id, validation.amount)
   const priceImpactTone = quote && quote.priceImpactPct >= 3 ? "text-danger" : "text-muted-foreground"
+  const getQuote = swap.getQuote
 
   const assetOptions = useMemo(
     () =>
@@ -78,7 +93,6 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
   )
 
   useEffect(() => {
-    setOutcome(null)
     if (!validation.valid) {
       setQuote(null)
       setQuoteState("idle")
@@ -88,14 +102,13 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
     let cancelled = false
     setQuoteState("loading")
     const timeout = window.setTimeout(() => {
-      void swap
-        .getQuote({
-          chainId: SWAP_CHAIN_ID,
-          inputAssetId,
-          outputAssetId,
-          inputAmount: validation.amount,
-          slippageBps,
-        })
+      void getQuote({
+        chainId: SWAP_CHAIN_ID,
+        inputAssetId,
+        outputAssetId,
+        inputAmount: validation.amount,
+        slippageBps,
+      })
         .then((nextQuote) => {
           if (cancelled) return
           setQuote(nextQuote.status === "valid" ? nextQuote : null)
@@ -110,7 +123,12 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
       cancelled = true
       window.clearTimeout(timeout)
     }
-  }, [inputAssetId, outputAssetId, slippageBps, swap, validation])
+  }, [getQuote, inputAssetId, outputAssetId, quoteRetry, slippageBps, validation])
+
+  useEffect(() => {
+    setOutcome(null)
+    setStage((current) => (current === "error" ? "configure" : current))
+  }, [amount, inputAssetId, outputAssetId, slippageBps])
 
   const setPercent = (percent: number) => {
     if (maxAmount <= 0) return
@@ -130,31 +148,123 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
     setQuote(null)
   }
 
-  const handlePrimary = async () => {
-    if (!validation.valid || !quote) return
-    if (approvalRequired) {
-      const approval = await swap.approve(inputAsset.id, validation.amount)
-      if (approval.status !== "approval_confirmed") {
-        setOutcome({ tone: "error", message: approval.failureReason ?? t("Approval failed.") })
-      }
-      return
+  const previewUi = useMemo<ActionPreviewUi | null>(() => {
+    if (!quote || !validation.valid) return null
+    const receiveLabel = `${formatAmount(quote.estimatedOutputAmount)} ${outputAsset.symbol}`
+    return {
+      allowed: true,
+      quoteId: quote.id,
+      amountLabel: `${amount} ${inputAsset.symbol}`,
+      amountTitle: t("Sell"),
+      amountValue: amount,
+      assetLabel: inputAsset.symbol,
+      assetSymbol: inputAsset.symbol,
+      amountUsd: validation.amount * inputAsset.priceUsd,
+      amountUsdLabel: exact(validation.amount * inputAsset.priceUsd),
+      rateLabel: t("Rate"),
+      rateValue: `1 ${inputAsset.symbol} = ${formatAmount(quote.exchangeRate)} ${outputAsset.symbol}`,
+      marketLabel: t("Receive at least"),
+      marketValue: receiveLabel,
+      balanceLabel: t("Balance"),
+      balanceValue: `${formatAmount(maxAmount)} ${inputAsset.symbol}`,
+      maxAmount,
+      metrics: [
+        {
+          id: "minimum-received",
+          label: t("Minimum received"),
+          value: `${formatAmount(quote.minimumOutputAmount)} ${outputAsset.symbol}`,
+        },
+        {
+          id: "price-impact",
+          label: t("Price impact"),
+          value: `${quote.priceImpactPct.toFixed(2)}%`,
+          tone: quote.priceImpactPct >= 3 ? "danger" : "default",
+        },
+        { id: "provider", label: t("Provider"), value: quote.provider },
+      ],
+      networkFeeLabel: exact(quote.networkFeeUsd),
+      risk:
+        quote.priceImpactPct >= 3
+          ? {
+              level: "danger",
+              title: t("Large price difference"),
+              message: t("You will receive significantly less than the current market value."),
+            }
+          : null,
+      blockedReason: null,
+      validationErrors: [],
+      warnings: [],
+      executionSteps: [
+        ...(approvalRequired ? [{ id: "approve", label: `Approve ${inputAsset.symbol}` }] : []),
+        { id: "sign", label: t("Confirm swap in wallet") },
+        { id: "submit", label: t("Submit swap") },
+        { id: "refresh", label: t("Refresh wallet balances") },
+      ],
     }
-    setReviewOpen(true)
-  }
+  }, [amount, approvalRequired, exact, inputAsset, maxAmount, outputAsset, quote, t, validation])
 
-  const confirmSwap = async () => {
-    if (!quote) return
-    const result = await swap.executeSwap(quote)
-    setReviewOpen(false)
-    setOutcome({
-      tone: result.status === "confirmed" ? "success" : "error",
-      message: result.status === "confirmed" ? t("Swap successful.") : (result.failureReason ?? t("Swap failed.")),
-    })
-    if (result.status === "confirmed") {
-      setAmount("")
-      setQuote(null)
+  const submitSwap = useCallback(async () => {
+    if (!quote || !previewUi || !validation.valid || isPending) return
+    setIsPending(true)
+    setOutcome(null)
+    try {
+      const result = await runActionSubmitFlow({
+        simulated: true,
+        needsAllowance: approvalRequired,
+        onStage: setStage,
+        execute: async () => {
+          if (approvalRequired) {
+            const approval = await swap.approve(inputAsset.id, validation.amount)
+            if (approval.status !== "approval_confirmed") {
+              throw new Error(approval.failureReason ?? t("Approval failed."))
+            }
+          }
+          const transaction = await swap.executeSwap(quote)
+          return {
+            transaction,
+            receipt: {
+              status: transaction.status === "confirmed" ? "success" : transaction.status,
+              error: transaction.failureReason ?? null,
+              hash: transaction.swapTransactionHash ?? null,
+            },
+          }
+        },
+      })
+      if (result.receipt.status !== "success") throw new Error(result.receipt.error ?? t("Swap failed."))
+      setSuccessUi({
+        quoteId: quote.id,
+        title: t("Swap successful."),
+        description: `${amount} ${inputAsset.symbol} ${t("swapped for")} ${formatAmount(quote.estimatedOutputAmount)} ${outputAsset.symbol}.`,
+        receiptHash: result.receipt.hash,
+        metrics: previewUi.metrics,
+        primaryCtaLabel: t("View wallet"),
+        primaryCtaHref: "/dashboard?tab=wallet",
+        secondaryCtaLabel: t("Swap again"),
+        receiptContext: {
+          verb: t("Sold"),
+          amountUsd: validation.amount * inputAsset.priceUsd,
+          amountLabel: `${amount} ${inputAsset.symbol}`,
+          rateLabel: t("Received"),
+          rateValue: `${formatAmount(quote.estimatedOutputAmount)} ${outputAsset.symbol}`,
+          marketValue: quote.provider,
+        },
+      })
+      setStage("success")
+    } catch (error) {
+      setOutcome({ tone: "error", message: error instanceof Error ? error.message : t("Swap failed.") })
+      setStage("error")
+    } finally {
+      setIsPending(false)
     }
-  }
+  }, [amount, approvalRequired, inputAsset, isPending, outputAsset, previewUi, quote, swap, t, validation])
+
+  const resetSwap = useCallback(() => {
+    setAmount("")
+    setQuote(null)
+    setSuccessUi(null)
+    setOutcome(null)
+    setStage("configure")
+  }, [])
 
   const primaryLabel = !inputBalance
     ? t("Insufficient balance")
@@ -164,140 +274,171 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
         ? t("Loading quote")
         : quoteState === "error"
           ? t("Refresh quote")
-          : approvalRequired
-            ? t("Approve {symbol}").replace("{symbol}", inputAsset.symbol)
-            : t("Review swap")
+          : t("Review swap")
+
+  const isTransactionStage = [
+    "approve_allowance",
+    "wallet_sign",
+    "processing",
+    "submitted",
+    "confirmed",
+    "refreshing_position",
+    "reconciled",
+  ].includes(stage)
 
   return (
     <ActionPageShell
       title="Swap"
       subtitle={`Choose which assets to swap on Ethereum${origin !== "wallet" ? ` · ${origin}` : ""}`}
       closeHref={returnHref}
-      flowHeaderStage="configure"
+      flowHeaderStage={stage}
+      hideTitle={stage === "review" || stage === "success" || isTransactionStage}
     >
-      <div className="space-y-4">
-        <div className="rounded-radius-xl border border-border bg-card p-4">
-          <SwapAssetField
-            label={t("Sell")}
-            amount={amount}
-            onAmountChange={setAmount}
-            assetId={inputAssetId}
-            onAssetChange={(assetId) => {
-              setInputAssetId(assetId)
-              if (assetId === outputAssetId) setOutputAssetId(fallbackOutput(assetId))
-            }}
-            assetOptions={assetOptions}
-            balanceLabel={`${t("Balance")}: ${formatAmount(maxAmount)} ${inputAsset.symbol}`}
-            fiatLabel={exact((Number(amount) || 0) * inputAsset.priceUsd)}
-          />
+      {isTransactionStage ? (
+        <ActionProcessingStage verb="Swap" preview={previewUi} closeHref={returnHref} stage={stage} />
+      ) : null}
 
-          <div className="-my-1 flex justify-center">
+      {stage === "success" && successUi ? (
+        <ActionSuccessStage success={successUi} closeHref={returnHref} onSecondary={resetSwap} />
+      ) : null}
+
+      {stage === "review" && previewUi ? (
+        <ActionReviewStage
+          title={t("Review swap")}
+          subtitle={t("Confirm the details below before signing.")}
+          preview={previewUi}
+          primaryLabel={t("Swap")}
+          onPrimary={() => void submitSwap()}
+          onSecondary={() => setStage("configure")}
+          primaryPending={isPending}
+        />
+      ) : null}
+
+      {stage === "configure" || stage === "error" ? (
+        <div className="space-y-4">
+          <div className="rounded-radius-xl border border-border bg-card p-4">
+            <SwapAssetField
+              label={t("Sell")}
+              amount={amount}
+              onAmountChange={setAmount}
+              assetId={inputAssetId}
+              onAssetChange={(assetId) => {
+                setInputAssetId(assetId)
+                if (assetId === outputAssetId) setOutputAssetId(fallbackOutput(assetId))
+              }}
+              assetOptions={assetOptions}
+              balanceLabel={`${t("Balance")}: ${formatAmount(maxAmount)} ${inputAsset.symbol}`}
+              fiatLabel={exact((Number(amount) || 0) * inputAsset.priceUsd)}
+            />
+
+            <div className="-my-1 flex justify-center">
+              <button
+                type="button"
+                onClick={reversePair}
+                aria-label={t("Reverse swap direction")}
+                className="inline-flex size-9 items-center justify-center rounded-full border border-border bg-surface-raised text-muted-foreground hover:text-foreground"
+              >
+                <ArrowDown className="size-4" />
+              </button>
+            </div>
+
+            <SwapAssetField
+              label={t("Receive at least")}
+              amount={quote ? formatAmount(quote.estimatedOutputAmount) : "0"}
+              readOnly
+              assetId={outputAssetId}
+              onAssetChange={(assetId) => {
+                setOutputAssetId(assetId)
+                if (assetId === inputAssetId) setInputAssetId(fallbackOutput(assetId))
+              }}
+              assetOptions={assetOptions}
+              fiatLabel={quote ? exact(quote.estimatedOutputAmount * outputAsset.priceUsd) : exact(0)}
+            />
+
+            <div className="mt-4 grid grid-cols-4 gap-2">
+              {[0.25, 0.5, 0.75, 1].map((percent) => (
+                <button
+                  key={percent}
+                  type="button"
+                  onClick={() => setPercent(percent)}
+                  className="rounded-full border border-border bg-surface-2 px-3 py-2 text-[13px] font-medium text-muted-foreground hover:text-foreground"
+                >
+                  {percent === 1 ? t("Max") : `${percent * 100}%`}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-radius-xl border border-border bg-card p-4">
+            <div className="flex items-center justify-between">
+              <span className="text-[14px] text-muted-foreground">{t("Max slippage")}</span>
+              <select
+                value={slippageBps}
+                onChange={(event) => setSlippageBps(Number(event.target.value))}
+                className="rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[13px] text-foreground"
+              >
+                <option value={10}>0.1%</option>
+                <option value={50}>0.5%</option>
+                <option value={100}>1%</option>
+                <option value={300}>3%</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="rounded-radius-xl border border-border bg-card p-4">
+            <QuoteRow
+              label={t("Rate")}
+              value={quote ? `1 ${inputAsset.symbol} = ${formatAmount(quote.exchangeRate)} ${outputAsset.symbol}` : "—"}
+            />
+            <QuoteRow
+              label={t("Minimum received")}
+              value={quote ? `${formatAmount(quote.minimumOutputAmount)} ${outputAsset.symbol}` : "—"}
+            />
+            <QuoteRow
+              label={t("Price impact")}
+              value={quote ? `${quote.priceImpactPct.toFixed(2)}%` : "—"}
+              valueClassName={priceImpactTone}
+            />
+            <QuoteRow label={t("Network fee")} value={quote ? exact(quote.networkFeeUsd) : "—"} />
+            <QuoteRow label={t("Provider")} value={quote?.provider ?? "—"} />
+          </div>
+
+          {outcome ? (
+            <div
+              className={`rounded-radius-xl border p-4 text-[14px] ${
+                outcome.tone === "success"
+                  ? "border-brand/30 bg-brand/10 text-foreground"
+                  : "border-danger/30 bg-danger/10 text-foreground"
+              }`}
+            >
+              {outcome.message}
+            </div>
+          ) : null}
+
+          <div className="grid grid-cols-2 gap-3">
+            <Link href={returnHref} className={secondaryCtaClass({ className: "w-full" })}>
+              {t("Cancel")}
+            </Link>
             <button
               type="button"
-              onClick={reversePair}
-              aria-label={t("Reverse swap direction")}
-              className="inline-flex size-9 items-center justify-center rounded-full border border-border bg-surface-raised text-muted-foreground hover:text-foreground"
+              onClick={() => {
+                if (quoteState === "error") {
+                  setQuoteRetry((current) => current + 1)
+                  return
+                }
+                if (previewUi) setStage("review")
+              }}
+              disabled={!validation.valid || quoteState === "loading" || (!quote && quoteState !== "error")}
+              className={primaryCtaClass({
+                disabled: !validation.valid || quoteState === "loading" || (!quote && quoteState !== "error"),
+                className: "w-full",
+              })}
             >
-              <ArrowDown className="size-4" />
+              {primaryLabel}
             </button>
           </div>
-
-          <SwapAssetField
-            label={t("Receive at least")}
-            amount={quote ? formatAmount(quote.estimatedOutputAmount) : "0"}
-            readOnly
-            assetId={outputAssetId}
-            onAssetChange={(assetId) => {
-              setOutputAssetId(assetId)
-              if (assetId === inputAssetId) setInputAssetId(fallbackOutput(assetId))
-            }}
-            assetOptions={assetOptions}
-            fiatLabel={quote ? exact(quote.estimatedOutputAmount * outputAsset.priceUsd) : exact(0)}
-          />
-
-          <div className="mt-4 grid grid-cols-4 gap-2">
-            {[0.25, 0.5, 0.75, 1].map((percent) => (
-              <button
-                key={percent}
-                type="button"
-                onClick={() => setPercent(percent)}
-                className="rounded-full border border-border bg-surface-2 px-3 py-2 text-[13px] font-medium text-muted-foreground hover:text-foreground"
-              >
-                {percent === 1 ? t("Max") : `${percent * 100}%`}
-              </button>
-            ))}
-          </div>
         </div>
-
-        <div className="rounded-radius-xl border border-border bg-card p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-[14px] text-muted-foreground">{t("Max slippage")}</span>
-            <select
-              value={slippageBps}
-              onChange={(event) => setSlippageBps(Number(event.target.value))}
-              className="rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[13px] text-foreground"
-            >
-              <option value={10}>0.1%</option>
-              <option value={50}>0.5%</option>
-              <option value={100}>1%</option>
-              <option value={300}>3%</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="rounded-radius-xl border border-border bg-card p-4">
-          <QuoteRow label={t("Rate")} value={quote ? `1 ${inputAsset.symbol} = ${formatAmount(quote.exchangeRate)} ${outputAsset.symbol}` : "—"} />
-          <QuoteRow label={t("Minimum received")} value={quote ? `${formatAmount(quote.minimumOutputAmount)} ${outputAsset.symbol}` : "—"} />
-          <QuoteRow label={t("Price impact")} value={quote ? `${quote.priceImpactPct.toFixed(2)}%` : "—"} valueClassName={priceImpactTone} />
-          <QuoteRow label={t("Network fee")} value={quote ? exact(quote.networkFeeUsd) : "—"} />
-          <QuoteRow label={t("Provider")} value={quote?.provider ?? "—"} />
-        </div>
-
-        {outcome ? (
-          <div
-            className={`rounded-radius-xl border p-4 text-[14px] ${
-              outcome.tone === "success" ? "border-brand/30 bg-brand/10 text-foreground" : "border-danger/30 bg-danger/10 text-foreground"
-            }`}
-          >
-            {outcome.message}
-          </div>
-        ) : null}
-
-        <div className="grid grid-cols-2 gap-3">
-          <Link href={returnHref} className={secondaryCtaClass({ className: "w-full" })}>
-            {t("Cancel")}
-          </Link>
-          <button
-            type="button"
-            onClick={handlePrimary}
-            disabled={!validation.valid || quoteState === "loading" || (!quote && quoteState !== "error")}
-            className={primaryCtaClass({
-              disabled: !validation.valid || quoteState === "loading" || (!quote && quoteState !== "error"),
-              className: "w-full",
-            })}
-          >
-            {primaryLabel}
-          </button>
-        </div>
-      </div>
-
-      <Dialog open={reviewOpen} onOpenChange={setReviewOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("Review swap")}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 text-[14px]">
-            <QuoteRow label={t("Sell")} value={`${amount || "0"} ${inputAsset.symbol}`} />
-            <QuoteRow label={t("Receive")} value={quote ? `${formatAmount(quote.estimatedOutputAmount)} ${outputAsset.symbol}` : "—"} />
-            <QuoteRow label={t("Minimum received")} value={quote ? `${formatAmount(quote.minimumOutputAmount)} ${outputAsset.symbol}` : "—"} />
-            <QuoteRow label={t("Network")} value="Ethereum" />
-            <QuoteRow label={t("Destination")} value={t("Wallet")} />
-            <button type="button" onClick={confirmSwap} className={primaryCtaClass({ className: "mt-3 w-full" })}>
-              {t("Confirm swap")}
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      ) : null}
     </ActionPageShell>
   )
 }
@@ -357,7 +498,15 @@ function SwapAssetField({
   )
 }
 
-function QuoteRow({ label, value, valueClassName = "text-foreground" }: { label: string; value: string; valueClassName?: string }) {
+function QuoteRow({
+  label,
+  value,
+  valueClassName = "text-foreground",
+}: {
+  label: string
+  value: string
+  valueClassName?: string
+}) {
   return (
     <div className="flex items-center justify-between border-b border-border/70 py-3 last:border-b-0">
       <span className="text-[13px] text-muted-foreground">{label}</span>
