@@ -15,7 +15,15 @@ function actionFlowStepIndex(stage: ActionStage) {
   return 3
 }
 
-export function ActionFlowHeader({ stage, onClose }: { stage: ActionStage; onClose: () => void }) {
+export function ActionFlowHeader({
+  stage,
+  onClose,
+  mobileOnly = false,
+}: {
+  stage: ActionStage
+  onClose: () => void
+  mobileOnly?: boolean
+}) {
   const { t } = useTranslation()
   const activeIndex = actionFlowStepIndex(stage)
   const activeStep = ACTION_FLOW_STEPS[activeIndex]
@@ -26,7 +34,11 @@ export function ActionFlowHeader({ stage, onClose }: { stage: ActionStage; onClo
     .replace("{label}", t(activeStep))
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center border-b border-border bg-background px-4 text-foreground sm:px-6 lg:h-[68px] lg:px-5 xl:px-6 2xl:px-8">
+    <header
+      className={`sticky top-0 z-40 flex h-16 items-center border-b border-border bg-background px-4 text-foreground sm:px-6 ${
+        mobileOnly ? "lg:hidden" : "lg:h-[68px] lg:px-5 xl:px-6 2xl:px-8"
+      }`}
+    >
       <Link href="/" aria-label={t("Home")} title={t("Home")} className="inline-flex min-w-0 items-center">
         <span className="xl:hidden">
           <BrandIcon />

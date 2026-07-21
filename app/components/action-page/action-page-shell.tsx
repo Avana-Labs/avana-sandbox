@@ -17,6 +17,7 @@ type ActionPageShellProps = {
   hideTitle?: boolean
   hideClose?: boolean
   flowHeaderStage?: ActionStage
+  flowHeaderMobileOnly?: boolean
   onClose?: () => void
   closeHref?: string
   children: ReactNode
@@ -32,6 +33,7 @@ export function ActionPageShell({
   hideTitle = false,
   hideClose = false,
   flowHeaderStage,
+  flowHeaderMobileOnly = false,
   onClose,
   closeHref,
   children,
@@ -78,7 +80,9 @@ export function ActionPageShell({
       data-testid="action-page-shell"
       data-mode={mode}
     >
-      {showFlowHeader ? <ActionFlowHeader stage={flowHeaderStage} onClose={handleClose} /> : null}
+      {showFlowHeader ? (
+        <ActionFlowHeader stage={flowHeaderStage} onClose={handleClose} mobileOnly={flowHeaderMobileOnly} />
+      ) : null}
 
       {showChrome && !hideClose && !showFlowHeader ? (
         <div className="flex items-center justify-end gap-1.5 px-4 pb-1 pt-3 sm:px-6">
@@ -100,6 +104,7 @@ export function ActionPageShell({
           density === "sidebar" && "max-w-none gap-4 px-0 pb-0",
           density === "default" && "max-w-[560px] gap-4 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] sm:px-6",
           showFlowHeader && density === "default" && "pt-12",
+          showFlowHeader && flowHeaderMobileOnly && density === "default" && "lg:pt-0",
         )}
       >
         {showTitleBlock ? (
