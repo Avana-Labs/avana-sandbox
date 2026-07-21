@@ -131,14 +131,14 @@ export function AssetDetailClient({ detail }: Props) {
       <MobileDetailActionBar className="grid grid-cols-2 gap-3">
         <Link
           href={actionPagePath("borrow", "borrow", { asset: detail.row.id, return: closeHref })}
-          className={primaryCtaClass({ size: "compact", className: "gap-2.5 [&_svg]:size-5" })}
+          className={primaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
         >
           <ActionIcon label="Borrow" />
           {t("Borrow")}
         </Link>
         <Link
           href={actionPagePath("borrow", "repay", { asset: detail.row.id, return: closeHref })}
-          className={secondaryCtaClass({ size: "compact", className: "gap-2.5 [&_svg]:size-5" })}
+          className={secondaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
         >
           <ActionIcon label="Repay" />
           {t("Repay")}

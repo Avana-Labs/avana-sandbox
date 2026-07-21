@@ -1,6 +1,7 @@
 "use client"
 
 import { LazyMotion, useReducedMotion } from "framer-motion"
+import type { ReactNode } from "react"
 import * as m from "framer-motion/m"
 import { cn } from "@/lib/utils"
 
@@ -8,7 +9,7 @@ const loadMotionFeatures = () => import("@/app/lib/framer-dom-animation").then((
 
 type SharedTabItem<T extends string> = {
   id: T
-  label: string
+  label: ReactNode
 }
 
 export function PillTabStrip<T extends string>({
@@ -17,12 +18,14 @@ export function PillTabStrip<T extends string>({
   onChange,
   ariaLabel,
   className,
+  tabClassName,
 }: {
   items: readonly SharedTabItem<T>[]
   value: T
   onChange: (value: T) => void
   ariaLabel: string
   className?: string
+  tabClassName?: string
 }) {
   const reduceMotion = useReducedMotion()
 
@@ -44,6 +47,7 @@ export function PillTabStrip<T extends string>({
               type="button"
               role="tab"
               aria-selected={active}
+              data-state={active ? "active" : "inactive"}
               onClick={() => onChange(item.id)}
               whileTap={reduceMotion ? undefined : { scale: 0.96 }}
               whileHover={reduceMotion ? undefined : { y: -1 }}
@@ -51,6 +55,7 @@ export function PillTabStrip<T extends string>({
               className={cn(
                 "shrink-0 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[14px] font-medium leading-none transition-colors sm:px-3 sm:text-[15px]",
                 active ? "bg-field-bottom text-foreground" : "text-muted-foreground hover:text-foreground",
+                tabClassName,
               )}
             >
               {item.label}

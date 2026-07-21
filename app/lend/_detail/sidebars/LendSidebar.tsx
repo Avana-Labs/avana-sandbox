@@ -49,6 +49,7 @@ function LendActionRail({ detail, className }: Props) {
         value={tab}
         onChange={(value) => setTab(value as SidebarTab)}
         ariaLabel={t("Lend actions")}
+        withIcons
       />
 
       <div className="mt-3">

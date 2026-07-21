@@ -228,7 +228,7 @@ export function PillButton({
   const sizeCls = size === "md" ? "h-9 px-4 text-[13px]" : "h-7 px-2.5 text-[12px]"
   const variantCls = {
     primary:
-      "bg-brand text-brand-foreground shadow-elev-1 hover:bg-brand/90 active:bg-brand/80 disabled:!opacity-100 disabled:bg-brand-soft disabled:text-brand-soft-foreground disabled:shadow-none",
+      "bg-brand text-white shadow-elev-1 hover:bg-brand/90 active:bg-brand/80 disabled:!opacity-100 disabled:bg-brand-soft disabled:text-brand-soft-foreground disabled:shadow-none",
     ghost: "border border-border bg-surface-raised text-foreground hover:bg-surface-hover",
     danger: "border border-destructive/30 bg-transparent text-destructive hover:bg-destructive/5 dark:text-rose-300",
     success: "bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-muted disabled:text-muted-foreground",

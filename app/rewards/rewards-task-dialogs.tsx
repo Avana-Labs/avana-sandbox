@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog"
 
 const rewardsPrimaryButtonClass =
-  "bg-brand text-brand-foreground shadow-none hover:bg-brand/90 disabled:bg-muted/60 disabled:text-muted-foreground"
+  "bg-brand font-bold text-white shadow-none hover:bg-brand/90 disabled:bg-muted/60 disabled:text-muted-foreground"
 
 const FAVORITE_MARKET_OPTIONS = [
   { id: "gho", label: "GHO Lend market" },

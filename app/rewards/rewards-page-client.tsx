@@ -493,7 +493,7 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
 
       <MobileDetailActionBar>
         {claimHref ? (
-          <Link href={claimHref} className={primaryCtaClass({ size: "compact", className: "w-full gap-2.5 [&_svg]:size-5" })}>
+          <Link href={claimHref} className={primaryCtaClass({ size: "compact", className: "w-full gap-2.5 font-bold [&_svg]:size-5" })}>
             <ActionIcon label="Claim" />
             {t("Claim rewards")}
           </Link>
