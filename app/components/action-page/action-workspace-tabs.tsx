@@ -16,6 +16,7 @@ export function ActionWorkspaceTabs({
   ariaLabel,
   className,
   withIcons = false,
+  revealLabels = false,
 }: {
   items: ActionWorkspaceTabItem[]
   value: string
@@ -23,6 +24,7 @@ export function ActionWorkspaceTabs({
   ariaLabel: string
   className?: string
   withIcons?: boolean
+  revealLabels?: boolean
 }) {
   const { t } = useTranslation()
 
@@ -35,7 +37,15 @@ export function ActionWorkspaceTabs({
           label: withIcons ? (
             <span className="inline-flex items-center gap-2.5">
               <ActionIcon label={label} className="size-5" />
-              <span>{label}</span>
+              <span
+                className={
+                  revealLabels
+                    ? "home-reveal-tab-label"
+                    : undefined
+                }
+              >
+                {label}
+              </span>
             </span>
           ) : (
             label
@@ -47,10 +57,13 @@ export function ActionWorkspaceTabs({
       ariaLabel={t(ariaLabel)}
       className={className}
       tabClassName={
-        withIcons
+        revealLabels
+          ? "home-reveal-tab h-10 w-10 overflow-hidden px-0 py-2 text-[14px] font-bold text-muted-foreground data-[state=active]:w-[104px] data-[state=active]:px-3.5 [&_svg]:size-4"
+          : withIcons
           ? "px-3.5 py-2 text-[14px] font-bold text-muted-foreground sm:px-3.5 sm:text-[14px] data-[state=active]:bg-neutral-200 data-[state=active]:text-foreground dark:data-[state=active]:bg-neutral-800 [&_svg]:size-4"
           : undefined
       }
+      cssOnly={revealLabels}
     />
   )
 }

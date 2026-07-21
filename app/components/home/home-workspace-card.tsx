@@ -33,6 +33,7 @@ export function HomeWorkspaceCard({
             onChange={(value) => onModeChange(value as HomeMode)}
             ariaLabel={t("Borrow actions")}
             withIcons
+            revealLabels
           />
         </div>
 
