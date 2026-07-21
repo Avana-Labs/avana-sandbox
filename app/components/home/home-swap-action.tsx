@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { ArrowDown } from "@/app/components/icons"
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
 import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
@@ -103,20 +102,6 @@ export function HomeSwapAction() {
     setOutcome(null)
     if (stage === "review" || stage === "error") setStage("configure")
   }, [amount, inputAssetId, outputAssetId, slippageBps])
-
-  const reversePair = () => {
-    if (!inputAssetId || !outputAssetId) return
-    const nextInput = outputAssetId
-    const nextOutput = inputAssetId
-    const nextInputBalance = swap.walletBalances.find(
-      (balance) => balance.assetId === nextInput && balance.sourceType === "wallet",
-    )
-    if (!nextInputBalance) return
-    setInputAssetId(nextInput)
-    setOutputAssetId(nextOutput)
-    setAmount("")
-    setQuote(null)
-  }
 
   const previewUi = useMemo<ActionPreviewUi | null>(() => {
     if (!quote || !validation.valid || !inputAsset || !outputAsset) return null
@@ -290,12 +275,14 @@ export function HomeSwapAction() {
           onPrimary={() => void submitSwap()}
           onSecondary={() => setStage("configure")}
           primaryPending={isPending}
+          hideHeader
+          amountVariant="raised"
         />
       ) : null}
 
       {stage === "configure" || stage === "error" ? (
         <>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-3">
             <HomeSwapAssetField
               label={t("Sell")}
               amount={amount}
@@ -313,15 +300,7 @@ export function HomeSwapAction() {
               }
               tone="raised"
             />
-            <div className="relative">
-              <button
-                type="button"
-                onClick={reversePair}
-                aria-label={t("Reverse swap direction")}
-                className="absolute left-1/2 top-0 z-20 flex size-7 -translate-x-1/2 -translate-y-[calc(50%+0.125rem)] items-center justify-center rounded-radius-md border-4 border-background bg-field-bottom text-muted-foreground hover:text-foreground"
-              >
-                <ArrowDown className="size-3.5" />
-              </button>
+            <div>
               <HomeSwapAssetField
                 label={t("Buy")}
                 amount={quote ? formatAmount(quote.estimatedOutputAmount) : "0"}
@@ -422,7 +401,9 @@ function HomeSwapAssetField({
             readOnly={readOnly}
             onChange={(event) => onAmountChange?.(event.target.value.replace(/[^\d.]/g, ""))}
             inputMode="decimal"
-            className="w-full min-w-0 border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground outline-none placeholder:text-muted-foreground/60"
+            className={`w-full min-w-0 border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] outline-none placeholder:text-muted-foreground/60 ${
+              amount && amount !== "0" ? "text-foreground" : "text-muted-foreground/60"
+            }`}
             placeholder="0"
             aria-label={label}
           />

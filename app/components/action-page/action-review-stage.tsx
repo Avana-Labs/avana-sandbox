@@ -21,6 +21,7 @@ export function ActionReviewStage({
   primaryPending = false,
   blockedReason = null,
   confirmationGate,
+  amountVariant = "card",
 }: {
   title: string
   subtitle?: string
@@ -39,6 +40,7 @@ export function ActionReviewStage({
     onCheckedChange: (checked: boolean) => void
     label: string
   }
+  amountVariant?: "card" | "inset" | "raised"
 }) {
   const { t } = useTranslation()
   const amountDisplay = resolveActionAmountCardProps(preview)
@@ -74,6 +76,7 @@ export function ActionReviewStage({
           borrowSymbol={amountDisplay.borrowSymbol}
           unitLabel={preview.amountUnitLabel}
           readOnly
+          variant={amountVariant}
         />
       )}
 

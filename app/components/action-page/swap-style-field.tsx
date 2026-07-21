@@ -37,14 +37,22 @@ export function SwapStyleField({
   )
 }
 
-export function SwapStyleFieldStack({ children, className }: { children: ReactNode; className?: string }) {
+export function SwapStyleFieldStack({
+  children,
+  className,
+  showConnector = true,
+}: {
+  children: ReactNode
+  className?: string
+  showConnector?: boolean
+}) {
   const items = Children.toArray(children)
   return (
     <div className={cn("flex flex-col gap-1", className)} data-testid="swap-style-field-stack">
       {items.map((child, index) => (
         <Fragment key={index}>
           {child}
-          {index === 0 && items.length > 1 ? (
+          {showConnector && index === 0 && items.length > 1 ? (
             // Uniswap-style directional affordance between the two fields. Decorative
             // only (not a swap button): borrow's collateral→borrow flow isn't
             // reversible, so this indicates direction without implying a toggle.
