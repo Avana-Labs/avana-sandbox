@@ -1,23 +1,27 @@
 import type { LucideIcon } from "@/app/components/icons"
-import { CircleArrowDown, CircleArrowUp, HandCoins, LogIn, LogOut } from "@/app/components/icons"
+import {
+  ArrowShrink,
+  ArrowUpRightStack,
+  CircleArrowOutDownRight,
+  CircleArrowOutUpLeft,
+  DollarReceive02,
+  DownloadCircle02,
+  LayerSendBackward,
+  SafeBox,
+  UploadCircle02,
+} from "@/app/components/icons"
 
-// Aave-style action glyphs: deposit/supply flows down-into (circled down arrow),
-// borrow flows up-out (circled up arrow), repay is money going back in (LogIn),
-// withdraw is money coming out (LogOut). Multiply/Deleverage reuse the circled
-// up/down pair (add vs. reduce leverage); Pledge reads like a deposit.
 const ACTION_ICONS: Record<string, LucideIcon> = {
-  deposit: CircleArrowDown,
-  supply: CircleArrowDown,
-  pledge: CircleArrowDown,
-  borrow: CircleArrowUp,
-  repay: LogIn,
-  withdraw: LogOut,
-  multiply: CircleArrowUp,
-  deleverage: CircleArrowDown,
-  // Trading-fee actions: claim collects earned fees (money in-hand), remove pulls
-  // liquidity back out (same out-flow semantic as withdraw).
-  claim: HandCoins,
-  remove: LogOut,
+  deposit: DownloadCircle02,
+  supply: DownloadCircle02,
+  pledge: SafeBox,
+  borrow: CircleArrowOutDownRight,
+  repay: CircleArrowOutUpLeft,
+  withdraw: UploadCircle02,
+  multiply: ArrowUpRightStack,
+  deleverage: ArrowShrink,
+  claim: DollarReceive02,
+  remove: LayerSendBackward,
 }
 
 /** Renders the directional icon for an action label, or nothing if unmapped.

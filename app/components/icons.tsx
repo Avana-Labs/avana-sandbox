@@ -4,7 +4,9 @@ import {
   AlertTriangle as _AlertTriangle,
   ArrowDown as _ArrowDown,
   ArrowRight as _ArrowRight,
+  ArrowShrinkIcon as _ArrowShrink,
   ArrowUpRight as _ArrowUpRight,
+  ArrowUpRightStackIcon as _ArrowUpRightStack,
   BadgeCheck as _BadgeCheck,
   BookOpen as _BookOpen,
   Check as _Check,
@@ -15,12 +17,16 @@ import {
   ChevronUp as _ChevronUp,
   Circle as _Circle,
   CircleArrowDown as _CircleArrowDown,
+  CircleArrowOutDownRightIcon as _CircleArrowOutDownRight,
+  CircleArrowOutUpLeftIcon as _CircleArrowOutUpLeft,
   CircleArrowUp as _CircleArrowUp,
   CircleUserRound as _CircleUserRound,
   Code as _Code,
   Coins as _Coins,
   Compass as _Compass,
   Copy as _Copy,
+  DollarReceive02Icon as _DollarReceive02,
+  DownloadCircle02Icon as _DownloadCircle02,
   DollarCircleIcon as _DollarCircleIcon,
   Droplets as _Droplets,
   ExternalLink as _ExternalLink,
@@ -34,6 +40,7 @@ import {
   Heart as _Heart,
   HelpCircleIcon as _HelpCircleIcon,
   Info as _Info,
+  LayerSendBackwardIcon as _LayerSendBackward,
   Layers as _Layers,
   LifeBuoy as _LifeBuoy,
   Link2 as _Link2,
@@ -53,6 +60,7 @@ import {
   Repeat as _Repeat,
   Repeat2 as _Repeat2,
   Rocket as _Rocket,
+  SafeBoxIcon as _SafeBox,
   Search as _Search,
   Shield as _Shield,
   ShieldCheck as _ShieldCheck,
@@ -65,6 +73,7 @@ import {
   Trophy as _Trophy,
   Umbrella as _Umbrella,
   Unlock as _Unlock,
+  UploadCircle02Icon as _UploadCircle02,
   Wallet as _Wallet,
   X as _X,
 } from "@hugeicons/core-free-icons"
@@ -96,7 +105,9 @@ function makeIcon(icon: HugeiconsIconProps["icon"]): IconComponent {
 export const AlertTriangle: IconComponent = makeIcon(_AlertTriangle)
 export const ArrowDown: IconComponent = makeIcon(_ArrowDown)
 export const ArrowRight: IconComponent = makeIcon(_ArrowRight)
+export const ArrowShrink: IconComponent = makeIcon(_ArrowShrink)
 export const ArrowUpRight: IconComponent = makeIcon(_ArrowUpRight)
+export const ArrowUpRightStack: IconComponent = makeIcon(_ArrowUpRightStack)
 export const BadgeCheck: IconComponent = makeIcon(_BadgeCheck)
 export const BadgeDollarSign: IconComponent = makeIcon(_DollarCircleIcon)
 export const BookOpen: IconComponent = makeIcon(_BookOpen)
@@ -108,6 +119,8 @@ export const ChevronRight: IconComponent = makeIcon(_ChevronRight)
 export const ChevronUp: IconComponent = makeIcon(_ChevronUp)
 export const Circle: IconComponent = makeIcon(_Circle)
 export const CircleArrowDown: IconComponent = makeIcon(_CircleArrowDown)
+export const CircleArrowOutDownRight: IconComponent = makeIcon(_CircleArrowOutDownRight)
+export const CircleArrowOutUpLeft: IconComponent = makeIcon(_CircleArrowOutUpLeft)
 export const CircleArrowUp: IconComponent = makeIcon(_CircleArrowUp)
 export const CircleDollarSign: IconComponent = makeIcon(_DollarCircleIcon)
 export const CircleHelp: IconComponent = makeIcon(_HelpCircleIcon)
@@ -116,6 +129,8 @@ export const Code2: IconComponent = makeIcon(_Code)
 export const Coins: IconComponent = makeIcon(_Coins)
 export const Compass: IconComponent = makeIcon(_Compass)
 export const Copy: IconComponent = makeIcon(_Copy)
+export const DollarReceive02: IconComponent = makeIcon(_DollarReceive02)
+export const DownloadCircle02: IconComponent = makeIcon(_DownloadCircle02)
 export const Droplets: IconComponent = makeIcon(_Droplets)
 export const ExternalLink: IconComponent = makeIcon(_ExternalLink)
 export const Eye: IconComponent = makeIcon(_Eye)
@@ -128,6 +143,7 @@ export const GraduationCap: IconComponent = makeIcon(_GraduationCap)
 export const HandCoins: IconComponent = makeIcon(_HandCoins)
 export const Heart: IconComponent = makeIcon(_Heart)
 export const Info: IconComponent = makeIcon(_Info)
+export const LayerSendBackward: IconComponent = makeIcon(_LayerSendBackward)
 export const Layers3: IconComponent = makeIcon(_Layers)
 export const LifeBuoy: IconComponent = makeIcon(_LifeBuoy)
 export const Link2: IconComponent = makeIcon(_Link2)
@@ -147,6 +163,7 @@ export const PieChart: IconComponent = makeIcon(_PieChart)
 export const Repeat: IconComponent = makeIcon(_Repeat)
 export const Repeat2: IconComponent = makeIcon(_Repeat2)
 export const Rocket: IconComponent = makeIcon(_Rocket)
+export const SafeBox: IconComponent = makeIcon(_SafeBox)
 export const Search: IconComponent = makeIcon(_Search)
 export const Shield: IconComponent = makeIcon(_Shield)
 export const ShieldCheck: IconComponent = makeIcon(_ShieldCheck)
@@ -159,5 +176,6 @@ export const TrendingUp: IconComponent = makeIcon(_TrendingUp)
 export const Trophy: IconComponent = makeIcon(_Trophy)
 export const Umbrella: IconComponent = makeIcon(_Umbrella)
 export const Unlock: IconComponent = makeIcon(_Unlock)
+export const UploadCircle02: IconComponent = makeIcon(_UploadCircle02)
 export const Wallet: IconComponent = makeIcon(_Wallet)
 export const X: IconComponent = makeIcon(_X)

@@ -1,6 +1,11 @@
 "use client"
 
-import { CircleArrowDown, CircleArrowUp, LogIn, LogOut } from "@/app/components/icons"
+import {
+  CircleArrowOutDownRight,
+  CircleArrowOutUpLeft,
+  DownloadCircle02,
+  UploadCircle02,
+} from "@/app/components/icons"
 import { PortfolioHeroActions } from "@/app/portfolio/hero/portfolio-hero-actions"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -19,10 +24,30 @@ export function PortfolioQuickActions() {
   const { t } = useTranslation()
 
   const actions = [
-    { id: "borrow", label: t("Borrow"), icon: CircleArrowUp, href: withReturn(actionPagePath("borrow", "borrow")) },
-    { id: "repay", label: t("Repay"), icon: LogIn, href: withReturn(actionPagePath("borrow", "repay")) },
-    { id: "deposit", label: t("Deposit"), icon: CircleArrowDown, href: withReturn(actionPagePath("lend", "deposit")) },
-    { id: "withdraw", label: t("Withdraw"), icon: LogOut, href: withReturn(actionPagePath("lend", "withdraw")) },
+    {
+      id: "borrow",
+      label: t("Borrow"),
+      icon: CircleArrowOutDownRight,
+      href: withReturn(actionPagePath("borrow", "borrow")),
+    },
+    {
+      id: "repay",
+      label: t("Repay"),
+      icon: CircleArrowOutUpLeft,
+      href: withReturn(actionPagePath("borrow", "repay")),
+    },
+    {
+      id: "deposit",
+      label: t("Deposit"),
+      icon: DownloadCircle02,
+      href: withReturn(actionPagePath("lend", "deposit")),
+    },
+    {
+      id: "withdraw",
+      label: t("Withdraw"),
+      icon: UploadCircle02,
+      href: withReturn(actionPagePath("lend", "withdraw")),
+    },
   ]
 
   return (
