@@ -25,15 +25,15 @@ import {
   Coins as _Coins,
   Compass as _Compass,
   Copy as _Copy,
-  DollarReceive02Icon as _DollarReceive02,
-  DownloadCircle02Icon as _DownloadCircle02,
   DollarCircleIcon as _DollarCircleIcon,
   Droplets as _Droplets,
+  EnteringGeoFenceIcon as _EnteringGeoFence,
   ExternalLink as _ExternalLink,
   Eye as _Eye,
   EyeOff as _EyeOff,
   FileText as _FileText,
   Flame as _Flame,
+  GiftIcon as _Gift,
   Globe as _Globe,
   GraduationCap as _GraduationCap,
   HandCoins as _HandCoins,
@@ -42,6 +42,7 @@ import {
   Info as _Info,
   LayerSendBackwardIcon as _LayerSendBackward,
   Layers as _Layers,
+  LeavingGeoFenceIcon as _LeavingGeoFence,
   LifeBuoy as _LifeBuoy,
   Link2 as _Link2,
   LoaderCircle as _LoaderCircle,
@@ -60,11 +61,11 @@ import {
   Repeat as _Repeat,
   Repeat2 as _Repeat2,
   Rocket as _Rocket,
-  SafeBoxIcon as _SafeBox,
   Search as _Search,
   Shield as _Shield,
   ShieldCheck as _ShieldCheck,
   Sparkles as _Sparkles,
+  SquareLock02Icon as _SquareLock02,
   Sun as _Sun,
   SunMedium as _SunMedium,
   Target as _Target,
@@ -73,7 +74,6 @@ import {
   Trophy as _Trophy,
   Umbrella as _Umbrella,
   Unlock as _Unlock,
-  UploadCircle02Icon as _UploadCircle02,
   Wallet as _Wallet,
   X as _X,
 } from "@hugeicons/core-free-icons"
@@ -129,14 +129,14 @@ export const Code2: IconComponent = makeIcon(_Code)
 export const Coins: IconComponent = makeIcon(_Coins)
 export const Compass: IconComponent = makeIcon(_Compass)
 export const Copy: IconComponent = makeIcon(_Copy)
-export const DollarReceive02: IconComponent = makeIcon(_DollarReceive02)
-export const DownloadCircle02: IconComponent = makeIcon(_DownloadCircle02)
 export const Droplets: IconComponent = makeIcon(_Droplets)
+export const EnteringGeoFence: IconComponent = makeIcon(_EnteringGeoFence)
 export const ExternalLink: IconComponent = makeIcon(_ExternalLink)
 export const Eye: IconComponent = makeIcon(_Eye)
 export const EyeOff: IconComponent = makeIcon(_EyeOff)
 export const FileText: IconComponent = makeIcon(_FileText)
 export const Flame: IconComponent = makeIcon(_Flame)
+export const Gift: IconComponent = makeIcon(_Gift)
 export const Globe: IconComponent = makeIcon(_Globe)
 export const Globe2: IconComponent = makeIcon(_Globe)
 export const GraduationCap: IconComponent = makeIcon(_GraduationCap)
@@ -145,6 +145,7 @@ export const Heart: IconComponent = makeIcon(_Heart)
 export const Info: IconComponent = makeIcon(_Info)
 export const LayerSendBackward: IconComponent = makeIcon(_LayerSendBackward)
 export const Layers3: IconComponent = makeIcon(_Layers)
+export const LeavingGeoFence: IconComponent = makeIcon(_LeavingGeoFence)
 export const LifeBuoy: IconComponent = makeIcon(_LifeBuoy)
 export const Link2: IconComponent = makeIcon(_Link2)
 export const LoaderCircle: IconComponent = makeIcon(_LoaderCircle)
@@ -163,11 +164,11 @@ export const PieChart: IconComponent = makeIcon(_PieChart)
 export const Repeat: IconComponent = makeIcon(_Repeat)
 export const Repeat2: IconComponent = makeIcon(_Repeat2)
 export const Rocket: IconComponent = makeIcon(_Rocket)
-export const SafeBox: IconComponent = makeIcon(_SafeBox)
 export const Search: IconComponent = makeIcon(_Search)
 export const Shield: IconComponent = makeIcon(_Shield)
 export const ShieldCheck: IconComponent = makeIcon(_ShieldCheck)
 export const Sparkles: IconComponent = makeIcon(_Sparkles)
+export const SquareLock02: IconComponent = makeIcon(_SquareLock02)
 export const Sun: IconComponent = makeIcon(_Sun)
 export const SunMedium: IconComponent = makeIcon(_SunMedium)
 export const Target: IconComponent = makeIcon(_Target)
@@ -176,6 +177,5 @@ export const TrendingUp: IconComponent = makeIcon(_TrendingUp)
 export const Trophy: IconComponent = makeIcon(_Trophy)
 export const Umbrella: IconComponent = makeIcon(_Umbrella)
 export const Unlock: IconComponent = makeIcon(_Unlock)
-export const UploadCircle02: IconComponent = makeIcon(_UploadCircle02)
 export const Wallet: IconComponent = makeIcon(_Wallet)
 export const X: IconComponent = makeIcon(_X)

@@ -3,6 +3,7 @@
 import * as React from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
+import { ActionIcon } from "@/app/components/action-icon"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
@@ -155,14 +156,16 @@ export function LendMarketDetailClient({ detail }: Props) {
       <MobileDetailActionBar className="grid grid-cols-2 gap-3">
         <Link
           href={actionPagePath("lend", "deposit", { market: marketId, return: `/lend/markets/${marketId}` })}
-          className={primaryCtaClass({ size: "compact" })}
+          className={primaryCtaClass({ size: "compact", className: "gap-2.5 [&_svg]:size-5" })}
         >
+          <ActionIcon label="Deposit" />
           {t("Deposit")}
         </Link>
         <Link
           href={actionPagePath("lend", "withdraw", { market: marketId, return: `/lend/markets/${marketId}` })}
-          className={secondaryCtaClass({ size: "compact" })}
+          className={secondaryCtaClass({ size: "compact", className: "gap-2.5 [&_svg]:size-5" })}
         >
+          <ActionIcon label="Withdraw" />
           {t("Withdraw")}
         </Link>
       </MobileDetailActionBar>
