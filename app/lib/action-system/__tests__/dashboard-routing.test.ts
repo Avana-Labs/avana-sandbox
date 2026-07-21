@@ -16,12 +16,12 @@ describe("dashboard-routing", () => {
   })
 
   it("routes every product action back to the dashboard page", () => {
-    expect(dashboardHrefForProduct("lend")).toBe("/dashboard")
-    expect(dashboardHrefForProduct("borrow")).toBe("/dashboard")
-    expect(dashboardHrefForProduct("multiply")).toBe("/dashboard")
-    expect(dashboardHrefForProduct("rewards")).toBe("/dashboard")
-    expect(dashboardHrefForTab("overview")).toBe("/dashboard")
-    expect(dashboardHrefForTab("lending")).toBe("/dashboard")
+    expect(dashboardHrefForProduct("lend")).toBe("/dashboard#dashboard-lend-account")
+    expect(dashboardHrefForProduct("borrow")).toBe("/dashboard#dashboard-borrow-account")
+    expect(dashboardHrefForProduct("multiply")).toBe("/dashboard#dashboard-multiply-account")
+    expect(dashboardHrefForProduct("rewards")).toBe("/dashboard#dashboard-activity")
+    expect(dashboardHrefForTab("overview")).toBe("/dashboard#dashboard-borrow-account")
+    expect(dashboardHrefForTab("lending")).toBe("/dashboard#dashboard-lend-account")
   })
 
   it("parses valid tab query values", () => {

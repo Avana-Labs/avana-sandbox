@@ -232,7 +232,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
   const hasMore = visibleItems.length > COLLAPSED_COUNT
 
   return (
-    <section className="min-w-0">
+    <section id="dashboard-activity" className="min-w-0 scroll-mt-24">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">
           {t("All Transactions")}

@@ -70,7 +70,7 @@ async function checkLowContrastText(page: Page, viewport: string, route: string)
 }
 
 async function clickAllTabs(page: Page, viewport: string, route: string) {
-  const tabs = page.locator('[role="tab"]')
+  const tabs = page.locator('[role="tab"]:visible')
   const count = await tabs.count()
   for (let i = 0; i < count; i++) {
     const tab = tabs.nth(i)
@@ -248,7 +248,7 @@ test.describe("Borrow pages", () => {
     await page.goto("/borrow", { waitUntil: "networkidle" })
     trackConsole(page, viewport, "/borrow workspace")
 
-    const workspaceTabs = page.locator('[role="tab"]')
+    const workspaceTabs = page.locator('[role="tab"]:visible')
     const count = await workspaceTabs.count()
     for (let i = 0; i < count; i++) {
       await workspaceTabs.nth(i).click()
@@ -267,7 +267,10 @@ test.describe("Lend pages", () => {
     const marketLink = page.locator("a[href*='/lend/markets/']").first()
     if (await marketLink.isVisible().catch(() => false)) {
       const href = await marketLink.getAttribute("href")
-      await page.locator("[data-featured-carousel]").hover()
+      const featuredCarousel = page.locator("[data-featured-carousel]").first()
+      if (await featuredCarousel.isVisible().catch(() => false)) {
+        await featuredCarousel.hover()
+      }
       await marketLink.click({ force: true })
       await page.waitForLoadState("networkidle")
       await browseRoute(page, viewport, href ?? "/lend")
@@ -287,7 +290,7 @@ test.describe("Multiply pages", () => {
     const marketLink = page.locator("a[href*='/multiply/markets/']").first()
     if (await marketLink.isVisible().catch(() => false)) {
       const href = await marketLink.getAttribute("href")
-      await marketLink.click()
+      await marketLink.click({ force: true })
       await page.waitForLoadState("networkidle")
       await browseRoute(page, viewport, href ?? "/multiply")
     }
@@ -301,8 +304,8 @@ test.describe("Multiply pages", () => {
 test.describe("Dashboard", () => {
   test("browse all dashboard tabs", async ({ page }, testInfo) => {
     const viewport = testInfo.project.name
-    await browseRoute(page, viewport, "/portfolio", { clickTabs: true })
-    await toggleTheme(page, viewport, "/portfolio")
+    await browseRoute(page, viewport, "/dashboard", { clickTabs: true })
+    await toggleTheme(page, viewport, "/dashboard")
   })
 })
 

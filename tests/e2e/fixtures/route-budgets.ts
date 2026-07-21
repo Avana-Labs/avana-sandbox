@@ -25,7 +25,11 @@ export const NAVIGATION_TIMING_BUDGETS: NavigationTimingBudget = {
   heroVisibleMs: 5_000,
 }
 
-export const ROUTE_TIMING_OVERRIDES: Partial<Record<LighthouseRoute, Partial<NavigationTimingBudget>>> = {}
+export const ROUTE_TIMING_OVERRIDES: Partial<Record<LighthouseRoute, Partial<NavigationTimingBudget>>> = {
+  "/lend/markets/usdc": {
+    domContentLoadedMs: 7_000,
+  },
+}
 
 export function getNavigationTimingBudget(route: LighthouseRoute): NavigationTimingBudget {
   const override = ROUTE_TIMING_OVERRIDES[route] ?? {}

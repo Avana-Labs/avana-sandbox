@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   ArrowRight,
   Droplets,
@@ -131,6 +131,19 @@ function RewardsPromoPanel({
   const { t } = useTranslation()
   const [activePromoTab, setActivePromoTab] = useState<RewardsPromoTabId>(promoTabs[0]?.id ?? "getting-started")
   const activeQuests = questsByTab[activePromoTab] ?? []
+
+  useEffect(() => {
+    const activateFromHash = () => {
+      const hash = window.location.hash.slice(1)
+      if (hash === "dashboard-borrow-account") setActivePromoTab("borrow")
+      if (hash === "dashboard-lend-account") setActivePromoTab("lend")
+      if (hash === "dashboard-multiply-account") setActivePromoTab("multiply")
+    }
+
+    activateFromHash()
+    window.addEventListener("hashchange", activateFromHash)
+    return () => window.removeEventListener("hashchange", activateFromHash)
+  }, [])
 
   return (
     <section className="space-y-6">

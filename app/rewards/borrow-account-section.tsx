@@ -87,7 +87,7 @@ export function BorrowAccountSection() {
   }, [borrowSession.state, borrowSnapshot, collateralPositions, debtPositions, hasMounted, walletId])
 
   return (
-    <section>
+    <section id="dashboard-borrow-account" className="scroll-mt-24">
       <div className="flex flex-col gap-3 border-b border-border/50 pb-px md:flex-row md:items-end md:justify-between md:border-b-0 md:pb-0">
         <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{t("Borrow Account")}</h2>
         <SectionTabStrip
