@@ -59,6 +59,7 @@ export function SwapPageClient({
   const [isPending, setIsPending] = useState(false)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [pickerSide, setPickerSide] = useState<"input" | "output" | null>(null)
+  const [acceptedPriceImpact, setAcceptedPriceImpact] = useState(false)
   const [outcome, setOutcome] = useState<{ tone: "success" | "error"; message: string } | null>(null)
 
   const inputAsset = SWAP_ASSETS.find((asset) => asset.id === inputAssetId) ?? swappableAssets[0]!
@@ -119,6 +120,7 @@ export function SwapPageClient({
 
   useEffect(() => {
     setOutcome(null)
+    setAcceptedPriceImpact(false)
     setStage((current) => (current === "error" ? "configure" : current))
   }, [amount, inputAssetId, outputAssetId, slippageBps])
 
@@ -197,9 +199,32 @@ export function SwapPageClient({
 
   const submitSwap = useCallback(async () => {
     if (!quote || !previewUi || !validation.valid || isPending) return
+    if (quote.priceImpactPct >= 3 && !acceptedPriceImpact) return
     setIsPending(true)
     setOutcome(null)
     try {
+      let executionQuote = quote
+      if (Date.now() >= quote.expiresAt) {
+        const refreshedQuote = await getQuote({
+          chainId: SWAP_CHAIN_ID,
+          inputAssetId,
+          outputAssetId,
+          inputAmount: validation.amount,
+          slippageBps,
+        })
+        if (refreshedQuote.status !== "valid") throw new Error(t("Unable to refresh the expired quote."))
+        const outputChanged =
+          Math.abs(refreshedQuote.estimatedOutputAmount - quote.estimatedOutputAmount) /
+            Math.max(quote.estimatedOutputAmount, Number.EPSILON) >
+          0.005
+        setQuote(refreshedQuote)
+        executionQuote = refreshedQuote
+        if (outputChanged) {
+          setOutcome({ tone: "error", message: t("The quote changed. Review the updated amount before continuing.") })
+          setStage("configure")
+          return
+        }
+      }
       const result = await runActionSubmitFlow({
         simulated: true,
         needsAllowance: approvalRequired,
@@ -211,7 +236,7 @@ export function SwapPageClient({
               throw new Error(approval.failureReason ?? t("Approval failed."))
             }
           }
-          const transaction = await swap.executeSwap(quote)
+          const transaction = await swap.executeSwap(executionQuote)
           return {
             transaction,
             receipt: {
@@ -224,9 +249,9 @@ export function SwapPageClient({
       })
       if (result.receipt.status !== "success") throw new Error(result.receipt.error ?? t("Swap failed."))
       setSuccessUi({
-        quoteId: quote.id,
+        quoteId: executionQuote.id,
         title: t("Swap successful."),
-        description: `${amount} ${inputAsset.symbol} ${t("swapped for")} ${formatAmount(quote.estimatedOutputAmount)} ${outputAsset.symbol}.`,
+        description: `${amount} ${inputAsset.symbol} ${t("swapped for")} ${formatAmount(executionQuote.estimatedOutputAmount)} ${outputAsset.symbol}.`,
         receiptHash: result.receipt.hash,
         metrics: previewUi.metrics,
         primaryCtaLabel: t("View wallet"),
@@ -237,8 +262,8 @@ export function SwapPageClient({
           amountUsd: validation.amount * inputAsset.priceUsd,
           amountLabel: `${amount} ${inputAsset.symbol}`,
           rateLabel: t("Received"),
-          rateValue: `${formatAmount(quote.estimatedOutputAmount)} ${outputAsset.symbol}`,
-          marketValue: quote.provider,
+          rateValue: `${formatAmount(executionQuote.estimatedOutputAmount)} ${outputAsset.symbol}`,
+          marketValue: executionQuote.provider,
         },
       })
       setStage("success")
@@ -248,7 +273,23 @@ export function SwapPageClient({
     } finally {
       setIsPending(false)
     }
-  }, [amount, approvalRequired, inputAsset, isPending, outputAsset, previewUi, quote, swap, t, validation])
+  }, [
+    acceptedPriceImpact,
+    amount,
+    approvalRequired,
+    getQuote,
+    inputAsset,
+    inputAssetId,
+    isPending,
+    outputAsset,
+    outputAssetId,
+    previewUi,
+    quote,
+    slippageBps,
+    swap,
+    t,
+    validation,
+  ])
 
   const resetSwap = useCallback(() => {
     setAmount("")
@@ -303,6 +344,15 @@ export function SwapPageClient({
           onPrimary={() => void submitSwap()}
           onSecondary={() => setStage("configure")}
           primaryPending={isPending}
+          confirmationGate={
+            quote && quote.priceImpactPct >= 3
+              ? {
+                  checked: acceptedPriceImpact,
+                  onCheckedChange: setAcceptedPriceImpact,
+                  label: t("I understand this swap may result in a significant loss of value."),
+                }
+              : undefined
+          }
         />
       ) : null}
 

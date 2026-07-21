@@ -20,6 +20,7 @@ export function ActionReviewStage({
   hideHeader = false,
   primaryPending = false,
   blockedReason = null,
+  confirmationGate,
 }: {
   title: string
   subtitle?: string
@@ -33,6 +34,11 @@ export function ActionReviewStage({
   primaryPending?: boolean
   /** When set (e.g. wrong network), hard-disable the confirm CTA and show the reason. */
   blockedReason?: string | null
+  confirmationGate?: {
+    checked: boolean
+    onCheckedChange: (checked: boolean) => void
+    label: string
+  }
 }) {
   const { t } = useTranslation()
   const amountDisplay = resolveActionAmountCardProps(preview)
@@ -116,13 +122,29 @@ export function ActionReviewStage({
 
       {blockedReason ? <ActionOutcomeBanner tone="error" title="Action unavailable" message={blockedReason} /> : null}
 
+      {confirmationGate ? (
+        <label className="flex cursor-pointer items-start gap-3 rounded-radius-xl border border-danger/30 bg-danger/10 p-4 text-[13px] leading-relaxed text-foreground">
+          <input
+            type="checkbox"
+            checked={confirmationGate.checked}
+            onChange={(event) => confirmationGate.onCheckedChange(event.target.checked)}
+            className="mt-0.5 size-4 shrink-0 accent-[hsl(var(--brand))]"
+          />
+          <span>{t(confirmationGate.label)}</span>
+        </label>
+      ) : null}
+
       <ActionFooter
         primaryLabel={primaryLabel}
         secondaryLabel={secondaryLabel}
         onPrimary={onPrimary}
         onSecondary={onSecondary}
         secondaryHref={secondaryHref}
-        primaryDisabled={(!preview.allowed && Boolean(preview.blockedReason)) || Boolean(blockedReason)}
+        primaryDisabled={
+          (!preview.allowed && Boolean(preview.blockedReason)) ||
+          Boolean(blockedReason) ||
+          Boolean(confirmationGate && !confirmationGate.checked)
+        }
         primaryPending={primaryPending}
         sticky
       />
