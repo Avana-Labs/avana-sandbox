@@ -7,7 +7,7 @@ import { ThemeProvider } from "@/app/components/theme-provider"
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
-  usePathname: () => "/actions/multiply/multiply",
+  usePathname: () => "/actions/rewards/claim",
 }))
 
 // The full site Header (wallet, search, preference controls) is rendered by the
