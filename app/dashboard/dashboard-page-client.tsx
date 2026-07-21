@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   REWARDS_PROMO_TABS,
   REWARDS_QUESTS_PER_TAB,
@@ -28,6 +28,7 @@ import { RewardsPageSkeleton } from "@/app/components/loading-states"
 import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
 import { RewardsBalanceHero, PortfolioRewardsCards as DashboardRewardsCards } from "@/app/rewards/rewards-balance-hero"
 import { DashboardQuickActions } from "./dashboard-quick-actions"
+import { DashboardWalletTab } from "./dashboard-wallet-tab"
 import { LendOpportunity } from "@/app/rewards/lend-opportunity"
 import { LearnSection } from "@/app/rewards/learn-section"
 import { RecentActivity } from "@/app/dashboard/recent-activity"
@@ -37,7 +38,7 @@ import { useDashboardPage } from "@/app/dashboard/use-dashboard-page"
 import { RewardsTabs } from "@/app/rewards/rewards-tabs"
 import { ActionIcon } from "@/app/components/action-icon"
 import { MobileDetailActionBar } from "@/app/components/detail-page-primitives"
-import { primaryCtaClass } from "@/app/components/action-page/action-cta"
+import { primaryCtaClass, SECONDARY_CTA_CLASS } from "@/app/components/action-page/action-cta"
 import Link from "next/link"
 import {
   RewardsEducationDialog,
@@ -204,6 +205,7 @@ function mapTaskToQuest(
 
 export function DashboardPageClient({ pageData }: { pageData?: RewardsPageData }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { t } = useTranslation()
   const { exact } = useCurrency()
   const avana = useAvanaSessions()
@@ -234,6 +236,7 @@ export function DashboardPageClient({ pageData }: { pageData?: RewardsPageData }
   const [referralTaskId, setReferralTaskId] = useState<string | null>(null)
   const [referralLink, setReferralLink] = useState("")
   const [referralCode, setReferralCode] = useState("")
+  const activeDashboardTab = searchParams.get("tab") === "wallet" ? "wallet" : "rewards"
 
   const snapshot = useMemo(() => {
     if (!hasHydratedStorage) return null
@@ -421,6 +424,42 @@ export function DashboardPageClient({ pageData }: { pageData?: RewardsPageData }
     ],
   )
 
+  const dashboardTabs = (
+    <div className="mb-6 flex gap-2 overflow-x-auto" aria-label={t("Dashboard tabs")}>
+      <Link
+        href="/dashboard"
+        aria-current={activeDashboardTab === "rewards" ? "page" : undefined}
+        className={
+          activeDashboardTab === "rewards"
+            ? primaryCtaClass({ size: "compact", className: "min-w-[112px]" })
+            : SECONDARY_CTA_CLASS
+        }
+      >
+        {t("Rewards")}
+      </Link>
+      <Link
+        href="/dashboard?tab=wallet"
+        aria-current={activeDashboardTab === "wallet" ? "page" : undefined}
+        className={
+          activeDashboardTab === "wallet"
+            ? primaryCtaClass({ size: "compact", className: "min-w-[112px]" })
+            : SECONDARY_CTA_CLASS
+        }
+      >
+        {t("Wallet")}
+      </Link>
+    </div>
+  )
+
+  if (activeDashboardTab === "wallet") {
+    return (
+      <>
+        {dashboardTabs}
+        <DashboardWalletTab walletId={walletId} />
+      </>
+    )
+  }
+
   if (!hasHydratedStorage || !snapshot) {
     return <RewardsPageSkeleton />
   }
@@ -455,6 +494,7 @@ export function DashboardPageClient({ pageData }: { pageData?: RewardsPageData }
 
   return (
     <>
+      {dashboardTabs}
       <RewardsBalanceHero claimHref={claimHref} />
 
       {/* Mobile: quick actions right after the hero chart (desktop shows them in the sidebar). */}
