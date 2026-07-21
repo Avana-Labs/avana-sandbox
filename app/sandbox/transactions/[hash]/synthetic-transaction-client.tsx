@@ -9,6 +9,8 @@ import { TransactionReceipt, type TransactionReceiptData } from "@/app/component
 import { syntheticBlockFromHash, syntheticNetworkFeeUsdFromHash } from "@/app/lib/action-system/synthetic-receipt"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { useSwapSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { getSwapAsset, type SwapTransactionRecord } from "@/app/lib/swap-system"
 
 const KIND_VERB: Record<string, string> = {
   borrow: "Borrow",
@@ -51,12 +53,55 @@ function toReceiptData(receipt: {
   }
 }
 
+export function swapTransactionToReceiptData(transaction: SwapTransactionRecord): TransactionReceiptData {
+  const inputAsset = getSwapAsset(transaction.inputAssetId)
+  const outputAsset = getSwapAsset(transaction.outputAssetId)
+  const inputSymbol = inputAsset?.symbol ?? transaction.inputAssetId.toUpperCase()
+  const outputSymbol = outputAsset?.symbol ?? transaction.outputAssetId.toUpperCase()
+  const hash = transaction.swapTransactionHash ?? transaction.approvalTransactionHash ?? transaction.id
+  return {
+    title: `Swap ${inputSymbol} for ${outputSymbol}`,
+    description:
+      transaction.status === "confirmed"
+        ? `${transaction.inputAmount.toLocaleString()} ${inputSymbol} swapped for ${transaction.outputAmount.toLocaleString()} ${outputSymbol}.`
+        : (transaction.failureReason ?? "Swap did not complete."),
+    symbol: inputSymbol,
+    amountRowLabel: "Sold",
+    amountLabel: `${transaction.inputAmount.toLocaleString()} ${inputSymbol}`,
+    amountUsd: transaction.inputAmount * (inputAsset?.priceUsd ?? 0),
+    rateLabel: "Received",
+    rateValue: `${transaction.outputAmount.toLocaleString()} ${outputSymbol}`,
+    marketValue: transaction.provider,
+    networkFeeUsd: transaction.networkFeeUsd,
+    block: syntheticBlockFromHash(hash),
+    dateMs: transaction.confirmedAt ?? transaction.createdAt,
+    hash,
+    metrics: [
+      {
+        id: "minimum-received",
+        label: "Minimum received",
+        value: `${transaction.minimumOutputAmount.toLocaleString()} ${outputSymbol}`,
+      },
+      { id: "price-impact", label: "Price impact", value: `${transaction.priceImpactPct.toFixed(2)}%` },
+      { id: "slippage", label: "Max slippage", value: `${(transaction.slippageBps / 100).toFixed(2)}%` },
+    ],
+    quoteId: transaction.quoteId,
+  }
+}
+
 export function SyntheticTransactionClient({ hash }: { hash: string }) {
   const { t } = useTranslation()
+  const swap = useSwapSessionContext()
   const { authedWallet, isSignedIn } = useSiweAuth()
   const receipt = useQuery(
     api.sandbox.transactions.getTransactionByHash,
     isSignedIn && authedWallet ? { wallet: authedWallet, hash } : "skip",
+  )
+  const swapTransaction = swap.transactionHistory.find(
+    (transaction) =>
+      transaction.id === hash ||
+      transaction.swapTransactionHash === hash ||
+      transaction.approvalTransactionHash === hash,
   )
 
   // When the backend is unreachable the query stays `undefined` forever, leaving an
@@ -72,7 +117,11 @@ export function SyntheticTransactionClient({ hash }: { hash: string }) {
     <main className="mx-auto min-h-[70vh] w-full max-w-3xl px-5 py-16">
       <p className="text-sm text-muted-foreground">{t("Avana sandbox")}</p>
       <h1 className="mt-3 text-4xl font-medium tracking-[-0.04em]">{t("Synthetic transaction receipt")}</h1>
-      {!isSignedIn ? (
+      {swapTransaction ? (
+        <div className="mx-auto mt-8 max-w-md">
+          <TransactionReceipt data={swapTransactionToReceiptData(swapTransaction)} />
+        </div>
+      ) : !isSignedIn ? (
         <p className="mt-8 text-muted-foreground">{t("Sign in with the wallet that created this transaction.")}</p>
       ) : receipt === undefined ? (
         timedOut ? (

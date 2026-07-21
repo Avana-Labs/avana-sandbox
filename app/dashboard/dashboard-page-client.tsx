@@ -32,6 +32,7 @@ import { DashboardWalletTab } from "./dashboard-wallet-tab"
 import { LendOpportunity } from "@/app/rewards/lend-opportunity"
 import { LearnSection } from "@/app/rewards/learn-section"
 import { RecentActivity } from "@/app/dashboard/recent-activity"
+import { mapSwapTransactionHistoryToActivityRows } from "@/app/dashboard/swap-activity"
 import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
 import { useDashboardPage } from "@/app/dashboard/use-dashboard-page"
@@ -482,6 +483,7 @@ export function DashboardPageClient({ pageData }: { pageData?: RewardsPageData }
       txHash: item.hash,
     })),
     ...buildLendActivityHistory(avana.lend.walletId, avana.lend.transactionHistory, avana.lend.state),
+    ...mapSwapTransactionHistoryToActivityRows(avana.swap.transactionHistory),
     ...(dashboardData?.activity.rows ?? []),
     ...rewardActivityRows,
   ]
@@ -533,7 +535,10 @@ export function DashboardPageClient({ pageData }: { pageData?: RewardsPageData }
 
       <MobileDetailActionBar>
         {claimHref ? (
-          <Link href={claimHref} className={primaryCtaClass({ size: "compact", className: "w-full gap-2.5 font-bold [&_svg]:size-5" })}>
+          <Link
+            href={claimHref}
+            className={primaryCtaClass({ size: "compact", className: "w-full gap-2.5 font-bold [&_svg]:size-5" })}
+          >
             <ActionIcon label="Claim" />
             {t("Claim rewards")}
           </Link>
