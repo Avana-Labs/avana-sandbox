@@ -27,7 +27,7 @@ const siteRoutes = {
   home: "/",
 }
 
-type MobileMenuView = "root" | "language" | "currency"
+type MobileMenuView = "root" | "language" | "currency" | "network"
 
 type MobileMenuProps = {
   actions?: ReactNode
@@ -180,6 +180,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
 
   const currentLanguage = LANGUAGE_OPTIONS.find((option) => option.code === language) ?? LANGUAGE_OPTIONS[0]
   const currentCurrency = CURRENCY_OPTIONS.find((option) => option.code === currency) ?? CURRENCY_OPTIONS[0]
+  const currentNetwork = "Sandbox"
   const lightModeEnabled = mounted ? resolvedTheme === "light" : false
   const isVisible = open && isShown
   const isSelectorSheetOpen = view !== "root"
@@ -330,6 +331,20 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
             </button>
           </li>
           <li className="translate-y-0 opacity-100" style={settingsIntroStyle(mainLinks.length + 2)}>
+            <button type="button" onClick={() => setView("network")} className={rootSettingsClass}>
+              <span className={rootSettingsLabelClass}>
+                <Globe2 className={rootSettingsIconClass} />
+                <span>{t("Network")}</span>
+              </span>
+              <span className="flex items-center gap-2 text-[1rem] text-muted-foreground">
+                <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[0.82rem] font-medium text-brand">
+                  {currentNetwork}
+                </span>
+                <ChevronRight className="h-[1.1rem] w-[1.1rem] text-muted-foreground" />
+              </span>
+            </button>
+          </li>
+          <li className="translate-y-0 opacity-100" style={settingsIntroStyle(mainLinks.length + 3)}>
             <div className={rootSettingsClass}>
               <span className={rootSettingsLabelClass}>
                 <SunMedium className={rootSettingsIconClass} />
@@ -343,7 +358,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
               />
             </div>
           </li>
-          <li className="translate-y-0 opacity-100" style={settingsIntroStyle(mainLinks.length + 3)}>
+          <li className="translate-y-0 opacity-100" style={settingsIntroStyle(mainLinks.length + 4)}>
             <Link href="/support-center" prefetch={false} onClick={onClose} className={rootSettingsClass}>
               <span className={rootSettingsLabelClass}>
                 <CircleHelp className={rootSettingsIconClass} />
@@ -352,7 +367,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
               <ArrowUpRight className="h-[1.1rem] w-[1.1rem] text-[#01AACF]" />
             </Link>
           </li>
-          <li className="translate-y-0 opacity-100" style={settingsIntroStyle(mainLinks.length + 4)}>
+          <li className="translate-y-0 opacity-100" style={settingsIntroStyle(mainLinks.length + 5)}>
             <a
               href={AVANA_EXTERNAL_LINKS.privacy}
               target="_blank"
@@ -486,6 +501,33 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
     )
   }
 
+  function renderNetworkList() {
+    return renderSelectorSheet(
+      "Network",
+      "root",
+      <ul className="space-y-1">
+        <li>
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-4 rounded-radius-lg px-3 py-4 text-left"
+            onClick={closeSelectorSheet}
+          >
+            <span className="text-[1.15rem] font-medium leading-tight text-foreground">{t("Sandbox")}</span>
+            <Check className="h-6 w-6 text-brand" />
+          </button>
+        </li>
+        {["Ethereum", "Avalanche", "Base", "Arbitrum", "Robinhood"].map((network) => (
+          <li key={network}>
+            <div className="flex w-full items-center justify-between gap-4 rounded-radius-lg px-3 py-4 text-left opacity-70">
+              <span className="text-[1.15rem] font-medium leading-tight text-foreground">{network}</span>
+              <span className="text-[0.82rem] text-muted-foreground">{t("Unavailable")}</span>
+            </div>
+          </li>
+        ))}
+      </ul>,
+    )
+  }
+
   return (
     <>
       <button
@@ -557,6 +599,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
 
           {view === "language" ? renderLanguageList() : null}
           {view === "currency" ? renderCurrencyList() : null}
+          {view === "network" ? renderNetworkList() : null}
         </div>
       ) : null}
     </>
