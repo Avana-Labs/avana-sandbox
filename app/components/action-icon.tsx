@@ -4,23 +4,23 @@ import {
   ArrowUpRightStack,
   CircleArrowOutDownRight,
   CircleArrowOutUpLeft,
-  DollarReceive02,
-  DownloadCircle02,
+  EnteringGeoFence,
+  Gift,
   LayerSendBackward,
-  SafeBox,
-  UploadCircle02,
+  LeavingGeoFence,
+  SquareLock02,
 } from "@/app/components/icons"
 
 const ACTION_ICONS: Record<string, LucideIcon> = {
-  deposit: DownloadCircle02,
-  supply: DownloadCircle02,
-  pledge: SafeBox,
+  deposit: EnteringGeoFence,
+  supply: EnteringGeoFence,
+  pledge: SquareLock02,
   borrow: CircleArrowOutDownRight,
   repay: CircleArrowOutUpLeft,
-  withdraw: UploadCircle02,
+  withdraw: LeavingGeoFence,
   multiply: ArrowUpRightStack,
   deleverage: ArrowShrink,
-  claim: DollarReceive02,
+  claim: Gift,
   remove: LayerSendBackward,
 }
 

@@ -3,8 +3,8 @@
 import {
   CircleArrowOutDownRight,
   CircleArrowOutUpLeft,
-  DownloadCircle02,
-  UploadCircle02,
+  EnteringGeoFence,
+  LeavingGeoFence,
 } from "@/app/components/icons"
 import { PortfolioHeroActions } from "@/app/portfolio/hero/portfolio-hero-actions"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
@@ -39,13 +39,13 @@ export function PortfolioQuickActions() {
     {
       id: "deposit",
       label: t("Deposit"),
-      icon: DownloadCircle02,
+      icon: EnteringGeoFence,
       href: withReturn(actionPagePath("lend", "deposit")),
     },
     {
       id: "withdraw",
       label: t("Withdraw"),
-      icon: UploadCircle02,
+      icon: LeavingGeoFence,
       href: withReturn(actionPagePath("lend", "withdraw")),
     },
   ]

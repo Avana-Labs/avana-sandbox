@@ -35,6 +35,7 @@ import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/rea
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
 import { usePortfolioPage } from "@/app/portfolio/use-portfolio-page"
 import { RewardsTabs } from "./rewards-tabs"
+import { ActionIcon } from "@/app/components/action-icon"
 import { MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
 import Link from "next/link"
@@ -492,7 +493,8 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
 
       <MobileDetailActionBar>
         {claimHref ? (
-          <Link href={claimHref} className={primaryCtaClass({ size: "compact", className: "w-full" })}>
+          <Link href={claimHref} className={primaryCtaClass({ size: "compact", className: "w-full gap-2.5 [&_svg]:size-5" })}>
+            <ActionIcon label="Claim" />
             {t("Claim rewards")}
           </Link>
         ) : (

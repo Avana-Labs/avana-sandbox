@@ -138,7 +138,7 @@ export function MarketMobilePrimaryAction({
     <button
       type="button"
       className={cn(
-        "mt-4 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-radius-sm bg-brand px-4 text-center text-[13px] font-semibold text-brand-foreground shadow-elev-1 transition-colors hover:bg-brand/90 active:bg-brand/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-1 disabled:!opacity-100 disabled:bg-brand-soft disabled:text-brand-soft-foreground [&_svg]:size-3.5 [&_svg]:shrink-0",
+        "mt-4 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-radius-sm bg-brand px-4 text-center text-[13px] font-semibold text-white shadow-elev-1 transition-colors hover:bg-brand/90 active:bg-brand/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-1 disabled:!opacity-100 disabled:bg-brand-soft disabled:text-brand-soft-foreground [&_svg]:size-3.5 [&_svg]:shrink-0",
         className,
       )}
       {...props}
