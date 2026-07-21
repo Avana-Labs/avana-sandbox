@@ -52,8 +52,7 @@ export function HomeSwapAction() {
   const inputBalance = swap.walletBalances.find(
     (balance) => balance.assetId === inputAsset?.id && balance.sourceType === "wallet",
   )
-  const inputBalanceLabel =
-    inputAsset && inputBalance ? formatAmount(inputBalance.amount) : null
+  const inputBalanceLabel = inputAsset && inputBalance ? formatAmount(inputBalance.amount) : null
   const validation = useMemo(
     () =>
       inputBalance && inputAsset && outputAsset
@@ -416,41 +415,48 @@ function HomeSwapAssetField({
   const asset = SWAP_ASSETS.find((item) => item.id === assetId) ?? null
   return (
     <SwapStyleField label={label} tone={tone}>
-      <div className="mt-1.5 flex min-h-[4.375rem] items-center gap-3 max-[360px]:flex-col max-[360px]:items-stretch">
+      <div className="mt-1.5 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-stretch">
         <div className="min-w-0 flex-1">
           <input
             value={amount}
             readOnly={readOnly}
             onChange={(event) => onAmountChange?.(event.target.value.replace(/[^\d.]/g, ""))}
             inputMode="decimal"
-            className="w-full min-w-0 border-0 bg-transparent p-0 font-data text-[clamp(1.75rem,8vw,2.5rem)] font-medium leading-none tracking-normal text-foreground outline-none placeholder:text-muted-foreground/60"
+            className="w-full min-w-0 border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground outline-none placeholder:text-muted-foreground/60"
             placeholder="0"
             aria-label={label}
           />
-          <div className="mt-1 flex items-center justify-between gap-3 text-[14px]">
-            <span className="min-w-0 truncate text-foreground/60">{fiatLabel}</span>
-            {balanceLabel ? (
-              <button
-                type="button"
-                onClick={onBalanceClick}
-                className="max-w-[9rem] shrink-0 truncate text-[13px] text-muted-foreground transition-colors hover:text-foreground"
-              >
-                Balance: <span className="text-foreground">{balanceLabel}</span>
-              </button>
-            ) : null}
-          </div>
         </div>
         <button
           type="button"
           onClick={onOpenAssetPicker}
           aria-label={`${label} asset`}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-background px-2.5 py-2 text-[14px] font-medium text-foreground dark:bg-card max-[360px]:self-end"
+          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-[14px] font-medium text-foreground dark:bg-card max-[360px]:self-end"
         >
-          {asset ? <ActionTokenIcon symbol={asset.symbol} /> : <span>{label === "Buy" ? "Select Asset" : "Select Asset"}</span>}
+          {asset ? (
+            <>
+              <ActionTokenIcon symbol={asset.symbol} />
+              <span>{asset.symbol}</span>
+            </>
+          ) : (
+            <span>Select Asset</span>
+          )}
           <span aria-hidden className="text-muted-foreground">
             ▾
           </span>
         </button>
+      </div>
+      <div className="mt-1 flex items-center justify-between gap-3 text-[14px]">
+        <span className="min-w-0 truncate text-foreground/60">{fiatLabel}</span>
+        {balanceLabel ? (
+          <button
+            type="button"
+            onClick={onBalanceClick}
+            className="max-w-[12rem] shrink-0 truncate text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Balance: <span className="text-foreground">{balanceLabel}</span>
+          </button>
+        ) : null}
       </div>
     </SwapStyleField>
   )
