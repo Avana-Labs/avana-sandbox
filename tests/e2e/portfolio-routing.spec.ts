@@ -7,7 +7,7 @@ test("dashboard page renders its product account tabs", async ({ page }) => {
   const borrowTab = page.getByRole("tab", { name: "Borrow" }).first()
   await expect(borrowTab).toBeVisible({ timeout: 15_000 })
   await borrowTab.click()
-  await expect(page.getByRole("heading", { name: "Borrow Account" })).toBeVisible({ timeout: 15_000 })
+  await expect(page.getByRole("heading", { name: "Borrow Balance" })).toBeVisible({ timeout: 15_000 })
 })
 
 test("old portfolio and rewards routes redirect to the dashboard page", async ({ page }) => {
