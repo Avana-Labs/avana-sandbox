@@ -49,7 +49,7 @@ import { UnderlineTabStrip } from "@/app/components/tab-primitives"
 import { RewardsPromoContent } from "@/app/rewards/quests-tab"
 import Link from "next/link"
 
-type DashboardPromoTabId = Extract<RewardsPromoTabId, "lend" | "borrow" | "multiply">
+type DashboardPromoTabId = Extract<RewardsPromoTabId, "lend" | "borrow" | "multiply" | "referrals">
 type DashboardTabId = "wallet" | DashboardPromoTabId
 
 const DASHBOARD_TABS: readonly { id: DashboardTabId; label: string }[] = [
@@ -57,12 +57,14 @@ const DASHBOARD_TABS: readonly { id: DashboardTabId; label: string }[] = [
   { id: "lend", label: "Lend" },
   { id: "borrow", label: "Borrow" },
   { id: "multiply", label: "Multiply" },
+  { id: "referrals", label: "Referrals" },
 ]
 
 const CURATED_REWARD_TASK_IDS: Record<DashboardPromoTabId, readonly string[]> = {
-  lend: ["first-lend-deposit", "supply-5k-lend", "grow-portfolio-10k"],
-  borrow: ["first-borrow", "first-repay", "borrow-2k"],
-  multiply: ["first-multiply", "open-2x-multiply", "first-deleverage"],
+  lend: ["review-risk-basics", "favorite-market", "run-first-simulation", "first-lend-deposit", "supply-5k-lend"],
+  borrow: ["first-borrow", "borrow-2k", "use-curve-position", "first-repay"],
+  multiply: ["first-multiply", "4-week-activity-streak", "open-2x-multiply", "first-deleverage"],
+  referrals: ["share-referral-link", "invite-first-wallet", "first-funded-referral", "bring-3-active-users"],
 }
 
 function resolveDashboardTab(tab: string | null): DashboardTabId {
@@ -71,6 +73,7 @@ function resolveDashboardTab(tab: string | null): DashboardTabId {
     case "lend":
     case "borrow":
     case "multiply":
+    case "referrals":
       return tab
     case "rewards":
       return "lend"
@@ -247,9 +250,10 @@ function mapTaskToQuest(
   }
 }
 
-export function DashboardPageClient({ pageData }: { pageData?: RewardsPageData }) {
+export function DashboardPageClient({ pageData: _pageData }: { pageData?: RewardsPageData }) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const searchTab = searchParams.get("tab")
   const { t } = useTranslation()
   const { exact } = useCurrency()
   const avana = useAvanaSessions()
@@ -280,13 +284,11 @@ export function DashboardPageClient({ pageData }: { pageData?: RewardsPageData }
   const [referralTaskId, setReferralTaskId] = useState<string | null>(null)
   const [referralLink, setReferralLink] = useState("")
   const [referralCode, setReferralCode] = useState("")
-  const [activeDashboardTab, setActiveDashboardTab] = useState<DashboardTabId>(() =>
-    resolveDashboardTab(searchParams.get("tab")),
-  )
+  const [activeDashboardTab, setActiveDashboardTab] = useState<DashboardTabId>(() => resolveDashboardTab(searchTab))
 
   useEffect(() => {
-    setActiveDashboardTab(resolveDashboardTab(searchParams.get("tab")))
-  }, [searchParams])
+    setActiveDashboardTab(resolveDashboardTab(searchTab))
+  }, [searchTab])
 
   const snapshot = useMemo(() => {
     if (!hasHydratedStorage) return null
@@ -480,7 +482,7 @@ export function DashboardPageClient({ pageData }: { pageData?: RewardsPageData }
   const handleDashboardTabChange = useCallback(
     (tab: DashboardTabId) => {
       setActiveDashboardTab(tab)
-      router.push(tab === "wallet" ? "/dashboard?tab=wallet" : `/dashboard?tab=${tab}`)
+      router.push(`/dashboard?tab=${tab}`)
     },
     [router],
   )
@@ -548,7 +550,7 @@ export function DashboardPageClient({ pageData }: { pageData?: RewardsPageData }
             <DashboardWalletTab
               walletId={walletId}
               balances={avana.swap.state.balances}
-              rewardQuests={questsByTab.referrals}
+              rewardQuests={questsByTab["getting-started"]}
               onTaskAction={(taskId) => handleTaskAction(taskId)}
             />
           ) : (

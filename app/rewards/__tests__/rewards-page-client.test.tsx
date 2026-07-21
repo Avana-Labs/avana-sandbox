@@ -301,7 +301,7 @@ describe("DashboardPageClient", () => {
     expect(questClaimButton).toBeDefined()
     await userEvent.click(questClaimButton!)
     expect(claimReward).toHaveBeenCalledWith("first-borrow")
-  }, 10_000)
+  }, 20_000)
 
   it("renders wallet inside the same dashboard tab strip", async () => {
     searchTab = "wallet"

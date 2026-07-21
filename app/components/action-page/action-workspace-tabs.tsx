@@ -50,15 +50,7 @@ export function ActionWorkspaceTabs({
           label: withIcons ? (
             <span className="inline-flex items-center gap-2.5">
               <ActionIcon label={label} className="size-5" />
-              <span
-                className={
-                  revealLabels
-                    ? "home-reveal-tab-label"
-                    : undefined
-                }
-              >
-                {label}
-              </span>
+              <span className={revealLabels ? "home-reveal-tab-label" : undefined}>{label}</span>
             </span>
           ) : (
             label
@@ -77,8 +69,8 @@ export function ActionWorkspaceTabs({
                 "data-[state=active]:w-[112px]",
             )
           : withIcons
-          ? "px-3.5 py-2 text-[14px] font-bold text-muted-foreground sm:px-3.5 sm:text-[14px] data-[state=active]:bg-neutral-200 data-[state=active]:text-foreground dark:data-[state=active]:bg-neutral-800 [&_svg]:size-4"
-          : undefined
+            ? "px-3.5 py-2 text-[14px] font-bold text-muted-foreground sm:px-3.5 sm:text-[14px] data-[state=active]:bg-neutral-200 data-[state=active]:text-foreground dark:data-[state=active]:bg-neutral-800 [&_svg]:size-4"
+            : undefined
       }
       cssOnly={revealLabels}
     />

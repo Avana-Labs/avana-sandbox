@@ -337,9 +337,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
                 <span>{t("Network")}</span>
               </span>
               <span className="flex items-center gap-2 text-[1rem] text-muted-foreground">
-                <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[0.82rem] font-medium text-brand">
-                  {currentNetwork}
-                </span>
+                <span>{currentNetwork}</span>
                 <ChevronRight className="h-[1.1rem] w-[1.1rem] text-muted-foreground" />
               </span>
             </button>

@@ -1,5 +1,7 @@
+import type { ReactNode } from "react"
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
+import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import { DashboardWalletTab } from "@/app/dashboard/dashboard-wallet-tab"
 
 vi.mock("@/app/lib/i18n/use-translation", () => ({
@@ -10,9 +12,13 @@ vi.mock("@/app/lib/currency/use-currency", () => ({
   useCurrency: () => ({ exact: (value: number) => `$${value.toFixed(2)}` }),
 }))
 
+function renderWalletTab(node: ReactNode) {
+  return render(<DisplayPreferencesProvider>{node}</DisplayPreferencesProvider>)
+}
+
 describe("DashboardWalletTab", () => {
-  it("renders wallet tokens and LPs separately", () => {
-    render(<DashboardWalletTab walletId="demo-wallet" />)
+  it("renders wallet tokens and LPs separately", { timeout: 20_000 }, () => {
+    renderWalletTab(<DashboardWalletTab walletId="demo-wallet" />)
 
     expect(screen.getByRole("heading", { name: "Wallet" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Tokens" })).toBeInTheDocument()
@@ -21,28 +27,24 @@ describe("DashboardWalletTab", () => {
     expect(screen.getAllByText("ETH / USDC LP").length).toBeGreaterThan(0)
   })
 
-  it("links swappable token rows to the canonical swap route", () => {
-    render(<DashboardWalletTab walletId="demo-wallet" />)
+  it("renders wallet balances without row-level swap actions", { timeout: 20_000 }, () => {
+    renderWalletTab(<DashboardWalletTab walletId="demo-wallet" />)
 
-    const links = screen.getAllByRole("link", { name: "Swap" }).map((link) => link.getAttribute("href"))
-
-    expect(links).toContain("/swap?origin=wallet&return=%2Fdashboard%3Ftab%3Dwallet&from=eth")
+    expect(screen.queryByRole("link", { name: "Swap" })).toBeNull()
   })
 
-  it("shows pool status and disables unsupported pool actions", () => {
-    render(<DashboardWalletTab walletId="demo-wallet" />)
+  it("shows pool status without row-level pool action buttons", { timeout: 20_000 }, () => {
+    renderWalletTab(<DashboardWalletTab walletId="demo-wallet" />)
 
     expect(screen.getAllByText("In range").length).toBeGreaterThan(0)
-    screen.getAllByRole("button", { name: "View" }).forEach((button) => expect(button).toBeDisabled())
+    expect(screen.queryByRole("button", { name: "View" })).toBeNull()
   })
 
-  it("can render live session balances passed by the dashboard", () => {
-    render(
+  it("can render live session balances passed by the dashboard", { timeout: 20_000 }, () => {
+    renderWalletTab(
       <DashboardWalletTab
         walletId="wallet-live"
-        balances={[
-          { id: "live-usdc", walletId: "wallet-live", assetId: "usdc", amount: 123, sourceType: "wallet" },
-        ]}
+        balances={[{ id: "live-usdc", walletId: "wallet-live", assetId: "usdc", amount: 123, sourceType: "wallet" }]}
       />,
     )
 

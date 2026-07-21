@@ -66,11 +66,13 @@ describe("swap eligibility", () => {
   })
 
   it("rejects protocol-locked and unsupported assets", () => {
-    expect(getSwapEligibility(balance({ assetId: "gho", amount: 10, sourceType: "protocol_locked" }), context)).toEqual({
-      eligible: false,
-      availableAmount: 0,
-      reason: "ineligible_protocol_locked",
-    })
+    expect(getSwapEligibility(balance({ assetId: "gho", amount: 10, sourceType: "protocol_locked" }), context)).toEqual(
+      {
+        eligible: false,
+        availableAmount: 0,
+        reason: "ineligible_protocol_locked",
+      },
+    )
     expect(getSwapEligibility(balance({ assetId: "not-real", amount: 10 }), context)).toEqual({
       eligible: false,
       availableAmount: 0,
@@ -94,7 +96,9 @@ describe("swap eligibility", () => {
 
 describe("swap amount validation", () => {
   it.each(["", "0", "-1", "abc", "1e3"])("rejects invalid amount input %s", (amountText) => {
-    expect(validateSwapInputAmount({ amountText, balance: balance({ assetId: "eth", amount: 1 }), context })).toMatchObject({
+    expect(
+      validateSwapInputAmount({ amountText, balance: balance({ assetId: "eth", amount: 1 }), context }),
+    ).toMatchObject({
       valid: false,
       reason: "invalid_amount",
     })
@@ -111,9 +115,9 @@ describe("swap amount validation", () => {
   })
 
   it("uses only eligible wallet balance for Max", () => {
-    expect(
-      getMaxSwapInputAmount(balance({ assetId: "eth", amount: 3, sourceType: "multiply_active" }), context),
-    ).toBe(0)
+    expect(getMaxSwapInputAmount(balance({ assetId: "eth", amount: 3, sourceType: "multiply_active" }), context)).toBe(
+      0,
+    )
   })
 
   it("rejects amounts below provider minimum, above maximum, and above eligible balance", () => {
