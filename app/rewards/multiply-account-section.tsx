@@ -19,8 +19,6 @@ const MultiplyCollateralTable = lazy(async () => ({
   default: (await import("@/app/dashboard/multiply-collateral-table")).MultiplyCollateralTable,
 }))
 
-const RETURN_HREF = "/dashboard"
-
 type LoopingSubTab = "overview" | "positions"
 const LOOPING_SUB_TABS: readonly { id: LoopingSubTab; label: string }[] = [
   { id: "overview", label: "Multiply Overview" },
@@ -73,7 +71,7 @@ function withDevMultiplyFixtures(data: PortfolioMultiplyTabData): PortfolioMulti
  * The multiply account overview + positions that used to live on the dashboard.
  * Self-contained: reads the live multiply session directly, no props.
  */
-export function MultiplyAccountSection() {
+export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHref?: string }) {
   const { t } = useTranslation()
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const hasMounted = useHasMounted()
@@ -148,7 +146,7 @@ export function MultiplyAccountSection() {
           </div>
         ) : (
           <AccountModuleBoundary>
-            <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} returnHref={RETURN_HREF} />
+            <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} returnHref={returnHref} />
           </AccountModuleBoundary>
         )}
       </div>

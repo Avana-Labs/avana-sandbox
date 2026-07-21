@@ -33,11 +33,13 @@ function formatHealthFactor(value: number) {
 export function MultiplyCollateralTable({
   rows,
   returnHref,
+  showHeading = true,
 }: {
   rows: PortfolioMultiplyCollateral[]
   // Close-button destination for the launched action flow. Defaults to the
   // market detail page; the dashboard passes its own URL so close returns here.
   returnHref?: string
+  showHeading?: boolean
 }) {
   const router = useRouter()
   const { showDollarAmounts } = useAmountDisplayPreferences()
@@ -48,9 +50,17 @@ export function MultiplyCollateralTable({
 
   return (
     <section>
+      {showHeading ? (
+        <div className="mb-4">
+          <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">{t("Multiply Positions")}</h3>
+          <p className="mt-1 text-[12px] text-muted-foreground">
+            {t("{count} positions").replace("{count}", String(rows.length))}
+          </p>
+        </div>
+      ) : null}
       <div className="rounded-radius-md bg-transparent dark:bg-transparent">
         <div className="hidden overflow-x-auto md:block">
-          <DesktopTableSurface className="rounded-radius-md">
+          <DesktopTableSurface className="!rounded-none">
             <table className="w-full min-w-[1080px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
                 <col className="w-[22%]" />
@@ -63,7 +73,7 @@ export function MultiplyCollateralTable({
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                  <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Market")}
                   </th>
                   <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
@@ -81,7 +91,7 @@ export function MultiplyCollateralTable({
                   <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                     {t("Net APY")}
                   </th>
-                  <SilentActionHeader className="pr-5" />
+                  <SilentActionHeader className="!rounded-none pr-5" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border dark:divide-white/6">

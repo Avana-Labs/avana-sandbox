@@ -8,6 +8,7 @@ import {
   Gift,
   LayerSendBackward,
   LeavingGeoFence,
+  Repeat2,
   SquareLock02,
 } from "@/app/components/icons"
 
@@ -20,6 +21,7 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   withdraw: LeavingGeoFence,
   multiply: ArrowUpRightStack,
   deleverage: ArrowShrink,
+  swap: Repeat2,
   claim: Gift,
   remove: LayerSendBackward,
 }

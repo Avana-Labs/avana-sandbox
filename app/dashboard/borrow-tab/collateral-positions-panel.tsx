@@ -28,9 +28,11 @@ const HEADER_CLASS =
 export function CollateralPositionsPanel({
   showBalance = true,
   returnHref,
+  showHeading = true,
 }: {
   showBalance?: boolean
   returnHref?: string
+  showHeading?: boolean
 }) {
   const { t } = useTranslation()
   const router = useRouter()
@@ -73,11 +75,19 @@ export function CollateralPositionsPanel({
 
   return (
     <section>
+      {showHeading ? (
+        <div className="mb-4">
+          <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">{t("Collateral Positions")}</h3>
+          <p className="mt-1 text-[12px] text-muted-foreground">
+            {t("{count} assets").replace("{count}", String(rows.length))}
+          </p>
+        </div>
+      ) : null}
       <AssetSummaryStrip metrics={summaryMetrics} />
 
       {/* Desktop */}
       <div className="hidden md:block">
-        <DesktopTableSurface className="rounded-radius-md">
+        <DesktopTableSurface className="!rounded-none">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[960px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
@@ -91,7 +101,7 @@ export function CollateralPositionsPanel({
               </colgroup>
               <thead>
                 <tr className="text-left">
-                  <th className={cn(HEADER_CLASS, "rounded-l-radius-lg pl-5")}>
+                  <th className={cn(HEADER_CLASS, "pl-5")}>
                     <MetricHeader label={t("Asset")} help="The underlying token for this reserve" />
                   </th>
                   <th className={cn(HEADER_CLASS, "text-right")}>{t("Deposited")}</th>
@@ -111,7 +121,7 @@ export function CollateralPositionsPanel({
                       align="right"
                     />
                   </th>
-                  <th className={cn(HEADER_CLASS, "rounded-r-radius-lg pr-5")} />
+                  <th className={cn(HEADER_CLASS, "pr-5")} />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border dark:divide-white/6">

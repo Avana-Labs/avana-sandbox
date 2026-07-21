@@ -47,6 +47,8 @@ export function DashboardInvestments({
   showHeading = true,
   showIndexColumn = false,
   returnHref,
+  title = "Assets",
+  countLabel,
 }: {
   investments: PortfolioSupplyPosition[]
   rewardsSummary?: PortfolioLendTabData["rewardsSummary"]
@@ -57,6 +59,8 @@ export function DashboardInvestments({
   // Where the action flow's close button should land. Defaults to the market
   // detail page; the dashboard passes its own URL so closing returns you here.
   returnHref?: string
+  title?: string
+  countLabel?: string
 }) {
   const router = useRouter()
   const { t } = useTranslation()
@@ -69,8 +73,8 @@ export function DashboardInvestments({
       {showHeading ? (
         <div className="mb-3 flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">Positions</h2>
-            {claimableUsd > 0 ? <p className="mt-1 text-[12px] text-muted-foreground">Claimable rewards</p> : null}
+            <h2 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">{title}</h2>
+            {countLabel ? <p className="mt-1 text-[12px] text-muted-foreground">{countLabel}</p> : null}
           </div>
           {claimableUsd > 0 && onClaimRewards ? (
             <Button type="button" size="sm" disabled={isClaimingRewards} onClick={onClaimRewards}>
@@ -93,7 +97,7 @@ export function DashboardInvestments({
       ) : (
         <>
           <div className="hidden overflow-x-auto md:block">
-            <DesktopTableSurface>
+            <DesktopTableSurface className="!rounded-none">
               <table className="w-full min-w-[500px] table-fixed border-separate border-spacing-0 text-[13px]">
                 <colgroup>
                   {showIndexColumn ? <col className="w-[6%]" /> : null}
@@ -105,12 +109,12 @@ export function DashboardInvestments({
                 <thead>
                   <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
                     {showIndexColumn ? (
-                      <th className="rounded-l-radius-lg bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                      <th className="bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                         #
                       </th>
                     ) : null}
                     <th
-                      className={`${showIndexColumn ? "" : "rounded-l-radius-lg"} bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70`}
+                      className="bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70"
                     >
                       Asset
                     </th>
@@ -120,7 +124,7 @@ export function DashboardInvestments({
                     <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                       APY
                     </th>
-                    <SilentActionHeader className="pr-5" />
+                    <SilentActionHeader className="!rounded-none pr-5" />
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border dark:divide-white/6">

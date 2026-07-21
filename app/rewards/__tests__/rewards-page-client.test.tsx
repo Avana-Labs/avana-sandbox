@@ -8,6 +8,7 @@ import { DashboardPageClient } from "@/app/dashboard/dashboard-page-client"
 import { parseFixed } from "@/app/lib/credit-engine"
 
 const push = vi.fn()
+let searchTab: string | null = "lend"
 const claimReward = vi.fn()
 const claimAllRewards = vi.fn()
 const completeEducation = vi.fn()
@@ -78,6 +79,9 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push,
   }),
+  useSearchParams: () => ({
+    get: (key: string) => (key === "tab" ? searchTab : null),
+  }),
 }))
 
 const lendSessionContext = {
@@ -121,6 +125,10 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
       },
       createIntent: multiplyCreateIntent,
       previewTransaction: multiplyPreviewTransaction,
+    },
+    swap: {
+      state: { balances: [] },
+      transactionHistory: [],
     },
   }),
 }))
@@ -244,6 +252,7 @@ describe("DashboardPageClient", () => {
   })
 
   beforeEach(() => {
+    searchTab = "lend"
     dateNowSpy = vi.spyOn(Date, "now").mockReturnValue(now)
     push.mockReset()
     claimReward.mockReset()
@@ -293,6 +302,19 @@ describe("DashboardPageClient", () => {
     await userEvent.click(questClaimButton!)
     expect(claimReward).toHaveBeenCalledWith("first-borrow")
   }, 10_000)
+
+  it("renders wallet inside the same dashboard tab strip", async () => {
+    searchTab = "wallet"
+    renderRewardsPage()
+
+    expect(screen.getByRole("tab", { name: "Wallet" })).toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: "Lend" })).toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: "Borrow" })).toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: "Multiply" })).toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: "Referrals" })).toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: "Rewards" })).toBeNull()
+    expect(screen.getByRole("heading", { name: "Wallet" })).toBeInTheDocument()
+  })
 
   it("opens the education flow for primer quests", async () => {
     renderRewardsPage()

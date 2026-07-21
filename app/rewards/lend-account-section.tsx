@@ -16,7 +16,7 @@ const EMPTY_LEND_TAB: PortfolioLendTabData = { investments: [], positions: [], s
  * to live on the dashboard. Self-contained: it reads the live lend session directly
  * so it can be dropped onto the rewards Lend tab with no prop wiring.
  */
-export function LendAccountSection() {
+export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?: string }) {
   const { t } = useTranslation()
   const { walletId } = useAvanaIdentity()
   const lendSession = useLendSessionContext()
@@ -37,14 +37,17 @@ export function LendAccountSection() {
 
   return (
     <section id="dashboard-lend-account" className="scroll-mt-24 space-y-5">
-      <DashboardLendPerformanceSection title={t("Lending Performance")} metrics={metrics} hideHeading />
+      <DashboardLendPerformanceSection title={t("Lend Balance")} metrics={metrics} />
       <DashboardInvestments
         investments={lendTabData.investments}
         rewardsSummary={lendTabData.rewardsSummary}
         onClaimRewards={handleClaimRewards}
         isClaimingRewards={isClaiming}
-        showHeading={false}
-        returnHref="/dashboard"
+        showHeading
+        title={t("Assets")}
+        countLabel={t("{count} assets")
+          .replace("{count}", String(lendTabData.investments.length))}
+        returnHref={returnHref}
       />
       <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{t("Lend Rewards")}</h2>
     </section>

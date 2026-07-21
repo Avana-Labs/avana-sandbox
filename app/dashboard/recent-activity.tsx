@@ -334,7 +334,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
       </div>
 
       {/* Desktop: table */}
-      <div className="hidden rounded-radius-md bg-transparent md:block md:overflow-visible">
+      <div className="hidden bg-transparent md:block md:overflow-visible">
         <div className="min-w-0">
           <table className="w-full table-fixed border-separate border-spacing-0 text-[14px]">
             <colgroup>
@@ -348,13 +348,13 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
             </colgroup>
             <thead>
               <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5">{t("Time")}</th>
+                <th className="bg-table-header px-5 py-3.5">{t("Time")}</th>
                 <th className="bg-table-header px-5 py-3.5">{t("Type")}</th>
                 <th className="bg-table-header px-5 py-3.5">{t("Product")}</th>
                 <th className="bg-table-header px-5 py-3.5">{t("For")}</th>
                 <th className="bg-table-header px-5 py-3.5">{t("Amount")}</th>
                 <th className="bg-table-header px-5 py-3.5">{t("Status")}</th>
-                <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right">{t("Txn")}</th>
+                <th className="bg-table-header px-5 py-3.5 text-right">{t("Txn")}</th>
               </tr>
             </thead>
             <tbody>

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
-  REWARDS_PROMO_TABS,
   REWARDS_QUESTS_PER_TAB,
   emptyRewardsQuestsByTab,
   resolveRewardsPromoTab,
@@ -29,18 +28,15 @@ import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
 import { RewardsBalanceHero, PortfolioRewardsCards as DashboardRewardsCards } from "@/app/rewards/rewards-balance-hero"
 import { DashboardQuickActions } from "./dashboard-quick-actions"
 import { DashboardWalletTab } from "./dashboard-wallet-tab"
-import { LendOpportunity } from "@/app/rewards/lend-opportunity"
 import { LearnSection } from "@/app/rewards/learn-section"
 import { RecentActivity } from "@/app/dashboard/recent-activity"
 import { mapSwapTransactionHistoryToActivityRows } from "@/app/dashboard/swap-activity"
 import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
 import { useDashboardPage } from "@/app/dashboard/use-dashboard-page"
-import { RewardsTabs } from "@/app/rewards/rewards-tabs"
 import { ActionIcon } from "@/app/components/action-icon"
 import { MobileDetailActionBar } from "@/app/components/detail-page-primitives"
-import { primaryCtaClass, SECONDARY_CTA_CLASS } from "@/app/components/action-page/action-cta"
-import Link from "next/link"
+import { primaryCtaClass } from "@/app/components/action-page/action-cta"
 import {
   RewardsEducationDialog,
   RewardsFavoriteDialog,
@@ -49,6 +45,35 @@ import {
 } from "@/app/rewards/rewards-task-dialogs"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
+import { UnderlineTabStrip } from "@/app/components/tab-primitives"
+import { RewardsPromoContent } from "@/app/rewards/quests-tab"
+import Link from "next/link"
+
+type DashboardPromoTabId = Extract<RewardsPromoTabId, "lend" | "borrow" | "multiply" | "referrals">
+type DashboardTabId = "wallet" | DashboardPromoTabId
+
+const DASHBOARD_TABS: readonly { id: DashboardTabId; label: string }[] = [
+  { id: "wallet", label: "Wallet" },
+  { id: "lend", label: "Lend" },
+  { id: "borrow", label: "Borrow" },
+  { id: "multiply", label: "Multiply" },
+  { id: "referrals", label: "Referrals" },
+]
+
+function resolveDashboardTab(tab: string | null): DashboardTabId {
+  switch (tab) {
+    case "wallet":
+    case "lend":
+    case "borrow":
+    case "multiply":
+    case "referrals":
+      return tab
+    case "rewards":
+      return "lend"
+    default:
+      return "wallet"
+  }
+}
 
 type RewardsSnapshot = {
   summary: {
@@ -237,7 +262,13 @@ export function DashboardPageClient({ pageData }: { pageData?: RewardsPageData }
   const [referralTaskId, setReferralTaskId] = useState<string | null>(null)
   const [referralLink, setReferralLink] = useState("")
   const [referralCode, setReferralCode] = useState("")
-  const activeDashboardTab = searchParams.get("tab") === "wallet" ? "wallet" : "rewards"
+  const [activeDashboardTab, setActiveDashboardTab] = useState<DashboardTabId>(() =>
+    resolveDashboardTab(searchParams.get("tab")),
+  )
+
+  useEffect(() => {
+    setActiveDashboardTab(resolveDashboardTab(searchParams.get("tab")))
+  }, [searchParams])
 
   const snapshot = useMemo(() => {
     if (!hasHydratedStorage) return null
@@ -425,41 +456,13 @@ export function DashboardPageClient({ pageData }: { pageData?: RewardsPageData }
     ],
   )
 
-  const dashboardTabs = (
-    <div className="mb-6 flex gap-2 overflow-x-auto" aria-label={t("Dashboard tabs")}>
-      <Link
-        href="/dashboard"
-        aria-current={activeDashboardTab === "rewards" ? "page" : undefined}
-        className={
-          activeDashboardTab === "rewards"
-            ? primaryCtaClass({ size: "compact", className: "min-w-[112px]" })
-            : SECONDARY_CTA_CLASS
-        }
-      >
-        {t("Rewards")}
-      </Link>
-      <Link
-        href="/dashboard?tab=wallet"
-        aria-current={activeDashboardTab === "wallet" ? "page" : undefined}
-        className={
-          activeDashboardTab === "wallet"
-            ? primaryCtaClass({ size: "compact", className: "min-w-[112px]" })
-            : SECONDARY_CTA_CLASS
-        }
-      >
-        {t("Wallet")}
-      </Link>
-    </div>
+  const handleDashboardTabChange = useCallback(
+    (tab: DashboardTabId) => {
+      setActiveDashboardTab(tab)
+      router.push(tab === "wallet" ? "/dashboard?tab=wallet" : `/dashboard?tab=${tab}`)
+    },
+    [router],
   )
-
-  if (activeDashboardTab === "wallet") {
-    return (
-      <>
-        {dashboardTabs}
-        <DashboardWalletTab walletId={walletId} balances={avana.swap.state.balances} />
-      </>
-    )
-  }
 
   if (!hasHydratedStorage || !snapshot) {
     return <RewardsPageSkeleton />
@@ -496,7 +499,6 @@ export function DashboardPageClient({ pageData }: { pageData?: RewardsPageData }
 
   return (
     <>
-      {dashboardTabs}
       <RewardsBalanceHero claimHref={claimHref} />
 
       {/* Mobile: quick actions right after the hero chart (desktop shows them in the sidebar). */}
@@ -504,54 +506,80 @@ export function DashboardPageClient({ pageData }: { pageData?: RewardsPageData }
         <DashboardQuickActions />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-x-8">
+      <UnderlineTabStrip
+        items={DASHBOARD_TABS.map((tab) => ({ id: tab.id, label: t(tab.label) }))}
+        value={activeDashboardTab}
+        onChange={handleDashboardTabChange}
+        ariaLabel={t("Dashboard tabs")}
+        className="mb-6"
+        listClassName="w-max min-w-full gap-6 px-2 sm:gap-9 sm:px-0"
+      />
+
+      <div
+        className={
+          activeDashboardTab === "wallet"
+            ? "grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-x-8"
+            : "grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-x-8"
+        }
+      >
         <div className="min-w-0">
-          <RewardsTabs
-            promoTabs={pageData?.promoTabs ?? REWARDS_PROMO_TABS}
-            questsByTab={questsByTab}
-            onTaskAction={(taskId) => handleTaskAction(taskId)}
-          />
+          {activeDashboardTab === "wallet" ? (
+            <DashboardWalletTab walletId={walletId} balances={avana.swap.state.balances} />
+          ) : (
+            <>
+              <RewardsPromoContent
+                activePromoTab={activeDashboardTab}
+                questsByTab={questsByTab}
+                onTaskAction={(taskId) => handleTaskAction(taskId)}
+                returnHref={`/dashboard?tab=${activeDashboardTab}`}
+              />
+            </>
+          )}
         </div>
 
         <aside className="hidden space-y-8 lg:block lg:self-start">
           <DashboardQuickActions />
-          <LendOpportunity />
+          <LearnSection layout="sidebar" />
         </aside>
       </div>
 
-      <div className="mb-8 md:mb-10">
-        <LearnSection />
-      </div>
+      {activeDashboardTab !== "wallet" ? (
+        <>
+          <div className="mb-8 md:mb-10 lg:hidden">
+            <LearnSection />
+          </div>
 
-      {/* Mobile: rewards cards + lend opportunity near the end (desktop shows these in the hero/sidebar). */}
-      <div className="mb-8 space-y-8 lg:hidden">
-        <DashboardRewardsCards claimHref={claimHref} />
-        <LendOpportunity />
-      </div>
+          <div className="mb-8 lg:hidden">
+            <DashboardRewardsCards claimHref={claimHref} />
+          </div>
+        </>
+      ) : null}
 
       <div className="pb-24 lg:pb-0">
         <RecentActivity rows={allActivityRows} />
       </div>
 
-      <MobileDetailActionBar>
-        {claimHref ? (
-          <Link
-            href={claimHref}
-            className={primaryCtaClass({ size: "compact", className: "w-full gap-2.5 font-bold [&_svg]:size-5" })}
-          >
-            <ActionIcon label="Claim" />
-            {t("Claim rewards")}
-          </Link>
-        ) : (
-          <button
-            type="button"
-            disabled
-            className={primaryCtaClass({ size: "compact", disabled: true, className: "w-full" })}
-          >
-            {t("No rewards ready")}
-          </button>
-        )}
-      </MobileDetailActionBar>
+      {activeDashboardTab !== "wallet" ? (
+        <MobileDetailActionBar>
+          {claimHref ? (
+            <Link
+              href={claimHref}
+              className={primaryCtaClass({ size: "compact", className: "w-full gap-2.5 font-bold [&_svg]:size-5" })}
+            >
+              <ActionIcon label="Claim" />
+              {t("Claim rewards")}
+            </Link>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className={primaryCtaClass({ size: "compact", disabled: true, className: "w-full" })}
+            >
+              {t("No rewards ready")}
+            </button>
+          )}
+        </MobileDetailActionBar>
+      ) : null}
 
       <RewardsEducationDialog
         open={educationOpen}
