@@ -34,7 +34,6 @@ function useRewardsEventBridge({
   multiply: MultiplySession
   lend: LendSession
   rewards: RewardsSession
-  swap: SwapSession
 }) {
   const seenIdsRef = useRef(new Set<string>())
 
@@ -165,6 +164,7 @@ export type AvanaSessions = {
   multiply: MultiplySession
   lend: LendSession
   rewards: RewardsSession
+  swap: SwapSession
 }
 
 export type AvanaIdentity = Pick<AvanaSessions, "walletId" | "walletAddress" | "sandboxMode">
