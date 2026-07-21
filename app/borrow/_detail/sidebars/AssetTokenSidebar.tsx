@@ -77,6 +77,7 @@ function TokenRail({
           onChange={(value) => setTab(value as SidebarTab)}
           ariaLabel={t("Asset actions")}
           withIcons
+          revealLabels
         />
 
         <div className="mt-3">

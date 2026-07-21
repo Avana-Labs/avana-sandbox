@@ -270,7 +270,7 @@
 }
 
 .home-reveal-tab[data-state="active"] .home-reveal-tab-label {
-  max-width: 6rem;
+  max-width: 8.5rem;
   opacity: 1;
   transform: translateX(0) scaleX(1);
 }
