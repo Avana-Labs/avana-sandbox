@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useRef, useState } from "react"
+import { useCallback, useMemo, useRef, useState } from "react"
 import { DEMO_SWAP_BALANCES } from "./wallet-balances"
 import { MockSwapProvider, type SwapQuoteRequest } from "./quote-provider"
 import {
@@ -44,16 +44,32 @@ export function useSwapSession({ walletId }: { walletId: string }) {
     [state.balances, walletId],
   )
 
+  const getQuote = useCallback(
+    (request: Omit<SwapQuoteRequest, "walletId">) => adapter.provider.getQuote({ ...request, walletId }),
+    [adapter, walletId],
+  )
+  const requiresApproval = useCallback(
+    (assetId: string, amount: number) => adapter.requiresApproval(walletId, assetId, amount),
+    [adapter, walletId],
+  )
+  const approve = useCallback(
+    (assetId: string, amount: number, options?: SwapExecutionOptions) => adapter.approve(walletId, assetId, amount, options),
+    [adapter, walletId],
+  )
+  const executeSwap = useCallback(
+    (quote: Parameters<typeof adapter.executeSwap>[0], options?: SwapExecutionOptions) =>
+      adapter.executeSwap(quote, walletId, options),
+    [adapter, walletId],
+  )
+
   return {
     walletId,
     state,
     walletBalances,
     transactionHistory: state.transactions,
-    getQuote: (request: Omit<SwapQuoteRequest, "walletId">) => adapter.provider.getQuote({ ...request, walletId }),
-    requiresApproval: (assetId: string, amount: number) => adapter.requiresApproval(walletId, assetId, amount),
-    approve: (assetId: string, amount: number, options?: SwapExecutionOptions) =>
-      adapter.approve(walletId, assetId, amount, options),
-    executeSwap: (quote: Parameters<typeof adapter.executeSwap>[0], options?: SwapExecutionOptions) =>
-      adapter.executeSwap(quote, walletId, options),
+    getQuote,
+    requiresApproval,
+    approve,
+    executeSwap,
   }
 }
