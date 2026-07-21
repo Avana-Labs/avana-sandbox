@@ -188,7 +188,14 @@ export function RewardsPromoContent({
       {activeQuests.length > 0 ? (
         <div className="space-y-4">
           {rewardsSectionTitle ? (
-            <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{rewardsSectionTitle}</h2>
+            <div>
+              <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">
+                {rewardsSectionTitle}
+              </h2>
+              <p className="mt-1 text-[13px] text-muted-foreground">
+                {t("{count} rewards").replace("{count}", String(activeQuests.length))}
+              </p>
+            </div>
           ) : null}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {activeQuests.map((quest) => (

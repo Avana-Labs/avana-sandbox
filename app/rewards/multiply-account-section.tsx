@@ -109,16 +109,21 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
       <div className="space-y-8">
         <div className="space-y-8">
           <DashboardOverviewSection title={t("Multiply Balance")} metrics={multiplyDashboardMetrics.overview} />
-          <div className="grid gap-4 xl:grid-cols-2">
-            <SuppliesHealthFactorCard
-              averageHealthFactor={multiplySnapshot.averageHealthFactor}
-              showBalance={showDollarAmounts}
-            />
-            <CurrentLtvCard
-              borrowedUsd={multiplySnapshot.totalBorrowedUsd}
-              collateralUsd={multiplySnapshot.totalCollateralUsd}
-              showBalance={showDollarAmounts}
-            />
+          <div className="space-y-4">
+            <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
+              {t("Multiply Health")}
+            </h3>
+            <div className="grid gap-4 xl:grid-cols-2">
+              <SuppliesHealthFactorCard
+                averageHealthFactor={multiplySnapshot.averageHealthFactor}
+                showBalance={showDollarAmounts}
+              />
+              <CurrentLtvCard
+                borrowedUsd={multiplySnapshot.totalBorrowedUsd}
+                collateralUsd={multiplySnapshot.totalCollateralUsd}
+                showBalance={showDollarAmounts}
+              />
+            </div>
           </div>
         </div>
         <AccountModuleBoundary>
