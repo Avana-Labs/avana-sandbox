@@ -1,8 +1,8 @@
 import { renderHook, waitFor } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
-import { usePortfolioBorrowLive } from "@/app/portfolio/use-portfolio-borrow-live"
+import { useDashboardBorrowLive } from "@/app/dashboard/use-dashboard-borrow-live"
 
-describe("usePortfolioBorrowLive", () => {
+describe("useDashboardBorrowLive", () => {
   it("re-reads portfolio borrow when session state or transaction history changes", async () => {
     const readPortfolioBorrow = vi
       .fn()
@@ -37,7 +37,7 @@ describe("usePortfolioBorrowLive", () => {
       transactionHistory: [] as unknown[],
     }
 
-    const { result, rerender } = renderHook(({ session }) => usePortfolioBorrowLive("demo-wallet", session), {
+    const { result, rerender } = renderHook(({ session }) => useDashboardBorrowLive("demo-wallet", session), {
       initialProps: { session: borrowSession },
     })
 
@@ -111,7 +111,7 @@ describe("usePortfolioBorrowLive", () => {
       transactionHistory: [] as unknown[],
     }
 
-    const { result, rerender } = renderHook(({ session }) => usePortfolioBorrowLive("demo-wallet", session), {
+    const { result, rerender } = renderHook(({ session }) => useDashboardBorrowLive("demo-wallet", session), {
       initialProps: { session: borrowSession },
     })
 

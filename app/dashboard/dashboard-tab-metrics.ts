@@ -2,7 +2,7 @@ import { calculateCreditMetrics, usd6ToNumber } from "@/app/lib/credit-engine"
 import type { BorrowSystemState } from "@/app/lib/credit-engine"
 import type { MultiplySystemState } from "@/app/lib/multiply-engine"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
-import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
+import type { BorrowSnapshot } from "@/app/dashboard/borrow-hero-state"
 import type { PortfolioLendTabData, PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
 
 export type DashboardOverviewMetrics = {
@@ -167,7 +167,7 @@ export function buildLendDashboardMetrics(data: PortfolioLendTabData) {
       ? investments.reduce((sum, item) => sum + item.apyPct * item.suppliedUsd, 0) / totalSuppliedUsd
       : 0
   // Interest earned is the sum of per-position earned interest — the same figure the
-  // portfolio hero's "Earned" stat sums (map-portfolio-page totalEarnedUsd). Don't
+  // dashboard hero's "Earned" stat sums (map-portfolio-page totalEarnedUsd). Don't
   // prefer rewardsSummary.totalEarnedUsd here: it drifted a cent from the hero and
   // conflated protocol rewards with supply interest.
   const interestEarnedUsd = investments.reduce((sum, item) => sum + item.earnedUsd, 0)

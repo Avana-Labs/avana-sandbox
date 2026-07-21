@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import { REWARDS_PROMO_TABS } from "@/app/lib/data/rewards/catalog"
 import { buildDefaultRewardsCatalog, evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
-import { RewardsPageClient } from "@/app/rewards/rewards-page-client"
+import { DashboardPageClient } from "@/app/dashboard/dashboard-page-client"
 import { parseFixed } from "@/app/lib/credit-engine"
 
 const push = vi.fn()
@@ -159,12 +159,12 @@ const multiplySessionContext = {
   },
 }
 
-vi.mock("@/app/portfolio/use-portfolio-page", () => ({
-  usePortfolioPage: () => ({ data: null, error: null, isLoading: false, retry: () => {} }),
+vi.mock("@/app/dashboard/use-dashboard-page", () => ({
+  useDashboardPage: () => ({ data: null, error: null, isLoading: false, retry: () => {} }),
 }))
 
 // Inspect the raw rows fed into the combined activity table.
-vi.mock("@/app/portfolio/recent-activity", () => ({
+vi.mock("@/app/dashboard/recent-activity", () => ({
   RecentActivity: ({
     rows,
   }: {
@@ -185,7 +185,7 @@ vi.mock("@/app/portfolio/recent-activity", () => ({
 function renderRewardsPage() {
   render(
     <DisplayPreferencesProvider>
-      <RewardsPageClient
+      <DashboardPageClient
         pageData={{
           walletProfileId: "demo-wallet",
           totalPools: 35,
@@ -236,7 +236,7 @@ async function openReferralTab() {
   await openProductTab("Referrals")
 }
 
-describe("RewardsPageClient", () => {
+describe("DashboardPageClient", () => {
   afterEach(() => {
     cleanup()
     dateNowSpy?.mockRestore()

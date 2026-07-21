@@ -173,8 +173,8 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       label: "Multiply",
     },
     {
-      href: "/portfolio",
-      label: "Portfolio",
+      href: "/dashboard",
+      label: "Dashboard",
     },
   ] as const
 

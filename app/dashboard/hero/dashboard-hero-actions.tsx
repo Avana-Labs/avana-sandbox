@@ -1,20 +1,20 @@
 "use client"
 
 import { useState } from "react"
-import { PortfolioHeroActionCard } from "./portfolio-hero-action-card"
-import { PortfolioHeroActionPill } from "./portfolio-hero-action-card"
-import type { PortfolioHeroAction } from "./types"
+import { DashboardHeroActionCard } from "./dashboard-hero-action-card"
+import { DashboardHeroActionPill } from "./dashboard-hero-action-card"
+import type { DashboardHeroAction } from "./types"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
-type PortfolioHeroActionsProps = {
-  actions: PortfolioHeroAction[]
+type DashboardHeroActionsProps = {
+  actions: DashboardHeroAction[]
 }
 
 /**
- * Quick-action rail for the portfolio hero.
+ * Quick-action rail for the dashboard hero.
  * Kept as its own segment so each action can later open a popup/dialog.
  */
-export function PortfolioHeroActions({ actions }: PortfolioHeroActionsProps) {
+export function DashboardHeroActions({ actions }: DashboardHeroActionsProps) {
   const { t } = useTranslation()
   const [activeMobileActionId, setActiveMobileActionId] = useState(actions[0]?.id)
   const [armedMobileActionId, setArmedMobileActionId] = useState<string | undefined>()
@@ -25,10 +25,10 @@ export function PortfolioHeroActions({ actions }: PortfolioHeroActionsProps) {
   }
 
   return (
-    <section aria-label={t("Portfolio quick actions")} className="min-w-0">
+    <section aria-label={t("Dashboard quick actions")} className="min-w-0">
       <div className="flex flex-wrap gap-2 md:hidden">
         {actions.map((action) => (
-          <PortfolioHeroActionPill
+          <DashboardHeroActionPill
             key={action.id}
             label={action.label}
             icon={action.icon}
@@ -44,7 +44,7 @@ export function PortfolioHeroActions({ actions }: PortfolioHeroActionsProps) {
 
       <div className="hidden grid-cols-2 gap-3 md:grid">
         {actions.map((action) => (
-          <PortfolioHeroActionCard
+          <DashboardHeroActionCard
             key={action.id}
             label={action.label}
             icon={action.icon}

@@ -6,7 +6,7 @@ import type { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-sessio
 
 type BorrowSession = ReturnType<typeof useBorrowSession>
 
-export function usePortfolioBorrowLive(walletId: string, borrowSession: BorrowSession) {
+export function useDashboardBorrowLive(walletId: string, borrowSession: BorrowSession) {
   const [portfolioBorrow, setPortfolioBorrow] = useState<PortfolioBorrowTabData | null>(null)
 
   useEffect(() => {

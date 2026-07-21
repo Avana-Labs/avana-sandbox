@@ -25,7 +25,7 @@ describe("NotFound recovery links (#141)", () => {
       ["Borrow", "/borrow"],
       ["Lend", "/lend"],
       ["Multiply", "/multiply"],
-      ["Portfolio", "/portfolio"],
+      ["Dashboard", "/dashboard"],
     ] as const) {
       expect(within(nav).getByRole("link", { name: label })).toHaveAttribute("href", href)
     }

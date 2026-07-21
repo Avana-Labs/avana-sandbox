@@ -25,6 +25,7 @@ import {
   Coins as _Coins,
   Compass as _Compass,
   Copy as _Copy,
+  DashboardSquareAddIcon as _DashboardSquareAdd,
   DollarCircleIcon as _DollarCircleIcon,
   Droplets as _Droplets,
   EnteringGeoFenceIcon as _EnteringGeoFence,
@@ -129,6 +130,7 @@ export const Code2: IconComponent = makeIcon(_Code)
 export const Coins: IconComponent = makeIcon(_Coins)
 export const Compass: IconComponent = makeIcon(_Compass)
 export const Copy: IconComponent = makeIcon(_Copy)
+export const DashboardSquareAdd: IconComponent = makeIcon(_DashboardSquareAdd)
 export const Droplets: IconComponent = makeIcon(_Droplets)
 export const EnteringGeoFence: IconComponent = makeIcon(_EnteringGeoFence)
 export const ExternalLink: IconComponent = makeIcon(_ExternalLink)

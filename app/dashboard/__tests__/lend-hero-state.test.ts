@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { buildLendSnapshotFromTabData } from "@/app/portfolio/lend-hero-state"
+import { buildLendSnapshotFromTabData } from "@/app/dashboard/lend-hero-state"
 import type { PortfolioLendTabData } from "@/app/lib/data/providers/portfolio/types"
 
 function buildTabData(overrides?: Partial<PortfolioLendTabData>): PortfolioLendTabData {

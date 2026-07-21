@@ -19,7 +19,7 @@ const HeroAreaChart = dynamic(
   },
 )
 
-// TODO(backend): wire these to the user's real Avana balance (mirrors the portfolio hero).
+// TODO(backend): wire these to the user's real Avana balance (mirrors the dashboard hero).
 const AVANA_BALANCE = "$14,400.00"
 const AVANA_BALANCE_DELTA = "-$312.96 (-3.80%)"
 

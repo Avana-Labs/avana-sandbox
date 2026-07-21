@@ -6,7 +6,7 @@ import type { useLendSession } from "@/app/lib/lend-system/use-lend-session"
 
 type LendSession = ReturnType<typeof useLendSession>
 
-export function usePortfolioLendLive(walletId: string, lendSession: LendSession) {
+export function useDashboardLendLive(walletId: string, lendSession: LendSession) {
   const [portfolioLend, setPortfolioLend] = useState<PortfolioLendTabData | null>(null)
 
   useEffect(() => {

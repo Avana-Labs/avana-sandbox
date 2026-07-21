@@ -41,7 +41,7 @@ describe("ActionProcessingStage", () => {
   })
 
   it("uses the correct verb inflection for remove flows", () => {
-    render(<ActionProcessingStage verb="Remove" preview={{ ...preview, amountLabel: "25%" }} closeHref="/portfolio" />)
+    render(<ActionProcessingStage verb="Remove" preview={{ ...preview, amountLabel: "25%" }} closeHref="/dashboard" />)
 
     expect(screen.getByRole("heading", { name: "Removing 25%" })).toBeInTheDocument()
   })

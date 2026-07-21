@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { PortfolioInvestments } from "@/app/portfolio/portfolio-investments"
+import { DashboardInvestments } from "@/app/dashboard/dashboard-investments"
 import type { PortfolioSupplyPosition } from "@/app/lib/data/providers/portfolio"
 
 vi.mock("@/app/components/display-preferences", () => ({
@@ -11,7 +11,7 @@ vi.mock("@/app/components/display-preferences", () => ({
 
 afterEach(() => cleanup())
 
-describe("PortfolioInvestments", () => {
+describe("DashboardInvestments", () => {
   it("labels the per-day figure as a projected run-rate, not realized 'today' earnings", () => {
     const investment: PortfolioSupplyPosition = {
       id: "usdc",
@@ -26,7 +26,7 @@ describe("PortfolioInvestments", () => {
       status: "active",
     }
 
-    render(<PortfolioInvestments investments={[investment]} showHeading={false} />)
+    render(<DashboardInvestments investments={[investment]} showHeading={false} />)
 
     // A projected APY run-rate must not read as money already earned "today".
     expect(screen.queryByText(/today/i)).toBeNull()
@@ -39,7 +39,7 @@ describe("PortfolioInvestments", () => {
     const onClaimRewards = vi.fn()
 
     render(
-      <PortfolioInvestments
+      <DashboardInvestments
         investments={[]}
         rewardsSummary={{ claimableUsd: 64, totalEarnedUsd: 64 }}
         onClaimRewards={onClaimRewards}
