@@ -45,6 +45,16 @@ describe("SwapPageClient", () => {
     expect(screen.getByRole("button", { name: "Review swap" })).toBeEnabled()
   })
 
+  it("searches supported assets in the receive picker", () => {
+    renderSwap()
+
+    fireEvent.click(screen.getByRole("button", { name: "Receive at least asset" }))
+    fireEvent.change(screen.getByLabelText("Find an asset"), { target: { value: "chain" } })
+    fireEvent.click(screen.getByText("ChainLink Token").closest("button")!)
+
+    expect(screen.getByRole("button", { name: "Receive at least asset" })).toHaveTextContent("LINK")
+  })
+
   it("opens review and confirms native swaps", async () => {
     renderSwap()
 
