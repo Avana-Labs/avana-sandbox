@@ -102,16 +102,16 @@ function AvanaQuestCard({
               }
             }}
             disabled={isDisabled}
-            className={`inline-flex h-9 w-full items-center justify-center gap-1 rounded-radius-sm px-3.5 text-[12px] transition-colors ${
+            className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-radius-sm px-3.5 text-[13px] font-bold transition-colors [&_svg]:size-4 ${
               isClaimable
-                ? "bg-brand text-brand-foreground hover:bg-brand/90"
+                ? "bg-brand text-white hover:bg-brand/90"
                 : isDisabled
                   ? "bg-muted/60 text-muted-foreground"
                   : "border border-brand/20 bg-brand/5 text-foreground hover:bg-brand/10"
             }`}
           >
             {t(quest.cta)}
-            {!isDisabled ? <ArrowRight className="h-3.5 w-3.5" /> : null}
+            {!isDisabled ? <ArrowRight /> : null}
           </button>
         </div>
       </div>

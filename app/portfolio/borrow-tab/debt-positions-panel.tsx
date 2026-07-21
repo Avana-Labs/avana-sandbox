@@ -248,7 +248,7 @@ function DebtMobileCard({
         <Button
           type="button"
           variant="brand"
-          className="h-10 rounded-radius-sm px-4 text-[13px]"
+          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
           onClick={(event) => {
             event.stopPropagation()
             onBorrow()
@@ -260,7 +260,7 @@ function DebtMobileCard({
         <Button
           type="button"
           variant="brand-secondary"
-          className="h-10 rounded-radius-sm px-4 text-[13px]"
+          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
           onClick={(event) => {
             event.stopPropagation()
             onRepay()

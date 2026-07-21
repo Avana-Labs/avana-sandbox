@@ -28,5 +28,5 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
  * Sizing/color come from the parent Button (`[&_svg]:size-3.5`, text color). */
 export function ActionIcon({ label, className }: { label: string; className?: string }) {
   const Icon = ACTION_ICONS[label.trim().toLowerCase()]
-  return Icon ? <Icon className={className} aria-hidden="true" /> : null
+  return Icon ? <Icon className={className} strokeWidth={2.1} aria-hidden="true" /> : null
 }

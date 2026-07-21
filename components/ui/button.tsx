@@ -26,12 +26,12 @@ const buttonVariants = cva(
         // Rests muted, then jumps to a solid mid-gray on row hover — a clear step
         // (not the near-identical surface tokens) so it reads plainly "on".
         "table-secondary":
-          "w-auto bg-muted font-medium text-foreground group-hover:bg-neutral-300 group-focus-within:bg-neutral-300 dark:group-hover:bg-neutral-700 dark:group-focus-within:bg-neutral-700 disabled:!opacity-100 disabled:!bg-muted disabled:!text-muted-foreground",
+          "w-auto bg-muted font-bold text-foreground group-hover:bg-neutral-300 group-focus-within:bg-neutral-300 dark:group-hover:bg-neutral-700 dark:group-focus-within:bg-neutral-700 disabled:!opacity-100 disabled:!bg-muted disabled:!text-muted-foreground",
         // Primary table pill: mobile has no row-hover state, so it renders as
         // the Avana brand CTA immediately. Desktop rests muted, then turns
         // brand cyan with white text on row/button hover, focus, or active press.
         "table-primary":
-          "w-auto bg-brand font-semibold text-white hover:bg-brand/90 active:bg-brand/80 focus-visible:ring-brand/40 md:bg-muted md:font-medium md:text-foreground md:hover:!bg-brand/90 md:hover:!text-white md:active:!bg-brand/80 md:active:!text-white md:group-hover:!bg-brand md:group-hover:!text-white md:group-focus-within:!bg-brand md:group-focus-within:!text-white disabled:!opacity-100 disabled:!bg-brand-soft disabled:!text-brand-soft-foreground md:disabled:!bg-muted md:disabled:!text-muted-foreground",
+          "w-auto bg-brand font-bold text-white hover:bg-brand/90 active:bg-brand/80 focus-visible:ring-brand/40 md:bg-muted md:font-bold md:text-foreground md:hover:!bg-brand/90 md:hover:!text-white md:active:!bg-brand/80 md:active:!text-white md:group-hover:!bg-brand md:group-hover:!text-white md:group-focus-within:!bg-brand md:group-focus-within:!text-white disabled:!opacity-100 disabled:!bg-brand-soft disabled:!text-brand-soft-foreground md:disabled:!bg-muted md:disabled:!text-muted-foreground",
       },
       size: {
         default: "h-9 px-3",
@@ -41,7 +41,7 @@ const buttonVariants = cva(
         // Full-height action-flow CTAs.
         cta: "h-14 rounded-radius-xl px-4 text-[16px]",
         compact: "h-12 rounded-radius-xl px-4 text-[15px]",
-        table: "h-auto gap-2 rounded-full px-3.5 py-2 text-[13.5px] font-medium [&_svg]:size-4",
+        table: "h-auto gap-2 rounded-full px-3.5 py-2 text-[13.5px] font-bold [&_svg]:size-4",
       },
     },
     defaultVariants: {

@@ -244,7 +244,7 @@ export function DebtsPanel({
                 <Button
                   type="button"
                   variant="brand-secondary"
-                  className="h-10 flex-1 rounded-radius-sm px-4 text-[13px]"
+                  className="h-11 flex-1 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
                   onClick={(event) => {
                     event.stopPropagation()
                     onRepay(row)
@@ -256,7 +256,7 @@ export function DebtsPanel({
                 <Button
                   type="button"
                   variant="brand"
-                  className="h-10 flex-[2] rounded-radius-sm px-4 text-[13px]"
+                  className="h-11 flex-[2] gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
                   onClick={(event) => {
                     event.stopPropagation()
                     onManage(row)

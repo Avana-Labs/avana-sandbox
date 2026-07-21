@@ -156,14 +156,14 @@ export function LendMarketDetailClient({ detail }: Props) {
       <MobileDetailActionBar className="grid grid-cols-2 gap-3">
         <Link
           href={actionPagePath("lend", "deposit", { market: marketId, return: `/lend/markets/${marketId}` })}
-          className={primaryCtaClass({ size: "compact", className: "gap-2.5 [&_svg]:size-5" })}
+          className={primaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
         >
           <ActionIcon label="Deposit" />
           {t("Deposit")}
         </Link>
         <Link
           href={actionPagePath("lend", "withdraw", { market: marketId, return: `/lend/markets/${marketId}` })}
-          className={secondaryCtaClass({ size: "compact", className: "gap-2.5 [&_svg]:size-5" })}
+          className={secondaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
         >
           <ActionIcon label="Withdraw" />
           {t("Withdraw")}
