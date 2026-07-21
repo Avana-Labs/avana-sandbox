@@ -34,4 +34,18 @@ describe("DashboardWalletTab", () => {
 
     expect(screen.getAllByText("LP tokens are not swappable").length).toBeGreaterThan(0)
   })
+
+  it("can render live session balances passed by the dashboard", () => {
+    render(
+      <DashboardWalletTab
+        walletId="wallet-live"
+        balances={[
+          { id: "live-usdc", walletId: "wallet-live", assetId: "usdc", amount: 123, sourceType: "wallet" },
+        ]}
+      />,
+    )
+
+    expect(screen.getAllByText("USD Coin").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("123").length).toBeGreaterThan(0)
+  })
 })
