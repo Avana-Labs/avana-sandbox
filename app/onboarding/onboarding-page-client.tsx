@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
-import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
+import { useLiveSiweToken } from "@/app/lib/siwe/use-siwe-auth"
 import { GuestOnboardingFlow } from "@/app/components/sandbox/guest-onboarding-flow"
 
 const OnboardingPageConnected = dynamic(
@@ -13,7 +13,7 @@ const OnboardingPageConnected = dynamic(
 
 export function OnboardingPageClient() {
   const { t } = useTranslation()
-  const { authedWallet, isSignedIn } = useSiweAuth()
+  const token = useLiveSiweToken()
 
   return (
     <main className="min-h-[calc(100vh-4rem)] px-5 py-6 sm:px-8">
@@ -22,8 +22,8 @@ export function OnboardingPageClient() {
           {t("Sandbox onboarding requires a Convex connection. Set")} <code>NEXT_PUBLIC_CONVEX_URL</code>{" "}
           {t("to continue.")}
         </div>
-      ) : isSignedIn && authedWallet ? (
-        <OnboardingPageConnected wallet={authedWallet} />
+      ) : token ? (
+        <OnboardingPageConnected wallet={token.wallet} />
       ) : (
         <GuestOnboardingFlow />
       )}

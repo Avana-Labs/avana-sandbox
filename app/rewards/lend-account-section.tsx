@@ -36,7 +36,7 @@ export function LendAccountSection() {
   }
 
   return (
-    <section className="space-y-5">
+    <section id="dashboard-lend-account" className="scroll-mt-24 space-y-5">
       <DashboardLendPerformanceSection title={t("Lending Performance")} metrics={metrics} hideHeading />
       <DashboardInvestments
         investments={lendTabData.investments}

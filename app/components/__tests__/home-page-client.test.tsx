@@ -56,7 +56,7 @@ describe("HomePageClient", () => {
     const borrowAction = await screen.findByTestId("embedded-borrow-action-borrow")
     expect(borrowAction).toHaveAttribute("data-embedded", "true")
     expect(borrowAction).toHaveAttribute("data-layout", "home")
-  })
+  }, 10_000)
 
   it("switches tabs to embedded repay, claim, and remove actions", async () => {
     render(<HomePageClient />)

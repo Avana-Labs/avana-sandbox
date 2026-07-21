@@ -16,18 +16,26 @@ const TAB_LABELS: Record<DashboardTabKey, string> = {
   activity: "Activity",
 }
 
+const PRODUCT_SECTION: Record<ActionProduct, string> = {
+  borrow: "dashboard-borrow-account",
+  lend: "dashboard-lend-account",
+  multiply: "dashboard-multiply-account",
+  rewards: "dashboard-activity",
+}
+
 export function dashboardTabForProduct(product: ActionProduct): DashboardTabKey {
   return PRODUCT_TAB[product]
 }
 
-// The per-product account overviews now all live on the dashboard page, which
-// doesn't deep-link to a specific tab via the URL — so every product returns there.
-export function dashboardHrefForProduct(_product: ActionProduct): string {
-  return "/dashboard"
+// The per-product account overviews live on the dashboard page. Keep a hash so
+// action success CTAs can land on the exact reconciled account section.
+export function dashboardHrefForProduct(product: ActionProduct): string {
+  return `/dashboard#${PRODUCT_SECTION[product]}`
 }
 
-export function dashboardHrefForTab(_tab: DashboardTabKey): string {
-  return "/dashboard"
+export function dashboardHrefForTab(tab: DashboardTabKey): string {
+  const product = (Object.keys(PRODUCT_TAB) as ActionProduct[]).find((key) => PRODUCT_TAB[key] === tab)
+  return product ? dashboardHrefForProduct(product) : "/dashboard"
 }
 
 export function dashboardTabLabel(tab: DashboardTabKey): string {
