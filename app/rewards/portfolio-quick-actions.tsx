@@ -1,6 +1,8 @@
 "use client"
 
 import {
+  ArrowShrink,
+  ArrowUpRightStack,
   CircleArrowOutDownRight,
   CircleArrowOutUpLeft,
   EnteringGeoFence,
@@ -47,6 +49,18 @@ export function PortfolioQuickActions() {
       label: t("Withdraw"),
       icon: LeavingGeoFence,
       href: withReturn(actionPagePath("lend", "withdraw")),
+    },
+    {
+      id: "multiply",
+      label: t("Multiply"),
+      icon: ArrowUpRightStack,
+      href: withReturn(actionPagePath("multiply", "multiply")),
+    },
+    {
+      id: "deleverage",
+      label: t("Deleverage"),
+      icon: ArrowShrink,
+      href: withReturn(actionPagePath("multiply", "deleverage")),
     },
   ]
 

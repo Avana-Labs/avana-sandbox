@@ -275,6 +275,40 @@
   transform: translateX(0) scaleX(1);
 }
 
+.portfolio-quick-action-pill {
+  transition:
+    width 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    padding 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    gap 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 160ms ease !important;
+}
+
+.portfolio-quick-action-pill[data-state="active"] {
+  width: 10rem !important;
+  gap: 0.625rem !important;
+  padding-inline: 0.875rem !important;
+}
+
+.portfolio-quick-action-pill-label {
+  display: inline-block;
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  white-space: nowrap;
+  transform: translateX(5px) scaleX(0.92);
+  transform-origin: left center;
+  transition:
+    max-width 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease,
+    transform 360ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+.portfolio-quick-action-pill[data-state="active"] .portfolio-quick-action-pill-label {
+  max-width: 8.5rem;
+  opacity: 1;
+  transform: translateX(0) scaleX(1);
+}
+
 @media (max-width: 560px) {
   #__CONNECTKIT__ [role="dialog"] div.active {
     opacity: 1 !important;

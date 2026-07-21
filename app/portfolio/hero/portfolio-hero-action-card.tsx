@@ -1,3 +1,6 @@
+"use client"
+
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import type { ComponentType, SVGProps } from "react"
 
@@ -7,6 +10,12 @@ type PortfolioHeroActionCardProps = {
   href?: string
   onClick?: () => void
   className?: string
+}
+
+type PortfolioHeroActionPillProps = PortfolioHeroActionCardProps & {
+  active?: boolean
+  armed?: boolean
+  onActivate?: () => void
 }
 
 export function PortfolioHeroActionCard({ label, icon: Icon, href, onClick, className }: PortfolioHeroActionCardProps) {
@@ -25,6 +34,45 @@ export function PortfolioHeroActionCard({ label, icon: Icon, href, onClick, clas
     <button type="button" onClick={onClick} className={classNameValue}>
       <Icon className="h-6 w-6 fill-current text-current" />
       <span className="text-[14px] font-semibold tracking-[-0.02em] text-current">{label}</span>
+    </button>
+  )
+}
+
+export function PortfolioHeroActionPill({
+  label,
+  icon: Icon,
+  href,
+  onClick,
+  className,
+  active = false,
+  armed = false,
+  onActivate,
+}: PortfolioHeroActionPillProps) {
+  const router = useRouter()
+  const classNameValue = `portfolio-quick-action-pill inline-flex h-10 w-10 items-center justify-center gap-0 overflow-hidden rounded-full bg-field-bottom px-0 text-[14px] font-bold text-foreground shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 active:scale-[0.98] dark:bg-field-bottom dark:text-white ${className ?? ""}`
+
+  const handlePress = () => {
+    if (active && armed) {
+      if (href) {
+        router.push(href)
+        return
+      }
+      onClick?.()
+      return
+    }
+    onActivate?.()
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handlePress}
+      className={classNameValue}
+      aria-label={label}
+      data-state={active ? "active" : "inactive"}
+    >
+      <Icon className="size-4 shrink-0 text-current" />
+      <span className="portfolio-quick-action-pill-label text-current">{label}</span>
     </button>
   )
 }
