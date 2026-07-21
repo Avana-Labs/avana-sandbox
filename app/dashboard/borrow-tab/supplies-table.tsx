@@ -79,7 +79,7 @@ export function SuppliesPanel({
         </div>
       ) : null}
       <div className="hidden md:block">
-        <DesktopTableSurface className="rounded-radius-md">
+        <DesktopTableSurface className="!rounded-none">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[980px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
@@ -91,7 +91,7 @@ export function SuppliesPanel({
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                  <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     {t("LP Position")}
                   </th>
                   <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
@@ -103,7 +103,7 @@ export function SuppliesPanel({
                   <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
                     {t("Health Factor")}
                   </th>
-                  <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 pr-6 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground" />
+                  <th className="bg-table-header px-5 py-3.5 pr-6 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground" />
                 </tr>
               </thead>
               <tbody>

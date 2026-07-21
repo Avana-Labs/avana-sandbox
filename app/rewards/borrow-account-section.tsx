@@ -29,8 +29,6 @@ const TradingFeesPanel = lazy(async () => ({
   default: (await import("@/app/dashboard/borrow-tab/trading-fees-panel")).TradingFeesPanel,
 }))
 
-const RETURN_HREF = "/dashboard"
-
 type CreditSubTab = "overview" | "collateral" | "debt" | "fees"
 const CREDIT_SUB_TABS: readonly { id: CreditSubTab; label: string }[] = [
   { id: "overview", label: "Borrow Overview" },
@@ -43,7 +41,7 @@ const CREDIT_SUB_TABS: readonly { id: CreditSubTab; label: string }[] = [
  * The borrow account overview + positions that used to live on the dashboard.
  * Self-contained: reads the live borrow session directly, no props.
  */
-export function BorrowAccountSection() {
+export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref?: string }) {
   const { t } = useTranslation()
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const hasMounted = useHasMounted()
@@ -122,15 +120,15 @@ export function BorrowAccountSection() {
           </div>
         ) : creditSubTab === "collateral" ? (
           <AccountModuleBoundary>
-            <CollateralPositionsPanel showBalance={showDollarAmounts} returnHref={RETURN_HREF} />
+            <CollateralPositionsPanel showBalance={showDollarAmounts} returnHref={returnHref} />
           </AccountModuleBoundary>
         ) : creditSubTab === "debt" ? (
           <AccountModuleBoundary>
-            <DebtPositionsPanel showBalance={showDollarAmounts} returnHref={RETURN_HREF} />
+            <DebtPositionsPanel showBalance={showDollarAmounts} returnHref={returnHref} />
           </AccountModuleBoundary>
         ) : (
           <AccountModuleBoundary>
-            <TradingFeesPanel showBalance={showDollarAmounts} returnHref={RETURN_HREF} />
+            <TradingFeesPanel showBalance={showDollarAmounts} returnHref={returnHref} />
           </AccountModuleBoundary>
         )}
       </div>

@@ -24,7 +24,15 @@ const MASK = "••••"
 const HEADER_CLASS =
   "whitespace-nowrap bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70"
 
-export function DebtPositionsPanel({ showBalance = true, returnHref }: { showBalance?: boolean; returnHref?: string }) {
+export function DebtPositionsPanel({
+  showBalance = true,
+  returnHref,
+  showHeading = true,
+}: {
+  showBalance?: boolean
+  returnHref?: string
+  showHeading?: boolean
+}) {
   const { t } = useTranslation()
   const router = useRouter()
   const { exact } = useCurrency()
@@ -66,11 +74,19 @@ export function DebtPositionsPanel({ showBalance = true, returnHref }: { showBal
 
   return (
     <section>
+      {showHeading ? (
+        <div className="mb-4">
+          <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">{t("Debt Positions")}</h3>
+          <p className="mt-1 text-[12px] text-muted-foreground">
+            {t("{count} loans").replace("{count}", String(rows.length))}
+          </p>
+        </div>
+      ) : null}
       <AssetSummaryStrip metrics={summaryMetrics} />
 
       {/* Desktop */}
       <div className="hidden md:block">
-        <DesktopTableSurface className="rounded-radius-md">
+        <DesktopTableSurface className="!rounded-none">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[960px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
@@ -82,11 +98,11 @@ export function DebtPositionsPanel({ showBalance = true, returnHref }: { showBal
               </colgroup>
               <thead>
                 <tr className="text-left">
-                  <th className={cn(HEADER_CLASS, "rounded-l-radius-lg pl-5")}>{t("Asset")}</th>
+                  <th className={cn(HEADER_CLASS, "pl-5")}>{t("Asset")}</th>
                   <th className={cn(HEADER_CLASS, "text-right")}>{t("Borrowed")}</th>
                   <th className={cn(HEADER_CLASS, "text-right")}>{t("APY")}</th>
                   <th className={cn(HEADER_CLASS, "text-right")}>{t("Fees Paid")}</th>
-                  <th className={cn(HEADER_CLASS, "rounded-r-radius-lg pr-5")} />
+                  <th className={cn(HEADER_CLASS, "pr-5")} />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border dark:divide-white/6">

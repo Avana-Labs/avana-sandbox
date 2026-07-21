@@ -125,15 +125,9 @@ export function DashboardBorrowTab({
               and expandable opportunities. */}
           <div className="space-y-10">
             <div>
-              <h3 className="mb-4 text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">
-                {t("Collateral Positions")}
-              </h3>
               <CollateralPositionsPanel showBalance={showDollarAmounts} returnHref={returnHref} />
             </div>
             <div>
-              <h3 className="mb-4 text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">
-                {t("Debt Positions")}
-              </h3>
               <DebtPositionsPanel showBalance={showDollarAmounts} returnHref={returnHref} />
             </div>
           </div>

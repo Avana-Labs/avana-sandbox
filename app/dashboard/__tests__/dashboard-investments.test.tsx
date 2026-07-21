@@ -47,7 +47,7 @@ describe("DashboardInvestments", () => {
       />,
     )
 
-    expect(screen.getByText("Claimable rewards")).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Assets" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Claim $64.00" })).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("button", { name: "Claim $64.00" }))

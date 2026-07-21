@@ -16,7 +16,7 @@ describe("DashboardWalletTab", () => {
 
     expect(screen.getByRole("heading", { name: "Wallet" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Tokens" })).toBeInTheDocument()
-    expect(screen.getByRole("heading", { name: "LPs" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Pools" })).toBeInTheDocument()
     expect(screen.getAllByText("Ether").length).toBeGreaterThan(0)
     expect(screen.getAllByText("ETH / USDC LP").length).toBeGreaterThan(0)
   })
@@ -29,10 +29,11 @@ describe("DashboardWalletTab", () => {
     expect(links).toContain("/swap?origin=wallet&return=%2Fdashboard%3Ftab%3Dwallet&from=eth")
   })
 
-  it("shows LP balances without a swap action", () => {
+  it("shows pool status and disables unsupported pool actions", () => {
     render(<DashboardWalletTab walletId="demo-wallet" />)
 
-    expect(screen.getAllByText("LP tokens are not swappable").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("In range").length).toBeGreaterThan(0)
+    screen.getAllByRole("button", { name: "View" }).forEach((button) => expect(button).toBeDisabled())
   })
 
   it("can render live session balances passed by the dashboard", () => {
@@ -46,6 +47,6 @@ describe("DashboardWalletTab", () => {
     )
 
     expect(screen.getAllByText("USD Coin").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("123").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("123 USDC").length).toBeGreaterThan(0)
   })
 })

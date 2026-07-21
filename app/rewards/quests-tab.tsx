@@ -155,9 +155,30 @@ function RewardsPromoPanel({
         listClassName="w-max min-w-full gap-6 px-2 sm:gap-9 sm:px-0"
       />
 
-      {activePromoTab === "lend" ? <LendAccountSection /> : null}
-      {activePromoTab === "borrow" ? <BorrowAccountSection /> : null}
-      {activePromoTab === "multiply" ? <MultiplyAccountSection /> : null}
+      <RewardsPromoContent activePromoTab={activePromoTab} questsByTab={questsByTab} onTaskAction={onTaskAction} />
+    </section>
+  )
+}
+
+export function RewardsPromoContent({
+  activePromoTab,
+  questsByTab,
+  onTaskAction,
+  returnHref = "/dashboard",
+}: {
+  activePromoTab: RewardsPromoTabId
+  questsByTab: Record<RewardsPromoTabId, RewardsQuest[]>
+  onTaskAction: (taskId: string) => Promise<unknown>
+  returnHref?: string
+}) {
+  const { t } = useTranslation()
+  const activeQuests = questsByTab[activePromoTab] ?? []
+
+  return (
+    <>
+      {activePromoTab === "lend" ? <LendAccountSection returnHref={returnHref} /> : null}
+      {activePromoTab === "borrow" ? <BorrowAccountSection returnHref={returnHref} /> : null}
+      {activePromoTab === "multiply" ? <MultiplyAccountSection returnHref={returnHref} /> : null}
 
       {activeQuests.length > 0 ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -168,7 +189,7 @@ function RewardsPromoPanel({
       ) : (
         <p className="text-[13px] text-muted-foreground">{t("No quests here yet — check back soon.")}</p>
       )}
-    </section>
+    </>
   )
 }
 
