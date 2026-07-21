@@ -157,6 +157,10 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       label: "Express",
     },
     {
+      href: "/swap",
+      label: "Swap",
+    },
+    {
       href: "/lend",
       label: "Lend",
     },

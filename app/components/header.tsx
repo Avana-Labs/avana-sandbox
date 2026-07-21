@@ -106,8 +106,9 @@ export function Header() {
               aria-label={t("Primary")}
               className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
-              {desktopLinks.slice(0, 4).map((link) => {
+              {desktopLinks.slice(0, 5).map((link) => {
                 const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)
+                const Icon = link.icon
 
                 return (
                   <Link
@@ -119,6 +120,11 @@ export function Header() {
                       isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
+                    {Icon ? (
+                      <span className="mr-2 inline-flex h-5 w-5 items-center justify-center text-current">
+                        <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
+                      </span>
+                    ) : null}
                     <span>{t(link.label)}</span>
                   </Link>
                 )
@@ -134,7 +140,7 @@ export function Header() {
 
           <div className="flex min-w-0 items-center justify-end gap-2 xl:gap-2.5">
             <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {desktopLinks.slice(4).map((link) => {
+              {desktopLinks.slice(5).map((link) => {
                 const isActive = pathname.startsWith(link.href)
                 const Icon = link.icon
 
