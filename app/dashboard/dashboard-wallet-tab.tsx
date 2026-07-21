@@ -219,7 +219,7 @@ export function DashboardWalletTab({
 
   return (
     <section id="dashboard-wallet" className="space-y-6" aria-label={t("Wallet balances")}>
-      <section className="space-y-4">
+      <section className="space-y-4 pb-3">
         <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{t("Wallet Balance")}</h2>
         <div className="grid w-full grid-cols-2 gap-5 xl:grid-cols-4 xl:gap-x-8">
           <WalletMetric label={t("Wallet Value")} value={m(exact(totalWalletUsd))} />

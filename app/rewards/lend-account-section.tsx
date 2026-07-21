@@ -36,7 +36,7 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
   }
 
   return (
-    <section id="dashboard-lend-account" className="scroll-mt-24 space-y-5">
+    <section id="dashboard-lend-account" className="scroll-mt-24 space-y-6">
       <DashboardLendPerformanceSection title={t("Lend Balance")} metrics={metrics} />
       <DashboardInvestments
         investments={lendTabData.investments}
@@ -49,7 +49,6 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
           .replace("{count}", String(lendTabData.investments.length))}
         returnHref={returnHref}
       />
-      <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{t("Lend Rewards")}</h2>
     </section>
   )
 }

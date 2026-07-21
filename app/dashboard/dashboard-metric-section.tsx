@@ -67,7 +67,7 @@ export function DashboardOverviewSection({
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-4 pb-3">
       {hideHeading ? null : (
         <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
       )}
@@ -127,7 +127,7 @@ export function DashboardCreditOverviewSection({
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-4 pb-3">
       {hideHeading ? null : (
         <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
       )}
@@ -172,7 +172,7 @@ export function DashboardPerformanceSection({
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-4 pb-3">
       <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
       <MetricGrid
         metrics={[
@@ -213,7 +213,7 @@ export function DashboardLendPerformanceSection({
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
   return (
-    <section className="space-y-4">
+    <section className="space-y-4 pb-3">
       {hideHeading ? null : (
         <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
       )}

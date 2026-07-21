@@ -173,14 +173,16 @@ export function RewardsPromoContent({
   const { t } = useTranslation()
   const activeQuests = questsByTab[activePromoTab] ?? []
   const rewardsSectionTitle =
-    activePromoTab === "borrow"
+    activePromoTab === "lend"
+      ? t("Lend Rewards")
+      : activePromoTab === "borrow"
       ? t("Borrow Rewards")
       : activePromoTab === "multiply"
         ? t("Multiply Rewards")
         : null
 
   return (
-    <>
+    <div className="space-y-6">
       {activePromoTab === "lend" ? <LendAccountSection returnHref={returnHref} /> : null}
       {activePromoTab === "borrow" ? <BorrowAccountSection returnHref={returnHref} /> : null}
       {activePromoTab === "multiply" ? <MultiplyAccountSection returnHref={returnHref} /> : null}
@@ -190,7 +192,7 @@ export function RewardsPromoContent({
       ) : (
         <p className="text-[13px] text-muted-foreground">{t("No quests here yet — check back soon.")}</p>
       )}
-    </>
+    </div>
   )
 }
 
