@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/app/components/theme-provider"
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
+  usePathname: () => "/actions/borrow/borrow",
 }))
 
 // The full site Header (wallet, search, preference controls) is rendered by the
@@ -76,6 +77,18 @@ describe("ActionPageShell", () => {
     )
 
     expect(screen.queryByText("Simulated transaction")).not.toBeInTheDocument()
+  })
+
+  it("renders the action flow header when a flow stage is provided", () => {
+    renderShell(
+      <ActionPageShell title="Withdraw" subtitle="Configure and review your withdrawal." flowHeaderStage="configure">
+        <div>Body</div>
+      </ActionPageShell>,
+    )
+
+    expect(screen.getByText("Step 2 of 4 · Configure")).toBeInTheDocument()
+    expect(screen.getByLabelText("Home")).toBeInTheDocument()
+    expect(screen.getByLabelText("Close")).toBeInTheDocument()
   })
 
   it("renders overlay mode on the shell root", async () => {
