@@ -49,7 +49,7 @@ import { UnderlineTabStrip } from "@/app/components/tab-primitives"
 import { RewardsPromoContent } from "@/app/rewards/quests-tab"
 import Link from "next/link"
 
-type DashboardPromoTabId = Extract<RewardsPromoTabId, "lend" | "borrow" | "multiply" | "referrals">
+type DashboardPromoTabId = Extract<RewardsPromoTabId, "lend" | "borrow" | "multiply">
 type DashboardTabId = "wallet" | DashboardPromoTabId
 
 const DASHBOARD_TABS: readonly { id: DashboardTabId; label: string }[] = [
@@ -57,14 +57,12 @@ const DASHBOARD_TABS: readonly { id: DashboardTabId; label: string }[] = [
   { id: "lend", label: "Lend" },
   { id: "borrow", label: "Borrow" },
   { id: "multiply", label: "Multiply" },
-  { id: "referrals", label: "Referrals" },
 ]
 
 const CURATED_REWARD_TASK_IDS: Record<DashboardPromoTabId, readonly string[]> = {
   lend: ["first-lend-deposit", "supply-5k-lend", "grow-portfolio-10k"],
   borrow: ["first-borrow", "first-repay", "borrow-2k"],
   multiply: ["first-multiply", "open-2x-multiply", "first-deleverage"],
-  referrals: [],
 }
 
 function resolveDashboardTab(tab: string | null): DashboardTabId {
@@ -73,7 +71,6 @@ function resolveDashboardTab(tab: string | null): DashboardTabId {
     case "lend":
     case "borrow":
     case "multiply":
-    case "referrals":
       return tab
     case "rewards":
       return "lend"
@@ -548,7 +545,12 @@ export function DashboardPageClient({ pageData }: { pageData?: RewardsPageData }
       >
         <div className="min-w-0">
           {activeDashboardTab === "wallet" ? (
-            <DashboardWalletTab walletId={walletId} balances={avana.swap.state.balances} />
+            <DashboardWalletTab
+              walletId={walletId}
+              balances={avana.swap.state.balances}
+              rewardQuests={questsByTab.referrals}
+              onTaskAction={(taskId) => handleTaskAction(taskId)}
+            />
           ) : (
             <>
               <RewardsPromoContent

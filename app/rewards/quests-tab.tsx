@@ -186,27 +186,41 @@ export function RewardsPromoContent({
       {activePromoTab === "multiply" ? <MultiplyAccountSection returnHref={returnHref} /> : null}
 
       {activeQuests.length > 0 ? (
-        <div className="space-y-4">
-          {rewardsSectionTitle ? (
-            <div>
-              <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">
-                {rewardsSectionTitle}
-              </h2>
-              <p className="mt-1 text-[13px] text-muted-foreground">
-                {t("{count} rewards").replace("{count}", String(activeQuests.length))}
-              </p>
-            </div>
-          ) : null}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {activeQuests.map((quest) => (
-              <AvanaQuestCard key={quest.id} quest={quest} onTaskAction={onTaskAction} />
-            ))}
-          </div>
-        </div>
+        <RewardsQuestSection title={rewardsSectionTitle} quests={activeQuests} onTaskAction={onTaskAction} />
       ) : (
         <p className="text-[13px] text-muted-foreground">{t("No quests here yet — check back soon.")}</p>
       )}
     </>
+  )
+}
+
+export function RewardsQuestSection({
+  title,
+  quests,
+  onTaskAction,
+}: {
+  title?: string | null
+  quests: Array<RewardsQuest & { status?: string; progressLabel?: string }>
+  onTaskAction: (taskId: string) => Promise<unknown>
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <div className="space-y-4">
+      {title ? (
+        <div>
+          <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{title}</h2>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            {t("{count} rewards").replace("{count}", String(quests.length))}
+          </p>
+        </div>
+      ) : null}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {quests.map((quest) => (
+          <AvanaQuestCard key={quest.id} quest={quest} onTaskAction={onTaskAction} />
+        ))}
+      </div>
+    </div>
   )
 }
 
