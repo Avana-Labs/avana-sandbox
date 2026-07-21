@@ -6,7 +6,7 @@ import { Header } from "@/app/components/header"
 
 export function ActionsLayoutChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  const useActionFlowHeader = pathname === "/actions/lend/withdraw"
+  const useActionFlowHeader = pathname.startsWith("/actions/borrow/") || pathname === "/actions/lend/withdraw"
 
   return (
     <div className="min-h-[100dvh] bg-background">
