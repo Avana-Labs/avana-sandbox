@@ -73,6 +73,13 @@ const SCRIPTS: Record<string, string[]> = {
     "Sending rewards to your wallet",
     "Updating your balances",
   ],
+  swap: [
+    "Connecting to the swap router",
+    "Refreshing your quote",
+    "Submitting your swap",
+    "Confirming the transaction",
+    "Updating your wallet balances",
+  ],
   pledge: [
     "Connecting to Uniswap v3",
     "Verifying your LP position",
@@ -106,6 +113,7 @@ export function processingNarrationScript(verb: string): string[] {
   if (v.includes("supply") || v.includes("pledge") || v.includes("collateral")) return SCRIPTS.pledge
   if (v.includes("deposit") || v.includes("lend")) return SCRIPTS.deposit
   if (v.includes("claim")) return SCRIPTS.claim
+  if (v.includes("swap")) return SCRIPTS.swap
   return SCRIPTS.generic
 }
 
