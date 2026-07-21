@@ -12,6 +12,7 @@ export type ActionWorkspaceTabItem = {
 
 const REVEAL_TAB_WIDTH_BY_LABEL: Record<string, string> = {
   Borrow: "data-[state=active]:w-[99px]",
+  Swap: "data-[state=active]:w-[94px]",
   Repay: "data-[state=active]:w-[92px]",
   Claim: "data-[state=active]:w-[92px]",
   Remove: "data-[state=active]:w-[104px]",
