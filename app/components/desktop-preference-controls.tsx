@@ -131,9 +131,7 @@ export function DesktopPreferenceControls() {
             >
               <span className="text-muted-foreground dark:text-white/64">{t("Network")}</span>
               <span className="flex items-center gap-2 font-medium text-foreground dark:text-white">
-                <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand dark:bg-brand/15">
-                  {currentNetwork.label}
-                </span>
+                <span>{currentNetwork.label}</span>
                 <ChevronRight className="h-4 w-4 text-muted-foreground dark:text-white/52" />
               </span>
             </DropdownMenuItem>
@@ -233,7 +231,9 @@ export function DesktopPreferenceControls() {
                   <span className="flex items-center gap-2">
                     {option.code === currentNetwork.code ? <Check className="h-4 w-4 text-brand" /> : null}
                     {option.unavailable ? (
-                      <span className="text-[12px] text-muted-foreground/80 dark:text-white/48">{t("Unavailable")}</span>
+                      <span className="text-[12px] text-muted-foreground/80 dark:text-white/48">
+                        {t("Unavailable")}
+                      </span>
                     ) : null}
                   </span>
                 </DropdownMenuItem>

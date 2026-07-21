@@ -85,7 +85,10 @@ function toBorrowVisual(symbol: string): BorrowAssetVisual {
 
 function lpPairVisuals(row: DashboardWalletBalanceRow): [BorrowAssetVisual, BorrowAssetVisual] | null {
   const pairLabel = row.name.replace(/\s*LP$/i, "")
-  const parts = pairLabel.split("/").map((part) => part.trim()).filter(Boolean)
+  const parts = pairLabel
+    .split("/")
+    .map((part) => part.trim())
+    .filter(Boolean)
   if (parts.length < 2) return null
   return [toBorrowVisual(parts[0]!), toBorrowVisual(parts[1]!)]
 }
@@ -144,13 +147,7 @@ function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
   )
 }
 
-function WalletMetric({
-  label,
-  value,
-}: {
-  label: string
-  value: string
-}) {
+function WalletMetric({ label, value }: { label: string; value: string }) {
   return (
     <article className="min-w-0 space-y-1.5">
       <div className="text-[12px] font-medium tracking-tight text-muted-foreground">{label}</div>
@@ -220,7 +217,10 @@ export function DashboardWalletTab({
   return (
     <section id="dashboard-wallet" className="space-y-6" aria-label={t("Wallet balances")}>
       <section className="space-y-4 pb-3">
-        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{t("Wallet Balance")}</h2>
+        <h2 className="text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">{t("Wallet")}</h2>
+        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">
+          {t("Wallet Balance")}
+        </h2>
         <div className="grid w-full grid-cols-2 gap-5 xl:grid-cols-4 xl:gap-x-8">
           <WalletMetric label={t("Wallet Value")} value={m(exact(totalWalletUsd))} />
           <WalletMetric label={t("Tokens")} value={String(tokens.length)} />
@@ -283,18 +283,26 @@ function WalletBalanceSection({
                   <div className="flex min-w-0 items-center gap-3">
                     <TokenIcon symbol={row.symbol} size="table" />
                     <div className="min-w-0">
-                      <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground">{row.name}</div>
+                      <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground">
+                        {row.name}
+                      </div>
                       <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">{row.symbol}</div>
                     </div>
                   </div>
                 </td>
-                <td className={`px-4 py-4 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground ${TABLE_ROW_HOVER_BG}`}>
+                <td
+                  className={`px-4 py-4 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground ${TABLE_ROW_HOVER_BG}`}
+                >
                   {m(row.valueUsd > 0 && row.amount > 0 ? exact(row.valueUsd / row.amount) : DASH)}
                 </td>
-                <td className={`px-4 py-4 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground ${TABLE_ROW_HOVER_BG}`}>
+                <td
+                  className={`px-4 py-4 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground ${TABLE_ROW_HOVER_BG}`}
+                >
                   {m(formatAssetAmount(row.amount, row.symbol))}
                 </td>
-                <td className={`px-4 py-4 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground ${TABLE_ROW_HOVER_BG}`}>
+                <td
+                  className={`px-4 py-4 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground ${TABLE_ROW_HOVER_BG}`}
+                >
                   {m(exact(row.valueUsd))}
                 </td>
                 <td className={`px-4 py-4 ${TABLE_ROW_HOVER_RIGHT}`}>
@@ -382,7 +390,7 @@ function PoolsBalanceSection({
 
       <DesktopTableSurface className="hidden !rounded-none md:block">
         <table className="w-full min-w-[780px] table-fixed border-separate border-spacing-0 text-[13px]">
-              <colgroup>
+          <colgroup>
             <col className="w-[28%]" />
             <col className="w-[16%]" />
             <col className="w-[26%]" />
@@ -436,7 +444,9 @@ function PoolsBalanceSection({
                 <div className="flex min-w-0 items-center gap-3">
                   <PoolIdentity row={row} />
                 </div>
-                <span className={`inline-flex rounded-full px-3 py-1 text-[12px] font-medium ${poolStatusClass(detail.status)}`}>
+                <span
+                  className={`inline-flex rounded-full px-3 py-1 text-[12px] font-medium ${poolStatusClass(detail.status)}`}
+                >
                   {poolStatusCopy(detail.status, t)}
                 </span>
               </div>

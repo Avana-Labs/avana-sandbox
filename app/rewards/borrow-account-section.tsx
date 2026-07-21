@@ -87,7 +87,9 @@ export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref
             totalCollateralUsd={borrowDashboardMetrics.performance.poolCollateralUsd}
           />
           <div className="space-y-4">
-            <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">{t("Borrow Health")}</h3>
+            <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
+              {t("Borrow Health")}
+            </h3>
             <div className="grid gap-4 xl:grid-cols-2">
               <SuppliesHealthFactorCard
                 averageHealthFactor={borrowSnapshot.averageHealthFactor}

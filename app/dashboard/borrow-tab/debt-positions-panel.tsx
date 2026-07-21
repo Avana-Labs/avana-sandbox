@@ -76,7 +76,9 @@ export function DebtPositionsPanel({
     <section>
       {showHeading ? (
         <div className="mb-4">
-          <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">{t("Debt Positions")}</h3>
+          <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
+            {t("Debt Positions")}
+          </h3>
           <p className="mt-1 text-[13px] text-muted-foreground">
             {t("{count} loans").replace("{count}", String(rows.length))}
           </p>

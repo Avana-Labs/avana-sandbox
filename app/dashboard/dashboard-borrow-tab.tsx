@@ -3,7 +3,6 @@
 import { useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
-import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import { CurrentLtvCard, DebtsPanel } from "@/app/dashboard/borrow-tab/debts-table"
@@ -44,7 +43,6 @@ export function DashboardBorrowTab({
 }) {
   const router = useRouter()
   const { showDollarAmounts } = useAmountDisplayPreferences()
-  const { t } = useTranslation()
   const supplies = collateralPositions
   const debtsRows = useMemo(() => debtPositions.filter((row) => row.borrowedUsd > 0), [debtPositions])
   const returnParams = returnHref ? { return: returnHref } : undefined

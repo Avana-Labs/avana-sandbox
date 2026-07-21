@@ -45,8 +45,7 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
         isClaimingRewards={isClaiming}
         showHeading
         title={t("Lend Assets")}
-        countLabel={t("{count} assets")
-          .replace("{count}", String(lendTabData.investments.length))}
+        countLabel={t("{count} assets").replace("{count}", String(lendTabData.investments.length))}
         returnHref={returnHref}
       />
     </section>

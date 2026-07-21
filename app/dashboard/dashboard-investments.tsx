@@ -113,9 +113,7 @@ export function DashboardInvestments({
                         #
                       </th>
                     ) : null}
-                    <th
-                      className="bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70"
-                    >
+                    <th className="bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
                       Asset
                     </th>
                     <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">

@@ -176,10 +176,10 @@ export function RewardsPromoContent({
     activePromoTab === "lend"
       ? t("Lend Rewards")
       : activePromoTab === "borrow"
-      ? t("Borrow Rewards")
-      : activePromoTab === "multiply"
-        ? t("Multiply Rewards")
-        : null
+        ? t("Borrow Rewards")
+        : activePromoTab === "multiply"
+          ? t("Multiply Rewards")
+          : null
 
   return (
     <div className="space-y-6">

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { useState } from "react"
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { HomePageClient } from "@/app/components/home-page-client"
@@ -7,6 +8,40 @@ import { selectAllAvailableCollateralPools, selectBorrowCollateralPools } from "
 
 const walletId = "demo-wallet"
 let state = buildMockBorrowSystemState(walletId)
+
+vi.mock("next/dynamic", () => ({
+  default: () => {
+    return function MockHomeWorkspaceRuntime() {
+      const [mode, setMode] = useState("borrow")
+      return (
+        <div data-testid="home-workspace-card">
+          {["Borrow", "Repay", "Claim", "Remove"].map((label) => (
+            <button key={label} type="button" role="tab" onClick={() => setMode(label.toLowerCase())}>
+              {label}
+            </button>
+          ))}
+          {mode === "borrow" ? (
+            <div data-testid="embedded-borrow-action-borrow" data-embedded="true" data-layout="home" />
+          ) : null}
+          {mode === "repay" ? (
+            <div data-testid="embedded-borrow-action-repay" data-embedded="true" data-layout="home" />
+          ) : null}
+          {mode === "claim" ? (
+            <div data-testid="embedded-borrow-action-claim" data-embedded="true" data-layout="home" />
+          ) : null}
+          {mode === "remove" ? (
+            <div
+              data-testid="embedded-borrow-action-remove"
+              data-embedded="true"
+              data-layout="home"
+              data-initial-amount=""
+            />
+          ) : null}
+        </div>
+      )
+    }
+  },
+}))
 
 vi.mock("@/app/components/action-page/borrow-action-page-client", () => ({
   BorrowActionPageClient: ({
