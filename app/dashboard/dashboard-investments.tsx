@@ -74,7 +74,7 @@ export function DashboardInvestments({
         <div className="mb-3 flex items-center justify-between gap-4">
           <div>
             <h2 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">{title}</h2>
-            {countLabel ? <p className="mt-1 text-[12px] text-muted-foreground">{countLabel}</p> : null}
+            {countLabel ? <p className="mt-1 text-[13px] text-muted-foreground">{countLabel}</p> : null}
           </div>
           {claimableUsd > 0 && onClaimRewards ? (
             <Button type="button" size="sm" disabled={isClaimingRewards} onClick={onClaimRewards}>

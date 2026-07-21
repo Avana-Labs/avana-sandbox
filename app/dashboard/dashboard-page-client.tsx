@@ -60,6 +60,13 @@ const DASHBOARD_TABS: readonly { id: DashboardTabId; label: string }[] = [
   { id: "referrals", label: "Referrals" },
 ]
 
+const CURATED_REWARD_TASK_IDS: Record<DashboardPromoTabId, readonly string[]> = {
+  lend: ["first-lend-deposit", "supply-5k-lend", "grow-portfolio-10k"],
+  borrow: ["first-borrow", "first-repay", "borrow-2k"],
+  multiply: ["first-multiply", "open-2x-multiply", "first-deleverage"],
+  referrals: [],
+}
+
 function resolveDashboardTab(tab: string | null): DashboardTabId {
   switch (tab) {
     case "wallet":
@@ -73,6 +80,20 @@ function resolveDashboardTab(tab: string | null): DashboardTabId {
     default:
       return "wallet"
   }
+}
+
+function curateDashboardQuests(
+  tab: DashboardPromoTabId,
+  quests: RewardCardViewModel[],
+  maxCount: number,
+): RewardCardViewModel[] {
+  const preferredIds = CURATED_REWARD_TASK_IDS[tab]
+  if (preferredIds.length === 0) return quests.slice(0, maxCount)
+
+  const byId = new Map(quests.map((quest) => [quest.id, quest]))
+  const curated = preferredIds.map((id) => byId.get(id)).filter((quest): quest is RewardCardViewModel => Boolean(quest))
+  const remainder = quests.filter((quest) => !preferredIds.includes(quest.id))
+  return [...curated, ...remainder].slice(0, maxCount)
 }
 
 type RewardsSnapshot = {
@@ -321,10 +342,13 @@ export function DashboardPageClient({ pageData }: { pageData?: RewardsPageData }
     grouped.lend = [...grouped["getting-started"], ...grouped.lend]
     grouped["getting-started"] = []
 
-    // Show at most 6 cards per tab (catalog order). Any extra claimable quests
-    // stay claimable through the sidebar / mobile claim rail.
+    // Curate the core product tabs down to the strongest three cards; referrals
+    // keeps the broader cap because that tab is its own funnel.
     for (const key of Object.keys(grouped) as RewardsPromoTabId[]) {
-      grouped[key] = grouped[key].slice(0, REWARDS_QUESTS_PER_TAB)
+      grouped[key] =
+        key === "lend" || key === "borrow" || key === "multiply"
+          ? curateDashboardQuests(key, grouped[key], 3)
+          : grouped[key].slice(0, REWARDS_QUESTS_PER_TAB)
     }
     return grouped
   }, [tasks, snapshot, state.firstLoginAt, now, t, exact])
