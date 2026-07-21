@@ -169,7 +169,12 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
             : t("Review swap")
 
   return (
-    <ActionPageShell title="Swap" subtitle={`Choose which assets to swap on Ethereum${origin !== "wallet" ? ` · ${origin}` : ""}`} closeHref={returnHref}>
+    <ActionPageShell
+      title="Swap"
+      subtitle={`Choose which assets to swap on Ethereum${origin !== "wallet" ? ` · ${origin}` : ""}`}
+      closeHref={returnHref}
+      flowHeaderStage="configure"
+    >
       <div className="space-y-4">
         <div className="rounded-radius-xl border border-border bg-card p-4">
           <SwapAssetField
