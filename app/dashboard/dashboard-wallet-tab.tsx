@@ -6,6 +6,7 @@ import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-t
 import { primaryCtaClass, SECONDARY_CTA_CLASS } from "@/app/components/action-page/action-cta"
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 import { buildDashboardWalletBalanceRows, type DashboardWalletBalanceRow } from "@/app/lib/swap-system"
+import type { UserAssetBalance } from "@/app/lib/swap-system"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
@@ -27,10 +28,10 @@ function restrictionCopy(row: DashboardWalletBalanceRow, t: (key: string) => str
   return t("Unavailable")
 }
 
-export function DashboardWalletTab({ walletId }: { walletId: string }) {
+export function DashboardWalletTab({ walletId, balances }: { walletId: string; balances?: UserAssetBalance[] }) {
   const { exact } = useCurrency()
   const { t } = useTranslation()
-  const rows = buildDashboardWalletBalanceRows({ walletId })
+  const rows = buildDashboardWalletBalanceRows({ walletId, balances })
   const tokens = rows.filter((row) => !row.isLpToken)
   const lps = rows.filter((row) => row.isLpToken)
   const totalWalletUsd = rows.reduce((total, row) => total + row.valueUsd, 0)

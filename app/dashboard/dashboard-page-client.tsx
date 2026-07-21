@@ -455,7 +455,7 @@ export function DashboardPageClient({ pageData }: { pageData?: RewardsPageData }
     return (
       <>
         {dashboardTabs}
-        <DashboardWalletTab walletId={walletId} />
+        <DashboardWalletTab walletId={walletId} balances={avana.swap.state.balances} />
       </>
     )
   }
