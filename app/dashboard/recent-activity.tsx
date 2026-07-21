@@ -27,12 +27,14 @@ const PRODUCT_OPTIONS: Array<{
   { id: "lend", label: "Lend" },
   { id: "multiply", label: "Multiply" },
   { id: "rewards", label: "Rewards" },
+  { id: "swap", label: "Swap" },
 ]
 
 const ACTION_OPTIONS: Array<{
   id: PortfolioActivityRow["kind"]
   label: string
 }> = [
+  { id: "swap", label: "Swap" },
   { id: "supply", label: "Supply" },
   { id: "withdraw", label: "Withdraw" },
   { id: "borrow", label: "Borrow" },
@@ -58,6 +60,7 @@ const STATUS_OPTIONS: Array<{
 ]
 
 const KIND_LABEL: Record<PortfolioActivityRow["kind"], string> = {
+  swap: "Swap",
   supply: "Supply",
   withdraw: "Withdraw",
   borrow: "Borrow",
