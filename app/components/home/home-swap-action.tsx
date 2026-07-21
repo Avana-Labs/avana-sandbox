@@ -414,8 +414,8 @@ function HomeSwapAssetField({
 }) {
   const asset = SWAP_ASSETS.find((item) => item.id === assetId) ?? null
   return (
-    <SwapStyleField label={label} tone={tone}>
-      <div className="mt-1.5 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-stretch">
+    <SwapStyleField label={label} tone={tone} className="py-3">
+      <div className="mt-1 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-stretch">
         <div className="min-w-0 flex-1">
           <input
             value={amount}
@@ -431,11 +431,11 @@ function HomeSwapAssetField({
           type="button"
           onClick={onOpenAssetPicker}
           aria-label={`${label} asset`}
-          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-background px-3 py-1.5 text-[14px] font-medium text-foreground dark:bg-card max-[360px]:self-end"
+          className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full border border-border bg-background px-3 text-[14px] font-medium text-foreground dark:bg-card max-[360px]:self-end"
         >
           {asset ? (
             <>
-              <ActionTokenIcon symbol={asset.symbol} />
+              <ActionTokenIcon symbol={asset.symbol} className="size-6" />
               <span>{asset.symbol}</span>
             </>
           ) : (
@@ -446,7 +446,7 @@ function HomeSwapAssetField({
           </span>
         </button>
       </div>
-      <div className="mt-1 flex items-center justify-between gap-3 text-[14px]">
+      <div className="mt-0.5 flex items-center justify-between gap-3 text-[14px]">
         <span className="min-w-0 truncate text-foreground/60">{fiatLabel}</span>
         {balanceLabel ? (
           <button
