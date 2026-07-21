@@ -396,7 +396,7 @@ export function LendActionPageClient({
         title={descriptor.title}
         subtitle={descriptor.subtitle}
         closeHref={closeHref}
-        flowHeaderStage={kind === "withdraw" && !embedded ? stage : undefined}
+        flowHeaderStage={!embedded ? stage : undefined}
         simulated
       >
         <ActionSessionLoading />
@@ -429,7 +429,7 @@ export function LendActionPageClient({
       hideTitle={hideTitle}
       hideClose={embedded}
       closeHref={closeHref}
-      flowHeaderStage={kind === "withdraw" && !embedded ? stage : undefined}
+      flowHeaderStage={!embedded ? stage : undefined}
       simulated={session.readAdapter.mode === "sandbox"}
     >
       {stage === "select" && !embedded ? (
