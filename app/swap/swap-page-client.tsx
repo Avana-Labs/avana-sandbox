@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import Link from "next/link"
 import { ArrowDown } from "@/app/components/icons"
 import { TokenIcon } from "@/app/components/token-icon"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
@@ -9,7 +8,7 @@ import { ActionProcessingStage } from "@/app/components/action-page/action-proce
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { SwapAssetPickerDialog } from "./swap-asset-picker-dialog"
-import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
+import { ActionFooter } from "@/app/components/action-page/action-amount-card"
 import { SWAP_ASSETS, SWAP_CHAIN_ID, getMaxSwapInputAmount, validateSwapInputAmount } from "@/app/lib/swap-system"
 import { useSwapSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useCurrency } from "@/app/lib/currency/use-currency"
@@ -300,14 +299,16 @@ export function SwapPageClient({
   }, [])
 
   const primaryLabel = !inputBalance
-    ? t("Insufficient balance")
+    ? "Insufficient balance"
     : !validation.valid
-      ? t(validation.reason === "invalid_amount" ? "Enter an amount" : "Swap unavailable")
+      ? validation.reason === "invalid_amount"
+        ? "Enter an amount"
+        : "Swap unavailable"
       : quoteState === "loading"
-        ? t("Loading quote")
+        ? "Loading quote"
         : quoteState === "error"
-          ? t("Refresh quote")
-          : t("Review swap")
+          ? "Refresh quote"
+          : "Review swap"
 
   const isTransactionStage = [
     "approve_allowance",
@@ -325,7 +326,9 @@ export function SwapPageClient({
       subtitle={`Choose which assets to swap on Ethereum${origin !== "wallet" ? ` · ${origin}` : ""}`}
       closeHref={returnHref}
       flowHeaderStage={stage}
+      flowHeaderMobileOnly
       hideTitle={stage === "review" || stage === "success" || isTransactionStage}
+      className="lg:pt-10"
     >
       {isTransactionStage ? (
         <ActionProcessingStage verb="Swap" preview={previewUi} closeHref={returnHref} stage={stage} />
@@ -449,28 +452,19 @@ export function SwapPageClient({
             </div>
           ) : null}
 
-          <div className="grid grid-cols-2 gap-3">
-            <Link href={returnHref} className={secondaryCtaClass({ className: "w-full" })}>
-              {t("Cancel")}
-            </Link>
-            <button
-              type="button"
-              onClick={() => {
-                if (quoteState === "error") {
-                  setQuoteRetry((current) => current + 1)
-                  return
-                }
-                if (previewUi) setStage("review")
-              }}
-              disabled={!validation.valid || quoteState === "loading" || (!quote && quoteState !== "error")}
-              className={primaryCtaClass({
-                disabled: !validation.valid || quoteState === "loading" || (!quote && quoteState !== "error"),
-                className: "w-full",
-              })}
-            >
-              {primaryLabel}
-            </button>
-          </div>
+          <ActionFooter
+            primaryLabel={primaryLabel}
+            secondaryHref={returnHref}
+            primaryDisabled={!validation.valid || quoteState === "loading" || (!quote && quoteState !== "error")}
+            onPrimary={() => {
+              if (quoteState === "error") {
+                setQuoteRetry((current) => current + 1)
+                return
+              }
+              if (previewUi) setStage("review")
+            }}
+            sticky
+          />
         </div>
       ) : null}
 
