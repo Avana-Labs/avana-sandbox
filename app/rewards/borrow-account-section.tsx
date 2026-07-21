@@ -77,8 +77,8 @@ export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref
 
   return (
     <section id="dashboard-borrow-account" className="scroll-mt-24">
-      <div className="space-y-8">
-        <div className="space-y-8">
+      <div className="space-y-6">
+        <div className="space-y-6">
           <DashboardCreditOverviewSection
             title={t("Borrow Balance")}
             approvedCreditUsd={borrowSnapshot.approvedUsd}

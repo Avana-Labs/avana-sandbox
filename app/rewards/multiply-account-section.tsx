@@ -106,8 +106,8 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
 
   return (
     <section id="dashboard-multiply-account" className="scroll-mt-24">
-      <div className="space-y-8">
-        <div className="space-y-8">
+      <div className="space-y-6">
+        <div className="space-y-6">
           <DashboardOverviewSection title={t("Multiply Balance")} metrics={multiplyDashboardMetrics.overview} />
           <div className="space-y-4">
             <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">

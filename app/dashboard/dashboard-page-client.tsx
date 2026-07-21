@@ -581,7 +581,7 @@ export function DashboardPageClient({ pageData }: { pageData?: RewardsPageData }
         </>
       ) : null}
 
-      <div className="pb-24 lg:pb-0">
+      <div className="mt-10 pb-24 md:mt-12 lg:mt-14 lg:pb-0">
         <RecentActivity rows={allActivityRows} />
       </div>
 
