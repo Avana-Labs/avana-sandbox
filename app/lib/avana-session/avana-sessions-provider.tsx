@@ -232,6 +232,7 @@ export function AvanaSessionsProvider({
   })
   const swap = useSwapSession({
     walletId: avana.walletId,
+    persistState: persistLocalState,
   })
 
   useRewardsEventBridge({

@@ -2,7 +2,8 @@ import { MockSwapProvider, isQuoteUsable, type SwapQuote, type SwapProvider } fr
 import { getSwapAsset } from "./catalog"
 import type { UserAssetBalance } from "./contracts"
 
-export type SwapTransactionStatus = "approval_pending" | "approval_confirmed" | "swap_pending" | "confirmed" | "failed" | "rejected" | "expired"
+export type SwapTransactionStatus =
+  "approval_pending" | "approval_confirmed" | "swap_pending" | "confirmed" | "failed" | "rejected" | "expired"
 
 export type SwapTransactionRecord = {
   id: string
@@ -13,6 +14,12 @@ export type SwapTransactionRecord = {
   outputAmount: number
   minimumOutputAmount: number
   quoteId: string
+  provider: string
+  exchangeRate: number
+  priceImpactPct: number
+  slippageBps: number
+  networkFeeUsd: number
+  route: string[]
   approvalTransactionHash?: string
   swapTransactionHash?: string
   status: SwapTransactionStatus
@@ -103,6 +110,12 @@ function recordFailure(
     outputAmount: 0,
     minimumOutputAmount: quote.minimumOutputAmount,
     quoteId: quote.id,
+    provider: quote.provider,
+    exchangeRate: quote.exchangeRate,
+    priceImpactPct: quote.priceImpactPct,
+    slippageBps: quote.slippageBps,
+    networkFeeUsd: quote.networkFeeUsd,
+    route: [...quote.route],
     status,
     failureReason,
     createdAt: now,
@@ -202,6 +215,12 @@ export class SandboxSwapTransactionAdapter {
       outputAmount: quote.estimatedOutputAmount,
       minimumOutputAmount: quote.minimumOutputAmount,
       quoteId: quote.id,
+      provider: quote.provider,
+      exchangeRate: quote.exchangeRate,
+      priceImpactPct: quote.priceImpactPct,
+      slippageBps: quote.slippageBps,
+      networkFeeUsd: quote.networkFeeUsd,
+      route: [...quote.route],
       swapTransactionHash: `0xswap${now.toString(16)}`,
       status: "confirmed",
       createdAt: now,
