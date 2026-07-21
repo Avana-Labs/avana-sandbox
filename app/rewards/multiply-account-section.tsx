@@ -1,6 +1,6 @@
 "use client"
 
-import { lazy, useMemo, useState } from "react"
+import { lazy, useMemo } from "react"
 import { useAvanaIdentity, useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useDashboardMultiplyLive } from "@/app/dashboard/use-dashboard-multiply-live"
 import { buildMultiplyDashboardMetrics, type DashboardTabMetrics } from "@/app/dashboard/dashboard-tab-metrics"
@@ -13,17 +13,11 @@ import { shouldUseOpenGateSession } from "@/app/lib/test-mode"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { SectionTabStrip, AccountModuleBoundary } from "./account-sections-shared"
+import { AccountModuleBoundary } from "./account-sections-shared"
 
 const MultiplyCollateralTable = lazy(async () => ({
   default: (await import("@/app/dashboard/multiply-collateral-table")).MultiplyCollateralTable,
 }))
-
-type LoopingSubTab = "overview" | "positions"
-const LOOPING_SUB_TABS: readonly { id: LoopingSubTab; label: string }[] = [
-  { id: "overview", label: "Multiply Overview" },
-  { id: "positions", label: "Multiply Positions" },
-]
 
 const EMPTY_MULTIPLY_TAB: PortfolioMultiplyTabData = {
   creditLines: {
@@ -77,7 +71,6 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
   const hasMounted = useHasMounted()
   const { walletId } = useAvanaIdentity()
   const multiplySession = useMultiplySessionContext()
-  const [loopingSubTab, setLoopingSubTab] = useState<LoopingSubTab>("overview")
 
   const portfolioMultiply = useDashboardMultiplyLive(walletId, multiplySession)
 
@@ -113,42 +106,24 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
 
   return (
     <section id="dashboard-multiply-account" className="scroll-mt-24">
-      <div className="flex flex-col gap-3 border-b border-border/50 pb-px md:flex-row md:items-end md:justify-between md:border-b-0 md:pb-0">
-        <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">
-          {t("Multiply Account")}
-        </h2>
-        <SectionTabStrip
-          items={LOOPING_SUB_TABS}
-          value={loopingSubTab}
-          onChange={setLoopingSubTab}
-          ariaLabel={t("Multiply sections")}
-        />
-      </div>
-      <div className="mt-8">
-        {loopingSubTab === "overview" ? (
-          <div className="space-y-8">
-            <DashboardOverviewSection
-              hideHeading
-              title={t("Multiply Overview")}
-              metrics={multiplyDashboardMetrics.overview}
+      <div className="space-y-8">
+        <div className="space-y-8">
+          <DashboardOverviewSection title={t("Multiply Balance")} metrics={multiplyDashboardMetrics.overview} />
+          <div className="grid gap-4 xl:grid-cols-2">
+            <SuppliesHealthFactorCard
+              averageHealthFactor={multiplySnapshot.averageHealthFactor}
+              showBalance={showDollarAmounts}
             />
-            <div className="grid gap-4 xl:grid-cols-2">
-              <SuppliesHealthFactorCard
-                averageHealthFactor={multiplySnapshot.averageHealthFactor}
-                showBalance={showDollarAmounts}
-              />
-              <CurrentLtvCard
-                borrowedUsd={multiplySnapshot.totalBorrowedUsd}
-                collateralUsd={multiplySnapshot.totalCollateralUsd}
-                showBalance={showDollarAmounts}
-              />
-            </div>
+            <CurrentLtvCard
+              borrowedUsd={multiplySnapshot.totalBorrowedUsd}
+              collateralUsd={multiplySnapshot.totalCollateralUsd}
+              showBalance={showDollarAmounts}
+            />
           </div>
-        ) : (
-          <AccountModuleBoundary>
-            <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} returnHref={returnHref} />
-          </AccountModuleBoundary>
-        )}
+        </div>
+        <AccountModuleBoundary>
+          <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} returnHref={returnHref} />
+        </AccountModuleBoundary>
       </div>
     </section>
   )

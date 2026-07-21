@@ -130,7 +130,6 @@ function RewardsPromoPanel({
 }) {
   const { t } = useTranslation()
   const [activePromoTab, setActivePromoTab] = useState<RewardsPromoTabId>(promoTabs[0]?.id ?? "getting-started")
-  const activeQuests = questsByTab[activePromoTab] ?? []
 
   useEffect(() => {
     const activateFromHash = () => {
@@ -173,6 +172,12 @@ export function RewardsPromoContent({
 }) {
   const { t } = useTranslation()
   const activeQuests = questsByTab[activePromoTab] ?? []
+  const rewardsSectionTitle =
+    activePromoTab === "borrow"
+      ? t("Borrow Rewards")
+      : activePromoTab === "multiply"
+        ? t("Multiply Rewards")
+        : null
 
   return (
     <>
@@ -181,10 +186,15 @@ export function RewardsPromoContent({
       {activePromoTab === "multiply" ? <MultiplyAccountSection returnHref={returnHref} /> : null}
 
       {activeQuests.length > 0 ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {activeQuests.map((quest) => (
-            <AvanaQuestCard key={quest.id} quest={quest} onTaskAction={onTaskAction} />
-          ))}
+        <div className="space-y-4">
+          {rewardsSectionTitle ? (
+            <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{rewardsSectionTitle}</h2>
+          ) : null}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {activeQuests.map((quest) => (
+              <AvanaQuestCard key={quest.id} quest={quest} onTaskAction={onTaskAction} />
+            ))}
+          </div>
         </div>
       ) : (
         <p className="text-[13px] text-muted-foreground">{t("No quests here yet — check back soon.")}</p>

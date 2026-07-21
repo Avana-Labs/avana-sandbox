@@ -235,11 +235,6 @@ export function DashboardLendPerformanceSection({
             value: m(formatUsdExact(metrics.interestEarnedUsd)),
             description: t("Total yield accrued across your lending positions"),
           },
-          {
-            label: t("Claimable Rewards"),
-            value: m(formatUsdExact(metrics.claimableRewardsUsd)),
-            description: t("Rewards available to claim from your lending activity"),
-          },
         ]}
       />
     </section>
