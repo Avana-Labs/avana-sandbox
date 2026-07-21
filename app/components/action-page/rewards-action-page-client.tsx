@@ -169,6 +169,7 @@ export function RewardsActionPageClient({
       hideTitle={hideTitle}
       hideClose={embedded}
       closeHref={closeHref}
+      flowHeaderStage={!embedded ? stage : undefined}
       simulated={rewards.readAdapter.mode === "sandbox"}
     >
       {isProcessingStage(stage) ? (
