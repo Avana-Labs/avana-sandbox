@@ -282,7 +282,7 @@ export function HomeSwapAction() {
 
       {stage === "configure" || stage === "error" ? (
         <>
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
             <HomeSwapAssetField
               label={t("Sell")}
               amount={amount}
@@ -416,7 +416,7 @@ function HomeSwapAssetField({
         >
           {asset ? (
             <>
-              <ActionTokenIcon symbol={asset.symbol} className="size-6" />
+              <ActionTokenIcon symbol={asset.symbol} className="size-7" />
               <span>{asset.symbol}</span>
             </>
           ) : (

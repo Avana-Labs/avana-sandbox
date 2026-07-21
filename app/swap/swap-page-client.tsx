@@ -1,12 +1,12 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { ArrowDown } from "@/app/components/icons"
-import { TokenIcon } from "@/app/components/token-icon"
+import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
+import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
 import { SwapAssetPickerDialog } from "./swap-asset-picker-dialog"
 import { ActionFooter } from "@/app/components/action-page/action-amount-card"
 import { SWAP_ASSETS, SWAP_CHAIN_ID, getMaxSwapInputAmount, validateSwapInputAmount } from "@/app/lib/swap-system"
@@ -50,7 +50,7 @@ export function SwapPageClient({
     initialTo && initialTo !== inputAssetId ? initialTo : fallbackOutput(inputAssetId),
   )
   const [amount, setAmount] = useState("")
-  const [slippageBps, setSlippageBps] = useState(50)
+  const slippageBps = 50
   const [quote, setQuote] = useState<SwapQuote | null>(null)
   const [quoteState, setQuoteState] = useState<"idle" | "loading" | "valid" | "error">("idle")
   const [quoteRetry, setQuoteRetry] = useState(0)
@@ -81,7 +81,6 @@ export function SwapPageClient({
     [amount, inputBalance, outputAssetId],
   )
   const approvalRequired = validation.valid && swap.requiresApproval(inputAsset.id, validation.amount)
-  const priceImpactTone = quote && quote.priceImpactPct >= 3 ? "text-danger" : "text-muted-foreground"
   const getQuote = swap.getQuote
 
   useEffect(() => {
@@ -123,24 +122,6 @@ export function SwapPageClient({
     setStage((current) => (current === "error" ? "configure" : current))
   }, [amount, inputAssetId, outputAssetId, slippageBps])
 
-  const setPercent = (percent: number) => {
-    if (maxAmount <= 0) return
-    setAmount(String(Number((maxAmount * percent).toFixed(6))))
-  }
-
-  const reversePair = () => {
-    const nextInput = outputAssetId
-    const nextOutput = inputAssetId
-    const nextInputBalance = swap.walletBalances.find(
-      (balance) => balance.assetId === nextInput && balance.sourceType === "wallet",
-    )
-    if (!nextInputBalance) return
-    setInputAssetId(nextInput)
-    setOutputAssetId(nextOutput)
-    setAmount("")
-    setQuote(null)
-  }
-
   const previewUi = useMemo<ActionPreviewUi | null>(() => {
     if (!quote || !validation.valid) return null
     const receiveLabel = `${formatAmount(quote.estimatedOutputAmount)} ${outputAsset.symbol}`
@@ -156,7 +137,7 @@ export function SwapPageClient({
       amountUsdLabel: exact(validation.amount * inputAsset.priceUsd),
       rateLabel: t("Rate"),
       rateValue: `1 ${inputAsset.symbol} = ${formatAmount(quote.exchangeRate)} ${outputAsset.symbol}`,
-      marketLabel: t("Receive at least"),
+      marketLabel: t("Buy"),
       marketValue: receiveLabel,
       balanceLabel: t("Balance"),
       balanceValue: `${formatAmount(maxAmount)} ${inputAsset.symbol}`,
@@ -361,83 +342,28 @@ export function SwapPageClient({
 
       {stage === "configure" || stage === "error" ? (
         <div className="space-y-4">
-          <div className="rounded-radius-xl border border-border bg-card p-4">
+          <div className="flex flex-col gap-1">
             <SwapAssetField
               label={t("Sell")}
               amount={amount}
               onAmountChange={setAmount}
               assetId={inputAssetId}
               onOpenAssetPicker={() => setPickerSide("input")}
-              balanceLabel={`${t("Balance")}: ${formatAmount(maxAmount)} ${inputAsset.symbol}`}
               fiatLabel={exact((Number(amount) || 0) * inputAsset.priceUsd)}
+              balanceLabel={formatAmount(maxAmount)}
+              onBalanceClick={() => setAmount(String(Number(maxAmount.toFixed(6))))}
+              tone="raised"
             />
 
-            <div className="-my-1 flex justify-center">
-              <button
-                type="button"
-                onClick={reversePair}
-                aria-label={t("Reverse swap direction")}
-                className="inline-flex size-9 items-center justify-center rounded-full border border-border bg-surface-raised text-muted-foreground hover:text-foreground"
-              >
-                <ArrowDown className="size-4" />
-              </button>
-            </div>
-
             <SwapAssetField
-              label={t("Receive at least")}
+              label={t("Buy")}
               amount={quote ? formatAmount(quote.estimatedOutputAmount) : "0"}
               readOnly
               assetId={outputAssetId}
               onOpenAssetPicker={() => setPickerSide("output")}
               fiatLabel={quote ? exact(quote.estimatedOutputAmount * outputAsset.priceUsd) : exact(0)}
+              tone="inset"
             />
-
-            <div className="mt-4 grid grid-cols-4 gap-2">
-              {[0.25, 0.5, 0.75, 1].map((percent) => (
-                <button
-                  key={percent}
-                  type="button"
-                  onClick={() => setPercent(percent)}
-                  className="rounded-full border border-border bg-surface-2 px-3 py-2 text-[13px] font-medium text-muted-foreground hover:text-foreground"
-                >
-                  {percent === 1 ? t("Max") : `${percent * 100}%`}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-radius-xl border border-border bg-card p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-[14px] text-muted-foreground">{t("Max slippage")}</span>
-              <select
-                value={slippageBps}
-                onChange={(event) => setSlippageBps(Number(event.target.value))}
-                className="rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[13px] text-foreground"
-              >
-                <option value={10}>0.1%</option>
-                <option value={50}>0.5%</option>
-                <option value={100}>1%</option>
-                <option value={300}>3%</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="rounded-radius-xl border border-border bg-card p-4">
-            <QuoteRow
-              label={t("Rate")}
-              value={quote ? `1 ${inputAsset.symbol} = ${formatAmount(quote.exchangeRate)} ${outputAsset.symbol}` : "—"}
-            />
-            <QuoteRow
-              label={t("Minimum received")}
-              value={quote ? `${formatAmount(quote.minimumOutputAmount)} ${outputAsset.symbol}` : "—"}
-            />
-            <QuoteRow
-              label={t("Price impact")}
-              value={quote ? `${quote.priceImpactPct.toFixed(2)}%` : "—"}
-              valueClassName={priceImpactTone}
-            />
-            <QuoteRow label={t("Network fee")} value={quote ? exact(quote.networkFeeUsd) : "—"} />
-            <QuoteRow label={t("Provider")} value={quote?.provider ?? "—"} />
           </div>
 
           {outcome ? (
@@ -473,7 +399,7 @@ export function SwapPageClient({
         onOpenChange={(open) => {
           if (!open) setPickerSide(null)
         }}
-        title={pickerSide === "input" ? "Sell" : "Receive"}
+        title={pickerSide === "input" ? "Sell" : "Buy"}
         assets={swappableAssets}
         balances={swap.walletBalances}
         selectedAssetId={pickerSide === "input" ? inputAssetId : outputAssetId}
@@ -494,7 +420,9 @@ function SwapAssetField({
   assetId,
   onOpenAssetPicker,
   balanceLabel,
+  onBalanceClick,
   fiatLabel,
+  tone,
   readOnly = false,
 }: {
   label: string
@@ -503,57 +431,53 @@ function SwapAssetField({
   assetId: string
   onOpenAssetPicker: () => void
   balanceLabel?: string
+  onBalanceClick?: () => void
   fiatLabel: string
+  tone: "raised" | "inset"
   readOnly?: boolean
 }) {
   const asset = SWAP_ASSETS.find((item) => item.id === assetId)!
   return (
-    <div className="space-y-2 py-2">
-      <div className="flex items-center justify-between gap-3 text-[13px] text-muted-foreground">
-        <span>{label}</span>
-        {balanceLabel ? <span>{balanceLabel}</span> : null}
-      </div>
-      <div className="flex items-center gap-3">
-        <input
-          value={amount}
-          readOnly={readOnly}
-          onChange={(event) => onAmountChange?.(event.target.value.replace(/[^\d.]/g, ""))}
-          inputMode="decimal"
-          className="min-w-0 flex-1 border-0 bg-transparent p-0 font-data text-[32px] font-medium leading-none text-foreground outline-none placeholder:text-muted-foreground/60"
-          placeholder="0"
-          aria-label={label}
-        />
+    <SwapStyleField label={label} tone={tone} className="py-3">
+      <div className="mt-1 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-stretch">
+        <div className="min-w-0 flex-1">
+          <input
+            value={amount}
+            readOnly={readOnly}
+            onChange={(event) => onAmountChange?.(event.target.value.replace(/[^\d.]/g, ""))}
+            inputMode="decimal"
+            className={`w-full min-w-0 border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] outline-none placeholder:text-muted-foreground/60 ${
+              amount && amount !== "0" ? "text-foreground" : "text-muted-foreground/60"
+            }`}
+            placeholder="0"
+            aria-label={label}
+          />
+        </div>
         <button
           type="button"
           onClick={onOpenAssetPicker}
           aria-label={`${label} asset`}
-          className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-2 text-[14px] font-semibold text-foreground"
+          className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full border border-border bg-background px-3 text-[14px] font-medium text-foreground dark:bg-card max-[360px]:self-end"
         >
-          <TokenIcon symbol={asset.symbol} size="sm" />
+          <ActionTokenIcon symbol={asset.symbol} className="size-7" />
           <span>{asset.symbol}</span>
-          <span aria-hidden="true" className="text-muted-foreground">
+          <span aria-hidden className="text-muted-foreground">
             ▾
           </span>
         </button>
       </div>
-      <div className="text-[13px] text-muted-foreground">{fiatLabel}</div>
-    </div>
-  )
-}
-
-function QuoteRow({
-  label,
-  value,
-  valueClassName = "text-foreground",
-}: {
-  label: string
-  value: string
-  valueClassName?: string
-}) {
-  return (
-    <div className="flex items-center justify-between border-b border-border/70 py-3 last:border-b-0">
-      <span className="text-[13px] text-muted-foreground">{label}</span>
-      <span className={`text-right font-data text-[13px] font-medium tabular-nums ${valueClassName}`}>{value}</span>
-    </div>
+      <div className="mt-0.5 flex items-center justify-between gap-3 text-[14px]">
+        <span className="min-w-0 truncate text-foreground/60">{fiatLabel}</span>
+        {balanceLabel ? (
+          <button
+            type="button"
+            onClick={onBalanceClick}
+            className="max-w-[12rem] shrink-0 truncate text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Balance: <span className="text-foreground">{balanceLabel}</span>
+          </button>
+        ) : null}
+      </div>
+    </SwapStyleField>
   )
 }

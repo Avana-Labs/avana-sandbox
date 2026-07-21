@@ -31,7 +31,7 @@ describe("SwapPageClient", () => {
 
     expect(screen.getByRole("heading", { name: "Swap" })).toBeInTheDocument()
     expect(screen.getByLabelText("Sell")).toBeInTheDocument()
-    expect(screen.getByLabelText("Receive at least")).toBeInTheDocument()
+    expect(screen.getByLabelText("Buy")).toBeInTheDocument()
   })
 
   it("quotes a wallet swap after amount entry", async () => {
@@ -40,7 +40,7 @@ describe("SwapPageClient", () => {
     fireEvent.change(screen.getAllByLabelText("Sell")[0]!, { target: { value: "0.001" } })
 
     await waitFor(() => {
-      expect(screen.getByText(/1 ETH =/)).toBeInTheDocument()
+      expect(screen.getByLabelText("Buy")).toHaveValue("1.926651")
     })
     expect(screen.getByRole("button", { name: "Review swap" })).toBeEnabled()
   })
@@ -48,11 +48,11 @@ describe("SwapPageClient", () => {
   it("searches supported assets in the receive picker", () => {
     renderSwap()
 
-    fireEvent.click(screen.getByRole("button", { name: "Receive at least asset" }))
+    fireEvent.click(screen.getByRole("button", { name: "Buy asset" }))
     fireEvent.change(screen.getByLabelText("Find an asset"), { target: { value: "chain" } })
     fireEvent.click(screen.getByText("ChainLink Token").closest("button")!)
 
-    expect(screen.getByRole("button", { name: "Receive at least asset" })).toHaveTextContent("LINK")
+    expect(screen.getByRole("button", { name: "Buy asset" })).toHaveTextContent("LINK")
   })
 
   it("opens review and confirms native swaps", async () => {
