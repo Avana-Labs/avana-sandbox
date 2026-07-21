@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { Search } from "@/app/components/icons"
 import { TokenIcon } from "@/app/components/token-icon"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import type { SwapAsset, UserAssetBalance } from "@/app/lib/swap-system"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -49,25 +49,29 @@ export function SwapAssetPickerDialog({
         if (!nextOpen) setQuery("")
       }}
     >
-      <DialogContent className="flex max-h-[min(680px,calc(100dvh-48px))] w-full max-w-[520px] flex-col gap-0 overflow-hidden rounded-radius-xl border-border bg-card p-0 sm:w-[calc(100vw-24px)]">
-        <DialogHeader className="border-b border-border px-5 pb-4 pt-5 text-left">
-          <DialogTitle className="text-[15px] font-semibold">{t(title)}</DialogTitle>
-          <label className="mt-4 flex h-12 items-center gap-3 rounded-radius-lg border border-border bg-surface-inset px-4">
-            <Search className="size-4 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={t("Find an asset")}
-              aria-label={t("Find an asset")}
-              className="min-w-0 flex-1 bg-transparent text-[14px] text-foreground outline-none placeholder:text-muted-foreground"
-            />
-          </label>
-        </DialogHeader>
+      <DialogContent className="max-h-[min(620px,calc(100dvh-96px))] w-full max-w-[500px] gap-0 overflow-hidden rounded-radius-xl border-border bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:w-[calc(100vw-24px)] sm:rounded-radius-xl [&>button]:right-3.5 [&>button]:top-3.5 [&>button]:rounded-full">
+        <DialogTitle className="sr-only">{t(title)}</DialogTitle>
+        <DialogDescription className="sr-only">{t("Select an asset for this swap.")}</DialogDescription>
 
-        <div className="px-5 pb-2 pt-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          {t("Supported assets")}
+        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+          <Search className="h-[18px] w-[18px] shrink-0 text-muted-foreground" />
+          <input
+            autoFocus
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={t("Find an asset")}
+            aria-label={t("Find an asset")}
+            className="h-8 min-w-0 flex-1 bg-transparent text-[16px] font-normal text-foreground outline-none placeholder:text-muted-foreground"
+          />
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-3">
+
+        <div className="flex items-center gap-2 border-b border-border px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+          <span>{t("Supported assets")}</span>
+          <span className="ml-auto rounded-full bg-surface-inset px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground/80">
+            {filteredAssets.length}
+          </span>
+        </div>
+        <div role="listbox" aria-label={t("Supported assets")} className="max-h-[430px] overflow-y-auto px-2 py-2.5">
           {filteredAssets.map((asset) => {
             const balance = balances.find((item) => item.assetId === asset.id && item.sourceType === "wallet")?.amount
             const amount = balance ?? 0
@@ -75,17 +79,19 @@ export function SwapAssetPickerDialog({
               <button
                 key={asset.id}
                 type="button"
+                role="option"
+                aria-selected={asset.id === selectedAssetId}
                 onClick={() => {
                   onSelect(asset.id)
                   onOpenChange(false)
                   setQuery("")
                 }}
-                className="flex w-full items-center gap-3 rounded-radius-md px-3 py-3 text-left transition-colors hover:bg-hover"
+                className="group flex w-full items-center gap-3 rounded-radius-md px-3 py-2 text-left transition-colors hover:bg-hover aria-selected:bg-surface-inset"
               >
-                <TokenIcon symbol={asset.symbol} size="lg" />
+                <TokenIcon symbol={asset.symbol} size="md" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[14px] font-medium text-foreground">{asset.name}</span>
-                  <span className="block text-[12px] text-muted-foreground">{asset.symbol}</span>
+                  <span className="block truncate text-[12px] leading-5 text-muted-foreground">{asset.symbol}</span>
                 </span>
                 <span className="text-right">
                   <span className="block font-data text-[13px] font-medium text-foreground">
