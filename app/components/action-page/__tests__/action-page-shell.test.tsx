@@ -7,14 +7,6 @@ import { ThemeProvider } from "@/app/components/theme-provider"
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
-  usePathname: () => "/actions/rewards/claim",
-}))
-
-// The full site Header (wallet, search, preference controls) is rendered by the
-// /actions layout, not the shell; stub it here so the layout test doesn't need the
-// web3 provider tree.
-vi.mock("@/app/components/header", () => ({
-  Header: () => <div data-testid="site-header">site header</div>,
 }))
 
 describe("ActionPageShell", () => {
@@ -58,14 +50,13 @@ describe("ActionPageShell", () => {
     expect(screen.queryByLabelText("Open help menu")).not.toBeInTheDocument()
   })
 
-  it("the /actions layout renders the full site header (currency/language live there)", () => {
+  it("the /actions layout leaves route chrome to the action shell", () => {
     render(
       <ActionsLayout>
         <div>Action page body</div>
       </ActionsLayout>,
     )
 
-    expect(screen.getByTestId("site-header")).toBeInTheDocument()
     expect(screen.getByText("Action page body")).toBeInTheDocument()
   })
 
