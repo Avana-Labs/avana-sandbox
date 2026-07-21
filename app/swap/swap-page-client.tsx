@@ -8,6 +8,7 @@ import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
+import { SwapAssetPickerDialog } from "./swap-asset-picker-dialog"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import { SWAP_ASSETS, SWAP_CHAIN_ID, getMaxSwapInputAmount, validateSwapInputAmount } from "@/app/lib/swap-system"
 import { useSwapSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
@@ -57,6 +58,7 @@ export function SwapPageClient({
   const [stage, setStage] = useState<ActionStage>("configure")
   const [isPending, setIsPending] = useState(false)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
+  const [pickerSide, setPickerSide] = useState<"input" | "output" | null>(null)
   const [outcome, setOutcome] = useState<{ tone: "success" | "error"; message: string } | null>(null)
 
   const inputAsset = SWAP_ASSETS.find((asset) => asset.id === inputAssetId) ?? swappableAssets[0]!
@@ -81,16 +83,6 @@ export function SwapPageClient({
   const approvalRequired = validation.valid && swap.requiresApproval(inputAsset.id, validation.amount)
   const priceImpactTone = quote && quote.priceImpactPct >= 3 ? "text-danger" : "text-muted-foreground"
   const getQuote = swap.getQuote
-
-  const assetOptions = useMemo(
-    () =>
-      swappableAssets.map((asset) => (
-        <option key={asset.id} value={asset.id}>
-          {asset.symbol}
-        </option>
-      )),
-    [swappableAssets],
-  )
 
   useEffect(() => {
     if (!validation.valid) {
@@ -322,11 +314,7 @@ export function SwapPageClient({
               amount={amount}
               onAmountChange={setAmount}
               assetId={inputAssetId}
-              onAssetChange={(assetId) => {
-                setInputAssetId(assetId)
-                if (assetId === outputAssetId) setOutputAssetId(fallbackOutput(assetId))
-              }}
-              assetOptions={assetOptions}
+              onOpenAssetPicker={() => setPickerSide("input")}
               balanceLabel={`${t("Balance")}: ${formatAmount(maxAmount)} ${inputAsset.symbol}`}
               fiatLabel={exact((Number(amount) || 0) * inputAsset.priceUsd)}
             />
@@ -347,11 +335,7 @@ export function SwapPageClient({
               amount={quote ? formatAmount(quote.estimatedOutputAmount) : "0"}
               readOnly
               assetId={outputAssetId}
-              onAssetChange={(assetId) => {
-                setOutputAssetId(assetId)
-                if (assetId === inputAssetId) setInputAssetId(fallbackOutput(assetId))
-              }}
-              assetOptions={assetOptions}
+              onOpenAssetPicker={() => setPickerSide("output")}
               fiatLabel={quote ? exact(quote.estimatedOutputAmount * outputAsset.priceUsd) : exact(0)}
             />
 
@@ -439,6 +423,22 @@ export function SwapPageClient({
           </div>
         </div>
       ) : null}
+
+      <SwapAssetPickerDialog
+        open={pickerSide !== null}
+        onOpenChange={(open) => {
+          if (!open) setPickerSide(null)
+        }}
+        title={pickerSide === "input" ? "Sell" : "Receive"}
+        assets={swappableAssets}
+        balances={swap.walletBalances}
+        selectedAssetId={pickerSide === "input" ? inputAssetId : outputAssetId}
+        excludedAssetId={pickerSide === "input" ? outputAssetId : inputAssetId}
+        onSelect={(assetId) => {
+          if (pickerSide === "input") setInputAssetId(assetId)
+          if (pickerSide === "output") setOutputAssetId(assetId)
+        }}
+      />
     </ActionPageShell>
   )
 }
@@ -448,8 +448,7 @@ function SwapAssetField({
   amount,
   onAmountChange,
   assetId,
-  onAssetChange,
-  assetOptions,
+  onOpenAssetPicker,
   balanceLabel,
   fiatLabel,
   readOnly = false,
@@ -458,8 +457,7 @@ function SwapAssetField({
   amount: string
   onAmountChange?: (value: string) => void
   assetId: string
-  onAssetChange: (assetId: string) => void
-  assetOptions: React.ReactNode
+  onOpenAssetPicker: () => void
   balanceLabel?: string
   fiatLabel: string
   readOnly?: boolean
@@ -481,17 +479,18 @@ function SwapAssetField({
           placeholder="0"
           aria-label={label}
         />
-        <label className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-2 text-[14px] font-semibold text-foreground">
+        <button
+          type="button"
+          onClick={onOpenAssetPicker}
+          aria-label={`${label} asset`}
+          className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-2 text-[14px] font-semibold text-foreground"
+        >
           <TokenIcon symbol={asset.symbol} size="sm" />
-          <select
-            value={assetId}
-            onChange={(event) => onAssetChange(event.target.value)}
-            className="bg-transparent outline-none"
-            aria-label={`${label} asset`}
-          >
-            {assetOptions}
-          </select>
-        </label>
+          <span>{asset.symbol}</span>
+          <span aria-hidden="true" className="text-muted-foreground">
+            ▾
+          </span>
+        </button>
       </div>
       <div className="text-[13px] text-muted-foreground">{fiatLabel}</div>
     </div>
