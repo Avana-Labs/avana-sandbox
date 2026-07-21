@@ -6,7 +6,7 @@ const actionSurfaces = [
   "app/components/home-page-client.tsx",
   "app/borrow/_detail/sidebars/PoolBorrowSidebar.tsx",
   "app/borrow/_detail/sidebars/AssetTokenSidebar.tsx",
-  "app/portfolio/dashboard-borrow-tab.tsx",
+  "app/dashboard/dashboard-borrow-tab.tsx",
 ]
 
 const legacyPreviewFunctions = [
@@ -67,7 +67,7 @@ describe("borrow architecture final gate", () => {
     expect(
       readFileSync(path.join(process.cwd(), "app/borrow/_detail/sidebars/AssetTokenSidebar.tsx"), "utf8"),
     ).toContain("ResponsiveBorrowAction")
-    expect(readFileSync(path.join(process.cwd(), "app/portfolio/dashboard-borrow-tab.tsx"), "utf8")).toContain(
+    expect(readFileSync(path.join(process.cwd(), "app/dashboard/dashboard-borrow-tab.tsx"), "utf8")).toContain(
       "actionPagePath",
     )
     expect(

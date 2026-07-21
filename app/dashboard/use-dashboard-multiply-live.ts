@@ -6,7 +6,7 @@ import type { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-
 
 type MultiplySession = ReturnType<typeof useMultiplySession>
 
-export function usePortfolioMultiplyLive(walletId: string, multiplySession: MultiplySession) {
+export function useDashboardMultiplyLive(walletId: string, multiplySession: MultiplySession) {
   const [portfolioMultiply, setPortfolioMultiply] = useState<PortfolioMultiplyTabData | null>(null)
 
   useEffect(() => {

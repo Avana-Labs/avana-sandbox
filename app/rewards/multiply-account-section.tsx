@@ -2,12 +2,12 @@
 
 import { lazy, useMemo, useState } from "react"
 import { useAvanaIdentity, useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
-import { usePortfolioMultiplyLive } from "@/app/portfolio/use-portfolio-multiply-live"
-import { buildMultiplyDashboardMetrics, type DashboardTabMetrics } from "@/app/portfolio/dashboard-tab-metrics"
-import { DashboardOverviewSection } from "@/app/portfolio/dashboard-metric-section"
-import { SuppliesHealthFactorCard } from "@/app/portfolio/borrow-tab/supplies-table"
-import { CurrentLtvCard } from "@/app/portfolio/borrow-tab/debts-table"
-import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
+import { useDashboardMultiplyLive } from "@/app/dashboard/use-dashboard-multiply-live"
+import { buildMultiplyDashboardMetrics, type DashboardTabMetrics } from "@/app/dashboard/dashboard-tab-metrics"
+import { DashboardOverviewSection } from "@/app/dashboard/dashboard-metric-section"
+import { SuppliesHealthFactorCard } from "@/app/dashboard/borrow-tab/supplies-table"
+import { CurrentLtvCard } from "@/app/dashboard/borrow-tab/debts-table"
+import type { BorrowSnapshot } from "@/app/dashboard/borrow-hero-state"
 import type { PortfolioMultiplyCollateral, PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
 import { shouldUseOpenGateSession } from "@/app/lib/test-mode"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
@@ -16,10 +16,10 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { SectionTabStrip, AccountModuleBoundary } from "./account-sections-shared"
 
 const MultiplyCollateralTable = lazy(async () => ({
-  default: (await import("@/app/portfolio/multiply-collateral-table")).MultiplyCollateralTable,
+  default: (await import("@/app/dashboard/multiply-collateral-table")).MultiplyCollateralTable,
 }))
 
-const RETURN_HREF = "/portfolio"
+const RETURN_HREF = "/dashboard"
 
 type LoopingSubTab = "overview" | "positions"
 const LOOPING_SUB_TABS: readonly { id: LoopingSubTab; label: string }[] = [
@@ -81,7 +81,7 @@ export function MultiplyAccountSection() {
   const multiplySession = useMultiplySessionContext()
   const [loopingSubTab, setLoopingSubTab] = useState<LoopingSubTab>("overview")
 
-  const portfolioMultiply = usePortfolioMultiplyLive(walletId, multiplySession)
+  const portfolioMultiply = useDashboardMultiplyLive(walletId, multiplySession)
 
   const multiplyTabData = useMemo(
     () => withDevMultiplyFixtures(hasMounted ? (portfolioMultiply ?? EMPTY_MULTIPLY_TAB) : EMPTY_MULTIPLY_TAB),

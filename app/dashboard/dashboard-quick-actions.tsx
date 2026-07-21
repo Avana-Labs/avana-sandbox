@@ -8,11 +8,11 @@ import {
   EnteringGeoFence,
   LeavingGeoFence,
 } from "@/app/components/icons"
-import { PortfolioHeroActions } from "@/app/portfolio/hero/portfolio-hero-actions"
+import { DashboardHeroActions } from "@/app/dashboard/hero/dashboard-hero-actions"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
-const RETURN_HREF = "/portfolio"
+const RETURN_HREF = "/dashboard"
 
 function withReturn(href: string) {
   return `${href}${href.includes("?") ? "&" : "?"}return=${encodeURIComponent(RETURN_HREF)}`
@@ -20,9 +20,9 @@ function withReturn(href: string) {
 
 /**
  * Borrow / Repay / Deposit / Withdraw quick actions that used to live in the
- * dashboard hero — now a portfolio sidebar section beneath the claim action.
+ * dashboard hero — now a dashboard sidebar section beneath the claim action.
  */
-export function PortfolioQuickActions() {
+export function DashboardQuickActions() {
   const { t } = useTranslation()
 
   const actions = [
@@ -69,7 +69,7 @@ export function PortfolioQuickActions() {
       <h3 className="mb-4 text-[16px] font-semibold tracking-tight text-foreground md:text-[17px]">
         {t("Quick actions")}
       </h3>
-      <PortfolioHeroActions actions={actions} />
+      <DashboardHeroActions actions={actions} />
     </section>
   )
 }

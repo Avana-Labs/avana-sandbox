@@ -216,7 +216,7 @@ const ACTION_CLOSE_HREF: Record<ActionProduct, string> = {
   borrow: "/borrow",
   lend: "/lend",
   multiply: "/multiply",
-  rewards: "/portfolio",
+  rewards: "/dashboard",
 }
 
 function normalizeReturnHref(returnHref: string) {

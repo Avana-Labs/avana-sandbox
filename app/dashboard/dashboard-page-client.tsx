@@ -26,15 +26,15 @@ import {
 } from "@/app/lib/rewards-engine/task-actions"
 import { RewardsPageSkeleton } from "@/app/components/loading-states"
 import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
-import { RewardsBalanceHero, PortfolioRewardsCards } from "./rewards-balance-hero"
-import { PortfolioQuickActions } from "./portfolio-quick-actions"
-import { LendOpportunity } from "./lend-opportunity"
-import { LearnSection } from "./learn-section"
-import { RecentActivity } from "@/app/portfolio/recent-activity"
+import { RewardsBalanceHero, PortfolioRewardsCards as DashboardRewardsCards } from "@/app/rewards/rewards-balance-hero"
+import { DashboardQuickActions } from "./dashboard-quick-actions"
+import { LendOpportunity } from "@/app/rewards/lend-opportunity"
+import { LearnSection } from "@/app/rewards/learn-section"
+import { RecentActivity } from "@/app/dashboard/recent-activity"
 import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
-import { usePortfolioPage } from "@/app/portfolio/use-portfolio-page"
-import { RewardsTabs } from "./rewards-tabs"
+import { useDashboardPage } from "@/app/dashboard/use-dashboard-page"
+import { RewardsTabs } from "@/app/rewards/rewards-tabs"
 import { ActionIcon } from "@/app/components/action-icon"
 import { MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
@@ -44,7 +44,7 @@ import {
   RewardsFavoriteDialog,
   RewardsReferralDialog,
   RewardsSimulateDialog,
-} from "./rewards-task-dialogs"
+} from "@/app/rewards/rewards-task-dialogs"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 
@@ -202,7 +202,7 @@ function mapTaskToQuest(
   }
 }
 
-export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) {
+export function DashboardPageClient({ pageData }: { pageData?: RewardsPageData }) {
   const router = useRouter()
   const { t } = useTranslation()
   const { exact } = useCurrency()
@@ -222,8 +222,8 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
     createReferralCode,
     recordReferralLinkCopied,
   } = useRewardsSessionContext()
-  // Full portfolio recent activity (all products) so the rewards table isn't claims-only.
-  const { data: portfolioData } = usePortfolioPage({ walletProfileId: walletId })
+  // Full dashboard recent activity (all products) so the rewards table isn't claims-only.
+  const { data: dashboardData } = useDashboardPage({ walletProfileId: walletId })
 
   const [now, setNow] = useState(0)
   const [isClaiming, setIsClaiming] = useState(false)
@@ -427,7 +427,7 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
 
   const claimHref = snapshot.summary.claimableTaskCount > 0 ? "/actions/rewards/claim" : undefined
   const rewardActivityRows = buildRewardsActivityHistory(walletId, state.claims, tasks)
-  // One combined "recent activity" table: live session actions + the full portfolio
+  // One combined "recent activity" table: live session actions + the full dashboard
   // activity (all products) + reward claims, deduped by tx hash (session rows win).
   const combinedActivityRows = [
     ...mapTransactionHistoryToActivityRows(avana.borrow.transactionHistory, avana.borrow.state.markets),
@@ -443,7 +443,7 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
       txHash: item.hash,
     })),
     ...buildLendActivityHistory(avana.lend.walletId, avana.lend.transactionHistory, avana.lend.state),
-    ...(portfolioData?.activity.rows ?? []),
+    ...(dashboardData?.activity.rows ?? []),
     ...rewardActivityRows,
   ]
   const seenTxHashes = new Set<string>()
@@ -459,7 +459,7 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
 
       {/* Mobile: quick actions right after the hero chart (desktop shows them in the sidebar). */}
       <div className="mb-8 lg:hidden">
-        <PortfolioQuickActions />
+        <DashboardQuickActions />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-x-8">
@@ -472,7 +472,7 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
         </div>
 
         <aside className="hidden space-y-8 lg:block lg:self-start">
-          <PortfolioQuickActions />
+          <DashboardQuickActions />
           <LendOpportunity />
         </aside>
       </div>
@@ -483,7 +483,7 @@ export function RewardsPageClient({ pageData }: { pageData?: RewardsPageData }) 
 
       {/* Mobile: rewards cards + lend opportunity near the end (desktop shows these in the hero/sidebar). */}
       <div className="mb-8 space-y-8 lg:hidden">
-        <PortfolioRewardsCards claimHref={claimHref} />
+        <DashboardRewardsCards claimHref={claimHref} />
         <LendOpportunity />
       </div>
 

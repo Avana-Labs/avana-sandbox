@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import type { PortfolioMultiplyCollateral } from "@/app/lib/data/providers/portfolio"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
-import { MultiplyCollateralTable } from "@/app/portfolio/multiply-collateral-table"
+import { MultiplyCollateralTable } from "@/app/dashboard/multiply-collateral-table"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 
 const push = vi.fn()

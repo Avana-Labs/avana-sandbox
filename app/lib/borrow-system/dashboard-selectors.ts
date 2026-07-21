@@ -8,7 +8,7 @@ import {
   type BorrowSpokeId,
   type BorrowSystemState,
 } from "@/app/lib/credit-engine"
-import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
+import type { BorrowSnapshot } from "@/app/dashboard/borrow-hero-state"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import {
   selectAllAvailableCollateralPools,

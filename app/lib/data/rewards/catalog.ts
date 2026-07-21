@@ -40,7 +40,7 @@ export const REWARDS_QUESTS_PER_TAB = 6
  * Group a reward task under one of the product tabs. Product-tagged quests route
  * by tag; cross-cutting quests (volume, activity, risk, integration, streak) are
  * pinned by id to the product they exercise. Everything else — wallet setup,
- * education, generic rewards/portfolio/mastery — lands in "Getting started".
+ * education, generic rewards/dashboard/mastery — lands in "Getting started".
  */
 const REWARDS_TAB_BY_TASK_ID: Record<string, RewardsPromoTabId> = {
   "supply-5k-lend": "lend",

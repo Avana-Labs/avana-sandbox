@@ -6,7 +6,7 @@ import {
   EXAMPLE_UNI_USDC_ASSET_ID,
   makeExampleBorrowSystemState,
 } from "@/app/lib/credit-engine/__tests__/fixtures"
-import { buildBorrowDashboardMetrics } from "@/app/portfolio/dashboard-tab-metrics"
+import { buildBorrowDashboardMetrics } from "@/app/dashboard/dashboard-tab-metrics"
 
 // One dollar of rounding tolerance for share-index arithmetic.
 const TOLERANCE = 1

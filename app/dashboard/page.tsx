@@ -1,33 +1,33 @@
 import type { Metadata } from "next"
 import { SchemaMarkup, buildWebPageSchema } from "@/app/components/seo/schema"
-import { RewardsPageClient } from "@/app/rewards/rewards-page-client"
+import { DashboardPageClient } from "@/app/dashboard/dashboard-page-client"
 import { fetchRewardsPage } from "@/app/lib/data/providers/rewards"
 import { resolvePortfolioWalletProfileId } from "@/app/lib/data/providers/portfolio"
 import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 
 export const metadata: Metadata = buildSeoMetadata({
-  title: "Portfolio",
+  title: "Dashboard",
   description: "Track your accounts, positions, quest progress, and activity across Avana.",
-  path: "/portfolio",
-  keywords: ["Avana portfolio", "positions", "quests", "activity", "rewards"],
+  path: "/dashboard",
+  keywords: ["Avana dashboard", "positions", "quests", "activity", "rewards"],
 })
 
-const PORTFOLIO_SCHEMA = buildWebPageSchema({
-  name: "Portfolio",
+const DASHBOARD_SCHEMA = buildWebPageSchema({
+  name: "Dashboard",
   description: "Track your accounts, positions, quest progress, and activity across Avana.",
-  url: "https://avana.cc/portfolio",
+  url: "https://avana.cc/dashboard",
 })
 
-export default async function PortfolioPage() {
+export default async function DashboardPage() {
   if (resolveDataSourceMode() === "live") {
     return (
       <>
-        <SchemaMarkup data={PORTFOLIO_SCHEMA} />
+        <SchemaMarkup data={DASHBOARD_SCHEMA} />
         <div className="bg-background">
           <main className="container mx-auto px-3 py-6 sm:px-4 md:py-10">
             <div className="mx-auto max-w-[1152px]">
-              <RewardsPageClient />
+              <DashboardPageClient />
             </div>
           </main>
         </div>
@@ -39,11 +39,11 @@ export default async function PortfolioPage() {
 
   return (
     <>
-      <SchemaMarkup data={PORTFOLIO_SCHEMA} />
+      <SchemaMarkup data={DASHBOARD_SCHEMA} />
       <div className="bg-background">
         <main className="container mx-auto px-3 py-6 sm:px-4 md:py-10">
           <div className="mx-auto max-w-[1152px]">
-            <RewardsPageClient pageData={pageData} />
+            <DashboardPageClient pageData={pageData} />
           </div>
         </main>
       </div>

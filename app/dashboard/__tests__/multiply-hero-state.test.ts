@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { buildMultiplyHeroData, buildMultiplySnapshotFromTabData } from "@/app/portfolio/multiply-hero-state"
+import { buildMultiplyHeroData, buildMultiplySnapshotFromTabData } from "@/app/dashboard/multiply-hero-state"
 
 describe("multiply hero state", () => {
   it("builds live hero values from multiply tab data", () => {

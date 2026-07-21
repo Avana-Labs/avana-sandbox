@@ -39,7 +39,7 @@ function resolveMarketId(token: PortfolioSupplyPosition) {
   return token.marketId ?? token.symbol.toLowerCase()
 }
 
-export function PortfolioInvestments({
+export function DashboardInvestments({
   investments,
   rewardsSummary,
   onClaimRewards,

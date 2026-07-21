@@ -13,14 +13,14 @@ type State = {
   isLoading: boolean
 }
 
-type UsePortfolioPageResult = State & {
+type UseDashboardPageResult = State & {
   retry: () => void
 }
 
-export function usePortfolioPage(
+export function useDashboardPage(
   input: FetchPortfolioPageInput,
   initialData?: PortfolioPageData | null,
-): UsePortfolioPageResult {
+): UseDashboardPageResult {
   const [state, setState] = React.useState<State>({
     data: initialData ?? null,
     error: null,
@@ -64,7 +64,7 @@ export function usePortfolioPage(
 
         setState({
           data: null,
-          error: error instanceof Error ? error.message : "Unable to load portfolio.",
+          error: error instanceof Error ? error.message : "Unable to load dashboard.",
           isLoading: false,
         })
       })

@@ -51,7 +51,7 @@ export type PortfolioFeedInput = {
   chartVariance: number
 }
 
-/** @swap-to-api Replace with `GET /portfolio/{wallet}/chart?network=…`. */
+/** @swap-to-api Replace with `GET /dashboard/{wallet}/chart?network=…`. */
 export function getPortfolioHeroFeed(input: PortfolioFeedInput): ChartFeed {
   return {
     headlineValue: input.balance,

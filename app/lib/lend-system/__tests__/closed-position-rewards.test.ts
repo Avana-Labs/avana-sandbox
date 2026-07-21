@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { buildPortfolioLendData, buildLendWalletSnapshot } from "@/app/lib/lend-system/read-model"
 import { buildMockLendSystemStateWithSeedPosition } from "@/app/lib/lend-system/mock"
-import { buildLendSnapshotFromTabData } from "@/app/portfolio/lend-hero-state"
+import { buildLendSnapshotFromTabData } from "@/app/dashboard/lend-hero-state"
 
 describe("closed lend position rewards", () => {
   it("keeps claimable rewards in wallet summaries after a position is closed", () => {

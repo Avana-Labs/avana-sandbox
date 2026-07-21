@@ -1,6 +1,6 @@
 import { render, within } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
-import { RecentActivity } from "@/app/portfolio/recent-activity"
+import { RecentActivity } from "@/app/dashboard/recent-activity"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import type { PortfolioActivityRow } from "@/app/lib/data/providers/portfolio"
 

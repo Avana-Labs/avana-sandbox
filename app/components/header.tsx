@@ -106,7 +106,7 @@ export function Header() {
               aria-label={t("Primary")}
               className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
-              {desktopLinks.slice(0, 5).map((link) => {
+              {desktopLinks.slice(0, 4).map((link) => {
                 const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)
                 const Icon = link.icon
 
@@ -140,7 +140,7 @@ export function Header() {
 
           <div className="flex min-w-0 items-center justify-end gap-2 xl:gap-2.5">
             <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {desktopLinks.slice(5).map((link) => {
+              {desktopLinks.slice(4).map((link) => {
                 const isActive = pathname.startsWith(link.href)
                 const Icon = link.icon
 

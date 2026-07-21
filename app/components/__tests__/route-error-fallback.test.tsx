@@ -19,8 +19,8 @@ describe("RouteErrorFallback", () => {
     fireEvent.click(screen.getByRole("button", { name: "Try again" }))
     expect(onRetry).toHaveBeenCalledTimes(1)
 
-    const home = screen.getByRole("link", { name: "Back to portfolio" })
-    expect(home).toHaveAttribute("href", "/portfolio")
+    const home = screen.getByRole("link", { name: "Back to dashboard" })
+    expect(home).toHaveAttribute("href", "/dashboard")
   })
 
   it("shows a wallet-reconnect message for auth-shaped errors", () => {

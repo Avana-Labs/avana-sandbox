@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { DashboardBorrowTab } from "@/app/portfolio/dashboard-borrow-tab"
+import { DashboardBorrowTab } from "@/app/dashboard/dashboard-borrow-tab"
 
 const push = vi.fn()
 
@@ -51,7 +51,7 @@ vi.mock("@/app/components/display-preferences", () => ({
   useOptionalLocaleDisplayPreferences: () => ({ currency: "USD", language: "EN" }),
 }))
 
-vi.mock("@/app/portfolio/borrow-tab/supplies-table", () => ({
+vi.mock("@/app/dashboard/borrow-tab/supplies-table", () => ({
   SuppliesHealthFactorCard: () => null,
   SuppliesPanel: ({
     rows,
@@ -78,7 +78,7 @@ vi.mock("@/app/portfolio/borrow-tab/supplies-table", () => ({
   ),
 }))
 
-vi.mock("@/app/portfolio/borrow-tab/debts-table", () => ({
+vi.mock("@/app/dashboard/borrow-tab/debts-table", () => ({
   CurrentLtvCard: () => null,
   DebtsPanel: ({
     rows,
@@ -105,26 +105,26 @@ describe("DashboardBorrowTab", () => {
     vi.clearAllMocks()
   })
 
-  it("routes portfolio supply actions to shared action pages", () => {
-    render(<DashboardBorrowTab section="supplies" collateralPositions={[supplyRow] as never} returnHref="/portfolio" />)
+  it("routes dashboard supply actions to shared action pages", () => {
+    render(<DashboardBorrowTab section="supplies" collateralPositions={[supplyRow] as never} returnHref="/dashboard" />)
 
     fireEvent.click(screen.getByText("open-borrow"))
-    expect(push).toHaveBeenCalledWith("/actions/borrow/borrow?market=uni-v3-bluechip-weth-usdc&return=%2Fportfolio")
+    expect(push).toHaveBeenCalledWith("/actions/borrow/borrow?market=uni-v3-bluechip-weth-usdc&return=%2Fdashboard")
 
     fireEvent.click(screen.getByText("open-supply"))
-    expect(push).toHaveBeenCalledWith("/actions/borrow/supply?market=uni-v3-bluechip-weth-usdc&return=%2Fportfolio")
+    expect(push).toHaveBeenCalledWith("/actions/borrow/supply?market=uni-v3-bluechip-weth-usdc&return=%2Fdashboard")
 
     fireEvent.click(screen.getByText("open-remove"))
-    expect(push).toHaveBeenCalledWith("/actions/borrow/remove?market=uni-v3-bluechip-weth-usdc&return=%2Fportfolio")
+    expect(push).toHaveBeenCalledWith("/actions/borrow/remove?market=uni-v3-bluechip-weth-usdc&return=%2Fdashboard")
   })
 
-  it("routes portfolio debt actions to shared action pages", () => {
-    render(<DashboardBorrowTab section="debts" debtPositions={[debtRow] as never} returnHref="/portfolio" />)
+  it("routes dashboard debt actions to shared action pages", () => {
+    render(<DashboardBorrowTab section="debts" debtPositions={[debtRow] as never} returnHref="/dashboard" />)
 
     fireEvent.click(screen.getByText("open-repay"))
-    expect(push).toHaveBeenCalledWith("/actions/borrow/repay?market=uni-v3-bluechip-weth-usdc&return=%2Fportfolio")
+    expect(push).toHaveBeenCalledWith("/actions/borrow/repay?market=uni-v3-bluechip-weth-usdc&return=%2Fdashboard")
 
     fireEvent.click(screen.getByText("open-manage"))
-    expect(push).toHaveBeenCalledWith("/actions/borrow/borrow?market=uni-v3-bluechip-weth-usdc&return=%2Fportfolio")
+    expect(push).toHaveBeenCalledWith("/actions/borrow/borrow?market=uni-v3-bluechip-weth-usdc&return=%2Fdashboard")
   })
 })

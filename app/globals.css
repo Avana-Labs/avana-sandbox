@@ -275,7 +275,7 @@
   transform: translateX(0) scaleX(1);
 }
 
-.portfolio-quick-action-pill {
+.dashboard-quick-action-pill {
   transition:
     width 420ms cubic-bezier(0.22, 1, 0.36, 1),
     padding 420ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -283,13 +283,13 @@
     transform 160ms ease !important;
 }
 
-.portfolio-quick-action-pill[data-state="active"] {
+.dashboard-quick-action-pill[data-state="active"] {
   width: 10rem !important;
   gap: 0.625rem !important;
   padding-inline: 0.875rem !important;
 }
 
-.portfolio-quick-action-pill-label {
+.dashboard-quick-action-pill-label {
   display: inline-block;
   max-width: 0;
   overflow: hidden;
@@ -303,7 +303,7 @@
     transform 360ms cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
 
-.portfolio-quick-action-pill[data-state="active"] .portfolio-quick-action-pill-label {
+.dashboard-quick-action-pill[data-state="active"] .dashboard-quick-action-pill-label {
   max-width: 8.5rem;
   opacity: 1;
   transform: translateX(0) scaleX(1);
