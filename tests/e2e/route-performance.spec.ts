@@ -61,6 +61,6 @@ test("borrow keeps the workspace shell below the hero", async ({ page }) => {
 
 test("home action workspace becomes interactive within budget", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" })
-  await expect(page.getByText("Collateral", { exact: true })).toBeVisible({ timeout: 5_000 })
-  await expect(page.getByRole("button", { name: "Enter an amount" })).toBeVisible()
+  await expect(page.getByText("Sell", { exact: true })).toBeVisible({ timeout: 5_000 })
+  await expect(page.getByRole("button", { name: "Select Asset" })).toBeVisible()
 })

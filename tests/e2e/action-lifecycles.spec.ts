@@ -4,17 +4,20 @@ const lifecycles = [
   {
     name: "borrow open",
     path: "/actions/borrow/borrow?asset=uni-v3-bluechip:usdc&market=uni-v3-bluechip-weth-usdc&amount=1",
-    dashboardSection: "dashboard-borrow-account",
+    dashboardTab: "Borrow",
+    dashboardHref: "/dashboard?tab=borrow",
   },
   {
     name: "multiply open",
     path: "/actions/multiply/multiply?market=aave-gho&multiplier=2&amount=1",
-    dashboardSection: "dashboard-multiply-account",
+    dashboardTab: "Multiply",
+    dashboardHref: "/dashboard?tab=multiply",
   },
   {
     name: "borrow repay",
     path: "/actions/borrow/repay?debt=0x0000000000000000000000000000000000000a11%3Auni-v3-bluechip%3Ausdc&market=uni-v3-bluechip-weth-usdc&amount=100",
-    dashboardSection: "dashboard-borrow-account",
+    dashboardTab: "Borrow",
+    dashboardHref: "/dashboard?tab=borrow",
   },
   // Lend deposit/withdraw no longer reconcile on the dashboard — the lend account
   // section moved to the rewards page (LendAccountSection returns to /rewards).
@@ -41,8 +44,10 @@ for (const lifecycle of lifecycles) {
     await expect(success).toBeVisible({ timeout: 30_000 })
     await expect(success.getByText("Quote", { exact: true })).toBeVisible()
 
-    await success.getByTestId("action-footer").locator(`a[href$="#${lifecycle.dashboardSection}"]`).click()
-    await expect(page.locator(`#${lifecycle.dashboardSection}`)).toBeVisible({ timeout: 15_000 })
-    await expect(page).toHaveURL(new RegExp(`#${lifecycle.dashboardSection}$`))
+    await success.getByTestId("action-footer").locator(`a[href="${lifecycle.dashboardHref}"]`).click()
+    await expect(page).toHaveURL(new RegExp(`${lifecycle.dashboardHref.replace("?", "\\?")}$`))
+    await expect(page.getByRole("tab", { name: lifecycle.dashboardTab, selected: true })).toBeVisible({
+      timeout: 15_000,
+    })
   })
 }
