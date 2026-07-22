@@ -26,6 +26,32 @@ describe("useSwapSession", () => {
     expect(result.current.walletBalances.find((balance) => balance.id === "wallet-eth")?.amount).toBe(0.011)
   })
 
+  it("sees approved ERC-20 allowance immediately for the following executeSwap", async () => {
+    const { result } = renderHook(() => useSwapSession({ walletId: "demo-wallet", persistState: false }))
+    const quote = await result.current.getQuote({
+      chainId: 1,
+      inputAssetId: "usdc",
+      outputAssetId: "eth",
+      inputAmount: 100,
+      slippageBps: 50,
+    })
+
+    expect(result.current.requiresApproval("usdc", 100)).toBe(true)
+
+    await act(async () => {
+      const approval = await result.current.approve("usdc", 100)
+      expect(approval.status).toBe("approval_confirmed")
+      // Must succeed in the same turn — before React re-renders from setState.
+      const swap = await result.current.executeSwap(quote)
+      expect(swap.status).toBe("confirmed")
+    })
+
+    await waitFor(() => {
+      expect(result.current.transactionHistory[0]).toMatchObject({ status: "confirmed" })
+    })
+    expect(result.current.requiresApproval("usdc", 100)).toBe(false)
+  })
+
   it("rehydrates wallet balances and transaction history", async () => {
     const walletId = "persisted-swap-wallet"
     const first = renderHook(() => useSwapSession({ walletId }))
