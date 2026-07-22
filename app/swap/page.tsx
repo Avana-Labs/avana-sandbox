@@ -15,7 +15,7 @@ function readParam(value: string | string[] | undefined) {
 }
 
 function safeReturnHref(value: string | undefined) {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/dashboard?tab=wallet"
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return "/"
   return value
 }
 
