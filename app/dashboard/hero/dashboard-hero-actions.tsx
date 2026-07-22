@@ -26,7 +26,7 @@ export function DashboardHeroActions({ actions }: DashboardHeroActionsProps) {
 
   return (
     <section aria-label={t("Dashboard quick actions")} className="min-w-0">
-      <div className="flex flex-wrap gap-2 md:hidden">
+      <div className="flex flex-nowrap gap-2 overflow-x-auto pb-1 [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden">
         {actions.map((action) => (
           <DashboardHeroActionPill
             key={action.id}

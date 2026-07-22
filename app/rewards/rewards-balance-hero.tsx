@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import dynamic from "next/dynamic"
 import Image from "next/image"
 import Link from "next/link"
@@ -19,13 +19,15 @@ const HeroAreaChart = dynamic(
   },
 )
 
-// TODO(backend): wire these to the user's real Avana balance (mirrors the dashboard hero).
-const AVANA_BALANCE = "$14,400.00"
-const AVANA_BALANCE_DELTA = "-$312.96 (-3.80%)"
-
-// TODO(backend): wire these to real fee accrual once fees ship.
-const TOTAL_FEES_EARNED = "$0"
-const CLAIMABLE_FEES = "$0"
+/**
+ * Reward balances are denominated in AVA (the card shows the AVA coin icon), not
+ * USD — so format the real earned/claimable totals as AVA amounts rather than a
+ * hardcoded "$0". (#26b)
+ */
+function formatAva(amount: number): string {
+  const safe = Number.isFinite(amount) ? amount : 0
+  return `${safe.toLocaleString(undefined, { maximumFractionDigits: 0 })} AVA`
+}
 
 const PORTFOLIO_TIME_LABELS = ["6:00 AM", "9:00 AM", "12:00 PM", "3:00 PM", "6:00 PM", "9:00 PM", "Now"]
 
@@ -39,17 +41,14 @@ function seededRandom(seed: number): () => number {
 }
 
 /**
- * Deterministic, rich-looking portfolio-value series for the balance chart.
- * A mean-reverting walk that drifts from ~$14,968 down to exactly $14,400 (the
- * headline), so the resting -3.80% delta and the red trend line agree. Seeded so
- * SSR and the client render the identical path — no hydration mismatch.
- * TODO(backend): replace with the wallet's real balance history.
+ * Deterministic portfolio-value series that ends at `endUsd` so the chart and
+ * headline share one live portfolio source of truth.
  */
-function buildPortfolioSeries(): ChartPoint[] {
+export function buildPortfolioSeries(endUsd: number): ChartPoint[] {
   const COUNT = 64
-  const start = 14_968.8
-  const end = 14_400
-  const random = seededRandom(20_260_716)
+  const end = Math.max(0, endUsd)
+  const start = end > 0 ? end * 1.0395 : 0
+  const random = seededRandom(20_260_716 + Math.round(end * 100))
   const values: number[] = []
   let value = start
   let velocity = 0
@@ -57,21 +56,18 @@ function buildPortfolioSeries(): ChartPoint[] {
     const progress = index / (COUNT - 1)
     const target = start + (end - start) * progress
     const meanReversion = (target - value) * 0.12
-    velocity = velocity * 0.78 + meanReversion + (random() - 0.5) * start * 0.006
+    velocity = velocity * 0.78 + meanReversion + (random() - 0.5) * Math.max(start, 1) * 0.006
     value += velocity
     values.push(Math.round(value * 100) / 100)
   }
-  // Pin the endpoints so the first/last points anchor the delta and headline.
-  values[0] = start
-  values[COUNT - 1] = end
+  values[0] = Math.round(start * 100) / 100
+  values[COUNT - 1] = Math.round(end * 100) / 100
   return values.map((point, index) => ({
     time: index,
     value: point,
     label: PORTFOLIO_TIME_LABELS[Math.round((index / (COUNT - 1)) * (PORTFOLIO_TIME_LABELS.length - 1))],
   }))
 }
-
-const PORTFOLIO_SERIES = buildPortfolioSeries()
 
 function AvanaCoin() {
   return (
@@ -127,15 +123,25 @@ function FeeCard({
  * Rendered as the hero's right column on desktop and inline near the bottom of
  * the page on mobile, so it's reachable on small screens too.
  */
-export function PortfolioRewardsCards({ claimHref }: { claimHref?: string }) {
+export function PortfolioRewardsCards({
+  claimHref,
+  earnedAmount = 0,
+  claimableAmount = 0,
+}: {
+  claimHref?: string
+  /** Total AVA earned across completed quests. */
+  earnedAmount?: number
+  /** AVA currently claimable. */
+  claimableAmount?: number
+}) {
   const { t } = useTranslation()
   const { showDollarAmounts } = useAmountDisplayPreferences()
   return (
     <section className="min-w-0 space-y-3">
-      <FeeCard label={t("Total Rewards earned")} value={TOTAL_FEES_EARNED} hidden={!showDollarAmounts} />
+      <FeeCard label={t("Total Rewards earned")} value={formatAva(earnedAmount)} hidden={!showDollarAmounts} />
       <FeeCard
         label={t("Claimable Rewards")}
-        value={CLAIMABLE_FEES}
+        value={formatAva(claimableAmount)}
         hidden={!showDollarAmounts}
         action={
           claimHref ? (
@@ -157,19 +163,38 @@ export function PortfolioRewardsCards({ claimHref }: { claimHref?: string }) {
   )
 }
 
-export function RewardsBalanceHero({ claimHref }: { claimHref?: string }) {
+export function RewardsBalanceHero({
+  claimHref,
+  portfolioValueUsd = 0,
+  earnedAmount = 0,
+  claimableAmount = 0,
+}: {
+  claimHref?: string
+  /** Live portfolio net value (wallet + positions). Required for a trustworthy hero. */
+  portfolioValueUsd?: number
+  /** Total AVA earned across completed quests. */
+  earnedAmount?: number
+  /** AVA currently claimable. */
+  claimableAmount?: number
+}) {
   const { t } = useTranslation()
   const { showDollarAmounts, toggleShowDollarAmounts } = useAmountDisplayPreferences()
-  // The headline follows the cursor across the chart, mirroring the detail heroes.
+  const series = useMemo(() => buildPortfolioSeries(portfolioValueUsd), [portfolioValueUsd])
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
-  const hoverPoint = hoverIndex != null ? PORTFOLIO_SERIES[hoverIndex] : null
+  const hoverPoint = hoverIndex != null ? series[hoverIndex] : null
 
-  const firstValue = PORTFOLIO_SERIES[0]?.value ?? 0
-  const hoverPct = hoverPoint && firstValue ? ((hoverPoint.value - firstValue) / firstValue) * 100 : 0
-  const balanceValue = hoverPoint ? formatChartValue("usd", hoverPoint.value) : AVANA_BALANCE
-  const balanceDelta = hoverPoint ? `${Math.abs(hoverPct).toFixed(2)}%` : AVANA_BALANCE_DELTA
+  const firstValue = series[0]?.value ?? 0
+  const lastValue = series[series.length - 1]?.value ?? portfolioValueUsd
+  const restingPct = firstValue > 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0
+  const hoverPct = hoverPoint && firstValue ? ((hoverPoint.value - firstValue) / firstValue) * 100 : restingPct
+  const balanceValue = hoverPoint
+    ? formatChartValue("usd", hoverPoint.value)
+    : formatChartValue("usd", portfolioValueUsd)
+  const balanceDelta = hoverPoint
+    ? `${Math.abs(hoverPct).toFixed(2)}%`
+    : `${restingPct >= 0 ? "" : "-"}$${Math.abs(lastValue - firstValue).toFixed(2)} (${restingPct.toFixed(2)}%)`
   const balanceMeta = hoverPoint ? hoverPoint.label : undefined
-  const balanceTone: "positive" | "negative" = hoverPoint ? (hoverPct >= 0 ? "positive" : "negative") : "negative"
+  const balanceTone: "positive" | "negative" = hoverPct >= 0 ? "positive" : "negative"
 
   return (
     <div className="mb-6 grid gap-5 md:mb-8 md:gap-7 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] lg:items-start">
@@ -199,10 +224,9 @@ export function RewardsBalanceHero({ claimHref }: { claimHref?: string }) {
             />
           </div>
 
-          {/* Height tuned so the card bottom aligns with the right column's fee cards. */}
           <div className="-mx-4 -mb-4 mt-1 sm:-mx-5">
             <HeroAreaChart
-              data={PORTFOLIO_SERIES}
+              data={series}
               activeRange="1D"
               height={116}
               gradientId="rewardsBalanceFill"
@@ -215,10 +239,8 @@ export function RewardsBalanceHero({ claimHref }: { claimHref?: string }) {
         </div>
       </section>
 
-      {/* Desktop: rewards cards as the hero's right column. On mobile they render
-          near the bottom of the page instead (see the portfolio page). */}
       <div className="hidden lg:block">
-        <PortfolioRewardsCards claimHref={claimHref} />
+        <PortfolioRewardsCards claimHref={claimHref} earnedAmount={earnedAmount} claimableAmount={claimableAmount} />
       </div>
     </div>
   )

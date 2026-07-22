@@ -56,7 +56,8 @@ export const SWAP_ASSETS: SwapAsset[] = [
     isNative: false,
     isLpToken: false,
     isSwapEnabled: true,
-    priceUsd: 64_000,
+    // Aligned with the single sandbox baseline (see prices/sandbox-baseline-prices.ts).
+    priceUsd: 65_000,
     minimumSwapAmount: 0.00001,
     maximumSwapAmount: 50,
   },
@@ -84,7 +85,8 @@ export const SWAP_ASSETS: SwapAsset[] = [
     isNative: false,
     isLpToken: false,
     isSwapEnabled: true,
-    priceUsd: 96,
+    // Aligned with the single sandbox baseline (see prices/sandbox-baseline-prices.ts).
+    priceUsd: 105,
     minimumSwapAmount: 0.001,
     maximumSwapAmount: 100_000,
   },

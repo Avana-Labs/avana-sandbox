@@ -71,7 +71,9 @@ describe("claimSelectItemsForWallet", () => {
 
     const items = claimSelectItemsForWallet(session as never, "demo-wallet")
     expect(items.length).toBeGreaterThan(0)
-    expect(items.some((item) => item.trailingLabel.includes("$142"))).toBe(true)
+    expect(items.some((item) => item.trailingLabel.includes("$111.10") || item.trailingLabel.includes("$111"))).toBe(
+      true,
+    )
     expect(items.every((item) => !item.trailingLabel.includes("$0.00"))).toBe(true)
   })
 

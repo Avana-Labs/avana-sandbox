@@ -13,7 +13,7 @@
  *   - pool markets  → slug = BorrowPoolRow.id           (e.g. "uni-v2-weth-usdc")
  */
 
-import { BORROW_POOL_CATALOG, type BorrowPoolRow } from "@/app/lib/borrow-sim"
+import { BORROW_POOL_CATALOG, poolLpTokenPriceUsd, type BorrowPoolRow } from "@/app/lib/borrow-sim"
 import { SANDBOX_NOW } from "@/app/lib/deterministic"
 import { listSpokeBorrowables, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
 import { prngFromString } from "@/app/lib/borrow-detail/prng"
@@ -251,10 +251,13 @@ function poolMarketRow(pool: BorrowPoolRow, createdAt: number): SeedMarketRow {
       iconUrl: visual.iconUrl,
     })),
     resources: [{ label: "Open market", href: `/borrow/markets/${pool.id}` }],
-    // LP collateral positions are tracked in USD (shares are derived client-side from the
-    // live LP price at claim time), so a pool's onboarding price is a nominal $1 unit — an
-    // LP pair has no single-token oracle price to resolve against.
-    priceUsd: 1,
+    // Server-side LP token price, derived with the SAME helper the client uses to size
+    // pledged collateral (borrow-system/mock.ts). assertBorrowSolvent revalues a pledge's
+    // 18-decimal LP-token amount as `tokens * priceUsd`; with the old nominal $1 here a
+    // multi-thousand-dollar pledge (a few LP tokens) valued at only a few dollars, so the
+    // server rejected borrows the client preview allowed. `pools.lpTokenPriceUsd` (unseeded
+    // in this deployment) still takes precedence when present.
+    priceUsd: poolLpTokenPriceUsd(pool),
     createdAt,
   }
 }

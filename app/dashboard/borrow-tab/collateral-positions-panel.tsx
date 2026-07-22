@@ -16,14 +16,19 @@ import {
 } from "@/app/components/market-card-primitives"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
+import {
+  TABLE_HEADER_CELL,
+  TABLE_ROW_HOVER_BG,
+  TABLE_ROW_HOVER_LEFT,
+  TABLE_ROW_HOVER_RIGHT,
+} from "@/app/lib/ui/table-row-hover"
+import { formatSectionCount } from "@/app/lib/ui/section-count"
 import { cn } from "@/lib/utils"
 import { AssetSummaryStrip, type SummaryMetric } from "./asset-positions-shared"
 import { getDashboardCollateralData, type CollateralAssetRow } from "./asset-positions-data"
 
 const MASK = "••••"
-const HEADER_CLASS =
-  "whitespace-nowrap bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70"
+const HEADER_CLASS = `whitespace-nowrap px-4 ${TABLE_HEADER_CELL}`
 
 export function CollateralPositionsPanel({
   showBalance = true,
@@ -58,9 +63,9 @@ export function CollateralPositionsPanel({
   const detailHref = (marketId: string) => `/lend/markets/${marketId}`
 
   const goDeposit = (marketId: string) =>
-    router.push(actionPagePath("lend", "deposit", { market: marketId, return: returnHref ?? detailHref(marketId) }))
+    router.push(actionPagePath("borrow", "supply", { market: marketId, return: returnHref ?? detailHref(marketId) }))
   const goWithdraw = (marketId: string) =>
-    router.push(actionPagePath("lend", "withdraw", { market: marketId, return: returnHref ?? detailHref(marketId) }))
+    router.push(actionPagePath("borrow", "remove", { market: marketId, return: returnHref ?? detailHref(marketId) }))
 
   if (rows.length === 0) {
     return (
@@ -80,9 +85,7 @@ export function CollateralPositionsPanel({
           <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
             {t("Collateral Positions")}
           </h3>
-          <p className="mt-1 text-[13px] text-muted-foreground">
-            {t("{count} assets").replace("{count}", String(rows.length))}
-          </p>
+          <p className="mt-1 text-[13px] text-muted-foreground">{formatSectionCount(rows.length, "asset", "assets")}</p>
         </div>
       ) : null}
       <AssetSummaryStrip metrics={summaryMetrics} />
@@ -91,7 +94,7 @@ export function CollateralPositionsPanel({
       <div className="hidden md:block">
         <DesktopTableSurface className="!rounded-none">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[960px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
                 <col className="w-[22%]" />
                 <col className="w-[14%]" />
@@ -173,8 +176,8 @@ export function CollateralPositionsPanel({
                             goDeposit(row.marketId)
                           }}
                         >
-                          <ActionIcon label="Deposit" />
-                          {t("Deposit")}
+                          <ActionIcon label="Pledge" />
+                          {t("Pledge")}
                         </Button>
                         <Button
                           type="button"
@@ -186,8 +189,8 @@ export function CollateralPositionsPanel({
                             goWithdraw(row.marketId)
                           }}
                         >
-                          <ActionIcon label="Withdraw" />
-                          {t("Withdraw")}
+                          <ActionIcon label="Remove" />
+                          {t("Remove")}
                         </Button>
                       </HoverActionGroup>
                     </td>
@@ -329,8 +332,8 @@ function CollateralMobileCard({
             onDeposit()
           }}
         >
-          <ActionIcon label="Deposit" />
-          {t("Deposit")}
+          <ActionIcon label="Pledge" />
+          {t("Pledge")}
         </Button>
         <Button
           type="button"
@@ -341,8 +344,8 @@ function CollateralMobileCard({
             onWithdraw()
           }}
         >
-          <ActionIcon label="Withdraw" />
-          {t("Withdraw")}
+          <ActionIcon label="Remove" />
+          {t("Remove")}
         </Button>
       </div>
     </MarketMobileCard>

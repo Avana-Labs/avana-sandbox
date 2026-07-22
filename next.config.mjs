@@ -136,9 +136,11 @@ const nextConfig = {
       // /express was a client-rendered page that only ever did redirect("/"). Serve the
       // same redirect at the edge instead — no React render, one fewer route in the bundle.
       { source: "/express", destination: "/", permanent: true },
-      // Rewards and Portfolio now live under Dashboard. Redirect legacy links at the edge.
-      { source: "/rewards", destination: "/dashboard", permanent: true },
+      // The old Portfolio and Rewards pages were folded into the dashboard, which is now the
+      // only account entry point. Redirect the retired routes (and any old bookmarks) there at
+      // the edge rather than dead-ending on a 404. Guarded by the portfolio-routing e2e smoke.
       { source: "/portfolio", destination: "/dashboard", permanent: true },
+      { source: "/rewards", destination: "/dashboard", permanent: true },
     ]
   },
   async rewrites() {

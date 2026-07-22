@@ -7,9 +7,10 @@ import {
   serializeBorrowValue,
 } from "@/app/lib/borrow-system/codec"
 import { safeReadParsed, safeRemoveItem, safeSetItem } from "@/app/lib/safe-local-storage"
+import { SESSION_CACHE_VERSION } from "@/app/lib/session-cache-version"
 
-const STORAGE_PREFIX = "avana.borrow.session.v1"
-const META_STORAGE_PREFIX = "avana.borrow.session.meta.v1"
+const STORAGE_PREFIX = `avana.borrow.session.${SESSION_CACHE_VERSION}`
+const META_STORAGE_PREFIX = `avana.borrow.session.meta.${SESSION_CACHE_VERSION}`
 
 export type BorrowSessionMetadata = {
   transactionHistory: TransactionHistoryItem[]

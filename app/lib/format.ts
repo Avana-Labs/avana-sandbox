@@ -1,3 +1,5 @@
+import { formatCompactUsd, formatUsdExact } from "@/app/lib/borrow-sim"
+
 /**
  * Shared percent/APY formatting so every surface uses one decimal convention.
  *
@@ -22,3 +24,8 @@ export function formatApy(value: number): string {
 
 /** Alias — APR shares the asset-APY 2dp convention. */
 export const formatApr = formatApy
+
+/** Canonical exact USD display (currency-aware). */
+export const formatUsd = formatUsdExact
+
+export { formatCompactUsd, formatUsdExact }

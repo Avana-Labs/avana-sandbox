@@ -50,6 +50,7 @@ const LOCAL_ASSET_ICON_SLUGS: Record<string, string> = {
   "ROCKET POOL": "rocket-pool",
   COMPOUND: "compound",
   CHAINLINK: "chainlink",
+  LINK: "chainlink",
   SUSHISWAP: "sushiswap",
   FRXUSD: "frxusd",
   USDG: "usdg",

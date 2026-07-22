@@ -3,9 +3,28 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { DEMO_SWAP_BALANCES } from "./wallet-balances"
 import { MockSwapProvider, type SwapQuoteRequest } from "./quote-provider"
-import { SandboxSwapTransactionAdapter, type SwapExecutionOptions, type SwapSystemState } from "./transaction-adapter"
+import {
+  SandboxSwapTransactionAdapter,
+  type SwapExecutionOptions,
+  type SwapSystemState,
+  type SwapTransactionRecord,
+} from "./transaction-adapter"
 import type { UserAssetBalance } from "./contracts"
-import { readSwapSessionState, writeSwapSessionState } from "./storage"
+import { readSwapSessionState, swapSessionStorageKey, writeSwapSessionState } from "./storage"
+
+/** A swap read back from Convex (`getWalletSwapTransactions`). Durable, cross-device. */
+export type DurableSwapTransaction = {
+  id: string
+  intentId: string | null
+  status: "success" | "failed" | "pending"
+  inputSymbol: string
+  outputSymbol: string
+  inputAmount: number
+  outputAmount: number
+  amountUsd: number
+  hash: string
+  at: number
+}
 
 export function createInitialSwapSystemState(walletId: string): SwapSystemState {
   const seededBalances = DEMO_SWAP_BALANCES.filter((balance) => balance.walletId === "demo-wallet").map((balance) => ({
@@ -21,28 +40,65 @@ export function createInitialSwapSystemState(walletId: string): SwapSystemState 
   }
 }
 
-export function useSwapSession({ walletId, persistState = true }: { walletId: string; persistState?: boolean }) {
+export function useSwapSession({
+  walletId,
+  persistState = true,
+  persistTransaction,
+  remoteTransactions,
+}: {
+  walletId: string
+  persistState?: boolean
+  /**
+   * Durable server persistence for an executed swap (Convex mode). Called after the local
+   * adapter applies the swap so the client UX is instant; failures are swallowed because the
+   * local session already reflects the swap and durability is best-effort. (#15)
+   */
+  persistTransaction?: (record: SwapTransactionRecord) => void | Promise<unknown>
+  /**
+   * Durable swaps read back from Convex (Convex mode). Exposed as `durableTransactions` so the
+   * dashboard can merge them with the in-session history and show persisted swaps after a
+   * reload / on another device — deduped by swap id. (#15 follow-on)
+   */
+  remoteTransactions?: DurableSwapTransaction[]
+}) {
   const seededState = useMemo(() => createInitialSwapSystemState(walletId), [walletId])
   const [state, setState] = useState<SwapSystemState>(seededState)
   const [hydratedWalletId, setHydratedWalletId] = useState<string | null>(null)
   const stateRef = useRef(state)
+  const revisionRef = useRef(0)
+  const writingRef = useRef(false)
   stateRef.current = state
 
   useEffect(() => {
-    setState(persistState ? readSwapSessionState(walletId, seededState) : seededState)
+    const hydrated = persistState ? readSwapSessionState(walletId, seededState) : { ...seededState, revision: 0 }
+    setState(hydrated)
+    revisionRef.current = hydrated.revision
     setHydratedWalletId(walletId)
   }, [persistState, seededState, walletId])
 
   useEffect(() => {
     if (!persistState || hydratedWalletId !== walletId) return
-    writeSwapSessionState(walletId, state)
+    // Suppress same-tab reload while we persist — writeSwapSessionState notifies
+    // synchronously, and echoing that into setState would loop forever.
+    writingRef.current = true
+    const persisted = writeSwapSessionState(walletId, state, revisionRef.current)
+    revisionRef.current = persisted.revision
+    queueMicrotask(() => {
+      writingRef.current = false
+    })
   }, [hydratedWalletId, persistState, state, walletId])
 
   useEffect(() => {
     if (!persistState || typeof window === "undefined") return undefined
-    const reload = () => setState(readSwapSessionState(walletId, seededState))
+    const reload = () => {
+      if (writingRef.current) return
+      const next = readSwapSessionState(walletId, seededState)
+      if (next.revision === revisionRef.current) return
+      revisionRef.current = next.revision
+      setState(next)
+    }
     const handleStorage = (event: StorageEvent) => {
-      if (event.key === `avana.swap.session.v1:${walletId}`) reload()
+      if (event.key === swapSessionStorageKey(walletId)) reload()
     }
     const handleSameTab = (event: Event) => {
       const detail = (event as CustomEvent<{ walletId?: string }>).detail
@@ -88,9 +144,19 @@ export function useSwapSession({ walletId, persistState = true }: { walletId: st
     [adapter, walletId],
   )
   const executeSwap = useCallback(
-    (quote: Parameters<typeof adapter.executeSwap>[0], options?: SwapExecutionOptions) =>
-      adapter.executeSwap(quote, walletId, options),
-    [adapter, walletId],
+    async (quote: Parameters<typeof adapter.executeSwap>[0], options?: SwapExecutionOptions) => {
+      const record = await adapter.executeSwap(quote, walletId, options)
+      if (persistTransaction) {
+        try {
+          await persistTransaction(record)
+        } catch {
+          // Best-effort: the local session already reflects the swap; a failed durable
+          // write must not surface as a swap failure to the user.
+        }
+      }
+      return record
+    },
+    [adapter, persistTransaction, walletId],
   )
 
   return {
@@ -99,9 +165,14 @@ export function useSwapSession({ walletId, persistState = true }: { walletId: st
     state,
     walletBalances,
     transactionHistory: state.transactions,
+    /** Durable swaps from Convex (empty in demo mode); merged with the in-session history by
+     *  the dashboard, deduped by swap id, so persisted swaps survive reload. (#15 follow-on) */
+    durableTransactions: remoteTransactions ?? EMPTY_DURABLE_TRANSACTIONS,
     getQuote,
     requiresApproval,
     approve,
     executeSwap,
   }
 }
+
+const EMPTY_DURABLE_TRANSACTIONS: DurableSwapTransaction[] = []

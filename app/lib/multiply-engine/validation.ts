@@ -53,6 +53,11 @@ export function validateMultiplyAction(params: {
   }
   if (params.healthFactor !== "infinity" && params.healthFactor < 1.0) {
     errors.push("Health factor is below the liquidation threshold.")
+  } else if (params.healthFactor !== "infinity" && params.healthFactor < params.minHealthFactor) {
+    // Between HF 1.0 and the market minimum the position is technically solvent but
+    // opens already inside the at-risk band. Block it as hard as the sub-1.0 case
+    // rather than merely warning — mirrors the maxLtv / publicMaxMultiplier errors.
+    errors.push("Health factor is below the market minimum.")
   }
   if (params.priceImpactPct > params.maxAllowedPriceImpact) {
     errors.push("Estimated price impact is too high.")

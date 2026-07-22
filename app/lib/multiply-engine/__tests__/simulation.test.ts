@@ -26,10 +26,12 @@ describe("multiply engine simulation", () => {
       selectedMultiplier,
     })
 
-    expect(inputEquityUsd).toBe(35)
-    expect(simulation.after.collateralValueUsd).toBeGreaterThan(69)
+    // Price-relative so this survives baseline-price changes: 0.01 ETH at the single
+    // sandbox baseline (~$1,934) is the equity; leverage math is asserted against it.
+    expect(inputEquityUsd).toBeCloseTo(19.34, 2)
+    expect(simulation.after.collateralValueUsd).toBeGreaterThan(inputEquityUsd * 1.9)
     expect(simulation.after.collateralValueUsd).toBeLessThanOrEqual(inputEquityUsd * selectedMultiplier)
-    expect(simulation.after.debtValueUsd).toBeGreaterThan(34)
+    expect(simulation.after.debtValueUsd).toBeGreaterThan(inputEquityUsd * 0.9)
     expect(simulation.after.debtValueUsd).toBeLessThan(inputEquityUsd)
     expect(simulation.after.multiplier).toBeCloseTo(selectedMultiplier, 6)
   })

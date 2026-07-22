@@ -196,7 +196,7 @@ function FeaturedCard({
     </>
   )
 
-  const cardClassName = cn(HIGHLIGHT_CARD_CLASS, "h-[176px] w-[372px]")
+  const cardClassName = cn(HIGHLIGHT_CARD_CLASS, "h-[176px] w-[min(372px,calc(100vw-2rem))]")
 
   if (!interactive) {
     return (

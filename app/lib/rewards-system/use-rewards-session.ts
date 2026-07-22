@@ -23,13 +23,18 @@ export function useRewardsSession({
   sessionSeed,
   persistState = true,
   remoteState,
+  remoteRevision,
   persistRemoteState,
 }: {
   walletId: string
   sessionSeed: string
   persistState?: boolean
   remoteState?: string | null
-  persistRemoteState?: (stateJson: string) => Promise<unknown>
+  remoteRevision?: number | null
+  persistRemoteState?: (args: {
+    stateJson: string
+    expectedRevision?: number
+  }) => Promise<{ revision?: number } | unknown>
 }) {
   const seededState = useMemo(() => JSON.parse(sessionSeed) as RewardsSessionState, [sessionSeed])
   const [state, setState] = useState(seededState)
@@ -38,6 +43,7 @@ export function useRewardsSession({
   stateRef.current = state
   const isPersistingRef = useRef(false)
   const lastRemoteStateRef = useRef<string | null>(null)
+  const rewardsRevisionRef = useRef<number | undefined>(undefined)
   const tasks = useMemo(() => buildDefaultRewardsCatalog(), [])
 
   useEffect(() => {
@@ -55,6 +61,7 @@ export function useRewardsSession({
       // Track the remote value (not `chosen`) so the persist effect re-pushes a
       // locally-fresher state up to Convex.
       lastRemoteStateRef.current = remoteState
+      if (remoteRevision != null) rewardsRevisionRef.current = remoteRevision
       setState(chosen)
       setHasHydratedStorage(true)
       return
@@ -62,7 +69,7 @@ export function useRewardsSession({
     const nextState = readRewardsSessionState(walletId, sessionSeed)
     setState(nextState)
     setHasHydratedStorage(true)
-  }, [persistState, remoteState, walletId, sessionSeed])
+  }, [persistState, remoteRevision, remoteState, walletId, sessionSeed])
 
   useEffect(() => {
     if (!hasHydratedStorage) return
@@ -73,9 +80,17 @@ export function useRewardsSession({
       writeRewardsSessionState(walletId, state)
       if (serialized === lastRemoteStateRef.current || !persistRemoteState) return
       lastRemoteStateRef.current = serialized
-      void persistRemoteState(serialized).catch(() => {
-        lastRemoteStateRef.current = null
+      void persistRemoteState({
+        stateJson: serialized,
+        expectedRevision: rewardsRevisionRef.current,
       })
+        .then((result) => {
+          const revision = (result as { revision?: number } | null)?.revision
+          if (revision != null) rewardsRevisionRef.current = revision
+        })
+        .catch(() => {
+          lastRemoteStateRef.current = null
+        })
       return
     }
     isPersistingRef.current = true

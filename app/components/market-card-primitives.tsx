@@ -16,8 +16,10 @@ export function MarketMobileCard({
   return (
     <div
       className={cn(
-        "rounded-radius-lg border border-border bg-card px-4 py-4 shadow-elev-1",
-        clickable ? "cursor-pointer transition-colors hover:border-brand/30" : "",
+        // Mobile cards sit on the hover/active surface by default (never transparent) and have
+        // NO hover state — on touch, :hover sticks after a tap, so it's dropped here.
+        "border-b border-border bg-hover px-4 py-3",
+        clickable ? "cursor-pointer" : "",
         className,
       )}
       {...props}
@@ -38,8 +40,8 @@ export function MarketMobileCardHeader({
 }) {
   return (
     <div className={cn("flex items-start justify-between gap-3", className)}>
-      {identity}
-      {metric ? <div className="text-right">{metric}</div> : null}
+      <div className="min-w-0">{identity}</div>
+      {metric ? <div className="shrink-0 text-right">{metric}</div> : null}
     </div>
   )
 }
@@ -98,8 +100,8 @@ export function MarketMobileInsetStats({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-radius-sm border border-border bg-surface-inset",
-        columns === 2 ? "grid grid-cols-2 divide-x divide-border" : "grid grid-cols-3 divide-x divide-border",
+        "grid divide-x divide-border border-t border-border bg-background",
+        columns === 2 ? "grid-cols-2" : "grid-cols-3",
         className,
       )}
     >
@@ -139,6 +141,25 @@ export function MarketMobilePrimaryAction({
       type="button"
       className={cn(
         "mt-4 inline-flex h-11 w-full items-center justify-center gap-2.5 rounded-radius-sm bg-brand px-4 text-center text-[14px] font-bold text-white shadow-elev-1 transition-colors hover:bg-brand/90 active:bg-brand/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-1 disabled:!opacity-100 disabled:bg-brand-soft disabled:text-brand-soft-foreground [&_svg]:size-[18px] [&_svg]:shrink-0",
+        className,
+      )}
+      {...props}
+    >
+      {children}
+    </button>
+  )
+}
+
+export function MarketMobileSecondaryAction({
+  children,
+  className,
+  ...props
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & { children: ReactNode; className?: string }) {
+  return (
+    <button
+      type="button"
+      className={cn(
+        "inline-flex h-11 flex-1 items-center justify-center gap-2.5 rounded-radius-sm border border-border bg-surface-raised px-4 text-center text-[14px] font-semibold text-foreground shadow-elev-1 transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-1 [&_svg]:size-[18px] [&_svg]:shrink-0",
         className,
       )}
       {...props}

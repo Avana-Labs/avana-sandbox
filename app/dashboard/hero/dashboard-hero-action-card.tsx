@@ -19,7 +19,7 @@ type DashboardHeroActionPillProps = DashboardHeroActionCardProps & {
 }
 
 export function DashboardHeroActionCard({ label, icon: Icon, href, onClick, className }: DashboardHeroActionCardProps) {
-  const classNameValue = `flex min-h-[94px] flex-col items-start justify-between rounded-radius-lg border-0 bg-[#dff2fb] px-[22px] py-[14px] text-brand shadow-none transition-colors hover:bg-[#d6eef9] dark:bg-[#0f1b24] dark:text-[#7DDCFF] dark:hover:bg-[#142331] ${className ?? ""}`
+  const classNameValue = `flex min-h-[94px] flex-col items-start justify-between rounded-radius-lg border-0 bg-brand/10 px-[22px] py-[14px] text-brand shadow-none transition-colors hover:bg-brand/15 dark:bg-brand/10 dark:text-brand dark:hover:bg-brand/15 ${className ?? ""}`
 
   if (href) {
     return (

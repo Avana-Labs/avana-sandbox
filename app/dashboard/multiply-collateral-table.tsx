@@ -19,15 +19,12 @@ import {
 } from "@/app/components/market-card-primitives"
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 import { healthFactorBand } from "@/app/lib/health/health-factor-bands"
+import { formatHealthFactor } from "@/app/lib/home-sim"
 
 const MASK = "••••"
 
 function formatPct(value: number) {
   return `${value.toFixed(2)}%`
-}
-
-function formatHealthFactor(value: number) {
-  return Number.isFinite(value) ? value.toFixed(2) : "∞"
 }
 
 export function MultiplyCollateralTable({
@@ -63,7 +60,7 @@ export function MultiplyCollateralTable({
       <div className="rounded-radius-md bg-transparent dark:bg-transparent">
         <div className="hidden overflow-x-auto md:block">
           <DesktopTableSurface className="!rounded-none">
-            <table className="w-full min-w-[1080px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className="w-full min-w-[700px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
                 <col className="w-[22%]" />
                 <col className="w-[12%]" />
@@ -75,22 +72,22 @@ export function MultiplyCollateralTable({
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                  <th className="bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Market")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Exposure")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Multiplier")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Debt")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Health")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Net APY")}
                   </th>
                   <SilentActionHeader className="!rounded-none pr-5" />

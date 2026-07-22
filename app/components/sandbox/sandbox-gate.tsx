@@ -89,12 +89,11 @@ export function SandboxGate({ children }: { children: ReactNode }) {
   // what flashed the onboarding screen at already-onboarded users on every load/refresh.
   // Hold a neutral placeholder until the client has hydrated — never onboarding.
   if (!hydrated) {
+    // Neutral placeholder only — never GuestOnboardingFlow, which flashes welcome copy
+    // for returning users before SIWE hydrates.
     return (
       <LockedShell>
-        {/* The guest intro is SSR-safe and matches the first hydrated OnboardingFlow
-            render. Showing it here lets the LCP paint from HTML instead of waiting for
-            localStorage/session hydration to settle. */}
-        <GuestOnboardingFlow />
+        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-hidden />
       </LockedShell>
     )
   }

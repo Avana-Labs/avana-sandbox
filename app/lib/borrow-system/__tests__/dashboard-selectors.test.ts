@@ -128,6 +128,32 @@ describe("borrow dashboard selectors", () => {
     expect(stable?.totalBorrowedUsd).toBe(800)
   })
 
+  it("scopes each collateral row's borrow power to its OWN pool, not the whole spoke", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    const supplies = selectPortfolioSupplyRows(state, "demo-wallet")
+
+    // Two collateral positions in the SAME bluechip spoke but with different
+    // collateral: eth-usdc ($4,200) and wbtc-eth ($2,100). The buggy selector read
+    // the whole-spoke available credit, so both rows reported the SAME figure.
+    const ethUsdc = supplies.find((row) => row.pool.id === "uni-v3-bluechip-weth-usdc")!
+    const wbtcEth = supplies.find((row) => row.pool.id === "uni-v3-bluechip-wbtc-weth")!
+
+    expect(ethUsdc).toBeDefined()
+    expect(wbtcEth).toBeDefined()
+    // Same spoke, different collateral => DIFFERENT per-position borrow power.
+    expect(ethUsdc.pool.collateralUsd).not.toBe(wbtcEth.pool.collateralUsd)
+    expect(ethUsdc.remainingBorrowPowerUsd).not.toBe(wbtcEth.remainingBorrowPowerUsd)
+
+    // Every row's borrow power equals its own collateral × maxLtv minus its own
+    // debt, and can NEVER exceed that position's own collateral value.
+    for (const row of supplies) {
+      const expected = Math.max(0, row.pool.collateralUsd * (Math.min(row.pool.maxLtv, 100) / 100) - row.borrowedUsd)
+      expect(row.remainingBorrowPowerUsd).toBeCloseTo(expected, 6)
+      expect(row.remainingBorrowPowerUsd).toBeGreaterThanOrEqual(0)
+      expect(row.remainingBorrowPowerUsd).toBeLessThanOrEqual(row.pool.collateralUsd)
+    }
+  })
+
   it("uses spoke-level engine health factors for portfolio rows", () => {
     const state = buildMockBorrowSystemState("demo-wallet")
     const supplies = selectPortfolioSupplyRows(state, "demo-wallet")

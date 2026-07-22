@@ -17,10 +17,10 @@ describe("currency formatting", () => {
 
   it("converts USD to the selected currency using its rate + symbol", () => {
     const ctx = currencyContext("CNY")
-    expect(ctx.symbol).toBe("¥")
+    expect(ctx.symbol).toBe("CN¥")
     expect(convertFromUsd(100, ctx)).toBeCloseTo(718, 0)
-    // $1.6M * 7.18 ≈ ¥11.5M
-    expect(formatCompactCurrency(1_600_000, ctx)).toBe("¥11.5M")
+    // $1.6M * 7.18 ≈ CN¥11.5M
+    expect(formatCompactCurrency(1_600_000, ctx)).toBe("CN¥11.5M")
   })
 
   it("honors an explicit rate override (e.g. live FX)", () => {
@@ -49,7 +49,7 @@ describe("redenominateCompactUsd", () => {
   })
 
   it("handles B / K suffixes and thousands separators", () => {
-    expect(redenominateCompactUsd("$1.6B", currencyContext("CNY"))).toBe("¥11.5B")
+    expect(redenominateCompactUsd("$1.6B", currencyContext("CNY"))).toBe("CN¥11.5B")
     expect(redenominateCompactUsd("$4,050", currencyContext("EUR"))).toBe("€3,726.00")
   })
 

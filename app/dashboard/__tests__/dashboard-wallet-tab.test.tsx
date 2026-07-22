@@ -36,7 +36,8 @@ describe("DashboardWalletTab", () => {
   it("shows pool status without row-level pool action buttons", { timeout: 20_000 }, () => {
     renderWalletTab(<DashboardWalletTab walletId="demo-wallet" />)
 
-    expect(screen.getAllByText("In range").length).toBeGreaterThan(0)
+    // Fabricated "In range" LP status removed — honesty over invented analytics.
+    expect(screen.queryByText("In range")).toBeNull()
     expect(screen.queryByRole("button", { name: "View" })).toBeNull()
   })
 

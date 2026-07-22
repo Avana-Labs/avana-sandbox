@@ -1,7 +1,8 @@
 import type { RewardsSessionState } from "./contracts"
 import { safeReadParsed, safeRemoveItem, safeSetItem } from "@/app/lib/safe-local-storage"
+import { SESSION_CACHE_VERSION } from "@/app/lib/session-cache-version"
 
-const REWARDS_STATE_PREFIX = "avana.rewards.session.v1"
+const REWARDS_STATE_PREFIX = `avana.rewards.session.${SESSION_CACHE_VERSION}`
 
 function stateKey(walletId: string) {
   return `${REWARDS_STATE_PREFIX}:${walletId}`

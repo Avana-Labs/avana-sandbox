@@ -4,7 +4,7 @@ import type { PortfolioBorrowTabData } from "@/app/lib/data/providers/portfolio"
 import type { BorrowMarketRecord } from "@/app/lib/credit-engine"
 import type { ProductionReadAdapter, WalletReadSnapshot } from "./contracts"
 
-const NOT_IMPLEMENTED = "Production read adapter is not implemented"
+const NOT_IMPLEMENTED = "BLOCKED: Production read adapter is not implemented"
 
 export type ProductionBorrowReadSource = Partial<{
   readWalletSnapshot: (walletId: string) => Promise<WalletReadSnapshot>

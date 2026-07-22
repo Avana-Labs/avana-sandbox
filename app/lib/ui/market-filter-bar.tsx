@@ -1,6 +1,5 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 import { CategoryChips } from "./category-chips"
 import type { CategoryChip } from "@/app/lib/markets/category"
@@ -54,12 +53,6 @@ export function MarketFilterBar({
   className?: string
 }) {
   const { t } = useTranslation()
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
-  const mobileInputRef = useRef<HTMLInputElement | null>(null)
-
-  useEffect(() => {
-    if (mobileSearchOpen) mobileInputRef.current?.focus()
-  }, [mobileSearchOpen])
 
   return (
     <div className={cn("w-full", className)}>
@@ -80,46 +73,30 @@ export function MarketFilterBar({
         </label>
       </div>
 
-      {/* Mobile: compact single row — chips + search icon, or a full-width field */}
-      <div className="md:hidden">
-        {mobileSearchOpen ? (
-          <label className={cn(FIELD_CLASSES, "w-full")}>
-            <SearchIcon className="shrink-0 text-[#8a8a8a] dark:text-muted-foreground/80" />
-            <input
-              ref={mobileInputRef}
-              aria-label={searchPlaceholder}
-              value={search}
-              onChange={(event) => onSearchChange(event.target.value)}
-              placeholder={searchPlaceholder}
-              className={INPUT_CLASSES}
-            />
+      {/* Mobile: full-width search bar on top, category chips on their own row below —
+          not fused into one cramped row. */}
+      <div className="space-y-2.5 md:hidden">
+        <label className={cn(FIELD_CLASSES, "w-full")}>
+          <SearchIcon className="shrink-0 text-[#8a8a8a] dark:text-muted-foreground/80" />
+          <input
+            aria-label={searchPlaceholder}
+            value={search}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder={searchPlaceholder}
+            className={INPUT_CLASSES}
+          />
+          {search.length > 0 ? (
             <button
               type="button"
-              aria-label={t("Close search")}
-              onClick={() => setMobileSearchOpen(false)}
+              aria-label={t("Clear search")}
+              onClick={() => onSearchChange("")}
               className="flex size-5 shrink-0 items-center justify-center text-muted-foreground"
             >
               <CloseIcon />
             </button>
-          </label>
-        ) : (
-          <div className="flex items-center gap-2">
-            <div className="min-w-0 flex-1">
-              <CategoryChips chips={chips} value={tab} onChange={onTabChange} />
-            </div>
-            <button
-              type="button"
-              aria-label={searchPlaceholder}
-              onClick={() => setMobileSearchOpen(true)}
-              className={cn(
-                "flex size-9 shrink-0 items-center justify-center rounded-full border border-[#e6e6e6] bg-[#fafafa] text-[#8a8a8a] transition-colors dark:border-border/60 dark:bg-surface-2 dark:text-muted-foreground",
-                search.length > 0 && "border-brand/50 text-brand dark:border-brand/50 dark:text-brand",
-              )}
-            >
-              <SearchIcon />
-            </button>
-          </div>
-        )}
+          ) : null}
+        </label>
+        <CategoryChips chips={chips} value={tab} onChange={onTabChange} />
       </div>
     </div>
   )

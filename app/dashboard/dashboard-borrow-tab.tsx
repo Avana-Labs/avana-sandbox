@@ -7,8 +7,6 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import { CurrentLtvCard, DebtsPanel } from "@/app/dashboard/borrow-tab/debts-table"
 import { SuppliesHealthFactorCard, SuppliesPanel } from "@/app/dashboard/borrow-tab/supplies-table"
-import { CollateralPositionsPanel } from "@/app/dashboard/borrow-tab/collateral-positions-panel"
-import { DebtPositionsPanel } from "@/app/dashboard/borrow-tab/debt-positions-panel"
 
 // Aggregate wallet-wide health factor: total liquidation value / total debt — the same
 // definition used by the hero (map-portfolio-page / selectWalletBorrowSnapshot), rather
@@ -118,16 +116,24 @@ export function DashboardBorrowTab({
             </div>
           ) : null}
 
-          {/* Two distinct stacked tables (no tab switcher): asset-based Collateral
-              (deposit-style) and Debt (loans-style), each with its own inline summary
-              and expandable opportunities. */}
           <div className="space-y-10">
-            <div>
-              <CollateralPositionsPanel showBalance={showDollarAmounts} returnHref={returnHref} />
-            </div>
-            <div>
-              <DebtPositionsPanel showBalance={showDollarAmounts} returnHref={returnHref} />
-            </div>
+            <SuppliesPanel
+              rows={sortedSupplies}
+              totals={supplyTotals}
+              onBorrowMore={handleSupplyBorrowMore}
+              onAddCollateral={handleSupplyAddCollateral}
+              onRemove={handleSupplyRemove}
+              showBalance={showDollarAmounts}
+              showSummary={false}
+            />
+            <DebtsPanel
+              rows={sortedDebts}
+              totals={debtTotals}
+              onRepay={handleDebtRepay}
+              onManage={handleDebtManage}
+              showBalance={showDollarAmounts}
+              showSummary={false}
+            />
           </div>
         </>
       ) : (

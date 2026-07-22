@@ -387,8 +387,7 @@ const dict: TranslationDictionary = {
   "Daily Interest": "日次利息",
   day: "日",
   "Deposit {symbol}": "{symbol} をデポジット",
-  "Deposit compatible collateral from {spoke} before borrowing {symbol}.":
-    "{symbol} を借りる前に、{spoke} から対応する担保をデポジットしてください。",
+  "Deposit LP collateral before borrowing {symbol}.": "Deposit LP collateral before borrowing {symbol}.",
   Done: "完了",
   Expiration: "有効期限",
   Expired: "期限切れ",
@@ -476,8 +475,7 @@ const dict: TranslationDictionary = {
   "This receipt does not exist for the authenticated wallet.": "この受領書は認証済みのウォレットには存在しません。",
   "This receipt is taking too long to load. It may not be available in this environment.":
     "この受領書の読み込みに時間がかかりすぎています。この環境では利用できない可能性があります。",
-  "To borrow {symbol}, deposit a compatible collateral market from {spoke} first.":
-    "{symbol} を借りるには、まず {spoke} から対応する担保マーケットをデポジットしてください。",
+  "To borrow {symbol}, deposit LP collateral first.": "To borrow {symbol}, deposit LP collateral first.",
   "To borrow you need to supply any LPs to be used as collateral":
     "借入するには、担保として使用する LP を供給する必要があります",
   "Total borrows": "借入合計",

@@ -8,8 +8,7 @@ import { DashboardOverviewSection } from "@/app/dashboard/dashboard-metric-secti
 import { SuppliesHealthFactorCard } from "@/app/dashboard/borrow-tab/supplies-table"
 import { CurrentLtvCard } from "@/app/dashboard/borrow-tab/debts-table"
 import type { BorrowSnapshot } from "@/app/dashboard/borrow-hero-state"
-import type { PortfolioMultiplyCollateral, PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
-import { shouldUseOpenGateSession } from "@/app/lib/test-mode"
+import type { PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -35,32 +34,6 @@ const EMPTY_MULTIPLY_TAB: PortfolioMultiplyTabData = {
   history: [],
 }
 
-// Dev-only fixture so the table + action flow are exercisable before a real
-// multiply position exists on the test wallet.
-const DEV_MULTIPLY_FIXTURE: PortfolioMultiplyCollateral = {
-  id: "dev-fixture-wsteth-eth",
-  marketId: "wstETH-ETH",
-  label: "wstETH / ETH Loop",
-  collateralToken: "wstETH",
-  borrowableToken: "ETH",
-  multiplier: 4.2,
-  protocol: "Aave v4",
-  healthFactor: 1.85,
-  collateralUsd: 42_000,
-  borrowPowerUsd: 31_500,
-  debtUsd: 31_800,
-  ltvPct: 75.7,
-  liquidationPriceUsd: null,
-  netApyPct: 6.42,
-  status: "open",
-}
-
-function withDevMultiplyFixtures(data: PortfolioMultiplyTabData): PortfolioMultiplyTabData {
-  if (!shouldUseOpenGateSession()) return data
-  if (data.lpCollaterals.length > 0) return data
-  return { ...data, lpCollaterals: [DEV_MULTIPLY_FIXTURE] }
-}
-
 /**
  * The multiply account overview + positions that used to live on the dashboard.
  * Self-contained: reads the live multiply session directly, no props.
@@ -75,7 +48,7 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
   const portfolioMultiply = useDashboardMultiplyLive(walletId, multiplySession)
 
   const multiplyTabData = useMemo(
-    () => withDevMultiplyFixtures(hasMounted ? (portfolioMultiply ?? EMPTY_MULTIPLY_TAB) : EMPTY_MULTIPLY_TAB),
+    () => (hasMounted ? (portfolioMultiply ?? EMPTY_MULTIPLY_TAB) : EMPTY_MULTIPLY_TAB),
     [hasMounted, portfolioMultiply],
   )
 

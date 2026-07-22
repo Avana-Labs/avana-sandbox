@@ -19,6 +19,7 @@ import { SANDBOX_NOW } from "@/app/lib/deterministic"
 import { buildCuratedPriceFamily } from "./token-price-series"
 import { computeAssetAllocation, formatPct } from "./allocation"
 import { buildAssetRiskAssessment } from "./risk-model"
+import { buildAssetProtocolParameters } from "./protocol-parameters"
 import { buildAssetFaqs } from "./content-model"
 import type {
   AboutCard,
@@ -542,37 +543,17 @@ function buildAssetAbout(asset: SpokeBorrowableRecord, fixture: AssetFixture | u
 }
 
 function buildAboutStats(asset: SpokeBorrowableRecord, fixture?: AssetFixture): AboutCard["stats"] {
-  const tokenSeed = fakeAddressSeed(`${asset.id}:token`)
-  const tokenLabel = fixture?.contractLabel ?? tokenSeed.short
-  const tokenExplorer = fixture?.contractAddress
-    ? `https://etherscan.io/address/${fixture.contractAddress}`
-    : `https://etherscan.io/address/${tokenSeed.full}`
-  const vaultHash = fakeAddressSeed(`${asset.id}:vault`)
-  const stakingHash = fakeAddressSeed(`${asset.id}:staking`)
-
-  return [
-    { label: "Vault Contract Address", value: vaultHash.short, href: `https://etherscan.io/address/${vaultHash.full}` },
-    { label: "Token Contract Address", value: tokenLabel, href: tokenExplorer },
-    {
-      label: "Staking Contract Address",
-      value: stakingHash.short,
-      href: `https://etherscan.io/address/${stakingHash.full}`,
-    },
-    { label: "Deployed On", value: asset.category === "stable" ? "March 18, 2024" : "October 7, 2024" },
-  ]
-}
-
-function fakeAddressSeed(seed: string) {
-  let hash = 0
-  for (let i = 0; i < seed.length; i += 1) {
-    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0
+  const stats: AboutCard["stats"] = []
+  // Only link real fixture addresses — never pattern-fake hex.
+  if (fixture?.contractAddress) {
+    stats.push({
+      label: "Token Contract Address",
+      value: fixture.contractLabel ?? fixture.contractAddress,
+      href: `https://etherscan.io/address/${fixture.contractAddress}`,
+    })
   }
-  const hex = hash.toString(16).padStart(8, "0").toUpperCase()
-  const full = hex.repeat(5).slice(0, 40)
-  return {
-    short: `0x${hex.slice(0, 4)}...${hex.slice(4)}`,
-    full: `0x${full}`,
-  }
+  stats.push({ label: "Deployed On", value: asset.category === "stable" ? "March 18, 2024" : "October 7, 2024" })
+  return stats
 }
 
 function buildRelated(asset: SpokeBorrowableRecord): RelatedAssetSummary[] {
@@ -668,6 +649,7 @@ export function buildAssetDetail(asset: SpokeBorrowableRecord): AssetDetail {
       series: buildHeroSeries(asset, supplied, borrowed, fixture),
     },
     quickStats: buildQuickStats(asset, supplied, borrowed, fixture),
+    protocolParameters: buildAssetProtocolParameters(asset),
     supplyBorrow: buildSupplyBorrow(asset, supplied, borrowed),
     interestGenerated: buildInterestGenerated(asset, borrowed),
     historicalUtilization: buildSeries(`${asset.id}:hist:util`, "1Y", "Utilization", {

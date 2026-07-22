@@ -402,8 +402,7 @@ const dict: TranslationDictionary = {
   "Daily Interest": "Tageszinsen",
   day: "Tag",
   "Deposit {symbol}": "{symbol} einzahlen",
-  "Deposit compatible collateral from {spoke} before borrowing {symbol}.":
-    "Zahle vor dem Leihen von {symbol} kompatible Sicherheiten von {spoke} ein.",
+  "Deposit LP collateral before borrowing {symbol}.": "Deposit LP collateral before borrowing {symbol}.",
   Done: "Fertig",
   Expiration: "Ablauf",
   Expired: "Abgelaufen",
@@ -493,8 +492,7 @@ const dict: TranslationDictionary = {
     "Diese Quittung existiert für die authentifizierte Wallet nicht.",
   "This receipt is taking too long to load. It may not be available in this environment.":
     "Diese Quittung lädt zu lange. Möglicherweise ist sie in dieser Umgebung nicht verfügbar.",
-  "To borrow {symbol}, deposit a compatible collateral market from {spoke} first.":
-    "Um {symbol} zu leihen, zahle zuerst einen kompatiblen Sicherheitenmarkt von {spoke} ein.",
+  "To borrow {symbol}, deposit LP collateral first.": "To borrow {symbol}, deposit LP collateral first.",
   "To borrow you need to supply any LPs to be used as collateral":
     "Zum Leihen musst du LPs als Sicherheiten bereitstellen.",
   "Total borrows": "Kredite gesamt",

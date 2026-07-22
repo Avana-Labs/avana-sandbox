@@ -1,18 +1,17 @@
 import { describe, expect, it } from "vitest"
 import {
   dashboardHrefForProduct,
-  dashboardHrefForTab,
   dashboardTabForProduct,
   parseDashboardTab,
   successDashboardCtaLabel,
 } from "@/app/lib/action-system/dashboard-routing"
 
 describe("dashboard-routing", () => {
-  it("maps each product to the correct dashboard tab", () => {
-    expect(dashboardTabForProduct("borrow")).toBe("overview")
-    expect(dashboardTabForProduct("lend")).toBe("lending")
-    expect(dashboardTabForProduct("multiply")).toBe("looping")
-    expect(dashboardTabForProduct("rewards")).toBe("activity")
+  it("maps each product to the dashboard tab query value", () => {
+    expect(dashboardTabForProduct("borrow")).toBe("borrow")
+    expect(dashboardTabForProduct("lend")).toBe("lend")
+    expect(dashboardTabForProduct("multiply")).toBe("multiply")
+    expect(dashboardTabForProduct("rewards")).toBe("wallet")
   })
 
   it("routes every product action back to the dashboard page", () => {
@@ -20,15 +19,11 @@ describe("dashboard-routing", () => {
     expect(dashboardHrefForProduct("borrow")).toBe("/dashboard?tab=borrow")
     expect(dashboardHrefForProduct("multiply")).toBe("/dashboard?tab=multiply")
     expect(dashboardHrefForProduct("rewards")).toBe("/dashboard?tab=wallet")
-    expect(dashboardHrefForTab("overview")).toBe("/dashboard?tab=borrow")
-    expect(dashboardHrefForTab("lending")).toBe("/dashboard?tab=lend")
   })
 
   it("parses valid tab query values", () => {
-    expect(parseDashboardTab("lending")).toBe("lending")
-    expect(parseDashboardTab("overview")).toBe("overview")
-    expect(parseDashboardTab("looping")).toBe("looping")
-    expect(parseDashboardTab("activity")).toBe("activity")
+    expect(parseDashboardTab("wallet")).toBe("wallet")
+    expect(parseDashboardTab("borrow")).toBe("borrow")
     expect(parseDashboardTab("invalid")).toBeNull()
     expect(parseDashboardTab(null)).toBeNull()
   })

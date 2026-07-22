@@ -296,7 +296,10 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
                   >
                     {t(link.label)}
                   </span>
-                  <span className="shrink-0 pb-0.5 text-[0.88rem] font-medium tracking-[-0.02em] text-[#01AACF]">
+                  <span
+                    aria-hidden="true"
+                    className="shrink-0 pb-0.5 text-[0.88rem] font-medium tracking-[-0.02em] text-[#01AACF]"
+                  >
                     {String(index + 1).padStart(2, "0")}
                   </span>
                 </Link>

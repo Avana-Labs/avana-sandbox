@@ -347,14 +347,14 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
               <col className="w-[132px]" />
             </colgroup>
             <thead>
-              <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                <th className="bg-table-header px-5 py-3.5">{t("Time")}</th>
-                <th className="bg-table-header px-5 py-3.5">{t("Type")}</th>
-                <th className="bg-table-header px-5 py-3.5">{t("Product")}</th>
-                <th className="bg-table-header px-5 py-3.5">{t("For")}</th>
-                <th className="bg-table-header px-5 py-3.5">{t("Amount")}</th>
-                <th className="bg-table-header px-5 py-3.5">{t("Status")}</th>
-                <th className="bg-table-header px-5 py-3.5 text-right">{t("Txn")}</th>
+              <tr className="text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="bg-table-header px-5 pb-2 pt-2.5">{t("Time")}</th>
+                <th className="bg-table-header px-5 pb-2 pt-2.5">{t("Type")}</th>
+                <th className="bg-table-header px-5 pb-2 pt-2.5">{t("Product")}</th>
+                <th className="bg-table-header px-5 pb-2 pt-2.5">{t("For")}</th>
+                <th className="bg-table-header px-5 pb-2 pt-2.5">{t("Amount")}</th>
+                <th className="bg-table-header px-5 pb-2 pt-2.5">{t("Status")}</th>
+                <th className="bg-table-header px-5 pb-2 pt-2.5 text-right">{t("Txn")}</th>
               </tr>
             </thead>
             <tbody>

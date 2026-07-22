@@ -14,6 +14,7 @@ import { useSwapSessionContext } from "@/app/lib/avana-session/avana-sessions-pr
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
+import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import type { SwapQuote } from "@/app/lib/swap-system"
 
@@ -39,6 +40,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
   const { t } = useTranslation()
   const { exact } = useCurrency()
   const swap = useSwapSessionContext()
+  const networkGuard = useActionNetworkGuard()
   const swappableAssets = SWAP_ASSETS.filter((asset) => asset.isSwapEnabled && !asset.isLpToken)
   const [inputAssetId, setInputAssetId] = useState(initialFrom ?? "eth")
   const [outputAssetId, setOutputAssetId] = useState(
@@ -128,8 +130,9 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
       amountValue: amount,
       assetLabel: inputAsset.symbol,
       assetSymbol: inputAsset.symbol,
-      amountUsd: validation.amount * inputAsset.priceUsd,
-      amountUsdLabel: exact(validation.amount * inputAsset.priceUsd),
+      // Sell USD must match the post-fee/impact FX (quote.exchangeRate), not raw catalog spot.
+      amountUsd: quote.estimatedOutputAmount * outputAsset.priceUsd,
+      amountUsdLabel: exact(quote.estimatedOutputAmount * outputAsset.priceUsd),
       rateLabel: t("Rate"),
       rateValue: `1 ${inputAsset.symbol} = ${formatAmount(quote.exchangeRate)} ${outputAsset.symbol}`,
       marketLabel: t("Buy"),
@@ -160,20 +163,34 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
               message: t("You will receive significantly less than the current market value."),
             }
           : null,
-      blockedReason: null,
+      blockedReason: networkGuard.blockedReason,
       validationErrors: [],
       warnings: [],
+      // Keep the surfaced steps terse and standard — the same short vocabulary the
+      // other actions use — and drop the internal "refresh balances" step, which no
+      // other action exposes. (#39)
       executionSteps: [
         ...(approvalRequired ? [{ id: "approve", label: `Approve ${inputAsset.symbol}` }] : []),
-        { id: "sign", label: t("Confirm swap in wallet") },
-        { id: "submit", label: t("Submit swap") },
-        { id: "refresh", label: t("Refresh wallet balances") },
+        { id: "sign", label: t("Confirm in wallet") },
+        { id: "submit", label: t("Submit") },
       ],
     }
-  }, [amount, approvalRequired, exact, inputAsset, maxAmount, outputAsset, quote, t, validation])
+  }, [
+    amount,
+    approvalRequired,
+    exact,
+    inputAsset,
+    maxAmount,
+    networkGuard.blockedReason,
+    outputAsset,
+    quote,
+    t,
+    validation,
+  ])
 
   const submitSwap = useCallback(async () => {
     if (!quote || !previewUi || !validation.valid || isPending) return
+    if (networkGuard.isWrongNetwork) return
     if (quote.priceImpactPct >= 3 && !acceptedPriceImpact) return
     setIsPending(true)
     setOutcome(null)
@@ -264,6 +281,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
     swap,
     t,
     validation,
+    networkGuard.isWrongNetwork,
   ])
 
   const resetSwap = useCallback(() => {
@@ -374,7 +392,12 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
           <ActionFooter
             primaryLabel={primaryLabel}
             secondaryHref={returnHref}
-            primaryDisabled={!validation.valid || quoteState === "loading" || (!quote && quoteState !== "error")}
+            primaryDisabled={
+              Boolean(networkGuard.blockedReason) ||
+              !validation.valid ||
+              quoteState === "loading" ||
+              (!quote && quoteState !== "error")
+            }
             onPrimary={() => {
               if (quoteState === "error") {
                 setQuoteRetry((current) => current + 1)

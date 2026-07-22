@@ -46,6 +46,8 @@ type Props = {
 const FILTERS = [
   { id: "all", label: "All" },
   { id: "supply", label: "Pledge" },
+  { id: "borrow", label: "Borrow" },
+  { id: "repay", label: "Repay" },
   { id: "withdraw", label: "Remove" },
   { id: "rewards", label: "Claim" },
 ] as const
@@ -85,16 +87,16 @@ export function CollateralHistoryCard({ transactions, title = "Transactions" }: 
             </colgroup>
             <thead>
               <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                <th className="rounded-l-radius-lg bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Time")}
                 </th>
-                <th className="bg-table-header px-3 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                <th className="bg-table-header px-3 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Type")}
                 </th>
-                <th className="bg-table-header px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                <th className="bg-table-header px-3 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   USD
                 </th>
-                <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                <th className="rounded-r-radius-lg bg-table-header px-5 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Wallet")}
                 </th>
               </tr>
@@ -156,16 +158,16 @@ export function CollateralHistoryCard({ transactions, title = "Transactions" }: 
             </colgroup>
             <thead>
               <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                <th className="rounded-l-radius-lg bg-table-header px-5 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                <th className="rounded-l-radius-lg bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Time")}
                 </th>
-                <th className="bg-table-header px-3 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                <th className="bg-table-header px-3 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Type")}
                 </th>
-                <th className="bg-table-header px-3 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                <th className="bg-table-header px-3 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   USD
                 </th>
-                <th className="rounded-r-radius-lg bg-table-header px-5 py-3.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
+                <th className="rounded-r-radius-lg bg-table-header px-5 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Wallet")}
                 </th>
               </tr>

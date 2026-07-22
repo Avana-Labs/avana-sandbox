@@ -400,8 +400,7 @@ const dict: TranslationDictionary = {
   "Daily Interest": "दैनिक ब्याज",
   day: "दिन",
   "Deposit {symbol}": "{symbol} जमा करें",
-  "Deposit compatible collateral from {spoke} before borrowing {symbol}.":
-    "{symbol} उधार लेने से पहले {spoke} से संगत कोलैटरल जमा करें।",
+  "Deposit LP collateral before borrowing {symbol}.": "Deposit LP collateral before borrowing {symbol}.",
   Done: "हो गया",
   Expiration: "समाप्ति",
   Expired: "समाप्त",
@@ -489,8 +488,7 @@ const dict: TranslationDictionary = {
   "This receipt does not exist for the authenticated wallet.": "प्रमाणित वॉलेट के लिए यह रसीद मौजूद नहीं है।",
   "This receipt is taking too long to load. It may not be available in this environment.":
     "इस रसीद को लोड होने में बहुत समय लग रहा है। यह इस एनवायरनमेंट में उपलब्ध नहीं हो सकती।",
-  "To borrow {symbol}, deposit a compatible collateral market from {spoke} first.":
-    "{symbol} उधार लेने के लिए, पहले {spoke} से एक संगत कोलैटरल मार्केट जमा करें।",
+  "To borrow {symbol}, deposit LP collateral first.": "To borrow {symbol}, deposit LP collateral first.",
   "To borrow you need to supply any LPs to be used as collateral":
     "उधार लेने के लिए आपको कोलैटरल के रूप में कोई LP सप्लाई करना होगा",
   "Total borrows": "कुल उधार",

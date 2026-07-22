@@ -4,10 +4,15 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { ActionIcon } from "@/app/components/action-icon"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
-import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
+import { secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
-import { PoolHero, PoolHeroIdentity, QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
+import {
+  PoolHero,
+  PoolHeroIdentity,
+  QuickStatsGrid,
+  ProtocolParametersSection,
+} from "@/app/borrow/_detail/pool-sections"
 import { PoolBorrowSidebar } from "@/app/borrow/_detail/sidebars"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
@@ -91,6 +96,7 @@ export function PoolDetailClient({ detail }: Props) {
                   </h2>
                   <QuickStatsGrid detail={detail} />
                   <DeferredDetailContent className="space-y-12">
+                    <ProtocolParametersSection parameters={detail.protocolParameters} />
                     <CashflowCard detail={detail} />
                     <RiskSection detail={detail} />
                     <DetailFaqSection
@@ -99,7 +105,7 @@ export function PoolDetailClient({ detail }: Props) {
                     />
                     <CollateralHistoryCard transactions={detail.transactions} />
                     <RelatedPoolsRow detail={detail} />
-                    <DetailPageNotice />
+                    <DetailPageNotice product="borrow" />
                   </DeferredDetailContent>
                 </section>
               </div>
@@ -115,7 +121,7 @@ export function PoolDetailClient({ detail }: Props) {
       <MobileDetailActionBar className="grid grid-cols-2 gap-3">
         <Link
           href={actionPagePath("borrow", "supply", { market: detail.id, return: `/borrow/markets/${detail.id}` })}
-          className={primaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
+          className={secondaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
         >
           <ActionIcon label="Pledge" />
           {t("Pledge")}

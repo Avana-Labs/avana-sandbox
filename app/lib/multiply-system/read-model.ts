@@ -99,14 +99,8 @@ export function catalogMarketToRow(market: MultiplyMarketRecord): MultiplyMarket
     ),
     availableSecondary: formatCompactUsd(market.economics.availableLiquidityUsd),
     // The explore table renders the primary reward row under its MAX LEVERAGE
-    // header, so that row must carry the single-sourced public max — the same
-    // number the trending card, hero average and markets table show — not the
-    // recommended cap (which lives in the secondary row for context).
+    // header with the single-sourced public max only — no recommended cap here.
     rewardRows: [
-      {
-        label: `Collateral factor ${Math.round(market.risk.collateralFactor * 100)}% · Liquidation threshold ${Math.round(market.risk.liquidationThreshold * 100)}%`,
-        value: `Recommended max ${formatFactor(market.risk.recommendedMaxMultiplier)}`,
-      },
       {
         label: `Collateral factor ${Math.round(market.risk.collateralFactor * 100)}% · Liquidation threshold ${Math.round(market.risk.liquidationThreshold * 100)}%`,
         value: formatFactor(maxLeverage),
@@ -180,6 +174,22 @@ export function worstMultiplyHealthFactor(healthFactors: readonly number[], posi
  */
 export const MULTIPLY_LIQUIDATION_THRESHOLD_FACTOR = 0.85
 
+function weightedMultiplyLiquidationThreshold(
+  positions: Array<{ marketId: string; collateralValueUsd: number }>,
+  markets: MultiplySystemState["markets"],
+): number {
+  let weighted = 0
+  let totalCollateral = 0
+  for (const position of positions) {
+    const market = markets[position.marketId]
+    if (!market) continue
+    weighted += position.collateralValueUsd * market.risk.liquidationThreshold
+    totalCollateral += position.collateralValueUsd
+  }
+  if (totalCollateral <= 0) return MULTIPLY_LIQUIDATION_THRESHOLD_FACTOR
+  return weighted / totalCollateral
+}
+
 export function buildPortfolioMultiplyData(
   walletId: string,
   state: MultiplySystemState,
@@ -198,7 +208,7 @@ export function buildPortfolioMultiplyData(
   return {
     creditLines: {
       approvedUsd: totalCollateralUsd,
-      liquidationThresholdUsd: totalCollateralUsd * MULTIPLY_LIQUIDATION_THRESHOLD_FACTOR,
+      liquidationThresholdUsd: totalCollateralUsd * weightedMultiplyLiquidationThreshold(positions, state.markets),
       averageHealthFactor,
       currentLtvPct: totalCollateralUsd > 0 ? (totalDebtUsd / totalCollateralUsd) * 100 : 0,
       totalBorrowedUsd: totalDebtUsd,
@@ -260,16 +270,25 @@ export function buildMultiplyWalletSnapshot(
 ): MultiplyWalletReadSnapshot {
   const portfolio = buildPortfolioMultiplyData(walletId, state, transactionHistory)
   const walletPositions = Object.values(state.positions).filter((position) => position.walletId === walletId)
+
+  // Blend at the portfolio level by EQUITY, not as a flat per-position average — a
+  // large loop must dominate the headline more than a tiny one. The aggregate
+  // multiplier is the true portfolio leverage (total exposure / total equity), and
+  // netApy is the equity-weighted mean of each position's net APY. (#21)
+  const totalCollateralUsd = portfolio.creditLines.totalCollateralUsd
+  const totalEquityUsd = totalCollateralUsd - portfolio.creditLines.totalBorrowedUsd
+  const equityWeights = walletPositions.map((position) =>
+    Math.max(0, position.collateralValueUsd - position.debtValueUsd),
+  )
+  const totalEquityWeight = equityWeights.reduce((sum, weight) => sum + weight, 0)
+
   return {
     walletId,
     transactionHistory,
     metrics: {
       collateralValueUsd: portfolio.creditLines.totalCollateralUsd,
       debtValueUsd: portfolio.creditLines.totalBorrowedUsd,
-      multiplier:
-        portfolio.positions.length > 0
-          ? portfolio.positions.reduce((sum, position) => sum + position.leverage, 0) / portfolio.positions.length
-          : 1,
+      multiplier: totalEquityUsd > 0 ? totalCollateralUsd / totalEquityUsd : 1,
       ltv: portfolio.creditLines.currentLtvPct / 100,
       // Collapse both "no positions" (null) and "positions but all debt-free" (∞)
       // to the canonical "infinity" sentinel this field uses across the system.
@@ -277,8 +296,9 @@ export function buildMultiplyWalletSnapshot(
         ? (portfolio.creditLines.averageHealthFactor as number)
         : "infinity",
       netApy:
-        walletPositions.length > 0
-          ? walletPositions.reduce((sum, position) => sum + position.netApy, 0) / walletPositions.length
+        totalEquityWeight > 0
+          ? walletPositions.reduce((sum, position, index) => sum + position.netApy * equityWeights[index], 0) /
+            totalEquityWeight
           : 0,
     },
     riskSnapshots: buildMockMultiplyRiskSnapshots(state).filter((snapshot) =>

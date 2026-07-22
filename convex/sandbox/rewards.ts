@@ -14,7 +14,11 @@ export const getState = query({
 })
 
 export const saveState = mutation({
-  args: { wallet: v.string(), stateJson: v.string() },
+  args: {
+    wallet: v.string(),
+    stateJson: v.string(),
+    expectedRevision: v.optional(v.number()),
+  },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
     if (args.stateJson.length > 1_000_000) throw new Error("REWARDS_STATE_TOO_LARGE")
@@ -29,9 +33,25 @@ export const saveState = mutation({
       .unique()
     const updatedAt = Date.now()
     if (existing) {
-      await ctx.db.patch(existing._id, { stateJson: args.stateJson, updatedAt })
-      return existing._id
+      const currentRevision = existing.revision ?? 0
+      if (args.expectedRevision == null) {
+        throw new Error("REVISION_REQUIRED: rewards state already exists; reload it and submit its expectedRevision.")
+      }
+      if (args.expectedRevision !== currentRevision) {
+        throw new Error(
+          `STALE_WRITE: rewards state changed since it was read (expected revision ${args.expectedRevision}, found ${currentRevision}); reload and retry.`,
+        )
+      }
+      const revision = currentRevision + 1
+      await ctx.db.patch(existing._id, { stateJson: args.stateJson, updatedAt, revision })
+      return { id: existing._id, revision }
     }
-    return ctx.db.insert("sandboxRewards", { wallet, stateJson: args.stateJson, updatedAt })
+    const id = await ctx.db.insert("sandboxRewards", {
+      wallet,
+      stateJson: args.stateJson,
+      updatedAt,
+      revision: 0,
+    })
+    return { id, revision: 0 }
   },
 })

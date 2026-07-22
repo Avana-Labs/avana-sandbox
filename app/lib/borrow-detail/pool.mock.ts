@@ -26,6 +26,7 @@ import { formatBpsAsPct, formatPct } from "./allocation"
 import { formatOraclePrice } from "./formatters"
 import { buildPoolRiskAssessment } from "./risk-model"
 import { buildPoolFaqs } from "./content-model"
+import { buildPoolProtocolParameters } from "./protocol-parameters"
 import type {
   AboutCard,
   CashflowCard,
@@ -676,34 +677,9 @@ function buildAbout(row: BorrowPoolRow, fixture: FixtureOverride | undefined): A
   }
 }
 
-function buildAboutStats(row: BorrowPoolRow): AboutCard["stats"] {
-  const vaultHash = fakeAddressSeed(`${row.id}:vault`)
-  const tokenHash = fakeAddressSeed(`${row.id}:token`)
-  const stakingHash = fakeAddressSeed(`${row.id}:staking`)
-
-  return [
-    { label: "Vault Contract Address", value: vaultHash.short, href: `https://etherscan.io/address/${vaultHash.full}` },
-    { label: "Token Contract Address", value: tokenHash.short, href: `https://etherscan.io/address/${tokenHash.full}` },
-    {
-      label: "Staking Contract Address",
-      value: stakingHash.short,
-      href: `https://etherscan.io/address/${stakingHash.full}`,
-    },
-    { label: "Deployed On", value: "March 18, 2024" },
-  ]
-}
-
-function fakeAddressSeed(seed: string) {
-  let hash = 0
-  for (let i = 0; i < seed.length; i += 1) {
-    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0
-  }
-  const hex = hash.toString(16).padStart(8, "0").toUpperCase()
-  const full = hex.repeat(5).slice(0, 40)
-  return {
-    short: `0x${hex.slice(0, 4)}...${hex.slice(4)}`,
-    full: `0x${full}`,
-  }
+function buildAboutStats(_row: BorrowPoolRow): AboutCard["stats"] {
+  // Omit fabricated contract hex links until real addresses ship.
+  return [{ label: "Deployed On", value: "March 18, 2024" }]
 }
 
 function buildRelated(row: BorrowPoolRow): RelatedPoolSummary[] {
@@ -806,6 +782,7 @@ export function buildPoolDetail(row: BorrowPoolRow): PoolDetail {
       series: heroMetricSeries,
     },
     quickStats: mergeQuickStats(buildDefaultQuickStats(row), fixture?.quickStats),
+    protocolParameters: buildPoolProtocolParameters(row),
     performance: buildPerformance(row, fixture),
     keyMetrics: buildKeyMetrics(row, fixture),
     cashflow: buildCashflow(row, fixture),

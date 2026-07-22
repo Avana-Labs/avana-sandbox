@@ -1,4 +1,6 @@
 import type { MarketLiquidityDelta } from "@/app/lib/convex/market-liquidity-provider"
+import type { BorrowSystemState } from "@/app/lib/credit-engine/types"
+import { parseFixed } from "@/app/lib/credit-engine/units"
 
 /**
  * Single source of truth for layering shared-ledger liquidity deltas onto the
@@ -49,4 +51,40 @@ export function applyBorrowableAssetDelta<T extends BorrowableLiquidity & { id: 
 export function borrowedAvailabilityDeltaUsd(deltas: DeltaMap, assetId: string): number {
   const borrowed = deltas.get(assetId)?.borrowedDeltaUsd ?? 0
   return borrowed === 0 ? 0 : -borrowed
+}
+
+function usdNumberToUsd6(deltaUsd: number): bigint {
+  if (!Number.isFinite(deltaUsd) || deltaUsd === 0) return 0n
+  return parseFixed(Math.abs(deltaUsd).toFixed(6), 6)
+}
+
+/**
+ * Layer shared-ledger borrow deltas onto credit-engine asset snapshots before a
+ * borrow simulate/execute so available liquidity matches what the UI lists.
+ */
+export function applyBorrowLiquidityDeltasToEngineState(state: BorrowSystemState, deltas: DeltaMap): BorrowSystemState {
+  if (deltas.size === 0) return state
+
+  let touched = false
+  const assets: BorrowSystemState["assets"] = { ...state.assets }
+  for (const [assetId, asset] of Object.entries(state.assets)) {
+    const delta = deltas.get(assetId)
+    if (!delta || delta.borrowedDeltaUsd === 0) continue
+
+    touched = true
+    const deltaUsd6 = usdNumberToUsd6(delta.borrowedDeltaUsd)
+    const borrowedDeltaUsd6 = delta.borrowedDeltaUsd >= 0 ? deltaUsd6 : -deltaUsd6
+    const nextAvailable = asset.snapshot.availableLiquidityUsd6 - borrowedDeltaUsd6
+    const nextBorrowed = asset.snapshot.totalBorrowedUsd6 + borrowedDeltaUsd6
+    assets[assetId] = {
+      ...asset,
+      snapshot: {
+        ...asset.snapshot,
+        availableLiquidityUsd6: nextAvailable > 0n ? nextAvailable : 0n,
+        totalBorrowedUsd6: nextBorrowed > 0n ? nextBorrowed : 0n,
+      },
+    }
+  }
+
+  return touched ? { ...state, assets } : state
 }

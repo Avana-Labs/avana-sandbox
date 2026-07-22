@@ -70,10 +70,11 @@ export default defineSchema({
     feeTier: v.optional(v.string()),
     maxLtvPct: v.optional(v.number()),
     /**
-     * Canonical USD price for the onboarding starter-allocation gate. The live token oracle
-     * (tokenPrices) only covers single-token bluechip symbols; pool markets carry LP-pair
-     * symbols and long-tail lend markets carry chain-name symbols with no oracle price. Seeded
-     * per market (pool = USD-denominated 1) so the claim gate can resolve a positive price.
+     * Canonical USD price. The live token oracle (tokenPrices) only covers single-token
+     * bluechip symbols; pool markets carry LP-pair symbols and long-tail lend markets carry
+     * chain-name symbols with no oracle price, so this is seeded per market. For POOL markets
+     * it is the LP token price (poolLpTokenPriceUsd) — used both by the onboarding starter
+     * gate and by assertBorrowSolvent to revalue an 18-decimal LP-token pledge.
      */
     priceUsd: v.optional(v.number()),
     visuals: v.optional(
@@ -559,6 +560,8 @@ export default defineSchema({
     wallet: v.string(),
     stateJson: v.string(),
     updatedAt: v.number(),
+    /** Optimistic-concurrency version; clients echo `expectedRevision` on update. */
+    revision: v.optional(v.number()),
   }).index("by_wallet", ["wallet"]),
 
   /**
@@ -716,8 +719,8 @@ export default defineSchema({
   transactions: defineTable({
     wallet: v.string(),
     intentId: v.optional(v.string()),
-    product: v.union(v.literal("borrow"), v.literal("lend"), v.literal("multiply")),
-    /** deposit | withdraw | borrow | repay | claim | liquidate | multiply | deleverage */
+    product: v.union(v.literal("borrow"), v.literal("lend"), v.literal("multiply"), v.literal("swap")),
+    /** deposit | withdraw | borrow | repay | claim | liquidate | multiply | deleverage | swap */
     kind: v.string(),
     status: v.union(v.literal("success"), v.literal("failed"), v.literal("pending")),
     marketSlug: v.optional(v.string()),
@@ -733,6 +736,12 @@ export default defineSchema({
      *  current multiplier (which rendered deleverages as leverage increases). */
     multiplierBefore: v.optional(v.number()),
     multiplierAfter: v.optional(v.number()),
+    /** Swap-only legs (product === "swap"): the input/output token identity + amounts so
+     *  the activity feed can render "0.001 ETH → 1.925 USDC" from the durable row alone. */
+    swapInputSymbol: v.optional(v.string()),
+    swapOutputSymbol: v.optional(v.string()),
+    swapInputAmount: v.optional(v.number()),
+    swapOutputAmount: v.optional(v.number()),
     syntheticTxHash: v.string(),
     simulated: v.boolean(),
     at: v.number(),
@@ -740,7 +749,8 @@ export default defineSchema({
     .index("by_wallet_at", ["wallet", "at"])
     .index("by_wallet_intent", ["wallet", "intentId"])
     .index("by_wallet_hash", ["wallet", "syntheticTxHash"])
-    .index("by_market_at", ["marketSlug", "at"]),
+    .index("by_market_at", ["marketSlug", "at"])
+    .index("by_wallet_product_at", ["wallet", "product", "at"]),
 
   /**
    * Append-only risk/health history per wallet. Preserves the SPOKE-scoped health

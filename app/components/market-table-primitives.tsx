@@ -8,7 +8,7 @@ export function DesktopTableSurface({ children, className }: { children: ReactNo
 }
 
 export function SilentActionHeader({ className }: { className?: string }) {
-  return <th className={cn("rounded-r-radius-lg bg-table-header px-4 py-3.5 pr-4", className)} />
+  return <th className={cn("rounded-r-radius-lg bg-table-header px-4 pb-2 pt-2.5 pr-4", className)} />
 }
 
 export function HoverActionGroup({

@@ -110,6 +110,7 @@ export type RemovePreview = {
   healthFactorAfterLabel: string
   riskTone: HomeRiskTone
   isUnsafe: boolean
+  isValid: boolean
   liquidationThresholdAfterUsd: number
   ctaLabel: string
 }
@@ -292,7 +293,7 @@ export const HOME_CLAIM_POSITIONS: HomeClaimPosition[] = [
     poolId: "eth-usdc",
     name: "ETH / USDC",
     subtitle: "Uni v3 · Bluechip · 0.3%",
-    totalUsd: 142,
+    totalUsd: 111.1,
     breakdown: [
       {
         id: "claim-eth-usdc-eth",
@@ -307,13 +308,6 @@ export const HOME_CLAIM_POSITIONS: HomeClaimPosition[] = [
         amountLabel: "42.11 USDC",
         usdValue: 42.11,
         visual: { symbol: "USDC", shortLabel: "U", bgClassName: "bg-sky-100", textClassName: "text-sky-700" },
-      },
-      {
-        id: "claim-eth-usdc-fees",
-        symbol: "Fees",
-        amountLabel: "$30.90 fees",
-        usdValue: 30.9,
-        visual: { symbol: "Fees", shortLabel: "F", bgClassName: "bg-amber-100", textClassName: "text-amber-700" },
       },
     ],
   },
@@ -497,7 +491,12 @@ export function calculateBorrowPreview(
     }
   }
 
-  const healthFactor = (pool.collateralUsd * (pool.maxLtv / 100)) / amountUsd
+  // Health factor uses the LIQUIDATION THRESHOLD, not the borrow max-LTV, so it
+  // matches the canonical engine definition (credit-engine/metrics.ts:99):
+  // HF = (collateral * liquidationThreshold) / debt. The pool carries a pre-scaled
+  // liquidation USD figure (collateralUsd * liquidationThreshold), so for a borrow
+  // against the full collateral this is simply liquidationUsd / debt.
+  const healthFactor = pool.liquidationUsd / amountUsd
   const exceedsBorrowPower = amountUsd > pool.borrowPowerUsd
   const riskTone = getRiskTone(healthFactor)
   const progressPercent = Math.max(5, Math.min(90, 90 - (amountUsd / pool.borrowPowerUsd) * 85))
@@ -545,24 +544,19 @@ export function calculateRepayPreview(
       exceedsDebt: false,
       remainingDebtUsd: currentDebtUsd,
       remainingDebtLabel: formatCompactUsd(currentDebtUsd),
-      healthFactorAfter:
-        currentDebtUsd > 0 ? (pool.collateralUsd * (pool.maxLtv / 100)) / currentDebtUsd : Number.POSITIVE_INFINITY,
-      healthFactorAfterLabel:
-        currentDebtUsd > 0 ? formatHealthFactor((pool.collateralUsd * (pool.maxLtv / 100)) / currentDebtUsd) : "∞",
-      oldHealthFactorLabel:
-        currentDebtUsd > 0 ? formatHealthFactor((pool.collateralUsd * (pool.maxLtv / 100)) / currentDebtUsd) : "∞",
-      riskTone:
-        currentDebtUsd > 0 ? getRiskTone((pool.collateralUsd * (pool.maxLtv / 100)) / currentDebtUsd) : "positive",
+      healthFactorAfter: currentDebtUsd > 0 ? pool.liquidationUsd / currentDebtUsd : Number.POSITIVE_INFINITY,
+      healthFactorAfterLabel: currentDebtUsd > 0 ? formatHealthFactor(pool.liquidationUsd / currentDebtUsd) : "∞",
+      oldHealthFactorLabel: currentDebtUsd > 0 ? formatHealthFactor(pool.liquidationUsd / currentDebtUsd) : "∞",
+      riskTone: currentDebtUsd > 0 ? getRiskTone(pool.liquidationUsd / currentDebtUsd) : "positive",
       yearlyInterestSavedUsd: 0,
       ctaLabel: "Enter an amount",
     }
   }
 
   const remainingDebtUsd = Math.max(0, currentDebtUsd - amountUsd)
-  const healthFactorAfter =
-    remainingDebtUsd > 0 ? (pool.collateralUsd * (pool.maxLtv / 100)) / remainingDebtUsd : Number.POSITIVE_INFINITY
-  const oldHealthFactor =
-    currentDebtUsd > 0 ? (pool.collateralUsd * (pool.maxLtv / 100)) / currentDebtUsd : Number.POSITIVE_INFINITY
+  // HF uses the liquidation threshold (pre-scaled into pool.liquidationUsd), not max-LTV.
+  const healthFactorAfter = remainingDebtUsd > 0 ? pool.liquidationUsd / remainingDebtUsd : Number.POSITIVE_INFINITY
+  const oldHealthFactor = currentDebtUsd > 0 ? pool.liquidationUsd / currentDebtUsd : Number.POSITIVE_INFINITY
   const exceedsDebt = amountUsd > currentDebtUsd
 
   return {
@@ -591,16 +585,15 @@ export function calculateClaimPreview(
   const selectedTotalUsd = selectedPositionIds.reduce((sum, positionId) => sum + (claimableTotals[positionId] ?? 0), 0)
   const hasCustomAmount = partialAmountUsd !== null && partialAmountUsd > 0
   const effectiveClaimUsd = hasCustomAmount ? Math.min(partialAmountUsd ?? 0, selectedTotalUsd) : selectedTotalUsd
-  // Include every breakdown line (tokens AND the "Fees" line). Dropping "Fees"
-  // made the itemized rows sum to less than the headline claim total — a claim of
-  // $142 showed only $111.10 of tokens. Claim harvests LP fees, so the fee line
-  // belongs in the breakdown and must reconcile with the headline.
+  // Claim breakdown is token harvest only — never list "Fees" as a green claimable
+  // reward leg beside ETH/USDC (that confused fee cost with rewards).
   const tokenTotals = positions.reduce<Record<string, number>>((accumulator, position) => {
     if (!selections[position.id]) {
       return accumulator
     }
 
     position.breakdown.forEach((item) => {
+      if (item.symbol === "Fees") return
       accumulator[item.symbol] = (accumulator[item.symbol] ?? 0) + item.usdValue
     })
 
@@ -638,10 +631,19 @@ export function calculateRemovePreview(
 ): RemovePreview {
   const removeUsd = Math.round((pool.collateralUsd * percent) / 100)
   const afterCollateralUsd = pool.collateralUsd - removeUsd
+  // Liquidation threshold ratio pre-scaled into the pool (liquidationUsd / collateralUsd,
+  // ≈0.805). HF uses this threshold applied to the REMAINING collateral, matching the
+  // canonical engine definition (credit-engine/metrics.ts:99) rather than the borrow max-LTV.
+  const liquidationThreshold = pool.collateralUsd > 0 ? pool.liquidationUsd / pool.collateralUsd : 0
+  const liquidationThresholdAfterUsd = Math.round(afterCollateralUsd * liquidationThreshold)
   const healthFactorAfter =
-    currentDebtUsd > 0 ? (afterCollateralUsd * (pool.maxLtv / 100)) / currentDebtUsd : Number.POSITIVE_INFINITY
+    currentDebtUsd > 0 ? (afterCollateralUsd * liquidationThreshold) / currentDebtUsd : Number.POSITIVE_INFINITY
   const safePercent = calculateSafeRemovePercent(pool, currentDebtUsd)
   const isUnsafe = currentDebtUsd > 0 && percent > safePercent
+  // Block the removal when it would push the position below the safe floor (percent >
+  // safePercent) or, worse, make it insolvent (HF-after < 1.0). Mirrors how BorrowPreview
+  // and RepayPreview gate on isValid.
+  const isValid = !isUnsafe && healthFactorAfter >= 1.0
 
   return {
     percent,
@@ -652,7 +654,8 @@ export function calculateRemovePreview(
     healthFactorAfterLabel: formatHealthFactor(healthFactorAfter),
     riskTone: getRiskTone(healthFactorAfter),
     isUnsafe,
-    liquidationThresholdAfterUsd: Math.round(afterCollateralUsd * 0.805),
-    ctaLabel: `Remove ${percent}% · ${formatCompactUsd(removeUsd)}`,
+    isValid,
+    liquidationThresholdAfterUsd,
+    ctaLabel: isValid ? `Remove ${percent}% · ${formatCompactUsd(removeUsd)}` : "Reduce removal amount",
   }
 }

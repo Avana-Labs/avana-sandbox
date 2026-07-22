@@ -11,6 +11,7 @@ import {
   MarketMobileCardHeader,
   MarketMobileMetric,
   MarketMobilePrimaryAction,
+  MarketMobileSecondaryAction,
   MarketMobileStatList,
   MarketMobileStatRow,
 } from "@/app/components/market-card-primitives"
@@ -27,9 +28,7 @@ import {
 } from "@/app/lib/data/borrow-domain"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { BorrowableAssetsPanel } from "./borrowable-assets-table"
-import { DexChipRow, PillButton, TokenBubble, TokenPairCell, TrendSpark } from "./atoms"
-import { usePriceFor } from "@/app/lib/prices/token-prices-context"
-import { pairExchangeRateLabel } from "@/app/lib/prices/format"
+import { PillButton, TokenBubble, TokenPairCell } from "./atoms"
 import { formatApy } from "@/app/lib/format"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -128,14 +127,11 @@ function SortIcon() {
 }
 
 function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
-  const priceFor = usePriceFor()
   const { compact } = useCurrency()
   const { t } = useTranslation()
-  // Pair exchange rate (e.g. "1 ETH = 1,612 USDC") from the real price oracle;
-  // falls back to TVL when either token is unpriced / the oracle is unavailable.
-  const subtitle =
-    pairExchangeRateLabel(pool.visuals[0].symbol, pool.visuals[1].symbol, priceFor) ??
-    `${compact(pool.tvlUsd)} ${t("TVL")}`
+  // Just the pool TVL — no venue prefix (the DEX/LP-type string was noise). The
+  // version is already conveyed by the group heading + the market detail page.
+  const subtitle = `${compact(pool.tvlUsd)} ${t("TVL")}`
   return (
     <div className="flex min-w-0 items-center gap-4">
       <div className="flex items-center">
@@ -180,7 +176,7 @@ function CollateralDesktopTable({
   embedded?: boolean
 }) {
   const router = useRouter()
-  const { compact, ctx, convert } = useCurrency()
+  const { compact } = useCurrency()
   const { t } = useTranslation()
   const [sortKey, setSortKey] = useState<"asset" | "apy" | "deposits" | "cf" | "risk" | "supplied">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
@@ -226,10 +222,10 @@ function CollateralDesktopTable({
       <table className="w-full min-w-[1120px] text-[12px]">
         <thead>
           <tr className="bg-table-header text-left text-muted-foreground">
-            <th className="pb-3 pt-4 pl-6 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 pl-6 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               #
             </th>
-            <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("asset")}
@@ -244,7 +240,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("apy")}
@@ -253,11 +249,11 @@ function CollateralDesktopTable({
                   sortKey === "apy" ? "text-foreground dark:text-white" : "text-muted-foreground/70 dark:text-white/42",
                 )}
               >
-                <span>{t("TRADING FEES")}</span>
+                <span>{t("FEES")}</span>
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("deposits")}
@@ -272,7 +268,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("cf")}
@@ -281,11 +277,11 @@ function CollateralDesktopTable({
                   sortKey === "cf" ? "text-foreground dark:text-white" : "text-muted-foreground/70 dark:text-white/42",
                 )}
               >
-                <span>{t("CF")}</span>
+                <span>{t("Max LTV")}</span>
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("risk")}
@@ -296,11 +292,11 @@ function CollateralDesktopTable({
                     : "text-muted-foreground/70 dark:text-white/42",
                 )}
               >
-                <span>{t("RISK PREMIUM")}</span>
+                <span>{t("PREMIUM")}</span>
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-3 pt-4 px-4 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("supplied")}
@@ -315,7 +311,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-3 pt-4 px-4 pr-5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+            <th className="pb-2 pt-2.5 px-4 pr-5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
           </tr>
         </thead>
         <tbody key={`collateral-${sortKey}-${sortDirection}-${sortedRows.length}`}>
@@ -343,9 +339,6 @@ function CollateralDesktopTable({
                 <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                   <span className="tabular-nums">{compact(pool.tvlUsd)}</span>
                 </div>
-                <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
-                  <span className="tabular-nums">{`${ctx.symbol}${Math.round(convert(pool.tvlUsd)).toLocaleString("en-US")}`}</span>
-                </div>
               </td>
               <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
                 <div className="font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white">
@@ -363,9 +356,6 @@ function CollateralDesktopTable({
               <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
                 <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                   <span className="tabular-nums">{compact(pool.availableUsd)}</span>
-                </div>
-                <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
-                  <span className="tabular-nums">{`${ctx.symbol}${Math.round(convert(pool.availableUsd)).toLocaleString("en-US")}`}</span>
                 </div>
               </td>
               <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
@@ -595,12 +585,12 @@ function SpokeMobileSection({
   onBorrowAsset: (asset: BorrowableAsset) => void
   deferContent: boolean
 }) {
+  const router = useRouter()
   // Each spoke/category owns its own Collateral/Borrowable toggle.
   const [activeTab, setActiveTab] = useState<SectionTabId>("collateral")
   const [expanded, setExpanded] = useState(false)
   const [contentMounted, setContentMounted] = useState(!deferContent)
   const sectionRef = useRef<HTMLElement | null>(null)
-  const priceFor = usePriceFor()
   const { compact } = useCurrency()
   const { t } = useTranslation()
   const visibleRows = expanded ? rows : rows.slice(0, INITIAL_MOBILE_COLLATERAL_ROWS)
@@ -656,17 +646,7 @@ function SpokeMobileSection({
                 <li key={pool.id}>
                   <MarketMobileCard clickable onClick={() => onViewMarket(pool)}>
                     <MarketMobileCardHeader
-                      identity={
-                        <TokenPairCell
-                          visuals={pool.visuals}
-                          name={pool.name}
-                          subtitle={
-                            pairExchangeRateLabel(pool.visuals[0].symbol, pool.visuals[1].symbol, priceFor) ??
-                            `${compact(pool.tvlUsd)} ${t("TVL")}`
-                          }
-                          size="md"
-                        />
-                      }
+                      identity={<TokenPairCell visuals={pool.visuals} name={pool.name} size="md" />}
                       metric={
                         <MarketMobileMetric
                           value={formatApy((pool.aprMin + pool.aprMax) / 2)}
@@ -680,29 +660,38 @@ function SpokeMobileSection({
                         <EventTagList events={pool.events} />
                       </div>
                     ) : null}
-                    <div className="mt-3 flex items-center justify-between text-[12px] text-muted-foreground">
-                      <DexChipRow dexes={pool.dexes} />
-                      <TrendSpark
-                        isPositive={pool.trendUp}
-                        seed={`pool-${pool.id}`}
-                        values={pool.trendValues}
-                        width={52}
-                      />
-                    </div>
                     <MarketMobileStatList className="mt-3">
+                      <MarketMobileStatRow label={t("TVL")} value={compact(pool.tvlUsd)} />
                       <MarketMobileStatRow label={t("Available")} value={compact(pool.availableUsd)} />
                       <MarketMobileStatRow label={t("Max LTV")} value={`${pool.ltv}%`} />
-                      <MarketMobileStatRow label={t("Risk Premium")} value={formatRiskPremium(pool.riskPremiumBps)} />
+                      <MarketMobileStatRow label={t("Premium")} value={formatRiskPremium(pool.riskPremiumBps)} />
                     </MarketMobileStatList>
-                    <MarketMobilePrimaryAction
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        onUseAsCollateral(pool)
-                      }}
-                    >
-                      <ActionIcon label="Pledge" />
-                      {t("Pledge")}
-                    </MarketMobilePrimaryAction>
+                    <div className="mt-4 flex gap-2">
+                      <MarketMobilePrimaryAction
+                        className="mt-0 flex-1"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          onUseAsCollateral(pool)
+                        }}
+                      >
+                        <ActionIcon label="Pledge" />
+                        {t("Pledge")}
+                      </MarketMobilePrimaryAction>
+                      <MarketMobileSecondaryAction
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          router.push(
+                            actionPagePath("borrow", "borrow", {
+                              market: pool.id,
+                              return: `/borrow/markets/${pool.id}`,
+                            }),
+                          )
+                        }}
+                      >
+                        <ActionIcon label="Borrow" />
+                        {t("Borrow")}
+                      </MarketMobileSecondaryAction>
+                    </div>
                   </MarketMobileCard>
                 </li>
               ))}

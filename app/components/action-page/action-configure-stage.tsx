@@ -381,19 +381,23 @@ export function ActionConfigureStage({
           {preview.rateLabel || preview.marketValue || preview.marketBreakdown ? (
             <ActionCard>
               {preview.rateLabel ? (
-                <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" />
+                <ActionInfoRow
+                  label={preview.rateLabel}
+                  value={preview.rateValue}
+                  tooltip={/rate/i.test(preview.rateLabel) && /=/.test(preview.rateValue) ? "fxRate" : "rate"}
+                />
               ) : null}
               {preview.marketBreakdown ? (
                 <>
                   <ActionInfoRow
                     label="Collateral APY"
                     value={`${preview.marketBreakdown.collateral.symbol} · ${preview.marketBreakdown.collateral.apy}`}
-                    tooltip="market"
+                    tooltip="collateralApy"
                   />
                   <ActionInfoRow
                     label="Borrow APY"
                     value={`${preview.marketBreakdown.borrow.symbol} · ${preview.marketBreakdown.borrow.apy}`}
-                    tooltip="market"
+                    tooltip="borrowApy"
                   />
                 </>
               ) : preview.marketValue ? (
@@ -412,7 +416,7 @@ export function ActionConfigureStage({
 
       {preview && showHomeDetails ? (
         <ActionCard>
-          <ActionInfoRow label="Avana Fee" value={preview.networkFeeLabel} tooltip="fee" />
+          <ActionInfoRow label="Network fee" value={preview.networkFeeLabel} tooltip="fee" />
         </ActionCard>
       ) : null}
 

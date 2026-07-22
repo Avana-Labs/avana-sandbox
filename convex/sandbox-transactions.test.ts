@@ -452,7 +452,7 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
     ).rejects.toThrow(/no backing collateral/i)
   })
 
-  test("rejects borrow debt when collateral value is missing", async () => {
+  test("rejects borrow debt when shares and principal are zero (no server-verifiable value)", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
     await expect(
@@ -466,15 +466,47 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
             collateral: [
               {
                 marketSlug: "uni-v3-bluechip-weth-usdc",
-                collateralShares: "2000000000",
-                principalTokenAmount: "2000000000",
+                collateralShares: "0",
+                principalTokenAmount: "0",
                 collateralEnabled: true,
+                // Spoofed client USD must not count as verifiable collateral.
+                collateralValueUsd6: "999999999000000",
               },
             ],
           },
         }),
       ),
     ).rejects.toThrow(/no server-verifiable value/i)
+  })
+
+  test("p0-02: rejects inflated client collateralValueUsd6 when shares revalue underwater", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await expect(
+      asUser.mutation(
+        api.sandbox.transactions.recordTransaction,
+        borrowIntent("inflated-collateral", {
+          amountUsd: 5000,
+          requestedAmountUsd6: "5000000000",
+          executedAmountUsd6: "5000000000",
+          position: {
+            status: "open",
+            marketSlug: "uni-v3-bluechip-weth-usdc",
+            // $5k debt. Real shares = $2k → LT 85% = $1.7k max. Client lies with $1M USD.
+            debtValueUsd6: "5000000000",
+            collateral: [
+              {
+                marketSlug: "uni-v3-bluechip-weth-usdc",
+                collateralShares: "2000000000",
+                principalTokenAmount: "2000000000",
+                collateralEnabled: true,
+                collateralValueUsd6: "1000000000000000",
+              },
+            ],
+          },
+        }),
+      ),
+    ).rejects.toThrow(/undercollateralized|health factor/i)
   })
 
   test("rejects a multiply position above the protocol leverage ceiling", async () => {

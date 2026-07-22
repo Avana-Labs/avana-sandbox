@@ -15,21 +15,18 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
   const fc = useCurrency()
   const { t } = useTranslation()
   return (
-    <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
-      <div className="min-w-0">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <p className="text-[12px] font-medium tracking-tight text-muted-foreground">{t("Total TVL")}</p>
-            <p className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
-              {fc.compact(metrics.totalTvlUsd)}
-            </p>
-          </div>
-        </div>
+    <div className="flex flex-col gap-3 pb-4 md:flex-row md:items-end md:justify-between md:gap-4">
+      {/* Mobile: label + value inline on one row. Desktop: stacked as before. */}
+      <div className="flex items-baseline justify-between gap-x-3 md:block md:min-w-0">
+        <p className="text-[12px] font-medium tracking-tight text-muted-foreground">{t("Total TVL")}</p>
+        <p className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
+          {fc.compact(metrics.totalTvlUsd)}
+        </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-2.5 sm:gap-5 md:ml-auto md:text-right">
-        <div>
-          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground md:justify-end">
+      <div className="flex flex-col gap-2.5 md:grid md:grid-cols-2 md:gap-5 md:ml-auto md:text-right">
+        <div className="flex items-baseline justify-between md:block">
+          <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground md:mb-1 md:justify-end">
             <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
             {t("Available Credit")}
           </div>
@@ -38,8 +35,8 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
           </p>
         </div>
 
-        <div>
-          <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground md:justify-end">
+        <div className="flex items-baseline justify-between md:block">
+          <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground md:mb-1 md:justify-end">
             <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
             {t("Outstanding Loans")}
           </div>

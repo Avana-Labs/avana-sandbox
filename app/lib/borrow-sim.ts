@@ -89,6 +89,19 @@ export type BorrowPoolRow = {
   events?: BorrowPoolEvent[]
 }
 
+/**
+ * USD price of a single LP token for a collateral pool. An LP pair has no
+ * single-token oracle price, so we derive a stable per-token price from the
+ * pool's example collateral position. This is the SINGLE source of truth shared
+ * by the client market snapshot (borrow-system/mock.ts) and the Convex seed
+ * (convex-seed/build-seed.ts) so the server values 18-decimal LP-token collateral
+ * amounts with the exact price the client used to derive those amounts. If the two
+ * diverged, server solvency would reject borrows the client preview allowed.
+ */
+export function poolLpTokenPriceUsd(pool: Pick<BorrowPoolRow, "collateralExampleUsd">): number {
+  return Math.max(1, pool.collateralExampleUsd / 2.5)
+}
+
 export type BorrowableAssetCategory = "stable" | "eth" | "btc" | "crypto"
 
 export type BorrowableAsset = {
@@ -843,6 +856,11 @@ function isStablePair(a: string, b: string): boolean {
   return isStableSymbol(a) && isStableSymbol(b)
 }
 
+function buildPoolTrendValues(poolId: string) {
+  const seed = seededUnit(poolId)
+  return [0.88, 0.91, 0.95, 0.93, 1.0].map((base, index) => Number((base + seed * 0.08 + index * 0.015).toFixed(3)))
+}
+
 function buildPoolCatalog(): BorrowPoolRow[] {
   const rows: BorrowPoolRow[] = []
   for (const spoke of BORROW_SPOKES) {
@@ -876,7 +894,10 @@ function buildPoolCatalog(): BorrowPoolRow[] {
       rows.push({
         id,
         name,
-        venue: `${dex.label} · ${spoke.description}`,
+        // Concise, meaningful venue (e.g. "Uniswap v2 LPs") — distinguishes the DEX + version
+        // without the jargon LP-type description ("Constant-product LP tokens") that cluttered
+        // the borrow table subtitle.
+        venue: spoke.label,
         feeTier,
         tvlUsd: Math.max(tvlUsd, 500_000),
         spoke: spoke.id,
@@ -890,6 +911,7 @@ function buildPoolCatalog(): BorrowPoolRow[] {
         visuals,
         collateralExampleUsd: 1_500 + index * 320,
         trendUp: seed.trendUp ?? index % 2 === 0,
+        trendValues: buildPoolTrendValues(id),
       })
     })
   }
@@ -1113,51 +1135,6 @@ export const BORROWABLE_ASSETS: BorrowableAsset[] = [
     trendUp: true,
     category: "eth",
   },
-  {
-    id: "aave",
-    symbol: "AAVE",
-    name: "Aave",
-    subtitle: "Aave governance token",
-    borrowApr: 4.5,
-    totalBorrowedUsd: 1_200_000,
-    utilization: 45,
-    availableUsd: 3_500_000,
-    walletBalanceLabel: "0 AAVE",
-    hasWalletBalance: false,
-    visual: v("AAVE"),
-    trendUp: true,
-    category: "crypto",
-  },
-  {
-    id: "uni",
-    symbol: "UNI",
-    name: "Uniswap",
-    subtitle: "Uniswap governance token",
-    borrowApr: 4.2,
-    totalBorrowedUsd: 800_000,
-    utilization: 35,
-    availableUsd: 2_800_000,
-    walletBalanceLabel: "0 UNI",
-    hasWalletBalance: false,
-    visual: v("UNI"),
-    trendUp: false,
-    category: "crypto",
-  },
-  {
-    id: "crv",
-    symbol: "CRV",
-    name: "Curve DAO",
-    subtitle: "Curve governance token",
-    borrowApr: 5.1,
-    totalBorrowedUsd: 600_000,
-    utilization: 38,
-    availableUsd: 1_900_000,
-    walletBalanceLabel: "0 CRV",
-    hasWalletBalance: false,
-    visual: v("CRV"),
-    trendUp: true,
-    category: "crypto",
-  },
 ]
 
 const BORROWABLE_ASSET_BY_SYMBOL = new Map(BORROWABLE_ASSETS.map((asset) => [asset.symbol.toUpperCase(), asset]))
@@ -1221,6 +1198,7 @@ export function getDexById(id: BorrowDexId): BorrowDex {
 }
 
 export function aprRangeLabel(pool: BorrowPoolRow): string {
+  if (!Number.isFinite(pool.aprMin) || !Number.isFinite(pool.aprMax)) return "—"
   if (pool.aprMin === pool.aprMax) {
     return `${pool.aprMin.toFixed(1)}%`
   }
@@ -1228,6 +1206,7 @@ export function aprRangeLabel(pool: BorrowPoolRow): string {
 }
 
 export function formatRiskPremium(bps: number): string {
+  if (!Number.isFinite(bps)) return "—"
   const value = bps / 100
   return `+${value.toFixed(2)}%`
 }
@@ -1246,6 +1225,7 @@ export function formatCompactUsd(usdValue: number): string {
 }
 
 export function formatUsdExact(usdValue: number): string {
+  if (!Number.isFinite(usdValue)) return "—"
   const { rate, zeroDecimal } = getActiveCurrency()
   const value = usdValue * rate
   const abs = Math.abs(value)

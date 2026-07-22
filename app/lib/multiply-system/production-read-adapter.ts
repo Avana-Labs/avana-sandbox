@@ -3,7 +3,7 @@ import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import type { PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
 import type { MultiplyReadAdapter, MultiplyWalletReadSnapshot } from "./contracts"
 
-const NOT_IMPLEMENTED = "Production multiply read adapter is not implemented"
+const NOT_IMPLEMENTED = "BLOCKED: Production multiply read adapter is not implemented"
 
 export type ProductionMultiplyReadSource = Partial<{
   readWalletSnapshot: (walletId: string) => Promise<MultiplyWalletReadSnapshot>

@@ -36,16 +36,20 @@ const METRIC_TOOLTIPS_BY_LABEL: Record<string, string> = {
   "Position APY": METRIC_TOOLTIPS_BY_ID["position-apy"]!,
   "Rewards earned": METRIC_TOOLTIPS_BY_ID["rewards-earned"]!,
   "Interest earned": METRIC_TOOLTIPS_BY_ID["interest-earned"]!,
-  "Avana Fee":
-    "Avana charges 10 basis points on the transaction amount. The network fee is the estimated gas cost to confirm on-chain.",
+  "Network fee":
+    "The estimated gas cost to confirm this action on-chain. Avana does not deduct a separate protocol fee in the sandbox.",
 }
 
 export const ACTION_INFO_TOOLTIPS: Record<string, string> = {
   rate: "Estimated annual rate for this action, such as borrow APY, supply APY, or net carry.",
+  fxRate: "Estimated exchange rate for this swap after price impact.",
   market: "The market this action applies to, including collateral and borrow assets where relevant.",
-  fee: "Avana charges 10 basis points on the transaction amount. The network fee is the estimated gas cost to confirm on-chain.",
+  fee: "The network fee is the estimated gas cost to confirm this action on-chain. Avana does not deduct a separate protocol fee in the sandbox.",
   amount: "Amount you are confirming for this transaction.",
   apy: "Annualized yield or cost rate for the selected market.",
+  collateralApy: "Annualized yield earned by the collateral asset in this multiply position.",
+  borrowApy: "Annualized cost to borrow the debt asset in this multiply position.",
+  claimTotal: "Total token rewards selected to claim. Network or protocol fees are separate from harvestable rewards.",
 }
 
 export function resolveMetricTooltip(id?: string, label?: string, explicit?: string) {

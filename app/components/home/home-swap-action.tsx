@@ -12,6 +12,7 @@ import { useSwapSessionContext } from "@/app/lib/avana-session/avana-sessions-pr
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
+import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { SWAP_ASSETS, SWAP_CHAIN_ID, validateSwapInputAmount, type SwapQuote } from "@/app/lib/swap-system"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 
@@ -40,6 +41,8 @@ export function HomeSwapAction() {
   const [outcome, setOutcome] = useState<{ tone: "success" | "error"; message: string } | null>(null)
   const [reviewPreviewUi, setReviewPreviewUi] = useState<ActionPreviewUi | null>(null)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
+  const [acceptedPriceImpact, setAcceptedPriceImpact] = useState(false)
+  const networkGuard = useActionNetworkGuard()
 
   const inputAsset = SWAP_ASSETS.find((asset) => asset.id === inputAssetId) ?? null
   const outputAsset = SWAP_ASSETS.find((asset) => asset.id === outputAssetId) ?? null
@@ -61,6 +64,8 @@ export function HomeSwapAction() {
   const getQuote = swap.getQuote
 
   useEffect(() => {
+    // A fresh quote invalidates any prior high-impact acknowledgement.
+    setAcceptedPriceImpact(false)
     if (!validation.valid || !inputAsset || !outputAsset) {
       setQuote(null)
       setQuoteState("idle")
@@ -143,20 +148,23 @@ export function HomeSwapAction() {
               message: t("You will receive significantly less than the current market value."),
             }
           : null,
-      blockedReason: null,
+      blockedReason: networkGuard.blockedReason,
       validationErrors: [],
       warnings: [],
       executionSteps: [
         ...(approvalRequired ? [{ id: "approve", label: `Approve ${inputAsset.symbol}` }] : []),
-        { id: "sign", label: t("Confirm swap in wallet") },
-        { id: "submit", label: t("Submit swap") },
-        { id: "refresh", label: t("Refresh wallet balances") },
+        { id: "sign", label: t("Confirm in wallet") },
+        { id: "submit", label: t("Submit") },
       ],
     }
-  }, [amount, exact, inputAsset, outputAsset, quote, swap, t, validation])
+  }, [amount, exact, inputAsset, networkGuard.blockedReason, outputAsset, quote, swap, t, validation])
 
   const submitSwap = useCallback(async () => {
     if (!quote || !previewUi || !validation.valid || !inputAsset || !outputAsset || isPending) return
+    // Safety parity with /swap: never submit on the wrong network, and require an
+    // explicit acknowledgement for a high price-impact swap. (#24)
+    if (networkGuard.isWrongNetwork) return
+    if (quote.priceImpactPct >= 3 && !acceptedPriceImpact) return
     setIsPending(true)
     setOutcome(null)
 
@@ -212,7 +220,19 @@ export function HomeSwapAction() {
     } finally {
       setIsPending(false)
     }
-  }, [amount, inputAsset, isPending, outputAsset, previewUi, quote, swap, t, validation])
+  }, [
+    acceptedPriceImpact,
+    amount,
+    inputAsset,
+    isPending,
+    networkGuard.isWrongNetwork,
+    outputAsset,
+    previewUi,
+    quote,
+    swap,
+    t,
+    validation,
+  ])
 
   const resetSwap = useCallback(() => {
     setInputAssetId("")
@@ -222,6 +242,7 @@ export function HomeSwapAction() {
     setReviewPreviewUi(null)
     setSuccessUi(null)
     setOutcome(null)
+    setAcceptedPriceImpact(false)
     setStage("configure")
   }, [])
 
@@ -272,6 +293,15 @@ export function HomeSwapAction() {
           primaryPending={isPending}
           hideHeader
           amountVariant="raised"
+          confirmationGate={
+            quote && quote.priceImpactPct >= 3
+              ? {
+                  checked: acceptedPriceImpact,
+                  onCheckedChange: setAcceptedPriceImpact,
+                  label: t("I understand this swap may result in a significant loss of value."),
+                }
+              : undefined
+          }
         />
       ) : null}
 
@@ -284,7 +314,11 @@ export function HomeSwapAction() {
               onAmountChange={setAmount}
               assetId={inputAssetId}
               onOpenAssetPicker={() => setPickerSide("input")}
-              fiatLabel={exact((Number(amount) || 0) * (inputAsset?.priceUsd ?? 0))}
+              fiatLabel={
+                quote && outputAsset
+                  ? exact(quote.estimatedOutputAmount * outputAsset.priceUsd)
+                  : exact((Number(amount) || 0) * (inputAsset?.priceUsd ?? 0))
+              }
               balanceLabel={inputBalanceLabel}
               onBalanceClick={
                 inputBalance
@@ -389,14 +423,20 @@ function HomeSwapAssetField({
   const asset = SWAP_ASSETS.find((item) => item.id === assetId) ?? null
   return (
     <SwapStyleField label={label} tone={tone} className="py-3">
-      <div className="mt-1.5 flex min-h-10 items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-stretch">
+      {/* Row sizing mirrors the shared ActionAmountCard (borrow/repay/claim/remove) exactly —
+          no min-heights — so the Express Sell/Buy cards are the SAME height as the other tabs'
+          cards and there's no card-size shift when switching tabs. (#9) */}
+      <div className="mt-1.5 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
         <div className="min-w-0 flex-1">
           <input
             value={amount}
             readOnly={readOnly}
             onChange={(event) => onAmountChange?.(event.target.value.replace(/[^\d.]/g, ""))}
             inputMode="decimal"
-            className={`w-full min-w-0 border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] outline-none placeholder:text-muted-foreground/60 ${
+            // h-[1em] makes the <input> size to its line box exactly like the borrow tab's
+            // amount <div>, so the Sell/Buy cards are the SAME height as the borrow cards and
+            // there's no card-size shift when toggling Express tabs. (#9)
+            className={`h-[1em] w-full min-w-0 border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] outline-none placeholder:text-muted-foreground/60 ${
               amount && amount !== "0" ? "text-foreground" : "text-muted-foreground/60"
             }`}
             placeholder="0"
@@ -407,13 +447,14 @@ function HomeSwapAssetField({
           type="button"
           onClick={onOpenAssetPicker}
           aria-label={`${label} asset`}
-          className={`inline-flex shrink-0 items-center rounded-full border border-border bg-surface-raised font-medium text-foreground hover:bg-surface-hover max-[360px]:self-end ${
-            asset ? "h-10 gap-2 px-3 text-[14px]" : "h-9 gap-2 px-3 text-[14px]"
-          }`}
+          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground hover:bg-surface-hover max-[360px]:self-end"
         >
           {asset ? (
             <>
-              <ActionTokenIcon symbol={asset.symbol} className="size-8" />
+              {/* Match the shared ActionAmountCard pill (borrow/repay/claim/remove) + multiply:
+                  a big size-12 token icon on reveal, not the old size-8, so the Express tabs
+                  present the selected asset consistently. (#9) */}
+              <ActionTokenIcon symbol={asset.symbol} />
               <span>{asset.symbol}</span>
             </>
           ) : (
@@ -424,7 +465,7 @@ function HomeSwapAssetField({
           </span>
         </button>
       </div>
-      <div className="mt-1 flex min-h-5 items-center justify-between gap-3 text-[14px]">
+      <div className="mt-1 flex items-center justify-between gap-3 text-[14px]">
         <span className="min-w-0 truncate text-foreground/60">{fiatLabel}</span>
         {balanceLabel ? (
           <button

@@ -7,14 +7,6 @@ import type { ActionPreviewUi } from "@/app/lib/action-system/contracts"
 import { formatActionAmount, formatActionApproxUsd, formatActionFeeSummary } from "@/app/lib/action-system/formatters"
 
 /**
- * The sandbox wallet's spendable collateral budget (USD), matching the borrow
- * system's seeded wallet cash. Multiply has no per-token wallet ledger, so this
- * stands in for "your balance" and keeps Max affordable instead of pegging it to
- * the pool's entire liquidity.
- */
-export const MULTIPLY_WALLET_COLLATERAL_BUDGET_USD = 12_500
-
-/**
  * Maximum collateral amount (in collateral units), capped by the smaller of the
  * wallet balance and the market's available liquidity. `walletBalanceUsd` defaults
  * to unbounded so callers that only care about the liquidity ceiling are unchanged.

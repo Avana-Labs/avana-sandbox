@@ -15,8 +15,18 @@ import {
   homeVisualToBorrowVisual,
 } from "@/app/lib/data/borrow-domain"
 import type { DebtRowContext } from "@/app/lib/data/borrow-position-types"
-import { HfNumber, TokenBubble, TokenPairCell } from "@/app/borrow/components/atoms"
+import { HfNumber, TokenPairCell } from "@/app/borrow/components/atoms"
+import {
+  MarketMobileCard,
+  MarketMobileCardHeader,
+  MarketMobileMetric,
+  MarketMobilePrimaryAction,
+  MarketMobileSecondaryAction,
+  MarketMobileStatList,
+  MarketMobileStatRow,
+} from "@/app/components/market-card-primitives"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
+import { liqUtilizationBarClass, liqUtilizationPercentTextClass } from "@/app/lib/borrow-system/liq-utilization-tone"
 import { cn } from "@/lib/utils"
 
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
@@ -82,7 +92,7 @@ export function DebtsPanel({
       <div className="hidden md:block">
         <DesktopTableSurface className="!rounded-none">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[960px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
                 <col className="w-[28%]" />
                 <col className="w-[16%]" />
@@ -92,19 +102,19 @@ export function DebtsPanel({
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                  <th className="bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    {t("Collateral Position")}
+                  <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    {t("Pool")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Borrowed")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    {t("Health Factor")}
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    {t("Health")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    {t("Liq. Threshold")}
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    {t("Liq.")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 pr-5 text-left text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground" />
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 pr-5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
                 </tr>
               </thead>
               <tbody>
@@ -146,7 +156,7 @@ export function DebtsPanel({
                         <div className="font-data text-[13px] tabular-nums text-foreground">
                           {m(exact(row.liquidationThresholdUsd))}
                         </div>
-                        <div className="text-[11px] text-muted-foreground">{t("collateral value")}</div>
+                        <div className="text-[11px] text-muted-foreground">{t("liquidation value")}</div>
                       </td>
                       <td className={`py-3 pl-4 pr-5 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
                         <HoverActionGroup align="start" className="gap-2">
@@ -194,57 +204,39 @@ export function DebtsPanel({
             ReturnType<typeof homeVisualToBorrowVisual>,
           ]
           const meta = BORROW_SUPPLY_META[row.pool.id]
-          const pairLabel = `${row.pool.visuals[0].symbol} / ${row.pool.visuals[1].symbol} LP`
           const rowKey = row.id ?? `${row.pool.id}-${index}`
           return (
-            <li
-              key={rowKey}
-              className="space-y-3 rounded-radius-md border border-border bg-card px-4 py-4 shadow-elev-1"
-            >
-              <div>
-                <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                  {t("Active debt")}
-                </div>
-                <div className="mt-1 flex items-baseline gap-2">
-                  <span className="font-data text-[28px] font-medium leading-none tracking-tight text-rose-500">
-                    {m(exact(row.borrowedUsd))}
-                  </span>
-                  <span className="text-[14px] font-medium text-muted-foreground">{row.debtAssetSymbol}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-3 rounded-radius-sm border border-border bg-surface-inset px-3 py-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-medium text-muted-foreground">{t("Backed by")}</span>
-                  <div className="flex items-center">
-                    <TokenBubble visual={visuals[0]} size="table" />
-                    <TokenBubble visual={visuals[1]} size="table" className="-ml-1.5" />
-                  </div>
-                </div>
-                <div className="text-right font-data text-[12.5px] font-medium tabular-nums text-foreground">
-                  {pairLabel} · {m(exact(row.pool.collateralUsd))}
-                </div>
-              </div>
-
-              <dl className="divide-y divide-border text-[12.5px]">
-                <DebtStatLine
+            <MarketMobileCard key={rowKey} clickable onClick={() => router.push(`/borrow/markets/${row.pool.id}`)}>
+              <MarketMobileCardHeader
+                identity={<TokenPairCell visuals={visuals} name={row.pool.name} size="md" />}
+                metric={
+                  <MarketMobileMetric
+                    value={m(compact(row.borrowedUsd))}
+                    label={t("Borrowed")}
+                    valueClassName="text-rose-500"
+                  />
+                }
+              />
+              <MarketMobileStatList className="mt-3">
+                <MarketMobileStatRow
+                  label={t("Health")}
+                  value={m(formatHealthFactor(row.healthFactor))}
+                  valueClassName={healthFactorToneClass(row.healthFactor)}
+                />
+                <MarketMobileStatRow
                   label={t("Borrow APR")}
                   value={`${row.borrowApr.toFixed(2)}%`}
-                  tone={aprToneClass(row.borrowApr)}
+                  valueClassName={aprToneClass(row.borrowApr)}
                 />
-                <DebtStatLine
+                <MarketMobileStatRow
                   label={t("Daily Interest")}
                   value={showBalance ? `+${exact(row.dailyInterestUsd)}/${t("day")}` : MASK}
-                  tone="text-rose-500"
+                  valueClassName="text-rose-500"
                 />
-                <DebtStatLine label={t("Opened")} value={meta?.openedLabel ?? "—"} />
-              </dl>
-
-              <div className="flex items-stretch gap-2">
-                <Button
-                  type="button"
-                  variant="brand-secondary"
-                  className="h-11 flex-1 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+                <MarketMobileStatRow label={t("Opened")} value={meta?.openedLabel ?? "—"} />
+              </MarketMobileStatList>
+              <div className="mt-4 flex gap-2">
+                <MarketMobileSecondaryAction
                   onClick={(event) => {
                     event.stopPropagation()
                     onRepay(row)
@@ -252,11 +244,9 @@ export function DebtsPanel({
                 >
                   <ActionIcon label="Repay" />
                   {t("Repay")}
-                </Button>
-                <Button
-                  type="button"
-                  variant="brand"
-                  className="h-11 flex-[2] gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+                </MarketMobileSecondaryAction>
+                <MarketMobilePrimaryAction
+                  className="mt-0 flex-1"
                   onClick={(event) => {
                     event.stopPropagation()
                     onManage(row)
@@ -264,22 +254,13 @@ export function DebtsPanel({
                 >
                   <ActionIcon label="Borrow" />
                   {t("Borrow")}
-                </Button>
+                </MarketMobilePrimaryAction>
               </div>
-            </li>
+            </MarketMobileCard>
           )
         })}
       </ul>
     </section>
-  )
-}
-
-function DebtStatLine({ label, value, tone }: { label: string; value: string; tone?: string }) {
-  return (
-    <div className="flex items-center justify-between py-2">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className={cn("font-data font-medium tabular-nums text-foreground", tone)}>{value}</dd>
-    </div>
   )
 }
 
@@ -303,11 +284,12 @@ export function CurrentLtvCard({
   const usedLabel = masked ? "••" : compact(borrowedUsd)
   const maxLabel = masked ? "••" : compact(liquidationValueUsd)
   const usedTicks = Math.max(1, Math.round((barFillPct / 100) * TICK_COUNT))
-  const tone = "bg-emerald-500"
+  const tone = liqUtilizationBarClass(liqUtilizationPct)
+  const liqPercentTone = liqUtilizationPercentTextClass(liqUtilizationPct)
   const statusLabel = remainingBorrowingPowerUsd > 0 ? t("GOOD") : t("RISK")
 
   return (
-    <div className="mb-4 rounded-radius-md border border-border bg-background px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
+    <div className="mb-4 rounded-radius-md border border-border bg-card px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
       <div className="flex h-6 items-center justify-between gap-3">
         <div className="flex min-w-0 items-baseline gap-2">
           <span className="font-data text-[20px] font-bold leading-none tracking-tight text-foreground">
@@ -363,7 +345,7 @@ export function CurrentLtvCard({
           <span>
             {t("Liq. max")} <span className="font-semibold text-foreground">{maxLabel}</span>
           </span>
-          <span className="text-rose-500">
+          <span className={liqPercentTone}>
             {masked ? "••" : t("{percent}% of liq. max").replace("{percent}", liqUtilizationPct.toFixed(0))}
           </span>
         </span>

@@ -1,6 +1,7 @@
 import {
   calculateHealthFactorWad,
   calculateSpokeCreditMetrics,
+  collateralInterestEarnedUsd6,
   currentDebtValueUsd6,
   debtInterestOwedUsd6,
   formatFixed,
@@ -8,7 +9,6 @@ import {
   type BorrowSpokeId,
   type BorrowSystemState,
 } from "@/app/lib/credit-engine"
-import type { BorrowSnapshot } from "@/app/dashboard/borrow-hero-state"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import {
   selectAllAvailableCollateralPools,
@@ -16,6 +16,8 @@ import {
   selectInitialBorrowDebts,
   selectWalletBorrowSnapshot,
 } from "@/app/lib/borrow-system/selectors"
+import { formatUsdExact } from "@/app/lib/borrow-sim"
+import type { BorrowSnapshot } from "@/app/dashboard/borrow-hero-state"
 
 function fixedToNumber(value: bigint, decimals: number) {
   return Number.parseFloat(formatFixed(value, decimals))
@@ -28,27 +30,36 @@ function spokeHealthFactor(state: BorrowSystemState, walletId: string, marketId:
   return healthFactorWad != null ? fixedToNumber(healthFactorWad, 18) : Number.POSITIVE_INFINITY
 }
 
-function spokeAvailableCreditUsd(state: BorrowSystemState, walletId: string, marketId: string) {
-  const spokeId = state.markets[marketId]?.spokeId
-  if (!spokeId) return 0
-  const metrics = calculateSpokeCreditMetrics(state, walletId, spokeId)
-  return fixedToNumber(metrics.availableCreditUsd6, 6)
-}
-
 export function selectPortfolioSupplyRows(state: BorrowSystemState, walletId: string): SupplyRowContext[] {
   const pools = selectBorrowCollateralPools(state, walletId)
   const debts = selectInitialBorrowDebts(state, walletId)
+  const account = state.accounts[walletId]
 
-  return pools.map((pool) => ({
-    pool,
-    borrowedUsd: debts[pool.id] ?? 0,
-    remainingBorrowPowerUsd: spokeAvailableCreditUsd(state, walletId, pool.id),
-    liquidationThresholdUsd: pool.liquidationUsd,
-    healthFactor: spokeHealthFactor(state, walletId, pool.id),
-    pairApr: pool.pairApr,
-    feesUsd: 0,
-    feesLabel: "$0.00",
-  }))
+  return pools.map((pool) => {
+    const position = account?.collateralPositions.find((entry) => entry.marketId === pool.id)
+    const market = state.markets[pool.id]
+    const feesUsd = position && market ? fixedToNumber(collateralInterestEarnedUsd6(position, market), 6) : 0
+
+    // Per-position borrow power: THIS pool's own collateral × its max LTV, minus
+    // this pool's own outstanding debt, clamped at zero. Previously this column read
+    // the whole-spoke available credit, so every collateral position sharing a spoke
+    // reported the SAME number and could exceed a single position's collateral. maxLtv
+    // is a percentage (e.g. 75); clamped at 100 so borrow power never exceeds collateral.
+    const borrowedUsd = debts[pool.id] ?? 0
+    const poolBorrowPowerUsd = pool.collateralUsd * (Math.min(pool.maxLtv, 100) / 100)
+    const remainingBorrowPowerUsd = Math.max(0, poolBorrowPowerUsd - borrowedUsd)
+
+    return {
+      pool,
+      borrowedUsd,
+      remainingBorrowPowerUsd,
+      liquidationThresholdUsd: pool.liquidationUsd,
+      healthFactor: spokeHealthFactor(state, walletId, pool.id),
+      pairApr: pool.pairApr,
+      feesUsd,
+      feesLabel: formatUsdExact(feesUsd),
+    }
+  })
 }
 
 // Health factor for a debt row. Uses the debt position's OWN spoke — which

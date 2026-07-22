@@ -67,7 +67,7 @@ export class SandboxRewardsActionAdapter implements RewardsActionAdapter {
     const referralProfile: ReferralProfile = {
       wallet,
       referralCode: buildReferralCode(wallet),
-      referralLink: `https://avana.cc/rewards?ref=${buildReferralCode(wallet)}`,
+      referralLink: `https://avana.cc/dashboard?tab=referrals&ref=${buildReferralCode(wallet)}`,
       activeReferralCount: 0,
       fundedReferralCount: 0,
       referralVolumeUsd: 0,
@@ -416,41 +416,42 @@ export class SandboxRewardsActionAdapter implements RewardsActionAdapter {
   }
 
   async applyReferralCode(wallet: string, referralCode: string) {
-    let state = this.readState()
-    const referrerProfile = Object.values(state.referralProfiles).find(
-      (profile) => profile.referralCode === referralCode,
-    )
-    if (!referrerProfile) throw new Error(`Unknown referral code ${referralCode}`)
-    if (referrerProfile.wallet === wallet) throw new Error("Wallet cannot refer itself")
+    // A referral code is minted deterministically from the referrer's wallet
+    // (`buildReferralCode`) and shared via the invite URL, so the code itself is the
+    // cross-wallet identifier for the referrer. Resolve the referrer FROM the code — never
+    // by scanning this (referred) wallet's isolated session, which only ever holds its own
+    // profile, so a scan turned every legitimate cross-wallet referral into "Unknown
+    // referral code" (silently swallowed by the dashboard's `.catch`).
+    const code = referralCode.trim().toUpperCase()
+    if (!/^AVA-[A-Z0-9]+$/.test(code)) {
+      throw new Error(`Invalid referral code ${referralCode}`)
+    }
+    if (buildReferralCode(wallet) === code) throw new Error("Wallet cannot refer itself")
 
+    const [initializedState, profile] = this.ensureReferralProfile(this.readState(), wallet)
+    let state = initializedState
+
+    // Idempotent: a wallet keeps the first referrer that claimed it.
     const existing = state.relationships.find((relationship) => relationship.referredWallet === wallet)
     if (existing) return existing
 
     const relationship: ReferralRelationship = {
-      referrerWallet: referrerProfile.wallet,
+      referrerWallet: code,
       referredWallet: wallet,
       createdAt: this.now(),
     }
 
+    // Record the referrer on THIS wallet's own profile (`referredBy`) — the fact the referred
+    // wallet legitimately owns — and in its relationship list. The referrer's own credit
+    // accrues in the referrer's session, which this isolated session can't (and must not) write.
     state = {
       ...state,
       relationships: [...state.relationships, relationship],
       referralProfiles: {
         ...state.referralProfiles,
-        [referrerProfile.wallet]: {
-          ...referrerProfile,
-          activeReferralCount: referrerProfile.activeReferralCount + 1,
-        },
+        [wallet]: { ...profile, referredBy: code },
       },
     }
-    state = applyActivityEventToSession(state, {
-      id: `${referrerProfile.wallet}:referral_connected:${wallet}`,
-      wallet: referrerProfile.wallet,
-      product: "referral",
-      type: "referral_connected",
-      referredWallet: wallet,
-      timestamp: this.now(),
-    })
 
     this.writeState(state)
     return relationship

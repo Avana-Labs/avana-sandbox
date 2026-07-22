@@ -22,9 +22,10 @@ describe("multiply max-leverage single source (#95)", () => {
       const perpEntry = page.markets.find((entry) => entry.symbol === market.collateralAsset.symbol)
       expect(perpEntry?.maxLeverage).toBeDefined()
 
-      // Explore table: the MAX LEVERAGE column shows the PRIMARY reward row (index 1).
+      // Explore table: the MAX LEVERAGE column shows the primary reward row.
       const row = catalogMarketToRow(market)
-      expect(row.rewardRows?.[1]?.value).toBe(formatFactor(expected))
+      expect(row.rewardRows?.[0]?.value).toBe(formatFactor(expected))
+      expect(row.rewardRows?.[0]?.value).not.toMatch(/Recommended max/i)
     }
   })
 
@@ -48,7 +49,8 @@ describe("multiply max-leverage single source (#95)", () => {
     const row = catalogMarketToRow(market)
     // Regression guard: the primary MAX LEVERAGE value must be the public max (1.80),
     // not the recommended cap (~1.76) that used to leak into the table column.
-    expect(row.rewardRows?.[1]?.value).toBe("1.80x")
+    expect(row.rewardRows?.[0]?.value).toBe("1.80x")
+    expect(row.rewardRows?.[0]?.value).not.toMatch(/Recommended max/i)
 
     const snapshots = buildMultiplyTrendingSnapshots(MULTIPLY_MARKET_CATALOG)
     const trending = snapshots.find((entry) => entry.marketId === "aave-gho")

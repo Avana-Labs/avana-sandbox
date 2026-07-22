@@ -2,6 +2,7 @@ import type { MultiplyMarketRecord, MultiplyRiskTier } from "@/app/lib/multiply-
 import { calculateSafeMaxMultiplier, calculateTheoreticalMaxMultiplier } from "@/app/lib/multiply-engine/formulas"
 import { MULTIPLY_CATALOG_LEVERAGE_SCALE } from "@/app/lib/multiply-system/leverage-limits"
 import { MULTIPLY_COLLATERAL_FACTORS } from "@/app/lib/multiply-sim"
+import { SANDBOX_BASELINE_PRICES_USD as ASSET_PRICES_USD } from "@/app/lib/prices/sandbox-baseline-prices"
 
 type CatalogSeed = {
   id: string
@@ -23,25 +24,6 @@ type CatalogSeed = {
   collateralPriceUsd: number
   borrowPriceUsd: number
   featured?: boolean
-}
-
-const ASSET_PRICES_USD: Record<string, number> = {
-  ETH: 3500,
-  WSTETH: 3800,
-  STETH: 3650,
-  RETH: 3700,
-  CBETH: 3600,
-  WBTC: 95000,
-  CBBTC: 96000,
-  USDC: 1,
-  USDT: 1,
-  DAI: 1,
-  GHO: 1,
-  CRVUSD: 1,
-  EURC: 1.08,
-  AAVE: 280,
-  UNI: 12,
-  CRV: 0.5,
 }
 
 const CATALOG_SEEDS: CatalogSeed[] = [

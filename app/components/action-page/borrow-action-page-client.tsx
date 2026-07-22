@@ -543,6 +543,7 @@ export function BorrowActionPageClient({
       const collateralFactorPct = market ? wadToPercent(market.riskConfig.collateralFactorWad) : 0
       const liquidationPct = market ? wadToPercent(market.riskConfig.liquidationThresholdWad) : 0
       const borrowableAssets = session.getBorrowableAssetsForMarket(marketId)
+      const walletBalanceUsd = usd6ToNumber(session.state.accounts[walletId]?.walletLpBalancesUsd6[marketId] ?? 0n)
       void session
         .previewTransaction(
           session.createIntent({
@@ -567,6 +568,7 @@ export function BorrowActionPageClient({
               borrowableAssetsLabel: borrowableAssets.map((asset) => asset.symbol).join(", ") || "—",
               borrowableAssetSymbols: borrowableAssets.map((asset) => asset.symbol),
               creditScopeLabel: creditScopeLabel ?? undefined,
+              walletBalanceUsd,
             }),
           )
         })
@@ -768,7 +770,8 @@ export function BorrowActionPageClient({
     setSuccessUi(
       mapBorrowSuccessToActionUi({
         title: `${descriptor.primaryVerb} successful`,
-        description: `${formatActionUsd(executedAmount)} processed.`,
+        // Always exact so tiny pledge amounts never render as a truncated "$0." fragment.
+        description: `${formatActionUsd(executedAmount, { exact: true })} processed.`,
         receiptHash: matchingHistory.hash ?? null,
         metrics: previewUi.metrics,
         href: dashboardHrefForProduct("borrow"),
@@ -910,6 +913,7 @@ export function BorrowActionPageClient({
         const collateralFactorPct = supplyMarket ? wadToPercent(supplyMarket.riskConfig.collateralFactorWad) : 0
         const liquidationPct = supplyMarket ? wadToPercent(supplyMarket.riskConfig.liquidationThresholdWad) : 0
         const borrowableAssets = session.getBorrowableAssetsForMarket(marketId)
+        const walletBalanceUsd = usd6ToNumber(session.state.accounts[walletId]?.walletLpBalancesUsd6[marketId] ?? 0n)
         executionPreviewUi = mapBorrowSupplyPreviewToActionUi(preview, {
           symbol: formatBorrowLpSymbolLabel(supplyMarket),
           amountUsd: safeAmount,
@@ -922,6 +926,7 @@ export function BorrowActionPageClient({
           borrowableAssetsLabel: borrowableAssets.map((asset) => asset.symbol).join(", ") || "—",
           borrowableAssetSymbols: borrowableAssets.map((asset) => asset.symbol),
           creditScopeLabel: creditScopeLabel ?? undefined,
+          walletBalanceUsd,
         })
       } else if (kind === "repay" && debtPosition) {
         const repayModel = buildRepayPreviewModel(session.state, walletId, debtPosition.id, safeAmount)
@@ -967,6 +972,7 @@ export function BorrowActionPageClient({
       setSuccessUi(
         mapBorrowSuccessToActionUi({
           title: `${descriptor.primaryVerb} successful`,
+          // Always exact so tiny pledge amounts never render as a truncated "$0." fragment.
           description: `${formatActionUsd(executedAmountUsd, { exact: true })} processed.`,
           receiptHash: result.receipt.hash ?? null,
           metrics: executionPreviewUi.metrics,
@@ -1042,7 +1048,9 @@ export function BorrowActionPageClient({
             ? "Choose collateral to remove."
             : kind === "supply"
               ? "Choose the LP pool you want to pledge."
-              : "Choose the asset to borrow."
+              : kind === "borrow"
+                ? "Pledge LP collateral before you can borrow against this market."
+                : "Choose the asset to borrow."
       : stage === "success" || isProcessingStage(stage) || stage === "review"
         ? undefined
         : descriptor.subtitle
@@ -1081,6 +1089,7 @@ export function BorrowActionPageClient({
         verb={descriptor.primaryVerb}
         amount={kind === "remove" ? percent : amount}
         onAmountChange={kind === "remove" ? setPercent : setAmount}
+        inputLabel={kind === "remove" ? "Percent of position" : undefined}
         preview={previewUi}
         assetSymbol={assetSymbol}
         borrowSymbol={undefined}
@@ -1256,6 +1265,7 @@ export function BorrowActionPageClient({
           verb={descriptor.primaryVerb}
           amount={kind === "remove" ? percent : amount}
           onAmountChange={kind === "remove" ? setPercent : setAmount}
+          inputLabel={kind === "remove" ? "Percent of position" : undefined}
           preview={previewUi}
           assetSymbol={
             kind === "supply"

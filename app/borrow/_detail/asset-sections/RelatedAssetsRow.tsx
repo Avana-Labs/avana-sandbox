@@ -43,7 +43,7 @@ export function RelatedAssetsRow({ detail }: Props) {
           </div>
         ),
         metrics: [
-          { label: t("Borrow APY"), value: rel.aprLabel },
+          { label: t("Borrow APR"), value: rel.aprLabel },
           { label: t("Available"), value: rel.availableLabel },
         ],
       }))}

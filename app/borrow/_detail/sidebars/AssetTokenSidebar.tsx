@@ -103,9 +103,7 @@ function TokenRail({
             ) : (
               <div className="rounded-radius-md border border-border bg-surface-raised px-5 py-4">
                 <p className="text-[15px] leading-6 text-muted-foreground">
-                  {t("Deposit compatible collateral from {spoke} before borrowing {symbol}.")
-                    .replace("{spoke}", detail.row.spokeLabel)
-                    .replace("{symbol}", detail.hero.symbol)}
+                  {t("Deposit LP collateral before borrowing {symbol}.").replace("{symbol}", detail.hero.symbol)}
                 </p>
                 <Button
                   type="button"
@@ -150,9 +148,7 @@ function TokenRail({
                 {t("You need to deposit an asset before you can borrow.")}
               </h3>
               <p className="text-[14px] leading-6 text-muted-foreground">
-                {t("To borrow {symbol}, deposit a compatible collateral market from {spoke} first.")
-                  .replace("{symbol}", detail.hero.symbol)
-                  .replace("{spoke}", detail.row.spokeLabel)}
+                {t("To borrow {symbol}, deposit LP collateral first.").replace("{symbol}", detail.hero.symbol)}
               </p>
             </div>
             <div className="flex flex-col gap-2">

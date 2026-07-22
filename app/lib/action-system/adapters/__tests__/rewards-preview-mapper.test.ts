@@ -35,4 +35,17 @@ describe("rewards preview mappers", () => {
     expect(ui.assetLabel).toBe("WETH · Core")
     expect(ui.metrics.map((row) => row.label)).toEqual(["WETH", "USDC"])
   })
+
+  it("keeps cents on a claim total over $100 so it reconciles with its rows (#25)", () => {
+    const ui = mapBorrowRewardsClaimPreviewToActionUi({
+      allowed: true,
+      claimUsd: 111.1,
+      marketLabel: "WETH · Core",
+      tokenTotals: { WETH: 68.99, USDC: 42.11 },
+    })
+    // $68.99 + $42.11 = $111.10 — not a cents-dropping "$111".
+    expect(ui.amountValue).toBe("$111.10")
+    expect(ui.rateValue).toBe("$111.10")
+    expect(ui.metrics.map((row) => row.value)).toEqual(["$68.99", "$42.11"])
+  })
 })

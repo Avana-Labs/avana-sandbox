@@ -93,6 +93,42 @@ describe("sandbox onboarding + economy caps", () => {
     expect(catalog?.rows).toHaveLength(STARTER_TEST_MARKETS.length)
   })
 
+  test("does not re-patch a fully-priced starter catalog on claim (steady-state fast path, #13/S1)", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+
+    // A fully-priced catalog already exists (the steady state after the first claim seeded it).
+    const SENTINEL_UPDATED_AT = 123_456
+    await t.run(async (ctx) => {
+      await seedStarterTestMarkets(ctx)
+      await ctx.db.insert("sandboxStarterCatalog", {
+        singleton: "starter",
+        rows: STARTER_TEST_MARKETS.map((market) => ({
+          slug: market.slug,
+          scope: market.scope,
+          symbol: market.symbol,
+          priceUsd: starterTestPriceFor(market.symbol),
+        })),
+        updatedAt: SENTINEL_UPDATED_AT,
+      })
+    })
+
+    await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+    await expect(asUser.mutation(api.sandbox.onboarding.claim, { wallet: WALLET })).resolves.toMatchObject({
+      status: "done",
+    })
+
+    // The claim READ the catalog on the fast path — it must not have re-patched the shared
+    // singleton (the onboarding-burst write hotspot): updatedAt is untouched.
+    const catalog = await t.run((ctx) =>
+      ctx.db
+        .query("sandboxStarterCatalog")
+        .withIndex("by_singleton", (queryBuilder) => queryBuilder.eq("singleton", "starter"))
+        .unique(),
+    )
+    expect(catalog?.updatedAt).toBe(SENTINEL_UPDATED_AT)
+  })
+
   test("X/tweet sub-flow: startTweet → xPending, confirmTweet → xConfirmed", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })

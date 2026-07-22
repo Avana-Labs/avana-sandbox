@@ -8,9 +8,15 @@ import type {
   UserRewardPosition,
 } from "@/app/lib/credit-engine"
 import { RAY, clampMax, clampMin, parseFixed } from "@/app/lib/credit-engine"
-import { BORROW_POOL_CATALOG, type BorrowAssetVisual, type BorrowPoolRow } from "@/app/lib/borrow-sim"
+import {
+  BORROW_POOL_CATALOG,
+  poolLpTokenPriceUsd,
+  type BorrowAssetVisual,
+  type BorrowPoolRow,
+} from "@/app/lib/borrow-sim"
 import { listSpokeBorrowables, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
 import { HOME_COLLATERAL_POOLS, HOME_CLAIM_POSITIONS, HOME_INITIAL_DEBTS } from "@/app/lib/borrow-system/home-contracts"
+import { liquidationThresholdPctFromMaxLtvPct } from "@/app/lib/borrow-system/liquidation-threshold"
 
 export const HOME_POOL_TO_MARKET_ID: Record<string, string> = {
   "eth-usdc": "uni-v3-bluechip-weth-usdc",
@@ -93,7 +99,9 @@ function estimateRiskScoreWad(pool: BorrowPoolRow) {
 }
 
 function estimateLiquidationThresholdWad(pool: BorrowPoolRow) {
-  return clampMax(wadFromRatio(pool.ltv / 100 + 0.1), parseFixed("0.95", 18))
+  // maxLtv + 10pp, capped 95% — via the shared helper so the credit engine, portfolio HF,
+  // and the Convex persist gate all use one liquidation-threshold basis (#12).
+  return wadFromRatio(liquidationThresholdPctFromMaxLtvPct(pool.ltv) / 100)
 }
 
 function assetPriceUsd6(asset: SpokeBorrowableRecord) {
@@ -122,7 +130,7 @@ function buildMarketRecord(pool: BorrowPoolRow, borrowAssetIdsBySymbol: Map<stri
   const totalBorrowedUsd = Math.max(pool.tvlUsd * 0.18, pool.availableUsd * 0.42)
   const volume24hUsd = Math.max(pool.availableUsd * 0.12, pool.tvlUsd * 0.035)
   const fees24hUsd = (pool.tvlUsd * (avgApr / 100)) / 365
-  const lpTokenPriceUsd = Math.max(1, pool.collateralExampleUsd / 2.5)
+  const lpTokenPriceUsd = poolLpTokenPriceUsd(pool)
 
   return {
     id: pool.id,

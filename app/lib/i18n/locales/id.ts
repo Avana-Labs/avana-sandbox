@@ -393,8 +393,7 @@ const dict: TranslationDictionary = {
   "Daily Interest": "Bunga Harian",
   day: "hari",
   "Deposit {symbol}": "Setor {symbol}",
-  "Deposit compatible collateral from {spoke} before borrowing {symbol}.":
-    "Setor jaminan yang kompatibel dari {spoke} sebelum meminjam {symbol}.",
+  "Deposit LP collateral before borrowing {symbol}.": "Deposit LP collateral before borrowing {symbol}.",
   Done: "Selesai",
   Expiration: "Kedaluwarsa",
   Expired: "Kedaluwarsa",
@@ -483,8 +482,7 @@ const dict: TranslationDictionary = {
     "Kwitansi ini tidak ada untuk dompet yang terautentikasi.",
   "This receipt is taking too long to load. It may not be available in this environment.":
     "Kwitansi ini terlalu lama dimuat. Mungkin tidak tersedia di lingkungan ini.",
-  "To borrow {symbol}, deposit a compatible collateral market from {spoke} first.":
-    "Untuk meminjam {symbol}, setor pasar jaminan yang kompatibel dari {spoke} terlebih dahulu.",
+  "To borrow {symbol}, deposit LP collateral first.": "To borrow {symbol}, deposit LP collateral first.",
   "To borrow you need to supply any LPs to be used as collateral":
     "Untuk meminjam, Anda perlu menyuplai LP apa pun untuk digunakan sebagai jaminan",
   "Total borrows": "Total pinjaman",

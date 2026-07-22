@@ -3,9 +3,10 @@ import { deserializeMultiplySystemState, serializeMultiplySystemState } from "./
 import type { MultiplyTransactionHistoryItem, MultiplyTransactionResult } from "./contracts"
 import { notifyMultiplySessionChanged } from "./session-sync"
 import { safeReadParsed, safeRemoveItem, safeSetItem } from "@/app/lib/safe-local-storage"
+import { SESSION_CACHE_VERSION } from "@/app/lib/session-cache-version"
 
-const STORAGE_PREFIX = "avana.multiply.session.v1"
-const META_STORAGE_PREFIX = "avana.multiply.session.meta.v1"
+const STORAGE_PREFIX = `avana.multiply.session.${SESSION_CACHE_VERSION}`
+const META_STORAGE_PREFIX = `avana.multiply.session.meta.${SESSION_CACHE_VERSION}`
 
 export type MultiplySessionMetadata = {
   transactionHistory: MultiplyTransactionHistoryItem[]

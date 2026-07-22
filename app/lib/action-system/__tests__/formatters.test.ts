@@ -32,10 +32,10 @@ describe("action formatters", () => {
     expect(formatActionNetworkFee(0.04)).toBe("~ $0.04")
   })
 
-  it("combines Avana bps and network fee for action summaries", () => {
-    expect(formatActionFeeSummary(1000, 0.04)).toBe("~ $1.00 · ~ $0.04 network")
-    expect(formatActionFeeSummary(100, 0.04)).toBe("~ $0.10 · ~ $0.04 network")
-    expect(formatActionFeeSummary(0, 0.04)).toBe("10 bps · ~ $0.04 network")
+  it("fee summary is the network fee alone — no fabricated protocol fee (#30)", () => {
+    expect(formatActionFeeSummary(1000, 0.04)).toBe("~ $0.04")
+    expect(formatActionFeeSummary(100, 0.04)).toBe("~ $0.04")
+    expect(formatActionFeeSummary(0, 0.04)).toBe("~ $0.04")
   })
 
   it("formats approx usd under amount input", () => {

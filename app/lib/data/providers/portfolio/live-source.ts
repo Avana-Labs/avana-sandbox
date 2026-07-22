@@ -2,6 +2,7 @@ import { createDataSourceAdapter } from "@/app/lib/data/core/source-runtime"
 import { api } from "@/convex/_generated/api"
 import { getAuthenticatedConvexClient } from "@/app/lib/data/providers/live-convex-client"
 import { MULTIPLY_LIQUIDATION_THRESHOLD_FACTOR, worstMultiplyHealthFactor } from "@/app/lib/multiply-system/read-model"
+import { liquidationThresholdPctFromMaxLtvPct } from "@/app/lib/borrow-system/liquidation-threshold"
 import type {
   PortfolioActivityKind,
   PortfolioActivityRecord,
@@ -87,7 +88,13 @@ export const livePortfolioPageSource: PortfolioPageSource = {
           const collateralUsd = toUsd(collateral.collateralValueUsd6)
           const borrowedUsd = allocateDebtByCollateral(positionBorrowedUsd, collateralUsd, totalCollateralUsd)
           const maxLtv = pool?.maxLtvPct ?? 0
-          const liquidationUsd = collateralUsd * ((pool?.liquidationThresholdPct ?? maxLtv) / 100)
+          // Liquidation threshold = explicit LT if set, else maxLtv + 10pp (capped 95%) — the
+          // same basis as the credit engine + Convex persist gate, NOT the raw maxLtv/CF, which
+          // understated HF and disagreed with the action preview (#12). maxLtv 0 (unknown pool)
+          // stays 0 so we never fabricate capacity.
+          const thresholdPct =
+            pool?.liquidationThresholdPct ?? (maxLtv > 0 ? liquidationThresholdPctFromMaxLtvPct(maxLtv) : 0)
+          const liquidationUsd = collateralUsd * (thresholdPct / 100)
           const visuals = pool?.visuals?.slice(0, 2) ?? []
           const fallbackVisual = {
             symbol: "AVA",

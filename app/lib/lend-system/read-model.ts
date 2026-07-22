@@ -9,6 +9,7 @@ import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend/asset-groups"
 import { LEND_FEATURED_ASSETS, LEND_FEATURED_SEQUENCE } from "@/app/lib/data/catalog/lend/featured-assets"
 import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
 import { LEND_MARKET_CATALOG } from "./catalog"
+import { formatReliableLendApyLabel } from "./illiquid-apy"
 import type { LendTransactionHistoryItem, LendWalletReadSnapshot, LendYieldSnapshot } from "./contracts"
 
 function formatPct(value: number) {
@@ -86,16 +87,25 @@ export function buildLendFeaturedSnapshots(markets: LendMarket[]): LendFeaturedS
   })
 }
 
+function formatSandboxSupplyApyLabel(supplyApy: number, tvlUsd: number) {
+  return formatReliableLendApyLabel(supplyApy, tvlUsd, formatPct)
+}
+
+function formatTotalApyLabel(totalApy: number, tvlUsd: number) {
+  return formatReliableLendApyLabel(totalApy, tvlUsd, formatPct)
+}
+
 export function catalogMarketToRow(market: LendMarket): LendMarketRow {
+  const tvlUsd = market.totalSupplied * market.assetPriceUsd
   return {
     marketId: market.marketId,
     href: `/lend/markets/${market.marketId}`,
     asset: market.asset.symbol,
     assetName: market.asset.name,
     logoSrc: getLocalAssetIcon(market.asset.symbol),
-    supplyApyLabel: formatPct(market.supplyApy),
+    supplyApyLabel: formatSandboxSupplyApyLabel(market.supplyApy, tvlUsd),
     rewardsApyLabel: market.rewardsApy > 0 ? formatPct(market.rewardsApy) : "No rewards",
-    totalApyLabel: formatPct(market.totalApy),
+    totalApyLabel: formatTotalApyLabel(market.totalApy, tvlUsd),
     totalSuppliedLabel: formatCompactUsd(market.totalSupplied * market.assetPriceUsd),
     availableLiquidityLabel: formatCompactUsd(market.availableLiquidity * market.assetPriceUsd),
     utilizationLabel: formatPct(market.utilization),
@@ -124,7 +134,11 @@ export function buildLendPageData(_walletId: string, state?: LendSystemState): L
         marketId: rowMarket?.marketId,
         href: rowMarket?.href,
         apy: rowMarket?.totalApyLabel ?? row.apy,
-        apyValue: rowMarket ? rowMarket.totalApy * 100 : row.apyValue,
+        apyValue: rowMarket
+          ? rowMarket.totalApyLabel.includes("Illiquid")
+            ? 0
+            : rowMarket.totalApy * 100
+          : row.apyValue,
         supplyApyLabel: rowMarket?.supplyApyLabel,
         rewardsApyLabel: rowMarket?.rewardsApyLabel ?? "No rewards",
         totalApyLabel: rowMarket?.totalApyLabel ?? row.apy,

@@ -2,34 +2,7 @@ import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend/asset-groups"
 import { calculateAvailableLiquidity, calculateTotalApy, calculateUtilization } from "@/app/lib/lend-engine/formulas"
 import { INITIAL_LIQUIDITY_INDEX } from "@/app/lib/lend-engine/constants"
 import type { LendMarket, LendRiskTier } from "@/app/lib/lend-engine/types"
-
-const ASSET_PRICES_USD: Record<string, number> = {
-  USDC: 1,
-  USDT: 1,
-  EURC: 1.08,
-  ETH: 3500,
-  BTC: 95000,
-  WBTC: 95000,
-  CBBTC: 96000,
-  CBETH: 3600,
-  STETH: 3650,
-  WSTETH: 3800,
-  RETH: 3700,
-  WEETH: 3650,
-  AAVE: 280,
-  UNI: 12,
-  CRV: 0.5,
-  LDO: 2,
-  BAL: 3.3,
-  GNO: 220,
-  AERO: 2.25,
-  ARB: 0.6,
-  OP: 1.46,
-  GHO: 1,
-  FRXUSD: 1,
-  USDG: 1,
-  RLUSD: 1,
-}
+import { sandboxBaselinePriceUsd } from "@/app/lib/prices/sandbox-baseline-prices"
 
 const SPEC_UTILIZATION: Record<string, number> = {
   USDC: 0.32,
@@ -90,7 +63,7 @@ function buildMarketFromRow(
 ): LendMarket {
   const symbol = row.symbol.toUpperCase()
   const marketId = toMarketId(row.symbol)
-  const assetPriceUsd = ASSET_PRICES_USD[symbol] ?? 1
+  const assetPriceUsd = sandboxBaselinePriceUsd(symbol)
   // Catalog deposit/liquidity figures are USD TVL in thousands (e.g. 120400 → $120.40M).
   // Convert to token amounts so `totalSupplied * price` reconciles to that USD TVL for
   // every asset (stable or volatile), keeping the list, detail, and Convex seed in sync
@@ -98,9 +71,17 @@ function buildMarketFromRow(
   const suppliedUsd = row.totalDepositsValue * 1_000
   const availableUsd = row.availableLiquidityValue * 1_000
   const totalSupplied = suppliedUsd / assetPriceUsd
-  const availableTokens = availableUsd / assetPriceUsd
-  const totalBorrowed = Math.max(0, totalSupplied - availableTokens)
-  const utilization = SPEC_UTILIZATION[symbol] ?? calculateUtilization(totalBorrowed, totalSupplied)
+  // When a spec utilization is pinned, it is the authoritative figure: derive
+  // borrowed (and therefore available) FROM it so the list's "Available" matches
+  // the detail page, which computes available = supplied·(1 − utilization). The
+  // raw catalog `availableLiquidityValue` was authored as the borrowed amount for
+  // these markets, so trusting it here surfaced borrowed as "Available" (#19).
+  const specUtilization = SPEC_UTILIZATION[symbol]
+  const totalBorrowed =
+    specUtilization !== undefined
+      ? totalSupplied * specUtilization
+      : Math.max(0, totalSupplied - availableUsd / assetPriceUsd)
+  const utilization = specUtilization ?? calculateUtilization(totalBorrowed, totalSupplied)
   const rewardsApy = SPEC_REWARDS_APY[symbol] ?? 0
   const totalDisplayApy = row.apyValue / 100
   const supplyApy = SPEC_SUPPLY_APY[symbol] ?? Math.max(0, totalDisplayApy - rewardsApy)

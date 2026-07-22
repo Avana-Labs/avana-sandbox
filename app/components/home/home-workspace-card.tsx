@@ -5,7 +5,7 @@ import type { HomeMode } from "@/app/lib/home-sim"
 import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
-const HOME_MODE_ITEMS: Array<{ value: HomeMode; label: string }> = [
+export const HOME_MODE_ITEMS: Array<{ value: HomeMode; label: string }> = [
   { value: "swap", label: "Swap" },
   { value: "borrow", label: "Borrow" },
   { value: "repay", label: "Repay" },
@@ -32,7 +32,7 @@ export function HomeWorkspaceCard({
             items={HOME_MODE_ITEMS.map((item) => ({ id: item.value, label: t(item.label) }))}
             value={mode}
             onChange={(value) => onModeChange(value as HomeMode)}
-            ariaLabel={t("Borrow actions")}
+            ariaLabel={t("Express actions")}
             withIcons
             revealLabels
           />

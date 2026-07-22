@@ -401,8 +401,7 @@ const dict: TranslationDictionary = {
   "Daily Interest": "Günlük Faiz",
   day: "gün",
   "Deposit {symbol}": "{symbol} yatır",
-  "Deposit compatible collateral from {spoke} before borrowing {symbol}.":
-    "{symbol} borçlanmadan önce {spoke} üzerinden uyumlu teminat yatırın.",
+  "Deposit LP collateral before borrowing {symbol}.": "Deposit LP collateral before borrowing {symbol}.",
   Done: "Tamam",
   Expiration: "Sona erme",
   Expired: "Süresi doldu",
@@ -491,8 +490,7 @@ const dict: TranslationDictionary = {
     "Bu makbuz, kimliği doğrulanmış cüzdan için mevcut değil.",
   "This receipt is taking too long to load. It may not be available in this environment.":
     "Bu makbuzun yüklenmesi çok uzun sürüyor. Bu ortamda mevcut olmayabilir.",
-  "To borrow {symbol}, deposit a compatible collateral market from {spoke} first.":
-    "{symbol} borçlanmak için önce {spoke} üzerinden uyumlu bir teminat piyasası yatırın.",
+  "To borrow {symbol}, deposit LP collateral first.": "To borrow {symbol}, deposit LP collateral first.",
   "To borrow you need to supply any LPs to be used as collateral":
     "Borçlanmak için teminat olarak kullanılacak LP'leri arz etmeniz gerekir",
   "Total borrows": "Toplam borçlanma",

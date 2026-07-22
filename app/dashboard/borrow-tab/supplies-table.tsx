@@ -10,9 +10,7 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
   BORROW_SUPPLY_META,
   formatHealthFactor,
-  getSpokeById,
   healthFactorToneClass,
-  homePoolSpoke,
   homeVisualToBorrowVisual,
 } from "@/app/lib/data/borrow-domain"
 import type { SupplyRowContext } from "@/app/lib/data/borrow-position-types"
@@ -22,9 +20,17 @@ import {
   healthFactorBarTone,
   healthFactorStatusLabel,
 } from "@/app/lib/action-system/health-factor-ui"
-import { HfNumber, TokenBubble, TokenPairCell } from "@/app/borrow/components/atoms"
+import { HfNumber, TokenPairCell } from "@/app/borrow/components/atoms"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
-import { MarketMobileCard } from "@/app/components/market-card-primitives"
+import {
+  MarketMobileCard,
+  MarketMobileCardHeader,
+  MarketMobileMetric,
+  MarketMobilePrimaryAction,
+  MarketMobileSecondaryAction,
+  MarketMobileStatList,
+  MarketMobileStatRow,
+} from "@/app/components/market-card-primitives"
 import { HealthFactorPositionBar } from "@/app/components/action-page/action-health-factor-bar"
 import { formatApy } from "@/app/lib/format"
 import { cn } from "@/lib/utils"
@@ -54,7 +60,7 @@ export function SuppliesPanel({
 }: SuppliesTableProps) {
   const { t } = useTranslation()
   const router = useRouter()
-  const { compact, exact } = useCurrency()
+  const { compact } = useCurrency()
   const m = (value: string) => (showBalance ? value : MASK)
   if (rows.length === 0) {
     return (
@@ -81,7 +87,7 @@ export function SuppliesPanel({
       <div className="hidden md:block">
         <DesktopTableSurface className="!rounded-none">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[980px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
                 <col className="w-[28%]" />
                 <col className="w-[16%]" />
@@ -91,19 +97,19 @@ export function SuppliesPanel({
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                  <th className="bg-table-header px-5 py-3.5 text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    {t("LP Position")}
+                  <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    {t("Pool")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Collateral")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Borrow Power")}
                   </th>
-                  <th className="bg-table-header px-4 py-3.5 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
-                    {t("Health Factor")}
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    {t("Health")}
                   </th>
-                  <th className="bg-table-header px-5 py-3.5 pr-6 text-right text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground" />
+                  <th className="bg-table-header px-5 pb-2 pt-2.5 pr-6 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
                 </tr>
               </thead>
               <tbody>
@@ -190,7 +196,6 @@ export function SuppliesPanel({
 
       <ul className="space-y-5 md:hidden">
         {rows.map((row) => {
-          const spoke = getSpokeById(homePoolSpoke(row.pool.category))
           const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [
             ReturnType<typeof homeVisualToBorrowVisual>,
             ReturnType<typeof homeVisualToBorrowVisual>,
@@ -200,83 +205,20 @@ export function SuppliesPanel({
           // caps/formats health identically to the desktop table and the hero card.
           const hfLabel = formatHealthFactor(hf)
           const hfTone = healthFactorBarTone(hf)
-          const spokeShort = spoke.label.replace(" Spoke", "")
-          const spokePillLabel = `${spokeShort} · Uni v3`
           return (
-            <MarketMobileCard
-              key={row.pool.id}
-              clickable
-              className="space-y-3"
-              onClick={() => router.push(`/borrow/markets/${row.pool.id}`)}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex items-center">
-                    <TokenBubble visual={visuals[0]} size="table" />
-                    <TokenBubble visual={visuals[1]} size="table" className="-ml-2" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-[14px] font-medium text-foreground">{row.pool.name}</div>
-                    <span
-                      className={cn(
-                        "mt-1 inline-flex items-center rounded-xs px-1.5 py-0.5 text-[11px] font-medium",
-                        spoke.pillBgClass,
-                        spoke.pillTextClass,
-                      )}
-                    >
-                      {spokePillLabel}
-                    </span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="font-data text-[17px] font-medium tabular-nums text-foreground">
-                    {m(exact(row.pool.collateralUsd))}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground">{t("Collateral")}</div>
-                </div>
-              </div>
-
-              <div className="space-y-2.5 rounded-radius-sm border border-border bg-surface-inset px-3 py-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-[12.5px] font-medium text-foreground">{t("Scope Health Factor")}</span>
-                  <span className={cn("font-data text-[22px] font-medium leading-none tabular-nums", hfTone.text)}>
-                    {m(hfLabel)}
-                  </span>
-                </div>
-                <HealthFactorPositionBar
-                  value={hf}
-                  heightClassName="h-1.5"
-                  trackClassName="bg-surface-raised"
-                  className="mt-0"
-                />
-                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span>{t("Safe")}</span>
-                  <span>{t("Caution")}</span>
-                  <span>{t("Liquidation")}</span>
-                </div>
-                <div className="flex items-center justify-between border-t border-border pt-2 text-[12.5px]">
-                  <span className="text-muted-foreground">{t("Liquidation at")}</span>
-                  <span className={cn("font-data font-medium tabular-nums", hfTone.text)}>
-                    {m(exact(row.liquidationThresholdUsd))} {t("collateral")}
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 divide-x divide-border overflow-hidden rounded-radius-sm border border-border bg-surface-inset">
-                <SupplyStatCell value={m(exact(row.borrowedUsd))} label={t("Borrowed")} valueTone="text-rose-500" />
-                <SupplyStatCell
-                  value={m(compact(row.remainingBorrowPowerUsd))}
-                  label={t("Borrow Power")}
-                  valueTone="text-success"
-                />
-                <SupplyStatCell value={formatApy(row.pairApr)} label={t("LP APR")} />
-              </div>
-
-              <div className="flex items-stretch gap-2">
-                <Button
-                  type="button"
-                  variant="brand-secondary"
-                  className="h-11 flex-1 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+            <MarketMobileCard key={row.pool.id} clickable onClick={() => router.push(`/borrow/markets/${row.pool.id}`)}>
+              <MarketMobileCardHeader
+                identity={<TokenPairCell visuals={visuals} name={row.pool.name} size="md" />}
+                metric={<MarketMobileMetric value={m(compact(row.pool.collateralUsd))} label={t("Collateral")} />}
+              />
+              <MarketMobileStatList className="mt-3">
+                <MarketMobileStatRow label={t("Health")} value={m(hfLabel)} valueClassName={hfTone.text} />
+                <MarketMobileStatRow label={t("Borrowed")} value={m(compact(row.borrowedUsd))} />
+                <MarketMobileStatRow label={t("Borrow Power")} value={m(compact(row.remainingBorrowPowerUsd))} />
+                <MarketMobileStatRow label={t("LP APR")} value={formatApy(row.pairApr)} />
+              </MarketMobileStatList>
+              <div className="mt-4 flex gap-2">
+                <MarketMobileSecondaryAction
                   onClick={(event) => {
                     event.stopPropagation()
                     if (onAddCollateral) onAddCollateral(row)
@@ -291,11 +233,9 @@ export function SuppliesPanel({
                 >
                   <ActionIcon label="Pledge" />
                   {t("Pledge")}
-                </Button>
-                <Button
-                  type="button"
-                  variant="brand"
-                  className="h-11 flex-[2] gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+                </MarketMobileSecondaryAction>
+                <MarketMobilePrimaryAction
+                  className="mt-0 flex-1"
                   onClick={(event) => {
                     event.stopPropagation()
                     onBorrowMore(row)
@@ -303,24 +243,13 @@ export function SuppliesPanel({
                 >
                   <ActionIcon label="Borrow" />
                   {t("Borrow")}
-                </Button>
+                </MarketMobilePrimaryAction>
               </div>
             </MarketMobileCard>
           )
         })}
       </ul>
     </section>
-  )
-}
-
-function SupplyStatCell({ value, label, valueTone }: { value: string; label: string; valueTone?: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center px-2 py-2.5">
-      <span className={cn("font-data text-[14px] font-medium tabular-nums text-foreground", valueTone)}>{value}</span>
-      <span className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-        {label}
-      </span>
-    </div>
   )
 }
 
@@ -338,7 +267,7 @@ export function SuppliesHealthFactorCard({
   const activeZoneIdx = activeHealthFactorZoneIndex(averageHealthFactor)
 
   return (
-    <div className="mb-4 rounded-radius-md border border-border bg-background px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
+    <div className="mb-4 rounded-radius-md border border-border bg-card px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
       <div className="flex h-6 items-center justify-between gap-3">
         <div className="flex items-baseline gap-2">
           <span className="font-data text-[20px] font-bold leading-none tracking-tight text-foreground">
@@ -382,7 +311,7 @@ export function SuppliesHealthFactorCard({
             const isActive = index === activeZoneIdx
             return (
               <span key={zone.id} className={cn("inline-flex items-center gap-1.5", isActive && "text-foreground")}>
-                <span className={cn("size-1.5 rounded-full", isActive ? zone.color : "bg-muted-foreground/40")} />
+                <span className={cn("size-1.5 rounded-full", isActive ? zone.color : cn(zone.color, "opacity-40"))} />
                 {t(zone.label)}
               </span>
             )

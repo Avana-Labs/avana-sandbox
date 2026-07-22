@@ -3,10 +3,12 @@ import {
   borrowResultToRecordArgs,
   lendResultToRecordArgs,
   multiplyResultToRecordArgs,
+  swapRecordToRecordSwapArgs,
 } from "@/app/lib/sandbox-tx/persistence"
 import type { MultiplySandboxActionResult } from "@/app/lib/multiply-system/contracts"
 import type { SandboxActionResult } from "@/app/lib/borrow-system/contracts"
 import type { LendSandboxActionResult } from "@/app/lib/lend-system/contracts"
+import type { SwapTransactionRecord } from "@/app/lib/swap-system/transaction-adapter"
 
 const WALLET = "0xabc0000000000000000000000000000000000001"
 
@@ -188,5 +190,55 @@ describe("multiplyResultToRecordArgs — close persistence (regression: C-1)", (
     // Per-transaction leverage is carried through so hydrated history shows 2.2x → 1x (M-7).
     expect(args.multiplierBefore).toBe(2.2)
     expect(args.multiplierAfter).toBe(1)
+  })
+})
+
+describe("swapRecordToRecordSwapArgs", () => {
+  const base: SwapTransactionRecord = {
+    id: "swap-abc",
+    walletId: WALLET,
+    inputAssetId: "eth",
+    outputAssetId: "usdc",
+    inputAmount: 0.5,
+    outputAmount: 967,
+    minimumOutputAmount: 960,
+    quoteId: "q1",
+    provider: "Avana mock router",
+    exchangeRate: 1934,
+    priceImpactPct: 0.1,
+    slippageBps: 50,
+    networkFeeUsd: 0.24,
+    route: ["ETH", "USDC"],
+    status: "confirmed",
+    createdAt: 1,
+    swapTransactionHash: "0xswap",
+  }
+
+  it("maps a confirmed swap to recordSwap args with the input-leg USD value", () => {
+    const args = swapRecordToRecordSwapArgs(base, WALLET)
+    expect(args).not.toBeNull()
+    // ETH baseline price is $1934 → 0.5 ETH = $967.
+    expect(args).toMatchObject({
+      intentId: "swap-abc",
+      status: "success",
+      inputSymbol: "ETH",
+      outputSymbol: "USDC",
+      inputAmount: 0.5,
+      outputAmount: 967,
+      amountUsd: 967,
+      syntheticTxHash: "0xswap",
+    })
+  })
+
+  it("maps failed/expired/rejected to a failed status", () => {
+    for (const status of ["failed", "expired", "rejected"] as const) {
+      expect(swapRecordToRecordSwapArgs({ ...base, status }, WALLET)?.status).toBe("failed")
+    }
+  })
+
+  it("returns null for a non-terminal record (approval gate / in-flight)", () => {
+    for (const status of ["approval_pending", "approval_confirmed", "swap_pending"] as const) {
+      expect(swapRecordToRecordSwapArgs({ ...base, status }, WALLET)).toBeNull()
+    }
   })
 })
