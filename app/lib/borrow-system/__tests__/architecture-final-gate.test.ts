@@ -82,5 +82,4 @@ describe("borrow architecture final gate", () => {
     )
     expect(poolSidebarSource).toMatch(/PoolBorrowActions[\s\S]*ActionPageLaunchCta/)
   })
-
 })

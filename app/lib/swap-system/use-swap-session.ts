@@ -60,7 +60,10 @@ export function useSwapSession({ walletId, persistState = true }: { walletId: st
     () =>
       new SandboxSwapTransactionAdapter({
         readState: () => stateRef.current,
-        writeState: setState,
+        writeState: (next) => {
+          stateRef.current = next
+          setState(next)
+        },
         provider: new MockSwapProvider(),
       }),
     [],
