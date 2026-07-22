@@ -157,10 +157,6 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       label: "Express",
     },
     {
-      href: "/swap",
-      label: "Swap",
-    },
-    {
       href: "/lend",
       label: "Lend",
     },
@@ -175,6 +171,10 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
     {
       href: "/dashboard",
       label: "Dashboard",
+    },
+    {
+      href: "/umbrella",
+      label: "Umbrella",
     },
   ] as const
 

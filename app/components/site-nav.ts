@@ -1,5 +1,5 @@
 import type { LucideIcon } from "@/app/components/icons"
-import { DashboardSquareAdd } from "@/app/components/icons"
+import { DashboardSquareAdd, Umbrella } from "@/app/components/icons"
 
 export type DesktopHeaderLink = {
   href: string
@@ -13,5 +13,6 @@ export const personalDesktopHeaderLinks: DesktopHeaderLink[] = [
   { href: "/lend", label: "Lend" },
   { href: "/borrow", label: "Borrow" },
   { href: "/multiply", label: "Multiply" },
+  { href: "/umbrella", label: "Umbrella", icon: Umbrella },
   { href: "/dashboard", label: "Dashboard", icon: DashboardSquareAdd },
 ]
