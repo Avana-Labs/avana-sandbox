@@ -78,46 +78,65 @@ export function HomeWorkspaceSkeleton() {
       <span className="sr-only">{t("Loading…")}</span>
       <section className="skeleton-enter flex min-h-[calc(100dvh-4rem)] justify-center px-4 pb-12 pt-14 md:pb-16 md:pt-20">
         <div className="w-full max-w-[480px]">
-          {/* header: mode tab strip */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-0.5 sm:gap-1">
-              {["w-14", "w-14", "w-12", "w-16"].map((width, index) => (
-                <Skeleton key={`home-mode-${index}`} className={cn("h-7 rounded-full", width)} />
+              {["Swap", "Borrow", "Repay", "Claim", "Remove"].map((label, index) => (
+                <span
+                  key={label}
+                  className={cn(
+                    "inline-flex h-7 items-center justify-center rounded-full px-2.5 text-[13px] font-medium",
+                    index === 0 ? "bg-field-bottom text-foreground shadow-elev-1" : "text-muted-foreground",
+                  )}
+                >
+                  {t(label)}
+                </span>
               ))}
             </div>
           </div>
 
-          {/* collateral → amount field stack + primary CTA */}
           <div className="mt-3 flex flex-col gap-2">
             <div className="flex flex-col gap-1">
               <HomeFieldSkeleton>
-                <Skeleton className="h-4 w-24 rounded-xs" />
-                <div className="mt-3 flex items-center justify-between gap-3">
-                  <Skeleton className="h-8 w-28 rounded-xs" />
-                  <Skeleton className="h-9 w-16 rounded-full" />
+                <div className="text-[14px] font-medium text-foreground">{t("Sell")}</div>
+                <div className="mt-1.5 flex min-h-10 items-center justify-between gap-3">
+                  <div className="text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none text-muted-foreground/60">
+                    0
+                  </div>
+                  <span className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-medium text-foreground">
+                    {t("Select Asset")}
+                    <span aria-hidden className="text-muted-foreground">
+                      ▾
+                    </span>
+                  </span>
                 </div>
-                <Skeleton className="mt-2 h-4 w-16 rounded-xs" />
+                <div className="mt-1 min-h-5 text-[14px] text-foreground/60">$0.00</div>
               </HomeFieldSkeleton>
 
-              {/* directional affordance between the two fields (decorative) */}
-              <div aria-hidden className="relative z-10 -my-3 flex justify-center">
-                <span className="flex size-7 items-center justify-center rounded-radius-md border-4 border-background bg-surface-inset">
-                  <Skeleton className="size-3.5 rounded-full" />
-                </span>
-              </div>
-
               <HomeFieldSkeleton>
-                <Skeleton className="h-4 w-16 rounded-xs" />
+                <div className="text-[14px] font-medium text-foreground">{t("Buy")}</div>
                 <div className="mt-1.5 flex items-center justify-between gap-3">
-                  <Skeleton className="h-8 w-24 rounded-xs" />
-                  <Skeleton className="h-9 w-20 rounded-full" />
+                  <div className="text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none text-muted-foreground/60">
+                    0
+                  </div>
+                  <span className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-medium text-foreground">
+                    {t("Select Asset")}
+                    <span aria-hidden className="text-muted-foreground">
+                      ▾
+                    </span>
+                  </span>
                 </div>
-                <Skeleton className="mt-1 h-4 w-20 rounded-xs" />
-                <Skeleton className="mt-1.5 h-3 w-32 rounded-xs" />
+                <div className="mt-1 min-h-5 text-[14px] text-foreground/60">$0.00</div>
               </HomeFieldSkeleton>
             </div>
 
-            <Skeleton className="mt-1 h-14 w-full rounded-radius-xl" />
+            <button
+              type="button"
+              disabled
+              className="mt-1 inline-flex h-14 w-full items-center justify-center rounded-radius-xl bg-muted text-[15px] font-semibold text-muted-foreground"
+              data-testid="action-footer-primary"
+            >
+              {t("Select Asset")}
+            </button>
           </div>
         </div>
       </section>

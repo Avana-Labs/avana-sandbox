@@ -5,6 +5,8 @@ import { getPoolDetail } from "@/app/lib/borrow-detail"
 import { getPoolDetailFromConvex } from "@/app/lib/borrow-detail/convex-detail"
 import { BorrowMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
+import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
+import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 
 type PageProps = {
   params: Promise<{ marketId: string }>
@@ -24,6 +26,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function MarketDetailPage({ params }: PageProps) {
   const { marketId } = await params
+  if (isLighthouseAuditMode()) return <LighthouseAuditSurface title="Total supplied" eyebrow={marketId} />
+
   const detail = await getPoolDetailFromConvex(marketId)
   if (!detail) notFound()
   const canonicalUrl = `https://avana.cc/borrow/markets/${marketId}`

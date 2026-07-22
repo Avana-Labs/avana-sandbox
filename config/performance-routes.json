@@ -2,15 +2,15 @@
   "primaryRoutes": [
     { "route": "/", "heroText": "Borrow", "heroRole": "tab", "marker": "Borrow" },
     { "route": "/borrow", "heroText": "Total TVL", "marker": "Borrow | Avana" },
-    { "route": "/borrow/asset/usdc", "heroText": "Asset data", "marker": "Asset data" },
+    { "route": "/borrow/assets/usdc", "heroText": "USD Coin", "marker": "USD Coin" },
     { "route": "/borrow/markets/uni-v3-bluechip-weth-usdc", "heroText": "Total supplied", "marker": "Total supplied" },
     { "route": "/borrow/assets/uni-v3-bluechip%3Ausdc", "heroText": "Asset data", "marker": "Asset data" },
     { "route": "/lend", "heroText": "Total TVL", "marker": "Lend | Avana" },
     { "route": "/lend/markets/usdc", "heroText": "Supply APY", "marker": "Supply APY" },
     { "route": "/multiply", "heroText": "Total Liquidity", "marker": "Multiply | Avana" },
     { "route": "/multiply/markets/aave-gho", "heroText": "Total value locked", "marker": "Total value locked" },
-    { "route": "/dashboard", "heroText": "AVA balance", "marker": "AVA balance" },
-    { "route": "/support-center", "heroText": "How can we help?", "heroRole": "heading", "marker": "How can we help?" }
+    { "route": "/dashboard", "heroText": "Dashboard", "marker": "Dashboard" },
+    { "route": "/support-center", "heroText": "Support Center", "heroRole": "heading", "marker": "Support Center" }
   ],
   "actionRoutes": [
     { "name": "borrow-select", "path": "/actions/borrow/borrow", "marker": "Borrow" },

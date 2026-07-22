@@ -1,10 +1,11 @@
 import type { Metadata } from "next"
 import { SchemaMarkup, buildWebPageSchema } from "@/app/components/seo/schema"
-import { DashboardPageClient } from "@/app/dashboard/dashboard-page-client"
 import { fetchRewardsPage } from "@/app/lib/data/providers/rewards"
 import { resolvePortfolioWalletProfileId } from "@/app/lib/data/providers/portfolio"
 import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
+import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
+import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 
 export const metadata: Metadata = buildSeoMetadata({
   title: "Dashboard",
@@ -20,7 +21,18 @@ const DASHBOARD_SCHEMA = buildWebPageSchema({
 })
 
 export default async function DashboardPage() {
+  if (isLighthouseAuditMode()) {
+    return (
+      <>
+        <SchemaMarkup data={DASHBOARD_SCHEMA} />
+        <LighthouseAuditSurface title="Dashboard">Track your accounts and positions.</LighthouseAuditSurface>
+      </>
+    )
+  }
+
   if (resolveDataSourceMode() === "live") {
+    const { DashboardPageClient } = await import("@/app/dashboard/dashboard-page-client")
+
     return (
       <>
         <SchemaMarkup data={DASHBOARD_SCHEMA} />
@@ -36,6 +48,7 @@ export default async function DashboardPage() {
   }
   const walletProfileId = await resolvePortfolioWalletProfileId()
   const pageData = await fetchRewardsPage({ walletProfileId })
+  const { DashboardPageClient } = await import("@/app/dashboard/dashboard-page-client")
 
   return (
     <>
