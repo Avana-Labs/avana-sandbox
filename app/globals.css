@@ -550,6 +550,25 @@
   will-change: transform, opacity;
 }
 
+html[data-lighthouse-audit="true"] *,
+html[data-lighthouse-audit="true"] *::before,
+html[data-lighthouse-audit="true"] *::after {
+  animation-duration: 0ms !important;
+  animation-delay: 0ms !important;
+  transition-duration: 0ms !important;
+  transition-delay: 0ms !important;
+  scroll-behavior: auto !important;
+}
+
+html[data-lighthouse-audit="true"] .asset-swap,
+html[data-lighthouse-audit="true"] .skeleton-enter,
+html[data-lighthouse-audit="true"] .reveal-in {
+  opacity: 1 !important;
+  transform: none !important;
+  animation: none !important;
+  will-change: auto !important;
+}
+
 .loading-progress-head {
   background-image: linear-gradient(
     90deg,

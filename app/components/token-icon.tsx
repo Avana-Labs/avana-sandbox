@@ -24,12 +24,14 @@ export function TokenIcon({
   className,
   ring = false,
   meta: metaOverride,
+  eager = false,
 }: {
   symbol: string
   size?: TokenIconSize
   className?: string
   ring?: boolean
   meta?: TokenIconMeta
+  eager?: boolean
 }) {
   const meta = metaOverride ?? getTokenIconMeta(symbol)
   const { box, text, px } = DIMENSIONS[size]
@@ -55,6 +57,8 @@ export function TokenIcon({
           height={px}
           sizes={`${px}px`}
           className="h-full w-full object-contain"
+          loading={eager ? "eager" : "lazy"}
+          fetchPriority={eager ? "high" : undefined}
           onError={() => setFailed(true)}
           unoptimized
         />

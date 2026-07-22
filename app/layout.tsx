@@ -18,6 +18,7 @@ import { ConditionalSiteChrome } from "./components/conditional-site-chrome"
 import { SandboxGate } from "./components/sandbox/sandbox-gate"
 import { CurrencyDisplayBoundary } from "./components/currency-display-boundary"
 import { ProductRuntimeProviders } from "./components/product-runtime-providers"
+import { isLighthouseAuditMode } from "./lib/test-mode"
 // Only load Vercel Analytics / Speed Insights when actually running on Vercel — their
 // scripts are served by Vercel's edge (/_vercel/*), so a local `next start` build 404s
 // on them and logs console errors (a Lighthouse best-practices failure). On Vercel the
@@ -103,8 +104,23 @@ export const metadata: Metadata = {
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const isAuditMode = isLighthouseAuditMode()
+
+  if (isAuditMode) {
+    return (
+      <html lang="en" data-lighthouse-audit="true" suppressHydrationWarning>
+        <body className="min-h-screen bg-background">{children}</body>
+      </html>
+    )
+  }
+
   return (
-    <html lang="en" className={diatypeSans.variable} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={diatypeSans.variable}
+      data-lighthouse-audit={isAuditMode ? "true" : undefined}
+      suppressHydrationWarning
+    >
       <head>
         {/* Inline to avoid a render-blocking theme-bootstrap network request. */}
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />

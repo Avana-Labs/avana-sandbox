@@ -87,7 +87,7 @@ function SortIcon() {
   )
 }
 
-function AssetIcon({ row }: { row: AssetRow }) {
+function AssetIcon({ row, eager = false }: { row: AssetRow; eager?: boolean }) {
   if (row.logoSrc) {
     return (
       <span className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-transparent">
@@ -98,13 +98,15 @@ function AssetIcon({ row }: { row: AssetRow }) {
           height={48}
           sizes="48px"
           className="h-full w-full object-contain"
+          loading={eager ? "eager" : "lazy"}
+          fetchPriority={eager ? "high" : undefined}
           unoptimized
         />
       </span>
     )
   }
 
-  return <TokenIcon symbol={row.symbol} size="table" ring className="bg-card dark:bg-card" />
+  return <TokenIcon symbol={row.symbol} size="table" ring className="bg-card dark:bg-card" eager={eager} />
 }
 
 function AssetRowView({
@@ -139,7 +141,7 @@ function AssetRowView({
       </td>
       <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
         <div className="flex min-w-0 items-center gap-3">
-          <AssetIcon row={row} />
+          <AssetIcon row={row} eager={index < 2} />
           <div className="min-w-0">
             <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
               {row.name}
@@ -238,7 +240,7 @@ function AssetCardView({ row, index }: { row: AssetRow; index: number }) {
       <MarketMobileCardHeader
         identity={
           <div className="flex min-w-0 items-center gap-3">
-            <AssetIcon row={row} />
+            <AssetIcon row={row} eager={index < 2} />
             <div className="min-w-0">
               <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
                 {row.name}

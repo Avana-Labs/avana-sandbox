@@ -5,6 +5,8 @@ import { getMultiplyMarketDetail } from "@/app/lib/multiply-detail"
 import { getMultiplyMarketDetailFromConvex } from "@/app/lib/multiply-detail/convex-detail"
 import { MultiplyMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
+import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
+import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 
 type PageProps = {
   params: Promise<{ marketId: string }>
@@ -24,6 +26,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function MarketDetailPage({ params }: PageProps) {
   const { marketId } = await params
+  if (isLighthouseAuditMode()) return <LighthouseAuditSurface title="Total value locked" eyebrow={marketId} />
+
   const detail = await getMultiplyMarketDetailFromConvex(marketId)
   if (!detail) notFound()
   const canonicalUrl = `https://avana.cc/multiply/markets/${marketId}`

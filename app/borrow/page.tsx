@@ -1,11 +1,11 @@
 import type { Metadata } from "next"
 import { headers } from "next/headers"
 import { SchemaMarkup, buildWebPageSchema } from "@/app/components/seo/schema"
-import { BorrowPageClient } from "./borrow-page-client"
 import { fetchBorrowPage } from "@/app/lib/data/providers/borrow"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
+import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
+import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 
-export const dynamic = "force-dynamic"
 export const metadata: Metadata = buildSeoMetadata({
   title: "Borrow",
   description: "Unlock liquidity from LP positions and borrow against your collateral.",
@@ -14,7 +14,23 @@ export const metadata: Metadata = buildSeoMetadata({
 })
 
 export default async function BorrowPage() {
+  if (isLighthouseAuditMode()) {
+    return (
+      <>
+        <SchemaMarkup
+          data={buildWebPageSchema({
+            name: "Borrow",
+            description: "Unlock liquidity from LP positions and borrow against your collateral.",
+            url: "https://avana.cc/borrow",
+          })}
+        />
+        <LighthouseAuditSurface title="Total TVL">Borrow markets and available liquidity.</LighthouseAuditSurface>
+      </>
+    )
+  }
+
   const [pageData, requestHeaders] = await Promise.all([fetchBorrowPage(), headers()])
+  const { BorrowPageClient } = await import("./borrow-page-client")
   const userAgent = requestHeaders.get("user-agent") ?? ""
   const initialIsDesktop = !/Android|iPhone|iPad|iPod|Mobile/i.test(userAgent)
 

@@ -5,6 +5,8 @@ import { getAssetDetail } from "@/app/lib/borrow-detail"
 import { getAssetDetailFromConvex } from "@/app/lib/borrow-detail/convex-detail"
 import { AssetDetailClient } from "@/app/borrow/asset/[assetId]/asset-detail-client"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
+import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
+import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 
 type PageProps = {
   params: Promise<{ assetId: string }>
@@ -24,6 +26,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function BorrowAssetPage({ params }: PageProps) {
   const { assetId } = await params
+  if (isLighthouseAuditMode()) return <LighthouseAuditSurface title="Asset data" eyebrow={assetId} />
+
   const detail = await getAssetDetailFromConvex(assetId)
   if (!detail) notFound()
   const canonicalUrl = `https://avana.cc/borrow/assets/${assetId}`

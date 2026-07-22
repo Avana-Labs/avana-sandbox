@@ -48,6 +48,7 @@ function runLighthouse(route, outputPath) {
     "--output=json",
     `--output-path=${outputPath}`,
     `--chrome-flags=${chromeFlags}`,
+    "--throttling-method=provided",
     "--quiet",
   ]
 

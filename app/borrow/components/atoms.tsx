@@ -23,11 +23,13 @@ export function TokenBubble({
   size = "sm",
   className,
   ring = true,
+  eager = false,
 }: {
   visual: BorrowAssetVisual
   size?: TokenBubbleSize
   className?: string
   ring?: boolean
+  eager?: boolean
 }) {
   const { box, text, px } = BUBBLE_DIMENSIONS[size]
   const [imgFailed, setImgFailed] = useState(false)
@@ -54,7 +56,8 @@ export function TokenBubble({
           // Logos are local SVGs (see getLocalAssetIcon). Lazy-load + async-decode so a
           // long market list doesn't decode every off-screen icon up front, and fall back
           // to the token's colored initials if an icon is ever missing.
-          loading="lazy"
+          loading={eager ? "eager" : "lazy"}
+          fetchPriority={eager ? "high" : undefined}
           decoding="async"
           onError={() => setImgFailed(true)}
           unoptimized
@@ -100,18 +103,20 @@ export function TokenSingleCell({
   name,
   subtitle,
   size = "md",
+  eager = false,
 }: {
   visual: BorrowAssetVisual
   name: string
   subtitle?: string
   size?: "sm" | "md" | "lg"
+  eager?: boolean
 }) {
   const bubbleSize: TokenBubbleSize = size === "lg" ? "xl" : size === "md" ? "table" : "sm"
   const nameCls = size === "lg" ? "text-[15px]" : "text-[14px]"
   const subtitleCls = size === "lg" ? "text-[12px]" : "text-xs"
   return (
     <div className="flex items-center gap-3">
-      <TokenBubble visual={visual} size={bubbleSize} />
+      <TokenBubble visual={visual} size={bubbleSize} eager={eager} />
       <div className="min-w-0">
         <div className={cn("font-medium leading-tight text-foreground", nameCls)}>{name}</div>
         {subtitle ? <div className={cn("mt-0.5 truncate text-muted-foreground", subtitleCls)}>{subtitle}</div> : null}

@@ -30,23 +30,31 @@ export function GuestOnboardingFlow() {
       <div data-onboarding-phase={hasStarted ? "connect" : "intro"}>
         {!hasStarted ? (
           <>
-            <h1 className="max-w-[600px] text-balance text-[clamp(1.85rem,3.2vw,2.4rem)] font-medium leading-[1.14] tracking-[-0.03em]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/avana-wordmark-220.png"
+              alt="Avana"
+              width="160"
+              height="63"
+              loading="eager"
+              fetchPriority="high"
+              className="h-auto w-[132px] sm:w-[160px]"
+            />
+            <h1 className="mt-5 max-w-[280px] text-balance text-[15px] font-medium leading-[1.2] tracking-normal sm:text-[18px]">
               {t("Welcome to the Avana Sandbox")}
             </h1>
-            <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">
-              {t(
-                "This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.",
-              )}
+            <p className="sr-only">
+              {t("Practice borrowing, lending, and looping with sandbox funds. No real assets. No wallet signatures.")}
             </p>
-            <ul className="mt-7 space-y-2.5">
+            <ul className="mt-5 space-y-2">
               {["Unlimited practice funds", "No transactions to sign", "No real assets involved"].map((perk) => (
-                <li className="flex items-center gap-2.5 text-[15px] font-medium" key={perk}>
-                  <Check className="size-4 shrink-0 text-emerald-500" strokeWidth={2.75} />
+                <li className="flex items-center gap-2 text-[13px] font-medium" key={perk}>
+                  <Check className="size-3.5 shrink-0 text-emerald-500" strokeWidth={2.75} />
                   {t(perk)}
                 </li>
               ))}
             </ul>
-            <button className={`${PRIMARY} mt-9`} onClick={() => setHasStarted(true)} type="button">
+            <button className={`${PRIMARY} mt-7`} onClick={() => setHasStarted(true)} type="button">
               {t("Get started")}
             </button>
           </>
