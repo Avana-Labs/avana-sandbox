@@ -193,7 +193,7 @@ export function RewardsPageSkeleton() {
         </Surface>
       </div>
 
-      {/* Underline tab strip (left-aligned, border-b) — RewardsTabs. */}
+      {/* Underline tab strip (left-aligned, border-b). */}
       <div className="mb-6 border-b border-border/90">
         <div className="flex gap-6 pb-3 sm:gap-9 sm:pb-4">
           {["w-20", "w-24", "w-20"].map((width, index) => (

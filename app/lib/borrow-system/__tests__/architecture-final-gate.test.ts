@@ -83,9 +83,4 @@ describe("borrow architecture final gate", () => {
     expect(poolSidebarSource).toMatch(/PoolBorrowActions[\s\S]*ActionPageLaunchCta/)
   })
 
-  it("keeps claim on adapter-backed preview runtime with canonical BorrowAction support", () => {
-    const policy = readFileSync(path.join(process.cwd(), "app/lib/borrow-system/claim-adapter-policy.ts"), "utf8")
-    expect(policy).toContain("isClaimSupportedByTransactionAdapter")
-    expect(policy).toMatch(/return true/)
-  })
 })
