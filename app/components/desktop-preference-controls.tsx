@@ -17,7 +17,16 @@ import { useEffect, useState } from "react"
 const triggerClassName =
   "inline-flex size-10 items-center justify-center rounded-full border border-border bg-background text-muted-foreground outline-none transition-colors hover:bg-hover hover:text-foreground focus:outline-none focus-visible:outline-none dark:bg-[#181818] dark:text-white/72 dark:hover:bg-surface-hover dark:hover:text-white [-webkit-tap-highlight-color:transparent]"
 
-type PreferencesView = "root" | "language" | "currency"
+type PreferencesView = "root" | "language" | "currency" | "network"
+
+const NETWORK_OPTIONS = [
+  { code: "Sandbox", label: "Sandbox", unavailable: false },
+  { code: "Ethereum", label: "Ethereum", unavailable: true },
+  { code: "Avalanche", label: "Avalanche", unavailable: true },
+  { code: "Base", label: "Base", unavailable: true },
+  { code: "Arbitrum", label: "Arbitrum", unavailable: true },
+  { code: "Robinhood", label: "Robinhood", unavailable: true },
+] as const
 
 export function DesktopPreferenceControls() {
   const { currency, language, setCurrency, setLanguage } = useLocaleDisplayPreferences()
@@ -33,6 +42,7 @@ export function DesktopPreferenceControls() {
 
   const currentLanguage = LANGUAGE_OPTIONS.find((option) => option.code === language) ?? LANGUAGE_OPTIONS[0]
   const currentCurrency = CURRENCY_OPTIONS.find((option) => option.code === currency) ?? CURRENCY_OPTIONS[0]
+  const currentNetwork = NETWORK_OPTIONS[0]
 
   return (
     <DropdownMenu
@@ -112,6 +122,19 @@ export function DesktopPreferenceControls() {
                 <ChevronRight className="h-4 w-4 text-muted-foreground dark:text-white/52" />
               </span>
             </DropdownMenuItem>
+            <DropdownMenuItem
+              className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-3 text-[14px] text-foreground outline-none hover:bg-hover focus:bg-hover dark:text-white"
+              onSelect={(event) => {
+                event.preventDefault()
+                setView("network")
+              }}
+            >
+              <span className="text-muted-foreground dark:text-white/64">{t("Network")}</span>
+              <span className="flex items-center gap-2 font-medium text-foreground dark:text-white">
+                <span>{currentNetwork.label}</span>
+                <ChevronRight className="h-4 w-4 text-muted-foreground dark:text-white/52" />
+              </span>
+            </DropdownMenuItem>
           </>
         ) : null}
 
@@ -174,6 +197,45 @@ export function DesktopPreferenceControls() {
                     {option.label}
                   </span>
                   {option.code === currency ? <Check className="h-4 w-4 text-brand" /> : null}
+                </DropdownMenuItem>
+              ))}
+            </div>
+          </>
+        ) : null}
+
+        {view === "network" ? (
+          <>
+            <DropdownMenuLabel className="flex items-center gap-1 px-1 py-1.5 text-[14px] font-medium normal-case tracking-normal text-foreground dark:text-white">
+              <button
+                type="button"
+                onClick={() => setView("root")}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full text-foreground transition hover:bg-hover dark:text-white"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span>{t("Network")}</span>
+            </DropdownMenuLabel>
+            <div className="max-h-[min(420px,60dvh)] overflow-y-auto">
+              {NETWORK_OPTIONS.map((option) => (
+                <DropdownMenuItem
+                  key={option.code}
+                  className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-2.5 text-[14px] text-foreground outline-none hover:bg-hover focus:bg-hover dark:text-white"
+                  onSelect={(event) => {
+                    event.preventDefault()
+                    if (option.unavailable) return
+                    setView("root")
+                  }}
+                  disabled={option.unavailable}
+                >
+                  <span>{option.label}</span>
+                  <span className="flex items-center gap-2">
+                    {option.code === currentNetwork.code ? <Check className="h-4 w-4 text-brand" /> : null}
+                    {option.unavailable ? (
+                      <span className="text-[12px] text-muted-foreground/80 dark:text-white/48">
+                        {t("Unavailable")}
+                      </span>
+                    ) : null}
+                  </span>
                 </DropdownMenuItem>
               ))}
             </div>

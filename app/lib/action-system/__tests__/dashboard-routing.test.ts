@@ -15,13 +15,13 @@ describe("dashboard-routing", () => {
     expect(dashboardTabForProduct("rewards")).toBe("activity")
   })
 
-  it("routes every product action back to the portfolio page", () => {
-    expect(dashboardHrefForProduct("lend")).toBe("/portfolio")
-    expect(dashboardHrefForProduct("borrow")).toBe("/portfolio")
-    expect(dashboardHrefForProduct("multiply")).toBe("/portfolio")
-    expect(dashboardHrefForProduct("rewards")).toBe("/portfolio")
-    expect(dashboardHrefForTab("overview")).toBe("/portfolio")
-    expect(dashboardHrefForTab("lending")).toBe("/portfolio")
+  it("routes every product action back to the dashboard page", () => {
+    expect(dashboardHrefForProduct("lend")).toBe("/dashboard?tab=lend")
+    expect(dashboardHrefForProduct("borrow")).toBe("/dashboard?tab=borrow")
+    expect(dashboardHrefForProduct("multiply")).toBe("/dashboard?tab=multiply")
+    expect(dashboardHrefForProduct("rewards")).toBe("/dashboard?tab=wallet")
+    expect(dashboardHrefForTab("overview")).toBe("/dashboard?tab=borrow")
+    expect(dashboardHrefForTab("lending")).toBe("/dashboard?tab=lend")
   })
 
   it("parses valid tab query values", () => {
@@ -33,10 +33,10 @@ describe("dashboard-routing", () => {
     expect(parseDashboardTab(null)).toBeNull()
   })
 
-  it("labels success CTAs to return to the portfolio", () => {
-    expect(successDashboardCtaLabel("lend")).toBe("View portfolio")
-    expect(successDashboardCtaLabel("borrow")).toBe("View portfolio")
-    expect(successDashboardCtaLabel("multiply")).toBe("View portfolio")
-    expect(successDashboardCtaLabel("rewards")).toBe("View portfolio")
+  it("labels success CTAs to return to the dashboard", () => {
+    expect(successDashboardCtaLabel("lend")).toBe("View dashboard")
+    expect(successDashboardCtaLabel("borrow")).toBe("View dashboard")
+    expect(successDashboardCtaLabel("multiply")).toBe("View dashboard")
+    expect(successDashboardCtaLabel("rewards")).toBe("View dashboard")
   })
 })

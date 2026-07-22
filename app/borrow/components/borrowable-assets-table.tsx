@@ -102,7 +102,7 @@ export function BorrowableAssetsPanel({
               </div>
             ) : null}
             <ul className="space-y-2">
-              {group.assets.map((asset) => {
+              {group.assets.map((asset, index) => {
                 const aprTone = aprToneClass(asset.borrowApr)
                 return (
                   <li key={asset.id}>
@@ -116,7 +116,7 @@ export function BorrowableAssetsPanel({
                       <MarketMobileCardHeader
                         identity={
                           <div className="flex items-center gap-2.5">
-                            <TokenBubble visual={asset.visual} size="table" />
+                            <TokenBubble visual={asset.visual} size="table" eager={index < 2} />
                             <div className="min-w-0">
                               <div className="text-[14px] font-medium text-foreground">{asset.symbol}</div>
                               <div className="text-[12px] text-muted-foreground">{asset.name}</div>
@@ -306,7 +306,13 @@ function LoanAssetsSection({
               </td>
               <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
                 <div className="flex min-w-0 items-center gap-4">
-                  <TokenBubble visual={asset.visual} size="table" ring={false} className="bg-transparent" />
+                  <TokenBubble
+                    visual={asset.visual}
+                    size="table"
+                    ring={false}
+                    className="bg-transparent"
+                    eager={index < 2}
+                  />
                   <div className="min-w-0">
                     <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
                       {asset.name}
@@ -473,6 +479,7 @@ function AssetsSection({
                         return p !== undefined ? formatTokenPrice(p) : asset.subtitle
                       })()}
                       size="md"
+                      eager={index < 2}
                     />
                   </td>
                   <td className={`py-2.5 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>

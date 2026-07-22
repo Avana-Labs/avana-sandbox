@@ -9,13 +9,6 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn() }),
 }))
 
-// The full site Header (wallet, search, preference controls) is rendered by the
-// /actions layout, not the shell; stub it here so the layout test doesn't need the
-// web3 provider tree.
-vi.mock("@/app/components/header", () => ({
-  Header: () => <div data-testid="site-header">site header</div>,
-}))
-
 describe("ActionPageShell", () => {
   beforeAll(() => {
     // ThemeProvider resolves the system theme via matchMedia, which jsdom omits.
@@ -57,14 +50,13 @@ describe("ActionPageShell", () => {
     expect(screen.queryByLabelText("Open help menu")).not.toBeInTheDocument()
   })
 
-  it("the /actions layout renders the full site header (currency/language live there)", () => {
+  it("the /actions layout leaves route chrome to the action shell", () => {
     render(
       <ActionsLayout>
         <div>Action page body</div>
       </ActionsLayout>,
     )
 
-    expect(screen.getByTestId("site-header")).toBeInTheDocument()
     expect(screen.getByText("Action page body")).toBeInTheDocument()
   })
 
@@ -76,6 +68,18 @@ describe("ActionPageShell", () => {
     )
 
     expect(screen.queryByText("Simulated transaction")).not.toBeInTheDocument()
+  })
+
+  it("renders the action flow header when a flow stage is provided", () => {
+    renderShell(
+      <ActionPageShell title="Withdraw" subtitle="Configure and review your withdrawal." flowHeaderStage="configure">
+        <div>Body</div>
+      </ActionPageShell>,
+    )
+
+    expect(screen.getByText("Step 2 of 4 · Configure")).toBeInTheDocument()
+    expect(screen.getByLabelText("Home")).toBeInTheDocument()
+    expect(screen.getByLabelText("Close")).toBeInTheDocument()
   })
 
   it("renders overlay mode on the shell root", async () => {

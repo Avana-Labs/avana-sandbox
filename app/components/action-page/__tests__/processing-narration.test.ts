@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { processingNarrationScript } from "@/app/components/action-page/processing-narration"
+import { getProcessingTitle } from "@/app/lib/action-system/action-page-labels"
 
 describe("processingNarrationScript", () => {
   // Every descriptor verb (contracts.ts) maps to its own apt script, keyed by a line
@@ -15,6 +16,7 @@ describe("processingNarrationScript", () => {
     ["Withdraw", "Unwinding your supplied position"],
     ["Multiply", "Locking in your leverage"],
     ["Deleverage", "Unwinding part of your loop"],
+    ["Swap", "Connecting to the swap router"],
   ]
 
   it.each(cases)("maps the %s verb to its own script", (verb, distinctiveLine) => {
@@ -29,5 +31,9 @@ describe("processingNarrationScript", () => {
     for (const [verb] of cases) {
       expect(processingNarrationScript(verb)).toHaveLength(5)
     }
+  })
+
+  it("uses the correct present participle for swap", () => {
+    expect(getProcessingTitle("Swap", "ETH")).toBe("Swapping ETH")
   })
 })

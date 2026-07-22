@@ -572,7 +572,13 @@ export function MultiplyActionPageClient({
 
   if (shouldShowActionSessionLoading(session.isHydrated)) {
     return (
-      <ActionPageShell title={descriptor.title} subtitle={descriptor.subtitle} closeHref={closeHref} simulated>
+      <ActionPageShell
+        title={descriptor.title}
+        subtitle={descriptor.subtitle}
+        closeHref={closeHref}
+        flowHeaderStage={!embedded ? stage : undefined}
+        simulated
+      >
         <ActionSessionLoading />
       </ActionPageShell>
     )
@@ -672,6 +678,7 @@ export function MultiplyActionPageClient({
       hideTitle={hideTitle}
       hideClose={embedded}
       closeHref={closeHref}
+      flowHeaderStage={!embedded ? stage : undefined}
       simulated={session.readAdapter.mode === "sandbox"}
     >
       {useWorkspaceFields ? stackedAmountField : null}

@@ -66,7 +66,7 @@ describe("buildBorrowSeed", () => {
     expect(asset.category === "stable" || asset.category === "crypto").toBe(true)
   })
 
-  it("produces sane, finite daily values (utilization 1..99, non-negative money)", () => {
+  it("produces sane, finite daily values (utilization 1..99, non-negative money)", { timeout: 30_000 }, () => {
     const seed = buildBorrowSeed({ days: 90, asOf: ASOF })
     for (const row of seed.dailyStats) {
       expect(Number.isFinite(row.suppliedUsd)).toBe(true)

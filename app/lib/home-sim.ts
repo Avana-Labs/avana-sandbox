@@ -1,7 +1,7 @@
 import { getActiveCurrency } from "@/app/lib/currency/active-rate"
 import { healthFactorBand } from "@/app/lib/health/health-factor-bands"
 
-export type HomeMode = "borrow" | "repay" | "claim" | "remove"
+export type HomeMode = "borrow" | "swap" | "repay" | "claim" | "remove"
 
 export type HomeAssetVisual = {
   symbol: string

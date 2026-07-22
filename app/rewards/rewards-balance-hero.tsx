@@ -19,7 +19,7 @@ const HeroAreaChart = dynamic(
   },
 )
 
-// TODO(backend): wire these to the user's real Avana balance (mirrors the portfolio hero).
+// TODO(backend): wire these to the user's real Avana balance (mirrors the dashboard hero).
 const AVANA_BALANCE = "$14,400.00"
 const AVANA_BALANCE_DELTA = "-$312.96 (-3.80%)"
 
@@ -139,14 +139,14 @@ export function PortfolioRewardsCards({ claimHref }: { claimHref?: string }) {
         hidden={!showDollarAmounts}
         action={
           claimHref ? (
-            <Button asChild size="sm" className="shrink-0 gap-1.5">
+            <Button asChild size="sm" className="shrink-0 gap-2 font-bold [&_svg]:size-4">
               <Link href={claimHref}>
                 <CircleDollarSign className="size-4" />
                 {t("Claim Rewards")}
               </Link>
             </Button>
           ) : (
-            <Button type="button" size="sm" disabled className="shrink-0 gap-1.5">
+            <Button type="button" size="sm" disabled className="shrink-0 gap-2 font-bold [&_svg]:size-4">
               <CircleDollarSign className="size-4" />
               {t("Claim Rewards")}
             </Button>

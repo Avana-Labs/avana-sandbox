@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic"
 import Link from "next/link"
+import { ActionIcon } from "@/app/components/action-icon"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
@@ -130,14 +131,16 @@ export function AssetDetailClient({ detail }: Props) {
       <MobileDetailActionBar className="grid grid-cols-2 gap-3">
         <Link
           href={actionPagePath("borrow", "borrow", { asset: detail.row.id, return: closeHref })}
-          className={primaryCtaClass({ size: "compact" })}
+          className={primaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
         >
+          <ActionIcon label="Borrow" />
           {t("Borrow")}
         </Link>
         <Link
           href={actionPagePath("borrow", "repay", { asset: detail.row.id, return: closeHref })}
-          className={secondaryCtaClass({ size: "compact" })}
+          className={secondaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
         >
+          <ActionIcon label="Repay" />
           {t("Repay")}
         </Link>
       </MobileDetailActionBar>

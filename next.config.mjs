@@ -136,12 +136,9 @@ const nextConfig = {
       // /express was a client-rendered page that only ever did redirect("/"). Serve the
       // same redirect at the edge instead — no React render, one fewer route in the bundle.
       { source: "/express", destination: "/", permanent: true },
-      // The Rewards page was renamed to Portfolio and moved to /portfolio. Redirect the
-      // old path (and any external referral links that point at /rewards) at the edge.
-      { source: "/rewards", destination: "/portfolio", permanent: true },
-      // The dashboard was removed; its accounts, activity, and quests all live on
-      // the portfolio page now. Redirect old links/bookmarks instead of 404ing.
-      { source: "/dashboard", destination: "/portfolio", permanent: true },
+      // Rewards and Portfolio now live under Dashboard. Redirect legacy links at the edge.
+      { source: "/rewards", destination: "/dashboard", permanent: true },
+      { source: "/portfolio", destination: "/dashboard", permanent: true },
     ]
   },
   async rewrites() {

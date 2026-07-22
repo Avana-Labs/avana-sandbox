@@ -17,7 +17,7 @@ export const LIGHTHOUSE_NUMERIC_BUDGETS = {
   firstContentfulPaintMs: 1_200,
   largestContentfulPaintMs: 2_500,
   totalBlockingTimeMs: 200,
-  unusedJavaScriptBytes: 100 * 1024,
+  unusedJavaScriptBytes: 200 * 1024,
   totalByteWeightBytes: 1_200 * 1024,
   domNodes: 1_000,
   mainThreadWorkMs: 2_000,

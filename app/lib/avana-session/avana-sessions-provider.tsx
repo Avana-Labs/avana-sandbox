@@ -9,12 +9,14 @@ import type { MultiplySandboxActionResult, MultiplyTransactionResult } from "@/a
 import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
 import { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-session"
+import { useSwapSession } from "@/app/lib/swap-system/use-swap-session"
 import { useAvanaSession } from "./use-avana-session"
 
 type BorrowSession = ReturnType<typeof useBorrowSession>
 type MultiplySession = ReturnType<typeof useMultiplySession>
 type LendSession = ReturnType<typeof useLendSession>
 type RewardsSession = ReturnType<typeof useRewardsSession>
+type SwapSession = ReturnType<typeof useSwapSession>
 
 function usd6ToNumber(value: bigint) {
   return Number(value) / 1_000_000
@@ -162,6 +164,7 @@ export type AvanaSessions = {
   multiply: MultiplySession
   lend: LendSession
   rewards: RewardsSession
+  swap: SwapSession
 }
 
 export type AvanaIdentity = Pick<AvanaSessions, "walletId" | "walletAddress" | "sandboxMode">
@@ -172,6 +175,7 @@ const BorrowSessionContext = createContext<BorrowSession | null>(null)
 const MultiplySessionContext = createContext<MultiplySession | null>(null)
 const LendSessionContext = createContext<LendSession | null>(null)
 const RewardsSessionContext = createContext<RewardsSession | null>(null)
+const SwapSessionContext = createContext<SwapSession | null>(null)
 
 export function AvanaSessionsProvider({
   walletId,
@@ -226,6 +230,10 @@ export function AvanaSessionsProvider({
     remoteState: remoteRewardsState,
     persistRemoteState: persistRewardsState,
   })
+  const swap = useSwapSession({
+    walletId: avana.walletId,
+    persistState: persistLocalState,
+  })
 
   useRewardsEventBridge({
     walletId: avana.walletId,
@@ -246,8 +254,9 @@ export function AvanaSessionsProvider({
       multiply,
       lend,
       rewards,
+      swap,
     }),
-    [avana.walletId, avana.walletAddress, avana.sandboxMode, borrow, multiply, lend, rewards],
+    [avana.walletId, avana.walletAddress, avana.sandboxMode, borrow, multiply, lend, rewards, swap],
   )
   const identity = useMemo<AvanaIdentity>(
     () => ({
@@ -264,7 +273,9 @@ export function AvanaSessionsProvider({
         <BorrowSessionContext.Provider value={borrow}>
           <MultiplySessionContext.Provider value={multiply}>
             <LendSessionContext.Provider value={lend}>
-              <RewardsSessionContext.Provider value={rewards}>{children}</RewardsSessionContext.Provider>
+              <RewardsSessionContext.Provider value={rewards}>
+                <SwapSessionContext.Provider value={swap}>{children}</SwapSessionContext.Provider>
+              </RewardsSessionContext.Provider>
             </LendSessionContext.Provider>
           </MultiplySessionContext.Provider>
         </BorrowSessionContext.Provider>
@@ -321,6 +332,14 @@ export function useRewardsSessionContext() {
   const context = useContext(RewardsSessionContext)
   if (!context) {
     throw new Error("useRewardsSessionContext must be used within AvanaSessionsProvider")
+  }
+  return context
+}
+
+export function useSwapSessionContext() {
+  const context = useContext(SwapSessionContext)
+  if (!context) {
+    throw new Error("useSwapSessionContext must be used within AvanaSessionsProvider")
   }
   return context
 }

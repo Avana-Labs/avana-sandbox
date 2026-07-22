@@ -4,7 +4,9 @@ import {
   AlertTriangle as _AlertTriangle,
   ArrowDown as _ArrowDown,
   ArrowRight as _ArrowRight,
+  ArrowShrinkIcon as _ArrowShrink,
   ArrowUpRight as _ArrowUpRight,
+  ArrowUpRightStackIcon as _ArrowUpRightStack,
   BadgeCheck as _BadgeCheck,
   BookOpen as _BookOpen,
   Check as _Check,
@@ -15,26 +17,33 @@ import {
   ChevronUp as _ChevronUp,
   Circle as _Circle,
   CircleArrowDown as _CircleArrowDown,
+  CircleArrowOutDownRightIcon as _CircleArrowOutDownRight,
+  CircleArrowOutUpLeftIcon as _CircleArrowOutUpLeft,
   CircleArrowUp as _CircleArrowUp,
   CircleUserRound as _CircleUserRound,
   Code as _Code,
   Coins as _Coins,
   Compass as _Compass,
   Copy as _Copy,
+  DashboardSquareAddIcon as _DashboardSquareAdd,
   DollarCircleIcon as _DollarCircleIcon,
   Droplets as _Droplets,
+  EnteringGeoFenceIcon as _EnteringGeoFence,
   ExternalLink as _ExternalLink,
   Eye as _Eye,
   EyeOff as _EyeOff,
   FileText as _FileText,
   Flame as _Flame,
+  GiftIcon as _Gift,
   Globe as _Globe,
   GraduationCap as _GraduationCap,
   HandCoins as _HandCoins,
   Heart as _Heart,
   HelpCircleIcon as _HelpCircleIcon,
   Info as _Info,
+  LayerSendBackwardIcon as _LayerSendBackward,
   Layers as _Layers,
+  LeavingGeoFenceIcon as _LeavingGeoFence,
   LifeBuoy as _LifeBuoy,
   Link2 as _Link2,
   LoaderCircle as _LoaderCircle,
@@ -57,6 +66,7 @@ import {
   Shield as _Shield,
   ShieldCheck as _ShieldCheck,
   Sparkles as _Sparkles,
+  SquareLock02Icon as _SquareLock02,
   Sun as _Sun,
   SunMedium as _SunMedium,
   Target as _Target,
@@ -96,7 +106,9 @@ function makeIcon(icon: HugeiconsIconProps["icon"]): IconComponent {
 export const AlertTriangle: IconComponent = makeIcon(_AlertTriangle)
 export const ArrowDown: IconComponent = makeIcon(_ArrowDown)
 export const ArrowRight: IconComponent = makeIcon(_ArrowRight)
+export const ArrowShrink: IconComponent = makeIcon(_ArrowShrink)
 export const ArrowUpRight: IconComponent = makeIcon(_ArrowUpRight)
+export const ArrowUpRightStack: IconComponent = makeIcon(_ArrowUpRightStack)
 export const BadgeCheck: IconComponent = makeIcon(_BadgeCheck)
 export const BadgeDollarSign: IconComponent = makeIcon(_DollarCircleIcon)
 export const BookOpen: IconComponent = makeIcon(_BookOpen)
@@ -108,6 +120,8 @@ export const ChevronRight: IconComponent = makeIcon(_ChevronRight)
 export const ChevronUp: IconComponent = makeIcon(_ChevronUp)
 export const Circle: IconComponent = makeIcon(_Circle)
 export const CircleArrowDown: IconComponent = makeIcon(_CircleArrowDown)
+export const CircleArrowOutDownRight: IconComponent = makeIcon(_CircleArrowOutDownRight)
+export const CircleArrowOutUpLeft: IconComponent = makeIcon(_CircleArrowOutUpLeft)
 export const CircleArrowUp: IconComponent = makeIcon(_CircleArrowUp)
 export const CircleDollarSign: IconComponent = makeIcon(_DollarCircleIcon)
 export const CircleHelp: IconComponent = makeIcon(_HelpCircleIcon)
@@ -116,19 +130,24 @@ export const Code2: IconComponent = makeIcon(_Code)
 export const Coins: IconComponent = makeIcon(_Coins)
 export const Compass: IconComponent = makeIcon(_Compass)
 export const Copy: IconComponent = makeIcon(_Copy)
+export const DashboardSquareAdd: IconComponent = makeIcon(_DashboardSquareAdd)
 export const Droplets: IconComponent = makeIcon(_Droplets)
+export const EnteringGeoFence: IconComponent = makeIcon(_EnteringGeoFence)
 export const ExternalLink: IconComponent = makeIcon(_ExternalLink)
 export const Eye: IconComponent = makeIcon(_Eye)
 export const EyeOff: IconComponent = makeIcon(_EyeOff)
 export const FileText: IconComponent = makeIcon(_FileText)
 export const Flame: IconComponent = makeIcon(_Flame)
+export const Gift: IconComponent = makeIcon(_Gift)
 export const Globe: IconComponent = makeIcon(_Globe)
 export const Globe2: IconComponent = makeIcon(_Globe)
 export const GraduationCap: IconComponent = makeIcon(_GraduationCap)
 export const HandCoins: IconComponent = makeIcon(_HandCoins)
 export const Heart: IconComponent = makeIcon(_Heart)
 export const Info: IconComponent = makeIcon(_Info)
+export const LayerSendBackward: IconComponent = makeIcon(_LayerSendBackward)
 export const Layers3: IconComponent = makeIcon(_Layers)
+export const LeavingGeoFence: IconComponent = makeIcon(_LeavingGeoFence)
 export const LifeBuoy: IconComponent = makeIcon(_LifeBuoy)
 export const Link2: IconComponent = makeIcon(_Link2)
 export const LoaderCircle: IconComponent = makeIcon(_LoaderCircle)
@@ -151,6 +170,7 @@ export const Search: IconComponent = makeIcon(_Search)
 export const Shield: IconComponent = makeIcon(_Shield)
 export const ShieldCheck: IconComponent = makeIcon(_ShieldCheck)
 export const Sparkles: IconComponent = makeIcon(_Sparkles)
+export const SquareLock02: IconComponent = makeIcon(_SquareLock02)
 export const Sun: IconComponent = makeIcon(_Sun)
 export const SunMedium: IconComponent = makeIcon(_SunMedium)
 export const Target: IconComponent = makeIcon(_Target)

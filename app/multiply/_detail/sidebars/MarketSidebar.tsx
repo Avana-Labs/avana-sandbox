@@ -77,6 +77,8 @@ function MarketActionRail({ detail, className, embedActions = false }: Props & {
         value={tab}
         onChange={(value) => setTab(value as SidebarTab)}
         ariaLabel={t("Multiply actions")}
+        withIcons
+        revealLabels
       />
 
       <div className="mt-3">

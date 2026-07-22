@@ -1,31 +1,23 @@
 "use client"
 
-import { lazy, useMemo, useState } from "react"
+import { lazy, useMemo } from "react"
 import { useAvanaIdentity, useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
-import { usePortfolioMultiplyLive } from "@/app/portfolio/use-portfolio-multiply-live"
-import { buildMultiplyDashboardMetrics, type DashboardTabMetrics } from "@/app/portfolio/dashboard-tab-metrics"
-import { DashboardOverviewSection } from "@/app/portfolio/dashboard-metric-section"
-import { SuppliesHealthFactorCard } from "@/app/portfolio/borrow-tab/supplies-table"
-import { CurrentLtvCard } from "@/app/portfolio/borrow-tab/debts-table"
-import type { BorrowSnapshot } from "@/app/portfolio/borrow-hero-state"
+import { useDashboardMultiplyLive } from "@/app/dashboard/use-dashboard-multiply-live"
+import { buildMultiplyDashboardMetrics, type DashboardTabMetrics } from "@/app/dashboard/dashboard-tab-metrics"
+import { DashboardOverviewSection } from "@/app/dashboard/dashboard-metric-section"
+import { SuppliesHealthFactorCard } from "@/app/dashboard/borrow-tab/supplies-table"
+import { CurrentLtvCard } from "@/app/dashboard/borrow-tab/debts-table"
+import type { BorrowSnapshot } from "@/app/dashboard/borrow-hero-state"
 import type { PortfolioMultiplyCollateral, PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
 import { shouldUseOpenGateSession } from "@/app/lib/test-mode"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { SectionTabStrip, AccountModuleBoundary } from "./account-sections-shared"
+import { AccountModuleBoundary } from "./account-sections-shared"
 
 const MultiplyCollateralTable = lazy(async () => ({
-  default: (await import("@/app/portfolio/multiply-collateral-table")).MultiplyCollateralTable,
+  default: (await import("@/app/dashboard/multiply-collateral-table")).MultiplyCollateralTable,
 }))
-
-const RETURN_HREF = "/portfolio"
-
-type LoopingSubTab = "overview" | "positions"
-const LOOPING_SUB_TABS: readonly { id: LoopingSubTab; label: string }[] = [
-  { id: "overview", label: "Multiply Overview" },
-  { id: "positions", label: "Multiply Positions" },
-]
 
 const EMPTY_MULTIPLY_TAB: PortfolioMultiplyTabData = {
   creditLines: {
@@ -73,15 +65,14 @@ function withDevMultiplyFixtures(data: PortfolioMultiplyTabData): PortfolioMulti
  * The multiply account overview + positions that used to live on the dashboard.
  * Self-contained: reads the live multiply session directly, no props.
  */
-export function MultiplyAccountSection() {
+export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHref?: string }) {
   const { t } = useTranslation()
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const hasMounted = useHasMounted()
   const { walletId } = useAvanaIdentity()
   const multiplySession = useMultiplySessionContext()
-  const [loopingSubTab, setLoopingSubTab] = useState<LoopingSubTab>("overview")
 
-  const portfolioMultiply = usePortfolioMultiplyLive(walletId, multiplySession)
+  const portfolioMultiply = useDashboardMultiplyLive(walletId, multiplySession)
 
   const multiplyTabData = useMemo(
     () => withDevMultiplyFixtures(hasMounted ? (portfolioMultiply ?? EMPTY_MULTIPLY_TAB) : EMPTY_MULTIPLY_TAB),
@@ -114,26 +105,14 @@ export function MultiplyAccountSection() {
   }
 
   return (
-    <section>
-      <div className="flex flex-col gap-3 border-b border-border/50 pb-px md:flex-row md:items-end md:justify-between md:border-b-0 md:pb-0">
-        <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">
-          {t("Multiply Account")}
-        </h2>
-        <SectionTabStrip
-          items={LOOPING_SUB_TABS}
-          value={loopingSubTab}
-          onChange={setLoopingSubTab}
-          ariaLabel={t("Multiply sections")}
-        />
-      </div>
-      <div className="mt-8">
-        {loopingSubTab === "overview" ? (
-          <div className="space-y-8">
-            <DashboardOverviewSection
-              hideHeading
-              title={t("Multiply Overview")}
-              metrics={multiplyDashboardMetrics.overview}
-            />
+    <section id="dashboard-multiply-account" className="scroll-mt-24">
+      <div className="space-y-6">
+        <div className="space-y-6">
+          <DashboardOverviewSection title={t("Multiply Balance")} metrics={multiplyDashboardMetrics.overview} />
+          <div className="space-y-4">
+            <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
+              {t("Multiply Health")}
+            </h3>
             <div className="grid gap-4 xl:grid-cols-2">
               <SuppliesHealthFactorCard
                 averageHealthFactor={multiplySnapshot.averageHealthFactor}
@@ -146,11 +125,10 @@ export function MultiplyAccountSection() {
               />
             </div>
           </div>
-        ) : (
-          <AccountModuleBoundary>
-            <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} returnHref={RETURN_HREF} />
-          </AccountModuleBoundary>
-        )}
+        </div>
+        <AccountModuleBoundary>
+          <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} returnHref={returnHref} />
+        </AccountModuleBoundary>
       </div>
     </section>
   )

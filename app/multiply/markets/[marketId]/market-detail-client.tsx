@@ -3,6 +3,7 @@
 import * as React from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
+import { ActionIcon } from "@/app/components/action-icon"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
@@ -127,24 +128,20 @@ export function MarketDetailClient({ detail }: Props) {
         </div>
       </main>
 
-      <MobileDetailActionBar className="grid grid-cols-3 gap-3">
+      <MobileDetailActionBar className="grid grid-cols-2 gap-3">
         <Link
           href={actionPagePath("multiply", "multiply", { market: marketId, return: `/multiply/markets/${marketId}` })}
-          className={primaryCtaClass({ size: "compact" })}
+          className={primaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
         >
+          <ActionIcon label="Multiply" />
           {t("Multiply")}
         </Link>
         <Link
           href={actionPagePath("multiply", "deleverage", { market: marketId, return: `/multiply/markets/${marketId}` })}
-          className={secondaryCtaClass({ size: "compact" })}
+          className={secondaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
         >
+          <ActionIcon label="Deleverage" />
           {t("Deleverage")}
-        </Link>
-        <Link
-          href={actionPagePath("multiply", "close", { market: marketId, return: `/multiply/markets/${marketId}` })}
-          className={secondaryCtaClass({ size: "compact" })}
-        >
-          {t("Close")}
         </Link>
       </MobileDetailActionBar>
     </div>

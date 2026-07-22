@@ -358,6 +358,7 @@ function LoopMarketsSection({
                 <MobileLoopCard
                   key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
                   row={row}
+                  index={index}
                   protocolLogo={getResolvedLogo(row.protocolLogo)}
                   assetLogo={getResolvedLogo(tokenLogos[row.asset as keyof typeof tokenLogos])}
                   availableLabel={
@@ -549,6 +550,8 @@ function LoopTableRow({
                 alt=""
                 aria-hidden="true"
                 className="size-12 shrink-0 rounded-full bg-card object-cover"
+                loading={index < 2 ? "eager" : "lazy"}
+                fetchPriority={index < 2 ? "high" : undefined}
               />
             </>
           ) : null}
@@ -572,6 +575,8 @@ function LoopTableRow({
                 alt=""
                 aria-hidden="true"
                 className="size-12 shrink-0 rounded-full bg-card object-cover"
+                loading={index < 2 ? "eager" : "lazy"}
+                fetchPriority={index < 2 ? "high" : undefined}
               />
             </>
           ) : null}
@@ -683,11 +688,13 @@ function LoopTableRow({
 
 function MobileLoopCard({
   row,
+  index,
   protocolLogo,
   assetLogo,
   availableLabel,
 }: {
   row: MultiplyPageData["lendRows"][number]
+  index: number
   protocolLogo?: string | null
   assetLogo?: string | null
   availableLabel: string
@@ -704,13 +711,27 @@ function MobileLoopCard({
                   {protocolLogo ? (
                     <div className="absolute left-0 top-0 z-10 flex size-12 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={protocolLogo} alt="" aria-hidden="true" className="size-full object-cover" />
+                      <img
+                        src={protocolLogo}
+                        alt=""
+                        aria-hidden="true"
+                        className="size-full object-cover"
+                        loading={index < 2 ? "eager" : "lazy"}
+                        fetchPriority={index < 2 ? "high" : undefined}
+                      />
                     </div>
                   ) : null}
                   {assetLogo ? (
                     <div className="absolute left-6 top-0 flex size-12 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={assetLogo} alt="" aria-hidden="true" className="size-full object-cover" />
+                      <img
+                        src={assetLogo}
+                        alt=""
+                        aria-hidden="true"
+                        className="size-full object-cover"
+                        loading={index < 2 ? "eager" : "lazy"}
+                        fetchPriority={index < 2 ? "high" : undefined}
+                      />
                     </div>
                   ) : null}
                 </div>
