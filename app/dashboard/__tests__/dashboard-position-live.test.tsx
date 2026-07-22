@@ -36,6 +36,41 @@ const pool = {
 }
 
 describe("DashboardBorrowTab live rows", () => {
+  it("p0-03 renders live collateral and debt rows in the default Borrow tab", () => {
+    render(
+      <DashboardBorrowTab
+        collateralPositions={[
+          {
+            pool,
+            borrowedUsd: 0,
+            remainingBorrowPowerUsd: 654,
+            liquidationThresholdUsd: 800,
+            healthFactor: null,
+            pairApr: 3,
+            feesUsd: 12,
+            feesLabel: "$12.00",
+          },
+        ]}
+        debtPositions={[
+          {
+            id: "debt-live",
+            pool,
+            debtAssetSymbol: "USDC",
+            borrowedUsd: 321,
+            liquidationThresholdUsd: 800,
+            healthFactor: 2.4,
+            borrowApr: 4,
+            accruedInterestUsd: 2,
+            dailyInterestUsd: 0.1,
+          },
+        ]}
+      />,
+    )
+
+    expect(screen.getByText("remaining:654")).toBeInTheDocument()
+    expect(screen.getByText("borrowed:321")).toBeInTheDocument()
+  })
+
   it("renders refreshed debt amounts from updated props", () => {
     const { rerender } = render(
       <DashboardBorrowTab

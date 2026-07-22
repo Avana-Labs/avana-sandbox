@@ -643,6 +643,31 @@ html[data-lighthouse-audit="true"] .reveal-in {
   }
 }
 
+/* Content reveal: the real view fades + lifts in as the client-gated skeleton
+   clears, so the placeholder→content swap reads as a smooth reveal instead of a
+   hard pop. Mirrors skeleton-enter's easing. Honors reduced-motion below and is
+   disabled under the lighthouse-audit reset above. */
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal-in {
+  animation: reveal-in 460ms cubic-bezier(0.22, 0.8, 0.22, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-in {
+    animation: none;
+  }
+}
+
 /* Prevent mouse/touch clicks from leaving browser tap/focus artifacts. Keyboard
    navigation still receives the existing :focus-visible treatment. */
 a,

@@ -35,7 +35,7 @@ export function AllocationBreakdownCard({ detail, id }: Props) {
               <th className="px-2 py-2 text-right">{t("Share")}</th>
               <th className="px-2 py-2 text-right">{t("Value")}</th>
               <th className="px-2 py-2 text-right">{t("Utilization")}</th>
-              <th className="px-4 py-2 text-right sm:pr-5">{t("Borrow APY")}</th>
+              <th className="px-4 py-2 text-right sm:pr-5">{t("Borrow APR")}</th>
             </tr>
           </thead>
           <tbody>

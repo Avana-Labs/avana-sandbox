@@ -18,6 +18,7 @@ import type {
   TransactionIntent,
   TransactionPreview,
 } from "./contracts"
+import { applyBorrowLiquidityDeltasToEngineState, type DeltaMap } from "@/app/lib/market-liquidity/apply"
 
 type SandboxAdapterOptions = {
   readState: () => BorrowSystemState
@@ -29,6 +30,7 @@ type SandboxAdapterOptions = {
     simulated: boolean
     timestamp: number
   }>
+  getLiquidityDeltas?: () => DeltaMap
   now?: () => number
   generateId?: (prefix: string) => string
 }
@@ -86,12 +88,21 @@ function normalizeBorrowAction(state: BorrowSystemState, action: BorrowAction): 
   }
 }
 
-function toPreview(state: BorrowSystemState, action: BorrowAction, intent: TransactionIntent): TransactionPreview {
+function toPreview(
+  state: BorrowSystemState,
+  action: BorrowAction,
+  intent: TransactionIntent,
+  getLiquidityDeltas?: () => DeltaMap,
+): TransactionPreview {
+  const preparedState =
+    action.type === "borrow" && getLiquidityDeltas
+      ? applyBorrowLiquidityDeltasToEngineState(state, getLiquidityDeltas())
+      : state
   const simulation =
     action.type === "supplyCollateral"
-      ? simulateDeposit(state, action)
+      ? simulateDeposit(preparedState, action)
       : action.type === "borrow"
-        ? simulateBorrow(state, action)
+        ? simulateBorrow(preparedState, action)
         : action.type === "repay"
           ? simulateRepay(state, action)
           : action.type === "removeCollateral"
@@ -116,6 +127,7 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
   private readonly readStateImpl: SandboxAdapterOptions["readState"]
   private readonly writeStateImpl: SandboxAdapterOptions["writeState"]
   private readonly persistResult?: SandboxAdapterOptions["persistResult"]
+  private readonly getLiquidityDeltas?: SandboxAdapterOptions["getLiquidityDeltas"]
   private readonly now: () => number
   private readonly generateId: (prefix: string) => string
   private readonly seed: BorrowSystemState
@@ -126,6 +138,7 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
     this.readStateImpl = options.readState
     this.writeStateImpl = options.writeState
     this.persistResult = options.persistResult
+    this.getLiquidityDeltas = options.getLiquidityDeltas
     this.now = options.now ?? Date.now
     this.generateId = options.generateId ?? defaultId
     this.seed = options.readState()
@@ -159,7 +172,7 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
       throw new Error("Sandbox transaction intent is missing its borrow action payload")
     }
     const state = this.readStateImpl()
-    const preview = toPreview(state, action, intent)
+    const preview = toPreview(state, action, intent, this.getLiquidityDeltas)
     this.previewCache.set(intent.id, preview)
     this.previewStateByIntent.set(intent.id, state)
     return preview

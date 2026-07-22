@@ -13,6 +13,7 @@ import type {
   TransactionHistoryItem,
   TransactionIntent,
 } from "@/app/lib/borrow-system/contracts"
+import type { DeltaMap } from "@/app/lib/market-liquidity/apply"
 import { createExecutionFingerprint } from "@/app/lib/borrow-system/execution-guard"
 import { buildLegacyTransactionHistory, buildSyntheticReceipts } from "@/app/lib/borrow-system/read-model"
 import { SandboxBorrowReadAdapter } from "@/app/lib/borrow-system/sandbox-read-adapter"
@@ -80,7 +81,7 @@ export type ConvexBorrowWalletData = {
   transactions: Array<{
     _id: string
     intentId?: string
-    product: "borrow" | "lend" | "multiply"
+    product: "borrow" | "lend" | "multiply" | "swap"
     kind: string
     status: "success" | "failed" | "pending"
     marketSlug?: string
@@ -102,6 +103,7 @@ export function useBorrowSession({
   transactionAdapter: injectedTransactionAdapter,
   persistState,
   persistTransaction,
+  getLiquidityDeltas,
 }: {
   walletId: string
   sessionSeed: string
@@ -115,6 +117,7 @@ export function useBorrowSession({
     simulated: boolean
     timestamp: number
   }>
+  getLiquidityDeltas?: () => DeltaMap
 }) {
   const adapterMode = injectedReadAdapter?.mode ?? injectedTransactionAdapter?.mode ?? "sandbox"
   const shouldPersistState = persistState ?? adapterMode === "sandbox"
@@ -334,8 +337,9 @@ export function useBorrowSession({
         setState(nextState)
       },
       persistResult: persistTransaction,
+      getLiquidityDeltas,
     })
-  }, [injectedTransactionAdapter, persistTransaction])
+  }, [getLiquidityDeltas, injectedTransactionAdapter, persistTransaction])
 
   const createIntent = useCallback(
     (action: BorrowAction) => transactionAdapter.createIntent(action),

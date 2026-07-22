@@ -26,7 +26,7 @@ export function CategoryChips({
       role="tablist"
       aria-label={t("Filter by category")}
       className={cn(
-        "flex items-center gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        "flex flex-nowrap items-center gap-2.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] snap-x snap-mandatory [&::-webkit-scrollbar]:hidden",
         className,
       )}
     >
@@ -40,7 +40,7 @@ export function CategoryChips({
             aria-selected={active}
             onClick={() => onChange(chip.id)}
             className={cn(
-              "shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-[14px] font-medium transition-colors",
+              "shrink-0 snap-start whitespace-nowrap rounded-full border px-4 py-2 text-[14px] font-medium transition-colors",
               active
                 ? "border-transparent bg-surface-inset text-foreground dark:bg-[#2c2c2c] dark:text-white"
                 : "border-border bg-card text-muted-foreground hover:bg-surface-hover hover:text-foreground dark:border-transparent dark:bg-[#1d1d1d] dark:text-white/65 dark:hover:text-white",

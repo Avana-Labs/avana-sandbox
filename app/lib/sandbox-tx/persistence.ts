@@ -10,6 +10,8 @@
 import type { SandboxActionResult, TransactionHistoryItem } from "@/app/lib/borrow-system/contracts"
 import type { LendSandboxActionResult } from "@/app/lib/lend-system/contracts"
 import type { MultiplySandboxActionResult } from "@/app/lib/multiply-system/contracts"
+import { getSwapAsset } from "@/app/lib/swap-system/catalog"
+import type { SwapTransactionRecord } from "@/app/lib/swap-system/transaction-adapter"
 
 export type RecordTransactionArgs = {
   wallet: string
@@ -244,5 +246,53 @@ export function borrowResultToRecordArgs(result: SandboxActionResult, wallet: st
       collateral,
       debt,
     },
+  }
+}
+
+export type RecordSwapArgs = {
+  wallet: string
+  intentId: string
+  status: "success" | "failed" | "pending"
+  inputAssetId: string
+  outputAssetId: string
+  inputSymbol: string
+  outputSymbol: string
+  inputAmount: number
+  outputAmount: number
+  amountUsd: number
+  simulated: boolean
+  syntheticTxHash?: string
+}
+
+/**
+ * Map an executed swap onto the Convex `recordSwap` args, or `null` for a non-terminal
+ * record (approval gate / in-flight) that isn't a persistable outcome. The idempotency key
+ * is the client swap id, so a replay returns the existing row. amountUsd is the input leg's
+ * USD value (the server zeroes it for a non-success status). (#15)
+ */
+export function swapRecordToRecordSwapArgs(record: SwapTransactionRecord, wallet: string): RecordSwapArgs | null {
+  const status: RecordSwapArgs["status"] | null =
+    record.status === "confirmed"
+      ? "success"
+      : record.status === "failed" || record.status === "expired" || record.status === "rejected"
+        ? "failed"
+        : null
+  if (status === null) return null
+
+  const input = getSwapAsset(record.inputAssetId)
+  const output = getSwapAsset(record.outputAssetId)
+  return {
+    wallet,
+    intentId: record.id,
+    status,
+    inputAssetId: record.inputAssetId,
+    outputAssetId: record.outputAssetId,
+    inputSymbol: input?.symbol ?? record.inputAssetId.toUpperCase(),
+    outputSymbol: output?.symbol ?? record.outputAssetId.toUpperCase(),
+    inputAmount: record.inputAmount,
+    outputAmount: record.outputAmount,
+    amountUsd: record.inputAmount * (input?.priceUsd ?? 0),
+    simulated: true,
+    syntheticTxHash: record.swapTransactionHash ?? undefined,
   }
 }

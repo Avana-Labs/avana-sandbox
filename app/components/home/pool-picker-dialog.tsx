@@ -59,7 +59,10 @@ export function PoolPickerDialog({
               <button
                 key={pool.id}
                 type="button"
-                onClick={() => onSelect(pool.id)}
+                onClick={() => {
+                  onSelect(pool.id)
+                  onOpenChange(false)
+                }}
                 className={cn(
                   "flex w-full items-center gap-4 px-5 py-2.5 text-left transition-colors hover:bg-hover",
                   isSelected && "bg-surface-inset",

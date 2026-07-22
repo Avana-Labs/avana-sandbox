@@ -89,7 +89,9 @@ export function MarketHeroChart({
   return (
     <div className="space-y-2">
       {/* Metric name kept for screen readers / internal recognition; hidden visually. */}
-      {label ? <span className="sr-only">{label}</span> : null}
+      {label ? (
+        <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{label}</p>
+      ) : null}
       <HeroBalanceDisplay value={value} delta={delta} deltaTone={tone} meta={meta} hidden={hideValue} />
       <HeroAreaChart
         data={points}

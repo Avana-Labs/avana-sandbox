@@ -43,7 +43,8 @@ describe("lend rewards accrual", () => {
     })
 
     expect(simulation.before.interestEarned).toBeCloseTo(0.04, 6)
-    expect(simulation.before.rewardsEarnedUsd).toBeCloseTo(364, 3)
+    // Rewards USD tracks the single sandbox baseline ETH price (~$1,934, was $3,500).
+    expect(simulation.before.rewardsEarnedUsd).toBeCloseTo(201.14, 2)
     expect(simulation.after.rewardsEarnedUsd).toBeCloseTo(simulation.before.rewardsEarnedUsd, 6)
   })
 })

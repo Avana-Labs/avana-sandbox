@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
+import { resolveInterestRateModelParams } from "@/app/lib/borrow-detail/protocol-parameters"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
@@ -22,11 +23,12 @@ export function InterestRateModelCard({ detail, className }: Props) {
   const borrowApr = getQuickStatPercent(detail, "borrowApy", 4)
   const currentUtilization = Number.isFinite(utilization) ? utilization : 0
   const currentBorrowApr = Number.isFinite(borrowApr) ? borrowApr : 4
-  const optimalUtilization = 92
+  const irm = resolveInterestRateModelParams(detail.protocolParameters)
+  const optimalUtilization = irm.optimalUtilizationPct
 
   const curve = React.useMemo(
-    () => buildBorrowCurve(currentUtilization, currentBorrowApr, optimalUtilization),
-    [currentUtilization, currentBorrowApr],
+    () => buildBorrowCurve(currentUtilization, currentBorrowApr, irm),
+    [currentUtilization, currentBorrowApr, irm],
   )
 
   React.useEffect(() => {
@@ -185,19 +187,24 @@ function getQuickStatPercent(detail: AssetDetail, id: string, fallback: number):
   return Number.isFinite(numeric) ? numeric : fallback
 }
 
-function buildBorrowCurve(currentUtilization: number, currentBorrowApr: number, optimalUtilization: number) {
+function buildBorrowCurve(
+  currentUtilization: number,
+  currentBorrowApr: number,
+  irm: ReturnType<typeof resolveInterestRateModelParams>,
+) {
   const points: CurvePoint[] = []
-  const maxBorrowApr = 10
-  const anchorApr = Math.max(1.5, currentBorrowApr)
+  const optimalUtilization = irm.optimalUtilizationPct
+  const anchorApr = irm.baseBorrowRatePct + irm.slopeBelowOptimalPct
+  const maxBorrowApr = Math.max(10, anchorApr + irm.slopeAboveOptimalPct, currentBorrowApr + 2)
 
   for (let util = 0; util <= 100; util += 1) {
     let apr: number
     if (util <= optimalUtilization) {
       const t = util / optimalUtilization
-      apr = 0.12 + (anchorApr / 1.08) * Math.pow(t, 1.2)
+      apr = irm.baseBorrowRatePct + irm.slopeBelowOptimalPct * t
     } else {
       const t = (util - optimalUtilization) / (100 - optimalUtilization)
-      apr = anchorApr + (maxBorrowApr - anchorApr) * Math.pow(t, 0.9)
+      apr = anchorApr + irm.slopeAboveOptimalPct * t
     }
     points.push({ utilization: util, apr })
   }

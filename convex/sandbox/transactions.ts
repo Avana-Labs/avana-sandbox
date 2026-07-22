@@ -32,8 +32,24 @@ const MAX_PORTFOLIO_HISTORY_ROWS = 365
 /** Global multiply leverage ceiling, mirrors MULTIPLY_ACTION_MAX_LEVERAGE (client slider). */
 const MAX_MULTIPLIER = 10
 
-/** Liquidation threshold (%) assumed when a pledged pool has none recorded. Conservative. */
+/** Liquidation threshold (%) assumed when a pledged pool has none recorded AND no maxLtv to
+ *  derive one from. Conservative. */
 const BORROW_FALLBACK_LIQUIDATION_PCT = 85
+
+/**
+ * Derive a liquidation threshold from a pool's max-LTV / collateral factor when the pool has
+ * no explicit `liquidationThresholdPct`. Kept in lockstep with the client credit engine's
+ * `estimateLiquidationThresholdWad` (borrow-system/mock.ts): LT = maxLtv + 10pp, capped at
+ * 95%. Convex can't import app/, so this is hand-synced (like the price baseline). Using the
+ * raw maxLtv (collateral factor) here instead — as the old fallback did — understated the
+ * liquidation value and rejected borrows the client preview had shown as solvent (HF ≥ 1),
+ * breaking confirm==persist parity. (#12)
+ */
+const LIQUIDATION_THRESHOLD_SPREAD_PCT = 10
+const LIQUIDATION_THRESHOLD_CAP_PCT = 95
+function liquidationThresholdFromMaxLtv(maxLtvPct: number) {
+  return Math.min(maxLtvPct + LIQUIDATION_THRESHOLD_SPREAD_PCT, LIQUIDATION_THRESHOLD_CAP_PCT)
+}
 
 /** Optional position upsert payload carried by a transaction. */
 const positionPayload = v.object({
@@ -180,12 +196,58 @@ function validateTransactionTransition(
 }
 
 /**
+ * Revalue a collateral leg from shares/principal + server oracle — never from the
+ * client-supplied `collateralValueUsd6` (that field is display-only and spoofable).
+ *
+ * Sandbox writes historically store usd6 microdollars in shares/principal (tests +
+ * persistence). Real engine positions store 18-decimal LP token amounts; those are
+ * converted with `pools.lpTokenPriceUsd` / `markets.priceUsd` when present.
+ */
+async function serverCollateralValueUsd(
+  ctx: MutationCtx,
+  row: { marketSlug: string; collateralShares: string; principalTokenAmount: string },
+) {
+  const principal = BigInt(row.principalTokenAmount)
+  const shares = BigInt(row.collateralShares)
+  const raw = principal > 0n ? principal : shares
+  if (raw <= 0n) {
+    throw new Error(`INVALID_TRANSITION: collateral ${row.marketSlug} has no server-verifiable value.`)
+  }
+
+  const [pool, market] = await Promise.all([
+    ctx.db
+      .query("pools")
+      .withIndex("by_slug", (q) => q.eq("slug", row.marketSlug))
+      .unique(),
+    ctx.db
+      .query("markets")
+      .withIndex("by_scope_slug", (q) => q.eq("scope", "pool").eq("slug", row.marketSlug))
+      .unique(),
+  ])
+  const priceUsd = pool?.lpTokenPriceUsd ?? market?.priceUsd
+  // 18-dec token notional (engine) vs usd6 microdollars (sandbox tests / persistence).
+  const valueUsd =
+    raw >= 10n ** 12n
+      ? priceUsd && priceUsd > 0
+        ? (Number(raw) / 1e18) * priceUsd
+        : (() => {
+            throw new Error(`INVALID_TRANSITION: collateral ${row.marketSlug} has no server-verifiable value.`)
+          })()
+      : Number(raw) / 1_000_000
+
+  if (!(valueUsd > 0)) {
+    throw new Error(`INVALID_TRANSITION: collateral ${row.marketSlug} has no server-verifiable value.`)
+  }
+  return { valueUsd, pool }
+}
+
+/**
  * Server-side borrow solvency re-derivation. The Credit Engine runs in the browser, so
  * the server must independently confirm a borrow/withdraw write does not persist an
  * underwater (HF < 1) or unbacked position — otherwise a tampered client could record
- * arbitrary debt against arbitrary (or zero) collateral. We re-derive the liquidation
- * value from the pledged pools' real liquidation thresholds (NOT any client-supplied HF)
- * and reject when debt exceeds it.
+ * arbitrary debt against arbitrary (or zero) collateral. We re-derive collateral USD
+ * from shares/principal + oracle and apply pool liquidation thresholds (NOT any
+ * client-supplied HF or collateralValueUsd6) and reject when debt exceeds it.
  */
 async function assertBorrowSolvent(
   ctx: MutationCtx,
@@ -202,15 +264,14 @@ async function assertBorrowSolvent(
 
   let liquidationValueUsd = 0
   for (const row of collateralRows) {
-    const valueUsd = usd6Number(row.collateralValueUsd6)
-    if (valueUsd <= 0) {
-      throw new Error(`INVALID_TRANSITION: collateral ${row.marketSlug} has no server-verifiable value.`)
-    }
-    const pool = await ctx.db
-      .query("pools")
-      .withIndex("by_slug", (q) => q.eq("slug", row.marketSlug))
-      .unique()
-    const thresholdPct = pool?.liquidationThresholdPct ?? pool?.maxLtvPct ?? BORROW_FALLBACK_LIQUIDATION_PCT
+    const { valueUsd, pool } = await serverCollateralValueUsd(ctx, row)
+    // Match the client credit engine's HF basis: explicit LT if the pool has one, otherwise
+    // maxLtv + 10pp (capped 95%) — NOT the raw maxLtv, which is the borrow-capacity collateral
+    // factor and understates the liquidation value, causing server rejections of borrows the
+    // preview allowed (#12).
+    const thresholdPct =
+      pool?.liquidationThresholdPct ??
+      (pool?.maxLtvPct != null ? liquidationThresholdFromMaxLtv(pool.maxLtvPct) : BORROW_FALLBACK_LIQUIDATION_PCT)
     liquidationValueUsd += valueUsd * (thresholdPct / 100)
   }
 
@@ -268,12 +329,9 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
   ])
   const open = positions.filter((position) => position.status === "open")
   const liquid = balances.reduce((sum, balance) => sum + balance.valueUsd, 0)
-  const borrowCollateral = open
-    .filter((position) => position.product === "borrow")
-    .reduce((sum, position) => sum + usd6Number(position.collateralValueUsd6), 0)
-  const borrowDebt = open
-    .filter((position) => position.product === "borrow")
-    .reduce((sum, position) => sum + usd6Number(position.debtValueUsd6), 0)
+  const borrowPositions = open.filter((position) => position.product === "borrow")
+  const borrowCollateral = borrowPositions.reduce((sum, position) => sum + usd6Number(position.collateralValueUsd6), 0)
+  const borrowDebt = borrowPositions.reduce((sum, position) => sum + usd6Number(position.debtValueUsd6), 0)
   const lendSupplied = open
     .filter((position) => position.product === "lend")
     .reduce((sum, position) => sum + usd6Number(position.suppliedUsd6), 0)
@@ -287,13 +345,34 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
     .filter((position) => position.product === "multiply")
     .reduce((sum, position) => sum + (position.debtValueUsd ?? 0), 0)
 
+  // ATB from per-pool collateral factors — never a hardcoded *0.7.
+  const borrowSlugs = [...new Set(borrowPositions.map((position) => position.marketSlug).filter(Boolean))]
+  const borrowPools = await Promise.all(
+    borrowSlugs.map((slug) =>
+      ctx.db
+        .query("pools")
+        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .unique(),
+    ),
+  )
+  const maxLtvBySlug = new Map(
+    borrowPools
+      .filter((pool): pool is NonNullable<typeof pool> => pool !== null)
+      .map((pool) => [pool.slug, pool.maxLtvPct / 100] as const),
+  )
+  const borrowCapacityUsd = borrowPositions.reduce((sum, position) => {
+    const collateralUsd = usd6Number(position.collateralValueUsd6)
+    const cf = maxLtvBySlug.get(position.marketSlug) ?? BORROW_FALLBACK_LIQUIDATION_PCT / 100
+    return sum + collateralUsd * cf
+  }, 0)
+
   const snapshot = {
     wallet,
     at: now,
     totalValueUsd: liquid + borrowCollateral - borrowDebt + lendSupplied + multiplyCollateral - multiplyDebt,
     totalSuppliedUsd: borrowCollateral + lendSupplied + multiplyCollateral,
     totalBorrowedUsd: borrowDebt + multiplyDebt,
-    availableToBorrowUsd: Math.max(0, borrowCollateral * 0.7 - borrowDebt),
+    availableToBorrowUsd: Math.max(0, borrowCapacityUsd - borrowDebt),
     totalMultiplyExposureUsd: multiplyCollateral,
     totalEarnedUsd: earned,
   }
@@ -623,6 +702,133 @@ export const recordTransaction = mutation({
       revision: writtenRevision ?? null,
       receipt: { id: transactionId, hash, status, simulated, timestamp: now },
     }
+  },
+})
+
+/**
+ * Persist an executed Express/standalone swap as a durable, server-owned transaction.
+ *
+ * A swap is a pure liquid-balance move (debit input token, credit output token) with no
+ * position, so it takes the dedicated path here instead of `recordTransaction`'s
+ * position-oriented transition validation. Same ownership + idempotency + rate-limit
+ * guarantees. Balances remain client-session-driven for display; this row is the durable
+ * server record + activity/receipt (#15). Swaps are USD-neutral, so no portfolio snapshot
+ * is appended (the wallet's server-tracked net value is unchanged by a swap).
+ */
+export const recordSwap = mutation({
+  args: {
+    wallet: v.string(),
+    /** Client swap id — the idempotency key (replays return the existing row). */
+    intentId: v.string(),
+    status: v.optional(v.union(v.literal("success"), v.literal("failed"), v.literal("pending"))),
+    inputAssetId: v.string(),
+    outputAssetId: v.string(),
+    inputSymbol: v.string(),
+    outputSymbol: v.string(),
+    inputAmount: v.number(),
+    outputAmount: v.number(),
+    /** USD value of the input leg (what the swap moved). */
+    amountUsd: v.number(),
+    simulated: v.optional(v.boolean()),
+    /** Optional client tx hash; a synthetic one is derived when absent. */
+    syntheticTxHash: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const now = Date.now()
+
+    // Idempotency — a replayed swap id returns the existing row, never double-records.
+    const prior = await ctx.db
+      .query("transactions")
+      .withIndex("by_wallet_intent", (q) => q.eq("wallet", wallet).eq("intentId", args.intentId))
+      .first()
+    if (prior) {
+      return {
+        idempotent: true,
+        transactionId: prior._id,
+        receipt: {
+          id: prior._id,
+          hash: prior.syntheticTxHash,
+          status: prior.status,
+          simulated: prior.simulated,
+          timestamp: prior.at,
+        },
+      }
+    }
+
+    // Same hourly per-wallet cap as recordTransaction (bounded read).
+    const windowStart = now - 60 * 60 * 1000
+    const recent = await ctx.db
+      .query("transactions")
+      .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet).gte("at", windowStart))
+      .take(MAX_TX_PER_HOUR)
+    if (recent.length >= MAX_TX_PER_HOUR) {
+      throw new Error(`RATE_LIMITED: more than ${MAX_TX_PER_HOUR} sandbox transactions in the last hour.`)
+    }
+
+    const status = args.status ?? "success"
+    const simulated = args.simulated ?? true
+    // A failed/expired/rejected swap executed nothing, so its output leg is legitimately 0
+    // (recordFailure). Only a successful swap must have moved a positive output; every swap
+    // still needs a positive input (the amount attempted) and a non-negative USD value.
+    const outputAmountValid = status === "success" ? args.outputAmount > 0 : args.outputAmount >= 0
+    if (!(args.inputAmount > 0) || !outputAmountValid || !(args.amountUsd >= 0)) {
+      throw new Error("INVALID_SWAP: input must be positive, output positive on success, USD non-negative.")
+    }
+    // Only a successful swap moved value; failed/expired executed nothing.
+    const executedUsd6 = status === "success" ? String(Math.round(args.amountUsd * 1_000_000)) : "0"
+    const requestedUsd6 = String(Math.round(args.amountUsd * 1_000_000))
+    const hash = args.syntheticTxHash ?? `sim-swap-${args.intentId.slice(0, 8)}-${now.toString(36)}`
+
+    const transactionId = await ctx.db.insert("transactions", {
+      wallet,
+      intentId: args.intentId,
+      product: "swap",
+      kind: "swap",
+      status,
+      assetId: args.inputAssetId,
+      requestedAmountUsd6: requestedUsd6,
+      executedAmountUsd6: executedUsd6,
+      amountUsd: status === "success" ? args.amountUsd : 0,
+      swapInputSymbol: args.inputSymbol,
+      swapOutputSymbol: args.outputSymbol,
+      swapInputAmount: args.inputAmount,
+      swapOutputAmount: args.outputAmount,
+      syntheticTxHash: hash,
+      simulated,
+      at: now,
+    })
+
+    return {
+      idempotent: false,
+      transactionId,
+      receipt: { id: transactionId, hash, status, simulated, timestamp: now },
+    }
+  },
+})
+
+/** Durable swap history for a wallet (newest first) — feeds the dashboard activity/receipt. */
+export const getWalletSwapTransactions = query({
+  args: { wallet: v.string() },
+  handler: async (ctx, args) => {
+    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const rows = await ctx.db
+      .query("transactions")
+      .withIndex("by_wallet_product_at", (q) => q.eq("wallet", wallet).eq("product", "swap"))
+      .order("desc")
+      .take(200)
+    return rows.map((row) => ({
+      id: row._id,
+      intentId: row.intentId ?? null,
+      status: row.status,
+      inputSymbol: row.swapInputSymbol ?? "",
+      outputSymbol: row.swapOutputSymbol ?? "",
+      inputAmount: row.swapInputAmount ?? 0,
+      outputAmount: row.swapOutputAmount ?? 0,
+      amountUsd: row.amountUsd,
+      hash: row.syntheticTxHash,
+      at: row.at,
+    }))
   },
 })
 

@@ -323,8 +323,8 @@ function LoopMarketsSection({
           return (parseValue(a.apy) - parseValue(b.apy)) * direction
         case "rewards":
           return (
-            (parseValue(a.rewardRows?.[1]?.value ?? a.rewardRows?.[0]?.value ?? a.partnerRewards) -
-              parseValue(b.rewardRows?.[1]?.value ?? b.rewardRows?.[0]?.value ?? b.partnerRewards)) *
+            (parseValue(a.rewardRows?.[0]?.value ?? a.partnerRewards) -
+              parseValue(b.rewardRows?.[0]?.value ?? b.partnerRewards)) *
             direction
           )
         case "cf":
@@ -392,10 +392,10 @@ function LoopMarketsSection({
                 </colgroup>
                 <thead>
                   <tr className="bg-table-header text-left text-muted-foreground">
-                    <th className="bg-table-header pb-3 pl-6 pr-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header pb-2 pl-6 pr-3 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       #
                     </th>
-                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("protocol")}
@@ -406,11 +406,11 @@ function LoopMarketsSection({
                             : "text-muted-foreground/70 dark:text-white/42",
                         )}
                       >
-                        <span>{t("COLLATERAL")}</span>
+                        <span>{t("Pool")}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("asset")}
@@ -421,11 +421,11 @@ function LoopMarketsSection({
                             : "text-muted-foreground/70 dark:text-white/42",
                         )}
                       >
-                        <span>{t("BORROWABLE")}</span>
+                        <span>{t("Borrowable")}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("apy")}
@@ -436,11 +436,11 @@ function LoopMarketsSection({
                             : "text-muted-foreground/70 dark:text-white/42",
                         )}
                       >
-                        <span>{t("LOOP APY")}</span>
+                        <span>{t("APY")}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("rewards")}
@@ -451,11 +451,11 @@ function LoopMarketsSection({
                             : "text-muted-foreground/70 dark:text-white/42",
                         )}
                       >
-                        <span>{t("LEVERAGE")}</span>
+                        <span>{t("Leverage")}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("cf")}
@@ -470,7 +470,7 @@ function LoopMarketsSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-3 pr-6 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pr-6 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("points")}
@@ -481,11 +481,11 @@ function LoopMarketsSection({
                             : "text-muted-foreground/70 dark:text-white/42",
                         )}
                       >
-                        <span>{t("AVAILABLE")}</span>
+                        <span>{t("Available")}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-3 pr-5 pt-4 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+                    <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
                   </tr>
                 </thead>
                 <tbody
@@ -606,7 +606,7 @@ function LoopTableRow({
           href={row.href}
           className="block font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white"
         >
-          {row.rewardRows?.[1]?.value ?? row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"}
+          {row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"}
         </CellLink>
       </td>
       <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
@@ -749,7 +749,7 @@ function MobileLoopCard({
           metric={
             <MarketMobileMetric
               value={row.apy || "—"}
-              label={t("APY at {leverage}").replace("{leverage}", row.rewardRows?.[1]?.value ?? "max leverage")}
+              label={t("APY at {leverage}").replace("{leverage}", row.rewardRows?.[0]?.value ?? "max leverage")}
             />
           }
         />
@@ -757,7 +757,7 @@ function MobileLoopCard({
         <MarketMobileStatList className="mt-4">
           <MarketMobileStatRow
             label={t("Max Leverage")}
-            value={row.rewardRows?.[1]?.value ?? row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"}
+            value={row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"}
           />
           <MarketMobileStatRow label={t("Available")} value={availableLabel} />
         </MarketMobileStatList>
@@ -777,7 +777,7 @@ function TrendingLoopCard({
   const collateralSrc = resolveImageSrc(snapshot.collateralLogo)
   const borrowSrc = resolveImageSrc(snapshot.borrowLogo, snapshot.collateralLogo)
 
-  const cardClassName = cn(HIGHLIGHT_CARD_CLASS, "h-[104px] w-[372px] p-5")
+  const cardClassName = cn(HIGHLIGHT_CARD_CLASS, "h-[104px] w-[min(372px,calc(100vw-2rem))] p-5")
 
   const content = (
     <>

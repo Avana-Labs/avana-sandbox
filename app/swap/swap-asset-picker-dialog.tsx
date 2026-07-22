@@ -81,6 +81,7 @@ export function SwapAssetPickerDialog({
                 type="button"
                 role="option"
                 aria-selected={asset.id === selectedAssetId}
+                aria-label={`${asset.name} (${asset.symbol})`}
                 onClick={() => {
                   onSelect(asset.id)
                   onOpenChange(false)

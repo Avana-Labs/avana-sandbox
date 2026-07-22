@@ -190,19 +190,27 @@ export const getBorrowEconomy = query({
   args: {},
   handler: async (ctx) => {
     const markets = await ctx.db.query("markets").collect()
+    // Read each market's latest daily snapshot in parallel (was a sequential
+    // per-market await loop that scaled poorly during the onboarding burst) —
+    // the same fan-out pattern computeMarketSnapshots already uses. (S4)
+    const relevant = markets.filter((market) => market.scope === "pool" || market.scope === "asset")
+    const latestByMarket = await Promise.all(
+      relevant.map((market) =>
+        ctx.db
+          .query("marketDailyStats")
+          .withIndex("by_market_day", (q) => q.eq("marketId", market._id))
+          .order("desc")
+          .first(),
+      ),
+    )
     let totalCollateralUsd = 0
     let outstandingLoansUsd = 0
-    for (const market of markets) {
-      if (market.scope !== "pool" && market.scope !== "asset") continue
-      const latest = await ctx.db
-        .query("marketDailyStats")
-        .withIndex("by_market_day", (q) => q.eq("marketId", market._id))
-        .order("desc")
-        .first()
-      if (!latest) continue
+    relevant.forEach((market, index) => {
+      const latest = latestByMarket[index]
+      if (!latest) return
       if (market.scope === "pool") totalCollateralUsd += latest.suppliedUsd
       else outstandingLoansUsd += latest.suppliedUsd
-    }
+    })
     return {
       totalCollateralUsd,
       outstandingLoansUsd,

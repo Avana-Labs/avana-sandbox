@@ -29,14 +29,19 @@ describe("QuickStatsGrid currency conversion", () => {
     expect(getByText("62.1%")).toBeInTheDocument()
   })
 
-  it("explains reserve metrics on hover", () => {
+  it("explains reserve metrics on hover", async () => {
+    const { userEvent } = await import("@testing-library/user-event")
+    const user = userEvent.setup()
     render(<QuickStatsGrid detail={detail} />)
 
-    expect(
+    await user.hover(
       screen.getByRole("button", {
         name: "More information about Utilization",
       }),
-    ).toHaveAttribute("title", "Percentage of deposited assets currently being borrowed")
+    )
+    expect(await screen.findByRole("tooltip")).toHaveTextContent(
+      "Percentage of deposited assets currently being borrowed",
+    )
   })
 
   it("re-denominates the money stat when the active currency is not USD", () => {

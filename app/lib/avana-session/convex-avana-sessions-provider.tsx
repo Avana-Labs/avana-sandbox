@@ -13,7 +13,9 @@ import {
   borrowResultToRecordArgs,
   lendResultToRecordArgs,
   multiplyResultToRecordArgs,
+  swapRecordToRecordSwapArgs,
 } from "@/app/lib/sandbox-tx/persistence"
+import type { SwapTransactionRecord } from "@/app/lib/swap-system/transaction-adapter"
 import {
   AvanaSessionsProvider,
   useBorrowSessionContext,
@@ -75,6 +77,8 @@ function ConvexSessionHydrators({
 
 export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: string; children: ReactNode }) {
   const recordTransaction = useMutation(api.sandbox.transactions.recordTransaction)
+  const recordSwap = useMutation(api.sandbox.transactions.recordSwap)
+  const durableSwapTransactions = useQuery(api.sandbox.transactions.getWalletSwapTransactions, { wallet: walletId })
   const saveRewardsState = useMutation(api.sandbox.rewards.saveState)
   const rewardsState = useQuery(api.sandbox.rewards.getState, { wallet: walletId })
   const revisionByKeyRef = useRef(new Map<string, number>())
@@ -146,8 +150,17 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
     [recordTransaction, walletId],
   )
   const persistRewardsState = useCallback(
-    (stateJson: string) => saveRewardsState({ wallet: walletId, stateJson }),
+    (args: { stateJson: string; expectedRevision?: number }) =>
+      saveRewardsState({ wallet: walletId, stateJson: args.stateJson, expectedRevision: args.expectedRevision }),
     [saveRewardsState, walletId],
+  )
+  const persistSwapTransaction = useCallback(
+    async (record: SwapTransactionRecord) => {
+      const args = swapRecordToRecordSwapArgs(record, walletId)
+      if (!args) return
+      await recordSwap(args)
+    },
+    [recordSwap, walletId],
   )
 
   return (
@@ -156,7 +169,10 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
       persistBorrowTransaction={persistBorrowTransaction}
       persistLendTransaction={persistLendTransaction}
       persistMultiplyTransaction={persistMultiplyTransaction}
+      persistSwapTransaction={persistSwapTransaction}
+      remoteSwapTransactions={durableSwapTransactions ?? undefined}
       remoteRewardsState={rewardsState?.stateJson ?? (rewardsState === null ? null : undefined)}
+      remoteRewardsRevision={rewardsState?.revision ?? (rewardsState === null ? null : undefined)}
       persistRewardsState={persistRewardsState}
       persistLocalState={false}
       sessionSource="convex"

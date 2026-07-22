@@ -3,6 +3,7 @@
 import { buildRangeData } from "@/app/components/charts"
 import type { PortfolioHeroData } from "@/app/lib/data/providers/portfolio"
 import { formatUsdExact } from "@/app/lib/borrow-sim"
+import { formatHealthFactor } from "@/app/lib/home-sim"
 
 export type BorrowSpokeBreakdown = {
   spokeId: string
@@ -34,6 +35,6 @@ export function buildBorrowHeroData(template: PortfolioHeroData, snapshot: Borro
     headlineDelta: `${snapshot.currentLtvPct.toFixed(2)}% current LTV`,
     rangeData: buildApprovedCreditRangeData(snapshot.approvedUsd),
     statOneValue: formatUsdExact(snapshot.totalBorrowedUsd),
-    statTwoValue: snapshot.averageHealthFactor == null ? "—" : snapshot.averageHealthFactor.toFixed(2),
+    statTwoValue: formatHealthFactor(snapshot.averageHealthFactor),
   }
 }

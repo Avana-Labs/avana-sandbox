@@ -155,6 +155,64 @@ describe("borrow preview mappers", () => {
     expect(ui.blockedReason).not.toMatch(/spoke|wallet-1|insolvent/i)
   })
 
+  it("p0-01: health factor 0n (underwater / zero liquidation value) renders as 0, not ∞", () => {
+    const underwater = borrowPreviewFixture({
+      before: {
+        ...preview.before,
+        totalBorrowedUsd6: 1_000_000_000n,
+        healthFactorWad: 0n,
+      },
+      after: {
+        ...preview.after,
+        totalBorrowedUsd6: 1_000_000_000n,
+        healthFactorWad: 0n,
+      },
+      riskLabel: "danger",
+    })
+    const ui = mapBorrowTransactionPreviewToActionUi(underwater, {
+      symbol: "USDC",
+      amountUsd: 100,
+      marketLabel: "USDC · Core",
+      ratePct: 5.2,
+      balanceLabel: "Available to Borrow",
+      balanceUsd: 0,
+      creditScopeLabel: "Uniswap Bluechip",
+    })
+
+    const health = ui.metrics.find((row) => row.id === "health-factor")
+    expect(health?.value).toBe("0.00 → 0.00")
+    expect(health?.value).not.toMatch(/∞/)
+    expect(ui.risk?.level).toBe("danger")
+  })
+
+  it("p0-01: null health factor (no debt) still renders as ∞", () => {
+    const noDebt = borrowPreviewFixture({
+      before: {
+        ...preview.before,
+        totalBorrowedUsd6: 0n,
+        healthFactorWad: null,
+      },
+      after: {
+        ...preview.after,
+        totalBorrowedUsd6: 0n,
+        healthFactorWad: null,
+      },
+      riskLabel: "safe",
+    })
+    const ui = mapBorrowTransactionPreviewToActionUi(noDebt, {
+      symbol: "USDC",
+      amountUsd: 0,
+      marketLabel: "USDC · Core",
+      ratePct: 5.2,
+      balanceLabel: "Available to Borrow",
+      balanceUsd: 5000,
+      creditScopeLabel: "Uniswap Bluechip",
+    })
+
+    const health = ui.metrics.find((row) => row.id === "health-factor")
+    expect(health?.value).toMatch(/∞/)
+  })
+
   it("maps remove metrics", () => {
     const removePreview = {
       ...preview,

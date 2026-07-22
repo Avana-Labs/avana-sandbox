@@ -1,4 +1,5 @@
 import { getActiveCurrency, withCurrencySymbol } from "@/app/lib/currency/active-rate"
+import { formatHealthFactor } from "@/app/lib/home-sim"
 
 export function formatActionInputAmount(value: number, maxDecimals = 6) {
   if (!Number.isFinite(value)) return "0"
@@ -43,9 +44,7 @@ export function formatActionRatioPercent(value: number, digits = 2) {
 }
 
 export function formatActionHealthFactor(value: number | null) {
-  if (value == null || Number.isNaN(value)) return "—"
-  if (!Number.isFinite(value)) return "∞"
-  return value.toFixed(value >= 10 ? 1 : 2)
+  return formatHealthFactor(value)
 }
 
 export function formatActionBeforeAfter(before: string, after: string) {
@@ -66,11 +65,14 @@ export function formatActionNetworkFee(value: number) {
 }
 
 /** Avana protocol fee (bps) plus estimated network gas for action summaries. */
-export function formatActionFeeSummary(amountUsd: number, networkFeeUsd: number, bps = 10) {
-  const avanaUsd = amountUsd > 0 ? amountUsd * (bps / 10_000) : 0
-  const avanaPart = amountUsd > 0 ? `~ ${formatActionUsd(avanaUsd)}` : "10 bps"
-  const networkPart = formatActionNetworkFee(networkFeeUsd)
-  return `${avanaPart} · ${networkPart} network`
+/**
+ * One honest fee story: the sandbox engines do NOT deduct a protocol/Avana fee,
+ * so the only real cost is the network fee. Surface just that — matching the
+ * receipt's "Network fee" row — instead of a fabricated bps protocol fee. The
+ * amount/bps params are retained for call-site compatibility but unused. (#30)
+ */
+export function formatActionFeeSummary(_amountUsd: number, networkFeeUsd: number, _bps = 30) {
+  return formatActionNetworkFee(networkFeeUsd)
 }
 
 export function formatActionAmount(assetAmount: number, symbol: string, digits = 6) {

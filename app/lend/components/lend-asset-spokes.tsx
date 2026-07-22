@@ -11,6 +11,8 @@ import {
   MarketMobileCard,
   MarketMobileCardHeader,
   MarketMobileMetric,
+  MarketMobilePrimaryAction,
+  MarketMobileSecondaryAction,
   MarketMobileStatList,
   MarketMobileStatRow,
 } from "@/app/components/market-card-primitives"
@@ -229,12 +231,23 @@ function AssetRowView({
   )
 }
 
-function AssetCardView({ row, index }: { row: AssetRow; index: number }) {
+function AssetCardView({
+  row,
+  index,
+  onDeposit,
+  canWithdraw,
+}: {
+  row: AssetRow
+  index: number
+  onDeposit?: (marketId: string) => void
+  canWithdraw: boolean
+}) {
   const { t } = useTranslation()
   const { ctx } = useCurrency()
   const router = useRouter()
   const marketId = "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase()
   const detailHref = row.href ?? `/lend/markets/${marketId}`
+  const detailReturn = detailHref
   return (
     <MarketMobileCard clickable style={{ animationDelay: `${index * 40}ms` }} onClick={() => router.push(detailHref)}>
       <MarketMobileCardHeader
@@ -278,6 +291,37 @@ function AssetCardView({ row, index }: { row: AssetRow; index: number }) {
           }
         />
       </MarketMobileStatList>
+      {onDeposit ? (
+        <div className="mt-4 flex gap-2">
+          <MarketMobilePrimaryAction
+            className="mt-0 flex-1"
+            onClick={(event) => {
+              event.stopPropagation()
+              onDeposit(marketId)
+            }}
+          >
+            <ActionIcon label="Deposit" />
+            {t("Deposit")}
+          </MarketMobilePrimaryAction>
+          <MarketMobileSecondaryAction
+            disabled={!canWithdraw}
+            title={canWithdraw ? undefined : t("No supplied position to withdraw")}
+            onClick={(event) => {
+              event.stopPropagation()
+              if (!canWithdraw) return
+              router.push(
+                actionPagePath("lend", "withdraw", {
+                  market: marketId,
+                  return: detailReturn,
+                }),
+              )
+            }}
+          >
+            <ActionIcon label="Withdraw" />
+            {t("Withdraw")}
+          </MarketMobileSecondaryAction>
+        </div>
+      ) : null}
     </MarketMobileCard>
   )
 }
@@ -390,7 +434,17 @@ function AssetSection({
           {!isDesktop ? (
             <div className="space-y-4">
               {sortedRows.length > 0 ? (
-                sortedRows.map((row, index) => <AssetCardView key={row.symbol} row={row} index={index} />)
+                sortedRows.map((row, index) => (
+                  <AssetCardView
+                    key={row.symbol}
+                    row={row}
+                    index={index}
+                    onDeposit={onDeposit}
+                    canWithdraw={withdrawableMarketIds.has(
+                      "marketId" in row && typeof row.marketId === "string" ? row.marketId : row.symbol.toLowerCase(),
+                    )}
+                  />
+                ))
               ) : (
                 <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground">
                   {t("No assets match these filters.")}
@@ -412,10 +466,10 @@ function AssetSection({
                 </colgroup>
                 <thead>
                   <tr className="bg-table-header text-left text-muted-foreground">
-                    <th className="bg-table-header pb-3 pl-6 pr-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header pb-2 pl-6 pr-3 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       #
                     </th>
-                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("asset")}
@@ -430,7 +484,7 @@ function AssetSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("supplyApy")}
@@ -441,11 +495,11 @@ function AssetSection({
                             : "text-muted-foreground/70 dark:text-white/42",
                         )}
                       >
-                        <span>{t("SUPPLY APY")}</span>
+                        <span>{t("APY")}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("totalDeposits")}
@@ -460,7 +514,7 @@ function AssetSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-3 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("utilization")}
@@ -475,7 +529,7 @@ function AssetSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-3 pr-6 pt-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pr-6 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("availableLiquidity")}
@@ -490,7 +544,7 @@ function AssetSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-3 pr-5 pt-4 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+                    <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
                   </tr>
                 </thead>
                 <tbody
@@ -571,7 +625,7 @@ export function LendAssetSpokes({
   )
 
   return (
-    <section className="mt-[38px] space-y-[58px]" style={{ overflowAnchor: "none" }}>
+    <section className="mt-6 space-y-8 sm:mt-[38px] sm:space-y-[58px]" style={{ overflowAnchor: "none" }}>
       <div className="py-2.5">
         <MarketFilterBar
           chips={CATEGORY_CHIPS.lend}

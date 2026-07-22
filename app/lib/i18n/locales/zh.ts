@@ -265,13 +265,11 @@ const dict: TranslationDictionary = {
   "Total value locked": "总锁仓价值",
   "Total borrows": "总借款",
   "Asset actions": "资产操作",
-  "Deposit compatible collateral from {spoke} before borrowing {symbol}.":
-    "在借入 {symbol} 之前，请先从 {spoke} 存入兼容的抵押品。",
+  "Deposit LP collateral before borrowing {symbol}.": "Deposit LP collateral before borrowing {symbol}.",
   "Deposit collateral": "存入抵押品",
   "Deposit collateral first": "请先存入抵押品",
   "You need to deposit an asset before you can borrow.": "你需要先存入资产才能借款。",
-  "To borrow {symbol}, deposit a compatible collateral market from {spoke} first.":
-    "要借入 {symbol}，请先从 {spoke} 存入兼容的抵押市场。",
+  "To borrow {symbol}, deposit LP collateral first.": "To borrow {symbol}, deposit LP collateral first.",
   "Got it": "知道了",
   "Manage {name}": "管理 {name}",
   Pledge: "质押",

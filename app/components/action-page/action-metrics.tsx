@@ -60,7 +60,7 @@ export function ActionInfoRow({
       </div>
       <div className="font-medium tabular-nums text-foreground max-[360px]:w-full">
         {typeof value === "string" || typeof value === "number" ? (
-          <AnimatedTextValue text={String(value)} animateOnMount />
+          <AnimatedTextValue text={String(value)} animateOnMount={false} />
         ) : (
           value
         )}

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { BadgeCheck, Copy, Globe, MessageSquare, Search } from "@/app/components/icons"
+import { BadgeCheck, Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
@@ -32,7 +32,7 @@ export function PoolHeroIdentity({
 
   return (
     <header className={cn("pb-5", className)}>
-      <div className="flex items-center justify-between gap-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
         <div className="flex min-w-0 items-center gap-4">
           <div className="relative shrink-0">
             {leading}
@@ -71,32 +71,17 @@ export function PoolHeroIdentity({
           </div>
         </div>
 
-        <div className="hidden shrink-0 items-center gap-2 self-center pl-5 lg:flex">
-          <HeroIcon
-            label={t("Search")}
-            onClick={() =>
-              window.open(`https://www.google.com/search?q=${encodeURIComponent(detail.hero.name)}`, "_blank")
-            }
-          >
-            <Search className="h-3.5 w-3.5" />
-          </HeroIcon>
-          <HeroIcon
-            label={t("Website")}
-            onClick={() =>
-              window.open(
-                detail.hero.explorerUrl ?? `https://www.google.com/search?q=${encodeURIComponent(detail.hero.name)}`,
-                "_blank",
-              )
-            }
-          >
-            <Globe className="h-3.5 w-3.5" />
-          </HeroIcon>
-          <HeroIcon
-            label={t("X")}
-            onClick={() => window.open(`https://x.com/search?q=${encodeURIComponent(detail.hero.name)}`, "_blank")}
-          >
-            <XIcon />
-          </HeroIcon>
+        <div className="flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-center">
+          {detail.hero.explorerUrl ? (
+            <HeroIcon label={t("Website")} onClick={() => window.open(detail.hero.explorerUrl!, "_blank")}>
+              <Globe className="h-3.5 w-3.5" />
+            </HeroIcon>
+          ) : null}
+          {detail.hero.xUrl ? (
+            <HeroIcon label={t("X")} onClick={() => window.open(detail.hero.xUrl!, "_blank")}>
+              <XIcon />
+            </HeroIcon>
+          ) : null}
           <HeroIcon label={t("Share")} onClick={() => navigator.clipboard.writeText(window.location.href)}>
             <MessageSquare className="h-3.5 w-3.5" />
           </HeroIcon>

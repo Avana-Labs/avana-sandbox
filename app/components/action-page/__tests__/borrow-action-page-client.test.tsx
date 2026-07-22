@@ -24,6 +24,18 @@ describe("BorrowActionPageClient", () => {
     cleanup()
   })
 
+  it("P1-30 labels Remove input as a percent of the position", async () => {
+    renderWithProviders(
+      <AvanaSessionsProvider>
+        <BorrowActionPageClient kind="remove" initialMarketId="uni-v3-bluechip-weth-usdc" initialAmount="25" />
+      </AvanaSessionsProvider>,
+    )
+
+    expect(await screen.findByText("Percent of position")).toBeInTheDocument()
+    expect(screen.getByLabelText("Percent of position amount")).toHaveValue("25")
+    expect(screen.getByText("%")).toBeInTheDocument()
+  })
+
   it("shows the executed USD amount after a collateral removal", async () => {
     renderWithProviders(
       <AvanaSessionsProvider>
@@ -63,7 +75,9 @@ describe("BorrowActionPageClient", () => {
     expect(await screen.findByText("Choose collateral to remove.")).toBeInTheDocument()
     expect(screen.getByPlaceholderText("Search pools")).toBeInTheDocument()
     expect(screen.getAllByText("WETH / USDC").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("Uniswap · 0.30%").length).toBeGreaterThan(0)
+    // Venue label is now the concise spoke label (e.g. "Uniswap v2 LPs"), suffixed with the
+    // fee tier by formatBorrowMarketContext — match the DEX + fee without pinning the version.
+    expect(screen.getAllByText(/Uniswap.*·\s*0\.30%/).length).toBeGreaterThan(0)
     expect(screen.queryByText("Choose the asset to borrow.")).not.toBeInTheDocument()
     expect(screen.queryByPlaceholderText("Find an asset")).not.toBeInTheDocument()
   })

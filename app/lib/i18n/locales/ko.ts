@@ -386,8 +386,7 @@ const dict: TranslationDictionary = {
   "Daily Interest": "일일 이자",
   day: "일",
   "Deposit {symbol}": "{symbol} 예치",
-  "Deposit compatible collateral from {spoke} before borrowing {symbol}.":
-    "{symbol} 차입 전에 {spoke}에서 호환 담보를 예치하세요.",
+  "Deposit LP collateral before borrowing {symbol}.": "Deposit LP collateral before borrowing {symbol}.",
   Done: "완료",
   Expiration: "만료",
   Expired: "만료됨",
@@ -475,8 +474,7 @@ const dict: TranslationDictionary = {
   "This receipt does not exist for the authenticated wallet.": "이 영수증은 인증된 지갑에 존재하지 않습니다.",
   "This receipt is taking too long to load. It may not be available in this environment.":
     "이 영수증을 불러오는 데 시간이 너무 오래 걸립니다. 이 환경에서는 사용할 수 없을 수 있습니다.",
-  "To borrow {symbol}, deposit a compatible collateral market from {spoke} first.":
-    "{symbol}을(를) 차입하려면 먼저 {spoke}에서 호환 담보 마켓을 예치하세요.",
+  "To borrow {symbol}, deposit LP collateral first.": "To borrow {symbol}, deposit LP collateral first.",
   "To borrow you need to supply any LPs to be used as collateral": "차입하려면 담보로 사용할 LP를 공급해야 합니다",
   "Total borrows": "총 차입",
   "Total Borrows": "총 차입",

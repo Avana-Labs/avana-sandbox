@@ -2,7 +2,12 @@
 
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useAvanaIdentity, useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import {
+  useAvanaIdentity,
+  useBorrowSessionContext,
+  useMultiplySessionContext,
+} from "@/app/lib/avana-session/avana-sessions-provider"
+import { formatFixed } from "@/app/lib/credit-engine"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor } from "@/app/lib/action-system/contracts"
 import {
@@ -31,6 +36,7 @@ import {
   MULTIPLY_ACTION_MIN_LEVERAGE,
   getDeleverageMultiplierMax,
   getDefaultDeleverageMultiplier,
+  isDeleverageCloseOnly,
   resolveDefaultMultiplyLeverage,
   resolveMultiplyMarketMaxLeverage,
 } from "@/app/lib/multiply-system/leverage-limits"
@@ -38,7 +44,6 @@ import {
   buildMultiplyOverCapPreviewUi,
   exceedsMultiplyCollateralCap,
   maxMultiplyCollateralAmount,
-  MULTIPLY_WALLET_COLLATERAL_BUDGET_USD,
 } from "@/app/lib/multiply-system/collateral-limits"
 import { formatActionAmount } from "@/app/lib/action-system/formatters"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
@@ -69,8 +74,14 @@ export function MultiplyActionPageClient({
   const router = useRouter()
   const { walletId } = useAvanaIdentity()
   const session = useMultiplySessionContext()
+  const borrowSession = useBorrowSessionContext()
   const isExitKind = kind === "deleverage" || kind === "close"
   const priceFor = usePriceFor()
+  const walletCollateralBudgetUsd = useMemo(() => {
+    const balanceUsd6 = borrowSession.state.accounts[walletId]?.walletBalanceUsd6
+    if (balanceUsd6 == null) return Number.POSITIVE_INFINITY
+    return Number.parseFloat(formatFixed(balanceUsd6, 6))
+  }, [borrowSession.state.accounts, walletId])
   const walletPositions = useMemo(
     () => Object.values(session.state.positions).filter((entry) => entry.walletId === walletId),
     [session.state.positions, walletId],
@@ -109,7 +120,7 @@ export function MultiplyActionPageClient({
       ? maxMultiplyCollateralAmount(
           market.economics.availableLiquidityUsd,
           collateralPriceUsd,
-          MULTIPLY_WALLET_COLLATERAL_BUDGET_USD,
+          walletCollateralBudgetUsd,
         )
       : null
 
@@ -592,6 +603,7 @@ export function MultiplyActionPageClient({
   // market, offer a full Close/Withdraw so collateral can always be reclaimed —
   // including a fully-unwound 1.0x/$0 position that deleverage itself can no longer act on.
   const canClosePosition = kind === "deleverage" && position != null
+  const deleverageCloseOnly = kind === "deleverage" && position != null && isDeleverageCloseOnly(position.multiplier)
 
   const hideTitle = embedded || stage === "success" || isProcessingStage(stage) || stage === "review"
   const isHomeLayout = embedded && layout === "home"
@@ -723,9 +735,9 @@ export function MultiplyActionPageClient({
             setAmount("")
           }}
           leverageHint={loopHint}
-          multiplier={kind === "close" ? undefined : multiplier}
+          multiplier={kind === "close" || deleverageCloseOnly ? undefined : multiplier}
           onMultiplierChange={
-            kind === "close"
+            kind === "close" || deleverageCloseOnly
               ? undefined
               : (value) => {
                   setHasUserInput(true)
@@ -739,7 +751,13 @@ export function MultiplyActionPageClient({
           }
           multiplierLabel="Target leverage"
           multiplierExposureBaseUsd={leverageExposureBaseUsd}
-          onPrimary={() => void handlePrimary()}
+          onPrimary={() => {
+            if (deleverageCloseOnly) {
+              void handleClose()
+              return
+            }
+            void handlePrimary()
+          }}
           onSecondary={handleBack}
           secondaryHref={closeHref}
           isPending={isPending}
@@ -748,10 +766,10 @@ export function MultiplyActionPageClient({
           onMax={handleMaxCollateral}
           balanceLabel={collateralBalanceLabel}
           balanceValue={collateralBalanceValue}
-          hideAmountInput={useWorkspaceFields || kind === "close"}
+          hideAmountInput={useWorkspaceFields || kind === "close" || deleverageCloseOnly}
           amountPlacement={useWorkspaceFields ? "stacked" : "inline"}
           homeLayout={isHomeLayout}
-          singlePrimaryCta={sidebar}
+          singlePrimaryCta={sidebar || deleverageCloseOnly}
           hideAssetSelector={isHomeLayout && Boolean(initialMarketId)}
         />
       ) : null}
@@ -761,7 +779,11 @@ export function MultiplyActionPageClient({
           type="button"
           onClick={() => void handleClose()}
           disabled={isPending}
-          className="mt-3 w-full rounded-radius-lg border border-border/70 px-4 py-3 text-[15px] font-semibold text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+          className={
+            deleverageCloseOnly
+              ? "mt-3 w-full rounded-radius-lg bg-brand px-4 py-3 text-[15px] font-semibold text-brand-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              : "mt-3 w-full rounded-radius-lg border border-border/70 px-4 py-3 text-[15px] font-semibold text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+          }
           data-testid="multiply-close-position"
         >
           {t("Close position and withdraw collateral")}

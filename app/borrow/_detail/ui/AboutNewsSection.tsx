@@ -6,9 +6,6 @@ import { AboutCard } from "@/app/borrow/_detail/pool-sections"
 import { NewsCard } from "./NewsCard"
 import { buildNewsItems } from "@/app/borrow/_detail/lib/news"
 
-/** Parameter changes are decided in governance, so the feed links out there. */
-const GOVERNANCE_URL = "https://governance.aave.com"
-
 type Props = {
   about: AboutCardData
   newsImageUrl?: string
@@ -16,7 +13,7 @@ type Props = {
   aboutTitle?: string
   compactAboutTitle?: boolean
   newsTitle?: string
-  /** Where "View all" and item links point (defaults to the governance forum). */
+  /** Optional outbound link for "View all" / items. Never default to Aave governance. */
   governanceUrl?: string
   /** Legacy prop; media placement is now fixed to the news-style thumbnail. */
   mediaVariant?: "card" | "icon"
@@ -30,7 +27,7 @@ export function AboutNewsSection({
   aboutTitle = "About",
   compactAboutTitle = false,
   newsTitle = "Risk Stewards",
-  governanceUrl = GOVERNANCE_URL,
+  governanceUrl,
   className,
 }: Props) {
   const newsItems = buildNewsItems(about, newsImageUrl, newsImageLabel)

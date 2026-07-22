@@ -393,8 +393,7 @@ const dict: TranslationDictionary = {
   "Daily Interest": "Дневной процент",
   day: "день",
   "Deposit {symbol}": "Внести {symbol}",
-  "Deposit compatible collateral from {spoke} before borrowing {symbol}.":
-    "Внесите совместимое обеспечение из {spoke} перед займом {symbol}.",
+  "Deposit LP collateral before borrowing {symbol}.": "Deposit LP collateral before borrowing {symbol}.",
   Done: "Готово",
   Expiration: "Истечение",
   Expired: "Истёк",
@@ -483,8 +482,7 @@ const dict: TranslationDictionary = {
     "Эта квитанция не существует для аутентифицированного кошелька.",
   "This receipt is taking too long to load. It may not be available in this environment.":
     "Эта квитанция загружается слишком долго. Возможно, она недоступна в этой среде.",
-  "To borrow {symbol}, deposit a compatible collateral market from {spoke} first.":
-    "Чтобы занять {symbol}, сначала внесите совместимый рынок обеспечения из {spoke}.",
+  "To borrow {symbol}, deposit LP collateral first.": "To borrow {symbol}, deposit LP collateral first.",
   "To borrow you need to supply any LPs to be used as collateral":
     "Для займа нужно поставить любые LP для использования в качестве обеспечения",
   "Total borrows": "Всего займов",

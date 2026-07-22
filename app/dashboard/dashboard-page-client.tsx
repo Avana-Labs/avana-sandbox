@@ -11,8 +11,11 @@ import {
   type RewardsQuestIconId,
 } from "@/app/lib/data/rewards/catalog"
 import type { RewardsPageData } from "@/app/lib/data/providers/rewards"
-import { useAvanaSessions } from "@/app/lib/avana-session/avana-sessions-provider"
-import { useRewardsSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useAvanaSessions, useRewardsSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { selectWalletBorrowSnapshot } from "@/app/lib/borrow-system/selectors"
+import { buildPortfolioLendData } from "@/app/lib/lend-system/read-model"
+import { buildPortfolioMultiplyData } from "@/app/lib/multiply-system/read-model"
+import { buildDashboardWalletBalanceRows } from "@/app/lib/swap-system"
 import type { RewardTask, UserRewardProgress } from "@/app/lib/rewards-engine"
 import { calculateRewardSummary, evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
 import {
@@ -30,7 +33,10 @@ import { DashboardQuickActions } from "./dashboard-quick-actions"
 import { DashboardWalletTab } from "./dashboard-wallet-tab"
 import { LearnSection } from "@/app/rewards/learn-section"
 import { RecentActivity } from "@/app/dashboard/recent-activity"
-import { mapSwapTransactionHistoryToActivityRows } from "@/app/dashboard/swap-activity"
+import {
+  mapConvexSwapTransactionsToActivityRows,
+  mapSwapTransactionHistoryToActivityRows,
+} from "@/app/dashboard/swap-activity"
 import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
 import { useDashboardPage } from "@/app/dashboard/use-dashboard-page"
@@ -254,6 +260,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
   const router = useRouter()
   const searchParams = useSearchParams()
   const searchTab = searchParams.get("tab")
+  const referralRef = searchParams.get("ref")
   const { t } = useTranslation()
   const { exact } = useCurrency()
   const avana = useAvanaSessions()
@@ -271,9 +278,48 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
     runReferralSandboxStep,
     createReferralCode,
     recordReferralLinkCopied,
+    applyReferralCode,
   } = useRewardsSessionContext()
   // Full dashboard recent activity (all products) so the rewards table isn't claims-only.
   const { data: dashboardData } = useDashboardPage({ walletProfileId: walletId })
+
+  const portfolioValueUsd = useMemo(() => {
+    const walletRows = buildDashboardWalletBalanceRows({
+      walletId,
+      balances: avana.swap?.state?.balances ?? [],
+    })
+    const liquid = walletRows.reduce((sum, row) => sum + row.valueUsd, 0)
+    let borrowNet = 0
+    try {
+      if (avana.borrow?.state) {
+        const borrow = selectWalletBorrowSnapshot(avana.borrow.state, walletId)
+        borrowNet = borrow.totalCollateralUsd - borrow.totalBorrowedUsd
+      }
+    } catch {
+      borrowNet = 0
+    }
+    let lendSupplied = 0
+    try {
+      if (avana.lend?.state?.positions) {
+        lendSupplied = buildPortfolioLendData(walletId, avana.lend.state).investments.reduce(
+          (sum, row) => sum + row.suppliedUsd,
+          0,
+        )
+      }
+    } catch {
+      lendSupplied = 0
+    }
+    let multiplyNet = 0
+    try {
+      if (avana.multiply?.state?.positions) {
+        const multiply = buildPortfolioMultiplyData(walletId, avana.multiply.state)
+        multiplyNet = multiply.creditLines.totalCollateralUsd - multiply.creditLines.totalBorrowedUsd
+      }
+    } catch {
+      multiplyNet = 0
+    }
+    return liquid + borrowNet + lendSupplied + multiplyNet
+  }, [avana.borrow?.state, avana.lend?.state, avana.multiply?.state, avana.swap?.state?.balances, walletId])
 
   const [now, setNow] = useState(0)
   const [isClaiming, setIsClaiming] = useState(false)
@@ -289,6 +335,11 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
   useEffect(() => {
     setActiveDashboardTab(resolveDashboardTab(searchTab))
   }, [searchTab])
+
+  useEffect(() => {
+    if (!hasHydratedStorage || !referralRef) return
+    void applyReferralCode(referralRef).catch(() => undefined)
+  }, [applyReferralCode, hasHydratedStorage, referralRef])
 
   const snapshot = useMemo(() => {
     if (!hasHydratedStorage) return null
@@ -493,6 +544,17 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
 
   const claimHref = snapshot.summary.claimableTaskCount > 0 ? "/actions/rewards/claim" : undefined
   const rewardActivityRows = buildRewardsActivityHistory(walletId, state.claims, tasks)
+  // Swap activity: the in-session rows (live) plus any durable Convex-persisted swaps not
+  // already in-session, so a swap survives reload / shows cross-device. Deduped by swap id
+  // (the two sources carry different tx hashes, so the hash-dedup below can't unify them). (#15)
+  const sessionSwapRows = mapSwapTransactionHistoryToActivityRows(avana.swap.transactionHistory)
+  const sessionSwapIds = new Set(sessionSwapRows.map((row) => row.id))
+  const swapActivityRows = [
+    ...sessionSwapRows,
+    ...mapConvexSwapTransactionsToActivityRows(avana.swap.durableTransactions ?? []).filter(
+      (row) => !sessionSwapIds.has(row.id),
+    ),
+  ]
   // One combined "recent activity" table: live session actions + the full dashboard
   // activity (all products) + reward claims, deduped by tx hash (session rows win).
   const combinedActivityRows = [
@@ -509,7 +571,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
       txHash: item.hash,
     })),
     ...buildLendActivityHistory(avana.lend.walletId, avana.lend.transactionHistory, avana.lend.state),
-    ...mapSwapTransactionHistoryToActivityRows(avana.swap.transactionHistory),
+    ...swapActivityRows,
     ...(dashboardData?.activity.rows ?? []),
     ...rewardActivityRows,
   ]
@@ -522,12 +584,12 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
 
   return (
     <>
-      <RewardsBalanceHero claimHref={claimHref} />
-
-      {/* Mobile: quick actions right after the hero chart (desktop shows them in the sidebar). */}
-      <div className="mb-8 lg:hidden">
-        <DashboardQuickActions />
-      </div>
+      <RewardsBalanceHero
+        claimHref={claimHref}
+        portfolioValueUsd={portfolioValueUsd}
+        earnedAmount={snapshot.summary.totalEarnedAmount}
+        claimableAmount={snapshot.summary.totalClaimableAmount}
+      />
 
       <UnderlineTabStrip
         items={DASHBOARD_TABS.map((tab) => ({ id: tab.id, label: t(tab.label) }))}
@@ -537,6 +599,11 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
         className="mb-6"
         listClassName="w-max min-w-full gap-6 px-2 sm:gap-9 sm:px-0"
       />
+
+      {/* Mobile: compact quick-action rail after tabs (desktop shows them in the sidebar). */}
+      <div className="mb-8 lg:hidden">
+        <DashboardQuickActions activeTab={activeDashboardTab} />
+      </div>
 
       <div
         className={
@@ -566,7 +633,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
         </div>
 
         <aside className="hidden space-y-8 lg:block lg:self-start">
-          <DashboardQuickActions />
+          <DashboardQuickActions activeTab={activeDashboardTab} />
           <LearnSection layout="sidebar" />
         </aside>
       </div>
@@ -578,7 +645,11 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
           </div>
 
           <div className="mb-8 lg:hidden">
-            <DashboardRewardsCards claimHref={claimHref} />
+            <DashboardRewardsCards
+              claimHref={claimHref}
+              earnedAmount={snapshot.summary.totalEarnedAmount}
+              claimableAmount={snapshot.summary.totalClaimableAmount}
+            />
           </div>
         </>
       ) : null}

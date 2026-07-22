@@ -1,20 +1,12 @@
 "use client"
 
-import dynamic from "next/dynamic"
 import { useState } from "react"
 import type { HomeMode } from "@/app/lib/home-sim"
 import { HomeWorkspaceCard } from "@/app/components/home/home-workspace-card"
 import { HomeSwapAction } from "@/app/components/home/home-swap-action"
+import { BorrowActionPageClient } from "@/app/components/action-page/borrow-action-page-client"
 import { HomeWorkspaceSkeleton } from "@/app/components/loading-states"
 import { AvanaSessionsProvider, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
-
-const BorrowActionPageClient = dynamic(
-  () => import("@/app/components/action-page/borrow-action-page-client").then((mod) => mod.BorrowActionPageClient),
-  {
-    ssr: false,
-    loading: () => <HomeWorkspaceSkeleton />,
-  },
-)
 
 export function HomePageWorkspaceRuntime({ walletId }: { walletId?: string }) {
   if (walletId) {

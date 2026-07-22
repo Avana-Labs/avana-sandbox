@@ -115,7 +115,7 @@ export function MarketDetailClient({ detail }: Props) {
                       borrowableSymbol={detail.row.asset}
                     />
                     <RelatedMarketsRow detail={detail} />
-                    <DetailPageNotice />
+                    <DetailPageNotice product="multiply" />
                   </DeferredDetailContent>
                 </section>
               </div>

@@ -35,7 +35,7 @@ export const CURRENCY_SYMBOLS: Record<CurrencyCode, string> = {
   AUD: "A$",
   BRL: "R$",
   CAD: "C$",
-  CNY: "¥",
+  CNY: "CN¥",
   COP: "CO$",
   EUR: "€",
   GBP: "£",

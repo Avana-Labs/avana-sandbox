@@ -140,7 +140,7 @@ export function LendMarketDetailClient({ detail }: Props) {
                       kindLabelMap={{ supply: "Supply", withdraw: "Withdraw", rewards: "Rewards" }}
                     />
                     <RelatedMarketsRow detail={detail} />
-                    <DetailPageNotice />
+                    <DetailPageNotice product="lend" />
                   </DeferredDetailContent>
                 </section>
               </div>

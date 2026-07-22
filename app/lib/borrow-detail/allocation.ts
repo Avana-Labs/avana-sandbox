@@ -7,13 +7,7 @@
  * - formatters that wrap the existing ones in borrow-sim.ts
  */
 
-import {
-  BORROW_POOL_CATALOG,
-  type BorrowAssetVisual,
-  type BorrowPoolRow,
-  getDexById,
-  getSpokeById,
-} from "@/app/lib/borrow-sim"
+import { BORROW_POOL_CATALOG, type BorrowAssetVisual, type BorrowPoolRow, getDexById } from "@/app/lib/borrow-sim"
 import type { SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
 import type { AllocationRow, RiskLevel } from "./types"
 
@@ -82,9 +76,12 @@ export function computeAssetAllocationRows(
   if (candidates.length === 0) return []
 
   const weighted = candidates.map((pool) => {
-    const spoke = getSpokeById(pool.spoke)
     const apr = (pool.aprMin + pool.aprMax) / 2
-    const utilization = Math.round(spoke.maxLtv * 0.92 + ((apr * 2) % 18))
+    // Real utilization from the pool's own economics: borrowed / total, where
+    // borrowed = total liquidity minus what is still available. Previously this
+    // was fabricated (`maxLtv*0.92 + (apr*2)%18`), which presented an invented
+    // number as a live figure. Fall back to 0 for an empty/unfunded pool.
+    const utilization = pool.tvlUsd > 0 ? Math.round(((pool.tvlUsd - pool.availableUsd) / pool.tvlUsd) * 100) : 0
     return {
       pool,
       weight: pool.availableUsd,
@@ -103,7 +100,7 @@ export function computeAssetAllocationRows(
       pool,
       sharePct: Math.round(sharePct * 100) / 100,
       valueUsd: Math.round(valueUsd),
-      utilizationPct: Math.min(99, Math.max(10, utilization)),
+      utilizationPct: Math.min(100, Math.max(0, utilization)),
       borrowAprPct: Math.round(apr * 100) / 100,
     }
   })
@@ -162,5 +159,6 @@ export function formatPct(value: number, digits = 1): string {
 
 /** Compact bps label (e.g. "+0.80%"). */
 export function formatBpsAsPct(bps: number): string {
+  if (!Number.isFinite(bps)) return "—"
   return `${bps >= 0 ? "+" : ""}${(bps / 100).toFixed(2)}%`
 }

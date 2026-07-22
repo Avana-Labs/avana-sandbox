@@ -478,7 +478,7 @@ export function ActionFooter({
         </button>
       )}
       {primaryHref && !onPrimary ? (
-        <Link href={primaryHref} className={primaryClassName}>
+        <Link href={primaryHref} className={primaryClassName} data-testid="action-footer-primary">
           {primaryPending ? t("Processing…") : primaryText}
         </Link>
       ) : (
@@ -487,6 +487,7 @@ export function ActionFooter({
           onClick={onPrimary}
           disabled={primaryDisabled || primaryPending}
           className={primaryClassName}
+          data-testid="action-footer-primary"
         >
           {primaryPending ? t("Processing…") : primaryText}
         </button>

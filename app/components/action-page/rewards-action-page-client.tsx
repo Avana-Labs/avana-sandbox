@@ -18,6 +18,7 @@ import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runti
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
+import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export function RewardsActionPageClient({
@@ -34,6 +35,7 @@ export function RewardsActionPageClient({
   const router = useRouter()
   const { walletId } = useAvanaIdentity()
   const rewards = useRewardsSessionContext()
+  const networkGuard = useActionNetworkGuard()
   const [amount, setAmount] = useState("")
   const [stage, setStage] = useState<ActionStage>("configure")
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
@@ -72,18 +74,22 @@ export function RewardsActionPageClient({
     })
   }, [rewards.readAdapter, rewards.state.claims, rewards.state.events, rewards.tasks, walletId])
 
-  const previewUi: ActionPreviewUi = useMemo(
-    () =>
-      mapRewardsClaimPreviewToActionUi({
-        allowed: claimSummary.claimUsd > 0,
-        claimUsd: claimSummary.claimUsd,
-        marketLabel: t("Avana rewards"),
-        claimableTaskCount: claimSummary.claimableTaskCount,
-        tokenBreakdown: claimSummary.tokenBreakdown,
-        blockedReason: claimSummary.claimUsd > 0 ? null : "Nothing to claim",
-      }),
-    [claimSummary],
-  )
+  const previewUi: ActionPreviewUi = useMemo(() => {
+    const base = mapRewardsClaimPreviewToActionUi({
+      allowed: claimSummary.claimUsd > 0,
+      claimUsd: claimSummary.claimUsd,
+      marketLabel: t("Avana rewards"),
+      claimableTaskCount: claimSummary.claimableTaskCount,
+      tokenBreakdown: claimSummary.tokenBreakdown,
+      blockedReason: claimSummary.claimUsd > 0 ? null : "Nothing to claim",
+    })
+    const blockedReason = networkGuard.blockedReason ?? base.blockedReason
+    return {
+      ...base,
+      allowed: base.allowed && !networkGuard.blockedReason,
+      blockedReason,
+    }
+  }, [claimSummary, networkGuard.blockedReason, t])
 
   const handleBack = useCallback(() => {
     if (stage === "review") {
@@ -106,6 +112,7 @@ export function RewardsActionPageClient({
     }
     if (stage !== "review") return
     if (!previewUi.allowed) return
+    if (networkGuard.isWrongNetwork) return
 
     setIsPending(true)
     setOutcome(null)
@@ -156,7 +163,17 @@ export function RewardsActionPageClient({
     } finally {
       setIsPending(false)
     }
-  }, [claimSummary.claimUsd, closeHref, descriptor.primaryVerb, previewUi, rewards, router, stage, successUi])
+  }, [
+    claimSummary.claimUsd,
+    closeHref,
+    descriptor.primaryVerb,
+    networkGuard.isWrongNetwork,
+    previewUi,
+    rewards,
+    router,
+    stage,
+    successUi,
+  ])
 
   const hideTitle = embedded || stage === "success" || isProcessingStage(stage) || stage === "review"
 

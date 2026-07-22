@@ -62,7 +62,7 @@ export function ActionReviewStage({
 
       {isClaimReview ? (
         <ActionCard>
-          <ActionInfoRow label="Claim total" value={preview.rateValue} tooltip="fee" />
+          <ActionInfoRow label="Claim total" value={preview.rateValue} tooltip="claimTotal" />
           <ActionInfoRow label="Market" value={preview.marketValue} tooltip="market" />
         </ActionCard>
       ) : (
@@ -85,19 +85,23 @@ export function ActionReviewStage({
         preview.marketValue ? (
         <ActionCard>
           {preview.rateLabel && preview.rateValue ? (
-            <ActionInfoRow label={preview.rateLabel} value={preview.rateValue} tooltip="rate" />
+            <ActionInfoRow
+              label={preview.rateLabel}
+              value={preview.rateValue}
+              tooltip={/rate/i.test(preview.rateLabel) && /=/.test(preview.rateValue) ? "fxRate" : "rate"}
+            />
           ) : null}
           {preview.marketBreakdown ? (
             <>
               <ActionInfoRow
                 label="Collateral APY"
                 value={`${preview.marketBreakdown.collateral.symbol} · ${preview.marketBreakdown.collateral.apy}`}
-                tooltip="market"
+                tooltip="collateralApy"
               />
               <ActionInfoRow
                 label="Borrow APY"
                 value={`${preview.marketBreakdown.borrow.symbol} · ${preview.marketBreakdown.borrow.apy}`}
-                tooltip="market"
+                tooltip="borrowApy"
               />
             </>
           ) : preview.marketValue ? (
@@ -119,7 +123,7 @@ export function ActionReviewStage({
       ) : null}
 
       <ActionCard>
-        <ActionInfoRow label="Avana Fee" value={preview.networkFeeLabel} tooltip="fee" />
+        <ActionInfoRow label="Network fee" value={preview.networkFeeLabel} tooltip="fee" />
         {preview.quoteId ? <ActionInfoRow label="Quote" value={preview.quoteId} /> : null}
       </ActionCard>
 

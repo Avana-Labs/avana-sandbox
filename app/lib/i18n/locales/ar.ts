@@ -395,8 +395,7 @@ const dict: TranslationDictionary = {
   "Daily Interest": "الفائدة اليومية",
   day: "يوم",
   "Deposit {symbol}": "إيداع {symbol}",
-  "Deposit compatible collateral from {spoke} before borrowing {symbol}.":
-    "أودِع ضمانًا متوافقًا من {spoke} قبل اقتراض {symbol}.",
+  "Deposit LP collateral before borrowing {symbol}.": "Deposit LP collateral before borrowing {symbol}.",
   Done: "تم",
   Expiration: "انتهاء الصلاحية",
   Expired: "منتهي الصلاحية",
@@ -484,8 +483,7 @@ const dict: TranslationDictionary = {
   "This receipt does not exist for the authenticated wallet.": "لا يوجد هذا الإيصال للمحفظة المُوثّقة.",
   "This receipt is taking too long to load. It may not be available in this environment.":
     "يستغرق تحميل هذا الإيصال وقتًا طويلاً. قد لا يكون متاحًا في هذه البيئة.",
-  "To borrow {symbol}, deposit a compatible collateral market from {spoke} first.":
-    "لاقتراض {symbol}، أودِع أولاً سوق ضمان متوافقة من {spoke}.",
+  "To borrow {symbol}, deposit LP collateral first.": "To borrow {symbol}, deposit LP collateral first.",
   "To borrow you need to supply any LPs to be used as collateral":
     "للاقتراض تحتاج إلى تزويد أي مراكز LP لاستخدامها كضمان",
   "Total borrows": "إجمالي الاقتراضات",

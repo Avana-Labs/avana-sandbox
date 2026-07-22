@@ -44,7 +44,7 @@ function StatsGrid({ stats, columns = 3 }: { stats: QuickStatLike[]; columns?: 3
   return (
     <div
       className={cn(
-        "grid grid-cols-2 gap-x-6 gap-y-6 md:gap-x-10",
+        "grid w-full grid-cols-2 gap-x-6 gap-y-6 md:gap-x-10",
         columns === 4 ? "sm:grid-cols-4" : "sm:grid-cols-3",
       )}
     >

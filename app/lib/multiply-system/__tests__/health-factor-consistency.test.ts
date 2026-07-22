@@ -47,6 +47,53 @@ describe("multiply credit-health aggregate agrees with the per-row table", () =>
     expect(data.creditLines.averageHealthFactor).toBeNull()
   })
 
+  it("aggregates open positions into the summary (Total Borrowed / Net Value / worst HF) matching the rows", () => {
+    const [firstMarketId, secondMarketId] = Object.keys(buildMultiplyCatalogMarketsRecord())
+    const one: MultiplyPosition = {
+      id: `wallet-1:${firstMarketId}`,
+      walletId: "wallet-1",
+      marketId: firstMarketId!,
+      collateralAmount: 3,
+      collateralValueUsd: 12_000,
+      debtValueUsd: 4_000,
+      multiplier: 1.5,
+      ltv: 33,
+      healthFactor: 2.4,
+      liquidationPrice: 3_000,
+      netApy: 0.03,
+      openedAt: 1_700_000_000_000,
+      lastUpdatedAt: 1_700_000_000_000,
+    }
+    const two: MultiplyPosition = {
+      id: `wallet-1:${secondMarketId}`,
+      walletId: "wallet-1",
+      marketId: secondMarketId!,
+      collateralAmount: 2,
+      collateralValueUsd: 8_000,
+      debtValueUsd: 5_500,
+      multiplier: 3,
+      ltv: 69,
+      healthFactor: 1.3,
+      liquidationPrice: 2_000,
+      netApy: 0.05,
+      openedAt: 1_700_000_000_000,
+      lastUpdatedAt: 1_700_000_000_000,
+    }
+    const data = buildPortfolioMultiplyData("wallet-1", stateWith([one, two]))
+
+    // Summary must NOT read $0 while open rows exist: Total Borrowed = Σ debt,
+    // collateral = Σ collateral, Net Value = Σ(collateral − debt), HF = worst.
+    const rowDebt = data.lpCollaterals.reduce((sum, row) => sum + row.debtUsd, 0)
+    const rowCollateral = data.lpCollaterals.reduce((sum, row) => sum + row.collateralUsd, 0)
+    expect(data.lpCollaterals).toHaveLength(2)
+    expect(data.creditLines.totalBorrowedUsd).toBe(9_500)
+    expect(data.creditLines.totalBorrowedUsd).toBe(rowDebt)
+    expect(data.creditLines.totalCollateralUsd).toBe(20_000)
+    expect(data.creditLines.totalCollateralUsd).toBe(rowCollateral)
+    expect(data.creditLines.totalCollateralUsd - data.creditLines.totalBorrowedUsd).toBe(10_500)
+    expect(data.creditLines.averageHealthFactor).toBe(1.3)
+  })
+
   it("reports the WORST position HF (not the average) so a near-liquidation position isn't hidden", () => {
     const [safeMarketId, riskyMarketId] = Object.keys(buildMultiplyCatalogMarketsRecord())
     const safe = zeroDebtPosition(safeMarketId!) // ∞ (debt-free)

@@ -391,8 +391,7 @@ const dict: TranslationDictionary = {
   "Daily Interest": "Dagelijkse rente",
   day: "dag",
   "Deposit {symbol}": "Storten {symbol}",
-  "Deposit compatible collateral from {spoke} before borrowing {symbol}.":
-    "Stort compatibel onderpand vanuit {spoke} voordat je {symbol} leent.",
+  "Deposit LP collateral before borrowing {symbol}.": "Deposit LP collateral before borrowing {symbol}.",
   Done: "Klaar",
   Expiration: "Vervaldatum",
   Expired: "Verlopen",
@@ -481,8 +480,7 @@ const dict: TranslationDictionary = {
   "This receipt does not exist for the authenticated wallet.": "Deze bon bestaat niet voor de geverifieerde wallet.",
   "This receipt is taking too long to load. It may not be available in this environment.":
     "Deze bon duurt te lang om te laden. Mogelijk is hij niet beschikbaar in deze omgeving.",
-  "To borrow {symbol}, deposit a compatible collateral market from {spoke} first.":
-    "Om {symbol} te lenen, stort eerst een compatibele onderpandmarkt vanuit {spoke}.",
+  "To borrow {symbol}, deposit LP collateral first.": "To borrow {symbol}, deposit LP collateral first.",
   "To borrow you need to supply any LPs to be used as collateral":
     "Om te lenen moet je LP's verstrekken die als onderpand worden gebruikt",
   "Total borrows": "Totaal geleend",

@@ -3,8 +3,8 @@
 import { lazy, useMemo } from "react"
 import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useDashboardBorrowLive } from "@/app/dashboard/use-dashboard-borrow-live"
-import { selectBorrowSnapshot } from "@/app/lib/borrow-system/dashboard-selectors"
 import { buildPortfolioBorrowData } from "@/app/lib/borrow-system/read-model"
+import type { PortfolioBorrowTabData } from "@/app/lib/data/providers/portfolio"
 import {
   buildBorrowDashboardMetrics,
   buildBorrowDashboardMetricsFromSnapshot,
@@ -19,15 +19,20 @@ import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { AccountModuleBoundary } from "./account-sections-shared"
 
-const CollateralPositionsPanel = lazy(async () => ({
-  default: (await import("@/app/dashboard/borrow-tab/collateral-positions-panel")).CollateralPositionsPanel,
+const DashboardBorrowTab = lazy(async () => ({
+  default: (await import("@/app/dashboard/dashboard-borrow-tab")).DashboardBorrowTab,
 }))
-const DebtPositionsPanel = lazy(async () => ({
-  default: (await import("@/app/dashboard/borrow-tab/debt-positions-panel")).DebtPositionsPanel,
-}))
-const TradingFeesPanel = lazy(async () => ({
-  default: (await import("@/app/dashboard/borrow-tab/trading-fees-panel")).TradingFeesPanel,
-}))
+
+function creditLinesToSnapshot(creditLines: PortfolioBorrowTabData["creditLines"]): BorrowSnapshot {
+  return {
+    approvedUsd: creditLines.approvedUsd,
+    liquidationThresholdUsd: creditLines.liquidationThresholdUsd,
+    totalBorrowedUsd: creditLines.totalBorrowedUsd,
+    totalCollateralUsd: creditLines.totalCollateralUsd,
+    averageHealthFactor: creditLines.averageHealthFactor,
+    currentLtvPct: creditLines.currentLtvPct,
+  }
+}
 
 /**
  * The borrow account overview + positions that used to live on the dashboard.
@@ -48,22 +53,18 @@ export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref
   const liveBorrowTab = hasMounted ? (sessionBorrowTab ?? dashboardBorrow) : null
 
   const borrowSnapshot = useMemo<BorrowSnapshot>(() => {
-    const sessionSnapshot =
-      hasMounted && walletId && borrowSession.state.accounts[walletId]
-        ? selectBorrowSnapshot(borrowSession.state, walletId)
-        : null
-    if (sessionSnapshot) return sessionSnapshot
-
-    const fallback = hasMounted ? liveBorrowTab?.creditLines : null
-    return {
-      approvedUsd: fallback?.approvedUsd ?? 0,
-      liquidationThresholdUsd: fallback?.liquidationThresholdUsd ?? 0,
-      totalBorrowedUsd: fallback?.totalBorrowedUsd ?? 0,
-      totalCollateralUsd: fallback?.totalCollateralUsd ?? 0,
-      averageHealthFactor: fallback?.averageHealthFactor ?? null,
-      currentLtvPct: fallback?.currentLtvPct ?? 0,
+    if (!liveBorrowTab) {
+      return {
+        approvedUsd: 0,
+        liquidationThresholdUsd: 0,
+        totalBorrowedUsd: 0,
+        totalCollateralUsd: 0,
+        averageHealthFactor: null,
+        currentLtvPct: 0,
+      }
     }
-  }, [borrowSession.state, hasMounted, liveBorrowTab, walletId])
+    return creditLinesToSnapshot(liveBorrowTab.creditLines)
+  }, [liveBorrowTab])
 
   const collateralPositions = liveBorrowTab?.collateralPositions ?? []
   const debtPositions = liveBorrowTab?.debtPositions ?? []
@@ -82,9 +83,9 @@ export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref
           <DashboardCreditOverviewSection
             title={t("Borrow Balance")}
             approvedCreditUsd={borrowSnapshot.approvedUsd}
-            totalBorrowedUsd={borrowDashboardMetrics.overview.totalBorrowedUsd}
+            totalBorrowedUsd={borrowSnapshot.totalBorrowedUsd}
             netApyPct={borrowDashboardMetrics.performance.netApyPct}
-            totalCollateralUsd={borrowDashboardMetrics.performance.poolCollateralUsd}
+            totalCollateralUsd={borrowSnapshot.totalCollateralUsd}
           />
           <div className="space-y-4">
             <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
@@ -105,13 +106,12 @@ export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref
         </div>
 
         <AccountModuleBoundary>
-          <CollateralPositionsPanel showBalance={showDollarAmounts} returnHref={returnHref} />
-        </AccountModuleBoundary>
-        <AccountModuleBoundary>
-          <DebtPositionsPanel showBalance={showDollarAmounts} returnHref={returnHref} />
-        </AccountModuleBoundary>
-        <AccountModuleBoundary>
-          <TradingFeesPanel showBalance={showDollarAmounts} returnHref={returnHref} />
+          <DashboardBorrowTab
+            collateralPositions={collateralPositions}
+            debtPositions={debtPositions}
+            showSummary={false}
+            returnHref={returnHref}
+          />
         </AccountModuleBoundary>
       </div>
     </section>

@@ -58,24 +58,26 @@ const DEFAULT_CONFIG = {
 // onboarding NEVER depends on the price cron having run. It must cover every token the starter
 // buckets can select whose price isn't seeded on the market row — i.e. all ASSET-market base
 // tokens (pool/lend/multiply carry their own `markets.priceUsd`). Values mirror the app's static
-// catalog prices (app/lib/lend-system/catalog.ts). Without full coverage here, a fresh deployment
-// (empty `tokenPrices`) resolves those asset legs to $0 and the claim gate rejects every wallet.
-const SANDBOX_TOKEN_PRICE_USD: Record<string, number> = {
+// catalog prices. These MUST mirror the single client baseline in
+// app/lib/prices/sandbox-baseline-prices.ts (Convex can't import app/ modules, so keep
+// them in sync by hand). Without full coverage here, a fresh deployment (empty
+// `tokenPrices`) resolves those asset legs to $0 and the claim gate rejects every wallet.
+export const SANDBOX_TOKEN_PRICE_USD: Record<string, number> = {
   usdc: 1,
   usdt: 1,
   dai: 1,
   gho: 1,
   crvusd: 1,
   eurc: 1.08,
-  eth: 3500,
-  weth: 3500,
-  steth: 3650,
-  wsteth: 3800,
-  reth: 3700,
-  cbeth: 3600,
-  wbtc: 95_000,
-  cbbtc: 96_000,
-  aave: 280,
+  eth: 1934,
+  weth: 1934,
+  steth: 1930,
+  wsteth: 2100,
+  reth: 2045,
+  cbeth: 1990,
+  wbtc: 65_000,
+  cbbtc: 65_000,
+  aave: 105,
   uni: 12,
   crv: 0.5,
 }
@@ -117,6 +119,15 @@ async function getOrSeedStarterCatalog(ctx: MutationCtx) {
     .query("sandboxStarterCatalog")
     .withIndex("by_singleton", (q) => q.eq("singleton", "starter"))
     .first()
+
+  // Steady-state fast path: a fully-priced catalog is a fixed grant manifest, so once it is
+  // populated every claim just READS it — no per-claim full tokenPrices+markets scan and no
+  // write to the shared singleton (which serialized concurrent claims and was the onboarding-
+  // burst hotspot). Only (re)build below when the catalog is missing or still partial from a
+  // cold-start seed (any unpriced row), preserving the late-seed recovery. (#13/S1)
+  if (existing && existing.rows.length > 0 && existing.rows.every((row) => row.priceUsd > 0)) {
+    return existing.rows
+  }
 
   const [priceRows, markets] = await Promise.all([
     ctx.db.query("tokenPrices").collect(),
@@ -665,13 +676,25 @@ export const claim = mutation({
     const multiplyEquityUsd = allocation.multiply.reduce((sum, leg) => sum + leg.amountUsd, 0)
     const multiplyExposureUsd = multiplyEquityUsd * 2
     const multiplyDebtUsd = multiplyExposureUsd - multiplyEquityUsd
+    const collateralPools = await Promise.all(
+      allocation.collateral.map((leg) =>
+        ctx.db
+          .query("pools")
+          .withIndex("by_slug", (q) => q.eq("slug", leg.marketSlug))
+          .unique(),
+      ),
+    )
+    const availableToBorrowUsd = allocation.collateral.reduce((sum, leg, index) => {
+      const cfPct = collateralPools[index]?.maxLtvPct ?? 70
+      return sum + leg.amountUsd * (cfPct / 100)
+    }, 0)
     const initialPortfolio = {
       wallet,
       at: now,
       totalValueUsd: liquidValueUsd + collateralValueUsd + lendValueUsd + multiplyExposureUsd - multiplyDebtUsd,
       totalSuppliedUsd: collateralValueUsd + lendValueUsd + multiplyExposureUsd,
       totalBorrowedUsd: multiplyDebtUsd,
-      availableToBorrowUsd: collateralValueUsd * 0.7,
+      availableToBorrowUsd,
       totalMultiplyExposureUsd: multiplyExposureUsd,
       totalEarnedUsd: 0,
     }

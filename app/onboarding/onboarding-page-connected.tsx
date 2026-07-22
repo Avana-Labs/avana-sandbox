@@ -19,7 +19,10 @@ export function OnboardingPageConnected({ wallet }: { wallet: string }) {
   useEffect(() => {
     if (isDone) router.replace("/dashboard")
   }, [isDone, router])
-  if (isDone) return null
+  // Don't flash the onboarding flow before we know the wallet's state: an
+  // already-onboarded wallet hitting /onboarding directly should go straight to
+  // the redirect, never briefly re-see onboarding while the query resolves. (#42)
+  if (walletState === undefined || isDone) return null
 
   const state: OnboardingGateState | null = walletState && economy ? { ...walletState, economy } : null
   return <OnboardingFlow wallet={wallet} state={state} />

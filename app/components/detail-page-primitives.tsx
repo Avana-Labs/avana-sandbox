@@ -12,7 +12,7 @@ export function DetailPageWidth({ children, className }: { children: ReactNode; 
 export function DeferredDetailContent({
   children,
   className,
-  placeholderClassName = "min-h-[1200px]",
+  placeholderClassName = "min-h-[120px]",
 }: {
   children: ReactNode
   className?: string
@@ -45,7 +45,11 @@ export function DeferredDetailContent({
       {shouldMount ? (
         children
       ) : (
-        <div aria-hidden className={cn("rounded-radius-md bg-table-row", placeholderClassName)} />
+        <div aria-hidden className={cn("space-y-3 rounded-radius-md p-2", placeholderClassName)}>
+          <div className="h-4 w-1/3 animate-pulse rounded bg-muted" />
+          <div className="h-20 w-full animate-pulse rounded bg-muted/70" />
+          <div className="h-20 w-full animate-pulse rounded bg-muted/50" />
+        </div>
       )}
     </div>
   )
@@ -64,7 +68,23 @@ export function MobileDetailActionBar({ children, className }: { children: React
   )
 }
 
-export function DetailPageNotice({ className }: { className?: string }) {
+const DETAIL_PAGE_NOTICES = {
+  borrow:
+    "Borrowing against LP tokens involves risk, including liquidation if market conditions move against your position. Avana does not custody your funds, rehypothecate LP positions, or alter how your liquidity operates on underlying AMMs. Loan terms, interest rates, and collateral values are enforced on-chain using transparent oracle systems and automated risk parameters. You remain in full control of your position at all times and can repay or adjust collateral whenever you choose. Only borrow amounts you are comfortable maintaining through market volatility.",
+  lend: "Supplying assets earns yield but carries smart-contract, oracle, and liquidity risk. Deposits may be utilized by borrowers, and rates can change with utilization. Avana does not custody your funds. You can withdraw available liquidity subject to market conditions. Only supply amounts you are comfortable keeping deployed.",
+  multiply:
+    "Multiply loops amplify both gains and losses through leveraged exposure. Liquidation risk rises as leverage increases, and funding or borrow rates can change. Avana does not custody your funds. Monitor health factor and unwind or deleverage when needed. Only use leverage you are comfortable maintaining through market volatility.",
+} as const
+
+export type DetailPageNoticeProduct = keyof typeof DETAIL_PAGE_NOTICES
+
+export function DetailPageNotice({
+  className,
+  product = "borrow",
+}: {
+  className?: string
+  product?: DetailPageNoticeProduct
+}) {
   return (
     <section
       role="note"
@@ -73,11 +93,7 @@ export function DetailPageNotice({ className }: { className?: string }) {
         className,
       )}
     >
-      Borrowing against LP tokens involves risk, including liquidation if market conditions move against your position.
-      Avana does not custody your funds, rehypothecate LP positions, or alter how your liquidity operates on underlying
-      AMMs. Loan terms, interest rates, and collateral values are enforced on-chain using transparent oracle systems and
-      automated risk parameters. You remain in full control of your position at all times and can repay or adjust
-      collateral whenever you choose. Only borrow amounts you are comfortable maintaining through market volatility.
+      {DETAIL_PAGE_NOTICES[product]}
     </section>
   )
 }

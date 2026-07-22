@@ -1,6 +1,6 @@
 export type ActionProduct = "borrow" | "lend" | "multiply" | "rewards"
 
-export type BorrowActionKind = "borrow" | "repay" | "supply" | "remove" | "claim"
+export type BorrowActionKind = "borrow" | "repay" | "supply" | "remove" | "claim" | "pledge"
 export type LendActionKind = "deposit" | "withdraw"
 export type MultiplyActionKind = "multiply" | "deleverage" | "close"
 export type RewardsActionKind = "claim"
@@ -190,8 +190,14 @@ export const ACTION_DESCRIPTORS: Record<ActionProduct, Partial<Record<ActionKind
   },
 }
 
+export function normalizeActionKind(product: string, kind: string): ActionKind {
+  if (product === "borrow" && kind === "pledge") return "supply"
+  return kind as ActionKind
+}
+
 export function getActionDescriptor(product: ActionProduct, kind: ActionKind): ActionPageDescriptor {
-  const descriptor = ACTION_DESCRIPTORS[product][kind as keyof (typeof ACTION_DESCRIPTORS)[typeof product]]
+  const normalizedKind = product === "borrow" && kind === "pledge" ? "supply" : kind
+  const descriptor = ACTION_DESCRIPTORS[product][normalizedKind as keyof (typeof ACTION_DESCRIPTORS)[typeof product]]
   if (!descriptor) {
     throw new Error(`Unknown action ${product}/${kind}`)
   }
@@ -204,7 +210,8 @@ export function isValidActionProduct(product: string): product is ActionProduct 
 
 export function isValidAction(product: string, kind: string): product is ActionProduct {
   if (!isValidActionProduct(product)) return false
-  return Boolean(ACTION_DESCRIPTORS[product][kind as keyof (typeof ACTION_DESCRIPTORS)[typeof product]])
+  const normalizedKind = normalizeActionKind(product, kind)
+  return Boolean(ACTION_DESCRIPTORS[product][normalizedKind as keyof (typeof ACTION_DESCRIPTORS)[typeof product]])
 }
 
 export function actionPagePath(product: ActionProduct, kind: ActionKind, params?: Record<string, string>) {

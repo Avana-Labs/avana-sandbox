@@ -53,6 +53,29 @@ describe("mergeConvexMarketSnapshots", () => {
     expect(usd6ToNumber(next.markets[POOL_SLUG]!.snapshot.totalLiquidityUsd6)).not.toBe(before)
   })
 
+  it("p1-07: hydrates feeApyWad from supplyApyPct, not borrowAprPct", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    const next = mergeConvexMarketSnapshots(state, [
+      {
+        slug: POOL_SLUG,
+        scope: "pool",
+        suppliedUsd: 33_000_000,
+        borrowedUsd: 22_000_000,
+        availableUsd: 11_000_000,
+        utilizationPct: 66,
+        supplyApyPct: 2.4,
+        borrowAprPct: 9.9,
+        tvlUsd: 33_000_000,
+        volumeUsd: 4_000_000,
+        feesUsd: 2_600,
+      },
+    ])
+    // wadFromPct(2.4) — must NOT track borrow 9.9
+    const feeApy = Number(next.markets[POOL_SLUG]!.snapshot.feeApyWad) / 1e18
+    expect(feeApy).toBeCloseTo(0.024, 6)
+    expect(feeApy).not.toBeCloseTo(0.099, 3)
+  })
+
   it("leaves wallet positions untouched", () => {
     const state = buildMockBorrowSystemState("demo-wallet")
     const next = mergeConvexMarketSnapshots(state, [

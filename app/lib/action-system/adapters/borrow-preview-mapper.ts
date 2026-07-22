@@ -3,6 +3,7 @@ import type { TransactionPreview } from "@/app/lib/borrow-system/contracts"
 import type { BorrowSimulationResult } from "@/app/lib/credit-engine/simulation"
 import type { ActionPreviewUi, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
+import { healthFactorBand } from "@/app/lib/health/health-factor-bands"
 import {
   formatActionApproxUsd,
   formatActionAmount,
@@ -22,26 +23,27 @@ function fixedToNumber(value: bigint, decimals: number) {
 }
 
 function hfToNumber(value: bigint | null) {
-  if (value == null || value === 0n) return Number.POSITIVE_INFINITY
+  // null = no debt → ∞. 0n = debt with zero liquidation value → underwater 0.
+  if (value == null) return Number.POSITIVE_INFINITY
   return fixedToNumber(value, 18)
 }
 
 function hfTone(value: number | null): "default" | "positive" | "warning" | "danger" {
   if (value == null || !Number.isFinite(value)) return "positive"
-  if (value < 1.05) return "danger"
-  if (value < 1.5) return "warning"
-  return "positive"
+  const tone = healthFactorBand(value).tone
+  return tone === "default" ? "default" : tone
 }
 
 function riskFromPreview(preview: TransactionPreview, healthAfter: number) {
-  if (preview.riskLabel === "danger" || (Number.isFinite(healthAfter) && healthAfter < 1.05)) {
+  const band = healthFactorBand(healthAfter)
+  if (preview.riskLabel === "danger" || band.id === "danger") {
     return {
       level: "danger" as const,
       title: "This borrow puts your position at risk",
       message: `Health factor will drop to ${formatActionHealthFactor(healthAfter)} after this transaction. You are at risk of liquidation.`,
     }
   }
-  if (preview.riskLabel === "warning" || (Number.isFinite(healthAfter) && healthAfter < 1.5)) {
+  if (preview.riskLabel === "warning" || band.id === "watch" || band.id === "moderate") {
     return {
       level: "warning" as const,
       title: "Borrowing gets tighter",
@@ -277,16 +279,26 @@ export function mapBorrowSupplyPreviewToActionUi(
     borrowableAssetsLabel: string
     borrowableAssetSymbols: string[]
     creditScopeLabel?: string
+    walletBalanceUsd?: number
   },
 ): ActionPreviewUi {
   const borrowPowerBefore = borrowingPowerUsd(preview, "before")
   const borrowPowerAfter = borrowingPowerUsd(preview, "after")
   const healthBefore = hfToNumber(preview.before.healthFactorWad)
   const healthAfter = hfToNumber(preview.after.healthFactorWad)
+  const maxPledgeUsd = options.walletBalanceUsd ?? 0
+  const exceedsBalance = maxPledgeUsd > 0 && options.amountUsd > maxPledgeUsd
+  const blockedReason = preview.allowed
+    ? exceedsBalance
+      ? `Maximum pledge is ${formatActionUsd(maxPledgeUsd, { exact: true })}, limited by wallet LP balance.`
+      : null
+    : exceedsBalance
+      ? `Maximum pledge is ${formatActionUsd(maxPledgeUsd, { exact: true })}, limited by wallet LP balance.`
+      : (humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable")
 
   return {
     quoteId: preview.intent.id,
-    allowed: preview.allowed,
+    allowed: preview.allowed && !exceedsBalance,
     amountLabel: formatActionUsd(options.amountUsd),
     amountValue: formatActionInputAmount(options.amountUsd, 2),
     assetLabel: options.poolLabel,
@@ -298,9 +310,9 @@ export function mapBorrowSupplyPreviewToActionUi(
     rateValue: formatActionPercent(options.collateralFactorPct),
     marketLabel: "Market",
     marketValue: options.marketLabel,
-    balanceLabel: "Borrow power",
-    balanceValue: formatActionUsd(borrowPowerAfter),
-    maxAmount: null,
+    balanceLabel: maxPledgeUsd > 0 ? "Wallet balance" : "Borrow power",
+    balanceValue: maxPledgeUsd > 0 ? formatActionUsd(maxPledgeUsd) : formatActionUsd(borrowPowerAfter),
+    maxAmount: maxPledgeUsd > 0 ? maxPledgeUsd : null,
     metrics: [
       ...creditScopeMetric(options.creditScopeLabel),
       {
@@ -338,9 +350,7 @@ export function mapBorrowSupplyPreviewToActionUi(
     ],
     networkFeeLabel: formatActionFeeSummary(options.amountUsd, 0.04),
     risk: null,
-    blockedReason: preview.allowed
-      ? null
-      : (humanizeBlockedReason(preview.validationErrors[0]) ?? "Action unavailable"),
+    blockedReason,
     validationErrors: preview.validationErrors,
     warnings: preview.warnings,
   }

@@ -22,8 +22,14 @@ function withReturn(href: string) {
  * Borrow / Repay / Deposit / Withdraw quick actions that used to live in the
  * dashboard hero — now a dashboard sidebar section beneath the claim action.
  */
-export function DashboardQuickActions() {
+export function DashboardQuickActions({
+  activeTab,
+}: {
+  activeTab?: "wallet" | "lend" | "borrow" | "multiply" | "referrals"
+}) {
   const { t } = useTranslation()
+  const depositHref = activeTab === "borrow" ? actionPagePath("borrow", "supply") : actionPagePath("lend", "deposit")
+  const withdrawHref = activeTab === "borrow" ? actionPagePath("borrow", "remove") : actionPagePath("lend", "withdraw")
 
   const actions = [
     {
@@ -42,13 +48,13 @@ export function DashboardQuickActions() {
       id: "deposit",
       label: t("Deposit"),
       icon: EnteringGeoFence,
-      href: withReturn(actionPagePath("lend", "deposit")),
+      href: withReturn(depositHref),
     },
     {
       id: "withdraw",
       label: t("Withdraw"),
       icon: LeavingGeoFence,
-      href: withReturn(actionPagePath("lend", "withdraw")),
+      href: withReturn(withdrawHref),
     },
     {
       id: "multiply",

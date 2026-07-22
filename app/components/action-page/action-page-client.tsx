@@ -1,7 +1,7 @@
 "use client"
 
 import type { ActionKind, ActionProduct } from "@/app/lib/action-system/contracts"
-import { isValidAction } from "@/app/lib/action-system/contracts"
+import { isValidAction, normalizeActionKind } from "@/app/lib/action-system/contracts"
 import { ActionNotFound } from "@/app/components/action-page/action-not-found"
 import { BorrowActionPageClient } from "@/app/components/action-page/borrow-action-page-client"
 import { LendActionPageClient } from "@/app/components/action-page/lend-action-page-client"
@@ -35,10 +35,12 @@ export function ActionPageClient({
     return <ActionNotFound closeHref={fallbackHref} />
   }
 
+  const resolvedKind = normalizeActionKind(product, kind)
+
   if (product === "borrow") {
     return (
       <BorrowActionPageClient
-        kind={kind as "borrow" | "repay" | "supply" | "remove" | "claim"}
+        kind={resolvedKind as "borrow" | "repay" | "supply" | "remove" | "claim"}
         closeHref={closeHref}
         initialAssetId={initialAssetId}
         initialMarketId={initialMarketId}

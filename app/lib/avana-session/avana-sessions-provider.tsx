@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useMemo, useRef, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useMemo, useRef, useCallback, type ReactNode } from "react"
 import { useMarketLiquidity } from "@/app/lib/convex/market-liquidity-provider"
 import { useRewardsSession } from "@/app/lib/rewards-system"
 import type { SandboxActionResult } from "@/app/lib/borrow-system/contracts"
@@ -9,7 +9,8 @@ import type { MultiplySandboxActionResult, MultiplyTransactionResult } from "@/a
 import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
 import { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-session"
-import { useSwapSession } from "@/app/lib/swap-system/use-swap-session"
+import { useSwapSession, type DurableSwapTransaction } from "@/app/lib/swap-system/use-swap-session"
+import type { SwapTransactionRecord } from "@/app/lib/swap-system/transaction-adapter"
 import { useAvanaSession } from "./use-avana-session"
 
 type BorrowSession = ReturnType<typeof useBorrowSession>
@@ -183,7 +184,10 @@ export function AvanaSessionsProvider({
   persistBorrowTransaction,
   persistLendTransaction,
   persistMultiplyTransaction,
+  persistSwapTransaction,
+  remoteSwapTransactions,
   remoteRewardsState,
+  remoteRewardsRevision,
   persistRewardsState,
   persistLocalState = true,
   sessionSource = "demo",
@@ -199,17 +203,29 @@ export function AvanaSessionsProvider({
   }>
   persistLendTransaction?: (result: LendSandboxActionResult) => Promise<LendTransactionResult>
   persistMultiplyTransaction?: (result: MultiplySandboxActionResult) => Promise<MultiplyTransactionResult>
+  persistSwapTransaction?: (record: SwapTransactionRecord) => void | Promise<unknown>
+  remoteSwapTransactions?: DurableSwapTransaction[]
   remoteRewardsState?: string | null
-  persistRewardsState?: (stateJson: string) => Promise<unknown>
+  remoteRewardsRevision?: number | null
+  persistRewardsState?: (args: {
+    stateJson: string
+    expectedRevision?: number
+  }) => Promise<{ revision?: number } | unknown>
   persistLocalState?: boolean
   sessionSource?: "demo" | "convex"
 }) {
+  const { deltas: liquidityDeltas } = useMarketLiquidity()
+  const liquidityDeltasRef = useRef(liquidityDeltas)
+  liquidityDeltasRef.current = liquidityDeltas
+  const getLiquidityDeltas = useCallback(() => liquidityDeltasRef.current, [])
+
   const avana = useAvanaSession(walletId, sessionSource)
   const borrow = useBorrowSession({
     walletId: avana.walletId,
     sessionSeed: avana.borrowSessionSeed,
     persistState: persistLocalState,
     persistTransaction: persistBorrowTransaction,
+    getLiquidityDeltas,
   })
   const multiply = useMultiplySession({
     walletId: avana.walletId,
@@ -228,11 +244,14 @@ export function AvanaSessionsProvider({
     sessionSeed: avana.rewardsSessionSeed,
     persistState: persistLocalState,
     remoteState: remoteRewardsState,
+    remoteRevision: remoteRewardsRevision,
     persistRemoteState: persistRewardsState,
   })
   const swap = useSwapSession({
     walletId: avana.walletId,
     persistState: persistLocalState,
+    persistTransaction: persistSwapTransaction,
+    remoteTransactions: remoteSwapTransactions,
   })
 
   useRewardsEventBridge({

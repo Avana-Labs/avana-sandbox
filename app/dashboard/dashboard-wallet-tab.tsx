@@ -17,21 +17,8 @@ import type { BorrowAssetVisual } from "@/app/lib/data/borrow-domain"
 const DASH = "\u2014"
 const MASK = "••••"
 
-const TOKEN_PNL_BASIS_MULTIPLIER: Record<string, number> = {
-  eth: 1.08,
-  usdc: 1,
-  link: 0.94,
-  gho: 1,
-  wbtc: 0.97,
-  aave: 1.03,
-}
-
-const LP_UI_DETAILS: Record<
-  string,
-  { feesUsd: number; status: "in_range" | "out_of_range" | "inactive"; protocol: string }
-> = {
-  "eth-usdc-lp": { feesUsd: 0.564, status: "in_range", protocol: "Uniswap v4" },
-}
+// Do not invent token P/L or LP fee/status analytics — show dashes until live data exists.
+const LP_UI_DETAILS: Record<string, { feesUsd: number; status: "inactive"; protocol: string }> = {}
 
 function sectionCount(count: number, singular: string, plural: string) {
   return `${count} ${count === 1 ? singular : plural}`
@@ -46,14 +33,9 @@ function formatPoolAmount(amount: number) {
   return amount.toLocaleString(undefined, { maximumFractionDigits: 6 })
 }
 
-function tokenPnl(row: DashboardWalletBalanceRow) {
-  const basisMultiplier = TOKEN_PNL_BASIS_MULTIPLIER[row.assetId]
-  if (basisMultiplier == null) return null
-
-  const basisValueUsd = row.valueUsd * basisMultiplier
-  const pnlUsd = row.valueUsd - basisValueUsd
-  const pnlPct = basisValueUsd === 0 ? 0 : (pnlUsd / basisValueUsd) * 100
-  return { pnlUsd, pnlPct }
+function tokenPnl(_row: DashboardWalletBalanceRow): { pnlUsd: number; pnlPct: number } | null {
+  // Fabricated wallet P/L removed (P1-04). Keep the column; show dash until live data exists.
+  return null
 }
 
 function poolUiDetail(row: DashboardWalletBalanceRow) {
@@ -259,7 +241,7 @@ function WalletBalanceSection({
       </div>
 
       <DesktopTableSurface className="hidden !rounded-none md:block">
-        <table className="w-full min-w-[780px] table-fixed border-separate border-spacing-0 text-[13px]">
+        <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
           <colgroup>
             <col className="w-[29%]" />
             <col className="w-[13%]" />
@@ -268,12 +250,12 @@ function WalletBalanceSection({
             <col className="w-[20%]" />
           </colgroup>
           <thead>
-            <tr className="text-left text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-              <th className="bg-table-header px-5 py-3.5">{t("Asset")}</th>
-              <th className="bg-table-header px-4 py-3.5 text-right">{t("Price")}</th>
-              <th className="bg-table-header px-4 py-3.5 text-right">{t("Balance")}</th>
-              <th className="bg-table-header px-4 py-3.5 text-right">{t("Value")}</th>
-              <th className="bg-table-header px-4 py-3.5 text-right">{t("P/L")}</th>
+            <tr className="text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <th className="bg-table-header px-5 pb-2 pt-2.5">{t("Asset")}</th>
+              <th className="bg-table-header px-4 pb-2 pt-2.5 text-right">{t("Price")}</th>
+              <th className="bg-table-header px-4 pb-2 pt-2.5 text-right">{t("Balance")}</th>
+              <th className="bg-table-header px-4 pb-2 pt-2.5 text-right">{t("Value")}</th>
+              <th className="bg-table-header px-4 pb-2 pt-2.5 text-right">{t("P/L")}</th>
             </tr>
           </thead>
           <tbody>
@@ -389,7 +371,7 @@ function PoolsBalanceSection({
       </div>
 
       <DesktopTableSurface className="hidden !rounded-none md:block">
-        <table className="w-full min-w-[780px] table-fixed border-separate border-spacing-0 text-[13px]">
+        <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
           <colgroup>
             <col className="w-[28%]" />
             <col className="w-[16%]" />
@@ -397,11 +379,11 @@ function PoolsBalanceSection({
             <col className="w-[30%]" />
           </colgroup>
           <thead>
-            <tr className="text-left text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-              <th className="bg-table-header px-5 py-3.5">{t("Pool")}</th>
-              <th className="bg-table-header px-4 py-3.5">{t("Status")}</th>
-              <th className="bg-table-header px-4 py-3.5 text-right">{t("Balance")}</th>
-              <th className="bg-table-header px-4 py-3.5 text-right">{t("Fees")}</th>
+            <tr className="text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <th className="bg-table-header px-5 pb-2 pt-2.5">{t("Pool")}</th>
+              <th className="bg-table-header px-4 pb-2 pt-2.5">{t("Status")}</th>
+              <th className="bg-table-header px-4 pb-2 pt-2.5 text-right">{t("Balance")}</th>
+              <th className="bg-table-header px-4 pb-2 pt-2.5 text-right">{t("Fees")}</th>
             </tr>
           </thead>
           <tbody>
@@ -459,18 +441,18 @@ function PoolsBalanceSection({
                 </div>
                 <div>
                   <div className="text-muted-foreground">{t("Balance")}</div>
-                  <div className="mt-1">
+                  <div className="mt-1 flex flex-col gap-0.5">
                     <span className="font-data tabular-nums text-foreground">{m(formatPoolAmount(row.amount))}</span>
-                    <span className="ml-2 text-[12px] text-muted-foreground">{m(exact(row.valueUsd))}</span>
+                    <span className="text-[12px] text-muted-foreground">{m(exact(row.valueUsd))}</span>
                   </div>
                 </div>
               </div>
               <div className="mt-3 grid grid-cols-1 gap-3 text-[13px]">
                 <div>
                   <div className="text-muted-foreground">{t("Fees")}</div>
-                  <div className="mt-1">
+                  <div className="mt-1 flex flex-col gap-0.5">
                     <span className="font-data tabular-nums text-foreground">{m(exact(detail.feesUsd))}</span>
-                    <span className="ml-2 text-[12px] text-muted-foreground">{m(t("Unclaimed fees"))}</span>
+                    <span className="text-[12px] text-muted-foreground">{m(t("Unclaimed fees"))}</span>
                   </div>
                 </div>
               </div>

@@ -1,5 +1,7 @@
-const LEND_STATE_PREFIX = "avana.lend.session.v1"
-const LEND_META_PREFIX = "avana.lend.session.meta.v1"
+import { SESSION_CACHE_VERSION } from "@/app/lib/session-cache-version"
+
+const LEND_STATE_PREFIX = `avana.lend.session.${SESSION_CACHE_VERSION}`
+const LEND_META_PREFIX = `avana.lend.session.meta.${SESSION_CACHE_VERSION}`
 
 import { deserializeLendSystemState, serializeLendSystemState } from "./codec"
 import type { LendTransactionHistoryItem, LendTransactionResult } from "./contracts"

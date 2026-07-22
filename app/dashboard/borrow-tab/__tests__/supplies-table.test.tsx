@@ -55,12 +55,12 @@ describe("SuppliesPanel column scope", () => {
     const view = within(container)
 
     // The desktop table exposes the spoke-scoped credit columns. "Borrow Power"
-    // and "Health Factor" here reflect the whole spoke, not the $2 in this row.
+    // and "Health" here reflect the whole spoke, not the $2 in this row.
     expect(view.getAllByText("Borrow Power").length).toBeGreaterThan(0)
-    expect(view.getAllByText(/^Health Factor$/).length).toBeGreaterThan(0)
-    // The mobile card names the health figure "Scope Health Factor" so a $2 row's
-    // reading is not mistaken for a per-position value.
-    expect(view.getAllByText("Scope Health Factor").length).toBeGreaterThan(0)
+    // Both the desktop column and the mobile card label the figure "Health"
+    // (matching the borrow/lend market cards). These read as spoke-scoped, not a
+    // per-$2-row value.
+    expect(view.getAllByText(/^Health$/).length).toBeGreaterThan(0)
     // No per-position "Max Borrow" label is shown that would imply the borrow
     // capacity belongs to this single dust-sized row.
     expect(view.queryByText(/Max Borrow/)).not.toBeInTheDocument()

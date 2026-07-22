@@ -57,3 +57,8 @@ export function getDeleverageMultiplierMax(currentMultiplier: number, step = 0.1
   const upperBound = Math.max(MULTIPLY_ACTION_MIN_LEVERAGE, currentMultiplier - step)
   return Number(upperBound.toFixed(2))
 }
+
+/** True when deleverage has no room below current leverage — Close is the only exit. */
+export function isDeleverageCloseOnly(currentMultiplier: number, step = 0.1) {
+  return getDeleverageMultiplierMax(currentMultiplier, step) <= MULTIPLY_ACTION_MIN_LEVERAGE + 1e-9
+}

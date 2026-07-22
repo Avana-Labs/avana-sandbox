@@ -1,6 +1,7 @@
 {
   "primaryRoutes": [
     { "route": "/", "heroText": "Borrow", "heroRole": "tab", "marker": "Borrow" },
+    { "route": "/swap", "heroText": "Swap", "heroRole": "tab", "marker": "Swap | Avana" },
     { "route": "/borrow", "heroText": "Total TVL", "marker": "Borrow | Avana" },
     { "route": "/borrow/assets/usdc", "heroText": "USD Coin", "marker": "USD Coin" },
     { "route": "/borrow/markets/uni-v3-bluechip-weth-usdc", "heroText": "Total supplied", "marker": "Total supplied" },

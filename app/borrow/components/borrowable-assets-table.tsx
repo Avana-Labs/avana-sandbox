@@ -226,10 +226,10 @@ function LoanAssetsSection({
       <table className="w-full min-w-[980px] text-[12px]">
         <thead>
           <tr className="bg-table-header text-left text-muted-foreground">
-            <th className="pb-3 pt-4 pl-6 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 pl-6 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               #
             </th>
-            <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("asset")}
@@ -244,7 +244,7 @@ function LoanAssetsSection({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("apy")}
@@ -257,7 +257,7 @@ function LoanAssetsSection({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-3 pt-4 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("borrows")}
@@ -272,7 +272,7 @@ function LoanAssetsSection({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-3 pt-4 px-4 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("liquidity")}
@@ -287,7 +287,7 @@ function LoanAssetsSection({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-3 pt-4 px-4 pr-5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+            <th className="pb-2 pt-2.5 px-4 pr-5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
           </tr>
         </thead>
 
@@ -438,24 +438,28 @@ function AssetsSection({
           <table className="w-full min-w-[980px] text-[13px]">
             <thead>
               <tr className="bg-table-header text-left text-muted-foreground">
-                <th className="pb-2 pt-3 pl-5 pr-3 text-[10.5px] font-medium uppercase tracking-[0.06em]">#</th>
-                <th className="pb-2 pt-3 pl-5 text-[10.5px] font-medium uppercase tracking-[0.06em]">{t("Asset")}</th>
-                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">
+                <th className="pb-2 pt-2.5 pl-5 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  #
+                </th>
+                <th className="pb-2 pt-2.5 pl-5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  {t("Asset")}
+                </th>
+                <th className="pb-2 pt-2.5 pl-4 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Borrow APR")}
                 </th>
-                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">
+                <th className="pb-2 pt-2.5 pl-4 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Utilization")}
                 </th>
-                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">
+                <th className="pb-2 pt-2.5 pl-4 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Available")}
                 </th>
-                <th className="pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">
+                <th className="pb-2 pt-2.5 pl-4 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Wallet Balance")}
                 </th>
-                <th className="w-20 pb-2 pt-3 pl-4 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]">
+                <th className="w-20 pb-2 pt-2.5 pl-4 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   7D
                 </th>
-                <th className="w-44 pb-2 pt-3 pl-4 pr-5 text-right text-[10.5px] font-medium uppercase tracking-[0.06em]" />
+                <th className="w-44 pb-2 pt-2.5 pl-4 pr-5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
               </tr>
             </thead>
             <tbody>

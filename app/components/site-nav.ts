@@ -8,6 +8,7 @@ export type DesktopHeaderLink = {
 }
 
 // Labels are translated at the header callsite (header.tsx wraps them in t()).
+// Umbrella stays out of primary nav until the product ships (page is currently a stub).
 export const personalDesktopHeaderLinks: DesktopHeaderLink[] = [
   { href: "/", label: "Express" },
   { href: "/lend", label: "Lend" },

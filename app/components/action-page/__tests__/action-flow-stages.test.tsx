@@ -30,6 +30,51 @@ afterEach(() => {
 })
 
 describe("action stage flow UI", () => {
+  it("P1-18 uses FX and APY-specific help for swap and multiply rates", async () => {
+    const user = userEvent.setup()
+    const swapPreview = {
+      ...preview,
+      rateLabel: "Rate",
+      rateValue: "1 USDC = 0.00031 WETH",
+      marketValue: "Ethereum",
+    }
+    const { unmount } = render(
+      <ActionConfigureStage
+        stage="configure"
+        verb="Swap"
+        amount="1000"
+        onAmountChange={() => undefined}
+        preview={swapPreview}
+        assetSymbol="USDC"
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: "More information about Rate" }))
+    expect(screen.getByRole("tooltip")).toHaveTextContent("Estimated exchange rate for this swap")
+    unmount()
+
+    render(
+      <ActionReviewStage
+        title="Review multiply"
+        preview={{
+          ...preview,
+          rateLabel: "",
+          rateValue: "",
+          marketBreakdown: {
+            collateral: { symbol: "ETH", apy: "3.10%" },
+            borrow: { symbol: "USDC", apy: "5.20%" },
+          },
+        }}
+      />,
+    )
+
+    await user.click(screen.getByRole("button", { name: "More information about Collateral APY" }))
+    expect(screen.getByRole("tooltip")).toHaveTextContent("Annualized yield earned by the collateral asset")
+    await user.click(screen.getByRole("button", { name: "More information about Borrow APY" }))
+    expect(screen.getByRole("tooltip")).toHaveTextContent("Annualized cost to borrow")
+    expect(screen.queryByText(/market this action applies to/i)).not.toBeInTheDocument()
+  })
+
   it("configure stage offers Review then review stage offers confirm verb", async () => {
     const user = userEvent.setup()
     const onPrimary = vi.fn()

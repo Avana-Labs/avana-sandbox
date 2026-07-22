@@ -11,11 +11,10 @@ import {
   Umbrella,
   Unlock,
 } from "@/app/components/icons"
+import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
-// The blog lives on the marketing deployment, not this webapp, so cards link out
-// with absolute URLs. Update the slug list to re-curate which posts are featured.
-const BLOG_BASE = "https://avana-ashen.vercel.app/blog"
+const BLOG_BASE = AVANA_EXTERNAL_LINKS.blog
 
 type LearnCard = {
   title: string

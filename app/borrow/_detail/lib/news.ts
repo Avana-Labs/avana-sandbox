@@ -19,10 +19,10 @@ export function buildNewsItems(about: AboutCard, _imageUrl?: string, imageLabel?
       time: entry.date,
     }))
 
-  return items.map((item, index) => ({
+  return items.map((item) => ({
     ...item,
-    // Free placeholder art (distinct per item) — swap for real news images later.
-    imageUrl: `https://picsum.photos/seed/avana-news-${index}/240/240`,
+    // No picsum placeholders — omit images until real editorial assets exist.
+    imageUrl: undefined,
     imageLabel,
   }))
 }

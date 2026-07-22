@@ -54,20 +54,25 @@ export function mapBorrowRewardsClaimPreviewToActionUi(options: {
       tone: "positive" as const,
     }))
 
+  // The claim total sits next to per-token rows that always show cents (each is
+  // < $100). Format the total exactly too, so $68.99 + $42.11 reads "$111.10" and
+  // not a cents-dropping "$111". (#25)
+  const claimTotalLabel = formatActionUsd(options.claimUsd, { exact: true })
+
   return {
     allowed: options.allowed,
-    amountValue: formatActionUsd(options.claimUsd),
-    amountLabel: formatActionUsd(options.claimUsd),
+    amountValue: claimTotalLabel,
+    amountLabel: claimTotalLabel,
     amountUsd: options.claimUsd,
     amountUsdLabel: formatActionApproxUsd(options.claimUsd),
     assetLabel: options.marketLabel,
     assetSymbol: Object.keys(options.tokenTotals)[0] ?? "Rewards",
     rateLabel: "Claim total",
-    rateValue: formatActionUsd(options.claimUsd),
+    rateValue: claimTotalLabel,
     marketLabel: "Market",
     marketValue: options.marketLabel,
     balanceLabel: "Claimable",
-    balanceValue: formatActionUsd(options.claimUsd),
+    balanceValue: claimTotalLabel,
     maxAmount: options.claimUsd,
     metrics:
       tokenRows.length > 0
@@ -76,7 +81,7 @@ export function mapBorrowRewardsClaimPreviewToActionUi(options: {
             {
               id: "claim-total",
               label: "Total received",
-              value: formatActionUsd(options.claimUsd),
+              value: claimTotalLabel,
               tone: "positive" as const,
             },
           ],

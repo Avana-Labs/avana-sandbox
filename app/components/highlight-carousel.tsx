@@ -122,7 +122,11 @@ export function HighlightCarousel({
         <div ref={sequenceRef} className={cn("flex shrink-0 items-start pr-3", gapClassName)}>
           {renderSequence(true)}
         </div>
-        <div aria-hidden="true" className={cn("flex shrink-0 items-start pr-3", gapClassName)}>
+        <div
+          aria-hidden="true"
+          inert
+          className={cn("flex shrink-0 items-start pr-3", gapClassName, "[&_*]:pointer-events-none")}
+        >
           {renderSequence(false)}
         </div>
       </div>

@@ -46,7 +46,10 @@ export type MockSwapProviderOptions = {
   priceImpactMultiplier?: number
 }
 
-const DEFAULT_QUOTE_TTL_MS = 30_000
+// A 30s TTL expired mid-review — before the user finished reading the multi-step
+// transacting summary — forcing a re-quote and amount flicker. 2 minutes comfortably
+// covers review + confirmation; submit still auto-refreshes a stale quote. (#32)
+const DEFAULT_QUOTE_TTL_MS = 120_000
 
 function quoteId(request: SwapQuoteRequest, createdAt: number) {
   return `quote-${request.walletId}-${request.inputAssetId}-${request.outputAssetId}-${request.inputAmount}-${request.slippageBps}-${createdAt}`

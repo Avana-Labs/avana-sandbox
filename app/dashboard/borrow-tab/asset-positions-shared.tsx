@@ -35,7 +35,7 @@ export function AssetSummaryStrip({ metrics }: { metrics: SummaryMetric[] }) {
             </span>
             <span
               className={cn(
-                "font-data text-[22px] font-medium leading-none tabular-nums text-foreground",
+                "font-data text-[22px] font-medium leading-none tracking-normal tabular-nums text-foreground",
                 metric.valueClassName,
               )}
             >
@@ -44,18 +44,21 @@ export function AssetSummaryStrip({ metrics }: { metrics: SummaryMetric[] }) {
           </div>
         ))}
       </div>
-      {/* Mobile */}
+      {/* Mobile — label above value for clearer hierarchy */}
       <div className="flex flex-col gap-3 md:hidden">
         {metrics.map((metric) => (
-          <div key={metric.label} className="flex items-center justify-between gap-3">
-            <span
-              className={cn("font-data text-[18px] font-medium tabular-nums text-foreground", metric.valueClassName)}
-            >
-              {metric.value}
-            </span>
+          <div key={metric.label} className="flex flex-col gap-1">
             <span className="inline-flex items-center gap-1 text-[13px] text-muted-foreground">
               {t(metric.label)}
               {metric.help ? <ActionMetricHelp topic={metric.label} text={metric.help} /> : null}
+            </span>
+            <span
+              className={cn(
+                "font-data text-[18px] font-medium tracking-normal tabular-nums text-foreground",
+                metric.valueClassName,
+              )}
+            >
+              {metric.value}
             </span>
           </div>
         ))}

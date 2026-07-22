@@ -42,6 +42,7 @@ import type { BorrowAssetVisual, BorrowPoolRow } from "@/app/lib/borrow-sim"
 import type { SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
 import type { ChartFeed } from "@/app/components/charts"
 import type { FaqContent } from "./content-model"
+import type { ProtocolParameterRow } from "./protocol-parameters"
 
 // -------------------------------------------------------------------------
 // Primitive building blocks
@@ -232,6 +233,8 @@ export type PoolDetailHero = {
   chain: string
   /** Link to the source contract / external explorer. */
   explorerUrl?: string
+  /** Official X profile when known. */
+  xUrl?: string
 }
 
 export type QuickStat = {
@@ -270,6 +273,7 @@ export type PoolDetail = {
     series: Record<ChartMetricId, Record<TimeRangeId, Series>>
   }
   quickStats: QuickStat[]
+  protocolParameters: ProtocolParameterRow[]
   performance: Record<PerfTab, Record<PerfPeriod, PerfTabDataset>>
   keyMetrics: Record<KeyMetricId, Record<TimeRangeId, Series>>
   cashflow: CashflowCard
@@ -371,6 +375,7 @@ export type AssetDetail = {
     series: Record<AssetChartMetricId, Record<TimeRangeId, Series>>
   }
   quickStats: QuickStat[]
+  protocolParameters: ProtocolParameterRow[]
   supplyBorrow: {
     supplied: Series
     borrowed: Series

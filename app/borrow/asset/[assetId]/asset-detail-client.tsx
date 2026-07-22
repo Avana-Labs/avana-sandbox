@@ -13,7 +13,7 @@ import {
   MobileDetailActionBar,
 } from "@/app/components/detail-page-primitives"
 import { AssetHero, AssetHeroIdentity } from "@/app/borrow/_detail/asset-sections"
-import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
+import { QuickStatsGrid, ProtocolParametersSection } from "@/app/borrow/_detail/pool-sections"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { AssetTokenSidebar } from "@/app/borrow/_detail/sidebars"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -101,6 +101,7 @@ export function AssetDetailClient({ detail }: Props) {
                   <QuickStatsGrid detail={detail} />
                   <DeferredDetailContent>
                     <div className="space-y-12">
+                      <ProtocolParametersSection parameters={detail.protocolParameters} />
                       <InterestRateModelCard detail={detail} />
                       <AllocationBreakdownCard detail={detail} />
                       <AssetCashflowCard detail={detail} />
@@ -112,7 +113,7 @@ export function AssetDetailClient({ detail }: Props) {
                       />
                       <TransactionHistoryCard transactions={detail.transactions} assetSymbol={detail.hero.symbol} />
                       <RelatedAssetsRow detail={detail} />
-                      <DetailPageNotice />
+                      <DetailPageNotice product="borrow" />
                     </div>
                   </DeferredDetailContent>
                 </section>

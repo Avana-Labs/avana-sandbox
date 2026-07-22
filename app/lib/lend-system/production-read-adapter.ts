@@ -3,7 +3,7 @@ import type { LendPageData } from "@/app/lib/data/providers/lend/types"
 import type { PortfolioLendTabData } from "@/app/lib/data/providers/portfolio/types"
 import type { LendReadAdapter, LendWalletReadSnapshot } from "./contracts"
 
-const NOT_IMPLEMENTED = "Production lend read adapter is not implemented"
+const NOT_IMPLEMENTED = "BLOCKED: Production lend read adapter is not implemented"
 
 type ProductionLendReadAdapterOptions = Partial<{
   readWalletSnapshot: (walletId: string) => Promise<LendWalletReadSnapshot>

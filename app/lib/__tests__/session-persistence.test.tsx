@@ -12,6 +12,7 @@
  */
 import { renderHook, waitFor } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
+import { SESSION_CACHE_VERSION as V } from "@/app/lib/session-cache-version"
 
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
 import { buildMockLendSystemState } from "@/app/lib/lend-system/mock"
@@ -53,7 +54,7 @@ describe("session persistence does not clobber richer storage on mount", () => {
     rich.walletBalances[walletId] = { ...(rich.walletBalances[walletId] ?? {}), "persist-marker": 4242 }
     writeLendSessionState(walletId, rich)
 
-    const writes = spyOnStateWrites("avana.lend.session.v1")
+    const writes = spyOnStateWrites(`avana.lend.session.${V}`)
     const { result } = renderHook(() => useLendSession({ walletId, sessionSeed }))
 
     await waitFor(() => {
@@ -73,7 +74,7 @@ describe("session persistence does not clobber richer storage on mount", () => {
     rich.now = 1_234_567_890
     writeMultiplySessionState(walletId, rich)
 
-    const writes = spyOnStateWrites("avana.multiply.session.v1")
+    const writes = spyOnStateWrites(`avana.multiply.session.${V}`)
     const { result } = renderHook(() => useMultiplySession({ walletId, sessionSeed }))
 
     await waitFor(() => {
@@ -93,7 +94,7 @@ describe("session persistence does not clobber richer storage on mount", () => {
     rich.now = 1_234_567_890
     writeBorrowSessionState(walletId, rich)
 
-    const writes = spyOnStateWrites("avana.borrow.session.v1")
+    const writes = spyOnStateWrites(`avana.borrow.session.${V}`)
     const { result } = renderHook(() => useBorrowSession({ walletId, sessionSeed }))
 
     await waitFor(() => {

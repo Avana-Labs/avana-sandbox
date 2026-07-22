@@ -15,14 +15,19 @@ import {
 } from "@/app/components/market-card-primitives"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
+import {
+  TABLE_HEADER_CELL,
+  TABLE_ROW_HOVER_BG,
+  TABLE_ROW_HOVER_LEFT,
+  TABLE_ROW_HOVER_RIGHT,
+} from "@/app/lib/ui/table-row-hover"
+import { formatSectionCount } from "@/app/lib/ui/section-count"
 import { cn } from "@/lib/utils"
 import { AssetSummaryStrip, type SummaryMetric } from "./asset-positions-shared"
 import { getDashboardDebtData, type DebtAssetRow } from "./asset-positions-data"
 
 const MASK = "••••"
-const HEADER_CLASS =
-  "whitespace-nowrap bg-table-header px-4 py-3.5 text-[11px] font-medium uppercase tracking-[0.08em] text-foreground/70"
+const HEADER_CLASS = `whitespace-nowrap px-4 ${TABLE_HEADER_CELL}`
 
 export function DebtPositionsPanel({
   showBalance = true,
@@ -79,9 +84,7 @@ export function DebtPositionsPanel({
           <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
             {t("Debt Positions")}
           </h3>
-          <p className="mt-1 text-[13px] text-muted-foreground">
-            {t("{count} loans").replace("{count}", String(rows.length))}
-          </p>
+          <p className="mt-1 text-[13px] text-muted-foreground">{formatSectionCount(rows.length, "loan", "loans")}</p>
         </div>
       ) : null}
       <AssetSummaryStrip metrics={summaryMetrics} />
@@ -90,7 +93,7 @@ export function DebtPositionsPanel({
       <div className="hidden md:block">
         <DesktopTableSurface className="!rounded-none">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[960px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
                 <col className="w-[28%]" />
                 <col className="w-[18%]" />

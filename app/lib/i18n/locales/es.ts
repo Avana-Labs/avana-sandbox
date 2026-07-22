@@ -269,13 +269,11 @@ const dict: TranslationDictionary = {
   "Total value locked": "Valor total bloqueado",
   "Total borrows": "Prestamos totales",
   "Asset actions": "Acciones del activo",
-  "Deposit compatible collateral from {spoke} before borrowing {symbol}.":
-    "Deposita colateral compatible de {spoke} antes de pedir prestado {symbol}.",
+  "Deposit LP collateral before borrowing {symbol}.": "Deposit LP collateral before borrowing {symbol}.",
   "Deposit collateral": "Depositar colateral",
   "Deposit collateral first": "Deposita colateral primero",
   "You need to deposit an asset before you can borrow.": "Necesitas depositar un activo antes de poder pedir prestado.",
-  "To borrow {symbol}, deposit a compatible collateral market from {spoke} first.":
-    "Para pedir prestado {symbol}, primero deposita un mercado de colateral compatible de {spoke}.",
+  "To borrow {symbol}, deposit LP collateral first.": "To borrow {symbol}, deposit LP collateral first.",
   "Got it": "Entendido",
   "Manage {name}": "Gestionar {name}",
   Pledge: "Aportar",

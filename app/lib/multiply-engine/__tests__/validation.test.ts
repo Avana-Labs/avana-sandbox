@@ -117,6 +117,34 @@ describe("multiply engine validation", () => {
     expect(result.errors.join(" ")).toContain("LTV exceeds the market maximum")
   })
 
+  it("blocks multiply when health factor is between 1.0 and the market minimum", () => {
+    const theoreticalMax = calculateTheoreticalMaxMultiplier(0.8)
+    const result = validateMultiplyAction({
+      selectedMultiplier: 3,
+      theoreticalMaxMultiplier: theoreticalMax,
+      publicMaxMultiplier: 20,
+      safeMaxMultiplier: 4,
+      recommendedMaxMultiplier: 3.5,
+      minHealthFactor: 1.5,
+      maxLtv: 0.8,
+      // Solvent (HF > 1.0) but below the market's 1.5 minimum -> must hard-block.
+      healthFactor: 1.2,
+      ltv: 0.6,
+      debtValueUsd: 2500,
+      initialCollateralValueUsd: 3500,
+      priceImpactPct: 0.002,
+      maxAllowedPriceImpact: 0.01,
+      netApy: 0.03,
+      supplyApy: 0.076,
+      borrowApy: 0.039,
+      liquidationPrice: 2100,
+      collateralPriceUsd: 280,
+    })
+
+    expect(result.allowed).toBe(false)
+    expect(result.errors.join(" ")).toContain("market minimum")
+  })
+
   it("warns when multiply exceeds the recommended maximum", () => {
     const theoreticalMax = calculateTheoreticalMaxMultiplier(0.9)
     const result = validateMultiplyAction({

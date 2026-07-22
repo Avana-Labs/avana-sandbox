@@ -36,8 +36,10 @@ function fixedToNumber(value: bigint, decimals: number) {
   return Number.parseFloat(formatFixed(value, decimals))
 }
 
-function healthFactorToNumber(healthFactorWad: bigint) {
-  return healthFactorWad > 0n ? fixedToNumber(healthFactorWad, 18) : Number.POSITIVE_INFINITY
+function healthFactorToNumber(healthFactorWad: bigint, totalBorrowedUsd6: bigint) {
+  // Raw metrics use 0n both for no-debt and for underwater zero-liq. Only no-debt is ∞.
+  if (totalBorrowedUsd6 === 0n) return Number.POSITIVE_INFINITY
+  return fixedToNumber(healthFactorWad, 18)
 }
 
 function userMessageFromError(error: unknown) {
@@ -255,7 +257,7 @@ export function buildHomeRepayPreview(
   const spokeId = debtPosition?.spokeId
   const currentMetrics = spokeId ? calculateSpokeCreditMetrics(state, walletId, spokeId) : null
   const currentHealthFactor = currentMetrics
-    ? healthFactorToNumber(currentMetrics.healthFactorWad)
+    ? healthFactorToNumber(currentMetrics.healthFactorWad, currentMetrics.totalBorrowedUsd6)
     : Number.POSITIVE_INFINITY
   const exceedsDebt = amountUsd > currentDebtUsd
 
@@ -333,6 +335,7 @@ export function buildHomeRemovePreview(
       healthFactorAfterLabel: "—",
       riskTone: "neutral",
       isUnsafe: false,
+      isValid: false,
       liquidationThresholdAfterUsd: 0,
       ctaLabel: "No collateral supplied",
     }
@@ -355,10 +358,7 @@ export function buildHomeRemovePreview(
       ? Math.max(0, Math.min(100, Math.floor((fixedToNumber(maxRemoveUsd6, 6) / currentValueUsd) * 100)))
       : 0
   if (percent <= 0) {
-    const currentHealthFactor =
-      currentMetrics.totalBorrowedUsd6 > 0n
-        ? healthFactorToNumber(currentMetrics.healthFactorWad)
-        : Number.POSITIVE_INFINITY
+    const currentHealthFactor = healthFactorToNumber(currentMetrics.healthFactorWad, currentMetrics.totalBorrowedUsd6)
     return {
       percent,
       safePercent,
@@ -368,6 +368,7 @@ export function buildHomeRemovePreview(
       healthFactorAfterLabel: formatHealthFactor(currentHealthFactor),
       riskTone: getRiskTone(currentHealthFactor),
       isUnsafe: false,
+      isValid: false,
       liquidationThresholdAfterUsd: fixedToNumber(currentMetrics.liquidationValueUsd6, 6),
       ctaLabel: "Remove 0% · $0",
     }
@@ -375,10 +376,12 @@ export function buildHomeRemovePreview(
 
   const model = buildWithdrawPreviewModel(state, walletId, marketId, percent)
   const healthFactorAfter =
-    model.healthFactorAfter ??
-    (currentMetrics.totalBorrowedUsd6 > 0n
-      ? healthFactorToNumber(currentMetrics.healthFactorWad)
-      : Number.POSITIVE_INFINITY)
+    model.healthFactorAfter ?? healthFactorToNumber(currentMetrics.healthFactorWad, currentMetrics.totalBorrowedUsd6)
+
+  // Block removals that breach the safe headroom or would leave the position
+  // insolvent (HF-after < 1.0). Consistent with the credit engine, which throws
+  // on unsafe collateral removal — surface it as a blocked CTA, not a live one.
+  const isValid = !model.isUnsafe && (healthFactorAfter == null || healthFactorAfter >= 1.0)
 
   return {
     percent,
@@ -389,8 +392,9 @@ export function buildHomeRemovePreview(
     healthFactorAfterLabel: formatHealthFactor(healthFactorAfter),
     riskTone: model.isUnsafe ? "danger" : getRiskTone(healthFactorAfter),
     isUnsafe: model.isUnsafe,
+    isValid,
     liquidationThresholdAfterUsd: fixedToNumber(currentMetrics.liquidationValueUsd6, 6),
-    ctaLabel: `Remove ${percent}% · ${formatCompactUsd(removeUsd)}`,
+    ctaLabel: isValid ? `Remove ${percent}% · ${formatCompactUsd(removeUsd)}` : "Reduce removal amount",
   }
 }
 

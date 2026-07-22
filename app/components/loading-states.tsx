@@ -4,6 +4,8 @@ import type { ReactNode } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
+import { HOME_MODE_ITEMS } from "@/app/components/home/home-workspace-card"
 
 /**
  * Client-gated loading skeletons.
@@ -78,20 +80,19 @@ export function HomeWorkspaceSkeleton() {
       <span className="sr-only">{t("Loading…")}</span>
       <section className="skeleton-enter flex min-h-[calc(100dvh-4rem)] justify-center px-4 pb-12 pt-14 md:pb-16 md:pt-20">
         <div className="w-full max-w-[480px]">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-0.5 sm:gap-1">
-              {["Swap", "Borrow", "Repay", "Claim", "Remove"].map((label, index) => (
-                <span
-                  key={label}
-                  className={cn(
-                    "inline-flex h-7 items-center justify-center rounded-full px-2.5 text-[13px] font-medium",
-                    index === 0 ? "bg-field-bottom text-foreground shadow-elev-1" : "text-muted-foreground",
-                  )}
-                >
-                  {t(label)}
-                </span>
-              ))}
-            </div>
+          {/* Mirror the real card's icon tab strip 1:1 (same ActionWorkspaceTabs,
+              Swap active) so the skeleton shows icons and the card reveals with
+              zero shift. Non-interactive placeholder — the root status region
+              already announces the load. */}
+          <div className="pointer-events-none flex items-center justify-between gap-2" aria-hidden>
+            <ActionWorkspaceTabs
+              items={HOME_MODE_ITEMS.map((item) => ({ id: item.value, label: t(item.label) }))}
+              value="swap"
+              onChange={() => {}}
+              ariaLabel={t("Express actions")}
+              withIcons
+              revealLabels
+            />
           </div>
 
           <div className="mt-3 flex flex-col gap-2">

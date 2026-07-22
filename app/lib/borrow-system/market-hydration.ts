@@ -53,7 +53,7 @@ export function mergeConvexMarketSnapshots(
         availableUsd6: usd6(snap.availableUsd),
         volume24hUsd6: usd6(snap.volumeUsd),
         fees24hUsd6: usd6(snap.feesUsd),
-        feeApyWad: wadFromPct(snap.borrowAprPct),
+        feeApyWad: wadFromPct(snap.supplyApyPct),
       }
       const s = market.snapshot
       // Only rebuild when a value actually differs. Every emit re-sends every market, so an
