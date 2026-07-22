@@ -1,12 +1,20 @@
 import type { ActionProduct } from "./contracts"
 
 export type DashboardTabKey = "lending" | "overview" | "looping" | "activity"
+type DashboardRouteTab = "wallet" | "lend" | "borrow" | "multiply" | "referrals"
 
 const PRODUCT_TAB: Record<ActionProduct, DashboardTabKey> = {
   borrow: "overview",
   lend: "lending",
   multiply: "looping",
   rewards: "activity",
+}
+
+const PRODUCT_DASHBOARD_ROUTE_TAB: Record<ActionProduct, DashboardRouteTab> = {
+  borrow: "borrow",
+  lend: "lend",
+  multiply: "multiply",
+  rewards: "wallet",
 }
 
 const TAB_LABELS: Record<DashboardTabKey, string> = {
@@ -16,21 +24,12 @@ const TAB_LABELS: Record<DashboardTabKey, string> = {
   activity: "Activity",
 }
 
-const PRODUCT_SECTION: Record<ActionProduct, string> = {
-  borrow: "dashboard-borrow-account",
-  lend: "dashboard-lend-account",
-  multiply: "dashboard-multiply-account",
-  rewards: "dashboard-activity",
-}
-
 export function dashboardTabForProduct(product: ActionProduct): DashboardTabKey {
   return PRODUCT_TAB[product]
 }
 
-// The per-product account overviews live on the dashboard page. Keep a hash so
-// action success CTAs can land on the exact reconciled account section.
 export function dashboardHrefForProduct(product: ActionProduct): string {
-  return `/dashboard#${PRODUCT_SECTION[product]}`
+  return `/dashboard?tab=${PRODUCT_DASHBOARD_ROUTE_TAB[product]}`
 }
 
 export function dashboardHrefForTab(tab: DashboardTabKey): string {
