@@ -12,12 +12,7 @@ import { useSwapSessionContext } from "@/app/lib/avana-session/avana-sessions-pr
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
-import {
-  SWAP_ASSETS,
-  SWAP_CHAIN_ID,
-  validateSwapInputAmount,
-  type SwapQuote,
-} from "@/app/lib/swap-system"
+import { SWAP_ASSETS, SWAP_CHAIN_ID, validateSwapInputAmount, type SwapQuote } from "@/app/lib/swap-system"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 
 function formatAmount(value: number) {
@@ -236,15 +231,15 @@ export function HomeSwapAction() {
       : "Select Asset"
     : !outputAssetId
       ? "Select Asset"
-    : !validation.valid
-      ? validation.reason === "invalid_amount"
-        ? "Enter an amount"
-        : "Swap unavailable"
-      : quoteState === "loading"
-        ? "Loading quote"
-        : quoteState === "error"
-          ? "Refresh quote"
-          : "Review swap"
+      : !validation.valid
+        ? validation.reason === "invalid_amount"
+          ? "Enter an amount"
+          : "Swap unavailable"
+        : quoteState === "loading"
+          ? "Loading quote"
+          : quoteState === "error"
+            ? "Refresh quote"
+            : "Review swap"
 
   const isTransactionStage = [
     "approve_allowance",

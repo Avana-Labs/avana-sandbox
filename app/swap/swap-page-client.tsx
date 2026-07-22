@@ -35,12 +35,7 @@ function formatAmount(value: number) {
   return value.toLocaleString(undefined, { maximumFractionDigits: 6 })
 }
 
-export function SwapPageClient({
-  initialFrom,
-  initialTo,
-  origin = "wallet",
-  returnHref = "/",
-}: SwapPageClientProps) {
+export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", returnHref = "/" }: SwapPageClientProps) {
   const { t } = useTranslation()
   const { exact } = useCurrency()
   const swap = useSwapSessionContext()
