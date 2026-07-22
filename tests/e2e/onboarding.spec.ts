@@ -23,6 +23,7 @@ async function installAuthToken(page: import("@playwright/test").Page, token: st
 }
 
 async function attachStateScreenshot(locator: import("@playwright/test").Locator, name: string) {
+  await expect(locator).toBeVisible()
   await test.info().attach(name, {
     body: await locator.screenshot({ animations: "disabled" }),
     contentType: "image/png",
@@ -37,7 +38,7 @@ async function attachResponsiveStateScreenshots(
   await page.setViewportSize({ width: 1440, height: 900 })
   await attachStateScreenshot(locator, `${name}-desktop`)
   await page.setViewportSize({ width: 390, height: 844 })
-  await attachStateScreenshot(locator, `${name}-mobile`)
+  await attachStateScreenshot(page.getByTestId("onboarding-canvas"), `${name}-mobile`)
   await page.setViewportSize({ width: 1440, height: 900 })
 }
 

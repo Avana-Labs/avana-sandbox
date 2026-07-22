@@ -6,6 +6,7 @@ import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspa
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 const HOME_MODE_ITEMS: Array<{ value: HomeMode; label: string }> = [
+  { value: "swap", label: "Swap" },
   { value: "borrow", label: "Borrow" },
   { value: "repay", label: "Repay" },
   { value: "claim", label: "Claim" },
@@ -32,6 +33,8 @@ export function HomeWorkspaceCard({
             value={mode}
             onChange={(value) => onModeChange(value as HomeMode)}
             ariaLabel={t("Borrow actions")}
+            withIcons
+            revealLabels
           />
         </div>
 

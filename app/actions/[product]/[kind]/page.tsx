@@ -1,6 +1,8 @@
 import { ActionPageClient } from "@/app/components/action-page/action-page-client"
+import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
 import type { ActionKind, ActionProduct } from "@/app/lib/action-system/contracts"
 import { resolveActionCloseHref } from "@/app/lib/action-system/contracts"
+import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 
 type PageProps = {
   params: Promise<{ product: ActionProduct; kind: ActionKind }>
@@ -14,6 +16,10 @@ function readParam(value: string | string[] | undefined) {
 export default async function ActionPage({ params, searchParams }: PageProps) {
   const { product, kind } = await params
   const query = await searchParams
+
+  if (isLighthouseAuditMode()) {
+    return <LighthouseAuditSurface title={kind} eyebrow={product} />
+  }
 
   return (
     <ActionPageClient

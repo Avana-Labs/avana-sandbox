@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   ArrowRight,
   Droplets,
@@ -102,16 +102,16 @@ function AvanaQuestCard({
               }
             }}
             disabled={isDisabled}
-            className={`inline-flex h-9 w-full items-center justify-center gap-1 rounded-radius-sm px-3.5 text-[12px] transition-colors ${
+            className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-radius-sm px-3.5 text-[13px] font-bold transition-colors [&_svg]:size-4 ${
               isClaimable
-                ? "bg-brand text-brand-foreground hover:bg-brand/90"
+                ? "bg-brand text-white hover:bg-brand/90"
                 : isDisabled
                   ? "bg-muted/60 text-muted-foreground"
                   : "border border-brand/20 bg-brand/5 text-foreground hover:bg-brand/10"
             }`}
           >
             {t(quest.cta)}
-            {!isDisabled ? <ArrowRight className="h-3.5 w-3.5" /> : null}
+            {!isDisabled ? <ArrowRight /> : null}
           </button>
         </div>
       </div>
@@ -130,7 +130,19 @@ function RewardsPromoPanel({
 }) {
   const { t } = useTranslation()
   const [activePromoTab, setActivePromoTab] = useState<RewardsPromoTabId>(promoTabs[0]?.id ?? "getting-started")
-  const activeQuests = questsByTab[activePromoTab] ?? []
+
+  useEffect(() => {
+    const activateFromHash = () => {
+      const hash = window.location.hash.slice(1)
+      if (hash === "dashboard-borrow-account") setActivePromoTab("borrow")
+      if (hash === "dashboard-lend-account") setActivePromoTab("lend")
+      if (hash === "dashboard-multiply-account") setActivePromoTab("multiply")
+    }
+
+    activateFromHash()
+    window.addEventListener("hashchange", activateFromHash)
+    return () => window.removeEventListener("hashchange", activateFromHash)
+  }, [])
 
   return (
     <section className="space-y-6">
@@ -142,20 +154,75 @@ function RewardsPromoPanel({
         listClassName="w-max min-w-full gap-6 px-2 sm:gap-9 sm:px-0"
       />
 
-      {activePromoTab === "lend" ? <LendAccountSection /> : null}
-      {activePromoTab === "borrow" ? <BorrowAccountSection /> : null}
-      {activePromoTab === "multiply" ? <MultiplyAccountSection /> : null}
+      <RewardsPromoContent activePromoTab={activePromoTab} questsByTab={questsByTab} onTaskAction={onTaskAction} />
+    </section>
+  )
+}
+
+export function RewardsPromoContent({
+  activePromoTab,
+  questsByTab,
+  onTaskAction,
+  returnHref = "/dashboard",
+}: {
+  activePromoTab: RewardsPromoTabId
+  questsByTab: Record<RewardsPromoTabId, RewardsQuest[]>
+  onTaskAction: (taskId: string) => Promise<unknown>
+  returnHref?: string
+}) {
+  const { t } = useTranslation()
+  const activeQuests = questsByTab[activePromoTab] ?? []
+  const rewardsSectionTitle =
+    activePromoTab === "lend"
+      ? t("Lend Rewards")
+      : activePromoTab === "borrow"
+        ? t("Borrow Rewards")
+        : activePromoTab === "multiply"
+          ? t("Multiply Rewards")
+          : null
+
+  return (
+    <div className="space-y-6">
+      {activePromoTab === "lend" ? <LendAccountSection returnHref={returnHref} /> : null}
+      {activePromoTab === "borrow" ? <BorrowAccountSection returnHref={returnHref} /> : null}
+      {activePromoTab === "multiply" ? <MultiplyAccountSection returnHref={returnHref} /> : null}
 
       {activeQuests.length > 0 ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {activeQuests.map((quest) => (
-            <AvanaQuestCard key={quest.id} quest={quest} onTaskAction={onTaskAction} />
-          ))}
-        </div>
+        <RewardsQuestSection title={rewardsSectionTitle} quests={activeQuests} onTaskAction={onTaskAction} />
       ) : (
         <p className="text-[13px] text-muted-foreground">{t("No quests here yet — check back soon.")}</p>
       )}
-    </section>
+    </div>
+  )
+}
+
+export function RewardsQuestSection({
+  title,
+  quests,
+  onTaskAction,
+}: {
+  title?: string | null
+  quests: Array<RewardsQuest & { status?: string; progressLabel?: string }>
+  onTaskAction: (taskId: string) => Promise<unknown>
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <div className="space-y-4">
+      {title ? (
+        <div>
+          <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{title}</h2>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            {t("{count} rewards").replace("{count}", String(quests.length))}
+          </p>
+        </div>
+      ) : null}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {quests.map((quest) => (
+          <AvanaQuestCard key={quest.id} quest={quest} onTaskAction={onTaskAction} />
+        ))}
+      </div>
+    </div>
   )
 }
 

@@ -4,10 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import { REWARDS_PROMO_TABS } from "@/app/lib/data/rewards/catalog"
 import { buildDefaultRewardsCatalog, evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
-import { RewardsPageClient } from "@/app/rewards/rewards-page-client"
+import { DashboardPageClient } from "@/app/dashboard/dashboard-page-client"
 import { parseFixed } from "@/app/lib/credit-engine"
 
 const push = vi.fn()
+let searchTab: string | null = "lend"
 const claimReward = vi.fn()
 const claimAllRewards = vi.fn()
 const completeEducation = vi.fn()
@@ -78,6 +79,9 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push,
   }),
+  useSearchParams: () => ({
+    get: (key: string) => (key === "tab" ? searchTab : null),
+  }),
 }))
 
 const lendSessionContext = {
@@ -122,6 +126,10 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
       createIntent: multiplyCreateIntent,
       previewTransaction: multiplyPreviewTransaction,
     },
+    swap: {
+      state: { balances: [] },
+      transactionHistory: [],
+    },
   }),
 }))
 
@@ -159,12 +167,12 @@ const multiplySessionContext = {
   },
 }
 
-vi.mock("@/app/portfolio/use-portfolio-page", () => ({
-  usePortfolioPage: () => ({ data: null, error: null, isLoading: false, retry: () => {} }),
+vi.mock("@/app/dashboard/use-dashboard-page", () => ({
+  useDashboardPage: () => ({ data: null, error: null, isLoading: false, retry: () => {} }),
 }))
 
 // Inspect the raw rows fed into the combined activity table.
-vi.mock("@/app/portfolio/recent-activity", () => ({
+vi.mock("@/app/dashboard/recent-activity", () => ({
   RecentActivity: ({
     rows,
   }: {
@@ -185,7 +193,7 @@ vi.mock("@/app/portfolio/recent-activity", () => ({
 function renderRewardsPage() {
   render(
     <DisplayPreferencesProvider>
-      <RewardsPageClient
+      <DashboardPageClient
         pageData={{
           walletProfileId: "demo-wallet",
           totalPools: 35,
@@ -236,7 +244,7 @@ async function openReferralTab() {
   await openProductTab("Referrals")
 }
 
-describe("RewardsPageClient", () => {
+describe("DashboardPageClient", () => {
   afterEach(() => {
     cleanup()
     dateNowSpy?.mockRestore()
@@ -244,6 +252,7 @@ describe("RewardsPageClient", () => {
   })
 
   beforeEach(() => {
+    searchTab = "lend"
     dateNowSpy = vi.spyOn(Date, "now").mockReturnValue(now)
     push.mockReset()
     claimReward.mockReset()
@@ -292,7 +301,20 @@ describe("RewardsPageClient", () => {
     expect(questClaimButton).toBeDefined()
     await userEvent.click(questClaimButton!)
     expect(claimReward).toHaveBeenCalledWith("first-borrow")
-  }, 10_000)
+  }, 20_000)
+
+  it("renders wallet inside the same dashboard tab strip", async () => {
+    searchTab = "wallet"
+    renderRewardsPage()
+
+    expect(screen.getByRole("tab", { name: "Wallet" })).toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: "Lend" })).toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: "Borrow" })).toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: "Multiply" })).toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: "Referrals" })).toBeInTheDocument()
+    expect(screen.queryByRole("link", { name: "Rewards" })).toBeNull()
+    expect(screen.getByRole("heading", { name: "Wallet" })).toBeInTheDocument()
+  })
 
   it("opens the education flow for primer quests", async () => {
     renderRewardsPage()

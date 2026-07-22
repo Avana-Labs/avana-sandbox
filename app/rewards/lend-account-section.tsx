@@ -2,10 +2,10 @@
 
 import { useState } from "react"
 import { useAvanaIdentity, useLendSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
-import { usePortfolioLendLive } from "@/app/portfolio/use-portfolio-lend-live"
-import { buildLendDashboardMetrics } from "@/app/portfolio/dashboard-tab-metrics"
-import { DashboardLendPerformanceSection } from "@/app/portfolio/dashboard-metric-section"
-import { PortfolioInvestments } from "@/app/portfolio/portfolio-investments"
+import { useDashboardLendLive } from "@/app/dashboard/use-dashboard-lend-live"
+import { buildLendDashboardMetrics } from "@/app/dashboard/dashboard-tab-metrics"
+import { DashboardLendPerformanceSection } from "@/app/dashboard/dashboard-metric-section"
+import { DashboardInvestments } from "@/app/dashboard/dashboard-investments"
 import type { PortfolioLendTabData } from "@/app/lib/data/providers/portfolio"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
@@ -16,12 +16,12 @@ const EMPTY_LEND_TAB: PortfolioLendTabData = { investments: [], positions: [], s
  * to live on the dashboard. Self-contained: it reads the live lend session directly
  * so it can be dropped onto the rewards Lend tab with no prop wiring.
  */
-export function LendAccountSection() {
+export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?: string }) {
   const { t } = useTranslation()
   const { walletId } = useAvanaIdentity()
   const lendSession = useLendSessionContext()
-  const portfolioLend = usePortfolioLendLive(walletId, lendSession)
-  const lendTabData = portfolioLend ?? EMPTY_LEND_TAB
+  const dashboardLend = useDashboardLendLive(walletId, lendSession)
+  const lendTabData = dashboardLend ?? EMPTY_LEND_TAB
   const metrics = buildLendDashboardMetrics(lendTabData)
   const [isClaiming, setIsClaiming] = useState(false)
 
@@ -36,17 +36,18 @@ export function LendAccountSection() {
   }
 
   return (
-    <section className="space-y-5">
-      <DashboardLendPerformanceSection title={t("Lending Performance")} metrics={metrics} hideHeading />
-      <PortfolioInvestments
+    <section id="dashboard-lend-account" className="scroll-mt-24 space-y-6">
+      <DashboardLendPerformanceSection title={t("Lend Balance")} metrics={metrics} />
+      <DashboardInvestments
         investments={lendTabData.investments}
         rewardsSummary={lendTabData.rewardsSummary}
         onClaimRewards={handleClaimRewards}
         isClaimingRewards={isClaiming}
-        showHeading={false}
-        returnHref="/portfolio"
+        showHeading
+        title={t("Lend Assets")}
+        countLabel={t("{count} assets").replace("{count}", String(lendTabData.investments.length))}
+        returnHref={returnHref}
       />
-      <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{t("Lend Rewards")}</h2>
     </section>
   )
 }

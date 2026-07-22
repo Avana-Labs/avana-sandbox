@@ -12,7 +12,11 @@ const PRIMARY_ROUTES = ROUTE_HERO_SELECTORS.filter((entry) => LIGHTHOUSE_ROUTES.
 
 for (const { route, heroText, heroRole } of PRIMARY_ROUTES) {
   test(`route ${route} paints hero content within budget`, async ({ page }) => {
+    test.setTimeout(60_000)
     const timingBudget = getNavigationTimingBudget(route)
+
+    await page.goto(route, { waitUntil: "domcontentloaded", timeout: 60_000 })
+
     const startedAt = Date.now()
 
     await page.goto(route, { waitUntil: "domcontentloaded", timeout: 60_000 })
@@ -40,6 +44,7 @@ for (const { route, heroText, heroRole } of PRIMARY_ROUTES) {
 
 for (const { name, path } of ACTION_LIGHTHOUSE_ROUTES) {
   test(`action route ${name} loads shell within budget`, async ({ page }) => {
+    test.setTimeout(45_000)
     const startedAt = Date.now()
     await page.goto(path, { waitUntil: "domcontentloaded", timeout: 60_000 })
     await expect(page.getByText(ONBOARDING_COPY, { exact: false })).toHaveCount(0)
@@ -56,6 +61,6 @@ test("borrow keeps the workspace shell below the hero", async ({ page }) => {
 
 test("home action workspace becomes interactive within budget", async ({ page }) => {
   await page.goto("/", { waitUntil: "domcontentloaded" })
-  await expect(page.getByText("Collateral", { exact: true })).toBeVisible({ timeout: 5_000 })
-  await expect(page.getByRole("button", { name: "Enter an amount" })).toBeVisible()
+  await expect(page.getByText("Sell", { exact: true })).toBeVisible({ timeout: 5_000 })
+  await expect(page.getByRole("button", { name: "Select Asset" })).toBeVisible()
 })

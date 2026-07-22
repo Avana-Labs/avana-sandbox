@@ -23,11 +23,13 @@ export function TokenBubble({
   size = "sm",
   className,
   ring = true,
+  eager = false,
 }: {
   visual: BorrowAssetVisual
   size?: TokenBubbleSize
   className?: string
   ring?: boolean
+  eager?: boolean
 }) {
   const { box, text, px } = BUBBLE_DIMENSIONS[size]
   const [imgFailed, setImgFailed] = useState(false)
@@ -54,7 +56,8 @@ export function TokenBubble({
           // Logos are local SVGs (see getLocalAssetIcon). Lazy-load + async-decode so a
           // long market list doesn't decode every off-screen icon up front, and fall back
           // to the token's colored initials if an icon is ever missing.
-          loading="lazy"
+          loading={eager ? "eager" : "lazy"}
+          fetchPriority={eager ? "high" : undefined}
           decoding="async"
           onError={() => setImgFailed(true)}
           unoptimized
@@ -100,18 +103,20 @@ export function TokenSingleCell({
   name,
   subtitle,
   size = "md",
+  eager = false,
 }: {
   visual: BorrowAssetVisual
   name: string
   subtitle?: string
   size?: "sm" | "md" | "lg"
+  eager?: boolean
 }) {
   const bubbleSize: TokenBubbleSize = size === "lg" ? "xl" : size === "md" ? "table" : "sm"
   const nameCls = size === "lg" ? "text-[15px]" : "text-[14px]"
   const subtitleCls = size === "lg" ? "text-[12px]" : "text-xs"
   return (
     <div className="flex items-center gap-3">
-      <TokenBubble visual={visual} size={bubbleSize} />
+      <TokenBubble visual={visual} size={bubbleSize} eager={eager} />
       <div className="min-w-0">
         <div className={cn("font-medium leading-tight text-foreground", nameCls)}>{name}</div>
         {subtitle ? <div className={cn("mt-0.5 truncate text-muted-foreground", subtitleCls)}>{subtitle}</div> : null}
@@ -228,7 +233,7 @@ export function PillButton({
   const sizeCls = size === "md" ? "h-9 px-4 text-[13px]" : "h-7 px-2.5 text-[12px]"
   const variantCls = {
     primary:
-      "bg-brand text-brand-foreground shadow-elev-1 hover:bg-brand/90 active:bg-brand/80 disabled:!opacity-100 disabled:bg-brand-soft disabled:text-brand-soft-foreground disabled:shadow-none",
+      "bg-brand text-white shadow-elev-1 hover:bg-brand/90 active:bg-brand/80 disabled:!opacity-100 disabled:bg-brand-soft disabled:text-brand-soft-foreground disabled:shadow-none",
     ghost: "border border-border bg-surface-raised text-foreground hover:bg-surface-hover",
     danger: "border border-destructive/30 bg-transparent text-destructive hover:bg-destructive/5 dark:text-rose-300",
     success: "bg-emerald-600 text-white hover:bg-emerald-700 disabled:bg-muted disabled:text-muted-foreground",

@@ -921,8 +921,8 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
               {t("Everything's funded and waiting. Dive in whenever you're ready.")}
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Link className={PRIMARY} href="/portfolio">
-                {t("Open portfolio")}
+              <Link className={PRIMARY} href="/dashboard">
+                {t("Open dashboard")}
               </Link>
               <a className={SECONDARY} href={intentHref} rel="noreferrer" target="_blank">
                 {t("Share on X")} <MoveUpRight className="ml-2 size-4" />

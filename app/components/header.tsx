@@ -108,6 +108,7 @@ export function Header() {
             >
               {desktopLinks.slice(0, 4).map((link) => {
                 const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)
+                const Icon = link.icon
 
                 return (
                   <Link
@@ -119,6 +120,11 @@ export function Header() {
                       isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
+                    {Icon ? (
+                      <span className="mr-2 inline-flex h-5 w-5 items-center justify-center text-current">
+                        <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
+                      </span>
+                    ) : null}
                     <span>{t(link.label)}</span>
                   </Link>
                 )
@@ -145,11 +151,13 @@ export function Header() {
                     aria-label={t(link.label)}
                     title={t(link.label)}
                     className={`group inline-flex items-center rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors xl:px-3 xl:py-2 xl:text-[16px] ${
-                      isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+                      isActive
+                        ? "text-brand dark:text-[#7DDCFF]"
+                        : "text-muted-foreground hover:text-brand dark:hover:text-[#7DDCFF]"
                     }`}
                   >
                     {Icon ? (
-                      <span className="inline-flex h-6 w-6 items-center justify-center text-[#01AACF] transition-transform duration-200 ease-out group-hover:-translate-y-[1px] xl:mr-2">
+                      <span className="inline-flex h-6 w-6 items-center justify-center text-current transition-transform duration-200 ease-out group-hover:-translate-y-[1px] xl:mr-2">
                         <Icon className="h-5 w-5 shrink-0" strokeWidth={2} />
                       </span>
                     ) : null}

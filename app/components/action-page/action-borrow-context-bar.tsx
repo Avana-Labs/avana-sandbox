@@ -58,7 +58,7 @@ export function ActionBorrowContextBar({
   return (
     <>
       {variant === "inset" ? (
-        <SwapStyleFieldStack>
+        <SwapStyleFieldStack showConnector={!workspace}>
           {poolField}
           {amountField}
         </SwapStyleFieldStack>

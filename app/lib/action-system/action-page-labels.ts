@@ -8,6 +8,7 @@ export function getProcessingTitle(verb: string, symbol: string) {
     Claim: "Claiming",
     Multiply: "Multiplying",
     Deleverage: "Deleveraging",
+    Swap: "Swapping",
   }
   const label = labels[verb] ?? `${verb}ing`
   return `${label} ${symbol}`

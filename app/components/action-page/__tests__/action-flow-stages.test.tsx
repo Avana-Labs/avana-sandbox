@@ -115,6 +115,29 @@ describe("action stage flow UI", () => {
     expect(screen.getByText("Liquidity is thin in this market.")).toBeInTheDocument()
   })
 
+  it("requires explicit confirmation for a gated review", async () => {
+    const user = userEvent.setup()
+    const onPrimary = vi.fn()
+    const onCheckedChange = vi.fn()
+    render(
+      <ActionReviewStage
+        title="Review swap"
+        preview={preview}
+        primaryLabel="Swap"
+        onPrimary={onPrimary}
+        confirmationGate={{
+          checked: false,
+          onCheckedChange,
+          label: "I understand this swap may result in a significant loss of value.",
+        }}
+      />,
+    )
+
+    expect(screen.getByRole("button", { name: "Swap" })).toBeDisabled()
+    await user.click(screen.getByRole("checkbox"))
+    expect(onCheckedChange).toHaveBeenCalledWith(true)
+  })
+
   it("processing stage shows pending badge", () => {
     render(<ActionProcessingStage verb="Deposit" preview={preview} closeHref="/lend" />)
     expect(screen.getByTestId("action-processing-stage")).toBeInTheDocument()

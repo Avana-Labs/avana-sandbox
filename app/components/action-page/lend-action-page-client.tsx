@@ -392,7 +392,13 @@ export function LendActionPageClient({
 
   if (shouldShowActionSessionLoading(session.isHydrated)) {
     return (
-      <ActionPageShell title={descriptor.title} subtitle={descriptor.subtitle} closeHref={closeHref} simulated>
+      <ActionPageShell
+        title={descriptor.title}
+        subtitle={descriptor.subtitle}
+        closeHref={closeHref}
+        flowHeaderStage={!embedded ? stage : undefined}
+        simulated
+      >
         <ActionSessionLoading />
       </ActionPageShell>
     )
@@ -423,6 +429,7 @@ export function LendActionPageClient({
       hideTitle={hideTitle}
       hideClose={embedded}
       closeHref={closeHref}
+      flowHeaderStage={!embedded ? stage : undefined}
       simulated={session.readAdapter.mode === "sandbox"}
     >
       {stage === "select" && !embedded ? (

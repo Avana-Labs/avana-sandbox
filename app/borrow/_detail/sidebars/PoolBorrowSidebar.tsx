@@ -62,6 +62,8 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
         value={tab}
         onChange={(value) => setTab(value as SidebarTab)}
         ariaLabel={t("Pool actions")}
+        withIcons
+        revealLabels
       />
 
       <div className="mt-3">

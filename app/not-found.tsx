@@ -43,10 +43,10 @@ export default function NotFound() {
                 {t("Multiply")}
               </Link>
               <Link
-                href="/portfolio"
+                href="/dashboard"
                 className="text-sm font-medium text-foreground transition hover:text-brand-readable"
               >
-                {t("Portfolio")}
+                {t("Dashboard")}
               </Link>
             </nav>
           </div>

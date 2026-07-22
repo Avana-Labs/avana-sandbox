@@ -1,12 +1,20 @@
 import type { ActionProduct } from "./contracts"
 
 export type DashboardTabKey = "lending" | "overview" | "looping" | "activity"
+type DashboardRouteTab = "wallet" | "lend" | "borrow" | "multiply" | "referrals"
 
 const PRODUCT_TAB: Record<ActionProduct, DashboardTabKey> = {
   borrow: "overview",
   lend: "lending",
   multiply: "looping",
   rewards: "activity",
+}
+
+const PRODUCT_DASHBOARD_ROUTE_TAB: Record<ActionProduct, DashboardRouteTab> = {
+  borrow: "borrow",
+  lend: "lend",
+  multiply: "multiply",
+  rewards: "wallet",
 }
 
 const TAB_LABELS: Record<DashboardTabKey, string> = {
@@ -20,14 +28,13 @@ export function dashboardTabForProduct(product: ActionProduct): DashboardTabKey 
   return PRODUCT_TAB[product]
 }
 
-// The per-product account overviews now all live on the portfolio page, which
-// doesn't deep-link to a specific tab via the URL — so every product returns there.
-export function dashboardHrefForProduct(_product: ActionProduct): string {
-  return "/portfolio"
+export function dashboardHrefForProduct(product: ActionProduct): string {
+  return `/dashboard?tab=${PRODUCT_DASHBOARD_ROUTE_TAB[product]}`
 }
 
-export function dashboardHrefForTab(_tab: DashboardTabKey): string {
-  return "/portfolio"
+export function dashboardHrefForTab(tab: DashboardTabKey): string {
+  const product = (Object.keys(PRODUCT_TAB) as ActionProduct[]).find((key) => PRODUCT_TAB[key] === tab)
+  return product ? dashboardHrefForProduct(product) : "/dashboard"
 }
 
 export function dashboardTabLabel(tab: DashboardTabKey): string {
@@ -43,5 +50,5 @@ export function parseDashboardTab(value: string | null | undefined): DashboardTa
 }
 
 export function successDashboardCtaLabel(_product: ActionProduct): string {
-  return "View portfolio"
+  return "View dashboard"
 }

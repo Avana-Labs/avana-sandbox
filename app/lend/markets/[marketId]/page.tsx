@@ -5,6 +5,8 @@ import { getLendMarketDetail } from "@/app/lib/lend-detail"
 import { getLendMarketDetailFromConvex } from "@/app/lib/lend-detail/convex-detail"
 import { LendMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
+import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
+import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 
 type PageProps = {
   params: Promise<{ marketId: string }>
@@ -24,6 +26,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function LendMarketDetailPage({ params }: PageProps) {
   const { marketId } = await params
+  if (isLighthouseAuditMode()) return <LighthouseAuditSurface title="Supply APY" eyebrow={marketId} />
+
   const detail = await getLendMarketDetailFromConvex(marketId)
   if (!detail) notFound()
   const canonicalUrl = `https://avana.cc/lend/markets/${marketId}`

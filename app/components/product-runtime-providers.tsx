@@ -15,7 +15,17 @@ const AvanaSessionProviders = dynamic(
   },
 )
 
-const PRODUCT_RUNTIME_ROUTES = ["/actions", "/borrow", "/lend", "/multiply", "/portfolio", "/rewards", "/sandbox"]
+const PRODUCT_RUNTIME_ROUTES = [
+  "/actions",
+  "/borrow",
+  "/lend",
+  "/multiply",
+  "/swap",
+  "/dashboard",
+  "/rewards",
+  "/sandbox",
+  "/onboarding",
+]
 
 function needsProductRuntime(pathname: string) {
   return PRODUCT_RUNTIME_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))

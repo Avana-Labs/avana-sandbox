@@ -187,7 +187,12 @@ export function ActionAmountCard({
   const amountRow = (
     <div className="mt-1.5 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
       {readOnly ? (
-        <div className="min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
+        <div
+          className={cn(
+            "min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em]",
+            amount && amount !== "0" ? "text-foreground" : "text-muted-foreground/60",
+          )}
+        >
           {amount || "0"}
         </div>
       ) : (
@@ -205,7 +210,10 @@ export function ActionAmountCard({
             spellCheck={false}
             value={amount}
             onChange={(event) => onAmountChange(sanitizeDecimalInput(event.target.value))}
-            className="w-full border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground outline-none placeholder:text-muted-foreground/60"
+            className={cn(
+              "w-full border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] outline-none placeholder:text-muted-foreground/60",
+              amount && amount !== "0" ? "text-foreground" : "text-muted-foreground/60",
+            )}
             placeholder="0"
           />
         </label>

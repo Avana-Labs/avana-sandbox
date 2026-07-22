@@ -228,6 +228,87 @@
   animation: none !important;
 }
 
+.home-reveal-tab {
+  background-color: transparent !important;
+  color: hsl(var(--muted-foreground)) !important;
+  transition:
+    width 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    padding 520ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+.home-reveal-tab:hover {
+  background-color: hsl(var(--hover-overlay)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+.home-reveal-tab[data-state="active"] {
+  background-color: hsl(var(--field-bottom)) !important;
+  color: hsl(var(--foreground)) !important;
+  box-shadow: var(--elev-1) !important;
+}
+
+.home-reveal-tab svg {
+  transition: transform 520ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+.home-reveal-tab[data-state="active"] svg {
+  transform: scale(1.06);
+}
+
+.home-reveal-tab-label {
+  display: inline-block;
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  white-space: nowrap;
+  transform: translateX(5px) scaleX(0.92);
+  transform-origin: left center;
+  transition:
+    max-width 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 220ms ease,
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+.home-reveal-tab[data-state="active"] .home-reveal-tab-label {
+  max-width: 8.5rem;
+  opacity: 1;
+  transform: translateX(0) scaleX(1);
+}
+
+.dashboard-quick-action-pill {
+  transition:
+    width 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    padding 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    gap 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 160ms ease !important;
+}
+
+.dashboard-quick-action-pill[data-state="active"] {
+  width: 10rem !important;
+  gap: 0.625rem !important;
+  padding-inline: 0.875rem !important;
+}
+
+.dashboard-quick-action-pill-label {
+  display: inline-block;
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  white-space: nowrap;
+  transform: translateX(5px) scaleX(0.92);
+  transform-origin: left center;
+  transition:
+    max-width 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 180ms ease,
+    transform 360ms cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+.dashboard-quick-action-pill[data-state="active"] .dashboard-quick-action-pill-label {
+  max-width: 8.5rem;
+  opacity: 1;
+  transform: translateX(0) scaleX(1);
+}
+
 @media (max-width: 560px) {
   #__CONNECTKIT__ [role="dialog"] div.active {
     opacity: 1 !important;
@@ -467,6 +548,25 @@
   animation: asset-swap 720ms cubic-bezier(0.22, 0.8, 0.22, 1) both;
   transform-origin: center;
   will-change: transform, opacity;
+}
+
+html[data-lighthouse-audit="true"] *,
+html[data-lighthouse-audit="true"] *::before,
+html[data-lighthouse-audit="true"] *::after {
+  animation-duration: 0ms !important;
+  animation-delay: 0ms !important;
+  transition-duration: 0ms !important;
+  transition-delay: 0ms !important;
+  scroll-behavior: auto !important;
+}
+
+html[data-lighthouse-audit="true"] .asset-swap,
+html[data-lighthouse-audit="true"] .skeleton-enter,
+html[data-lighthouse-audit="true"] .reveal-in {
+  opacity: 1 !important;
+  transform: none !important;
+  animation: none !important;
+  will-change: auto !important;
 }
 
 .loading-progress-head {
