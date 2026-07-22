@@ -39,7 +39,7 @@ export function SwapPageClient({
   initialFrom,
   initialTo,
   origin = "wallet",
-  returnHref = "/dashboard?tab=wallet",
+  returnHref = "/",
 }: SwapPageClientProps) {
   const { t } = useTranslation()
   const { exact } = useCurrency()
@@ -307,9 +307,7 @@ export function SwapPageClient({
       subtitle={`Choose which assets to swap on Ethereum${origin !== "wallet" ? ` · ${origin}` : ""}`}
       closeHref={returnHref}
       flowHeaderStage={stage}
-      flowHeaderMobileOnly
       hideTitle={stage === "review" || stage === "success" || isTransactionStage}
-      className="lg:pt-10"
     >
       {isTransactionStage ? (
         <ActionProcessingStage verb="Swap" preview={previewUi} closeHref={returnHref} stage={stage} />
@@ -439,7 +437,7 @@ function SwapAssetField({
   const asset = SWAP_ASSETS.find((item) => item.id === assetId)!
   return (
     <SwapStyleField label={label} tone={tone} className="py-3">
-      <div className="mt-1 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-stretch">
+      <div className="mt-1.5 flex min-h-10 items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-stretch">
         <div className="min-w-0 flex-1">
           <input
             value={amount}
@@ -457,16 +455,16 @@ function SwapAssetField({
           type="button"
           onClick={onOpenAssetPicker}
           aria-label={`${label} asset`}
-          className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full border border-border bg-background px-3 text-[14px] font-medium text-foreground dark:bg-card max-[360px]:self-end"
+          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-medium text-foreground hover:bg-surface-hover max-[360px]:self-end"
         >
-          <ActionTokenIcon symbol={asset.symbol} className="size-7" />
+          <ActionTokenIcon symbol={asset.symbol} className="size-8" />
           <span>{asset.symbol}</span>
           <span aria-hidden className="text-muted-foreground">
             ▾
           </span>
         </button>
       </div>
-      <div className="mt-0.5 flex items-center justify-between gap-3 text-[14px]">
+      <div className="mt-1 flex min-h-5 items-center justify-between gap-3 text-[14px]">
         <span className="min-w-0 truncate text-foreground/60">{fiatLabel}</span>
         {balanceLabel ? (
           <button
