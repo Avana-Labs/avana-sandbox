@@ -13,6 +13,6 @@ export const personalDesktopHeaderLinks: DesktopHeaderLink[] = [
   { href: "/lend", label: "Lend" },
   { href: "/borrow", label: "Borrow" },
   { href: "/multiply", label: "Multiply" },
-  { href: "/umbrella", label: "Umbrella", icon: Umbrella },
   { href: "/dashboard", label: "Dashboard", icon: DashboardSquareAdd },
+  { href: "/umbrella", label: "Umbrella", icon: Umbrella },
 ]
