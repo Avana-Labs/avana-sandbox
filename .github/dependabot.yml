@@ -13,6 +13,30 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      # Keep major framework/runtime migrations out of routine Dependabot churn.
+      # These need coordinated app-level migration work instead of isolated PRs.
+      - dependency-name: "typescript"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "react"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "react-dom"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "@types/react"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "@types/react-dom"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "web-vitals"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "zod"
+        update-types:
+          - "version-update:semver-major"
 
   # Keep GitHub Actions themselves current (checkout, setup-node, etc.).
   - package-ecosystem: github-actions
