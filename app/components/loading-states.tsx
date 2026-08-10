@@ -59,9 +59,19 @@ function Surface({ children, className }: BlockProps) {
 // with no jump. It is NOT wrapped in `Page` — the home layout is its own shell.
 // -----------------------------------------------------------------------------
 
-/** One swap-style field box (collateral / amount) — matches `SwapStyleField`. */
-function HomeFieldSkeleton({ children }: { children: ReactNode }) {
-  return <div className="rounded-radius-xl border border-border/60 bg-surface-inset px-4 py-3">{children}</div>
+/** One swap-style field box (sell / buy) — matches `SwapStyleField`. */
+function HomeFieldSkeleton({ children, tone }: { children: ReactNode; tone: "raised" | "inset" }) {
+  return (
+    <div
+      className={cn(
+        "rounded-radius-xl px-4 py-3",
+        tone === "raised" && "border border-border bg-field-top text-card-foreground dark:shadow-none",
+        tone === "inset" && "border border-transparent bg-field-bottom",
+      )}
+    >
+      {children}
+    </div>
+  )
 }
 
 export function HomeWorkspaceSkeleton() {
@@ -86,10 +96,10 @@ export function HomeWorkspaceSkeleton() {
               already announces the load. */}
           <div className="pointer-events-none flex items-center justify-between gap-2" aria-hidden>
             <ActionWorkspaceTabs
-              items={HOME_MODE_ITEMS.map((item) => ({ id: item.value, label: t(item.label) }))}
+              items={HOME_MODE_ITEMS.map((item) => ({ id: item.value, label: item.label }))}
               value="swap"
               onChange={() => {}}
-              ariaLabel={t("Express actions")}
+              ariaLabel="Express actions"
               withIcons
               revealLabels
             />
@@ -97,43 +107,47 @@ export function HomeWorkspaceSkeleton() {
 
           <div className="mt-3 flex flex-col gap-2">
             <div className="flex flex-col gap-1">
-              <HomeFieldSkeleton>
-                <div className="text-[14px] font-medium text-foreground">{t("Sell")}</div>
-                <div className="mt-1.5 flex min-h-10 items-center justify-between gap-3">
-                  <div className="text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none text-muted-foreground/60">
+              <HomeFieldSkeleton tone="raised">
+                <div className="text-[15px] font-medium text-foreground/75">{t("Sell")}</div>
+                <div className="mt-1.5 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
+                  <div className="h-[1em] min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-muted-foreground/60">
                     0
                   </div>
-                  <span className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-medium text-foreground">
+                  <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground max-[360px]:self-end">
                     {t("Select Asset")}
                     <span aria-hidden className="text-muted-foreground">
                       ▾
                     </span>
                   </span>
                 </div>
-                <div className="mt-1 min-h-5 text-[14px] text-foreground/60">$0.00</div>
+                <div className="mt-1 flex items-center justify-between gap-3 text-[14px]">
+                  <span className="min-w-0 truncate text-foreground/60">$0.00</span>
+                </div>
               </HomeFieldSkeleton>
 
-              <HomeFieldSkeleton>
-                <div className="text-[14px] font-medium text-foreground">{t("Buy")}</div>
-                <div className="mt-1.5 flex items-center justify-between gap-3">
-                  <div className="text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none text-muted-foreground/60">
+              <HomeFieldSkeleton tone="inset">
+                <div className="text-[15px] font-medium text-foreground/75">{t("Buy")}</div>
+                <div className="mt-1.5 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
+                  <div className="h-[1em] min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-muted-foreground/60">
                     0
                   </div>
-                  <span className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-medium text-foreground">
+                  <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground max-[360px]:self-end">
                     {t("Select Asset")}
                     <span aria-hidden className="text-muted-foreground">
                       ▾
                     </span>
                   </span>
                 </div>
-                <div className="mt-1 min-h-5 text-[14px] text-foreground/60">$0.00</div>
+                <div className="mt-1 flex items-center justify-between gap-3 text-[14px]">
+                  <span className="min-w-0 truncate text-foreground/60">$0.00</span>
+                </div>
               </HomeFieldSkeleton>
             </div>
 
             <button
               type="button"
               disabled
-              className="mt-1 inline-flex h-14 w-full items-center justify-center rounded-radius-xl bg-muted text-[15px] font-semibold text-muted-foreground"
+              className="mt-1 inline-flex h-14 w-full items-center justify-center rounded-radius-xl bg-brand-soft text-[15px] font-semibold text-brand-soft-foreground"
               data-testid="action-footer-primary"
             >
               {t("Select Asset")}
