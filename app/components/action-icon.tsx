@@ -2,6 +2,8 @@ import type { LucideIcon } from "@/app/components/icons"
 import {
   ArrowShrink,
   ArrowUpRightStack,
+  Circle,
+  CircleArrowUp,
   CircleArrowOutDownRight,
   CircleArrowOutUpLeft,
   EnteringGeoFence,
@@ -10,6 +12,7 @@ import {
   LeavingGeoFence,
   Repeat2,
   SquareLock02,
+  Unlock,
 } from "@/app/components/icons"
 
 const ACTION_ICONS: Record<string, LucideIcon> = {
@@ -22,7 +25,10 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   multiply: ArrowUpRightStack,
   deleverage: ArrowShrink,
   swap: Repeat2,
+  stake: CircleArrowUp,
   claim: Gift,
+  cooldown: Circle,
+  unstake: Unlock,
   remove: LayerSendBackward,
 }
 
