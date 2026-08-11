@@ -53,12 +53,12 @@ function StatsGrid({ stats, columns = 3 }: { stats: QuickStatLike[]; columns?: 3
 
         return (
           <article key={stat.id} className="min-w-0">
-            <div className="font-data text-[19px] font-semibold leading-none tracking-[-0.03em] text-foreground md:text-[21px]">
-              {redenominateCompactUsd(stat.value, ctx)}
-            </div>
-            <div className="mt-1.5 flex items-center gap-1">
+            <div className="flex items-center gap-1">
               <span className="text-[13px] font-normal leading-snug text-muted-foreground">{t(stat.label)}</span>
               {tooltip ? <ActionMetricHelp text={tooltip} topic={stat.label} /> : null}
+            </div>
+            <div className="mt-1.5 font-data text-[19px] font-semibold leading-none tracking-[-0.03em] text-foreground md:text-[21px]">
+              {redenominateCompactUsd(stat.value, ctx)}
             </div>
           </article>
         )
