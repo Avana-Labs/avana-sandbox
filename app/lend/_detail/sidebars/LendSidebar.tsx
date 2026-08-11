@@ -49,7 +49,7 @@ function LendActionRail({ detail, className }: Props) {
         value={tab}
         onChange={(value) => setTab(value as SidebarTab)}
         ariaLabel={t("Lend actions")}
-        className="[&_button]:font-semibold"
+        className="gap-6 overflow-visible sm:gap-7 [&_button]:font-semibold [&_button]:text-foreground/65 [&_button]:hover:text-foreground [&_button[data-state=active]]:bg-neutral-200 [&_button[data-state=active]]:text-foreground dark:[&_button[data-state=active]]:bg-neutral-800"
       />
 
       <div className="mt-2">
