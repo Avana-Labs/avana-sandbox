@@ -21,6 +21,10 @@ const modules = import.meta.glob("../**/*.*s")
 
 const WALLET = "0xAbC0000000000000000000000000000000000001"
 
+function liquidityReader(t: ReturnType<typeof convexTest>) {
+  return t.withIdentity({ subject: WALLET })
+}
+
 /** Sum a folded ledger to a comparable {borrowed, supplied} per market. */
 function bySlug(rows: Array<{ marketSlug: string; borrowedDeltaUsd: number; suppliedDeltaUsd: number }>) {
   const map = new Map<string, { borrowedDeltaUsd: number; suppliedDeltaUsd: number }>()
@@ -119,7 +123,7 @@ describe("liquidity bounded fold (compaction) matches the naive sum", () => {
     ])
 
     // BEFORE compaction: everything is in the raw table; baseline is empty.
-    const preFold = bySlug(await t.query(api.liquidity.listDeltas))
+    const preFold = bySlug(await liquidityReader(t).query(api.liquidity.listDeltas))
     expect(preFold).toEqual(expected)
     const rawBefore = await t.run((ctx) => ctx.db.query("marketLiquidityDeltas").collect())
     const baselineBefore = await t.run((ctx) => ctx.db.query("marketLiquidityBaseline").collect())
@@ -132,7 +136,7 @@ describe("liquidity bounded fold (compaction) matches the naive sum", () => {
     expect(res.markets).toBe(2)
 
     // AFTER compaction: identical totals, but now served entirely from the baseline.
-    const postFold = bySlug(await t.query(api.liquidity.listDeltas))
+    const postFold = bySlug(await liquidityReader(t).query(api.liquidity.listDeltas))
     expect(postFold).toEqual(expected)
     const rawAfter = await t.run((ctx) => ctx.db.query("marketLiquidityDeltas").collect())
     const baselineAfter = await t.run((ctx) => ctx.db.query("marketLiquidityBaseline").collect())
@@ -141,7 +145,7 @@ describe("liquidity bounded fold (compaction) matches the naive sum", () => {
 
     // The app-wide snapshot rebuilt from the bounded fold matches too.
     await t.mutation(internal.liquidity.rebuildDeltaSnapshot, {})
-    const snap = bySlug(await t.query(api.liquidity.listDeltaSnapshot))
+    const snap = bySlug(await liquidityReader(t).query(api.liquidity.listDeltaSnapshot))
     expect(snap).toEqual(expected)
   })
 
@@ -177,7 +181,7 @@ describe("liquidity bounded fold (compaction) matches the naive sum", () => {
     })
 
     // baseline (500) + un-compacted raw (300) = 800, before a second compaction.
-    expect(bySlug(await t.query(api.liquidity.listDeltas)).get("usdc")).toEqual({
+    expect(bySlug(await liquidityReader(t).query(api.liquidity.listDeltas)).get("usdc")).toEqual({
       borrowedDeltaUsd: 0,
       suppliedDeltaUsd: 800,
     })
@@ -187,7 +191,7 @@ describe("liquidity bounded fold (compaction) matches the naive sum", () => {
     const baseline = await t.run((ctx) => ctx.db.query("marketLiquidityBaseline").collect())
     expect(baseline.length).toBe(1)
     expect(baseline[0]?.suppliedDeltaUsd).toBe(800)
-    expect(bySlug(await t.query(api.liquidity.listDeltas)).get("usdc")).toEqual({
+    expect(bySlug(await liquidityReader(t).query(api.liquidity.listDeltas)).get("usdc")).toEqual({
       borrowedDeltaUsd: 0,
       suppliedDeltaUsd: 800,
     })
@@ -222,27 +226,27 @@ describe("liquidity compaction — migration of pre-existing raw rows", () => {
     ])
 
     // Fold works on legacy rows even before any compaction has run (baseline empty).
-    expect(bySlug(await t.query(api.liquidity.listDeltas))).toEqual(expected)
+    expect(bySlug(await liquidityReader(t).query(api.liquidity.listDeltas))).toEqual(expected)
 
     // Compaction absorbs them into the baseline and deletes them — total unchanged.
     const res = await t.mutation(internal.liquidity.compactDeltas, {})
     expect(res.compacted).toBe(legacy.length)
     expect(res.markets).toBe(3)
     expect(await t.run((ctx) => ctx.db.query("marketLiquidityDeltas").collect())).toHaveLength(0)
-    expect(bySlug(await t.query(api.liquidity.listDeltas))).toEqual(expected)
+    expect(bySlug(await liquidityReader(t).query(api.liquidity.listDeltas))).toEqual(expected)
 
     // Idempotent: a second compaction with nothing to fold is a no-op and preserves totals.
     const again = await t.mutation(internal.liquidity.compactDeltas, {})
     expect(again).toEqual({ compacted: 0, markets: 0 })
-    expect(bySlug(await t.query(api.liquidity.listDeltas))).toEqual(expected)
+    expect(bySlug(await liquidityReader(t).query(api.liquidity.listDeltas))).toEqual(expected)
   })
 
   test("fresh deployment: empty tables fold and compact to nothing (no phantom rows)", async () => {
     const t = convexTest(schema, modules)
-    expect(await t.query(api.liquidity.listDeltas)).toEqual([])
+    expect(await liquidityReader(t).query(api.liquidity.listDeltas)).toEqual([])
     const res = await t.mutation(internal.liquidity.compactDeltas, {})
     expect(res).toEqual({ compacted: 0, markets: 0 })
-    expect(await t.query(api.liquidity.listDeltas)).toEqual([])
+    expect(await liquidityReader(t).query(api.liquidity.listDeltas)).toEqual([])
     expect(await t.run((ctx) => ctx.db.query("marketLiquidityBaseline").collect())).toHaveLength(0)
   })
 
@@ -269,7 +273,7 @@ describe("liquidity compaction — migration of pre-existing raw rows", () => {
       ["usdc", { borrowedDeltaUsd: 0, suppliedDeltaUsd: 25 }],
       ["eth-usdt", { borrowedDeltaUsd: 0, suppliedDeltaUsd: 25 }],
     ])
-    expect(bySlug(await t.query(api.liquidity.listDeltas))).toEqual(expected)
+    expect(bySlug(await liquidityReader(t).query(api.liquidity.listDeltas))).toEqual(expected)
 
     // Drain to completion (the default batch is large, so this is one run here; the loop
     // still proves convergence and that repeated runs never over- or under-count).
@@ -279,9 +283,9 @@ describe("liquidity compaction — migration of pre-existing raw rows", () => {
       if (res.compacted === 0) break
       if (++guard > 100) throw new Error("compaction did not converge")
       // Total is invariant after every partial run.
-      expect(bySlug(await t.query(api.liquidity.listDeltas))).toEqual(expected)
+      expect(bySlug(await liquidityReader(t).query(api.liquidity.listDeltas))).toEqual(expected)
     }
     expect(await t.run((ctx) => ctx.db.query("marketLiquidityDeltas").collect())).toHaveLength(0)
-    expect(bySlug(await t.query(api.liquidity.listDeltas))).toEqual(expected)
+    expect(bySlug(await liquidityReader(t).query(api.liquidity.listDeltas))).toEqual(expected)
   })
 })

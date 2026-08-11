@@ -9,6 +9,10 @@ const modules = import.meta.glob("./**/*.*s")
 
 const WALLET = "0xAbC0000000000000000000000000000000000001"
 
+function liquidityReader(t: ReturnType<typeof convexTest>) {
+  return t.withIdentity({ subject: WALLET })
+}
+
 /**
  * H20 — with the shared ledger written only inside the idempotent recordTransaction,
  * a single action that reaches Convex more than once (e.g. the same intent fired from
@@ -39,7 +43,7 @@ describe("shared ledger — no double-count across tabs (H20)", () => {
     expect(a.idempotent).toBe(false)
     expect(b.idempotent).toBe(true)
 
-    const ledger = await t.query(api.liquidity.listDeltas)
+    const ledger = await liquidityReader(t).query(api.liquidity.listDeltas)
     const row = ledger.find((r) => r.marketSlug === "uni-v2:usdc")
     expect(row?.borrowedDeltaUsd).toBe(1000) // once, not 2000
   })
@@ -62,7 +66,7 @@ describe("shared ledger — no double-count across tabs (H20)", () => {
     await tabA.mutation(api.sandbox.transactions.recordTransaction, intent)
     await tabB.mutation(api.sandbox.transactions.recordTransaction, intent)
 
-    const ledger = await t.query(api.liquidity.listDeltas)
+    const ledger = await liquidityReader(t).query(api.liquidity.listDeltas)
     const row = ledger.find((r) => r.marketSlug === "usdc")
     expect(row?.suppliedDeltaUsd).toBe(500) // once, not 1000
   })
@@ -92,7 +96,7 @@ describe("shared ledger — no double-count across tabs (H20)", () => {
     await tabA.mutation(api.sandbox.transactions.recordTransaction, intent)
     await tabB.mutation(api.sandbox.transactions.recordTransaction, intent)
 
-    const ledger = await t.query(api.liquidity.listDeltas)
+    const ledger = await liquidityReader(t).query(api.liquidity.listDeltas)
     const row = ledger.find((r) => r.marketSlug === "eth-usdt")
     expect(row?.suppliedDeltaUsd).toBe(3000) // collateral delta once, not 6000
     expect(row?.borrowedDeltaUsd).toBe(2000) // debt delta once, not 4000
