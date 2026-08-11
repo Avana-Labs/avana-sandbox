@@ -17,6 +17,8 @@ import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspa
 import { MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import { DesktopTableSurface } from "@/app/components/market-table-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
+import { AmountVisibilityToggle } from "@/app/components/amount-visibility-toggle"
+import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import {
   TABLE_HEADER_CELL,
   TABLE_ROW_HOVER_BG,
@@ -155,33 +157,60 @@ const umbrellaAssetSummaries = [
 ]
 
 const userUmbrellaSnapshot = [
-  { label: "Staked", value: "$70,600", tone: "default" },
-  { label: "Claimable", value: "$206.28", tone: "positive" },
-  { label: "In cooldown", value: "$18,240", tone: "warning" },
-  { label: "Net rewards APY", value: "6.4%", tone: "positive" },
+  { label: "Staked", value: "$70,600", change: "▲ 2.8%", tone: "positive" },
+  { label: "Claimable", value: "$206.28", change: "ready", tone: "positive" },
+  { label: "In cooldown", value: "$18,240", change: "25.8%", tone: "warning" },
+  { label: "Net rewards APY", value: "6.4%", change: "+0.3%", tone: "positive" },
 ]
 
 function UmbrellaHero() {
+  const { showDollarAmounts } = useAmountDisplayPreferences()
+
   return (
     <div className="mb-6 md:mb-8">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <h2 className="text-[24px] font-semibold tracking-[-0.045em]">Your Umbrella</h2>
+        <AmountVisibilityToggle />
+      </div>
       <section className="relative overflow-hidden rounded-radius-md bg-card px-4 py-5 sm:px-5">
         <div className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle,rgba(148,163,184,0.16)_1px,transparent_1.2px)] [background-position:18px_18px] [background-size:16px_16px] dark:opacity-35 dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.1)_1px,transparent_1.2px)]" />
         <div className="relative">
-          <div className="grid gap-4 md:grid-cols-4 md:divide-x md:divide-border">
-            {userUmbrellaSnapshot.map((item) => (
-              <div key={item.label} className="min-w-0 md:px-5 first:md:pl-0 last:md:pr-0">
-                <div className="text-[13px] font-medium text-muted-foreground">{item.label}</div>
-                <div
-                  className={cn(
-                    "mt-2 font-data text-[28px] font-medium leading-none tracking-tight tabular-nums text-foreground",
-                    item.tone === "positive" && "text-success",
-                    item.tone === "warning" && "text-warning",
-                  )}
-                >
-                  {item.value}
-                </div>
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(420px,1fr)] lg:items-end">
+            <div className="min-w-0">
+              <div className="text-[15px] font-medium text-muted-foreground">{userUmbrellaSnapshot[0].label}</div>
+              <div className="mt-2 text-[30px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[34px]">
+                {showDollarAmounts ? userUmbrellaSnapshot[0].value : "••••"}
               </div>
-            ))}
+              {showDollarAmounts ? (
+                <div className="mt-2 text-[13px] font-semibold tabular-nums text-success">
+                  {userUmbrellaSnapshot[0].change}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:divide-x lg:divide-border">
+              {userUmbrellaSnapshot.slice(1).map((item) => (
+                <div key={item.label} className="min-w-0 lg:px-5 first:lg:pl-0 last:lg:pr-0">
+                  <div className="text-[15px] font-medium text-muted-foreground">{item.label}</div>
+                  <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    <span className="text-[26px] font-normal leading-none tracking-[-0.03em] text-foreground">
+                      {showDollarAmounts ? item.value : "••••"}
+                    </span>
+                    {showDollarAmounts ? (
+                      <span
+                        className={cn(
+                          "text-[14px] font-semibold tabular-nums",
+                          item.tone === "positive" && "text-success",
+                          item.tone === "warning" && "text-warning",
+                        )}
+                      >
+                        {item.change}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -470,7 +499,7 @@ function UmbrellaClaimsCooldown() {
   return (
     <section className="mt-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[20px] font-semibold tracking-[-0.04em]">Umbrella claims & cooldown</h2>
+        <h2 className="text-[24px] font-semibold tracking-[-0.045em]">Umbrella Claims</h2>
       </div>
 
       <div className="grid gap-3 md:grid-cols-3">
@@ -534,33 +563,37 @@ function UmbrellaLearnSection() {
 
 export default function UmbrellaPage() {
   return (
-    <main className="mx-auto w-full max-w-[1152px] px-4 py-6 pb-28 sm:px-6 lg:px-8 lg:pb-10">
-      <UmbrellaHero />
+    <div className="bg-background">
+      <main className="container mx-auto px-3 py-6 pb-28 sm:px-4 md:py-10 lg:pb-10">
+        <div className="mx-auto max-w-[1152px]">
+          <UmbrellaHero />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-x-8">
-        <div className="min-w-0">
-          <UmbrellaPositions />
-          <UmbrellaClaimsCooldown />
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-x-8">
+            <div className="min-w-0">
+              <UmbrellaPositions />
+              <UmbrellaClaimsCooldown />
+            </div>
+
+            <aside className="hidden space-y-8 lg:block lg:self-start">
+              <UmbrellaActionSidebar />
+            </aside>
+          </div>
+
+          <UmbrellaStress />
+          <UmbrellaLearnSection />
+
+          <MobileDetailActionBar className="grid grid-cols-2 gap-3">
+            <button className={secondaryCtaClass({ size: "compact", className: "w-full gap-2.5" })} type="button">
+              <CircleDollarSign className="h-5 w-5" />
+              Claim
+            </button>
+            <button className={primaryCtaClass({ size: "compact", className: "w-full gap-2.5" })} type="button">
+              <CircleArrowUp className="h-5 w-5" />
+              Stake
+            </button>
+          </MobileDetailActionBar>
         </div>
-
-        <aside className="hidden space-y-8 lg:block lg:self-start">
-          <UmbrellaActionSidebar />
-        </aside>
-      </div>
-
-      <UmbrellaStress />
-      <UmbrellaLearnSection />
-
-      <MobileDetailActionBar className="grid grid-cols-2 gap-3">
-        <button className={secondaryCtaClass({ size: "compact", className: "w-full gap-2.5" })} type="button">
-          <CircleDollarSign className="h-5 w-5" />
-          Claim
-        </button>
-        <button className={primaryCtaClass({ size: "compact", className: "w-full gap-2.5" })} type="button">
-          <CircleArrowUp className="h-5 w-5" />
-          Stake
-        </button>
-      </MobileDetailActionBar>
-    </main>
+      </main>
+    </div>
   )
 }
