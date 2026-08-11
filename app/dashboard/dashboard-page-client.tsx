@@ -43,6 +43,7 @@ import { useDashboardPage } from "@/app/dashboard/use-dashboard-page"
 import { ActionIcon } from "@/app/components/action-icon"
 import { MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
+import { AmountVisibilityToggle } from "@/app/components/amount-visibility-toggle"
 import {
   RewardsEducationDialog,
   RewardsFavoriteDialog,
@@ -584,6 +585,10 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
 
   return (
     <>
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+        <h2 className="text-[24px] font-semibold tracking-[-0.045em]">{t("Your Portfolio")}</h2>
+        <AmountVisibilityToggle />
+      </div>
       <RewardsBalanceHero
         claimHref={claimHref}
         portfolioValueUsd={portfolioValueUsd}
