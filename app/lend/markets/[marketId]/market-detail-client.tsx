@@ -110,13 +110,6 @@ export function LendMarketDetailClient({ detail }: Props) {
                 <LendHero detail={detail} hideIdentity className="mb-12" />
 
                 <div className="space-y-14 md:space-y-16">
-                  <section aria-label={t("Key Statistics")} className="space-y-6">
-                    <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
-                      Key Statistics
-                    </h2>
-                    <QuickStatsGrid detail={detail} />
-                  </section>
-
                   <AboutNewsSection
                     about={detail.about}
                     aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
@@ -124,7 +117,17 @@ export function LendMarketDetailClient({ detail }: Props) {
                     newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
                     newsImageLabel={detail.hero.symbol}
                     mediaVariant="icon"
-                    afterAbout={<RiskSection detail={detail} />}
+                    afterAbout={
+                      <>
+                        <section aria-label={t("Key Statistics")} className="space-y-6">
+                          <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+                            Key Statistics
+                          </h2>
+                          <QuickStatsGrid detail={detail} />
+                        </section>
+                        <RiskSection detail={detail} />
+                      </>
+                    }
                     className="pt-0"
                   />
 
