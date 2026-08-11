@@ -287,7 +287,7 @@ export function HeroAreaChart({
                   y={tick.y}
                   dominantBaseline="middle"
                   textAnchor="end"
-                  className="fill-foreground font-data text-[12.5px] font-medium"
+                  className="fill-muted-foreground font-data text-[12.5px] font-medium"
                 >
                   {tick.label}
                 </text>
@@ -303,7 +303,7 @@ export function HeroAreaChart({
                 x={tick.x}
                 y={dimensions.height - 8}
                 textAnchor={tick.anchor}
-                className="fill-foreground font-data text-[12px] font-medium"
+                className="fill-muted-foreground font-data text-[12px] font-medium"
               >
                 {tick.label}
               </text>
