@@ -107,41 +107,44 @@ export function LendMarketDetailClient({ detail }: Props) {
               </div>
 
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                <LendHero detail={detail} hideIdentity className="mb-6" />
+                <LendHero detail={detail} hideIdentity className="mb-12" />
 
-                <section aria-label={t("Key Statistics")} className="mb-12 space-y-6">
-                  <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
-                    Key Statistics
-                  </h2>
-                  <QuickStatsGrid detail={detail} />
-                </section>
+                <div className="space-y-14 md:space-y-16">
+                  <section aria-label={t("Key Statistics")} className="space-y-6">
+                    <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+                      Key Statistics
+                    </h2>
+                    <QuickStatsGrid detail={detail} />
+                  </section>
 
-                <AboutNewsSection
-                  about={detail.about}
-                  aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
-                  compactAboutTitle
-                  newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
-                  newsImageLabel={detail.hero.symbol}
-                  mediaVariant="icon"
-                />
+                  <AboutNewsSection
+                    about={detail.about}
+                    aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
+                    compactAboutTitle
+                    newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
+                    newsImageLabel={detail.hero.symbol}
+                    mediaVariant="icon"
+                    className="pt-0"
+                  />
 
-                <section aria-label={t("Lend market analytics")} className="space-y-12 pt-12">
-                  <DeferredDetailContent className="space-y-12">
-                    <CashflowCard detail={detail} />
-                    <RiskSection detail={detail} />
-                    <DetailFaqSection
-                      title={t("General FAQs")}
-                      items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
-                    />
-                    <TransactionHistoryCard
-                      transactions={transactions}
-                      assetSymbol={detail.hero.symbol}
-                      kindLabelMap={{ supply: "Supply", withdraw: "Withdraw", rewards: "Rewards" }}
-                    />
-                    <RelatedMarketsRow detail={detail} />
-                    <DetailPageNotice product="lend" />
-                  </DeferredDetailContent>
-                </section>
+                  <section aria-label={t("Lend market analytics")} className="space-y-14 md:space-y-16">
+                    <DeferredDetailContent className="space-y-14 md:space-y-16">
+                      <CashflowCard detail={detail} />
+                      <RiskSection detail={detail} />
+                      <DetailFaqSection
+                        title={t("General FAQs")}
+                        items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
+                      />
+                      <TransactionHistoryCard
+                        transactions={transactions}
+                        assetSymbol={detail.hero.symbol}
+                        kindLabelMap={{ supply: "Supply", withdraw: "Withdraw", rewards: "Rewards" }}
+                      />
+                      <RelatedMarketsRow detail={detail} />
+                      <DetailPageNotice product="lend" />
+                    </DeferredDetailContent>
+                  </section>
+                </div>
               </div>
 
               <aside className="hidden lg:col-start-2 lg:row-start-2 lg:block lg:self-start">
