@@ -67,7 +67,7 @@ export function buildHeroAreaGeometry(
   if (data.length === 0) return { points: [] as PlotPoint[], linePath: "", areaPath: "", axisTicks: [] as AxisTick[] }
   const top = 12
   const bottom = 8
-  const right = width < 640 ? 54 : 72
+  const right = width < 640 ? 42 : 52
   const values = data.map((point) => point.value)
   const min = Math.min(...values) - 4
   const max = Math.max(...values) + 4
@@ -252,7 +252,7 @@ export function HeroAreaChart({
                   y={tick.y}
                   dominantBaseline="middle"
                   textAnchor="end"
-                  className="fill-muted-foreground font-data text-[11px] font-medium"
+                  className="fill-muted-foreground font-data text-[12.5px] font-medium"
                 >
                   {tick.label}
                 </text>
