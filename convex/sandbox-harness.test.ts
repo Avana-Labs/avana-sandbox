@@ -131,7 +131,7 @@ describe("multi-user harness — calm + borrowHeavy (ledger invariant)", () => {
     }
 
     // Invariant 1: the shared ledger row equals the summed deltas.
-    const deltas = await t.query(api.liquidity.listDeltas)
+    const deltas = await t.withIdentity({ subject: wallet(0) }).query(api.liquidity.listDeltas)
     const row = deltas.find((d) => d.marketSlug === SLUG)
     expect(row?.borrowedDeltaUsd).toBeCloseTo(expectedBorrowed, 6)
 

@@ -8,6 +8,7 @@ import { api, internal } from "./_generated/api"
 const modules = import.meta.glob("./**/*.*s")
 
 const SLUG = "uni-v3-bluechip-weth-usdc"
+const WALLET = "0xAbC0000000000000000000000000000000000001"
 
 async function setup() {
   const t = convexTest(schema, modules)
@@ -67,7 +68,7 @@ describe("rollupDailyStats — flush the live delta into a persistent daily snap
     expect(latest?.tvlUsd).toBe(1_250_000)
 
     // The ledger is rebased to zero net for this market.
-    const net = await t.query(api.liquidity.listDeltas, {})
+    const net = await t.withIdentity({ subject: WALLET }).query(api.liquidity.listDeltas, {})
     expect(net.find((r) => r.marketSlug === SLUG)?.suppliedDeltaUsd ?? 0).toBe(0)
 
     // Once the shared delta cache the overlay reads is refreshed (the rollup schedules
