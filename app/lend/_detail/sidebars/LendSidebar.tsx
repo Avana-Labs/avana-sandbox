@@ -55,8 +55,8 @@ function LendActionRail({ detail, className }: Props) {
               data-state={active ? "active" : "inactive"}
               onClick={() => setTab(item.id)}
               className={cn(
-                "rounded-full px-3 py-1.5 text-[15px] font-semibold leading-none text-foreground/65 transition-colors hover:text-foreground",
-                active && "bg-neutral-200 px-4.5 py-2.5 text-foreground dark:bg-neutral-800",
+                "rounded-full px-3.5 py-2 text-[15px] font-semibold leading-none text-foreground/65 transition-colors hover:text-foreground",
+                active && "bg-muted px-4 py-2.5 text-foreground",
               )}
             >
               {t(item.label)}
