@@ -5,6 +5,7 @@ import { BadgeCheck, Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
+import { formatChartValue, type ChartFeed, type ChartRangeData, type ChartValueFormat } from "@/app/components/charts"
 import { getLendMarketHeroFeed } from "@/app/lib/chart-feeds"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
@@ -98,7 +99,24 @@ export function LendHeroIdentity({
 
 export function LendHero({ detail, leading, actions, className, hideIdentity = false }: LendHeroProps) {
   const { t } = useTranslation()
-  const feed = React.useMemo(() => detail.heroFeed ?? getLendMarketHeroFeed(detail.id), [detail.heroFeed, detail.id])
+  const metricTabs = React.useMemo(() => [t("Supplied"), t("Borrowed"), t("Utilization")], [t])
+  const [activeMetricTab, setActiveMetricTab] = React.useState(metricTabs[0])
+  React.useEffect(() => {
+    setActiveMetricTab(metricTabs[0])
+  }, [metricTabs])
+  const feed = React.useMemo(() => {
+    const suppliedFeed = detail.heroFeed ?? getLendMarketHeroFeed(detail.id)
+    if (activeMetricTab === metricTabs[1]) {
+      return buildLendMetricFeed(detail.supplyBorrow.borrowed, "usdCompact", suppliedFeed)
+    }
+    if (activeMetricTab === metricTabs[2]) {
+      return buildLendMetricFeed(detail.supplyBorrow.utilization, "percent", suppliedFeed, {
+        headlineValue: `${(detail.supplyBorrow.utilization.aggregate ?? latestValue(detail.supplyBorrow.utilization.points) ?? 0).toFixed(2)}%`,
+        valueFormat: "percent",
+      })
+    }
+    return suppliedFeed
+  }, [activeMetricTab, detail.heroFeed, detail.id, detail.supplyBorrow.borrowed, detail.supplyBorrow.utilization, metricTabs])
 
   return (
     <section className={cn("flex flex-col gap-5", className)} data-testid="lend-hero">
@@ -109,13 +127,61 @@ export function LendHero({ detail, leading, actions, className, hideIdentity = f
           feed={feed}
           defaultRange="1D"
           gradientId={`lendHeroFill-${detail.id}`}
+          height={360}
           showMeta={false}
-          metricTabs={[t("Supplied"), t("Borrowed"), t("Utilization")]}
-          activeMetricTab={t("Supplied")}
+          metricTabs={metricTabs}
+          activeMetricTab={activeMetricTab}
+          onMetricTabChange={setActiveMetricTab}
+          chartTone="neutral"
         />
       </div>
     </section>
   )
+}
+
+function buildLendMetricFeed(
+  series: LendMarketDetail["supplyBorrow"]["supplied"],
+  valueFormat: ChartValueFormat,
+  fallback: ChartFeed,
+  overrides?: Partial<Pick<ChartFeed, "headlineValue" | "valueFormat">>,
+): ChartFeed {
+  const points = series.points.map((point) => ({
+    time: Date.parse(point.t),
+    value: point.v,
+    label: formatPointLabel(point.t),
+  }))
+  const latest = series.aggregate ?? points[points.length - 1]?.value ?? 0
+  const first = points[0]?.value ?? latest
+  const pct = first ? ((latest - first) / first) * 100 : 0
+  const rangeData = makeRangeData(points.length ? points : fallback.rangeData["1D"])
+  return {
+    headlineValue: overrides?.headlineValue ?? formatChartValue(valueFormat, latest),
+    headlineDelta: `${Math.abs(pct).toFixed(2)}%`,
+    deltaTone: pct < 0 ? "negative" : "positive",
+    rangeData,
+    valueFormat: overrides?.valueFormat ?? valueFormat,
+  }
+}
+
+function makeRangeData(points: ChartFeed["rangeData"]["1D"]): ChartRangeData {
+  return {
+    "1D": points,
+    "1W": points.slice(-7),
+    "1M": points.slice(-30),
+    "3M": points.slice(-90),
+    "1Y": points.slice(-365),
+    All: points,
+  }
+}
+
+function latestValue(points: LendMarketDetail["supplyBorrow"]["supplied"]["points"]) {
+  return points[points.length - 1]?.v
+}
+
+function formatPointLabel(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date)
 }
 
 function TokenAvatar({ visual }: { visual: LendMarketDetail["hero"]["visual"] }) {
