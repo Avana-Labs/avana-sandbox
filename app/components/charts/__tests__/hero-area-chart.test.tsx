@@ -10,10 +10,11 @@ const points = [
 
 describe("HeroAreaChart", () => {
   it("builds a smooth closed area without Recharts", () => {
-    const geometry = buildHeroAreaGeometry(points, 400, 240)
+    const geometry = buildHeroAreaGeometry(points, 400, 240, (value) => `axis:${Math.round(value)}`)
     expect(geometry.points).toHaveLength(3)
     expect(geometry.linePath).toContain(" C ")
     expect(geometry.areaPath).toMatch(/ Z$/)
+    expect(geometry.axisTicks.map((tick) => tick.label)).toEqual(["axis:112", "axis:104", "axis:96"])
   })
 
   it("preserves hover selection, tooltip formatting, and pointer exit", () => {
@@ -23,6 +24,7 @@ describe("HeroAreaChart", () => {
         data={points}
         activeRange="1D"
         formatValue={(value) => `value:${value}`}
+        formatYAxis={(value) => `axis:${Math.round(value)}`}
         onActiveIndexChange={onActiveIndexChange}
       />,
     )
@@ -42,6 +44,7 @@ describe("HeroAreaChart", () => {
     fireEvent.pointerMove(chart, { clientX: 150 })
     expect(screen.getByText("11:00")).toBeInTheDocument()
     expect(screen.getByText("value:108")).toBeInTheDocument()
+    expect(screen.getByText("axis:112")).toBeInTheDocument()
     expect(onActiveIndexChange).toHaveBeenLastCalledWith(1)
 
     fireEvent.pointerLeave(chart)
