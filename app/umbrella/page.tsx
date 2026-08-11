@@ -178,9 +178,9 @@ function UmbrellaHero() {
           <div className="grid grid-cols-2 gap-5 lg:grid-cols-4 lg:divide-x lg:divide-border">
             {userUmbrellaSnapshot.map((item) => (
               <div key={item.label} className="min-w-0 lg:px-5 first:lg:pl-0 last:lg:pr-0">
-                <div className="text-[15px] font-medium text-muted-foreground">{item.label}</div>
+                <div className="text-[12px] font-medium tracking-tight text-muted-foreground">{item.label}</div>
                 <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                  <span className="text-[28px] font-normal leading-none tracking-[-0.03em] text-foreground lg:text-[30px]">
+                  <span className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
                     {showDollarAmounts ? item.value : "••••"}
                   </span>
                   {showDollarAmounts ? (
