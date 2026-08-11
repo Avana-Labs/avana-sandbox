@@ -257,6 +257,30 @@ function formatRelativeAge(ageMs: number) {
   return `${Math.floor(totalHours / 24)}d`
 }
 
+function contractAddressFor(market: LendMarket, salt: string) {
+  const seed = `${market.marketId}:${salt}`
+  let hash = 0x811c9dc5
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  const chunk = (hash >>> 0).toString(16).padStart(8, "0").toUpperCase()
+  return `0x${chunk}${chunk}${chunk}${chunk}${chunk}`.slice(0, 42)
+}
+
+function shortAddress(address: string) {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
+function buildContractStat(label: string, market: LendMarket, salt: string): AboutCard["stats"][number] {
+  const address = contractAddressFor(market, salt)
+  return {
+    label,
+    value: shortAddress(address),
+    href: `https://etherscan.io/address/${address}`,
+  }
+}
+
 function buildAbout(market: LendMarket): AboutCard {
   const isStable = market.riskTier === "low"
   return {
@@ -267,16 +291,10 @@ function buildAbout(market: LendMarket): AboutCard {
         isStable ? "stablecoin" : "tier-" + market.riskTier
       } market.`,
     stats: [
-      {
-        label: "Risk tier",
-        value: market.riskTier === "low" ? "Low" : market.riskTier === "medium" ? "Medium" : "High",
-      },
-      { label: "Reserve factor", value: `${(market.reserveFactor * 100).toFixed(0)}%` },
-      {
-        label: "Status",
-        value: market.status === "active" ? "Active" : market.status === "capped" ? "Capped" : "Paused",
-      },
-      { label: "Chain", value: "Ethereum" },
+      buildContractStat("Vault Contract Address", market, "vault"),
+      buildContractStat("Token Contract Address", market, "token"),
+      buildContractStat("Staking Contract Address", market, "staking"),
+      { label: "Deployed On", value: isStable ? "March 18, 2024" : "October 7, 2024" },
     ],
     history: [
       { date: "2025-01-20", title: "Listed", description: `${market.asset.symbol} supply market opened.` },

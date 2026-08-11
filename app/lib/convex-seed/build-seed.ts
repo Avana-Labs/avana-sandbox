@@ -447,6 +447,30 @@ function revenueForMarket(stats: SeedDailyStatRow[], reserveFactor: number): See
   })
 }
 
+function contractAddressForSeed(slug: string, salt: string) {
+  const seed = `${slug}:${salt}`
+  let hash = 0x811c9dc5
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  const chunk = (hash >>> 0).toString(16).padStart(8, "0").toUpperCase()
+  return `0x${chunk}${chunk}${chunk}${chunk}${chunk}`.slice(0, 42)
+}
+
+function shortAddress(address: string) {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
+function contractStatForSeed(label: string, slug: string, salt: string) {
+  const address = contractAddressForSeed(slug, salt)
+  return {
+    label,
+    value: shortAddress(address),
+    href: `https://etherscan.io/address/${address}`,
+  }
+}
+
 const WALLET_EVENT_KINDS = ["supply", "borrow", "repay", "withdraw"] as const
 
 function hex(rand: () => number, length: number): string {
@@ -640,15 +664,10 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
       slug: market.marketId,
       description: `${market.asset.name} (${market.asset.symbol}) is a single-asset supply market on Avana. Deposit to earn the supply APY${market.rewardsApy > 0 ? " plus active rewards" : ""}, and withdraw available liquidity anytime. Yield tracks borrow demand and utilization.`,
       stats: [
-        {
-          label: "Risk tier",
-          value: market.riskTier === "low" ? "Low" : market.riskTier === "medium" ? "Medium" : "High",
-        },
-        { label: "Reserve factor", value: `${(market.reserveFactor * 100).toFixed(0)}%` },
-        {
-          label: "Status",
-          value: market.status === "active" ? "Active" : market.status === "capped" ? "Capped" : "Paused",
-        },
+        contractStatForSeed("Vault Contract Address", market.marketId, "vault"),
+        contractStatForSeed("Token Contract Address", market.marketId, "token"),
+        contractStatForSeed("Staking Contract Address", market.marketId, "staking"),
+        { label: "Deployed On", value: market.riskTier === "low" ? "March 18, 2024" : "October 7, 2024" },
       ],
       history: [
         { date: "2025-01-20", title: "Listed", description: `${market.asset.symbol} supply market opened.` },
