@@ -278,7 +278,90 @@ function buildContractStat(label: string, market: LendMarket, salt: string): Abo
   }
 }
 
-function buildAbout(market: LendMarket): AboutCard {
+function buildGovernanceParameters(market: LendMarket, ref: Reference): AboutCard["governanceParameters"] {
+  const isStable = market.riskTier === "low"
+  const ltvPct = isStable ? 78 : 72
+  const liquidationThresholdPct = isStable ? 83 : 78
+  const liquidationBonusPct = isStable ? 5 : 7
+  const supplyCapUsd = Math.max(25_000_000, Math.ceil((ref.suppliedUsd * 1.75) / 1_000_000) * 1_000_000)
+  const borrowCapUsd = Math.max(10_000_000, Math.ceil((ref.borrowedUsd * 2.25) / 1_000_000) * 1_000_000)
+  const proposalHref = `https://etherscan.io/address/${contractAddressFor(market, "governance")}`
+
+  return {
+    parameters: [
+      {
+        id: "ltv",
+        label: "Max LTV",
+        value: `${ltvPct}%`,
+        description: "Maximum borrow power when this supplied asset is used as collateral.",
+      },
+      {
+        id: "liquidationThreshold",
+        label: "Liquidation threshold",
+        value: `${liquidationThresholdPct}%`,
+        description: "Health factor begins breaking down when collateral value crosses this threshold.",
+      },
+      {
+        id: "supplyCap",
+        label: "Supply cap",
+        value: formatCompactUsd(supplyCapUsd),
+        description: "Governance-controlled ceiling for deposits into this market.",
+      },
+      {
+        id: "borrowCap",
+        label: "Borrow cap",
+        value: formatCompactUsd(borrowCapUsd),
+        description: "Governance-controlled ceiling for total borrowed liquidity.",
+      },
+      {
+        id: "liquidationBonus",
+        label: "Liquidation bonus",
+        value: `${liquidationBonusPct}%`,
+        description: "Incentive paid to liquidators when unhealthy positions are cleared.",
+      },
+      {
+        id: "oracle",
+        label: "Oracle source",
+        value: "Chainlink",
+        description: "Price feed family used by the market risk engine.",
+      },
+    ],
+    changelog: [
+      {
+        id: "supply-cap-review",
+        parameter: "Supply cap",
+        previous: formatCompactUsd(Math.round(supplyCapUsd * 0.86)),
+        current: formatCompactUsd(supplyCapUsd),
+        date: "2025-09-08",
+        source: "Risk parameter review",
+        executor: "Governance executor",
+        href: proposalHref,
+      },
+      {
+        id: "reserve-factor-review",
+        parameter: "Reserve factor",
+        previous: `${Math.max(0, Math.round(market.reserveFactor * 100) - 1)}%`,
+        current: `${Math.round(market.reserveFactor * 100)}%`,
+        date: "2025-06-02",
+        source: "Revenue parameter update",
+        executor: "Risk steward multisig",
+        href: proposalHref,
+      },
+      {
+        id: "collateral-onboarding",
+        parameter: "Collateral configuration",
+        previous: "Disabled",
+        current: `${ltvPct}% LTV / ${liquidationThresholdPct}% LT`,
+        date: "2025-01-20",
+        source: "Market onboarding",
+        executor: "Governance executor",
+        href: proposalHref,
+      },
+    ],
+  }
+}
+
+function buildAbout(market: LendMarket, ref: Reference): AboutCard {
   const isStable = market.riskTier === "low"
   return {
     description:
@@ -306,6 +389,7 @@ function buildAbout(market: LendMarket): AboutCard {
         description: "Quarterly risk review — reserve factor unchanged.",
       },
     ],
+    governanceParameters: buildGovernanceParameters(market, ref),
   }
 }
 
@@ -345,7 +429,7 @@ export function buildLendMarketDetail(market: LendMarket, overrides?: LendDetail
     supplyBorrow: buildSupplyBorrow(market, ref),
     cashflow: buildCashflow(market, ref),
     risk: buildLendRiskAssessment(market),
-    about: buildAbout(market),
+    about: buildAbout(market, ref),
     faqs: buildLendFaqs(market.asset.symbol, market.asset.name),
     transactions: buildTransactions(market),
     related: buildRelated(market),
@@ -355,5 +439,5 @@ export function buildLendMarketDetail(market: LendMarket, overrides?: LendDetail
 
 /** About card for seeding the Convex content layer (mirrors what the detail page renders). */
 export function getLendAboutCard(market: LendMarket): AboutCard {
-  return buildAbout(market)
+  return buildAbout(market, resolveReference(market))
 }

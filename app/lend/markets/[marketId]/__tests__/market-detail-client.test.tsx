@@ -25,7 +25,12 @@ vi.mock("@/app/lend/_detail/sections/RelatedMarketsRow", () => ({
   ),
 }))
 vi.mock("@/app/borrow/_detail/ui", () => ({
-  AboutNewsSection: () => <div data-testid="about" />,
+  AboutNewsSection: ({ afterAbout }: { afterAbout?: React.ReactNode }) => (
+    <>
+      <div data-testid="about" />
+      {afterAbout}
+    </>
+  ),
 }))
 vi.mock("@/app/borrow/_detail/ui/DetailFaqSection", () => ({
   DetailFaqSection: ({ items }: { items: unknown[] }) => <div data-testid="faqs">{items.length}</div>,

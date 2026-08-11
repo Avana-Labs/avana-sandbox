@@ -250,6 +250,26 @@ export type AboutCard = {
   stats: Array<{ label: string; value: string; href?: string }>
   history: Array<{ date: string; title: string; description?: string }>
   news?: Array<{ title: string; description?: string; source: string; time: string }>
+  governanceParameters?: {
+    parameters: Array<{
+      id: string
+      label: string
+      value: string
+      status?: string
+      description?: string
+      href?: string
+    }>
+    changelog: Array<{
+      id: string
+      parameter: string
+      previous: string
+      current: string
+      date: string
+      source: string
+      executor: string
+      href?: string
+    }>
+  }
 }
 
 export type RelatedPoolSummary = {
