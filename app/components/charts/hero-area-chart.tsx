@@ -81,7 +81,7 @@ export function buildHeroAreaGeometry(
       xAxisTicks: [] as XAxisTick[],
     }
   }
-  const top = 4
+  const top = 58
   const bottom = 34
   const right = width < 640 ? 40 : 52
   const values = data.map((point) => point.value)

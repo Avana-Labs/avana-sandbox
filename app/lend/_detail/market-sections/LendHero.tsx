@@ -133,7 +133,7 @@ export function LendHero({ detail, leading, actions, className, hideIdentity = f
           activeMetricTab={activeMetricTab}
           onMetricTabChange={setActiveMetricTab}
           balanceVariant="strong"
-          balanceClassName="absolute left-0 top-0 z-10 translate-y-3"
+          balanceClassName="absolute left-0 top-0 z-10 translate-y-1"
         />
       </div>
     </section>
