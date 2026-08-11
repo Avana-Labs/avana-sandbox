@@ -83,7 +83,7 @@ export function buildHeroAreaGeometry(
   }
   const top = 58
   const bottom = 34
-  const right = width < 640 ? 40 : 52
+  const right = width < 640 ? 40 : 48
   const values = data.map((point) => point.value)
   const rawMin = Math.min(...values)
   const rawMax = Math.max(...values)
@@ -93,7 +93,7 @@ export function buildHeroAreaGeometry(
   const range = Math.max(1, max - min)
   const plotHeight = Math.max(1, height - top - bottom)
   const plotWidth = Math.max(1, width - right)
-  const yTickCount = width < 640 ? 5 : 7
+  const yTickCount = width < 640 ? 5 : 6
   const tickValues = Array.from({ length: yTickCount }, (_, index) => max - (range * index) / (yTickCount - 1))
   const axisTicks = tickValues.map((value) => ({
     value,
