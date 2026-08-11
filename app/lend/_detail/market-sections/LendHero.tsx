@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { BadgeCheck, Copy, Globe, MessageSquare } from "@/app/components/icons"
+import { Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
@@ -49,10 +49,6 @@ export function LendHeroIdentity({
               <span className="shrink-0 text-[20px] font-medium leading-none tracking-[-0.01em] text-foreground/55">
                 {detail.hero.symbol}
               </span>
-              <BadgeCheck
-                className="h-[22px] w-[22px] shrink-0 -translate-y-[2px] fill-muted-foreground text-background"
-                aria-hidden="true"
-              />
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-3 text-[15px] font-medium text-foreground/75">
               <span>{chainLabel}</span>
