@@ -41,7 +41,7 @@ export function NewsCard({ items, title = "Risk Stewards", plain = false, viewAl
           plain ? "flex items-center justify-between gap-3" : "flex items-center justify-between gap-3 px-4 py-3"
         }
       >
-        <h2 className="truncate text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
+        <h2 className="truncate text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
           {t(title)}
         </h2>
         {viewAllHref ? (

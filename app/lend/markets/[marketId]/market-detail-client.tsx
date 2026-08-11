@@ -110,7 +110,7 @@ export function LendMarketDetailClient({ detail }: Props) {
                 <LendHero detail={detail} hideIdentity className="mb-6" />
 
                 <section aria-label={t("Key Statistics")} className="mb-12 space-y-6">
-                  <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
+                  <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
                     Key Statistics
                   </h2>
                   <QuickStatsGrid detail={detail} />
