@@ -165,7 +165,7 @@ function UmbrellaHero() {
 
   return (
     <div className="mb-6 md:mb-8">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-[24px] font-semibold tracking-[-0.045em]">Your Umbrella</h2>
         <AmountVisibilityToggle />
       </div>
@@ -267,13 +267,19 @@ function UmbrellaStress() {
                   <span className="text-[15px] font-semibold tabular-nums">{asset.deficitOffset}</span>
                 </div>
                 <div className="flex items-start justify-between gap-3">
-                  <span className="text-[14px] text-muted-foreground">Emission runway</span>
+                  <span className="text-[14px] text-muted-foreground">Rewards budget</span>
                   <span className="min-w-0 text-right">
-                    <span className="block truncate text-[13px] font-medium text-foreground">
-                      {asset.emissionToken}
-                    </span>
                     <span className="mt-1 block text-[15px] font-semibold tabular-nums">{asset.unallocated}</span>
-                    <span className="mt-0.5 block text-[13px] text-muted-foreground">{asset.runwayEnd}</span>
+                    <span className="mt-0.5 block text-[13px] text-muted-foreground">Runs to {asset.runwayEnd}</span>
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[14px] text-muted-foreground">Claimable</span>
+                  <span className="text-right text-[15px] font-semibold tabular-nums">
+                    {asset.claimable}
+                    <span className="ml-1.5 text-[13px] font-normal text-muted-foreground">
+                      · Claimed {asset.claimed}
+                    </span>
                   </span>
                 </div>
               </div>
@@ -284,16 +290,12 @@ function UmbrellaStress() {
                   <div className="mt-1 text-[19px] font-semibold tracking-[-0.04em] tabular-nums">{asset.totalApy}</div>
                 </div>
                 <div>
-                  <div className="text-[14px] text-muted-foreground">{asset.cooldownWhen}</div>
+                  <div className="text-[14px] text-muted-foreground">Next cooldown release</div>
                   <div className="mt-1 text-[19px] font-semibold tracking-[-0.04em] tabular-nums">
                     {asset.cooldownRelease}
                   </div>
-                  <div className="mt-0.5 text-[13px] text-muted-foreground">Cooldown release</div>
+                  <div className="mt-0.5 text-[13px] text-muted-foreground">{asset.cooldownWhen}</div>
                 </div>
-              </div>
-
-              <div className="mt-4 text-[13px] text-muted-foreground">
-                Claimable {asset.claimable} · Claimed {asset.claimed}
               </div>
             </div>
           ))}

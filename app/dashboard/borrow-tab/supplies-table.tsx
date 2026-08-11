@@ -81,7 +81,9 @@ export function SuppliesPanel({
       ) : null}
       {showHeading ? (
         <div className="mb-3">
-          <h3 className="text-[14px] font-medium tracking-tight">{t("My LP Collaterals")}</h3>
+          <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
+            {t("My Collaterals")}
+          </h3>
         </div>
       ) : null}
       <div className="hidden md:block">
