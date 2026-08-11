@@ -20,6 +20,28 @@ type Props = {
 }
 
 const RISK_STAT_IDS = new Set(["riskPremium", "maxLtv", "collateralFactor"])
+const MARKET_STAT_ORDER = new Map([
+  ["supplied", 0],
+  ["totalSupplied", 0],
+  ["borrowApy", 1],
+  ["price", 2],
+  ["borrowed", 3],
+  ["totalBorrowed", 3],
+  ["available", 4],
+  ["availableLiquidity", 4],
+  ["utilization", 5],
+  ["supplyApy", 6],
+  ["rewardsApy", 7],
+  ["reserveFactor", 8],
+])
+
+function orderMarketStats(stats: QuickStatLike[]) {
+  return [...stats].sort((a, b) => {
+    const aOrder = MARKET_STAT_ORDER.get(a.id) ?? 100
+    const bOrder = MARKET_STAT_ORDER.get(b.id) ?? 100
+    return aOrder - bOrder
+  })
+}
 
 function splitQuickStats(stats: QuickStatLike[]) {
   const market: QuickStatLike[] = []
@@ -33,7 +55,7 @@ function splitQuickStats(stats: QuickStatLike[]) {
     }
   }
 
-  return { market, risk }
+  return { market: orderMarketStats(market), risk }
 }
 
 function StatsGrid({ stats, columns = 3 }: { stats: QuickStatLike[]; columns?: 3 | 4 }) {
