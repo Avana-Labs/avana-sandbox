@@ -149,7 +149,7 @@ function ChartMetricSelector({
   onTabChange?: (tab: string) => void
 }) {
   return (
-    <div className="inline-flex w-fit items-center gap-0.5 rounded-full border border-border bg-background p-0.5 shadow-sm">
+    <div className="inline-flex w-fit items-center gap-0.5 rounded-full border border-border bg-background p-0.5">
       {tabs.map((tab) => {
         const active = tab === activeTab
         return (

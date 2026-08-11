@@ -29,7 +29,7 @@ export function ChartRangeSelector({
       role="tablist"
       aria-label={t("Time range")}
       className={cn(
-        "inline-flex w-fit items-center gap-0.5 rounded-full border border-border bg-background p-0.5 shadow-sm",
+        "inline-flex w-fit items-center gap-0.5 rounded-full border border-border bg-background p-0.5",
         className,
       )}
     >
