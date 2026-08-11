@@ -149,9 +149,7 @@ export function DashboardInvestments({
                               <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
                                 {token.name}
                               </span>
-                              <span className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
-                                {token.symbol}
-                              </span>
+                              <span className="mt-0.5 text-[13px] text-muted-foreground">{token.symbol}</span>
                             </div>
                           </div>
                         </td>
@@ -159,7 +157,7 @@ export function DashboardInvestments({
                           <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                             {m(formatTokenAmount(token.balance, token.symbol))}
                           </div>
-                          <div className="text-[12px] tracking-[-0.03em] text-muted-foreground">
+                          <div className="text-[13px] text-muted-foreground">
                             {m(formatUsdExact(token.suppliedUsd))}
                           </div>
                         </td>
@@ -167,7 +165,7 @@ export function DashboardInvestments({
                           <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                             {token.apyPct.toFixed(2)}%
                           </div>
-                          <div className="text-[12px] tracking-[-0.03em] text-muted-foreground">
+                          <div className="text-[13px] text-muted-foreground">
                             {m(`+${formatUsdExact(token.earnedUsd)}`)}
                           </div>
                         </td>
@@ -248,7 +246,7 @@ export function DashboardInvestments({
                       value={
                         <span>
                           {m(formatTokenAmount(token.balance, token.symbol))}
-                          <span className="ml-2 text-[12px] tracking-[-0.03em] text-muted-foreground">
+                          <span className="ml-2 text-[13px] text-muted-foreground">
                             {m(formatUsdExact(token.suppliedUsd))}
                           </span>
                         </span>
@@ -259,7 +257,7 @@ export function DashboardInvestments({
                       value={
                         <span>
                           {m(`+${formatUsdExact(token.earnedUsd)}`)}
-                          <span className="ml-2 text-[12px] tracking-[-0.03em] text-muted-foreground">
+                          <span className="ml-2 text-[13px] text-muted-foreground">
                             {m(`${formatUsdExact(token.dailyEarnedUsd)}/day`)}
                           </span>
                         </span>

@@ -313,7 +313,8 @@ describe("DashboardPageClient", () => {
     expect(screen.getByRole("tab", { name: "Multiply" })).toBeInTheDocument()
     expect(screen.getByRole("tab", { name: "Referrals" })).toBeInTheDocument()
     expect(screen.queryByRole("link", { name: "Rewards" })).toBeNull()
-    expect(screen.getByRole("heading", { name: "Wallet" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Your Portfolio" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Wallet Balance" })).toBeInTheDocument()
   })
 
   it("opens the education flow for primer quests", async () => {

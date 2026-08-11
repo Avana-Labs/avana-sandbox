@@ -295,7 +295,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-baseline gap-1.5">
                   <span className="text-[14px] font-medium text-foreground">{t(KIND_LABEL[row.kind])}</span>
-                  <span className="truncate text-[12px] text-muted-foreground">
+                  <span className="truncate text-[13px] text-muted-foreground">
                     · {t(PRODUCT_OPTIONS.find((option) => option.id === row.product)?.label ?? row.product)}
                   </span>
                 </div>
@@ -305,7 +305,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
               </div>
               <div className="mt-1.5 min-w-0">
                 <div className="truncate text-[14px] text-foreground">{row.primaryLabel}</div>
-                <div className="truncate text-[12px] text-muted-foreground">{row.secondaryLabel}</div>
+                <div className="truncate text-[13px] text-muted-foreground">{row.secondaryLabel}</div>
               </div>
               <div className="mt-2.5 flex items-center justify-between gap-3">
                 <span className="font-data text-[14px] font-medium tabular-nums text-foreground">{amount(row)}</span>
@@ -320,7 +320,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
                   </span>
                   <TxnLink
                     txHash={row.txHash}
-                    className="font-data text-[12px] tabular-nums text-muted-foreground underline-offset-2 hover:underline"
+                    className="font-data text-[13px] tabular-nums text-muted-foreground underline-offset-2 hover:underline"
                   />
                 </div>
               </div>
@@ -377,7 +377,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
                     <td className="px-5 py-4 align-middle">
                       <div className="min-w-0">
                         <div className="truncate text-[14px] font-medium text-foreground">{row.primaryLabel}</div>
-                        <div className="truncate text-[12px] text-muted-foreground">{row.secondaryLabel}</div>
+                        <div className="truncate text-[13px] text-muted-foreground">{row.secondaryLabel}</div>
                       </div>
                     </td>
                     <td className="px-5 py-4 align-middle font-data text-[14px] font-medium tabular-nums text-foreground">
