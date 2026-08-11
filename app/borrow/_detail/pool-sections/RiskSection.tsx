@@ -76,7 +76,7 @@ export function RiskSection({ detail }: Props) {
                     className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-hover"
                   >
                     <div className="flex min-w-0 items-center gap-2.5">
-                      <span className="truncate text-[13px] font-medium text-foreground">{t(item.label)}</span>
+                      <span className="truncate text-[14px] font-normal text-muted-foreground">{t(item.label)}</span>
                       <RiskLevelPill level={item.level} withDot={false} />
                     </div>
                     <div className="flex shrink-0 items-center gap-2.5">
