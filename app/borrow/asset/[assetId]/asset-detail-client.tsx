@@ -13,7 +13,8 @@ import {
   MobileDetailActionBar,
 } from "@/app/components/detail-page-primitives"
 import { AssetHero, AssetHeroIdentity } from "@/app/borrow/_detail/asset-sections"
-import { QuickStatsGrid, ProtocolParametersSection } from "@/app/borrow/_detail/pool-sections"
+import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
+import { withGovernanceParameterView } from "@/app/borrow/_detail/lib/governance-parameters"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { AssetTokenSidebar } from "@/app/borrow/_detail/sidebars"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -60,6 +61,7 @@ type Props = { detail: AssetDetail }
 export function AssetDetailClient({ detail }: Props) {
   const { t } = useTranslation()
   const closeHref = `/borrow/assets/${detail.row.id}`
+  const about = withGovernanceParameterView(detail.about, detail.protocolParameters)
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -79,33 +81,39 @@ export function AssetDetailClient({ detail }: Props) {
               <span className="font-normal text-foreground">{detail.hero.name}</span>
             </nav>
 
-            <div className="grid lg:grid-cols-[minmax(0,1fr)_420px] lg:grid-rows-[auto_1fr] lg:gap-x-8">
+            <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-20">
               <div className="min-w-0 border-b border-border pb-5 lg:col-span-2">
                 <AssetHeroIdentity detail={detail} className="pb-0" />
               </div>
 
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                <AssetHero detail={detail} hideIdentity className="mb-6" />
+                <AssetHero detail={detail} hideIdentity className="mb-12" />
 
                 <AboutNewsSection
-                  about={detail.about}
+                  about={about}
                   aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
                   compactAboutTitle
                   newsImageLabel={detail.hero.symbol}
+                  afterAbout={
+                    <>
+                      <section aria-label={t("Key Statistics")} className="space-y-6">
+                        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+                          Key Statistics
+                        </h2>
+                        <QuickStatsGrid detail={detail} hideRisk />
+                      </section>
+                      <RiskSection detail={detail} />
+                    </>
+                  }
+                  className="pt-0"
                 />
 
-                <section aria-label={t("Asset analytics")} className="space-y-12 pt-12">
-                  <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
-                    Asset data
-                  </h2>
-                  <QuickStatsGrid detail={detail} />
+                <section aria-label={t("Asset analytics")} className="space-y-14 pt-14 md:space-y-16 md:pt-16">
                   <DeferredDetailContent>
-                    <div className="space-y-12">
-                      <ProtocolParametersSection parameters={detail.protocolParameters} />
+                    <div className="space-y-14 md:space-y-16">
                       <InterestRateModelCard detail={detail} />
                       <AllocationBreakdownCard detail={detail} />
                       <AssetCashflowCard detail={detail} />
-                      <RiskSection detail={detail} />
                       <CashflowTrendCard detail={detail} />
                       <DetailFaqSection
                         title={t("General FAQs")}

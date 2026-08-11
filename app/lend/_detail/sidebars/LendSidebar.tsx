@@ -3,6 +3,7 @@
 import * as React from "react"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
 import { ResponsiveLendAction } from "@/app/components/action-page/responsive-lend-action"
+import { DetailActionTabs } from "@/app/components/detail-action-tabs"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
@@ -32,7 +33,6 @@ export function LendMarketActions({ detail, className }: Props) {
 }
 
 function LendActionRail({ detail, className }: Props) {
-  const { t } = useTranslation()
   const marketId = detail.row.marketId
   const closeHref = `/lend/markets/${marketId}`
   const [tab, setTab] = React.useState<SidebarTab>("deposit")
@@ -43,27 +43,7 @@ function LendActionRail({ detail, className }: Props) {
 
   return (
     <div className={cn("flex w-full flex-col", className)}>
-      <div role="tablist" aria-label={t("Lend actions")} className="flex items-center gap-0">
-        {LEND_TAB_ITEMS.map((item) => {
-          const active = tab === item.id
-          return (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              data-state={active ? "active" : "inactive"}
-              onClick={() => setTab(item.id)}
-              className={cn(
-                "rounded-full px-3.5 py-2 text-[15px] font-semibold leading-none text-foreground/65 transition-colors hover:text-foreground",
-                active && "bg-muted px-4 py-2.5 text-foreground",
-              )}
-            >
-              {t(item.label)}
-            </button>
-          )
-        })}
-      </div>
+      <DetailActionTabs items={LEND_TAB_ITEMS} value={tab} onChange={setTab} ariaLabel="Lend actions" />
 
       <div className="mt-2">
         {tab === "deposit" ? (

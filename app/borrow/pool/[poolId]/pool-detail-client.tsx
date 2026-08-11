@@ -7,12 +7,8 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
-import {
-  PoolHero,
-  PoolHeroIdentity,
-  QuickStatsGrid,
-  ProtocolParametersSection,
-} from "@/app/borrow/_detail/pool-sections"
+import { withGovernanceParameterView } from "@/app/borrow/_detail/lib/governance-parameters"
+import { PoolHero, PoolHeroIdentity, QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
 import { PoolBorrowSidebar } from "@/app/borrow/_detail/sidebars"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
@@ -54,6 +50,7 @@ type Props = { detail: PoolDetail }
  */
 export function PoolDetailClient({ detail }: Props) {
   const { t } = useTranslation()
+  const about = withGovernanceParameterView(detail.about, detail.protocolParameters)
 
   return (
     <div className="bg-background">
@@ -73,32 +70,38 @@ export function PoolDetailClient({ detail }: Props) {
               <span className="font-normal text-foreground">{detail.hero.name}</span>
             </nav>
 
-            <div className="grid lg:grid-cols-[minmax(0,1fr)_420px] lg:grid-rows-[auto_1fr] lg:gap-x-8">
+            <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-20">
               <div className="min-w-0 border-b border-border pb-5 lg:col-span-2">
                 <PoolHeroIdentity detail={detail} className="pb-0" />
               </div>
 
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                <PoolHero detail={detail} hideIdentity className="mb-6" />
+                <PoolHero detail={detail} hideIdentity className="mb-12" />
 
                 <AboutNewsSection
-                  about={detail.about}
+                  about={about}
                   aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
                   compactAboutTitle
                   newsImageUrl={detail.hero.visuals[0].iconUrl ?? detail.hero.visuals[1].iconUrl ?? undefined}
                   newsImageLabel={detail.hero.name}
                   mediaVariant="icon"
+                  afterAbout={
+                    <>
+                      <section aria-label={t("Key Statistics")} className="space-y-6">
+                        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+                          Key Statistics
+                        </h2>
+                        <QuickStatsGrid detail={detail} hideRisk />
+                      </section>
+                      <RiskSection detail={detail} />
+                    </>
+                  }
+                  className="pt-0"
                 />
 
-                <section aria-label={t("Pool analytics")} className="space-y-12 pt-12">
-                  <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
-                    Key Statistics
-                  </h2>
-                  <QuickStatsGrid detail={detail} />
-                  <DeferredDetailContent className="space-y-12">
-                    <ProtocolParametersSection parameters={detail.protocolParameters} />
+                <section aria-label={t("Pool analytics")} className="space-y-14 pt-14 md:space-y-16 md:pt-16">
+                  <DeferredDetailContent className="space-y-14 md:space-y-16">
                     <CashflowCard detail={detail} />
-                    <RiskSection detail={detail} />
                     <DetailFaqSection
                       title={t("General FAQs")}
                       items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}

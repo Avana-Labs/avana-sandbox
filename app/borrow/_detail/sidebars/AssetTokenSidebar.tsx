@@ -7,7 +7,7 @@ import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-launch-cta"
 import { ResponsiveBorrowAction } from "@/app/components/action-page/responsive-borrow-action"
-import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
+import { DetailActionTabs } from "@/app/components/detail-action-tabs"
 import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { HomeAssetVisual, HomeCollateralPool } from "@/app/lib/borrow-system/home-contracts"
 import type { BorrowPoolRow } from "@/app/lib/data/borrow-domain"
@@ -18,6 +18,11 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 type Props = { detail: AssetDetail; className?: string }
 
 type SidebarTab = "borrow" | "repay"
+
+const ASSET_TAB_ITEMS = [
+  { id: "borrow", label: "Borrow" },
+  { id: "repay", label: "Repay" },
+] as const
 
 export function AssetTokenSidebar({ detail, className }: Props) {
   return (
@@ -68,17 +73,7 @@ function TokenRail({
   return (
     <>
       <div className={cn("flex w-full flex-col", className)}>
-        <ActionWorkspaceTabs
-          items={[
-            { id: "borrow", label: t("Borrow") },
-            { id: "repay", label: t("Repay") },
-          ]}
-          value={tab}
-          onChange={(value) => setTab(value as SidebarTab)}
-          ariaLabel={t("Asset actions")}
-          withIcons
-          revealLabels
-        />
+        <DetailActionTabs items={ASSET_TAB_ITEMS} value={tab} onChange={setTab} ariaLabel="Asset actions" />
 
         <div className="mt-3">
           {tab === "borrow" ? (
