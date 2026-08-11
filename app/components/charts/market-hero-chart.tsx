@@ -38,6 +38,8 @@ type MarketHeroChartProps = {
   activeMetricTab?: string
   onMetricTabChange?: (tab: string) => void
   chartTone?: "positive" | "negative" | "neutral"
+  balanceVariant?: "default" | "strong"
+  balanceClassName?: string
 }
 
 /**
@@ -57,6 +59,8 @@ export function MarketHeroChart({
   activeMetricTab,
   onMetricTabChange,
   chartTone,
+  balanceVariant = "default",
+  balanceClassName,
 }: MarketHeroChartProps) {
   // Only offer ranges the feed can actually populate. Daily-granularity feeds omit
   // 1H/1D (which would render as duplicate sparse 2-point lines).
@@ -97,12 +101,20 @@ export function MarketHeroChart({
   }, [ctx, feed, hoverPoint, points, rangeTone])
 
   return (
-    <div className="space-y-2">
+    <div className="relative space-y-2">
       {/* Metric name kept for screen readers / internal recognition; hidden visually. */}
       {label ? (
         <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{label}</p>
       ) : null}
-      <HeroBalanceDisplay value={value} delta={delta} deltaTone={tone} meta={showMeta ? meta : undefined} hidden={hideValue} />
+      <HeroBalanceDisplay
+        value={value}
+        delta={delta}
+        deltaTone={tone}
+        meta={showMeta ? meta : undefined}
+        hidden={hideValue}
+        variant={balanceVariant}
+        className={balanceClassName}
+      />
       <HeroAreaChart
         data={points}
         activeRange={activeRange}
