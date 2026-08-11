@@ -21,6 +21,26 @@ const detail = {
 }
 
 describe("QuickStatsGrid currency conversion", () => {
+  it("keeps supplied and borrow APY at the top of market stats", () => {
+    render(
+      <QuickStatsGrid
+        detail={{
+          quickStats: [
+            { id: "utilization", label: "Utilization", value: "62.1%" },
+            { id: "reserveFactor", label: "Reserve Factor", value: "10%" },
+            { id: "borrowApy", label: "Borrow APY", value: "37.98%" },
+            { id: "supplied", label: "Total Supplied", value: "$29.46M" },
+          ],
+        }}
+      />,
+    )
+
+    const labels = screen
+      .getAllByText(/Total Supplied|Borrow APY|Utilization|Reserve Factor/)
+      .map((node) => node.textContent)
+    expect(labels).toEqual(["Total Supplied", "Borrow APY", "Utilization", "Reserve Factor"])
+  })
+
   it("renders Market overview money stats in USD by default", () => {
     currencyRef.current = "USD"
     const { getByText } = render(<QuickStatsGrid detail={detail} />)
