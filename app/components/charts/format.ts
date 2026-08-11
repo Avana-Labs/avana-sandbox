@@ -31,6 +31,8 @@ function formatCompactAxis(value: number): string {
 /** Tooltip + headline value formatting. */
 export function formatChartValue(format: ChartValueFormat, value: number): string {
   switch (format) {
+    case "percent":
+      return `${value.toFixed(2)}%`
     case "usdCompact":
       return formatCompactUsd(value)
     case "price":
@@ -45,6 +47,8 @@ export function formatChartValue(format: ChartValueFormat, value: number): strin
 /** Y-axis tick formatting (shorter than the headline). */
 export function formatChartAxis(format: ChartValueFormat, value: number): string {
   switch (format) {
+    case "percent":
+      return `${value.toFixed(value >= 10 ? 0 : 1)}%`
     case "usdCompact":
       return formatCompactAxis(value)
     case "price":

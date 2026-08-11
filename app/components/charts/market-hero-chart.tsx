@@ -36,6 +36,8 @@ type MarketHeroChartProps = {
   showMeta?: boolean
   metricTabs?: readonly string[]
   activeMetricTab?: string
+  onMetricTabChange?: (tab: string) => void
+  chartTone?: "positive" | "negative" | "neutral"
 }
 
 /**
@@ -53,6 +55,8 @@ export function MarketHeroChart({
   showMeta = true,
   metricTabs,
   activeMetricTab,
+  onMetricTabChange,
+  chartTone,
 }: MarketHeroChartProps) {
   // Only offer ranges the feed can actually populate. Daily-granularity feeds omit
   // 1H/1D (which would render as duplicate sparse 2-point lines).
@@ -104,20 +108,34 @@ export function MarketHeroChart({
         activeRange={activeRange}
         height={height}
         gradientId={gradientId}
-        tone={hoverPoint ? tone : rangeTone}
+        tone={chartTone ?? (hoverPoint ? tone : rangeTone)}
         formatValue={(v) => formatChartValue(feed.valueFormat, v)}
         formatYAxis={(v) => formatChartAxis(feed.valueFormat, v)}
         onActiveIndexChange={setHoverIndex}
       />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ChartRangeSelector activeRange={activeRange} onRangeChange={setRequestedRange} ranges={availableRanges} />
-        {metricTabs?.length ? <ChartMetricSelector tabs={metricTabs} activeTab={activeMetricTab ?? metricTabs[0]} /> : null}
+        {metricTabs?.length ? (
+          <ChartMetricSelector
+            tabs={metricTabs}
+            activeTab={activeMetricTab ?? metricTabs[0]}
+            onTabChange={onMetricTabChange}
+          />
+        ) : null}
       </div>
     </div>
   )
 }
 
-function ChartMetricSelector({ tabs, activeTab }: { tabs: readonly string[]; activeTab: string }) {
+function ChartMetricSelector({
+  tabs,
+  activeTab,
+  onTabChange,
+}: {
+  tabs: readonly string[]
+  activeTab: string
+  onTabChange?: (tab: string) => void
+}) {
   return (
     <div className="inline-flex w-fit items-center gap-0.5 rounded-full border border-border bg-background p-0.5 shadow-sm">
       {tabs.map((tab) => {
@@ -126,6 +144,7 @@ function ChartMetricSelector({ tabs, activeTab }: { tabs: readonly string[]; act
           <button
             key={tab}
             type="button"
+            onClick={() => onTabChange?.(tab)}
             className={[
               "flex h-7 min-w-16 items-center justify-center rounded-full px-2.5 text-[12px] font-semibold transition-colors sm:text-[13px]",
               active ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground",

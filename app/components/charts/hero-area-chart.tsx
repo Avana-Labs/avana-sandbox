@@ -15,6 +15,11 @@ const TONE_COLORS = {
     fill: "#F0444C",
     cursor: "rgba(240, 68, 76, 0.2)",
   },
+  neutral: {
+    stroke: "hsl(var(--foreground))",
+    fill: "hsl(var(--foreground))",
+    cursor: "hsl(var(--foreground) / 0.18)",
+  },
 } as const
 
 type HeroAreaChartProps = {
@@ -25,7 +30,7 @@ type HeroAreaChartProps = {
   formatYAxis?: (value: number) => string
   gradientId?: string
   className?: string
-  tone?: "positive" | "negative"
+  tone?: "positive" | "negative" | "neutral"
   onActiveIndexChange?: (index: number | null) => void
 }
 
@@ -158,7 +163,7 @@ export function HeroAreaChart({
     return () => observer.disconnect()
   }, [])
 
-  const resolvedTone: "positive" | "negative" =
+  const resolvedTone: "positive" | "negative" | "neutral" =
     tone ?? (data.length >= 2 && data[data.length - 1].value < data[0].value ? "negative" : "positive")
   const color = TONE_COLORS[resolvedTone]
   const geometry = useMemo(
@@ -279,7 +284,7 @@ export function HeroAreaChart({
                   y={tick.y}
                   dominantBaseline="middle"
                   textAnchor="end"
-                  className="fill-muted-foreground font-data text-[12.5px] font-medium"
+                  className="fill-foreground font-data text-[12.5px] font-medium"
                 >
                   {tick.label}
                 </text>
@@ -295,7 +300,7 @@ export function HeroAreaChart({
                 x={tick.x}
                 y={dimensions.height - 8}
                 textAnchor={tick.anchor}
-                className="fill-muted-foreground font-data text-[12px] font-medium"
+                className="fill-foreground font-data text-[12px] font-medium"
               >
                 {tick.label}
               </text>
