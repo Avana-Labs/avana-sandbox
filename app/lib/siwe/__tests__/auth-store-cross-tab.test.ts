@@ -4,61 +4,31 @@ import { clearSiweToken, getSiweToken, setSiweToken, subscribeSiwe } from "@/app
 const STORAGE_KEY = "avana.siwe.token.v1"
 const WALLET = "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
 
-function fireStorage(newValue: string | null) {
+function fireLegacyStorage(newValue: string | null) {
   window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY, newValue }))
 }
 
-describe("auth-store cross-tab sync", () => {
+describe("auth-store session storage", () => {
   beforeEach(() => clearSiweToken())
   afterEach(() => clearSiweToken())
 
-  it("syncs a sign-in from another tab and notifies subscribers", () => {
-    const listener = vi.fn()
-    const unsubscribe = subscribeSiwe(listener)
+  it("stores live tokens in sessionStorage, not localStorage", () => {
+    setSiweToken("live-jwt", WALLET)
 
-    fireStorage(JSON.stringify({ jwt: "jwt-from-other-tab", wallet: WALLET }))
-
-    expect(getSiweToken()).toEqual({ jwt: "jwt-from-other-tab", wallet: WALLET })
-    expect(listener).toHaveBeenCalledTimes(1)
-    unsubscribe()
+    expect(window.sessionStorage.getItem(STORAGE_KEY)).toContain("live-jwt")
+    expect(window.localStorage.getItem(STORAGE_KEY)).toBeNull()
   })
 
-  it("syncs a sign-out from another tab so no stale authed token remains", () => {
+  it("clears the tab token when legacy persistent storage is cleared", () => {
     setSiweToken("live-jwt", WALLET)
-    expect(getSiweToken()).not.toBeNull()
-
     const listener = vi.fn()
     const unsubscribe = subscribeSiwe(listener)
 
-    fireStorage(null) // other tab removed the key
+    fireLegacyStorage(null)
 
     expect(getSiweToken()).toBeNull()
+    expect(window.sessionStorage.getItem(STORAGE_KEY)).toBeNull()
     expect(listener).toHaveBeenCalledTimes(1)
-    unsubscribe()
-  })
-
-  it("syncs a wallet switch from another tab", () => {
-    setSiweToken("jwt-a", WALLET)
-    const otherWallet = "0x1111111111111111111111111111111111111111"
-
-    const listener = vi.fn()
-    const unsubscribe = subscribeSiwe(listener)
-
-    fireStorage(JSON.stringify({ jwt: "jwt-b", wallet: otherWallet }))
-
-    expect(getSiweToken()).toEqual({ jwt: "jwt-b", wallet: otherWallet })
-    expect(listener).toHaveBeenCalledTimes(1)
-    unsubscribe()
-  })
-
-  it("does not notify when the incoming token is unchanged", () => {
-    setSiweToken("same-jwt", WALLET)
-    const listener = vi.fn()
-    const unsubscribe = subscribeSiwe(listener)
-
-    fireStorage(JSON.stringify({ jwt: "same-jwt", wallet: WALLET }))
-
-    expect(listener).not.toHaveBeenCalled()
     unsubscribe()
   })
 
