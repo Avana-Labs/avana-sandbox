@@ -61,8 +61,8 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
       <p
         className={
           plain
-            ? "text-[15px] leading-[1.6] text-text-high md:text-[16px]"
-            : "px-4 text-[15px] leading-[1.6] text-text-high md:text-[16px]"
+            ? "text-[15px] leading-[1.6] text-muted-foreground md:text-[16px]"
+            : "px-4 text-[15px] leading-[1.6] text-muted-foreground md:text-[16px]"
         }
       >
         {shownDescription}
