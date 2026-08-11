@@ -30,9 +30,6 @@ import type { QuickStat } from "@/app/lib/borrow-detail"
 
 /** Convex `getQuickStats` emits asset-style ids; map each to the mock ids it overrides. */
 const QUICK_STAT_ALIASES: Record<string, string[]> = {
-  supplied: ["supplied"],
-  borrowed: ["borrowed"],
-  utilization: ["utilization"],
   supplyApy: ["supplyApy"],
   borrowApy: ["borrowApy"],
 }

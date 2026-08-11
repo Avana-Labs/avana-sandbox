@@ -113,15 +113,12 @@ function buildHero(market: LendMarket): LendMarketHero {
 function buildQuickStats(market: LendMarket, ref: Reference): QuickStat[] {
   return [
     { id: "price", label: "Price", value: formatUsdPrice(ref.price), delta: deltaFromPct(0.1) },
-    { id: "supplied", label: "Total Supplied", value: formatCompactUsd(ref.suppliedUsd), delta: deltaFromPct(1.8) },
-    { id: "borrowed", label: "Total Borrowed", value: formatCompactUsd(ref.borrowedUsd), delta: deltaFromPct(1.1) },
     {
       id: "available",
       label: "Available Liquidity",
       value: formatCompactUsd(ref.availableUsd),
       delta: deltaFromPct(0.6),
     },
-    { id: "utilization", label: "Utilization", value: formatPct(ref.utilizationPct, 2), delta: deltaFromPct(-0.4) },
     { id: "supplyApy", label: "Supply APY", value: formatPct(ref.supplyApyPct, 2), delta: deltaFromPct(0.1) },
     {
       id: "rewardsApy",
