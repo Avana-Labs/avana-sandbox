@@ -34,6 +34,7 @@
 import { v } from "convex/values"
 import { internalMutation, query } from "./_generated/server"
 import type { MutationCtx, QueryCtx } from "./_generated/server"
+import { getAuthedWallet } from "./sandbox/auth"
 
 /** Single cache row discriminator (see `liquidityDeltasCache` in schema.ts). */
 const DELTAS_SINGLETON = "deltas"
@@ -48,6 +49,13 @@ const DELTAS_SINGLETON = "deltas"
 const COMPACTION_BATCH = 4_096
 
 type FoldedDelta = { marketSlug: string; borrowedDeltaUsd: number; suppliedDeltaUsd: number; updatedAt: number }
+
+async function requireLiquidityReader(ctx: QueryCtx) {
+  const wallet = await getAuthedWallet(ctx)
+  if (!wallet) {
+    throw new Error("UNAUTHENTICATED: sign in to read live liquidity deltas.")
+  }
+}
 
 /**
  * Fold the compacted baseline plus the un-compacted raw delta rows into one net aggregate
@@ -195,7 +203,10 @@ export const recordDelta = internalMutation({
  */
 export const listDeltas = query({
   args: {},
-  handler: async (ctx) => foldDeltas(ctx),
+  handler: async (ctx) => {
+    await requireLiquidityReader(ctx)
+    return foldDeltas(ctx)
+  },
 })
 
 /**
@@ -208,6 +219,7 @@ export const listDeltas = query({
 export const listDeltaSnapshot = query({
   args: {},
   handler: async (ctx) => {
+    await requireLiquidityReader(ctx)
     const cache = selectCanonicalSnapshot(await readDeltaSnapshotRows(ctx))
     if (cache) return cache.rows
     return foldDeltas(ctx)
