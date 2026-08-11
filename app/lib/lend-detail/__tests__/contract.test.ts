@@ -58,7 +58,10 @@ describe("lend detail contract", () => {
   it("fills every section with well-formed data", () => {
     const detail = getLendMarketDetail("usdc")!
     expect(detail.quickStats.length).toBeGreaterThan(0)
-    expect(detail.quickStats.find((s) => s.id === "supplied")).toBeTruthy()
+    expect(detail.quickStats.find((s) => s.id === "available")).toBeTruthy()
+    expect(detail.quickStats.find((s) => s.id === "supplied")).toBeUndefined()
+    expect(detail.quickStats.find((s) => s.id === "borrowed")).toBeUndefined()
+    expect(detail.quickStats.find((s) => s.id === "utilization")).toBeUndefined()
     expect(detail.supplyBorrow.supplied.points.length).toBeGreaterThan(0)
     expect(detail.supplyBorrow.utilization.points.length).toBeGreaterThan(0)
     expect(detail.cashflow.rows.length).toBeGreaterThan(0)
@@ -105,11 +108,9 @@ describe("lend detail contract", () => {
       utilizationPct: 40.5,
       supplyApyPct: 7.25,
     })
-    const supplied = overridden.quickStats.find((s) => s.id === "supplied")
-    const utilization = overridden.quickStats.find((s) => s.id === "utilization")
+    const available = overridden.quickStats.find((s) => s.id === "available")
     const supplyApy = overridden.quickStats.find((s) => s.id === "supplyApy")
-    expect(supplied?.value).toBe("$123.5M")
-    expect(utilization?.value).toBe("40.50%")
+    expect(available?.value).toBe("$73.5M")
     expect(supplyApy?.value).toBe("7.25%")
   })
 
