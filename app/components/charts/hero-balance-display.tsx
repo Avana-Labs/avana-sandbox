@@ -69,7 +69,7 @@ export function HeroBalanceDisplay({
           className={cn(
             "leading-none tracking-[-0.03em] text-foreground",
             variant === "strong"
-              ? "text-[31px] font-semibold sm:text-[34px] md:text-[37px]"
+              ? "text-[29px] font-semibold sm:text-[32px] md:text-[34px]"
               : "text-[26px] font-normal sm:text-[28px] md:text-[30px]",
           )}
         >
