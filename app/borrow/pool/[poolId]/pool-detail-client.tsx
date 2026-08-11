@@ -54,7 +54,7 @@ export function PoolDetailClient({ detail }: Props) {
 
   return (
     <div className="bg-background">
-      <main className="pb-24 pt-8 md:pb-12">
+      <main className="pb-24 pt-12 md:pb-12 md:pt-14">
         <div className="container mx-auto px-4">
           <DetailPageWidth>
             <nav
