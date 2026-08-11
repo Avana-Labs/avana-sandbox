@@ -662,7 +662,13 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
     walletEvents.push(...walletEventsForMarket(market.marketId, asOf, walletEventDays))
     content.push({
       slug: market.marketId,
-      description: `${market.asset.name} (${market.asset.symbol}) is a single-asset supply market on Avana. Deposit to earn the supply APY${market.rewardsApy > 0 ? " plus active rewards" : ""}, and withdraw available liquidity anytime. Yield tracks borrow demand and utilization.`,
+      description:
+        `${market.asset.name} (${market.asset.symbol}) is a single-asset supply market on Avana. ` +
+        `Deposit to earn the supply APY${market.rewardsApy > 0 ? " plus active rewards" : ""}, and withdraw available liquidity anytime. ` +
+        `Yield tracks borrower demand, utilization, reserve settings, and market liquidity, so supplier returns can move as deposits and borrows rebalance. ` +
+        `The page focuses on the live supply rate, the supply/borrow mix, available liquidity, and the latest risk posture for this ${
+          market.riskTier === "low" ? "stablecoin" : "tier-" + market.riskTier
+        } market. Suppliers should watch utilization, reserve factor, oracle quality, and withdrawal depth because those inputs affect both earned yield and how quickly capital can exit during stressed conditions.`,
       stats: [
         contractStatForSeed("Vault Contract Address", market.marketId, "vault"),
         contractStatForSeed("Token Contract Address", market.marketId, "token"),

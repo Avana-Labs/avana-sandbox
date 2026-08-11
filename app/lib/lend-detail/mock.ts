@@ -283,10 +283,11 @@ function buildAbout(market: LendMarket): AboutCard {
   return {
     description:
       `${market.asset.name} (${market.asset.symbol}) is a single-asset supply market on Avana. ` +
-      `Suppliers earn the supply APY${market.rewardsApy > 0 ? " plus active rewards" : ""} from borrower interest, ` +
-      `net of the reserve factor. Yield tracks utilization, so the page focuses on the live supply rate, the supply/utilization mix, and the latest risk posture for this ${
+      `Deposit to earn the supply APY${market.rewardsApy > 0 ? " plus active rewards" : ""}, and withdraw available liquidity anytime. ` +
+      `Yield tracks borrower demand, utilization, reserve settings, and market liquidity, so supplier returns can move as deposits and borrows rebalance. ` +
+      `The page focuses on the live supply rate, the supply/borrow mix, available liquidity, and the latest risk posture for this ${
         isStable ? "stablecoin" : "tier-" + market.riskTier
-      } market.`,
+      } market. Suppliers should watch utilization, reserve factor, oracle quality, and withdrawal depth because those inputs affect both earned yield and how quickly capital can exit during stressed conditions.`,
     stats: [
       buildContractStat("Vault Contract Address", market, "vault"),
       buildContractStat("Token Contract Address", market, "token"),
