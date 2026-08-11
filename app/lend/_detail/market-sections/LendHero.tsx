@@ -46,6 +46,9 @@ export function LendHeroIdentity({
               <h1 className="truncate text-ui-heading font-normal leading-none tracking-[-0.02em] text-foreground">
                 {detail.hero.name}
               </h1>
+              <span className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-foreground/55">
+                {detail.hero.symbol}
+              </span>
               <BadgeCheck
                 className="h-[24px] w-[24px] shrink-0 -translate-y-[3px] fill-muted-foreground text-background"
                 aria-hidden="true"
