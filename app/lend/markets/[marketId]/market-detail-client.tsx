@@ -90,7 +90,7 @@ export function LendMarketDetailClient({ detail }: Props) {
           <DetailPageWidth>
             <nav
               aria-label={t("Breadcrumb")}
-              className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]"
+              className="mb-4 flex items-center gap-1.5 text-[15px] text-muted-foreground md:text-[16px]"
             >
               <Link href="/lend" className="transition-colors hover:text-foreground">
                 {t("Lend")}
