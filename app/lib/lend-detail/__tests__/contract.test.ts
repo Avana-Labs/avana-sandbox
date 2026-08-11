@@ -70,6 +70,19 @@ describe("lend detail contract", () => {
     expect(detail.about.stats.length).toBeGreaterThan(0)
   })
 
+  it("uses contract metadata in the About stats like borrow details", () => {
+    const detail = getLendMarketDetail("usdc")!
+    expect(detail.about.stats.map((stat) => stat.label)).toEqual([
+      "Vault Contract Address",
+      "Token Contract Address",
+      "Staking Contract Address",
+      "Deployed On",
+    ])
+    expect(detail.about.stats.slice(0, 3).every((stat) => stat.href?.startsWith("https://etherscan.io/address/"))).toBe(
+      true,
+    )
+  })
+
   it("labels a zero incentive APY as no rewards", () => {
     const detail = getLendMarketDetail("eurc")!
     expect(detail.quickStats.find((stat) => stat.id === "rewardsApy")?.value).toBe("No rewards")

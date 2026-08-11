@@ -86,7 +86,7 @@ export async function getLendMarketDetailFromConvex(id: string): Promise<LendMar
     fetchLendContent(slug),
   ])
 
-  return applyDetailContentOverlay(
+  const hydrated = applyDetailContentOverlay(
     {
       ...detail,
       quickStats: injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, market.asset.symbol),
@@ -97,4 +97,12 @@ export async function getLendMarketDetailFromConvex(id: string): Promise<LendMar
     },
     content,
   )
+
+  return {
+    ...hydrated,
+    about: {
+      ...hydrated.about,
+      stats: detail.about.stats,
+    },
+  }
 }
