@@ -241,7 +241,7 @@ async function openProductTab(label: string) {
 }
 
 async function openReferralTab() {
-  await openProductTab("Referrals")
+  await openProductTab("Rewards")
 }
 
 describe("DashboardPageClient", () => {
@@ -252,7 +252,7 @@ describe("DashboardPageClient", () => {
   })
 
   beforeEach(() => {
-    searchTab = "lend"
+    searchTab = "rewards"
     dateNowSpy = vi.spyOn(Date, "now").mockReturnValue(now)
     push.mockReset()
     claimReward.mockReset()
@@ -294,7 +294,7 @@ describe("DashboardPageClient", () => {
     expect(mobileClaim).toHaveAttribute("href", "/actions/rewards/claim")
     expect(claimAllRewards).not.toHaveBeenCalled()
 
-    await openProductTab("Borrow")
+    await openProductTab("Rewards")
     const questClaimButton = screen
       .getAllByRole("button", { name: "Claim 50 AVA" })
       .find((button) => button.getAttribute("data-testid") !== "action-footer-primary")
@@ -311,7 +311,7 @@ describe("DashboardPageClient", () => {
     expect(screen.getByRole("tab", { name: "Lend" })).toBeInTheDocument()
     expect(screen.getByRole("tab", { name: "Borrow" })).toBeInTheDocument()
     expect(screen.getByRole("tab", { name: "Multiply" })).toBeInTheDocument()
-    expect(screen.getByRole("tab", { name: "Referrals" })).toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: "Rewards" })).toBeInTheDocument()
     expect(screen.queryByRole("link", { name: "Rewards" })).toBeNull()
     expect(screen.getByRole("heading", { name: "Your Portfolio" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Wallet Balance" })).toBeInTheDocument()
@@ -351,7 +351,7 @@ describe("DashboardPageClient", () => {
   it("routes deep-link tasks into the correct product surfaces", async () => {
     renderRewardsPage()
 
-    await openProductTab("Borrow")
+    await openProductTab("Rewards")
     await clickQuestAction("Borrow more")
     await waitFor(() => expect(push).toHaveBeenCalledWith("/borrow"))
   })
@@ -359,7 +359,7 @@ describe("DashboardPageClient", () => {
   it("records daily check-ins from challenge tasks", async () => {
     renderRewardsPage()
 
-    await openProductTab("Multiply")
+    await openProductTab("Rewards")
     await waitFor(() => expect(screen.getAllByRole("button", { name: "Check in" }).length).toBeGreaterThan(0))
     await clickQuestAction("Check in")
 
@@ -369,7 +369,7 @@ describe("DashboardPageClient", () => {
   it("records sandbox tours and routes users to the tour surface", async () => {
     renderRewardsPage()
 
-    await openProductTab("Borrow")
+    await openProductTab("Rewards")
     await waitFor(() => expect(screen.getAllByRole("button", { name: "Start tour" }).length).toBeGreaterThan(0))
     await clickQuestAction("Start tour")
 

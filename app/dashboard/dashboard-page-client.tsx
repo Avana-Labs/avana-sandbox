@@ -53,18 +53,19 @@ import {
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { UnderlineTabStrip } from "@/app/components/tab-primitives"
-import { RewardsPromoContent } from "@/app/rewards/quests-tab"
+import { RewardsPromoContent, RewardsQuestSection } from "@/app/rewards/quests-tab"
 import Link from "next/link"
 
 type DashboardPromoTabId = Extract<RewardsPromoTabId, "lend" | "borrow" | "multiply" | "referrals">
-type DashboardTabId = "wallet" | DashboardPromoTabId
+type DashboardAccountTabId = Extract<RewardsPromoTabId, "lend" | "borrow" | "multiply">
+type DashboardTabId = "wallet" | DashboardAccountTabId | "rewards"
 
 const DASHBOARD_TABS: readonly { id: DashboardTabId; label: string }[] = [
   { id: "wallet", label: "Wallet" },
   { id: "lend", label: "Lend" },
   { id: "borrow", label: "Borrow" },
   { id: "multiply", label: "Multiply" },
-  { id: "referrals", label: "Referrals" },
+  { id: "rewards", label: "Rewards" },
 ]
 
 const CURATED_REWARD_TASK_IDS: Record<DashboardPromoTabId, readonly string[]> = {
@@ -80,10 +81,10 @@ function resolveDashboardTab(tab: string | null): DashboardTabId {
     case "lend":
     case "borrow":
     case "multiply":
-    case "referrals":
-      return tab
     case "rewards":
-      return "lend"
+      return tab
+    case "referrals":
+      return "rewards"
     default:
       return "wallet"
   }
@@ -227,6 +228,31 @@ function buildRewardsSnapshot(
   })
 
   return { summary, progress }
+}
+
+function DashboardRewardsTab({
+  questsByTab,
+  onTaskAction,
+}: {
+  questsByTab: Record<RewardsPromoTabId, RewardCardViewModel[]>
+  onTaskAction: (taskId: string) => Promise<unknown>
+}) {
+  const sections: Array<{ id: DashboardPromoTabId; title: string }> = [
+    { id: "lend", title: "Lend Rewards" },
+    { id: "borrow", title: "Borrow Rewards" },
+    { id: "multiply", title: "Multiply Rewards" },
+    { id: "referrals", title: "Referral Rewards" },
+  ]
+
+  return (
+    <div className="space-y-8">
+      {sections.map(({ id, title }) => {
+        const quests = questsByTab[id] ?? []
+        if (quests.length === 0) return null
+        return <RewardsQuestSection key={id} title={title} quests={quests} onTaskAction={onTaskAction} />
+      })}
+    </div>
+  )
 }
 
 function mapTaskToQuest(
@@ -619,21 +645,17 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
       >
         <div className="min-w-0">
           {activeDashboardTab === "wallet" ? (
-            <DashboardWalletTab
-              walletId={walletId}
-              balances={avana.swap.state.balances}
-              rewardQuests={questsByTab["getting-started"]}
-              onTaskAction={(taskId) => handleTaskAction(taskId)}
-            />
+            <DashboardWalletTab walletId={walletId} balances={avana.swap.state.balances} />
+          ) : activeDashboardTab === "rewards" ? (
+            <DashboardRewardsTab questsByTab={questsByTab} onTaskAction={(taskId) => handleTaskAction(taskId)} />
           ) : (
-            <>
-              <RewardsPromoContent
-                activePromoTab={activeDashboardTab}
-                questsByTab={questsByTab}
-                onTaskAction={(taskId) => handleTaskAction(taskId)}
-                returnHref={`/dashboard?tab=${activeDashboardTab}`}
-              />
-            </>
+            <RewardsPromoContent
+              activePromoTab={activeDashboardTab}
+              questsByTab={questsByTab}
+              onTaskAction={(taskId) => handleTaskAction(taskId)}
+              returnHref={`/dashboard?tab=${activeDashboardTab}`}
+              showRewards={false}
+            />
           )}
         </div>
 
@@ -643,7 +665,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
         </aside>
       </div>
 
-      {activeDashboardTab !== "wallet" ? (
+      {activeDashboardTab === "rewards" ? (
         <>
           <div className="mb-8 md:mb-10 lg:hidden">
             <LearnSection />
@@ -663,7 +685,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
         <RecentActivity rows={allActivityRows} />
       </div>
 
-      {activeDashboardTab !== "wallet" ? (
+      {activeDashboardTab === "rewards" ? (
         <MobileDetailActionBar>
           {claimHref ? (
             <Link

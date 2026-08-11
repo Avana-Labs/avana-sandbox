@@ -4,14 +4,12 @@ import { TokenPairCell } from "@/app/borrow/components/atoms"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { TokenIcon } from "@/app/components/token-icon"
 import { DesktopTableSurface } from "@/app/components/market-table-primitives"
-import { RewardsQuestSection } from "@/app/rewards/quests-tab"
 import { getTokenIconMeta } from "@/app/lib/token-icons"
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 import { buildDashboardWalletBalanceRows, type DashboardWalletBalanceRow } from "@/app/lib/swap-system"
 import type { UserAssetBalance } from "@/app/lib/swap-system"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import type { RewardsQuest } from "@/app/lib/data/rewards/catalog"
 import type { BorrowAssetVisual } from "@/app/lib/data/borrow-domain"
 
 const DASH = "\u2014"
@@ -176,17 +174,7 @@ function PnlCell({
   )
 }
 
-export function DashboardWalletTab({
-  walletId,
-  balances,
-  rewardQuests = [],
-  onTaskAction,
-}: {
-  walletId: string
-  balances?: UserAssetBalance[]
-  rewardQuests?: Array<RewardsQuest & { status?: string; progressLabel?: string }>
-  onTaskAction?: (taskId: string) => Promise<unknown>
-}) {
+export function DashboardWalletTab({ walletId, balances }: { walletId: string; balances?: UserAssetBalance[] }) {
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const { exact } = useCurrency()
   const { t } = useTranslation()
@@ -209,9 +197,6 @@ export function DashboardWalletTab({
 
       <WalletBalanceSection title={t("Tokens")} rows={tokens} exact={exact} t={t} showBalance={showDollarAmounts} />
       <PoolsBalanceSection title={t("Pools")} rows={lps} exact={exact} t={t} showBalance={showDollarAmounts} />
-      {rewardQuests.length > 0 && onTaskAction ? (
-        <RewardsQuestSection title={t("Wallet Rewards")} quests={rewardQuests} onTaskAction={onTaskAction} />
-      ) : null}
     </section>
   )
 }
