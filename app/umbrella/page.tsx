@@ -103,7 +103,6 @@ const umbrellaAssetSummaries = [
     coverage: "$60.3M",
     targetCoverage: "$38.4M",
     totalApy: "4.91%",
-    umbrellaApy: "1.62%",
     tokenApy: "3.29%",
     emissions: "426.84K",
     currentDeficit: "$51,371",
@@ -122,7 +121,6 @@ const umbrellaAssetSummaries = [
     coverage: "$13.2M",
     targetCoverage: "$1",
     totalApy: "0.00%",
-    umbrellaApy: "0.00%",
     tokenApy: "0.00%",
     emissions: "0",
     currentDeficit: "$146",
@@ -141,7 +139,6 @@ const umbrellaAssetSummaries = [
     coverage: "$16.3M",
     targetCoverage: "$18.6K",
     totalApy: "5.31%",
-    umbrellaApy: "3.88%",
     tokenApy: "1.42%",
     emissions: "164.45",
     currentDeficit: "$52,973",
@@ -178,7 +175,7 @@ function UmbrellaHero() {
           <div className="grid grid-cols-2 gap-5 lg:grid-cols-4 lg:divide-x lg:divide-border">
             {userUmbrellaSnapshot.map((item) => (
               <div key={item.label} className="min-w-0 lg:px-5 first:lg:pl-0 last:lg:pr-0">
-                <div className="text-[12px] font-medium tracking-tight text-muted-foreground">{item.label}</div>
+                <div className="text-[13px] text-muted-foreground">{item.label}</div>
                 <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
                   <span className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
                     {showDollarAmounts ? item.value : "••••"}
@@ -214,7 +211,7 @@ function UmbrellaStress() {
       <div className="space-y-3">
         <div className="rounded-radius-md bg-card px-4 py-4">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <p className="text-[12px] font-medium tracking-tight text-muted-foreground">Total coverage</p>
+            <p className="text-[13px] text-muted-foreground">Total coverage</p>
             <p className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
               $159M
             </p>
@@ -244,70 +241,59 @@ function UmbrellaStress() {
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
           {umbrellaAssetSummaries.map((asset) => (
             <div key={asset.asset} className="rounded-radius-md bg-card px-4 py-4">
-              <div className="flex items-center gap-3">
-                <TokenIcon symbol={asset.symbol} size="table" />
+              <div className="flex items-center gap-3.5">
+                <TokenIcon symbol={asset.symbol} size="table" className="size-16" />
                 <div>
-                  <div className="text-[15px] font-semibold tracking-[-0.03em]">{asset.asset}</div>
-                  <div className="mt-0.5 text-[12px] text-muted-foreground">Covers {asset.asset} deficits</div>
+                  <div className="text-[18px] font-semibold tracking-[-0.04em]">{asset.asset}</div>
+                  <div className="mt-0.5 text-[14px] text-muted-foreground">Covers {asset.asset} deficits</div>
                 </div>
               </div>
 
-              <div className="mt-4 space-y-2.5">
+              <div className="mt-5 space-y-3">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-[12px] text-muted-foreground">Coverage</span>
-                  <span className="text-[14px] font-semibold tabular-nums">{asset.coverage}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[12px] text-muted-foreground">Target</span>
-                  <span className="text-[14px] font-semibold tabular-nums">{asset.targetCoverage}</span>
+                  <span className="text-[14px] text-muted-foreground">Coverage</span>
+                  <span className="text-[15px] font-semibold tabular-nums">{asset.coverage}</span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-[12px] text-muted-foreground">Current deficit</span>
-                  <span className="text-[14px] font-semibold tabular-nums">{asset.currentDeficit}</span>
+                  <span className="text-[14px] text-muted-foreground">Target</span>
+                  <span className="text-[15px] font-semibold tabular-nums">{asset.targetCoverage}</span>
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="text-[12px] text-muted-foreground">Deficit offset</span>
-                  <span className="text-[14px] font-semibold tabular-nums">{asset.deficitOffset}</span>
+                  <span className="text-[14px] text-muted-foreground">Current deficit</span>
+                  <span className="text-[15px] font-semibold tabular-nums">{asset.currentDeficit}</span>
                 </div>
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-3">
-                <div>
-                  <div className="text-[12px] text-muted-foreground">Total APY</div>
-                  <div className="mt-1 text-[17px] font-semibold tracking-[-0.04em] tabular-nums">{asset.totalApy}</div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[14px] text-muted-foreground">Deficit offset</span>
+                  <span className="text-[15px] font-semibold tabular-nums">{asset.deficitOffset}</span>
                 </div>
-                <div>
-                  <div className="text-[12px] text-muted-foreground">Umbrella APY</div>
-                  <div className="mt-1 text-[17px] font-semibold tracking-[-0.04em] tabular-nums">
-                    {asset.umbrellaApy}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 border-t border-border pt-3">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="truncate text-[12px] font-medium text-foreground">{asset.emissionToken}</div>
-                    <div className="mt-0.5 text-[12px] text-muted-foreground">Emission runway</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[14px] font-semibold tabular-nums">{asset.unallocated}</div>
-                    <div className="mt-0.5 text-[12px] text-muted-foreground">{asset.runwayEnd}</div>
-                  </div>
-                </div>
-                <div className="mt-2 text-[12px] text-muted-foreground">
-                  Claimable {asset.claimable} · Claimed {asset.claimed}
-                </div>
-              </div>
-
-              <div className="mt-3 rounded-radius-sm bg-background px-3 py-2.5">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[12px] font-medium text-muted-foreground">{asset.cooldownWhen}</span>
-                  <span className="text-[15px] font-semibold tracking-[-0.04em] tabular-nums">
-                    {asset.cooldownRelease}
+                  <span className="text-[14px] text-muted-foreground">Emission runway</span>
+                  <span className="min-w-0 text-right">
+                    <span className="block truncate text-[13px] font-medium text-foreground">
+                      {asset.emissionToken}
+                    </span>
+                    <span className="mt-1 block text-[15px] font-semibold tabular-nums">{asset.unallocated}</span>
+                    <span className="mt-0.5 block text-[13px] text-muted-foreground">{asset.runwayEnd}</span>
                   </span>
                 </div>
-                <div className="mt-0.5 text-[12px] text-muted-foreground">Cooldown release</div>
+              </div>
+
+              <div className="mt-5 grid grid-cols-2 gap-3 border-t border-border pt-4">
+                <div>
+                  <div className="text-[14px] text-muted-foreground">Total APY</div>
+                  <div className="mt-1 text-[19px] font-semibold tracking-[-0.04em] tabular-nums">{asset.totalApy}</div>
+                </div>
+                <div>
+                  <div className="text-[14px] text-muted-foreground">{asset.cooldownWhen}</div>
+                  <div className="mt-1 text-[19px] font-semibold tracking-[-0.04em] tabular-nums">
+                    {asset.cooldownRelease}
+                  </div>
+                  <div className="mt-0.5 text-[13px] text-muted-foreground">Cooldown release</div>
+                </div>
+              </div>
+
+              <div className="mt-4 text-[13px] text-muted-foreground">
+                Claimable {asset.claimable} · Claimed {asset.claimed}
               </div>
             </div>
           ))}
@@ -352,15 +338,15 @@ function UmbrellaActionSidebar() {
 
             <div className="mt-5 space-y-3">
               <div className="rounded-radius-md bg-background px-3 py-3">
-                <div className="text-[12px] text-muted-foreground">Wallet balance</div>
+                <div className="text-[13px] text-muted-foreground">Wallet balance</div>
                 <div className="mt-1 text-[20px] font-medium tracking-[-0.03em]">12,420 aUSDC</div>
               </div>
               <div className="rounded-radius-md bg-background px-3 py-3">
-                <div className="text-[12px] text-muted-foreground">Covers</div>
+                <div className="text-[13px] text-muted-foreground">Covers</div>
                 <div className="mt-1 text-[20px] font-medium tracking-[-0.03em]">USDC deficits</div>
               </div>
               <div className="rounded-radius-md bg-background px-3 py-3">
-                <div className="text-[12px] text-muted-foreground">Estimated rewards</div>
+                <div className="text-[13px] text-muted-foreground">Estimated rewards</div>
                 <div className="mt-1 text-[20px] font-medium tracking-[-0.03em] text-success">6.8% APY</div>
               </div>
             </div>
@@ -421,9 +407,7 @@ function UmbrellaPositions() {
                         <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
                           {position.asset}
                         </span>
-                        <span className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
-                          {position.network}
-                        </span>
+                        <span className="mt-0.5 text-[13px] text-muted-foreground">{position.network}</span>
                       </div>
                     </div>
                   </td>
@@ -456,21 +440,21 @@ function UmbrellaPositions() {
               <TokenIcon symbol={position.symbol} size="table" />
               <div>
                 <div className="font-semibold text-foreground">{position.asset}</div>
-                <div className="text-[12px] text-muted-foreground">{position.network}</div>
+                <div className="text-[13px] text-muted-foreground">{position.network}</div>
               </div>
             </div>
 
             <div className="mt-3 grid grid-cols-3 gap-2">
               <div>
-                <div className="text-[12px] text-muted-foreground">Staked</div>
+                <div className="text-[13px] text-muted-foreground">Staked</div>
                 <div className="font-medium">{position.staked}</div>
               </div>
               <div>
-                <div className="text-[12px] text-muted-foreground">APY</div>
+                <div className="text-[13px] text-muted-foreground">APY</div>
                 <div className="font-medium">{position.apy}</div>
               </div>
               <div>
-                <div className="text-[12px] text-muted-foreground">Coverage</div>
+                <div className="text-[13px] text-muted-foreground">Coverage</div>
                 <div className="font-medium">{position.coverage}</div>
               </div>
             </div>
@@ -496,7 +480,7 @@ function UmbrellaClaimsCooldown() {
                 <TokenIcon symbol={position.symbol} size="table" />
                 <div className="min-w-0">
                   <div className="truncate text-[15px] font-semibold tracking-[-0.03em]">{position.asset}</div>
-                  <div className="mt-0.5 text-[12px] text-muted-foreground">{position.network}</div>
+                  <div className="mt-0.5 text-[13px] text-muted-foreground">{position.network}</div>
                 </div>
               </div>
               <span
@@ -511,11 +495,11 @@ function UmbrellaClaimsCooldown() {
 
             <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border pt-3">
               <div>
-                <div className="text-[12px] text-muted-foreground">Claimable</div>
+                <div className="text-[13px] text-muted-foreground">Claimable</div>
                 <div className="mt-1 text-[20px] font-semibold tracking-[-0.04em] text-success">{position.rewards}</div>
               </div>
               <div>
-                <div className="text-[12px] text-muted-foreground">Cooldown</div>
+                <div className="text-[13px] text-muted-foreground">Cooldown</div>
                 <div className="mt-1 text-[20px] font-semibold tracking-[-0.04em]">
                   {position.tone === "warning" ? "Active" : "Ready"}
                 </div>

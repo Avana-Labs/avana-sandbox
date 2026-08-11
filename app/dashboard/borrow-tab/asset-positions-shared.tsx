@@ -29,7 +29,7 @@ export function AssetSummaryStrip({ metrics }: { metrics: SummaryMetric[] }) {
             key={metric.label}
             className={cn("flex flex-col gap-1 pr-8", index > 0 && "border-l border-border pl-8 dark:border-white/10")}
           >
-            <span className="inline-flex items-center gap-1 text-[12px] font-medium text-muted-foreground">
+            <span className="inline-flex items-center gap-1 text-[13px] text-muted-foreground">
               {t(metric.label)}
               {metric.help ? <ActionMetricHelp topic={metric.label} text={metric.help} /> : null}
             </span>

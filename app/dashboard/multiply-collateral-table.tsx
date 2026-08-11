@@ -107,7 +107,7 @@ export function MultiplyCollateralTable({
                           <span className="block truncate text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
                             {row.label}
                           </span>
-                          <span className="mt-0.5 block truncate text-[12px] text-muted-foreground dark:text-white/38">
+                          <span className="mt-0.5 block truncate text-[13px] text-muted-foreground dark:text-white/38">
                             {row.collateralToken} / {row.borrowableToken}
                           </span>
                         </span>
@@ -213,15 +213,13 @@ export function MultiplyCollateralTable({
               <MarketMobileCardHeader
                 identity={
                   <div className="flex min-w-0 items-center gap-2.5">
-                    <span className="text-[13px] tracking-[-0.03em] text-muted-foreground dark:text-white/38">
-                      {index + 1}
-                    </span>
+                    <span className="text-[13px] text-muted-foreground dark:text-white/38">{index + 1}</span>
                     <TokenIcon symbol={row.collateralToken} size="table" />
                     <div className="min-w-0">
                       <div className="text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
                         {row.label}
                       </div>
-                      <div className="truncate text-[12px] text-muted-foreground dark:text-white/38">
+                      <div className="truncate text-[13px] text-muted-foreground dark:text-white/38">
                         {row.protocol}
                       </div>
                     </div>
