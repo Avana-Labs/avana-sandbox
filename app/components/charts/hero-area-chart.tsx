@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react"
+import { getChartTickIndexes } from "./chart-data"
 import type { ChartPoint, ChartRangeOption } from "./types"
 
 const TONE_COLORS = {
@@ -30,6 +31,7 @@ type HeroAreaChartProps = {
 
 type PlotPoint = ChartPoint & { x: number; y: number }
 type AxisTick = { value: number; y: number; label: string }
+type XAxisTick = { x: number; label: string; anchor: "start" | "middle" | "end" }
 
 function monotoneLinePath(points: PlotPoint[]) {
   if (points.length === 0) return ""
@@ -62,19 +64,29 @@ export function buildHeroAreaGeometry(
   data: ChartPoint[],
   width: number,
   height: number,
+  activeRange: ChartRangeOption = "1D",
   formatYAxis: (value: number) => string = (value) => String(Math.round(value)),
 ) {
-  if (data.length === 0) return { points: [] as PlotPoint[], linePath: "", areaPath: "", axisTicks: [] as AxisTick[] }
+  if (data.length === 0) {
+    return {
+      points: [] as PlotPoint[],
+      linePath: "",
+      areaPath: "",
+      axisTicks: [] as AxisTick[],
+      xAxisTicks: [] as XAxisTick[],
+    }
+  }
   const top = 12
-  const bottom = 8
-  const right = width < 640 ? 42 : 52
+  const bottom = 34
+  const right = width < 640 ? 44 : 66
   const values = data.map((point) => point.value)
   const min = Math.min(...values) - 4
   const max = Math.max(...values) + 4
   const range = Math.max(1, max - min)
   const plotHeight = Math.max(1, height - top - bottom)
   const plotWidth = Math.max(1, width - right)
-  const tickValues = [max, min + range / 2, min]
+  const yTickCount = width < 640 ? 5 : 7
+  const tickValues = Array.from({ length: yTickCount }, (_, index) => max - (range * index) / (yTickCount - 1))
   const axisTicks = tickValues.map((value) => ({
     value,
     y: top + ((max - value) / range) * plotHeight,
@@ -85,9 +97,24 @@ export function buildHeroAreaGeometry(
     x: data.length === 1 ? plotWidth / 2 : (index / (data.length - 1)) * plotWidth,
     y: top + ((max - point.value) / range) * plotHeight,
   }))
+  const rawTickIndexes = Array.from(new Set(getChartTickIndexes(activeRange, data.length)))
+  const tickIndexes = width < 640 ? rawTickIndexes.filter((_, index) => index % 2 === 0) : rawTickIndexes
+  const xAxisTicks = tickIndexes.map((index, tickPosition) => {
+    const point = points[Math.min(points.length - 1, Math.max(0, index))]
+    return {
+      x: point.x,
+      label: point.label,
+      anchor:
+        tickPosition === 0
+          ? ("start" as const)
+          : tickPosition === tickIndexes.length - 1
+            ? ("end" as const)
+            : ("middle" as const),
+    }
+  })
   const linePath = monotoneLinePath(points)
   const areaPath = `${linePath} L ${points[points.length - 1].x} ${height - bottom} L ${points[0].x} ${height - bottom} Z`
-  return { points, linePath, areaPath, axisTicks }
+  return { points, linePath, areaPath, axisTicks, xAxisTicks }
 }
 
 export function HeroAreaChart({
@@ -135,8 +162,8 @@ export function HeroAreaChart({
     tone ?? (data.length >= 2 && data[data.length - 1].value < data[0].value ? "negative" : "positive")
   const color = TONE_COLORS[resolvedTone]
   const geometry = useMemo(
-    () => buildHeroAreaGeometry(data, dimensions.width, dimensions.height, formatYAxis),
-    [data, dimensions, formatYAxis],
+    () => buildHeroAreaGeometry(data, dimensions.width, dimensions.height, activeRange, formatYAxis),
+    [activeRange, data, dimensions, formatYAxis],
   )
   const activePoint = activeIndex == null ? null : geometry.points[activeIndex]
   const lastPoint = geometry.points[geometry.points.length - 1]
@@ -212,7 +239,7 @@ export function HeroAreaChart({
               x1={activePoint.x}
               x2={activePoint.x}
               y1={12}
-              y2={dimensions.height - 8}
+              y2={dimensions.height - 34}
               stroke={color.cursor}
               vectorEffect="non-scaling-stroke"
             />
@@ -257,6 +284,21 @@ export function HeroAreaChart({
                   {tick.label}
                 </text>
               </g>
+            ))}
+          </g>
+        ) : null}
+        {geometry.xAxisTicks.length > 0 ? (
+          <g aria-hidden="true">
+            {geometry.xAxisTicks.map((tick) => (
+              <text
+                key={`${tick.x}-${tick.label}`}
+                x={tick.x}
+                y={dimensions.height - 8}
+                textAnchor={tick.anchor}
+                className="fill-muted-foreground font-data text-[12px] font-medium"
+              >
+                {tick.label}
+              </text>
             ))}
           </g>
         ) : null}

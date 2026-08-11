@@ -23,8 +23,8 @@ function formatCompactAxis(value: number): string {
   const sign = signOf(value)
   const abs = Math.abs(value)
   if (abs >= 1_000_000_000) return `${sign}${symbol}${(abs / 1_000_000_000).toFixed(1)}B`
-  if (abs >= 1_000_000) return `${sign}${symbol}${(abs / 1_000_000).toFixed(0)}M`
-  if (abs >= 1_000) return `${sign}${symbol}${(abs / 1_000).toFixed(0)}K`
+  if (abs >= 1_000_000) return `${sign}${symbol}${(abs / 1_000_000).toFixed(1)}M`
+  if (abs >= 1_000) return `${sign}${symbol}${(abs / 1_000).toFixed(1)}K`
   return `${sign}${symbol}${Math.round(abs)}`
 }
 
