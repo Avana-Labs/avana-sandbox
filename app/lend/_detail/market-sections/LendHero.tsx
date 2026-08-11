@@ -42,15 +42,15 @@ export function LendHeroIdentity({
           </div>
 
           <div className="min-w-0">
-            <div className="flex translate-y-1 items-center gap-1.5">
-              <h1 className="truncate text-ui-heading font-normal leading-none tracking-[-0.02em] text-foreground">
+            <div className="flex min-w-0 translate-y-1 items-baseline gap-3 whitespace-nowrap">
+              <h1 className="min-w-0 truncate text-[28px] font-semibold leading-none tracking-[-0.02em] text-foreground">
                 {detail.hero.name}
               </h1>
-              <span className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-foreground/55">
+              <span className="shrink-0 text-[20px] font-medium leading-none tracking-[-0.01em] text-foreground/55">
                 {detail.hero.symbol}
               </span>
               <BadgeCheck
-                className="h-[24px] w-[24px] shrink-0 -translate-y-[3px] fill-muted-foreground text-background"
+                className="h-[22px] w-[22px] shrink-0 -translate-y-[2px] fill-muted-foreground text-background"
                 aria-hidden="true"
               />
             </div>
