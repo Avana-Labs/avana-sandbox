@@ -17,6 +17,7 @@ type QuickStatLike = {
 type Props = {
   detail: { quickStats: QuickStatLike[] }
   className?: string
+  hideRisk?: boolean
 }
 
 const RISK_STAT_IDS = new Set(["riskPremium", "maxLtv", "collateralFactor"])
@@ -67,14 +68,14 @@ function StatsGrid({ stats, columns = 3 }: { stats: QuickStatLike[]; columns?: 3
   )
 }
 
-export function QuickStatsGrid({ detail, className }: Props) {
+export function QuickStatsGrid({ detail, className, hideRisk = false }: Props) {
   const { t } = useTranslation()
   const { market, risk } = splitQuickStats(detail.quickStats)
 
   return (
     <div className={cn("space-y-10", className)}>
       {market.length > 0 ? <StatsGrid stats={market} /> : null}
-      {risk.length > 0 ? (
+      {!hideRisk && risk.length > 0 ? (
         <section aria-label={t("Risk exposure")} className="space-y-5">
           <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
             {t("Risk exposure")}
