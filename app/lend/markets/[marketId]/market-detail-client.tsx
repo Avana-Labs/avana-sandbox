@@ -95,7 +95,7 @@ export function LendMarketDetailClient({ detail }: Props) {
               <Link href="/lend" className="transition-colors hover:text-foreground">
                 {t("Lend")}
               </Link>
-              <span aria-hidden className="text-border">
+              <span aria-hidden className="font-medium text-muted-foreground">
                 ›
               </span>
               <span className="font-normal text-foreground">{detail.hero.name}</span>
