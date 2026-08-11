@@ -7,7 +7,16 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 // real SearchCommand and the pre-hydration placeholder (search-command is a
 // `ssr: false` dynamic import) render this, so the swap from placeholder to the
 // hydrated component is visually seamless — no color/text flash on load.
-export function SearchTrigger({ iconOnly = false, onClick }: { iconOnly?: boolean; onClick?: () => void }) {
+export function SearchTrigger({
+  iconOnly = false,
+  // "nav" matches Dashboard / Umbrella muted chrome; "brand" is the phone-only cyan.
+  tone = "nav",
+  onClick,
+}: {
+  iconOnly?: boolean
+  tone?: "nav" | "brand"
+  onClick?: () => void
+}) {
   const { t } = useTranslation()
 
   return (
@@ -17,7 +26,9 @@ export function SearchTrigger({ iconOnly = false, onClick }: { iconOnly?: boolea
       onClick={onClick}
       className={
         iconOnly
-          ? "inline-flex h-10 w-10 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
+          ? tone === "brand"
+            ? "inline-flex h-10 w-10 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
+            : "inline-flex h-10 w-10 items-center justify-center text-muted-foreground transition-colors hover:text-brand focus-visible:outline-none focus-visible:ring-0 active:scale-95 dark:hover:text-[#7DDCFF] [-webkit-tap-highlight-color:transparent]"
           : "flex h-9 w-full items-center gap-2.5 rounded-full border border-[#e6e6e6] bg-[#fafafa] px-3.5 text-left text-[14px] font-normal tracking-[-0.01em] text-[#767676] shadow-none lg:h-10 lg:gap-3 lg:px-4 lg:text-[15px] dark:border-border/60 dark:bg-surface-2 dark:text-muted-foreground"
       }
     >

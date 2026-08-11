@@ -122,6 +122,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <head>
+        <link
+          rel="preload"
+          as="image"
+          href="/avana-wordmark-220.png"
+          imageSrcSet="/avana-wordmark-220.png 220w, /avana-wordmark-440.png 440w"
+          imageSizes="220px"
+        />
+        <link rel="preload" as="image" href="/avana-icon-64.png" />
         {/* Inline to avoid a render-blocking theme-bootstrap network request. */}
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>
