@@ -76,7 +76,7 @@ export function QuickStatsGrid({ detail, className }: Props) {
       {market.length > 0 ? <StatsGrid stats={market} /> : null}
       {risk.length > 0 ? (
         <section aria-label={t("Risk exposure")} className="space-y-5">
-          <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
+          <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
             {t("Risk exposure")}
           </h2>
           <StatsGrid stats={risk} columns={4} />

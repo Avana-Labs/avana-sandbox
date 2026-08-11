@@ -17,7 +17,7 @@ export function ProtocolParametersSection({ parameters, className }: Props) {
 
   return (
     <section aria-label={t("Protocol parameters")} className={cn("space-y-5", className)}>
-      <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
+      <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
         {t("Protocol parameters")}
       </h2>
       <div className="grid w-full grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-4 md:gap-x-10">

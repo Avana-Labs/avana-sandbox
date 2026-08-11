@@ -35,7 +35,7 @@ export function CashflowTrendCard({ detail }: Props) {
   return (
     <section className="min-w-0">
       <div className="mb-1">
-        <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
+        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
           {t("Cash flow")}
         </h2>
         <p className="mt-0.5 text-[11.5px] text-muted-foreground">

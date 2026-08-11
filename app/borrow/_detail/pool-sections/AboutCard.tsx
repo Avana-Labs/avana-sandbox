@@ -50,8 +50,8 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
         <h2
           className={
             compact
-              ? "truncate text-[18px] font-normal leading-none tracking-[-0.02em] text-brand-readable"
-              : "truncate text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable"
+              ? "truncate text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]"
+              : "truncate text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]"
           }
         >
           {t(title)}
@@ -60,7 +60,9 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
 
       <p
         className={
-          plain ? "text-[14px] leading-[1.55] text-text-high" : "px-4 text-[14px] leading-[1.55] text-text-high"
+          plain
+            ? "text-[15px] leading-[1.6] text-text-high md:text-[16px]"
+            : "px-4 text-[15px] leading-[1.6] text-text-high md:text-[16px]"
         }
       >
         {shownDescription}
