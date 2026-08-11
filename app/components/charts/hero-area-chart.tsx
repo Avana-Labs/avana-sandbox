@@ -177,7 +177,7 @@ export function HeroAreaChart({
   const lastPoint = geometry.points[geometry.points.length - 1]
   const chartShellClassName =
     className ??
-    "relative h-[210px] bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.06)_1px,transparent_0)] [background-size:18px_18px] dark:bg-none sm:h-[240px]"
+    "relative h-[210px] bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.08)_1px,transparent_0)] [background-size:18px_18px] dark:bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.18)_1px,transparent_0)] sm:h-[240px]"
 
   const setPointerIndex = (event: PointerEvent<HTMLDivElement>) => {
     if (data.length === 0) return

@@ -19,7 +19,7 @@ function HeroAreaChartPlaceholder() {
   return (
     <div
       aria-hidden
-      className="h-[210px] bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.06)_1px,transparent_0)] [background-size:18px_18px] dark:bg-none sm:h-[240px]"
+      className="h-[210px] bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.08)_1px,transparent_0)] [background-size:18px_18px] dark:bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.18)_1px,transparent_0)] sm:h-[240px]"
     />
   )
 }
