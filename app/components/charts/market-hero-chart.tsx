@@ -33,6 +33,9 @@ type MarketHeroChartProps = {
   gradientId?: string
   /** Small uppercase label naming the metric (e.g. "Total borrows"). */
   label?: string
+  showMeta?: boolean
+  metricTabs?: readonly string[]
+  activeMetricTab?: string
 }
 
 /**
@@ -47,6 +50,9 @@ export function MarketHeroChart({
   height,
   gradientId = "marketHeroFill",
   label,
+  showMeta = true,
+  metricTabs,
+  activeMetricTab,
 }: MarketHeroChartProps) {
   // Only offer ranges the feed can actually populate. Daily-granularity feeds omit
   // 1H/1D (which would render as duplicate sparse 2-point lines).
@@ -92,7 +98,7 @@ export function MarketHeroChart({
       {label ? (
         <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{label}</p>
       ) : null}
-      <HeroBalanceDisplay value={value} delta={delta} deltaTone={tone} meta={meta} hidden={hideValue} />
+      <HeroBalanceDisplay value={value} delta={delta} deltaTone={tone} meta={showMeta ? meta : undefined} hidden={hideValue} />
       <HeroAreaChart
         data={points}
         activeRange={activeRange}
@@ -103,7 +109,32 @@ export function MarketHeroChart({
         formatYAxis={(v) => formatChartAxis(feed.valueFormat, v)}
         onActiveIndexChange={setHoverIndex}
       />
-      <ChartRangeSelector activeRange={activeRange} onRangeChange={setRequestedRange} ranges={availableRanges} />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <ChartRangeSelector activeRange={activeRange} onRangeChange={setRequestedRange} ranges={availableRanges} />
+        {metricTabs?.length ? <ChartMetricSelector tabs={metricTabs} activeTab={activeMetricTab ?? metricTabs[0]} /> : null}
+      </div>
+    </div>
+  )
+}
+
+function ChartMetricSelector({ tabs, activeTab }: { tabs: readonly string[]; activeTab: string }) {
+  return (
+    <div className="inline-flex w-fit items-center gap-0.5 rounded-full border border-border bg-background p-0.5 shadow-sm">
+      {tabs.map((tab) => {
+        const active = tab === activeTab
+        return (
+          <button
+            key={tab}
+            type="button"
+            className={[
+              "flex h-7 min-w-16 items-center justify-center rounded-full px-2.5 text-[12px] font-semibold transition-colors sm:text-[13px]",
+              active ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground",
+            ].join(" ")}
+          >
+            {tab}
+          </button>
+        )
+      })}
     </div>
   )
 }

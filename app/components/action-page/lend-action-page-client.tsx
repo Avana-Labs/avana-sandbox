@@ -490,6 +490,7 @@ export function LendActionPageClient({
           outcome={outcome}
           homeLayout={isHomeLayout}
           singlePrimaryCta={sidebar}
+          amountVariant={sidebar ? "raised" : "card"}
           hideAssetSelector={isHomeLayout && Boolean(initialMarketId)}
           showBalance
           balanceLabel={spendableBalanceLabel}
