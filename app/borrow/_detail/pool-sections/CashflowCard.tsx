@@ -55,13 +55,28 @@ export function CashflowCard({ detail }: Props) {
                 <th scope="row" className="py-2.5 pl-5 text-left text-[14px] font-normal text-muted-foreground">
                   {t(row.label)}
                 </th>
-                <td className="py-2.5 text-right font-data font-medium tabular-nums text-foreground">
+                <td
+                  className={cn(
+                    "py-2.5 text-right font-data font-medium tabular-nums",
+                    row.highlighted ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
                   {periodValue(row.reported, 1)}
                 </td>
-                <td className="py-2.5 text-right font-data font-medium tabular-nums text-foreground">
+                <td
+                  className={cn(
+                    "py-2.5 text-right font-data font-medium tabular-nums",
+                    row.highlighted ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
                   {periodValue(row.reported, 30)}
                 </td>
-                <td className="py-2.5 pr-5 text-right font-data font-medium tabular-nums text-foreground">
+                <td
+                  className={cn(
+                    "py-2.5 pr-5 text-right font-data font-medium tabular-nums",
+                    row.highlighted ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
                   {periodValue(row.reported, 90)}
                 </td>
               </tr>

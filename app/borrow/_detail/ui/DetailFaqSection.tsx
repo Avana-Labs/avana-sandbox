@@ -32,10 +32,10 @@ export function DetailFaqSection({ title, items, className, id }: DetailFaqSecti
             value={`faq-${index}`}
             className="border-b border-border/70 dark:border-white/10"
           >
-            <AccordionTrigger className="py-3.5 text-left text-[15px] font-normal tracking-[-0.02em] text-muted-foreground transition-colors hover:text-foreground data-[state=open]:text-foreground md:py-4">
+            <AccordionTrigger className="py-4 text-left text-[16px] font-normal tracking-[-0.02em] text-muted-foreground transition-colors hover:text-foreground data-[state=open]:text-foreground md:py-[18px]">
               <span className="max-w-[calc(100%-20px)]">{item.question}</span>
             </AccordionTrigger>
-            <AccordionContent className="pb-4 text-[13px] leading-5 text-muted-foreground dark:text-white/68 md:pb-5 md:text-[13px]">
+            <AccordionContent className="pb-5 text-[15px] leading-[1.6] text-muted-foreground dark:text-white/68 md:text-[16px]">
               {item.answer}
             </AccordionContent>
           </AccordionItem>
