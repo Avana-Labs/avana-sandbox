@@ -667,9 +667,13 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
         contractStatForSeed("Vault Contract Address", market.marketId, "vault"),
         contractStatForSeed("Token Contract Address", market.marketId, "token"),
         contractStatForSeed("Staking Contract Address", market.marketId, "staking"),
-        { label: "Deployed On", value: market.riskTier === "low" ? "March 18, 2024" : "October 7, 2024" },
       ],
       history: [
+        {
+          date: market.riskTier === "low" ? "March 18, 2024" : "October 7, 2024",
+          title: "Deployed",
+          description: "Market contracts deployed.",
+        },
         { date: "2025-01-20", title: "Listed", description: `${market.asset.symbol} supply market opened.` },
         {
           date: "2025-09-08",

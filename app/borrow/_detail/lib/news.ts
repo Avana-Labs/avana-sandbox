@@ -10,14 +10,27 @@ export type NewsCardItem = {
 }
 
 export function buildNewsItems(about: AboutCard, _imageUrl?: string, imageLabel?: string): NewsCardItem[] {
-  const items =
-    about.news ??
-    about.history.slice(0, 3).map((entry, index) => ({
-      title: entry.title,
-      description: entry.description,
-      source: index === 0 ? "Latest update" : "Protocol note",
-      time: entry.date,
-    }))
+  const deployedOn = about.stats.find((stat) => stat.label === "Deployed On")?.value
+  const deploymentItem = deployedOn
+    ? [
+        {
+          title: "Deployed",
+          description: "Market contracts deployed.",
+          source: "Deployment",
+          time: deployedOn,
+        },
+      ]
+    : []
+  const items = [
+    ...deploymentItem,
+    ...(about.news ??
+      about.history.slice(0, 3).map((entry, index) => ({
+        title: entry.title,
+        description: entry.description,
+        source: entry.title === "Deployed" ? "Deployment" : index === 0 ? "Latest update" : "Protocol note",
+        time: entry.date,
+      }))),
+  ]
 
   return items.map((item) => ({
     ...item,
