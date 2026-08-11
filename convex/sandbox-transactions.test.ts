@@ -92,7 +92,7 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
 
     // The aggregate ledger delta is recomputed server-side (there is no client ledger
     // arg), keyed by the borrowed asset, never anything the client could dictate.
-    const ledger = await t.query(api.liquidity.listDeltas)
+    const ledger = await asUser.query(api.liquidity.listDeltas)
     const row = ledger.find((r) => r.marketSlug === "uni-v2:usdc")
     expect(row?.borrowedDeltaUsd).toBe(1000)
 

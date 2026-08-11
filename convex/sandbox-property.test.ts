@@ -45,7 +45,7 @@ describe("recordTransaction — idempotency + ledger property", () => {
           const expectedSum = [...firstSeenAmount.values()].reduce((s, v) => s + v, 0)
           const uniqueCount = firstSeenAmount.size
 
-          const deltas = await t.query(api.liquidity.listDeltas)
+          const deltas = await asUser.query(api.liquidity.listDeltas)
           const row = deltas.find((d) => d.marketSlug === SLUG)
           const activity = await asUser.query(api.sandbox.transactions.getActivity, { wallet: WALLET, limit: 200 })
 
