@@ -3,7 +3,6 @@
 import * as React from "react"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
 import { ResponsiveLendAction } from "@/app/components/action-page/responsive-lend-action"
-import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
@@ -44,13 +43,27 @@ function LendActionRail({ detail, className }: Props) {
 
   return (
     <div className={cn("flex w-full flex-col", className)}>
-      <ActionWorkspaceTabs
-        items={[...LEND_TAB_ITEMS]}
-        value={tab}
-        onChange={(value) => setTab(value as SidebarTab)}
-        ariaLabel={t("Lend actions")}
-        className="gap-0 overflow-visible sm:gap-0 [&_button]:font-semibold [&_button]:text-foreground/65 [&_button]:hover:text-foreground [&_button[data-state=active]]:bg-neutral-200 [&_button[data-state=active]]:px-4.5 [&_button[data-state=active]]:py-2.5 [&_button[data-state=active]]:text-foreground dark:[&_button[data-state=active]]:bg-neutral-800"
-      />
+      <div role="tablist" aria-label={t("Lend actions")} className="flex items-center gap-0">
+        {LEND_TAB_ITEMS.map((item) => {
+          const active = tab === item.id
+          return (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              data-state={active ? "active" : "inactive"}
+              onClick={() => setTab(item.id)}
+              className={cn(
+                "rounded-full px-3 py-1.5 text-[15px] font-semibold leading-none text-foreground/65 transition-colors hover:text-foreground",
+                active && "bg-neutral-200 px-4.5 py-2.5 text-foreground dark:bg-neutral-800",
+              )}
+            >
+              {t(item.label)}
+            </button>
+          )
+        })}
+      </div>
 
       <div className="mt-2">
         {tab === "deposit" ? (
