@@ -124,13 +124,13 @@ export function LendMarketDetailClient({ detail }: Props) {
                     newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
                     newsImageLabel={detail.hero.symbol}
                     mediaVariant="icon"
+                    afterAbout={<RiskSection detail={detail} />}
                     className="pt-0"
                   />
 
                   <section aria-label={t("Lend market analytics")} className="space-y-14 md:space-y-16">
                     <DeferredDetailContent className="space-y-14 md:space-y-16">
                       <CashflowCard detail={detail} />
-                      <RiskSection detail={detail} />
                       <DetailFaqSection
                         title={t("General FAQs")}
                         items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
