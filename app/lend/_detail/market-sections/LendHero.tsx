@@ -51,7 +51,7 @@ export function LendHeroIdentity({
                 aria-hidden="true"
               />
             </div>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-[15px] font-medium text-muted-foreground">
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-[15px] font-medium text-foreground/75">
               <span>{chainLabel}</span>
               <span aria-hidden className="h-5 w-px bg-border" />
               <button
@@ -59,7 +59,7 @@ export function LendHeroIdentity({
                 onClick={async () => {
                   await navigator.clipboard.writeText(contractLabel)
                 }}
-                className="inline-flex min-h-8 items-center gap-1.5 rounded-full text-[15px] font-medium leading-none text-muted-foreground transition-colors hover:text-foreground"
+                className="inline-flex min-h-8 items-center gap-1.5 rounded-full text-[15px] font-medium leading-none text-foreground/75 transition-colors hover:text-foreground"
                 aria-label={`${t("Copy")} ${contractLabel}`}
               >
                 <Copy className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
@@ -127,12 +127,11 @@ export function LendHero({ detail, leading, actions, className, hideIdentity = f
           feed={feed}
           defaultRange="1D"
           gradientId={`lendHeroFill-${detail.id}`}
-          height={360}
+          height={310}
           showMeta={false}
           metricTabs={metricTabs}
           activeMetricTab={activeMetricTab}
           onMetricTabChange={setActiveMetricTab}
-          chartTone="neutral"
         />
       </div>
     </section>
@@ -214,7 +213,7 @@ function HeroIcon({ label, onClick, children }: { label: string; onClick: () => 
       type="button"
       aria-label={label}
       onClick={onClick}
-      className="flex size-10 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-hover hover:text-foreground md:size-9"
+      className="flex size-10 items-center justify-center rounded-full text-foreground/75 transition-colors hover:bg-hover hover:text-foreground md:size-9"
     >
       {children}
     </button>
