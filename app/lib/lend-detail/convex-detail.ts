@@ -100,6 +100,10 @@ export async function getLendMarketDetailFromConvex(id: string): Promise<LendMar
     about: {
       ...hydrated.about,
       stats: detail.about.stats,
+      history: [
+        ...detail.about.history.filter((entry) => entry.title === "Deployed"),
+        ...hydrated.about.history.filter((entry) => entry.title !== "Deployed"),
+      ],
     },
   }
 }

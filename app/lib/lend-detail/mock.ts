@@ -291,9 +291,13 @@ function buildAbout(market: LendMarket): AboutCard {
       buildContractStat("Vault Contract Address", market, "vault"),
       buildContractStat("Token Contract Address", market, "token"),
       buildContractStat("Staking Contract Address", market, "staking"),
-      { label: "Deployed On", value: isStable ? "March 18, 2024" : "October 7, 2024" },
     ],
     history: [
+      {
+        date: isStable ? "March 18, 2024" : "October 7, 2024",
+        title: "Deployed",
+        description: "Market contracts deployed.",
+      },
       { date: "2025-01-20", title: "Listed", description: `${market.asset.symbol} supply market opened.` },
       {
         date: "2025-09-08",

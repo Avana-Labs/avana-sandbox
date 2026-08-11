@@ -35,6 +35,7 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
   const description = translateAboutDescription(about.description, t)
   const isLong = typeof description === "string" && description.length > DESCRIPTION_CLAMP
   const shownDescription = !isLong || expanded ? description : `${description.slice(0, DESCRIPTION_CLAMP).trimEnd()}… `
+  const visibleStats = about.stats.filter((stat) => stat.label !== "Deployed On")
 
   return (
     <section
@@ -77,9 +78,9 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
         ) : null}
       </p>
 
-      {about.stats.length > 0 ? (
+      {visibleStats.length > 0 ? (
         <dl className={plain ? "text-[13.5px]" : "px-4 pb-2 text-[13.5px]"}>
-          {about.stats.map((s) => (
+          {visibleStats.map((s) => (
             <div key={s.label} className="flex items-center justify-between gap-4 py-2.5">
               <dt className="flex min-w-0 items-center gap-1.5 text-text-low">
                 <span className={s.href ? "min-w-0 truncate" : "truncate"}>{t(s.label)}</span>

@@ -79,11 +79,8 @@ describe("lend detail contract", () => {
       "Vault Contract Address",
       "Token Contract Address",
       "Staking Contract Address",
-      "Deployed On",
     ])
-    expect(detail.about.stats.slice(0, 3).every((stat) => stat.href?.startsWith("https://etherscan.io/address/"))).toBe(
-      true,
-    )
+    expect(detail.about.stats.every((stat) => stat.href?.startsWith("https://etherscan.io/address/"))).toBe(true)
   })
 
   it("labels a zero incentive APY as no rewards", () => {
