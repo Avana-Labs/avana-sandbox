@@ -175,42 +175,28 @@ function UmbrellaHero() {
       <section className="relative overflow-hidden rounded-radius-md bg-card px-4 py-5 sm:px-5">
         <div className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle,rgba(148,163,184,0.16)_1px,transparent_1.2px)] [background-position:18px_18px] [background-size:16px_16px] dark:opacity-35 dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.1)_1px,transparent_1.2px)]" />
         <div className="relative">
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(420px,1fr)] lg:items-end">
-            <div className="min-w-0">
-              <div className="text-[15px] font-medium text-muted-foreground">{userUmbrellaSnapshot[0].label}</div>
-              <div className="mt-2 text-[30px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[34px]">
-                {showDollarAmounts ? userUmbrellaSnapshot[0].value : "••••"}
-              </div>
-              {showDollarAmounts ? (
-                <div className="mt-2 text-[13px] font-semibold tabular-nums text-success">
-                  {userUmbrellaSnapshot[0].change}
-                </div>
-              ) : null}
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:divide-x lg:divide-border">
-              {userUmbrellaSnapshot.slice(1).map((item) => (
-                <div key={item.label} className="min-w-0 lg:px-5 first:lg:pl-0 last:lg:pr-0">
-                  <div className="text-[15px] font-medium text-muted-foreground">{item.label}</div>
-                  <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                    <span className="text-[26px] font-normal leading-none tracking-[-0.03em] text-foreground">
-                      {showDollarAmounts ? item.value : "••••"}
+          <div className="grid grid-cols-2 gap-5 lg:grid-cols-4 lg:divide-x lg:divide-border">
+            {userUmbrellaSnapshot.map((item) => (
+              <div key={item.label} className="min-w-0 lg:px-5 first:lg:pl-0 last:lg:pr-0">
+                <div className="text-[15px] font-medium text-muted-foreground">{item.label}</div>
+                <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                  <span className="text-[28px] font-normal leading-none tracking-[-0.03em] text-foreground lg:text-[30px]">
+                    {showDollarAmounts ? item.value : "••••"}
+                  </span>
+                  {showDollarAmounts ? (
+                    <span
+                      className={cn(
+                        "text-[13px] font-semibold tabular-nums lg:text-[14px]",
+                        item.tone === "positive" && "text-success",
+                        item.tone === "warning" && "text-warning",
+                      )}
+                    >
+                      {item.change}
                     </span>
-                    {showDollarAmounts ? (
-                      <span
-                        className={cn(
-                          "text-[14px] font-semibold tabular-nums",
-                          item.tone === "positive" && "text-success",
-                          item.tone === "warning" && "text-warning",
-                        )}
-                      >
-                        {item.change}
-                      </span>
-                    ) : null}
-                  </div>
+                  ) : null}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
