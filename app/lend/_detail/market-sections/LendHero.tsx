@@ -115,7 +115,14 @@ export function LendHero({ detail, leading, actions, className, hideIdentity = f
       })
     }
     return suppliedFeed
-  }, [activeMetricTab, detail.heroFeed, detail.id, detail.supplyBorrow.borrowed, detail.supplyBorrow.utilization, metricTabs])
+  }, [
+    activeMetricTab,
+    detail.heroFeed,
+    detail.id,
+    detail.supplyBorrow.borrowed,
+    detail.supplyBorrow.utilization,
+    metricTabs,
+  ])
 
   return (
     <section className={cn("flex flex-col gap-5", className)} data-testid="lend-hero">

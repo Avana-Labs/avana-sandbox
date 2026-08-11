@@ -37,7 +37,9 @@ function HeroDeltaText({
         <span className={cn("leading-none", variant === "strong" ? "text-[12px]" : "text-[11px]")}>
           {tone === "positive" ? "▲" : "▼"}
         </span>
-        <span className={cn("tabular-nums", variant === "strong" ? "text-[15px] font-semibold" : "text-[14px] font-medium")}>
+        <span
+          className={cn("tabular-nums", variant === "strong" ? "text-[15px] font-semibold" : "text-[14px] font-medium")}
+        >
           {value}
         </span>
       </div>
