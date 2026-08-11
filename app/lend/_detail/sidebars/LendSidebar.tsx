@@ -49,7 +49,7 @@ function LendActionRail({ detail, className }: Props) {
         value={tab}
         onChange={(value) => setTab(value as SidebarTab)}
         ariaLabel={t("Lend actions")}
-        withIcons
+        className="[&_button]:font-semibold"
       />
 
       <div className="mt-2">
