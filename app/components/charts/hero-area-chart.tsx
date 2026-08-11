@@ -83,7 +83,7 @@ export function buildHeroAreaGeometry(
   }
   const top = 58
   const bottom = 34
-  const right = width < 640 ? 40 : 48
+  const right = width < 640 ? 40 : 58
   const values = data.map((point) => point.value)
   const rawMin = Math.min(...values)
   const rawMax = Math.max(...values)
