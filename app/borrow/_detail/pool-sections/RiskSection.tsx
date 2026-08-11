@@ -6,6 +6,7 @@ import { formatBpsAsPct, riskLevelLabel } from "@/app/lib/borrow-detail"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { RiskGauge, RiskLevelPill, SectionCard } from "../ui"
 import { DeltaPill } from "@/app/components/ui/live/delta-pill"
+import { cn } from "@/lib/utils"
 
 type Props = { detail: { risk: RiskAssessment } }
 
