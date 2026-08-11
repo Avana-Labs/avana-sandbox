@@ -87,22 +87,6 @@ export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref
             netApyPct={borrowDashboardMetrics.performance.netApyPct}
             totalCollateralUsd={borrowSnapshot.totalCollateralUsd}
           />
-          <div className="space-y-4">
-            <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
-              {t("Borrow Health")}
-            </h3>
-            <div className="grid gap-4 xl:grid-cols-2">
-              <SuppliesHealthFactorCard
-                averageHealthFactor={borrowSnapshot.averageHealthFactor}
-                showBalance={showDollarAmounts}
-              />
-              <CurrentLtvCard
-                borrowedUsd={borrowSnapshot.totalBorrowedUsd}
-                collateralUsd={borrowSnapshot.totalCollateralUsd}
-                showBalance={showDollarAmounts}
-              />
-            </div>
-          </div>
         </div>
 
         <AccountModuleBoundary>
@@ -113,6 +97,23 @@ export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref
             returnHref={returnHref}
           />
         </AccountModuleBoundary>
+
+        <div className="space-y-4">
+          <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
+            {t("Borrow Health")}
+          </h3>
+          <div className="grid gap-4 xl:grid-cols-2">
+            <SuppliesHealthFactorCard
+              averageHealthFactor={borrowSnapshot.averageHealthFactor}
+              showBalance={showDollarAmounts}
+            />
+            <CurrentLtvCard
+              borrowedUsd={borrowSnapshot.totalBorrowedUsd}
+              collateralUsd={borrowSnapshot.totalCollateralUsd}
+              showBalance={showDollarAmounts}
+            />
+          </div>
+        </div>
       </div>
     </section>
   )

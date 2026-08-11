@@ -611,7 +611,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-[24px] font-semibold tracking-[-0.045em]">{t("Your Portfolio")}</h2>
         <AmountVisibilityToggle />
       </div>

@@ -117,20 +117,20 @@ export function DashboardBorrowTab({
           ) : null}
 
           <div className="space-y-10">
+            <DebtsPanel
+              rows={sortedDebts}
+              totals={debtTotals}
+              onRepay={handleDebtRepay}
+              onManage={handleDebtManage}
+              showBalance={showDollarAmounts}
+              showSummary={false}
+            />
             <SuppliesPanel
               rows={sortedSupplies}
               totals={supplyTotals}
               onBorrowMore={handleSupplyBorrowMore}
               onAddCollateral={handleSupplyAddCollateral}
               onRemove={handleSupplyRemove}
-              showBalance={showDollarAmounts}
-              showSummary={false}
-            />
-            <DebtsPanel
-              rows={sortedDebts}
-              totals={debtTotals}
-              onRepay={handleDebtRepay}
-              onManage={handleDebtManage}
               showBalance={showDollarAmounts}
               showSummary={false}
             />
