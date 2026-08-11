@@ -17,9 +17,8 @@ describe("HeroAreaChart", () => {
     expect(geometry.axisTicks.map((tick) => tick.label)).toEqual([
       "axis:112",
       "axis:109",
-      "axis:107",
-      "axis:104",
-      "axis:101",
+      "axis:106",
+      "axis:102",
       "axis:99",
       "axis:96",
     ])
