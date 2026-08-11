@@ -44,7 +44,7 @@ export function ChartRangeSelector({
             onClick={() => onRangeChange(range)}
             className={cn(
               "relative flex h-7 min-w-9 flex-none items-center justify-center rounded-full px-2.5 text-[12px] font-semibold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:text-[13px]",
-              active ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground",
+              active ? "bg-muted text-foreground" : "text-foreground/75 hover:text-foreground",
             )}
           >
             {formatRangeLabel(range)}

@@ -147,7 +147,7 @@ function ChartMetricSelector({
             onClick={() => onTabChange?.(tab)}
             className={[
               "flex h-7 min-w-16 items-center justify-center rounded-full px-2.5 text-[12px] font-semibold transition-colors sm:text-[13px]",
-              active ? "bg-muted text-foreground" : "text-muted-foreground hover:text-foreground",
+              active ? "bg-muted text-foreground" : "text-foreground/75 hover:text-foreground",
             ].join(" ")}
           >
             {tab}

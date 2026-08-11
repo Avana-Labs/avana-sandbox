@@ -85,8 +85,11 @@ export function buildHeroAreaGeometry(
   const bottom = 34
   const right = width < 640 ? 40 : 52
   const values = data.map((point) => point.value)
-  const min = Math.min(...values) - 4
-  const max = Math.max(...values) + 4
+  const rawMin = Math.min(...values)
+  const rawMax = Math.max(...values)
+  const valueSpan = Math.max(1, rawMax - rawMin)
+  const min = rawMin - Math.max(4, valueSpan * 0.08)
+  const max = rawMax + Math.max(4, valueSpan * 0.28)
   const range = Math.max(1, max - min)
   const plotHeight = Math.max(1, height - top - bottom)
   const plotWidth = Math.max(1, width - right)
