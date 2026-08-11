@@ -21,10 +21,10 @@ function HeroDeltaText({ value, tone, meta }: { value: string; tone: "positive" 
           tone === "positive" ? "flex items-center gap-1 text-[#01AACF]" : "flex items-center gap-1 text-rose-500"
         }
       >
-        <span className="text-[10px] leading-none">{tone === "positive" ? "▲" : "▼"}</span>
-        <span className="text-[12px] font-normal tabular-nums">{value}</span>
+        <span className="text-[11px] leading-none">{tone === "positive" ? "▲" : "▼"}</span>
+        <span className="text-[14px] font-medium tabular-nums">{value}</span>
       </div>
-      {meta ? <span className="text-[12px] font-normal text-muted-foreground">{meta}</span> : null}
+      {meta ? <span className="text-[13px] font-normal text-muted-foreground">{meta}</span> : null}
     </div>
   )
 }

@@ -23,7 +23,7 @@ export function LendSidebar({ detail, className }: Props) {
       className={cn("flex w-full flex-col gap-12", className)}
       aria-label={t("Lend {name}").replace("{name}", detail.hero.name)}
     >
-      <LendActionRail detail={detail} className="mt-6" />
+      <LendActionRail detail={detail} className="mt-3" />
     </aside>
   )
 }
@@ -53,7 +53,7 @@ function LendActionRail({ detail, className }: Props) {
         revealLabels
       />
 
-      <div className="mt-3">
+      <div className="mt-2">
         {tab === "deposit" ? (
           <ResponsiveLendAction kind="deposit" market={marketId} closeHref={closeHref} sidebar />
         ) : (

@@ -76,9 +76,9 @@ export function buildHeroAreaGeometry(
       xAxisTicks: [] as XAxisTick[],
     }
   }
-  const top = 12
+  const top = 4
   const bottom = 34
-  const right = width < 640 ? 44 : 66
+  const right = width < 640 ? 40 : 52
   const values = data.map((point) => point.value)
   const min = Math.min(...values) - 4
   const max = Math.max(...values) + 4
@@ -238,7 +238,7 @@ export function HeroAreaChart({
             <line
               x1={activePoint.x}
               x2={activePoint.x}
-              y1={12}
+              y1={4}
               y2={dimensions.height - 34}
               stroke={color.cursor}
               vectorEffect="non-scaling-stroke"
