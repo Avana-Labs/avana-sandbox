@@ -23,7 +23,7 @@ export function LendSidebar({ detail, className }: Props) {
       className={cn("flex w-full flex-col gap-12", className)}
       aria-label={t("Lend {name}").replace("{name}", detail.hero.name)}
     >
-      <LendActionRail detail={detail} className="mt-3" />
+      <LendActionRail detail={detail} className="mt-9" />
     </aside>
   )
 }
