@@ -208,14 +208,23 @@ function FilterMenu<T extends string>({
   )
 }
 
-export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
+export function RecentActivity({
+  rows,
+  defaultShowAll = false,
+  showHeading = true,
+}: {
+  rows: PortfolioActivityRow[]
+  /** When true, start expanded (used by the All Transactions dashboard tab). */
+  defaultShowAll?: boolean
+  showHeading?: boolean
+}) {
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const { t } = useTranslation()
   const amount = (row: PortfolioActivityRow) => (showDollarAmounts ? formatRowAmount(row) : MASK)
   const [products, setProducts] = React.useState<PortfolioActivityRow["product"][]>([])
   const [kinds, setKinds] = React.useState<PortfolioActivityRow["kind"][]>([])
   const [statuses, setStatuses] = React.useState<PortfolioActivityRow["status"][]>([])
-  const [showAll, setShowAll] = React.useState(false)
+  const [showAll, setShowAll] = React.useState(defaultShowAll)
 
   const hasFilters = products.length > 0 || kinds.length > 0 || statuses.length > 0
   const visibleItems = React.useMemo(
@@ -232,24 +241,30 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
   // Show a short preview by default; "View all" expands to the full history.
   const COLLAPSED_COUNT = 5
   const displayItems = showAll ? visibleItems : visibleItems.slice(0, COLLAPSED_COUNT)
-  const hasMore = visibleItems.length > COLLAPSED_COUNT
+  const hasMore = !defaultShowAll && visibleItems.length > COLLAPSED_COUNT
 
   return (
     <section id="dashboard-activity" className="min-w-0 scroll-mt-24">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">
-          {t("All Transactions")}
-        </h2>
-        {hasMore ? (
-          <button
-            type="button"
-            onClick={() => setShowAll((prev) => !prev)}
-            className="shrink-0 text-[13px] font-medium text-brand transition-colors hover:text-brand/80"
-          >
-            {showAll ? t("Show less") : t("View all")}
-          </button>
-        ) : null}
-      </div>
+      {showHeading || hasMore ? (
+        <div className="mb-4 flex items-center justify-between gap-3">
+          {showHeading ? (
+            <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">
+              {t("All Transactions")}
+            </h2>
+          ) : (
+            <span />
+          )}
+          {hasMore ? (
+            <button
+              type="button"
+              onClick={() => setShowAll((prev) => !prev)}
+              className="shrink-0 text-[13px] font-medium text-brand transition-colors hover:text-brand/80"
+            >
+              {showAll ? t("Show less") : t("View all")}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <button
           type="button"
