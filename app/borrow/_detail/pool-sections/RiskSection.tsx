@@ -30,7 +30,7 @@ export function RiskSection({ detail }: Props) {
 
   return (
     <SectionCard
-      title={t("Risk assessment")}
+      title={t("Risk premium")}
       rightSlot={<RiskLevelPill level={risk.level} size="md" />}
       chrome="plain"
       bodyClassName="p-0"
@@ -38,10 +38,7 @@ export function RiskSection({ detail }: Props) {
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div className="min-w-0">
-            <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-              {t("Risk premium")}
-            </div>
-            <div className="mt-1 flex items-baseline gap-2">
+            <div className="flex items-baseline gap-2">
               <span className="font-data text-[26px] font-medium tabular-nums text-foreground md:text-[30px]">
                 {formatBpsAsPct(risk.premiumBps)}
               </span>

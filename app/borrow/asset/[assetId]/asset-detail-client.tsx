@@ -8,6 +8,8 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import {
   DeferredDetailContent,
+  detailAnalyticsSectionClass,
+  detailAnalyticsStackClass,
   DetailPageNotice,
   DetailPageWidth,
   MobileDetailActionBar,
@@ -90,7 +92,7 @@ export function AssetDetailClient({ detail }: Props) {
                   newsImageLabel={detail.hero.symbol}
                   mediaVariant="icon"
                   afterAbout={
-                    <div className="space-y-12">
+                    <>
                       <section aria-label={t("Key Statistics")} className="space-y-6">
                         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
                           Key Statistics
@@ -98,14 +100,13 @@ export function AssetDetailClient({ detail }: Props) {
                         <QuickStatsGrid detail={detail} hideRisk />
                       </section>
                       <RiskSection detail={detail} />
-                    </div>
+                    </>
                   }
                   className="pt-0"
                 />
 
-                <section aria-label={t("Asset analytics")} className="space-y-14 pt-14 md:space-y-16 md:pt-16">
-                  <DeferredDetailContent>
-                    <div className="space-y-14 md:space-y-16">
+                <section aria-label={t("Asset analytics")} className={detailAnalyticsSectionClass}>
+                  <DeferredDetailContent className={detailAnalyticsStackClass}>
                       <InterestRateModelCard {...interestRateModelFromAssetDetail(detail)} />
                       <AllocationBreakdownCard detail={detail} />
                       <CashflowCard detail={detail} />
@@ -119,7 +120,6 @@ export function AssetDetailClient({ detail }: Props) {
                       />
                       <TransactionHistoryCard transactions={detail.transactions} assetSymbol={detail.hero.symbol} />
                       <DetailPageNotice product="borrow" />
-                    </div>
                   </DeferredDetailContent>
                 </section>
               </div>
