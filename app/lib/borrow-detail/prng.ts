@@ -110,7 +110,9 @@ export function buildSeries(seed: string, range: TimeRangeId, label: string, sha
       const factor = 10 ** shape.roundTo
       v = Math.round(v * factor) / factor
     }
-    const ts = new Date(now - (samples - 1 - i) * msPerStep).toISOString().slice(0, 10)
+    const at = new Date(now - (samples - 1 - i) * msPerStep)
+    // Keep full ISO for intraday (1D) so chart x-axis can show times; daily ranges stay date-only.
+    const ts = days <= 1 ? at.toISOString() : at.toISOString().slice(0, 10)
     points.push({ t: ts, v })
   }
   const aggregate = points.reduce((sum, p) => sum + p.v, 0) / points.length

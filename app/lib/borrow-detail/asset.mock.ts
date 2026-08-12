@@ -234,6 +234,10 @@ function deltaFromPct(pct: number): DeltaStat {
 }
 
 function buildHero(asset: SpokeBorrowableRecord, fixture: AssetFixture | undefined): AssetDetailHero {
+  const contractAddress = fixture?.contractAddress ?? contractAddressFor(asset.id, "token")
+  const contractLabel =
+    fixture?.contractLabel ??
+    ( /^0x[a-fA-F0-9]{40}$/.test(contractAddress) ? shortAddress(contractAddress) : contractAddress)
   return {
     visual: asset.visual,
     name: asset.name,
@@ -243,8 +247,8 @@ function buildHero(asset: SpokeBorrowableRecord, fixture: AssetFixture | undefin
       : `${asset.name} — ${asset.subtitle}.`,
     chain: fixture?.chain ?? "Ethereum",
     category: asset.category === "stable" ? "stable" : "crypto",
-    contractLabel: fixture?.contractLabel,
-    contractAddress: fixture?.contractAddress,
+    contractLabel,
+    contractAddress,
     websiteUrl: fixture?.websiteUrl,
     xUrl: fixture?.xUrl,
   }

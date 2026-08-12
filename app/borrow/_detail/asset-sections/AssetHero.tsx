@@ -7,6 +7,11 @@ import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { getAssetHeroFeed } from "@/app/lib/chart-feeds"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import {
+  buildFeedFromRangeSeries,
+  formatHeroContractLabel,
+  resolveHeroContractAddress,
+} from "@/app/borrow/_detail/lib/hero-chart-feeds"
 
 type Props = {
   detail: AssetDetail
@@ -28,7 +33,14 @@ export function AssetHeroIdentity({
   className?: string
 }) {
   const { t } = useTranslation()
-  const metaLabel = detail.hero.contractLabel ?? detail.hero.chain
+  const contractAddress =
+    detail.hero.contractAddress && /^0x[a-fA-F0-9]{40}$/i.test(detail.hero.contractAddress)
+      ? detail.hero.contractAddress
+      : resolveHeroContractAddress(detail.id)
+  const contractLabel = detail.hero.contractLabel ?? formatHeroContractLabel(contractAddress)
+  const showSymbol =
+    detail.hero.symbol.trim().length > 0 &&
+    detail.hero.symbol.trim().toLowerCase() !== detail.hero.name.trim().toLowerCase()
 
   return (
     <header className={cn("pb-5", className)}>
@@ -62,9 +74,11 @@ export function AssetHeroIdentity({
               <h1 className="min-w-0 truncate text-[25px] font-semibold leading-none tracking-[-0.02em] text-foreground">
                 {detail.hero.name}
               </h1>
-              <span className="shrink-0 text-[20px] font-medium leading-none tracking-[-0.01em] text-foreground/55">
-                {detail.hero.symbol}
-              </span>
+              {showSymbol ? (
+                <span className="shrink-0 text-[20px] font-medium leading-none tracking-[-0.01em] text-foreground/55">
+                  {detail.hero.symbol}
+                </span>
+              ) : null}
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-3 text-[15px] font-medium text-foreground/75">
               <span className="leading-none text-foreground/75">{detail.hero.chain}</span>
@@ -72,12 +86,13 @@ export function AssetHeroIdentity({
               <button
                 type="button"
                 onClick={async () => {
-                  await navigator.clipboard.writeText(detail.hero.contractAddress ?? metaLabel)
+                  await navigator.clipboard.writeText(contractAddress)
                 }}
                 className="inline-flex min-h-8 items-center gap-1.5 rounded-full text-[15px] font-medium leading-none text-foreground/75 transition-colors hover:text-foreground"
+                aria-label={`${t("Copy")} ${contractLabel}`}
               >
                 <Copy className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
-                <span>{metaLabel}</span>
+                <span>{contractLabel}</span>
               </button>
             </div>
           </div>
@@ -88,7 +103,7 @@ export function AssetHeroIdentity({
             label={t("Website")}
             onClick={() =>
               window.open(
-                detail.hero.websiteUrl ?? `https://www.google.com/search?q=${encodeURIComponent(detail.hero.name)}`,
+                detail.hero.websiteUrl ?? `https://etherscan.io/address/${contractAddress}`,
                 "_blank",
               )
             }
@@ -99,7 +114,7 @@ export function AssetHeroIdentity({
             label="X"
             onClick={() =>
               window.open(
-                detail.hero.xUrl ?? `https://x.com/search?q=${encodeURIComponent(detail.hero.name)}`,
+                detail.hero.xUrl ?? `https://x.com/search?q=${encodeURIComponent(detail.hero.symbol)}`,
                 "_blank",
               )
             }
@@ -117,7 +132,22 @@ export function AssetHeroIdentity({
 }
 
 export function AssetHero({ detail, leading, actions, className, hideIdentity = false }: Props) {
-  const feed = detail.heroFeed ?? getAssetHeroFeed(detail.id)
+  const { t } = useTranslation()
+  const metricTabs = React.useMemo(() => [t("Supplied"), t("Borrowed"), t("Utilization")], [t])
+  const [activeMetricTab, setActiveMetricTab] = React.useState(metricTabs[0])
+  React.useEffect(() => {
+    setActiveMetricTab(metricTabs[0])
+  }, [metricTabs])
+  const feed = React.useMemo(() => {
+    const fallback = detail.heroFeed ?? getAssetHeroFeed(detail.id)
+    if (activeMetricTab === metricTabs[1]) {
+      return buildFeedFromRangeSeries(detail.heroMetric.series.borrow, "usdCompact", fallback)
+    }
+    if (activeMetricTab === metricTabs[2]) {
+      return buildFeedFromRangeSeries(detail.heroMetric.series.utilization, "percent", fallback)
+    }
+    return buildFeedFromRangeSeries(detail.heroMetric.series.supply, "usdCompact", fallback)
+  }, [activeMetricTab, detail.heroFeed, detail.heroMetric.series, detail.id, metricTabs])
 
   return (
     <section className={cn("flex flex-col gap-5", className)} data-testid="asset-hero">
@@ -130,6 +160,9 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
           gradientId={`assetHeroFill-${detail.id}`}
           height={310}
           showMeta={false}
+          metricTabs={metricTabs}
+          activeMetricTab={activeMetricTab}
+          onMetricTabChange={setActiveMetricTab}
           balanceVariant="strong"
           balanceClassName="absolute left-0 top-0 z-10 -translate-y-0.5"
         />

@@ -18,8 +18,6 @@ import { AssetHero, AssetHeroIdentity, interestRateModelFromAssetDetail } from "
 import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
 import { withGovernanceParameterView } from "@/app/borrow/_detail/lib/governance-parameters"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
-import { SupportedCollateralSection } from "@/app/borrow/_detail/ui/CrossMarketReferenceSections"
-import { resolveCollateralForAsset } from "@/app/lib/borrow-detail/cross-market"
 import { AssetTokenSidebar } from "@/app/borrow/_detail/sidebars"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
@@ -110,10 +108,6 @@ export function AssetDetailClient({ detail }: Props) {
                       <InterestRateModelCard {...interestRateModelFromAssetDetail(detail)} />
                       <AllocationBreakdownCard detail={detail} />
                       <CashflowCard detail={detail} />
-                      <SupportedCollateralSection
-                        assetSymbol={detail.hero.symbol}
-                        markets={resolveCollateralForAsset(detail.row)}
-                      />
                       <DetailFaqSection
                         title={t("General FAQs")}
                         items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}

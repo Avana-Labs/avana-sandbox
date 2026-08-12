@@ -42,7 +42,7 @@ export function buildFeedFromRangeSeries(
       series?.points.map((point) => ({
         time: Date.parse(point.t),
         value: point.v,
-        label: formatPointLabel(point.t),
+        label: formatPointLabel(point.t, borrowRange as BorrowRangeId),
       })) ?? fallback.rangeData[chartRange]
     return accumulator
   }, {} as ChartRangeData)
@@ -99,8 +99,14 @@ function makeRangeData(points: ChartFeed["rangeData"]["1D"]): ChartRangeData {
   }
 }
 
-function formatPointLabel(value: string) {
+function formatPointLabel(value: string, range?: BorrowRangeId | "ALL") {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
+  if (range === "1D" || value.includes("T")) {
+    return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(date)
+  }
+  if (range === "1Y" || range === "ALL") {
+    return new Intl.DateTimeFormat("en-US", { month: "short", year: "2-digit" }).format(date)
+  }
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date)
 }

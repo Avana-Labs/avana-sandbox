@@ -4,16 +4,18 @@ import { useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import { TokenBubble } from "@/app/borrow/components/atoms"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
-import { DesktopTableSurface } from "@/app/components/market-table-primitives"
+import { ArrowUpRight } from "@/app/components/icons"
+import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
+import { Button } from "@/components/ui/button"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import { formatCompactUsd, utilizationToneClass } from "@/app/lib/borrow-sim"
+import { resolveCollateralForAsset } from "@/app/lib/borrow-detail/cross-market"
 import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
 
 type Props = { detail: AssetDetail; id?: string }
-type SortKey = "pool" | "share" | "value"
+type SortKey = "pool" | "cf" | "allocation"
 
 function SortIcon() {
   return (
@@ -43,33 +45,79 @@ function headerCellClass(extra?: string) {
   )
 }
 
-function marketHrefForAllocationRow(assetId: string, rowId: string) {
+function poolIdFromAllocationRow(assetId: string, rowId: string) {
   const prefix = `${assetId}-`
-  return rowId.startsWith(prefix) ? borrowMarketDetailPath(rowId.slice(prefix.length)) : borrowMarketDetailPath(rowId)
+  return rowId.startsWith(prefix) ? rowId.slice(prefix.length) : rowId
+}
+
+function marketHrefForAllocationRow(assetId: string, rowId: string) {
+  return borrowMarketDetailPath(poolIdFromAllocationRow(assetId, rowId))
+}
+
+function ViewDetailButton({ href, label }: { href: string; label: string }) {
+  const router = useRouter()
+  return (
+    <HoverActionGroup className="gap-2">
+      <Button
+        type="button"
+        size="table"
+        variant="table-secondary"
+        className="w-auto"
+        onClick={(event) => {
+          event.stopPropagation()
+          router.push(href)
+        }}
+      >
+        <ArrowUpRight className="size-3.5" aria-hidden />
+        {label}
+      </Button>
+    </HoverActionGroup>
+  )
 }
 
 export function AllocationBreakdownCard({ detail, id }: Props) {
   const { t } = useTranslation()
   const router = useRouter()
-  const [sortKey, setSortKey] = useState<SortKey>("share")
+  const [sortKey, setSortKey] = useState<SortKey>("allocation")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
 
-  const helpText = t("Where {symbol} is deployed across LP collateral pools.").replace("{symbol}", detail.hero.symbol)
+  const helpText = t("Assets that can be used as collateral to borrow {symbol} from this market.").replace(
+    "{symbol}",
+    detail.hero.symbol,
+  )
+
+  const collateralFactorByPoolId = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const market of resolveCollateralForAsset(detail.row)) {
+      map.set(market.id, market.collateralFactorPct)
+    }
+    return map
+  }, [detail.row])
 
   const rows = useMemo(() => {
     const direction = sortDirection === "asc" ? 1 : -1
-    return [...detail.allocation].sort((a, b) => {
-      switch (sortKey) {
-        case "share":
-          return (a.sharePct - b.sharePct) * direction
-        case "value":
-          return (a.valueUsd - b.valueUsd) * direction
-        case "pool":
-        default:
-          return a.poolName.localeCompare(b.poolName) * direction
-      }
-    })
-  }, [detail.allocation, sortDirection, sortKey])
+    return [...detail.allocation]
+      .map((row) => {
+        const poolId = poolIdFromAllocationRow(detail.row.id, row.id)
+        return {
+          ...row,
+          poolId,
+          href: marketHrefForAllocationRow(detail.row.id, row.id),
+          collateralFactorPct: collateralFactorByPoolId.get(poolId) ?? 0,
+        }
+      })
+      .sort((a, b) => {
+        switch (sortKey) {
+          case "cf":
+            return (a.collateralFactorPct - b.collateralFactorPct) * direction
+          case "allocation":
+            return (a.sharePct - b.sharePct) * direction
+          case "pool":
+          default:
+            return a.poolName.localeCompare(b.poolName) * direction
+        }
+      })
+  }, [collateralFactorByPoolId, detail.allocation, detail.row.id, sortDirection, sortKey])
 
   const toggleSort = (nextKey: SortKey) => {
     if (sortKey === nextKey) {
@@ -81,12 +129,12 @@ export function AllocationBreakdownCard({ detail, id }: Props) {
   }
 
   return (
-    <section id={id} aria-label={t("Allocation breakdown")} className="space-y-5">
+    <section id={id} aria-label={t("Supported Collateral")} className="space-y-5">
       <div className="flex items-center gap-1.5">
         <h2 className="text-[22px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[24px]">
-          {t("Allocation breakdown")}
+          {t("Supported Collateral")}
         </h2>
-        <ActionMetricHelp text={helpText} topic="Allocation breakdown" />
+        <ActionMetricHelp text={helpText} topic="Supported Collateral" />
       </div>
 
       {rows.length === 0 ? (
@@ -98,10 +146,11 @@ export function AllocationBreakdownCard({ detail, id }: Props) {
           <div className="overflow-x-auto md:overflow-x-visible">
             <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[12px] md:min-w-0">
               <colgroup>
-                <col className="w-[8%]" />
-                <col className="w-[44%]" />
-                <col className="w-[24%]" />
-                <col className="w-[24%]" />
+                <col className="w-[6%]" />
+                <col className="w-[42%]" />
+                <col className="w-[20%]" />
+                <col className="w-[16%]" />
+                <col className="w-[16%]" />
               </colgroup>
               <thead>
                 <tr className="bg-table-header text-left text-muted-foreground">
@@ -119,96 +168,84 @@ export function AllocationBreakdownCard({ detail, id }: Props) {
                   <th className={headerCellClass("px-2 sm:px-4")}>
                     <button
                       type="button"
-                      onClick={() => toggleSort("share")}
-                      className={headerButtonClass(sortKey === "share")}
+                      onClick={() => toggleSort("cf")}
+                      className={headerButtonClass(sortKey === "cf")}
                     >
-                      <span>{t("SHARE")}</span>
+                      <span>{t("COLLATERAL FACTOR")}</span>
                       <SortIcon />
                     </button>
                   </th>
-                  <th className={headerCellClass("pl-2 pr-4 sm:pr-6")}>
+                  <th className={headerCellClass("px-2 sm:px-4")}>
                     <button
                       type="button"
-                      onClick={() => toggleSort("value")}
-                      className={headerButtonClass(sortKey === "value")}
+                      onClick={() => toggleSort("allocation")}
+                      className={headerButtonClass(sortKey === "allocation")}
                     >
-                      <span>{t("VALUE")}</span>
+                      <span>{t("ALLOCATION")}</span>
                       <SortIcon />
                     </button>
                   </th>
+                  <SilentActionHeader className="pr-4 sm:pr-6" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border dark:divide-white/6">
-                {rows.map((row, index) => {
-                  const href = marketHrefForAllocationRow(detail.row.id, row.id)
-                  return (
-                    <tr
-                      key={row.id}
-                      className="asset-swap group cursor-pointer transition-colors"
-                      onClick={() => router.push(href)}
-                      style={{ animationDelay: `${index * 40}ms` }}
+                {rows.map((row, index) => (
+                  <tr
+                    key={row.id}
+                    className="asset-swap group cursor-pointer transition-colors"
+                    onClick={() => router.push(row.href)}
+                    style={{ animationDelay: `${index * 40}ms` }}
+                  >
+                    <td
+                      className={`py-2.5 pl-4 pr-2 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 sm:pl-6 ${TABLE_ROW_HOVER_LEFT}`}
                     >
-                      <td
-                        className={`py-2.5 pl-4 pr-2 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 sm:pl-6 ${TABLE_ROW_HOVER_LEFT}`}
-                      >
-                        {index + 1}
-                      </td>
-                      <td className={`min-w-0 py-2.5 px-2 sm:px-4 ${TABLE_ROW_HOVER_BG}`}>
-                        <div className="flex min-w-0 items-center gap-3">
-                          <div className="flex shrink-0 items-center">
-                            <span className="relative z-[1]">
-                              <TokenBubble
-                                visual={row.visuals[0]}
-                                size="table"
-                                ring={false}
-                                className="bg-transparent"
-                              />
-                            </span>
-                            <span className="-ml-3">
-                              <TokenBubble
-                                visual={row.visuals[1]}
-                                size="table"
-                                ring={false}
-                                className="bg-transparent"
-                              />
-                            </span>
-                          </div>
-                          <div className="min-w-0">
-                            <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
-                              {row.poolName}
-                            </div>
-                            <div
-                              className={cn(
-                                "mt-1 truncate text-[13px] font-normal tracking-[-0.03em] tabular-nums",
-                                utilizationToneClass(row.utilizationPct),
-                              )}
-                            >
-                              {row.utilizationPct.toFixed(2)}% {t("Utilization")}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className={`py-2.5 px-2 sm:px-4 ${TABLE_ROW_HOVER_BG}`}>
-                        <div className="flex min-w-0 items-center gap-2">
-                          <span className="hidden h-1 w-10 shrink-0 overflow-hidden rounded-xs bg-surface-inset sm:block lg:w-14">
-                            <span
-                              className="block h-full rounded-xs bg-accent-primary"
-                              style={{ width: `${Math.min(100, row.sharePct)}%` }}
+                      {index + 1}
+                    </td>
+                    <td className={`min-w-0 py-2.5 px-2 sm:px-4 ${TABLE_ROW_HOVER_BG}`}>
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex shrink-0 items-center">
+                          <span className="relative z-[1]">
+                            <TokenBubble
+                              visual={row.visuals[0]}
+                              size="table"
+                              ring={false}
+                              className="bg-transparent"
                             />
                           </span>
-                          <span className="font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white">
-                            {row.sharePct.toFixed(2)}%
+                          <span className="-ml-3">
+                            <TokenBubble
+                              visual={row.visuals[1]}
+                              size="table"
+                              ring={false}
+                              className="bg-transparent"
+                            />
                           </span>
                         </div>
-                      </td>
-                      <td
-                        className={`py-2.5 pl-2 pr-4 font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white sm:pr-6 ${TABLE_ROW_HOVER_RIGHT}`}
-                      >
-                        {formatCompactUsd(row.valueUsd)}
-                      </td>
-                    </tr>
-                  )
-                })}
+                        <div className="min-w-0">
+                          <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                            {row.poolName}
+                          </div>
+                          <div className="mt-1 truncate text-[13px] font-normal tracking-[-0.03em] tabular-nums text-brand">
+                            {row.utilizationPct.toFixed(2)}% {t("Utilization")}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                    <td
+                      className={`py-2.5 px-2 font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white sm:px-4 ${TABLE_ROW_HOVER_BG}`}
+                    >
+                      {Math.round(row.collateralFactorPct)}%
+                    </td>
+                    <td
+                      className={`py-2.5 px-2 font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white sm:px-4 ${TABLE_ROW_HOVER_BG}`}
+                    >
+                      {row.sharePct.toFixed(2)}%
+                    </td>
+                    <td className={`py-2.5 pl-2 pr-4 text-right sm:pr-6 ${TABLE_ROW_HOVER_RIGHT}`}>
+                      <ViewDetailButton href={row.href} label={t("View")} />
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
