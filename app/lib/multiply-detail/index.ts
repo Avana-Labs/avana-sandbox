@@ -17,7 +17,11 @@ import {
 import { formatTokenPrice } from "@/app/lib/prices/format"
 import { prngFromString } from "@/app/lib/borrow-detail/prng"
 import { SANDBOX_NOW } from "@/app/lib/deterministic"
-import { buildMultiplyAboutDescription, buildMultiplyFaqs, type FaqContent } from "@/app/lib/borrow-detail/content-model"
+import {
+  buildMultiplyAboutDescription,
+  buildMultiplyFaqs,
+  type FaqContent,
+} from "@/app/lib/borrow-detail/content-model"
 import { MULTIPLY_MARKET_ROWS, MULTIPLY_TOKEN_LOGOS, type MultiplyMarketRow } from "@/app/lib/multiply-sim"
 import { MULTIPLY_MARKET_CATALOG, getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
 import { catalogMarketToRow } from "@/app/lib/multiply-system/read-model"
@@ -307,10 +311,7 @@ function buildGovernanceParameters(
   const maxLeverage =
     record != null ? `${record.risk.publicMaxMultiplier.toFixed(2)}x` : (row.rewardRows?.[0]?.value ?? "—")
   const availableUsd = record?.economics.availableLiquidityUsd
-  const supplyCapUsd = Math.max(
-    25_000_000,
-    Math.ceil(((availableUsd ?? 6_000_000) * 1.75) / 1_000_000) * 1_000_000,
-  )
+  const supplyCapUsd = Math.max(25_000_000, Math.ceil(((availableUsd ?? 6_000_000) * 1.75) / 1_000_000) * 1_000_000)
   const liquidationBonusPct = record?.risk.riskTier === "low" ? 5 : record?.risk.riskTier === "medium" ? 6 : 7
   const proposalHref = `https://etherscan.io/address/${contractAddressFor(marketId, "governance")}`
 

@@ -1,15 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import {
-  Circle,
-  CircleArrowUp,
-  CircleDollarSign,
-  Coins,
-  ShieldCheck,
-  Umbrella,
-  Unlock,
-} from "@/app/components/icons"
+import { Circle, CircleArrowUp, CircleDollarSign, Coins, ShieldCheck, Umbrella, Unlock } from "@/app/components/icons"
 import { CarouselArrowButtons, useOverflowCarousel } from "@/app/components/carousel-arrow-buttons"
 import { ActionAmountCard } from "@/app/components/action-page/action-amount-card"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
@@ -164,7 +156,9 @@ function UmbrellaHero() {
   return (
     <div className="mb-12">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">Your Umbrella</h2>
+        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+          Your Umbrella
+        </h2>
         <AmountVisibilityToggle />
       </div>
       <section className="relative overflow-hidden rounded-radius-md bg-card px-4 py-5 sm:px-5">
@@ -203,7 +197,9 @@ function UmbrellaStress() {
   return (
     <section>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">Market Level Risk</h2>
+        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+          Market Level Risk
+        </h2>
       </div>
 
       <div className="space-y-3">
@@ -439,9 +435,6 @@ function UmbrellaActionSidebar({
                 <ActionInfoRow label="Covers" value={selected.covers} />
                 <ActionInfoRow className="border-t border-border" label="Est. rewards" value={`${selected.apy} APY`} />
               </ActionCard>
-              <p className="text-[12px] leading-5 text-muted-foreground">
-                Stake tokens remain slashable if the covered asset has a deficit.
-              </p>
               <button
                 type="button"
                 disabled={!canSubmit}
@@ -473,11 +466,11 @@ function UmbrellaActionSidebar({
                 <ActionInfoRow label="Cooldown" value={selected.cooldownReady ? "Ready" : "20 days"} />
                 <ActionInfoRow className="border-t border-border" label="Coverage" value={selected.covers} />
               </ActionCard>
-              <p className="text-[12px] leading-5 text-muted-foreground">
-                {selected.cooldownReady
-                  ? "Withdrawal window is open for this module."
-                  : "Unstake starts a 20-day cooldown before you can remove."}
-              </p>
+              {selected.cooldownReady ? (
+                <p className="text-[12px] leading-5 text-muted-foreground">
+                  Withdrawal window is open for this module.
+                </p>
+              ) : null}
               <button
                 type="button"
                 disabled={selected.cooldownReady ? !canSubmit : false}
@@ -549,9 +542,7 @@ function UmbrellaPositions({ onClaim }: { onClaim: (id: UmbrellaModuleId) => voi
                     </span>
                   </td>
                   <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
-                    <span className="text-[15px] font-normal tracking-[-0.03em] text-success">
-                      {position.rewards}
-                    </span>
+                    <span className="text-[15px] font-normal tracking-[-0.03em] text-success">{position.rewards}</span>
                   </td>
                   <td className={cn("py-3.5 pr-5", TABLE_ROW_HOVER_RIGHT)}>
                     <HoverActionGroup className="justify-end">

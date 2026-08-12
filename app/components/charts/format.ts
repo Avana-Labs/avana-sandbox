@@ -55,7 +55,7 @@ export function formatChartAxis(format: ChartValueFormat, value: number): string
     case "usd":
     default: {
       const active = toActive(value)
-      return `${signOf(active)}${getActiveCurrency().symbol}${Math.round(Math.abs(active))}`
+      return `${signOf(active)}${getActiveCurrency().symbol}${Math.round(Math.abs(active)).toLocaleString()}`
     }
   }
 }

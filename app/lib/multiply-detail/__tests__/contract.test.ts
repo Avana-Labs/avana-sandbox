@@ -7,7 +7,9 @@ describe("multiply detail about contract", () => {
     const detail = getMultiplyMarketDetail("crvusd-usdt")!
     expect(detail.hero.venue).toBe("Avana Multiply")
     expect(detail.hero.explorerUrl).toMatch(/^https:\/\/etherscan\.io\/address\/0x[a-fA-F0-9]{40}$/)
-    expect(resolveHeroContractLabel(detail.id, detail.hero.explorerUrl)).toMatch(/^0x[a-fA-F0-9]{4}\.\.\.[a-fA-F0-9]{4}$/)
+    expect(resolveHeroContractLabel(detail.id, detail.hero.explorerUrl)).toMatch(
+      /^0x[a-fA-F0-9]{4}\.\.\.[a-fA-F0-9]{4}$/,
+    )
   })
 
   it("uses contract metadata in the About stats like lend details", () => {

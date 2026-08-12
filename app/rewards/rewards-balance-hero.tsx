@@ -7,7 +7,7 @@ import Link from "next/link"
 import { CircleDollarSign, Eye, EyeOff, Info } from "@/app/components/icons"
 import { Button } from "@/components/ui/button"
 import { HeroBalanceDisplay } from "@/app/components/charts/hero-balance-display"
-import { formatChartValue, type ChartPoint } from "@/app/components/charts"
+import { formatChartAxis, formatChartValue, type ChartPoint } from "@/app/components/charts"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
@@ -15,7 +15,7 @@ const HeroAreaChart = dynamic(
   () => import("@/app/components/charts/hero-area-chart").then((mod) => mod.HeroAreaChart),
   {
     ssr: false,
-    loading: () => <div aria-hidden className="h-[128px] w-full" />,
+    loading: () => <div aria-hidden className="h-[148px] w-full" />,
   },
 )
 
@@ -62,11 +62,20 @@ export function buildPortfolioSeries(endUsd: number): ChartPoint[] {
   }
   values[0] = Math.round(start * 100) / 100
   values[COUNT - 1] = Math.round(end * 100) / 100
-  return values.map((point, index) => ({
-    time: index,
-    value: point,
-    label: PORTFOLIO_TIME_LABELS[Math.round((index / (COUNT - 1)) * (PORTFOLIO_TIME_LABELS.length - 1))],
-  }))
+  const tickIndexes = PORTFOLIO_TIME_LABELS.map((_, index) =>
+    Math.round((index / (PORTFOLIO_TIME_LABELS.length - 1)) * (COUNT - 1)),
+  )
+  return values.map((point, index) => {
+    const labelIndex = tickIndexes.findIndex((tickIndex, tickPosition) => {
+      const nextTick = tickIndexes[tickPosition + 1] ?? COUNT
+      return index >= tickIndex && index < nextTick
+    })
+    return {
+      time: index,
+      value: point,
+      label: PORTFOLIO_TIME_LABELS[labelIndex] ?? PORTFOLIO_TIME_LABELS[PORTFOLIO_TIME_LABELS.length - 1],
+    }
+  })
 }
 
 function AvanaCoin() {
@@ -190,11 +199,9 @@ export function RewardsBalanceHero({
   const balanceValue = hoverPoint
     ? formatChartValue("usd", hoverPoint.value)
     : formatChartValue("usd", portfolioValueUsd)
-  const balanceDelta = hoverPoint
-    ? `${Math.abs(hoverPct).toFixed(2)}%`
-    : `${restingPct >= 0 ? "" : "-"}$${Math.abs(lastValue - firstValue).toFixed(2)} (${restingPct.toFixed(2)}%)`
+  const balanceDelta = `${(hoverPoint ? hoverPct : restingPct) >= 0 ? "" : "-"}$${Math.abs((hoverPoint?.value ?? lastValue) - firstValue).toFixed(2)} (${(hoverPoint ? hoverPct : restingPct).toFixed(2)}%)`
   const balanceMeta = hoverPoint ? hoverPoint.label : undefined
-  const balanceTone: "positive" | "negative" = hoverPct >= 0 ? "positive" : "negative"
+  const balanceTone: "positive" | "negative" = (hoverPoint ? hoverPct : restingPct) >= 0 ? "positive" : "negative"
 
   return (
     <div className="mb-6 grid gap-5 md:mb-8 md:gap-7 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] lg:items-start">
@@ -228,11 +235,12 @@ export function RewardsBalanceHero({
             <HeroAreaChart
               data={series}
               activeRange="1D"
-              height={116}
+              height={148}
               gradientId="rewardsBalanceFill"
               className="relative w-full"
               tone={balanceTone}
               formatValue={(v) => (showDollarAmounts ? formatChartValue("usd", v) : "••••")}
+              formatYAxis={(v) => (showDollarAmounts ? formatChartAxis("usdCompact", v) : "••••")}
               onActiveIndexChange={setHoverIndex}
             />
           </div>

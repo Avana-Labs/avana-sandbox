@@ -17,7 +17,11 @@ import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { CarouselArrowButtons } from "@/app/components/carousel-arrow-buttons"
-import { HIGHLIGHT_CARD_CLASS, HighlightCarousel, type HighlightCarouselHandle } from "@/app/components/highlight-carousel"
+import {
+  HIGHLIGHT_CARD_CLASS,
+  HighlightCarousel,
+  type HighlightCarouselHandle,
+} from "@/app/components/highlight-carousel"
 import { hasImageSrc, resolveImageSrc } from "@/lib/image-src"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar"

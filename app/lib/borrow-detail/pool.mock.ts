@@ -417,8 +417,7 @@ function buildHero(row: BorrowPoolRow, fixture: FixtureOverride | undefined): Po
     subtitle: fixture?.subtitle ?? `${row.name} accepted as LP collateral. Supply to unlock borrow power.`,
     feeTier: fixture?.feeTier,
     chain: fixture?.chain ?? pickChain(row),
-    explorerUrl:
-      fixture?.explorerUrl ?? `https://etherscan.io/address/${resolveHeroContractAddress(row.id)}`,
+    explorerUrl: fixture?.explorerUrl ?? `https://etherscan.io/address/${resolveHeroContractAddress(row.id)}`,
   }
 }
 

@@ -35,11 +35,11 @@ describe("protocol parameters on borrow detail", () => {
     )
   })
 
-  it("p1-19: asset and pool detail clients mount ProtocolParametersSection", () => {
+  it("p1-19: asset and pool detail clients fold protocol parameters into About", () => {
     const assetDetail = readFileSync(resolve(__dirname, "../../asset/[assetId]/asset-detail-client.tsx"), "utf8")
     const poolDetail = readFileSync(resolve(__dirname, "../../pool/[poolId]/pool-detail-client.tsx"), "utf8")
 
-    expect(assetDetail).toMatch(/ProtocolParametersSection/)
-    expect(poolDetail).toMatch(/ProtocolParametersSection/)
+    expect(assetDetail).toMatch(/withGovernanceParameterView/)
+    expect(poolDetail).toMatch(/withGovernanceParameterView/)
   })
 })

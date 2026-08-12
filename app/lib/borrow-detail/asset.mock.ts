@@ -17,7 +17,7 @@ import {
 import { buildSeries, buildSeriesFamily, prngFromString } from "./prng"
 import { SANDBOX_NOW } from "@/app/lib/deterministic"
 import { buildCuratedPriceFamily } from "./token-price-series"
-import { computeAssetAllocation, formatPct } from "./allocation"
+import { computeAssetAllocation } from "./allocation"
 import { buildAssetRiskAssessment } from "./risk-model"
 import { buildAssetProtocolParameters } from "./protocol-parameters"
 import { buildAssetFaqs } from "./content-model"

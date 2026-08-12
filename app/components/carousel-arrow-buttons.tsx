@@ -35,6 +35,7 @@ export function CarouselArrowButtons({
 
 export function useOverflowCarousel() {
   const scrollerRef = useRef<HTMLDivElement>(null)
+  const scrollGenerationRef = useRef(0)
   const [canPrev, setCanPrev] = useState(false)
   const [canNext, setCanNext] = useState(true)
 
@@ -64,7 +65,18 @@ export function useOverflowCarousel() {
     if (!scroller) return
     const card = scroller.querySelector("[data-carousel-card]") ?? scroller.querySelector(":scope > * > *")
     const distance = (card?.getBoundingClientRect().width ?? scroller.clientWidth / 3) + 12
+    const generation = ++scrollGenerationRef.current
+    // Snap can cancel `behavior: "smooth"` and jump; lift it for the animation, then restore.
+    scroller.style.scrollSnapType = "none"
     scroller.scrollBy({ left: direction * distance, behavior: "smooth" })
+
+    const restoreSnap = () => {
+      if (generation !== scrollGenerationRef.current) return
+      scroller.style.scrollSnapType = ""
+      scroller.removeEventListener("scrollend", restoreSnap)
+    }
+    scroller.addEventListener("scrollend", restoreSnap)
+    window.setTimeout(restoreSnap, 550)
   }
 
   return { scrollerRef, canPrev, canNext, scrollByCard }

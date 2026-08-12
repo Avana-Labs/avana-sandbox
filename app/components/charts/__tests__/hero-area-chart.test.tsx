@@ -25,6 +25,30 @@ describe("HeroAreaChart", () => {
     expect(geometry.xAxisTicks.length).toBeGreaterThan(0)
   })
 
+  it("keeps one x-axis label per unique series label", () => {
+    const series = [
+      { time: 0, value: 100, label: "6:00 AM" },
+      { time: 1, value: 101, label: "6:00 AM" },
+      { time: 2, value: 102, label: "9:00 AM" },
+      { time: 3, value: 103, label: "12:00 PM" },
+      { time: 4, value: 104, label: "3:00 PM" },
+      { time: 5, value: 105, label: "3:00 PM" },
+      { time: 6, value: 106, label: "6:00 PM" },
+      { time: 7, value: 107, label: "9:00 PM" },
+      { time: 8, value: 108, label: "Now" },
+    ]
+    const geometry = buildHeroAreaGeometry(series, 900, 148, "1D")
+    expect(geometry.xAxisTicks.map((tick) => tick.label)).toEqual([
+      "6:00 AM",
+      "9:00 AM",
+      "12:00 PM",
+      "3:00 PM",
+      "6:00 PM",
+      "9:00 PM",
+      "Now",
+    ])
+  })
+
   it("preserves hover selection, tooltip formatting, and pointer exit", () => {
     const onActiveIndexChange = vi.fn()
     render(

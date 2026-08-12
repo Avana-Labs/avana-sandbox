@@ -6,7 +6,11 @@ import { useMemo, useRef, useState } from "react"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { cn } from "@/lib/utils"
 import { CarouselArrowButtons } from "@/app/components/carousel-arrow-buttons"
-import { HIGHLIGHT_CARD_CLASS, HighlightCarousel, type HighlightCarouselHandle } from "@/app/components/highlight-carousel"
+import {
+  HIGHLIGHT_CARD_CLASS,
+  HighlightCarousel,
+  type HighlightCarouselHandle,
+} from "@/app/components/highlight-carousel"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type HoverState = {
