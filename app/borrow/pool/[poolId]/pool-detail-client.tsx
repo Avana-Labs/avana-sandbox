@@ -7,6 +7,8 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
+import { AssetsYouCanBorrowSection } from "@/app/borrow/_detail/ui/CrossMarketReferenceSections"
+import { resolveBorrowablesForPool } from "@/app/lib/borrow-detail/cross-market"
 import { withGovernanceParameterView } from "@/app/borrow/_detail/lib/governance-parameters"
 import { PoolHero, PoolHeroIdentity, QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
 import { PoolBorrowSidebar } from "@/app/borrow/_detail/sidebars"
@@ -86,7 +88,7 @@ export function PoolDetailClient({ detail }: Props) {
                   newsImageLabel={detail.hero.name}
                   mediaVariant="icon"
                   afterAbout={
-                    <>
+                    <div className="space-y-12">
                       <section aria-label={t("Key Statistics")} className="space-y-6">
                         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
                           Key Statistics
@@ -94,7 +96,7 @@ export function PoolDetailClient({ detail }: Props) {
                         <QuickStatsGrid detail={detail} hideRisk />
                       </section>
                       <RiskSection detail={detail} />
-                    </>
+                    </div>
                   }
                   className="pt-0"
                 />
@@ -102,6 +104,10 @@ export function PoolDetailClient({ detail }: Props) {
                 <section aria-label={t("Pool analytics")} className="space-y-14 pt-14 md:space-y-16 md:pt-16">
                   <DeferredDetailContent className="space-y-14 md:space-y-16">
                     <CashflowCard detail={detail} />
+                    <AssetsYouCanBorrowSection
+                      collateralLabel={detail.hero.name}
+                      assets={resolveBorrowablesForPool(detail.row)}
+                    />
                     <DetailFaqSection
                       title={t("General FAQs")}
                       items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}

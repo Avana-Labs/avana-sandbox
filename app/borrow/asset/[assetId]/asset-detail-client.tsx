@@ -16,6 +16,8 @@ import { AssetHero, AssetHeroIdentity } from "@/app/borrow/_detail/asset-section
 import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
 import { withGovernanceParameterView } from "@/app/borrow/_detail/lib/governance-parameters"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
+import { SupportedCollateralSection } from "@/app/borrow/_detail/ui/CrossMarketReferenceSections"
+import { resolveCollateralForAsset } from "@/app/lib/borrow-detail/cross-market"
 import { AssetTokenSidebar } from "@/app/borrow/_detail/sidebars"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
@@ -92,7 +94,7 @@ export function AssetDetailClient({ detail }: Props) {
                   newsImageLabel={detail.hero.symbol}
                   mediaVariant="icon"
                   afterAbout={
-                    <>
+                    <div className="space-y-12">
                       <section aria-label={t("Key Statistics")} className="space-y-6">
                         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
                           Key Statistics
@@ -100,7 +102,7 @@ export function AssetDetailClient({ detail }: Props) {
                         <QuickStatsGrid detail={detail} hideRisk />
                       </section>
                       <RiskSection detail={detail} />
-                    </>
+                    </div>
                   }
                   className="pt-0"
                 />
@@ -111,6 +113,10 @@ export function AssetDetailClient({ detail }: Props) {
                       <InterestRateModelCard detail={detail} />
                       <AllocationBreakdownCard detail={detail} />
                       <CashflowCard detail={detail} />
+                      <SupportedCollateralSection
+                        assetSymbol={detail.hero.symbol}
+                        markets={resolveCollateralForAsset(detail.row)}
+                      />
                       <DetailFaqSection
                         title={t("General FAQs")}
                         items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
