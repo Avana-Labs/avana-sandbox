@@ -79,24 +79,28 @@ export function buildHeroAreaGeometry(
       areaPath: "",
       axisTicks: [] as AxisTick[],
       xAxisTicks: [] as XAxisTick[],
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
     }
   }
-  // Compact portfolio heroes (~116px) can't use the tall market-hero padding —
-  // otherwise the plot collapses to ~24px and axis labels collide.
-  const compact = height < 160
-  const top = compact ? 10 : 58
-  const bottom = compact ? 22 : 34
-  const right = compact ? (width < 640 ? 48 : 56) : width < 640 ? 40 : 58
+  // Match lend/market detail chart padding. Unique series labels keep custom
+  // day axes (portfolio) from duplicating ticks when the range label count differs.
+  const top = 58
+  const bottom = 34
+  const left = 0
+  const right = width < 640 ? 40 : 58
   const values = data.map((point) => point.value)
   const rawMin = Math.min(...values)
   const rawMax = Math.max(...values)
   const valueSpan = Math.max(1, rawMax - rawMin)
   const min = rawMin - Math.max(4, valueSpan * 0.08)
-  const max = rawMax + Math.max(4, valueSpan * (compact ? 0.12 : 0.28))
+  const max = rawMax + Math.max(4, valueSpan * 0.28)
   const range = Math.max(1, max - min)
   const plotHeight = Math.max(1, height - top - bottom)
-  const plotWidth = Math.max(1, width - right)
-  const yTickCount = compact ? 4 : width < 640 ? 5 : 6
+  const plotWidth = Math.max(1, width - left - right)
+  const yTickCount = width < 640 ? 5 : 6
   const tickValues = Array.from({ length: yTickCount }, (_, index) => max - (range * index) / (yTickCount - 1))
   const axisTicks = tickValues.map((value) => ({
     value,
@@ -105,11 +109,9 @@ export function buildHeroAreaGeometry(
   }))
   const points = data.map((point, index) => ({
     ...point,
-    x: data.length === 1 ? plotWidth / 2 : (index / (data.length - 1)) * plotWidth,
+    x: data.length === 1 ? left + plotWidth / 2 : left + (index / (data.length - 1)) * plotWidth,
     y: top + ((max - point.value) / range) * plotHeight,
   }))
-  // Prefer one tick per unique series label so custom axes (portfolio day labels)
-  // never render duplicates when the activeRange tick count differs.
   const uniqueLabelIndexes: number[] = []
   let previousLabel: string | undefined
   for (let index = 0; index < data.length; index += 1) {
@@ -138,7 +140,7 @@ export function buildHeroAreaGeometry(
   })
   const linePath = monotoneLinePath(points)
   const areaPath = `${linePath} L ${points[points.length - 1].x} ${height - bottom} L ${points[0].x} ${height - bottom} Z`
-  return { points, linePath, areaPath, axisTicks, xAxisTicks }
+  return { points, linePath, areaPath, axisTicks, xAxisTicks, left, right, top, bottom }
 }
 
 export function HeroAreaChart({
@@ -189,18 +191,24 @@ export function HeroAreaChart({
     () => buildHeroAreaGeometry(data, dimensions.width, dimensions.height, activeRange, formatYAxis),
     [activeRange, data, dimensions, formatYAxis],
   )
-  const compact = dimensions.height < 160
-  const cursorBottom = compact ? 22 : 34
+  const cursorBottom = geometry.bottom || 34
   const activePoint = activeIndex == null ? null : geometry.points[activeIndex]
   const lastPoint = geometry.points[geometry.points.length - 1]
   const chartShellClassName =
     className ??
-    "relative h-[210px] before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.12)_1px,transparent_0)] before:[background-size:18px_18px] before:[mask-image:radial-gradient(ellipse_at_center,black_58%,transparent_100%)] before:content-[''] dark:before:bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.12)_1px,transparent_0)] sm:h-[240px]"
+    [
+      "relative before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.12)_1px,transparent_0)] before:[background-size:18px_18px] before:[mask-image:radial-gradient(ellipse_at_center,black_58%,transparent_100%)] before:content-[''] dark:before:bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.12)_1px,transparent_0)]",
+      height === 240 ? "h-[210px] sm:h-[240px]" : "",
+    ]
+      .filter(Boolean)
+      .join(" ")
 
   const setPointerIndex = (event: PointerEvent<HTMLDivElement>) => {
     if (data.length === 0) return
     const rect = event.currentTarget.getBoundingClientRect()
-    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / Math.max(1, rect.width)))
+    const plotLeft = geometry.left
+    const plotWidth = Math.max(1, rect.width - geometry.left - geometry.right)
+    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left - plotLeft) / plotWidth))
     const index = Math.round(ratio * (data.length - 1))
     setActiveIndex(index)
     onActiveIndexChange?.(index)
@@ -215,7 +223,7 @@ export function HeroAreaChart({
     <div
       ref={shellRef}
       className={chartShellClassName}
-      style={height !== 240 ? { height } : undefined}
+      style={{ height }}
       onPointerMove={setPointerIndex}
       onPointerLeave={clearPointer}
       data-testid="hero-area-chart"
@@ -231,6 +239,20 @@ export function HeroAreaChart({
             <stop offset="0%" stopColor={color.fill} stopOpacity="0.32" />
             <stop offset="100%" stopColor={color.fill} stopOpacity="0.03" />
           </linearGradient>
+          <linearGradient id={`${gradientId}-leftFade`} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#fff" stopOpacity="0" />
+            <stop offset="10%" stopColor="#fff" stopOpacity="1" />
+          </linearGradient>
+          <mask
+            id={`${gradientId}-leftMask`}
+            maskUnits="userSpaceOnUse"
+            x="0"
+            y="0"
+            width={dimensions.width}
+            height={dimensions.height}
+          >
+            <rect width={dimensions.width} height={dimensions.height} fill={`url(#${gradientId}-leftFade)`} />
+          </mask>
         </defs>
         {geometry.axisTicks.length > 0 ? (
           <g aria-hidden="true">
@@ -249,53 +271,55 @@ export function HeroAreaChart({
             ))}
           </g>
         ) : null}
-        {geometry.areaPath ? <path d={geometry.areaPath} fill={`url(#${gradientId})`} /> : null}
-        {geometry.linePath ? (
-          <path
-            d={geometry.linePath}
-            fill="none"
-            stroke={color.stroke}
-            strokeWidth="2.5"
-            vectorEffect="non-scaling-stroke"
-          />
-        ) : null}
-        {activePoint ? (
-          <>
-            <line
-              x1={activePoint.x}
-              x2={activePoint.x}
-              y1={4}
-              y2={dimensions.height - cursorBottom}
-              stroke={color.cursor}
+        <g mask={`url(#${gradientId}-leftMask)`}>
+          {geometry.areaPath ? <path d={geometry.areaPath} fill={`url(#${gradientId})`} /> : null}
+          {geometry.linePath ? (
+            <path
+              d={geometry.linePath}
+              fill="none"
+              stroke={color.stroke}
+              strokeWidth="2.5"
               vectorEffect="non-scaling-stroke"
             />
-            <circle
-              cx={activePoint.x}
-              cy={activePoint.y}
-              r="5"
-              fill={color.stroke}
-              stroke="hsl(var(--background))"
-              strokeWidth="2.5"
-            />
-          </>
-        ) : lastPoint ? (
-          <>
-            {isVisible ? (
-              <circle cx={lastPoint.x} cy={lastPoint.y} fill={color.stroke} opacity="0.45">
-                <animate attributeName="r" values="5;18" dur="1.6s" repeatCount="indefinite" />
-                <animate attributeName="opacity" values="0.5;0" dur="1.6s" repeatCount="indefinite" />
-              </circle>
-            ) : null}
-            <circle
-              cx={lastPoint.x}
-              cy={lastPoint.y}
-              r="5.5"
-              fill={color.stroke}
-              stroke="hsl(var(--background))"
-              strokeWidth="2.5"
-            />
-          </>
-        ) : null}
+          ) : null}
+          {activePoint ? (
+            <>
+              <line
+                x1={activePoint.x}
+                x2={activePoint.x}
+                y1={4}
+                y2={dimensions.height - cursorBottom}
+                stroke={color.cursor}
+                vectorEffect="non-scaling-stroke"
+              />
+              <circle
+                cx={activePoint.x}
+                cy={activePoint.y}
+                r="5"
+                fill={color.stroke}
+                stroke="hsl(var(--background))"
+                strokeWidth="2.5"
+              />
+            </>
+          ) : lastPoint ? (
+            <>
+              {isVisible ? (
+                <circle cx={lastPoint.x} cy={lastPoint.y} fill={color.stroke} opacity="0.45">
+                  <animate attributeName="r" values="5;18" dur="1.6s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0.5;0" dur="1.6s" repeatCount="indefinite" />
+                </circle>
+              ) : null}
+              <circle
+                cx={lastPoint.x}
+                cy={lastPoint.y}
+                r="5.5"
+                fill={color.stroke}
+                stroke="hsl(var(--background))"
+                strokeWidth="2.5"
+              />
+            </>
+          ) : null}
+        </g>
         {geometry.axisTicks.length > 0 ? (
           <g aria-hidden="true">
             {geometry.axisTicks.map((tick) => (

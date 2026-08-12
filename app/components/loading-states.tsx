@@ -168,44 +168,25 @@ export function RewardsPageSkeleton() {
   return (
     <Page mainClassName="px-3 py-6 sm:px-4 md:py-10">
       {/* Balance hero (left) + promo card (right, md+) — RewardsBalanceHero. */}
-      <div className="mb-6 grid gap-5 md:mb-8 md:gap-7 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] xl:items-start">
-        <Surface className="px-4 py-4 sm:px-5 md:min-h-[174px]">
-          <div className="flex min-h-[142px] flex-col justify-between gap-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-8 w-32 rounded-xs" />
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                </div>
-                <Skeleton className="h-3 w-24 rounded-xs" />
-                <Skeleton className="h-3 w-28 rounded-xs" />
-              </div>
-              <Skeleton className="h-10 w-28 rounded-radius-sm" />
-            </div>
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-48 rounded-xs" />
-              <Skeleton className="h-1.5 w-full rounded-xs" />
-            </div>
+      <div className="mb-6 grid gap-5 md:mb-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
+        <Surface className="relative min-h-[310px] px-4 py-4 sm:px-5">
+          <div className="space-y-3">
+            <Skeleton className="h-8 w-36 rounded-xs" />
+            <Skeleton className="h-4 w-28 rounded-xs" />
           </div>
+          <Skeleton className="mt-10 h-[210px] w-full rounded-xs" />
         </Surface>
 
-        <Surface className="hidden p-4 md:block">
-          <Skeleton className="mb-3 h-3.5 w-28 rounded-xs" />
-          <div className="space-y-3.5">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div key={`rewards-promo-row-${index}`} className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-9 w-9 rounded-full" />
-                  <div className="space-y-1.5">
-                    <Skeleton className="h-3 w-24 rounded-xs" />
-                    <Skeleton className="h-2.5 w-14 rounded-xs" />
-                  </div>
-                </div>
-                <Skeleton className="h-3.5 w-12 rounded-xs" />
-              </div>
-            ))}
-          </div>
-        </Surface>
+        <div className="hidden space-y-3 lg:block">
+          <Surface className="p-4">
+            <Skeleton className="mb-3 h-3.5 w-28 rounded-xs" />
+            <Skeleton className="h-8 w-36 rounded-xs" />
+          </Surface>
+          <Surface className="p-4">
+            <Skeleton className="mb-3 h-3.5 w-28 rounded-xs" />
+            <Skeleton className="h-8 w-36 rounded-xs" />
+          </Surface>
+        </div>
       </div>
 
       {/* Underline tab strip (left-aligned, border-b). */}

@@ -636,13 +636,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
         <DashboardQuickActions activeTab={activeDashboardTab} />
       </div>
 
-      <div
-        className={
-          activeDashboardTab === "wallet"
-            ? "grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-x-8"
-            : "grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-x-8"
-        }
-      >
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
         <div className="min-w-0">
           {activeDashboardTab === "wallet" ? (
             <DashboardWalletTab walletId={walletId} balances={avana.swap.state.balances} />
@@ -659,7 +653,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
           )}
         </div>
 
-        <aside className="hidden space-y-8 lg:block lg:self-start">
+        <aside className="hidden min-w-0 space-y-8 lg:block lg:self-start">
           <DashboardQuickActions activeTab={activeDashboardTab} />
           <LearnSection layout="sidebar" />
         </aside>
