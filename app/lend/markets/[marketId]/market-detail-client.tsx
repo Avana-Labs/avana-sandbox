@@ -24,6 +24,10 @@ const CashflowCard = dynamic(
   () => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard),
   { ssr: false },
 )
+const InterestRateModelCard = dynamic(
+  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.InterestRateModelCard),
+  { ssr: false },
+)
 const RiskSection = dynamic(
   () => import("@/app/borrow/_detail/pool-sections/RiskSection").then((mod) => mod.RiskSection),
   { ssr: false },
@@ -34,10 +38,6 @@ const DetailFaqSection = dynamic(
 )
 const TransactionHistoryCard = dynamic(
   () => import("@/app/borrow/_detail/asset-sections/TransactionHistoryCard").then((mod) => mod.TransactionHistoryCard),
-  { ssr: false },
-)
-const RelatedMarketsRow = dynamic(
-  () => import("@/app/lend/_detail/sections/RelatedMarketsRow").then((mod) => mod.RelatedMarketsRow),
   { ssr: false },
 )
 
@@ -133,6 +133,11 @@ export function LendMarketDetailClient({ detail }: Props) {
 
                   <section aria-label={t("Lend market analytics")} className="space-y-14 md:space-y-16">
                     <DeferredDetailContent className="space-y-14 md:space-y-16">
+                      <InterestRateModelCard
+                        utilizationPct={detail.utilizationPct}
+                        borrowAprPct={detail.borrowAprPct}
+                        protocolParameters={detail.protocolParameters}
+                      />
                       <CashflowCard detail={detail} />
                       <DetailFaqSection
                         title={t("General FAQs")}
@@ -143,7 +148,6 @@ export function LendMarketDetailClient({ detail }: Props) {
                         assetSymbol={detail.hero.symbol}
                         kindLabelMap={{ supply: "Supply", withdraw: "Withdraw", rewards: "Rewards" }}
                       />
-                      <RelatedMarketsRow detail={detail} />
                       <DetailPageNotice product="lend" />
                     </DeferredDetailContent>
                   </section>

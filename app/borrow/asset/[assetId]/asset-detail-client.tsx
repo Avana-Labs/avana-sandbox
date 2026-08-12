@@ -12,7 +12,7 @@ import {
   DetailPageWidth,
   MobileDetailActionBar,
 } from "@/app/components/detail-page-primitives"
-import { AssetHero, AssetHeroIdentity } from "@/app/borrow/_detail/asset-sections"
+import { AssetHero, AssetHeroIdentity, interestRateModelFromAssetDetail } from "@/app/borrow/_detail/asset-sections"
 import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
 import { withGovernanceParameterView } from "@/app/borrow/_detail/lib/governance-parameters"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
@@ -41,10 +41,6 @@ const CashflowCard = dynamic(
 const TransactionHistoryCard = dynamic(
   () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.TransactionHistoryCard),
   { ssr: false, loading: () => <DeferredBlock className="h-[360px]" /> },
-)
-const RelatedAssetsRow = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.RelatedAssetsRow),
-  { ssr: false, loading: () => <DeferredBlock className="h-[200px]" /> },
 )
 const RiskSection = dynamic(() => import("@/app/borrow/_detail/pool-sections").then((mod) => mod.RiskSection), {
   ssr: false,
@@ -110,7 +106,7 @@ export function AssetDetailClient({ detail }: Props) {
                 <section aria-label={t("Asset analytics")} className="space-y-14 pt-14 md:space-y-16 md:pt-16">
                   <DeferredDetailContent>
                     <div className="space-y-14 md:space-y-16">
-                      <InterestRateModelCard detail={detail} />
+                      <InterestRateModelCard {...interestRateModelFromAssetDetail(detail)} />
                       <AllocationBreakdownCard detail={detail} />
                       <CashflowCard detail={detail} />
                       <SupportedCollateralSection
@@ -122,7 +118,6 @@ export function AssetDetailClient({ detail }: Props) {
                         items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
                       />
                       <TransactionHistoryCard transactions={detail.transactions} assetSymbol={detail.hero.symbol} />
-                      <RelatedAssetsRow detail={detail} />
                       <DetailPageNotice product="borrow" />
                     </div>
                   </DeferredDetailContent>

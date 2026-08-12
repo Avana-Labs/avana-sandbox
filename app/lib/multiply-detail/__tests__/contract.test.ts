@@ -34,11 +34,13 @@ describe("multiply detail about contract", () => {
       "Reserve Factor",
     ])
     expect(detail.about.governanceParameters?.parameters.map((parameter) => parameter.label)).toEqual([
-      "Max LTV",
+      "Collateral factor",
+      "Collateral risk",
+      "Deposit capacity",
+      "Liquidation penalty",
+      "Borrow capacity",
+      "Target health factor",
       "Liquidation threshold",
-      "Supply cap",
-      "Borrow cap",
-      "Liquidation bonus",
       "Oracle source",
     ])
     expect(detail.about.governanceParameters?.changelog.length).toBeGreaterThan(0)

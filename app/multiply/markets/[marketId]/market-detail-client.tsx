@@ -38,10 +38,6 @@ const TransactionHistoryCard = dynamic(
   () => import("@/app/multiply/_detail/pool-sections/TransactionHistoryCard").then((mod) => mod.TransactionHistoryCard),
   { ssr: false },
 )
-const RelatedMarketsRow = dynamic(
-  () => import("@/app/multiply/_detail/pool-sections/RelatedMarketsRow").then((mod) => mod.RelatedMarketsRow),
-  { ssr: false },
-)
 
 export function MarketDetailClient({ detail }: Props) {
   const session = useMultiplySessionContext()
@@ -119,7 +115,6 @@ export function MarketDetailClient({ detail }: Props) {
                       collateralSymbol={detail.row.protocol}
                       borrowableSymbol={detail.row.asset}
                     />
-                    <RelatedMarketsRow detail={detail} />
                     <DetailPageNotice product="multiply" />
                   </DeferredDetailContent>
                 </section>

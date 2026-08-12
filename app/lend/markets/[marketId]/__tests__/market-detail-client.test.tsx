@@ -19,11 +19,6 @@ vi.mock("@/app/lend/_detail", () => ({
   ),
   LendSidebar: () => <div data-testid="lend-sidebar" />,
 }))
-vi.mock("@/app/lend/_detail/sections/RelatedMarketsRow", () => ({
-  RelatedMarketsRow: ({ detail }: { detail: { related: unknown[] } }) => (
-    <div data-testid="related">{detail.related.length}</div>
-  ),
-}))
 vi.mock("@/app/borrow/_detail/ui", () => ({
   AboutNewsSection: ({ afterAbout }: { afterAbout?: React.ReactNode }) => (
     <>
@@ -73,7 +68,6 @@ describe("LendMarketDetailClient", () => {
     expect(screen.getByTestId("risk")).toBeInTheDocument()
     expect(screen.getByTestId("faqs")).toHaveTextContent(String(detail.faqs.length))
     expect(screen.getByTestId("transactions")).toHaveTextContent(`USDC:${detail.transactions.length}`)
-    expect(screen.getByTestId("related")).toHaveTextContent(String(detail.related.length))
     // Sidebar renders (desktop + mobile dock → 2 instances).
     expect(screen.getAllByTestId("lend-sidebar").length).toBeGreaterThanOrEqual(1)
   })

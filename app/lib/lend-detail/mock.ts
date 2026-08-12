@@ -22,6 +22,8 @@ import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
 import { LEND_MARKET_CATALOG, getLendMarketById, resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import type { LendMarket } from "@/app/lib/lend-engine/types"
 import type { AboutCard, CashflowCard, DeltaStat, QuickStat, TxHistoryRow } from "@/app/lib/borrow-detail"
+import { buildInterestRateModelParameterRows } from "@/app/lib/borrow-detail/protocol-parameters"
+import { buildRiskParameterSet } from "@/app/lib/borrow-detail/risk-parameters"
 import type { LendMarketDetail, LendMarketHero, LendMarketRelatedSummary, LendTokenVisual } from "./types"
 
 /** Reference values from a Convex snapshot, threaded into the headline numbers. */
@@ -288,48 +290,18 @@ function buildGovernanceParameters(market: LendMarket, ref: Reference): AboutCar
   const proposalHref = `https://etherscan.io/address/${contractAddressFor(market, "governance")}`
 
   return {
-    parameters: [
-      {
-        id: "ltv",
-        label: "Max LTV",
-        value: `${ltvPct}%`,
-        description: "Maximum borrow power when this supplied asset is used as collateral.",
-      },
-      {
-        id: "liquidationThreshold",
-        label: "Liquidation threshold",
-        value: `${liquidationThresholdPct}%`,
-        description: "Health factor begins breaking down when collateral value crosses this threshold.",
-      },
-      {
-        id: "supplyCap",
-        label: "Supply cap",
-        value: formatCompactUsd(supplyCapUsd),
-        description: "Governance-controlled ceiling for deposits into this market.",
-      },
-      {
-        id: "borrowCap",
-        label: "Borrow cap",
-        value: formatCompactUsd(borrowCapUsd),
-        description: "Governance-controlled ceiling for total borrowed liquidity.",
-      },
-      {
-        id: "liquidationBonus",
-        label: "Liquidation bonus",
-        value: `${liquidationBonusPct}%`,
-        description: "Incentive paid to liquidators when unhealthy positions are cleared.",
-      },
-      {
-        id: "oracle",
-        label: "Oracle source",
-        value: "Chainlink",
-        description: "Price feed family used by the market risk engine.",
-      },
-    ],
+    parameters: buildRiskParameterSet({
+      collateralFactorPct: ltvPct,
+      liquidationThresholdPct,
+      depositCapacityLabel: formatCompactUsd(supplyCapUsd),
+      borrowCapacityLabel: formatCompactUsd(borrowCapUsd),
+      liquidationPenaltyPct: liquidationBonusPct,
+      collateralFactorDescription: "Maximum borrow power when this supplied asset is used as collateral.",
+    }),
     changelog: [
       {
         id: "supply-cap-review",
-        parameter: "Supply cap",
+        parameter: "Deposit capacity",
         previous: formatCompactUsd(Math.round(supplyCapUsd * 0.86)),
         current: formatCompactUsd(supplyCapUsd),
         date: "2025-09-08",
@@ -351,7 +323,7 @@ function buildGovernanceParameters(market: LendMarket, ref: Reference): AboutCar
         id: "collateral-onboarding",
         parameter: "Collateral configuration",
         previous: "Disabled",
-        current: `${ltvPct}% LTV / ${liquidationThresholdPct}% LT`,
+        current: `${ltvPct}% CF / ${liquidationThresholdPct}% LT`,
         date: "2025-01-20",
         source: "Market onboarding",
         executor: "Governance executor",
@@ -426,6 +398,9 @@ export function buildLendMarketDetail(market: LendMarket, overrides?: LendDetail
     id: market.marketId,
     hero: buildHero(market),
     quickStats: buildQuickStats(market, ref),
+    utilizationPct: ref.utilizationPct,
+    borrowAprPct: ref.borrowAprPct,
+    protocolParameters: buildInterestRateModelParameterRows(market.marketId, ref.borrowAprPct),
     supplyBorrow: buildSupplyBorrow(market, ref),
     cashflow: buildCashflow(market, ref),
     risk: buildLendRiskAssessment(market),

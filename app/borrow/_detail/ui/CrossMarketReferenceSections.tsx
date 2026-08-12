@@ -94,10 +94,7 @@ export function AssetsYouCanBorrowSection({
 
   if (assets.length === 0) return null
 
-  const helpText = t("What assets can be borrowed with {name} as collateral.").replace(
-    "{name}",
-    collateralLabel,
-  )
+  const helpText = t("What assets can be borrowed with {name} as collateral.").replace("{name}", collateralLabel)
 
   return (
     <section aria-label={t("Assets You Can Borrow")} className="space-y-5">

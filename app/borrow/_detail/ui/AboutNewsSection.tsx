@@ -63,7 +63,7 @@ export function AboutNewsSection({
               ) : null}
             </div>
 
-            <div className="grid gap-x-8 gap-y-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-6 lg:grid-cols-4 lg:gap-x-8">
               {governanceParameters.parameters.map((parameter) => {
                 const parameterContent = (
                   <>
