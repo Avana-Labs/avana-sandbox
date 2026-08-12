@@ -134,22 +134,22 @@ export function LendMarketDetailClient({ detail }: Props) {
 
                 <section aria-label={t("Lend market analytics")} className={detailAnalyticsSectionClass}>
                   <DeferredDetailContent className={detailAnalyticsStackClass}>
-                      <InterestRateModelCard
-                        utilizationPct={detail.utilizationPct}
-                        borrowAprPct={detail.borrowAprPct}
-                        protocolParameters={detail.protocolParameters}
-                      />
-                      <CashflowCard detail={detail} />
-                      <DetailFaqSection
-                        title={t("General FAQs")}
-                        items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
-                      />
-                      <TransactionHistoryCard
-                        transactions={transactions}
-                        assetSymbol={detail.hero.symbol}
-                        kindLabelMap={{ supply: "Supply", withdraw: "Withdraw", rewards: "Rewards" }}
-                      />
-                      <DetailPageNotice product="lend" />
+                    <InterestRateModelCard
+                      utilizationPct={detail.utilizationPct}
+                      borrowAprPct={detail.borrowAprPct}
+                      protocolParameters={detail.protocolParameters}
+                    />
+                    <CashflowCard detail={detail} />
+                    <DetailFaqSection
+                      title={t("General FAQs")}
+                      items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
+                    />
+                    <TransactionHistoryCard
+                      transactions={transactions}
+                      assetSymbol={detail.hero.symbol}
+                      kindLabelMap={{ supply: "Supply", withdraw: "Withdraw", rewards: "Rewards" }}
+                    />
+                    <DetailPageNotice product="lend" />
                   </DeferredDetailContent>
                 </section>
               </div>

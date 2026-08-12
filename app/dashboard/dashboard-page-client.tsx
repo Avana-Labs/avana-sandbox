@@ -40,7 +40,7 @@ import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/rea
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
 import { useDashboardPage } from "@/app/dashboard/use-dashboard-page"
 import { ActionIcon } from "@/app/components/action-icon"
-import { MobileDetailActionBar } from "@/app/components/detail-page-primitives"
+import { detailSectionStackClass, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
 import { AmountVisibilityToggle } from "@/app/components/amount-visibility-toggle"
 import {
@@ -248,7 +248,7 @@ function DashboardRewardsTab({
   ]
 
   return (
-    <div className="space-y-8">
+    <div className={detailSectionStackClass}>
       {sections.map(({ id, title }) => {
         const quests = questsByTab[id] ?? []
         if (quests.length === 0) return null
@@ -632,7 +632,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
         />
       </div>
 
-      <div className="space-y-14 md:space-y-16">
+      <div className={detailSectionStackClass}>
         <section>
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">

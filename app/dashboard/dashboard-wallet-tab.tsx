@@ -1,6 +1,7 @@
 "use client"
 
 import { TokenPairCell } from "@/app/borrow/components/atoms"
+import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { TokenIcon } from "@/app/components/token-icon"
 import { DesktopTableSurface } from "@/app/components/market-table-primitives"
@@ -185,8 +186,8 @@ export function DashboardWalletTab({ walletId, balances }: { walletId: string; b
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
   return (
-    <section id="dashboard-wallet" className="space-y-6" aria-label={t("Wallet balances")}>
-      <section className="space-y-4 pb-3">
+    <section id="dashboard-wallet" className={detailSectionStackClass} aria-label={t("Wallet balances")}>
+      <section className="space-y-4">
         <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">
           {t("Wallet Balance")}
         </h2>

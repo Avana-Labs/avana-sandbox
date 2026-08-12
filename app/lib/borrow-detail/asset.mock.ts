@@ -237,7 +237,7 @@ function buildHero(asset: SpokeBorrowableRecord, fixture: AssetFixture | undefin
   const contractAddress = fixture?.contractAddress ?? contractAddressFor(asset.id, "token")
   const contractLabel =
     fixture?.contractLabel ??
-    ( /^0x[a-fA-F0-9]{40}$/.test(contractAddress) ? shortAddress(contractAddress) : contractAddress)
+    (/^0x[a-fA-F0-9]{40}$/.test(contractAddress) ? shortAddress(contractAddress) : contractAddress)
   return {
     visual: asset.visual,
     name: asset.name,

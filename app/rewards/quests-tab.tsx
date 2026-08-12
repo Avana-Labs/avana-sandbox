@@ -18,6 +18,7 @@ import {
   Wallet,
 } from "@/app/components/icons"
 import { type RewardsPromoTabId, type RewardsQuestIconId, type RewardsQuest } from "@/app/lib/data/rewards/catalog"
+import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { UnderlineTabStrip } from "@/app/components/tab-primitives"
 import { Card } from "@/components/ui/card"
 import { LendAccountSection } from "./lend-account-section"
@@ -184,7 +185,7 @@ export function RewardsPromoContent({
           : null
 
   return (
-    <div className="space-y-6">
+    <div className={detailSectionStackClass}>
       {activePromoTab === "lend" ? <LendAccountSection returnHref={returnHref} /> : null}
       {activePromoTab === "borrow" ? <BorrowAccountSection returnHref={returnHref} /> : null}
       {activePromoTab === "multiply" ? <MultiplyAccountSection returnHref={returnHref} /> : null}

@@ -9,7 +9,7 @@ import { ActionCard, ActionInfoRow } from "@/app/components/action-page/action-m
 import { DetailSidebarActionCard } from "@/app/components/action-page/detail-sidebar-action-card"
 import { DetailActionTabs } from "@/app/components/detail-action-tabs"
 import { ActionIcon } from "@/app/components/action-icon"
-import { MobileDetailActionBar } from "@/app/components/detail-page-primitives"
+import { detailSectionStackClass, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
 import { Button } from "@/components/ui/button"
@@ -821,7 +821,7 @@ export default function UmbrellaPage() {
         <div className="mx-auto max-w-[1152px]">
           <UmbrellaHero />
 
-          <div className="space-y-14 md:space-y-16">
+          <div className={detailSectionStackClass}>
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
               <div className="min-w-0">
                 <UmbrellaPositions onClaim={setModuleId} />
