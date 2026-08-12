@@ -37,13 +37,19 @@ export function CashflowCard({ detail }: Props) {
   return (
     <SectionCard title={t("Cashflow breakdown")} chrome="plain" bodyClassName="p-0">
       <div className="overflow-x-auto">
-        <table className="w-full text-[13px]">
+        <table className="w-full table-fixed text-[13px]">
+          <colgroup>
+            <col className="w-[40%]" />
+            <col className="w-[20%]" />
+            <col className="w-[20%]" />
+            <col className="w-[20%]" />
+          </colgroup>
           <thead>
             <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-              <th className="pb-2 pl-5 pt-3">{t("Line")}</th>
+              <th className="pb-2 pt-3">{t("Line")}</th>
               <th className="pb-2 pt-3 text-right">{t("1D")}</th>
               <th className="pb-2 pt-3 text-right">{t("30 Days")}</th>
-              <th className="pb-2 pr-5 pt-3 text-right">{t("90 Days")}</th>
+              <th className="pb-2 pt-3 text-right">{t("90 Days")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -52,7 +58,7 @@ export function CashflowCard({ detail }: Props) {
                 key={i}
                 className={cn("transition-colors hover:bg-hover", row.highlighted ? "bg-surface-inset/40" : undefined)}
               >
-                <th scope="row" className="py-2.5 pl-5 text-left text-[14px] font-normal text-muted-foreground">
+                <th scope="row" className="py-2.5 text-left text-[14px] font-normal text-muted-foreground">
                   {t(row.label)}
                 </th>
                 <td
@@ -73,7 +79,7 @@ export function CashflowCard({ detail }: Props) {
                 </td>
                 <td
                   className={cn(
-                    "py-2.5 pr-5 text-right font-data font-medium tabular-nums",
+                    "py-2.5 text-right font-data font-medium tabular-nums",
                     row.highlighted ? "text-foreground" : "text-muted-foreground",
                   )}
                 >

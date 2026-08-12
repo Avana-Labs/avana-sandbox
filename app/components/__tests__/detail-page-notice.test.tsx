@@ -12,17 +12,23 @@ describe("DetailPageNotice", () => {
     expect(screen.getByRole("note")).toHaveTextContent(/Borrowing against LP tokens/)
   })
 
-  it("p0-05: lend variant does not ship borrow-LP liquidation copy", () => {
+  it("p0-05: lend variant uses the same full disclaimer shape without borrow-LP copy", () => {
     render(<DetailPageNotice product="lend" />)
     const note = screen.getByRole("note")
     expect(note).not.toHaveTextContent(/Borrowing against LP tokens/)
-    expect(note).toHaveTextContent(/Supplying assets/)
+    expect(note).toHaveTextContent(/Supplying assets involves risk/)
+    expect(note).toHaveTextContent(/does not custody your funds/)
+    expect(note).toHaveTextContent(/enforced on-chain/)
+    expect(note).toHaveTextContent(/full control of your position/)
   })
 
-  it("p0-05: multiply variant does not ship borrow-LP liquidation copy", () => {
+  it("p0-05: multiply variant uses the same full disclaimer shape without borrow-LP copy", () => {
     render(<DetailPageNotice product="multiply" />)
     const note = screen.getByRole("note")
     expect(note).not.toHaveTextContent(/Borrowing against LP tokens/)
-    expect(note).toHaveTextContent(/Multiply loops/)
+    expect(note).toHaveTextContent(/Opening a multiply position involves risk/)
+    expect(note).toHaveTextContent(/does not custody your funds/)
+    expect(note).toHaveTextContent(/enforced on-chain/)
+    expect(note).toHaveTextContent(/full control of your position/)
   })
 })

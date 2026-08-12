@@ -25,6 +25,22 @@ function translateAboutDescription(description: string, t: (key: string) => stri
       .replace("{marketType}", marketType)
   }
 
+  const multiplyMatch = description.match(
+    /^(.+?) \((.+?)\) \/ (.+?) \((.+?)\) is a leveraged multiply market on Avana\. Supply \2 as collateral to loop into \4 exposure, up to (.+?), in a route dedicated to leveraged positions rather than LP collateral pools\. Net returns track the supply\/borrow spread, utilization, and the selected multiplier, so looping results can move as rates and available liquidity rebalance\. The page focuses on the live leverage limit, the supply\/borrow mix, available liquidity, and the latest risk posture for this (.+?) market\. Users should watch collateral factor, liquidation threshold, borrow cost, and available liquidity because those inputs affect both looping returns and how quickly a position can be unwound during stressed conditions\.$/,
+  )
+  if (multiplyMatch) {
+    const [, name, symbol, borrowName, borrow, leverage, marketType] = multiplyMatch
+    return t(
+      "{name} ({symbol}) / {borrowName} ({borrow}) is a leveraged multiply market on Avana. Supply {symbol} as collateral to loop into {borrow} exposure, up to {leverage}, in a route dedicated to leveraged positions rather than LP collateral pools. Net returns track the supply/borrow spread, utilization, and the selected multiplier, so looping results can move as rates and available liquidity rebalance. The page focuses on the live leverage limit, the supply/borrow mix, available liquidity, and the latest risk posture for this {marketType} market. Users should watch collateral factor, liquidation threshold, borrow cost, and available liquidity because those inputs affect both looping returns and how quickly a position can be unwound during stressed conditions.",
+    )
+      .replaceAll("{name}", name)
+      .replaceAll("{symbol}", symbol)
+      .replaceAll("{borrowName}", borrowName)
+      .replaceAll("{borrow}", borrow)
+      .replaceAll("{leverage}", leverage)
+      .replaceAll("{marketType}", marketType)
+  }
+
   return t(description)
 }
 

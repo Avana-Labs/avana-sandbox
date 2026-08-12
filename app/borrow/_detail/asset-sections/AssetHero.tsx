@@ -7,7 +7,6 @@ import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { getAssetHeroFeed } from "@/app/lib/chart-feeds"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { buildFeedFromSeries } from "@/app/borrow/_detail/lib/hero-chart-feeds"
 
 type Props = {
   detail: AssetDetail
@@ -118,26 +117,7 @@ export function AssetHeroIdentity({
 }
 
 export function AssetHero({ detail, leading, actions, className, hideIdentity = false }: Props) {
-  const { t } = useTranslation()
-  const metricTabs = React.useMemo(() => [t("Price"), t("Supplied"), t("Borrowed"), t("Utilization")], [t])
-  const [activeMetricTab, setActiveMetricTab] = React.useState(metricTabs[0])
-  React.useEffect(() => {
-    setActiveMetricTab(metricTabs[0])
-  }, [metricTabs])
-  // Prefer the Convex-backed feed (total borrows); fall back to the local feed.
-  const feed = React.useMemo(() => {
-    const fallback = detail.heroFeed ?? getAssetHeroFeed(detail.id)
-    if (activeMetricTab === metricTabs[1]) {
-      return buildFeedFromSeries(detail.supplyBorrow.supplied, "usdCompact", fallback)
-    }
-    if (activeMetricTab === metricTabs[2]) {
-      return buildFeedFromSeries(detail.supplyBorrow.borrowed, "usdCompact", fallback)
-    }
-    if (activeMetricTab === metricTabs[3]) {
-      return buildFeedFromSeries(detail.supplyBorrow.utilization, "percent", fallback)
-    }
-    return fallback
-  }, [activeMetricTab, detail.heroFeed, detail.id, detail.supplyBorrow, metricTabs])
+  const feed = detail.heroFeed ?? getAssetHeroFeed(detail.id)
 
   return (
     <section className={cn("flex flex-col gap-5", className)} data-testid="asset-hero">
@@ -150,9 +130,6 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
           gradientId={`assetHeroFill-${detail.id}`}
           height={310}
           showMeta={false}
-          metricTabs={metricTabs}
-          activeMetricTab={activeMetricTab}
-          onMetricTabChange={setActiveMetricTab}
           balanceVariant="strong"
           balanceClassName="absolute left-0 top-0 z-10 -translate-y-0.5"
         />

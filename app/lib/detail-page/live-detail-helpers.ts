@@ -50,6 +50,6 @@ export function applyDetailContentOverlay<T extends DetailWithContent>(
       stats: content.stats,
       history: content.history,
     },
-    faqs: content.faqs,
+    faqs: detail.faqs,
   } as T
 }

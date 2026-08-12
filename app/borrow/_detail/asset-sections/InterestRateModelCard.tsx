@@ -19,8 +19,8 @@ const Y_TICKS = [0, 5, 10]
 export function InterestRateModelCard({ detail, className }: Props) {
   const { t } = useTranslation()
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
-  const utilization = getQuickStatPercent(detail, "utilization", 0)
-  const borrowApr = getQuickStatPercent(detail, "borrowApy", 4)
+  const utilization = getQuickStatPercent(detail, "utilization", detail.row.utilization)
+  const borrowApr = getQuickStatPercent(detail, "borrowApy", detail.row.borrowApr)
   const currentUtilization = Number.isFinite(utilization) ? utilization : 0
   const currentBorrowApr = Number.isFinite(borrowApr) ? borrowApr : 4
   const irm = resolveInterestRateModelParams(detail.protocolParameters)

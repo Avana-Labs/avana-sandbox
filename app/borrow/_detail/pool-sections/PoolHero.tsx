@@ -7,7 +7,7 @@ import type { PoolDetail } from "@/app/lib/borrow-detail"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { getPoolHeroFeed } from "@/app/lib/chart-feeds"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { buildFeedFromRangeSeries, shortenAddressFromUrl } from "@/app/borrow/_detail/lib/hero-chart-feeds"
+import { buildFeedFromRangeSeries, resolveHeroContractLabel } from "@/app/borrow/_detail/lib/hero-chart-feeds"
 
 type PoolHeroProps = {
   detail: PoolDetail
@@ -29,7 +29,7 @@ export function PoolHeroIdentity({
   className?: string
 }) {
   const { t } = useTranslation()
-  const contractLabel = shortenAddressFromUrl(detail.hero.explorerUrl)
+  const contractLabel = resolveHeroContractLabel(detail.id, detail.hero.explorerUrl)
 
   return (
     <header className={cn("pb-5", className)}>
@@ -48,30 +48,21 @@ export function PoolHeroIdentity({
               <h1 className="min-w-0 truncate text-[25px] font-semibold leading-none tracking-[-0.02em] text-foreground">
                 {detail.hero.name}
               </h1>
-              {detail.hero.feeTier ? (
-                <span className="shrink-0 text-[20px] font-medium leading-none tracking-[-0.01em] text-foreground/55">
-                  {detail.hero.feeTier}
-                </span>
-              ) : null}
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-3 text-[15px] font-medium text-foreground/75">
               <span className="leading-none text-foreground/75">{detail.hero.chain}</span>
-              {contractLabel ? (
-                <>
-                  <span aria-hidden className="h-5 w-px bg-border" />
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await navigator.clipboard.writeText(contractLabel)
-                    }}
-                    className="inline-flex min-h-8 items-center gap-1.5 rounded-full text-[15px] font-medium leading-none text-foreground/75 transition-colors hover:text-foreground"
-                    aria-label={`${t("Copy")} ${contractLabel}`}
-                  >
-                    <Copy className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
-                    <span>{contractLabel}</span>
-                  </button>
-                </>
-              ) : null}
+              <span aria-hidden className="h-5 w-px bg-border" />
+              <button
+                type="button"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(contractLabel)
+                }}
+                className="inline-flex min-h-8 items-center gap-1.5 rounded-full text-[15px] font-medium leading-none text-foreground/75 transition-colors hover:text-foreground"
+                aria-label={`${t("Copy")} ${contractLabel}`}
+              >
+                <Copy className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+                <span>{contractLabel}</span>
+              </button>
             </div>
           </div>
         </div>

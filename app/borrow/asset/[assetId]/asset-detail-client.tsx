@@ -28,16 +28,12 @@ const InterestRateModelCard = dynamic(
   () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.InterestRateModelCard),
   { ssr: false, loading: () => <DeferredBlock className="h-[320px]" /> },
 )
-const CashflowTrendCard = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.CashflowTrendCard),
-  { ssr: false, loading: () => <DeferredBlock className="h-[320px]" /> },
-)
 const AllocationBreakdownCard = dynamic(
   () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.AllocationBreakdownCard),
   { ssr: false, loading: () => <DeferredBlock className="h-[320px]" /> },
 )
-const AssetCashflowCard = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.AssetCashflowCard),
+const CashflowCard = dynamic(
+  () => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard),
   { ssr: false, loading: () => <DeferredBlock className="h-[240px]" /> },
 )
 const TransactionHistoryCard = dynamic(
@@ -62,7 +58,6 @@ export function AssetDetailClient({ detail }: Props) {
   const { t } = useTranslation()
   const closeHref = `/borrow/assets/${detail.row.id}`
   const about = withGovernanceParameterView(detail.about, detail.protocolParameters)
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       <main className="pb-24 pt-12 md:pb-12 md:pt-14">
@@ -70,12 +65,12 @@ export function AssetDetailClient({ detail }: Props) {
           <DetailPageWidth>
             <nav
               aria-label={t("Breadcrumb")}
-              className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]"
+              className="mb-4 flex items-center gap-1.5 text-[15px] text-muted-foreground md:text-[16px]"
             >
               <Link href="/borrow" className="transition-colors hover:text-foreground">
                 {t("Borrow")}
               </Link>
-              <span aria-hidden className="text-border">
+              <span aria-hidden className="font-medium text-muted-foreground">
                 ›
               </span>
               <span className="font-normal text-foreground">{detail.hero.name}</span>
@@ -93,7 +88,9 @@ export function AssetDetailClient({ detail }: Props) {
                   about={about}
                   aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
                   compactAboutTitle
+                  newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
                   newsImageLabel={detail.hero.symbol}
+                  mediaVariant="icon"
                   afterAbout={
                     <>
                       <section aria-label={t("Key Statistics")} className="space-y-6">
@@ -113,8 +110,7 @@ export function AssetDetailClient({ detail }: Props) {
                     <div className="space-y-14 md:space-y-16">
                       <InterestRateModelCard detail={detail} />
                       <AllocationBreakdownCard detail={detail} />
-                      <AssetCashflowCard detail={detail} />
-                      <CashflowTrendCard detail={detail} />
+                      <CashflowCard detail={detail} />
                       <DetailFaqSection
                         title={t("General FAQs")}
                         items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
