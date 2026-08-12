@@ -13,7 +13,7 @@ describe("borrow detail contract", () => {
       "borrowApy",
       "reserveFactor",
     ])
-    expect(detail.about.governanceParameters?.parameters[0]?.label).toBe("Max LTV")
+    expect(detail.about.governanceParameters?.parameters[0]?.label).toBe("Collateral factor")
   })
 
   it("always exposes a lend-style hero contract address for borrow pools", () => {
@@ -68,13 +68,15 @@ describe("borrow detail contract", () => {
     expect(detail.quickStats.find((stat) => stat.id === "utilization")).toBeUndefined()
   })
 
-  it("fills six lend-style risk parameters on every borrow pool", () => {
+  it("fills eight Morpho-aligned risk parameters on every borrow pool", () => {
     const labels = [
-      "Max LTV",
+      "Collateral factor",
+      "Collateral risk",
+      "Deposit capacity",
+      "Liquidation penalty",
+      "Borrow capacity",
+      "Target health factor",
       "Liquidation threshold",
-      "Supply cap",
-      "Borrow cap",
-      "Liquidation bonus",
       "Oracle source",
     ]
     for (const detail of listAllPoolDetails()) {
@@ -86,11 +88,13 @@ describe("borrow detail contract", () => {
   it("uses lend-style risk parameters instead of the interest-rate model", () => {
     const detail = getAssetDetail("uni-v3-stable:usdc")!
     expect(detail.about.governanceParameters?.parameters.map((parameter) => parameter.label)).toEqual([
-      "Max LTV",
+      "Collateral factor",
+      "Collateral risk",
+      "Deposit capacity",
+      "Liquidation penalty",
+      "Borrow capacity",
+      "Target health factor",
       "Liquidation threshold",
-      "Supply cap",
-      "Borrow cap",
-      "Liquidation bonus",
       "Oracle source",
     ])
     expect(detail.about.governanceParameters?.changelog.length).toBeGreaterThan(0)

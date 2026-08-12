@@ -27,6 +27,7 @@ import { formatOraclePrice } from "./formatters"
 import { buildPoolRiskAssessment } from "./risk-model"
 import { buildPoolFaqs } from "./content-model"
 import { buildPoolProtocolParameters } from "./protocol-parameters"
+import { buildRiskParameterSet } from "./risk-parameters"
 import { resolveHeroContractAddress } from "@/app/borrow/_detail/lib/hero-chart-feeds"
 import type {
   AboutCard,
@@ -698,48 +699,18 @@ function buildPoolGovernanceParameters(row: BorrowPoolRow): NonNullable<AboutCar
   const reserve = isStablePool(row) ? 10 : 15
 
   return {
-    parameters: [
-      {
-        id: "ltv",
-        label: "Max LTV",
-        value: formatPct(ltvPct, 1),
-        description: "Maximum borrow power when this LP position is used as collateral.",
-      },
-      {
-        id: "liquidationThreshold",
-        label: "Liquidation threshold",
-        value: formatPct(liquidationThresholdPct, 1),
-        description: "Health factor begins breaking down when collateral value crosses this threshold.",
-      },
-      {
-        id: "supplyCap",
-        label: "Supply cap",
-        value: formatCompactUsd(supplyCapUsd),
-        description: "Governance-controlled ceiling for deposits into this market.",
-      },
-      {
-        id: "borrowCap",
-        label: "Borrow cap",
-        value: formatCompactUsd(borrowCapUsd),
-        description: "Governance-controlled ceiling for total borrowed liquidity.",
-      },
-      {
-        id: "liquidationBonus",
-        label: "Liquidation bonus",
-        value: `${liquidationBonusPct}%`,
-        description: "Incentive paid to liquidators when unhealthy positions are cleared.",
-      },
-      {
-        id: "oracle",
-        label: "Oracle source",
-        value: "Chainlink",
-        description: "Price feed family used by the market risk engine.",
-      },
-    ],
+    parameters: buildRiskParameterSet({
+      collateralFactorPct: ltvPct,
+      liquidationThresholdPct,
+      depositCapacityLabel: formatCompactUsd(supplyCapUsd),
+      borrowCapacityLabel: formatCompactUsd(borrowCapUsd),
+      liquidationPenaltyPct: liquidationBonusPct,
+      collateralFactorDescription: "Maximum borrow power when this LP position is used as collateral.",
+    }),
     changelog: [
       {
         id: "supply-cap-review",
-        parameter: "Supply cap",
+        parameter: "Deposit capacity",
         previous: formatCompactUsd(Math.round(supplyCapUsd * 0.86)),
         current: formatCompactUsd(supplyCapUsd),
         date: "2025-09-08",
@@ -761,7 +732,7 @@ function buildPoolGovernanceParameters(row: BorrowPoolRow): NonNullable<AboutCar
         id: "collateral-onboarding",
         parameter: "Collateral configuration",
         previous: "Disabled",
-        current: `${formatPct(ltvPct, 1)} LTV / ${formatPct(liquidationThresholdPct, 1)} LT`,
+        current: `${formatPct(ltvPct, 1)} CF / ${formatPct(liquidationThresholdPct, 1)} LT`,
         date: "2025-01-20",
         source: "Market onboarding",
         executor: "Governance executor",

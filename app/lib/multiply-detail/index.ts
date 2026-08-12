@@ -25,6 +25,7 @@ import {
 import { MULTIPLY_MARKET_ROWS, MULTIPLY_TOKEN_LOGOS, type MultiplyMarketRow } from "@/app/lib/multiply-sim"
 import { MULTIPLY_MARKET_CATALOG, getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
 import { catalogMarketToRow } from "@/app/lib/multiply-system/read-model"
+import { buildRiskParameterSet } from "@/app/lib/borrow-detail/risk-parameters"
 import { resolveHeroContractAddress } from "@/app/borrow/_detail/lib/hero-chart-feeds"
 
 export type MultiplyMarketHero = {
@@ -316,44 +317,14 @@ function buildGovernanceParameters(
   const proposalHref = `https://etherscan.io/address/${contractAddressFor(marketId, "governance")}`
 
   return {
-    parameters: [
-      {
-        id: "ltv",
-        label: "Max LTV",
-        value: `${maxLtvPct}%`,
-        description: "Maximum borrow power against this multiply collateral leg.",
-      },
-      {
-        id: "liquidationThreshold",
-        label: "Liquidation threshold",
-        value: `${liquidationThresholdPct}%`,
-        description: "Health factor begins breaking down when collateral value crosses this threshold.",
-      },
-      {
-        id: "supplyCap",
-        label: "Supply cap",
-        value: formatCompactUsd(supplyCapUsd),
-        description: "Governance-controlled ceiling for deposits into this market.",
-      },
-      {
-        id: "borrowCap",
-        label: "Borrow cap",
-        value: formatCompactUsd(Math.max(10_000_000, Math.round(supplyCapUsd * 0.45))),
-        description: "Governance-controlled ceiling for total borrowed liquidity.",
-      },
-      {
-        id: "liquidationBonus",
-        label: "Liquidation bonus",
-        value: `${liquidationBonusPct}%`,
-        description: "Incentive paid to liquidators when unhealthy positions are cleared.",
-      },
-      {
-        id: "oracle",
-        label: "Oracle source",
-        value: "Chainlink",
-        description: "Price feed family used by the market risk engine.",
-      },
-    ],
+    parameters: buildRiskParameterSet({
+      collateralFactorPct: maxLtvPct,
+      liquidationThresholdPct,
+      depositCapacityLabel: formatCompactUsd(supplyCapUsd),
+      borrowCapacityLabel: formatCompactUsd(Math.max(10_000_000, Math.round(supplyCapUsd * 0.45))),
+      liquidationPenaltyPct: liquidationBonusPct,
+      collateralFactorDescription: "Maximum borrow power against this multiply collateral leg.",
+    }),
     changelog: [
       {
         id: "leverage-review",
@@ -379,7 +350,7 @@ function buildGovernanceParameters(
         id: "market-onboarding",
         parameter: "Collateral configuration",
         previous: "Disabled",
-        current: `${maxLtvPct}% LTV / ${liquidationThresholdPct}% LT`,
+        current: `${maxLtvPct}% CF / ${liquidationThresholdPct}% LT`,
         date: "2025-08-12",
         source: "Market onboarding",
         executor: "Governance executor",

@@ -1,17 +1,12 @@
 import { describe, expect, it } from "vitest"
-import { normalizeGovernanceParameters, withGovernanceParameterView } from "../governance-parameters"
-
-const LEND_LABELS = [
-  "Max LTV",
-  "Liquidation threshold",
-  "Supply cap",
-  "Borrow cap",
-  "Liquidation bonus",
-  "Oracle source",
-]
+import {
+  RISK_PARAMETER_LABELS,
+  normalizeGovernanceParameters,
+  withGovernanceParameterView,
+} from "../governance-parameters"
 
 describe("risk parameter normalization", () => {
-  it("rewrites the IRM five-pack into six filled lend parameters", () => {
+  it("rewrites the IRM five-pack into eight filled risk parameters", () => {
     const about = withGovernanceParameterView(
       {
         description: "x",
@@ -27,41 +22,48 @@ describe("risk parameter normalization", () => {
       ],
     )
 
-    expect(about.governanceParameters?.parameters.map((parameter) => parameter.label)).toEqual(LEND_LABELS)
+    expect(about.governanceParameters?.parameters.map((parameter) => parameter.label)).toEqual(RISK_PARAMETER_LABELS)
     expect(about.governanceParameters?.parameters.map((parameter) => parameter.value)).toEqual([
       "63.5%",
-      "68.5%",
+      "5.00%",
       "$25.0M",
+      "5.00% - 5.55%",
       "$10.0M",
-      "5%",
+      "1.57",
+      "68.50%",
       "Chainlink",
     ])
   })
 
-  it("keeps an already-complete lend set", () => {
+  it("keeps an already-complete risk set", () => {
     const about = normalizeGovernanceParameters({
       description: "x",
       stats: [],
       history: [],
       governanceParameters: {
         parameters: [
-          { id: "ltv", label: "Max LTV", value: "78%" },
-          { id: "liquidationThreshold", label: "Liquidation threshold", value: "83%" },
-          { id: "supplyCap", label: "Supply cap", value: "$120.0M" },
-          { id: "borrowCap", label: "Borrow cap", value: "$40.0M" },
-          { id: "liquidationBonus", label: "Liquidation bonus", value: "5%" },
+          { id: "collateralFactor", label: "Collateral factor", value: "78.00%" },
+          { id: "collateralRisk", label: "Collateral risk", value: "5.00%" },
+          { id: "depositCapacity", label: "Deposit capacity", value: "$120.0M" },
+          { id: "liquidationPenalty", label: "Liquidation penalty", value: "5.00% - 5.55%" },
+          { id: "borrowCapacity", label: "Borrow capacity", value: "$40.0M" },
+          { id: "targetHealthFactor", label: "Target health factor", value: "1.28" },
+          { id: "liquidationThreshold", label: "Liquidation threshold", value: "83.00%" },
           { id: "oracle", label: "Oracle source", value: "Chainlink" },
         ],
         changelog: [],
       },
     })
 
+    expect(about.parameters.map((parameter) => parameter.label)).toEqual(RISK_PARAMETER_LABELS)
     expect(about.parameters.map((parameter) => parameter.value)).toEqual([
-      "78%",
-      "83%",
+      "78.00%",
+      "5.00%",
       "$120.0M",
+      "5.00% - 5.55%",
       "$40.0M",
-      "5%",
+      "1.28",
+      "83.00%",
       "Chainlink",
     ])
   })

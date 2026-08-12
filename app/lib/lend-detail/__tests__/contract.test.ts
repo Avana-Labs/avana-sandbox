@@ -62,6 +62,14 @@ describe("lend detail contract", () => {
     expect(detail.quickStats.find((s) => s.id === "supplied")).toBeUndefined()
     expect(detail.quickStats.find((s) => s.id === "borrowed")).toBeUndefined()
     expect(detail.quickStats.find((s) => s.id === "utilization")).toBeUndefined()
+    expect(detail.utilizationPct).toBeGreaterThan(0)
+    expect(detail.borrowAprPct).toBeGreaterThan(0)
+    expect(detail.protocolParameters.map((row) => row.id)).toEqual([
+      "optimalUtilization",
+      "slopeBelowOptimal",
+      "slopeAboveOptimal",
+      "baseBorrowRate",
+    ])
     expect(detail.supplyBorrow.supplied.points.length).toBeGreaterThan(0)
     expect(detail.supplyBorrow.utilization.points.length).toBeGreaterThan(0)
     expect(detail.cashflow.rows.length).toBeGreaterThan(0)

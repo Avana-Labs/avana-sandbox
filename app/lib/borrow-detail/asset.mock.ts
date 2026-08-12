@@ -21,6 +21,7 @@ import { computeAssetAllocation } from "./allocation"
 import { buildAssetRiskAssessment } from "./risk-model"
 import { buildAssetProtocolParameters } from "./protocol-parameters"
 import { buildAssetFaqs } from "./content-model"
+import { buildRiskParameterSet } from "./risk-parameters"
 import type {
   AboutCard,
   AllocationRow,
@@ -575,48 +576,18 @@ function buildAssetGovernanceParameters(
   const reserve = reserveFactorPct(asset)
 
   return {
-    parameters: [
-      {
-        id: "ltv",
-        label: "Max LTV",
-        value: `${ltvPct}%`,
-        description: "Maximum borrow power when this supplied asset is used as collateral.",
-      },
-      {
-        id: "liquidationThreshold",
-        label: "Liquidation threshold",
-        value: `${liquidationThresholdPct}%`,
-        description: "Health factor begins breaking down when collateral value crosses this threshold.",
-      },
-      {
-        id: "supplyCap",
-        label: "Supply cap",
-        value: formatCompactUsd(supplyCapUsd),
-        description: "Governance-controlled ceiling for deposits into this market.",
-      },
-      {
-        id: "borrowCap",
-        label: "Borrow cap",
-        value: formatCompactUsd(borrowCapUsd),
-        description: "Governance-controlled ceiling for total borrowed liquidity.",
-      },
-      {
-        id: "liquidationBonus",
-        label: "Liquidation bonus",
-        value: `${liquidationBonusPct}%`,
-        description: "Incentive paid to liquidators when unhealthy positions are cleared.",
-      },
-      {
-        id: "oracle",
-        label: "Oracle source",
-        value: "Chainlink",
-        description: "Price feed family used by the market risk engine.",
-      },
-    ],
+    parameters: buildRiskParameterSet({
+      collateralFactorPct: ltvPct,
+      liquidationThresholdPct,
+      depositCapacityLabel: formatCompactUsd(supplyCapUsd),
+      borrowCapacityLabel: formatCompactUsd(borrowCapUsd),
+      liquidationPenaltyPct: liquidationBonusPct,
+      collateralFactorDescription: "Maximum borrow power when this supplied asset is used as collateral.",
+    }),
     changelog: [
       {
         id: "supply-cap-review",
-        parameter: "Supply cap",
+        parameter: "Deposit capacity",
         previous: formatCompactUsd(Math.round(supplyCapUsd * 0.86)),
         current: formatCompactUsd(supplyCapUsd),
         date: "2025-09-08",
@@ -638,7 +609,7 @@ function buildAssetGovernanceParameters(
         id: "collateral-onboarding",
         parameter: "Collateral configuration",
         previous: "Disabled",
-        current: `${ltvPct}% LTV / ${liquidationThresholdPct}% LT`,
+        current: `${ltvPct}% CF / ${liquidationThresholdPct}% LT`,
         date: "2025-01-20",
         source: "Market onboarding",
         executor: "Governance executor",

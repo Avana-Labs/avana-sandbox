@@ -32,10 +32,6 @@ const CollateralHistoryCard = dynamic(
   () => import("@/app/borrow/_detail/pool-sections/CollateralHistoryCard").then((mod) => mod.CollateralHistoryCard),
   { ssr: false },
 )
-const RelatedPoolsRow = dynamic(
-  () => import("@/app/borrow/_detail/pool-sections/RelatedPoolsRow").then((mod) => mod.RelatedPoolsRow),
-  { ssr: false },
-)
 const DetailFaqSection = dynamic(
   () => import("@/app/borrow/_detail/ui/DetailFaqSection").then((mod) => mod.DetailFaqSection),
   { ssr: false },
@@ -113,7 +109,6 @@ export function PoolDetailClient({ detail }: Props) {
                       items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
                     />
                     <CollateralHistoryCard transactions={detail.transactions} />
-                    <RelatedPoolsRow detail={detail} />
                     <DetailPageNotice product="borrow" />
                   </DeferredDetailContent>
                 </section>
