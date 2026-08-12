@@ -1,23 +1,14 @@
 "use client"
 
-import { useMemo, useState, type ReactNode } from "react"
-import dynamic from "next/dynamic"
+import { useMemo, type ReactNode } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { CircleDollarSign, Eye, EyeOff, Info } from "@/app/components/icons"
+import { CircleDollarSign, Info } from "@/app/components/icons"
 import { Button } from "@/components/ui/button"
-import { HeroBalanceDisplay } from "@/app/components/charts/hero-balance-display"
-import { formatChartAxis, formatChartValue, type ChartPoint } from "@/app/components/charts"
+import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
+import { formatChartValue, type ChartFeed, type ChartPoint, type ChartRangeData } from "@/app/components/charts"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-
-const HeroAreaChart = dynamic(
-  () => import("@/app/components/charts/hero-area-chart").then((mod) => mod.HeroAreaChart),
-  {
-    ssr: false,
-    loading: () => <div aria-hidden className="h-[148px] w-full" />,
-  },
-)
 
 /**
  * Reward balances are denominated in AVA (the card shows the AVA coin icon), not
@@ -78,6 +69,33 @@ export function buildPortfolioSeries(endUsd: number): ChartPoint[] {
   })
 }
 
+function makePortfolioRangeData(points: ChartPoint[]): ChartRangeData {
+  return {
+    "1D": points,
+    "1W": points,
+    "1M": points,
+    "3M": points,
+    "1Y": points,
+    All: points,
+  }
+}
+
+function buildPortfolioFeed(portfolioValueUsd: number): ChartFeed {
+  const points = buildPortfolioSeries(portfolioValueUsd)
+  const first = points[0]?.value ?? portfolioValueUsd
+  const last = points[points.length - 1]?.value ?? portfolioValueUsd
+  const changeAbs = last - first
+  const pct = first ? (changeAbs / first) * 100 : 0
+  return {
+    headlineValue: formatChartValue("usd", portfolioValueUsd),
+    headlineDelta: `${formatChartValue("usd", Math.abs(changeAbs))} (${Math.abs(pct).toFixed(2)}%)`,
+    deltaTone: pct >= 0 ? "positive" : "negative",
+    rangeData: makePortfolioRangeData(points.length ? points : [{ time: 0, value: portfolioValueUsd, label: "Now" }]),
+    // Same axis formatting as lend/market heroes; resting headline stays exact USD above.
+    valueFormat: "usdCompact",
+  }
+}
+
 function AvanaCoin() {
   return (
     <div
@@ -109,7 +127,7 @@ function FeeCard({
   action?: ReactNode
 }) {
   return (
-    <div className="rounded-radius-md border-0 bg-card px-4 py-4">
+    <div className="rounded-radius-md border-0 bg-card px-4 py-4 dark:bg-white/[0.04]">
       <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
         {label}
         <Info className="h-3 w-3" />
@@ -186,65 +204,27 @@ export function RewardsBalanceHero({
   /** AVA currently claimable. */
   claimableAmount?: number
 }) {
-  const { t } = useTranslation()
-  const { showDollarAmounts, toggleShowDollarAmounts } = useAmountDisplayPreferences()
-  const series = useMemo(() => buildPortfolioSeries(portfolioValueUsd), [portfolioValueUsd])
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null)
-  const hoverPoint = hoverIndex != null ? series[hoverIndex] : null
-
-  const firstValue = series[0]?.value ?? 0
-  const lastValue = series[series.length - 1]?.value ?? portfolioValueUsd
-  const restingPct = firstValue > 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0
-  const hoverPct = hoverPoint && firstValue ? ((hoverPoint.value - firstValue) / firstValue) * 100 : restingPct
-  const balanceValue = hoverPoint
-    ? formatChartValue("usd", hoverPoint.value)
-    : formatChartValue("usd", portfolioValueUsd)
-  const balanceDelta = `${(hoverPoint ? hoverPct : restingPct) >= 0 ? "" : "-"}$${Math.abs((hoverPoint?.value ?? lastValue) - firstValue).toFixed(2)} (${(hoverPoint ? hoverPct : restingPct).toFixed(2)}%)`
-  const balanceMeta = hoverPoint ? hoverPoint.label : undefined
-  const balanceTone: "positive" | "negative" = (hoverPoint ? hoverPct : restingPct) >= 0 ? "positive" : "negative"
+  const { showDollarAmounts } = useAmountDisplayPreferences()
+  const feed = useMemo(() => buildPortfolioFeed(portfolioValueUsd), [portfolioValueUsd])
 
   return (
-    <div className="mb-6 grid gap-5 md:mb-8 md:gap-7 lg:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] lg:items-start">
-      <section className="relative overflow-hidden rounded-radius-md border-0 bg-card px-4 py-4 sm:px-5">
-        <div className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle,rgba(148,163,184,0.16)_1px,transparent_1.2px)] [background-position:18px_18px] [background-size:16px_16px] dark:opacity-35 dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.1)_1px,transparent_1.2px)]" />
-
-        <div className="relative flex flex-col gap-3">
-          <div className="min-w-0">
-            <span className="sr-only">{t("AVA balance")}</span>
-            <HeroBalanceDisplay
-              value={balanceValue}
-              delta={balanceDelta}
-              deltaTone={balanceTone}
-              meta={balanceMeta}
-              hidden={!showDollarAmounts}
-              valueSuffix={
-                <button
-                  type="button"
-                  onClick={toggleShowDollarAmounts}
-                  aria-label={t("Dollar amounts")}
-                  aria-pressed={showDollarAmounts}
-                  className="inline-flex shrink-0 items-center text-brand-readable transition-opacity hover:opacity-80"
-                >
-                  {showDollarAmounts ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
-                </button>
-              }
-            />
-          </div>
-
-          <div className="-mx-4 -mb-4 mt-1 sm:-mx-5">
-            <HeroAreaChart
-              data={series}
-              activeRange="1D"
-              height={148}
-              gradientId="rewardsBalanceFill"
-              className="relative w-full"
-              tone={balanceTone}
-              formatValue={(v) => (showDollarAmounts ? formatChartValue("usd", v) : "••••")}
-              formatYAxis={(v) => (showDollarAmounts ? formatChartAxis("usdCompact", v) : "••••")}
-              onActiveIndexChange={setHoverIndex}
-            />
-          </div>
-        </div>
+    <div className="mb-6 grid gap-5 md:mb-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
+      {/* Same chart as lend detail, quieter balance, rewards-card surface. */}
+      <section
+        className="relative min-w-0 overflow-hidden rounded-radius-md border-0 bg-card px-1.5 pt-4 dark:bg-card/50"
+        data-testid="portfolio-hero-chart"
+      >
+        <MarketHeroChart
+          feed={feed}
+          defaultRange="1D"
+          gradientId="rewardsBalanceFill"
+          height={310}
+          showMeta={false}
+          showRangeSelector={false}
+          hideValue={!showDollarAmounts}
+          balanceVariant="quiet"
+          balanceClassName="absolute left-2.5 top-0 z-10 -translate-y-0.5"
+        />
       </section>
 
       <div className="hidden lg:block">

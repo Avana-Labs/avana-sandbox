@@ -38,8 +38,10 @@ type MarketHeroChartProps = {
   activeMetricTab?: string
   onMetricTabChange?: (tab: string) => void
   chartTone?: "positive" | "negative" | "neutral"
-  balanceVariant?: "default" | "strong"
+  balanceVariant?: "default" | "strong" | "quiet"
   balanceClassName?: string
+  /** When false, lock to `defaultRange` and hide the 1D/1W/… pills. */
+  showRangeSelector?: boolean
 }
 
 /**
@@ -61,12 +63,17 @@ export function MarketHeroChart({
   chartTone,
   balanceVariant = "default",
   balanceClassName,
+  showRangeSelector = true,
 }: MarketHeroChartProps) {
   // Only offer ranges the feed can actually populate. Daily-granularity feeds omit
   // 1H/1D (which would render as duplicate sparse 2-point lines).
   const availableRanges = useMemo(() => resolveAvailableRanges(feed.rangeData), [feed.rangeData])
   const [requestedRange, setRequestedRange] = useState<ChartRangeOption>(defaultRange)
-  const activeRange = availableRanges.includes(requestedRange) ? requestedRange : availableRanges[0]
+  const activeRange = showRangeSelector
+    ? availableRanges.includes(requestedRange)
+      ? requestedRange
+      : availableRanges[0]
+    : defaultRange
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   // Subscribe to the active currency so the pre-formatted headline re-denominates
   // in sync with the (live-converting) delta, tooltip, and axis — no mixed $/€.
@@ -100,6 +107,8 @@ export function MarketHeroChart({
     }
   }, [ctx, feed, hoverPoint, points, rangeTone])
 
+  const showFooter = showRangeSelector || Boolean(metricTabs?.length)
+
   return (
     <div className="relative space-y-2">
       {/* Metric name kept for screen readers / internal recognition; hidden visually. */}
@@ -125,16 +134,22 @@ export function MarketHeroChart({
         formatYAxis={(v) => formatChartAxis(feed.valueFormat, v)}
         onActiveIndexChange={setHoverIndex}
       />
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-        <ChartRangeSelector activeRange={activeRange} onRangeChange={setRequestedRange} ranges={availableRanges} />
-        {metricTabs?.length ? (
-          <ChartMetricSelector
-            tabs={metricTabs}
-            activeTab={activeMetricTab ?? metricTabs[0]}
-            onTabChange={onMetricTabChange}
-          />
-        ) : null}
-      </div>
+      {showFooter ? (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          {showRangeSelector ? (
+            <ChartRangeSelector activeRange={activeRange} onRangeChange={setRequestedRange} ranges={availableRanges} />
+          ) : (
+            <span />
+          )}
+          {metricTabs?.length ? (
+            <ChartMetricSelector
+              tabs={metricTabs}
+              activeTab={activeMetricTab ?? metricTabs[0]}
+              onTabChange={onMetricTabChange}
+            />
+          ) : null}
+        </div>
+      ) : null}
     </div>
   )
 }

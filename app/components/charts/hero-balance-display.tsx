@@ -12,7 +12,7 @@ type HeroBalanceDisplayProps = {
   label?: string
   /** Inline node rendered right next to the value (e.g. a show/hide toggle). */
   valueSuffix?: ReactNode
-  variant?: "default" | "strong"
+  variant?: "default" | "strong" | "quiet"
   className?: string
 }
 
@@ -25,7 +25,7 @@ function HeroDeltaText({
   value: string
   tone: "positive" | "negative"
   meta?: string
-  variant?: "default" | "strong"
+  variant?: "default" | "strong" | "quiet"
 }) {
   return (
     <div className="flex items-center gap-2">
@@ -34,11 +34,23 @@ function HeroDeltaText({
           tone === "positive" ? "flex items-center gap-1 text-[#01AACF]" : "flex items-center gap-1 text-rose-500"
         }
       >
-        <span className={cn("leading-none", variant === "strong" ? "text-[12px]" : "text-[11px]")}>
+        <span
+          className={cn(
+            "leading-none",
+            variant === "strong" ? "text-[12px]" : variant === "quiet" ? "text-[12px]" : "text-[11px]",
+          )}
+        >
           {tone === "positive" ? "▲" : "▼"}
         </span>
         <span
-          className={cn("tabular-nums", variant === "strong" ? "text-[15px] font-semibold" : "text-[14px] font-medium")}
+          className={cn(
+            "tabular-nums",
+            variant === "strong"
+              ? "text-[15px] font-semibold"
+              : variant === "quiet"
+                ? "text-[13px] font-semibold lg:text-[14px]"
+                : "text-[14px] font-medium",
+          )}
         >
           {value}
         </span>
@@ -69,10 +81,12 @@ export function HeroBalanceDisplay({
       <div className="flex items-center gap-2">
         <span
           className={cn(
-            "leading-none tracking-[-0.03em] text-foreground",
+            "leading-none text-foreground",
             variant === "strong"
-              ? "text-[29px] font-semibold sm:text-[32px] md:text-[34px]"
-              : "text-[26px] font-normal sm:text-[28px] md:text-[30px]",
+              ? "text-[29px] font-semibold tracking-[-0.03em] sm:text-[32px] md:text-[34px]"
+              : variant === "quiet"
+                ? "font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium tracking-[-0.04em]"
+                : "text-[26px] font-normal tracking-[-0.03em] sm:text-[28px] md:text-[30px]",
           )}
         >
           {hidden ? "••••••••" : value}

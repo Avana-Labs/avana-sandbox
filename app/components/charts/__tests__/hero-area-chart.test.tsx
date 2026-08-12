@@ -37,7 +37,7 @@ describe("HeroAreaChart", () => {
       { time: 7, value: 107, label: "9:00 PM" },
       { time: 8, value: 108, label: "Now" },
     ]
-    const geometry = buildHeroAreaGeometry(series, 900, 148, "1D")
+    const geometry = buildHeroAreaGeometry(series, 900, 310, "1D")
     expect(geometry.xAxisTicks.map((tick) => tick.label)).toEqual([
       "6:00 AM",
       "9:00 AM",
@@ -47,6 +47,9 @@ describe("HeroAreaChart", () => {
       "9:00 PM",
       "Now",
     ])
+    expect(geometry.axisTicks).toHaveLength(6)
+    expect(geometry.points[0]?.x).toBe(0)
+    expect(geometry.xAxisTicks.at(-1)?.x).toBe(geometry.points.at(-1)?.x)
   })
 
   it("preserves hover selection, tooltip formatting, and pointer exit", () => {
