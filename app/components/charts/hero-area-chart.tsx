@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react"
+import { CHART_RANGE_LABELS, getChartTickIndexes } from "./chart-data"
 import type { ChartPoint, ChartRangeOption } from "./types"
 
 const TONE_COLORS = {
@@ -14,6 +15,11 @@ const TONE_COLORS = {
     fill: "#F0444C",
     cursor: "rgba(240, 68, 76, 0.2)",
   },
+  neutral: {
+    stroke: "hsl(var(--foreground))",
+    fill: "hsl(var(--foreground))",
+    cursor: "hsl(var(--foreground) / 0.18)",
+  },
 } as const
 
 type HeroAreaChartProps = {
@@ -24,11 +30,13 @@ type HeroAreaChartProps = {
   formatYAxis?: (value: number) => string
   gradientId?: string
   className?: string
-  tone?: "positive" | "negative"
+  tone?: "positive" | "negative" | "neutral"
   onActiveIndexChange?: (index: number | null) => void
 }
 
 type PlotPoint = ChartPoint & { x: number; y: number }
+type AxisTick = { value: number; y: number; label: string }
+type XAxisTick = { x: number; label: string; anchor: "start" | "middle" | "end" }
 
 function monotoneLinePath(points: PlotPoint[]) {
   if (points.length === 0) return ""
@@ -57,25 +65,87 @@ function monotoneLinePath(points: PlotPoint[]) {
   return path
 }
 
-export function buildHeroAreaGeometry(data: ChartPoint[], width: number, height: number) {
-  if (data.length === 0) return { points: [] as PlotPoint[], linePath: "", areaPath: "" }
-  const top = 12
-  const bottom = 8
-  const right = width < 640 ? 8 : 16
+export function buildHeroAreaGeometry(
+  data: ChartPoint[],
+  width: number,
+  height: number,
+  activeRange: ChartRangeOption = "1D",
+  formatYAxis: (value: number) => string = (value) => String(Math.round(value)),
+) {
+  if (data.length === 0) {
+    return {
+      points: [] as PlotPoint[],
+      linePath: "",
+      areaPath: "",
+      axisTicks: [] as AxisTick[],
+      xAxisTicks: [] as XAxisTick[],
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+    }
+  }
+  // Match lend/market detail chart padding. Unique series labels keep custom
+  // day axes (portfolio) from duplicating ticks when the range label count differs.
+  const top = 58
+  const bottom = 34
+  const left = 0
+  const right = width < 640 ? 40 : 58
   const values = data.map((point) => point.value)
-  const min = Math.min(...values) - 4
-  const max = Math.max(...values) + 4
+  const rawMin = Math.min(...values)
+  const rawMax = Math.max(...values)
+  const valueSpan = Math.max(1, rawMax - rawMin)
+  const min = rawMin - Math.max(4, valueSpan * 0.08)
+  const max = rawMax + Math.max(4, valueSpan * 0.28)
   const range = Math.max(1, max - min)
   const plotHeight = Math.max(1, height - top - bottom)
-  const plotWidth = Math.max(1, width - right)
+  const plotWidth = Math.max(1, width - left - right)
+  const yTickCount = width < 640 ? 5 : 6
+  const tickValues = Array.from({ length: yTickCount }, (_, index) => max - (range * index) / (yTickCount - 1))
+  const axisTicks = tickValues.map((value) => ({
+    value,
+    y: top + ((max - value) / range) * plotHeight,
+    label: formatYAxis(value),
+  }))
   const points = data.map((point, index) => ({
     ...point,
-    x: data.length === 1 ? plotWidth / 2 : (index / (data.length - 1)) * plotWidth,
+    x: data.length === 1 ? left + plotWidth / 2 : left + (index / (data.length - 1)) * plotWidth,
     y: top + ((max - point.value) / range) * plotHeight,
   }))
+  const uniqueLabelIndexes: number[] = []
+  let previousLabel: string | undefined
+  for (let index = 0; index < data.length; index += 1) {
+    if (data[index].label !== previousLabel) {
+      uniqueLabelIndexes.push(index)
+      previousLabel = data[index].label
+    }
+  }
+  // Sparse pre-bucketed labels (demo feeds / portfolio) can be used as-is.
+  // Dense day/hour series (detail pages) must be subsampled or labels collide.
+  const preferredTickCount = CHART_RANGE_LABELS[activeRange]?.length ?? 6
+  const rawTickIndexes =
+    uniqueLabelIndexes.length >= 2 && uniqueLabelIndexes.length <= preferredTickCount + 1
+      ? uniqueLabelIndexes
+      : Array.from(new Set(getChartTickIndexes(activeRange, data.length)))
+  const tickIndexes = width < 640 ? rawTickIndexes.filter((_, index) => index % 2 === 0) : rawTickIndexes
+  const xAxisTicks = tickIndexes.map((index, tickPosition) => {
+    const point = points[Math.min(points.length - 1, Math.max(0, index))]
+    return {
+      x: point.x,
+      label: point.label,
+      anchor:
+        tickPosition === 0
+          ? ("start" as const)
+          : tickPosition === tickIndexes.length - 1
+            ? ("end" as const)
+            : ("middle" as const),
+    }
+  })
+  // Drop empty labels so a sparse/malformed feed still keeps readable ticks.
+  const labeledXAxisTicks = xAxisTicks.filter((tick) => tick.label.trim().length > 0)
   const linePath = monotoneLinePath(points)
   const areaPath = `${linePath} L ${points[points.length - 1].x} ${height - bottom} L ${points[0].x} ${height - bottom} Z`
-  return { points, linePath, areaPath }
+  return { points, linePath, areaPath, axisTicks, xAxisTicks: labeledXAxisTicks, left, right, top, bottom }
 }
 
 export function HeroAreaChart({
@@ -84,7 +154,7 @@ export function HeroAreaChart({
   height = 240,
   formatValue = (value) =>
     `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-  formatYAxis = (value) => `$${Math.round(value)}`,
+  formatYAxis = (value) => `$${Math.round(value).toLocaleString()}`,
   gradientId = "heroAreaChartFill",
   className,
   tone,
@@ -94,8 +164,6 @@ export function HeroAreaChart({
   const [dimensions, setDimensions] = useState({ width: 1_000, height })
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const [isVisible, setIsVisible] = useState(true)
-  void formatYAxis
-  void activeRange
 
   useEffect(() => {
     const shell = shellRef.current
@@ -120,20 +188,31 @@ export function HeroAreaChart({
     return () => observer.disconnect()
   }, [])
 
-  const resolvedTone: "positive" | "negative" =
+  const resolvedTone: "positive" | "negative" | "neutral" =
     tone ?? (data.length >= 2 && data[data.length - 1].value < data[0].value ? "negative" : "positive")
   const color = TONE_COLORS[resolvedTone]
-  const geometry = useMemo(() => buildHeroAreaGeometry(data, dimensions.width, dimensions.height), [data, dimensions])
+  const geometry = useMemo(
+    () => buildHeroAreaGeometry(data, dimensions.width, dimensions.height, activeRange, formatYAxis),
+    [activeRange, data, dimensions, formatYAxis],
+  )
+  const cursorBottom = geometry.bottom || 34
   const activePoint = activeIndex == null ? null : geometry.points[activeIndex]
   const lastPoint = geometry.points[geometry.points.length - 1]
   const chartShellClassName =
     className ??
-    "relative h-[210px] bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.06)_1px,transparent_0)] [background-size:18px_18px] dark:bg-none sm:h-[240px]"
+    [
+      "relative before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.12)_1px,transparent_0)] before:[background-size:18px_18px] before:[mask-image:radial-gradient(ellipse_at_center,black_58%,transparent_100%)] before:content-[''] dark:before:bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.12)_1px,transparent_0)]",
+      height === 240 ? "h-[210px] sm:h-[240px]" : "",
+    ]
+      .filter(Boolean)
+      .join(" ")
 
   const setPointerIndex = (event: PointerEvent<HTMLDivElement>) => {
     if (data.length === 0) return
     const rect = event.currentTarget.getBoundingClientRect()
-    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / Math.max(1, rect.width)))
+    const plotLeft = geometry.left
+    const plotWidth = Math.max(1, rect.width - geometry.left - geometry.right)
+    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left - plotLeft) / plotWidth))
     const index = Math.round(ratio * (data.length - 1))
     setActiveIndex(index)
     onActiveIndexChange?.(index)
@@ -148,7 +227,7 @@ export function HeroAreaChart({
     <div
       ref={shellRef}
       className={chartShellClassName}
-      style={height !== 240 ? { height } : undefined}
+      style={{ height }}
       onPointerMove={setPointerIndex}
       onPointerLeave={clearPointer}
       data-testid="hero-area-chart"
@@ -164,53 +243,118 @@ export function HeroAreaChart({
             <stop offset="0%" stopColor={color.fill} stopOpacity="0.32" />
             <stop offset="100%" stopColor={color.fill} stopOpacity="0.03" />
           </linearGradient>
+          <linearGradient id={`${gradientId}-leftFade`} x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="#fff" stopOpacity="0" />
+            <stop offset="10%" stopColor="#fff" stopOpacity="1" />
+          </linearGradient>
+          <mask
+            id={`${gradientId}-leftMask`}
+            maskUnits="userSpaceOnUse"
+            x="0"
+            y="0"
+            width={dimensions.width}
+            height={dimensions.height}
+          >
+            <rect width={dimensions.width} height={dimensions.height} fill={`url(#${gradientId}-leftFade)`} />
+          </mask>
         </defs>
-        {geometry.areaPath ? <path d={geometry.areaPath} fill={`url(#${gradientId})`} /> : null}
-        {geometry.linePath ? (
-          <path
-            d={geometry.linePath}
-            fill="none"
-            stroke={color.stroke}
-            strokeWidth="2.5"
-            vectorEffect="non-scaling-stroke"
-          />
+        {geometry.axisTicks.length > 0 ? (
+          <g aria-hidden="true">
+            {geometry.axisTicks.map((tick) => (
+              <line
+                key={`${tick.value}-${tick.y}-grid`}
+                x1={0}
+                x2={dimensions.width}
+                y1={tick.y}
+                y2={tick.y}
+                stroke="hsl(var(--border))"
+                strokeOpacity="0.45"
+                strokeDasharray="2 6"
+                vectorEffect="non-scaling-stroke"
+              />
+            ))}
+          </g>
         ) : null}
-        {activePoint ? (
-          <>
-            <line
-              x1={activePoint.x}
-              x2={activePoint.x}
-              y1={12}
-              y2={dimensions.height - 8}
-              stroke={color.cursor}
+        <g mask={`url(#${gradientId}-leftMask)`}>
+          {geometry.areaPath ? <path d={geometry.areaPath} fill={`url(#${gradientId})`} /> : null}
+          {geometry.linePath ? (
+            <path
+              d={geometry.linePath}
+              fill="none"
+              stroke={color.stroke}
+              strokeWidth="2.5"
               vectorEffect="non-scaling-stroke"
             />
-            <circle
-              cx={activePoint.x}
-              cy={activePoint.y}
-              r="5"
-              fill={color.stroke}
-              stroke="hsl(var(--background))"
-              strokeWidth="2.5"
-            />
-          </>
-        ) : lastPoint ? (
-          <>
-            {isVisible ? (
-              <circle cx={lastPoint.x} cy={lastPoint.y} fill={color.stroke} opacity="0.45">
-                <animate attributeName="r" values="5;18" dur="1.6s" repeatCount="indefinite" />
-                <animate attributeName="opacity" values="0.5;0" dur="1.6s" repeatCount="indefinite" />
-              </circle>
-            ) : null}
-            <circle
-              cx={lastPoint.x}
-              cy={lastPoint.y}
-              r="5.5"
-              fill={color.stroke}
-              stroke="hsl(var(--background))"
-              strokeWidth="2.5"
-            />
-          </>
+          ) : null}
+          {activePoint ? (
+            <>
+              <line
+                x1={activePoint.x}
+                x2={activePoint.x}
+                y1={4}
+                y2={dimensions.height - cursorBottom}
+                stroke={color.cursor}
+                vectorEffect="non-scaling-stroke"
+              />
+              <circle
+                cx={activePoint.x}
+                cy={activePoint.y}
+                r="5"
+                fill={color.stroke}
+                stroke="hsl(var(--background))"
+                strokeWidth="2.5"
+              />
+            </>
+          ) : lastPoint ? (
+            <>
+              {isVisible ? (
+                <circle cx={lastPoint.x} cy={lastPoint.y} fill={color.stroke} opacity="0.45">
+                  <animate attributeName="r" values="5;18" dur="1.6s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0.5;0" dur="1.6s" repeatCount="indefinite" />
+                </circle>
+              ) : null}
+              <circle
+                cx={lastPoint.x}
+                cy={lastPoint.y}
+                r="5.5"
+                fill={color.stroke}
+                stroke="hsl(var(--background))"
+                strokeWidth="2.5"
+              />
+            </>
+          ) : null}
+        </g>
+        {geometry.axisTicks.length > 0 ? (
+          <g aria-hidden="true">
+            {geometry.axisTicks.map((tick) => (
+              <g key={`${tick.value}-${tick.y}-label`}>
+                <text
+                  x={dimensions.width - 2}
+                  y={tick.y}
+                  dominantBaseline="middle"
+                  textAnchor="end"
+                  className="fill-muted-foreground font-data text-[12.5px] font-medium"
+                >
+                  {tick.label}
+                </text>
+              </g>
+            ))}
+          </g>
+        ) : null}
+        {geometry.xAxisTicks.length > 0 ? (
+          <g aria-hidden="true">
+            {geometry.xAxisTicks.map((tick) => (
+              <text
+                key={`${tick.x}-${tick.label}`}
+                x={tick.x}
+                y={dimensions.height - 8}
+                textAnchor={tick.anchor}
+                className="fill-muted-foreground font-data text-[12px] font-medium"
+              >
+                {tick.label}
+              </text>
+            ))}
+          </g>
         ) : null}
       </svg>
 

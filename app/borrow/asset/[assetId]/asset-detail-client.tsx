@@ -8,12 +8,15 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import {
   DeferredDetailContent,
+  detailAnalyticsSectionClass,
+  detailAnalyticsStackClass,
   DetailPageNotice,
   DetailPageWidth,
   MobileDetailActionBar,
 } from "@/app/components/detail-page-primitives"
-import { AssetHero, AssetHeroIdentity } from "@/app/borrow/_detail/asset-sections"
-import { QuickStatsGrid, ProtocolParametersSection } from "@/app/borrow/_detail/pool-sections"
+import { AssetHero, AssetHeroIdentity, interestRateModelFromAssetDetail } from "@/app/borrow/_detail/asset-sections"
+import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
+import { withGovernanceParameterView } from "@/app/borrow/_detail/lib/governance-parameters"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { AssetTokenSidebar } from "@/app/borrow/_detail/sidebars"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -27,25 +30,17 @@ const InterestRateModelCard = dynamic(
   () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.InterestRateModelCard),
   { ssr: false, loading: () => <DeferredBlock className="h-[320px]" /> },
 )
-const CashflowTrendCard = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.CashflowTrendCard),
-  { ssr: false, loading: () => <DeferredBlock className="h-[320px]" /> },
-)
 const AllocationBreakdownCard = dynamic(
   () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.AllocationBreakdownCard),
   { ssr: false, loading: () => <DeferredBlock className="h-[320px]" /> },
 )
-const AssetCashflowCard = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.AssetCashflowCard),
+const CashflowCard = dynamic(
+  () => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard),
   { ssr: false, loading: () => <DeferredBlock className="h-[240px]" /> },
 )
 const TransactionHistoryCard = dynamic(
   () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.TransactionHistoryCard),
   { ssr: false, loading: () => <DeferredBlock className="h-[360px]" /> },
-)
-const RelatedAssetsRow = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.RelatedAssetsRow),
-  { ssr: false, loading: () => <DeferredBlock className="h-[200px]" /> },
 )
 const RiskSection = dynamic(() => import("@/app/borrow/_detail/pool-sections").then((mod) => mod.RiskSection), {
   ssr: false,
@@ -60,61 +55,65 @@ type Props = { detail: AssetDetail }
 export function AssetDetailClient({ detail }: Props) {
   const { t } = useTranslation()
   const closeHref = `/borrow/assets/${detail.row.id}`
-
+  const about = withGovernanceParameterView(detail.about, detail.protocolParameters)
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <main className="pb-24 pt-8 md:pb-12">
+      <main className="pb-24 pt-12 md:pb-12 md:pt-14">
         <div className="container mx-auto px-4">
           <DetailPageWidth>
             <nav
               aria-label={t("Breadcrumb")}
-              className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]"
+              className="mb-4 flex items-center gap-1.5 text-[15px] text-muted-foreground md:text-[16px]"
             >
               <Link href="/borrow" className="transition-colors hover:text-foreground">
                 {t("Borrow")}
               </Link>
-              <span aria-hidden className="text-border">
+              <span aria-hidden className="font-medium text-muted-foreground">
                 ›
               </span>
               <span className="font-normal text-foreground">{detail.hero.name}</span>
             </nav>
 
-            <div className="grid lg:grid-cols-[minmax(0,1fr)_420px] lg:grid-rows-[auto_1fr] lg:gap-x-8">
+            <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-20">
               <div className="min-w-0 border-b border-border pb-5 lg:col-span-2">
                 <AssetHeroIdentity detail={detail} className="pb-0" />
               </div>
 
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                <AssetHero detail={detail} hideIdentity className="mb-6" />
+                <AssetHero detail={detail} hideIdentity className="mb-12" />
 
                 <AboutNewsSection
-                  about={detail.about}
+                  about={about}
                   aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
                   compactAboutTitle
+                  newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
                   newsImageLabel={detail.hero.symbol}
+                  mediaVariant="icon"
+                  afterAbout={
+                    <>
+                      <section aria-label={t("Key Statistics")} className="space-y-6">
+                        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+                          Key Statistics
+                        </h2>
+                        <QuickStatsGrid detail={detail} hideRisk />
+                      </section>
+                      <RiskSection detail={detail} />
+                    </>
+                  }
+                  className="pt-0"
                 />
 
-                <section aria-label={t("Asset analytics")} className="space-y-12 pt-12">
-                  <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
-                    Asset data
-                  </h2>
-                  <QuickStatsGrid detail={detail} />
-                  <DeferredDetailContent>
-                    <div className="space-y-12">
-                      <ProtocolParametersSection parameters={detail.protocolParameters} />
-                      <InterestRateModelCard detail={detail} />
-                      <AllocationBreakdownCard detail={detail} />
-                      <AssetCashflowCard detail={detail} />
-                      <RiskSection detail={detail} />
-                      <CashflowTrendCard detail={detail} />
-                      <DetailFaqSection
-                        title={t("General FAQs")}
-                        items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
-                      />
-                      <TransactionHistoryCard transactions={detail.transactions} assetSymbol={detail.hero.symbol} />
-                      <RelatedAssetsRow detail={detail} />
-                      <DetailPageNotice product="borrow" />
-                    </div>
+                <section aria-label={t("Asset analytics")} className={detailAnalyticsSectionClass}>
+                  <DeferredDetailContent className={detailAnalyticsStackClass}>
+                    <InterestRateModelCard {...interestRateModelFromAssetDetail(detail)} />
+                    <AllocationBreakdownCard detail={detail} />
+                    <CashflowCard detail={detail} />
+                    <DetailFaqSection
+                      title={t("General FAQs")}
+                      items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
+                    />
+                    <TransactionHistoryCard transactions={detail.transactions} assetSymbol={detail.hero.symbol} />
+                    <DetailPageNotice product="borrow" />
                   </DeferredDetailContent>
                 </section>
               </div>

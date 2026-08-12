@@ -27,6 +27,8 @@ import { formatOraclePrice } from "./formatters"
 import { buildPoolRiskAssessment } from "./risk-model"
 import { buildPoolFaqs } from "./content-model"
 import { buildPoolProtocolParameters } from "./protocol-parameters"
+import { buildRiskParameterSet } from "./risk-parameters"
+import { resolveHeroContractAddress } from "@/app/borrow/_detail/lib/hero-chart-feeds"
 import type {
   AboutCard,
   CashflowCard,
@@ -86,9 +88,9 @@ type FixtureOverride = {
   quickStats?: Record<string, Partial<QuickStat>>
   /** Base TVL used by hero + key metrics (overrides catalog liquidity). */
   baseTvlUsd?: number
-  /** Daily volume used to seed the hero/volume chart (overrides derived). */
+  /** Daily volume used to seed cashflow / key-metric charts (overrides derived). */
   baseVolumeUsd?: number
-  /** Daily fees used to seed the hero/fees chart (overrides derived). */
+  /** Daily fees used to seed cashflow / key-metric charts (overrides derived). */
   baseFeesUsd?: number
   /** About card override (description + stats + history). */
   about?: AboutCard
@@ -376,20 +378,26 @@ function pickChain(row: BorrowPoolRow): string {
   return "Ethereum"
 }
 
+function isStablePool(row: BorrowPoolRow) {
+  const stables = new Set(["USDC", "USDT", "DAI", "GHO", "FRAX", "CRVUSD", "USDS"])
+  return row.visuals.every((visual) => stables.has(visual.symbol.toUpperCase()))
+}
+
 function buildDefaultQuickStats(row: BorrowPoolRow): QuickStat[] {
-  const spoke = getSpokeById(row.spoke)
-  const totalSupplied = spoke.liquidityUsd
-  const totalBorrowed = Math.round(totalSupplied * (row.ltv / 100))
-  const oraclePrice = pairReferencePrice(row)
+  const supplyApy = (row.aprMin + row.aprMax) / 2
+  const borrowApy = supplyApy + row.riskPremiumBps / 100
   return [
-    { id: "oraclePrice", label: "Oracle price", value: formatOraclePrice(oraclePrice) },
-    { id: "totalSupplied", label: "Total Supplied", value: formatCompactUsd(totalSupplied), delta: deltaUp(1.8) },
-    { id: "totalBorrowed", label: "Total Borrowed", value: formatCompactUsd(totalBorrowed), delta: deltaUp(2.9) },
-    { id: "utilization", label: "Utilization", value: formatPct(spoke.maxLtv * 0.82, 1) },
-    { id: "apr", label: "Supply APY", value: `${((row.aprMin + row.aprMax) / 2).toFixed(1)}%`, delta: deltaUp(0.3) },
-    { id: "riskPremium", label: "Risk premium", value: formatBpsAsPct(row.riskPremiumBps), delta: deltaUp(2.9) },
-    { id: "maxLtv", label: "Max LTV", value: formatPct(row.ltv, 1) },
-    { id: "available", label: "Available to borrow", value: formatCompactUsd(row.availableUsd) },
+    { id: "price", label: "Price", value: formatOraclePrice(pairReferencePrice(row)), delta: deltaUp(0.1) },
+    {
+      id: "available",
+      label: "Available Liquidity",
+      value: formatCompactUsd(row.availableUsd),
+      delta: deltaUp(0.6),
+    },
+    { id: "supplyApy", label: "Supply APY", value: formatPct(supplyApy, 2), delta: deltaUp(0.1) },
+    { id: "rewardsApy", label: "Rewards APY", value: "No rewards" },
+    { id: "borrowApy", label: "Borrow APY", value: formatPct(borrowApy, 2), delta: deltaUp(0.08) },
+    { id: "reserveFactor", label: "Reserve Factor", value: isStablePool(row) ? "10%" : "15%" },
   ]
 }
 
@@ -410,7 +418,7 @@ function buildHero(row: BorrowPoolRow, fixture: FixtureOverride | undefined): Po
     subtitle: fixture?.subtitle ?? `${row.name} accepted as LP collateral. Supply to unlock borrow power.`,
     feeTier: fixture?.feeTier,
     chain: fixture?.chain ?? pickChain(row),
-    explorerUrl: fixture?.explorerUrl,
+    explorerUrl: fixture?.explorerUrl ?? `https://etherscan.io/address/${resolveHeroContractAddress(row.id)}`,
   }
 }
 
@@ -420,14 +428,12 @@ function buildHeroMetricSeries(
 ): Record<ChartMetricId, Record<TimeRangeId, Series>> {
   const spoke = getSpokeById(row.spoke)
   const baseTvl = fixture?.baseTvlUsd ?? spoke.liquidityUsd
-  const baseVol = fixture?.baseVolumeUsd ?? Math.round(baseTvl * 0.12)
-  const baseFees = fixture?.baseFeesUsd ?? Math.round(baseVol * 0.003)
-  const basePrice = pairReferencePrice(row)
+  const baseBorrowed = Math.max(1, Math.round(baseTvl - row.availableUsd))
+  const baseUtilization = Math.max(1, Math.min(95, (baseBorrowed / Math.max(1, baseTvl)) * 100))
   return {
-    // TVL is a level, not a trending flow — keep the series close to the stated base
-    // (no systematic +8% drift) so the hero headline reconciles with the overview
-    // "Total Supplied" stat instead of ending materially higher/lower.
-    tvl: buildSeriesFamily(`${row.id}:tvl`, "TVL", {
+    // Supplied/TVL is a level — keep the series close to the stated base so the hero
+    // headline reconciles with Key Statistics instead of ending materially higher/lower.
+    tvl: buildSeriesFamily(`${row.id}:tvl`, "Supplied", {
       base: baseTvl,
       driftMultiplier: 1.0,
       noise: 0.02,
@@ -435,29 +441,21 @@ function buildHeroMetricSeries(
       nonNegative: true,
       roundTo: 0,
     }),
-    volume: buildSeriesFamily(`${row.id}:volume`, "Volume", {
-      base: baseVol,
-      driftMultiplier: 1.12,
-      noise: 0.15,
-      wave: 0.22,
-      nonNegative: true,
-      roundTo: 0,
-    }),
-    fees: buildSeriesFamily(`${row.id}:fees`, "Fees", {
-      base: baseFees,
-      driftMultiplier: 1.1,
-      noise: 0.18,
-      wave: 0.22,
-      nonNegative: true,
-      roundTo: 0,
-    }),
-    price: buildSeriesFamily(`${row.id}:price`, "Price", {
-      base: basePrice,
-      driftMultiplier: 1.04,
-      noise: 0.02,
+    borrowed: buildSeriesFamily(`${row.id}:borrowed`, "Borrowed", {
+      base: baseBorrowed,
+      driftMultiplier: 1.06,
+      noise: 0.04,
       wave: 0.06,
       nonNegative: true,
-      roundTo: 4,
+      roundTo: 0,
+    }),
+    utilization: buildSeriesFamily(`${row.id}:utilization`, "Utilization", {
+      base: baseUtilization,
+      driftMultiplier: 1.02,
+      noise: 0.05,
+      wave: 0.08,
+      nonNegative: true,
+      roundTo: 2,
     }),
   }
 }
@@ -656,30 +654,107 @@ function buildRisk(row: BorrowPoolRow, fixture: FixtureOverride | undefined): Ri
   return buildPoolRiskAssessment(row)
 }
 
-function buildAbout(row: BorrowPoolRow, fixture: FixtureOverride | undefined): AboutCard {
-  if (fixture?.about) {
-    return {
-      ...fixture.about,
-      stats: fixture.about.stats.length > 0 ? fixture.about.stats : buildAboutStats(row),
-    }
+function contractAddressFor(poolId: string, salt: string) {
+  const seed = `${poolId}:${salt}`
+  let hash = 0x811c9dc5
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193)
   }
-  const spoke = getSpokeById(row.spoke)
+  const chunk = (hash >>> 0).toString(16).padStart(8, "0").toUpperCase()
+  return `0x${chunk}${chunk}${chunk}${chunk}${chunk}`.slice(0, 42)
+}
+
+function shortAddress(address: string) {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
+function buildContractStat(label: string, poolId: string, salt: string): AboutCard["stats"][number] {
+  const address = contractAddressFor(poolId, salt)
   return {
+    label,
+    value: shortAddress(address),
+    href: `https://etherscan.io/address/${address}`,
+  }
+}
+
+function buildPoolGovernanceParameters(row: BorrowPoolRow): NonNullable<AboutCard["governanceParameters"]> {
+  const ltvPct = row.ltv
+  const liquidationThresholdPct = Math.min(95, Math.round((row.ltv + 5) * 10) / 10)
+  const liquidationBonusPct = isStablePool(row) ? 5 : 7
+  const suppliedUsd = getSpokeById(row.spoke).liquidityUsd
+  const supplyCapUsd = Math.max(25_000_000, Math.ceil((suppliedUsd * 1.75) / 1_000_000) * 1_000_000)
+  const borrowCapUsd = Math.max(10_000_000, Math.ceil((row.availableUsd * 2.25) / 1_000_000) * 1_000_000)
+  const proposalHref = `https://etherscan.io/address/${contractAddressFor(row.id, "governance")}`
+  const reserve = isStablePool(row) ? 10 : 15
+
+  return {
+    parameters: buildRiskParameterSet({
+      collateralFactorPct: ltvPct,
+      liquidationThresholdPct,
+      depositCapacityLabel: formatCompactUsd(supplyCapUsd),
+      borrowCapacityLabel: formatCompactUsd(borrowCapUsd),
+      liquidationPenaltyPct: liquidationBonusPct,
+      collateralFactorDescription: "Maximum borrow power when this LP position is used as collateral.",
+    }),
+    changelog: [
+      {
+        id: "supply-cap-review",
+        parameter: "Deposit capacity",
+        previous: formatCompactUsd(Math.round(supplyCapUsd * 0.86)),
+        current: formatCompactUsd(supplyCapUsd),
+        date: "2025-09-08",
+        source: "Risk parameter review",
+        executor: "Governance executor",
+        href: proposalHref,
+      },
+      {
+        id: "reserve-factor-review",
+        parameter: "Reserve factor",
+        previous: `${Math.max(0, reserve - 1)}%`,
+        current: `${reserve}%`,
+        date: "2025-06-02",
+        source: "Revenue parameter update",
+        executor: "Risk steward multisig",
+        href: proposalHref,
+      },
+      {
+        id: "collateral-onboarding",
+        parameter: "Collateral configuration",
+        previous: "Disabled",
+        current: `${formatPct(ltvPct, 1)} CF / ${formatPct(liquidationThresholdPct, 1)} LT`,
+        date: "2025-01-20",
+        source: "Market onboarding",
+        executor: "Governance executor",
+        href: proposalHref,
+      },
+    ],
+  }
+}
+
+function buildAbout(row: BorrowPoolRow, fixture: FixtureOverride | undefined): AboutCard {
+  const spoke = getSpokeById(row.spoke)
+  const about = fixture?.about ?? {
     description:
       `${row.name} on ${getDexById(row.dexes[0]?.id as Parameters<typeof getDexById>[0])?.label ?? row.venue} is treated as LP collateral inside the ${spoke.label}. ` +
       `The pool's depth, fee tier, and pair composition determine how much it can support, while the spoke's max LTV keeps the borrow power anchored to the market's actual risk. ` +
       `That gives this page a single source of truth for how the pool should be understood: what it is, how much capital it can safely support, and what kind of downside the protocol is underwriting.`,
-    stats: buildAboutStats(row),
+    stats: [],
     history: [
       { date: "2025-01-14", title: "Onboarded", description: `Added to the ${spoke.label}.` },
       { date: "2025-06-02", title: "Parameters refreshed", description: "Quarterly risk review — no changes to LTV." },
     ],
   }
-}
 
-function buildAboutStats(_row: BorrowPoolRow): AboutCard["stats"] {
-  // Omit fabricated contract hex links until real addresses ship.
-  return [{ label: "Deployed On", value: "March 18, 2024" }]
+  return {
+    ...about,
+    stats: [
+      buildContractStat("Vault Contract Address", row.id, "vault"),
+      buildContractStat("Token Contract Address", row.id, "token"),
+      buildContractStat("Staking Contract Address", row.id, "staking"),
+    ],
+    governanceParameters: buildPoolGovernanceParameters(row),
+  }
 }
 
 function buildRelated(row: BorrowPoolRow): RelatedPoolSummary[] {

@@ -13,7 +13,6 @@ vi.mock("@/app/lend/_detail", () => ({
   LendHero: () => <div data-testid="lend-hero" />,
   LendHeroIdentity: () => <div data-testid="lend-hero-identity" />,
   SupplyCard: () => <div data-testid="supply-card" />,
-  RelatedMarketsRow: () => <div data-testid="related" />,
   LendSidebar: () => <div data-testid="lend-sidebar" />,
 }))
 vi.mock("@/app/borrow/_detail/ui", () => ({

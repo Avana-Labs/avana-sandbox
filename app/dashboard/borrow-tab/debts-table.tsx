@@ -86,7 +86,7 @@ export function DebtsPanel({
       ) : null}
       {showHeading ? (
         <div className="mb-3">
-          <h3 className="text-[14px] font-medium tracking-tight">{t("My Borrows")}</h3>
+          <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">{t("My Debts")}</h3>
         </div>
       ) : null}
       <div className="hidden md:block">

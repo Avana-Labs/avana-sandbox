@@ -2,6 +2,7 @@ import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import type { ChartFeed } from "@/app/components/charts"
 import {
   formatBpsAsPct,
+  formatPct,
   riskLevelFromBps,
   riskLevelLabel,
   riskScoreFromBps,
@@ -13,19 +14,19 @@ import {
   type RiskAssessment,
   type Series,
 } from "@/app/lib/borrow-detail"
+import { formatTokenPrice } from "@/app/lib/prices/format"
 import { prngFromString } from "@/app/lib/borrow-detail/prng"
 import { SANDBOX_NOW } from "@/app/lib/deterministic"
-import { buildMultiplyFaqs, type FaqContent } from "@/app/lib/borrow-detail/content-model"
 import {
-  MULTIPLY_MARKET_ROWS,
-  MULTIPLY_TOKEN_AVAILABLE_USD,
-  MULTIPLY_TOKEN_BORROW_APYS,
-  MULTIPLY_TOKEN_LOGOS,
-  MULTIPLY_TOKEN_SUPPLY_APYS,
-  type MultiplyMarketRow,
-} from "@/app/lib/multiply-sim"
+  buildMultiplyAboutDescription,
+  buildMultiplyFaqs,
+  type FaqContent,
+} from "@/app/lib/borrow-detail/content-model"
+import { MULTIPLY_MARKET_ROWS, MULTIPLY_TOKEN_LOGOS, type MultiplyMarketRow } from "@/app/lib/multiply-sim"
 import { MULTIPLY_MARKET_CATALOG, getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
 import { catalogMarketToRow } from "@/app/lib/multiply-system/read-model"
+import { buildRiskParameterSet } from "@/app/lib/borrow-detail/risk-parameters"
+import { resolveHeroContractAddress } from "@/app/borrow/_detail/lib/hero-chart-feeds"
 
 export type MultiplyMarketHero = {
   visuals: [MultiplyTokenVisual, MultiplyTokenVisual]
@@ -91,6 +92,13 @@ function deltaUp(pct: number): DeltaStat {
   return { value: pct, direction: "up", label: `+${pct.toFixed(1)}%` }
 }
 
+function deltaFromPct(pct: number): DeltaStat {
+  if (pct === 0) return { value: 0, direction: "flat", label: "0.0%" }
+  return pct > 0
+    ? { value: pct, direction: "up", label: `+${pct.toFixed(1)}%` }
+    : { value: pct, direction: "down", label: `${pct.toFixed(1)}%` }
+}
+
 function pickChain(collateral: string, borrowable: string) {
   const pair = `${collateral} ${borrowable}`.toLowerCase()
   if (pair.includes("wbtc") || pair.includes("cbbtc")) return "Bitcoin"
@@ -106,26 +114,27 @@ function pickChain(collateral: string, borrowable: string) {
   return "Ethereum"
 }
 
-function buildQuickStats(row: MultiplyMarketRow): QuickStat[] {
-  const supplyApy = MULTIPLY_TOKEN_SUPPLY_APYS[row.protocol as keyof typeof MULTIPLY_TOKEN_SUPPLY_APYS] ?? "—"
-  const borrowApy = MULTIPLY_TOKEN_BORROW_APYS[row.asset as keyof typeof MULTIPLY_TOKEN_BORROW_APYS] ?? "—"
-  const availableUsd = MULTIPLY_TOKEN_AVAILABLE_USD[row.asset as keyof typeof MULTIPLY_TOKEN_AVAILABLE_USD] ?? 0
-  const available = row.points ?? formatCompactUsd(availableUsd)
-  const maxLeverage = row.rewardRows?.[0]?.value ?? "—"
+function buildQuickStats(row: MultiplyMarketRow, marketId: string): QuickStat[] {
+  const record = getMultiplyMarketById(marketId)
+  const price = record?.collateralAsset.priceUsd ?? 1
+  const availableUsd = record?.economics.availableLiquidityUsd
+  const available = row.points ?? (availableUsd != null ? formatCompactUsd(availableUsd) : "—")
+  const supplyApyPct = (record?.economics.supplyApy ?? 0) * 100
+  const borrowApyPct = (record?.economics.borrowApy ?? 0) * 100
+  const reserveFactorPct = record?.risk.riskTier === "low" ? 10 : record?.risk.riskTier === "medium" ? 12 : 15
 
   return [
-    { id: "collateral", label: "Collateral", value: row.protocol },
-    { id: "borrowable", label: "Borrowable", value: row.asset },
-    { id: "maxApy", label: "Max APY", value: row.apy, delta: deltaUp(2.2) },
-    { id: "maxLeverage", label: "Max leverage", value: maxLeverage },
-    { id: "available", label: "Available", value: available, delta: deltaUp(1.4) },
-    { id: "collateralFactor", label: "Collateral factor", value: `${Math.round(row.collateralFactor * 100)}%` },
-    { id: "supplyApy", label: "Supply APY", value: supplyApy },
-    { id: "borrowApy", label: "Borrow APY", value: borrowApy },
+    { id: "price", label: "Price", value: formatTokenPrice(price), delta: deltaFromPct(0.1) },
+    { id: "available", label: "Available Liquidity", value: available, delta: deltaUp(1.4) },
+    { id: "supplyApy", label: "Supply APY", value: formatPct(supplyApyPct, 2), delta: deltaFromPct(0.1) },
+    { id: "rewardsApy", label: "Rewards APY", value: "No rewards" },
+    { id: "borrowApy", label: "Borrow APY", value: formatPct(borrowApyPct, 2), delta: deltaFromPct(0.08) },
+    { id: "reserveFactor", label: "Reserve Factor", value: formatPct(reserveFactorPct, 0) },
   ]
 }
 
-function buildHero(row: MultiplyMarketRow): MultiplyMarketHero {
+function buildHero(row: MultiplyMarketRow, marketId: string): MultiplyMarketHero {
+  const address = resolveHeroContractAddress(marketId)
   return {
     visuals: [getVisual(row.protocol), getVisual(row.asset)],
     name: `${row.protocol} / ${row.asset}`,
@@ -133,6 +142,7 @@ function buildHero(row: MultiplyMarketRow): MultiplyMarketHero {
     subtitle: `Use ${row.protocol} as collateral to multiply ${row.asset} exposure without changing the underlying structure.`,
     feeTier: `${row.apy} max APY`,
     chain: pickChain(row.protocol, row.asset),
+    explorerUrl: `https://etherscan.io/address/${address}`,
   }
 }
 
@@ -268,16 +278,115 @@ function buildRisk(row: MultiplyMarketRow): RiskAssessment {
   }
 }
 
-function buildAbout(row: MultiplyMarketRow): AboutCard {
+function contractAddressFor(marketId: string, salt: string) {
+  const seed = `${marketId}:${salt}`
+  let hash = 0x811c9dc5
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  const chunk = (hash >>> 0).toString(16).padStart(8, "0").toUpperCase()
+  return `0x${chunk}${chunk}${chunk}${chunk}${chunk}`.slice(0, 42)
+}
+
+function shortAddress(address: string) {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
+function buildContractStat(label: string, marketId: string, salt: string): AboutCard["stats"][number] {
+  const address = contractAddressFor(marketId, salt)
   return {
-    description: `Multiply market for ${row.protocol} collateral against ${row.asset} exposure. The route is dedicated to leveraged positions, not LP collateral pools.`,
+    label,
+    value: shortAddress(address),
+    href: `https://etherscan.io/address/${address}`,
+  }
+}
+
+function buildGovernanceParameters(
+  row: MultiplyMarketRow,
+  marketId: string,
+): NonNullable<AboutCard["governanceParameters"]> {
+  const record = getMultiplyMarketById(marketId)
+  const maxLtvPct = Math.round((record?.risk.maxLtv ?? row.collateralFactor) * 100)
+  const liquidationThresholdPct = Math.round((record?.risk.liquidationThreshold ?? row.liquidationThreshold) * 100)
+  const maxLeverage =
+    record != null ? `${record.risk.publicMaxMultiplier.toFixed(2)}x` : (row.rewardRows?.[0]?.value ?? "—")
+  const availableUsd = record?.economics.availableLiquidityUsd
+  const supplyCapUsd = Math.max(25_000_000, Math.ceil(((availableUsd ?? 6_000_000) * 1.75) / 1_000_000) * 1_000_000)
+  const liquidationBonusPct = record?.risk.riskTier === "low" ? 5 : record?.risk.riskTier === "medium" ? 6 : 7
+  const proposalHref = `https://etherscan.io/address/${contractAddressFor(marketId, "governance")}`
+
+  return {
+    parameters: buildRiskParameterSet({
+      collateralFactorPct: maxLtvPct,
+      liquidationThresholdPct,
+      depositCapacityLabel: formatCompactUsd(supplyCapUsd),
+      borrowCapacityLabel: formatCompactUsd(Math.max(10_000_000, Math.round(supplyCapUsd * 0.45))),
+      liquidationPenaltyPct: liquidationBonusPct,
+      collateralFactorDescription: "Maximum borrow power against this multiply collateral leg.",
+    }),
+    changelog: [
+      {
+        id: "leverage-review",
+        parameter: "Max leverage",
+        previous: "—",
+        current: maxLeverage,
+        date: "2026-01-18",
+        source: "Risk parameter review",
+        executor: "Governance executor",
+        href: proposalHref,
+      },
+      {
+        id: "lt-review",
+        parameter: "Liquidation threshold",
+        previous: `${Math.max(0, liquidationThresholdPct - 2)}%`,
+        current: `${liquidationThresholdPct}%`,
+        date: "2025-09-08",
+        source: "Risk parameter review",
+        executor: "Risk steward multisig",
+        href: proposalHref,
+      },
+      {
+        id: "market-onboarding",
+        parameter: "Collateral configuration",
+        previous: "Disabled",
+        current: `${maxLtvPct}% CF / ${liquidationThresholdPct}% LT`,
+        date: "2025-08-12",
+        source: "Market onboarding",
+        executor: "Governance executor",
+        href: proposalHref,
+      },
+    ],
+  }
+}
+
+function buildAbout(row: MultiplyMarketRow, marketId: string): AboutCard {
+  const record = getMultiplyMarketById(marketId)
+  const collateralName = row.protocolName ?? record?.collateralAsset.name ?? row.protocol
+  const borrowName = row.assetName ?? record?.borrowAsset.name ?? row.asset
+  const maxLeverage =
+    record != null ? `${record.risk.publicMaxMultiplier.toFixed(2)}x` : (row.rewardRows?.[0]?.value ?? "—")
+
+  return {
+    description: buildMultiplyAboutDescription({
+      collateralName,
+      collateralSymbol: row.protocol,
+      borrowName,
+      borrowSymbol: row.asset,
+      maxLeverage,
+      riskTier: record?.risk.riskTier,
+    }),
     stats: [
-      { label: "Collateral", value: row.protocol },
-      { label: "Borrowable", value: row.asset },
-      { label: "Max APY", value: row.apy },
-      { label: "Available", value: row.points ?? "—" },
+      buildContractStat("Vault Contract Address", marketId, "vault"),
+      buildContractStat("Token Contract Address", marketId, "token"),
+      buildContractStat("Staking Contract Address", marketId, "staking"),
     ],
     history: [
+      {
+        date: "2025-08-12",
+        title: "Deployed",
+        description: "Market contracts deployed.",
+      },
       { date: "2025-08-12", title: "Market listed", description: `${row.protocol}/${row.asset} added to Multiply.` },
       {
         date: "2026-01-18",
@@ -285,6 +394,7 @@ function buildAbout(row: MultiplyMarketRow): AboutCard {
         description: "Updated leverage and availability parameters.",
       },
     ],
+    governanceParameters: buildGovernanceParameters(row, marketId),
   }
 }
 
@@ -381,13 +491,13 @@ export function getMultiplyMarketDetail(id: string): MultiplyMarketDetail | null
 
   return {
     id: resolvedId,
-    hero: buildHero(row),
+    hero: buildHero(row, resolvedId),
     supplyBorrow: buildSupplyBorrow(row),
     cashflow: buildCashflow(`multiply:${row.protocol}-${row.asset}`, liquidityUsd, borrowApy),
     transactions: buildTransactions(row),
-    quickStats: buildQuickStats(row),
+    quickStats: buildQuickStats(row, resolvedId),
     risk: buildRisk(row),
-    about: buildAbout(row),
+    about: buildAbout(row, resolvedId),
     faqs: buildMultiplyFaqs(row.protocol, row.asset),
     related: buildRelated(row),
     row,

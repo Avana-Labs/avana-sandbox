@@ -3,13 +3,32 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import type { CashflowCard as CashflowCardData } from "@/app/lib/borrow-detail"
+import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { SectionCard } from "../ui"
-import { DeltaPill } from "@/app/components/ui/live/delta-pill"
 
 // Structural prop (like QuickStatsGrid / RiskSection) so any detail view-model
 // carrying a `cashflow: CashflowCard` (borrow pool, lend market) can reuse this.
 type Props = { detail: { cashflow: CashflowCardData } }
+
+function parseCompactUsd(value: string) {
+  const match = value.replace(/,/g, "").match(/-?\d+(?:\.\d+)?/)
+  if (!match) return null
+  const number = Number(match[0])
+  if (!Number.isFinite(number)) return null
+  const suffix = value
+    .trim()
+    .match(/[KMB]$/i)?.[0]
+    ?.toUpperCase()
+  const multiplier = suffix === "B" ? 1_000_000_000 : suffix === "M" ? 1_000_000 : suffix === "K" ? 1_000 : 1
+  return number * multiplier
+}
+
+function periodValue(reported: string, days: 1 | 30 | 90) {
+  const parsed = parseCompactUsd(reported)
+  if (parsed == null) return "—"
+  return formatCompactUsd((parsed / 90) * days)
+}
 
 export function CashflowCard({ detail }: Props) {
   const { cashflow } = detail
@@ -18,12 +37,19 @@ export function CashflowCard({ detail }: Props) {
   return (
     <SectionCard title={t("Cashflow breakdown")} chrome="plain" bodyClassName="p-0">
       <div className="overflow-x-auto">
-        <table className="w-full text-[13px]">
+        <table className="w-full table-fixed text-[13px]">
+          <colgroup>
+            <col className="w-[40%]" />
+            <col className="w-[20%]" />
+            <col className="w-[20%]" />
+            <col className="w-[20%]" />
+          </colgroup>
           <thead>
             <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-              <th className="pb-2 pl-5 pt-3">{t("Line")}</th>
-              <th className="pb-2 pt-3 text-right">{t("Reported")}</th>
-              <th className="pb-2 pr-5 pt-3 text-right">{t("YoY")}</th>
+              <th className="pb-2 pt-3">{t("Line")}</th>
+              <th className="pb-2 pt-3 text-right">{t("1D")}</th>
+              <th className="pb-2 pt-3 text-right">{t("30 Days")}</th>
+              <th className="pb-2 pt-3 text-right">{t("90 Days")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -32,12 +58,32 @@ export function CashflowCard({ detail }: Props) {
                 key={i}
                 className={cn("transition-colors hover:bg-hover", row.highlighted ? "bg-surface-inset/40" : undefined)}
               >
-                <th scope="row" className="py-2.5 pl-5 text-left font-medium text-foreground">
+                <th scope="row" className="py-2.5 text-left text-[14px] font-normal text-muted-foreground">
                   {t(row.label)}
                 </th>
-                <td className="py-2.5 text-right font-data font-medium tabular-nums text-foreground">{row.reported}</td>
-                <td className="py-2.5 pr-5 text-right">
-                  {row.yoy ? <DeltaPill value={row.yoy.value} format="percent" digits={1} hideZero={false} /> : null}
+                <td
+                  className={cn(
+                    "py-2.5 text-right font-data font-medium tabular-nums",
+                    row.highlighted ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  {periodValue(row.reported, 1)}
+                </td>
+                <td
+                  className={cn(
+                    "py-2.5 text-right font-data font-medium tabular-nums",
+                    row.highlighted ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  {periodValue(row.reported, 30)}
+                </td>
+                <td
+                  className={cn(
+                    "py-2.5 text-right font-data font-medium tabular-nums",
+                    row.highlighted ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  {periodValue(row.reported, 90)}
                 </td>
               </tr>
             ))}

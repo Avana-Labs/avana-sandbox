@@ -48,7 +48,7 @@ export function MetricTrendCard({
     <section id={id} className={cn("min-w-0", className)}>
       <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
         <div className="min-w-0">
-          <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
+          <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
             {t(title)}
           </h2>
           <p className="mt-0.5 text-[11.5px] text-muted-foreground">{t(subtitle)}</p>

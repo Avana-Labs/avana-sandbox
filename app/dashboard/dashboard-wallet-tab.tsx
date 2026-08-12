@@ -1,17 +1,16 @@
 "use client"
 
 import { TokenPairCell } from "@/app/borrow/components/atoms"
+import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { TokenIcon } from "@/app/components/token-icon"
 import { DesktopTableSurface } from "@/app/components/market-table-primitives"
-import { RewardsQuestSection } from "@/app/rewards/quests-tab"
 import { getTokenIconMeta } from "@/app/lib/token-icons"
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 import { buildDashboardWalletBalanceRows, type DashboardWalletBalanceRow } from "@/app/lib/swap-system"
 import type { UserAssetBalance } from "@/app/lib/swap-system"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import type { RewardsQuest } from "@/app/lib/data/rewards/catalog"
 import type { BorrowAssetVisual } from "@/app/lib/data/borrow-domain"
 
 const DASH = "\u2014"
@@ -124,7 +123,7 @@ function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
   return (
     <div className="flex flex-col items-end pr-4">
       <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground">{token}</span>
-      <span className="text-[12px] tracking-[-0.03em] text-muted-foreground">{usd}</span>
+      <span className="text-[13px] text-muted-foreground">{usd}</span>
     </div>
   )
 }
@@ -132,7 +131,7 @@ function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
 function WalletMetric({ label, value }: { label: string; value: string }) {
   return (
     <article className="min-w-0 space-y-1.5">
-      <div className="text-[12px] font-medium tracking-tight text-muted-foreground">{label}</div>
+      <div className="text-[13px] text-muted-foreground">{label}</div>
       <div className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
         {value}
       </div>
@@ -155,7 +154,7 @@ function PnlCell({
     return (
       <div className="text-right">
         <div className="font-data tabular-nums text-foreground">{MASK}</div>
-        <div className="mt-0.5 text-[12px] text-muted-foreground">{MASK}</div>
+        <div className="mt-0.5 text-[13px] text-muted-foreground">{MASK}</div>
       </div>
     )
   }
@@ -176,17 +175,7 @@ function PnlCell({
   )
 }
 
-export function DashboardWalletTab({
-  walletId,
-  balances,
-  rewardQuests = [],
-  onTaskAction,
-}: {
-  walletId: string
-  balances?: UserAssetBalance[]
-  rewardQuests?: Array<RewardsQuest & { status?: string; progressLabel?: string }>
-  onTaskAction?: (taskId: string) => Promise<unknown>
-}) {
+export function DashboardWalletTab({ walletId, balances }: { walletId: string; balances?: UserAssetBalance[] }) {
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const { exact } = useCurrency()
   const { t } = useTranslation()
@@ -197,24 +186,18 @@ export function DashboardWalletTab({
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
   return (
-    <section id="dashboard-wallet" className="space-y-6" aria-label={t("Wallet balances")}>
-      <section className="space-y-4 pb-3">
-        <h2 className="text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">{t("Wallet")}</h2>
+    <section id="dashboard-wallet" className={detailSectionStackClass} aria-label={t("Wallet balances")}>
+      <section className="space-y-4">
         <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">
           {t("Wallet Balance")}
         </h2>
-        <div className="grid w-full grid-cols-2 gap-5 xl:grid-cols-4 xl:gap-x-8">
+        <div className="grid w-full grid-cols-1 gap-5 xl:gap-x-8">
           <WalletMetric label={t("Wallet Value")} value={m(exact(totalWalletUsd))} />
-          <WalletMetric label={t("Tokens")} value={String(tokens.length)} />
-          <WalletMetric label={t("Pools")} value={String(lps.length)} />
         </div>
       </section>
 
       <WalletBalanceSection title={t("Tokens")} rows={tokens} exact={exact} t={t} showBalance={showDollarAmounts} />
       <PoolsBalanceSection title={t("Pools")} rows={lps} exact={exact} t={t} showBalance={showDollarAmounts} />
-      {rewardQuests.length > 0 && onTaskAction ? (
-        <RewardsQuestSection title={t("Wallet Rewards")} quests={rewardQuests} onTaskAction={onTaskAction} />
-      ) : null}
     </section>
   )
 }
@@ -268,7 +251,7 @@ function WalletBalanceSection({
                       <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground">
                         {row.name}
                       </div>
-                      <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">{row.symbol}</div>
+                      <div className="mt-0.5 text-[13px] text-muted-foreground">{row.symbol}</div>
                     </div>
                   </div>
                 </td>
@@ -443,7 +426,7 @@ function PoolsBalanceSection({
                   <div className="text-muted-foreground">{t("Balance")}</div>
                   <div className="mt-1 flex flex-col gap-0.5">
                     <span className="font-data tabular-nums text-foreground">{m(formatPoolAmount(row.amount))}</span>
-                    <span className="text-[12px] text-muted-foreground">{m(exact(row.valueUsd))}</span>
+                    <span className="text-[13px] text-muted-foreground">{m(exact(row.valueUsd))}</span>
                   </div>
                 </div>
               </div>
@@ -452,7 +435,7 @@ function PoolsBalanceSection({
                   <div className="text-muted-foreground">{t("Fees")}</div>
                   <div className="mt-1 flex flex-col gap-0.5">
                     <span className="font-data tabular-nums text-foreground">{m(exact(detail.feesUsd))}</span>
-                    <span className="text-[12px] text-muted-foreground">{m(t("Unclaimed fees"))}</span>
+                    <span className="text-[13px] text-muted-foreground">{m(t("Unclaimed fees"))}</span>
                   </div>
                 </div>
               </div>

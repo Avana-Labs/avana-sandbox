@@ -1,6 +1,7 @@
 "use client"
 
 import { lazy, useMemo } from "react"
+import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useDashboardBorrowLive } from "@/app/dashboard/use-dashboard-borrow-live"
 import { buildPortfolioBorrowData } from "@/app/lib/borrow-system/read-model"
@@ -77,42 +78,37 @@ export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref
   }, [borrowSession.state, borrowSnapshot, collateralPositions, debtPositions, hasMounted, walletId])
 
   return (
-    <section id="dashboard-borrow-account" className="scroll-mt-24">
-      <div className="space-y-6">
-        <div className="space-y-6">
-          <DashboardCreditOverviewSection
-            title={t("Borrow Balance")}
-            approvedCreditUsd={borrowSnapshot.approvedUsd}
-            totalBorrowedUsd={borrowSnapshot.totalBorrowedUsd}
-            netApyPct={borrowDashboardMetrics.performance.netApyPct}
-            totalCollateralUsd={borrowSnapshot.totalCollateralUsd}
-          />
-          <div className="space-y-4">
-            <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
-              {t("Borrow Health")}
-            </h3>
-            <div className="grid gap-4 xl:grid-cols-2">
-              <SuppliesHealthFactorCard
-                averageHealthFactor={borrowSnapshot.averageHealthFactor}
-                showBalance={showDollarAmounts}
-              />
-              <CurrentLtvCard
-                borrowedUsd={borrowSnapshot.totalBorrowedUsd}
-                collateralUsd={borrowSnapshot.totalCollateralUsd}
-                showBalance={showDollarAmounts}
-              />
-            </div>
-          </div>
-        </div>
+    <section id="dashboard-borrow-account" className={`scroll-mt-24 ${detailSectionStackClass}`}>
+      <DashboardCreditOverviewSection
+        title={t("Borrow Balance")}
+        approvedCreditUsd={borrowSnapshot.approvedUsd}
+        totalBorrowedUsd={borrowSnapshot.totalBorrowedUsd}
+        netApyPct={borrowDashboardMetrics.performance.netApyPct}
+        totalCollateralUsd={borrowSnapshot.totalCollateralUsd}
+      />
 
-        <AccountModuleBoundary>
-          <DashboardBorrowTab
-            collateralPositions={collateralPositions}
-            debtPositions={debtPositions}
-            showSummary={false}
-            returnHref={returnHref}
+      <AccountModuleBoundary>
+        <DashboardBorrowTab
+          collateralPositions={collateralPositions}
+          debtPositions={debtPositions}
+          showSummary={false}
+          returnHref={returnHref}
+        />
+      </AccountModuleBoundary>
+
+      <div className="space-y-4">
+        <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">{t("Borrow Health")}</h3>
+        <div className="grid gap-4 xl:grid-cols-2">
+          <SuppliesHealthFactorCard
+            averageHealthFactor={borrowSnapshot.averageHealthFactor}
+            showBalance={showDollarAmounts}
           />
-        </AccountModuleBoundary>
+          <CurrentLtvCard
+            borrowedUsd={borrowSnapshot.totalBorrowedUsd}
+            collateralUsd={borrowSnapshot.totalCollateralUsd}
+            showBalance={showDollarAmounts}
+          />
+        </div>
       </div>
     </section>
   )

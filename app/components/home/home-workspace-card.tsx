@@ -29,7 +29,7 @@ export function HomeWorkspaceCard({
       <div className="w-full max-w-[480px]" data-testid="home-workspace-card">
         <div className="flex items-center justify-between gap-2">
           <ActionWorkspaceTabs
-            items={HOME_MODE_ITEMS.map((item) => ({ id: item.value, label: t(item.label) }))}
+            items={HOME_MODE_ITEMS.map((item) => ({ id: item.value, label: item.label }))}
             value={mode}
             onChange={(value) => onModeChange(value as HomeMode)}
             ariaLabel={t("Express actions")}

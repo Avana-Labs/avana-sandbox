@@ -78,7 +78,9 @@ export function TransactionHistoryCard({
     <section className="min-w-0">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-foreground">{t(title)}</h2>
+          <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+            {t(title)}
+          </h2>
           {subtitle ? <p className="mt-1 text-[12px] text-muted-foreground">{t(subtitle)}</p> : null}
         </div>
         <PillTabStrip

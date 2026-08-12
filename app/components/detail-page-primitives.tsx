@@ -5,6 +5,17 @@ import { cn } from "@/lib/utils"
 
 export const DETAIL_PAGE_MAX_W = "max-w-[1152px]"
 
+/** Vertical stack of detail page sections with horizontal dividers centered between siblings. */
+export const detailSectionStackClass =
+  "flex flex-col [&>*:not(:last-child)]:pb-10 [&>*+*]:border-t [&>*+*]:border-border [&>*+*]:pt-10"
+
+/** Larger spacing variant for deferred analytics blocks below the fold. */
+export const detailAnalyticsStackClass =
+  "flex flex-col [&>*:not(:last-child)]:pb-10 md:[&>*:not(:last-child)]:pb-12 [&>*+*]:border-t [&>*+*]:border-border [&>*+*]:pt-10 md:[&>*+*]:pt-12"
+
+/** Top divider centered between the about block and analytics sections. */
+export const detailAnalyticsSectionClass = "mt-10 border-t border-border pt-10 md:mt-12 md:pt-12"
+
 export function DetailPageWidth({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cn("mx-auto", DETAIL_PAGE_MAX_W, className)}>{children}</div>
 }
@@ -71,9 +82,9 @@ export function MobileDetailActionBar({ children, className }: { children: React
 const DETAIL_PAGE_NOTICES = {
   borrow:
     "Borrowing against LP tokens involves risk, including liquidation if market conditions move against your position. Avana does not custody your funds, rehypothecate LP positions, or alter how your liquidity operates on underlying AMMs. Loan terms, interest rates, and collateral values are enforced on-chain using transparent oracle systems and automated risk parameters. You remain in full control of your position at all times and can repay or adjust collateral whenever you choose. Only borrow amounts you are comfortable maintaining through market volatility.",
-  lend: "Supplying assets earns yield but carries smart-contract, oracle, and liquidity risk. Deposits may be utilized by borrowers, and rates can change with utilization. Avana does not custody your funds. You can withdraw available liquidity subject to market conditions. Only supply amounts you are comfortable keeping deployed.",
+  lend: "Supplying assets involves risk, including smart-contract, oracle, and liquidity risk if market conditions change. Avana does not custody your funds or alter how your deposits operate in the lending market. Supply rates, utilization, and available liquidity are enforced on-chain using transparent oracle systems and automated risk parameters. You remain in full control of your position at all times and can withdraw available liquidity whenever market conditions allow. Only supply amounts you are comfortable keeping deployed through changes in utilization and demand.",
   multiply:
-    "Multiply loops amplify both gains and losses through leveraged exposure. Liquidation risk rises as leverage increases, and funding or borrow rates can change. Avana does not custody your funds. Monitor health factor and unwind or deleverage when needed. Only use leverage you are comfortable maintaining through market volatility.",
+    "Opening a multiply position involves risk, including liquidation if market conditions move against your leveraged loop. Avana does not custody your funds or alter how the underlying collateral and debt legs operate. Leverage limits, interest rates, and collateral values are enforced on-chain using transparent oracle systems and automated risk parameters. You remain in full control of your position at all times and can deleverage, repay, or close whenever you choose. Only use leverage you are comfortable maintaining through market volatility.",
 } as const
 
 export type DetailPageNoticeProduct = keyof typeof DETAIL_PAGE_NOTICES

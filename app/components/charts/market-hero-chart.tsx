@@ -19,7 +19,7 @@ function HeroAreaChartPlaceholder() {
   return (
     <div
       aria-hidden
-      className="h-[210px] bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.06)_1px,transparent_0)] [background-size:18px_18px] dark:bg-none sm:h-[240px]"
+      className="relative h-[210px] before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_1px_1px,rgba(0,0,0,0.12)_1px,transparent_0)] before:[background-size:18px_18px] before:[mask-image:radial-gradient(ellipse_at_center,black_58%,transparent_100%)] before:content-[''] dark:before:bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.12)_1px,transparent_0)] sm:h-[240px]"
     />
   )
 }
@@ -33,6 +33,15 @@ type MarketHeroChartProps = {
   gradientId?: string
   /** Small uppercase label naming the metric (e.g. "Total borrows"). */
   label?: string
+  showMeta?: boolean
+  metricTabs?: readonly string[]
+  activeMetricTab?: string
+  onMetricTabChange?: (tab: string) => void
+  chartTone?: "positive" | "negative" | "neutral"
+  balanceVariant?: "default" | "strong" | "quiet"
+  balanceClassName?: string
+  /** When false, lock to `defaultRange` and hide the 1D/1W/… pills. */
+  showRangeSelector?: boolean
 }
 
 /**
@@ -47,12 +56,24 @@ export function MarketHeroChart({
   height,
   gradientId = "marketHeroFill",
   label,
+  showMeta = true,
+  metricTabs,
+  activeMetricTab,
+  onMetricTabChange,
+  chartTone,
+  balanceVariant = "default",
+  balanceClassName,
+  showRangeSelector = true,
 }: MarketHeroChartProps) {
   // Only offer ranges the feed can actually populate. Daily-granularity feeds omit
   // 1H/1D (which would render as duplicate sparse 2-point lines).
   const availableRanges = useMemo(() => resolveAvailableRanges(feed.rangeData), [feed.rangeData])
   const [requestedRange, setRequestedRange] = useState<ChartRangeOption>(defaultRange)
-  const activeRange = availableRanges.includes(requestedRange) ? requestedRange : availableRanges[0]
+  const activeRange = showRangeSelector
+    ? availableRanges.includes(requestedRange)
+      ? requestedRange
+      : availableRanges[0]
+    : defaultRange
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   // Subscribe to the active currency so the pre-formatted headline re-denominates
   // in sync with the (live-converting) delta, tooltip, and axis — no mixed $/€.
@@ -86,24 +107,80 @@ export function MarketHeroChart({
     }
   }, [ctx, feed, hoverPoint, points, rangeTone])
 
+  const showFooter = showRangeSelector || Boolean(metricTabs?.length)
+
   return (
-    <div className="space-y-2">
+    <div className="relative space-y-2">
       {/* Metric name kept for screen readers / internal recognition; hidden visually. */}
       {label ? (
         <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{label}</p>
       ) : null}
-      <HeroBalanceDisplay value={value} delta={delta} deltaTone={tone} meta={meta} hidden={hideValue} />
+      <HeroBalanceDisplay
+        value={value}
+        delta={delta}
+        deltaTone={tone}
+        meta={showMeta ? meta : undefined}
+        hidden={hideValue}
+        variant={balanceVariant}
+        className={balanceClassName}
+      />
       <HeroAreaChart
         data={points}
         activeRange={activeRange}
         height={height}
         gradientId={gradientId}
-        tone={hoverPoint ? tone : rangeTone}
+        tone={chartTone ?? (hoverPoint ? tone : rangeTone)}
         formatValue={(v) => formatChartValue(feed.valueFormat, v)}
         formatYAxis={(v) => formatChartAxis(feed.valueFormat, v)}
         onActiveIndexChange={setHoverIndex}
       />
-      <ChartRangeSelector activeRange={activeRange} onRangeChange={setRequestedRange} ranges={availableRanges} />
+      {showFooter ? (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          {showRangeSelector ? (
+            <ChartRangeSelector activeRange={activeRange} onRangeChange={setRequestedRange} ranges={availableRanges} />
+          ) : (
+            <span />
+          )}
+          {metricTabs?.length ? (
+            <ChartMetricSelector
+              tabs={metricTabs}
+              activeTab={activeMetricTab ?? metricTabs[0]}
+              onTabChange={onMetricTabChange}
+            />
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function ChartMetricSelector({
+  tabs,
+  activeTab,
+  onTabChange,
+}: {
+  tabs: readonly string[]
+  activeTab: string
+  onTabChange?: (tab: string) => void
+}) {
+  return (
+    <div className="inline-flex w-fit items-center gap-0.5 rounded-full border border-border bg-background p-0.5">
+      {tabs.map((tab) => {
+        const active = tab === activeTab
+        return (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => onTabChange?.(tab)}
+            className={[
+              "flex h-7 min-w-16 items-center justify-center rounded-full px-2.5 text-[12px] font-semibold transition-colors sm:text-[13px]",
+              active ? "bg-muted text-foreground" : "text-foreground/75 hover:text-foreground",
+            ].join(" ")}
+          >
+            {tab}
+          </button>
+        )
+      })}
     </div>
   )
 }

@@ -7,7 +7,9 @@ import {
   fetchMultiplyRecentTransactions,
   fetchMultiplyRisk,
   fetchMultiplySupplySeries,
+  fetchTokenPrices,
 } from "@/app/lib/multiply-system/market-hydration-server"
+import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
 import { applyDetailContentOverlay, mergeAliasedQuickStats } from "@/app/lib/detail-page/live-detail-helpers"
 import { getMultiplyMarketDetail } from "./index"
 import type { MultiplyMarketDetail, MultiplyTxHistoryRow } from "./index"
@@ -60,11 +62,21 @@ function mapConvexTransactions(
   }))
 }
 
-/** Convex `getQuickStats` emits asset-style ids; map each to the multiply mock ids. */
+/** Convex `getQuickStats` emits asset-style ids; map each to the lend-style mock ids. */
 const QUICK_STAT_ALIASES: Record<string, string[]> = {
-  supplied: ["available"],
   supplyApy: ["supplyApy"],
   borrowApy: ["borrowApy"],
+}
+
+function injectRealPrice(
+  quickStats: QuickStat[],
+  prices: Record<string, number> | null,
+  baseSymbol: string,
+): QuickStat[] {
+  if (!prices) return quickStats
+  const price = prices[priceKey(baseSymbol)]
+  if (price === undefined) return quickStats
+  return quickStats.map((s) => (s.id === "price" ? { ...s, value: formatTokenPrice(price) } : s))
 }
 
 function mergeConvexQuickStats(
@@ -79,19 +91,20 @@ export async function getMultiplyMarketDetailFromConvex(id: string): Promise<Mul
   if (!detail) return null
   const slug = detail.id
 
-  const [supplyPoints, cashflow, transactions, risk, quickStats, content] = await Promise.all([
+  const [supplyPoints, cashflow, transactions, risk, quickStats, prices, content] = await Promise.all([
     fetchMultiplySupplySeries(slug),
     fetchMultiplyCashflowBreakdown(slug),
     fetchMultiplyRecentTransactions(slug),
     fetchMultiplyRisk(slug),
     fetchMultiplyQuickStats(slug),
+    fetchTokenPrices(),
     fetchMultiplyContent(slug),
   ])
 
-  return applyDetailContentOverlay(
+  const hydrated = applyDetailContentOverlay(
     {
       ...detail,
-      quickStats: mergeConvexQuickStats(detail.quickStats, quickStats),
+      quickStats: injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, detail.row.protocol),
       heroFeed: buildHeroFeedFromConvexSeries(supplyPoints, "usdCompact") ?? detail.heroFeed,
       cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
       transactions: mapConvexTransactions(transactions) ?? detail.transactions,
@@ -99,4 +112,14 @@ export async function getMultiplyMarketDetailFromConvex(id: string): Promise<Mul
     },
     content,
   )
+
+  return {
+    ...hydrated,
+    about: {
+      ...hydrated.about,
+      description: detail.about.description,
+      stats: detail.about.stats,
+      governanceParameters: detail.about.governanceParameters,
+    },
+  }
 }

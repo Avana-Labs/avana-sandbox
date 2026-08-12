@@ -1,13 +1,17 @@
 "use client"
 
 import * as React from "react"
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import { resolveInterestRateModelParams } from "@/app/lib/borrow-detail/protocol-parameters"
+import { resolveBorrowDetailMetricHelp } from "@/app/lib/borrow-detail/metric-help"
+import { resolveInterestRateModelParams, type ProtocolParameterRow } from "@/app/lib/borrow-detail/protocol-parameters"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
 type Props = {
-  detail: AssetDetail
+  utilizationPct: number
+  borrowAprPct: number
+  protocolParameters: ProtocolParameterRow[]
   className?: string
 }
 
@@ -16,15 +20,61 @@ type CurvePoint = { utilization: number; apr: number }
 const X_TICKS = [0, 25, 50, 75, 100]
 const Y_TICKS = [0, 5, 10]
 
-export function InterestRateModelCard({ detail, className }: Props) {
+function formatPct(value: number, digits = 2) {
+  return `${value.toFixed(digits)}%`
+}
+
+function readQuickStatPercent(
+  quickStats: ReadonlyArray<{ id: string; value: string }>,
+  id: string,
+  fallback: number,
+): number {
+  const raw = quickStats.find((stat) => stat.id === id)?.value ?? ""
+  const numeric = Number.parseFloat(raw.replace(/[^0-9.-]/g, ""))
+  return Number.isFinite(numeric) ? numeric : fallback
+}
+
+/** Map a borrowable asset detail into InterestRateModelCard props. */
+export function interestRateModelFromAssetDetail(detail: AssetDetail): Omit<Props, "className"> {
+  return {
+    utilizationPct: readQuickStatPercent(detail.quickStats, "utilization", detail.row.utilization),
+    borrowAprPct: readQuickStatPercent(detail.quickStats, "borrowApy", detail.row.borrowApr),
+    protocolParameters: detail.protocolParameters,
+  }
+}
+
+export function InterestRateModelCard({ utilizationPct, borrowAprPct, protocolParameters, className }: Props) {
   const { t } = useTranslation()
   const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
-  const utilization = getQuickStatPercent(detail, "utilization", 0)
-  const borrowApr = getQuickStatPercent(detail, "borrowApy", 4)
-  const currentUtilization = Number.isFinite(utilization) ? utilization : 0
-  const currentBorrowApr = Number.isFinite(borrowApr) ? borrowApr : 4
-  const irm = resolveInterestRateModelParams(detail.protocolParameters)
+  const currentUtilization = Number.isFinite(utilizationPct) ? utilizationPct : 0
+  const currentBorrowApr = Number.isFinite(borrowAprPct) ? borrowAprPct : 4
+  const irm = resolveInterestRateModelParams(protocolParameters)
   const optimalUtilization = irm.optimalUtilizationPct
+
+  const helpText = t("Borrow APR rises as utilization increases and steepens past the optimal threshold.")
+
+  const paramRows = [
+    {
+      id: "optimalUtilization",
+      label: "Optimal utilization",
+      value: formatPct(irm.optimalUtilizationPct),
+    },
+    {
+      id: "slopeBelowOptimal",
+      label: "Slope below optimal",
+      value: formatPct(irm.slopeBelowOptimalPct),
+    },
+    {
+      id: "slopeAboveOptimal",
+      label: "Slope above optimal",
+      value: formatPct(irm.slopeAboveOptimalPct),
+    },
+    {
+      id: "baseBorrowRate",
+      label: "Base borrow rate",
+      value: formatPct(irm.baseBorrowRatePct),
+    },
+  ] as const
 
   const curve = React.useMemo(
     () => buildBorrowCurve(currentUtilization, currentBorrowApr, irm),
@@ -54,9 +104,9 @@ export function InterestRateModelCard({ detail, className }: Props) {
       const gridColor = "rgba(65, 74, 104, 0.12)"
       const curveColor = `hsl(${brand})`
       const markerColor = "rgba(1, 170, 207, 0.9)"
-      const plotLeft = 72
-      const plotRight = rect.width - 40
-      const plotTop = 32
+      const plotLeft = 48
+      const plotRight = rect.width - 16
+      const plotTop = 36
       const plotBottom = rect.height - 36
       const plotWidth = plotRight - plotLeft
       const plotHeight = plotBottom - plotTop
@@ -75,7 +125,7 @@ export function InterestRateModelCard({ detail, className }: Props) {
       ctx.restore()
 
       ctx.save()
-      ctx.lineWidth = 4
+      ctx.lineWidth = 3.5
       ctx.strokeStyle = curveColor
       ctx.lineJoin = "round"
       ctx.lineCap = "round"
@@ -92,16 +142,16 @@ export function InterestRateModelCard({ detail, className }: Props) {
 
       ctx.save()
       ctx.strokeStyle = markerColor
-      ctx.lineWidth = 2
-      ctx.setLineDash([6, 6])
+      ctx.lineWidth = 1.5
+      ctx.setLineDash([5, 5])
       const currentX = plotLeft + (curve.currentUtilization / 100) * plotWidth
       const optimalX = plotLeft + (curve.optimalUtilization / 100) * plotWidth
       ctx.beginPath()
-      ctx.moveTo(currentX, plotTop + 28)
+      ctx.moveTo(currentX, plotTop + 24)
       ctx.lineTo(currentX, plotBottom)
       ctx.stroke()
       ctx.beginPath()
-      ctx.moveTo(optimalX, plotTop + 12)
+      ctx.moveTo(optimalX, plotTop + 10)
       ctx.lineTo(optimalX, plotBottom)
       ctx.stroke()
       ctx.restore()
@@ -115,76 +165,104 @@ export function InterestRateModelCard({ detail, className }: Props) {
     return () => ro.disconnect()
   }, [curve])
 
+  const utilizationHelp = resolveBorrowDetailMetricHelp("Utilisation rate")
+
   return (
-    <section className={cn("min-w-0", className)}>
-      <div className="min-w-0">
-        <div className="min-w-0">
-          <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
-            {t("Interest rate model")}
-          </h2>
-          <p className="mt-1 text-[11.5px] text-muted-foreground">
-            {t("Borrow APR rises as utilization increases and steepens past the optimal threshold.")}
-          </p>
-        </div>
+    <section className={cn("min-w-0", className)} aria-label={t("Interest rate model")}>
+      <div className="flex items-center gap-1.5">
+        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+          {t("Interest rate model")}
+        </h2>
+        <ActionMetricHelp text={helpText} topic="Interest rate model" />
       </div>
 
-      <div className="mt-6">
-        <div className="relative h-[300px] w-full sm:h-[330px]">
-          <canvas ref={canvasRef} aria-hidden className="absolute inset-0 h-full w-full select-none" />
+      <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(240px,0.85fr)] lg:items-stretch lg:gap-10">
+        <div className="relative min-w-0 rounded-radius-md bg-muted/30 dark:bg-white/[0.03]">
+          <div className="relative h-[260px] w-full sm:h-[300px] lg:h-full lg:min-h-[300px]">
+            <canvas ref={canvasRef} aria-hidden className="absolute inset-0 h-full w-full select-none" />
 
-          <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 z-[6] w-16">
-            {Y_TICKS.map((tick) => {
-              const y = 32 + (1 - tick / curve.maxApr) * (300 - 68)
-              return (
+            <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 z-[6] w-12 pt-9 pb-9">
+              {Y_TICKS.map((tick) => (
                 <div
                   key={tick}
-                  className="absolute left-0 translate-y-[-50%] text-left text-[11px] font-normal leading-none text-[#A0A5BA]"
-                  style={{ top: `${(y / 300) * 100}%` }}
+                  className="absolute left-2 translate-y-[-50%] text-left text-[11px] font-normal leading-none text-muted-foreground"
+                  style={{ top: `${((10 - tick) / 10) * 100}%` }}
                 >
                   {tick}%
                 </div>
-              )
-            })}
-          </div>
-
-          <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 right-16 z-[6] h-9">
-            {X_TICKS.map((tick) => {
-              return (
-                <div
-                  key={tick}
-                  className="absolute bottom-0 translate-x-[-50%] text-[11px] font-normal leading-none text-[#A0A5BA]"
-                  style={{ left: `${((72 + (tick / 100) * (1000 - 112)) / 1000) * 100}%` }}
-                >
-                  {tick}%
-                </div>
-              )
-            })}
-          </div>
-
-          <div aria-hidden className="pointer-events-none absolute inset-x-0 top-3 z-[6] h-0">
-            <div
-              className="absolute -translate-x-1/2 text-[13px] font-medium leading-none text-[#6A728A]"
-              style={{ left: `${Math.min(96, 7.2 + currentUtilization * 0.888)}%`, top: "18px" }}
-            >
-              {t("Current {value}%").replace("{value}", currentUtilization.toFixed(2))}
+              ))}
             </div>
-            <div
-              className="absolute -translate-x-1/2 text-[13px] font-medium leading-none text-[#6A728A]"
-              style={{ left: `${Math.min(88, 7.2 + optimalUtilization * 0.888 - 8)}%`, top: "28px" }}
-            >
-              {t("Optimal {value}%").replace("{value}", String(optimalUtilization))}
+
+            <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-2 z-[6] h-6 pl-12 pr-4">
+              {X_TICKS.map((tick) => (
+                <div
+                  key={tick}
+                  className="absolute bottom-0 translate-x-[-50%] text-[11px] font-normal leading-none text-muted-foreground"
+                  style={{ left: `${12 + tick * 0.76}%` }}
+                >
+                  {tick}%
+                </div>
+              ))}
+            </div>
+
+            <div aria-hidden className="pointer-events-none absolute inset-x-0 top-3 z-[6] h-0 pl-12 pr-4">
+              <div
+                className="absolute -translate-x-1/2 text-[12px] font-medium leading-none text-muted-foreground"
+                style={{
+                  left: `${Math.min(92, 12 + currentUtilization * 0.76)}%`,
+                  top: "14px",
+                }}
+              >
+                {t("Current {value}%").replace("{value}", currentUtilization.toFixed(1))}
+              </div>
+              <div
+                className="absolute -translate-x-1/2 text-[12px] font-medium leading-none text-muted-foreground"
+                style={{
+                  left: `${Math.min(88, 12 + optimalUtilization * 0.76)}%`,
+                  top: "0px",
+                }}
+              >
+                {t("Optimal")}
+              </div>
             </div>
           </div>
         </div>
+
+        <aside className="flex min-w-0 flex-col justify-center lg:pl-2">
+          <div>
+            <div className="flex items-center gap-1">
+              <span className="text-[13px] font-normal leading-snug text-muted-foreground">
+                {t("Utilization rate")}
+              </span>
+              {utilizationHelp ? <ActionMetricHelp text={utilizationHelp} topic="Utilization rate" /> : null}
+            </div>
+            <div className="mt-2 font-data text-[28px] font-semibold leading-none tracking-[-0.03em] text-foreground md:text-[32px]">
+              {formatPct(currentUtilization)}
+            </div>
+          </div>
+
+          <div className="mt-6 border-t border-border pt-5 dark:border-white/10">
+            <ul className="space-y-4">
+              {paramRows.map((row) => {
+                const tooltip = resolveBorrowDetailMetricHelp(row.label)
+                return (
+                  <li key={row.id} className="flex items-start justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-1">
+                      <span className="text-[13px] font-normal leading-snug text-muted-foreground">{t(row.label)}</span>
+                      {tooltip ? <ActionMetricHelp text={tooltip} topic={row.label} /> : null}
+                    </div>
+                    <span className="shrink-0 font-data text-[14px] font-medium tabular-nums text-foreground">
+                      {row.value}
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+        </aside>
       </div>
     </section>
   )
-}
-
-function getQuickStatPercent(detail: AssetDetail, id: string, fallback: number): number {
-  const raw = detail.quickStats.find((stat) => stat.id === id)?.value ?? ""
-  const numeric = Number.parseFloat(raw.replace(/[^0-9.-]/g, ""))
-  return Number.isFinite(numeric) ? numeric : fallback
 }
 
 function buildBorrowCurve(

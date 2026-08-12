@@ -18,6 +18,7 @@ import {
   Wallet,
 } from "@/app/components/icons"
 import { type RewardsPromoTabId, type RewardsQuestIconId, type RewardsQuest } from "@/app/lib/data/rewards/catalog"
+import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { UnderlineTabStrip } from "@/app/components/tab-primitives"
 import { Card } from "@/components/ui/card"
 import { LendAccountSection } from "./lend-account-section"
@@ -164,11 +165,13 @@ export function RewardsPromoContent({
   questsByTab,
   onTaskAction,
   returnHref = "/dashboard",
+  showRewards = true,
 }: {
   activePromoTab: RewardsPromoTabId
   questsByTab: Record<RewardsPromoTabId, RewardsQuest[]>
   onTaskAction: (taskId: string) => Promise<unknown>
   returnHref?: string
+  showRewards?: boolean
 }) {
   const { t } = useTranslation()
   const activeQuests = questsByTab[activePromoTab] ?? []
@@ -182,16 +185,16 @@ export function RewardsPromoContent({
           : null
 
   return (
-    <div className="space-y-6">
+    <div className={detailSectionStackClass}>
       {activePromoTab === "lend" ? <LendAccountSection returnHref={returnHref} /> : null}
       {activePromoTab === "borrow" ? <BorrowAccountSection returnHref={returnHref} /> : null}
       {activePromoTab === "multiply" ? <MultiplyAccountSection returnHref={returnHref} /> : null}
 
-      {activeQuests.length > 0 ? (
+      {showRewards && activeQuests.length > 0 ? (
         <RewardsQuestSection title={rewardsSectionTitle} quests={activeQuests} onTaskAction={onTaskAction} />
-      ) : (
+      ) : showRewards ? (
         <p className="text-[13px] text-muted-foreground">{t("No quests here yet — check back soon.")}</p>
-      )}
+      ) : null}
     </div>
   )
 }

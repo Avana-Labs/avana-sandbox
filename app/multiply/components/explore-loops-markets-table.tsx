@@ -16,7 +16,12 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { HIGHLIGHT_CARD_CLASS, HighlightCarousel } from "@/app/components/highlight-carousel"
+import { CarouselArrowButtons } from "@/app/components/carousel-arrow-buttons"
+import {
+  HIGHLIGHT_CARD_CLASS,
+  HighlightCarousel,
+  type HighlightCarouselHandle,
+} from "@/app/components/highlight-carousel"
 import { hasImageSrc, resolveImageSrc } from "@/lib/image-src"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar"
@@ -206,17 +211,26 @@ export function ExploreLoopsMarketsTable({
     )
   }, [revealedRows])
 
+  const carouselRef = React.useRef<HighlightCarouselHandle>(null)
+
   return (
     <section className="mt-7">
-      <div>
-        <div>
-          <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">
-            {t("Trending")}
-          </h2>
-        </div>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">
+          {t("Trending")}
+        </h2>
+        <CarouselArrowButtons
+          canPrev
+          canNext
+          onPrev={() => carouselRef.current?.step(-1)}
+          onNext={() => carouselRef.current?.step(1)}
+          prevLabel="Previous trending"
+          nextLabel="Next trending"
+        />
       </div>
 
       <HighlightCarousel
+        ref={carouselRef}
         className="mt-5 h-[104px]"
         renderSequence={(interactive) =>
           trendingSnapshots.map((snapshot, index) => (

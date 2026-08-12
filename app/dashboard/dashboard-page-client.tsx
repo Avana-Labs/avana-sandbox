@@ -28,8 +28,7 @@ import {
 } from "@/app/lib/rewards-engine/task-actions"
 import { RewardsPageSkeleton } from "@/app/components/loading-states"
 import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
-import { RewardsBalanceHero, PortfolioRewardsCards as DashboardRewardsCards } from "@/app/rewards/rewards-balance-hero"
-import { DashboardQuickActions } from "./dashboard-quick-actions"
+import { RewardsBalanceHero } from "@/app/rewards/rewards-balance-hero"
 import { DashboardWalletTab } from "./dashboard-wallet-tab"
 import { LearnSection } from "@/app/rewards/learn-section"
 import { RecentActivity } from "@/app/dashboard/recent-activity"
@@ -41,8 +40,9 @@ import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/rea
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
 import { useDashboardPage } from "@/app/dashboard/use-dashboard-page"
 import { ActionIcon } from "@/app/components/action-icon"
-import { MobileDetailActionBar } from "@/app/components/detail-page-primitives"
+import { detailSectionStackClass, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
+import { AmountVisibilityToggle } from "@/app/components/amount-visibility-toggle"
 import {
   RewardsEducationDialog,
   RewardsFavoriteDialog,
@@ -52,18 +52,20 @@ import {
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { UnderlineTabStrip } from "@/app/components/tab-primitives"
-import { RewardsPromoContent } from "@/app/rewards/quests-tab"
+import { RewardsPromoContent, RewardsQuestSection } from "@/app/rewards/quests-tab"
 import Link from "next/link"
 
 type DashboardPromoTabId = Extract<RewardsPromoTabId, "lend" | "borrow" | "multiply" | "referrals">
-type DashboardTabId = "wallet" | DashboardPromoTabId
+type DashboardAccountTabId = Extract<RewardsPromoTabId, "lend" | "borrow" | "multiply">
+type DashboardTabId = "wallet" | DashboardAccountTabId | "rewards" | "transactions"
 
 const DASHBOARD_TABS: readonly { id: DashboardTabId; label: string }[] = [
   { id: "wallet", label: "Wallet" },
   { id: "lend", label: "Lend" },
   { id: "borrow", label: "Borrow" },
   { id: "multiply", label: "Multiply" },
-  { id: "referrals", label: "Referrals" },
+  { id: "rewards", label: "Rewards" },
+  { id: "transactions", label: "All Transactions" },
 ]
 
 const CURATED_REWARD_TASK_IDS: Record<DashboardPromoTabId, readonly string[]> = {
@@ -79,10 +81,13 @@ function resolveDashboardTab(tab: string | null): DashboardTabId {
     case "lend":
     case "borrow":
     case "multiply":
-    case "referrals":
-      return tab
     case "rewards":
-      return "lend"
+    case "transactions":
+      return tab
+    case "referrals":
+      return "rewards"
+    case "activity":
+      return "transactions"
     default:
       return "wallet"
   }
@@ -226,6 +231,31 @@ function buildRewardsSnapshot(
   })
 
   return { summary, progress }
+}
+
+function DashboardRewardsTab({
+  questsByTab,
+  onTaskAction,
+}: {
+  questsByTab: Record<RewardsPromoTabId, RewardCardViewModel[]>
+  onTaskAction: (taskId: string) => Promise<unknown>
+}) {
+  const sections: Array<{ id: DashboardPromoTabId; title: string }> = [
+    { id: "lend", title: "Lend Rewards" },
+    { id: "borrow", title: "Borrow Rewards" },
+    { id: "multiply", title: "Multiply Rewards" },
+    { id: "referrals", title: "Referral Rewards" },
+  ]
+
+  return (
+    <div className={detailSectionStackClass}>
+      {sections.map(({ id, title }) => {
+        const quests = questsByTab[id] ?? []
+        if (quests.length === 0) return null
+        return <RewardsQuestSection key={id} title={title} quests={quests} onTaskAction={onTaskAction} />
+      })}
+    </div>
+  )
 }
 
 function mapTaskToQuest(
@@ -533,7 +563,9 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
   const handleDashboardTabChange = useCallback(
     (tab: DashboardTabId) => {
       setActiveDashboardTab(tab)
-      router.push(`/dashboard?tab=${tab}`)
+      // Keep scroll position when swapping portfolio tabs — default App Router
+      // navigation resets to the top of the page.
+      router.push(`/dashboard?tab=${tab}`, { scroll: false })
     },
     [router],
   )
@@ -584,81 +616,64 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
 
   return (
     <>
-      <RewardsBalanceHero
-        claimHref={claimHref}
-        portfolioValueUsd={portfolioValueUsd}
-        earnedAmount={snapshot.summary.totalEarnedAmount}
-        claimableAmount={snapshot.summary.totalClaimableAmount}
-      />
-
-      <UnderlineTabStrip
-        items={DASHBOARD_TABS.map((tab) => ({ id: tab.id, label: t(tab.label) }))}
-        value={activeDashboardTab}
-        onChange={handleDashboardTabChange}
-        ariaLabel={t("Dashboard tabs")}
-        className="mb-6"
-        listClassName="w-max min-w-full gap-6 px-2 sm:gap-9 sm:px-0"
-      />
-
-      {/* Mobile: compact quick-action rail after tabs (desktop shows them in the sidebar). */}
-      <div className="mb-8 lg:hidden">
-        <DashboardQuickActions activeTab={activeDashboardTab} />
+      <div className="mb-12">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+            {t("Your Portfolio")}
+          </h2>
+          <AmountVisibilityToggle />
+        </div>
+        <RewardsBalanceHero
+          claimHref={claimHref}
+          portfolioValueUsd={portfolioValueUsd}
+          earnedAmount={snapshot.summary.totalEarnedAmount}
+          claimableAmount={snapshot.summary.totalClaimableAmount}
+          activeTab={activeDashboardTab}
+        />
       </div>
 
-      <div
-        className={
-          activeDashboardTab === "wallet"
-            ? "grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-x-8"
-            : "grid gap-6 lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-x-8"
-        }
-      >
-        <div className="min-w-0">
-          {activeDashboardTab === "wallet" ? (
-            <DashboardWalletTab
-              walletId={walletId}
-              balances={avana.swap.state.balances}
-              rewardQuests={questsByTab["getting-started"]}
-              onTaskAction={(taskId) => handleTaskAction(taskId)}
-            />
-          ) : (
-            <>
+      <div className={detailSectionStackClass}>
+        <section>
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+              {t("Portfolio Positions")}
+            </h2>
+          </div>
+
+          <UnderlineTabStrip
+            items={DASHBOARD_TABS.map((tab) => ({ id: tab.id, label: t(tab.label) }))}
+            value={activeDashboardTab}
+            onChange={handleDashboardTabChange}
+            ariaLabel={t("Dashboard tabs")}
+            className="mb-6"
+            listClassName="w-max min-w-full gap-6 px-2 sm:gap-9 sm:px-0"
+          />
+
+          <div className="min-w-0">
+            {activeDashboardTab === "wallet" ? (
+              <DashboardWalletTab walletId={walletId} balances={avana.swap.state.balances} />
+            ) : activeDashboardTab === "rewards" ? (
+              <DashboardRewardsTab questsByTab={questsByTab} onTaskAction={(taskId) => handleTaskAction(taskId)} />
+            ) : activeDashboardTab === "transactions" ? (
+              <RecentActivity rows={allActivityRows} defaultShowAll showHeading={false} />
+            ) : (
               <RewardsPromoContent
                 activePromoTab={activeDashboardTab}
                 questsByTab={questsByTab}
                 onTaskAction={(taskId) => handleTaskAction(taskId)}
                 returnHref={`/dashboard?tab=${activeDashboardTab}`}
+                showRewards={false}
               />
-            </>
-          )}
+            )}
+          </div>
+        </section>
+
+        <div className="pb-24 lg:pb-0">
+          <LearnSection />
         </div>
-
-        <aside className="hidden space-y-8 lg:block lg:self-start">
-          <DashboardQuickActions activeTab={activeDashboardTab} />
-          <LearnSection layout="sidebar" />
-        </aside>
       </div>
 
-      {activeDashboardTab !== "wallet" ? (
-        <>
-          <div className="mb-8 md:mb-10 lg:hidden">
-            <LearnSection />
-          </div>
-
-          <div className="mb-8 lg:hidden">
-            <DashboardRewardsCards
-              claimHref={claimHref}
-              earnedAmount={snapshot.summary.totalEarnedAmount}
-              claimableAmount={snapshot.summary.totalClaimableAmount}
-            />
-          </div>
-        </>
-      ) : null}
-
-      <div className="mt-10 pb-24 md:mt-12 lg:mt-14 lg:pb-0">
-        <RecentActivity rows={allActivityRows} />
-      </div>
-
-      {activeDashboardTab !== "wallet" ? (
+      {activeDashboardTab === "rewards" ? (
         <MobileDetailActionBar>
           {claimHref ? (
             <Link

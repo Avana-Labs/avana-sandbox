@@ -9,6 +9,10 @@ const modules = import.meta.glob("../**/*.*s")
 
 const WALLET = "0xAbC0000000000000000000000000000000000001"
 
+function liquidityReader(t: ReturnType<typeof convexTest>) {
+  return t.withIdentity({ subject: WALLET })
+}
+
 describe("liquidity.recordDelta is internal-only", () => {
   test("is registered as internal, not publicly callable", () => {
     // Compile-time proof: an internalMutation is absent from the public `api` type but
@@ -25,7 +29,7 @@ describe("liquidity.recordDelta is internal-only", () => {
 
     // The ledger starts empty and only the validated recordTransaction write path moves it
     // (there is no public recordDelta a client could call to fold an arbitrary delta).
-    const before = await t.query(api.liquidity.listDeltas)
+    const before = await liquidityReader(t).query(api.liquidity.listDeltas)
     expect(before.find((r) => r.marketSlug === "uni-v2:usdc")).toBeUndefined()
 
     await asUser.mutation(api.sandbox.transactions.recordTransaction, {
@@ -41,7 +45,7 @@ describe("liquidity.recordDelta is internal-only", () => {
       simulated: true,
     })
 
-    const after = await t.query(api.liquidity.listDeltas)
+    const after = await liquidityReader(t).query(api.liquidity.listDeltas)
     // The server recomputed the delta from the action (borrow $1000 → +1000 on the asset).
     expect(after.find((r) => r.marketSlug === "uni-v2:usdc")?.borrowedDeltaUsd).toBe(1000)
   })

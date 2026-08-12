@@ -17,6 +17,7 @@ type QuickStatLike = {
 type Props = {
   detail: { quickStats: QuickStatLike[] }
   className?: string
+  hideRisk?: boolean
 }
 
 const RISK_STAT_IDS = new Set(["riskPremium", "maxLtv", "collateralFactor"])
@@ -53,12 +54,12 @@ function StatsGrid({ stats, columns = 3 }: { stats: QuickStatLike[]; columns?: 3
 
         return (
           <article key={stat.id} className="min-w-0">
-            <div className="font-data text-[19px] font-semibold leading-none tracking-[-0.03em] text-foreground md:text-[21px]">
-              {redenominateCompactUsd(stat.value, ctx)}
-            </div>
-            <div className="mt-1.5 flex items-center gap-1">
+            <div className="flex items-center gap-1">
               <span className="text-[13px] font-normal leading-snug text-muted-foreground">{t(stat.label)}</span>
               {tooltip ? <ActionMetricHelp text={tooltip} topic={stat.label} /> : null}
+            </div>
+            <div className="mt-1.5 font-data text-[19px] font-semibold leading-none tracking-[-0.03em] text-foreground md:text-[21px]">
+              {redenominateCompactUsd(stat.value, ctx)}
             </div>
           </article>
         )
@@ -67,16 +68,16 @@ function StatsGrid({ stats, columns = 3 }: { stats: QuickStatLike[]; columns?: 3
   )
 }
 
-export function QuickStatsGrid({ detail, className }: Props) {
+export function QuickStatsGrid({ detail, className, hideRisk = false }: Props) {
   const { t } = useTranslation()
   const { market, risk } = splitQuickStats(detail.quickStats)
 
   return (
     <div className={cn("space-y-10", className)}>
       {market.length > 0 ? <StatsGrid stats={market} /> : null}
-      {risk.length > 0 ? (
+      {!hideRisk && risk.length > 0 ? (
         <section aria-label={t("Risk exposure")} className="space-y-5">
-          <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
+          <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
             {t("Risk exposure")}
           </h2>
           <StatsGrid stats={risk} columns={4} />

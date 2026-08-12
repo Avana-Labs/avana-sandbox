@@ -180,7 +180,7 @@ function isTypingTarget(target: EventTarget | null) {
   return target.isContentEditable || tagName === "INPUT" || tagName === "TEXTAREA" || tagName === "SELECT"
 }
 
-export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {}) {
+export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: boolean; tone?: "nav" | "brand" } = {}) {
   const router = useRouter()
   const { t } = useTranslation()
   const { compact } = useCurrency()
@@ -312,6 +312,7 @@ export function SearchCommand({ iconOnly = false }: { iconOnly?: boolean } = {})
     <>
       <SearchTrigger
         iconOnly={iconOnly}
+        tone={tone}
         onClick={() => {
           void loadResults()
           setOpen(true)

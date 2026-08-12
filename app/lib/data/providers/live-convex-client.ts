@@ -1,7 +1,6 @@
 import { ConvexHttpClient } from "convex/browser"
 import { DataSourceError } from "@/app/lib/data/core/source-runtime"
-
-const SIWE_STORAGE_KEY = "avana.siwe.token.v1"
+import { getSiweToken } from "@/app/lib/siwe/auth-store"
 
 export function getAuthenticatedConvexClient(sourceId: string, operation: string) {
   if (typeof window === "undefined") {
@@ -22,8 +21,7 @@ export function getAuthenticatedConvexClient(sourceId: string, operation: string
       retryable: true,
     })
   }
-  const raw = window.localStorage.getItem(SIWE_STORAGE_KEY)
-  const token = raw ? (JSON.parse(raw) as { jwt?: string; wallet?: string }) : null
+  const token = getSiweToken()
   if (!token?.jwt || !token.wallet) {
     throw new DataSourceError({
       code: "auth",
