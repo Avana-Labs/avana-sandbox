@@ -560,7 +560,9 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
   const handleDashboardTabChange = useCallback(
     (tab: DashboardTabId) => {
       setActiveDashboardTab(tab)
-      router.push(`/dashboard?tab=${tab}`)
+      // Keep scroll position when swapping portfolio tabs — default App Router
+      // navigation resets to the top of the page.
+      router.push(`/dashboard?tab=${tab}`, { scroll: false })
     },
     [router],
   )
@@ -611,72 +613,86 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[24px] font-semibold tracking-[-0.045em]">{t("Your Portfolio")}</h2>
-        <AmountVisibilityToggle />
-      </div>
-      <RewardsBalanceHero
-        claimHref={claimHref}
-        portfolioValueUsd={portfolioValueUsd}
-        earnedAmount={snapshot.summary.totalEarnedAmount}
-        claimableAmount={snapshot.summary.totalClaimableAmount}
-      />
-
-      <UnderlineTabStrip
-        items={DASHBOARD_TABS.map((tab) => ({ id: tab.id, label: t(tab.label) }))}
-        value={activeDashboardTab}
-        onChange={handleDashboardTabChange}
-        ariaLabel={t("Dashboard tabs")}
-        className="mb-6"
-        listClassName="w-max min-w-full gap-6 px-2 sm:gap-9 sm:px-0"
-      />
-
-      {/* Mobile: compact quick-action rail after tabs (desktop shows them in the sidebar). */}
-      <div className="mb-8 lg:hidden">
-        <DashboardQuickActions activeTab={activeDashboardTab} />
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
-        <div className="min-w-0">
-          {activeDashboardTab === "wallet" ? (
-            <DashboardWalletTab walletId={walletId} balances={avana.swap.state.balances} />
-          ) : activeDashboardTab === "rewards" ? (
-            <DashboardRewardsTab questsByTab={questsByTab} onTaskAction={(taskId) => handleTaskAction(taskId)} />
-          ) : (
-            <RewardsPromoContent
-              activePromoTab={activeDashboardTab}
-              questsByTab={questsByTab}
-              onTaskAction={(taskId) => handleTaskAction(taskId)}
-              returnHref={`/dashboard?tab=${activeDashboardTab}`}
-              showRewards={false}
-            />
-          )}
+      <div className="mb-12">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+            {t("Your Portfolio")}
+          </h2>
+          <AmountVisibilityToggle />
         </div>
-
-        <aside className="hidden min-w-0 space-y-8 lg:block lg:self-start">
-          <DashboardQuickActions activeTab={activeDashboardTab} />
-          <LearnSection layout="sidebar" />
-        </aside>
+        <RewardsBalanceHero
+          claimHref={claimHref}
+          portfolioValueUsd={portfolioValueUsd}
+          earnedAmount={snapshot.summary.totalEarnedAmount}
+          claimableAmount={snapshot.summary.totalClaimableAmount}
+        />
       </div>
 
-      {activeDashboardTab === "rewards" ? (
-        <>
-          <div className="mb-8 md:mb-10 lg:hidden">
-            <LearnSection />
+      <div className="space-y-14 md:space-y-16">
+        <section>
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+              {t("Portfolio Positions")}
+            </h2>
           </div>
 
+          <UnderlineTabStrip
+            items={DASHBOARD_TABS.map((tab) => ({ id: tab.id, label: t(tab.label) }))}
+            value={activeDashboardTab}
+            onChange={handleDashboardTabChange}
+            ariaLabel={t("Dashboard tabs")}
+            className="mb-6"
+            listClassName="w-max min-w-full gap-6 px-2 sm:gap-9 sm:px-0"
+          />
+
+          {/* Mobile: compact quick-action rail after tabs (desktop shows them in the sidebar). */}
           <div className="mb-8 lg:hidden">
-            <DashboardRewardsCards
-              claimHref={claimHref}
-              earnedAmount={snapshot.summary.totalEarnedAmount}
-              claimableAmount={snapshot.summary.totalClaimableAmount}
-            />
+            <DashboardQuickActions activeTab={activeDashboardTab} />
           </div>
-        </>
-      ) : null}
 
-      <div className="mt-10 pb-24 md:mt-12 lg:mt-14 lg:pb-0">
-        <RecentActivity rows={allActivityRows} />
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
+            <div className="min-w-0">
+              {activeDashboardTab === "wallet" ? (
+                <DashboardWalletTab walletId={walletId} balances={avana.swap.state.balances} />
+              ) : activeDashboardTab === "rewards" ? (
+                <DashboardRewardsTab questsByTab={questsByTab} onTaskAction={(taskId) => handleTaskAction(taskId)} />
+              ) : (
+                <RewardsPromoContent
+                  activePromoTab={activeDashboardTab}
+                  questsByTab={questsByTab}
+                  onTaskAction={(taskId) => handleTaskAction(taskId)}
+                  returnHref={`/dashboard?tab=${activeDashboardTab}`}
+                  showRewards={false}
+                />
+              )}
+            </div>
+
+            <aside className="hidden min-w-0 space-y-8 lg:block lg:self-start">
+              <DashboardQuickActions activeTab={activeDashboardTab} />
+              <LearnSection layout="sidebar" />
+            </aside>
+          </div>
+
+          {activeDashboardTab === "rewards" ? (
+            <>
+              <div className="mb-8 md:mb-10 lg:hidden">
+                <LearnSection />
+              </div>
+
+              <div className="mb-8 lg:hidden">
+                <DashboardRewardsCards
+                  claimHref={claimHref}
+                  earnedAmount={snapshot.summary.totalEarnedAmount}
+                  claimableAmount={snapshot.summary.totalClaimableAmount}
+                />
+              </div>
+            </>
+          ) : null}
+        </section>
+
+        <div className="pb-24 lg:pb-0">
+          <RecentActivity rows={allActivityRows} />
+        </div>
       </div>
 
       {activeDashboardTab === "rewards" ? (

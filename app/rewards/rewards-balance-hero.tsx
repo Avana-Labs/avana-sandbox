@@ -208,7 +208,7 @@ export function RewardsBalanceHero({
   const feed = useMemo(() => buildPortfolioFeed(portfolioValueUsd), [portfolioValueUsd])
 
   return (
-    <div className="mb-6 grid gap-5 md:mb-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
+    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
       {/* Same chart as lend detail, quieter balance, rewards-card surface. */}
       <section
         className="relative min-w-0 overflow-hidden rounded-radius-md border-0 bg-card px-1.5 pt-4 dark:bg-card/50"
