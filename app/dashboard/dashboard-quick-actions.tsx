@@ -25,7 +25,7 @@ function withReturn(href: string) {
 export function DashboardQuickActions({
   activeTab,
 }: {
-  activeTab?: "wallet" | "lend" | "borrow" | "multiply" | "rewards"
+  activeTab?: "wallet" | "lend" | "borrow" | "multiply" | "rewards" | "transactions"
 }) {
   const { t } = useTranslation()
   const depositHref = activeTab === "borrow" ? actionPagePath("borrow", "supply") : actionPagePath("lend", "deposit")
