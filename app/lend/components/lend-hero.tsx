@@ -5,6 +5,7 @@ import { useAmountDisplayPreferences } from "@/app/components/display-preference
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { cn } from "@/lib/utils"
 
 const LEND_METRICS = [
   { key: "averageApy", label: "Average APY" },
@@ -55,24 +56,22 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
 
   return (
     <section className="mb-4">
-      <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
+      <div className="grid w-full grid-cols-3 gap-x-3 pb-4 md:flex md:items-end md:justify-between md:gap-4">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <p className="text-[12px] font-medium tracking-tight text-muted-foreground">{t("Total TVL")}</p>
-            <p className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
-              {showDollarAmounts ? fc.compact(metrics.totalTvl) : "••••••••"}
-            </p>
-          </div>
+          <p className="text-[12px] font-medium tracking-tight text-muted-foreground">{t("Total TVL")}</p>
+          <p className="mt-1 font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
+            {showDollarAmounts ? fc.compact(metrics.totalTvl) : "••••••••"}
+          </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-5 md:ml-auto md:text-right">
-          {LEND_METRICS.map((metric) => (
-            <div key={metric.key}>
-              <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground md:justify-end">
-                <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
+        <div className="contents md:ml-auto md:flex md:gap-5 md:text-right">
+          {LEND_METRICS.map((metric, index) => (
+            <div key={metric.key} className={cn("min-w-0", index === LEND_METRICS.length - 1 && "text-right md:text-right")}>
+              <div className="mb-0 flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground md:mb-1 md:justify-end">
+                <span className="hidden h-1.5 w-1.5 rounded-full bg-muted-foreground md:inline-block" />
                 {t(metric.label)}
               </div>
-              <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
+              <p className="mt-1 font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[1rem] md:font-semibold">
                 {showDollarAmounts
                   ? metric.key === "averageApy"
                     ? `${metrics.weightedApy.toFixed(2)}%`
