@@ -193,13 +193,42 @@ function UmbrellaHero() {
   )
 }
 
+function parseCompactUsd(value: string): number {
+  const normalized = value.trim().replace(/[$,]/g, "").toUpperCase()
+  if (normalized.endsWith("M")) return Number.parseFloat(normalized) * 1_000_000
+  if (normalized.endsWith("K")) return Number.parseFloat(normalized) * 1_000
+  return Number.parseFloat(normalized) || 0
+}
+
+/** Share of the fused bar that is offset (green); remainder is current deficit (red). */
+function deficitOffsetPercent(offset: string, deficit: string): number {
+  const offsetUsd = Math.max(parseCompactUsd(offset), 0)
+  const deficitUsd = Math.max(parseCompactUsd(deficit), 0)
+  const total = offsetUsd + deficitUsd
+  if (total <= 0) return 50
+  // Keep a visible red tip when offset dominates (USDC/GHO).
+  return Math.min(96, Math.max(4, (offsetUsd / total) * 100))
+}
+
 function UmbrellaStress() {
+  const { scrollerRef, canPrev, canNext, scrollByCard } = useOverflowCarousel()
+
   return (
     <section>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
           Market Level Risk
         </h2>
+        <div className="md:hidden">
+          <CarouselArrowButtons
+            canPrev={canPrev}
+            canNext={canNext}
+            onPrev={() => scrollByCard(-1)}
+            onNext={() => scrollByCard(1)}
+            prevLabel="Previous market risk"
+            nextLabel="Next market risk"
+          />
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -211,14 +240,14 @@ function UmbrellaStress() {
             </p>
           </div>
 
-          <div className="mt-5 grid grid-cols-[1fr_0.7fr] gap-1">
-            <div className="h-2.5 rounded-l-full bg-success" />
-            <div className="h-2.5 rounded-r-full bg-danger" />
+          <div className="mt-5 flex h-2.5 overflow-hidden rounded-full">
+            <div className="h-full min-w-0 flex-[1] bg-brand" />
+            <div className="h-full min-w-0 flex-[0.7] bg-danger" />
           </div>
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
-              <div className="text-[18px] font-semibold tracking-[-0.04em] text-success">139.77% covered</div>
+              <div className="text-[18px] font-semibold tracking-[-0.04em] text-brand">139.77% covered</div>
               <div className="mt-2 text-[14px] font-medium text-muted-foreground">
                 $159M supplied · $114M target · 6.74K users
               </div>
@@ -232,52 +261,86 @@ function UmbrellaStress() {
           </div>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {umbrellaAssetSummaries.map((asset) => (
-            <div key={asset.asset} className="rounded-radius-md bg-card px-4 py-4">
-              <div className="flex items-center gap-3.5">
-                <TokenIcon symbol={asset.symbol} size="table" className="size-16" />
-                <div>
-                  <div className="text-[18px] font-semibold tracking-[-0.04em]">{asset.asset}</div>
-                  <div className="mt-0.5 text-[14px] text-muted-foreground">Covers {asset.asset} deficits</div>
-                </div>
-              </div>
+        <div
+          ref={scrollerRef}
+          className="overflow-x-auto pb-1 [scrollbar-width:none] snap-x snap-mandatory md:overflow-visible [&::-webkit-scrollbar]:hidden"
+        >
+          <ul className="flex w-full gap-3 md:grid md:grid-cols-2 md:gap-3 xl:grid-cols-3">
+            {umbrellaAssetSummaries.map((asset) => (
+              <li
+                key={asset.asset}
+                data-carousel-card
+                className="w-[min(320px,88%)] shrink-0 snap-start md:w-auto md:shrink md:snap-align-none"
+              >
+                <div className="h-full rounded-radius-md bg-card px-4 py-4">
+                  <div className="flex items-center gap-3.5">
+                    <TokenIcon symbol={asset.symbol} size="table" className="size-16" />
+                    <div>
+                      <div className="text-[18px] font-semibold tracking-[-0.04em]">{asset.asset}</div>
+                      <div className="mt-0.5 text-[14px] text-muted-foreground">Covers {asset.asset} deficits</div>
+                    </div>
+                  </div>
 
-              <div className="mt-5 space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[14px] text-muted-foreground">Coverage</span>
-                  <span className="text-[15px] font-semibold tabular-nums">{asset.coverage}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[14px] text-muted-foreground">Target</span>
-                  <span className="text-[15px] font-semibold tabular-nums">{asset.targetCoverage}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[14px] text-muted-foreground">Current deficit</span>
-                  <span className="text-[15px] font-semibold tabular-nums">{asset.currentDeficit}</span>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[14px] text-muted-foreground">Deficit offset</span>
-                  <span className="text-[15px] font-semibold tabular-nums">{asset.deficitOffset}</span>
-                </div>
-              </div>
+                  <div className="mt-5 space-y-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[14px] text-muted-foreground">Coverage</span>
+                      <span className="text-[15px] font-semibold tabular-nums">{asset.coverage}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[14px] text-muted-foreground">Target</span>
+                      <span className="text-[15px] font-semibold tabular-nums">{asset.targetCoverage}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[14px] text-muted-foreground">APY</span>
+                      <span className="text-[15px] font-semibold tabular-nums">{asset.totalApy}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[14px] text-muted-foreground">Claimable</span>
+                      <span className="text-[15px] font-semibold tabular-nums">{asset.claimable}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[14px] text-muted-foreground">Rewards</span>
+                      <span className="text-[15px] font-semibold tabular-nums">{asset.rewards}</span>
+                    </div>
+                  </div>
 
-              <div className="mt-4 grid grid-cols-3 gap-3 border-t border-border pt-3">
-                <div>
-                  <div className="text-[12px] text-muted-foreground">APY</div>
-                  <div className="mt-0.5 text-[15px] font-semibold tabular-nums">{asset.totalApy}</div>
+                  <div className="mt-5 border-t border-border pt-4">
+                    <div className="flex h-2.5 overflow-hidden rounded-full">
+                      <div
+                        className="h-full bg-brand"
+                        style={{ width: `${deficitOffsetPercent(asset.deficitOffset, asset.currentDeficit)}%` }}
+                      />
+                      <div
+                        className="h-full bg-danger"
+                        style={{
+                          width: `${100 - deficitOffsetPercent(asset.deficitOffset, asset.currentDeficit)}%`,
+                        }}
+                      />
+                    </div>
+
+                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <div className="text-[16px] font-semibold tracking-[-0.04em] text-brand">
+                          {asset.deficitOffset} offset
+                        </div>
+                        <div className="mt-1.5 text-[13px] font-medium text-muted-foreground">
+                          Buffer for {asset.asset} deficits
+                        </div>
+                      </div>
+                      <div className="text-left sm:text-right">
+                        <div className="text-[16px] font-semibold tracking-[-0.04em] text-danger">
+                          {asset.currentDeficit} current deficit
+                        </div>
+                        <div className="mt-1.5 text-[13px] font-medium text-muted-foreground">
+                          Active shortfall in {asset.asset}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-[12px] text-muted-foreground">Claimable</div>
-                  <div className="mt-0.5 text-[15px] font-semibold tabular-nums">{asset.claimable}</div>
-                </div>
-                <div>
-                  <div className="text-[12px] text-muted-foreground">Rewards</div>
-                  <div className="mt-0.5 text-[15px] font-semibold tabular-nums">{asset.rewards}</div>
-                </div>
-              </div>
-            </div>
-          ))}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>

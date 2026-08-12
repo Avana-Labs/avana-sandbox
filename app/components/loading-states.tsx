@@ -167,57 +167,70 @@ export function HomeWorkspaceSkeleton() {
 export function RewardsPageSkeleton() {
   return (
     <Page mainClassName="px-3 py-6 sm:px-4 md:py-10">
-      {/* Balance hero (left) + promo card (right, md+) — RewardsBalanceHero. */}
-      <div className="mb-6 grid gap-5 md:mb-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
-        <Surface className="relative min-h-[310px] px-4 py-4 sm:px-5">
-          <div className="space-y-3">
-            <Skeleton className="h-8 w-36 rounded-xs" />
-            <Skeleton className="h-4 w-28 rounded-xs" />
+      <div className="mb-12">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <Skeleton className="h-7 w-40 rounded-xs md:h-8" />
+          <Skeleton className="h-8 w-28 rounded-full" />
+        </div>
+        {/* Balance hero (left) + promo card (right, md+) — RewardsBalanceHero. */}
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
+          <Surface className="relative min-h-[310px] px-4 py-4 sm:px-5">
+            <div className="space-y-3">
+              <Skeleton className="h-8 w-36 rounded-xs" />
+              <Skeleton className="h-4 w-28 rounded-xs" />
+            </div>
+            <Skeleton className="mt-10 h-[210px] w-full rounded-xs" />
+          </Surface>
+
+          <div className="hidden space-y-3 lg:block">
+            <Surface className="p-4">
+              <Skeleton className="mb-3 h-3.5 w-28 rounded-xs" />
+              <Skeleton className="h-8 w-36 rounded-xs" />
+            </Surface>
+            <Surface className="p-4">
+              <Skeleton className="mb-3 h-3.5 w-28 rounded-xs" />
+              <Skeleton className="h-8 w-36 rounded-xs" />
+            </Surface>
           </div>
-          <Skeleton className="mt-10 h-[210px] w-full rounded-xs" />
-        </Surface>
-
-        <div className="hidden space-y-3 lg:block">
-          <Surface className="p-4">
-            <Skeleton className="mb-3 h-3.5 w-28 rounded-xs" />
-            <Skeleton className="h-8 w-36 rounded-xs" />
-          </Surface>
-          <Surface className="p-4">
-            <Skeleton className="mb-3 h-3.5 w-28 rounded-xs" />
-            <Skeleton className="h-8 w-36 rounded-xs" />
-          </Surface>
         </div>
       </div>
 
-      {/* Underline tab strip (left-aligned, border-b). */}
-      <div className="mb-6 border-b border-border/90">
-        <div className="flex gap-6 pb-3 sm:gap-9 sm:pb-4">
-          {["w-20", "w-24", "w-20"].map((width, index) => (
-            <Skeleton key={`rewards-tab-${index}`} className={cn("h-4 rounded-xs", width)} />
-          ))}
-        </div>
-      </div>
+      <div className="space-y-14 md:space-y-16">
+        <section>
+          <div className="mb-6">
+            <Skeleton className="h-7 w-48 rounded-xs md:h-8" />
+          </div>
+          {/* Underline tab strip (left-aligned, border-b). */}
+          <div className="mb-6 border-b border-border/90">
+            <div className="flex gap-6 pb-3 sm:gap-9 sm:pb-4">
+              {["w-20", "w-24", "w-20"].map((width, index) => (
+                <Skeleton key={`rewards-tab-${index}`} className={cn("h-4 rounded-xs", width)} />
+              ))}
+            </div>
+          </div>
 
-      {/* Quest grid — QuestsTab: h-full cards with icon + badge, title block, and a
-          bottom CTA, laid out 1 → 2 → 4 → 5 columns. */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
-        {Array.from({ length: 8 }).map((_, index) => (
-          <Surface key={`rewards-quest-${index}`} className="flex h-full flex-col p-3.5">
-            <div className="flex items-start justify-between gap-3">
-              <Skeleton className="h-9 w-9 rounded-radius-md" />
-              <Skeleton className="h-4 w-16 rounded-full" />
-            </div>
-            <div className="mt-3 space-y-2 sm:mt-3.5">
-              <Skeleton className="h-3.5 w-full rounded-xs" />
-              <Skeleton className="h-3.5 w-4/5 rounded-xs" />
-              <Skeleton className="h-3 w-2/3 rounded-xs" />
-              <Skeleton className="h-3.5 w-20 rounded-xs" />
-            </div>
-            <div className="mt-auto pt-3.5">
-              <Skeleton className="h-9 w-full rounded-radius-sm" />
-            </div>
-          </Surface>
-        ))}
+          {/* Quest grid — QuestsTab: h-full cards with icon + badge, title block, and a
+              bottom CTA, laid out 1 → 2 → 4 → 5 columns. */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <Surface key={`rewards-quest-${index}`} className="flex h-full flex-col p-3.5">
+                <div className="flex items-start justify-between gap-3">
+                  <Skeleton className="h-9 w-9 rounded-radius-md" />
+                  <Skeleton className="h-4 w-16 rounded-full" />
+                </div>
+                <div className="mt-3 space-y-2 sm:mt-3.5">
+                  <Skeleton className="h-3.5 w-full rounded-xs" />
+                  <Skeleton className="h-3.5 w-4/5 rounded-xs" />
+                  <Skeleton className="h-3 w-2/3 rounded-xs" />
+                  <Skeleton className="h-3.5 w-20 rounded-xs" />
+                </div>
+                <div className="mt-auto pt-3.5">
+                  <Skeleton className="h-9 w-full rounded-radius-sm" />
+                </div>
+              </Surface>
+            ))}
+          </div>
+        </section>
       </div>
     </Page>
   )
