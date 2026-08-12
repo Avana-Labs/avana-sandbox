@@ -12,16 +12,8 @@ describe("P1-03: borrow tab deposit and withdraw routing", () => {
   it("routes Borrow-tab Deposit and Withdraw quick actions to collateral pledge/remove", () => {
     render(<DashboardQuickActions activeTab="borrow" />)
 
-    expect(
-      screen
-        .getAllByRole("link", { name: "Deposit" })
-        .every((link) => link.getAttribute("href")?.includes("/actions/borrow/supply")),
-    ).toBe(true)
-    expect(
-      screen
-        .getAllByRole("link", { name: "Withdraw" })
-        .every((link) => link.getAttribute("href")?.includes("/actions/borrow/remove")),
-    ).toBe(true)
+    expect(screen.getByRole("link", { name: "Deposit" }).getAttribute("href")).toContain("/actions/borrow/supply")
+    expect(screen.getByRole("link", { name: "Withdraw" }).getAttribute("href")).toContain("/actions/borrow/remove")
   })
 
   it("routes collateral position panel Deposit and Withdraw to borrow pledge/remove", () => {

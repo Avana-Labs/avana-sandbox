@@ -9,6 +9,10 @@ import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { formatChartValue, type ChartFeed, type ChartPoint, type ChartRangeData } from "@/app/components/charts"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import {
+  DashboardQuickActions,
+  type DashboardQuickActionsTab,
+} from "@/app/dashboard/dashboard-quick-actions"
 
 /**
  * Reward balances are denominated in AVA (the card shows the AVA coin icon), not
@@ -154,38 +158,46 @@ export function PortfolioRewardsCards({
   claimHref,
   earnedAmount = 0,
   claimableAmount = 0,
+  activeTab,
+  showQuickActions = false,
 }: {
   claimHref?: string
   /** Total AVA earned across completed quests. */
   earnedAmount?: number
   /** AVA currently claimable. */
   claimableAmount?: number
+  activeTab?: DashboardQuickActionsTab
+  /** When true, render the compact quick-action icon rail under the claim cards. */
+  showQuickActions?: boolean
 }) {
   const { t } = useTranslation()
   const { showDollarAmounts } = useAmountDisplayPreferences()
   return (
-    <section className="min-w-0 space-y-3">
-      <FeeCard label={t("Total Rewards earned")} value={formatAva(earnedAmount)} hidden={!showDollarAmounts} />
-      <FeeCard
-        label={t("Claimable Rewards")}
-        value={formatAva(claimableAmount)}
-        hidden={!showDollarAmounts}
-        action={
-          claimHref ? (
-            <Button asChild size="sm" className="shrink-0 gap-2 font-bold [&_svg]:size-4">
-              <Link href={claimHref}>
+    <section className="min-w-0 space-y-4">
+      <div className="space-y-3">
+        <FeeCard label={t("Total Rewards earned")} value={formatAva(earnedAmount)} hidden={!showDollarAmounts} />
+        <FeeCard
+          label={t("Claimable Rewards")}
+          value={formatAva(claimableAmount)}
+          hidden={!showDollarAmounts}
+          action={
+            claimHref ? (
+              <Button asChild size="sm" className="shrink-0 gap-2 font-bold [&_svg]:size-4">
+                <Link href={claimHref}>
+                  <CircleDollarSign className="size-4" />
+                  {t("Claim Rewards")}
+                </Link>
+              </Button>
+            ) : (
+              <Button type="button" size="sm" disabled className="shrink-0 gap-2 font-bold [&_svg]:size-4">
                 <CircleDollarSign className="size-4" />
                 {t("Claim Rewards")}
-              </Link>
-            </Button>
-          ) : (
-            <Button type="button" size="sm" disabled className="shrink-0 gap-2 font-bold [&_svg]:size-4">
-              <CircleDollarSign className="size-4" />
-              {t("Claim Rewards")}
-            </Button>
-          )
-        }
-      />
+              </Button>
+            )
+          }
+        />
+      </div>
+      {showQuickActions ? <DashboardQuickActions activeTab={activeTab} /> : null}
     </section>
   )
 }
@@ -195,6 +207,7 @@ export function RewardsBalanceHero({
   portfolioValueUsd = 0,
   earnedAmount = 0,
   claimableAmount = 0,
+  activeTab,
 }: {
   claimHref?: string
   /** Live portfolio net value (wallet + positions). Required for a trustworthy hero. */
@@ -203,6 +216,7 @@ export function RewardsBalanceHero({
   earnedAmount?: number
   /** AVA currently claimable. */
   claimableAmount?: number
+  activeTab?: DashboardQuickActionsTab
 }) {
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const feed = useMemo(() => buildPortfolioFeed(portfolioValueUsd), [portfolioValueUsd])
@@ -227,9 +241,13 @@ export function RewardsBalanceHero({
         />
       </section>
 
-      <div className="hidden lg:block">
-        <PortfolioRewardsCards claimHref={claimHref} earnedAmount={earnedAmount} claimableAmount={claimableAmount} />
-      </div>
+      <PortfolioRewardsCards
+        claimHref={claimHref}
+        earnedAmount={earnedAmount}
+        claimableAmount={claimableAmount}
+        activeTab={activeTab}
+        showQuickActions
+      />
     </div>
   )
 }

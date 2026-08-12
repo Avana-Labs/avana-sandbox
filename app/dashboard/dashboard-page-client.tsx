@@ -28,8 +28,7 @@ import {
 } from "@/app/lib/rewards-engine/task-actions"
 import { RewardsPageSkeleton } from "@/app/components/loading-states"
 import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
-import { RewardsBalanceHero, PortfolioRewardsCards as DashboardRewardsCards } from "@/app/rewards/rewards-balance-hero"
-import { DashboardQuickActions } from "./dashboard-quick-actions"
+import { RewardsBalanceHero } from "@/app/rewards/rewards-balance-hero"
 import { DashboardWalletTab } from "./dashboard-wallet-tab"
 import { LearnSection } from "@/app/rewards/learn-section"
 import { RecentActivity } from "@/app/dashboard/recent-activity"
@@ -629,6 +628,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
           portfolioValueUsd={portfolioValueUsd}
           earnedAmount={snapshot.summary.totalEarnedAmount}
           claimableAmount={snapshot.summary.totalClaimableAmount}
+          activeTab={activeDashboardTab}
         />
       </div>
 
@@ -649,54 +649,23 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
             listClassName="w-max min-w-full gap-6 px-2 sm:gap-9 sm:px-0"
           />
 
-          {/* Mobile: compact quick-action rail after tabs (desktop shows them in the sidebar). */}
-          {activeDashboardTab === "transactions" ? null : (
-            <div className="mb-8 lg:hidden">
-              <DashboardQuickActions activeTab={activeDashboardTab} />
-            </div>
-          )}
-
-          <div
-            className={
-              activeDashboardTab === "transactions"
-                ? "grid gap-6 lg:grid-cols-1 lg:items-start lg:gap-x-20"
-                : "grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20"
-            }
-          >
-            <div className="min-w-0">
-              {activeDashboardTab === "wallet" ? (
-                <DashboardWalletTab walletId={walletId} balances={avana.swap.state.balances} />
-              ) : activeDashboardTab === "rewards" ? (
-                <DashboardRewardsTab questsByTab={questsByTab} onTaskAction={(taskId) => handleTaskAction(taskId)} />
-              ) : activeDashboardTab === "transactions" ? (
-                <RecentActivity rows={allActivityRows} defaultShowAll showHeading={false} />
-              ) : (
-                <RewardsPromoContent
-                  activePromoTab={activeDashboardTab}
-                  questsByTab={questsByTab}
-                  onTaskAction={(taskId) => handleTaskAction(taskId)}
-                  returnHref={`/dashboard?tab=${activeDashboardTab}`}
-                  showRewards={false}
-                />
-              )}
-            </div>
-
-            {activeDashboardTab === "transactions" ? null : (
-              <aside className="hidden min-w-0 lg:block lg:self-start">
-                <DashboardQuickActions activeTab={activeDashboardTab} />
-              </aside>
+          <div className="min-w-0">
+            {activeDashboardTab === "wallet" ? (
+              <DashboardWalletTab walletId={walletId} balances={avana.swap.state.balances} />
+            ) : activeDashboardTab === "rewards" ? (
+              <DashboardRewardsTab questsByTab={questsByTab} onTaskAction={(taskId) => handleTaskAction(taskId)} />
+            ) : activeDashboardTab === "transactions" ? (
+              <RecentActivity rows={allActivityRows} defaultShowAll showHeading={false} />
+            ) : (
+              <RewardsPromoContent
+                activePromoTab={activeDashboardTab}
+                questsByTab={questsByTab}
+                onTaskAction={(taskId) => handleTaskAction(taskId)}
+                returnHref={`/dashboard?tab=${activeDashboardTab}`}
+                showRewards={false}
+              />
             )}
           </div>
-
-          {activeDashboardTab === "rewards" ? (
-            <div className="mb-8 lg:hidden">
-              <DashboardRewardsCards
-                claimHref={claimHref}
-                earnedAmount={snapshot.summary.totalEarnedAmount}
-                claimableAmount={snapshot.summary.totalClaimableAmount}
-              />
-            </div>
-          ) : null}
         </section>
 
         <div className="pb-24 lg:pb-0">
