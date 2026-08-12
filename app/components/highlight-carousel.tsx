@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 import { useMediaQuery } from "@/app/lib/use-media-query"
 
@@ -22,21 +22,31 @@ const DEFAULT_MARQUEE_DURATION_SECONDS = 38
  * and whenever the viewer prefers reduced motion. `onHoverChange` lets callers
  * that layer their own hover UI (e.g. the Lend graph tooltip) reset it on exit.
  */
-export function HighlightCarousel({
-  renderSequence,
-  className,
-  gapClassName = "gap-3",
-  leadPadClassName = "pl-4 sm:pl-6",
-  durationSeconds = DEFAULT_MARQUEE_DURATION_SECONDS,
-  onHoverChange,
-}: {
+export type HighlightCarouselHandle = {
+  step: (direction: -1 | 1) => void
+}
+
+type HighlightCarouselProps = {
   renderSequence: (interactive: boolean) => ReactNode
   className?: string
   gapClassName?: string
   leadPadClassName?: string
   durationSeconds?: number
   onHoverChange?: (hovered: boolean) => void
-}) {
+}
+
+export const HighlightCarousel = forwardRef<HighlightCarouselHandle, HighlightCarouselProps>(
+  function HighlightCarousel(
+    {
+      renderSequence,
+      className,
+      gapClassName = "gap-3",
+      leadPadClassName = "pl-4 sm:pl-6",
+      durationSeconds = DEFAULT_MARQUEE_DURATION_SECONDS,
+      onHoverChange,
+    },
+    ref,
+  ) {
   const [hovered, setHovered] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
   const viewportRef = useRef<HTMLDivElement | null>(null)
@@ -99,6 +109,24 @@ export function HighlightCarousel({
     onHoverChange?.(next)
   }
 
+  useImperativeHandle(ref, () => ({
+    step(direction) {
+      const sequence = sequenceRef.current
+      const track = trackRef.current
+      const card = sequence?.firstElementChild as HTMLElement | null
+      if (!sequence || !track || !card) return
+      const gap = Number.parseFloat(getComputedStyle(sequence).columnGap || getComputedStyle(sequence).gap || "12") || 12
+      const sequenceWidth = sequenceWidthRef.current
+      let nextX = xRef.current - direction * (card.getBoundingClientRect().width + gap)
+      if (sequenceWidth > 0) {
+        while (nextX <= -sequenceWidth) nextX += sequenceWidth
+        while (nextX > 0) nextX -= sequenceWidth
+      }
+      xRef.current = nextX
+      track.style.transform = `translate3d(${nextX}px, 0, 0)`
+    },
+  }))
+
   return (
     <div
       ref={viewportRef}
@@ -132,4 +160,4 @@ export function HighlightCarousel({
       </div>
     </div>
   )
-}
+})

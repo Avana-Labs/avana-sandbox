@@ -34,8 +34,7 @@ export function RouteErrorFallback({
 
   return (
     <main className="mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col items-start justify-center px-5 py-16">
-      <p className="text-sm text-muted-foreground">Avana</p>
-      <h1 className="mt-3 text-4xl font-medium tracking-[-0.04em]">{resolvedTitle}</h1>
+      <h1 className="text-4xl font-medium tracking-[-0.04em]">{resolvedTitle}</h1>
       <p className="mt-6 max-w-prose text-muted-foreground">{resolvedMessage}</p>
       <div className="mt-8 flex flex-wrap gap-3">
         <button

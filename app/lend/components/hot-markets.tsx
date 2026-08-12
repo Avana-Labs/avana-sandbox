@@ -2,10 +2,11 @@
 
 import Image from "next/image"
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { cn } from "@/lib/utils"
-import { HIGHLIGHT_CARD_CLASS, HighlightCarousel } from "@/app/components/highlight-carousel"
+import { CarouselArrowButtons } from "@/app/components/carousel-arrow-buttons"
+import { HIGHLIGHT_CARD_CLASS, HighlightCarousel, type HighlightCarouselHandle } from "@/app/components/highlight-carousel"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type HoverState = {
@@ -263,14 +264,27 @@ export function HotMarkets({
       )
     })
 
+  const carouselRef = useRef<HighlightCarouselHandle>(null)
+
   return (
     <section>
       <div className="w-full">
-        <h2 className="mb-5 mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">
-          {t("Featured")}
-        </h2>
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">
+            {t("Featured")}
+          </h2>
+          <CarouselArrowButtons
+            canPrev
+            canNext
+            onPrev={() => carouselRef.current?.step(-1)}
+            onNext={() => carouselRef.current?.step(1)}
+            prevLabel="Previous featured"
+            nextLabel="Next featured"
+          />
+        </div>
 
         <HighlightCarousel
+          ref={carouselRef}
           className="h-[176px]"
           renderSequence={renderSequence}
           onHoverChange={(hovered) => {
