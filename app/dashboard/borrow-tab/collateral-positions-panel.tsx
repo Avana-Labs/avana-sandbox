@@ -247,7 +247,7 @@ function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
   return (
     <div className="flex flex-col items-end pr-4">
       <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">{token}</span>
-      <span className="text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">{usd}</span>
+      <span className="text-[13px] text-muted-foreground dark:text-white/40">{usd}</span>
     </div>
   )
 }
@@ -290,7 +290,7 @@ function CollateralMobileCard({
           value={
             <span>
               {mask(row.depositedToken)}
-              <span className="ml-2 text-[12px] text-muted-foreground">{mask(exact(row.depositedUsd))}</span>
+              <span className="ml-2 text-[13px] text-muted-foreground">{mask(exact(row.depositedUsd))}</span>
             </span>
           }
         />
@@ -299,7 +299,7 @@ function CollateralMobileCard({
           value={
             <span>
               {mask(row.earningsToken)}
-              <span className="ml-2 text-[12px] text-muted-foreground">{mask(exact(row.earningsUsd))}</span>
+              <span className="ml-2 text-[13px] text-muted-foreground">{mask(exact(row.earningsUsd))}</span>
             </span>
           }
         />

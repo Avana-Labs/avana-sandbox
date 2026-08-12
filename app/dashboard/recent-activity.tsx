@@ -208,14 +208,23 @@ function FilterMenu<T extends string>({
   )
 }
 
-export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
+export function RecentActivity({
+  rows,
+  defaultShowAll = false,
+  showHeading = true,
+}: {
+  rows: PortfolioActivityRow[]
+  /** When true, start expanded (used by the All Transactions dashboard tab). */
+  defaultShowAll?: boolean
+  showHeading?: boolean
+}) {
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const { t } = useTranslation()
   const amount = (row: PortfolioActivityRow) => (showDollarAmounts ? formatRowAmount(row) : MASK)
   const [products, setProducts] = React.useState<PortfolioActivityRow["product"][]>([])
   const [kinds, setKinds] = React.useState<PortfolioActivityRow["kind"][]>([])
   const [statuses, setStatuses] = React.useState<PortfolioActivityRow["status"][]>([])
-  const [showAll, setShowAll] = React.useState(false)
+  const [showAll, setShowAll] = React.useState(defaultShowAll)
 
   const hasFilters = products.length > 0 || kinds.length > 0 || statuses.length > 0
   const visibleItems = React.useMemo(
@@ -232,24 +241,30 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
   // Show a short preview by default; "View all" expands to the full history.
   const COLLAPSED_COUNT = 5
   const displayItems = showAll ? visibleItems : visibleItems.slice(0, COLLAPSED_COUNT)
-  const hasMore = visibleItems.length > COLLAPSED_COUNT
+  const hasMore = !defaultShowAll && visibleItems.length > COLLAPSED_COUNT
 
   return (
     <section id="dashboard-activity" className="min-w-0 scroll-mt-24">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">
-          {t("All Transactions")}
-        </h2>
-        {hasMore ? (
-          <button
-            type="button"
-            onClick={() => setShowAll((prev) => !prev)}
-            className="shrink-0 text-[13px] font-medium text-brand transition-colors hover:text-brand/80"
-          >
-            {showAll ? t("Show less") : t("View all")}
-          </button>
-        ) : null}
-      </div>
+      {showHeading || hasMore ? (
+        <div className="mb-4 flex items-center justify-between gap-3">
+          {showHeading ? (
+            <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">
+              {t("All Transactions")}
+            </h2>
+          ) : (
+            <span />
+          )}
+          {hasMore ? (
+            <button
+              type="button"
+              onClick={() => setShowAll((prev) => !prev)}
+              className="shrink-0 text-[13px] font-medium text-brand transition-colors hover:text-brand/80"
+            >
+              {showAll ? t("Show less") : t("View all")}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <button
           type="button"
@@ -295,7 +310,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-baseline gap-1.5">
                   <span className="text-[14px] font-medium text-foreground">{t(KIND_LABEL[row.kind])}</span>
-                  <span className="truncate text-[12px] text-muted-foreground">
+                  <span className="truncate text-[13px] text-muted-foreground">
                     · {t(PRODUCT_OPTIONS.find((option) => option.id === row.product)?.label ?? row.product)}
                   </span>
                 </div>
@@ -305,7 +320,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
               </div>
               <div className="mt-1.5 min-w-0">
                 <div className="truncate text-[14px] text-foreground">{row.primaryLabel}</div>
-                <div className="truncate text-[12px] text-muted-foreground">{row.secondaryLabel}</div>
+                <div className="truncate text-[13px] text-muted-foreground">{row.secondaryLabel}</div>
               </div>
               <div className="mt-2.5 flex items-center justify-between gap-3">
                 <span className="font-data text-[14px] font-medium tabular-nums text-foreground">{amount(row)}</span>
@@ -320,7 +335,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
                   </span>
                   <TxnLink
                     txHash={row.txHash}
-                    className="font-data text-[12px] tabular-nums text-muted-foreground underline-offset-2 hover:underline"
+                    className="font-data text-[13px] tabular-nums text-muted-foreground underline-offset-2 hover:underline"
                   />
                 </div>
               </div>
@@ -377,7 +392,7 @@ export function RecentActivity({ rows }: { rows: PortfolioActivityRow[] }) {
                     <td className="px-5 py-4 align-middle">
                       <div className="min-w-0">
                         <div className="truncate text-[14px] font-medium text-foreground">{row.primaryLabel}</div>
-                        <div className="truncate text-[12px] text-muted-foreground">{row.secondaryLabel}</div>
+                        <div className="truncate text-[13px] text-muted-foreground">{row.secondaryLabel}</div>
                       </div>
                     </td>
                     <td className="px-5 py-4 align-middle font-data text-[14px] font-medium tabular-nums text-foreground">

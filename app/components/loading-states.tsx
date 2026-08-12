@@ -59,9 +59,19 @@ function Surface({ children, className }: BlockProps) {
 // with no jump. It is NOT wrapped in `Page` — the home layout is its own shell.
 // -----------------------------------------------------------------------------
 
-/** One swap-style field box (collateral / amount) — matches `SwapStyleField`. */
-function HomeFieldSkeleton({ children }: { children: ReactNode }) {
-  return <div className="rounded-radius-xl border border-border/60 bg-surface-inset px-4 py-3">{children}</div>
+/** One swap-style field box (sell / buy) — matches `SwapStyleField`. */
+function HomeFieldSkeleton({ children, tone }: { children: ReactNode; tone: "raised" | "inset" }) {
+  return (
+    <div
+      className={cn(
+        "rounded-radius-xl px-4 py-3",
+        tone === "raised" && "border border-border bg-field-top text-card-foreground dark:shadow-none",
+        tone === "inset" && "border border-transparent bg-field-bottom",
+      )}
+    >
+      {children}
+    </div>
+  )
 }
 
 export function HomeWorkspaceSkeleton() {
@@ -86,10 +96,10 @@ export function HomeWorkspaceSkeleton() {
               already announces the load. */}
           <div className="pointer-events-none flex items-center justify-between gap-2" aria-hidden>
             <ActionWorkspaceTabs
-              items={HOME_MODE_ITEMS.map((item) => ({ id: item.value, label: t(item.label) }))}
+              items={HOME_MODE_ITEMS.map((item) => ({ id: item.value, label: item.label }))}
               value="swap"
               onChange={() => {}}
-              ariaLabel={t("Express actions")}
+              ariaLabel="Express actions"
               withIcons
               revealLabels
             />
@@ -97,43 +107,47 @@ export function HomeWorkspaceSkeleton() {
 
           <div className="mt-3 flex flex-col gap-2">
             <div className="flex flex-col gap-1">
-              <HomeFieldSkeleton>
-                <div className="text-[14px] font-medium text-foreground">{t("Sell")}</div>
-                <div className="mt-1.5 flex min-h-10 items-center justify-between gap-3">
-                  <div className="text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none text-muted-foreground/60">
+              <HomeFieldSkeleton tone="raised">
+                <div className="text-[15px] font-medium text-foreground/75">{t("Sell")}</div>
+                <div className="mt-1.5 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
+                  <div className="h-[1em] min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-muted-foreground/60">
                     0
                   </div>
-                  <span className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-medium text-foreground">
+                  <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground max-[360px]:self-end">
                     {t("Select Asset")}
                     <span aria-hidden className="text-muted-foreground">
                       ▾
                     </span>
                   </span>
                 </div>
-                <div className="mt-1 min-h-5 text-[14px] text-foreground/60">$0.00</div>
+                <div className="mt-1 flex items-center justify-between gap-3 text-[14px]">
+                  <span className="min-w-0 truncate text-foreground/60">$0.00</span>
+                </div>
               </HomeFieldSkeleton>
 
-              <HomeFieldSkeleton>
-                <div className="text-[14px] font-medium text-foreground">{t("Buy")}</div>
-                <div className="mt-1.5 flex items-center justify-between gap-3">
-                  <div className="text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none text-muted-foreground/60">
+              <HomeFieldSkeleton tone="inset">
+                <div className="text-[15px] font-medium text-foreground/75">{t("Buy")}</div>
+                <div className="mt-1.5 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
+                  <div className="h-[1em] min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-muted-foreground/60">
                     0
                   </div>
-                  <span className="inline-flex h-9 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-medium text-foreground">
+                  <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground max-[360px]:self-end">
                     {t("Select Asset")}
                     <span aria-hidden className="text-muted-foreground">
                       ▾
                     </span>
                   </span>
                 </div>
-                <div className="mt-1 min-h-5 text-[14px] text-foreground/60">$0.00</div>
+                <div className="mt-1 flex items-center justify-between gap-3 text-[14px]">
+                  <span className="min-w-0 truncate text-foreground/60">$0.00</span>
+                </div>
               </HomeFieldSkeleton>
             </div>
 
             <button
               type="button"
               disabled
-              className="mt-1 inline-flex h-14 w-full items-center justify-center rounded-radius-xl bg-muted text-[15px] font-semibold text-muted-foreground"
+              className="mt-1 inline-flex h-14 w-full items-center justify-center rounded-radius-xl bg-brand-soft text-[15px] font-semibold text-brand-soft-foreground"
               data-testid="action-footer-primary"
             >
               {t("Select Asset")}
@@ -153,76 +167,70 @@ export function HomeWorkspaceSkeleton() {
 export function RewardsPageSkeleton() {
   return (
     <Page mainClassName="px-3 py-6 sm:px-4 md:py-10">
-      {/* Balance hero (left) + promo card (right, md+) — RewardsBalanceHero. */}
-      <div className="mb-6 grid gap-5 md:mb-8 md:gap-7 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.9fr)] xl:items-start">
-        <Surface className="px-4 py-4 sm:px-5 md:min-h-[174px]">
-          <div className="flex min-h-[142px] flex-col justify-between gap-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-8 w-32 rounded-xs" />
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                </div>
-                <Skeleton className="h-3 w-24 rounded-xs" />
-                <Skeleton className="h-3 w-28 rounded-xs" />
-              </div>
-              <Skeleton className="h-10 w-28 rounded-radius-sm" />
+      <div className="mb-12">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <Skeleton className="h-7 w-40 rounded-xs md:h-8" />
+          <Skeleton className="h-8 w-28 rounded-full" />
+        </div>
+        {/* Balance hero (left) + promo card (right, md+) — RewardsBalanceHero. */}
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
+          <Surface className="relative min-h-[310px] px-4 py-4 sm:px-5">
+            <div className="space-y-3">
+              <Skeleton className="h-8 w-36 rounded-xs" />
+              <Skeleton className="h-4 w-28 rounded-xs" />
             </div>
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-48 rounded-xs" />
-              <Skeleton className="h-1.5 w-full rounded-xs" />
-            </div>
-          </div>
-        </Surface>
+            <Skeleton className="mt-10 h-[210px] w-full rounded-xs" />
+          </Surface>
 
-        <Surface className="hidden p-4 md:block">
-          <Skeleton className="mb-3 h-3.5 w-28 rounded-xs" />
-          <div className="space-y-3.5">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div key={`rewards-promo-row-${index}`} className="flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-9 w-9 rounded-full" />
-                  <div className="space-y-1.5">
-                    <Skeleton className="h-3 w-24 rounded-xs" />
-                    <Skeleton className="h-2.5 w-14 rounded-xs" />
-                  </div>
-                </div>
-                <Skeleton className="h-3.5 w-12 rounded-xs" />
-              </div>
-            ))}
+          <div className="hidden space-y-3 lg:block">
+            <Surface className="p-4">
+              <Skeleton className="mb-3 h-3.5 w-28 rounded-xs" />
+              <Skeleton className="h-8 w-36 rounded-xs" />
+            </Surface>
+            <Surface className="p-4">
+              <Skeleton className="mb-3 h-3.5 w-28 rounded-xs" />
+              <Skeleton className="h-8 w-36 rounded-xs" />
+            </Surface>
           </div>
-        </Surface>
-      </div>
-
-      {/* Underline tab strip (left-aligned, border-b). */}
-      <div className="mb-6 border-b border-border/90">
-        <div className="flex gap-6 pb-3 sm:gap-9 sm:pb-4">
-          {["w-20", "w-24", "w-20"].map((width, index) => (
-            <Skeleton key={`rewards-tab-${index}`} className={cn("h-4 rounded-xs", width)} />
-          ))}
         </div>
       </div>
 
-      {/* Quest grid — QuestsTab: h-full cards with icon + badge, title block, and a
-          bottom CTA, laid out 1 → 2 → 4 → 5 columns. */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
-        {Array.from({ length: 8 }).map((_, index) => (
-          <Surface key={`rewards-quest-${index}`} className="flex h-full flex-col p-3.5">
-            <div className="flex items-start justify-between gap-3">
-              <Skeleton className="h-9 w-9 rounded-radius-md" />
-              <Skeleton className="h-4 w-16 rounded-full" />
+      <div className="space-y-14 md:space-y-16">
+        <section>
+          <div className="mb-6">
+            <Skeleton className="h-7 w-48 rounded-xs md:h-8" />
+          </div>
+          {/* Underline tab strip (left-aligned, border-b). */}
+          <div className="mb-6 border-b border-border/90">
+            <div className="flex gap-6 pb-3 sm:gap-9 sm:pb-4">
+              {["w-20", "w-24", "w-20"].map((width, index) => (
+                <Skeleton key={`rewards-tab-${index}`} className={cn("h-4 rounded-xs", width)} />
+              ))}
             </div>
-            <div className="mt-3 space-y-2 sm:mt-3.5">
-              <Skeleton className="h-3.5 w-full rounded-xs" />
-              <Skeleton className="h-3.5 w-4/5 rounded-xs" />
-              <Skeleton className="h-3 w-2/3 rounded-xs" />
-              <Skeleton className="h-3.5 w-20 rounded-xs" />
-            </div>
-            <div className="mt-auto pt-3.5">
-              <Skeleton className="h-9 w-full rounded-radius-sm" />
-            </div>
-          </Surface>
-        ))}
+          </div>
+
+          {/* Quest grid — QuestsTab: h-full cards with icon + badge, title block, and a
+              bottom CTA, laid out 1 → 2 → 4 → 5 columns. */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <Surface key={`rewards-quest-${index}`} className="flex h-full flex-col p-3.5">
+                <div className="flex items-start justify-between gap-3">
+                  <Skeleton className="h-9 w-9 rounded-radius-md" />
+                  <Skeleton className="h-4 w-16 rounded-full" />
+                </div>
+                <div className="mt-3 space-y-2 sm:mt-3.5">
+                  <Skeleton className="h-3.5 w-full rounded-xs" />
+                  <Skeleton className="h-3.5 w-4/5 rounded-xs" />
+                  <Skeleton className="h-3 w-2/3 rounded-xs" />
+                  <Skeleton className="h-3.5 w-20 rounded-xs" />
+                </div>
+                <div className="mt-auto pt-3.5">
+                  <Skeleton className="h-9 w-full rounded-radius-sm" />
+                </div>
+              </Surface>
+            ))}
+          </div>
+        </section>
       </div>
     </Page>
   )

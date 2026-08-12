@@ -12,9 +12,8 @@ type ChartRangeSelectorProps = {
   ranges?: readonly ChartRangeOption[]
 }
 
-/** "All" renders as "ALL" to match the uppercase tick labels. */
 function formatRangeLabel(range: ChartRangeOption): string {
-  return range === "All" ? "ALL" : range
+  return range
 }
 
 export function ChartRangeSelector({
@@ -28,7 +27,10 @@ export function ChartRangeSelector({
     <div
       role="tablist"
       aria-label={t("Time range")}
-      className={cn("flex w-full items-stretch justify-start gap-10 border-b border-border sm:gap-12", className)}
+      className={cn(
+        "inline-flex w-fit items-center gap-0.5 rounded-full border border-border bg-background p-0.5",
+        className,
+      )}
     >
       {ranges.map((range) => {
         const active = activeRange === range
@@ -40,18 +42,11 @@ export function ChartRangeSelector({
             type="button"
             onClick={() => onRangeChange(range)}
             className={cn(
-              "relative flex min-h-10 flex-none items-center justify-center pb-2.5 pt-1 text-[13px] font-semibold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:min-h-0 sm:text-sm",
-              active ? "text-sky-400" : "text-muted-foreground hover:text-foreground",
+              "relative flex h-7 min-w-8 flex-none items-center justify-center rounded-full px-2 text-[12px] font-semibold tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:text-[13px]",
+              active ? "bg-muted text-foreground" : "text-foreground/75 hover:text-foreground",
             )}
           >
             {formatRangeLabel(range)}
-            <span
-              aria-hidden
-              className={cn(
-                "pointer-events-none absolute -bottom-px left-1/2 h-0.5 w-7 -translate-x-1/2 rounded-full bg-sky-400 transition-opacity",
-                active ? "opacity-100" : "opacity-0",
-              )}
-            />
           </button>
         )
       })}

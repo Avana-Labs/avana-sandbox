@@ -25,6 +25,22 @@ function translateAboutDescription(description: string, t: (key: string) => stri
       .replace("{marketType}", marketType)
   }
 
+  const multiplyMatch = description.match(
+    /^(.+?) \((.+?)\) \/ (.+?) \((.+?)\) is a leveraged multiply market on Avana\. Supply \2 as collateral to loop into \4 exposure, up to (.+?), in a route dedicated to leveraged positions rather than LP collateral pools\. Net returns track the supply\/borrow spread, utilization, and the selected multiplier, so looping results can move as rates and available liquidity rebalance\. The page focuses on the live leverage limit, the supply\/borrow mix, available liquidity, and the latest risk posture for this (.+?) market\. Users should watch collateral factor, liquidation threshold, borrow cost, and available liquidity because those inputs affect both looping returns and how quickly a position can be unwound during stressed conditions\.$/,
+  )
+  if (multiplyMatch) {
+    const [, name, symbol, borrowName, borrow, leverage, marketType] = multiplyMatch
+    return t(
+      "{name} ({symbol}) / {borrowName} ({borrow}) is a leveraged multiply market on Avana. Supply {symbol} as collateral to loop into {borrow} exposure, up to {leverage}, in a route dedicated to leveraged positions rather than LP collateral pools. Net returns track the supply/borrow spread, utilization, and the selected multiplier, so looping results can move as rates and available liquidity rebalance. The page focuses on the live leverage limit, the supply/borrow mix, available liquidity, and the latest risk posture for this {marketType} market. Users should watch collateral factor, liquidation threshold, borrow cost, and available liquidity because those inputs affect both looping returns and how quickly a position can be unwound during stressed conditions.",
+    )
+      .replaceAll("{name}", name)
+      .replaceAll("{symbol}", symbol)
+      .replaceAll("{borrowName}", borrowName)
+      .replaceAll("{borrow}", borrow)
+      .replaceAll("{leverage}", leverage)
+      .replaceAll("{marketType}", marketType)
+  }
+
   return t(description)
 }
 
@@ -35,6 +51,7 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
   const description = translateAboutDescription(about.description, t)
   const isLong = typeof description === "string" && description.length > DESCRIPTION_CLAMP
   const shownDescription = !isLong || expanded ? description : `${description.slice(0, DESCRIPTION_CLAMP).trimEnd()}… `
+  const visibleStats = about.stats.filter((stat) => stat.label !== "Deployed On")
 
   return (
     <section
@@ -50,8 +67,8 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
         <h2
           className={
             compact
-              ? "truncate text-[18px] font-normal leading-none tracking-[-0.02em] text-brand-readable"
-              : "truncate text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable"
+              ? "truncate text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]"
+              : "truncate text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]"
           }
         >
           {t(title)}
@@ -60,7 +77,9 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
 
       <p
         className={
-          plain ? "text-[14px] leading-[1.55] text-text-high" : "px-4 text-[14px] leading-[1.55] text-text-high"
+          plain
+            ? "text-[15px] leading-[1.6] text-muted-foreground md:text-[16px]"
+            : "px-4 text-[15px] leading-[1.6] text-muted-foreground md:text-[16px]"
         }
       >
         {shownDescription}
@@ -75,9 +94,9 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
         ) : null}
       </p>
 
-      {about.stats.length > 0 ? (
+      {visibleStats.length > 0 ? (
         <dl className={plain ? "text-[13.5px]" : "px-4 pb-2 text-[13.5px]"}>
-          {about.stats.map((s) => (
+          {visibleStats.map((s) => (
             <div key={s.label} className="flex items-center justify-between gap-4 py-2.5">
               <dt className="flex min-w-0 items-center gap-1.5 text-text-low">
                 <span className={s.href ? "min-w-0 truncate" : "truncate"}>{t(s.label)}</span>

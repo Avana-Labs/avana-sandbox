@@ -15,16 +15,19 @@ import type { LendMarketDetail } from "@/app/lib/lend-detail"
 import type { TxHistoryRow } from "@/app/lib/borrow-detail"
 import {
   DeferredDetailContent,
+  detailAnalyticsSectionClass,
+  detailAnalyticsStackClass,
   DetailPageNotice,
   DetailPageWidth,
   MobileDetailActionBar,
 } from "@/app/components/detail-page-primitives"
 
-const SupplyCard = dynamic(() => import("@/app/lend/_detail/sections/SupplyCard").then((mod) => mod.SupplyCard), {
-  ssr: false,
-})
 const CashflowCard = dynamic(
   () => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard),
+  { ssr: false },
+)
+const InterestRateModelCard = dynamic(
+  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.InterestRateModelCard),
   { ssr: false },
 )
 const RiskSection = dynamic(
@@ -37,10 +40,6 @@ const DetailFaqSection = dynamic(
 )
 const TransactionHistoryCard = dynamic(
   () => import("@/app/borrow/_detail/asset-sections/TransactionHistoryCard").then((mod) => mod.TransactionHistoryCard),
-  { ssr: false },
-)
-const RelatedMarketsRow = dynamic(
-  () => import("@/app/lend/_detail/sections/RelatedMarketsRow").then((mod) => mod.RelatedMarketsRow),
   { ssr: false },
 )
 
@@ -88,29 +87,29 @@ export function LendMarketDetailClient({ detail }: Props) {
 
   return (
     <div className="bg-background">
-      <main className="pb-24 pt-8 md:pb-12">
+      <main className="pb-24 pt-12 md:pb-12 md:pt-14">
         <div className="container mx-auto px-4">
           <DetailPageWidth>
             <nav
               aria-label={t("Breadcrumb")}
-              className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]"
+              className="mb-4 flex items-center gap-1.5 text-[15px] text-muted-foreground md:text-[16px]"
             >
               <Link href="/lend" className="transition-colors hover:text-foreground">
                 {t("Lend")}
               </Link>
-              <span aria-hidden className="text-border">
+              <span aria-hidden className="font-medium text-muted-foreground">
                 ›
               </span>
               <span className="font-normal text-foreground">{detail.hero.name}</span>
             </nav>
 
-            <div className="grid lg:grid-cols-[minmax(0,1fr)_420px] lg:grid-rows-[auto_1fr] lg:gap-x-8">
+            <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-20">
               <div className="min-w-0 border-b border-border pb-5 lg:col-span-2">
                 <LendHeroIdentity detail={detail} className="pb-0" />
               </div>
 
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                <LendHero detail={detail} hideIdentity className="mb-6" />
+                <LendHero detail={detail} hideIdentity className="mb-12" />
 
                 <AboutNewsSection
                   about={detail.about}
@@ -119,17 +118,28 @@ export function LendMarketDetailClient({ detail }: Props) {
                   newsImageUrl={detail.hero.visual.iconUrl ?? undefined}
                   newsImageLabel={detail.hero.symbol}
                   mediaVariant="icon"
+                  afterAbout={
+                    <>
+                      <section aria-label={t("Key Statistics")} className="space-y-6">
+                        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+                          Key Statistics
+                        </h2>
+                        <QuickStatsGrid detail={detail} />
+                      </section>
+                      <RiskSection detail={detail} />
+                    </>
+                  }
+                  className="pt-0"
                 />
 
-                <section aria-label={t("Lend market analytics")} className="space-y-12 pt-12">
-                  <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
-                    Key Statistics
-                  </h2>
-                  <QuickStatsGrid detail={detail} />
-                  <DeferredDetailContent className="space-y-12">
-                    <SupplyCard detail={detail} />
+                <section aria-label={t("Lend market analytics")} className={detailAnalyticsSectionClass}>
+                  <DeferredDetailContent className={detailAnalyticsStackClass}>
+                    <InterestRateModelCard
+                      utilizationPct={detail.utilizationPct}
+                      borrowAprPct={detail.borrowAprPct}
+                      protocolParameters={detail.protocolParameters}
+                    />
                     <CashflowCard detail={detail} />
-                    <RiskSection detail={detail} />
                     <DetailFaqSection
                       title={t("General FAQs")}
                       items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
@@ -139,7 +149,6 @@ export function LendMarketDetailClient({ detail }: Props) {
                       assetSymbol={detail.hero.symbol}
                       kindLabelMap={{ supply: "Supply", withdraw: "Withdraw", rewards: "Rewards" }}
                     />
-                    <RelatedMarketsRow detail={detail} />
                     <DetailPageNotice product="lend" />
                   </DeferredDetailContent>
                 </section>

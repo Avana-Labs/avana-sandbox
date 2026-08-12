@@ -55,7 +55,7 @@ for (const { name, path } of ACTION_LIGHTHOUSE_ROUTES) {
 
 test("borrow keeps the workspace shell below the hero", async ({ page }) => {
   await page.goto("/borrow", { waitUntil: "domcontentloaded" })
-  await expect(page.getByText("Total TVL").first()).toBeVisible()
+  await expect(page.getByText("Borrow TVL").first()).toBeVisible()
   await expect(page.locator(".borrow-workspace-shell")).toBeVisible()
 })
 

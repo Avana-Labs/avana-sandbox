@@ -24,7 +24,7 @@ export default async function BorrowPage() {
             url: "https://avana.cc/borrow",
           })}
         />
-        <LighthouseAuditSurface title="Total TVL">Borrow markets and available liquidity.</LighthouseAuditSurface>
+        <LighthouseAuditSurface title="Borrow TVL">Borrow markets and available liquidity.</LighthouseAuditSurface>
       </>
     )
   }

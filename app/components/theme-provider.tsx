@@ -73,15 +73,12 @@ type ThemeProviderProps = React.PropsWithChildren<{
 
 export function ThemeProvider({
   children,
-  defaultTheme = "system",
+  defaultTheme = "light",
   disableTransitionOnChange = true,
   storageKey = THEME_STORAGE_KEY,
 }: ThemeProviderProps) {
-  // Initialize to deterministic defaults so the server and the client's first
-  // render match; the stored/system theme is applied in the effect below after
-  // mount. Reading localStorage/matchMedia in the initializer would mismatch.
-  const [theme, setThemeState] = useState<Theme>(defaultTheme)
-  const [systemTheme, setSystemTheme] = useState<"light" | "dark">("light")
+  const [theme, setThemeState] = useState<Theme>(() => getStoredTheme(storageKey, defaultTheme))
+  const [systemTheme, setSystemTheme] = useState<"light" | "dark">(() => getSystemTheme())
   const [hydrated, setHydrated] = useState(false)
 
   useEffect(() => {

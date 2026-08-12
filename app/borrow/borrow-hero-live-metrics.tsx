@@ -15,32 +15,31 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
   const fc = useCurrency()
   const { t } = useTranslation()
   return (
-    <div className="flex flex-col gap-3 pb-4 md:flex-row md:items-end md:justify-between md:gap-4">
-      {/* Mobile: label + value inline on one row. Desktop: stacked as before. */}
-      <div className="flex items-baseline justify-between gap-x-3 md:block md:min-w-0">
-        <p className="text-[12px] font-medium tracking-tight text-muted-foreground">{t("Total TVL")}</p>
-        <p className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
+    <div className="flex w-full items-start justify-between gap-4 pb-4">
+      <div className="min-w-0 space-y-1.5">
+        <p className="text-[13px] text-muted-foreground">{t("Borrow TVL")}</p>
+        <p className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-normal tabular-nums text-foreground">
           {fc.compact(metrics.totalTvlUsd)}
         </p>
       </div>
 
-      <div className="flex flex-col gap-2.5 md:grid md:grid-cols-2 md:gap-5 md:ml-auto md:text-right">
-        <div className="flex items-baseline justify-between md:block">
-          <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground md:mb-1 md:justify-end">
+      <div className="hidden md:ml-auto md:flex md:gap-8 md:text-right">
+        <div className="min-w-0 space-y-1.5">
+          <p className="flex items-center justify-end gap-1.5 text-[13px] text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
             {t("Available Credit")}
-          </div>
-          <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
+          </p>
+          <p className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-normal tabular-nums text-foreground">
             {fc.compact(metrics.availableCreditUsd)}
           </p>
         </div>
 
-        <div className="flex items-baseline justify-between md:block">
-          <div className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground md:mb-1 md:justify-end">
+        <div className="min-w-0 space-y-1.5">
+          <p className="flex items-center justify-end gap-1.5 text-[13px] text-muted-foreground">
             <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
             {t("Outstanding Loans")}
-          </div>
-          <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
+          </p>
+          <p className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-normal tabular-nums text-foreground">
             {fc.compact(metrics.outstandingLoansUsd)}
           </p>
         </div>

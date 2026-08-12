@@ -20,7 +20,8 @@ describe("DashboardWalletTab", () => {
   it("renders wallet tokens and LPs separately", { timeout: 20_000 }, () => {
     renderWalletTab(<DashboardWalletTab walletId="demo-wallet" />)
 
-    expect(screen.getByRole("heading", { name: "Wallet" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Wallet Balance" })).toBeInTheDocument()
+    expect(screen.getByText("Wallet Value")).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Tokens" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Pools" })).toBeInTheDocument()
     expect(screen.getAllByText("Ether").length).toBeGreaterThan(0)

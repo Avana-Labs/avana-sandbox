@@ -10,10 +10,59 @@ const points = [
 
 describe("HeroAreaChart", () => {
   it("builds a smooth closed area without Recharts", () => {
-    const geometry = buildHeroAreaGeometry(points, 400, 240)
+    const geometry = buildHeroAreaGeometry(points, 800, 240, "1D", (value) => `axis:${Math.round(value)}`)
     expect(geometry.points).toHaveLength(3)
     expect(geometry.linePath).toContain(" C ")
     expect(geometry.areaPath).toMatch(/ Z$/)
+    expect(geometry.axisTicks.map((tick) => tick.label)).toEqual([
+      "axis:112",
+      "axis:109",
+      "axis:106",
+      "axis:102",
+      "axis:99",
+      "axis:96",
+    ])
+    expect(geometry.xAxisTicks.length).toBeGreaterThan(0)
+  })
+
+  it("keeps one x-axis label per unique series label", () => {
+    const series = [
+      { time: 0, value: 100, label: "6:00 AM" },
+      { time: 1, value: 101, label: "6:00 AM" },
+      { time: 2, value: 102, label: "9:00 AM" },
+      { time: 3, value: 103, label: "12:00 PM" },
+      { time: 4, value: 104, label: "3:00 PM" },
+      { time: 5, value: 105, label: "3:00 PM" },
+      { time: 6, value: 106, label: "6:00 PM" },
+      { time: 7, value: 107, label: "9:00 PM" },
+      { time: 8, value: 108, label: "Now" },
+    ]
+    const geometry = buildHeroAreaGeometry(series, 900, 310, "1D")
+    expect(geometry.xAxisTicks.map((tick) => tick.label)).toEqual([
+      "6:00 AM",
+      "9:00 AM",
+      "12:00 PM",
+      "3:00 PM",
+      "6:00 PM",
+      "9:00 PM",
+      "Now",
+    ])
+    expect(geometry.axisTicks).toHaveLength(6)
+    expect(geometry.points[0]?.x).toBe(0)
+    expect(geometry.xAxisTicks.at(-1)?.x).toBe(geometry.points.at(-1)?.x)
+  })
+
+  it("subsamples dense day labels so 1M stays readable", () => {
+    const series = Array.from({ length: 30 }, (_, index) => ({
+      time: index,
+      value: 100 + index,
+      label: `Jun ${index + 1}`,
+    }))
+    const geometry = buildHeroAreaGeometry(series, 900, 310, "1M")
+    expect(geometry.xAxisTicks.length).toBeGreaterThanOrEqual(3)
+    expect(geometry.xAxisTicks.length).toBeLessThanOrEqual(6)
+    expect(geometry.xAxisTicks[0]?.label).toBe("Jun 1")
+    expect(geometry.xAxisTicks.at(-1)?.label).toBe("Jun 30")
   })
 
   it("preserves hover selection, tooltip formatting, and pointer exit", () => {
@@ -23,6 +72,7 @@ describe("HeroAreaChart", () => {
         data={points}
         activeRange="1D"
         formatValue={(value) => `value:${value}`}
+        formatYAxis={(value) => `axis:${Math.round(value)}`}
         onActiveIndexChange={onActiveIndexChange}
       />,
     )
@@ -40,8 +90,10 @@ describe("HeroAreaChart", () => {
     })
 
     fireEvent.pointerMove(chart, { clientX: 150 })
-    expect(screen.getByText("11:00")).toBeInTheDocument()
+    expect(screen.getAllByText("11:00").length).toBeGreaterThan(0)
     expect(screen.getByText("value:108")).toBeInTheDocument()
+    expect(screen.getByText("axis:112")).toBeInTheDocument()
+    expect(screen.getAllByText("10:00").length).toBeGreaterThan(0)
     expect(onActiveIndexChange).toHaveBeenLastCalledWith(1)
 
     fireEvent.pointerLeave(chart)

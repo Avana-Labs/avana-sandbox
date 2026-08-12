@@ -5,13 +5,17 @@ import { RewardsBalanceHero } from "@/app/rewards/rewards-balance-hero"
 
 vi.mock("next/dynamic", () => ({
   default: () =>
-    function Chart({ data }: { data: Array<{ value: number }> }) {
-      return <div data-testid="portfolio-chart">{data.map((point) => point.value).join(",")}</div>
+    function Chart({ data }: { data?: Array<{ value: number }> }) {
+      return <div data-testid="portfolio-chart">{(data ?? []).map((point) => point.value).join(",")}</div>
     },
 }))
 
 vi.mock("@/app/lib/i18n/use-translation", () => ({
   useTranslation: () => ({ t: (value: string) => value }),
+}))
+
+vi.mock("@/app/lib/currency/use-currency", () => ({
+  useCurrency: () => ({ ctx: { currency: "USD", rate: 1 } }),
 }))
 
 describe("RewardsBalanceHero", () => {

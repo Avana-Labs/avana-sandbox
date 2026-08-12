@@ -16,6 +16,18 @@ const METRIC_HELP_BY_LABEL: Readonly<Record<string, string>> = {
   "slope below optimal": "Rate of interest increase when utilisation is below optimal",
   "slope above optimal": "Rate of interest increase when utilisation exceeds optimal",
   "base borrow rate": "The minimum borrow rate applied at 0% utilisation",
+  "liquidation threshold": "Health factor begins breaking down when collateral value crosses this threshold.",
+  "oracle source": "Price feed family used by the market risk engine.",
+  "max ltv": "Maximum percentage of an asset's value that can be borrowed against",
+  "supply cap": "Maximum total deposits allowed before the cap is reached",
+  "borrow cap": "Maximum total borrows allowed before the cap is reached",
+  "liquidation bonus": "The penalty range applied when this position is liquidated",
+  price: "Current oracle price used to value this market's asset.",
+  "available liquidity": "Amount of supplied liquidity that can currently be withdrawn or borrowed.",
+  "supply apy": "Annualized yield paid to suppliers from borrower interest.",
+  "rewards apy": "Additional annualized incentive yield paid on top of base supply interest.",
+  "borrow apy": "Annualized rate paid by borrowers before rewards or position-specific effects.",
+  "reserve factor": "Share of borrower interest directed to the protocol reserve instead of suppliers.",
 }
 
 export function resolveBorrowDetailMetricHelp(label: string): string | undefined {

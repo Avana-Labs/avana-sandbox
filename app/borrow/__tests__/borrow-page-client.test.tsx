@@ -120,7 +120,7 @@ describe("BorrowPageHero", () => {
   it("renders fetched hero metrics and explore sections without recomputing them locally", () => {
     renderWithPrefs(<BorrowPageHero pageData={basePageData} />)
 
-    expect(screen.getByText("Total TVL")).toBeInTheDocument()
+    expect(screen.getByText("Borrow TVL")).toBeInTheDocument()
     expect(screen.getByText("$327.4M")).toBeInTheDocument()
     // "Total Collateral" ($315.7M) was dropped in the one-stat-per-page hero refactor.
     expect(screen.getByText("$92.7M")).toBeInTheDocument()

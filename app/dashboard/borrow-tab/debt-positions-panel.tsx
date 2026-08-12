@@ -208,7 +208,7 @@ function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
   return (
     <div className="flex flex-col items-end pr-4">
       <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">{token}</span>
-      <span className="text-[12px] tracking-[-0.03em] text-muted-foreground dark:text-white/40">{usd}</span>
+      <span className="text-[13px] text-muted-foreground dark:text-white/40">{usd}</span>
     </div>
   )
 }
@@ -251,7 +251,7 @@ function DebtMobileCard({
           value={
             <span>
               {mask(row.borrowedToken)}
-              <span className="ml-2 text-[12px] text-muted-foreground">{mask(exact(row.borrowedUsd))}</span>
+              <span className="ml-2 text-[13px] text-muted-foreground">{mask(exact(row.borrowedUsd))}</span>
             </span>
           }
         />
@@ -260,7 +260,7 @@ function DebtMobileCard({
           value={
             <span>
               {mask(row.feesToken)}
-              <span className="ml-2 text-[12px] text-muted-foreground">{mask(exact(row.feesUsd))}</span>
+              <span className="ml-2 text-[13px] text-muted-foreground">{mask(exact(row.feesUsd))}</span>
             </span>
           }
         />

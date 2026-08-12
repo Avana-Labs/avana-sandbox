@@ -6,6 +6,7 @@ import { formatBpsAsPct, riskLevelLabel } from "@/app/lib/borrow-detail"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { RiskGauge, RiskLevelPill, SectionCard } from "../ui"
 import { DeltaPill } from "@/app/components/ui/live/delta-pill"
+import { cn } from "@/lib/utils"
 
 type Props = { detail: { risk: RiskAssessment } }
 
@@ -29,7 +30,7 @@ export function RiskSection({ detail }: Props) {
 
   return (
     <SectionCard
-      title={t("Risk assessment")}
+      title={t("Risk premium")}
       rightSlot={<RiskLevelPill level={risk.level} size="md" />}
       chrome="plain"
       bodyClassName="p-0"
@@ -37,10 +38,7 @@ export function RiskSection({ detail }: Props) {
       <div className="space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div className="min-w-0">
-            <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-              {t("Risk premium")}
-            </div>
-            <div className="mt-1 flex items-baseline gap-2">
+            <div className="flex items-baseline gap-2">
               <span className="font-data text-[26px] font-medium tabular-nums text-foreground md:text-[30px]">
                 {formatBpsAsPct(risk.premiumBps)}
               </span>
@@ -63,23 +61,40 @@ export function RiskSection({ detail }: Props) {
         </div>
 
         <div>
-          <ul className="divide-y divide-border rounded-radius-sm border border-border bg-surface-inset">
+          <ul className="space-y-2">
             {risk.breakdown.map((item) => {
               const open = expanded.has(item.id)
               const relatedMetric = metricByLabel[item.label.toLowerCase()]
               return (
-                <li key={item.id}>
+                <li
+                  key={item.id}
+                  className="rounded-radius-md border border-border/70 bg-background/45 transition-colors hover:border-border hover:bg-hover/40"
+                >
                   <button
                     type="button"
                     aria-expanded={open}
                     onClick={() => toggle(item.id)}
-                    className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-hover"
+                    className="flex w-full items-start justify-between gap-4 px-4 py-3 text-left"
                   >
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <span className="truncate text-[13px] font-medium text-foreground">{t(item.label)}</span>
-                      <RiskLevelPill level={item.level} withDot={false} />
+                    <div className="min-w-0">
+                      <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <span
+                          className={cn(
+                            "truncate text-[15px] font-normal tracking-[-0.02em] transition-colors",
+                            open ? "text-foreground" : "text-muted-foreground",
+                          )}
+                        >
+                          {t(item.label)}
+                        </span>
+                        <RiskLevelPill level={item.level} size="sm" />
+                      </div>
+                      {open ? (
+                        <p className="mt-2 max-w-[560px] text-[13px] leading-5 text-muted-foreground">
+                          {t(item.description)}
+                        </p>
+                      ) : null}
                     </div>
-                    <div className="flex shrink-0 items-center gap-2.5">
+                    <div className="flex shrink-0 items-center gap-2">
                       {relatedMetric ? (
                         <span className="hidden font-data text-[11.5px] tabular-nums text-muted-foreground sm:inline">
                           {relatedMetric}
@@ -108,16 +123,6 @@ export function RiskSection({ detail }: Props) {
                       </svg>
                     </div>
                   </button>
-                  {open ? (
-                    <div className="px-3.5 pb-3 text-[11.5px] leading-5 text-muted-foreground">
-                      {t(item.description)}
-                      {relatedMetric ? (
-                        <div className="mt-2 inline-flex items-center gap-2 rounded-xs border border-border bg-surface-raised px-2 py-1 font-data text-[11px] tabular-nums text-foreground">
-                          {t(item.label)}: {relatedMetric}
-                        </div>
-                      ) : null}
-                    </div>
-                  ) : null}
                 </li>
               )
             })}

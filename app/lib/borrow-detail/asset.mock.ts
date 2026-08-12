@@ -17,10 +17,11 @@ import {
 import { buildSeries, buildSeriesFamily, prngFromString } from "./prng"
 import { SANDBOX_NOW } from "@/app/lib/deterministic"
 import { buildCuratedPriceFamily } from "./token-price-series"
-import { computeAssetAllocation, formatPct } from "./allocation"
+import { computeAssetAllocation } from "./allocation"
 import { buildAssetRiskAssessment } from "./risk-model"
 import { buildAssetProtocolParameters } from "./protocol-parameters"
 import { buildAssetFaqs } from "./content-model"
+import { buildRiskParameterSet } from "./risk-parameters"
 import type {
   AboutCard,
   AllocationRow,
@@ -75,11 +76,9 @@ const ASSET_FIXTURES: Record<string, AssetFixture> = {
     subtitle:
       "The deepest stablecoin on the protocol — borrowed to lever up LP collateral and for stable-to-stable carry.",
     quickStats: {
-      supplied: { value: "$205.67M", delta: { value: 2.1, direction: "up", label: "+2.1%" } },
-      borrowed: { value: "$166.24M", delta: { value: 1.4, direction: "up", label: "+1.4%" } },
-      utilization: { value: "80.83%", delta: { value: 0.5, direction: "up", label: "+0.5%" } },
+      available: { value: "$39.43M", delta: { value: 0.6, direction: "up", label: "+0.6%" } },
       supplyApy: { value: "6.32%" },
-      supplyApy90d: { value: "6.44%" },
+      borrowApy: { value: "7.44%" },
     },
     about: {
       description:
@@ -235,6 +234,10 @@ function deltaFromPct(pct: number): DeltaStat {
 }
 
 function buildHero(asset: SpokeBorrowableRecord, fixture: AssetFixture | undefined): AssetDetailHero {
+  const contractAddress = fixture?.contractAddress ?? contractAddressFor(asset.id, "token")
+  const contractLabel =
+    fixture?.contractLabel ??
+    (/^0x[a-fA-F0-9]{40}$/.test(contractAddress) ? shortAddress(contractAddress) : contractAddress)
   return {
     visual: asset.visual,
     name: asset.name,
@@ -244,11 +247,15 @@ function buildHero(asset: SpokeBorrowableRecord, fixture: AssetFixture | undefin
       : `${asset.name} — ${asset.subtitle}.`,
     chain: fixture?.chain ?? "Ethereum",
     category: asset.category === "stable" ? "stable" : "crypto",
-    contractLabel: fixture?.contractLabel,
-    contractAddress: fixture?.contractAddress,
+    contractLabel,
+    contractAddress,
     websiteUrl: fixture?.websiteUrl,
     xUrl: fixture?.xUrl,
   }
+}
+
+function reserveFactorPct(asset: SpokeBorrowableRecord) {
+  return asset.category === "stable" ? 10 : 15
 }
 
 function buildQuickStats(
@@ -257,27 +264,26 @@ function buildQuickStats(
   borrowed: number,
   fixture: AssetFixture | undefined,
 ): QuickStat[] {
-  const utilization = borrowed / supplied
   const heroPriceUsd =
     fixture?.heroPriceUsd ?? (asset.category === "stable" ? 1 : asset.category === "btc" ? 68422.18 : 2019.96)
-  const dexLiquidityUsd = BORROW_POOL_CATALOG.filter((pool) => asset.marketIds.includes(pool.id)).reduce(
-    (sum, pool) => sum + pool.availableUsd,
-    0,
-  )
+  const availableUsd = Math.max(0, supplied - borrowed)
   const defaults: QuickStat[] = [
-    { id: "price", label: "Price", value: formatUsdPrice(heroPriceUsd), delta: deltaFromPct(-2.1) },
-    { id: "dexLiquidity", label: "Dex Liquidity", value: formatCompactUsd(dexLiquidityUsd), delta: deltaFromPct(1.2) },
-    { id: "supplied", label: "Total Supplied", value: formatCompactUsd(supplied), delta: deltaFromPct(1.8) },
-    { id: "borrowed", label: "Total Borrowed", value: formatCompactUsd(borrowed), delta: deltaFromPct(1.1) },
-    { id: "utilization", label: "Utilization", value: formatPct(utilization * 100, 2), delta: deltaFromPct(-0.6) },
+    { id: "price", label: "Price", value: formatUsdPrice(heroPriceUsd), delta: deltaFromPct(0.1) },
+    {
+      id: "available",
+      label: "Available Liquidity",
+      value: formatCompactUsd(availableUsd),
+      delta: deltaFromPct(0.6),
+    },
     {
       id: "supplyApy",
       label: "Supply APY",
       value: `${(asset.borrowApr * 0.85).toFixed(2)}%`,
       delta: deltaFromPct(0.1),
     },
-    { id: "supplyApy90d", label: "Supply APY (90D Avg)", value: `${(asset.borrowApr * 0.83).toFixed(2)}%` },
+    { id: "rewardsApy", label: "Rewards APY", value: "No rewards" },
     { id: "borrowApy", label: "Borrow APY", value: `${asset.borrowApr.toFixed(2)}%`, delta: deltaFromPct(0.08) },
+    { id: "reserveFactor", label: "Reserve Factor", value: `${reserveFactorPct(asset)}%` },
   ]
   if (!fixture?.quickStats) return defaults
   return defaults.map((stat) => ({ ...stat, ...(fixture.quickStats?.[stat.id] ?? {}) }))
@@ -523,37 +529,130 @@ function buildAssetRisk(asset: SpokeBorrowableRecord, fixture: AssetFixture | un
   return buildAssetRiskAssessment(asset)
 }
 
-function buildAssetAbout(asset: SpokeBorrowableRecord, fixture: AssetFixture | undefined): AboutCard {
-  if (fixture?.about) {
+function contractAddressFor(assetId: string, salt: string) {
+  const seed = `${assetId}:${salt}`
+  let hash = 0x811c9dc5
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  const chunk = (hash >>> 0).toString(16).padStart(8, "0").toUpperCase()
+  return `0x${chunk}${chunk}${chunk}${chunk}${chunk}`.slice(0, 42)
+}
+
+function shortAddress(address: string) {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
+function buildContractStat(label: string, assetId: string, salt: string): AboutCard["stats"][number] {
+  const address = contractAddressFor(assetId, salt)
+  return {
+    label,
+    value: shortAddress(address),
+    href: `https://etherscan.io/address/${address}`,
+  }
+}
+
+function tokenContractStat(asset: SpokeBorrowableRecord, fixture?: AssetFixture): AboutCard["stats"][number] {
+  const address = fixture?.contractAddress
+  if (address && /^0x[a-fA-F0-9]{40}$/.test(address)) {
     return {
-      ...fixture.about,
-      stats: fixture.about.stats.length > 0 ? fixture.about.stats : buildAboutStats(asset, fixture),
+      label: "Token Contract Address",
+      value: fixture.contractLabel ?? shortAddress(address),
+      href: `https://etherscan.io/address/${address}`,
     }
   }
+  return buildContractStat("Token Contract Address", asset.id, "token")
+}
+
+function buildAssetGovernanceParameters(
+  asset: SpokeBorrowableRecord,
+  supplied: number,
+  borrowed: number,
+): NonNullable<AboutCard["governanceParameters"]> {
+  const isStable = asset.category === "stable"
+  const ltvPct = isStable ? 78 : 72
+  const liquidationThresholdPct = isStable ? 83 : 78
+  const liquidationBonusPct = isStable ? 5 : 7
+  const supplyCapUsd = Math.max(25_000_000, Math.ceil((supplied * 1.75) / 1_000_000) * 1_000_000)
+  const borrowCapUsd = Math.max(10_000_000, Math.ceil((borrowed * 2.25) / 1_000_000) * 1_000_000)
+  const proposalHref = `https://etherscan.io/address/${contractAddressFor(asset.id, "governance")}`
+  const reserve = reserveFactorPct(asset)
+
   return {
+    parameters: buildRiskParameterSet({
+      collateralFactorPct: ltvPct,
+      liquidationThresholdPct,
+      depositCapacityLabel: formatCompactUsd(supplyCapUsd),
+      borrowCapacityLabel: formatCompactUsd(borrowCapUsd),
+      liquidationPenaltyPct: liquidationBonusPct,
+      collateralFactorDescription: "Maximum borrow power when this supplied asset is used as collateral.",
+    }),
+    changelog: [
+      {
+        id: "supply-cap-review",
+        parameter: "Deposit capacity",
+        previous: formatCompactUsd(Math.round(supplyCapUsd * 0.86)),
+        current: formatCompactUsd(supplyCapUsd),
+        date: "2025-09-08",
+        source: "Risk parameter review",
+        executor: "Governance executor",
+        href: proposalHref,
+      },
+      {
+        id: "reserve-factor-review",
+        parameter: "Reserve factor",
+        previous: `${Math.max(0, reserve - 1)}%`,
+        current: `${reserve}%`,
+        date: "2025-06-02",
+        source: "Revenue parameter update",
+        executor: "Risk steward multisig",
+        href: proposalHref,
+      },
+      {
+        id: "collateral-onboarding",
+        parameter: "Collateral configuration",
+        previous: "Disabled",
+        current: `${ltvPct}% CF / ${liquidationThresholdPct}% LT`,
+        date: "2025-01-20",
+        source: "Market onboarding",
+        executor: "Governance executor",
+        href: proposalHref,
+      },
+    ],
+  }
+}
+
+function buildAssetAbout(
+  asset: SpokeBorrowableRecord,
+  fixture: AssetFixture | undefined,
+  supplied: number,
+  borrowed: number,
+): AboutCard {
+  const about = fixture?.about ?? {
     description:
       `${asset.name} (${asset.symbol}) is a core borrowable market in ${asset.spokeLabel} and a building block for directional hedges and LP carry loops within that spoke. ` +
       `${asset.subtitle} The borrow APY is influenced by utilization, reserve settings, and demand inside ${asset.spokeLabel}, so the page focuses on the live rate, the supply/borrow mix, and the latest risk posture.`,
-    stats: buildAboutStats(asset, fixture),
+    stats: [],
     history: [
       { date: "2025-02-10", title: "Listed", description: `${asset.symbol} listed with conservative borrow cap.` },
       { date: "2025-11-18", title: "Parameters refreshed", description: "Quarterly risk review — no changes." },
     ],
   }
+
+  return {
+    ...about,
+    stats: buildAboutStats(asset, fixture),
+    governanceParameters: buildAssetGovernanceParameters(asset, supplied, borrowed),
+  }
 }
 
 function buildAboutStats(asset: SpokeBorrowableRecord, fixture?: AssetFixture): AboutCard["stats"] {
-  const stats: AboutCard["stats"] = []
-  // Only link real fixture addresses — never pattern-fake hex.
-  if (fixture?.contractAddress) {
-    stats.push({
-      label: "Token Contract Address",
-      value: fixture.contractLabel ?? fixture.contractAddress,
-      href: `https://etherscan.io/address/${fixture.contractAddress}`,
-    })
-  }
-  stats.push({ label: "Deployed On", value: asset.category === "stable" ? "March 18, 2024" : "October 7, 2024" })
-  return stats
+  return [
+    buildContractStat("Vault Contract Address", asset.id, "vault"),
+    tokenContractStat(asset, fixture),
+    buildContractStat("Staking Contract Address", asset.id, "staking"),
+  ]
 }
 
 function buildRelated(asset: SpokeBorrowableRecord): RelatedAssetSummary[] {
@@ -664,7 +763,7 @@ export function buildAssetDetail(asset: SpokeBorrowableRecord): AssetDetail {
     keyMetrics: buildAssetKeyMetrics(asset, supplied, borrowed),
     cashflow: buildAssetCashflow(asset, supplied, borrowed),
     risk: buildAssetRisk(asset, fixture),
-    about: buildAssetAbout(asset, fixture),
+    about: buildAssetAbout(asset, fixture, supplied, borrowed),
     faqs: buildAssetFaqs(asset.symbol, asset.name),
     transactions: buildTransactions(asset),
     related: buildRelated(asset),
@@ -674,7 +773,10 @@ export function buildAssetDetail(asset: SpokeBorrowableRecord): AssetDetail {
 
 /** About card for seeding the Convex content layer (mirrors what the detail page renders). */
 export function getAssetAboutCard(asset: SpokeBorrowableRecord): AboutCard {
-  return buildAssetAbout(asset, ASSET_FIXTURES[asset.baseAssetId])
+  const fixture = ASSET_FIXTURES[asset.baseAssetId]
+  const supplied = fixture?.baseSuppliedUsd ?? Math.max(asset.totalBorrowedUsd + asset.availableUsd, 1)
+  const borrowed = fixture?.baseBorrowedUsd ?? asset.totalBorrowedUsd
+  return buildAssetAbout(asset, fixture, supplied, borrowed)
 }
 
 for (const id of ALL_ASSET_CHART_METRICS) void id

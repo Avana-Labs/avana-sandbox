@@ -44,9 +44,9 @@ import type { AssetDetail, PoolDetail } from "./types"
 const detailWalletId = getDefaultWalletProfileId()
 
 /**
- * The asset mock uses quick-stat ids supplied/borrowed/supplyApy; the pool mock uses
- * totalSupplied/totalBorrowed/apr for the same concepts. Convex `getQuickStats` emits
- * the asset-style ids, so map each Convex id to every mock id it should override.
+ * Convex `getQuickStats` emits supplied/borrowed/utilization/supplyApy/borrowApy.
+ * Pool pages still use totalSupplied/totalBorrowed/apr; asset pages now follow the
+ * lend headline set (available/supplyApy/borrowApy), so unused Convex ids no-op.
  */
 const QUICK_STAT_ALIASES: Record<string, string[]> = {
   supplied: ["supplied", "totalSupplied"],
@@ -54,13 +54,12 @@ const QUICK_STAT_ALIASES: Record<string, string[]> = {
   utilization: ["utilization"],
   supplyApy: ["supplyApy", "apr"],
   borrowApy: ["borrowApy"],
+  available: ["available"],
 }
 
 /**
- * Overlay the Convex Market-overview quick stats (supplied / borrowed / utilization /
- * APY) onto the mock quick stats, keeping the mock-only stats (price, dex liquidity,
- * risk exposure) untouched. This makes the headline numbers match the hero + the page
- * aggregate instead of the curated-fixture values, for both asset and pool pages.
+ * Overlay Convex Market-overview quick stats onto the mock headline numbers,
+ * keeping mock-only stats (price, rewards, reserve factor, risk exposure) intact.
  */
 function mergeConvexQuickStats(
   base: QuickStat[],
@@ -97,10 +96,10 @@ export function injectPoolOraclePrice(
   const p0 = prices?.[priceKey(symbol0)]
   const p1 = prices?.[priceKey(symbol1)]
   if (p0 === undefined || p1 === undefined || p1 === 0) {
-    return quickStats.filter((s) => s.id !== "oraclePrice")
+    return quickStats.filter((s) => s.id !== "price" && s.id !== "oraclePrice")
   }
   const value = formatOraclePrice(p0 / p1)
-  return quickStats.map((s) => (s.id === "oraclePrice" ? { ...s, value } : s))
+  return quickStats.map((s) => (s.id === "price" || s.id === "oraclePrice" ? { ...s, value } : s))
 }
 
 /**
@@ -134,34 +133,25 @@ export function syncRelatedAvailable(
 }
 
 /**
- * Overlay "Dex Liquidity" (Σ available liquidity across the asset's pools) from the
- * calibrated Convex pool snapshots, so it matches the rest of the page instead of the
- * inflated catalog sum. No-op if no pool snapshots are present.
+ * Overlay "Available Liquidity" from the Convex asset snapshot (supplied − borrowed).
+ * No-op if that snapshot is missing.
  */
-function injectDexLiquidity(
+function injectAvailableLiquidity(
   quickStats: QuickStat[],
   snapshots: ConvexMarketSnapshot[],
-  poolSlugs: readonly string[],
+  slug: string,
+  scope: "asset" | "pool" = "asset",
 ): QuickStat[] {
-  const poolAvailable = new Map(snapshots.filter((s) => s.scope === "pool").map((s) => [s.slug, s.availableUsd]))
-  let total = 0
-  let matched = false
-  for (const slug of poolSlugs) {
-    const available = poolAvailable.get(slug)
-    if (available !== undefined) {
-      total += available
-      matched = true
-    }
-  }
-  if (!matched) return quickStats
-  return quickStats.map((s) => (s.id === "dexLiquidity" ? { ...s, value: formatCompactUsd(total) } : s))
+  const snap = snapshots.find((s) => s.scope === scope && s.slug === slug)
+  if (!snap) return quickStats
+  return quickStats.map((s) => (s.id === "available" ? { ...s, value: formatCompactUsd(snap.availableUsd) } : s))
 }
 
 export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | null> {
   const snapshots = await fetchConvexMarketSnapshots()
   const state = buildMockBorrowSystemState(detailWalletId)
-  const hydrated = snapshots.length > 0 ? mergeConvexMarketSnapshots(state, snapshots) : state
-  const detail = resolvePoolDetailFromState(hydrated, detailWalletId, normalizeBorrowMarketRouteId(id))
+  const hydratedState = snapshots.length > 0 ? mergeConvexMarketSnapshots(state, snapshots) : state
+  const detail = resolvePoolDetailFromState(hydratedState, detailWalletId, normalizeBorrowMarketRouteId(id))
   if (!detail) return null
 
   const [tvlPoints, cashflow, transactions, risk, quickStats, prices, content] = await Promise.all([
@@ -174,14 +164,19 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
     fetchContent("pool", detail.row.id),
   ])
   const effectiveRisk = (risk as typeof detail.risk) ?? detail.risk
-  return applyDetailContentOverlay(
+  const hydrated = applyDetailContentOverlay(
     {
       ...detail,
-      quickStats: injectPoolOraclePrice(
-        syncQuickStatsRiskPremium(mergeConvexQuickStats(detail.quickStats, quickStats), effectiveRisk.premiumBps),
-        prices,
-        detail.row.visuals[0].symbol,
-        detail.row.visuals[1].symbol,
+      quickStats: injectAvailableLiquidity(
+        injectPoolOraclePrice(
+          mergeConvexQuickStats(detail.quickStats, quickStats),
+          prices,
+          detail.row.visuals[0].symbol,
+          detail.row.visuals[1].symbol,
+        ),
+        snapshots,
+        detail.row.id,
+        "pool",
       ),
       related: syncRelatedAvailable(detail.related, snapshots),
       heroFeed: buildHeroFeedFromConvexSeries(tvlPoints, "usdCompact") ?? detail.heroFeed,
@@ -191,6 +186,16 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
     },
     content,
   )
+
+  return {
+    ...hydrated,
+    about: {
+      ...hydrated.about,
+      description: detail.about.description,
+      stats: detail.about.stats,
+      governanceParameters: detail.about.governanceParameters,
+    },
+  }
 }
 
 export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail | null> {
@@ -230,13 +235,13 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
       fetchTokenPrices(),
       fetchContent("asset", slug),
     ])
-  return applyDetailContentOverlay(
+  const hydrated = applyDetailContentOverlay(
     {
       ...detail,
-      quickStats: injectDexLiquidity(
+      quickStats: injectAvailableLiquidity(
         injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, record.baseAssetId),
         snapshots,
-        record.marketIds,
+        slug,
       ),
       heroFeed: buildHeroFeedFromConvexSeries(borrowPoints, "usdCompact") ?? detail.heroFeed,
       cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
@@ -247,4 +252,14 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
     },
     content,
   )
+
+  return {
+    ...hydrated,
+    about: {
+      ...hydrated.about,
+      description: detail.about.description,
+      stats: detail.about.stats,
+      governanceParameters: detail.about.governanceParameters,
+    },
+  }
 }

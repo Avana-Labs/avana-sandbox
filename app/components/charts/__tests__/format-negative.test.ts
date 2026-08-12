@@ -13,7 +13,7 @@ describe("chart currency sign placement", () => {
   })
 
   it("formatChartAxis puts the minus before the symbol", () => {
-    expect(formatChartAxis("usdCompact", -1_500)).toBe("-$2K")
+    expect(formatChartAxis("usdCompact", -1_500)).toBe("-$1.5K")
     expect(formatChartAxis("usd", -42)).toBe("-$42")
   })
 })

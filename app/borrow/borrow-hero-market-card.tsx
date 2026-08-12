@@ -25,6 +25,7 @@ export type HeroMarketCardProps = {
 export function HeroMarketCard({ title, subtitle, hideTitleOnMobile = false, className, rows }: HeroMarketCardProps) {
   return (
     <section
+      data-carousel-card
       className={cn(
         "min-w-[19rem] max-w-[19rem] shrink-0 rounded-radius-md border-0 bg-card p-3.5 shadow-none md:min-w-[20rem] md:max-w-[20rem] md:p-4",
         className,

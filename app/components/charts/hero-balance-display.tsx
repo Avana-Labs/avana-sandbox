@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { cn } from "@/lib/utils"
 
 type HeroBalanceDisplayProps = {
   value: string
@@ -11,9 +12,21 @@ type HeroBalanceDisplayProps = {
   label?: string
   /** Inline node rendered right next to the value (e.g. a show/hide toggle). */
   valueSuffix?: ReactNode
+  variant?: "default" | "strong" | "quiet"
+  className?: string
 }
 
-function HeroDeltaText({ value, tone, meta }: { value: string; tone: "positive" | "negative"; meta?: string }) {
+function HeroDeltaText({
+  value,
+  tone,
+  meta,
+  variant = "default",
+}: {
+  value: string
+  tone: "positive" | "negative"
+  meta?: string
+  variant?: "default" | "strong" | "quiet"
+}) {
   return (
     <div className="flex items-center gap-2">
       <div
@@ -21,10 +34,28 @@ function HeroDeltaText({ value, tone, meta }: { value: string; tone: "positive" 
           tone === "positive" ? "flex items-center gap-1 text-[#01AACF]" : "flex items-center gap-1 text-rose-500"
         }
       >
-        <span className="text-[10px] leading-none">{tone === "positive" ? "▲" : "▼"}</span>
-        <span className="text-[12px] font-normal tabular-nums">{value}</span>
+        <span
+          className={cn(
+            "leading-none",
+            variant === "strong" ? "text-[12px]" : variant === "quiet" ? "text-[12px]" : "text-[11px]",
+          )}
+        >
+          {tone === "positive" ? "▲" : "▼"}
+        </span>
+        <span
+          className={cn(
+            "tabular-nums",
+            variant === "strong"
+              ? "text-[15px] font-semibold"
+              : variant === "quiet"
+                ? "text-[13px] font-semibold lg:text-[14px]"
+                : "text-[14px] font-medium",
+          )}
+        >
+          {value}
+        </span>
       </div>
-      {meta ? <span className="text-[12px] font-normal text-muted-foreground">{meta}</span> : null}
+      {meta ? <span className="text-[13px] font-normal text-muted-foreground">{meta}</span> : null}
     </div>
   )
 }
@@ -37,16 +68,27 @@ export function HeroBalanceDisplay({
   hidden = false,
   label,
   valueSuffix,
+  variant = "default",
+  className,
 }: HeroBalanceDisplayProps) {
   return (
-    <div className="space-y-1.5">
+    <div className={cn("space-y-1.5", className)}>
       {label ? (
         <span className="block text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
           {label}
         </span>
       ) : null}
       <div className="flex items-center gap-2">
-        <span className="text-[26px] font-normal leading-none tracking-[-0.03em] text-foreground sm:text-[28px] md:text-[30px]">
+        <span
+          className={cn(
+            "leading-none text-foreground",
+            variant === "strong"
+              ? "text-[29px] font-semibold tracking-[-0.03em] sm:text-[32px] md:text-[34px]"
+              : variant === "quiet"
+                ? "font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium tracking-[-0.04em]"
+                : "text-[26px] font-normal tracking-[-0.03em] sm:text-[28px] md:text-[30px]",
+          )}
+        >
           {hidden ? "••••••••" : value}
         </span>
         {valueSuffix}
@@ -54,7 +96,7 @@ export function HeroBalanceDisplay({
       {hidden ? (
         <span className="text-[13px] text-muted-foreground">••••••••</span>
       ) : (
-        <HeroDeltaText value={delta} tone={deltaTone} meta={meta} />
+        <HeroDeltaText value={delta} tone={deltaTone} meta={meta} variant={variant} />
       )}
     </div>
   )

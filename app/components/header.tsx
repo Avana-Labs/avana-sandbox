@@ -27,7 +27,7 @@ export function Header() {
   const renderMobileActions = () => (
     <>
       <span className="-mr-1 flex items-center">
-        {mounted ? <LazySearchCommandIconOnly /> : <SearchCommandIconPlaceholder />}
+        {mounted ? <LazySearchCommandIconOnly tone="brand" /> : <SearchCommandIconPlaceholder tone="brand" />}
       </span>
       <span className="flex items-center">
         <WalletControl size="mobile" />
@@ -85,6 +85,64 @@ export function Header() {
     }
   }, [mounted])
 
+  const renderPrimaryLinks = (compact: boolean) =>
+    desktopLinks.slice(0, 4).map((link) => {
+      const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)
+      const Icon = link.icon
+
+      return (
+        <Link
+          key={link.href}
+          href={link.href}
+          aria-label={t(link.label)}
+          title={t(link.label)}
+          className={`inline-flex items-center rounded-full font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
+            compact ? "px-2.5 py-1.5" : "px-3 py-2"
+          } ${isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+        >
+          {Icon ? (
+            <span className="mr-2 inline-flex h-5 w-5 items-center justify-center text-current">
+              <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
+            </span>
+          ) : null}
+          <span>{t(link.label)}</span>
+        </Link>
+      )
+    })
+
+  const renderUtilityLinks = (compact: boolean) =>
+    desktopLinks.slice(4).map((link) => {
+      const isActive = pathname.startsWith(link.href)
+      const Icon = link.icon
+
+      return (
+        <Link
+          key={link.href}
+          href={link.href}
+          aria-label={t(link.label)}
+          title={t(link.label)}
+          className={`group inline-flex items-center rounded-full font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
+            compact ? "px-1.5 py-1.5" : "px-3 py-2"
+          } ${
+            isActive
+              ? "text-brand dark:text-[#7DDCFF]"
+              : "text-muted-foreground hover:text-brand dark:hover:text-[#7DDCFF]"
+          }`}
+        >
+          {Icon ? (
+            <span
+              className={`inline-flex items-center justify-center text-current transition-transform duration-200 ease-out group-hover:-translate-y-[1px] ${
+                compact ? "h-9 w-9" : "mr-2 h-6 w-6"
+              }`}
+            >
+              <Icon className="h-5 w-5 shrink-0" strokeWidth={2} />
+            </span>
+          ) : null}
+          {compact ? null : <span>{t(link.label)}</span>}
+        </Link>
+      )
+    })
+
   return (
     <header
       ref={headerRef}
@@ -92,79 +150,29 @@ export function Header() {
         mounted && showDivider ? "shadow-[inset_0_-1px_0_hsl(var(--border))]" : "shadow-none"
       }`}
     >
-      <div className="hidden lg:block">
-        <div className="grid h-[68px] w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center gap-3 px-3 sm:px-4 lg:px-5 xl:grid-cols-[minmax(0,1fr)_minmax(280px,410px)_minmax(0,1fr)] xl:gap-4 xl:px-6 2xl:px-8">
-          <div className="flex min-w-0 items-center gap-4 overflow-hidden xl:gap-5">
+      {/* Full desktop: wide enough for wordmark, labels, and center search (14"+ / large monitors). */}
+      <div className="hidden min-[1440px]:block">
+        <div className="grid h-[68px] w-full grid-cols-[minmax(0,1fr)_minmax(280px,410px)_minmax(0,1fr)] items-center gap-4 px-6 2xl:px-8">
+          <div className="flex min-w-0 items-center gap-5">
             <Link href="/" aria-label={t("Home")} title={t("Home")} className="flex shrink-0 items-center">
-              <span className="xl:hidden">
-                <BrandIcon />
-              </span>
-              <BrandLogo className="hidden h-[44px] xl:block" />
+              <BrandLogo className="h-[44px]" />
             </Link>
 
             <nav
               aria-label={t("Primary")}
               className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             >
-              {desktopLinks.slice(0, 4).map((link) => {
-                const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)
-                const Icon = link.icon
-
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    aria-label={t(link.label)}
-                    title={t(link.label)}
-                    className={`inline-flex items-center rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors xl:px-3 xl:py-2 xl:text-[16px] ${
-                      isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {Icon ? (
-                      <span className="mr-2 inline-flex h-5 w-5 items-center justify-center text-current">
-                        <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
-                      </span>
-                    ) : null}
-                    <span>{t(link.label)}</span>
-                  </Link>
-                )
-              })}
+              {renderPrimaryLinks(false)}
             </nav>
           </div>
 
-          <div className="hidden min-w-0 justify-center px-1 xl:flex xl:px-2">
-            <div className="w-full max-w-[280px] xl:max-w-[360px]">
-              {mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}
-            </div>
+          <div className="flex min-w-0 justify-center px-2">
+            <div className="w-full max-w-[360px]">{mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}</div>
           </div>
 
-          <div className="flex min-w-0 items-center justify-end gap-2 xl:gap-2.5">
+          <div className="flex min-w-0 items-center justify-end gap-2.5">
             <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {desktopLinks.slice(4).map((link) => {
-                const isActive = pathname.startsWith(link.href)
-                const Icon = link.icon
-
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    aria-label={t(link.label)}
-                    title={t(link.label)}
-                    className={`group inline-flex items-center rounded-full px-2.5 py-1.5 font-sans text-[16px] font-normal leading-[1.15] transition-colors xl:px-3 xl:py-2 xl:text-[16px] ${
-                      isActive
-                        ? "text-brand dark:text-[#7DDCFF]"
-                        : "text-muted-foreground hover:text-brand dark:hover:text-[#7DDCFF]"
-                    }`}
-                  >
-                    {Icon ? (
-                      <span className="inline-flex h-6 w-6 items-center justify-center text-current transition-transform duration-200 ease-out group-hover:-translate-y-[1px] xl:mr-2">
-                        <Icon className="h-5 w-5 shrink-0" strokeWidth={2} />
-                      </span>
-                    ) : null}
-                    <span className="hidden xl:inline">{t(link.label)}</span>
-                  </Link>
-                )
-              })}
+              {renderUtilityLinks(false)}
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
@@ -177,6 +185,39 @@ export function Header() {
         </div>
       </div>
 
+      {/* iPad / mid laptop (lg–1439px): compact desktop chrome, not the phone menu. */}
+      <div className="hidden lg:block min-[1440px]:hidden">
+        <div className="grid h-[68px] w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 lg:px-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <Link href="/" aria-label={t("Home")} title={t("Home")} className="flex shrink-0 items-center">
+              <BrandLogo className="h-[44px]" />
+            </Link>
+
+            <nav
+              aria-label={t("Primary")}
+              className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {renderPrimaryLinks(true)}
+            </nav>
+          </div>
+
+          <div className="flex shrink-0 items-center justify-end gap-1.5">
+            <div className="flex items-center gap-0.5">{renderUtilityLinks(true)}</div>
+
+            <div className="flex shrink-0 items-center gap-1.5">
+              <span className="flex items-center">
+                {mounted ? <LazySearchCommandIconOnly /> : <SearchCommandIconPlaceholder />}
+              </span>
+              <DesktopPreferenceControls />
+              <div className="flex shrink-0">
+                <WalletControl size="desktop" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Phone / portrait tablet */}
       <div className="lg:hidden">
         <div className="relative flex h-16 w-full items-center justify-between bg-background px-4 text-foreground sm:px-6">
           <div className="flex items-center gap-3">

@@ -24,11 +24,11 @@ type Props = {
 }
 
 /**
- * A market's "news" feed — used here to surface Risk Stewards updates. Each row is
+ * A market's "news" feed — used here to surface risk parameter updates. Each row is
  * a headline + "source · date" with a thumbnail on the right, linking out to the
  * governance thread where the change was made.
  */
-export function NewsCard({ items, title = "Risk Stewards", plain = false, viewAllHref, itemHrefFallback }: Props) {
+export function NewsCard({ items, title = "Risk Parameters", plain = false, viewAllHref, itemHrefFallback }: Props) {
   const { t } = useTranslation()
   return (
     <section
@@ -41,7 +41,7 @@ export function NewsCard({ items, title = "Risk Stewards", plain = false, viewAl
           plain ? "flex items-center justify-between gap-3" : "flex items-center justify-between gap-3 px-4 py-3"
         }
       >
-        <h2 className="truncate text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
+        <h2 className="truncate text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
           {t(title)}
         </h2>
         {viewAllHref ? (

@@ -22,6 +22,8 @@ import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
 import { LEND_MARKET_CATALOG, getLendMarketById, resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import type { LendMarket } from "@/app/lib/lend-engine/types"
 import type { AboutCard, CashflowCard, DeltaStat, QuickStat, TxHistoryRow } from "@/app/lib/borrow-detail"
+import { buildInterestRateModelParameterRows } from "@/app/lib/borrow-detail/protocol-parameters"
+import { buildRiskParameterSet } from "@/app/lib/borrow-detail/risk-parameters"
 import type { LendMarketDetail, LendMarketHero, LendMarketRelatedSummary, LendTokenVisual } from "./types"
 
 /** Reference values from a Convex snapshot, threaded into the headline numbers. */
@@ -113,15 +115,12 @@ function buildHero(market: LendMarket): LendMarketHero {
 function buildQuickStats(market: LendMarket, ref: Reference): QuickStat[] {
   return [
     { id: "price", label: "Price", value: formatUsdPrice(ref.price), delta: deltaFromPct(0.1) },
-    { id: "supplied", label: "Total Supplied", value: formatCompactUsd(ref.suppliedUsd), delta: deltaFromPct(1.8) },
-    { id: "borrowed", label: "Total Borrowed", value: formatCompactUsd(ref.borrowedUsd), delta: deltaFromPct(1.1) },
     {
       id: "available",
       label: "Available Liquidity",
       value: formatCompactUsd(ref.availableUsd),
       delta: deltaFromPct(0.6),
     },
-    { id: "utilization", label: "Utilization", value: formatPct(ref.utilizationPct, 2), delta: deltaFromPct(-0.4) },
     { id: "supplyApy", label: "Supply APY", value: formatPct(ref.supplyApyPct, 2), delta: deltaFromPct(0.1) },
     {
       id: "rewardsApy",
@@ -257,28 +256,104 @@ function formatRelativeAge(ageMs: number) {
   return `${Math.floor(totalHours / 24)}d`
 }
 
-function buildAbout(market: LendMarket): AboutCard {
+function contractAddressFor(market: LendMarket, salt: string) {
+  const seed = `${market.marketId}:${salt}`
+  let hash = 0x811c9dc5
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  const chunk = (hash >>> 0).toString(16).padStart(8, "0").toUpperCase()
+  return `0x${chunk}${chunk}${chunk}${chunk}${chunk}`.slice(0, 42)
+}
+
+function shortAddress(address: string) {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
+function buildContractStat(label: string, market: LendMarket, salt: string): AboutCard["stats"][number] {
+  const address = contractAddressFor(market, salt)
+  return {
+    label,
+    value: shortAddress(address),
+    href: `https://etherscan.io/address/${address}`,
+  }
+}
+
+function buildGovernanceParameters(market: LendMarket, ref: Reference): AboutCard["governanceParameters"] {
+  const isStable = market.riskTier === "low"
+  const ltvPct = isStable ? 78 : 72
+  const liquidationThresholdPct = isStable ? 83 : 78
+  const liquidationBonusPct = isStable ? 5 : 7
+  const supplyCapUsd = Math.max(25_000_000, Math.ceil((ref.suppliedUsd * 1.75) / 1_000_000) * 1_000_000)
+  const borrowCapUsd = Math.max(10_000_000, Math.ceil((ref.borrowedUsd * 2.25) / 1_000_000) * 1_000_000)
+  const proposalHref = `https://etherscan.io/address/${contractAddressFor(market, "governance")}`
+
+  return {
+    parameters: buildRiskParameterSet({
+      collateralFactorPct: ltvPct,
+      liquidationThresholdPct,
+      depositCapacityLabel: formatCompactUsd(supplyCapUsd),
+      borrowCapacityLabel: formatCompactUsd(borrowCapUsd),
+      liquidationPenaltyPct: liquidationBonusPct,
+      collateralFactorDescription: "Maximum borrow power when this supplied asset is used as collateral.",
+    }),
+    changelog: [
+      {
+        id: "supply-cap-review",
+        parameter: "Deposit capacity",
+        previous: formatCompactUsd(Math.round(supplyCapUsd * 0.86)),
+        current: formatCompactUsd(supplyCapUsd),
+        date: "2025-09-08",
+        source: "Risk parameter review",
+        executor: "Governance executor",
+        href: proposalHref,
+      },
+      {
+        id: "reserve-factor-review",
+        parameter: "Reserve factor",
+        previous: `${Math.max(0, Math.round(market.reserveFactor * 100) - 1)}%`,
+        current: `${Math.round(market.reserveFactor * 100)}%`,
+        date: "2025-06-02",
+        source: "Revenue parameter update",
+        executor: "Risk steward multisig",
+        href: proposalHref,
+      },
+      {
+        id: "collateral-onboarding",
+        parameter: "Collateral configuration",
+        previous: "Disabled",
+        current: `${ltvPct}% CF / ${liquidationThresholdPct}% LT`,
+        date: "2025-01-20",
+        source: "Market onboarding",
+        executor: "Governance executor",
+        href: proposalHref,
+      },
+    ],
+  }
+}
+
+function buildAbout(market: LendMarket, ref: Reference): AboutCard {
   const isStable = market.riskTier === "low"
   return {
     description:
       `${market.asset.name} (${market.asset.symbol}) is a single-asset supply market on Avana. ` +
-      `Suppliers earn the supply APY${market.rewardsApy > 0 ? " plus active rewards" : ""} from borrower interest, ` +
-      `net of the reserve factor. Yield tracks utilization, so the page focuses on the live supply rate, the supply/utilization mix, and the latest risk posture for this ${
+      `Deposit to earn the supply APY${market.rewardsApy > 0 ? " plus active rewards" : ""}, and withdraw available liquidity anytime. ` +
+      `Yield tracks borrower demand, utilization, reserve settings, and market liquidity, so supplier returns can move as deposits and borrows rebalance. ` +
+      `The page focuses on the live supply rate, the supply/borrow mix, available liquidity, and the latest risk posture for this ${
         isStable ? "stablecoin" : "tier-" + market.riskTier
-      } market.`,
+      } market. Suppliers should watch utilization, reserve factor, oracle quality, and withdrawal depth because those inputs affect both earned yield and how quickly capital can exit during stressed conditions.`,
     stats: [
-      {
-        label: "Risk tier",
-        value: market.riskTier === "low" ? "Low" : market.riskTier === "medium" ? "Medium" : "High",
-      },
-      { label: "Reserve factor", value: `${(market.reserveFactor * 100).toFixed(0)}%` },
-      {
-        label: "Status",
-        value: market.status === "active" ? "Active" : market.status === "capped" ? "Capped" : "Paused",
-      },
-      { label: "Chain", value: "Ethereum" },
+      buildContractStat("Vault Contract Address", market, "vault"),
+      buildContractStat("Token Contract Address", market, "token"),
+      buildContractStat("Staking Contract Address", market, "staking"),
     ],
     history: [
+      {
+        date: isStable ? "March 18, 2024" : "October 7, 2024",
+        title: "Deployed",
+        description: "Market contracts deployed.",
+      },
       { date: "2025-01-20", title: "Listed", description: `${market.asset.symbol} supply market opened.` },
       {
         date: "2025-09-08",
@@ -286,6 +361,7 @@ function buildAbout(market: LendMarket): AboutCard {
         description: "Quarterly risk review — reserve factor unchanged.",
       },
     ],
+    governanceParameters: buildGovernanceParameters(market, ref),
   }
 }
 
@@ -322,10 +398,13 @@ export function buildLendMarketDetail(market: LendMarket, overrides?: LendDetail
     id: market.marketId,
     hero: buildHero(market),
     quickStats: buildQuickStats(market, ref),
+    utilizationPct: ref.utilizationPct,
+    borrowAprPct: ref.borrowAprPct,
+    protocolParameters: buildInterestRateModelParameterRows(market.marketId, ref.borrowAprPct),
     supplyBorrow: buildSupplyBorrow(market, ref),
     cashflow: buildCashflow(market, ref),
     risk: buildLendRiskAssessment(market),
-    about: buildAbout(market),
+    about: buildAbout(market, ref),
     faqs: buildLendFaqs(market.asset.symbol, market.asset.name),
     transactions: buildTransactions(market),
     related: buildRelated(market),
@@ -335,5 +414,5 @@ export function buildLendMarketDetail(market: LendMarket, overrides?: LendDetail
 
 /** About card for seeding the Convex content layer (mirrors what the detail page renders). */
 export function getLendAboutCard(market: LendMarket): AboutCard {
-  return buildAbout(market)
+  return buildAbout(market, resolveReference(market))
 }

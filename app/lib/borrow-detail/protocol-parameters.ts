@@ -63,17 +63,20 @@ function formatInterestRateModelRows(params: InterestRateModelParams): ProtocolP
   ]
 }
 
+/** IRM parameter rows for any market keyed by seed + current borrow APR. */
+export function buildInterestRateModelParameterRows(seedKey: string, borrowAprPct: number): ProtocolParameterRow[] {
+  return formatInterestRateModelRows(buildInterestRateModelParams(seedKey, borrowAprPct))
+}
+
 export function buildAssetProtocolParameters(asset: SpokeBorrowableRecord): ProtocolParameterRow[] {
-  const irm = buildInterestRateModelParams(asset.id, asset.borrowApr)
-  return formatInterestRateModelRows(irm)
+  return buildInterestRateModelParameterRows(asset.id, asset.borrowApr)
 }
 
 export function buildPoolProtocolParameters(row: BorrowPoolRow): ProtocolParameterRow[] {
   const borrowApr = (row.aprMin + row.aprMax) / 2
-  const irm = buildInterestRateModelParams(row.id, borrowApr)
   return [
     { id: "collateralFactor", label: "Collateral factor", value: `${row.ltv.toFixed(1)}%` },
-    ...formatInterestRateModelRows(irm),
+    ...buildInterestRateModelParameterRows(row.id, borrowApr),
   ]
 }
 

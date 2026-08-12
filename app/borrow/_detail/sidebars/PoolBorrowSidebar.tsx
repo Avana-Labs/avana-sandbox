@@ -4,7 +4,7 @@ import * as React from "react"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
 import { ResponsiveBorrowAction } from "@/app/components/action-page/responsive-borrow-action"
 import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-launch-cta"
-import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
+import { DetailActionTabs } from "@/app/components/detail-action-tabs"
 import { getPoolById, type HomeAssetVisual, type HomeCollateralPool } from "@/app/lib/borrow-system/home-contracts"
 import { cn } from "@/lib/utils"
 import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
@@ -16,6 +16,11 @@ type Props = {
 }
 
 type SidebarTab = "pledge" | "claim"
+
+const POOL_TAB_ITEMS = [
+  { id: "pledge", label: "Pledge" },
+  { id: "claim", label: "Claim" },
+] as const
 
 export function PoolBorrowSidebar({ detail, className }: Props) {
   return (
@@ -38,7 +43,6 @@ export function PoolBorrowActions({ detail, className }: Props) {
 }
 
 function PoolActionRail({ detail, className, embedActions = false }: Props & { embedActions?: boolean }) {
-  const { t } = useTranslation()
   const [tab, setTab] = React.useState<SidebarTab>("pledge")
   const session = useBorrowSessionContext()
   const closeHref = `/borrow/markets/${detail.id}`
@@ -54,17 +58,7 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
 
   return (
     <div className={cn("flex w-full flex-col", className)}>
-      <ActionWorkspaceTabs
-        items={[
-          { id: "pledge", label: t("Pledge") },
-          { id: "claim", label: t("Claim") },
-        ]}
-        value={tab}
-        onChange={(value) => setTab(value as SidebarTab)}
-        ariaLabel={t("Pool actions")}
-        withIcons
-        revealLabels
-      />
+      <DetailActionTabs items={POOL_TAB_ITEMS} value={tab} onChange={setTab} ariaLabel="Pool actions" />
 
       <div className="mt-3">
         {tab === "pledge" ? (

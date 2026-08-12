@@ -21,6 +21,7 @@ import type { ChartFeed } from "@/app/components/charts"
 import type { LendMarket } from "@/app/lib/lend-engine/types"
 import type { AboutCard, CashflowCard, QuickStat, RiskAssessment, Series, TxHistoryRow } from "@/app/lib/borrow-detail"
 import type { FaqContent } from "@/app/lib/borrow-detail/content-model"
+import type { ProtocolParameterRow } from "@/app/lib/borrow-detail/protocol-parameters"
 
 /** Single-asset visual for the lend hero / related cards. */
 export type LendTokenVisual = {
@@ -61,6 +62,12 @@ export type LendMarketDetail = {
    * builder; the hero falls back to the local feed when absent. */
   heroFeed?: ChartFeed
   quickStats: QuickStat[]
+  /** Current utilization % used by the interest-rate model chart. */
+  utilizationPct: number
+  /** Current borrow APR % used to anchor the interest-rate curve. */
+  borrowAprPct: number
+  /** Interest-rate model parameter rows (optimal util, slopes, base rate). */
+  protocolParameters: ProtocolParameterRow[]
   supplyBorrow: {
     supplied: Series
     borrowed: Series

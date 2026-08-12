@@ -1,7 +1,6 @@
 export { AssetHero, AssetHeroIdentity } from "./AssetHero"
-export { InterestRateModelCard } from "./InterestRateModelCard"
+export { InterestRateModelCard, interestRateModelFromAssetDetail } from "./InterestRateModelCard"
 export { CashflowTrendCard } from "./CashflowTrendCard"
 export { AllocationBreakdownCard } from "./AllocationBreakdownCard"
 export { AssetCashflowCard } from "./AssetCashflowCard"
 export { TransactionHistoryCard } from "./TransactionHistoryCard"
-export { RelatedAssetsRow } from "./RelatedAssetsRow"

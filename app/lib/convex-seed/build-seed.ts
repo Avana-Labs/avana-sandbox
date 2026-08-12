@@ -24,7 +24,13 @@ import {
   buildMultiplyRiskAssessment,
   buildPoolRiskAssessment,
 } from "@/app/lib/borrow-detail/risk-model"
-import { buildAssetFaqs, buildLendFaqs, buildMultiplyFaqs, buildPoolFaqs } from "@/app/lib/borrow-detail/content-model"
+import {
+  buildAssetFaqs,
+  buildLendFaqs,
+  buildMultiplyAboutDescription,
+  buildMultiplyFaqs,
+  buildPoolFaqs,
+} from "@/app/lib/borrow-detail/content-model"
 import { getAssetAboutCard } from "@/app/lib/borrow-detail/asset.mock"
 import { getPoolAboutCard } from "@/app/lib/borrow-detail/pool.mock"
 import { LEND_MARKET_CATALOG } from "@/app/lib/lend-system/catalog"
@@ -447,6 +453,30 @@ function revenueForMarket(stats: SeedDailyStatRow[], reserveFactor: number): See
   })
 }
 
+function contractAddressForSeed(slug: string, salt: string) {
+  const seed = `${slug}:${salt}`
+  let hash = 0x811c9dc5
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193)
+  }
+  const chunk = (hash >>> 0).toString(16).padStart(8, "0").toUpperCase()
+  return `0x${chunk}${chunk}${chunk}${chunk}${chunk}`.slice(0, 42)
+}
+
+function shortAddress(address: string) {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
+function contractStatForSeed(label: string, slug: string, salt: string) {
+  const address = contractAddressForSeed(slug, salt)
+  return {
+    label,
+    value: shortAddress(address),
+    href: `https://etherscan.io/address/${address}`,
+  }
+}
+
 const WALLET_EVENT_KINDS = ["supply", "borrow", "repay", "withdraw"] as const
 
 function hex(rand: () => number, length: number): string {
@@ -638,19 +668,24 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
     walletEvents.push(...walletEventsForMarket(market.marketId, asOf, walletEventDays))
     content.push({
       slug: market.marketId,
-      description: `${market.asset.name} (${market.asset.symbol}) is a single-asset supply market on Avana. Deposit to earn the supply APY${market.rewardsApy > 0 ? " plus active rewards" : ""}, and withdraw available liquidity anytime. Yield tracks borrow demand and utilization.`,
+      description:
+        `${market.asset.name} (${market.asset.symbol}) is a single-asset supply market on Avana. ` +
+        `Deposit to earn the supply APY${market.rewardsApy > 0 ? " plus active rewards" : ""}, and withdraw available liquidity anytime. ` +
+        `Yield tracks borrower demand, utilization, reserve settings, and market liquidity, so supplier returns can move as deposits and borrows rebalance. ` +
+        `The page focuses on the live supply rate, the supply/borrow mix, available liquidity, and the latest risk posture for this ${
+          market.riskTier === "low" ? "stablecoin" : "tier-" + market.riskTier
+        } market. Suppliers should watch utilization, reserve factor, oracle quality, and withdrawal depth because those inputs affect both earned yield and how quickly capital can exit during stressed conditions.`,
       stats: [
-        {
-          label: "Risk tier",
-          value: market.riskTier === "low" ? "Low" : market.riskTier === "medium" ? "Medium" : "High",
-        },
-        { label: "Reserve factor", value: `${(market.reserveFactor * 100).toFixed(0)}%` },
-        {
-          label: "Status",
-          value: market.status === "active" ? "Active" : market.status === "capped" ? "Capped" : "Paused",
-        },
+        contractStatForSeed("Vault Contract Address", market.marketId, "vault"),
+        contractStatForSeed("Token Contract Address", market.marketId, "token"),
+        contractStatForSeed("Staking Contract Address", market.marketId, "staking"),
       ],
       history: [
+        {
+          date: market.riskTier === "low" ? "March 18, 2024" : "October 7, 2024",
+          title: "Deployed",
+          description: "Market contracts deployed.",
+        },
         { date: "2025-01-20", title: "Listed", description: `${market.asset.symbol} supply market opened.` },
         {
           date: "2025-09-08",
@@ -685,15 +720,18 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
     walletEvents.push(...walletEventsForMarket(market.id, asOf, walletEventDays))
     content.push({
       slug: market.id,
-      description: `Multiply market pairing ${market.collateralAsset.name} (${market.collateralAsset.symbol}) collateral with ${market.borrowAsset.symbol} exposure in a leveraged loop, up to ${market.risk.publicMaxMultiplier.toFixed(2)}x. The route is dedicated to leveraged positions, separate from LP collateral pools.`,
+      description: buildMultiplyAboutDescription({
+        collateralName: market.collateralAsset.name,
+        collateralSymbol: market.collateralAsset.symbol,
+        borrowName: market.borrowAsset.name,
+        borrowSymbol: market.borrowAsset.symbol,
+        maxLeverage: `${market.risk.publicMaxMultiplier.toFixed(2)}x`,
+        riskTier: market.risk.riskTier,
+      }),
       stats: [
-        { label: "Collateral", value: market.collateralAsset.symbol },
-        { label: "Borrowable", value: market.borrowAsset.symbol },
-        { label: "Max leverage", value: `${market.risk.publicMaxMultiplier.toFixed(2)}x` },
-        {
-          label: "Risk tier",
-          value: market.risk.riskTier === "low" ? "Low" : market.risk.riskTier === "medium" ? "Medium" : "High",
-        },
+        contractStatForSeed("Vault Contract Address", market.id, "vault"),
+        contractStatForSeed("Token Contract Address", market.id, "token"),
+        contractStatForSeed("Staking Contract Address", market.id, "staking"),
       ],
       history: [
         {

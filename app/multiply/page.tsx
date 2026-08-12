@@ -24,7 +24,7 @@ export default async function MultiplyPage() {
             url: "https://avana.cc/multiply",
           })}
         />
-        <LighthouseAuditSurface title="Total Liquidity">Multiply LP-backed positions.</LighthouseAuditSurface>
+        <LighthouseAuditSurface title="Multiply TVL">Multiply LP-backed positions.</LighthouseAuditSurface>
       </>
     )
   }

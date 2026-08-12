@@ -29,7 +29,7 @@ function MetricGrid({ metrics, labelOnTop = false }: { metrics: MetricItem[]; la
         )
         const label = (
           <div className="flex items-center gap-1.5">
-            <span className="text-[12px] font-medium tracking-tight text-muted-foreground">{metric.label}</span>
+            <span className="text-[13px] text-muted-foreground">{metric.label}</span>
             <ActionMetricHelp text={metric.description} topic={metric.label} />
           </div>
         )

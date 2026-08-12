@@ -13,6 +13,8 @@ import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-se
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
   DeferredDetailContent,
+  detailAnalyticsSectionClass,
+  detailAnalyticsStackClass,
   DetailPageNotice,
   DetailPageWidth,
   MobileDetailActionBar,
@@ -22,10 +24,6 @@ import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
 
 type Props = { detail: MultiplyMarketDetail }
 
-const SupplyBorrowCard = dynamic(
-  () => import("@/app/multiply/_detail/pool-sections/SupplyBorrowCard").then((mod) => mod.SupplyBorrowCard),
-  { ssr: false },
-)
 const CashflowCard = dynamic(
   () => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard),
   { ssr: false },
@@ -40,10 +38,6 @@ const DetailFaqSection = dynamic(
 )
 const TransactionHistoryCard = dynamic(
   () => import("@/app/multiply/_detail/pool-sections/TransactionHistoryCard").then((mod) => mod.TransactionHistoryCard),
-  { ssr: false },
-)
-const RelatedMarketsRow = dynamic(
-  () => import("@/app/multiply/_detail/pool-sections/RelatedMarketsRow").then((mod) => mod.RelatedMarketsRow),
   { ssr: false },
 )
 
@@ -63,29 +57,29 @@ export function MarketDetailClient({ detail }: Props) {
 
   return (
     <div className="bg-background">
-      <main className="pb-24 pt-8 md:pb-12">
+      <main className="pb-24 pt-12 md:pb-12 md:pt-14">
         <div className="container mx-auto px-4">
           <DetailPageWidth>
             <nav
               aria-label={t("Breadcrumb")}
-              className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]"
+              className="mb-4 flex items-center gap-1.5 text-[15px] text-muted-foreground md:text-[16px]"
             >
               <Link href="/multiply" className="transition-colors hover:text-foreground">
                 {t("Multiply")}
               </Link>
-              <span aria-hidden className="text-border">
+              <span aria-hidden className="font-medium text-muted-foreground">
                 ›
               </span>
               <span className="font-normal text-foreground">{detail.hero.name}</span>
             </nav>
 
-            <div className="grid lg:grid-cols-[minmax(0,1fr)_420px] lg:grid-rows-[auto_1fr] lg:gap-x-8">
+            <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-20">
               <div className="min-w-0 border-b border-border pb-5 lg:col-span-2">
                 <MarketHeroIdentity detail={detail} className="pb-0" />
               </div>
 
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                <MarketHero detail={detail} hideIdentity className="mb-6" />
+                <MarketHero detail={detail} hideIdentity className="mb-12" />
 
                 <AboutNewsSection
                   about={detail.about}
@@ -94,17 +88,23 @@ export function MarketDetailClient({ detail }: Props) {
                   newsImageUrl={detail.hero.visuals[0]?.iconUrl ?? detail.hero.visuals[1]?.iconUrl ?? undefined}
                   newsImageLabel={detail.hero.name}
                   mediaVariant="icon"
+                  afterAbout={
+                    <>
+                      <section aria-label={t("Key Statistics")} className="space-y-6">
+                        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+                          Key Statistics
+                        </h2>
+                        <QuickStatsGrid detail={detail} />
+                      </section>
+                      <RiskSection detail={detail} />
+                    </>
+                  }
+                  className="pt-0"
                 />
 
-                <section aria-label={t("Multiply market analytics")} className="space-y-12 pt-12">
-                  <h2 className="text-ui-heading font-normal leading-none tracking-[-0.02em] text-brand-readable">
-                    Key Statistics
-                  </h2>
-                  <QuickStatsGrid detail={detail} />
-                  <DeferredDetailContent className="space-y-12">
-                    <SupplyBorrowCard detail={detail} />
+                <section aria-label={t("Multiply market analytics")} className={detailAnalyticsSectionClass}>
+                  <DeferredDetailContent className={detailAnalyticsStackClass}>
                     <CashflowCard detail={detail} />
-                    <RiskSection detail={detail} />
                     <DetailFaqSection
                       title={t("Multiply FAQs")}
                       items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
@@ -114,7 +114,6 @@ export function MarketDetailClient({ detail }: Props) {
                       collateralSymbol={detail.row.protocol}
                       borrowableSymbol={detail.row.asset}
                     />
-                    <RelatedMarketsRow detail={detail} />
                     <DetailPageNotice product="multiply" />
                   </DeferredDetailContent>
                 </section>

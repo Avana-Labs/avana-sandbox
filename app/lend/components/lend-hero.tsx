@@ -55,24 +55,22 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
 
   return (
     <section className="mb-4">
-      <div className="flex flex-col gap-4 pb-4 md:flex-row md:items-end md:justify-between">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <p className="text-[12px] font-medium tracking-tight text-muted-foreground">{t("Total TVL")}</p>
-            <p className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
-              {showDollarAmounts ? fc.compact(metrics.totalTvl) : "••••••••"}
-            </p>
-          </div>
+      <div className="flex w-full items-start justify-between gap-4 pb-4">
+        <div className="min-w-0 space-y-1.5">
+          <p className="text-[13px] text-muted-foreground">{t("Lend TVL")}</p>
+          <p className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-normal tabular-nums text-foreground">
+            {showDollarAmounts ? fc.compact(metrics.totalTvl) : "••••••••"}
+          </p>
         </div>
 
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-5 md:ml-auto md:text-right">
+        <div className="hidden md:ml-auto md:flex md:gap-8 md:text-right">
           {LEND_METRICS.map((metric) => (
-            <div key={metric.key}>
-              <div className="mb-1 flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground md:justify-end">
+            <div key={metric.key} className="min-w-0 space-y-1.5">
+              <p className="flex items-center justify-end gap-1.5 text-[13px] text-muted-foreground">
                 <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
                 {t(metric.label)}
-              </div>
-              <p className="font-data text-[1rem] font-semibold tracking-tight text-foreground">
+              </p>
+              <p className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-normal tabular-nums text-foreground">
                 {showDollarAmounts
                   ? metric.key === "averageApy"
                     ? `${metrics.weightedApy.toFixed(2)}%`

@@ -38,7 +38,7 @@ const diatypeSans = localFont({
   preload: false,
 })
 
-const themeBootstrapScript = `(()=>{const storageKey="avana-theme";const root=document.documentElement;const storedTheme=window.localStorage.getItem(storageKey);const theme=storedTheme==="light"||storedTheme==="dark"||storedTheme==="system"?storedTheme:"system";const systemTheme=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";const resolvedTheme=theme==="system"?systemTheme:theme;root.classList.toggle("dark",resolvedTheme==="dark");root.style.colorScheme=resolvedTheme})()`
+const themeBootstrapScript = `(()=>{const storageKey="avana-theme";const root=document.documentElement;const storedTheme=window.localStorage.getItem(storageKey);const theme=storedTheme==="light"||storedTheme==="dark"||storedTheme==="system"?storedTheme:"light";const systemTheme=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";const resolvedTheme=theme==="system"?systemTheme:theme;root.classList.toggle("dark",resolvedTheme==="dark");root.style.colorScheme=resolvedTheme})()`
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://avana.cc"),
@@ -122,11 +122,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <head>
+        <link
+          rel="preload"
+          as="image"
+          href="/avana-wordmark-220.png"
+          imageSrcSet="/avana-wordmark-220.png 220w, /avana-wordmark-440.png 440w"
+          imageSizes="220px"
+        />
+        <link rel="preload" as="image" href="/avana-icon-64.png" />
         {/* Inline to avoid a render-blocking theme-bootstrap network request. */}
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>
       <body className="min-h-screen bg-background">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <DisplayPreferencesProvider>
             <WalletGateProvider>
               <Web3ProviderBoundary>

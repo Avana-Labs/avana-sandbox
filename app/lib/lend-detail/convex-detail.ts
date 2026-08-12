@@ -30,9 +30,6 @@ import type { QuickStat } from "@/app/lib/borrow-detail"
 
 /** Convex `getQuickStats` emits asset-style ids; map each to the mock ids it overrides. */
 const QUICK_STAT_ALIASES: Record<string, string[]> = {
-  supplied: ["supplied"],
-  borrowed: ["borrowed"],
-  utilization: ["utilization"],
   supplyApy: ["supplyApy"],
   borrowApy: ["borrowApy"],
 }
@@ -86,7 +83,7 @@ export async function getLendMarketDetailFromConvex(id: string): Promise<LendMar
     fetchLendContent(slug),
   ])
 
-  return applyDetailContentOverlay(
+  const hydrated = applyDetailContentOverlay(
     {
       ...detail,
       quickStats: injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, market.asset.symbol),
@@ -97,4 +94,17 @@ export async function getLendMarketDetailFromConvex(id: string): Promise<LendMar
     },
     content,
   )
+
+  return {
+    ...hydrated,
+    about: {
+      ...hydrated.about,
+      description: detail.about.description,
+      stats: detail.about.stats,
+      history: [
+        ...detail.about.history.filter((entry) => entry.title === "Deployed"),
+        ...hydrated.about.history.filter((entry) => entry.title !== "Deployed"),
+      ],
+    },
+  }
 }

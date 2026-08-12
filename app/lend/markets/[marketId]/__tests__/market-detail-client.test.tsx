@@ -19,16 +19,13 @@ vi.mock("@/app/lend/_detail", () => ({
   ),
   LendSidebar: () => <div data-testid="lend-sidebar" />,
 }))
-vi.mock("@/app/lend/_detail/sections/SupplyCard", () => ({
-  SupplyCard: () => <div data-testid="supply-card" />,
-}))
-vi.mock("@/app/lend/_detail/sections/RelatedMarketsRow", () => ({
-  RelatedMarketsRow: ({ detail }: { detail: { related: unknown[] } }) => (
-    <div data-testid="related">{detail.related.length}</div>
-  ),
-}))
 vi.mock("@/app/borrow/_detail/ui", () => ({
-  AboutNewsSection: () => <div data-testid="about" />,
+  AboutNewsSection: ({ afterAbout }: { afterAbout?: React.ReactNode }) => (
+    <>
+      <div data-testid="about" />
+      {afterAbout}
+    </>
+  ),
 }))
 vi.mock("@/app/borrow/_detail/ui/DetailFaqSection", () => ({
   DetailFaqSection: ({ items }: { items: unknown[] }) => <div data-testid="faqs">{items.length}</div>,
@@ -66,12 +63,11 @@ describe("LendMarketDetailClient", () => {
     expect(screen.getByTestId("lend-hero-identity")).toHaveTextContent(detail.hero.name)
     expect(screen.getByTestId("lend-hero")).toBeInTheDocument()
     expect(screen.getByTestId("quickstats")).toHaveTextContent(String(detail.quickStats.length))
-    expect(await screen.findByTestId("supply-card")).toBeInTheDocument()
-    expect(screen.getByTestId("cashflow")).toBeInTheDocument()
+    expect(screen.queryByTestId("supply-card")).not.toBeInTheDocument()
+    expect(await screen.findByTestId("cashflow")).toBeInTheDocument()
     expect(screen.getByTestId("risk")).toBeInTheDocument()
     expect(screen.getByTestId("faqs")).toHaveTextContent(String(detail.faqs.length))
     expect(screen.getByTestId("transactions")).toHaveTextContent(`USDC:${detail.transactions.length}`)
-    expect(screen.getByTestId("related")).toHaveTextContent(String(detail.related.length))
     // Sidebar renders (desktop + mobile dock → 2 instances).
     expect(screen.getAllByTestId("lend-sidebar").length).toBeGreaterThanOrEqual(1)
   })

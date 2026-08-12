@@ -4,7 +4,7 @@ import * as React from "react"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
 import { ActionPageLaunchCta } from "@/app/components/action-page/action-page-launch-cta"
 import { ResponsiveMultiplyAction } from "@/app/components/action-page/responsive-multiply-action"
-import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
+import { DetailActionTabs } from "@/app/components/detail-action-tabs"
 import { getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
@@ -72,14 +72,7 @@ function MarketActionRail({ detail, className, embedActions = false }: Props & {
 
   return (
     <div className={cn("flex w-full flex-col", className)}>
-      <ActionWorkspaceTabs
-        items={[...MULTIPLY_TAB_ITEMS]}
-        value={tab}
-        onChange={(value) => setTab(value as SidebarTab)}
-        ariaLabel={t("Multiply actions")}
-        withIcons
-        revealLabels
-      />
+      <DetailActionTabs items={MULTIPLY_TAB_ITEMS} value={tab} onChange={setTab} ariaLabel="Multiply actions" />
 
       <div className="mt-3">
         {tab === "multiply" ? (
