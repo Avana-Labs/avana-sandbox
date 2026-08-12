@@ -15,6 +15,8 @@ import { PoolBorrowSidebar } from "@/app/borrow/_detail/sidebars"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
   DeferredDetailContent,
+  detailAnalyticsSectionClass,
+  detailAnalyticsStackClass,
   DetailPageNotice,
   DetailPageWidth,
   MobileDetailActionBar,
@@ -84,7 +86,7 @@ export function PoolDetailClient({ detail }: Props) {
                   newsImageLabel={detail.hero.name}
                   mediaVariant="icon"
                   afterAbout={
-                    <div className="space-y-12">
+                    <>
                       <section aria-label={t("Key Statistics")} className="space-y-6">
                         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
                           Key Statistics
@@ -92,13 +94,13 @@ export function PoolDetailClient({ detail }: Props) {
                         <QuickStatsGrid detail={detail} hideRisk />
                       </section>
                       <RiskSection detail={detail} />
-                    </div>
+                    </>
                   }
                   className="pt-0"
                 />
 
-                <section aria-label={t("Pool analytics")} className="space-y-14 pt-14 md:space-y-16 md:pt-16">
-                  <DeferredDetailContent className="space-y-14 md:space-y-16">
+                <section aria-label={t("Pool analytics")} className={detailAnalyticsSectionClass}>
+                  <DeferredDetailContent className={detailAnalyticsStackClass}>
                     <CashflowCard detail={detail} />
                     <AssetsYouCanBorrowSection
                       collateralLabel={detail.hero.name}

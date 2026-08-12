@@ -13,6 +13,8 @@ import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-se
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
   DeferredDetailContent,
+  detailAnalyticsSectionClass,
+  detailAnalyticsStackClass,
   DetailPageNotice,
   DetailPageWidth,
   MobileDetailActionBar,
@@ -100,11 +102,8 @@ export function MarketDetailClient({ detail }: Props) {
                   className="pt-0"
                 />
 
-                <section
-                  aria-label={t("Multiply market analytics")}
-                  className="space-y-14 pt-14 md:space-y-16 md:pt-16"
-                >
-                  <DeferredDetailContent className="space-y-14 md:space-y-16">
+                <section aria-label={t("Multiply market analytics")} className={detailAnalyticsSectionClass}>
+                  <DeferredDetailContent className={detailAnalyticsStackClass}>
                     <CashflowCard detail={detail} />
                     <DetailFaqSection
                       title={t("Multiply FAQs")}

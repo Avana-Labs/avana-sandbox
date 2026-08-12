@@ -9,6 +9,7 @@ import { NewsCard } from "./NewsCard"
 import { buildNewsItems } from "@/app/borrow/_detail/lib/news"
 import { normalizeGovernanceParameters } from "@/app/borrow/_detail/lib/governance-parameters"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 
 type Props = {
   about: AboutCardData
@@ -41,7 +42,7 @@ export function AboutNewsSection({
   const governanceParameters = normalizeGovernanceParameters(about)
 
   return (
-    <div className={cn("space-y-12 pt-10", className)}>
+    <div className={cn(detailSectionStackClass, "pt-10", className)}>
       <AboutCard about={about} title={aboutTitle} compact={compactAboutTitle} plain />
       {afterAbout}
       {governanceParameters ? (
@@ -94,12 +95,12 @@ export function AboutNewsSection({
                     href={parameter.href}
                     target="_blank"
                     rel="noreferrer"
-                    className="group min-w-0 border-b border-border/70 pb-4 transition-colors hover:border-border-medium"
+                    className="group min-w-0 transition-colors"
                   >
                     {parameterContent}
                   </a>
                 ) : (
-                  <article key={parameter.id} className="min-w-0 border-b border-border/70 pb-4">
+                  <article key={parameter.id} className="min-w-0">
                     {parameterContent}
                   </article>
                 )

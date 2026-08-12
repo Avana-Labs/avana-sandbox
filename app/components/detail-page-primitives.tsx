@@ -5,6 +5,17 @@ import { cn } from "@/lib/utils"
 
 export const DETAIL_PAGE_MAX_W = "max-w-[1152px]"
 
+/** Vertical stack of detail page sections with horizontal dividers centered between siblings. */
+export const detailSectionStackClass =
+  "flex flex-col [&>*:not(:last-child)]:pb-10 [&>*+*]:border-t [&>*+*]:border-border [&>*+*]:pt-10"
+
+/** Larger spacing variant for deferred analytics blocks below the fold. */
+export const detailAnalyticsStackClass =
+  "flex flex-col [&>*:not(:last-child)]:pb-10 md:[&>*:not(:last-child)]:pb-12 [&>*+*]:border-t [&>*+*]:border-border [&>*+*]:pt-10 md:[&>*+*]:pt-12"
+
+/** Top divider centered between the about block and analytics sections. */
+export const detailAnalyticsSectionClass = "mt-10 border-t border-border pt-10 md:mt-12 md:pt-12"
+
 export function DetailPageWidth({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cn("mx-auto", DETAIL_PAGE_MAX_W, className)}>{children}</div>
 }
