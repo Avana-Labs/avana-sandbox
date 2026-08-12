@@ -30,7 +30,12 @@ export function DetailFaqSection({ title, items, className, id }: DetailFaqSecti
           <AccordionItem
             key={item.question}
             value={`faq-${index}`}
-            className="border-b border-border/70 dark:border-white/10"
+            className={cn(
+              // AccordionItem defaults to border-b; keep separators between items only so
+              // this section doesn't double-up with detail page section dividers.
+              "border-b-0",
+              index > 0 && "border-t border-border/70 dark:border-white/10",
+            )}
           >
             <AccordionTrigger className="py-4 text-left text-[16px] font-normal tracking-[-0.02em] text-muted-foreground transition-colors hover:text-foreground data-[state=open]:text-foreground md:py-[18px]">
               <span className="max-w-[calc(100%-20px)]">{item.question}</span>

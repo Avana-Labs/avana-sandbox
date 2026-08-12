@@ -148,7 +148,8 @@ export type RiskAssessment = {
 
 export type TimeRangeId = "1D" | "1W" | "1M" | "3M" | "1Y" | "ALL"
 
-export type ChartMetricId = "tvl" | "volume" | "fees" | "price"
+/** Hero chart metric keys. `tvl` is the supplied/TVL series (Convex hero feed). */
+export type ChartMetricId = "tvl" | "borrowed" | "utilization"
 
 export type KeyMetricId =
   | "tvl"
@@ -426,7 +427,7 @@ export type AssetDetail = {
 // -------------------------------------------------------------------------
 
 export const ALL_TIME_RANGES: TimeRangeId[] = ["1D", "1W", "1M", "3M", "1Y", "ALL"]
-export const ALL_CHART_METRICS: ChartMetricId[] = ["tvl", "volume", "fees", "price"]
+export const ALL_CHART_METRICS: ChartMetricId[] = ["tvl", "borrowed", "utilization"]
 export const ALL_KEY_METRICS: KeyMetricId[] = [
   "tvl",
   "volume",

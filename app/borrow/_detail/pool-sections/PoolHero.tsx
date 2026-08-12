@@ -98,24 +98,21 @@ export function PoolHeroIdentity({
 
 export function PoolHero({ detail, leading, actions, className, hideIdentity = false }: PoolHeroProps) {
   const { t } = useTranslation()
-  const metricTabs = React.useMemo(() => [t("TVL"), t("Volume"), t("Fees"), t("Price")], [t])
+  const metricTabs = React.useMemo(() => [t("Supplied"), t("Borrowed"), t("Utilization")], [t])
   const [activeMetricTab, setActiveMetricTab] = React.useState(metricTabs[0])
   React.useEffect(() => {
     setActiveMetricTab(metricTabs[0])
   }, [metricTabs])
-  // Prefer the Convex-backed feed (TVL / total supplied); fall back to the local feed.
+  // Prefer the Convex-backed feed (supplied / TVL); fall back to the local feed.
   const feed = React.useMemo(() => {
     const fallback = detail.heroFeed ?? getPoolHeroFeed(detail.id)
     if (activeMetricTab === metricTabs[1]) {
-      return buildFeedFromRangeSeries(detail.heroMetric.series.volume, "usdCompact", fallback)
+      return buildFeedFromRangeSeries(detail.heroMetric.series.borrowed, "usdCompact", fallback)
     }
     if (activeMetricTab === metricTabs[2]) {
-      return buildFeedFromRangeSeries(detail.heroMetric.series.fees, "usdCompact", fallback)
+      return buildFeedFromRangeSeries(detail.heroMetric.series.utilization, "percent", fallback)
     }
-    if (activeMetricTab === metricTabs[3]) {
-      return buildFeedFromRangeSeries(detail.heroMetric.series.price, "price", fallback)
-    }
-    return fallback
+    return detail.heroFeed ?? buildFeedFromRangeSeries(detail.heroMetric.series.tvl, "usdCompact", getPoolHeroFeed(detail.id))
   }, [activeMetricTab, detail.heroFeed, detail.heroMetric.series, detail.id, metricTabs])
 
   return (

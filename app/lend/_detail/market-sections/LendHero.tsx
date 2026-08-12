@@ -189,6 +189,9 @@ function latestValue(points: LendMarketDetail["supplyBorrow"]["supplied"]["point
 function formatPointLabel(value: string) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return value
+  if (value.includes("T")) {
+    return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit" }).format(date)
+  }
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric" }).format(date)
 }
 

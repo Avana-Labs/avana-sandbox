@@ -88,9 +88,9 @@ type FixtureOverride = {
   quickStats?: Record<string, Partial<QuickStat>>
   /** Base TVL used by hero + key metrics (overrides catalog liquidity). */
   baseTvlUsd?: number
-  /** Daily volume used to seed the hero/volume chart (overrides derived). */
+  /** Daily volume used to seed cashflow / key-metric charts (overrides derived). */
   baseVolumeUsd?: number
-  /** Daily fees used to seed the hero/fees chart (overrides derived). */
+  /** Daily fees used to seed cashflow / key-metric charts (overrides derived). */
   baseFeesUsd?: number
   /** About card override (description + stats + history). */
   about?: AboutCard
@@ -428,14 +428,12 @@ function buildHeroMetricSeries(
 ): Record<ChartMetricId, Record<TimeRangeId, Series>> {
   const spoke = getSpokeById(row.spoke)
   const baseTvl = fixture?.baseTvlUsd ?? spoke.liquidityUsd
-  const baseVol = fixture?.baseVolumeUsd ?? Math.round(baseTvl * 0.12)
-  const baseFees = fixture?.baseFeesUsd ?? Math.round(baseVol * 0.003)
-  const basePrice = pairReferencePrice(row)
+  const baseBorrowed = Math.max(1, Math.round(baseTvl - row.availableUsd))
+  const baseUtilization = Math.max(1, Math.min(95, (baseBorrowed / Math.max(1, baseTvl)) * 100))
   return {
-    // TVL is a level, not a trending flow — keep the series close to the stated base
-    // (no systematic +8% drift) so the hero headline reconciles with the overview
-    // "Total Supplied" stat instead of ending materially higher/lower.
-    tvl: buildSeriesFamily(`${row.id}:tvl`, "TVL", {
+    // Supplied/TVL is a level — keep the series close to the stated base so the hero
+    // headline reconciles with Key Statistics instead of ending materially higher/lower.
+    tvl: buildSeriesFamily(`${row.id}:tvl`, "Supplied", {
       base: baseTvl,
       driftMultiplier: 1.0,
       noise: 0.02,
@@ -443,29 +441,21 @@ function buildHeroMetricSeries(
       nonNegative: true,
       roundTo: 0,
     }),
-    volume: buildSeriesFamily(`${row.id}:volume`, "Volume", {
-      base: baseVol,
-      driftMultiplier: 1.12,
-      noise: 0.15,
-      wave: 0.22,
-      nonNegative: true,
-      roundTo: 0,
-    }),
-    fees: buildSeriesFamily(`${row.id}:fees`, "Fees", {
-      base: baseFees,
-      driftMultiplier: 1.1,
-      noise: 0.18,
-      wave: 0.22,
-      nonNegative: true,
-      roundTo: 0,
-    }),
-    price: buildSeriesFamily(`${row.id}:price`, "Price", {
-      base: basePrice,
-      driftMultiplier: 1.04,
-      noise: 0.02,
+    borrowed: buildSeriesFamily(`${row.id}:borrowed`, "Borrowed", {
+      base: baseBorrowed,
+      driftMultiplier: 1.06,
+      noise: 0.04,
       wave: 0.06,
       nonNegative: true,
-      roundTo: 4,
+      roundTo: 0,
+    }),
+    utilization: buildSeriesFamily(`${row.id}:utilization`, "Utilization", {
+      base: baseUtilization,
+      driftMultiplier: 1.02,
+      noise: 0.05,
+      wave: 0.08,
+      nonNegative: true,
+      roundTo: 2,
     }),
   }
 }

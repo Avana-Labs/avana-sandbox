@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react"
-import { getChartTickIndexes } from "./chart-data"
+import { CHART_RANGE_LABELS, getChartTickIndexes } from "./chart-data"
 import type { ChartPoint, ChartRangeOption } from "./types"
 
 const TONE_COLORS = {
@@ -120,8 +120,11 @@ export function buildHeroAreaGeometry(
       previousLabel = data[index].label
     }
   }
+  // Sparse pre-bucketed labels (demo feeds / portfolio) can be used as-is.
+  // Dense day/hour series (detail pages) must be subsampled or labels collide.
+  const preferredTickCount = CHART_RANGE_LABELS[activeRange]?.length ?? 6
   const rawTickIndexes =
-    uniqueLabelIndexes.length >= 2
+    uniqueLabelIndexes.length >= 2 && uniqueLabelIndexes.length <= preferredTickCount + 1
       ? uniqueLabelIndexes
       : Array.from(new Set(getChartTickIndexes(activeRange, data.length)))
   const tickIndexes = width < 640 ? rawTickIndexes.filter((_, index) => index % 2 === 0) : rawTickIndexes
@@ -138,9 +141,11 @@ export function buildHeroAreaGeometry(
             : ("middle" as const),
     }
   })
+  // Drop empty labels so a sparse/malformed feed still keeps readable ticks.
+  const labeledXAxisTicks = xAxisTicks.filter((tick) => tick.label.trim().length > 0)
   const linePath = monotoneLinePath(points)
   const areaPath = `${linePath} L ${points[points.length - 1].x} ${height - bottom} L ${points[0].x} ${height - bottom} Z`
-  return { points, linePath, areaPath, axisTicks, xAxisTicks, left, right, top, bottom }
+  return { points, linePath, areaPath, axisTicks, xAxisTicks: labeledXAxisTicks, left, right, top, bottom }
 }
 
 export function HeroAreaChart({
@@ -159,7 +164,6 @@ export function HeroAreaChart({
   const [dimensions, setDimensions] = useState({ width: 1_000, height })
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const [isVisible, setIsVisible] = useState(true)
-  void activeRange
 
   useEffect(() => {
     const shell = shellRef.current

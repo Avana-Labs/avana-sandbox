@@ -52,6 +52,19 @@ describe("HeroAreaChart", () => {
     expect(geometry.xAxisTicks.at(-1)?.x).toBe(geometry.points.at(-1)?.x)
   })
 
+  it("subsamples dense day labels so 1M stays readable", () => {
+    const series = Array.from({ length: 30 }, (_, index) => ({
+      time: index,
+      value: 100 + index,
+      label: `Jun ${index + 1}`,
+    }))
+    const geometry = buildHeroAreaGeometry(series, 900, 310, "1M")
+    expect(geometry.xAxisTicks.length).toBeGreaterThanOrEqual(3)
+    expect(geometry.xAxisTicks.length).toBeLessThanOrEqual(6)
+    expect(geometry.xAxisTicks[0]?.label).toBe("Jun 1")
+    expect(geometry.xAxisTicks.at(-1)?.label).toBe("Jun 30")
+  })
+
   it("preserves hover selection, tooltip formatting, and pointer exit", () => {
     const onActiveIndexChange = vi.fn()
     render(
