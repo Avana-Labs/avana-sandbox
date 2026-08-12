@@ -102,10 +102,7 @@ export function AssetHeroIdentity({
           <HeroIcon
             label={t("Website")}
             onClick={() =>
-              window.open(
-                detail.hero.websiteUrl ?? `https://etherscan.io/address/${contractAddress}`,
-                "_blank",
-              )
+              window.open(detail.hero.websiteUrl ?? `https://etherscan.io/address/${contractAddress}`, "_blank")
             }
           >
             <Globe className="h-[18px] w-[18px]" />

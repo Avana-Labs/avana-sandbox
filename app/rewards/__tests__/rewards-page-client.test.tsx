@@ -312,6 +312,7 @@ describe("DashboardPageClient", () => {
     expect(screen.getByRole("tab", { name: "Borrow" })).toBeInTheDocument()
     expect(screen.getByRole("tab", { name: "Multiply" })).toBeInTheDocument()
     expect(screen.getByRole("tab", { name: "Rewards" })).toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: "All Transactions" })).toBeInTheDocument()
     expect(screen.queryByRole("link", { name: "Rewards" })).toBeNull()
     expect(screen.getByRole("heading", { name: "Your Portfolio" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Wallet Balance" })).toBeInTheDocument()
@@ -459,6 +460,7 @@ describe("DashboardPageClient", () => {
   })
 
   it("feeds product transactions into the combined activity table", async () => {
+    searchTab = "transactions"
     borrowTxHistory = [
       {
         id: "history-1",
@@ -494,8 +496,7 @@ describe("DashboardPageClient", () => {
 
     renderRewardsPage()
 
-    // The dashboard's old "All Transactions" table now lives on the rewards page,
-    // fed by borrow + multiply + lend + reward-claim rows.
+    // Combined activity lives on the All Transactions tab (borrow + multiply + lend + reward-claim).
     await waitFor(() => expect(screen.getByText("sim_abc123")).toBeInTheDocument())
     expect(screen.getByText("Simulated transaction")).toBeInTheDocument()
     expect(screen.getByText("0xmultiply")).toBeInTheDocument()

@@ -1,6 +1,7 @@
 "use client"
 
 import { lazy, useMemo } from "react"
+import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { useAvanaIdentity, useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useDashboardMultiplyLive } from "@/app/dashboard/use-dashboard-multiply-live"
 import { buildMultiplyDashboardMetrics, type DashboardTabMetrics } from "@/app/dashboard/dashboard-tab-metrics"
@@ -144,31 +145,27 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
   )
 
   return (
-    <section id="dashboard-multiply-account" className="scroll-mt-24">
-      <div className="space-y-6">
-        <div className="space-y-6">
-          <DashboardOverviewSection title={t("Multiply Balance")} metrics={multiplyDashboardMetrics.overview} />
-          <div className="space-y-4">
-            <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
-              {t("Multiply Health")}
-            </h3>
-            <div className="grid gap-4 xl:grid-cols-2">
-              <SuppliesHealthFactorCard
-                averageHealthFactor={multiplySnapshot.averageHealthFactor}
-                showBalance={showDollarAmounts}
-              />
-              <CurrentLtvCard
-                borrowedUsd={multiplySnapshot.totalBorrowedUsd}
-                collateralUsd={multiplySnapshot.totalCollateralUsd}
-                showBalance={showDollarAmounts}
-              />
-            </div>
-          </div>
+    <section id="dashboard-multiply-account" className={`scroll-mt-24 ${detailSectionStackClass}`}>
+      <DashboardOverviewSection title={t("Multiply Balance")} metrics={multiplyDashboardMetrics.overview} />
+      <div className="space-y-4">
+        <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
+          {t("Multiply Health")}
+        </h3>
+        <div className="grid gap-4 xl:grid-cols-2">
+          <SuppliesHealthFactorCard
+            averageHealthFactor={multiplySnapshot.averageHealthFactor}
+            showBalance={showDollarAmounts}
+          />
+          <CurrentLtvCard
+            borrowedUsd={multiplySnapshot.totalBorrowedUsd}
+            collateralUsd={multiplySnapshot.totalCollateralUsd}
+            showBalance={showDollarAmounts}
+          />
         </div>
-        <AccountModuleBoundary>
-          <MultiplyCollateralTable rows={displayMultiplyTabData.lpCollaterals} returnHref={returnHref} />
-        </AccountModuleBoundary>
       </div>
+      <AccountModuleBoundary>
+        <MultiplyCollateralTable rows={displayMultiplyTabData.lpCollaterals} returnHref={returnHref} />
+      </AccountModuleBoundary>
     </section>
   )
 }

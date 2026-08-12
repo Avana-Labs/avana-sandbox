@@ -112,7 +112,10 @@ export function PoolHero({ detail, leading, actions, className, hideIdentity = f
     if (activeMetricTab === metricTabs[2]) {
       return buildFeedFromRangeSeries(detail.heroMetric.series.utilization, "percent", fallback)
     }
-    return detail.heroFeed ?? buildFeedFromRangeSeries(detail.heroMetric.series.tvl, "usdCompact", getPoolHeroFeed(detail.id))
+    return (
+      detail.heroFeed ??
+      buildFeedFromRangeSeries(detail.heroMetric.series.tvl, "usdCompact", getPoolHeroFeed(detail.id))
+    )
   }, [activeMetricTab, detail.heroFeed, detail.heroMetric.series, detail.id, metricTabs])
 
   return (

@@ -105,15 +105,15 @@ export function AssetDetailClient({ detail }: Props) {
 
                 <section aria-label={t("Asset analytics")} className={detailAnalyticsSectionClass}>
                   <DeferredDetailContent className={detailAnalyticsStackClass}>
-                      <InterestRateModelCard {...interestRateModelFromAssetDetail(detail)} />
-                      <AllocationBreakdownCard detail={detail} />
-                      <CashflowCard detail={detail} />
-                      <DetailFaqSection
-                        title={t("General FAQs")}
-                        items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
-                      />
-                      <TransactionHistoryCard transactions={detail.transactions} assetSymbol={detail.hero.symbol} />
-                      <DetailPageNotice product="borrow" />
+                    <InterestRateModelCard {...interestRateModelFromAssetDetail(detail)} />
+                    <AllocationBreakdownCard detail={detail} />
+                    <CashflowCard detail={detail} />
+                    <DetailFaqSection
+                      title={t("General FAQs")}
+                      items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
+                    />
+                    <TransactionHistoryCard transactions={detail.transactions} assetSymbol={detail.hero.symbol} />
+                    <DetailPageNotice product="borrow" />
                   </DeferredDetailContent>
                 </section>
               </div>

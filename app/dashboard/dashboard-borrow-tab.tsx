@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
+import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
@@ -102,7 +103,7 @@ export function DashboardBorrowTab({
   )
 
   return (
-    <section className="space-y-8">
+    <section className={detailSectionStackClass}>
       {section === "all" ? (
         <>
           {showSummary ? (
@@ -116,7 +117,7 @@ export function DashboardBorrowTab({
             </div>
           ) : null}
 
-          <div className="space-y-10">
+          <div className={detailSectionStackClass}>
             <DebtsPanel
               rows={sortedDebts}
               totals={debtTotals}

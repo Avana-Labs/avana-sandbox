@@ -9,10 +9,7 @@ import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { formatChartValue, type ChartFeed, type ChartPoint, type ChartRangeData } from "@/app/components/charts"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import {
-  DashboardQuickActions,
-  type DashboardQuickActionsTab,
-} from "@/app/dashboard/dashboard-quick-actions"
+import { DashboardQuickActions, type DashboardQuickActionsTab } from "@/app/dashboard/dashboard-quick-actions"
 
 /**
  * Reward balances are denominated in AVA (the card shows the AVA coin icon), not

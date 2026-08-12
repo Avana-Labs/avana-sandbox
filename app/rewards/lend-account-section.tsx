@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { ActionIcon } from "@/app/components/action-icon"
+import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
 import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
 import { useAvanaIdentity, useLendSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
@@ -191,7 +192,7 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
   }
 
   return (
-    <section id="dashboard-lend-account" className="scroll-mt-24 space-y-6">
+    <section id="dashboard-lend-account" className={`scroll-mt-24 ${detailSectionStackClass}`}>
       <DashboardLendPerformanceSection title={t("Lend Balance")} metrics={metrics} />
       <DashboardInvestments
         investments={lendTabData.investments}

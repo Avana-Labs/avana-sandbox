@@ -205,20 +205,10 @@ export function AllocationBreakdownCard({ detail, id }: Props) {
                       <div className="flex min-w-0 items-center gap-3">
                         <div className="flex shrink-0 items-center">
                           <span className="relative z-[1]">
-                            <TokenBubble
-                              visual={row.visuals[0]}
-                              size="table"
-                              ring={false}
-                              className="bg-transparent"
-                            />
+                            <TokenBubble visual={row.visuals[0]} size="table" ring={false} className="bg-transparent" />
                           </span>
                           <span className="-ml-3">
-                            <TokenBubble
-                              visual={row.visuals[1]}
-                              size="table"
-                              ring={false}
-                              className="bg-transparent"
-                            />
+                            <TokenBubble visual={row.visuals[1]} size="table" ring={false} className="bg-transparent" />
                           </span>
                         </div>
                         <div className="min-w-0">
