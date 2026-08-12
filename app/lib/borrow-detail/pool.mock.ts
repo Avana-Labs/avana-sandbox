@@ -27,6 +27,7 @@ import { formatOraclePrice } from "./formatters"
 import { buildPoolRiskAssessment } from "./risk-model"
 import { buildPoolFaqs } from "./content-model"
 import { buildPoolProtocolParameters } from "./protocol-parameters"
+import { resolveHeroContractAddress } from "@/app/borrow/_detail/lib/hero-chart-feeds"
 import type {
   AboutCard,
   CashflowCard,
@@ -376,20 +377,26 @@ function pickChain(row: BorrowPoolRow): string {
   return "Ethereum"
 }
 
+function isStablePool(row: BorrowPoolRow) {
+  const stables = new Set(["USDC", "USDT", "DAI", "GHO", "FRAX", "CRVUSD", "USDS"])
+  return row.visuals.every((visual) => stables.has(visual.symbol.toUpperCase()))
+}
+
 function buildDefaultQuickStats(row: BorrowPoolRow): QuickStat[] {
-  const spoke = getSpokeById(row.spoke)
-  const totalSupplied = spoke.liquidityUsd
-  const totalBorrowed = Math.round(totalSupplied * (row.ltv / 100))
-  const oraclePrice = pairReferencePrice(row)
+  const supplyApy = (row.aprMin + row.aprMax) / 2
+  const borrowApy = supplyApy + row.riskPremiumBps / 100
   return [
-    { id: "oraclePrice", label: "Oracle price", value: formatOraclePrice(oraclePrice) },
-    { id: "totalSupplied", label: "Total Supplied", value: formatCompactUsd(totalSupplied), delta: deltaUp(1.8) },
-    { id: "totalBorrowed", label: "Total Borrowed", value: formatCompactUsd(totalBorrowed), delta: deltaUp(2.9) },
-    { id: "utilization", label: "Utilization", value: formatPct(spoke.maxLtv * 0.82, 1) },
-    { id: "apr", label: "Supply APY", value: `${((row.aprMin + row.aprMax) / 2).toFixed(1)}%`, delta: deltaUp(0.3) },
-    { id: "riskPremium", label: "Risk premium", value: formatBpsAsPct(row.riskPremiumBps), delta: deltaUp(2.9) },
-    { id: "maxLtv", label: "Max LTV", value: formatPct(row.ltv, 1) },
-    { id: "available", label: "Available to borrow", value: formatCompactUsd(row.availableUsd) },
+    { id: "price", label: "Price", value: formatOraclePrice(pairReferencePrice(row)), delta: deltaUp(0.1) },
+    {
+      id: "available",
+      label: "Available Liquidity",
+      value: formatCompactUsd(row.availableUsd),
+      delta: deltaUp(0.6),
+    },
+    { id: "supplyApy", label: "Supply APY", value: formatPct(supplyApy, 2), delta: deltaUp(0.1) },
+    { id: "rewardsApy", label: "Rewards APY", value: "No rewards" },
+    { id: "borrowApy", label: "Borrow APY", value: formatPct(borrowApy, 2), delta: deltaUp(0.08) },
+    { id: "reserveFactor", label: "Reserve Factor", value: isStablePool(row) ? "10%" : "15%" },
   ]
 }
 
@@ -410,7 +417,8 @@ function buildHero(row: BorrowPoolRow, fixture: FixtureOverride | undefined): Po
     subtitle: fixture?.subtitle ?? `${row.name} accepted as LP collateral. Supply to unlock borrow power.`,
     feeTier: fixture?.feeTier,
     chain: fixture?.chain ?? pickChain(row),
-    explorerUrl: fixture?.explorerUrl,
+    explorerUrl:
+      fixture?.explorerUrl ?? `https://etherscan.io/address/${resolveHeroContractAddress(row.id)}`,
   }
 }
 
@@ -656,30 +664,137 @@ function buildRisk(row: BorrowPoolRow, fixture: FixtureOverride | undefined): Ri
   return buildPoolRiskAssessment(row)
 }
 
-function buildAbout(row: BorrowPoolRow, fixture: FixtureOverride | undefined): AboutCard {
-  if (fixture?.about) {
-    return {
-      ...fixture.about,
-      stats: fixture.about.stats.length > 0 ? fixture.about.stats : buildAboutStats(row),
-    }
+function contractAddressFor(poolId: string, salt: string) {
+  const seed = `${poolId}:${salt}`
+  let hash = 0x811c9dc5
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index)
+    hash = Math.imul(hash, 0x01000193)
   }
-  const spoke = getSpokeById(row.spoke)
+  const chunk = (hash >>> 0).toString(16).padStart(8, "0").toUpperCase()
+  return `0x${chunk}${chunk}${chunk}${chunk}${chunk}`.slice(0, 42)
+}
+
+function shortAddress(address: string) {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
+function buildContractStat(label: string, poolId: string, salt: string): AboutCard["stats"][number] {
+  const address = contractAddressFor(poolId, salt)
   return {
+    label,
+    value: shortAddress(address),
+    href: `https://etherscan.io/address/${address}`,
+  }
+}
+
+function buildPoolGovernanceParameters(row: BorrowPoolRow): NonNullable<AboutCard["governanceParameters"]> {
+  const ltvPct = row.ltv
+  const liquidationThresholdPct = Math.min(95, Math.round((row.ltv + 5) * 10) / 10)
+  const liquidationBonusPct = isStablePool(row) ? 5 : 7
+  const suppliedUsd = getSpokeById(row.spoke).liquidityUsd
+  const supplyCapUsd = Math.max(25_000_000, Math.ceil((suppliedUsd * 1.75) / 1_000_000) * 1_000_000)
+  const borrowCapUsd = Math.max(10_000_000, Math.ceil((row.availableUsd * 2.25) / 1_000_000) * 1_000_000)
+  const proposalHref = `https://etherscan.io/address/${contractAddressFor(row.id, "governance")}`
+  const reserve = isStablePool(row) ? 10 : 15
+
+  return {
+    parameters: [
+      {
+        id: "ltv",
+        label: "Max LTV",
+        value: formatPct(ltvPct, 1),
+        description: "Maximum borrow power when this LP position is used as collateral.",
+      },
+      {
+        id: "liquidationThreshold",
+        label: "Liquidation threshold",
+        value: formatPct(liquidationThresholdPct, 1),
+        description: "Health factor begins breaking down when collateral value crosses this threshold.",
+      },
+      {
+        id: "supplyCap",
+        label: "Supply cap",
+        value: formatCompactUsd(supplyCapUsd),
+        description: "Governance-controlled ceiling for deposits into this market.",
+      },
+      {
+        id: "borrowCap",
+        label: "Borrow cap",
+        value: formatCompactUsd(borrowCapUsd),
+        description: "Governance-controlled ceiling for total borrowed liquidity.",
+      },
+      {
+        id: "liquidationBonus",
+        label: "Liquidation bonus",
+        value: `${liquidationBonusPct}%`,
+        description: "Incentive paid to liquidators when unhealthy positions are cleared.",
+      },
+      {
+        id: "oracle",
+        label: "Oracle source",
+        value: "Chainlink",
+        description: "Price feed family used by the market risk engine.",
+      },
+    ],
+    changelog: [
+      {
+        id: "supply-cap-review",
+        parameter: "Supply cap",
+        previous: formatCompactUsd(Math.round(supplyCapUsd * 0.86)),
+        current: formatCompactUsd(supplyCapUsd),
+        date: "2025-09-08",
+        source: "Risk parameter review",
+        executor: "Governance executor",
+        href: proposalHref,
+      },
+      {
+        id: "reserve-factor-review",
+        parameter: "Reserve factor",
+        previous: `${Math.max(0, reserve - 1)}%`,
+        current: `${reserve}%`,
+        date: "2025-06-02",
+        source: "Revenue parameter update",
+        executor: "Risk steward multisig",
+        href: proposalHref,
+      },
+      {
+        id: "collateral-onboarding",
+        parameter: "Collateral configuration",
+        previous: "Disabled",
+        current: `${formatPct(ltvPct, 1)} LTV / ${formatPct(liquidationThresholdPct, 1)} LT`,
+        date: "2025-01-20",
+        source: "Market onboarding",
+        executor: "Governance executor",
+        href: proposalHref,
+      },
+    ],
+  }
+}
+
+function buildAbout(row: BorrowPoolRow, fixture: FixtureOverride | undefined): AboutCard {
+  const spoke = getSpokeById(row.spoke)
+  const about = fixture?.about ?? {
     description:
       `${row.name} on ${getDexById(row.dexes[0]?.id as Parameters<typeof getDexById>[0])?.label ?? row.venue} is treated as LP collateral inside the ${spoke.label}. ` +
       `The pool's depth, fee tier, and pair composition determine how much it can support, while the spoke's max LTV keeps the borrow power anchored to the market's actual risk. ` +
       `That gives this page a single source of truth for how the pool should be understood: what it is, how much capital it can safely support, and what kind of downside the protocol is underwriting.`,
-    stats: buildAboutStats(row),
+    stats: [],
     history: [
       { date: "2025-01-14", title: "Onboarded", description: `Added to the ${spoke.label}.` },
       { date: "2025-06-02", title: "Parameters refreshed", description: "Quarterly risk review — no changes to LTV." },
     ],
   }
-}
 
-function buildAboutStats(_row: BorrowPoolRow): AboutCard["stats"] {
-  // Omit fabricated contract hex links until real addresses ship.
-  return [{ label: "Deployed On", value: "March 18, 2024" }]
+  return {
+    ...about,
+    stats: [
+      buildContractStat("Vault Contract Address", row.id, "vault"),
+      buildContractStat("Token Contract Address", row.id, "token"),
+      buildContractStat("Staking Contract Address", row.id, "staking"),
+    ],
+    governanceParameters: buildPoolGovernanceParameters(row),
+  }
 }
 
 function buildRelated(row: BorrowPoolRow): RelatedPoolSummary[] {

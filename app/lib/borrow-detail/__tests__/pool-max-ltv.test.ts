@@ -12,8 +12,8 @@ describe("pool detail Max LTV single-sources the collateral factor", () => {
 
     for (const row of BORROW_POOL_CATALOG) {
       const detail = buildPoolDetail(row)
-      const maxLtv = detail.quickStats.find((stat) => stat.id === "maxLtv")!
-      expect(maxLtv.value).toBe(formatPct(row.ltv, 1))
+      const maxLtv = detail.about.governanceParameters?.parameters.find((parameter) => parameter.id === "ltv")
+      expect(maxLtv?.value).toBe(formatPct(row.ltv, 1))
     }
   })
 })

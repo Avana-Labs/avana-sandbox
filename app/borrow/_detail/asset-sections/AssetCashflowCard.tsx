@@ -22,12 +22,17 @@ export function AssetCashflowCard({ detail }: Props) {
       bodyClassName="p-0"
     >
       <div className="overflow-x-auto">
-        <table className="w-full text-[13px]">
+        <table className="w-full table-fixed text-[13px]">
+          <colgroup>
+            <col className="w-[40%]" />
+            <col className="w-[30%]" />
+            <col className="w-[30%]" />
+          </colgroup>
           <thead>
             <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-              <th className="pb-2 pl-5 pt-3">{t("Line")}</th>
+              <th className="pb-2 pt-3">{t("Line")}</th>
               <th className="pb-2 pt-3 text-right">{t("Reported")}</th>
-              <th className="pb-2 pr-5 pt-3 text-right">{t("YoY")}</th>
+              <th className="pb-2 pt-3 text-right">{t("YoY")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -36,11 +41,11 @@ export function AssetCashflowCard({ detail }: Props) {
                 key={i}
                 className={cn("transition-colors hover:bg-hover", row.highlighted ? "bg-surface-inset/40" : undefined)}
               >
-                <th scope="row" className="py-2.5 pl-5 text-left font-medium text-foreground">
+                <th scope="row" className="py-2.5 text-left font-medium text-foreground">
                   {t(row.label)}
                 </th>
                 <td className="py-2.5 text-right font-data font-medium tabular-nums text-foreground">{row.reported}</td>
-                <td className="py-2.5 pr-5 text-right">
+                <td className="py-2.5 text-right">
                   {row.yoy ? <DeltaPill value={row.yoy.value} format="percent" digits={1} hideZero={false} /> : null}
                 </td>
               </tr>

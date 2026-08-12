@@ -59,12 +59,12 @@ export function PoolDetailClient({ detail }: Props) {
           <DetailPageWidth>
             <nav
               aria-label={t("Breadcrumb")}
-              className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]"
+              className="mb-4 flex items-center gap-1.5 text-[15px] text-muted-foreground md:text-[16px]"
             >
               <Link href="/borrow" className="transition-colors hover:text-foreground">
                 {t("Borrow")}
               </Link>
-              <span aria-hidden className="text-border">
+              <span aria-hidden className="font-medium text-muted-foreground">
                 ›
               </span>
               <span className="font-normal text-foreground">{detail.hero.name}</span>

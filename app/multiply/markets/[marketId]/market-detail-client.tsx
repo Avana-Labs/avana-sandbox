@@ -8,7 +8,6 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
-import { withGovernanceParameterView } from "@/app/borrow/_detail/lib/governance-parameters"
 import { mapMultiplyHistoryToDetailRows } from "@/app/lib/multiply-system/read-model"
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -23,10 +22,6 @@ import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
 
 type Props = { detail: MultiplyMarketDetail }
 
-const SupplyBorrowCard = dynamic(
-  () => import("@/app/multiply/_detail/pool-sections/SupplyBorrowCard").then((mod) => mod.SupplyBorrowCard),
-  { ssr: false },
-)
 const CashflowCard = dynamic(
   () => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard),
   { ssr: false },
@@ -52,12 +47,6 @@ export function MarketDetailClient({ detail }: Props) {
   const session = useMultiplySessionContext()
   const { t } = useTranslation()
   const marketId = detail.id.toLowerCase().replaceAll("_", "-")
-  const about = withGovernanceParameterView(
-    detail.about,
-    detail.quickStats.filter((stat) =>
-      ["maxLeverage", "collateralFactor", "supplyApy", "borrowApy", "available"].includes(stat.id),
-    ),
-  )
 
   const transactions = React.useMemo(() => {
     const sessionRows = mapMultiplyHistoryToDetailRows(
@@ -75,12 +64,12 @@ export function MarketDetailClient({ detail }: Props) {
           <DetailPageWidth>
             <nav
               aria-label={t("Breadcrumb")}
-              className="mb-4 flex items-center gap-1.5 text-[14px] text-muted-foreground md:text-[15px]"
+              className="mb-4 flex items-center gap-1.5 text-[15px] text-muted-foreground md:text-[16px]"
             >
               <Link href="/multiply" className="transition-colors hover:text-foreground">
                 {t("Multiply")}
               </Link>
-              <span aria-hidden className="text-border">
+              <span aria-hidden className="font-medium text-muted-foreground">
                 ›
               </span>
               <span className="font-normal text-foreground">{detail.hero.name}</span>
@@ -95,7 +84,7 @@ export function MarketDetailClient({ detail }: Props) {
                 <MarketHero detail={detail} hideIdentity className="mb-12" />
 
                 <AboutNewsSection
-                  about={about}
+                  about={detail.about}
                   aboutTitle={t("About {name}").replace("{name}", detail.hero.name)}
                   compactAboutTitle
                   newsImageUrl={detail.hero.visuals[0]?.iconUrl ?? detail.hero.visuals[1]?.iconUrl ?? undefined}
@@ -107,7 +96,7 @@ export function MarketDetailClient({ detail }: Props) {
                         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
                           Key Statistics
                         </h2>
-                        <QuickStatsGrid detail={detail} hideRisk />
+                        <QuickStatsGrid detail={detail} />
                       </section>
                       <RiskSection detail={detail} />
                     </>
@@ -120,7 +109,6 @@ export function MarketDetailClient({ detail }: Props) {
                   className="space-y-14 pt-14 md:space-y-16 md:pt-16"
                 >
                   <DeferredDetailContent className="space-y-14 md:space-y-16">
-                    <SupplyBorrowCard detail={detail} />
                     <CashflowCard detail={detail} />
                     <DetailFaqSection
                       title={t("Multiply FAQs")}

@@ -24,7 +24,13 @@ import {
   buildMultiplyRiskAssessment,
   buildPoolRiskAssessment,
 } from "@/app/lib/borrow-detail/risk-model"
-import { buildAssetFaqs, buildLendFaqs, buildMultiplyFaqs, buildPoolFaqs } from "@/app/lib/borrow-detail/content-model"
+import {
+  buildAssetFaqs,
+  buildLendFaqs,
+  buildMultiplyAboutDescription,
+  buildMultiplyFaqs,
+  buildPoolFaqs,
+} from "@/app/lib/borrow-detail/content-model"
 import { getAssetAboutCard } from "@/app/lib/borrow-detail/asset.mock"
 import { getPoolAboutCard } from "@/app/lib/borrow-detail/pool.mock"
 import { LEND_MARKET_CATALOG } from "@/app/lib/lend-system/catalog"
@@ -714,15 +720,18 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
     walletEvents.push(...walletEventsForMarket(market.id, asOf, walletEventDays))
     content.push({
       slug: market.id,
-      description: `Multiply market pairing ${market.collateralAsset.name} (${market.collateralAsset.symbol}) collateral with ${market.borrowAsset.symbol} exposure in a leveraged loop, up to ${market.risk.publicMaxMultiplier.toFixed(2)}x. The route is dedicated to leveraged positions, separate from LP collateral pools.`,
+      description: buildMultiplyAboutDescription({
+        collateralName: market.collateralAsset.name,
+        collateralSymbol: market.collateralAsset.symbol,
+        borrowName: market.borrowAsset.name,
+        borrowSymbol: market.borrowAsset.symbol,
+        maxLeverage: `${market.risk.publicMaxMultiplier.toFixed(2)}x`,
+        riskTier: market.risk.riskTier,
+      }),
       stats: [
-        { label: "Collateral", value: market.collateralAsset.symbol },
-        { label: "Borrowable", value: market.borrowAsset.symbol },
-        { label: "Max leverage", value: `${market.risk.publicMaxMultiplier.toFixed(2)}x` },
-        {
-          label: "Risk tier",
-          value: market.risk.riskTier === "low" ? "Low" : market.risk.riskTier === "medium" ? "Medium" : "High",
-        },
+        contractStatForSeed("Vault Contract Address", market.id, "vault"),
+        contractStatForSeed("Token Contract Address", market.id, "token"),
+        contractStatForSeed("Staking Contract Address", market.id, "staking"),
       ],
       history: [
         {

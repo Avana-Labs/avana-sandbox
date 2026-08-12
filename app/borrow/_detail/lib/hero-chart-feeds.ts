@@ -61,11 +61,31 @@ export function buildFeedFromRangeSeries(
 }
 
 export function shortenAddressFromUrl(url?: string): string | null {
-  if (!url) return null
-  const match = url.match(/0x[a-fA-F0-9]{40}/)
-  if (!match) return null
-  const value = match[0]
-  return `${value.slice(0, 6)}...${value.slice(-4)}`
+  const address = addressFromExplorerUrl(url)
+  return address ? formatHeroContractLabel(address) : null
+}
+
+export function addressFromExplorerUrl(url?: string): string | null {
+  return url?.match(/0x[a-fA-F0-9]{40}/)?.[0] ?? null
+}
+
+export function resolveHeroContractAddress(id: string, explorerUrl?: string): string {
+  const fromExplorer = addressFromExplorerUrl(explorerUrl)
+  if (fromExplorer) return fromExplorer
+  const fallback = Array.from(id)
+    .map((char) => char.charCodeAt(0).toString(16).padStart(2, "0"))
+    .join("")
+    .padEnd(40, "0")
+    .slice(0, 40)
+  return `0x${fallback}`
+}
+
+export function formatHeroContractLabel(address: string): string {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
+}
+
+export function resolveHeroContractLabel(id: string, explorerUrl?: string): string {
+  return formatHeroContractLabel(resolveHeroContractAddress(id, explorerUrl))
 }
 
 function makeRangeData(points: ChartFeed["rangeData"]["1D"]): ChartRangeData {

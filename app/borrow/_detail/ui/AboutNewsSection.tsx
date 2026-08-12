@@ -7,6 +7,7 @@ import { ActionMetricHelp } from "@/app/components/action-page/action-metric-hel
 import { AboutCard } from "@/app/borrow/_detail/pool-sections"
 import { NewsCard } from "./NewsCard"
 import { buildNewsItems } from "@/app/borrow/_detail/lib/news"
+import { normalizeGovernanceParameters } from "@/app/borrow/_detail/lib/governance-parameters"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type Props = {
@@ -37,7 +38,7 @@ export function AboutNewsSection({
 }: Props) {
   const { t } = useTranslation()
   const newsItems = buildNewsItems(about, newsImageUrl, newsImageLabel)
-  const governanceParameters = about.governanceParameters
+  const governanceParameters = normalizeGovernanceParameters(about)
 
   return (
     <div className={cn("space-y-12 pt-10", className)}>

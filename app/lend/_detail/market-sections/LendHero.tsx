@@ -8,6 +8,7 @@ import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { formatChartValue, type ChartFeed, type ChartRangeData, type ChartValueFormat } from "@/app/components/charts"
 import { getLendMarketHeroFeed } from "@/app/lib/chart-feeds"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { resolveHeroContractLabel } from "@/app/borrow/_detail/lib/hero-chart-feeds"
 
 type LendHeroProps = {
   detail: LendMarketDetail
@@ -30,7 +31,7 @@ export function LendHeroIdentity({
 }) {
   const { t } = useTranslation()
   const chainLabel = detail.hero.chain
-  const contractLabel = resolveContractLabel(detail)
+  const contractLabel = resolveHeroContractLabel(detail.id, detail.hero.explorerUrl)
 
   return (
     <header className={cn("pb-5", className)}>
@@ -236,13 +237,3 @@ function XIcon() {
   )
 }
 
-function resolveContractLabel(detail: LendMarketDetail) {
-  const fromExplorer = detail.hero.explorerUrl?.match(/0x[a-fA-F0-9]{40}/)?.[0]
-  const fallback = Array.from(detail.id)
-    .map((char) => char.charCodeAt(0).toString(16).padStart(2, "0"))
-    .join("")
-    .padEnd(40, "0")
-    .slice(0, 40)
-  const address = fromExplorer ?? `0x${fallback}`
-  return `${address.slice(0, 6)}...${address.slice(-4)}`
-}

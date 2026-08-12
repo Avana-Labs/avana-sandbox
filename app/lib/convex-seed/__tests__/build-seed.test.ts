@@ -55,6 +55,13 @@ describe("buildBorrowSeed", () => {
     const multiplySlugs = new Set(multiply.map((m) => m.slug))
     expect(seed.content.some((c) => multiplySlugs.has(c.slug))).toBe(true)
     expect(seed.risk.some((r) => multiplySlugs.has(r.slug) && r.breakdown.length >= 5)).toBe(true)
+    const about = seed.content.find((c) => c.slug === "aave-gho")
+    expect(about?.stats.map((stat) => stat.label)).toEqual([
+      "Vault Contract Address",
+      "Token Contract Address",
+      "Staking Contract Address",
+    ])
+    expect(about?.stats.every((stat) => stat.href?.startsWith("https://etherscan.io/address/"))).toBe(true)
   })
 
   it("uses route-matching slugs (asset = spoke-scoped id, pool = pool id)", () => {
