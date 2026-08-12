@@ -16,7 +16,7 @@ export function AmountVisibilityToggle() {
         checked={showDollarAmounts}
         onCheckedChange={setShowDollarAmounts}
         aria-label={label}
-        className="h-5 w-9 border border-border data-[state=checked]:bg-brand data-[state=unchecked]:bg-input [&>span]:bg-white dark:[&>span]:bg-white"
+        className="h-5 w-9 border border-border p-px data-[state=checked]:bg-brand data-[state=unchecked]:bg-input [&>span]:h-4 [&>span]:w-4 [&>span]:bg-white [&>span]:data-[state=unchecked]:!translate-x-0 [&>span]:data-[state=checked]:!translate-x-4 dark:[&>span]:bg-white"
       />
     </div>
   )

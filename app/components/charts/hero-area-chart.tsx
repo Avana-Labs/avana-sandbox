@@ -81,19 +81,22 @@ export function buildHeroAreaGeometry(
       xAxisTicks: [] as XAxisTick[],
     }
   }
-  const top = 58
-  const bottom = 34
-  const right = width < 640 ? 40 : 58
+  // Compact portfolio heroes (~116px) can't use the tall market-hero padding —
+  // otherwise the plot collapses to ~24px and axis labels collide.
+  const compact = height < 160
+  const top = compact ? 10 : 58
+  const bottom = compact ? 22 : 34
+  const right = compact ? (width < 640 ? 48 : 56) : width < 640 ? 40 : 58
   const values = data.map((point) => point.value)
   const rawMin = Math.min(...values)
   const rawMax = Math.max(...values)
   const valueSpan = Math.max(1, rawMax - rawMin)
   const min = rawMin - Math.max(4, valueSpan * 0.08)
-  const max = rawMax + Math.max(4, valueSpan * 0.28)
+  const max = rawMax + Math.max(4, valueSpan * (compact ? 0.12 : 0.28))
   const range = Math.max(1, max - min)
   const plotHeight = Math.max(1, height - top - bottom)
   const plotWidth = Math.max(1, width - right)
-  const yTickCount = width < 640 ? 5 : 6
+  const yTickCount = compact ? 4 : width < 640 ? 5 : 6
   const tickValues = Array.from({ length: yTickCount }, (_, index) => max - (range * index) / (yTickCount - 1))
   const axisTicks = tickValues.map((value) => ({
     value,
@@ -105,7 +108,20 @@ export function buildHeroAreaGeometry(
     x: data.length === 1 ? plotWidth / 2 : (index / (data.length - 1)) * plotWidth,
     y: top + ((max - point.value) / range) * plotHeight,
   }))
-  const rawTickIndexes = Array.from(new Set(getChartTickIndexes(activeRange, data.length)))
+  // Prefer one tick per unique series label so custom axes (portfolio day labels)
+  // never render duplicates when the activeRange tick count differs.
+  const uniqueLabelIndexes: number[] = []
+  let previousLabel: string | undefined
+  for (let index = 0; index < data.length; index += 1) {
+    if (data[index].label !== previousLabel) {
+      uniqueLabelIndexes.push(index)
+      previousLabel = data[index].label
+    }
+  }
+  const rawTickIndexes =
+    uniqueLabelIndexes.length >= 2
+      ? uniqueLabelIndexes
+      : Array.from(new Set(getChartTickIndexes(activeRange, data.length)))
   const tickIndexes = width < 640 ? rawTickIndexes.filter((_, index) => index % 2 === 0) : rawTickIndexes
   const xAxisTicks = tickIndexes.map((index, tickPosition) => {
     const point = points[Math.min(points.length - 1, Math.max(0, index))]
@@ -131,7 +147,7 @@ export function HeroAreaChart({
   height = 240,
   formatValue = (value) =>
     `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-  formatYAxis = (value) => `$${Math.round(value)}`,
+  formatYAxis = (value) => `$${Math.round(value).toLocaleString()}`,
   gradientId = "heroAreaChartFill",
   className,
   tone,
@@ -173,6 +189,8 @@ export function HeroAreaChart({
     () => buildHeroAreaGeometry(data, dimensions.width, dimensions.height, activeRange, formatYAxis),
     [activeRange, data, dimensions, formatYAxis],
   )
+  const compact = dimensions.height < 160
+  const cursorBottom = compact ? 22 : 34
   const activePoint = activeIndex == null ? null : geometry.points[activeIndex]
   const lastPoint = geometry.points[geometry.points.length - 1]
   const chartShellClassName =
@@ -247,7 +265,7 @@ export function HeroAreaChart({
               x1={activePoint.x}
               x2={activePoint.x}
               y1={4}
-              y2={dimensions.height - 34}
+              y2={dimensions.height - cursorBottom}
               stroke={color.cursor}
               vectorEffect="non-scaling-stroke"
             />

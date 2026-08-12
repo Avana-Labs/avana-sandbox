@@ -94,7 +94,7 @@ export function BorrowPageHero({ pageData }: { pageData: BorrowPageData }) {
 
         <div
           ref={scrollerRef}
-          className="overflow-x-auto pb-1 [scrollbar-width:none] snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
+          className="overflow-x-auto scroll-smooth pb-1 [scrollbar-width:none] snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
         >
           <div className="flex min-w-max gap-3">
             {heroCards.map((card) => (

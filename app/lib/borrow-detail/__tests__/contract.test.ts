@@ -21,7 +21,9 @@ describe("borrow detail contract", () => {
     const v2 = getPoolDetail("uni-v2-weth-usdt")!
     expect(curated.hero.explorerUrl).toMatch(/0x[a-fA-F0-9]{40}/)
     expect(v2.hero.explorerUrl).toMatch(/0x[a-fA-F0-9]{40}/)
-    expect(resolveHeroContractLabel(curated.id, curated.hero.explorerUrl)).toMatch(/^0x[a-fA-F0-9]{4}\.\.\.[a-fA-F0-9]{4}$/)
+    expect(resolveHeroContractLabel(curated.id, curated.hero.explorerUrl)).toMatch(
+      /^0x[a-fA-F0-9]{4}\.\.\.[a-fA-F0-9]{4}$/,
+    )
     expect(resolveHeroContractLabel(v2.id, v2.hero.explorerUrl)).toMatch(/^0x[a-fA-F0-9]{4}\.\.\.[a-fA-F0-9]{4}$/)
   })
 

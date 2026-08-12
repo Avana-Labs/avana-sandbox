@@ -67,26 +67,22 @@ export function PoolHeroIdentity({
           </div>
         </div>
 
-        <div className="hidden shrink-0 items-center gap-2 self-center pl-5 lg:flex">
+        <div className="flex shrink-0 items-center gap-2 self-center sm:pl-5">
           <HeroIcon
             label={t("Website")}
-            onClick={() =>
-              window.open(
-                detail.hero.explorerUrl ?? `https://www.google.com/search?q=${encodeURIComponent(detail.hero.name)}`,
-                "_blank",
-              )
-            }
+            onClick={() => {
+              if (!detail.hero.explorerUrl) return
+              window.open(detail.hero.explorerUrl, "_blank")
+            }}
           >
             <Globe className="h-[18px] w-[18px]" />
           </HeroIcon>
           <HeroIcon
             label={t("X")}
-            onClick={() =>
-              window.open(
-                detail.hero.xUrl ?? `https://x.com/search?q=${encodeURIComponent(detail.hero.name)}`,
-                "_blank",
-              )
-            }
+            onClick={() => {
+              if (!detail.hero.xUrl) return
+              window.open(detail.hero.xUrl, "_blank")
+            }}
           >
             <XIcon />
           </HeroIcon>

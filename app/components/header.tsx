@@ -27,11 +27,7 @@ export function Header() {
   const renderMobileActions = () => (
     <>
       <span className="-mr-1 flex items-center">
-        {mounted ? (
-          <LazySearchCommandIconOnly tone="brand" />
-        ) : (
-          <SearchCommandIconPlaceholder tone="brand" />
-        )}
+        {mounted ? <LazySearchCommandIconOnly tone="brand" /> : <SearchCommandIconPlaceholder tone="brand" />}
       </span>
       <span className="flex items-center">
         <WalletControl size="mobile" />
@@ -171,9 +167,7 @@ export function Header() {
           </div>
 
           <div className="flex min-w-0 justify-center px-2">
-            <div className="w-full max-w-[360px]">
-              {mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}
-            </div>
+            <div className="w-full max-w-[360px]">{mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}</div>
           </div>
 
           <div className="flex min-w-0 items-center justify-end gap-2.5">
@@ -208,9 +202,7 @@ export function Header() {
           </div>
 
           <div className="flex shrink-0 items-center justify-end gap-1.5">
-            <div className="flex items-center gap-0.5">
-              {renderUtilityLinks(true)}
-            </div>
+            <div className="flex items-center gap-0.5">{renderUtilityLinks(true)}</div>
 
             <div className="flex shrink-0 items-center gap-1.5">
               <span className="flex items-center">

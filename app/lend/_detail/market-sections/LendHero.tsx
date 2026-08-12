@@ -236,4 +236,3 @@ function XIcon() {
     </svg>
   )
 }
-
