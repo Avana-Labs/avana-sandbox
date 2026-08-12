@@ -12,7 +12,7 @@ describe("LendHero", () => {
   it("renders lending metrics", () => {
     const { getByText } = render(<LendHero markets={MARKETS} />)
 
-    expect(getByText("Total TVL")).toBeInTheDocument()
+    expect(getByText("Lend TVL")).toBeInTheDocument()
     expect(getByText("$31.4M")).toBeInTheDocument()
     expect(getByText("Average APY")).toBeInTheDocument()
     expect(getByText("8.42%")).toBeInTheDocument()

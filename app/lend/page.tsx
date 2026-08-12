@@ -24,7 +24,7 @@ export default async function LendPage() {
             url: "https://avana.cc/lend",
           })}
         />
-        <LighthouseAuditSurface title="Total TVL">Lend assets and supply markets.</LighthouseAuditSurface>
+        <LighthouseAuditSurface title="Lend TVL">Lend assets and supply markets.</LighthouseAuditSurface>
       </>
     )
   }
