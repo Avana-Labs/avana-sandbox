@@ -135,20 +135,35 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
   React.useEffect(() => {
     setActiveMetricTab(metricTabs[0])
   }, [metricTabs])
+  // Prefer Convex-backed feeds for every hero tab (mirrors PoolHero). Borrowed/Utilization
+  // used to read only the PRNG mock series; now they fall back to it only when Convex is
+  // unseeded, so all three tabs agree with the live market size.
   const feed = React.useMemo(() => {
     const fallback = detail.heroFeed ?? getAssetHeroFeed(detail.id)
     if (activeMetricTab === metricTabs[1]) {
-      return buildFeedFromRangeSeries(detail.heroMetric.series.borrow, "usdCompact", fallback)
+      return (
+        detail.heroBorrowedFeed ?? buildFeedFromRangeSeries(detail.heroMetric.series.borrow, "usdCompact", fallback)
+      )
     }
     if (activeMetricTab === metricTabs[2]) {
-      return buildFeedFromRangeSeries(detail.heroMetric.series.utilization, "percent", fallback)
+      return (
+        detail.heroUtilizationFeed ??
+        buildFeedFromRangeSeries(detail.heroMetric.series.utilization, "percent", fallback)
+      )
     }
-    // Prefer Convex-backed supply series when hydrated; mock only as fallback.
     return (
       detail.heroFeed ??
       buildFeedFromRangeSeries(detail.heroMetric.series.supply, "usdCompact", getAssetHeroFeed(detail.id))
     )
-  }, [activeMetricTab, detail.heroFeed, detail.heroMetric.series, detail.id, metricTabs])
+  }, [
+    activeMetricTab,
+    detail.heroFeed,
+    detail.heroBorrowedFeed,
+    detail.heroUtilizationFeed,
+    detail.heroMetric.series,
+    detail.id,
+    metricTabs,
+  ])
 
   return (
     <section className={cn("flex flex-col gap-5", className)} data-testid="asset-hero">
