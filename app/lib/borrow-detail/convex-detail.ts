@@ -44,11 +44,7 @@ import { buildHeroFeedFromConvexSeries } from "@/app/lib/chart-feeds"
 import { getDefaultWalletProfileId } from "@/app/lib/data/wallet/profiles"
 import { applyDetailContentOverlay, mergeAliasedQuickStats } from "@/app/lib/detail-page/live-detail-helpers"
 import { buildMockLiquidationRiskStats } from "@/app/lib/detail-page/liquidation-risk"
-import {
-  injectSiloedMarketQuickStats,
-  overlayAboutDescription,
-  overlayHeroIdentity,
-} from "@/app/lib/detail-page/siloed-market-overlay"
+import { injectSiloedMarketQuickStats, overlayHeroIdentity } from "@/app/lib/detail-page/siloed-market-overlay"
 import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
 import { shouldFailClosedWithoutSnapshots } from "@/app/lib/borrow-detail/live-fallback"
 import type { AllocationRow, AssetDetail, PoolDetail, QuickStat } from "./types"
@@ -236,7 +232,14 @@ const CONTRACT_ADDRESS_LABEL_BY_SALT: Record<string, string> = {
   vault: "Vault Contract Address",
   token: "Token Contract Address",
   staking: "Staking Contract Address",
-  governance: "Governance Contract Address",
+}
+
+/** Only these three addresses show on About (matches the pre-migration 3-row spec — no Governance). */
+const CONTRACT_ADDRESS_SALTS = new Set(["vault", "token", "staking"])
+
+/** True for any stat that is a contract-address row (used to strip stale/duplicate ones). */
+function isContractAddressStat(stat: { label: string }): boolean {
+  return /Contract Address$/.test(stat.label)
 }
 
 function contractRowToStat(row: ConvexContractAddressRow): { label: string; value: string; href: string } {
@@ -247,16 +250,32 @@ function contractRowToStat(row: ConvexContractAddressRow): { label: string; valu
   }
 }
 
+/**
+ * Replace (not append) the About card's contract-address rows with the canonical
+ * Vault/Token/Staking set from Convex. Stripping any pre-existing contract rows first
+ * makes this idempotent against stale/double-seeded `content.stats` (deployments seeded
+ * before the mock stopped emitting these), so the card always shows exactly three —
+ * never the 6–7 duplicates the old append produced. When Convex has no rows (offline),
+ * leave the seeded stats untouched so the card still renders.
+ */
 function injectContractAddressStats<T extends { about: AssetDetail["about"] | PoolDetail["about"] }>(
   detail: T,
   rows: readonly ConvexContractAddressRow[],
 ): T {
-  if (rows.length === 0) return detail
+  const contractRows = rows.filter((row) => CONTRACT_ADDRESS_SALTS.has(row.salt))
+  if (contractRows.length === 0) return detail
+  const seen = new Set<string>()
+  const contractStats: Array<{ label: string; value: string; href: string }> = []
+  for (const stat of contractRows.map(contractRowToStat)) {
+    if (seen.has(stat.label)) continue
+    seen.add(stat.label)
+    contractStats.push(stat)
+  }
   return {
     ...detail,
     about: {
       ...detail.about,
-      stats: [...detail.about.stats, ...rows.map(contractRowToStat)],
+      stats: [...detail.about.stats.filter((stat) => !isContractAddressStat(stat)), ...contractStats],
     },
   }
 }
@@ -366,7 +385,6 @@ async function getPoolDetailFromConvexUncached(id: string): Promise<PoolDetail |
     {
       ...hydrated,
       hero: overlayHeroIdentity(hydrated.hero, siloedMarket),
-      about: overlayAboutDescription(hydrated.about, siloedMarket),
     },
     contractAddresses,
   )
@@ -472,7 +490,6 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
       {
         ...hydrated,
         hero: overlayHeroIdentity(hydrated.hero, siloedMarket),
-        about: overlayAboutDescription(hydrated.about, siloedMarket),
       },
       contractAddresses,
     ),
