@@ -172,7 +172,7 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
       <div className="pt-4" data-testid="asset-hero-chart-card">
         <MarketHeroChart
           feed={feed}
-          defaultRange="1D"
+          defaultRange="1M"
           gradientId={`assetHeroFill-${detail.id}`}
           height={310}
           showMeta={false}
