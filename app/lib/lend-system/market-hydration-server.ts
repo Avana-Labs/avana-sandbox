@@ -3,6 +3,7 @@ import { ConvexHttpClient } from "convex/browser"
 import { api } from "@/convex/_generated/api"
 import { type ConvexSeriesPoint } from "@/app/lib/borrow-system/market-hydration-server"
 import type { LendConvexSnapshot } from "@/app/lib/lend-system/market-hydration"
+import { requestCache } from "@/app/lib/detail-page/request-cache"
 
 /**
  * Server-side Convex fetchers for the lend (single-asset supply) detail page.
@@ -25,7 +26,9 @@ export type LendMarketSnapshot = {
   borrowAprPct: number
 }
 
-function convexClient(): ConvexHttpClient | null {
+// One client per request (request-scoped via React.cache); a fresh client per call
+// in the non-RSC test runtime, matching prior behavior.
+const convexClient = requestCache((): ConvexHttpClient | null => {
   const url = process.env.NEXT_PUBLIC_CONVEX_URL
   if (!url || !/^https?:\/\//.test(url)) return null
   try {
@@ -33,7 +36,7 @@ function convexClient(): ConvexHttpClient | null {
   } catch {
     return null
   }
-}
+})
 
 /** All lend-scope latest-day snapshots (for SSR list hydration). [] when unreachable. */
 export async function fetchLendMarketSnapshots(): Promise<LendConvexSnapshot[]> {
