@@ -8,6 +8,7 @@ import { secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
 import type { PoolHeroPreloads } from "@/app/lib/borrow-detail/hero-preload"
 import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
+import type { CashflowPreload } from "@/app/lib/detail-page/cashflow-preload"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { AssetsYouCanBorrowSection } from "@/app/borrow/_detail/ui/CrossMarketReferenceSections"
 import { LiquidationRiskSection } from "@/app/borrow/_detail/ui/LiquidationRiskSection"
@@ -46,6 +47,7 @@ type Props = {
   detail: PoolDetail
   heroPreloads?: PoolHeroPreloads | null
   quickStatsPreload?: QuickStatsPreload | null
+  cashflowPreload?: CashflowPreload | null
 }
 
 /**
@@ -55,7 +57,12 @@ type Props = {
  * CompactBorrowCard reused) sticks on the right. Mobile: sections stack and
  * the sidebar collapses into a bottom sheet triggered by a fixed button.
  */
-export function PoolDetailClient({ detail, heroPreloads = null, quickStatsPreload = null }: Props) {
+export function PoolDetailClient({
+  detail,
+  heroPreloads = null,
+  quickStatsPreload = null,
+  cashflowPreload = null,
+}: Props) {
   const { t } = useTranslation()
   const about = withGovernanceParameterView(detail.about, detail.protocolParameters)
 
@@ -113,7 +120,7 @@ export function PoolDetailClient({ detail, heroPreloads = null, quickStatsPreloa
 
                 <section aria-label={t("Pool analytics")} className={detailAnalyticsSectionClass}>
                   <DeferredDetailContent className={detailAnalyticsStackClass}>
-                    <CashflowCard detail={detail} />
+                    <CashflowCard detail={detail} cashflowPreload={cashflowPreload} />
                     <AssetsYouCanBorrowSection
                       collateralLabel={detail.hero.name}
                       assets={detail.borrowableAssets ?? resolveBorrowablesForPool(detail.row)}
