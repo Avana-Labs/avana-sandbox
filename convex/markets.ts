@@ -9,14 +9,15 @@
  *   - `PoolDetail.keyMetrics` / `AssetDetail.keyMetrics` → `getKeyMetrics`
  *   - `AssetDetail.quickStats` / `PoolDetail.quickStats` → `getQuickStats`
  *
- * All of these fold the `marketDailyStats` table. The UI keeps a single
+ * Prefer product-siloed `*DailyStats` tables; fall back to legacy
+ * `marketDailyStats` keyed by `markets` id. The UI keeps a single
  * `Series` / `Point` shape; this file is the only place that knows the
  * Convex column names.
  */
 
 import { v } from "convex/values"
 import { internalMutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
-import type { Doc, Id } from "./_generated/dataModel"
+import type { Id } from "./_generated/dataModel"
 import { internal } from "./_generated/api"
 import { foldDeltas } from "./liquidity"
 
@@ -33,6 +34,23 @@ const RANGE_DAYS = {
 } as const
 
 type RangeId = keyof typeof RANGE_DAYS
+type MarketScope = "asset" | "pool" | "lend" | "multiply"
+
+/** Shared numeric fields across legacy + siloed daily stats rows. */
+type DailyStatAmounts = {
+  day: string
+  suppliedUsd: number
+  borrowedUsd: number
+  utilizationPct: number
+  supplyApyPct: number
+  borrowAprPct: number
+  tvlUsd: number
+  volumeUsd: number
+  feesUsd: number
+  priceUsd?: number
+  supplyCapUsd?: number
+  borrowCapUsd?: number
+}
 
 const rangeValidator = v.union(
   v.literal("1D"),
@@ -50,11 +68,11 @@ const rangeValidator = v.union(
 export const getHistoricalUtilization = query({
   args: { slug: v.string() },
   handler: async (ctx, { slug }) => {
+    const rows = await dailyRowsForScope(ctx, "asset", slug, "1Y")
+    if (rows.length === 0) return null
     const market = await resolveMarket(ctx, "asset", slug)
-    if (!market) return null
-    const rows = await dailyRows(ctx, market._id, "1Y")
     return {
-      id: `${market._id}:historical-utilization`,
+      id: `${market?._id ?? slug}:historical-utilization`,
       label: "Utilization",
       points: rows.map((r) => ({ t: r.day, v: r.utilizationPct })),
     }
@@ -68,60 +86,63 @@ export const getHistoricalUtilization = query({
 export const getSupplyBorrow = query({
   args: { slug: v.string() },
   handler: async (ctx, { slug }) => {
+    const rows = await dailyRowsForScope(ctx, "asset", slug, "1Y")
+    if (rows.length === 0) return null
     const market = await resolveMarket(ctx, "asset", slug)
-    if (!market) return null
-    const rows = await dailyRows(ctx, market._id, "1Y")
-    const mk = (field: keyof Doc<"marketDailyStats">, id: string, label: string) => ({
+    const prefix = market?._id ?? slug
+    const mk = (field: keyof DailyStatAmounts, id: string, label: string) => ({
       id,
       label,
       points: rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) })),
     })
     return {
-      supplied: mk("suppliedUsd", `${market._id}:sb:supplied`, "Supplied"),
-      borrowed: mk("borrowedUsd", `${market._id}:sb:borrowed`, "Borrowed"),
-      utilization: mk("utilizationPct", `${market._id}:sb:utilization`, "Utilization"),
+      supplied: mk("suppliedUsd", `${prefix}:sb:supplied`, "Supplied"),
+      borrowed: mk("borrowedUsd", `${prefix}:sb:borrowed`, "Borrowed"),
+      utilization: mk("utilizationPct", `${prefix}:sb:utilization`, "Utilization"),
     }
   },
 })
 
 /**
- * Range-selectable key-metric time-series for the key metrics chart.
- * Returns shape: `Series`.
+ * Multiply variant of getSupplyBorrow — same shape as the asset version but
+ * reads scope="multiply". Multiply detail's MarketHero metric tabs currently
+ * fall back to a PRNG mock (`buildSupplyBorrow` in multiply-detail/index.ts).
+ * Wiring this in Phase E removes that fallback.
  */
-export const getKeyMetric = query({
-  args: {
-    scope: v.union(v.literal("asset"), v.literal("pool")),
-    slug: v.string(),
-    metric: v.union(
-      v.literal("tvl"),
-      v.literal("volume"),
-      v.literal("fees"),
-      v.literal("utilization"),
-      v.literal("borrowApr"),
-      v.literal("supplyApy"),
-    ),
-    range: rangeValidator,
-  },
-  handler: async (ctx, { scope, slug, metric, range }) => {
-    const market = await resolveMarket(ctx, scope, slug)
-    if (!market) return null
-    const rows = await dailyRows(ctx, market._id, range)
-    const field =
-      metric === "tvl"
-        ? "tvlUsd"
-        : metric === "volume"
-          ? "volumeUsd"
-          : metric === "fees"
-            ? "feesUsd"
-            : metric === "utilization"
-              ? "utilizationPct"
-              : metric === "borrowApr"
-                ? "borrowAprPct"
-                : "supplyApyPct"
-    return {
-      id: `${market._id}:km:${metric}:${range}`,
-      label: metric,
+export const getMultiplySupplyBorrow = query({
+  args: { slug: v.string() },
+  handler: async (ctx, { slug }) => {
+    const rows = await dailyRowsForScope(ctx, "multiply", slug, "1Y")
+    if (rows.length === 0) return null
+    const market = await resolveMarket(ctx, "multiply", slug)
+    const prefix = market?._id ?? slug
+    const mk = (field: keyof DailyStatAmounts, id: string, label: string) => ({
+      id,
+      label,
       points: rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) })),
+    })
+    return {
+      supplied: mk("suppliedUsd", `${prefix}:sb:supplied`, "Supplied"),
+      borrowed: mk("borrowedUsd", `${prefix}:sb:borrowed`, "Borrowed"),
+      utilization: mk("utilizationPct", `${prefix}:sb:utilization`, "Utilization"),
+    }
+  },
+})
+
+/**
+ * Multiply variant of getHistoricalUtilization — reads scope="multiply". Feeds
+ * the historical utilization card that currently renders from PRNG.
+ */
+export const getMultiplyHistoricalUtilization = query({
+  args: { slug: v.string() },
+  handler: async (ctx, { slug }) => {
+    const rows = await dailyRowsForScope(ctx, "multiply", slug, "1Y")
+    if (rows.length === 0) return null
+    const market = await resolveMarket(ctx, "multiply", slug)
+    return {
+      id: `${market?._id ?? slug}:historical-utilization`,
+      label: "Utilization",
+      points: rows.map((r) => ({ t: r.day, v: r.utilizationPct })),
     }
   },
 })
@@ -137,31 +158,47 @@ export const getQuickStats = query({
     slug: v.string(),
   },
   handler: async (ctx, { scope, slug }) => {
-    const market = await resolveMarket(ctx, scope, slug)
-    if (!market) return null
-    const rows = await dailyRows(ctx, market._id, "1W")
+    const rows = await dailyRowsForScope(ctx, scope, slug, "1W")
     const latest = rows[rows.length - 1]
     const prev = rows[rows.length - 2]
-    if (!latest) return []
+    if (!latest) {
+      const market = await resolveMarket(ctx, scope, slug)
+      return market ? [] : null
+    }
+    const delta = await liveMarketDeltaFromFold(ctx, slug)
+    const suppliedUsd = Math.max(0, latest.suppliedUsd + delta.suppliedDeltaUsd)
+    const borrowedUsd = Math.max(0, latest.borrowedUsd + delta.borrowedDeltaUsd)
+    const availableUsd = Math.max(0, suppliedUsd - borrowedUsd)
+    const prevAvailableUsd =
+      prev !== undefined ? Math.max(0, (prev.suppliedUsd ?? 0) - (prev.borrowedUsd ?? 0)) : undefined
+    const utilizationPct = suppliedUsd > 0 ? Math.min(100, (borrowedUsd / suppliedUsd) * 100) : 0
     const pct = (curr: number, old?: number) => (!old ? 0 : Math.round(((curr - old) / old) * 1000) / 10)
-    return [
+    const identity = await loadSiloedMarketIdentity(ctx, scope, slug)
+    const reserveFactorPct = identity?.reserveFactorPct
+    const stats: Array<{ id: string; label: string; value: string; delta: ReturnType<typeof toDelta> }> = [
       {
         id: "supplied",
         label: scope === "pool" ? "TVL" : "Total Supplied",
-        value: formatCompactUsd(latest.suppliedUsd),
-        delta: toDelta(pct(latest.suppliedUsd, prev?.suppliedUsd)),
+        value: formatCompactUsd(suppliedUsd),
+        delta: toDelta(pct(suppliedUsd, prev?.suppliedUsd)),
       },
       {
         id: "borrowed",
         label: "Total Borrowed",
-        value: formatCompactUsd(latest.borrowedUsd),
-        delta: toDelta(pct(latest.borrowedUsd, prev?.borrowedUsd)),
+        value: formatCompactUsd(borrowedUsd),
+        delta: toDelta(pct(borrowedUsd, prev?.borrowedUsd)),
+      },
+      {
+        id: "available",
+        label: "Available Liquidity",
+        value: formatCompactUsd(availableUsd),
+        delta: toDelta(pct(availableUsd, prevAvailableUsd)),
       },
       {
         id: "utilization",
         label: "Utilization",
-        value: `${latest.utilizationPct.toFixed(2)}%`,
-        delta: toDelta(pct(latest.utilizationPct, prev?.utilizationPct)),
+        value: `${utilizationPct.toFixed(2)}%`,
+        delta: toDelta(pct(utilizationPct, prev?.utilizationPct)),
       },
       {
         id: "supplyApy",
@@ -176,48 +213,15 @@ export const getQuickStats = query({
         delta: toDelta(pct(latest.borrowAprPct, prev?.borrowAprPct)),
       },
     ]
-  },
-})
-
-/**
- * Borrow economy headline aggregates from the latest daily snapshot per market.
- * Efficient: one indexed read per market (≈128), never a full-table scan.
- *   - Total Collateral = Σ latest pool suppliedUsd (pools = LP collateral)
- *   - Outstanding Loans = Σ latest asset suppliedUsd (borrowable assets, ≈ fully borrowed)
- *   - Available Credit  = Collateral − Loans
- */
-export const getBorrowEconomy = query({
-  args: {},
-  handler: async (ctx) => {
-    const markets = await ctx.db.query("markets").collect()
-    // Read each market's latest daily snapshot in parallel (was a sequential
-    // per-market await loop that scaled poorly during the onboarding burst) —
-    // the same fan-out pattern computeMarketSnapshots already uses. (S4)
-    const relevant = markets.filter((market) => market.scope === "pool" || market.scope === "asset")
-    const latestByMarket = await Promise.all(
-      relevant.map((market) =>
-        ctx.db
-          .query("marketDailyStats")
-          .withIndex("by_market_day", (q) => q.eq("marketId", market._id))
-          .order("desc")
-          .first(),
-      ),
-    )
-    let totalCollateralUsd = 0
-    let outstandingLoansUsd = 0
-    relevant.forEach((market, index) => {
-      const latest = latestByMarket[index]
-      if (!latest) return
-      if (market.scope === "pool") totalCollateralUsd += latest.suppliedUsd
-      else outstandingLoansUsd += latest.suppliedUsd
-    })
-    return {
-      totalCollateralUsd,
-      outstandingLoansUsd,
-      availableCreditUsd: Math.max(0, totalCollateralUsd - outstandingLoansUsd),
-      poolMarkets: markets.filter((m) => m.scope === "pool").length,
-      assetMarkets: markets.filter((m) => m.scope === "asset").length,
+    if (reserveFactorPct !== undefined && reserveFactorPct !== null) {
+      stats.push({
+        id: "reserveFactor",
+        label: "Reserve Factor",
+        value: `${Math.round(reserveFactorPct)}%`,
+        delta: toDelta(0),
+      })
     }
+    return stats
   },
 })
 
@@ -231,27 +235,36 @@ async function computeMarketSnapshots(ctx: QueryCtx | MutationCtx) {
   const markets = await ctx.db.query("markets").collect()
   const out = await Promise.all(
     markets.map(async (market) => {
-      const latest = await ctx.db
-        .query("marketDailyStats")
-        .withIndex("by_market_day", (q) => q.eq("marketId", market._id))
-        .order("desc")
-        .first()
+      if (
+        market.scope !== "pool" &&
+        market.scope !== "asset" &&
+        market.scope !== "lend" &&
+        market.scope !== "multiply"
+      ) {
+        return null
+      }
+      const latest = await latestDailyStatForScope(ctx, market.scope, market.slug, market._id)
       if (!latest) return null
+      const identity = (await loadSiloedMarketIdentity(ctx, market.scope, market.slug)) ?? market
+      const premiumBps = await loadSiloedPremiumBps(ctx, market.scope, market.slug)
       return {
         slug: market.slug,
         scope: market.scope,
-        name: market.name,
-        symbol: market.symbol,
-        chainId: market.chainId,
-        venueLabel: market.venueLabel,
-        category: market.category,
-        description: market.description,
-        iconUrl: market.iconUrl,
-        spokeId: market.spokeId,
-        feeTier: market.feeTier,
-        maxLtvPct: market.maxLtvPct,
-        visuals: market.visuals,
-        resources: market.resources,
+        name: identity.name,
+        symbol: identity.symbol,
+        chainId: identity.chainId,
+        venueLabel: identity.venueLabel,
+        category: identity.category,
+        description: identity.description,
+        iconUrl: identity.iconUrl,
+        spokeId: identity.spokeId,
+        feeTier: identity.feeTier,
+        maxLtvPct: identity.maxLtvPct,
+        reserveFactorPct: identity.reserveFactorPct,
+        rewardsApyPct: identity.rewardsApyPct,
+        premiumBps: premiumBps ?? undefined,
+        visuals: identity.visuals,
+        resources: identity.resources,
         suppliedUsd: latest.suppliedUsd,
         borrowedUsd: latest.borrowedUsd,
         availableUsd: Math.max(0, latest.suppliedUsd - latest.borrowedUsd),
@@ -267,6 +280,47 @@ async function computeMarketSnapshots(ctx: QueryCtx | MutationCtx) {
   return out.filter((row): row is NonNullable<typeof row> => row !== null)
 }
 
+async function loadSiloedPremiumBps(ctx: QueryCtx | MutationCtx, scope: MarketScope, slug: string) {
+  if (scope === "lend") {
+    const row = await ctx.db
+      .query("lendRiskAssessments")
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .unique()
+    return row?.premiumBps
+  }
+  if (scope === "multiply") {
+    const row = await ctx.db
+      .query("multiplyRiskAssessments")
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .unique()
+    return row?.premiumBps
+  }
+  const row = await ctx.db
+    .query("borrowRiskAssessments")
+    .withIndex("by_slug", (q) => q.eq("slug", slug))
+    .unique()
+  return row?.premiumBps
+}
+
+async function loadSiloedMarketIdentity(ctx: QueryCtx | MutationCtx, scope: MarketScope, slug: string) {
+  if (scope === "lend") {
+    return ctx.db
+      .query("lendMarkets")
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .unique()
+  }
+  if (scope === "multiply") {
+    return ctx.db
+      .query("multiplyMarkets")
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .unique()
+  }
+  return ctx.db
+    .query("borrowMarkets")
+    .withIndex("by_slug", (q) => q.eq("slug", slug))
+    .unique()
+}
+
 /**
  * Latest-day reference snapshot for every market. Subscribed app-wide, so it reads
  * the single precomputed `marketSnapshotsCache` document (O(1) reads) instead of
@@ -275,21 +329,53 @@ async function computeMarketSnapshots(ctx: QueryCtx | MutationCtx) {
  * reads the same Convex numbers. Keyed by the market `slug` (pool id, or
  * spoke-scoped asset id) for a direct lookup against the catalog.
  *
+ * Live overlay: each row's economics are `dailyTip + folded liquidity delta` so
+ * landings move with user activity without waiting for end-of-day rollup.
+ *
  * Cold-cache fallback: if the cache has not been built yet (fresh deploy, before
  * the first `rebuildMarketSnapshots`), fall back to the recompute so the app still
  * hydrates. Steady state never hits that path.
  */
 export const listMarketSnapshots = query({
   args: {},
+  handler: async (ctx) => listMarketSnapshotRows(ctx),
+})
+
+/** Borrow landing/detail reference rows only (`pool` + `asset`). */
+export const listBorrowMarketSnapshots = query({
+  args: {},
   handler: async (ctx) => {
-    const cache = await ctx.db
-      .query("marketSnapshotsCache")
-      .withIndex("by_singleton", (q) => q.eq("singleton", SNAPSHOTS_SINGLETON))
-      .unique()
-    if (cache) return cache.rows
-    return computeMarketSnapshots(ctx)
+    const rows = await listMarketSnapshotRows(ctx)
+    return rows.filter((row) => row.scope === "pool" || row.scope === "asset")
   },
 })
+
+/** Lend landing/detail reference rows only. */
+export const listLendMarketSnapshots = query({
+  args: {},
+  handler: async (ctx) => {
+    const rows = await listMarketSnapshotRows(ctx)
+    return rows.filter((row) => row.scope === "lend")
+  },
+})
+
+/** Multiply landing/detail reference rows only. */
+export const listMultiplyMarketSnapshots = query({
+  args: {},
+  handler: async (ctx) => {
+    const rows = await listMarketSnapshotRows(ctx)
+    return rows.filter((row) => row.scope === "multiply")
+  },
+})
+
+async function listMarketSnapshotRows(ctx: QueryCtx) {
+  const cache = await ctx.db
+    .query("marketSnapshotsCache")
+    .withIndex("by_singleton", (q) => q.eq("singleton", SNAPSHOTS_SINGLETON))
+    .unique()
+  const rows = cache ? cache.rows : await computeMarketSnapshots(ctx)
+  return withLiveLiquidityDeltas(ctx, rows)
+}
 
 /**
  * Rebuild the `listMarketSnapshots` cache document. Runs the expensive recompute
@@ -354,11 +440,7 @@ export const rollupDailyStats = internalMutation({
       ) {
         continue
       }
-      const latest = await ctx.db
-        .query("marketDailyStats")
-        .withIndex("by_market_day", (q) => q.eq("marketId", market._id))
-        .order("desc")
-        .first()
+      const latest = await latestDailyStatForScope(ctx, market.scope, market.slug, market._id)
       if (!latest) continue
 
       const d = deltaBySlug.get(market.slug) ?? { supplied: 0, borrowed: 0 }
@@ -380,8 +462,15 @@ export const rollupDailyStats = internalMutation({
         borrowCapUsd: latest.borrowCapUsd,
       }
 
-      if (latest.day === today) await ctx.db.patch(latest._id, snapshot)
+      const legacyLatest = await ctx.db
+        .query("marketDailyStats")
+        .withIndex("by_market_day", (q) => q.eq("marketId", market._id))
+        .order("desc")
+        .first()
+      if (legacyLatest?.day === today) await ctx.db.patch(legacyLatest._id, snapshot)
       else await ctx.db.insert("marketDailyStats", { marketId: market._id, day: today, ...snapshot })
+
+      await upsertSiloedDailyStat(ctx, market.scope, market.slug, today, snapshot)
       written++
 
       // Rebase the running ledger to zero for this market: the delta is now baked into
@@ -418,9 +507,9 @@ const assetHeroMetric = v.union(
 export const getAssetHeroSeries = query({
   args: { slug: v.string(), metric: assetHeroMetric, range: rangeValidator },
   handler: async (ctx, { slug, metric, range }) => {
+    const rows = await dailyRowsForScope(ctx, "asset", slug, range)
+    if (rows.length === 0) return null
     const market = await resolveMarket(ctx, "asset", slug)
-    if (!market) return null
-    const rows = await dailyRows(ctx, market._id, range)
     const field =
       metric === "price"
         ? "priceUsd"
@@ -432,10 +521,10 @@ export const getAssetHeroSeries = query({
               ? "utilizationPct"
               : "borrowAprPct"
     const points = rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) }))
-    const delta = await liveMarketDelta(ctx, market.slug)
+    const delta = await liveMarketDelta(ctx, slug)
     const deltaUsd = metric === "supply" ? delta.suppliedDeltaUsd : metric === "borrow" ? delta.borrowedDeltaUsd : 0
     return {
-      id: `${market._id}:hero:${metric}:${range}`,
+      id: `${market?._id ?? slug}:hero:${metric}:${range}`,
       label: metric,
       points: withLiveTip(points, deltaUsd),
     }
@@ -444,34 +533,37 @@ export const getAssetHeroSeries = query({
 
 const poolHeroMetric = v.union(
   v.literal("tvl"),
+  v.literal("borrowed"),
   v.literal("volume"),
   v.literal("fees"),
   v.literal("utilization"),
   v.literal("apy"),
 )
 
-/** Pool-page hero series (tvl/volume/fees/utilization/apy) folded from daily stats. */
+/** Pool-page hero series (tvl/borrowed/volume/fees/utilization/apy) folded from daily stats. */
 export const getPoolHeroSeries = query({
   args: { slug: v.string(), metric: poolHeroMetric, range: rangeValidator },
   handler: async (ctx, { slug, metric, range }) => {
+    const rows = await dailyRowsForScope(ctx, "pool", slug, range)
+    if (rows.length === 0) return null
     const market = await resolveMarket(ctx, "pool", slug)
-    if (!market) return null
-    const rows = await dailyRows(ctx, market._id, range)
     const field =
       metric === "tvl"
         ? "tvlUsd"
-        : metric === "volume"
-          ? "volumeUsd"
-          : metric === "fees"
-            ? "feesUsd"
-            : metric === "utilization"
-              ? "utilizationPct"
-              : "supplyApyPct"
+        : metric === "borrowed"
+          ? "borrowedUsd"
+          : metric === "volume"
+            ? "volumeUsd"
+            : metric === "fees"
+              ? "feesUsd"
+              : metric === "utilization"
+                ? "utilizationPct"
+                : "supplyApyPct"
     const points = rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) }))
-    const delta = await liveMarketDelta(ctx, market.slug)
-    const deltaUsd = metric === "tvl" ? delta.suppliedDeltaUsd : 0
+    const delta = await liveMarketDelta(ctx, slug)
+    const deltaUsd = metric === "tvl" ? delta.suppliedDeltaUsd : metric === "borrowed" ? delta.borrowedDeltaUsd : 0
     return {
-      id: `${market._id}:hero:${metric}:${range}`,
+      id: `${market?._id ?? slug}:hero:${metric}:${range}`,
       label: metric,
       points: withLiveTip(points, deltaUsd),
     }
@@ -484,15 +576,15 @@ const lendHeroMetric = v.union(v.literal("supply"), v.literal("utilization"), v.
 export const getLendHeroSeries = query({
   args: { slug: v.string(), metric: lendHeroMetric, range: rangeValidator },
   handler: async (ctx, { slug, metric, range }) => {
+    const rows = await dailyRowsForScope(ctx, "lend", slug, range)
+    if (rows.length === 0) return null
     const market = await resolveMarket(ctx, "lend", slug)
-    if (!market) return null
-    const rows = await dailyRows(ctx, market._id, range)
     const field = metric === "supply" ? "suppliedUsd" : metric === "utilization" ? "utilizationPct" : "supplyApyPct"
     const points = rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) }))
-    const delta = await liveMarketDelta(ctx, market.slug)
+    const delta = await liveMarketDelta(ctx, slug)
     const deltaUsd = metric === "supply" ? delta.suppliedDeltaUsd : 0
     return {
-      id: `${market._id}:hero:${metric}:${range}`,
+      id: `${market?._id ?? slug}:hero:${metric}:${range}`,
       label: metric,
       points: withLiveTip(points, deltaUsd),
     }
@@ -505,15 +597,15 @@ const multiplyHeroMetric = v.union(v.literal("supply"), v.literal("utilization")
 export const getMultiplyHeroSeries = query({
   args: { slug: v.string(), metric: multiplyHeroMetric, range: rangeValidator },
   handler: async (ctx, { slug, metric, range }) => {
+    const rows = await dailyRowsForScope(ctx, "multiply", slug, range)
+    if (rows.length === 0) return null
     const market = await resolveMarket(ctx, "multiply", slug)
-    if (!market) return null
-    const rows = await dailyRows(ctx, market._id, range)
     const field = metric === "supply" ? "suppliedUsd" : metric === "utilization" ? "utilizationPct" : "supplyApyPct"
     const points = rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) }))
-    const delta = await liveMarketDelta(ctx, market.slug)
+    const delta = await liveMarketDelta(ctx, slug)
     const deltaUsd = metric === "supply" ? delta.suppliedDeltaUsd : 0
     return {
-      id: `${market._id}:hero:${metric}:${range}`,
+      id: `${market?._id ?? slug}:hero:${metric}:${range}`,
       label: metric,
       points: withLiveTip(points, deltaUsd),
     }
@@ -521,8 +613,9 @@ export const getMultiplyHeroSeries = query({
 })
 
 /**
- * Recent wallet transactions for a market's detail-page history card. Reads
- * walletEvents (the engagement source) so the history is real, not random mock.
+ * Recent transactions for a market's detail-page history card.
+ * Prefers live sandbox `transactions` for this marketSlug (user activity).
+ * Falls back to seeded `walletEvents` when no sandbox rows exist yet.
  * Returns shape: `TxHistoryRow[]` (app/lib/borrow-detail/types.ts).
  */
 export const getRecentTransactions = query({
@@ -532,13 +625,34 @@ export const getRecentTransactions = query({
     limit: v.optional(v.number()),
   },
   handler: async (ctx, { scope, slug, limit }) => {
+    const take = limit ?? 12
+    const sandboxRows = await ctx.db
+      .query("transactions")
+      .withIndex("by_market_at", (q) => q.eq("marketSlug", slug))
+      .order("desc")
+      .take(take * 2)
+    const live = sandboxRows
+      .filter((r) => r.status === "success" && r.marketSlug === slug)
+      .slice(0, take)
+      .map((r) => ({
+        id: String(r._id),
+        at: new Date(r.at).toISOString(),
+        kind: mapSandboxTxKind(r.kind),
+        amountLabel: formatCompactUsd(r.amountUsd),
+        walletLabel: `${r.wallet.slice(0, 6)}…${r.wallet.slice(-4)}`,
+        counterpartyLabel: undefined as string | undefined,
+        txHashShort: r.syntheticTxHash.slice(0, 10),
+        source: "sandbox" as const,
+      }))
+    if (live.length > 0) return live
+
     const market = await resolveMarket(ctx, scope, slug)
     if (!market) return []
     const rows = await ctx.db
       .query("walletEvents")
       .withIndex("by_market_at", (q) => q.eq("marketId", market._id))
       .order("desc")
-      .take(limit ?? 12)
+      .take(take)
     return rows.map((r) => ({
       id: String(r._id),
       at: new Date(r.at).toISOString(),
@@ -550,21 +664,184 @@ export const getRecentTransactions = query({
       walletLabel: `${r.wallet.slice(0, 6)}…${r.wallet.slice(-4)}`,
       counterpartyLabel: r.counterparty ? `${r.counterparty.slice(0, 6)}…${r.counterparty.slice(-4)}` : undefined,
       txHashShort: r.txHash.slice(0, 10),
+      source: "seed" as const,
     }))
   },
 })
 
-async function dailyRows(ctx: QueryCtx, marketId: Id<"markets">, range: RangeId) {
+function mapSandboxTxKind(kind: string): "supply" | "withdraw" | "borrow" | "repay" | "liquidation" | "rewards" {
+  if (kind === "deposit") return "supply"
+  if (kind === "withdraw") return "withdraw"
+  if (kind === "borrow" || kind === "multiply") return "borrow"
+  if (kind === "repay" || kind === "deleverage" || kind === "close") return "repay"
+  if (kind === "claim") return "rewards"
+  if (kind === "liquidate" || kind === "liquidation") return "liquidation"
+  return "supply"
+}
+
+async function dailyRows(ctx: QueryCtx, marketId: Id<"markets">, range: RangeId): Promise<DailyStatAmounts[]> {
   const days = RANGE_DAYS[range]
   const start = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10)
-  return ctx.db
+  const rows = await ctx.db
     .query("marketDailyStats")
     .withIndex("by_market_day", (q) => q.eq("marketId", marketId).gte("day", start))
     .order("asc")
     .collect()
+  return rows.map(toDailyStatAmounts)
 }
 
-async function resolveMarket(ctx: QueryCtx, scope: "asset" | "pool" | "lend" | "multiply", slug: string) {
+/** Prefer product-siloed daily stats by slug; fall back to legacy marketDailyStats. */
+async function dailyRowsForScope(
+  ctx: QueryCtx,
+  scope: MarketScope,
+  slug: string,
+  range: RangeId,
+): Promise<DailyStatAmounts[]> {
+  const days = RANGE_DAYS[range]
+  const start = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10)
+  const siloed = await loadSiloedDailyRows(ctx, scope, slug, start)
+  if (siloed.length > 0) return siloed
+
+  const market = await resolveMarket(ctx, scope, slug)
+  if (!market) return []
+  return dailyRows(ctx, market._id, range)
+}
+
+async function loadSiloedDailyRows(
+  ctx: QueryCtx | MutationCtx,
+  scope: MarketScope,
+  slug: string,
+  startDay: string,
+): Promise<DailyStatAmounts[]> {
+  if (scope === "lend") {
+    const rows = await ctx.db
+      .query("lendDailyStats")
+      .withIndex("by_slug_day", (q) => q.eq("slug", slug).gte("day", startDay))
+      .order("asc")
+      .collect()
+    return rows.map(toDailyStatAmounts)
+  }
+  if (scope === "multiply") {
+    const rows = await ctx.db
+      .query("multiplyDailyStats")
+      .withIndex("by_slug_day", (q) => q.eq("slug", slug).gte("day", startDay))
+      .order("asc")
+      .collect()
+    return rows.map(toDailyStatAmounts)
+  }
+  const rows = await ctx.db
+    .query("borrowDailyStats")
+    .withIndex("by_slug_day", (q) => q.eq("slug", slug).gte("day", startDay))
+    .order("asc")
+    .collect()
+  return rows.map(toDailyStatAmounts)
+}
+
+async function latestDailyStatForScope(
+  ctx: QueryCtx | MutationCtx,
+  scope: MarketScope,
+  slug: string,
+  marketId?: Id<"markets">,
+): Promise<DailyStatAmounts | null> {
+  if (scope === "lend") {
+    const siloed = await ctx.db
+      .query("lendDailyStats")
+      .withIndex("by_slug_day", (q) => q.eq("slug", slug))
+      .order("desc")
+      .first()
+    if (siloed) return toDailyStatAmounts(siloed)
+  } else if (scope === "multiply") {
+    const siloed = await ctx.db
+      .query("multiplyDailyStats")
+      .withIndex("by_slug_day", (q) => q.eq("slug", slug))
+      .order("desc")
+      .first()
+    if (siloed) return toDailyStatAmounts(siloed)
+  } else {
+    const siloed = await ctx.db
+      .query("borrowDailyStats")
+      .withIndex("by_slug_day", (q) => q.eq("slug", slug))
+      .order("desc")
+      .first()
+    if (siloed) return toDailyStatAmounts(siloed)
+  }
+
+  if (!marketId) return null
+  const legacy = await ctx.db
+    .query("marketDailyStats")
+    .withIndex("by_market_day", (q) => q.eq("marketId", marketId))
+    .order("desc")
+    .first()
+  return legacy ? toDailyStatAmounts(legacy) : null
+}
+
+async function upsertSiloedDailyStat(
+  ctx: MutationCtx,
+  scope: MarketScope,
+  slug: string,
+  day: string,
+  snapshot: Omit<DailyStatAmounts, "day">,
+) {
+  if (scope === "lend") {
+    const row = { slug, day, ...snapshot }
+    const existing = await ctx.db
+      .query("lendDailyStats")
+      .withIndex("by_slug_day", (q) => q.eq("slug", slug).eq("day", day))
+      .unique()
+    if (existing) await ctx.db.patch(existing._id, row)
+    else await ctx.db.insert("lendDailyStats", row)
+    return
+  }
+  if (scope === "multiply") {
+    const row = { slug, day, ...snapshot }
+    const existing = await ctx.db
+      .query("multiplyDailyStats")
+      .withIndex("by_slug_day", (q) => q.eq("slug", slug).eq("day", day))
+      .unique()
+    if (existing) await ctx.db.patch(existing._id, row)
+    else await ctx.db.insert("multiplyDailyStats", row)
+    return
+  }
+  const row = { slug, kind: scope, day, ...snapshot }
+  const existing = await ctx.db
+    .query("borrowDailyStats")
+    .withIndex("by_slug_day", (q) => q.eq("slug", slug).eq("day", day))
+    .unique()
+  if (existing) await ctx.db.patch(existing._id, row)
+  else await ctx.db.insert("borrowDailyStats", row)
+}
+
+function toDailyStatAmounts(row: {
+  day: string
+  suppliedUsd: number
+  borrowedUsd: number
+  utilizationPct: number
+  supplyApyPct: number
+  borrowAprPct: number
+  tvlUsd: number
+  volumeUsd: number
+  feesUsd: number
+  priceUsd?: number
+  supplyCapUsd?: number
+  borrowCapUsd?: number
+}): DailyStatAmounts {
+  return {
+    day: row.day,
+    suppliedUsd: row.suppliedUsd,
+    borrowedUsd: row.borrowedUsd,
+    utilizationPct: row.utilizationPct,
+    supplyApyPct: row.supplyApyPct,
+    borrowAprPct: row.borrowAprPct,
+    tvlUsd: row.tvlUsd,
+    volumeUsd: row.volumeUsd,
+    feesUsd: row.feesUsd,
+    priceUsd: row.priceUsd,
+    supplyCapUsd: row.supplyCapUsd,
+    borrowCapUsd: row.borrowCapUsd,
+  }
+}
+
+async function resolveMarket(ctx: QueryCtx, scope: MarketScope, slug: string) {
   return ctx.db
     .query("markets")
     .withIndex("by_scope_slug", (q) => q.eq("scope", scope).eq("slug", slug))
@@ -587,7 +864,45 @@ async function liveMarketDelta(ctx: QueryCtx, marketSlug: string) {
     .collect()
   const canonical = cacheRows.length ? cacheRows.reduce((a, b) => (b.updatedAt >= a.updatedAt ? b : a)) : null
   const row = canonical?.rows.find((r) => r.marketSlug === marketSlug)
+  if (row) return { suppliedDeltaUsd: row.suppliedDeltaUsd, borrowedDeltaUsd: row.borrowedDeltaUsd }
+  // Cache miss / not yet rebuilt: fold the ledger directly so list/quickStats stay live.
+  return liveMarketDeltaFromFold(ctx, marketSlug)
+}
+
+async function liveMarketDeltaFromFold(ctx: QueryCtx, marketSlug: string) {
+  const folded = await foldDeltas(ctx)
+  const row = folded.find((r) => r.marketSlug === marketSlug)
   return { suppliedDeltaUsd: row?.suppliedDeltaUsd ?? 0, borrowedDeltaUsd: row?.borrowedDeltaUsd ?? 0 }
+}
+
+type SnapshotRow = {
+  slug: string
+  suppliedUsd: number
+  borrowedUsd: number
+  availableUsd: number
+  utilizationPct: number
+  tvlUsd: number
+  [key: string]: unknown
+}
+
+/** Overlay folded liquidity deltas onto cached/computed snapshot tips (tip + delta = live). */
+async function withLiveLiquidityDeltas<T extends SnapshotRow>(ctx: QueryCtx, rows: T[]): Promise<T[]> {
+  const folded = await foldDeltas(ctx)
+  if (folded.length === 0) return rows
+  const bySlug = new Map(folded.map((d) => [d.marketSlug, d]))
+  let changed = false
+  const next = rows.map((row) => {
+    const delta = bySlug.get(row.slug)
+    if (!delta || (delta.suppliedDeltaUsd === 0 && delta.borrowedDeltaUsd === 0)) return row
+    changed = true
+    const suppliedUsd = Math.max(0, row.suppliedUsd + delta.suppliedDeltaUsd)
+    const borrowedUsd = Math.max(0, row.borrowedUsd + delta.borrowedDeltaUsd)
+    const availableUsd = Math.max(0, suppliedUsd - borrowedUsd)
+    const utilizationPct = suppliedUsd > 0 ? Math.min(100, (borrowedUsd / suppliedUsd) * 100) : 0
+    const tvlUsd = Math.max(0, row.tvlUsd + delta.suppliedDeltaUsd)
+    return { ...row, suppliedUsd, borrowedUsd, availableUsd, utilizationPct, tvlUsd }
+  })
+  return changed ? next : rows
 }
 
 /**

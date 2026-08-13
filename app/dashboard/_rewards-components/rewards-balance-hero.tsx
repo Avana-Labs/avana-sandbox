@@ -220,11 +220,8 @@ export function RewardsBalanceHero({
 
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
-      {/* Same chart as lend detail, quieter balance, rewards-card surface. */}
-      <section
-        className="relative min-w-0 overflow-hidden rounded-radius-md border-0 bg-card px-1.5 pt-4 dark:bg-card/50"
-        data-testid="portfolio-hero-chart"
-      >
+      {/* Same chart as lend detail, quieter balance — no card chrome. */}
+      <section className="relative min-w-0 overflow-hidden pt-4" data-testid="portfolio-hero-chart">
         <MarketHeroChart
           feed={feed}
           defaultRange="1D"

@@ -12,15 +12,13 @@ describe("multiply detail about contract", () => {
     )
   })
 
-  it("uses contract metadata in the About stats like lend details", () => {
+  it("mock builder yields empty About stats — contract rows injected by Convex overlay", () => {
+    // Contract-address stats are no longer baked into the mock builder. The three
+    // vault/token/staking rows land in about.stats at Convex overlay time, via
+    // getMultiplyMarketDetailFromConvex + api.contractAddresses.listMultiplyAddresses.
+    // Verify the mock stays empty here so a regression that re-adds mock rows fails.
     const detail = getMultiplyMarketDetail("aave-gho")!
-    expect(detail.about.stats.map((stat) => stat.label)).toEqual([
-      "Vault Contract Address",
-      "Token Contract Address",
-      "Staking Contract Address",
-    ])
-    expect(detail.about.stats.every((stat) => stat.href?.startsWith("https://etherscan.io/address/"))).toBe(true)
-    expect(detail.about.stats.every((stat) => /\.\.\./.test(stat.value))).toBe(true)
+    expect(detail.about.stats).toEqual([])
   })
 
   it("uses lend-style key statistics and risk parameters", () => {

@@ -154,7 +154,7 @@ function UmbrellaHero() {
   const { showDollarAmounts } = useAmountDisplayPreferences()
 
   return (
-    <div className="mb-12">
+    <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
           Your Umbrella
@@ -819,9 +819,9 @@ export default function UmbrellaPage() {
     <div className="bg-background">
       <main className="container mx-auto px-3 py-6 pb-28 sm:px-4 md:py-10 lg:pb-10">
         <div className="mx-auto max-w-[1152px]">
-          <UmbrellaHero />
-
           <div className={detailSectionStackClass}>
+            <UmbrellaHero />
+
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
               <div className="min-w-0">
                 <UmbrellaPositions onClaim={setModuleId} />

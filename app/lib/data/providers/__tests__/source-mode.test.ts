@@ -16,17 +16,19 @@ describe("resolveDataSourceMode", () => {
     expect(resolveDataSourceMode()).toBe("mock")
   })
 
-  it("uses mock market data for the open-gate browser test wallet", () => {
+  it("keeps live Convex data for the Playwright open-gate browser test wallet", () => {
+    // Open-gate is a session shortcut (skip SIWE, use shared dev wallet). The data source
+    // stays live — dev work exercises the same Convex reads as production.
     vi.stubEnv("AVANA_DATA_SOURCE", "live")
     vi.stubEnv("NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE", "1")
-    expect(resolveDataSourceMode()).toBe("mock")
+    expect(resolveDataSourceMode()).toBe("live")
   })
 
-  it("uses mock market data when the dev open-gate flag is enabled", () => {
-    // The dev open-gate is now an explicit opt-in (NEXT_PUBLIC_DEV_OPEN_GATE), not automatic on
-    // NODE_ENV=development — a plain dev server uses live Convex data unless explicitly opted in.
+  it("keeps live Convex data when the dev open-gate flag is enabled", () => {
+    // Open-gate no longer implies mock — the shared dev wallet reads/writes real Convex
+    // against the same prod deployment other wallets use.
     vi.stubEnv("AVANA_DATA_SOURCE", "live")
     vi.stubEnv("NEXT_PUBLIC_DEV_OPEN_GATE", "1")
-    expect(resolveDataSourceMode()).toBe("mock")
+    expect(resolveDataSourceMode()).toBe("live")
   })
 })

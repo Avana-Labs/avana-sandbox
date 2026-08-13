@@ -12,9 +12,9 @@
  *   hero / heroFeed / quickStats / supplyBorrow ← markets + marketDailyStats
  *   cashflow                                    ← marketRevenueDaily (getBreakdownForLend)
  *   engagement                                  ← walletEvents (getForLend)
- *   risk                                        ← riskAssessments (getRisk scope:"lend")
- *   about / faqs                                ← marketContent (getContent scope:"lend")
- *   transactions                                ← walletEvents (getRecentTransactions scope:"lend")
+ *   risk                                        ← lendRiskAssessments (lend.riskAssessment.getRisk)
+ *   about / faqs                                ← lendMarketContent (lend.content.getContent)
+ *   transactions                                ← sandbox txs / walletEvents (getRecentTransactions scope:"lend")
  */
 
 import type { ChartFeed } from "@/app/components/charts"

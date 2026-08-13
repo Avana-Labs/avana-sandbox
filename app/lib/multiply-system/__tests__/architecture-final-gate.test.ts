@@ -5,7 +5,7 @@ import path from "node:path"
 const multiplyActionSurfaces = [
   "app/components/action-page/multiply-action-page-client.tsx",
   "app/multiply/_detail/sidebars/MarketSidebar.tsx",
-  "app/rewards/multiply-account-section.tsx",
+  "app/dashboard/_rewards-components/multiply-account-section.tsx",
 ]
 
 describe("multiply architecture final gate", () => {
@@ -28,7 +28,10 @@ describe("multiply architecture final gate", () => {
     })
 
     expect(offenders).toEqual([])
-    const multiplySection = readFileSync(path.join(process.cwd(), "app/rewards/multiply-account-section.tsx"), "utf8")
+    const multiplySection = readFileSync(
+      path.join(process.cwd(), "app/dashboard/_rewards-components/multiply-account-section.tsx"),
+      "utf8",
+    )
     expect(multiplySection).toContain("useMultiplySessionContext")
     // The multiply UI must draw its session from the shared avana context rather
     // than instantiating its own, so unrelated product updates don't force a rerender.

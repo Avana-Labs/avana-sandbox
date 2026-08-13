@@ -5,28 +5,53 @@ import {
   fetchAllocation,
   fetchAssetBorrowSeries,
   fetchAssetCashflowTrend,
+  fetchAssetContractAddresses,
+  fetchBorrowInterestRateModel,
+  fetchBorrowLiquidationRisk,
+  fetchBorrowMarket,
+  fetchBorrowPoolBorrowables,
+  fetchBorrowRiskParameters,
   fetchCashflowBreakdown,
   fetchContent,
   fetchConvexMarketSnapshots,
+  fetchHistoricalUtilization,
+  fetchPoolBorrowedSeries,
+  fetchPoolContractAddresses,
   fetchPoolTvlSeries,
+  fetchPoolUtilizationSeries,
   fetchQuickStats,
   fetchRecentTransactions,
   fetchRisk,
+  fetchSupplyBorrow,
   fetchTokenPrices,
+  type ConvexContractAddressRow,
 } from "@/app/lib/borrow-system/market-hydration-server"
 import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
 import { formatOraclePrice } from "@/app/lib/borrow-detail/formatters"
 import { formatBpsAsPct } from "@/app/lib/borrow-detail/allocation"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
-import type { QuickStat, RelatedPoolSummary } from "./types"
 import { resolveAssetDetailFromState, resolvePoolDetailFromState } from "@/app/lib/borrow-system/read-model"
 import { resolveAsset } from "@/app/lib/borrow-detail/asset.mock"
+import {
+  borrowAssetDetailPath,
+  normalizeBorrowAssetRouteId,
+  normalizeBorrowMarketRouteId,
+} from "@/app/lib/borrow-routes"
+import type { BorrowableAssetRef } from "@/app/lib/borrow-detail/cross-market"
+import { listSpokeBorrowables } from "@/app/lib/borrow-system/registry"
 import { buildHeroFeedFromConvexSeries } from "@/app/lib/chart-feeds"
-import { normalizeBorrowAssetRouteId, normalizeBorrowMarketRouteId } from "@/app/lib/borrow-routes"
 import { getDefaultWalletProfileId } from "@/app/lib/data/wallet/profiles"
 import { applyDetailContentOverlay, mergeAliasedQuickStats } from "@/app/lib/detail-page/live-detail-helpers"
-import type { AssetDetail, PoolDetail } from "./types"
+import { buildMockLiquidationRiskStats } from "@/app/lib/detail-page/liquidation-risk"
+import {
+  injectSiloedMarketQuickStats,
+  overlayAboutDescription,
+  overlayHeroIdentity,
+} from "@/app/lib/detail-page/siloed-market-overlay"
+import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
+import { shouldFailClosedWithoutSnapshots } from "@/app/lib/borrow-detail/live-fallback"
+import type { AllocationRow, AssetDetail, PoolDetail, QuickStat, RelatedPoolSummary } from "./types"
 
 /**
  * Server-only Convex-hydrated detail builders. The borrow detail pages call these
@@ -133,69 +158,241 @@ export function syncRelatedAvailable(
 }
 
 /**
- * Overlay "Available Liquidity" from the Convex asset snapshot (supplied − borrowed).
- * No-op if that snapshot is missing.
+ * Fail-closed empty defaults used when a Convex query returns null. These stand in for
+ * the removed nullish-mock cascades — the mock's shape survives (so UI type contracts
+ * hold) but none of its VALUES leak into the hydrated detail. Each shape is the minimal
+ * that makes the corresponding UI section render empty (no rows, no bars).
  */
-function injectAvailableLiquidity(
-  quickStats: QuickStat[],
-  snapshots: ConvexMarketSnapshot[],
-  slug: string,
-  scope: "asset" | "pool" = "asset",
-): QuickStat[] {
-  const snap = snapshots.find((s) => s.scope === scope && s.slug === slug)
-  if (!snap) return quickStats
-  return quickStats.map((s) => (s.id === "available" ? { ...s, value: formatCompactUsd(snap.availableUsd) } : s))
+const EMPTY_CASHFLOW_CARD: import("./types").CashflowCard = { bars: [], rows: [], periodLabel: "" }
+const EMPTY_RISK_ASSESSMENT: import("./types").RiskAssessment = {
+  premiumBps: 0,
+  level: "low",
+  score: 0,
+  headline: "",
+  summary: "",
+  breakdown: [],
+  metrics: [],
+}
+const EMPTY_CASHFLOW_TREND: import("./types").CashflowTrend = {
+  totalLabel: "",
+  periodLabel: "",
+  series: { id: "cashflow-trend", label: "", points: [] },
+}
+const EMPTY_SERIES = { id: "empty", label: "", points: [] }
+const EMPTY_SUPPLY_BORROW = {
+  supplied: { id: "supplied", label: "Supplied", points: [] },
+  borrowed: { id: "borrowed", label: "Borrowed", points: [] },
+  utilization: { id: "utilization", label: "Utilization", points: [] },
+}
+
+function mapConvexBorrowables(
+  rows: ReadonlyArray<{ id: string; name: string; symbol: string; borrowAprPct: number }> | null,
+): BorrowableAssetRef[] | undefined {
+  if (!rows || rows.length === 0) return undefined
+  const byId = new Map(listSpokeBorrowables().map((asset) => [asset.id, asset]))
+  return rows.map((row) => {
+    const asset = byId.get(row.id)
+    return {
+      id: row.id,
+      name: row.name,
+      symbol: row.symbol,
+      visual: asset?.visual ?? {
+        symbol: row.symbol,
+        shortLabel: row.symbol.slice(0, 1),
+        bgClass: "bg-muted",
+        textClass: "text-foreground",
+      },
+      apy: row.borrowAprPct,
+      href: borrowAssetDetailPath(row.id),
+    }
+  })
+}
+
+function collateralFactorFromRiskParameters(
+  parameters: ReadonlyArray<{ id: string; value: string }> | null | undefined,
+): number | undefined {
+  const raw = parameters?.find((parameter) => parameter.id === "collateralFactor")?.value
+  if (!raw) return undefined
+  const numeric = Number.parseFloat(raw.replace(/[^0-9.-]/g, ""))
+  return Number.isFinite(numeric) ? numeric : undefined
+}
+
+async function enrichAllocationWithCollateralFactors(
+  allocation: AllocationRow[] | null,
+  assetId: string,
+): Promise<AllocationRow[] | null> {
+  if (!allocation || allocation.length === 0) return allocation
+  const poolSlugs = [
+    ...new Set(
+      allocation.map((row) => {
+        const prefix = `${assetId}-`
+        return row.id.startsWith(prefix) ? row.id.slice(prefix.length) : row.id
+      }),
+    ),
+  ]
+  const riskRows = await Promise.all(poolSlugs.map((poolSlug) => fetchBorrowRiskParameters(poolSlug)))
+  const cfByPool = new Map<string, number>()
+  poolSlugs.forEach((poolSlug, index) => {
+    const cf = collateralFactorFromRiskParameters(riskRows[index]?.parameters)
+    if (cf !== undefined) cfByPool.set(poolSlug, cf)
+  })
+  if (cfByPool.size === 0) return allocation
+  return allocation.map((row) => {
+    const prefix = `${assetId}-`
+    const poolSlug = row.id.startsWith(prefix) ? row.id.slice(prefix.length) : row.id
+    const collateralFactorPct = cfByPool.get(poolSlug)
+    return collateralFactorPct === undefined ? row : { ...row, collateralFactorPct }
+  })
+}
+
+/**
+ * Contract-address rows for the About card. Maps the Convex row's label/address/href
+ * into AboutCard.stats — the display-friendly `Vault Contract Address` / `Token …` /
+ * `Staking …` (+ `Governance …` on pools) labels come from the seed (`salt` → label
+ * spelled out in contract-addresses-seed.ts) so the client stays a pass-through.
+ */
+const CONTRACT_ADDRESS_LABEL_BY_SALT: Record<string, string> = {
+  vault: "Vault Contract Address",
+  token: "Token Contract Address",
+  staking: "Staking Contract Address",
+  governance: "Governance Contract Address",
+}
+
+function contractRowToStat(row: ConvexContractAddressRow): { label: string; value: string; href: string } {
+  return {
+    label: CONTRACT_ADDRESS_LABEL_BY_SALT[row.salt] ?? row.label,
+    value: row.label,
+    href: row.href,
+  }
+}
+
+function injectContractAddressStats<T extends { about: AssetDetail["about"] | PoolDetail["about"] }>(
+  detail: T,
+  rows: readonly ConvexContractAddressRow[],
+): T {
+  if (rows.length === 0) return detail
+  return {
+    ...detail,
+    about: {
+      ...detail.about,
+      stats: [...detail.about.stats, ...rows.map(contractRowToStat)],
+    },
+  }
+}
+
+function applyRiskParametersToAbout<T extends { about: AssetDetail["about"] | PoolDetail["about"] }>(
+  detail: T,
+  riskParameters: Awaited<ReturnType<typeof fetchBorrowRiskParameters>>,
+): T {
+  if (!riskParameters?.parameters.length) return detail
+  return {
+    ...detail,
+    about: {
+      ...detail.about,
+      governanceParameters: {
+        parameters: riskParameters.parameters.map((parameter) => ({
+          id: parameter.id,
+          label: parameter.label,
+          value: parameter.value,
+          description: parameter.description,
+        })),
+        changelog: detail.about.governanceParameters?.changelog ?? [],
+      },
+    },
+  }
 }
 
 export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | null> {
   const snapshots = await fetchConvexMarketSnapshots()
+  if (shouldFailClosedWithoutSnapshots(resolveDataSourceMode(), snapshots.length)) return null
   const state = buildMockBorrowSystemState(detailWalletId)
   const hydratedState = snapshots.length > 0 ? mergeConvexMarketSnapshots(state, snapshots) : state
   const detail = resolvePoolDetailFromState(hydratedState, detailWalletId, normalizeBorrowMarketRouteId(id))
   if (!detail) return null
 
-  const [tvlPoints, cashflow, transactions, risk, quickStats, prices, content] = await Promise.all([
+  const [
+    tvlPoints,
+    borrowedPoints,
+    utilizationPoints,
+    cashflow,
+    transactions,
+    risk,
+    quickStats,
+    prices,
+    content,
+    riskParameters,
+    poolBorrowables,
+    liquidationRisk,
+    siloedMarket,
+    contractAddresses,
+  ] = await Promise.all([
     fetchPoolTvlSeries(detail.row.id),
+    fetchPoolBorrowedSeries(detail.row.id),
+    fetchPoolUtilizationSeries(detail.row.id),
     fetchCashflowBreakdown("pool", detail.row.id),
     fetchRecentTransactions("pool", detail.row.id),
     fetchRisk("pool", detail.row.id),
     fetchQuickStats("pool", detail.row.id),
     fetchTokenPrices(),
     fetchContent("pool", detail.row.id),
+    fetchBorrowRiskParameters(detail.row.id),
+    fetchBorrowPoolBorrowables(detail.row.id),
+    fetchBorrowLiquidationRisk(detail.row.id),
+    fetchBorrowMarket(detail.row.id),
+    fetchPoolContractAddresses(detail.row.id),
   ])
-  const effectiveRisk = (risk as typeof detail.risk) ?? detail.risk
+  // Capacity labels are now sourced solely from borrowRiskParameters (Convex-seeded
+  // via borrowPoolCapacityLabels at seed time). Read-time overlay removed — it re-applied
+  // the same 1.75×/2.25× heuristic on top of the already-seeded value, silently masking
+  // any real cap change and giving devs two things to keep in sync.
+  //
+  // getQuickStats already emits `available` and `reserveFactor` directly, so the two
+  // per-stat overlays that used to layer them on top of the Convex quickStats have been
+  // deleted. premiumBps flows from Convex risk when present, else 0 (fail-closed).
+  const convexRisk = (risk as typeof detail.risk | null) ?? null
+  const mergedQuickStats = syncQuickStatsRiskPremium(
+    injectSiloedMarketQuickStats(
+      injectPoolOraclePrice(
+        mergeConvexQuickStats(detail.quickStats, quickStats),
+        prices,
+        detail.row.visuals[0].symbol,
+        detail.row.visuals[1].symbol,
+      ),
+      siloedMarket,
+    ),
+    convexRisk?.premiumBps ?? 0,
+  )
   const hydrated = applyDetailContentOverlay(
     {
       ...detail,
-      quickStats: injectAvailableLiquidity(
-        injectPoolOraclePrice(
-          mergeConvexQuickStats(detail.quickStats, quickStats),
-          prices,
-          detail.row.visuals[0].symbol,
-          detail.row.visuals[1].symbol,
-        ),
-        snapshots,
-        detail.row.id,
-        "pool",
-      ),
+      quickStats: mergedQuickStats,
       related: syncRelatedAvailable(detail.related, snapshots),
-      heroFeed: buildHeroFeedFromConvexSeries(tvlPoints, "usdCompact") ?? detail.heroFeed,
-      cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
-      transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
-      risk: effectiveRisk,
+      heroFeed: buildHeroFeedFromConvexSeries(tvlPoints, "usdCompact") ?? undefined,
+      heroBorrowedFeed: buildHeroFeedFromConvexSeries(borrowedPoints, "usdCompact") ?? undefined,
+      heroUtilizationFeed: buildHeroFeedFromConvexSeries(utilizationPoints, "percent") ?? undefined,
+      cashflow: (cashflow as typeof detail.cashflow | null) ?? EMPTY_CASHFLOW_CARD,
+      transactions: (transactions as typeof detail.transactions | null) ?? [],
+      risk: convexRisk ?? EMPTY_RISK_ASSESSMENT,
+      borrowableAssets: mapConvexBorrowables(poolBorrowables),
+      liquidationRisk: liquidationRisk?.stats?.length
+        ? liquidationRisk.stats
+        : (detail.liquidationRisk ?? buildMockLiquidationRiskStats(detail.row.id)),
     },
     content,
+    { clearWhenMissing: resolveDataSourceMode() === "live" },
   )
 
-  return {
-    ...hydrated,
-    about: {
-      ...hydrated.about,
-      description: detail.about.description,
-      stats: detail.about.stats,
-      governanceParameters: detail.about.governanceParameters,
+  const withIdentity = injectContractAddressStats(
+    {
+      ...hydrated,
+      hero: overlayHeroIdentity(hydrated.hero, siloedMarket),
+      about: overlayAboutDescription(hydrated.about, siloedMarket),
     },
-  }
+    contractAddresses,
+  )
+
+  if (!riskParameters?.parameters.length) return withIdentity
+  return applyRiskParametersToAbout(withIdentity, riskParameters)
 }
 
 export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail | null> {
@@ -209,6 +406,7 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
   const slug = record.id
 
   const snapshots = await fetchConvexMarketSnapshots()
+  if (shouldFailClosedWithoutSnapshots(resolveDataSourceMode(), snapshots.length)) return null
   const snap = snapshots.find((row) => row.scope === "asset" && row.slug === slug)
   const detail = resolveAssetDetailFromState(
     slug,
@@ -223,43 +421,81 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
   )
   if (!detail) return null
 
-  const [borrowPoints, cashflow, cashflowTrend, transactions, allocation, risk, quickStats, prices, content] =
-    await Promise.all([
-      fetchAssetBorrowSeries(slug),
-      fetchCashflowBreakdown("asset", slug),
-      fetchAssetCashflowTrend(slug),
-      fetchRecentTransactions("asset", slug),
-      fetchAllocation(slug),
-      fetchRisk("asset", slug),
-      fetchQuickStats("asset", slug),
-      fetchTokenPrices(),
-      fetchContent("asset", slug),
-    ])
+  const [
+    borrowPoints,
+    supplyBorrow,
+    historicalUtilization,
+    cashflow,
+    cashflowTrend,
+    transactions,
+    allocation,
+    risk,
+    quickStats,
+    prices,
+    content,
+    riskParameters,
+    interestRateModel,
+    siloedMarket,
+    contractAddresses,
+  ] = await Promise.all([
+    fetchAssetBorrowSeries(slug),
+    fetchSupplyBorrow(slug),
+    fetchHistoricalUtilization(slug),
+    fetchCashflowBreakdown("asset", slug),
+    fetchAssetCashflowTrend(slug),
+    fetchRecentTransactions("asset", slug),
+    fetchAllocation(slug),
+    fetchRisk("asset", slug),
+    fetchQuickStats("asset", slug),
+    fetchTokenPrices(),
+    fetchContent("asset", slug),
+    fetchBorrowRiskParameters(slug),
+    fetchBorrowInterestRateModel(slug),
+    fetchBorrowMarket(slug),
+    fetchAssetContractAddresses(slug),
+  ])
+
+  const allocationWithCf = await enrichAllocationWithCollateralFactors(allocation, slug)
+
   const hydrated = applyDetailContentOverlay(
     {
       ...detail,
-      quickStats: injectAvailableLiquidity(
+      quickStats: injectSiloedMarketQuickStats(
         injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, record.baseAssetId),
-        snapshots,
-        slug,
+        siloedMarket,
       ),
-      heroFeed: buildHeroFeedFromConvexSeries(borrowPoints, "usdCompact") ?? detail.heroFeed,
-      cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
-      cashflowTrend: (cashflowTrend as typeof detail.cashflowTrend) ?? detail.cashflowTrend,
-      transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
-      allocation: allocation ?? detail.allocation,
-      risk: (risk as typeof detail.risk) ?? detail.risk,
+      heroFeed: buildHeroFeedFromConvexSeries(borrowPoints, "usdCompact") ?? undefined,
+      supplyBorrow: (supplyBorrow as typeof detail.supplyBorrow | null) ?? EMPTY_SUPPLY_BORROW,
+      historicalUtilization: (historicalUtilization as typeof detail.historicalUtilization | null) ?? EMPTY_SERIES,
+      cashflow: (cashflow as typeof detail.cashflow | null) ?? EMPTY_CASHFLOW_CARD,
+      cashflowTrend: (cashflowTrend as typeof detail.cashflowTrend | null) ?? EMPTY_CASHFLOW_TREND,
+      transactions: (transactions as typeof detail.transactions | null) ?? [],
+      allocation: (allocationWithCf as typeof detail.allocation | null) ?? [],
+      risk: (risk as typeof detail.risk | null) ?? EMPTY_RISK_ASSESSMENT,
+      interestRateModel: interestRateModel
+        ? {
+            utilizationPct: interestRateModel.utilizationPct,
+            borrowAprPct: interestRateModel.borrowAprPct,
+            optimalUtilizationPct: interestRateModel.optimalUtilizationPct,
+            slopeBelowOptimalPct: interestRateModel.slopeBelowOptimalPct,
+            slopeAboveOptimalPct: interestRateModel.slopeAboveOptimalPct,
+            baseBorrowRatePct: interestRateModel.baseBorrowRatePct,
+          }
+        : undefined,
     },
     content,
+    { clearWhenMissing: resolveDataSourceMode() === "live" },
   )
 
-  return {
-    ...hydrated,
-    about: {
-      ...hydrated.about,
-      description: detail.about.description,
-      stats: detail.about.stats,
-      governanceParameters: detail.about.governanceParameters,
-    },
-  }
+  return applyRiskParametersToAbout(
+    injectContractAddressStats(
+      {
+        ...hydrated,
+        hero: overlayHeroIdentity(hydrated.hero, siloedMarket),
+        about: overlayAboutDescription(hydrated.about, siloedMarket),
+      },
+      contractAddresses,
+    ),
+    riskParameters,
+  )
 }

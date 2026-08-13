@@ -34,10 +34,6 @@ import type {
   CashflowCard,
   ChartMetricId,
   DeltaStat,
-  KeyMetricId,
-  PerfPeriod,
-  PerfTab,
-  PerfTabDataset,
   PoolDetail,
   PoolDetailHero,
   QuickStat,
@@ -47,7 +43,6 @@ import type {
   TimeRangeId,
   TxHistoryRow,
 } from "./types"
-import { ALL_KEY_METRICS, ALL_PERF_PERIODS, ALL_PERF_TABS } from "./types"
 
 // -------------------------------------------------------------------------
 // Home-page id → catalog mapping
@@ -385,7 +380,6 @@ function isStablePool(row: BorrowPoolRow) {
 
 function buildDefaultQuickStats(row: BorrowPoolRow): QuickStat[] {
   const supplyApy = (row.aprMin + row.aprMax) / 2
-  const borrowApy = supplyApy + row.riskPremiumBps / 100
   return [
     { id: "price", label: "Price", value: formatOraclePrice(pairReferencePrice(row)), delta: deltaUp(0.1) },
     {
@@ -396,7 +390,12 @@ function buildDefaultQuickStats(row: BorrowPoolRow): QuickStat[] {
     },
     { id: "supplyApy", label: "Supply APY", value: formatPct(supplyApy, 2), delta: deltaUp(0.1) },
     { id: "rewardsApy", label: "Rewards APY", value: "No rewards" },
-    { id: "borrowApy", label: "Borrow APY", value: formatPct(borrowApy, 2), delta: deltaUp(0.08) },
+    // Borrow APY is Convex-sourced — the mock never has enough to derive a real value
+    // (it would have to know the pool's utilization + reserve factor + constituent asset
+    // borrow rates). getQuickStats emits `borrowApy` from Convex's implied rate;
+    // mergeConvexQuickStats replaces this placeholder. Live-mode without a snapshot
+    // fails closed via shouldFailClosedWithoutSnapshots — never shows the em dash to a user.
+    { id: "borrowApy", label: "Borrow APY", value: "—" },
     { id: "reserveFactor", label: "Reserve Factor", value: isStablePool(row) ? "10%" : "15%" },
   ]
 }
@@ -426,9 +425,11 @@ function buildHeroMetricSeries(
   row: BorrowPoolRow,
   fixture: FixtureOverride | undefined,
 ): Record<ChartMetricId, Record<TimeRangeId, Series>> {
-  const spoke = getSpokeById(row.spoke)
-  const baseTvl = fixture?.baseTvlUsd ?? spoke.liquidityUsd
-  const baseBorrowed = Math.max(1, Math.round(baseTvl - row.availableUsd))
+  // Use the pool row's own TVL/available (Convex-hydrated when live), NEVER spoke.liquidityUsd.
+  // spoke.liquidityUsd is catalog-scale (~$1.25B for uni-v3-stable) and produced absurd
+  // "Borrowed" hero headlines (~$1.2B) next to Convex Supplied (~$63M).
+  const baseTvl = fixture?.baseTvlUsd ?? Math.max(1, row.tvlUsd)
+  const baseBorrowed = Math.max(1, Math.round(baseTvl - Math.min(row.availableUsd, baseTvl)))
   const baseUtilization = Math.max(1, Math.min(95, (baseBorrowed / Math.max(1, baseTvl)) * 100))
   return {
     // Supplied/TVL is a level — keep the series close to the stated base so the hero
@@ -470,129 +471,6 @@ function pairReferencePrice(row: BorrowPoolRow): number {
   if (a.includes("BTC") && b.includes("ETH")) return 15.8
   if (b === "USDC" || b === "USDT" || b === "DAI") return 1_200
   return 1
-}
-
-function buildKeyMetrics(
-  row: BorrowPoolRow,
-  fixture: FixtureOverride | undefined,
-): Record<KeyMetricId, Record<TimeRangeId, Series>> {
-  const spoke = getSpokeById(row.spoke)
-  const tvl = fixture?.baseTvlUsd ?? spoke.liquidityUsd
-  const vol = fixture?.baseVolumeUsd ?? Math.round(tvl * 0.12)
-  const fees = fixture?.baseFeesUsd ?? Math.round(vol * 0.003)
-  const shapes: Record<KeyMetricId, Parameters<typeof buildSeriesFamily>[2]> = {
-    tvl: { base: tvl, driftMultiplier: 1.0, noise: 0.02, nonNegative: true, roundTo: 0 },
-    volume: { base: vol, driftMultiplier: 1.12, noise: 0.15, nonNegative: true, roundTo: 0 },
-    fees: { base: fees, driftMultiplier: 1.1, noise: 0.18, nonNegative: true, roundTo: 0 },
-    feesApr: { base: row.aprMin + 0.5, driftMultiplier: 1.05, noise: 0.08, nonNegative: true, roundTo: 2 },
-    rewards: { base: fees * 0.4, driftMultiplier: 1.04, noise: 0.12, nonNegative: true, roundTo: 0 },
-    utilization: { base: spoke.maxLtv * 0.82, driftMultiplier: 1.02, noise: 0.04, nonNegative: true, roundTo: 1 },
-    borrowApr: {
-      base: (row.aprMin + row.aprMax) / 2,
-      driftMultiplier: 1.04,
-      noise: 0.05,
-      nonNegative: true,
-      roundTo: 2,
-    },
-    incentives: { base: fees * 0.2, driftMultiplier: 1.05, noise: 0.2, nonNegative: true, roundTo: 0 },
-    depth2pct: { base: tvl * 0.02, driftMultiplier: 1.01, noise: 0.06, nonNegative: true, roundTo: 0 },
-    volatility30d: { base: 42, driftMultiplier: 0.96, noise: 0.12, nonNegative: true, roundTo: 2 },
-    impermanentLoss: { base: 0.25, driftMultiplier: 1.08, noise: 0.4, nonNegative: true, roundTo: 2 },
-    oraclePremium: { base: 0.12, driftMultiplier: 1.02, noise: 0.2, nonNegative: true, roundTo: 2 },
-  }
-  const out = {} as Record<KeyMetricId, Record<TimeRangeId, Series>>
-  for (const id of ALL_KEY_METRICS) {
-    out[id] = buildSeriesFamily(`${row.id}:km:${id}`, id, shapes[id])
-  }
-  return out
-}
-
-function buildPerformance(
-  row: BorrowPoolRow,
-  fixture: FixtureOverride | undefined,
-): Record<PerfTab, Record<PerfPeriod, PerfTabDataset>> {
-  const tvl = fixture?.baseTvlUsd ?? getSpokeById(row.spoke).liquidityUsd
-  const vol = fixture?.baseVolumeUsd ?? Math.round(tvl * 0.12)
-  const fees = fixture?.baseFeesUsd ?? Math.round(vol * 0.003)
-  const tabs: Record<PerfTab, { base: number; unit: string; headlineFmt: (n: number) => string }> = {
-    fees: { base: fees, unit: "$", headlineFmt: formatCompactUsd },
-    pnl: { base: fees * 1.4, unit: "$", headlineFmt: formatCompactUsd },
-    composition: { base: tvl, unit: "$", headlineFmt: formatCompactUsd },
-    incentives: { base: fees * 0.4, unit: "$", headlineFmt: formatCompactUsd },
-  }
-  const periods: Record<PerfPeriod, { scale: number; label: string }> = {
-    weekly: { scale: 7, label: "7d" },
-    monthly: { scale: 30, label: "30d" },
-    quarterly: { scale: 90, label: "90d" },
-  }
-  const out = {} as Record<PerfTab, Record<PerfPeriod, PerfTabDataset>>
-  for (const tab of ALL_PERF_TABS) {
-    const tabCfg = tabs[tab]
-    const inner = {} as Record<PerfPeriod, PerfTabDataset>
-    for (const period of ALL_PERF_PERIODS) {
-      const { scale, label } = periods[period]
-      const headline = tabCfg.headlineFmt(tabCfg.base * scale)
-      const series: Series = {
-        id: `${row.id}:perf:${tab}:${period}`,
-        label: `${tab} · ${label}`,
-        points: buildSeriesFamily(`${row.id}:perf:${tab}:${period}`, tab, {
-          base: tabCfg.base,
-          driftMultiplier: 1.05,
-          noise: 0.18,
-          nonNegative: true,
-          roundTo: 0,
-        })["1M"].points,
-      }
-      const breakdown = buildPerfBreakdown(tab, tabCfg.base * scale, tabCfg.headlineFmt)
-      inner[period] = {
-        headline,
-        subLabel: `vs previous ${label} ${deltaLabelForSeed(`${row.id}:${tab}:${period}`)}`,
-        series,
-        breakdown,
-      }
-    }
-    out[tab] = inner
-  }
-  return out
-}
-
-function deltaLabelForSeed(seed: string): string {
-  const rand = prngFromString(seed)()
-  const pct = Math.round((rand * 18 - 6) * 10) / 10
-  return `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`
-}
-
-function buildPerfBreakdown(tab: PerfTab, total: number, fmt: (n: number) => string): PerfTabDataset["breakdown"] {
-  const rows: PerfTabDataset["breakdown"] = []
-  if (tab === "fees") {
-    rows.push(
-      { label: "Swap fees", value: fmt(total * 0.78), delta: { value: 4.8, direction: "up", label: "+4.8%" } },
-      { label: "LP incentives", value: fmt(total * 0.18), delta: { value: 1.2, direction: "up", label: "+1.2%" } },
-      { label: "Protocol cut", value: fmt(total * 0.04), delta: { value: -0.3, direction: "down", label: "-0.3%" } },
-    )
-  } else if (tab === "pnl") {
-    rows.push(
-      { label: "Fees earned", value: fmt(total * 0.62), delta: { value: 3.4, direction: "up", label: "+3.4%" } },
-      { label: "Divergence loss", value: fmt(total * 0.28), delta: { value: -2.1, direction: "down", label: "-2.1%" } },
-      { label: "Incentives", value: fmt(total * 0.1), delta: { value: 0.9, direction: "up", label: "+0.9%" } },
-    )
-  } else if (tab === "composition") {
-    rows.push(
-      { label: "Token A share", value: fmt(total * 0.52) },
-      { label: "Token B share", value: fmt(total * 0.48) },
-      { label: "Out-of-range liquidity", value: fmt(total * 0.06) },
-    )
-  } else {
-    rows.push(
-      { label: "Protocol rewards", value: fmt(total * 0.72), delta: { value: 2.1, direction: "up", label: "+2.1%" } },
-      {
-        label: "External incentives",
-        value: fmt(total * 0.28),
-        delta: { value: -0.4, direction: "down", label: "-0.4%" },
-      },
-    )
-  }
-  return rows
 }
 
 function buildCashflow(row: BorrowPoolRow, fixture: FixtureOverride | undefined): CashflowCard {
@@ -654,30 +532,6 @@ function buildRisk(row: BorrowPoolRow, fixture: FixtureOverride | undefined): Ri
   return buildPoolRiskAssessment(row)
 }
 
-function contractAddressFor(poolId: string, salt: string) {
-  const seed = `${poolId}:${salt}`
-  let hash = 0x811c9dc5
-  for (let index = 0; index < seed.length; index += 1) {
-    hash ^= seed.charCodeAt(index)
-    hash = Math.imul(hash, 0x01000193)
-  }
-  const chunk = (hash >>> 0).toString(16).padStart(8, "0").toUpperCase()
-  return `0x${chunk}${chunk}${chunk}${chunk}${chunk}`.slice(0, 42)
-}
-
-function shortAddress(address: string) {
-  return `${address.slice(0, 6)}...${address.slice(-4)}`
-}
-
-function buildContractStat(label: string, poolId: string, salt: string): AboutCard["stats"][number] {
-  const address = contractAddressFor(poolId, salt)
-  return {
-    label,
-    value: shortAddress(address),
-    href: `https://etherscan.io/address/${address}`,
-  }
-}
-
 function buildPoolGovernanceParameters(row: BorrowPoolRow): NonNullable<AboutCard["governanceParameters"]> {
   const ltvPct = row.ltv
   const liquidationThresholdPct = Math.min(95, Math.round((row.ltv + 5) * 10) / 10)
@@ -685,7 +539,6 @@ function buildPoolGovernanceParameters(row: BorrowPoolRow): NonNullable<AboutCar
   const suppliedUsd = getSpokeById(row.spoke).liquidityUsd
   const supplyCapUsd = Math.max(25_000_000, Math.ceil((suppliedUsd * 1.75) / 1_000_000) * 1_000_000)
   const borrowCapUsd = Math.max(10_000_000, Math.ceil((row.availableUsd * 2.25) / 1_000_000) * 1_000_000)
-  const proposalHref = `https://etherscan.io/address/${contractAddressFor(row.id, "governance")}`
   const reserve = isStablePool(row) ? 10 : 15
 
   return {
@@ -706,7 +559,9 @@ function buildPoolGovernanceParameters(row: BorrowPoolRow): NonNullable<AboutCar
         date: "2025-09-08",
         source: "Risk parameter review",
         executor: "Governance executor",
-        href: proposalHref,
+        // Governance proposal link removed with contractAddressFor — the convex overlay
+        // (governanceParameters.changelog is currently untouched by convex-detail; a
+        // later pass can inject the real proposal href from the Convex governance row).
       },
       {
         id: "reserve-factor-review",
@@ -716,7 +571,9 @@ function buildPoolGovernanceParameters(row: BorrowPoolRow): NonNullable<AboutCar
         date: "2025-06-02",
         source: "Revenue parameter update",
         executor: "Risk steward multisig",
-        href: proposalHref,
+        // Governance proposal link removed with contractAddressFor — the convex overlay
+        // (governanceParameters.changelog is currently untouched by convex-detail; a
+        // later pass can inject the real proposal href from the Convex governance row).
       },
       {
         id: "collateral-onboarding",
@@ -726,7 +583,9 @@ function buildPoolGovernanceParameters(row: BorrowPoolRow): NonNullable<AboutCar
         date: "2025-01-20",
         source: "Market onboarding",
         executor: "Governance executor",
-        href: proposalHref,
+        // Governance proposal link removed with contractAddressFor — the convex overlay
+        // (governanceParameters.changelog is currently untouched by convex-detail; a
+        // later pass can inject the real proposal href from the Convex governance row).
       },
     ],
   }
@@ -746,13 +605,13 @@ function buildAbout(row: BorrowPoolRow, fixture: FixtureOverride | undefined): A
     ],
   }
 
+  // Contract-address stats now injected at overlay time by getPoolDetailFromConvex via
+  // api.contractAddresses.listPoolAddresses. The FNV-hashed synthetic addresses that
+  // used to seed this array have been superseded by the Convex table (same values on
+  // disk today, but a single source instead of two).
   return {
     ...about,
-    stats: [
-      buildContractStat("Vault Contract Address", row.id, "vault"),
-      buildContractStat("Token Contract Address", row.id, "token"),
-      buildContractStat("Staking Contract Address", row.id, "staking"),
-    ],
+    stats: [],
     governanceParameters: buildPoolGovernanceParameters(row),
   }
 }
@@ -846,7 +705,7 @@ function formatTokenAmount(value: number) {
 export function buildPoolDetail(row: BorrowPoolRow): PoolDetail {
   const fixture = CURATED_FIXTURES[row.id]
   const heroMetricSeries = buildHeroMetricSeries(row, fixture)
-  const baseTvl = fixture?.baseTvlUsd ?? getSpokeById(row.spoke).liquidityUsd
+  const baseTvl = fixture?.baseTvlUsd ?? Math.max(1, row.tvlUsd)
   return {
     id: row.id,
     hero: buildHero(row, fixture),
@@ -858,22 +717,12 @@ export function buildPoolDetail(row: BorrowPoolRow): PoolDetail {
     },
     quickStats: mergeQuickStats(buildDefaultQuickStats(row), fixture?.quickStats),
     protocolParameters: buildPoolProtocolParameters(row),
-    performance: buildPerformance(row, fixture),
-    keyMetrics: buildKeyMetrics(row, fixture),
     cashflow: buildCashflow(row, fixture),
     risk: buildRisk(row, fixture),
     about: buildAbout(row, fixture),
     faqs: buildPoolFaqs(row.name),
     transactions: buildCollateralHistory(row),
     related: buildRelated(row),
-    governanceNotes: [
-      { title: "Risk council", body: "Quarterly risk review touches every active pool.", tone: "info" },
-      {
-        title: "Fee-split",
-        body: "90% of swap fees flow to suppliers, 10% to the protocol treasury.",
-        tone: "positive",
-      },
-    ],
     row,
   }
 }

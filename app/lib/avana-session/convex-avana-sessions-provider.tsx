@@ -3,9 +3,6 @@
 import { useCallback, useEffect, useRef, type ReactNode } from "react"
 import { useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
-import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
-import type { LendConvexSnapshot } from "@/app/lib/lend-system/market-hydration"
-import type { MultiplyConvexSnapshot } from "@/app/lib/multiply-system/market-hydration"
 import type { SandboxActionResult } from "@/app/lib/borrow-system/contracts"
 import type { LendSandboxActionResult, LendTransactionResult } from "@/app/lib/lend-system/contracts"
 import type { MultiplySandboxActionResult, MultiplyTransactionResult } from "@/app/lib/multiply-system/contracts"
@@ -22,6 +19,7 @@ import {
   useLendSessionContext,
   useMultiplySessionContext,
 } from "./avana-sessions-provider"
+import { ConvexMarketSnapshotHydrators } from "./convex-market-snapshot-hydrators"
 import { pendingHydrationIntentIds, shouldApplyHydration } from "./wallet-hydration-guard"
 import {
   advanceRevisionOnSuccess,
@@ -31,7 +29,7 @@ import {
   type PositionRevisionSummary,
 } from "./optimistic-revision"
 
-function ConvexSessionHydrators({
+function ConvexWalletHydrators({
   walletId,
   onWalletHydrated,
 }: {
@@ -41,8 +39,15 @@ function ConvexSessionHydrators({
   const borrow = useBorrowSessionContext()
   const lend = useLendSessionContext()
   const multiply = useMultiplySessionContext()
-  const snapshots = useQuery(api.markets.listMarketSnapshots)
   const session = useQuery(api.sandbox.transactions.getSessionState, { wallet: walletId })
+  // Seeded initial per-wallet portfolio state lives in three tables (walletDebts /
+  // walletCollateralPositions / walletClaimPositions) — the Convex swaps for the
+  // HOME_INITIAL_DEBTS + HOME_COLLATERAL_POOLS + HOME_CLAIM_POSITIONS mocks. Read
+  // here and forward into the borrow hydrate so the home portfolio cards render
+  // per-wallet Convex data instead of the mock catalog.
+  const walletDebts = useQuery(api.wallet.debts.listForWallet, { wallet: walletId })
+  const walletCollateralPositions = useQuery(api.wallet.collateralPositions.listForWallet, { wallet: walletId })
+  const walletClaimPositions = useQuery(api.wallet.claimPositions.listForWallet, { wallet: walletId })
   const historiesRef = useRef({
     borrow: borrow.transactionHistory,
     lend: lend.transactionHistory,
@@ -55,22 +60,41 @@ function ConvexSessionHydrators({
   }
 
   useEffect(() => {
-    if (!snapshots || snapshots.length === 0) return
-    borrow.hydrateMarketData(snapshots as ConvexMarketSnapshot[])
-    lend.hydrateMarketData(snapshots as LendConvexSnapshot[])
-    multiply.hydrateMarketData(snapshots as MultiplyConvexSnapshot[])
-  }, [borrow.hydrateMarketData, lend.hydrateMarketData, multiply.hydrateMarketData, snapshots])
-
-  useEffect(() => {
     if (!session) return
     const { borrow: borrowHistory, lend: lendHistory, multiply: multiplyHistory } = historiesRef.current
     const pending = pendingHydrationIntentIds([...borrowHistory, ...lendHistory, ...multiplyHistory], Date.now())
     if (!shouldApplyHydration(session, pending)) return
-    borrow.hydrateWalletData(session)
+    borrow.hydrateWalletData({
+      ...session,
+      walletDebts: walletDebts?.map((row) => ({
+        marketId: row.marketId,
+        debtAssetId: row.debtAssetId,
+        amountUsd: row.amountUsd,
+      })),
+      walletCollateralPositions: walletCollateralPositions?.map((row) => ({
+        homePoolId: row.homePoolId,
+        marketId: row.marketId,
+        collateralUsd: row.collateralUsd,
+      })),
+      walletClaimPositions: walletClaimPositions?.map((row) => ({
+        claimId: row.claimId,
+        marketId: row.marketId,
+        totalUsd: row.totalUsd,
+      })),
+    })
     lend.hydrateWalletData(session)
     multiply.hydrateWalletData(session)
     onWalletHydrated(session.positions)
-  }, [borrow.hydrateWalletData, lend.hydrateWalletData, multiply.hydrateWalletData, onWalletHydrated, session])
+  }, [
+    borrow.hydrateWalletData,
+    lend.hydrateWalletData,
+    multiply.hydrateWalletData,
+    onWalletHydrated,
+    session,
+    walletDebts,
+    walletCollateralPositions,
+    walletClaimPositions,
+  ])
 
   return null
 }
@@ -177,7 +201,8 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
       persistLocalState={false}
       sessionSource="convex"
     >
-      <ConvexSessionHydrators walletId={walletId} onWalletHydrated={handleWalletHydrated} />
+      <ConvexMarketSnapshotHydrators />
+      <ConvexWalletHydrators walletId={walletId} onWalletHydrated={handleWalletHydrated} />
       {children}
     </AvanaSessionsProvider>
   )

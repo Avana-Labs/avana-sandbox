@@ -165,6 +165,7 @@ export function buildBorrowPageData(state: BorrowSystemState, walletId: string):
   const markets = Object.values(state.markets)
   const assets = Object.values(state.assets)
 
+  // Same contract as aggregateBorrowEconomyFromSnapshots — the borrow landing hero.
   const totalTvlUsd = markets.reduce((sum, market) => sum + fixedToNumber(market.snapshot.totalLiquidityUsd6, 6), 0)
   const totalCollateralUsd = totalTvlUsd
   const availableCreditUsd = markets.reduce((sum, market) => sum + fixedToNumber(market.snapshot.availableUsd6, 6), 0)

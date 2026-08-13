@@ -6,7 +6,7 @@ describe("Dashboard and Express surface tokens", () => {
   it("P2-10: aligns dashboard metric cards with hero card surfaces", () => {
     const debts = readFileSync(resolve(__dirname, "../borrow-tab/debts-table.tsx"), "utf8")
     const supplies = readFileSync(resolve(__dirname, "../borrow-tab/supplies-table.tsx"), "utf8")
-    const hero = readFileSync(resolve(__dirname, "../../rewards/rewards-balance-hero.tsx"), "utf8")
+    const hero = readFileSync(resolve(__dirname, "../_rewards-components/rewards-balance-hero.tsx"), "utf8")
 
     expect(hero).toMatch(/bg-card/)
     expect(debts).toMatch(/export function CurrentLtvCard[\s\S]*bg-card/)

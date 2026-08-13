@@ -91,8 +91,14 @@ export function AllocationBreakdownCard({ detail, id }: Props) {
     for (const market of resolveCollateralForAsset(detail.row)) {
       map.set(market.id, market.collateralFactorPct)
     }
+    // Prefer Convex-hydrated CF on allocation rows when present.
+    for (const row of detail.allocation) {
+      if (row.collateralFactorPct === undefined) continue
+      const poolId = poolIdFromAllocationRow(detail.row.id, row.id)
+      map.set(poolId, row.collateralFactorPct)
+    }
     return map
-  }, [detail.row])
+  }, [detail.allocation, detail.row])
 
   const rows = useMemo(() => {
     const direction = sortDirection === "asc" ? 1 : -1

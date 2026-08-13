@@ -1,4 +1,5 @@
 import type { LendSystemState } from "@/app/lib/lend-engine"
+import { warnLiveFallback } from "@/app/lib/data/providers/hydration-telemetry"
 
 /**
  * One lend row from convex/markets.ts `listMarketSnapshots` (scope === "lend").
@@ -8,6 +9,10 @@ import type { LendSystemState } from "@/app/lib/lend-engine"
 export type LendConvexSnapshot = {
   slug: string
   scope: string
+  name?: string
+  symbol?: string
+  reserveFactorPct?: number
+  rewardsApyPct?: number
   suppliedUsd: number
   borrowedUsd: number
   availableUsd: number
@@ -18,13 +23,8 @@ export type LendConvexSnapshot = {
 /**
  * Fold Convex lend market reference data into a lend system state so the session
  * (list, hero overview, dashboard) reads the SAME numbers as the detail page and
- * the single source of truth. Only market-level supply/liquidity/rate fields are
- * overwritten — wallet positions, balances, and history are left untouched.
- * Returns the SAME state reference when nothing changed so callers can guard
- * re-renders.
- *
- * Convex stores USD; the engine carries token amounts, so we divide by the asset
- * price to recover supplied/borrowed/available token quantities.
+ * the single source of truth. Overwrites supply/liquidity/rate fields plus identity,
+ * reserve factor, and rewards when present on the snapshot.
  */
 export function mergeConvexLendSnapshots(
   state: LendSystemState,
@@ -40,6 +40,34 @@ export function mergeConvexLendSnapshots(
     if (!existing) continue
     const price = existing.assetPriceUsd || 1
     const supplyApy = snap.supplyApyPct / 100
+    let rewardsApy: number
+    if (snap.rewardsApyPct !== undefined && Number.isFinite(snap.rewardsApyPct)) {
+      rewardsApy = snap.rewardsApyPct / 100
+    } else {
+      warnLiveFallback("lend", snap.slug, "rewardsApyPct")
+      rewardsApy = existing.rewardsApy
+    }
+    let reserveFactor: number
+    if (snap.reserveFactorPct !== undefined && Number.isFinite(snap.reserveFactorPct)) {
+      reserveFactor = snap.reserveFactorPct / 100
+    } else {
+      warnLiveFallback("lend", snap.slug, "reserveFactorPct")
+      reserveFactor = existing.reserveFactor
+    }
+    let assetName: string
+    if (snap.name?.trim()) {
+      assetName = snap.name
+    } else {
+      warnLiveFallback("lend", snap.slug, "name")
+      assetName = existing.asset.name
+    }
+    let assetSymbol: string
+    if (snap.symbol?.trim()) {
+      assetSymbol = snap.symbol
+    } else {
+      warnLiveFallback("lend", snap.slug, "symbol")
+      assetSymbol = existing.asset.symbol
+    }
     const next = {
       ...existing,
       totalSupplied: snap.suppliedUsd / price,
@@ -47,17 +75,26 @@ export function mergeConvexLendSnapshots(
       availableLiquidity: snap.availableUsd / price,
       utilization: snap.utilizationPct / 100,
       supplyApy,
-      totalApy: supplyApy + existing.rewardsApy,
+      rewardsApy,
+      reserveFactor,
+      totalApy: supplyApy + rewardsApy,
+      asset: {
+        ...existing.asset,
+        name: assetName,
+        symbol: assetSymbol,
+      },
     }
-    // Skip when nothing changed: every emit re-sends every market, so an unconditional
-    // `changed = true` allocated a new state object per push and re-fired every page-live read.
     if (
       existing.totalSupplied === next.totalSupplied &&
       existing.totalBorrowed === next.totalBorrowed &&
       existing.availableLiquidity === next.availableLiquidity &&
       existing.utilization === next.utilization &&
       existing.supplyApy === next.supplyApy &&
-      existing.totalApy === next.totalApy
+      existing.rewardsApy === next.rewardsApy &&
+      existing.reserveFactor === next.reserveFactor &&
+      existing.totalApy === next.totalApy &&
+      existing.asset.name === next.asset.name &&
+      existing.asset.symbol === next.asset.symbol
     ) {
       continue
     }

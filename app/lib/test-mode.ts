@@ -55,8 +55,14 @@ export function shouldUseOpenGateSession(): boolean {
   return isDevOpenGateEnabled() || isPlaywrightTestMode() || isLighthouseAuditMode()
 }
 
+/**
+ * The dev open-gate session (fake wallet, skip SIWE) is INTENTIONALLY decoupled from the
+ * mock data source. Open-gate now reads live Convex data against a shared dev wallet, so
+ * dev work exercises the same reads/writes production users hit — no mock catalog overlay.
+ * Mock data remains available for isolated unit/e2e work via an explicit AVANA_DATA_SOURCE.
+ */
 export function shouldUseMockDataSource(): boolean {
-  return shouldUseOpenGateSession() || process.env.AVANA_DATA_SOURCE === "mock"
+  return process.env.AVANA_DATA_SOURCE === "mock"
 }
 
 export const IS_DEV_SHORTCUT_MODE = shouldUseOpenGateSession()

@@ -8,6 +8,7 @@ import { secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { AssetsYouCanBorrowSection } from "@/app/borrow/_detail/ui/CrossMarketReferenceSections"
+import { LiquidationRiskSection } from "@/app/borrow/_detail/ui/LiquidationRiskSection"
 import { resolveBorrowablesForPool } from "@/app/lib/borrow-detail/cross-market"
 import { withGovernanceParameterView } from "@/app/borrow/_detail/lib/governance-parameters"
 import { PoolHero, PoolHeroIdentity, QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
@@ -104,8 +105,11 @@ export function PoolDetailClient({ detail }: Props) {
                     <CashflowCard detail={detail} />
                     <AssetsYouCanBorrowSection
                       collateralLabel={detail.hero.name}
-                      assets={resolveBorrowablesForPool(detail.row)}
+                      assets={detail.borrowableAssets ?? resolveBorrowablesForPool(detail.row)}
                     />
+                    {detail.liquidationRisk && detail.liquidationRisk.length > 0 ? (
+                      <LiquidationRiskSection stats={detail.liquidationRisk} />
+                    ) : null}
                     <DetailFaqSection
                       title={t("General FAQs")}
                       items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}

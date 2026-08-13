@@ -20,6 +20,7 @@ import {
   MobileDetailActionBar,
 } from "@/app/components/detail-page-primitives"
 import { MarketHero, MarketHeroIdentity, MarketSidebar } from "@/app/multiply/_detail"
+import { LiquidationRiskSection } from "@/app/borrow/_detail/ui/LiquidationRiskSection"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
 
 type Props = { detail: MultiplyMarketDetail }
@@ -105,6 +106,9 @@ export function MarketDetailClient({ detail }: Props) {
                 <section aria-label={t("Multiply market analytics")} className={detailAnalyticsSectionClass}>
                   <DeferredDetailContent className={detailAnalyticsStackClass}>
                     <CashflowCard detail={detail} />
+                    {detail.liquidationRisk && detail.liquidationRisk.length > 0 ? (
+                      <LiquidationRiskSection stats={detail.liquidationRisk} />
+                    ) : null}
                     <DetailFaqSection
                       title={t("Multiply FAQs")}
                       items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}

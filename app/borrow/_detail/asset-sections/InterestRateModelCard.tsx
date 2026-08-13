@@ -3,6 +3,7 @@
 import * as React from "react"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
+import { buildBorrowInterestRateCurve } from "@/app/lib/borrow-detail/interest-rate-curve"
 import { resolveBorrowDetailMetricHelp } from "@/app/lib/borrow-detail/metric-help"
 import { resolveInterestRateModelParams, type ProtocolParameterRow } from "@/app/lib/borrow-detail/protocol-parameters"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -15,10 +16,13 @@ type Props = {
   className?: string
 }
 
-type CurvePoint = { utilization: number; apr: number }
-
 const X_TICKS = [0, 25, 50, 75, 100]
-const Y_TICKS = [0, 5, 10]
+const VIEW_W = 640
+const VIEW_H = 300
+const PLOT_LEFT = 52
+const PLOT_RIGHT = 624
+const PLOT_TOP = 40
+const PLOT_BOTTOM = 264
 
 function formatPct(value: number, digits = 2) {
   return `${value.toFixed(digits)}%`
@@ -34,8 +38,44 @@ function readQuickStatPercent(
   return Number.isFinite(numeric) ? numeric : fallback
 }
 
+function plotX(utilization: number) {
+  return PLOT_LEFT + (utilization / 100) * (PLOT_RIGHT - PLOT_LEFT)
+}
+
+function plotY(apr: number, maxApr: number) {
+  return PLOT_BOTTOM - (apr / maxApr) * (PLOT_BOTTOM - PLOT_TOP)
+}
+
 /** Map a borrowable asset detail into InterestRateModelCard props. */
 export function interestRateModelFromAssetDetail(detail: AssetDetail): Omit<Props, "className"> {
+  if (detail.interestRateModel) {
+    return {
+      utilizationPct: detail.interestRateModel.utilizationPct,
+      borrowAprPct: detail.interestRateModel.borrowAprPct,
+      protocolParameters: [
+        {
+          id: "optimalUtilization",
+          label: "Optimal utilization",
+          value: formatPct(detail.interestRateModel.optimalUtilizationPct),
+        },
+        {
+          id: "slopeBelowOptimal",
+          label: "Slope below optimal",
+          value: formatPct(detail.interestRateModel.slopeBelowOptimalPct),
+        },
+        {
+          id: "slopeAboveOptimal",
+          label: "Slope above optimal",
+          value: formatPct(detail.interestRateModel.slopeAboveOptimalPct),
+        },
+        {
+          id: "baseBorrowRate",
+          label: "Base borrow rate",
+          value: formatPct(detail.interestRateModel.baseBorrowRatePct),
+        },
+      ],
+    }
+  }
   return {
     utilizationPct: readQuickStatPercent(detail.quickStats, "utilization", detail.row.utilization),
     borrowAprPct: readQuickStatPercent(detail.quickStats, "borrowApy", detail.row.borrowApr),
@@ -45,11 +85,9 @@ export function interestRateModelFromAssetDetail(detail: AssetDetail): Omit<Prop
 
 export function InterestRateModelCard({ utilizationPct, borrowAprPct, protocolParameters, className }: Props) {
   const { t } = useTranslation()
-  const canvasRef = React.useRef<HTMLCanvasElement | null>(null)
   const currentUtilization = Number.isFinite(utilizationPct) ? utilizationPct : 0
   const currentBorrowApr = Number.isFinite(borrowAprPct) ? borrowAprPct : 4
-  const irm = resolveInterestRateModelParams(protocolParameters)
-  const optimalUtilization = irm.optimalUtilizationPct
+  const irm = React.useMemo(() => resolveInterestRateModelParams(protocolParameters), [protocolParameters])
 
   const helpText = t("Borrow APR rises as utilization increases and steepens past the optimal threshold.")
 
@@ -77,94 +115,24 @@ export function InterestRateModelCard({ utilizationPct, borrowAprPct, protocolPa
   ] as const
 
   const curve = React.useMemo(
-    () => buildBorrowCurve(currentUtilization, currentBorrowApr, irm),
+    () => buildBorrowInterestRateCurve(currentUtilization, currentBorrowApr, irm),
     [currentUtilization, currentBorrowApr, irm],
   )
 
-  React.useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+  const pathD = React.useMemo(
+    () =>
+      curve.points
+        .map((point, index) => {
+          const x = plotX(point.utilization)
+          const y = plotY(point.apr, curve.maxApr)
+          return `${index === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)}`
+        })
+        .join(" "),
+    [curve],
+  )
 
-    const container = canvas.parentElement
-    if (!container) return
-
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-
-    const draw = () => {
-      const rect = container.getBoundingClientRect()
-      const styles = getComputedStyle(container)
-      const brand = (styles.getPropertyValue("--brand") || "191 99% 41%").trim()
-      const dpr = window.devicePixelRatio || 1
-      canvas.width = Math.max(1, Math.round(rect.width * dpr))
-      canvas.height = Math.max(1, Math.round(rect.height * dpr))
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
-      ctx.clearRect(0, 0, rect.width, rect.height)
-
-      const gridColor = "rgba(65, 74, 104, 0.12)"
-      const curveColor = `hsl(${brand})`
-      const markerColor = "rgba(1, 170, 207, 0.9)"
-      const plotLeft = 48
-      const plotRight = rect.width - 16
-      const plotTop = 36
-      const plotBottom = rect.height - 36
-      const plotWidth = plotRight - plotLeft
-      const plotHeight = plotBottom - plotTop
-
-      ctx.save()
-      ctx.lineWidth = 1
-      ctx.strokeStyle = gridColor
-      ctx.setLineDash([1, 5])
-      Y_TICKS.forEach((tick) => {
-        const y = plotBottom - (tick / 10) * plotHeight
-        ctx.beginPath()
-        ctx.moveTo(plotLeft, y)
-        ctx.lineTo(plotRight, y)
-        ctx.stroke()
-      })
-      ctx.restore()
-
-      ctx.save()
-      ctx.lineWidth = 3.5
-      ctx.strokeStyle = curveColor
-      ctx.lineJoin = "round"
-      ctx.lineCap = "round"
-      ctx.setLineDash([])
-      ctx.beginPath()
-      curve.points.forEach((point, index) => {
-        const x = plotLeft + (point.utilization / 100) * plotWidth
-        const y = plotBottom - (point.apr / curve.maxApr) * plotHeight
-        if (index === 0) ctx.moveTo(x, y)
-        else ctx.lineTo(x, y)
-      })
-      ctx.stroke()
-      ctx.restore()
-
-      ctx.save()
-      ctx.strokeStyle = markerColor
-      ctx.lineWidth = 1.5
-      ctx.setLineDash([5, 5])
-      const currentX = plotLeft + (curve.currentUtilization / 100) * plotWidth
-      const optimalX = plotLeft + (curve.optimalUtilization / 100) * plotWidth
-      ctx.beginPath()
-      ctx.moveTo(currentX, plotTop + 24)
-      ctx.lineTo(currentX, plotBottom)
-      ctx.stroke()
-      ctx.beginPath()
-      ctx.moveTo(optimalX, plotTop + 10)
-      ctx.lineTo(optimalX, plotBottom)
-      ctx.stroke()
-      ctx.restore()
-    }
-
-    draw()
-
-    const ro = new ResizeObserver(draw)
-    ro.observe(container)
-
-    return () => ro.disconnect()
-  }, [curve])
-
+  const currentX = plotX(curve.currentUtilization)
+  const optimalX = plotX(curve.optimalUtilization)
   const utilizationHelp = resolveBorrowDetailMetricHelp("Utilisation rate")
 
   return (
@@ -179,52 +147,97 @@ export function InterestRateModelCard({ utilizationPct, borrowAprPct, protocolPa
       <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(240px,0.85fr)] lg:items-stretch lg:gap-10">
         <div className="relative min-w-0 rounded-radius-md bg-muted/30 dark:bg-white/[0.03]">
           <div className="relative h-[260px] w-full sm:h-[300px] lg:h-full lg:min-h-[300px]">
-            <canvas ref={canvasRef} aria-hidden className="absolute inset-0 h-full w-full select-none" />
+            <svg
+              viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
+              className="absolute inset-0 h-full w-full select-none"
+              role="img"
+              aria-label={t("Borrow APR versus utilization")}
+            >
+              {curve.yTicks.map((tick) => {
+                const y = plotY(tick, curve.maxApr)
+                return (
+                  <g key={`y-${tick}`}>
+                    <line
+                      x1={PLOT_LEFT}
+                      x2={PLOT_RIGHT}
+                      y1={y}
+                      y2={y}
+                      stroke="currentColor"
+                      strokeOpacity={0.12}
+                      strokeDasharray="1 5"
+                      className="text-foreground"
+                    />
+                    <text
+                      x={PLOT_LEFT - 10}
+                      y={y}
+                      textAnchor="end"
+                      dominantBaseline="middle"
+                      className="fill-muted-foreground text-[11px]"
+                    >
+                      {tick}%
+                    </text>
+                  </g>
+                )
+              })}
 
-            <div aria-hidden className="pointer-events-none absolute inset-y-0 left-0 z-[6] w-12 pt-9 pb-9">
-              {Y_TICKS.map((tick) => (
-                <div
-                  key={tick}
-                  className="absolute left-2 translate-y-[-50%] text-left text-[11px] font-normal leading-none text-muted-foreground"
-                  style={{ top: `${((10 - tick) / 10) * 100}%` }}
-                >
-                  {tick}%
-                </div>
-              ))}
-            </div>
-
-            <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-2 z-[6] h-6 pl-12 pr-4">
               {X_TICKS.map((tick) => (
-                <div
-                  key={tick}
-                  className="absolute bottom-0 translate-x-[-50%] text-[11px] font-normal leading-none text-muted-foreground"
-                  style={{ left: `${12 + tick * 0.76}%` }}
+                <text
+                  key={`x-${tick}`}
+                  x={plotX(tick)}
+                  y={VIEW_H - 12}
+                  textAnchor="middle"
+                  className="fill-muted-foreground text-[11px]"
                 >
                   {tick}%
-                </div>
+                </text>
               ))}
-            </div>
 
-            <div aria-hidden className="pointer-events-none absolute inset-x-0 top-3 z-[6] h-0 pl-12 pr-4">
-              <div
-                className="absolute -translate-x-1/2 text-[12px] font-medium leading-none text-muted-foreground"
-                style={{
-                  left: `${Math.min(92, 12 + currentUtilization * 0.76)}%`,
-                  top: "14px",
-                }}
-              >
-                {t("Current {value}%").replace("{value}", currentUtilization.toFixed(1))}
-              </div>
-              <div
-                className="absolute -translate-x-1/2 text-[12px] font-medium leading-none text-muted-foreground"
-                style={{
-                  left: `${Math.min(88, 12 + optimalUtilization * 0.76)}%`,
-                  top: "0px",
-                }}
+              <path
+                d={pathD}
+                fill="none"
+                className="text-[hsl(var(--brand))]"
+                stroke="currentColor"
+                strokeWidth={3.5}
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+
+              <line
+                x1={optimalX}
+                x2={optimalX}
+                y1={PLOT_TOP + 10}
+                y2={PLOT_BOTTOM}
+                stroke="rgba(1, 170, 207, 0.9)"
+                strokeWidth={1.5}
+                strokeDasharray="5 5"
+              />
+              <line
+                x1={currentX}
+                x2={currentX}
+                y1={PLOT_TOP + 24}
+                y2={PLOT_BOTTOM}
+                stroke="rgba(1, 170, 207, 0.9)"
+                strokeWidth={1.5}
+                strokeDasharray="5 5"
+              />
+
+              <text
+                x={optimalX}
+                y={PLOT_TOP}
+                textAnchor="middle"
+                className="fill-muted-foreground text-[12px] font-medium"
               >
                 {t("Optimal")}
-              </div>
-            </div>
+              </text>
+              <text
+                x={currentX}
+                y={PLOT_TOP + 16}
+                textAnchor="middle"
+                className="fill-muted-foreground text-[12px] font-medium"
+              >
+                {t("Current {value}%").replace("{value}", currentUtilization.toFixed(1))}
+              </text>
+            </svg>
           </div>
         </div>
 
@@ -263,34 +276,4 @@ export function InterestRateModelCard({ utilizationPct, borrowAprPct, protocolPa
       </div>
     </section>
   )
-}
-
-function buildBorrowCurve(
-  currentUtilization: number,
-  currentBorrowApr: number,
-  irm: ReturnType<typeof resolveInterestRateModelParams>,
-) {
-  const points: CurvePoint[] = []
-  const optimalUtilization = irm.optimalUtilizationPct
-  const anchorApr = irm.baseBorrowRatePct + irm.slopeBelowOptimalPct
-  const maxBorrowApr = Math.max(10, anchorApr + irm.slopeAboveOptimalPct, currentBorrowApr + 2)
-
-  for (let util = 0; util <= 100; util += 1) {
-    let apr: number
-    if (util <= optimalUtilization) {
-      const t = util / optimalUtilization
-      apr = irm.baseBorrowRatePct + irm.slopeBelowOptimalPct * t
-    } else {
-      const t = (util - optimalUtilization) / (100 - optimalUtilization)
-      apr = anchorApr + irm.slopeAboveOptimalPct * t
-    }
-    points.push({ utilization: util, apr })
-  }
-
-  return {
-    points,
-    currentUtilization: Math.min(100, Math.max(0, currentUtilization)),
-    optimalUtilization,
-    maxApr: maxBorrowApr,
-  }
 }

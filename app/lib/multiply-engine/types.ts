@@ -30,6 +30,9 @@ export type MultiplyMarketRecord = {
     supplyApy: number
     borrowApy: number
     availableLiquidityUsd: number
+    /** Reserve factor as a percentage (0–100). Overlaid from Convex when the
+     *  snapshot carries it; detail QuickStats prefer this over the catalog default. */
+    reserveFactorPct?: number
   }
   ui: {
     status: "active" | "coming_soon" | "paused"

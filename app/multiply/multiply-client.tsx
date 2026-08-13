@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
+import { useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import type { MultiplyMarketRecord } from "@/app/lib/multiply-engine"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
@@ -27,6 +29,10 @@ export function MultiplyClient({
   const router = useRouter()
   const session = useMultiplySessionContext()
   const [hasMounted, setHasMounted] = React.useState(false)
+  // Client-side swap for the multiply-sim MULTIPLY_TOKEN_SUPPLY_APYS/BORROW_APYS/LOGOS
+  // constants: read the 16-row multiplyTokenParameters table directly. Only used post-mount
+  // so SSR keeps its static page data (mock constants) — see comment on livePageData.
+  const convexTokens = useQuery(api.multiply.tokenParameters.listTokens, {})
 
   React.useEffect(() => {
     setHasMounted(true)
@@ -38,8 +44,8 @@ export function MultiplyClient({
   // first client render keep the static page data so static generation is preserved
   // and there is no hydration mismatch.
   const livePageData = React.useMemo(
-    () => (hasMounted ? buildMultiplyPageData(session.walletId, session.state) : pageData),
-    [hasMounted, pageData, session.state, session.walletId],
+    () => (hasMounted ? buildMultiplyPageData(session.walletId, session.state, convexTokens ?? undefined) : pageData),
+    [convexTokens, hasMounted, pageData, session.state, session.walletId],
   )
 
   const handleOpenMultiply = React.useCallback(

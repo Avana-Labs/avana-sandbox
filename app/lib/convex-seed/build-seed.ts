@@ -13,11 +13,14 @@
  *   - pool markets  → slug = BorrowPoolRow.id           (e.g. "uni-v2-weth-usdc")
  */
 
-import { BORROW_POOL_CATALOG, poolLpTokenPriceUsd, type BorrowPoolRow } from "@/app/lib/borrow-sim"
+import { BORROW_POOL_CATALOG, formatCompactUsd, poolLpTokenPriceUsd, type BorrowPoolRow } from "@/app/lib/borrow-sim"
 import { SANDBOX_NOW } from "@/app/lib/deterministic"
 import { listSpokeBorrowables, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
 import { prngFromString } from "@/app/lib/borrow-detail/prng"
 import { computeAssetAllocationRows } from "@/app/lib/borrow-detail/allocation"
+import { resolveBorrowablesForPool } from "@/app/lib/borrow-detail/cross-market"
+import { buildInterestRateModelParams } from "@/app/lib/borrow-detail/protocol-parameters"
+import { buildRiskParameterSet } from "@/app/lib/borrow-detail/risk-parameters"
 import {
   buildAssetRiskAssessment,
   buildLendRiskAssessment,
@@ -39,6 +42,25 @@ import type { LendMarket } from "@/app/lib/lend-engine/types"
 import type { MultiplyMarketRecord } from "@/app/lib/multiply-engine/types"
 import type { RiskAssessment } from "@/app/lib/borrow-detail/types"
 
+// Phase C seed inputs (see design-decisions.md) — grouped, pre-derived arrays.
+import { SPOKES_SEED_ROWS, DEXES_SEED_ROWS } from "./inputs/reference-seed"
+import { BORROW_ASSETS_SEED_ROWS } from "./inputs/borrow-assets-seed"
+import {
+  MULTIPLY_IRM_SEED_ROWS,
+  MULTIPLY_ALLOCATION_SEED_ROWS,
+  MULTIPLY_TOKEN_PARAM_SEED_ROWS,
+} from "./inputs/multiply-catalog-seed"
+import {
+  POOL_CONTRACT_SEED_ROWS,
+  ASSET_CONTRACT_SEED_ROWS,
+  MULTIPLY_CONTRACT_SEED_ROWS,
+} from "./inputs/contract-addresses-seed"
+import {
+  TEST_WALLET_COLLATERAL_SEED_ROWS,
+  TEST_WALLET_DEBTS_SEED_ROWS,
+  TEST_WALLET_CLAIMS_SEED_ROWS,
+} from "./inputs/test-wallet-portfolio-seed"
+
 const DAY_MS = 86_400_000
 
 export type SeedMarketRow = {
@@ -54,6 +76,10 @@ export type SeedMarketRow = {
   spokeId?: string
   feeTier?: string
   maxLtvPct?: number
+  /** Reserve factor percent for Key Statistics (e.g. 10 = 10%). */
+  reserveFactorPct?: number
+  /** Incentive rewards APY percent (0 = none / "No rewards"). */
+  rewardsApyPct?: number
   visuals?: Array<{
     symbol: string
     shortLabel: string
@@ -87,6 +113,9 @@ export type SeedDailyStatRow = {
   priceUsd?: number
 }
 
+/** Product-siloed borrow daily stats (pool + asset). */
+export type SeedBorrowDailyStatRow = SeedDailyStatRow & { kind: "pool" | "asset" }
+
 export type SeedRevenueRow = {
   slug: string
   day: string
@@ -96,6 +125,9 @@ export type SeedRevenueRow = {
   rewardsDistributedUsd: number
   swapFeesUsd: number
 }
+
+/** Product-siloed borrow revenue (pool + asset). */
+export type SeedBorrowRevenueRow = SeedRevenueRow & { kind: "pool" | "asset" }
 
 export type SeedRiskRow = {
   slug: string
@@ -114,6 +146,9 @@ export type SeedRiskRow = {
   }[]
   metrics: { id: string; label: string; value: string; hint?: string }[]
 }
+
+/** Product-siloed borrow risk assessment (pool + asset). */
+export type SeedBorrowRiskAssessmentRow = SeedRiskRow & { kind: "pool" | "asset" }
 
 export type SeedWalletEventRow = {
   slug: string
@@ -146,15 +181,246 @@ export type SeedContentRow = {
   faqs: { question: string; answer: string }[]
 }
 
+/** Product-siloed borrow content (pool + asset). */
+export type SeedBorrowContentRow = SeedContentRow & { kind: "pool" | "asset" }
+
+export type SeedRiskParameterRow = {
+  slug: string
+  kind?: "pool" | "asset"
+  parameters: Array<{ id: string; label: string; value: string; description?: string }>
+  updatedAt: number
+  source: "seed"
+}
+
+export type SeedInterestRateModelRow = {
+  slug: string
+  optimalUtilizationPct: number
+  slopeBelowOptimalPct: number
+  slopeAboveOptimalPct: number
+  baseBorrowRatePct: number
+  updatedAt: number
+  source: "seed"
+}
+
+export type SeedLiquidationDailyRow = {
+  slug: string
+  day: string
+  liquidationsCount: number
+  collateralSeizedUsd: number
+  debtRepaidUsd: number
+  liquidationBonusUsd: number
+  collateralAtRiskUsd: number
+  walletsAtRisk: number
+  walletsEligibleForLiquidation: number
+  badDebtUsd: number
+  walletsWithBadDebt: number
+}
+
+export type SeedBorrowableEdgeRow = {
+  poolSlug: string
+  assetSlug: string
+  name: string
+  symbol: string
+  borrowAprPct: number
+}
+
 export type SeedData = {
   markets: SeedMarketRow[]
+  borrowMarkets: Array<Omit<SeedMarketRow, "scope"> & { kind: "pool" | "asset" }>
+  lendMarkets: Array<Omit<SeedMarketRow, "scope">>
+  multiplyMarkets: Array<Omit<SeedMarketRow, "scope">>
   dailyStats: SeedDailyStatRow[]
+  borrowDailyStats: SeedBorrowDailyStatRow[]
+  lendDailyStats: SeedDailyStatRow[]
+  multiplyDailyStats: SeedDailyStatRow[]
   revenue: SeedRevenueRow[]
+  borrowRevenueDaily: SeedBorrowRevenueRow[]
+  lendRevenueDaily: SeedRevenueRow[]
+  multiplyRevenueDaily: SeedRevenueRow[]
   risk: SeedRiskRow[]
+  borrowRiskAssessments: SeedBorrowRiskAssessmentRow[]
+  lendRiskAssessments: SeedRiskRow[]
+  multiplyRiskAssessments: SeedRiskRow[]
   walletEvents: SeedWalletEventRow[]
   allocation: SeedAllocationRow[]
   content: SeedContentRow[]
+  borrowMarketContent: SeedBorrowContentRow[]
+  lendMarketContent: SeedContentRow[]
+  multiplyMarketContent: SeedContentRow[]
+  borrowRiskParameters: SeedRiskParameterRow[]
+  borrowInterestRateModels: SeedInterestRateModelRow[]
+  borrowLiquidationDaily: SeedLiquidationDailyRow[]
+  borrowPoolBorrowables: SeedBorrowableEdgeRow[]
+  lendRiskParameters: SeedRiskParameterRow[]
+  lendInterestRateModels: SeedInterestRateModelRow[]
+  multiplyRiskParameters: SeedRiskParameterRow[]
+  multiplyLiquidationDaily: SeedLiquidationDailyRow[]
+
+  // ---------------------------------------------------------------------------
+  // Phase C additions — one field per new Convex table. All optional so the
+  // existing seed pipeline keeps working while individual table writers land
+  // per-commit.
+  // ---------------------------------------------------------------------------
+  spokes?: SeedSpokeRow[]
+  dexes?: SeedDexRow[]
+  borrowAssets?: SeedBorrowAssetRow[]
+  multiplyInterestRateModels?: SeedMultiplyIrmRow[]
+  multiplyMarketAllocations?: SeedMultiplyAllocationRow[]
+  multiplyTokenParameters?: SeedMultiplyTokenParamRow[]
+  poolContractAddresses?: SeedContractAddressRow[]
+  assetContractAddresses?: SeedContractAddressRow[]
+  multiplyContractAddresses?: SeedContractAddressRow[]
+  walletCollateralPositions?: SeedWalletCollateralPositionRow[]
+  walletDebts?: SeedWalletDebtRow[]
+  walletClaimPositions?: SeedWalletClaimPositionRow[]
+  walletRewardsProgress?: SeedWalletRewardsProgressRow[]
 }
+
+// -----------------------------------------------------------------------------
+// Phase C row types — seed shapes matching convex/schema.ts additions.
+// -----------------------------------------------------------------------------
+
+export type SeedTokenVisual = {
+  symbol: string
+  iconUrl: string
+  shortLabel: string
+  bgClass: string
+  textClass: string
+}
+
+export type SeedSpokeRow = {
+  id: string
+  slug: string
+  dex: string
+  label: string
+  description: string
+  eMode?: string
+  maxLtvPct: number
+  aprApproxPct: number
+  riskPremiumBps: number
+  liquidityUsd: number
+  liquidationUsdApprox: number
+  bgClass: string
+  textClass: string
+  borrowableTokens: SeedTokenVisual[]
+  isSmartSpoke: boolean
+}
+
+export type SeedDexRow = { id: string; label: string; tvlUsd: number; bgClass: string; textClass: string }
+
+export type SeedBorrowAssetRow = {
+  id: string
+  spokeId: string
+  baseAssetId: string
+  name: string
+  symbol: string
+  subtitle: string
+  category: string
+  contextLabel: string
+  displayVisual: SeedTokenVisual
+  baseBorrowAprPct: number
+  totalCapacityUsd: number
+  utilizationPct: number
+  totalBorrowedUsd: number
+  availableUsd: number
+  reserveFactorPct?: number
+  marketIds: string[]
+}
+
+export type SeedMultiplyIrmRow = {
+  slug: string
+  optimalUtilizationPct: number
+  slopeBelowOptimalPct: number
+  slopeAboveOptimalPct: number
+  baseBorrowRatePct: number
+}
+
+export type SeedMultiplyAllocationRow = {
+  marketSlug: string
+  rowKey: string
+  poolSlug: string
+  poolName: string
+  venueLabel: string
+  sharePct: number
+  valueUsd: number
+  utilizationPct: number
+  borrowAprPct: number
+  collateralFactorPct: number
+}
+
+export type SeedMultiplyTokenParamRow = {
+  symbol: string
+  supplyApyPct: number
+  borrowAprPct: number
+  availableUsd: number
+  collateralFactorPct: number
+  liquidationThresholdPct: number
+  iconUrl: string
+}
+
+export type SeedContractAddressRow = {
+  slug: string
+  salt: string
+  address: string
+  label: string
+  href: string
+  chain: string
+  isSynthetic: boolean
+}
+
+export type SeedWalletCollateralPositionRow = {
+  wallet: string
+  homePoolId: string
+  marketId: string
+  name: string
+  venueLabel: string
+  category: string
+  collateralUsd: number
+  maxLtvPct: number
+  borrowPowerUsd: number
+  liquidationUsd: number
+  pairAprPct: number
+}
+
+export type SeedWalletDebtRow = {
+  wallet: string
+  homePoolId: string
+  marketId: string
+  debtAssetId: string
+  amountUsd: number
+}
+
+export type SeedWalletClaimBreakdownRow = {
+  symbol: string
+  amountLabel: string
+  amountToken: number
+  usdValue: number
+  visualSymbol: string
+}
+
+export type SeedWalletClaimPositionRow = {
+  wallet: string
+  claimId: string
+  homePoolId: string
+  marketId: string
+  name: string
+  subtitle: string
+  totalUsd: number
+  breakdown: SeedWalletClaimBreakdownRow[]
+}
+
+export type SeedWalletRewardsProgressRow = {
+  wallet: string
+  taskId: string
+  status: "locked" | "available" | "in-progress" | "completed" | "claimed"
+  earnedAmount: number
+  claimableAmount: number
+  claimedAmount: number
+  completedAt?: number
+}
+
+/** Re-export TEST_WALLET_ADDRESS at its original path so existing consumers keep working. */
+export { TEST_WALLET_ADDRESS } from "./test-wallet"
 
 export type BuildSeedOptions = {
   /** How many trailing daily rows to generate per market (drives 1Y/ALL chart depth). */
@@ -249,6 +515,8 @@ function poolMarketRow(pool: BorrowPoolRow, createdAt: number): SeedMarketRow {
     spokeId: pool.spoke,
     feeTier: pool.feeTier,
     maxLtvPct: pool.ltv,
+    reserveFactorPct: Math.round(RESERVE_FACTOR_DEFAULT * 100),
+    rewardsApyPct: 0,
     visuals: pool.visuals.map((visual) => ({
       symbol: visual.symbol,
       shortLabel: visual.shortLabel,
@@ -279,6 +547,8 @@ function assetMarketRow(asset: SpokeBorrowableRecord, createdAt: number): SeedMa
     description: asset.subtitle,
     iconUrl: asset.visual.iconUrl,
     spokeId: asset.spokeId,
+    reserveFactorPct: Math.round(RESERVE_FACTOR_DEFAULT * 100),
+    rewardsApyPct: 0,
     visuals: [
       {
         symbol: asset.visual.symbol,
@@ -303,6 +573,8 @@ function lendMarketRow(market: LendMarket, createdAt: number): SeedMarketRow {
     // Low-tier lend markets are the stablecoins; everything else is volatile.
     category: market.riskTier === "low" ? "stable" : "crypto",
     description: `Supply ${market.asset.symbol} to the Avana lending market.`,
+    reserveFactorPct: Math.round(market.reserveFactor * 1000) / 10,
+    rewardsApyPct: Math.round(market.rewardsApy * 10000) / 100,
     resources: [{ label: "Open market", href: `/lend/markets/${market.marketId}` }],
     // Long-tail lend assets (OP, ARB, AERO, …) aren't in the single-token oracle, so carry
     // the catalog's own USD price for the onboarding gate. Lend positions store USD, so this
@@ -353,6 +625,7 @@ function dailyStatsForLendMarket(
 }
 
 function multiplyMarketRow(market: MultiplyMarketRecord, createdAt: number): SeedMarketRow {
+  const reserveFactorPct = market.risk.riskTier === "low" ? 10 : market.risk.riskTier === "medium" ? 12 : 15
   return {
     scope: "multiply",
     slug: market.id,
@@ -361,6 +634,12 @@ function multiplyMarketRow(market: MultiplyMarketRecord, createdAt: number): See
     symbol: market.collateralAsset.symbol,
     category: market.risk.riskTier === "low" ? "stable" : "crypto",
     description: `Multiply ${market.collateralAsset.symbol} exposure against ${market.borrowAsset.symbol}.`,
+    // Convex hydration reads maxLtvPct into the multiply state's risk.collateralFactor;
+    // omitting it silently used the catalog's default and tripped the hydration-telemetry
+    // warn. Source from the catalog's maxLtv (already declared per-market).
+    maxLtvPct: market.risk.maxLtv * 100,
+    reserveFactorPct,
+    rewardsApyPct: 0,
     resources: [{ label: "Open market", href: `/multiply/markets/${market.id}` }],
     // Collateral symbols are bluechips the oracle already covers; carry the catalog price
     // too so the gate stays satisfied even if the oracle is briefly stale/unseeded.
@@ -477,6 +756,130 @@ function contractStatForSeed(label: string, slug: string, salt: string) {
   }
 }
 
+function isStablePool(row: BorrowPoolRow) {
+  const stables = new Set(["USDC", "USDT", "DAI", "GHO", "FRAX", "CRVUSD", "USDS"])
+  return row.visuals.every((visual) => stables.has(visual.symbol.toUpperCase()))
+}
+
+/** Deposit/borrow capacity labels derived from a market tip (must use post-calibration tips). */
+export function borrowPoolCapacityLabels(suppliedUsd: number, availableUsd: number) {
+  const supplyCapUsd = Math.max(25_000_000, Math.ceil((Math.max(0, suppliedUsd) * 1.75) / 1_000_000) * 1_000_000)
+  const borrowCapUsd = Math.max(10_000_000, Math.ceil((Math.max(0, availableUsd) * 2.25) / 1_000_000) * 1_000_000)
+  return {
+    depositCapacityLabel: formatCompactUsd(supplyCapUsd),
+    borrowCapacityLabel: formatCompactUsd(borrowCapUsd),
+    supplyCapUsd,
+    borrowCapUsd,
+  }
+}
+
+export function borrowAssetCapacityLabels(suppliedUsd: number, availableUsd: number) {
+  return {
+    depositCapacityLabel: formatCompactUsd(Math.max(25_000_000, Math.max(0, suppliedUsd) * 1.75)),
+    borrowCapacityLabel: formatCompactUsd(Math.max(10_000_000, Math.max(0, availableUsd) * 2)),
+  }
+}
+
+function borrowPoolRiskParameterRow(pool: BorrowPoolRow, asOf: number): SeedRiskParameterRow {
+  const caps = borrowPoolCapacityLabels(pool.tvlUsd, pool.availableUsd)
+  return {
+    slug: pool.id,
+    kind: "pool",
+    parameters: buildRiskParameterSet({
+      collateralFactorPct: pool.ltv,
+      liquidationThresholdPct: Math.min(95, Math.round((pool.ltv + 5) * 10) / 10),
+      depositCapacityLabel: caps.depositCapacityLabel,
+      borrowCapacityLabel: caps.borrowCapacityLabel,
+      liquidationPenaltyPct: isStablePool(pool) ? 5 : 7,
+      collateralFactorDescription: "Maximum borrow power when this LP position is used as collateral.",
+    }),
+    updatedAt: asOf,
+    source: "seed",
+  }
+}
+
+function borrowAssetRiskParameterRow(asset: SpokeBorrowableRecord, asOf: number): SeedRiskParameterRow {
+  const suppliedUsd = asset.availableUsd + asset.totalBorrowedUsd
+  const caps = borrowAssetCapacityLabels(suppliedUsd, asset.availableUsd)
+  return {
+    slug: asset.id,
+    kind: "asset",
+    parameters: buildRiskParameterSet({
+      collateralFactorPct: 75,
+      depositCapacityLabel: caps.depositCapacityLabel,
+      borrowCapacityLabel: caps.borrowCapacityLabel,
+      liquidationPenaltyPct: asset.category === "stable" ? 5 : 7,
+    }),
+    updatedAt: asOf,
+    source: "seed",
+  }
+}
+
+/**
+ * After `calibrateToTargets`, rewrite borrow risk deposit/borrow capacity labels from
+ * the calibrated latest-day tip so Risk Parameters match live market size (not raw catalog).
+ */
+export function resyncBorrowRiskParameterCapsFromDailyTips(
+  riskParameters: SeedRiskParameterRow[],
+  dailyStats: ReadonlyArray<{ slug: string; day: string; suppliedUsd: number; borrowedUsd: number }>,
+  lastDay: string,
+) {
+  const tipBySlug = new Map<string, { suppliedUsd: number; availableUsd: number }>()
+  for (const row of dailyStats) {
+    if (row.day !== lastDay) continue
+    tipBySlug.set(row.slug, {
+      suppliedUsd: row.suppliedUsd,
+      availableUsd: Math.max(0, row.suppliedUsd - row.borrowedUsd),
+    })
+  }
+  for (const risk of riskParameters) {
+    const tip = tipBySlug.get(risk.slug)
+    if (!tip) continue
+    const caps =
+      risk.kind === "asset"
+        ? borrowAssetCapacityLabels(tip.suppliedUsd, tip.availableUsd)
+        : borrowPoolCapacityLabels(tip.suppliedUsd, tip.availableUsd)
+    risk.parameters = risk.parameters.map((parameter) => {
+      if (parameter.id === "depositCapacity") return { ...parameter, value: caps.depositCapacityLabel }
+      if (parameter.id === "borrowCapacity") return { ...parameter, value: caps.borrowCapacityLabel }
+      return parameter
+    })
+  }
+}
+
+function interestRateModelRow(slug: string, borrowAprPct: number, asOf: number): SeedInterestRateModelRow {
+  const params = buildInterestRateModelParams(slug, borrowAprPct)
+  return { slug, ...params, updatedAt: asOf, source: "seed" }
+}
+
+function liquidationDailyForSlug(slug: string, asOf: number): SeedLiquidationDailyRow[] {
+  const rand = prngFromString(`liq:${slug}`)
+  const today = isoDay(asOf)
+  const yesterday = isoDay(asOf - DAY_MS)
+  const base = {
+    liquidationsCount: Math.floor(rand() * 20) + 2,
+    collateralSeizedUsd: round(rand() * 2_000_000 + 200_000, 0),
+    debtRepaidUsd: round(rand() * 1_800_000 + 180_000, 0),
+    liquidationBonusUsd: round(rand() * 100_000 + 10_000, 0),
+    collateralAtRiskUsd: round(rand() * 12_000_000 + 1_000_000, 0),
+    walletsAtRisk: Math.floor(rand() * 80) + 5,
+    walletsEligibleForLiquidation: Math.floor(rand() * 15) + 1,
+    badDebtUsd: round(rand() * 5_000 + 100, 2),
+    walletsWithBadDebt: Math.floor(rand() * 5),
+  }
+  const prior = {
+    ...base,
+    liquidationsCount: Math.max(0, base.liquidationsCount - Math.floor(rand() * 5)),
+    collateralAtRiskUsd: round(base.collateralAtRiskUsd * (0.9 + rand() * 0.2), 0),
+    walletsAtRisk: Math.max(0, base.walletsAtRisk + Math.floor(rand() * 10) - 5),
+    badDebtUsd: round(base.badDebtUsd * (0.8 + rand() * 0.4), 2),
+  }
+  return [
+    { slug, day: yesterday, ...prior },
+    { slug, day: today, ...base },
+  ]
+}
+
 const WALLET_EVENT_KINDS = ["supply", "borrow", "repay", "withdraw"] as const
 
 function hex(rand: () => number, length: number): string {
@@ -558,11 +961,31 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
 
   const markets: SeedMarketRow[] = []
   const dailyStats: SeedDailyStatRow[] = []
+  const borrowDailyStats: SeedBorrowDailyStatRow[] = []
+  const lendDailyStats: SeedDailyStatRow[] = []
+  const multiplyDailyStats: SeedDailyStatRow[] = []
   const revenue: SeedRevenueRow[] = []
+  const borrowRevenueDaily: SeedBorrowRevenueRow[] = []
+  const lendRevenueDaily: SeedRevenueRow[] = []
+  const multiplyRevenueDaily: SeedRevenueRow[] = []
   const risk: SeedRiskRow[] = []
+  const borrowRiskAssessments: SeedBorrowRiskAssessmentRow[] = []
+  const lendRiskAssessments: SeedRiskRow[] = []
+  const multiplyRiskAssessments: SeedRiskRow[] = []
   const walletEvents: SeedWalletEventRow[] = []
   const allocation: SeedAllocationRow[] = []
   const content: SeedContentRow[] = []
+  const borrowMarketContent: SeedBorrowContentRow[] = []
+  const lendMarketContent: SeedContentRow[] = []
+  const multiplyMarketContent: SeedContentRow[] = []
+  const borrowRiskParameters: SeedRiskParameterRow[] = []
+  const borrowInterestRateModels: SeedInterestRateModelRow[] = []
+  const borrowLiquidationDaily: SeedLiquidationDailyRow[] = []
+  const borrowPoolBorrowables: SeedBorrowableEdgeRow[] = []
+  const lendRiskParameters: SeedRiskParameterRow[] = []
+  const lendInterestRateModels: SeedInterestRateModelRow[] = []
+  const multiplyRiskParameters: SeedRiskParameterRow[] = []
+  const multiplyLiquidationDaily: SeedLiquidationDailyRow[] = []
 
   for (const pool of BORROW_POOL_CATALOG) {
     markets.push(poolMarketRow(pool, asOf))
@@ -574,19 +997,36 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
       { suppliedUsd: pool.tvlUsd, utilizationPct, borrowAprPct: (pool.aprMin + pool.aprMax) / 2 },
       asOf,
       days,
-    )
+    ).map((row) => ({ ...row, kind: "pool" as const }))
     dailyStats.push(...stats)
-    revenue.push(...revenueForMarket(stats, reserveFactor))
+    borrowDailyStats.push(...stats)
+    const poolRevenue = revenueForMarket(stats, reserveFactor).map((row) => ({ ...row, kind: "pool" as const }))
+    revenue.push(...poolRevenue)
+    borrowRevenueDaily.push(...poolRevenue)
     risk.push(riskRow(pool.id, asOf, buildPoolRiskAssessment(pool)))
+    borrowRiskAssessments.push({ ...risk[risk.length - 1]!, kind: "pool" })
     walletEvents.push(...walletEventsForMarket(pool.id, asOf, walletEventDays))
     const poolAbout = getPoolAboutCard(pool)
-    content.push({
+    const poolContent = {
       slug: pool.id,
       description: poolAbout.description,
       stats: poolAbout.stats,
       history: poolAbout.history,
       faqs: buildPoolFaqs(pool.name),
-    })
+    }
+    content.push(poolContent)
+    borrowMarketContent.push({ ...poolContent, kind: "pool" })
+    borrowRiskParameters.push(borrowPoolRiskParameterRow(pool, asOf))
+    borrowLiquidationDaily.push(...liquidationDailyForSlug(pool.id, asOf))
+    for (const asset of resolveBorrowablesForPool(pool)) {
+      borrowPoolBorrowables.push({
+        poolSlug: pool.id,
+        assetSlug: asset.id,
+        name: asset.name,
+        symbol: asset.symbol,
+        borrowAprPct: asset.apy,
+      })
+    }
   }
 
   for (const asset of listSpokeBorrowables()) {
@@ -598,10 +1038,14 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
       { suppliedUsd, utilizationPct: asset.utilization, borrowAprPct: asset.borrowApr },
       asOf,
       days,
-    )
+    ).map((row) => ({ ...row, kind: "asset" as const }))
     dailyStats.push(...stats)
-    revenue.push(...revenueForMarket(stats, reserveFactor))
+    borrowDailyStats.push(...stats)
+    const assetRevenue = revenueForMarket(stats, reserveFactor).map((row) => ({ ...row, kind: "asset" as const }))
+    revenue.push(...assetRevenue)
+    borrowRevenueDaily.push(...assetRevenue)
     risk.push(riskRow(asset.id, asOf, buildAssetRiskAssessment(asset)))
+    borrowRiskAssessments.push({ ...risk[risk.length - 1]!, kind: "asset" })
     walletEvents.push(...walletEventsForMarket(asset.id, asOf, walletEventDays))
     // Per-pool allocation shares (deterministic, shared with the UI mock). `valueUsd`
     // is filled in below from the CALIBRATED asset TVL so the breakdown sums to the
@@ -618,13 +1062,17 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
       })
     }
     const assetAbout = getAssetAboutCard(asset)
-    content.push({
+    const assetContent = {
       slug: asset.id,
       description: assetAbout.description,
       stats: assetAbout.stats,
       history: assetAbout.history,
       faqs: buildAssetFaqs(asset.symbol, asset.name),
-    })
+    }
+    content.push(assetContent)
+    borrowMarketContent.push({ ...assetContent, kind: "asset" })
+    borrowRiskParameters.push(borrowAssetRiskParameterRow(asset, asOf))
+    borrowInterestRateModels.push(interestRateModelRow(asset.id, asset.borrowApr, asOf))
   }
 
   // Calibrate the latest day to the canonical economy aggregates. `dailyStats` and
@@ -634,6 +1082,10 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
     poolTvlTargetUsd: options.poolTvlTargetUsd ?? POOL_TVL_TARGET_USD,
     assetTvlTargetUsd: options.assetTvlTargetUsd ?? ASSET_TVL_TARGET_USD,
   })
+
+  // Risk-parameter capacities were built from raw catalog TVLs before calibration.
+  // Rewrite them from the calibrated tip so detail Risk Parameters match live size.
+  resyncBorrowRiskParameterCapsFromDailyTips(borrowRiskParameters, dailyStats, lastDay)
 
   // Anchor allocation values to the post-calibration per-asset supplied (latest day)
   // so the asset detail "Value" column reconciles with the headline TVL.
@@ -663,8 +1115,12 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
       days,
     )
     dailyStats.push(...stats)
-    revenue.push(...revenueForMarket(stats, market.reserveFactor))
+    lendDailyStats.push(...stats)
+    const lendRevenue = revenueForMarket(stats, market.reserveFactor)
+    revenue.push(...lendRevenue)
+    lendRevenueDaily.push(...lendRevenue)
     risk.push(riskRow(market.marketId, asOf, buildLendRiskAssessment(market)))
+    lendRiskAssessments.push(risk[risk.length - 1]!)
     walletEvents.push(...walletEventsForMarket(market.marketId, asOf, walletEventDays))
     content.push({
       slug: market.marketId,
@@ -695,6 +1151,32 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
       ],
       faqs: buildLendFaqs(market.asset.symbol, market.asset.name),
     })
+    lendMarketContent.push(content[content.length - 1]!)
+    lendRiskParameters.push({
+      slug: market.marketId,
+      parameters: buildRiskParameterSet({
+        collateralFactorPct: market.riskTier === "low" ? 78 : 72,
+        liquidationThresholdPct: market.riskTier === "low" ? 83 : 78,
+        depositCapacityLabel: formatCompactUsd(
+          Math.max(25_000_000, Math.ceil((market.totalSupplied * market.assetPriceUsd * 1.75) / 1_000_000) * 1_000_000),
+        ),
+        borrowCapacityLabel: formatCompactUsd(
+          Math.max(
+            10_000_000,
+            Math.ceil((market.totalSupplied * market.assetPriceUsd * market.utilization * 2.25) / 1_000_000) *
+              1_000_000,
+          ),
+        ),
+        liquidationPenaltyPct: market.riskTier === "low" ? 5 : 7,
+        collateralFactorDescription: "Maximum borrow power when this supplied asset is used as collateral.",
+      }),
+      updatedAt: asOf,
+      source: "seed",
+    })
+    const util = Math.min(99, Math.max(1, market.utilization * 100))
+    const supplyApyPct = Math.max(0.01, market.supplyApy * 100)
+    const borrowAprPct = supplyApyPct / Math.max(0.05, util / 100) / Math.max(0.5, 1 - market.reserveFactor)
+    lendInterestRateModels.push(interestRateModelRow(market.marketId, borrowAprPct, asOf))
   }
 
   // Multiply markets (leveraged loops). Like lend, appended after calibration so their
@@ -715,8 +1197,12 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
       days,
     )
     dailyStats.push(...stats)
-    revenue.push(...revenueForMarket(stats, reserveFactor))
+    multiplyDailyStats.push(...stats)
+    const multiplyRevenue = revenueForMarket(stats, reserveFactor)
+    revenue.push(...multiplyRevenue)
+    multiplyRevenueDaily.push(...multiplyRevenue)
     risk.push(riskRow(market.id, asOf, buildMultiplyRiskAssessment(market)))
+    multiplyRiskAssessments.push(risk[risk.length - 1]!)
     walletEvents.push(...walletEventsForMarket(market.id, asOf, walletEventDays))
     content.push({
       slug: market.id,
@@ -747,9 +1233,72 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
       ],
       faqs: buildMultiplyFaqs(market.collateralAsset.symbol, market.borrowAsset.symbol),
     })
+    multiplyMarketContent.push(content[content.length - 1]!)
+    multiplyRiskParameters.push({
+      slug: market.id,
+      parameters: buildRiskParameterSet({
+        collateralFactorPct: Math.round(market.risk.collateralFactor * 1000) / 10,
+        liquidationThresholdPct: Math.round(market.risk.liquidationThreshold * 1000) / 10,
+        depositCapacityLabel: formatCompactUsd(Math.max(25_000_000, market.economics.availableLiquidityUsd * 1.5)),
+        borrowCapacityLabel: formatCompactUsd(Math.max(10_000_000, market.economics.availableLiquidityUsd)),
+        liquidationPenaltyPct: market.risk.riskTier === "low" ? 5 : 7,
+      }),
+      updatedAt: asOf,
+      source: "seed",
+    })
+    multiplyLiquidationDaily.push(...liquidationDailyForSlug(market.id, asOf))
   }
 
-  return { markets, dailyStats, revenue, risk, walletEvents, allocation, content }
+  return {
+    markets,
+    borrowMarkets: markets
+      .filter((m): m is SeedMarketRow & { scope: "pool" | "asset" } => m.scope === "pool" || m.scope === "asset")
+      .map(({ scope, ...rest }) => ({ ...rest, kind: scope })),
+    lendMarkets: markets.filter((m) => m.scope === "lend").map(({ scope: _scope, ...rest }) => rest),
+    multiplyMarkets: markets.filter((m) => m.scope === "multiply").map(({ scope: _scope, ...rest }) => rest),
+    dailyStats,
+    borrowDailyStats,
+    lendDailyStats,
+    multiplyDailyStats,
+    revenue,
+    borrowRevenueDaily,
+    lendRevenueDaily,
+    multiplyRevenueDaily,
+    risk,
+    borrowRiskAssessments,
+    lendRiskAssessments,
+    multiplyRiskAssessments,
+    walletEvents,
+    allocation,
+    content,
+    borrowMarketContent,
+    lendMarketContent,
+    multiplyMarketContent,
+    borrowRiskParameters,
+    borrowInterestRateModels,
+    borrowLiquidationDaily,
+    borrowPoolBorrowables,
+    lendRiskParameters,
+    lendInterestRateModels,
+    multiplyRiskParameters,
+    multiplyLiquidationDaily,
+
+    // Phase C additions — pre-derived arrays imported from convex-seed/inputs/.
+    // These are pure data (byte-for-byte parity with the mock) and don't
+    // interact with the calibration loop above.
+    spokes: SPOKES_SEED_ROWS,
+    dexes: DEXES_SEED_ROWS,
+    borrowAssets: BORROW_ASSETS_SEED_ROWS,
+    multiplyInterestRateModels: MULTIPLY_IRM_SEED_ROWS,
+    multiplyMarketAllocations: MULTIPLY_ALLOCATION_SEED_ROWS,
+    multiplyTokenParameters: MULTIPLY_TOKEN_PARAM_SEED_ROWS,
+    poolContractAddresses: POOL_CONTRACT_SEED_ROWS,
+    assetContractAddresses: ASSET_CONTRACT_SEED_ROWS,
+    multiplyContractAddresses: MULTIPLY_CONTRACT_SEED_ROWS,
+    walletCollateralPositions: TEST_WALLET_COLLATERAL_SEED_ROWS,
+    walletDebts: TEST_WALLET_DEBTS_SEED_ROWS,
+    walletClaimPositions: TEST_WALLET_CLAIMS_SEED_ROWS,
+  }
 }
 
 function calibrateToTargets(

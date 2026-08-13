@@ -1,9 +1,15 @@
 import { parseFixed, type BorrowSystemState } from "@/app/lib/credit-engine"
+import { warnLiveFallback } from "@/app/lib/data/providers/hydration-telemetry"
 
 /** One row from convex/markets.ts `listMarketSnapshots`. */
 export type ConvexMarketSnapshot = {
   slug: string
   scope: "asset" | "pool"
+  name?: string
+  symbol?: string
+  maxLtvPct?: number
+  premiumBps?: number
+  reserveFactorPct?: number
   suppliedUsd: number
   borrowedUsd: number
   availableUsd: number
@@ -26,12 +32,8 @@ function wadFromPct(pct: number) {
 /**
  * Fold Convex market reference data into a borrow system state so the session
  * (list, previews, health factor) reads the SAME numbers as the hero/detail.
- * Only market-level liquidity/rate fields are overwritten — wallet positions,
- * LP token price, shares, and risk config are left untouched. Returns the SAME
- * state reference when nothing changed so callers can guard re-renders.
- *
- * Keying: pool snapshots → state.markets[slug]; asset snapshots → state.assets[slug]
- * (slug = pool id / spoke-scoped asset id, matching the catalog ids).
+ * Overwrites market-level liquidity/rate fields plus list identity/LTV/premium when
+ * present on the snapshot. Returns the SAME state reference when nothing changed.
  */
 export function mergeConvexMarketSnapshots(
   state: BorrowSystemState,
@@ -55,21 +57,51 @@ export function mergeConvexMarketSnapshots(
         fees24hUsd6: usd6(snap.feesUsd),
         feeApyWad: wadFromPct(snap.supplyApyPct),
       }
+      let nextCf: bigint
+      if (snap.maxLtvPct !== undefined && Number.isFinite(snap.maxLtvPct)) {
+        nextCf = wadFromPct(snap.maxLtvPct)
+      } else {
+        warnLiveFallback("borrow", snap.slug, "maxLtvPct")
+        nextCf = market.riskConfig.collateralFactorWad
+      }
+      let nextName: string
+      if (snap.name?.trim()) {
+        nextName = snap.name
+      } else {
+        warnLiveFallback("borrow", snap.slug, "name")
+        nextName = market.display.name
+      }
+      const nextPremium = snap.premiumBps
+      let nextReserveFactorPct: number | undefined
+      if (snap.reserveFactorPct !== undefined && Number.isFinite(snap.reserveFactorPct)) {
+        nextReserveFactorPct = snap.reserveFactorPct
+      } else {
+        warnLiveFallback("borrow", snap.slug, "reserveFactorPct")
+        nextReserveFactorPct = market.reserveFactorPct
+      }
       const s = market.snapshot
-      // Only rebuild when a value actually differs. Every emit re-sends every market, so an
-      // unconditional `changed = true` allocated a fresh state object on each push — re-firing
-      // every page-live async readAdapter on 10k clients even when nothing moved.
       if (
         s.totalLiquidityUsd6 === nextSnapshot.totalLiquidityUsd6 &&
         s.totalBorrowedUsd6 === nextSnapshot.totalBorrowedUsd6 &&
         s.availableUsd6 === nextSnapshot.availableUsd6 &&
         s.volume24hUsd6 === nextSnapshot.volume24hUsd6 &&
         s.fees24hUsd6 === nextSnapshot.fees24hUsd6 &&
-        s.feeApyWad === nextSnapshot.feeApyWad
+        s.feeApyWad === nextSnapshot.feeApyWad &&
+        market.riskConfig.collateralFactorWad === nextCf &&
+        market.display.name === nextName &&
+        market.listPremiumBps === nextPremium &&
+        market.reserveFactorPct === nextReserveFactorPct
       ) {
         continue
       }
-      markets[snap.slug] = { ...market, snapshot: nextSnapshot }
+      markets[snap.slug] = {
+        ...market,
+        display: { ...market.display, name: nextName },
+        riskConfig: { ...market.riskConfig, collateralFactorWad: nextCf },
+        listPremiumBps: nextPremium,
+        reserveFactorPct: nextReserveFactorPct,
+        snapshot: nextSnapshot,
+      }
       changed = true
     } else {
       const asset = assets[snap.slug]
@@ -77,18 +109,45 @@ export function mergeConvexMarketSnapshots(
       const availableLiquidityUsd6 = usd6(snap.availableUsd)
       const totalBorrowedUsd6 = usd6(snap.borrowedUsd)
       const baseBorrowAprWad = wadFromPct(snap.borrowAprPct)
+      let nextName: string
+      if (snap.name?.trim()) {
+        nextName = snap.name
+      } else {
+        warnLiveFallback("borrow", snap.slug, "name")
+        nextName = asset.display.name
+      }
+      let nextSymbol: string
+      if (snap.symbol?.trim()) {
+        nextSymbol = snap.symbol
+      } else {
+        warnLiveFallback("borrow", snap.slug, "symbol")
+        nextSymbol = asset.symbol
+      }
+      let nextReserveFactorPct: number | undefined
+      if (snap.reserveFactorPct !== undefined && Number.isFinite(snap.reserveFactorPct)) {
+        nextReserveFactorPct = snap.reserveFactorPct
+      } else {
+        warnLiveFallback("borrow", snap.slug, "reserveFactorPct")
+        nextReserveFactorPct = asset.reserveFactorPct
+      }
       const a = asset.snapshot
       if (
         asset.borrowConfig.baseBorrowAprWad === baseBorrowAprWad &&
         a.availableLiquidityUsd6 === availableLiquidityUsd6 &&
         a.totalBorrowedUsd6 === totalBorrowedUsd6 &&
-        a.totalDebtSharesUsd6 === totalBorrowedUsd6
+        a.totalDebtSharesUsd6 === totalBorrowedUsd6 &&
+        asset.display.name === nextName &&
+        asset.symbol === nextSymbol &&
+        asset.reserveFactorPct === nextReserveFactorPct
       ) {
         continue
       }
       assets[snap.slug] = {
         ...asset,
+        symbol: nextSymbol,
+        display: { ...asset.display, name: nextName },
         borrowConfig: { ...asset.borrowConfig, baseBorrowAprWad },
+        reserveFactorPct: nextReserveFactorPct,
         snapshot: {
           ...asset.snapshot,
           availableLiquidityUsd6,

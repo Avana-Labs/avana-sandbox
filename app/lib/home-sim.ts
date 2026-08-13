@@ -359,12 +359,6 @@ export const HOME_CLAIM_POSITIONS: HomeClaimPosition[] = [
   },
 ]
 
-export const HOME_INITIAL_DEBTS: Record<string, number> = {
-  "eth-usdc": 1_200,
-  "usdc-usdt": 800,
-  "wbtc-eth": 0,
-}
-
 export const HOME_INITIAL_CLAIM_SELECTIONS: Record<string, boolean> = {
   "claim-eth-usdc": true,
   "claim-usdc-usdt": true,

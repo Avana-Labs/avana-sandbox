@@ -112,7 +112,10 @@ export function MarketHero({ detail, leading, actions, className, hideIdentity =
     if (activeMetricTab === metricTabs[2]) {
       return buildFeedFromSeries(detail.supplyBorrow.utilization, "percent", fallback)
     }
-    return buildFeedFromSeries(detail.supplyBorrow.supplied, "usdCompact", fallback)
+    return (
+      detail.heroFeed ??
+      buildFeedFromSeries(detail.supplyBorrow.supplied, "usdCompact", getMultiplyMarketHeroFeed(detail.id))
+    )
   }, [activeMetricTab, detail.heroFeed, detail.id, detail.supplyBorrow, metricTabs])
 
   return (

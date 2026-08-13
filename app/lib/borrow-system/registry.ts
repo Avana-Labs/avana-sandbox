@@ -41,7 +41,7 @@ export type SpokeBorrowableRecord = BorrowableAsset & {
   marketIds: string[]
 }
 
-const SPOKE_SLUGS: Record<BorrowSpokeId, string> = {
+export const SPOKE_SLUGS: Record<BorrowSpokeId, string> = {
   "uni-v2": "uniswap-v2",
   "uni-v3-stable": "uniswap-stable",
   "uni-v3-bluechip": "uniswap-bluechip",

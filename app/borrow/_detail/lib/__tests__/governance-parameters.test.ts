@@ -67,4 +67,39 @@ describe("risk parameter normalization", () => {
       "Chainlink",
     ])
   })
+
+  it("prefers Convex about.history for the parameter changelog when present", () => {
+    const about = normalizeGovernanceParameters({
+      description: "x",
+      stats: [],
+      history: [{ date: "2026-03-01", title: "Raised LTV", description: "68% → 75%" }],
+      governanceParameters: {
+        parameters: [
+          { id: "collateralFactor", label: "Collateral factor", value: "75.00%" },
+          { id: "collateralRisk", label: "Collateral risk", value: "5.00%" },
+          { id: "depositCapacity", label: "Deposit capacity", value: "$25.0M" },
+          { id: "liquidationPenalty", label: "Liquidation penalty", value: "5.00% - 5.55%" },
+          { id: "borrowCapacity", label: "Borrow capacity", value: "$10.0M" },
+          { id: "targetHealthFactor", label: "Target health factor", value: "1.25" },
+          { id: "liquidationThreshold", label: "Liquidation threshold", value: "80.00%" },
+          { id: "oracle", label: "Oracle source", value: "Chainlink" },
+        ],
+        changelog: [
+          {
+            id: "mock-1",
+            parameter: "Mock param",
+            previous: "1%",
+            current: "2%",
+            date: "2024-01-01",
+            source: "Mock",
+            executor: "Mock",
+          },
+        ],
+      },
+    })
+
+    expect(about.changelog).toHaveLength(1)
+    expect(about.changelog[0]?.parameter).toBe("Raised LTV")
+    expect(about.changelog[0]?.current).toBe("68% → 75%")
+  })
 })

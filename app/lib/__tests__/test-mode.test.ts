@@ -27,14 +27,15 @@ describe("open gate test mode", () => {
     expect(dev.shouldUseMockDataSource()).toBe(false)
   })
 
-  it("opens in development when NEXT_PUBLIC_DEV_OPEN_GATE=1", async () => {
+  it("opens in development when NEXT_PUBLIC_DEV_OPEN_GATE=1 without switching to mock data", async () => {
     vi.stubEnv("NODE_ENV", "development")
     vi.stubEnv("NEXT_PUBLIC_DEV_OPEN_GATE", "1")
     vi.stubEnv("NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE", "0")
     const open = await import("@/app/lib/test-mode")
     expect(open.IS_OPEN_GATE_TEST_MODE).toBe(true)
     expect(open.shouldUseOpenGateSession()).toBe(true)
-    expect(open.shouldUseMockDataSource()).toBe(true)
+    // Open-gate is a session shortcut only — the data source stays live.
+    expect(open.shouldUseMockDataSource()).toBe(false)
     expect(open.TEST_MODE_WALLET_ADDRESS).toMatch(/^0x[0-9a-f]{40}$/)
   })
 

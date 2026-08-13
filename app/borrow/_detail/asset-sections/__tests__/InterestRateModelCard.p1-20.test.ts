@@ -27,6 +27,7 @@ describe("InterestRateModelCard market params", () => {
     expect(source).toMatch(/resolveInterestRateModelParams/)
     expect(source).toMatch(/slopeBelowOptimalPct/)
     expect(source).toMatch(/slopeAboveOptimalPct/)
+    expect(source).toMatch(/buildBorrowInterestRateCurve/)
   })
 
   it("p1-20: seeded market params vary by asset id", () => {

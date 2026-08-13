@@ -1,16 +1,36 @@
 import "server-only"
 import { buildHeroFeedFromConvexSeries } from "@/app/lib/chart-feeds"
 import {
+  fetchMultiplyAllocation,
   fetchMultiplyCashflowBreakdown,
   fetchMultiplyContent,
+  fetchMultiplyContractAddresses,
+  fetchMultiplyHistoricalUtilization,
+  fetchMultiplyInterestRateModel,
+  fetchMultiplyLiquidationRisk,
+  fetchMultiplyMarket,
+  fetchMultiplyMarketSnapshot,
   fetchMultiplyQuickStats,
   fetchMultiplyRecentTransactions,
   fetchMultiplyRisk,
+  fetchMultiplyRiskParameters,
+  fetchMultiplySupplyBorrow,
   fetchMultiplySupplySeries,
   fetchTokenPrices,
+  type ConvexContractAddressRow,
 } from "@/app/lib/multiply-system/market-hydration-server"
 import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
 import { applyDetailContentOverlay, mergeAliasedQuickStats } from "@/app/lib/detail-page/live-detail-helpers"
+import { buildMockLiquidationRiskStats } from "@/app/lib/detail-page/liquidation-risk"
+import {
+  injectAvailableUsdQuickStat,
+  injectSiloedMarketQuickStats,
+  overlayAboutDescription,
+  overlayHeroIdentity,
+} from "@/app/lib/detail-page/siloed-market-overlay"
+import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
+import { shouldFailClosedInLive } from "@/app/lib/detail-page/live-fallback"
+import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { getMultiplyMarketDetail } from "./index"
 import type { MultiplyMarketDetail, MultiplyTxHistoryRow } from "./index"
 import type { QuickStat } from "@/app/lib/borrow-detail"
@@ -19,12 +39,11 @@ import type { QuickStat } from "@/app/lib/borrow-detail"
  * Server-only Convex-hydrated multiply detail builder. Overlays seeded/live data onto
  * the deterministic mock detail so the page's numbers come from Convex and match the
  * list/hero:
- *   - HERO chart (TVL)                      ← Convex daily series (replaces the old
- *                                             hash-random getMultiplyMarketHeroFeed)
+ *   - HERO chart (TVL)                      ← Convex daily series
  *   - quick stats (available / APYs)        ← Convex snapshot
  *   - cashflow / risk / content            ← Convex queries
- *   - transactions                         ← global walletEvents for this market,
- *                                            mapped onto the multiply row kinds
+ *   - risk parameters / liquidation risk   ← multiply* product silos
+ *   - transactions                         ← global walletEvents for this market
  * Each Convex read falls back to the mock value when unreachable, so the page always
  * renders.
  */
@@ -86,12 +105,83 @@ function mergeConvexQuickStats(
   return mergeAliasedQuickStats(base, convex, QUICK_STAT_ALIASES)
 }
 
+function applyRiskParametersToAbout(
+  detail: MultiplyMarketDetail,
+  riskParameters: Awaited<ReturnType<typeof fetchMultiplyRiskParameters>>,
+): MultiplyMarketDetail {
+  if (!riskParameters?.parameters.length) return detail
+  return {
+    ...detail,
+    about: {
+      ...detail.about,
+      governanceParameters: {
+        parameters: riskParameters.parameters.map((parameter) => ({
+          id: parameter.id,
+          label: parameter.label,
+          value: parameter.value,
+          description: parameter.description,
+        })),
+        changelog: detail.about.governanceParameters?.changelog ?? [],
+      },
+    },
+  }
+}
+
+/**
+ * Same three salts as the pool/asset overlays (vault/token/staking), keyed by `salt`
+ * so the display label stays derived from the Convex row's classification, not
+ * hardcoded here in the detail path.
+ */
+const MULTIPLY_CONTRACT_LABEL_BY_SALT: Record<string, string> = {
+  vault: "Vault Contract Address",
+  token: "Token Contract Address",
+  staking: "Staking Contract Address",
+}
+
+function injectMultiplyContractAddressStats(
+  detail: MultiplyMarketDetail,
+  rows: readonly ConvexContractAddressRow[],
+): MultiplyMarketDetail {
+  if (rows.length === 0) return detail
+  return {
+    ...detail,
+    about: {
+      ...detail.about,
+      stats: [
+        ...detail.about.stats,
+        ...rows.map((row) => ({
+          label: MULTIPLY_CONTRACT_LABEL_BY_SALT[row.salt] ?? row.label,
+          value: row.label,
+          href: row.href,
+        })),
+      ],
+    },
+  }
+}
+
 export async function getMultiplyMarketDetailFromConvex(id: string): Promise<MultiplyMarketDetail | null> {
   const detail = getMultiplyMarketDetail(id)
   if (!detail) return null
   const slug = detail.id
 
-  const [supplyPoints, cashflow, transactions, risk, quickStats, prices, content] = await Promise.all([
+  const [
+    supplyPoints,
+    cashflow,
+    transactions,
+    risk,
+    quickStats,
+    prices,
+    content,
+    riskParameters,
+    liquidationRisk,
+    siloedMarket,
+    snapshot,
+    supplyBorrow,
+    historicalUtilization,
+    allocation,
+    interestRateModel,
+    contractAddresses,
+  ] = await Promise.all([
     fetchMultiplySupplySeries(slug),
     fetchMultiplyCashflowBreakdown(slug),
     fetchMultiplyRecentTransactions(slug),
@@ -99,27 +189,84 @@ export async function getMultiplyMarketDetailFromConvex(id: string): Promise<Mul
     fetchMultiplyQuickStats(slug),
     fetchTokenPrices(),
     fetchMultiplyContent(slug),
+    fetchMultiplyRiskParameters(slug),
+    fetchMultiplyLiquidationRisk(slug),
+
+    fetchMultiplyMarket(slug),
+    fetchMultiplyMarketSnapshot(slug),
+    fetchMultiplySupplyBorrow(slug),
+    fetchMultiplyHistoricalUtilization(slug),
+    fetchMultiplyAllocation(slug),
+    fetchMultiplyInterestRateModel(slug),
+    fetchMultiplyContractAddresses(slug),
   ])
+  // Fail closed in live mode when Convex has no snapshot — matches borrow detail
+  // so the page never silently renders the mock catalog next to an empty live list.
+  if (shouldFailClosedInLive(resolveDataSourceMode(), snapshot != null)) return null
 
   const hydrated = applyDetailContentOverlay(
     {
       ...detail,
-      quickStats: injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, detail.row.protocol),
+      quickStats: injectSiloedMarketQuickStats(
+        injectAvailableUsdQuickStat(
+          injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, detail.row.protocol),
+          snapshot?.availableUsd,
+          formatCompactUsd,
+        ),
+        siloedMarket,
+      ),
       heroFeed: buildHeroFeedFromConvexSeries(supplyPoints, "usdCompact") ?? detail.heroFeed,
       cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
       transactions: mapConvexTransactions(transactions) ?? detail.transactions,
       risk: (risk as typeof detail.risk) ?? detail.risk,
+      liquidationRisk: liquidationRisk?.stats?.length
+        ? liquidationRisk.stats
+        : (detail.liquidationRisk ?? buildMockLiquidationRiskStats(slug)),
+      // Fail closed: when Convex has no rows the section stays empty rather than
+      // reusing the PRNG mock in `detail.supplyBorrow`. Empty series render as no
+      // points and the hero chart falls back to its own downstream local feed.
+      supplyBorrow: supplyBorrow ?? buildEmptySupplyBorrow(slug),
+      // Fail closed: undefined when Convex returns null, so the section is unrendered
+      // rather than showing PRNG data.
+      historicalUtilization: historicalUtilization ?? undefined,
+      allocation: allocation ?? undefined,
+      interestRateModel: interestRateModel
+        ? {
+            utilizationPct: interestRateModel.utilizationPct,
+            borrowAprPct: interestRateModel.borrowAprPct,
+            optimalUtilizationPct: interestRateModel.optimalUtilizationPct,
+            slopeBelowOptimalPct: interestRateModel.slopeBelowOptimalPct,
+            slopeAboveOptimalPct: interestRateModel.slopeAboveOptimalPct,
+            baseBorrowRatePct: interestRateModel.baseBorrowRatePct,
+          }
+        : undefined,
     },
     content,
+    { clearWhenMissing: resolveDataSourceMode() === "live" },
   )
 
+  return applyRiskParametersToAbout(
+    injectMultiplyContractAddressStats(
+      {
+        ...hydrated,
+        hero: overlayHeroIdentity(hydrated.hero, siloedMarket),
+        about: overlayAboutDescription(hydrated.about, siloedMarket),
+      },
+      contractAddresses,
+    ),
+    riskParameters,
+  )
+}
+
+/**
+ * Empty supply/borrow/utilization triple used when the Convex query returns null.
+ * The page's fail-closed contract: the section stays empty (no points) rather than
+ * reusing the mock PRNG series from `getMultiplyMarketDetail`.
+ */
+function buildEmptySupplyBorrow(slug: string): MultiplyMarketDetail["supplyBorrow"] {
   return {
-    ...hydrated,
-    about: {
-      ...hydrated.about,
-      description: detail.about.description,
-      stats: detail.about.stats,
-      governanceParameters: detail.about.governanceParameters,
-    },
+    supplied: { id: `${slug}:sb:supplied`, label: "Supplied", points: [] },
+    borrowed: { id: `${slug}:sb:borrowed`, label: "Borrowed", points: [] },
+    utilization: { id: `${slug}:sb:utilization`, label: "Utilization", points: [] },
   }
 }

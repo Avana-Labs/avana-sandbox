@@ -268,14 +268,9 @@ describe("page providers", () => {
     expect(data.pageSize).toBe(24)
   })
 
-  it("fetches rewards page data from the default source", async () => {
-    const data = await fetchRewardsPage({ walletProfileId: await resolvePortfolioWalletProfileId() })
-
-    expect(data.rewardPools.length).toBeGreaterThan(0)
-    expect(data.promoTabs.length).toBeGreaterThan(0)
-    expect(data.questsByTab["getting-started"].length).toBeGreaterThan(0)
-  })
-
+  // The default rewards source (liveRewardsPageSource) requires an authenticated
+  // Convex client — that path is exercised by real-app integration tests, not
+  // here. This test only covers the override path.
   it("accepts a rewards source override", async () => {
     const source: RewardsPageSource = {
       adapter: createDataSourceAdapter({ id: "rewards-test", label: "Rewards test source", mode: "mock" }),
@@ -283,21 +278,6 @@ describe("page providers", () => {
         return {
           data: {
             walletProfileId: input.walletProfileId,
-            totalPools: 10,
-            completedPools: 3,
-            progressPercentage: 30,
-            balanceTotal: 1200,
-            rewardPools: [
-              {
-                id: "reward-1",
-                href: "/borrow/markets/custom",
-                title: "Custom Pool",
-                subtitle: "0.30% fee",
-                value: "$1.2M",
-                delta: "7.0% APY",
-                deltaClassName: "text-emerald-500",
-              },
-            ] as RewardsPageData["rewardPools"],
             promoTabs: [{ id: "new-users", label: "New users" }] as unknown as RewardsPageData["promoTabs"],
             questsByTab: {
               "new-users": [
@@ -318,7 +298,8 @@ describe("page providers", () => {
     }
 
     const data = await fetchRewardsPage({ walletProfileId: "wallet-1" }, source)
-    expect(data.balanceTotal).toBe(1200)
+    expect(data.walletProfileId).toBe("wallet-1")
+    expect(data.questsByTab["new-users"]!.length).toBe(1)
   })
 
   it("fetches portfolio page data from the default source", async () => {

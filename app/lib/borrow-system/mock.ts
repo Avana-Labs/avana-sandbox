@@ -15,7 +15,7 @@ import {
   type BorrowPoolRow,
 } from "@/app/lib/borrow-sim"
 import { listSpokeBorrowables, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
-import { HOME_COLLATERAL_POOLS, HOME_CLAIM_POSITIONS, HOME_INITIAL_DEBTS } from "@/app/lib/borrow-system/home-contracts"
+import { HOME_COLLATERAL_POOLS, HOME_CLAIM_POSITIONS } from "@/app/lib/borrow-system/home-contracts"
 import { liquidationThresholdPctFromMaxLtvPct } from "@/app/lib/borrow-system/liquidation-threshold"
 
 export const HOME_POOL_TO_MARKET_ID: Record<string, string> = {
@@ -24,7 +24,20 @@ export const HOME_POOL_TO_MARKET_ID: Record<string, string> = {
   "usdc-usdt": "uni-v3-stable-usdc-usdt",
 }
 
-const HOME_POOL_TO_DEBT_ASSET_ID: Record<string, string> = {
+/**
+ * Test-fixture initial debts baked into the mock builder. Duplicated once here rather than
+ * imported from home-sim so Wave 6 can delete HOME_INITIAL_DEBTS from home-sim/home-contracts
+ * without breaking selector/read-model/dashboard tests that rely on demo-wallet debtPositions.
+ * Production authenticated flows use buildConvexBorrowSessionSeed (empty accounts) and hydrate
+ * seeded debts from Convex walletDebts — this map never reaches a real wallet.
+ */
+const MOCK_INITIAL_DEBTS: Record<string, number> = {
+  "eth-usdc": 1_200,
+  "usdc-usdt": 800,
+  "wbtc-eth": 0,
+}
+
+export const HOME_POOL_TO_DEBT_ASSET_ID: Record<string, string> = {
   "eth-usdc": "usdc",
   "wbtc-eth": "weth",
   "usdc-usdt": "usdt",
@@ -367,7 +380,11 @@ export function buildMockBorrowSystemState(walletId = "demo-wallet"): BorrowSyst
   const collateralPositions = HOME_COLLATERAL_POOLS.map((pool) =>
     collateralPositionFromHomePool(walletId, pool.id, pool.collateralUsd, markets),
   ).filter((position): position is UserCollateralPosition => Boolean(position))
-  const initialDebts = walletId === "home-demo-wallet" ? {} : HOME_INITIAL_DEBTS
+  // home-demo-wallet is the unauthenticated landing demo, deliberately clean.
+  // Every OTHER walletId here is a test fixture — production authenticated wallets
+  // never reach this builder (they use buildConvexBorrowSessionSeed with empty
+  // accounts and hydrate real debts from Convex walletDebts).
+  const initialDebts = walletId === "home-demo-wallet" ? {} : MOCK_INITIAL_DEBTS
   const debtPositions = Object.entries(initialDebts)
     .map(([poolId, debtUsd]) => debtPositionFromHomePool(walletId, poolId, debtUsd, markets, assets))
     .filter((position): position is UserDebtPosition => Boolean(position))
