@@ -256,9 +256,7 @@ describe("page providers", () => {
             ] as unknown as MultiplyPageData["lendRows"],
             trendingSnapshots: [],
             pageSize: 24,
-            tokenBorrowApys: { USDC: "5.00%" } as unknown as MultiplyPageData["tokenBorrowApys"],
             tokenLogos: { ETH: "https://example.com/eth.png" } as unknown as MultiplyPageData["tokenLogos"],
-            tokenSupplyApys: { ETH: "3.50%" } as unknown as MultiplyPageData["tokenSupplyApys"],
           },
         }
       },
