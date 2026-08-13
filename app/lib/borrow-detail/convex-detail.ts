@@ -12,6 +12,7 @@ import {
   fetchBorrowMarket,
   fetchBorrowPoolBorrowables,
   fetchBorrowRiskParameters,
+  fetchBorrowRiskParametersForSlugs,
   fetchCashflowBreakdown,
   fetchContent,
   fetchConvexMarketSnapshots,
@@ -231,12 +232,12 @@ async function enrichAllocationWithCollateralFactors(
       }),
     ),
   ]
-  const riskRows = await Promise.all(poolSlugs.map((poolSlug) => fetchBorrowRiskParameters(poolSlug)))
+  const riskRows = await fetchBorrowRiskParametersForSlugs(poolSlugs)
   const cfByPool = new Map<string, number>()
-  poolSlugs.forEach((poolSlug, index) => {
-    const cf = collateralFactorFromRiskParameters(riskRows[index]?.parameters)
-    if (cf !== undefined) cfByPool.set(poolSlug, cf)
-  })
+  for (const row of riskRows ?? []) {
+    const cf = collateralFactorFromRiskParameters(row.parameters)
+    if (cf !== undefined) cfByPool.set(row.slug, cf)
+  }
   if (cfByPool.size === 0) return allocation
   return allocation.map((row) => {
     const prefix = `${assetId}-`

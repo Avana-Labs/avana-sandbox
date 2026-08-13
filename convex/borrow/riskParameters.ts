@@ -31,6 +31,27 @@ export const getRiskParameters = query({
   },
 })
 
+/**
+ * Batch variant: risk parameters for many slugs in ONE query round-trip. The asset
+ * allocation card needs each pool's collateral factor; fetching them one slug at a
+ * time was an N+1 network fan-out after the main detail batch. Lookups stay indexed
+ * (by_slug), so the server cost is N cheap point reads inside a single query.
+ */
+export const getRiskParametersForSlugs = query({
+  args: { slugs: v.array(v.string()) },
+  handler: async (ctx, { slugs }) => {
+    const rows = await Promise.all(
+      slugs.map((slug) =>
+        ctx.db
+          .query("borrowRiskParameters")
+          .withIndex("by_slug", (q) => q.eq("slug", slug))
+          .unique(),
+      ),
+    )
+    return rows.filter((row) => row !== null).map((row) => ({ slug: row.slug, parameters: row.parameters }))
+  },
+})
+
 export const upsertRiskParameters = internalMutation({
   args: {
     rows: v.array(
