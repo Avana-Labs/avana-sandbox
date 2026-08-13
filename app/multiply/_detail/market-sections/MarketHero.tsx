@@ -125,7 +125,7 @@ export function MarketHero({ detail, leading, actions, className, hideIdentity =
       <div className="pt-4" data-testid="market-hero-chart-card">
         <MarketHeroChart
           feed={feed}
-          defaultRange="1D"
+          defaultRange="1M"
           gradientId={`multiplyHeroFill-${detail.id}`}
           height={310}
           showMeta={false}
