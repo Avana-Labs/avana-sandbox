@@ -4,6 +4,7 @@ import { SchemaMarkup, buildBreadcrumbSchema, buildFaqSchema, buildWebPageSchema
 import { getAssetDetail } from "@/app/lib/borrow-detail"
 import { getAssetDetailFromConvex } from "@/app/lib/borrow-detail/convex-detail"
 import { preloadAssetHero } from "@/app/lib/borrow-detail/hero-preload"
+import { preloadDetailQuickStats } from "@/app/lib/detail-page/quick-stats-preload"
 import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { AssetDetailClient } from "@/app/borrow/asset/[assetId]/asset-detail-client"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
@@ -37,6 +38,7 @@ export default async function BorrowAssetPage({ params }: PageProps) {
   const detail = await getAssetDetailFromConvex(assetId)
   if (!detail) notFound()
   const { preloads: heroPreloads, feeds } = await preloadAssetHero(assetId)
+  const quickStatsPreload = await preloadDetailQuickStats("asset", assetId)
   const detailWithFeeds = { ...detail, ...feeds }
   const canonicalUrl = `https://avana.cc/borrow/assets/${assetId}`
   return (
@@ -56,7 +58,7 @@ export default async function BorrowAssetPage({ params }: PageProps) {
           buildFaqSchema(detail.faqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),
         ]}
       />
-      <AssetDetailClient detail={detailWithFeeds} heroPreloads={heroPreloads} />
+      <AssetDetailClient detail={detailWithFeeds} heroPreloads={heroPreloads} quickStatsPreload={quickStatsPreload} />
     </>
   )
 }

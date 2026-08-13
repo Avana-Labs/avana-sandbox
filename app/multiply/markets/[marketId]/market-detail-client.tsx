@@ -23,8 +23,13 @@ import { MarketHero, MarketHeroIdentity, MarketSidebar } from "@/app/multiply/_d
 import { LiquidationRiskSection } from "@/app/borrow/_detail/ui/LiquidationRiskSection"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
 import type { MultiplyHeroPreloads } from "@/app/lib/multiply-detail/hero-preload"
+import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
 
-type Props = { detail: MultiplyMarketDetail; heroPreloads?: MultiplyHeroPreloads | null }
+type Props = {
+  detail: MultiplyMarketDetail
+  heroPreloads?: MultiplyHeroPreloads | null
+  quickStatsPreload?: QuickStatsPreload | null
+}
 
 const CashflowCard = dynamic(
   () => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard),
@@ -43,7 +48,7 @@ const TransactionHistoryCard = dynamic(
   { ssr: false },
 )
 
-export function MarketDetailClient({ detail, heroPreloads = null }: Props) {
+export function MarketDetailClient({ detail, heroPreloads = null, quickStatsPreload = null }: Props) {
   const session = useMultiplySessionContext()
   const { t } = useTranslation()
   const marketId = detail.id.toLowerCase().replaceAll("_", "-")
@@ -96,7 +101,7 @@ export function MarketDetailClient({ detail, heroPreloads = null }: Props) {
                         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
                           Key Statistics
                         </h2>
-                        <QuickStatsGrid detail={detail} />
+                        <QuickStatsGrid detail={detail} quickStatsPreload={quickStatsPreload} product="multiply" />
                       </section>
                       <RiskSection detail={detail} />
                     </>

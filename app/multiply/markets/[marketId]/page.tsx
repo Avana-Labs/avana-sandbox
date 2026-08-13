@@ -4,6 +4,7 @@ import { SchemaMarkup, buildBreadcrumbSchema, buildFaqSchema, buildWebPageSchema
 import { getMultiplyMarketDetail } from "@/app/lib/multiply-detail"
 import { getMultiplyMarketDetailFromConvex } from "@/app/lib/multiply-detail/convex-detail"
 import { preloadMultiplyHero } from "@/app/lib/multiply-detail/hero-preload"
+import { preloadDetailQuickStats } from "@/app/lib/detail-page/quick-stats-preload"
 import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { MultiplyMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
@@ -37,6 +38,7 @@ export default async function MarketDetailPage({ params }: PageProps) {
   const detail = await getMultiplyMarketDetailFromConvex(marketId)
   if (!detail) notFound()
   const { preloads: heroPreloads, feeds } = await preloadMultiplyHero(marketId)
+  const quickStatsPreload = await preloadDetailQuickStats("multiply", marketId)
   const detailWithFeeds = { ...detail, ...feeds }
   const canonicalUrl = `https://avana.cc/multiply/markets/${marketId}`
   return (
@@ -56,7 +58,11 @@ export default async function MarketDetailPage({ params }: PageProps) {
           buildFaqSchema(detail.faqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),
         ]}
       />
-      <MultiplyMarketDetailClientShell detail={detailWithFeeds} heroPreloads={heroPreloads} />
+      <MultiplyMarketDetailClientShell
+        detail={detailWithFeeds}
+        heroPreloads={heroPreloads}
+        quickStatsPreload={quickStatsPreload}
+      />
     </>
   )
 }

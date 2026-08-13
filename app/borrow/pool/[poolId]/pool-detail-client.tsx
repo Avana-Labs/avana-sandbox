@@ -7,6 +7,7 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
 import type { PoolHeroPreloads } from "@/app/lib/borrow-detail/hero-preload"
+import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { AssetsYouCanBorrowSection } from "@/app/borrow/_detail/ui/CrossMarketReferenceSections"
 import { LiquidationRiskSection } from "@/app/borrow/_detail/ui/LiquidationRiskSection"
@@ -41,7 +42,11 @@ const DetailFaqSection = dynamic(
   { ssr: false },
 )
 
-type Props = { detail: PoolDetail; heroPreloads?: PoolHeroPreloads | null }
+type Props = {
+  detail: PoolDetail
+  heroPreloads?: PoolHeroPreloads | null
+  quickStatsPreload?: QuickStatsPreload | null
+}
 
 /**
  * Two-column detail page for a single LP collateral pool.
@@ -50,7 +55,7 @@ type Props = { detail: PoolDetail; heroPreloads?: PoolHeroPreloads | null }
  * CompactBorrowCard reused) sticks on the right. Mobile: sections stack and
  * the sidebar collapses into a bottom sheet triggered by a fixed button.
  */
-export function PoolDetailClient({ detail, heroPreloads = null }: Props) {
+export function PoolDetailClient({ detail, heroPreloads = null, quickStatsPreload = null }: Props) {
   const { t } = useTranslation()
   const about = withGovernanceParameterView(detail.about, detail.protocolParameters)
 
@@ -93,7 +98,12 @@ export function PoolDetailClient({ detail, heroPreloads = null }: Props) {
                         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
                           Key Statistics
                         </h2>
-                        <QuickStatsGrid detail={detail} hideRisk />
+                        <QuickStatsGrid
+                          detail={detail}
+                          quickStatsPreload={quickStatsPreload}
+                          product="borrow"
+                          hideRisk
+                        />
                       </section>
                       <RiskSection detail={detail} />
                     </>

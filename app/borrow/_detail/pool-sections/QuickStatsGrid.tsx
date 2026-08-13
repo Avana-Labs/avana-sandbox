@@ -1,9 +1,14 @@
 "use client"
 
+import * as React from "react"
+import { usePreloadedQuery } from "convex/react"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { resolveBorrowDetailMetricHelp } from "@/app/lib/borrow-detail/metric-help"
 import { redenominateCompactUsd } from "@/app/lib/currency/format"
 import { useCurrency } from "@/app/lib/currency/use-currency"
+import { useConvexLiveSession } from "@/app/lib/convex/use-convex-live-session"
+import { mergeLiveQuickStats, type QuickStatsProduct } from "@/app/lib/detail-page/live-quick-stats"
+import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 
@@ -16,6 +21,9 @@ type QuickStatLike = {
 
 type Props = {
   detail: { quickStats: QuickStatLike[] }
+  /** Preloaded getQuickStats token + product enable the live variant (connected sessions). */
+  quickStatsPreload?: QuickStatsPreload | null
+  product?: QuickStatsProduct
   className?: string
   hideRisk?: boolean
 }
@@ -68,7 +76,7 @@ function StatsGrid({ stats, columns = 3 }: { stats: QuickStatLike[]; columns?: 3
   )
 }
 
-export function QuickStatsGrid({ detail, className, hideRisk = false }: Props) {
+function QuickStatsGridView({ detail, className, hideRisk = false }: Omit<Props, "quickStatsPreload" | "product">) {
   const { t } = useTranslation()
   const { market, risk } = splitQuickStats(detail.quickStats)
 
@@ -84,5 +92,33 @@ export function QuickStatsGrid({ detail, className, hideRisk = false }: Props) {
         </section>
       ) : null}
     </div>
+  )
+}
+
+/**
+ * Live wrapper: hydrates getQuickStats from the server-preloaded token via
+ * `usePreloadedQuery` (no client re-fetch) and subscribes for updates, re-merging the fresh
+ * values over the already-merged base via the shared alias map. Only mounted where a Convex
+ * provider exists AND a preload token + product were supplied — see the chooser below.
+ */
+function QuickStatsGridLive({
+  preload,
+  product,
+  ...props
+}: Omit<Props, "quickStatsPreload" | "product"> & { preload: QuickStatsPreload; product: QuickStatsProduct }) {
+  const live = usePreloadedQuery(preload)
+  const detail = React.useMemo(
+    () => ({ ...props.detail, quickStats: mergeLiveQuickStats(props.detail.quickStats, live, product) }),
+    [props.detail, live, product],
+  )
+  return <QuickStatsGridView {...props} detail={detail} />
+}
+
+export function QuickStatsGrid(props: Props) {
+  const liveSession = useConvexLiveSession()
+  return liveSession && props.quickStatsPreload && props.product ? (
+    <QuickStatsGridLive {...props} preload={props.quickStatsPreload} product={props.product} />
+  ) : (
+    <QuickStatsGridView {...props} />
   )
 }

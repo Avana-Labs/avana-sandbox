@@ -17,6 +17,7 @@ import {
 } from "@/app/lib/multiply-system/market-hydration-server"
 import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
 import { applyDetailContentOverlay, mergeAliasedQuickStats } from "@/app/lib/detail-page/live-detail-helpers"
+import { QUICK_STAT_ALIASES } from "@/app/lib/detail-page/live-quick-stats"
 import { buildMockLiquidationRiskStats } from "@/app/lib/detail-page/liquidation-risk"
 import {
   injectAvailableUsdQuickStat,
@@ -77,11 +78,6 @@ function mapConvexTransactions(
 }
 
 /** Convex `getQuickStats` emits asset-style ids; map each to the lend-style mock ids. */
-const QUICK_STAT_ALIASES: Record<string, string[]> = {
-  supplyApy: ["supplyApy"],
-  borrowApy: ["borrowApy"],
-}
-
 function injectRealPrice(
   quickStats: QuickStat[],
   prices: Record<string, number> | null,
@@ -97,7 +93,7 @@ function mergeConvexQuickStats(
   base: QuickStat[],
   convex: ReadonlyArray<{ id: string; value: string; delta?: QuickStat["delta"] }> | null,
 ): QuickStat[] {
-  return mergeAliasedQuickStats(base, convex, QUICK_STAT_ALIASES)
+  return mergeAliasedQuickStats(base, convex, QUICK_STAT_ALIASES.multiply)
 }
 
 function applyRiskParametersToAbout(
