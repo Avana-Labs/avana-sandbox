@@ -17,7 +17,7 @@ describe("SandboxLendReadAdapter", () => {
 
     expect(markets.length).toBeGreaterThan(10)
     expect(page.featuredSnapshots.length).toBe(3)
-    expect(page.marketRows.length).toBeGreaterThan(10)
+    expect(page.assetGroups.flatMap((group) => group.rows).length).toBeGreaterThan(10)
     expect(portfolio.investments.length).toBe(1)
   })
 
@@ -26,9 +26,9 @@ describe("SandboxLendReadAdapter", () => {
     const adapter = new SandboxLendReadAdapter({ state })
 
     const page = await adapter.readLendPage("wallet-1")
-    const boosted = page.marketRows.find((row) => row.asset === "USDG")
+    const boosted = page.assetGroups.flatMap((group) => group.rows).find((row) => row.symbol === "USDG")
 
-    expect(boosted?.rewardsApy).toBeGreaterThan(0)
+    expect(boosted?.rewardsApyValue).toBeGreaterThan(0)
     expect(boosted?.rewardsApyLabel).not.toBe("0.00%")
   })
 

@@ -34,15 +34,6 @@ const lendPageSchema = z.object({
       rows: z.array(z.object({ symbol: z.string(), name: z.string(), apy: z.string() }).passthrough()),
     }),
   ),
-  marketRows: z.array(
-    z
-      .object({
-        marketId: z.string(),
-        asset: z.string(),
-        href: z.string(),
-      })
-      .passthrough(),
-  ),
 })
 
 function getLendPageSource(source?: LendPageSource) {

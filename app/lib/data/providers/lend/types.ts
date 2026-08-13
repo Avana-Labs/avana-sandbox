@@ -1,5 +1,5 @@
 import { LEND_ASSET_GROUPS, LEND_FEATURED_ASSETS, LEND_FEATURED_SEQUENCE } from "@/app/lib/data/catalog/lend"
-import type { LendFeaturedSnapshot, LendMarketRow } from "@/app/lib/lend-system/read-model"
+import type { LendFeaturedSnapshot } from "@/app/lib/lend-system/read-model"
 
 export type LendMarket = {
   symbol: string
@@ -24,7 +24,4 @@ export type LendPageData = {
   featuredSequence: ReadonlyArray<(typeof LEND_FEATURED_SEQUENCE)[number]>
   featuredSnapshots: ReadonlyArray<LendFeaturedSnapshot>
   assetGroups: ReadonlyArray<(typeof LEND_ASSET_GROUPS)[number]>
-  // Retained despite no UI consumer: the test suite uses this per-market row
-  // projection to assert row-building logic (rewards labels, strategy buckets).
-  marketRows: ReadonlyArray<LendMarketRow>
 }

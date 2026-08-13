@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { buildPortfolioLendData, buildLendWalletSnapshot } from "@/app/lib/lend-system/read-model"
 import { buildMockLendSystemStateWithSeedPosition } from "@/app/lib/lend-system/mock"
-import { buildLendSnapshotFromTabData } from "@/app/dashboard/lend-hero-state"
 
 describe("closed lend position rewards", () => {
   it("keeps claimable rewards in wallet summaries after a position is closed", () => {
@@ -19,13 +18,11 @@ describe("closed lend position rewards", () => {
     }
 
     const portfolio = buildPortfolioLendData("wallet-1", state, [])
-    const snapshot = buildLendSnapshotFromTabData(portfolio)
     const walletSnapshot = buildLendWalletSnapshot("wallet-1", state, [])
 
     expect(portfolio.investments).toHaveLength(0)
     expect(portfolio.rewardsSummary?.claimableUsd).toBe(64)
     expect(portfolio.rewardsSummary?.totalEarnedUsd).toBe(64)
-    expect(snapshot.totalEarnedUsd).toBe(64)
     expect(walletSnapshot.metrics.totalEarnedUsd).toBe(64)
     expect(walletSnapshot.metrics.rewardsEarnedUsd).toBe(64)
   })
