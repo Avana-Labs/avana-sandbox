@@ -46,15 +46,6 @@ export type MultiplyTokenVisual = {
   iconUrl?: string
 }
 
-export type MultiplyMarketRelatedSummary = {
-  id: string
-  name: string
-  venue: string
-  visuals: [MultiplyTokenVisual, MultiplyTokenVisual]
-  maxApyLabel: string
-  availableLabel: string
-}
-
 export type MultiplyMarketDetail = {
   id: string
   hero: MultiplyMarketHero
@@ -72,7 +63,6 @@ export type MultiplyMarketDetail = {
   risk: RiskAssessment
   about: AboutCard
   faqs: FaqContent[]
-  related: MultiplyMarketRelatedSummary[]
   row: MultiplyMarketRow
   /**
    * Liquidation Risk KPIs — from product-siloed `multiplyLiquidationDaily`.
@@ -445,20 +435,6 @@ function resolveMultiplyRow(id: string): MultiplyMarketRow | null {
   )
 }
 
-function buildRelated(row: MultiplyMarketRow): MultiplyMarketRelatedSummary[] {
-  const catalogRows = MULTIPLY_MARKET_CATALOG.map(catalogMarketToRow)
-  const sameCollateral = catalogRows.filter((other) => other.protocol === row.protocol && other.asset !== row.asset)
-  const sameBorrowable = catalogRows.filter((other) => other.asset === row.asset && other.protocol !== row.protocol)
-  return [...sameCollateral, ...sameBorrowable].slice(0, 4).map((other) => ({
-    id: `${other.protocol}-${other.asset}`,
-    name: `${other.protocol} / ${other.asset}`,
-    venue: "Avana Multiply",
-    visuals: [getVisual(other.protocol), getVisual(other.asset)],
-    maxApyLabel: other.apy,
-    availableLabel: other.points ?? "—",
-  }))
-}
-
 export function getMultiplyMarketDetail(id: string): MultiplyMarketDetail | null {
   const row = resolveMultiplyRow(id)
   if (!row) return null
@@ -478,7 +454,6 @@ export function getMultiplyMarketDetail(id: string): MultiplyMarketDetail | null
     risk: buildRisk(row),
     about: buildAbout(row, resolvedId),
     faqs: buildMultiplyFaqs(row.protocol, row.asset),
-    related: buildRelated(row),
     row,
   }
 }

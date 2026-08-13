@@ -15,7 +15,6 @@ import {
   BORROW_POOL_CATALOG,
   type BorrowAssetVisual,
   type BorrowPoolRow,
-  aprRangeLabel,
   formatCompactUsd,
   getDexById,
   getSpokeById,
@@ -37,7 +36,6 @@ import type {
   PoolDetail,
   PoolDetailHero,
   QuickStat,
-  RelatedPoolSummary,
   RiskAssessment,
   Series,
   TimeRangeId,
@@ -616,19 +614,6 @@ function buildAbout(row: BorrowPoolRow, fixture: FixtureOverride | undefined): A
   }
 }
 
-function buildRelated(row: BorrowPoolRow): RelatedPoolSummary[] {
-  return BORROW_POOL_CATALOG.filter((other) => other.spoke === row.spoke && other.id !== row.id)
-    .slice(0, 4)
-    .map((other) => ({
-      id: other.id,
-      name: other.name,
-      venue: other.venue,
-      visuals: other.visuals,
-      aprLabel: aprRangeLabel(other),
-      availableLabel: formatCompactUsd(other.availableUsd),
-    }))
-}
-
 function buildCollateralHistory(row: BorrowPoolRow): TxHistoryRow[] {
   const seed = prngFromString(`${row.id}:tx`)
   const kinds: TxHistoryRow["kind"][] = ["supply", "withdraw", "rewards"]
@@ -722,7 +707,6 @@ export function buildPoolDetail(row: BorrowPoolRow): PoolDetail {
     about: buildAbout(row, fixture),
     faqs: buildPoolFaqs(row.name),
     transactions: buildCollateralHistory(row),
-    related: buildRelated(row),
     row,
   }
 }
