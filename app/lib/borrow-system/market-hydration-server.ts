@@ -266,6 +266,17 @@ export async function fetchBorrowRiskParameters(slug: string) {
   }
 }
 
+/** Borrow product — risk parameters for many slugs in one round-trip (allocation card). */
+export async function fetchBorrowRiskParametersForSlugs(slugs: string[]) {
+  const client = convexClient()
+  if (!client || slugs.length === 0) return null
+  try {
+    return await client.query(api.borrow.riskParameters.getRiskParametersForSlugs, { slugs })
+  } catch {
+    return null
+  }
+}
+
 /** Borrow product — Assets You Can Borrow edges for a pool. */
 export async function fetchBorrowPoolBorrowables(poolSlug: string) {
   const client = convexClient()
