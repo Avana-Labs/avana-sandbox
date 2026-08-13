@@ -129,7 +129,6 @@ export const getMultiplySupplyBorrow = query({
   },
 })
 
-
 /**
  * Quick-stats row values + 24h deltas derived from the two most recent daily
  * snapshots. The UI's `QuickStat[]` shape is built here so the data seam

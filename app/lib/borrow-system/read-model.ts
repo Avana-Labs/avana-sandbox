@@ -175,7 +175,6 @@ export function buildBorrowPageData(state: BorrowSystemState, walletId: string):
       ? poolCatalog.reduce((sum, pool) => sum + (pool.change24hPct ?? 0) * pool.tvlUsd, 0) / totalTvlUsd
       : 0
 
-
   return {
     walletId,
     borrowSessionSeed: serializeBorrowSystemState(state),
