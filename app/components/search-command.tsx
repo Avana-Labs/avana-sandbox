@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { SearchTrigger } from "./search-trigger"
 import { triggerPageLoading } from "@/app/lib/page-loading"
 import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
+import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import type { BorrowAssetVisual } from "@/app/lib/borrow-sim"
 import { TOKEN_ICON_TABLE_PX } from "@/app/lib/token-icon-sizes"
 import { cn } from "@/lib/utils"
@@ -89,7 +90,9 @@ async function getSearchResults(
       subtitle: `${asset.symbol} ${t("lending market")} / ${asset.utilization}% ${t("utilization")}`,
       eyebrow: "Lend asset",
       metric: `${Math.max(asset.borrowApr - 0.8, 0.1).toFixed(1)}% APY`,
-      href: borrowAssetDetailPath(asset.id),
+      // Lend results are presented as lend markets — link into the lend product, not
+      // the borrow asset page. Same slug derivation the lend list/detail use.
+      href: `/lend/markets/${resolveLendMarketId(asset.symbol)}`,
       keywords: `${asset.id} ${asset.symbol} ${asset.name} lend deposit supply yield apy`,
       visual: asset.visual,
     }))
