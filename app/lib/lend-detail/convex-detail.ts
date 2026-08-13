@@ -16,11 +16,7 @@ import {
   fetchTokenPrices,
 } from "@/app/lib/lend-system/market-hydration-server"
 import { applyDetailContentOverlay, mergeAliasedQuickStats } from "@/app/lib/detail-page/live-detail-helpers"
-import {
-  injectSiloedMarketQuickStats,
-  overlayAboutDescription,
-  overlayHeroIdentity,
-} from "@/app/lib/detail-page/siloed-market-overlay"
+import { injectSiloedMarketQuickStats, overlayHeroIdentity } from "@/app/lib/detail-page/siloed-market-overlay"
 import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
 import { shouldFailClosedInLive } from "@/app/lib/detail-page/live-fallback"
 import { resolveLendHeadlineRates } from "./headline-rates"
@@ -185,7 +181,6 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
     {
       ...hydrated,
       hero: overlayHeroIdentity(hydrated.hero, siloedMarket),
-      about: overlayAboutDescription(hydrated.about, siloedMarket),
     },
     riskParameters,
   )
