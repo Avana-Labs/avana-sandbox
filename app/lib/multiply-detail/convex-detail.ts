@@ -1,4 +1,5 @@
 import "server-only"
+import { requestCache as cache } from "@/app/lib/detail-page/request-cache"
 import { buildHeroFeedFromConvexSeries } from "@/app/lib/chart-feeds"
 import {
   fetchMultiplyAllocation,
@@ -159,7 +160,7 @@ function injectMultiplyContractAddressStats(
   }
 }
 
-export async function getMultiplyMarketDetailFromConvex(id: string): Promise<MultiplyMarketDetail | null> {
+async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<MultiplyMarketDetail | null> {
   const detail = getMultiplyMarketDetail(id)
   if (!detail) return null
   const slug = detail.id
@@ -270,3 +271,7 @@ function buildEmptySupplyBorrow(slug: string): MultiplyMarketDetail["supplyBorro
     utilization: { id: `${slug}:sb:utilization`, label: "Utilization", points: [] },
   }
 }
+
+// Request-scoped memoization so generateMetadata + the page body share one Convex
+// fan-out per request instead of running it twice.
+export const getMultiplyMarketDetailFromConvex = cache(getMultiplyMarketDetailFromConvexUncached)

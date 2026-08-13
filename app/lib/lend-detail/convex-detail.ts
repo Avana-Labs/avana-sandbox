@@ -1,4 +1,5 @@
 import "server-only"
+import { requestCache as cache } from "@/app/lib/detail-page/request-cache"
 import { buildHeroFeedFromConvexSeries } from "@/app/lib/chart-feeds"
 import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
 import {
@@ -106,7 +107,7 @@ function applyRiskParametersToAbout(
   }
 }
 
-export async function getLendMarketDetailFromConvex(id: string): Promise<LendMarketDetail | null> {
+async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMarketDetail | null> {
   const market = resolveLendMarket(id)
   if (!market) return null
   const slug = market.marketId
@@ -189,3 +190,7 @@ export async function getLendMarketDetailFromConvex(id: string): Promise<LendMar
     riskParameters,
   )
 }
+
+// Request-scoped memoization so generateMetadata + the page body share one Convex
+// fan-out per request instead of running it twice.
+export const getLendMarketDetailFromConvex = cache(getLendMarketDetailFromConvexUncached)
