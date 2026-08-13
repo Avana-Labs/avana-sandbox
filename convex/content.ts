@@ -1,8 +1,7 @@
 /**
- * Editorial content query — powers the About card, the Parameter-Changes history,
- * and the General FAQs on both detail pages. Reads the seeded `marketContent` row
- * for a market and returns it shaped for the detail builder to inject. Returns null
- * when unseeded so callers fall back to the catalog-derived content.
+ * Legacy shared content query — prefers product-siloed tables, falls back to
+ * `marketContent` keyed by `markets` id. Detail hydration should call
+ * `borrow|lend|multiply.content.getContent` directly; this remains for older callers.
  */
 
 import { v } from "convex/values"
@@ -13,6 +12,47 @@ const marketScope = v.union(v.literal("asset"), v.literal("pool"), v.literal("le
 export const getContent = query({
   args: { scope: marketScope, slug: v.string() },
   handler: async (ctx, { scope, slug }) => {
+    if (scope === "asset" || scope === "pool") {
+      const siloed = await ctx.db
+        .query("borrowMarketContent")
+        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .unique()
+      if (siloed) {
+        return {
+          description: siloed.description,
+          stats: siloed.stats,
+          history: siloed.history,
+          faqs: siloed.faqs,
+        }
+      }
+    } else if (scope === "lend") {
+      const siloed = await ctx.db
+        .query("lendMarketContent")
+        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .unique()
+      if (siloed) {
+        return {
+          description: siloed.description,
+          stats: siloed.stats,
+          history: siloed.history,
+          faqs: siloed.faqs,
+        }
+      }
+    } else {
+      const siloed = await ctx.db
+        .query("multiplyMarketContent")
+        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .unique()
+      if (siloed) {
+        return {
+          description: siloed.description,
+          stats: siloed.stats,
+          history: siloed.history,
+          faqs: siloed.faqs,
+        }
+      }
+    }
+
     const market = await ctx.db
       .query("markets")
       .withIndex("by_scope_slug", (q) => q.eq("scope", scope).eq("slug", slug))

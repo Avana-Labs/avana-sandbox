@@ -98,10 +98,9 @@ describe("borrow detail contract", () => {
       "Oracle source",
     ])
     expect(detail.about.governanceParameters?.changelog.length).toBeGreaterThan(0)
-    expect(detail.about.stats.map((stat) => stat.label)).toEqual([
-      "Vault Contract Address",
-      "Token Contract Address",
-      "Staking Contract Address",
-    ])
+    // Contract-address stats moved out of the mock builder. They're injected at
+    // Convex overlay time (getAssetDetailFromConvex + api.contractAddresses.listAssetAddresses),
+    // so the mock detail starts with an empty stats array; the overlay appends the rows.
+    expect(detail.about.stats).toEqual([])
   })
 })

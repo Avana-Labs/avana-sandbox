@@ -171,6 +171,13 @@ vi.mock("@/app/dashboard/use-dashboard-page", () => ({
   useDashboardPage: () => ({ data: null, error: null, isLoading: false, retry: () => {} }),
 }))
 
+// The wallet tab now consults Convex for balances when no explicit prop is passed.
+// This isolated test render doesn't mount a ConvexProvider, so stub the hook to
+// return undefined — the tab falls through to the DEMO_SWAP_BALANCES default.
+vi.mock("@/app/lib/swap-system/use-convex-wallet-balances", () => ({
+  useConvexWalletBalances: () => undefined,
+}))
+
 // Inspect the raw rows fed into the combined activity table.
 vi.mock("@/app/dashboard/recent-activity", () => ({
   RecentActivity: ({

@@ -1,4 +1,3 @@
-import { buildHomeSnapshot } from "@/app/lib/home-data"
 import {
   createDataSourceAdapter,
   type DataSourceAdapter,
@@ -6,16 +5,13 @@ import {
   type DataSourceResponse,
 } from "@/app/lib/data/core/source-runtime"
 import { api } from "@/convex/_generated/api"
-import { BORROW_POOL_CATALOG, formatCompactUsd } from "@/app/lib/data/catalog/borrow"
-import { mockRewardsSharedSource } from "@/app/lib/data/mock/shared/rewards"
 import {
   REWARDS_PROMO_TABS,
   emptyRewardsQuestsByTab,
   resolveRewardsPromoTab,
-  type RewardsPromoTabId,
   type RewardsQuestIconId,
 } from "@/app/lib/data/rewards/catalog"
-import { buildDefaultRewardsCatalog, calculateRewardSummary, evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
+import { buildDefaultRewardsCatalog, evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
 import type { RewardsSessionState } from "@/app/lib/rewards-system/contracts"
 import { getAuthenticatedConvexClient } from "@/app/lib/data/providers/live-convex-client"
 import type { RewardsPageData } from "./types"
@@ -32,54 +28,11 @@ export type RewardsPageSource = {
   ): Promise<DataSourceResponse<RewardsPageData>>
 }
 
-export const mockRewardsPageAdapter = createDataSourceAdapter({
-  id: "rewards-mock",
-  label: "Rewards page mock source",
-  mode: "mock",
-})
-
 export const liveRewardsPageAdapter = createDataSourceAdapter({
   id: "rewards-live",
   label: "Rewards page live source",
   mode: "live",
 })
-
-export const mockRewardsPageSource: RewardsPageSource = {
-  adapter: mockRewardsPageAdapter,
-  async getRewardsPageData(input) {
-    const homeSnapshot = buildHomeSnapshot()
-    const rewardPools = BORROW_POOL_CATALOG.filter((pool) => pool.visuals.every((visual) => Boolean(visual.iconUrl)))
-      .sort((left, right) => right.tvlUsd - left.tvlUsd)
-      .slice(0, 2)
-      .map((pool) => ({
-        id: `rewards-${pool.id}`,
-        href: `/borrow/markets/${pool.id}`,
-        pool,
-        title: pool.name,
-        subtitle: `${pool.feeTier} fee · ${formatCompactUsd(pool.tvlUsd)} TVL`,
-        value: formatCompactUsd(pool.tvlUsd),
-        delta: `${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}% APY`,
-        deltaClassName: "text-apy-positive",
-      }))
-
-    return {
-      fetchedAt: new Date().toISOString(),
-      data: {
-        walletProfileId: input.walletProfileId,
-        totalPools: homeSnapshot.totalPools,
-        completedPools: homeSnapshot.completedPools,
-        progressPercentage: homeSnapshot.progressPercentage,
-        balanceTotal: mockRewardsSharedSource.getBalanceTotal(),
-        rewardPools,
-        promoTabs: mockRewardsSharedSource.getPromoTabs(),
-        questsByTab: mockRewardsSharedSource.getAllQuests() as Record<
-          RewardsPromoTabId,
-          ReturnType<typeof mockRewardsSharedSource.getQuests>
-        >,
-      },
-    }
-  },
-}
 
 export const liveRewardsPageSource: RewardsPageSource = {
   adapter: liveRewardsPageAdapter,
@@ -88,10 +41,7 @@ export const liveRewardsPageSource: RewardsPageSource = {
     if (input.walletProfileId && input.walletProfileId.toLowerCase() !== wallet) {
       throw new Error("Requested rewards do not match the authenticated wallet.")
     }
-    const [stored, markets] = await Promise.all([
-      client.query(api.sandbox.rewards.getState, { wallet }),
-      client.query(api.markets.listMarketSnapshots),
-    ])
+    const stored = await client.query(api.sandbox.rewards.getState, { wallet })
     const state: RewardsSessionState = stored
       ? (JSON.parse(stored.stateJson) as RewardsSessionState)
       : {
@@ -105,14 +55,6 @@ export const liveRewardsPageSource: RewardsPageSource = {
     const now = Date.now()
     const tasks = buildDefaultRewardsCatalog(now)
     const progress = evaluateAllTasksForUser({
-      tasks,
-      wallet,
-      events: state.events,
-      claims: state.claims,
-      now,
-      firstLoginAt: state.firstLoginAt,
-    })
-    const summary = calculateRewardSummary({
       tasks,
       wallet,
       events: state.events,
@@ -150,11 +92,6 @@ export const liveRewardsPageSource: RewardsPageSource = {
       fetchedAt: new Date().toISOString(),
       data: {
         walletProfileId: wallet,
-        totalPools: markets.length,
-        completedPools: summary.completedTaskCount,
-        progressPercentage: Math.round((summary.completedTaskCount / Math.max(1, summary.totalTaskCount)) * 100),
-        balanceTotal: summary.totalClaimedAmount,
-        rewardPools: [],
         promoTabs: REWARDS_PROMO_TABS,
         questsByTab,
       },

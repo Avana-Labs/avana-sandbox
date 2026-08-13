@@ -52,6 +52,9 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
   const isLong = typeof description === "string" && description.length > DESCRIPTION_CLAMP
   const shownDescription = !isLong || expanded ? description : `${description.slice(0, DESCRIPTION_CLAMP).trimEnd()}… `
   const visibleStats = about.stats.filter((stat) => stat.label !== "Deployed On")
+  const hasBody =
+    (typeof description === "string" ? description.trim().length > 0 : Boolean(description)) || visibleStats.length > 0
+  if (!hasBody) return null
 
   return (
     <section

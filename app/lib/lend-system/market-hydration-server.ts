@@ -40,18 +40,20 @@ export async function fetchLendMarketSnapshots(): Promise<LendConvexSnapshot[]> 
   const client = convexClient()
   if (!client) return []
   try {
-    const rows = await client.query(api.markets.listMarketSnapshots, {})
-    return rows
-      .filter((row) => row.scope === "lend")
-      .map((row) => ({
-        slug: row.slug,
-        scope: row.scope,
-        suppliedUsd: row.suppliedUsd,
-        borrowedUsd: row.borrowedUsd,
-        availableUsd: row.availableUsd,
-        utilizationPct: row.utilizationPct,
-        supplyApyPct: row.supplyApyPct,
-      }))
+    const rows = await client.query(api.markets.listLendMarketSnapshots, {})
+    return rows.map((row) => ({
+      slug: row.slug,
+      scope: row.scope,
+      name: row.name,
+      symbol: row.symbol,
+      reserveFactorPct: row.reserveFactorPct,
+      rewardsApyPct: row.rewardsApyPct,
+      suppliedUsd: row.suppliedUsd,
+      borrowedUsd: row.borrowedUsd,
+      availableUsd: row.availableUsd,
+      utilizationPct: row.utilizationPct,
+      supplyApyPct: row.supplyApyPct,
+    }))
   } catch {
     return []
   }
@@ -62,8 +64,8 @@ export async function fetchLendMarketSnapshot(slug: string): Promise<LendMarketS
   const client = convexClient()
   if (!client) return null
   try {
-    const rows = await client.query(api.markets.listMarketSnapshots, {})
-    const match = rows.find((row) => row.scope === "lend" && row.slug === slug)
+    const rows = await client.query(api.markets.listLendMarketSnapshots, {})
+    const match = rows.find((row) => row.slug === slug)
     if (!match) return null
     return {
       slug: match.slug,
@@ -96,13 +98,13 @@ export async function fetchLendCashflowBreakdown(slug: string) {
   const client = convexClient()
   if (!client) return null
   try {
-    return await client.query(api.cashflow.getBreakdownForLend, { slug })
+    return await client.query(api.lend.cashflow.getBreakdown, { slug })
   } catch {
     return null
   }
 }
 
-/** Recent market transactions (from walletEvents) for the lend history card. */
+/** Recent market transactions (sandbox first, seeded walletEvents fallback). */
 export async function fetchLendRecentTransactions(slug: string) {
   const client = convexClient()
   if (!client) return null
@@ -115,11 +117,12 @@ export async function fetchLendRecentTransactions(slug: string) {
 }
 
 /** Latest risk assessment (premium + breakdown + metrics) for a lend market. */
+/** Latest risk assessment (Risk Premium card) from product-siloed `lendRiskAssessments`. */
 export async function fetchLendRisk(slug: string) {
   const client = convexClient()
   if (!client) return null
   try {
-    return await client.query(api.risk.getRisk, { scope: "lend", slug })
+    return await client.query(api.lend.riskAssessment.getRisk, { slug })
   } catch {
     return null
   }
@@ -142,7 +145,40 @@ export async function fetchLendContent(slug: string) {
   const client = convexClient()
   if (!client) return null
   try {
-    return await client.query(api.content.getContent, { scope: "lend", slug })
+    return await client.query(api.lend.content.getContent, { slug })
+  } catch {
+    return null
+  }
+}
+
+/** Lend product — Risk Parameters for About / Risk Parameters grid. */
+export async function fetchLendRiskParameters(slug: string) {
+  const client = convexClient()
+  if (!client) return null
+  try {
+    return await client.query(api.lend.riskParameters.getRiskParameters, { slug })
+  } catch {
+    return null
+  }
+}
+
+/** Lend product — Interest Rate Model curve params + live util/APR. */
+export async function fetchLendInterestRateModel(slug: string) {
+  const client = convexClient()
+  if (!client) return null
+  try {
+    return await client.query(api.lend.interestRateModel.getInterestRateModel, { slug })
+  } catch {
+    return null
+  }
+}
+
+/** Lend product — siloed market identity. */
+export async function fetchLendMarket(slug: string) {
+  const client = convexClient()
+  if (!client) return null
+  try {
+    return await client.query(api.lend.markets.getMarket, { slug })
   } catch {
     return null
   }

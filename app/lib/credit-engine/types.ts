@@ -75,6 +75,11 @@ export type BorrowMarketRecord = {
     liquidationThresholdWad: bigint
     riskScoreWad: bigint
   }
+  /** List/Explore overlay from Convex `premiumBps` when snapshots carry it. */
+  listPremiumBps?: number
+  /** Reserve factor as a percentage (0–100). Overlaid from Convex when the snapshot
+   *  carries it; detail QuickStats prefer this over the isStablePool heuristic. */
+  reserveFactorPct?: number
   relations: {
     supportedBorrowAssetIds: string[]
     relatedMarketIds: string[]
@@ -121,6 +126,9 @@ export type BorrowAssetRecord = {
   borrowConfig: {
     baseBorrowAprWad: bigint
   }
+  /** Reserve factor as a percentage (0–100). Overlaid from Convex when the snapshot
+   *  carries it; asset detail QuickStats prefer this over the catalog heuristic. */
+  reserveFactorPct?: number
   snapshot: {
     priceUsd6: bigint
     priceChange24hWad: bigint

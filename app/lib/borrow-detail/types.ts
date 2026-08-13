@@ -21,14 +21,14 @@
  *     engagement                        ← walletEvents
  *     allocation                        ← assetPoolAllocationDaily (+markets join)
  *     transactions                      ← walletEvents (raw feed)
- *     risk                              ← riskAssessments
+ *     risk                              ← borrowRiskAssessments
  *
  *   PoolDetail
  *     hero / heroMetric / quickStats    ← markets + marketDailyStats
  *     keyMetrics / performance          ← marketDailyStats
  *     cashflow                          ← marketRevenueDaily
  *     engagement                        ← walletEvents
- *     risk                              ← riskAssessments
+ *     risk                              ← borrowRiskAssessments
  *
  * Query stubs for all of these live in:
  *   convex/engagement.ts, convex/cashflow.ts, convex/markets.ts,
@@ -120,7 +120,7 @@ export type RiskMetric = {
 /**
  * Risk rating shown in the `RiskSection` on both detail pages.
  *
- * @convex-source Latest row in `riskAssessments` for the given `marketId`.
+ * @convex-source Latest row in product-siloed `*RiskAssessments` for the given slug.
  *   Historical rows are retained for audit; the UI only reads the freshest.
  */
 export type RiskAssessment = {
@@ -295,21 +295,32 @@ export type PoolDetail = {
   }
   quickStats: QuickStat[]
   protocolParameters: ProtocolParameterRow[]
-  performance: Record<PerfTab, Record<PerfPeriod, PerfTabDataset>>
-  keyMetrics: Record<KeyMetricId, Record<TimeRangeId, Series>>
   cashflow: CashflowCard
   risk: RiskAssessment
   about: AboutCard
-  /** General FAQs (plain-text answers). @convex-query content.getContent */
+  /** General FAQs (plain-text answers). @convex-query borrow.content.getContent */
   faqs: FaqContent[]
   transactions: TxHistoryRow[]
   related: RelatedPoolSummary[]
-  governanceNotes: Array<{ title: string; body: string; tone?: "info" | "warning" | "positive" }>
   /** Passthrough reference to the table row so sidebars can stay in sync. */
   row: BorrowPoolRow
+  /**
+   * Assets You Can Borrow — from product-siloed `borrowPoolBorrowables` when seeded.
+   * @convex-query borrow.poolBorrowables.getPoolBorrowables
+   */
+  borrowableAssets?: import("./cross-market").BorrowableAssetRef[]
+  /**
+   * Liquidation Risk KPIs — from product-siloed `borrowLiquidationDaily` when seeded.
+   * @convex-query borrow.liquidationRisk.getLiquidationRisk
+   */
+  liquidationRisk?: import("../detail-page/liquidation-risk").LiquidationRiskStat[]
   /** Convex-backed hero chart feed (TVL / total supplied). Set only by the
    * Convex detail builder; the hero falls back to the local feed when absent. */
   heroFeed?: ChartFeed
+  /** Convex-backed borrowed series for the hero Borrowed tab. */
+  heroBorrowedFeed?: ChartFeed
+  /** Convex-backed utilization series for the hero Utilization tab. */
+  heroUtilizationFeed?: ChartFeed
 }
 
 // -------------------------------------------------------------------------
@@ -337,15 +348,20 @@ export type AllocationRow = {
   valueUsd: number
   utilizationPct: number
   borrowAprPct: number
+  /**
+   * Collateral factor % for this pool — from product-siloed `borrowRiskParameters`
+   * when hydrated; AllocationBreakdownCard falls back to catalog if absent.
+   */
+  collateralFactorPct?: number
 }
 
 /**
  * Row used by the detail-page activity tables.
  *
- * @convex-source `walletEvents` filtered by the page's market id. `amountLabel`
- *   pre-formats `amountUsd` with a sign based on `kind`.
- * @convex-query  TBD — likely `transactions.getForAsset({ slug, limit })` or a
- *   collateral-specific equivalent.
+ * @convex-source Prefer sandbox `transactions` by `marketSlug`; fall back to
+ *   seeded `walletEvents` when no live rows exist. `amountLabel` pre-formats
+ *   `amountUsd` (sign based on `kind` is a UI concern).
+ * @convex-query  `markets.getRecentTransactions({ scope, slug, limit })`
  */
 export type TxHistoryRow = {
   id: string
@@ -361,6 +377,8 @@ export type TxHistoryRow = {
   walletLabel?: string
   walletHref?: string
   txHashShort: string
+  /** Live sandbox row vs seeded theater history. */
+  source?: "sandbox" | "seed"
 }
 
 export type AssetDetailHero = {
@@ -407,16 +425,27 @@ export type AssetDetail = {
   /** Monthly income / expense / savings bars shown after historical utilization. */
   cashflowTrend: CashflowTrend
   allocation: AllocationRow[]
-  keyMetrics: Record<KeyMetricId, Record<TimeRangeId, Series>>
   cashflow: CashflowCard
   risk: RiskAssessment
   about: AboutCard
-  /** General FAQs (plain-text answers). @convex-query content.getContent */
+  /** General FAQs (plain-text answers). @convex-query borrow.content.getContent */
   faqs: FaqContent[]
   transactions: TxHistoryRow[]
   related: RelatedAssetSummary[]
   /** Passthrough reference so sidebars can stay in sync. */
   row: SpokeBorrowableRecord
+  /**
+   * Interest rate model curve params — from product-siloed `borrowInterestRateModels`.
+   * @convex-query borrow.interestRateModel.getInterestRateModel
+   */
+  interestRateModel?: {
+    utilizationPct: number
+    borrowAprPct: number
+    optimalUtilizationPct: number
+    slopeBelowOptimalPct: number
+    slopeAboveOptimalPct: number
+    baseBorrowRatePct: number
+  }
   /** Convex-backed hero chart feed (total borrows). Set only by the Convex detail
    * builder; the hero falls back to the local feed when absent. */
   heroFeed?: ChartFeed

@@ -55,6 +55,24 @@ export type MultiplyMarketRelatedSummary = {
   availableLabel: string
 }
 
+/**
+ * One row in the multiply market's allocation breakdown table.
+ *
+ * @convex-source `multiplyMarketAllocations` — one row per contributing pool.
+ * @convex-query  `multiply.allocation.getAllocation({ slug })`
+ */
+export type MultiplyAllocationRow = {
+  rowKey: string
+  poolSlug: string
+  poolName: string
+  venueLabel: string
+  sharePct: number
+  valueUsd: number
+  utilizationPct: number
+  borrowAprPct: number
+  collateralFactorPct: number
+}
+
 export type MultiplyMarketDetail = {
   id: string
   hero: MultiplyMarketHero
@@ -74,6 +92,36 @@ export type MultiplyMarketDetail = {
   faqs: FaqContent[]
   related: MultiplyMarketRelatedSummary[]
   row: MultiplyMarketRow
+  /**
+   * Liquidation Risk KPIs — from product-siloed `multiplyLiquidationDaily`.
+   * @convex-query multiply.liquidationRisk.getLiquidationRisk
+   */
+  liquidationRisk?: import("../detail-page/liquidation-risk").LiquidationRiskStat[]
+  /**
+   * Historical utilization series (Convex 1Y window). Set only by the Convex builder;
+   * absent when the query returns null (unseeded) to keep the section fail-closed.
+   * @convex-query markets.getMultiplyHistoricalUtilization
+   */
+  historicalUtilization?: Series
+  /**
+   * Per-pool allocation breakdown for the multiply market. Set only by the Convex
+   * builder; absent when unseeded (fail-closed, no silent mock fallback).
+   * @convex-query multiply.allocation.getAllocation
+   */
+  allocation?: MultiplyAllocationRow[]
+  /**
+   * Interest rate model curve params (matches the borrow IRM shape). Set only by the
+   * Convex builder; absent when unseeded (fail-closed).
+   * @convex-query multiply.interestRateModel.getInterestRateModel
+   */
+  interestRateModel?: {
+    utilizationPct: number
+    borrowAprPct: number
+    optimalUtilizationPct: number
+    slopeBelowOptimalPct: number
+    slopeAboveOptimalPct: number
+    baseBorrowRatePct: number
+  }
 }
 
 export type MultiplyTxHistoryRow = {
@@ -278,30 +326,6 @@ function buildRisk(row: MultiplyMarketRow): RiskAssessment {
   }
 }
 
-function contractAddressFor(marketId: string, salt: string) {
-  const seed = `${marketId}:${salt}`
-  let hash = 0x811c9dc5
-  for (let index = 0; index < seed.length; index += 1) {
-    hash ^= seed.charCodeAt(index)
-    hash = Math.imul(hash, 0x01000193)
-  }
-  const chunk = (hash >>> 0).toString(16).padStart(8, "0").toUpperCase()
-  return `0x${chunk}${chunk}${chunk}${chunk}${chunk}`.slice(0, 42)
-}
-
-function shortAddress(address: string) {
-  return `${address.slice(0, 6)}...${address.slice(-4)}`
-}
-
-function buildContractStat(label: string, marketId: string, salt: string): AboutCard["stats"][number] {
-  const address = contractAddressFor(marketId, salt)
-  return {
-    label,
-    value: shortAddress(address),
-    href: `https://etherscan.io/address/${address}`,
-  }
-}
-
 function buildGovernanceParameters(
   row: MultiplyMarketRow,
   marketId: string,
@@ -314,7 +338,6 @@ function buildGovernanceParameters(
   const availableUsd = record?.economics.availableLiquidityUsd
   const supplyCapUsd = Math.max(25_000_000, Math.ceil(((availableUsd ?? 6_000_000) * 1.75) / 1_000_000) * 1_000_000)
   const liquidationBonusPct = record?.risk.riskTier === "low" ? 5 : record?.risk.riskTier === "medium" ? 6 : 7
-  const proposalHref = `https://etherscan.io/address/${contractAddressFor(marketId, "governance")}`
 
   return {
     parameters: buildRiskParameterSet({
@@ -325,6 +348,9 @@ function buildGovernanceParameters(
       liquidationPenaltyPct: liquidationBonusPct,
       collateralFactorDescription: "Maximum borrow power against this multiply collateral leg.",
     }),
+    // Changelog rows lost their governance proposal href when contractAddressFor was
+    // removed. The Convex overlay in getMultiplyDetailFromConvex can add real hrefs
+    // (from multiplyContractAddresses "governance" salt) in a follow-up if needed.
     changelog: [
       {
         id: "leverage-review",
@@ -334,7 +360,6 @@ function buildGovernanceParameters(
         date: "2026-01-18",
         source: "Risk parameter review",
         executor: "Governance executor",
-        href: proposalHref,
       },
       {
         id: "lt-review",
@@ -344,7 +369,6 @@ function buildGovernanceParameters(
         date: "2025-09-08",
         source: "Risk parameter review",
         executor: "Risk steward multisig",
-        href: proposalHref,
       },
       {
         id: "market-onboarding",
@@ -354,7 +378,6 @@ function buildGovernanceParameters(
         date: "2025-08-12",
         source: "Market onboarding",
         executor: "Governance executor",
-        href: proposalHref,
       },
     ],
   }
@@ -376,11 +399,10 @@ function buildAbout(row: MultiplyMarketRow, marketId: string): AboutCard {
       maxLeverage,
       riskTier: record?.risk.riskTier,
     }),
-    stats: [
-      buildContractStat("Vault Contract Address", marketId, "vault"),
-      buildContractStat("Token Contract Address", marketId, "token"),
-      buildContractStat("Staking Contract Address", marketId, "staking"),
-    ],
+    // Contract-address stats now injected at overlay time by getMultiplyDetailFromConvex
+    // via api.contractAddresses.listMultiplyAddresses. The 3 seeded salts (vault/token/
+    // staking) become AboutCard.stats rows there.
+    stats: [],
     history: [
       {
         date: "2025-08-12",

@@ -111,7 +111,56 @@ export function catalogMarketToRow(market: MultiplyMarketRecord): MultiplyMarket
   }
 }
 
-export function buildMultiplyPageData(_walletId: string, state?: MultiplySystemState): MultiplyPageData {
+/**
+ * Row shape returned by api.multiply.tokenParameters.listTokens — passed in from
+ * the client (multiply-client.tsx uses useQuery). Kept as a structural type here so
+ * this file doesn't import Convex generated code (which would drag SSR into the
+ * Convex runtime).
+ */
+export type MultiplyTokenParameterRow = {
+  symbol: string
+  supplyApyPct: number
+  borrowAprPct: number
+  availableUsd: number
+  collateralFactorPct: number
+  liquidationThresholdPct: number
+  iconUrl: string
+}
+
+function formatPctString(value: number): string {
+  return `${value.toFixed(2)}%`
+}
+
+/**
+ * Client-side swap: when Convex has returned multiplyTokenParameters rows, build the
+ * three token maps from those rows. Symbols line up 1:1 with MULTIPLY_TOKEN_LOGOS keys
+ * (all 16 loop assets), so the returned object satisfies the MultiplyPageData typing.
+ */
+function buildTokenMapsFromConvex(
+  rows: readonly MultiplyTokenParameterRow[],
+): Pick<MultiplyPageData, "tokenBorrowApys" | "tokenSupplyApys" | "tokenLogos"> {
+  type TokenSymbol = keyof typeof MULTIPLY_TOKEN_LOGOS
+  const borrow: Partial<Record<TokenSymbol, string>> = {}
+  const supply: Partial<Record<TokenSymbol, string>> = {}
+  const logos: Partial<Record<TokenSymbol, string>> = {}
+  for (const row of rows) {
+    const symbol = row.symbol as TokenSymbol
+    borrow[symbol] = formatPctString(row.borrowAprPct)
+    supply[symbol] = formatPctString(row.supplyApyPct)
+    logos[symbol] = row.iconUrl
+  }
+  return {
+    tokenBorrowApys: borrow as MultiplyPageData["tokenBorrowApys"],
+    tokenSupplyApys: supply as MultiplyPageData["tokenSupplyApys"],
+    tokenLogos: logos as MultiplyPageData["tokenLogos"],
+  }
+}
+
+export function buildMultiplyPageData(
+  _walletId: string,
+  state?: MultiplySystemState,
+  convexTokens?: readonly MultiplyTokenParameterRow[],
+): MultiplyPageData {
   const markets = state ? Object.values(state.markets) : MULTIPLY_MARKET_CATALOG
   const lendRows = [...markets].sort((a, b) => a.rank - b.rank).map(catalogMarketToRow)
 
@@ -130,6 +179,16 @@ export function buildMultiplyPageData(_walletId: string, state?: MultiplySystemS
         ) / marketCount
       : 0
 
+  // SSR/test path uses the multiply-sim constants; the client hydrator passes convexTokens
+  // and the three maps come from Convex multiplyTokenParameters (16 rows). Same shape either way.
+  const tokenMaps = convexTokens
+    ? buildTokenMapsFromConvex(convexTokens)
+    : {
+        tokenBorrowApys: MULTIPLY_TOKEN_BORROW_APYS,
+        tokenSupplyApys: MULTIPLY_TOKEN_SUPPLY_APYS,
+        tokenLogos: MULTIPLY_TOKEN_LOGOS,
+      }
+
   return {
     markets: [...markets].map((market) => ({
       symbol: market.collateralAsset.symbol,
@@ -146,9 +205,7 @@ export function buildMultiplyPageData(_walletId: string, state?: MultiplySystemS
     lendRows,
     trendingSnapshots: buildMultiplyTrendingSnapshots(markets),
     pageSize: 12,
-    tokenBorrowApys: MULTIPLY_TOKEN_BORROW_APYS,
-    tokenLogos: MULTIPLY_TOKEN_LOGOS,
-    tokenSupplyApys: MULTIPLY_TOKEN_SUPPLY_APYS,
+    ...tokenMaps,
   }
 }
 

@@ -9,6 +9,7 @@ import { getTokenIconMeta } from "@/app/lib/token-icons"
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 import { buildDashboardWalletBalanceRows, type DashboardWalletBalanceRow } from "@/app/lib/swap-system"
 import type { UserAssetBalance } from "@/app/lib/swap-system"
+import { useConvexWalletBalances } from "@/app/lib/swap-system/use-convex-wallet-balances"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { BorrowAssetVisual } from "@/app/lib/data/borrow-domain"
@@ -179,7 +180,12 @@ export function DashboardWalletTab({ walletId, balances }: { walletId: string; b
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const { exact } = useCurrency()
   const { t } = useTranslation()
-  const rows = buildDashboardWalletBalanceRows({ walletId, balances })
+  // Prefer Convex-backed balances when no explicit override was passed. Falls through
+  // to the DEMO_SWAP_BALANCES default (via buildDashboardWalletBalanceRows) when Convex
+  // returns undefined (loading) — the tab renders skeleton, not stale mock.
+  const convexBalances = useConvexWalletBalances(balances === undefined ? walletId : null)
+  const effectiveBalances = balances ?? convexBalances ?? undefined
+  const rows = buildDashboardWalletBalanceRows({ walletId, balances: effectiveBalances })
   const tokens = rows.filter((row) => !row.isLpToken)
   const lps = rows.filter((row) => row.isLpToken)
   const totalWalletUsd = rows.reduce((total, row) => total + row.valueUsd, 0)

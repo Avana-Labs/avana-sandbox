@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest"
-import { ASSET_TVL_TARGET_USD, buildBorrowSeed, POOL_TVL_TARGET_USD } from "@/app/lib/convex-seed/build-seed"
+import {
+  ASSET_TVL_TARGET_USD,
+  borrowPoolCapacityLabels,
+  buildBorrowSeed,
+  POOL_TVL_TARGET_USD,
+} from "@/app/lib/convex-seed/build-seed"
+import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
 import { LEND_MARKET_CATALOG } from "@/app/lib/lend-system/catalog"
 import { MULTIPLY_MARKET_CATALOG } from "@/app/lib/multiply-system/catalog"
 
@@ -9,19 +15,40 @@ const MULTIPLY_COUNT = MULTIPLY_MARKET_CATALOG.length
 const TOTAL_MARKETS = 128 + LEND_COUNT + MULTIPLY_COUNT // 64 pools + 64 assets + lend + multiply markets
 
 describe("buildBorrowSeed", () => {
-  it("seeds one market row per borrow pool + asset + lend + multiply market", () => {
-    const seed = buildBorrowSeed({ days: 30, asOf: ASOF })
-    const pools = seed.markets.filter((m) => m.scope === "pool")
-    const assets = seed.markets.filter((m) => m.scope === "asset")
-    const lend = seed.markets.filter((m) => m.scope === "lend")
-    const multiply = seed.markets.filter((m) => m.scope === "multiply")
-    expect(pools.length).toBe(64)
-    expect(assets.length).toBe(64)
-    expect(lend.length).toBe(LEND_COUNT)
-    expect(multiply.length).toBe(MULTIPLY_COUNT)
-    expect(seed.markets.length).toBe(TOTAL_MARKETS)
-    // one risk assessment per market
-    expect(seed.risk.length).toBe(TOTAL_MARKETS)
+  it("seeds product-siloed borrow/lend/multiply detail param tables", () => {
+    const seed = buildBorrowSeed({ days: 1, asOf: ASOF })
+    expect(seed.borrowRiskParameters.length).toBe(64 + 64) // pools + assets
+    expect(seed.borrowInterestRateModels.length).toBe(64) // assets only
+    expect(seed.borrowLiquidationDaily.length).toBe(64 * 2) // 2 days per pool
+    expect(seed.borrowPoolBorrowables.length).toBeGreaterThan(0)
+    expect(seed.lendRiskParameters.length).toBe(LEND_COUNT)
+    expect(seed.lendInterestRateModels.length).toBe(LEND_COUNT)
+    expect(seed.multiplyRiskParameters.length).toBe(MULTIPLY_COUNT)
+    expect(seed.multiplyLiquidationDaily.length).toBe(MULTIPLY_COUNT * 2)
+    expect(seed.borrowMarketContent.length).toBe(64 + 64)
+    expect(seed.lendMarketContent.length).toBe(LEND_COUNT)
+    expect(seed.multiplyMarketContent.length).toBe(MULTIPLY_COUNT)
+    expect(seed.borrowRiskAssessments.length).toBe(64 + 64)
+    expect(seed.lendRiskAssessments.length).toBe(LEND_COUNT)
+    expect(seed.multiplyRiskAssessments.length).toBe(MULTIPLY_COUNT)
+    expect(seed.borrowRevenueDaily.length).toBe(128) // 64 pools + 64 assets, days=1
+    expect(seed.lendRevenueDaily.length).toBe(LEND_COUNT)
+    expect(seed.multiplyRevenueDaily.length).toBe(MULTIPLY_COUNT)
+    expect(seed.borrowDailyStats.length).toBe(128)
+    expect(seed.lendDailyStats.length).toBe(LEND_COUNT)
+    expect(seed.multiplyDailyStats.length).toBe(MULTIPLY_COUNT)
+    expect(seed.borrowMarkets.length).toBe(128)
+    expect(seed.lendMarkets.length).toBe(LEND_COUNT)
+    expect(seed.multiplyMarkets.length).toBe(MULTIPLY_COUNT)
+    expect(seed.borrowMarkets.every((m) => typeof m.reserveFactorPct === "number")).toBe(true)
+    expect(seed.lendMarkets.every((m) => typeof m.reserveFactorPct === "number")).toBe(true)
+    expect(seed.multiplyMarkets.every((m) => typeof m.reserveFactorPct === "number")).toBe(true)
+    expect(seed.borrowMarkets.every((m) => m.rewardsApyPct === 0)).toBe(true)
+    expect(seed.lendMarkets.some((m) => (m.rewardsApyPct ?? 0) > 0)).toBe(true)
+    // Product rows never share slugs across silos incorrectly for IRM (borrow assets vs lend).
+    const borrowIrm = new Set(seed.borrowInterestRateModels.map((r) => r.slug))
+    const lendIrm = new Set(seed.lendInterestRateModels.map((r) => r.slug))
+    for (const slug of lendIrm) expect(borrowIrm.has(slug)).toBe(false)
   })
 
   it("generates `days` daily stat + revenue rows per market", () => {
@@ -106,6 +133,29 @@ describe("buildBorrowSeed", () => {
     expect(Math.abs(assetTvl - ASSET_TVL_TARGET_USD)).toBeLessThan(ASSET_TVL_TARGET_USD * 0.0001)
     const availableCredit = poolTvl - assetTvl
     expect(Math.round(availableCredit / 1e6)).toBe(900) // $900M
+  })
+
+  it("rewrites borrow risk deposit/borrow caps from post-calibration tips (not raw catalog)", () => {
+    const seed = buildBorrowSeed({ days: 1, asOf: ASOF })
+    const lastDay = new Date(ASOF).toISOString().slice(0, 10)
+    const slug = "uni-v2-wbtc-usdc"
+    const catalog = BORROW_POOL_CATALOG.find((p) => p.id === slug)
+    expect(catalog).toBeDefined()
+    const tip = seed.dailyStats.find((row) => row.slug === slug && row.day === lastDay)
+    expect(tip).toBeDefined()
+    const risk = seed.borrowRiskParameters.find((row) => row.slug === slug)
+    expect(risk).toBeDefined()
+
+    const fromTip = borrowPoolCapacityLabels(tip!.suppliedUsd, Math.max(0, tip!.suppliedUsd - tip!.borrowedUsd))
+    const fromCatalog = borrowPoolCapacityLabels(catalog!.tvlUsd, catalog!.availableUsd)
+    const deposit = risk!.parameters.find((p) => p.id === "depositCapacity")?.value
+    const borrow = risk!.parameters.find((p) => p.id === "borrowCapacity")?.value
+
+    expect(deposit).toBe(fromTip.depositCapacityLabel)
+    expect(borrow).toBe(fromTip.borrowCapacityLabel)
+    // Calibration scales markets down from catalog — caps must not stay on raw catalog size.
+    expect(tip!.suppliedUsd).toBeLessThan(catalog!.tvlUsd)
+    expect(deposit).not.toBe(fromCatalog.depositCapacityLabel)
   })
 
   it("is fully deterministic for a fixed asOf", () => {

@@ -28,9 +28,9 @@ import {
 } from "@/app/lib/rewards-engine/task-actions"
 import { RewardsPageSkeleton } from "@/app/components/loading-states"
 import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
-import { RewardsBalanceHero } from "@/app/rewards/rewards-balance-hero"
+import { RewardsBalanceHero } from "@/app/dashboard/_rewards-components/rewards-balance-hero"
 import { DashboardWalletTab } from "./dashboard-wallet-tab"
-import { LearnSection } from "@/app/rewards/learn-section"
+import { LearnSection } from "@/app/dashboard/_rewards-components/learn-section"
 import { RecentActivity } from "@/app/dashboard/recent-activity"
 import {
   mapConvexSwapTransactionsToActivityRows,
@@ -48,11 +48,11 @@ import {
   RewardsFavoriteDialog,
   RewardsReferralDialog,
   RewardsSimulateDialog,
-} from "@/app/rewards/rewards-task-dialogs"
+} from "@/app/dashboard/_rewards-components/rewards-task-dialogs"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { UnderlineTabStrip } from "@/app/components/tab-primitives"
-import { RewardsPromoContent, RewardsQuestSection } from "@/app/rewards/quests-tab"
+import { RewardsPromoContent, RewardsQuestSection } from "@/app/dashboard/_rewards-components/quests-tab"
 import Link from "next/link"
 
 type DashboardPromoTabId = Extract<RewardsPromoTabId, "lend" | "borrow" | "multiply" | "referrals">
@@ -616,23 +616,23 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
 
   return (
     <>
-      <div className="mb-12">
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
-            {t("Your Portfolio")}
-          </h2>
-          <AmountVisibilityToggle />
-        </div>
-        <RewardsBalanceHero
-          claimHref={claimHref}
-          portfolioValueUsd={portfolioValueUsd}
-          earnedAmount={snapshot.summary.totalEarnedAmount}
-          claimableAmount={snapshot.summary.totalClaimableAmount}
-          activeTab={activeDashboardTab}
-        />
-      </div>
-
       <div className={detailSectionStackClass}>
+        <div>
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+              {t("Your Portfolio")}
+            </h2>
+            <AmountVisibilityToggle />
+          </div>
+          <RewardsBalanceHero
+            claimHref={claimHref}
+            portfolioValueUsd={portfolioValueUsd}
+            earnedAmount={snapshot.summary.totalEarnedAmount}
+            claimableAmount={snapshot.summary.totalClaimableAmount}
+            activeTab={activeDashboardTab}
+          />
+        </div>
+
         <section>
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">

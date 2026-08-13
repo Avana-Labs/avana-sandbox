@@ -74,6 +74,7 @@ export function selectBorrowMarketSummaries(state: BorrowSystemState, walletId: 
     // Show the intrinsic per-market risk premium (matches the pool detail) rather than the
     // wallet-scoped premium, which is 0 for a browsing wallet with no position in the spoke.
     const riskPremiumBps =
+      market.listPremiumBps ??
       CATALOG_RISK_PREMIUM_BPS.get(market.id) ??
       Math.round(
         fixedToNumber(calculateSpokeCreditMetrics(state, walletId, market.spokeId).riskPremiumWad, 18) * 10_000,

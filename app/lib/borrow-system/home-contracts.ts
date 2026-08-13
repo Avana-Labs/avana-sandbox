@@ -2,7 +2,6 @@ export {
   HOME_BORROW_TOKENS,
   HOME_CLAIM_POSITIONS,
   HOME_COLLATERAL_POOLS,
-  HOME_INITIAL_DEBTS,
   formatHealthFactor,
   getPoolById,
   type HomeAssetVisual,

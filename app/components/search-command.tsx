@@ -14,6 +14,8 @@ import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { rankResults } from "@/app/lib/search-ranking"
 import { useCurrency } from "@/app/lib/currency/use-currency"
+import { useBorrowSessionContextOptional } from "@/app/lib/avana-session/avana-sessions-provider"
+import type { BorrowPoolRow, BorrowableAsset } from "@/app/lib/borrow-sim"
 
 type SearchTab = "all" | "pools" | "borrow" | "lend"
 
@@ -39,16 +41,19 @@ const TABS: Array<{ id: SearchTab; label: string }> = [
 async function getSearchResults(
   formatCompactCurrency: (usd: number) => string,
   t: (key: string) => string,
+  hydratedPools: BorrowPoolRow[],
+  hydratedAssets: BorrowableAsset[],
 ): Promise<SearchResult[]> {
-  const [{ BORROWABLE_ASSETS, BORROW_POOL_CATALOG }, { MARKETS, TOKENS }] = await Promise.all([
-    import("@/app/lib/borrow-sim"),
-    import("@/app/lend/components/data"),
-  ])
+  // Read pool + borrowable numbers from the Convex-hydrated session state (fed by
+  // listBorrowMarketSnapshots) so the search box shows the SAME TVL/available/APR
+  // the borrow list + detail show. Lend symbol set stays catalog-derived — it's a
+  // set membership filter, not a number.
+  const { MARKETS, TOKENS } = await import("@/app/lend/components/data")
   const lendSymbols: ReadonlySet<string> = new Set([
     ...TOKENS.map((token) => token.symbol),
     ...MARKETS.map((market) => market.symbol),
   ])
-  const poolResults = BORROW_POOL_CATALOG.slice(0, 18).map((pool) => ({
+  const poolResults = hydratedPools.slice(0, 18).map((pool) => ({
     id: `pool-${pool.id}`,
     tab: "pools" as const,
     title: pool.name,
@@ -62,7 +67,7 @@ async function getSearchResults(
     visual: pool.visuals,
   }))
 
-  const borrowResults = BORROWABLE_ASSETS.map((asset) => ({
+  const borrowResults = hydratedAssets.map((asset) => ({
     id: `borrow-${asset.id}`,
     tab: "borrow" as const,
     title: asset.name,
@@ -74,7 +79,8 @@ async function getSearchResults(
     visual: asset.visual,
   }))
 
-  const lendResults = BORROWABLE_ASSETS.filter((asset) => lendSymbols.has(asset.symbol))
+  const lendResults = hydratedAssets
+    .filter((asset) => lendSymbols.has(asset.symbol))
     .slice(0, 12)
     .map((asset) => ({
       id: `lend-${asset.id}`,
@@ -184,6 +190,7 @@ export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: b
   const router = useRouter()
   const { t } = useTranslation()
   const { compact } = useCurrency()
+  const borrowSession = useBorrowSessionContextOptional()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [activeTab, setActiveTab] = useState<SearchTab>("all")
@@ -200,11 +207,21 @@ export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: b
     setLoadingResults(true)
 
     try {
-      setResults(await getSearchResults(compact, t))
+      // Prefer the Convex-hydrated session state (matches list/detail numbers). If the
+      // search command is mounted outside AvanaSessionsProvider (e.g. an isolated test
+      // wrapper), fall back to the static catalog so the box still renders.
+      let hydratedPools: BorrowPoolRow[] = borrowSession?.marketSummaries ?? []
+      let hydratedAssets: BorrowableAsset[] = borrowSession?.borrowableAssets ?? []
+      if (hydratedPools.length === 0 || hydratedAssets.length === 0) {
+        const { BORROW_POOL_CATALOG, BORROWABLE_ASSETS } = await import("@/app/lib/borrow-sim")
+        if (hydratedPools.length === 0) hydratedPools = BORROW_POOL_CATALOG
+        if (hydratedAssets.length === 0) hydratedAssets = BORROWABLE_ASSETS
+      }
+      setResults(await getSearchResults(compact, t, hydratedPools, hydratedAssets))
     } finally {
       setLoadingResults(false)
     }
-  }, [compact, loadingResults, results, t])
+  }, [borrowSession, compact, loadingResults, results, t])
 
   useEffect(() => {
     setResults(null)

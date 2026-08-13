@@ -37,11 +37,33 @@ type DetailWithContent = {
   faqs: FaqEntry[]
 }
 
+export type DetailContentOverlayOptions = {
+  /**
+   * Live mode: when Convex content is missing, clear catalog About/FAQs/history
+   * instead of silently re-pinning mock editorial. Mock/open-gate leaves base intact.
+   */
+  clearWhenMissing?: boolean
+}
+
+/** Prefer Convex editorial content (About + FAQs); keep any base-only about fields. */
 export function applyDetailContentOverlay<T extends DetailWithContent>(
   detail: T,
   content: DetailContentOverlay | null | undefined,
+  options: DetailContentOverlayOptions = {},
 ): T {
-  if (!content) return detail
+  if (!content) {
+    if (!options.clearWhenMissing) return detail
+    return {
+      ...detail,
+      about: {
+        ...detail.about,
+        description: "",
+        stats: [],
+        history: [],
+      },
+      faqs: [],
+    } as T
+  }
   return {
     ...detail,
     about: {
@@ -50,6 +72,6 @@ export function applyDetailContentOverlay<T extends DetailWithContent>(
       stats: content.stats,
       history: content.history,
     },
-    faqs: detail.faqs,
+    faqs: content.faqs,
   } as T
 }

@@ -21,7 +21,7 @@ const riskLevel = v.union(v.literal("low"), v.literal("moderate"), v.literal("el
  * risk) and a non-empty "seeded" signal for the LARGE tables — collecting the 46k+ daily
  * allocation/stat rows would blow the per-query read limit. Internal-only (the seed CLI
  * reaches it through the secret-gated `seedAdmin.getCounts` action); an anonymous caller
- * can neither invoke it nor force an unbounded scan. Use getBorrowEconomy in
+ * can neither invoke it nor force an unbounded scan. Use listMarketSnapshots in
  * convex/markets.ts for the calibrated aggregate totals.
  */
 export const getCounts = internalQuery({
@@ -65,6 +65,7 @@ export const upsertMarkets = internalMutation({
         category: v.optional(v.union(v.literal("stable"), v.literal("crypto"))),
         explorerUrl: v.optional(v.string()),
         reserveFactorPct: v.optional(v.number()),
+        rewardsApyPct: v.optional(v.number()),
         description: v.optional(v.string()),
         iconUrl: v.optional(v.string()),
         spokeId: v.optional(v.string()),

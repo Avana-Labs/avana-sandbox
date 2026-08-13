@@ -331,6 +331,16 @@ export function useBorrowSessionContext() {
   return context
 }
 
+/**
+ * Returns the borrow session when mounted inside AvanaSessionsProvider, null otherwise.
+ * Use in components that appear in BOTH session-scoped surfaces (dashboard, borrow) AND
+ * chromed shells that may render without a session (e.g. the global search command
+ * inside a test-only wrapper). Session-scoped consumers should keep useBorrowSessionContext.
+ */
+export function useBorrowSessionContextOptional() {
+  return useContext(BorrowSessionContext)
+}
+
 export function useMultiplySessionContext() {
   const context = useContext(MultiplySessionContext)
   if (!context) {

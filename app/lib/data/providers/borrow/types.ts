@@ -4,7 +4,6 @@ import {
   BORROW_PENDING_ROWS,
   BORROW_POOL_CATALOG,
   HOME_COLLATERAL_POOLS,
-  HOME_INITIAL_DEBTS,
 } from "@/app/lib/data/catalog/borrow"
 
 export type BorrowPageData = {
@@ -27,7 +26,7 @@ export type BorrowPageData = {
   pendingRows: ReadonlyArray<(typeof BORROW_PENDING_ROWS)[number]>
   dexes: ReadonlyArray<(typeof BORROW_DEXES)[number]>
   collateralPools: ReadonlyArray<(typeof HOME_COLLATERAL_POOLS)[number]>
-  initialDebts: typeof HOME_INITIAL_DEBTS
+  initialDebts: Record<string, number>
   borrowSnapshot: {
     totalBorrowedUsd: number
     availableCreditUsd: number

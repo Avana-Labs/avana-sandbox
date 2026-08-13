@@ -54,6 +54,7 @@ export const getPrices = query({
       priceUsd: r.priceUsd,
       confidence: r.confidence,
       source: r.source,
+      priceChange24hWad: r.priceChange24hWad,
       updatedAt: r.updatedAt,
     }))
   },

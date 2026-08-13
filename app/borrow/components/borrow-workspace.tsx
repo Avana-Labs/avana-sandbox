@@ -21,7 +21,7 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { RevealSentinel, useProgressiveReveal } from "@/app/lib/ui/use-progressive-reveal"
 
 // Curated (protocol-strategy) spokes that belong in "smart" regardless of their tokens.
-const SMART_SPOKES = new Set<string>([
+export const SMART_SPOKES = new Set<string>([
   "uni-v2",
   "uni-v3-stable",
   "uni-v3-bluechip",

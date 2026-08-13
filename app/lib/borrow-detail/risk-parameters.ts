@@ -191,23 +191,23 @@ export function normalizeGovernanceParameters(about: AboutCard): GovernanceParam
     }
   }
 
-  const changelog =
+  const fromHistory = about.history.slice(0, 3).map((entry, index) => ({
+    id: `${entry.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${index}`,
+    parameter: entry.title,
+    previous: "—",
+    current: entry.description ?? "Updated",
+    date: entry.date,
+    source: sourceFor(entry.title, index),
+    executor: entry.title.toLowerCase().includes("deploy") ? "Deployment executor" : "Governance executor",
+  }))
+
+  const fromGovernance =
     about.governanceParameters?.changelog.filter((entry) => !isIrmLabel(entry.parameter)).slice(0, 3) ?? []
 
   return {
     parameters,
-    changelog:
-      changelog.length > 0
-        ? changelog
-        : about.history.slice(0, 3).map((entry, index) => ({
-            id: `${entry.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${index}`,
-            parameter: entry.title,
-            previous: "—",
-            current: entry.description ?? "Updated",
-            date: entry.date,
-            source: sourceFor(entry.title, index),
-            executor: entry.title.toLowerCase().includes("deploy") ? "Deployment executor" : "Governance executor",
-          })),
+    // Prefer Convex product-siloed market content history when present; fall back to mock changelog.
+    changelog: fromHistory.length > 0 ? fromHistory : fromGovernance,
   }
 }
 

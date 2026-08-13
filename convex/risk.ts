@@ -1,12 +1,7 @@
 /**
- * Risk queries — powers the `RiskSection` on both the asset and pool detail pages.
- *
- * Reads the freshest `riskAssessments` row for a market and returns it shaped
- * exactly like `RiskAssessment` in `app/lib/borrow-detail/types.ts`, so the
- * detail builder can inject it with no transformation. The seed populates the
- * rich `breakdown` + `metrics` via the shared risk-model (see
- * `app/lib/borrow-detail/risk-model.ts`), so this query never falls back to a
- * stub when the table is seeded.
+ * Legacy shared risk query — prefers product-siloed assessment tables, falls back to
+ * `riskAssessments` keyed by `markets` id. Detail hydration should call
+ * `borrow|lend|multiply.riskAssessment.getRisk` directly; this remains for older callers.
  */
 
 import { v } from "convex/values"
@@ -14,10 +9,56 @@ import { query } from "./_generated/server"
 
 const marketScope = v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply"))
 
-/** Latest risk assessment for an asset or pool. Returns null when unseeded. */
+function shapeAssessment(row: {
+  premiumBps: number
+  level: "low" | "moderate" | "elevated" | "high"
+  score: number
+  headline: string
+  summary: string
+  breakdown: Array<{
+    id: string
+    label: string
+    bps: number
+    level: "low" | "moderate" | "elevated" | "high"
+    description: string
+  }>
+  metrics: Array<{ id: string; label: string; value: string; hint?: string }>
+}) {
+  return {
+    premiumBps: row.premiumBps,
+    level: row.level,
+    score: row.score,
+    headline: row.headline,
+    summary: row.summary,
+    breakdown: row.breakdown,
+    metrics: row.metrics,
+  }
+}
+
+/** Latest risk assessment for a market. Returns null when unseeded. */
 export const getRisk = query({
   args: { scope: marketScope, slug: v.string() },
   handler: async (ctx, { scope, slug }) => {
+    if (scope === "asset" || scope === "pool") {
+      const siloed = await ctx.db
+        .query("borrowRiskAssessments")
+        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .unique()
+      if (siloed) return shapeAssessment(siloed)
+    } else if (scope === "lend") {
+      const siloed = await ctx.db
+        .query("lendRiskAssessments")
+        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .unique()
+      if (siloed) return shapeAssessment(siloed)
+    } else {
+      const siloed = await ctx.db
+        .query("multiplyRiskAssessments")
+        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .unique()
+      if (siloed) return shapeAssessment(siloed)
+    }
+
     const market = await ctx.db
       .query("markets")
       .withIndex("by_scope_slug", (q) => q.eq("scope", scope).eq("slug", slug))
@@ -31,14 +72,6 @@ export const getRisk = query({
       .first()
     if (!latest) return null
 
-    return {
-      premiumBps: latest.premiumBps,
-      level: latest.level,
-      score: latest.score,
-      headline: latest.headline,
-      summary: latest.summary,
-      breakdown: latest.breakdown,
-      metrics: latest.metrics,
-    }
+    return shapeAssessment(latest)
   },
 })

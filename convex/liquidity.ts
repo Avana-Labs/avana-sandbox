@@ -219,7 +219,12 @@ export const listDeltas = query({
 export const listDeltaSnapshot = query({
   args: {},
   handler: async (ctx) => {
-    await requireLiquidityReader(ctx)
+    // Public read. The snapshot is an AGGREGATE delta per market (borrowedDeltaUsd +
+    // suppliedDeltaUsd summed across every wallet), never a per-wallet breakdown, so it
+    // exposes zero PII about individual users' activity. Every rendered surface (borrow
+    // list, hero, detail) needs this to reconcile live tips to the daily rollup, and
+    // gating on auth broke that reconciliation for open-gate + guest sessions with no
+    // functional benefit — the delta rows were public in the aggregate hero anyway.
     const cache = selectCanonicalSnapshot(await readDeltaSnapshotRows(ctx))
     if (cache) return cache.rows
     return foldDeltas(ctx)

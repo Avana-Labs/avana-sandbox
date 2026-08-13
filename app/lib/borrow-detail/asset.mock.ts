@@ -31,7 +31,6 @@ import type {
   CashflowCard,
   CashflowTrend,
   DeltaStat,
-  KeyMetricId,
   PerfPeriod,
   PerfTabDataset,
   QuickStat,
@@ -41,7 +40,7 @@ import type {
   TimeRangeId,
   TxHistoryRow,
 } from "./types"
-import { ALL_ASSET_CHART_METRICS, ALL_KEY_METRICS, ALL_PERF_PERIODS } from "./types"
+import { ALL_ASSET_CHART_METRICS, ALL_PERF_PERIODS } from "./types"
 
 type AssetFixture = {
   chain?: string
@@ -414,45 +413,6 @@ function deltaForPeriod(id: string, period: PerfPeriod): string {
   return `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`
 }
 
-function buildAssetKeyMetrics(
-  asset: SpokeBorrowableRecord,
-  supplied: number,
-  borrowed: number,
-): Record<KeyMetricId, Record<TimeRangeId, Series>> {
-  const utilization = Math.min(95, (borrowed / supplied) * 100)
-  const shapes: Record<KeyMetricId, Parameters<typeof buildSeriesFamily>[2]> = {
-    tvl: { base: supplied, driftMultiplier: 1.08, noise: 0.04, nonNegative: true, roundTo: 0 },
-    volume: { base: borrowed * 0.2, driftMultiplier: 1.08, noise: 0.12, nonNegative: true, roundTo: 0 },
-    fees: {
-      base: borrowed * asset.borrowApr * 0.0001,
-      driftMultiplier: 1.06,
-      noise: 0.14,
-      nonNegative: true,
-      roundTo: 0,
-    },
-    feesApr: { base: asset.borrowApr * 0.85, driftMultiplier: 1.02, noise: 0.06, nonNegative: true, roundTo: 2 },
-    rewards: { base: borrowed * 0.002, driftMultiplier: 1.05, noise: 0.18, nonNegative: true, roundTo: 0 },
-    utilization: { base: utilization, driftMultiplier: 1.02, noise: 0.05, nonNegative: true, roundTo: 1 },
-    borrowApr: { base: asset.borrowApr, driftMultiplier: 1.04, noise: 0.06, nonNegative: true, roundTo: 2 },
-    incentives: { base: borrowed * 0.001, driftMultiplier: 1.05, noise: 0.2, nonNegative: true, roundTo: 0 },
-    depth2pct: { base: supplied * 0.05, driftMultiplier: 1.01, noise: 0.06, nonNegative: true, roundTo: 0 },
-    volatility30d: {
-      base: asset.category === "stable" ? 1.2 : 48,
-      driftMultiplier: 0.98,
-      noise: 0.12,
-      nonNegative: true,
-      roundTo: 2,
-    },
-    impermanentLoss: { base: 0.1, driftMultiplier: 1.04, noise: 0.3, nonNegative: true, roundTo: 2 },
-    oraclePremium: { base: 0.08, driftMultiplier: 1.02, noise: 0.2, nonNegative: true, roundTo: 2 },
-  }
-  const out = {} as Record<KeyMetricId, Record<TimeRangeId, Series>>
-  for (const id of ALL_KEY_METRICS) {
-    out[id] = buildSeriesFamily(`${asset.id}:km:${id}`, id, shapes[id])
-  }
-  return out
-}
-
 function buildAssetCashflow(asset: SpokeBorrowableRecord, supplied: number, borrowed: number): CashflowCard {
   const annualInterest = (borrowed * asset.borrowApr) / 100
   const feesSeries = buildSeries(`${asset.id}:cf:interest`, "1Y", "Interest", {
@@ -544,27 +504,6 @@ function shortAddress(address: string) {
   return `${address.slice(0, 6)}...${address.slice(-4)}`
 }
 
-function buildContractStat(label: string, assetId: string, salt: string): AboutCard["stats"][number] {
-  const address = contractAddressFor(assetId, salt)
-  return {
-    label,
-    value: shortAddress(address),
-    href: `https://etherscan.io/address/${address}`,
-  }
-}
-
-function tokenContractStat(asset: SpokeBorrowableRecord, fixture?: AssetFixture): AboutCard["stats"][number] {
-  const address = fixture?.contractAddress
-  if (address && /^0x[a-fA-F0-9]{40}$/.test(address)) {
-    return {
-      label: "Token Contract Address",
-      value: fixture.contractLabel ?? shortAddress(address),
-      href: `https://etherscan.io/address/${address}`,
-    }
-  }
-  return buildContractStat("Token Contract Address", asset.id, "token")
-}
-
 function buildAssetGovernanceParameters(
   asset: SpokeBorrowableRecord,
   supplied: number,
@@ -640,19 +579,15 @@ function buildAssetAbout(
     ],
   }
 
+  // Contract-address stats now injected at overlay time by getAssetDetailFromConvex via
+  // api.contractAddresses.listAssetAddresses. The hero contract address (top of page)
+  // still uses the local FNV synthetic — see buildHero — because the Convex swap for
+  // that field is a separate concern (fixture pins take precedence there).
   return {
     ...about,
-    stats: buildAboutStats(asset, fixture),
+    stats: [],
     governanceParameters: buildAssetGovernanceParameters(asset, supplied, borrowed),
   }
-}
-
-function buildAboutStats(asset: SpokeBorrowableRecord, fixture?: AssetFixture): AboutCard["stats"] {
-  return [
-    buildContractStat("Vault Contract Address", asset.id, "vault"),
-    tokenContractStat(asset, fixture),
-    buildContractStat("Staking Contract Address", asset.id, "staking"),
-  ]
 }
 
 function buildRelated(asset: SpokeBorrowableRecord): RelatedAssetSummary[] {
@@ -760,7 +695,6 @@ export function buildAssetDetail(asset: SpokeBorrowableRecord): AssetDetail {
     }),
     cashflowTrend: buildCashflowTrend(asset, supplied, borrowed),
     allocation,
-    keyMetrics: buildAssetKeyMetrics(asset, supplied, borrowed),
     cashflow: buildAssetCashflow(asset, supplied, borrowed),
     risk: buildAssetRisk(asset, fixture),
     about: buildAssetAbout(asset, fixture, supplied, borrowed),

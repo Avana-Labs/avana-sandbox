@@ -6,12 +6,13 @@
  * the view-model shapes declared in `app/lib/borrow-detail/types.ts`.
  *
  * Table naming contract:
- *   - `markets`                     canonical identity for every asset + pool.
+ *   - `markets`                     canonical identity (legacy shared; decoupling track splits by product).
  *   - `walletEvents`                source-of-truth user actions (drives engagement + transaction history).
  *   - `marketDailyStats`            daily market snapshot (drives supply/borrow, utilization, key metrics).
  *   - `marketRevenueDaily`          daily revenue (drives cash-flow card).
  *   - `assetPoolAllocationDaily`    daily per-pool allocation per asset (drives allocation breakdown).
  *   - `riskAssessments`             risk rating snapshots.
+ *   - `borrow*` / `lend*` / `multiply*`  product-siloed detail params (IRM, risk grid, liquidation, borrowables).
  *
  * If you change field names here, update the matching JSDoc `@convex-source`
  * pointers in `app/lib/borrow-detail/types.ts` so the data seam stays obvious.
@@ -64,6 +65,8 @@ export default defineSchema({
     explorerUrl: v.optional(v.string()),
     /** Used to cap user-visible utilization / LTV on the front end. */
     reserveFactorPct: v.optional(v.number()),
+    /** Incentive / rewards APY percent (0 = none). Detail Key Statistics overlay. */
+    rewardsApyPct: v.optional(v.number()),
     description: v.optional(v.string()),
     iconUrl: v.optional(v.string()),
     spokeId: v.optional(v.string()),
@@ -93,6 +96,128 @@ export default defineSchema({
   })
     .index("by_scope_slug", ["scope", "slug"])
     .index("by_scope_chain", ["scope", "chainId"]),
+
+  /**
+   * Product-siloed borrow market identity (pool + asset). Prefer this for display
+   * metadata; legacy `markets` remains the FK hub for walletEvents / allocation until
+   * those are siloed.
+   */
+  borrowMarkets: defineTable({
+    slug: v.string(),
+    kind: v.union(v.literal("pool"), v.literal("asset")),
+    chainId: v.number(),
+    name: v.string(),
+    symbol: v.string(),
+    venueLabel: v.optional(v.string()),
+    category: v.optional(v.union(v.literal("stable"), v.literal("crypto"))),
+    explorerUrl: v.optional(v.string()),
+    reserveFactorPct: v.optional(v.number()),
+    /** Incentive / rewards APY percent (0 = none). Detail Key Statistics overlay. */
+    rewardsApyPct: v.optional(v.number()),
+    description: v.optional(v.string()),
+    iconUrl: v.optional(v.string()),
+    spokeId: v.optional(v.string()),
+    feeTier: v.optional(v.string()),
+    maxLtvPct: v.optional(v.number()),
+    priceUsd: v.optional(v.number()),
+    visuals: v.optional(
+      v.array(
+        v.object({
+          symbol: v.string(),
+          shortLabel: v.string(),
+          bgClassName: v.string(),
+          textClassName: v.string(),
+          iconUrl: v.optional(v.string()),
+        }),
+      ),
+    ),
+    resources: v.optional(v.array(v.object({ label: v.string(), href: v.string() }))),
+    /** Asset-scope fields: spoke-agnostic asset id + display context label. */
+    baseAssetId: v.optional(v.string()),
+    contextLabel: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_slug", ["slug"]),
+
+  /** Product-siloed lend market identity. */
+  lendMarkets: defineTable({
+    slug: v.string(),
+    chainId: v.number(),
+    name: v.string(),
+    symbol: v.string(),
+    venueLabel: v.optional(v.string()),
+    category: v.optional(v.union(v.literal("stable"), v.literal("crypto"))),
+    explorerUrl: v.optional(v.string()),
+    reserveFactorPct: v.optional(v.number()),
+    /** Incentive / rewards APY percent (0 = none). Detail Key Statistics overlay. */
+    rewardsApyPct: v.optional(v.number()),
+    description: v.optional(v.string()),
+    iconUrl: v.optional(v.string()),
+    spokeId: v.optional(v.string()),
+    feeTier: v.optional(v.string()),
+    maxLtvPct: v.optional(v.number()),
+    priceUsd: v.optional(v.number()),
+    visuals: v.optional(
+      v.array(
+        v.object({
+          symbol: v.string(),
+          shortLabel: v.string(),
+          bgClassName: v.string(),
+          textClassName: v.string(),
+          iconUrl: v.optional(v.string()),
+        }),
+      ),
+    ),
+    resources: v.optional(v.array(v.object({ label: v.string(), href: v.string() }))),
+    createdAt: v.number(),
+  }).index("by_slug", ["slug"]),
+
+  /** Product-siloed multiply market identity. */
+  multiplyMarkets: defineTable({
+    slug: v.string(),
+    chainId: v.number(),
+    name: v.string(),
+    symbol: v.string(),
+    venueLabel: v.optional(v.string()),
+    category: v.optional(v.union(v.literal("stable"), v.literal("crypto"))),
+    explorerUrl: v.optional(v.string()),
+    reserveFactorPct: v.optional(v.number()),
+    /** Incentive / rewards APY percent (0 = none). Detail Key Statistics overlay. */
+    rewardsApyPct: v.optional(v.number()),
+    description: v.optional(v.string()),
+    iconUrl: v.optional(v.string()),
+    spokeId: v.optional(v.string()),
+    feeTier: v.optional(v.string()),
+    maxLtvPct: v.optional(v.number()),
+    priceUsd: v.optional(v.number()),
+    visuals: v.optional(
+      v.array(
+        v.object({
+          symbol: v.string(),
+          shortLabel: v.string(),
+          bgClassName: v.string(),
+          textClassName: v.string(),
+          iconUrl: v.optional(v.string()),
+        }),
+      ),
+    ),
+    resources: v.optional(v.array(v.object({ label: v.string(), href: v.string() }))),
+    /**
+     * Multiply-specific catalog fields. All optional so existing rows migrate
+     * lazily; seed writer populates from MULTIPLY_MARKET_CATALOG in Phase C.
+     */
+    publicMaxMultiplier: v.optional(v.number()),
+    hardMaxMultiplier: v.optional(v.number()),
+    minHealthFactor: v.optional(v.number()),
+    riskTier: v.optional(v.union(v.literal("low"), v.literal("medium"), v.literal("high"))),
+    liquidationThresholdPct: v.optional(v.number()),
+    collateralSymbol: v.optional(v.string()),
+    collateralName: v.optional(v.string()),
+    borrowSymbol: v.optional(v.string()),
+    borrowName: v.optional(v.string()),
+    featured: v.optional(v.boolean()),
+    status: v.optional(v.string()),
+    createdAt: v.number(),
+  }).index("by_slug", ["slug"]),
 
   /**
    * Every on-chain user action. Source of truth for:
@@ -134,6 +259,13 @@ export default defineSchema({
    *
    * Write path: daily aggregator job. Read path: `convex/markets.ts`.
    */
+  /**
+   * Legacy shared daily market snapshot. Prefer product-siloed
+   * `borrowDailyStats` / `lendDailyStats` / `multiplyDailyStats`.
+   * Kept for dual-read during decoupling; seed still dual-writes for now.
+   *
+   * Write path: daily aggregator job. Read path: `convex/markets.ts` (+ siloed IRM).
+   */
   marketDailyStats: defineTable({
     marketId: v.id("markets"),
     /** ISO YYYY-MM-DD in UTC. One row per (marketId, day). */
@@ -155,6 +287,58 @@ export default defineSchema({
     supplyCapUsd: v.optional(v.number()),
     borrowCapUsd: v.optional(v.number()),
   }).index("by_market_day", ["marketId", "day"]),
+
+  /** Borrow product daily stats (pool + asset), slug-keyed. */
+  borrowDailyStats: defineTable({
+    slug: v.string(),
+    kind: v.union(v.literal("pool"), v.literal("asset")),
+    day: v.string(),
+    suppliedUsd: v.number(),
+    borrowedUsd: v.number(),
+    utilizationPct: v.number(),
+    supplyApyPct: v.number(),
+    borrowAprPct: v.number(),
+    tvlUsd: v.number(),
+    volumeUsd: v.number(),
+    feesUsd: v.number(),
+    priceUsd: v.optional(v.number()),
+    supplyCapUsd: v.optional(v.number()),
+    borrowCapUsd: v.optional(v.number()),
+  }).index("by_slug_day", ["slug", "day"]),
+
+  /** Lend product daily stats, slug-keyed. */
+  lendDailyStats: defineTable({
+    slug: v.string(),
+    day: v.string(),
+    suppliedUsd: v.number(),
+    borrowedUsd: v.number(),
+    utilizationPct: v.number(),
+    supplyApyPct: v.number(),
+    borrowAprPct: v.number(),
+    tvlUsd: v.number(),
+    volumeUsd: v.number(),
+    feesUsd: v.number(),
+    priceUsd: v.optional(v.number()),
+    supplyCapUsd: v.optional(v.number()),
+    borrowCapUsd: v.optional(v.number()),
+  }).index("by_slug_day", ["slug", "day"]),
+
+  /** Multiply product daily stats, slug-keyed. */
+  multiplyDailyStats: defineTable({
+    slug: v.string(),
+    day: v.string(),
+    suppliedUsd: v.number(),
+    borrowedUsd: v.number(),
+    utilizationPct: v.number(),
+    supplyApyPct: v.number(),
+    borrowAprPct: v.number(),
+    tvlUsd: v.number(),
+    volumeUsd: v.number(),
+    feesUsd: v.number(),
+    priceUsd: v.optional(v.number()),
+    supplyCapUsd: v.optional(v.number()),
+    borrowCapUsd: v.optional(v.number()),
+  }).index("by_slug_day", ["slug", "day"]),
 
   /**
    * Precomputed reference-snapshot cache for `listMarketSnapshots`. That query is
@@ -181,6 +365,10 @@ export default defineSchema({
         spokeId: v.optional(v.string()),
         feeTier: v.optional(v.string()),
         maxLtvPct: v.optional(v.number()),
+        reserveFactorPct: v.optional(v.number()),
+        rewardsApyPct: v.optional(v.number()),
+        /** Latest siloed risk-assessment premium (bps) for list Risk Premium column. */
+        premiumBps: v.optional(v.number()),
         visuals: v.optional(
           v.array(
             v.object({
@@ -208,9 +396,9 @@ export default defineSchema({
   }).index("by_singleton", ["singleton"]),
 
   /**
-   * Daily revenue per market. Feeds the monthly Cash Flow card. The UI
-   * aggregates daily rows into monthly buckets client-side, so any writer
-   * can land data at whatever cadence makes sense.
+   * Legacy shared daily revenue per market (Cashflow card), keyed by `markets` id.
+   * Prefer product-siloed `borrowRevenueDaily` / `lendRevenueDaily` / `multiplyRevenueDaily`.
+   * Kept for dual-read during decoupling; seed still dual-writes for now.
    *
    * Source of truth for:
    *   - `CashflowTrend.series` (asset page — "revenue generated")
@@ -232,6 +420,40 @@ export default defineSchema({
     swapFeesUsd: v.number(),
   }).index("by_market_day", ["marketId", "day"]),
 
+  /** Borrow product daily revenue (pool + asset), slug-keyed. */
+  borrowRevenueDaily: defineTable({
+    slug: v.string(),
+    kind: v.union(v.literal("pool"), v.literal("asset")),
+    day: v.string(),
+    interestFromBorrowersUsd: v.number(),
+    interestToSuppliersUsd: v.number(),
+    reserveTakeUsd: v.number(),
+    rewardsDistributedUsd: v.number(),
+    swapFeesUsd: v.number(),
+  }).index("by_slug_day", ["slug", "day"]),
+
+  /** Lend product daily revenue, slug-keyed. */
+  lendRevenueDaily: defineTable({
+    slug: v.string(),
+    day: v.string(),
+    interestFromBorrowersUsd: v.number(),
+    interestToSuppliersUsd: v.number(),
+    reserveTakeUsd: v.number(),
+    rewardsDistributedUsd: v.number(),
+    swapFeesUsd: v.number(),
+  }).index("by_slug_day", ["slug", "day"]),
+
+  /** Multiply product daily revenue, slug-keyed. */
+  multiplyRevenueDaily: defineTable({
+    slug: v.string(),
+    day: v.string(),
+    interestFromBorrowersUsd: v.number(),
+    interestToSuppliersUsd: v.number(),
+    reserveTakeUsd: v.number(),
+    rewardsDistributedUsd: v.number(),
+    swapFeesUsd: v.number(),
+  }).index("by_slug_day", ["slug", "day"]),
+
   /**
    * Daily snapshot of how an asset's liquidity is split across pools.
    * Source of truth for `AssetDetail.allocation`. The table is keyed by the
@@ -251,10 +473,9 @@ export default defineSchema({
     .index("by_pool_day", ["poolId", "day"]),
 
   /**
-   * Risk review snapshots. One row per review cycle. The UI reads the latest
-   * row for a given market; history is retained for audit.
-   *
-   * Source of truth for `RiskAssessment` on both detail pages.
+   * Legacy shared risk review snapshots (Risk Premium card), keyed by `markets` id.
+   * Prefer product-siloed `borrowRiskAssessments` / `lendRiskAssessments` / `multiplyRiskAssessments`.
+   * Kept for dual-read during decoupling; seed still dual-writes for now.
    */
   riskAssessments: defineTable({
     marketId: v.id("markets"),
@@ -390,15 +611,26 @@ export default defineSchema({
     decimals: v.optional(v.number()),
     /** DefiLlama price confidence (0..1). */
     confidence: v.optional(v.number()),
+    /**
+     * Where the row came from: "defillama" is the hourly refreshed live spot;
+     * "baseline" is the seeded snapshot used until the first live refresh lands
+     * (replaces the ASSET_PRICE_USD constant in the mock). Live upserts strictly
+     * overwrite baselines on the same symbol.
+     */
     source: v.string(),
+    /**
+     * 24h price change as a 1e18 wad (bigint stored as string). Optional because
+     * DefiLlama's percentChange1d isn't always populated; when absent, the UI
+     * suppresses the delta arrow. Replaces ASSET_PRICE_CHANGE_24H mock map.
+     */
+    priceChange24hWad: v.optional(v.string()),
     updatedAt: v.number(),
   }).index("by_symbol", ["symbol"]),
 
   /**
-   * Static per-market editorial content: the About description + on-chain stats,
-   * the parameter-change history, and the General FAQs. Seeded from the shared
-   * generators so the detail page reads About / Parameter Changes / FAQs from
-   * Convex like everything else. One row per market.
+   * Legacy shared editorial content (About / history / FAQs), keyed by `markets` id.
+   * Prefer product-siloed `borrowMarketContent` / `lendMarketContent` / `multiplyMarketContent`.
+   * Kept for dual-read during decoupling; seed still dual-writes for now.
    */
   marketContent: defineTable({
     marketId: v.id("markets"),
@@ -407,6 +639,234 @@ export default defineSchema({
     history: v.array(v.object({ date: v.string(), title: v.string(), description: v.optional(v.string()) })),
     faqs: v.array(v.object({ question: v.string(), answer: v.string() })),
   }).index("by_market", ["marketId"]),
+
+  // ── Product-siloed detail params (Borrow / Lend / Multiply are separate products) ──
+  // Keyed by product slug — do NOT share rows across products.
+
+  /** Borrow About / FAQs / parameter-change history (pool + asset). */
+  borrowMarketContent: defineTable({
+    slug: v.string(),
+    kind: v.union(v.literal("pool"), v.literal("asset")),
+    description: v.string(),
+    stats: v.array(v.object({ label: v.string(), value: v.string(), href: v.optional(v.string()) })),
+    history: v.array(v.object({ date: v.string(), title: v.string(), description: v.optional(v.string()) })),
+    faqs: v.array(v.object({ question: v.string(), answer: v.string() })),
+  }).index("by_slug", ["slug"]),
+
+  /** Borrow Risk Premium / assessment card (pool + asset). Distinct from `borrowRiskParameters`. */
+  borrowRiskAssessments: defineTable({
+    slug: v.string(),
+    kind: v.union(v.literal("pool"), v.literal("asset")),
+    assessedAt: v.number(),
+    premiumBps: v.number(),
+    level: riskLevel,
+    score: v.number(),
+    headline: v.string(),
+    summary: v.string(),
+    breakdown: v.array(
+      v.object({
+        id: v.string(),
+        label: v.string(),
+        bps: v.number(),
+        level: riskLevel,
+        description: v.string(),
+      }),
+    ),
+    metrics: v.array(
+      v.object({
+        id: v.string(),
+        label: v.string(),
+        value: v.string(),
+        hint: v.optional(v.string()),
+      }),
+    ),
+  }).index("by_slug", ["slug"]),
+
+  /** Borrow Risk Parameters grid (pool + asset). One latest row per slug. */
+  borrowRiskParameters: defineTable({
+    slug: v.string(),
+    kind: v.union(v.literal("pool"), v.literal("asset")),
+    parameters: v.array(
+      v.object({
+        id: v.string(),
+        label: v.string(),
+        value: v.string(),
+        description: v.optional(v.string()),
+      }),
+    ),
+    updatedAt: v.number(),
+    source: v.optional(v.union(v.literal("seed"), v.literal("chain"))),
+    txHash: v.optional(v.string()),
+  }).index("by_slug", ["slug"]),
+
+  /** Borrow Interest Rate Model curve params (asset markets). */
+  borrowInterestRateModels: defineTable({
+    slug: v.string(),
+    optimalUtilizationPct: v.number(),
+    slopeBelowOptimalPct: v.number(),
+    slopeAboveOptimalPct: v.number(),
+    baseBorrowRatePct: v.number(),
+    updatedAt: v.number(),
+    source: v.optional(v.union(v.literal("seed"), v.literal("chain"))),
+    txHash: v.optional(v.string()),
+  }).index("by_slug", ["slug"]),
+
+  /** Borrow market liquidation KPIs (pool markets), one row per pool per day. */
+  borrowLiquidationDaily: defineTable({
+    slug: v.string(),
+    day: v.string(),
+    liquidationsCount: v.number(),
+    collateralSeizedUsd: v.number(),
+    debtRepaidUsd: v.number(),
+    liquidationBonusUsd: v.number(),
+    collateralAtRiskUsd: v.number(),
+    walletsAtRisk: v.number(),
+    walletsEligibleForLiquidation: v.number(),
+    badDebtUsd: v.number(),
+    walletsWithBadDebt: v.number(),
+  }).index("by_slug_day", ["slug", "day"]),
+
+  /** Borrow pool → borrowable asset edges (Assets You Can Borrow). */
+  borrowPoolBorrowables: defineTable({
+    poolSlug: v.string(),
+    assetSlug: v.string(),
+    name: v.string(),
+    symbol: v.string(),
+    borrowAprPct: v.number(),
+  }).index("by_pool", ["poolSlug"]),
+
+  /** Lend About / FAQs / parameter-change history. */
+  lendMarketContent: defineTable({
+    slug: v.string(),
+    description: v.string(),
+    stats: v.array(v.object({ label: v.string(), value: v.string(), href: v.optional(v.string()) })),
+    history: v.array(v.object({ date: v.string(), title: v.string(), description: v.optional(v.string()) })),
+    faqs: v.array(v.object({ question: v.string(), answer: v.string() })),
+  }).index("by_slug", ["slug"]),
+
+  /** Lend Risk Premium / assessment card. Distinct from `lendRiskParameters`. */
+  lendRiskAssessments: defineTable({
+    slug: v.string(),
+    assessedAt: v.number(),
+    premiumBps: v.number(),
+    level: riskLevel,
+    score: v.number(),
+    headline: v.string(),
+    summary: v.string(),
+    breakdown: v.array(
+      v.object({
+        id: v.string(),
+        label: v.string(),
+        bps: v.number(),
+        level: riskLevel,
+        description: v.string(),
+      }),
+    ),
+    metrics: v.array(
+      v.object({
+        id: v.string(),
+        label: v.string(),
+        value: v.string(),
+        hint: v.optional(v.string()),
+      }),
+    ),
+  }).index("by_slug", ["slug"]),
+
+  /** Lend Risk Parameters grid. */
+  lendRiskParameters: defineTable({
+    slug: v.string(),
+    parameters: v.array(
+      v.object({
+        id: v.string(),
+        label: v.string(),
+        value: v.string(),
+        description: v.optional(v.string()),
+      }),
+    ),
+    updatedAt: v.number(),
+    source: v.optional(v.union(v.literal("seed"), v.literal("chain"))),
+    txHash: v.optional(v.string()),
+  }).index("by_slug", ["slug"]),
+
+  /** Lend Interest Rate Model curve params. */
+  lendInterestRateModels: defineTable({
+    slug: v.string(),
+    optimalUtilizationPct: v.number(),
+    slopeBelowOptimalPct: v.number(),
+    slopeAboveOptimalPct: v.number(),
+    baseBorrowRatePct: v.number(),
+    updatedAt: v.number(),
+    source: v.optional(v.union(v.literal("seed"), v.literal("chain"))),
+    txHash: v.optional(v.string()),
+  }).index("by_slug", ["slug"]),
+
+  /** Multiply About / FAQs / parameter-change history. */
+  multiplyMarketContent: defineTable({
+    slug: v.string(),
+    description: v.string(),
+    stats: v.array(v.object({ label: v.string(), value: v.string(), href: v.optional(v.string()) })),
+    history: v.array(v.object({ date: v.string(), title: v.string(), description: v.optional(v.string()) })),
+    faqs: v.array(v.object({ question: v.string(), answer: v.string() })),
+  }).index("by_slug", ["slug"]),
+
+  /** Multiply Risk Premium / assessment card. Distinct from `multiplyRiskParameters`. */
+  multiplyRiskAssessments: defineTable({
+    slug: v.string(),
+    assessedAt: v.number(),
+    premiumBps: v.number(),
+    level: riskLevel,
+    score: v.number(),
+    headline: v.string(),
+    summary: v.string(),
+    breakdown: v.array(
+      v.object({
+        id: v.string(),
+        label: v.string(),
+        bps: v.number(),
+        level: riskLevel,
+        description: v.string(),
+      }),
+    ),
+    metrics: v.array(
+      v.object({
+        id: v.string(),
+        label: v.string(),
+        value: v.string(),
+        hint: v.optional(v.string()),
+      }),
+    ),
+  }).index("by_slug", ["slug"]),
+
+  /** Multiply Risk Parameters grid. */
+  multiplyRiskParameters: defineTable({
+    slug: v.string(),
+    parameters: v.array(
+      v.object({
+        id: v.string(),
+        label: v.string(),
+        value: v.string(),
+        description: v.optional(v.string()),
+      }),
+    ),
+    updatedAt: v.number(),
+    source: v.optional(v.union(v.literal("seed"), v.literal("chain"))),
+    txHash: v.optional(v.string()),
+  }).index("by_slug", ["slug"]),
+
+  /** Multiply market liquidation KPIs, one row per market per day. */
+  multiplyLiquidationDaily: defineTable({
+    slug: v.string(),
+    day: v.string(),
+    liquidationsCount: v.number(),
+    collateralSeizedUsd: v.number(),
+    debtRepaidUsd: v.number(),
+    liquidationBonusUsd: v.number(),
+    collateralAtRiskUsd: v.number(),
+    walletsAtRisk: v.number(),
+    walletsEligibleForLiquidation: v.number(),
+    badDebtUsd: v.number(),
+    walletsWithBadDebt: v.number(),
+  }).index("by_slug_day", ["slug", "day"]),
 
   /**
    * Support Center submissions. Captured every time a user sends a request from
@@ -616,14 +1076,45 @@ export default defineSchema({
         shortLabel: v.string(),
         bgClassName: v.string(),
         textClassName: v.string(),
+        /** Optional iconUrl added in Phase C so the borrow catalog stops relying on the client-side VISUALS map. */
+        iconUrl: v.optional(v.string()),
       }),
     ),
     maxLtvPct: v.number(),
     liquidationThresholdPct: v.optional(v.number()),
     pairAprPct: v.number(),
     lpTokenPriceUsd: v.optional(v.number()),
+    /**
+     * Phase C additions — currently hardcoded in borrow-sim.ts. All optional so
+     * existing pool rows migrate lazily; the borrow-catalog seed writer sets
+     * them when it repopulates.
+     */
+    venueLabel: v.optional(v.string()),
+    spokeId: v.optional(v.string()),
+    dexId: v.optional(v.string()),
+    feeTier: v.optional(v.string()),
+    chain: v.optional(v.string()),
+    subtitle: v.optional(v.string()),
+    lpSymbol: v.optional(v.string()),
+    collateralExampleUsd: v.optional(v.number()),
+    riskPremiumBps: v.optional(v.number()),
+    borrowableTokens: v.optional(
+      v.array(
+        v.object({
+          symbol: v.string(),
+          iconUrl: v.string(),
+          shortLabel: v.string(),
+          bgClass: v.string(),
+          textClass: v.string(),
+        }),
+      ),
+    ),
+    supportedBorrowAssetIds: v.optional(v.array(v.string())),
+    poolSeedName: v.optional(v.string()),
     createdAt: v.number(),
-  }).index("by_slug", ["slug"]),
+  })
+    .index("by_slug", ["slug"])
+    .index("by_spoke_id", ["spokeId"]),
 
   /**
    * Open/closed position, one row per (wallet, product, market). Unified across
@@ -862,4 +1353,342 @@ export default defineSchema({
     seededAt: v.optional(v.number()),
     lastSeenAt: v.number(),
   }).index("by_wallet", ["wallet"]),
+
+  /**
+   * Per-wallet token balances backing the swap flow + the dashboard "Wallet" tab.
+   * Mirrors app/lib/swap-system/contracts.ts UserAssetBalance so the display path
+   * stops reading DEMO_SWAP_BALANCES. One row per (wallet, assetId, sourceType);
+   * amount is a number (asset-native, not USD-scaled — pricing happens at render).
+   *
+   * sourceType discriminates where the balance sits: "wallet" is the base wallet
+   * holding; "position" is claimable/withdrawable balance credited by an open
+   * position (with sourcePositionId joining `positions`). Positions writes update
+   * these rows so the wallet tab reflects unrealized earnings live.
+   */
+  walletBalances: defineTable({
+    wallet: v.string(),
+    assetId: v.string(),
+    amount: v.number(),
+    sourceType: v.union(v.literal("wallet"), v.literal("position")),
+    sourcePositionId: v.optional(v.id("positions")),
+    /**
+     * Discriminates the asset shape inside a balance row so home + action
+     * flows can filter without a join. "wallet" = plain token holding;
+     * "lp" = LP-token collateral for a pool market (assetId is `lp:<marketSlug>`);
+     * "returned-lp" = LP returned from a remove-collateral action, pending
+     * withdrawal to the wallet. Optional so existing rows migrate lazily.
+     */
+    assetKind: v.optional(v.union(v.literal("wallet"), v.literal("lp"), v.literal("returned-lp"))),
+    /** Display symbol so select lists render without a per-row asset lookup. */
+    symbol: v.optional(v.string()),
+    /**
+     * USD-scaled value at 1e6 (bigint stored as string), computed at write
+     * time using the row's live price. Home + action pages read this instead
+     * of doing a price join per row. Refreshed by the same rollup that
+     * updates `tokenPrices`.
+     */
+    valueUsd6: v.optional(v.string()),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_wallet_asset", ["wallet", "assetId"])
+    .index("by_wallet_asset_kind", ["wallet", "assetKind"]),
+
+  /**
+   * LP token spot price for a pool market (USD per LP token). Feeds pledge-flow
+   * "you deposit N LP ≈ $X" previews across the borrow action pages. Kept per-slug
+   * (not baked into marketDailyStats) because LP prices tick faster than daily
+   * — snapshots update on the same interval as the market-snapshots cache.
+   */
+  lpTokenPrices: defineTable({
+    slug: v.string(),
+    /** Spot price in USD per LP token. */
+    priceUsd: v.number(),
+    updatedAt: v.number(),
+  }).index("by_slug", ["slug"]),
+
+  /**
+   * Fee APY as a wad (1e18-scaled bigint stored as string) per market. Sourced
+   * from marketDailyStats.supplyApyPct at rollup, but split into its own table so
+   * the credit engine's accrual math (accrueLinearIndex) can read a stable wad
+   * value without re-parsing/rounding a percentage on the hot path. Feeds
+   * BorrowMarketRecord.snapshot.feeApyWad in hydrated state — currently sourced
+   * from the mock catalog, target for #17's home + sidebar flip.
+   */
+  feeApyWads: defineTable({
+    slug: v.string(),
+    feeApyWad: v.string(),
+    updatedAt: v.number(),
+  }).index("by_slug", ["slug"]),
+
+  // ---------------------------------------------------------------------------
+  // Global reference — spokes, dexes, home content
+  // ---------------------------------------------------------------------------
+
+  /**
+   * BorrowSpoke registry (currently hardcoded in `app/lib/borrow-sim.ts`
+   * BORROW_SPOKES). Feeds spoke section headings, category filter (isSmartSpoke),
+   * risk-model spoke labels, `getSpokeById` lookups, and SPOKE_SLUGS routing.
+   */
+  spokes: defineTable({
+    id: v.string(),
+    slug: v.string(),
+    dex: v.string(),
+    label: v.string(),
+    description: v.string(),
+    eMode: v.optional(v.string()),
+    maxLtvPct: v.number(),
+    aprApproxPct: v.number(),
+    riskPremiumBps: v.number(),
+    liquidityUsd: v.number(),
+    liquidationUsdApprox: v.number(),
+    bgClass: v.string(),
+    textClass: v.string(),
+    borrowableTokens: v.array(
+      v.object({
+        symbol: v.string(),
+        iconUrl: v.string(),
+        shortLabel: v.string(),
+        bgClass: v.string(),
+        textClass: v.string(),
+      }),
+    ),
+    isSmartSpoke: v.boolean(),
+    updatedAt: v.number(),
+  })
+    .index("by_key", ["id"])
+    .index("by_slug", ["slug"]),
+
+  /** DEX catalog (currently hardcoded BORROW_DEXES). 4 entries at seed time. */
+  dexes: defineTable({
+    id: v.string(),
+    label: v.string(),
+    tvlUsd: v.number(),
+    bgClass: v.string(),
+    textClass: v.string(),
+    updatedAt: v.number(),
+  }).index("by_key", ["id"]),
+
+  // ---------------------------------------------------------------------------
+  // Borrowable assets — global registry per (spokeId, baseAssetId)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Per-spoke borrowable asset records currently derived at runtime from
+   * `app/lib/borrow-system/registry.ts`. Referenced by pool + asset landing
+   * rows, the "Assets You Can Borrow" section, and asset detail cross-market
+   * links.
+   */
+  borrowAssets: defineTable({
+    id: v.string(),
+    spokeId: v.string(),
+    baseAssetId: v.string(),
+    name: v.string(),
+    symbol: v.string(),
+    subtitle: v.string(),
+    category: v.string(),
+    contextLabel: v.string(),
+    displayVisual: v.object({
+      symbol: v.string(),
+      iconUrl: v.string(),
+      shortLabel: v.string(),
+      bgClass: v.string(),
+      textClass: v.string(),
+    }),
+    baseBorrowAprPct: v.number(),
+    totalCapacityUsd: v.number(),
+    utilizationPct: v.number(),
+    totalBorrowedUsd: v.number(),
+    availableUsd: v.number(),
+    reserveFactorPct: v.optional(v.number()),
+    marketIds: v.array(v.string()),
+    updatedAt: v.number(),
+  })
+    .index("by_key", ["id"])
+    .index("by_spoke", ["spokeId"])
+    .index("by_base_asset", ["baseAssetId"]),
+
+  // ---------------------------------------------------------------------------
+  // Multiply — missing tables that let detail render from Convex (constraint 6)
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Multiply IRM parameters. Mirrors `borrowInterestRateModels` — one row per
+   * multiply market slug. Currently multiply detail renders the IRM section
+   * from a client-side mock silently; this fixes that.
+   */
+  multiplyInterestRateModels: defineTable({
+    slug: v.string(),
+    optimalUtilizationPct: v.number(),
+    slopeBelowOptimalPct: v.number(),
+    slopeAboveOptimalPct: v.number(),
+    baseBorrowRatePct: v.number(),
+    source: v.optional(v.union(v.literal("seed"), v.literal("chain"))),
+    txHash: v.optional(v.string()),
+    updatedAt: v.number(),
+  }).index("by_slug", ["slug"]),
+
+  /**
+   * Per-multiply-market allocation across contributing pools. Currently
+   * missing; detail renders nothing / silent mock. Same shape as the asset
+   * allocation cards but keyed by multiplyMarkets.slug.
+   */
+  multiplyMarketAllocations: defineTable({
+    marketSlug: v.string(),
+    rowKey: v.string(),
+    poolSlug: v.string(),
+    poolName: v.string(),
+    venueLabel: v.string(),
+    sharePct: v.number(),
+    valueUsd: v.number(),
+    utilizationPct: v.number(),
+    borrowAprPct: v.number(),
+    collateralFactorPct: v.number(),
+    updatedAt: v.number(),
+  }).index("by_market", ["marketSlug"]),
+
+  /**
+   * Per-token multiply parameters (supply APY, borrow APY, available USD,
+   * collateral factor, liquidation threshold) currently spread across
+   * MULTIPLY_TOKEN_SUPPLY_APYS / MULTIPLY_TOKEN_BORROW_APYS /
+   * MULTIPLY_TOKEN_AVAILABLE_USD / MULTIPLY_COLLATERAL_FACTORS /
+   * MULTIPLY_LIQUIDATION_THRESHOLDS / MULTIPLY_TOKEN_LOGOS in `multiply-sim.ts`.
+   */
+  multiplyTokenParameters: defineTable({
+    symbol: v.string(),
+    supplyApyPct: v.number(),
+    borrowAprPct: v.number(),
+    availableUsd: v.number(),
+    collateralFactorPct: v.number(),
+    liquidationThresholdPct: v.number(),
+    iconUrl: v.string(),
+    updatedAt: v.number(),
+  }).index("by_symbol", ["symbol"]),
+
+  // ---------------------------------------------------------------------------
+  // Contract addresses — seeded synthetic 0x… strings today, Etherscan later.
+  // Split by scope (pool / asset / multiply) to keep indexes narrow.
+  // ---------------------------------------------------------------------------
+
+  poolContractAddresses: defineTable({
+    poolSlug: v.string(),
+    salt: v.string(),
+    address: v.string(),
+    label: v.string(),
+    href: v.string(),
+    chain: v.string(),
+    isSynthetic: v.boolean(),
+    updatedAt: v.number(),
+  })
+    .index("by_pool_salt", ["poolSlug", "salt"])
+    .index("by_pool", ["poolSlug"]),
+
+  assetContractAddresses: defineTable({
+    assetSlug: v.string(),
+    salt: v.string(),
+    address: v.string(),
+    label: v.string(),
+    href: v.string(),
+    chain: v.string(),
+    isSynthetic: v.boolean(),
+    updatedAt: v.number(),
+  })
+    .index("by_asset_salt", ["assetSlug", "salt"])
+    .index("by_asset", ["assetSlug"]),
+
+  multiplyContractAddresses: defineTable({
+    marketSlug: v.string(),
+    salt: v.string(),
+    address: v.string(),
+    label: v.string(),
+    href: v.string(),
+    chain: v.string(),
+    isSynthetic: v.boolean(),
+    updatedAt: v.number(),
+  })
+    .index("by_market_salt", ["marketSlug", "salt"])
+    .index("by_market", ["marketSlug"]),
+
+  // ---------------------------------------------------------------------------
+  // Per-wallet portfolio — the "home page is the connected wallet's portfolio"
+  // architecture. Test wallet is a seeded row using the "test-wallet-000"
+  // convention; production wallets use hex addresses that never collide.
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Home page collateral cards + action-page sidebar HomeCollateralPool.
+   * Currently HOME_COLLATERAL_POOLS mock keyed by home compact id.
+   */
+  walletCollateralPositions: defineTable({
+    wallet: v.string(),
+    homePoolId: v.string(),
+    marketId: v.string(),
+    name: v.string(),
+    venueLabel: v.string(),
+    category: v.string(),
+    collateralUsd: v.number(),
+    maxLtvPct: v.number(),
+    borrowPowerUsd: v.number(),
+    liquidationUsd: v.number(),
+    pairAprPct: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_wallet_home_pool", ["wallet", "homePoolId"])
+    .index("by_wallet_market", ["wallet", "marketId"]),
+
+  /**
+   * UI view of open debts. Currently HOME_INITIAL_DEBTS mock leaks into every
+   * non-'home-demo-wallet' session; per-wallet rows fix that leak.
+   */
+  walletDebts: defineTable({
+    wallet: v.string(),
+    homePoolId: v.string(),
+    marketId: v.string(),
+    debtAssetId: v.string(),
+    amountUsd: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_wallet_home_pool", ["wallet", "homePoolId"]),
+
+  /**
+   * Rewards / fee claim positions on the home page. Currently HOME_CLAIM_POSITIONS
+   * mock. Breakdown is an inline array so a single query renders the whole card.
+   */
+  walletClaimPositions: defineTable({
+    wallet: v.string(),
+    claimId: v.string(),
+    homePoolId: v.string(),
+    marketId: v.string(),
+    name: v.string(),
+    subtitle: v.string(),
+    totalUsd: v.number(),
+    breakdown: v.array(
+      v.object({
+        symbol: v.string(),
+        amountLabel: v.string(),
+        amountToken: v.number(),
+        usdValue: v.number(),
+        visualSymbol: v.string(),
+      }),
+    ),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_wallet_claim", ["wallet", "claimId"]),
+
+  /** Per-wallet quest completion + claim state. */
+  walletRewardsProgress: defineTable({
+    wallet: v.string(),
+    taskId: v.string(),
+    status: v.string(),
+    earnedAmount: v.number(),
+    claimableAmount: v.number(),
+    claimedAmount: v.number(),
+    completedAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_wallet_task", ["wallet", "taskId"]),
 })

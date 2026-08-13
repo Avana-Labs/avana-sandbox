@@ -4,7 +4,7 @@ import { resolve } from "node:path"
 
 describe("Dashboard quick-action placement", () => {
   it("P2-03: quick actions sit under claim cards in the hero as an icon rail", () => {
-    const heroSource = readFileSync(resolve(__dirname, "../../rewards/rewards-balance-hero.tsx"), "utf8")
+    const heroSource = readFileSync(resolve(__dirname, "../_rewards-components/rewards-balance-hero.tsx"), "utf8")
     expect(heroSource).toMatch(/showQuickActions/)
     expect(heroSource).toMatch(/DashboardQuickActions/)
 

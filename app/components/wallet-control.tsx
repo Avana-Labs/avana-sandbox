@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic"
 import { useEffect, useState } from "react"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { cn } from "@/lib/utils"
 import { IS_DEV_SHORTCUT_MODE, TEST_MODE_WALLET_ADDRESS } from "@/app/lib/test-mode"
 import { useWalletGate } from "@/app/lib/web3/wallet-gate"
 import { useSiweToken } from "@/app/lib/siwe/use-siwe-auth"
@@ -24,7 +23,7 @@ const ConnectedWalletControl = dynamic(
 
 /**
  * Single wallet control for the whole app. It picks one of three implementations:
- *   - dev open-gate/test mode  → a static "Test wallet" pill (no real wallet)
+ *   - dev open-gate/test mode  → the shared dev wallet rendered as a real address pill
  *   - wallet SDK not mounted   → the lightweight idle control (Connect / token account pill)
  *   - wallet SDK mounted       → the full ConnectKit + SIWE flow (dynamically loaded)
  *
@@ -33,30 +32,26 @@ const ConnectedWalletControl = dynamic(
  */
 export function WalletControl({ size = "desktop" }: { size?: WalletControlSize }) {
   const { active } = useWalletGate()
-  if (IS_DEV_SHORTCUT_MODE) return <TestWalletControl size={size} />
+  if (IS_DEV_SHORTCUT_MODE) return <DevWalletControl size={size} />
   return active ? <ConnectedWalletControl size={size} /> : <IdleWalletControl size={size} />
 }
 
-/** Test mode: no wallet states to align with, so size to content and never clip the label. */
-function TestWalletControl({ size }: { size: WalletControlSize }) {
-  const { t } = useTranslation()
+/**
+ * Dev open-gate: the shared dev wallet reads+writes real Convex just like any user.
+ * Render it as a normal connected wallet — truncated address + gradient icon — so the
+ * dev environment matches production. No amber "Test wallet" label.
+ */
+function DevWalletControl({ size }: { size: WalletControlSize }) {
+  const { pill } = walletButtonClasses(size)
+  const address = TEST_MODE_WALLET_ADDRESS
   return (
-    <div
-      className={cn(
-        "inline-flex h-9 items-center justify-center gap-2 rounded-full border border-border bg-transparent px-3 text-foreground",
-        size === "mobile" ? "sm:h-10 sm:px-4" : "h-10 px-4",
-      )}
-      title={TEST_MODE_WALLET_ADDRESS}
-      data-testid="test-mode-wallet"
-    >
+    <div className={pill} title={address} data-testid="test-mode-wallet" aria-label={address}>
       <span
         aria-hidden
         className="size-5 shrink-0 rounded-full ring-1 ring-border"
-        style={{ background: walletGradient(TEST_MODE_WALLET_ADDRESS) }}
+        style={{ background: walletGradient(address) }}
       />
-      <span className="whitespace-nowrap font-data text-[12px] font-semibold uppercase tracking-wide text-amber-500">
-        {t("Test wallet")}
-      </span>
+      <span className="max-w-[110px] truncate font-data tabular-nums">{truncateAddress(address)}</span>
     </div>
   )
 }

@@ -103,20 +103,43 @@ export function PoolHero({ detail, leading, actions, className, hideIdentity = f
   React.useEffect(() => {
     setActiveMetricTab(metricTabs[0])
   }, [metricTabs])
-  // Prefer the Convex-backed feed (supplied / TVL); fall back to the local feed.
+  // Prefer Convex-backed feeds for every hero tab. Borrowed/Utilization used to
+  // read mock series seeded from spoke.liquidityUsd (~$1.25B), which disagreed
+  // with Convex Supplied (~$63M) on the same page.
   const feed = React.useMemo(() => {
-    const fallback = detail.heroFeed ?? getPoolHeroFeed(detail.id)
     if (activeMetricTab === metricTabs[1]) {
-      return buildFeedFromRangeSeries(detail.heroMetric.series.borrowed, "usdCompact", fallback)
+      return (
+        detail.heroBorrowedFeed ??
+        buildFeedFromRangeSeries(
+          detail.heroMetric.series.borrowed,
+          "usdCompact",
+          detail.heroFeed ?? getPoolHeroFeed(detail.id),
+        )
+      )
     }
     if (activeMetricTab === metricTabs[2]) {
-      return buildFeedFromRangeSeries(detail.heroMetric.series.utilization, "percent", fallback)
+      return (
+        detail.heroUtilizationFeed ??
+        buildFeedFromRangeSeries(
+          detail.heroMetric.series.utilization,
+          "percent",
+          detail.heroFeed ?? getPoolHeroFeed(detail.id),
+        )
+      )
     }
     return (
       detail.heroFeed ??
       buildFeedFromRangeSeries(detail.heroMetric.series.tvl, "usdCompact", getPoolHeroFeed(detail.id))
     )
-  }, [activeMetricTab, detail.heroFeed, detail.heroMetric.series, detail.id, metricTabs])
+  }, [
+    activeMetricTab,
+    detail.heroBorrowedFeed,
+    detail.heroFeed,
+    detail.heroMetric.series,
+    detail.heroUtilizationFeed,
+    detail.id,
+    metricTabs,
+  ])
 
   return (
     <section className={cn("flex flex-col gap-5", className)} data-testid="pool-hero">

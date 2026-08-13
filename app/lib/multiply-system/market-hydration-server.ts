@@ -11,13 +11,14 @@ import type { MultiplyConvexSnapshot } from "@/app/lib/multiply-system/market-hy
  * so the page always renders off the catalog/mock fallback.
  */
 
-export type { ConvexSeriesPoint } from "@/app/lib/borrow-system/market-hydration-server"
-export { fetchTokenPrices } from "@/app/lib/borrow-system/market-hydration-server"
+export type { ConvexContractAddressRow, ConvexSeriesPoint } from "@/app/lib/borrow-system/market-hydration-server"
+export { fetchMultiplyContractAddresses, fetchTokenPrices } from "@/app/lib/borrow-system/market-hydration-server"
 
 /** Latest-day reference snapshot for a single multiply market. */
 export type MultiplyMarketSnapshot = {
   slug: string
   suppliedUsd: number
+  availableUsd: number
   utilizationPct: number
   supplyApyPct: number
   borrowAprPct: number
@@ -38,12 +39,13 @@ export async function fetchMultiplyMarketSnapshot(slug: string): Promise<Multipl
   const client = convexClient()
   if (!client) return null
   try {
-    const rows = await client.query(api.markets.listMarketSnapshots, {})
-    const match = rows.find((row) => row.scope === "multiply" && row.slug === slug)
+    const rows = await client.query(api.markets.listMultiplyMarketSnapshots, {})
+    const match = rows.find((row) => row.slug === slug)
     if (!match) return null
     return {
       slug: match.slug,
       suppliedUsd: match.suppliedUsd,
+      availableUsd: match.availableUsd,
       utilizationPct: match.utilizationPct,
       supplyApyPct: match.supplyApyPct,
       borrowAprPct: match.borrowAprPct,
@@ -58,17 +60,20 @@ export async function fetchMultiplyMarketSnapshots(): Promise<MultiplyConvexSnap
   const client = convexClient()
   if (!client) return []
   try {
-    const rows = await client.query(api.markets.listMarketSnapshots, {})
-    return rows
-      .filter((row) => row.scope === "multiply")
-      .map((row) => ({
-        slug: row.slug,
-        scope: row.scope,
-        suppliedUsd: row.suppliedUsd,
-        utilizationPct: row.utilizationPct,
-        supplyApyPct: row.supplyApyPct,
-        borrowAprPct: row.borrowAprPct,
-      }))
+    const rows = await client.query(api.markets.listMultiplyMarketSnapshots, {})
+    return rows.map((row) => ({
+      slug: row.slug,
+      scope: row.scope,
+      name: row.name,
+      symbol: row.symbol,
+      maxLtvPct: row.maxLtvPct,
+      suppliedUsd: row.suppliedUsd,
+      borrowedUsd: row.borrowedUsd,
+      availableUsd: row.availableUsd,
+      utilizationPct: row.utilizationPct,
+      supplyApyPct: row.supplyApyPct,
+      borrowAprPct: row.borrowAprPct,
+    }))
   } catch {
     return []
   }
@@ -91,13 +96,13 @@ export async function fetchMultiplyCashflowBreakdown(slug: string) {
   const client = convexClient()
   if (!client) return null
   try {
-    return await client.query(api.cashflow.getBreakdownForMultiply, { slug })
+    return await client.query(api.multiply.cashflow.getBreakdown, { slug })
   } catch {
     return null
   }
 }
 
-/** Recent market transactions (from walletEvents) for the multiply history card. */
+/** Recent market transactions (sandbox first, seeded walletEvents fallback). */
 export async function fetchMultiplyRecentTransactions(slug: string) {
   const client = convexClient()
   if (!client) return null
@@ -110,11 +115,12 @@ export async function fetchMultiplyRecentTransactions(slug: string) {
 }
 
 /** Latest risk assessment (premium + breakdown + metrics) for a multiply market. */
+/** Latest risk assessment (Risk Premium card) from product-siloed `multiplyRiskAssessments`. */
 export async function fetchMultiplyRisk(slug: string) {
   const client = convexClient()
   if (!client) return null
   try {
-    return await client.query(api.risk.getRisk, { scope: "multiply", slug })
+    return await client.query(api.multiply.riskAssessment.getRisk, { slug })
   } catch {
     return null
   }
@@ -137,7 +143,85 @@ export async function fetchMultiplyContent(slug: string) {
   const client = convexClient()
   if (!client) return null
   try {
-    return await client.query(api.content.getContent, { scope: "multiply", slug })
+    return await client.query(api.multiply.content.getContent, { slug })
+  } catch {
+    return null
+  }
+}
+
+/** Multiply product — Risk Parameters for About / Risk Parameters grid. */
+export async function fetchMultiplyRiskParameters(slug: string) {
+  const client = convexClient()
+  if (!client) return null
+  try {
+    return await client.query(api.multiply.riskParameters.getRiskParameters, { slug })
+  } catch {
+    return null
+  }
+}
+
+/** Multiply product — Liquidation Risk KPIs. */
+export async function fetchMultiplyLiquidationRisk(slug: string) {
+  const client = convexClient()
+  if (!client) return null
+  try {
+    return await client.query(api.multiply.liquidationRisk.getLiquidationRisk, { slug })
+  } catch {
+    return null
+  }
+}
+
+/** Multiply product — siloed market identity. */
+export async function fetchMultiplyMarket(slug: string) {
+  const client = convexClient()
+  if (!client) return null
+  try {
+    return await client.query(api.multiply.markets.getMarket, { slug })
+  } catch {
+    return null
+  }
+}
+
+/** Multiply product — Interest Rate Model params for the IRM curve card. */
+export async function fetchMultiplyInterestRateModel(slug: string) {
+  const client = convexClient()
+  if (!client) return null
+  try {
+    return await client.query(api.multiply.interestRateModel.getInterestRateModel, { slug })
+  } catch {
+    return null
+  }
+}
+
+/** Multiply product — per-market allocation across contributing pools. */
+export async function fetchMultiplyAllocation(slug: string) {
+  const client = convexClient()
+  if (!client) return null
+  try {
+    const rows = await client.query(api.multiply.allocation.getAllocation, { slug })
+    return rows.length > 0 ? rows : null
+  } catch {
+    return null
+  }
+}
+
+/** Multiply supply/borrow/utilization series (Convex daily rows, "1Y" window). */
+export async function fetchMultiplySupplyBorrow(slug: string) {
+  const client = convexClient()
+  if (!client) return null
+  try {
+    return await client.query(api.markets.getMultiplySupplyBorrow, { slug })
+  } catch {
+    return null
+  }
+}
+
+/** Multiply historical utilization series (Convex daily rows, "1Y" window). */
+export async function fetchMultiplyHistoricalUtilization(slug: string) {
+  const client = convexClient()
+  if (!client) return null
+  try {
+    return await client.query(api.markets.getMultiplyHistoricalUtilization, { slug })
   } catch {
     return null
   }

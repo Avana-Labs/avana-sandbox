@@ -9,6 +9,13 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
 }))
 
+// MultiplyClient reads api.multiply.tokenParameters.listTokens for its token maps.
+// This test only asserts routing, so stub useQuery to skip the Convex path entirely
+// (buildMultiplyPageData falls back to the multiply-sim constants when the arg is null).
+vi.mock("convex/react", () => ({
+  useQuery: () => undefined,
+}))
+
 vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
   // MultiplyClient now renders the live session-backed catalog. The routing
   // assertion below doesn't depend on session content (the markets table is

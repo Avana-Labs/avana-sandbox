@@ -12,6 +12,13 @@ vi.mock("@/app/lib/currency/use-currency", () => ({
   useCurrency: () => ({ exact: (value: number) => `$${value.toFixed(2)}` }),
 }))
 
+// The wallet tab now consults Convex for balances when no explicit prop is passed.
+// The isolated test render doesn't mount a ConvexProvider, so stub the hook to
+// return undefined — the tab falls through to the DEMO_SWAP_BALANCES default.
+vi.mock("@/app/lib/swap-system/use-convex-wallet-balances", () => ({
+  useConvexWalletBalances: () => undefined,
+}))
+
 function renderWalletTab(node: ReactNode) {
   return render(<DisplayPreferencesProvider>{node}</DisplayPreferencesProvider>)
 }

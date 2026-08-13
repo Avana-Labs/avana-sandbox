@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
-import { RewardsBalanceHero } from "@/app/rewards/rewards-balance-hero"
+import { RewardsBalanceHero } from "@/app/dashboard/_rewards-components/rewards-balance-hero"
 
 vi.mock("next/dynamic", () => ({
   default: () =>

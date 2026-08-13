@@ -45,12 +45,66 @@ export const upsertMarkets = action({
   },
 })
 
+export const upsertBorrowMarkets = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.borrow.markets.upsertMarkets, { rows })
+  },
+})
+
+export const upsertLendMarkets = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.lend.markets.upsertMarkets, { rows })
+  },
+})
+
+export const upsertMultiplyMarkets = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.multiply.markets.upsertMarkets, { rows })
+  },
+})
+
 export const upsertDailyStats = action({
   args: rowsArgs,
   handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
     requireSeedSecret(seedSecret)
     requireSafeSeedRows(rows)
     return ctx.runMutation(internal.seed.upsertDailyStats, { rows })
+  },
+})
+
+export const upsertBorrowDailyStats = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.borrow.dailyStats.upsertDailyStats, { rows })
+  },
+})
+
+export const upsertLendDailyStats = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.lend.dailyStats.upsertDailyStats, { rows })
+  },
+})
+
+export const upsertMultiplyDailyStats = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.multiply.dailyStats.upsertDailyStats, { rows })
   },
 })
 
@@ -75,12 +129,66 @@ export const upsertRevenue = action({
   },
 })
 
+export const upsertBorrowRevenueDaily = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.borrow.cashflow.upsertRevenueDaily, { rows })
+  },
+})
+
+export const upsertLendRevenueDaily = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.lend.cashflow.upsertRevenueDaily, { rows })
+  },
+})
+
+export const upsertMultiplyRevenueDaily = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.multiply.cashflow.upsertRevenueDaily, { rows })
+  },
+})
+
 export const upsertRisk = action({
   args: rowsArgs,
   handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
     requireSeedSecret(seedSecret)
     requireSafeSeedRows(rows)
     return ctx.runMutation(internal.seed.upsertRisk, { rows })
+  },
+})
+
+export const upsertBorrowRiskAssessments = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.borrow.riskAssessment.upsertRiskAssessments, { rows })
+  },
+})
+
+export const upsertLendRiskAssessments = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.lend.riskAssessment.upsertRiskAssessments, { rows })
+  },
+})
+
+export const upsertMultiplyRiskAssessments = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.multiply.riskAssessment.upsertRiskAssessments, { rows })
   },
 })
 
@@ -102,6 +210,33 @@ export const upsertContent = action({
   },
 })
 
+export const upsertBorrowMarketContent = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.borrow.content.upsertContent, { rows })
+  },
+})
+
+export const upsertLendMarketContent = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.lend.content.upsertContent, { rows })
+  },
+})
+
+export const upsertMultiplyMarketContent = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.multiply.content.upsertContent, { rows })
+  },
+})
+
 export const clearWalletEvents = action({
   args: { seedSecret: v.string(), limit: v.optional(v.number()) },
   handler: async (ctx, { seedSecret, limit }): Promise<unknown> => {
@@ -116,6 +251,211 @@ export const insertWalletEvents = action({
     requireSeedSecret(seedSecret)
     requireSafeSeedRows(rows)
     return ctx.runMutation(internal.seed.insertWalletEvents, { rows })
+  },
+})
+
+export const upsertBorrowRiskParameters = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.borrow.riskParameters.upsertRiskParameters, { rows })
+  },
+})
+
+export const upsertBorrowInterestRateModels = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.borrow.interestRateModel.upsertInterestRateModels, { rows })
+  },
+})
+
+export const upsertBorrowLiquidationDaily = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.borrow.liquidationRisk.upsertLiquidationDaily, { rows })
+  },
+})
+
+export const upsertBorrowPoolBorrowables = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.borrow.poolBorrowables.upsertPoolBorrowables, { rows })
+  },
+})
+
+export const upsertLendRiskParameters = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.lend.riskParameters.upsertRiskParameters, { rows })
+  },
+})
+
+export const upsertLendInterestRateModels = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.lend.interestRateModel.upsertInterestRateModels, { rows })
+  },
+})
+
+export const upsertMultiplyRiskParameters = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.multiply.riskParameters.upsertRiskParameters, { rows })
+  },
+})
+
+export const upsertMultiplyLiquidationDaily = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.multiply.liquidationRisk.upsertLiquidationDaily, { rows })
+  },
+})
+
+// -----------------------------------------------------------------------------
+// Phase C additions — action wrappers for every new upsert mutation. Follow the
+// same secret-gated + size-bounded pattern as the existing wrappers so the
+// build-seed pipeline can populate every new Convex table via one entrypoint.
+// -----------------------------------------------------------------------------
+
+export const upsertSpokes = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.borrow.spokes.upsertSpokes, { rows })
+  },
+})
+
+export const upsertDexes = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.borrow.dexes.upsertDexes, { rows })
+  },
+})
+
+export const upsertBorrowAssets = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.borrow.assets.upsertAssets, { rows })
+  },
+})
+
+export const upsertMultiplyInterestRateModels = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.multiply.interestRateModel.upsertInterestRateModels, { rows })
+  },
+})
+
+export const upsertMultiplyAllocation = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.multiply.allocation.upsertAllocation, { rows })
+  },
+})
+
+export const upsertMultiplyTokenParameters = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.multiply.tokenParameters.upsertTokens, { rows })
+  },
+})
+
+export const upsertPoolContractAddresses = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.contractAddresses.upsertPoolAddresses, { rows })
+  },
+})
+
+export const upsertAssetContractAddresses = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.contractAddresses.upsertAssetAddresses, { rows })
+  },
+})
+
+export const upsertMultiplyContractAddresses = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.contractAddresses.upsertMultiplyAddresses, { rows })
+  },
+})
+
+/**
+ * Per-wallet portfolio upserts take a wallet arg alongside rows[]. Rows use
+ * the same size caps to keep any single seed batch small.
+ */
+const perWalletRowsArgs = {
+  seedSecret: v.string(),
+  wallet: v.string(),
+  rows: v.array(v.any()),
+}
+
+export const upsertWalletCollateralPositions = action({
+  args: perWalletRowsArgs,
+  handler: async (ctx, { seedSecret, wallet, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.wallet.collateralPositions.upsertForWallet, { wallet, rows })
+  },
+})
+
+export const upsertWalletDebts = action({
+  args: perWalletRowsArgs,
+  handler: async (ctx, { seedSecret, wallet, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.wallet.debts.upsertForWallet, { wallet, rows })
+  },
+})
+
+export const upsertWalletClaimPositions = action({
+  args: perWalletRowsArgs,
+  handler: async (ctx, { seedSecret, wallet, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.wallet.claimPositions.upsertForWallet, { wallet, rows })
+  },
+})
+
+export const upsertWalletRewardsProgress = action({
+  args: perWalletRowsArgs,
+  handler: async (ctx, { seedSecret, wallet, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.wallet.rewardsProgress.upsertForWallet, { wallet, rows })
   },
 })
 

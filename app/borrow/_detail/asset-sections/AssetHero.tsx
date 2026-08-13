@@ -143,7 +143,11 @@ export function AssetHero({ detail, leading, actions, className, hideIdentity = 
     if (activeMetricTab === metricTabs[2]) {
       return buildFeedFromRangeSeries(detail.heroMetric.series.utilization, "percent", fallback)
     }
-    return buildFeedFromRangeSeries(detail.heroMetric.series.supply, "usdCompact", fallback)
+    // Prefer Convex-backed supply series when hydrated; mock only as fallback.
+    return (
+      detail.heroFeed ??
+      buildFeedFromRangeSeries(detail.heroMetric.series.supply, "usdCompact", getAssetHeroFeed(detail.id))
+    )
   }, [activeMetricTab, detail.heroFeed, detail.heroMetric.series, detail.id, metricTabs])
 
   return (

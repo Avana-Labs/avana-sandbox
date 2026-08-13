@@ -5,7 +5,6 @@ import {
   HOME_DEFAULT_SELECTIONS,
   HOME_INITIAL_CLAIMABLE_TOTALS,
   HOME_INITIAL_CLAIM_SELECTIONS,
-  HOME_INITIAL_DEBTS,
   HOME_PORTFOLIO_SUMMARY,
   formatCompactUsd,
   formatHealthFactor,
@@ -36,7 +35,6 @@ export {
   HOME_DEFAULT_SELECTIONS,
   HOME_INITIAL_CLAIMABLE_TOTALS,
   HOME_INITIAL_CLAIM_SELECTIONS,
-  HOME_INITIAL_DEBTS,
   HOME_PORTFOLIO_SUMMARY,
   formatCompactUsd,
   formatHealthFactor,
@@ -61,7 +59,7 @@ export const mockBorrowSharedSource = {
   },
   getInitialState() {
     return {
-      debts: HOME_INITIAL_DEBTS,
+      debts: {} as Record<string, number>,
       claimSelections: HOME_INITIAL_CLAIM_SELECTIONS,
       claimableTotals: HOME_INITIAL_CLAIMABLE_TOTALS,
       selections: HOME_DEFAULT_SELECTIONS,

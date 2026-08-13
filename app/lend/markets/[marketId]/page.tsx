@@ -14,7 +14,7 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { marketId } = await params
-  const detail = getLendMarketDetail(marketId)
+  const detail = (await getLendMarketDetailFromConvex(marketId)) ?? getLendMarketDetail(marketId)
   if (!detail) return { title: "Lend market · Avana" }
   return buildSeoMetadata({
     title: `${detail.hero.name} · Avana Lend`,
