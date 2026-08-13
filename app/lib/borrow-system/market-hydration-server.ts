@@ -115,16 +115,33 @@ export async function fetchPoolUtilizationSeries(slug: string): Promise<ConvexSe
   }
 }
 
-/** Asset hero series = total borrows over the full window. */
-export async function fetchAssetBorrowSeries(slug: string): Promise<ConvexSeriesPoint[]> {
+async function fetchAssetHeroSeries(
+  slug: string,
+  metric: "supply" | "borrow" | "utilization",
+): Promise<ConvexSeriesPoint[]> {
   const client = convexClient()
   if (!client) return []
   try {
-    const res = await client.query(api.markets.getAssetHeroSeries, { slug, metric: "borrow", range: "ALL" })
+    const res = await client.query(api.markets.getAssetHeroSeries, { slug, metric, range: "ALL" })
     return (res?.points ?? []) as ConvexSeriesPoint[]
   } catch {
     return []
   }
+}
+
+/** Asset hero Supplied series over the full window. */
+export function fetchAssetSuppliedSeries(slug: string): Promise<ConvexSeriesPoint[]> {
+  return fetchAssetHeroSeries(slug, "supply")
+}
+
+/** Asset hero Borrowed series over the full window. */
+export function fetchAssetBorrowSeries(slug: string): Promise<ConvexSeriesPoint[]> {
+  return fetchAssetHeroSeries(slug, "borrow")
+}
+
+/** Asset hero Utilization series over the full window. */
+export function fetchAssetUtilizationSeries(slug: string): Promise<ConvexSeriesPoint[]> {
+  return fetchAssetHeroSeries(slug, "utilization")
 }
 
 /** Cashflow breakdown card (rows + monthly bars) from seeded revenue. */

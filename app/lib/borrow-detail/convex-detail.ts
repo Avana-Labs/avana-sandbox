@@ -5,6 +5,8 @@ import { mergeConvexMarketSnapshots } from "@/app/lib/borrow-system/market-hydra
 import {
   fetchAllocation,
   fetchAssetBorrowSeries,
+  fetchAssetSuppliedSeries,
+  fetchAssetUtilizationSeries,
   fetchAssetCashflowTrend,
   fetchAssetContractAddresses,
   fetchBorrowInterestRateModel,
@@ -420,7 +422,9 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
   if (!detail) return null
 
   const [
+    suppliedPoints,
     borrowPoints,
+    utilizationPoints,
     supplyBorrow,
     historicalUtilization,
     cashflow,
@@ -436,7 +440,9 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
     siloedMarket,
     contractAddresses,
   ] = await Promise.all([
+    fetchAssetSuppliedSeries(slug),
     fetchAssetBorrowSeries(slug),
+    fetchAssetUtilizationSeries(slug),
     fetchSupplyBorrow(slug),
     fetchHistoricalUtilization(slug),
     fetchCashflowBreakdown("asset", slug),
@@ -462,7 +468,9 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
         injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, record.baseAssetId),
         siloedMarket,
       ),
-      heroFeed: buildHeroFeedFromConvexSeries(borrowPoints, "usdCompact") ?? undefined,
+      heroFeed: buildHeroFeedFromConvexSeries(suppliedPoints, "usdCompact") ?? undefined,
+      heroBorrowedFeed: buildHeroFeedFromConvexSeries(borrowPoints, "usdCompact") ?? undefined,
+      heroUtilizationFeed: buildHeroFeedFromConvexSeries(utilizationPoints, "percent") ?? undefined,
       supplyBorrow: (supplyBorrow as typeof detail.supplyBorrow | null) ?? EMPTY_SUPPLY_BORROW,
       historicalUtilization: (historicalUtilization as typeof detail.historicalUtilization | null) ?? EMPTY_SERIES,
       cashflow: (cashflow as typeof detail.cashflow | null) ?? EMPTY_CASHFLOW_CARD,

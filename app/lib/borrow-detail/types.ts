@@ -425,9 +425,13 @@ export type AssetDetail = {
     slopeAboveOptimalPct: number
     baseBorrowRatePct: number
   }
-  /** Convex-backed hero chart feed (total borrows). Set only by the Convex detail
-   * builder; the hero falls back to the local feed when absent. */
+  /** Convex-backed hero chart feed (Supplied). Set only by the Convex detail builder;
+   * the hero falls back to the local feed when absent. */
   heroFeed?: ChartFeed
+  /** Convex-backed Borrowed hero feed (Borrowed tab). Convex-only; PRNG fallback when absent. */
+  heroBorrowedFeed?: ChartFeed
+  /** Convex-backed Utilization hero feed (Utilization tab). Convex-only; PRNG fallback when absent. */
+  heroUtilizationFeed?: ChartFeed
 }
 
 // -------------------------------------------------------------------------
