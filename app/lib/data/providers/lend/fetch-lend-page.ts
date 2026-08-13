@@ -5,12 +5,7 @@ import { liveLendPageSource, mockLendPageSource, type LendPageSource } from "./s
 import type { LendPageData } from "./types"
 
 const lendPageSchema = z.object({
-  tokens: z.array(z.object({ symbol: z.string(), name: z.string() }).passthrough()),
   markets: z.array(z.object({ symbol: z.string(), name: z.string() }).passthrough()),
-  activity: z.array(
-    z.object({ type: z.string(), asset: z.string(), amount: z.string(), date: z.string() }).passthrough(),
-  ),
-  chartSeries: z.array(z.object({ time: z.string(), value: z.number() })),
   featuredAssets: z.record(
     z.string(),
     z.object({
@@ -32,6 +27,13 @@ const lendPageSchema = z.object({
       })
       .passthrough(),
   ),
+  assetGroups: z.array(
+    z.object({
+      title: z.string(),
+      subtitle: z.string().optional(),
+      rows: z.array(z.object({ symbol: z.string(), name: z.string(), apy: z.string() }).passthrough()),
+    }),
+  ),
   marketRows: z.array(
     z
       .object({
@@ -40,13 +42,6 @@ const lendPageSchema = z.object({
         href: z.string(),
       })
       .passthrough(),
-  ),
-  assetGroups: z.array(
-    z.object({
-      title: z.string(),
-      subtitle: z.string().optional(),
-      rows: z.array(z.object({ symbol: z.string(), name: z.string(), apy: z.string() }).passthrough()),
-    }),
   ),
 })
 
