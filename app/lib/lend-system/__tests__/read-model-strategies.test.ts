@@ -10,7 +10,7 @@ describe("buildLendStrategyBuckets", () => {
     const market = Object.values(state.markets).find((entry) => entry.rewardsApy === 0)!
 
     const page = buildLendPageData("demo-wallet", state)
-    const row = page.marketRows.find((entry) => entry.marketId === market.marketId)
+    const row = page.assetGroups.flatMap((group) => group.rows).find((entry) => entry.marketId === market.marketId)
 
     expect(row?.rewardsApyLabel).toBe("No rewards")
   })
