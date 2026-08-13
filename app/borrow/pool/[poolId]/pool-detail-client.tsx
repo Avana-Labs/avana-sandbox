@@ -6,6 +6,7 @@ import { ActionIcon } from "@/app/components/action-icon"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
+import type { PoolHeroPreloads } from "@/app/lib/borrow-detail/hero-preload"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { AssetsYouCanBorrowSection } from "@/app/borrow/_detail/ui/CrossMarketReferenceSections"
 import { LiquidationRiskSection } from "@/app/borrow/_detail/ui/LiquidationRiskSection"
@@ -40,7 +41,7 @@ const DetailFaqSection = dynamic(
   { ssr: false },
 )
 
-type Props = { detail: PoolDetail }
+type Props = { detail: PoolDetail; heroPreloads?: PoolHeroPreloads | null }
 
 /**
  * Two-column detail page for a single LP collateral pool.
@@ -49,7 +50,7 @@ type Props = { detail: PoolDetail }
  * CompactBorrowCard reused) sticks on the right. Mobile: sections stack and
  * the sidebar collapses into a bottom sheet triggered by a fixed button.
  */
-export function PoolDetailClient({ detail }: Props) {
+export function PoolDetailClient({ detail, heroPreloads = null }: Props) {
   const { t } = useTranslation()
   const about = withGovernanceParameterView(detail.about, detail.protocolParameters)
 
@@ -77,7 +78,7 @@ export function PoolDetailClient({ detail }: Props) {
               </div>
 
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                <PoolHero detail={detail} hideIdentity className="mb-12" />
+                <PoolHero detail={detail} heroPreloads={heroPreloads} hideIdentity className="mb-12" />
 
                 <AboutNewsSection
                   about={about}
