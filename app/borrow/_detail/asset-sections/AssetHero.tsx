@@ -4,8 +4,11 @@ import * as React from "react"
 import { Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
+import { useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
-import { getAssetHeroFeed } from "@/app/lib/chart-feeds"
+import { buildHeroFeedFromConvexSeries, getAssetHeroFeed } from "@/app/lib/chart-feeds"
+import { useConvexLiveSession } from "@/app/lib/convex/use-convex-live-session"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
   buildFeedFromRangeSeries,
@@ -128,7 +131,35 @@ export function AssetHeroIdentity({
   )
 }
 
-export function AssetHero({ detail, leading, actions, className, hideIdentity = false }: Props) {
+/**
+ * Live wrapper (mirrors PoolHeroLive): subscribes to the three asset hero series and
+ * overrides the server-built feed props with live data, falling back to the props while
+ * loading. Only mounted where a Convex provider exists — see `useConvexLiveSession`.
+ */
+function AssetHeroLive(props: Props) {
+  const { detail } = props
+  const supply = useQuery(api.markets.getAssetHeroSeries, { slug: detail.id, metric: "supply", range: "ALL" })
+  const borrow = useQuery(api.markets.getAssetHeroSeries, { slug: detail.id, metric: "borrow", range: "ALL" })
+  const utilization = useQuery(api.markets.getAssetHeroSeries, { slug: detail.id, metric: "utilization", range: "ALL" })
+  const liveDetail = React.useMemo(
+    () => ({
+      ...detail,
+      heroFeed: buildHeroFeedFromConvexSeries(supply?.points ?? [], "usdCompact") ?? detail.heroFeed,
+      heroBorrowedFeed: buildHeroFeedFromConvexSeries(borrow?.points ?? [], "usdCompact") ?? detail.heroBorrowedFeed,
+      heroUtilizationFeed:
+        buildHeroFeedFromConvexSeries(utilization?.points ?? [], "percent") ?? detail.heroUtilizationFeed,
+    }),
+    [detail, supply, borrow, utilization],
+  )
+  return <AssetHeroView {...props} detail={liveDetail} />
+}
+
+export function AssetHero(props: Props) {
+  const live = useConvexLiveSession()
+  return live ? <AssetHeroLive {...props} /> : <AssetHeroView {...props} />
+}
+
+function AssetHeroView({ detail, leading, actions, className, hideIdentity = false }: Props) {
   const { t } = useTranslation()
   const metricTabs = React.useMemo(() => [t("Supplied"), t("Borrowed"), t("Utilization")], [t])
   const [activeMetricTab, setActiveMetricTab] = React.useState(metricTabs[0])

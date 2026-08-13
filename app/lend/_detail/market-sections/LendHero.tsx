@@ -4,9 +4,12 @@ import * as React from "react"
 import { Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
+import { useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { formatChartValue, type ChartFeed, type ChartRangeData, type ChartValueFormat } from "@/app/components/charts"
-import { getLendMarketHeroFeed } from "@/app/lib/chart-feeds"
+import { buildHeroFeedFromConvexSeries, getLendMarketHeroFeed } from "@/app/lib/chart-feeds"
+import { useConvexLiveSession } from "@/app/lib/convex/use-convex-live-session"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { resolveHeroContractLabel } from "@/app/borrow/_detail/lib/hero-chart-feeds"
 
@@ -97,7 +100,31 @@ export function LendHeroIdentity({
   )
 }
 
-export function LendHero({ detail, leading, actions, className, hideIdentity = false }: LendHeroProps) {
+/**
+ * Live wrapper: subscribes to the lend supply hero series and overrides the server
+ * `heroFeed` (the Supplied tab) with live data, falling back to it while loading. Only
+ * the Supplied metric has a hero-series query; Borrowed/Utilization stay on the server
+ * `supplyBorrow` snapshot. Only mounted where a Convex provider exists.
+ */
+function LendHeroLive(props: LendHeroProps) {
+  const { detail } = props
+  const supply = useQuery(api.markets.getLendHeroSeries, { slug: detail.id, metric: "supply", range: "ALL" })
+  const liveDetail = React.useMemo(
+    () => ({
+      ...detail,
+      heroFeed: buildHeroFeedFromConvexSeries(supply?.points ?? [], "usdCompact") ?? detail.heroFeed,
+    }),
+    [detail, supply],
+  )
+  return <LendHeroView {...props} detail={liveDetail} />
+}
+
+export function LendHero(props: LendHeroProps) {
+  const live = useConvexLiveSession()
+  return live ? <LendHeroLive {...props} /> : <LendHeroView {...props} />
+}
+
+function LendHeroView({ detail, leading, actions, className, hideIdentity = false }: LendHeroProps) {
   const { t } = useTranslation()
   const metricTabs = React.useMemo(() => [t("Supplied"), t("Borrowed"), t("Utilization")], [t])
   const [activeMetricTab, setActiveMetricTab] = React.useState(metricTabs[0])
