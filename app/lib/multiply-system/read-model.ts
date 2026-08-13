@@ -132,9 +132,7 @@ export type MultiplyTokenParameterRow = {
  * token-logo map from those rows. Symbols line up 1:1 with MULTIPLY_TOKEN_LOGOS keys
  * (all 16 loop assets), so the returned object satisfies the MultiplyPageData typing.
  */
-function buildTokenLogosFromConvex(
-  rows: readonly MultiplyTokenParameterRow[],
-): Pick<MultiplyPageData, "tokenLogos"> {
+function buildTokenLogosFromConvex(rows: readonly MultiplyTokenParameterRow[]): Pick<MultiplyPageData, "tokenLogos"> {
   type TokenSymbol = keyof typeof MULTIPLY_TOKEN_LOGOS
   const logos: Partial<Record<TokenSymbol, string>> = {}
   for (const row of rows) {
