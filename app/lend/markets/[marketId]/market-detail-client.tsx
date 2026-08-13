@@ -14,6 +14,7 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
 import type { LendHeroPreloads } from "@/app/lib/lend-detail/hero-preload"
 import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
+import type { CashflowPreload } from "@/app/lib/detail-page/cashflow-preload"
 import type { TxHistoryRow } from "@/app/lib/borrow-detail"
 import {
   DeferredDetailContent,
@@ -49,6 +50,7 @@ type Props = {
   detail: LendMarketDetail
   heroPreloads?: LendHeroPreloads | null
   quickStatsPreload?: QuickStatsPreload | null
+  cashflowPreload?: CashflowPreload | null
 }
 
 /** Map a wallet's own sandbox lend actions into the shared TxHistoryRow shape. */
@@ -81,7 +83,12 @@ function formatAge(elapsedMs: number) {
   return `${Math.floor(h / 24)}d`
 }
 
-export function LendMarketDetailClient({ detail, heroPreloads = null, quickStatsPreload = null }: Props) {
+export function LendMarketDetailClient({
+  detail,
+  heroPreloads = null,
+  quickStatsPreload = null,
+  cashflowPreload = null,
+}: Props) {
   const session = useLendSessionContext()
   const { t } = useTranslation()
   const marketId = detail.row.marketId
@@ -145,7 +152,7 @@ export function LendMarketDetailClient({ detail, heroPreloads = null, quickStats
                       borrowAprPct={detail.borrowAprPct}
                       protocolParameters={detail.protocolParameters}
                     />
-                    <CashflowCard detail={detail} />
+                    <CashflowCard detail={detail} cashflowPreload={cashflowPreload} />
                     <DetailFaqSection
                       title={t("General FAQs")}
                       items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}

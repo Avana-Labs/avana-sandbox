@@ -5,6 +5,7 @@ import { getPoolDetail } from "@/app/lib/borrow-detail"
 import { getPoolDetailFromConvex } from "@/app/lib/borrow-detail/convex-detail"
 import { preloadPoolHero } from "@/app/lib/borrow-detail/hero-preload"
 import { preloadDetailQuickStats } from "@/app/lib/detail-page/quick-stats-preload"
+import { preloadDetailCashflow } from "@/app/lib/detail-page/cashflow-preload"
 import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { BorrowMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
@@ -41,6 +42,7 @@ export default async function MarketDetailPage({ params }: PageProps) {
   // value and hand the tokens to the client so the live hero hydrates instead of re-fetching.
   const { preloads: heroPreloads, feeds } = await preloadPoolHero(marketId)
   const quickStatsPreload = await preloadDetailQuickStats("pool", marketId)
+  const cashflowPreload = await preloadDetailCashflow("pool", marketId)
   const detailWithFeeds = { ...detail, ...feeds }
   const canonicalUrl = `https://avana.cc/borrow/markets/${marketId}`
   return (
@@ -64,6 +66,7 @@ export default async function MarketDetailPage({ params }: PageProps) {
         detail={detailWithFeeds}
         heroPreloads={heroPreloads}
         quickStatsPreload={quickStatsPreload}
+        cashflowPreload={cashflowPreload}
       />
     </>
   )

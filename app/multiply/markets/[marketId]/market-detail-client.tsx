@@ -24,11 +24,13 @@ import { LiquidationRiskSection } from "@/app/borrow/_detail/ui/LiquidationRiskS
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
 import type { MultiplyHeroPreloads } from "@/app/lib/multiply-detail/hero-preload"
 import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
+import type { CashflowPreload } from "@/app/lib/detail-page/cashflow-preload"
 
 type Props = {
   detail: MultiplyMarketDetail
   heroPreloads?: MultiplyHeroPreloads | null
   quickStatsPreload?: QuickStatsPreload | null
+  cashflowPreload?: CashflowPreload | null
 }
 
 const CashflowCard = dynamic(
@@ -48,7 +50,12 @@ const TransactionHistoryCard = dynamic(
   { ssr: false },
 )
 
-export function MarketDetailClient({ detail, heroPreloads = null, quickStatsPreload = null }: Props) {
+export function MarketDetailClient({
+  detail,
+  heroPreloads = null,
+  quickStatsPreload = null,
+  cashflowPreload = null,
+}: Props) {
   const session = useMultiplySessionContext()
   const { t } = useTranslation()
   const marketId = detail.id.toLowerCase().replaceAll("_", "-")
@@ -111,7 +118,7 @@ export function MarketDetailClient({ detail, heroPreloads = null, quickStatsPrel
 
                 <section aria-label={t("Multiply market analytics")} className={detailAnalyticsSectionClass}>
                   <DeferredDetailContent className={detailAnalyticsStackClass}>
-                    <CashflowCard detail={detail} />
+                    <CashflowCard detail={detail} cashflowPreload={cashflowPreload} />
                     {detail.liquidationRisk && detail.liquidationRisk.length > 0 ? (
                       <LiquidationRiskSection stats={detail.liquidationRisk} />
                     ) : null}

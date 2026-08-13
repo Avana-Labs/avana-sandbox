@@ -6,6 +6,7 @@ import { ActionIcon } from "@/app/components/action-icon"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import type { AssetHeroPreloads } from "@/app/lib/borrow-detail/hero-preload"
 import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
+import type { CashflowPreload } from "@/app/lib/detail-page/cashflow-preload"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import {
@@ -56,9 +57,15 @@ type Props = {
   detail: AssetDetail
   heroPreloads?: AssetHeroPreloads | null
   quickStatsPreload?: QuickStatsPreload | null
+  cashflowPreload?: CashflowPreload | null
 }
 
-export function AssetDetailClient({ detail, heroPreloads = null, quickStatsPreload = null }: Props) {
+export function AssetDetailClient({
+  detail,
+  heroPreloads = null,
+  quickStatsPreload = null,
+  cashflowPreload = null,
+}: Props) {
   const { t } = useTranslation()
   const closeHref = `/borrow/assets/${detail.row.id}`
   const about = withGovernanceParameterView(detail.about, detail.protocolParameters)
@@ -118,7 +125,7 @@ export function AssetDetailClient({ detail, heroPreloads = null, quickStatsPrelo
                   <DeferredDetailContent className={detailAnalyticsStackClass}>
                     <InterestRateModelCard {...interestRateModelFromAssetDetail(detail)} />
                     <AllocationBreakdownCard detail={detail} />
-                    <CashflowCard detail={detail} />
+                    <CashflowCard detail={detail} cashflowPreload={cashflowPreload} />
                     <DetailFaqSection
                       title={t("General FAQs")}
                       items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
