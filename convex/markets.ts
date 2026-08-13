@@ -129,23 +129,6 @@ export const getMultiplySupplyBorrow = query({
   },
 })
 
-/**
- * Multiply variant of getHistoricalUtilization — reads scope="multiply". Feeds
- * the historical utilization card that currently renders from PRNG.
- */
-export const getMultiplyHistoricalUtilization = query({
-  args: { slug: v.string() },
-  handler: async (ctx, { slug }) => {
-    const rows = await dailyRowsForScope(ctx, "multiply", slug, "1Y")
-    if (rows.length === 0) return null
-    const market = await resolveMarket(ctx, "multiply", slug)
-    return {
-      id: `${market?._id ?? slug}:historical-utilization`,
-      label: "Utilization",
-      points: rows.map((r) => ({ t: r.day, v: r.utilizationPct })),
-    }
-  },
-})
 
 /**
  * Quick-stats row values + 24h deltas derived from the two most recent daily

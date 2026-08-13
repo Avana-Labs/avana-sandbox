@@ -185,46 +185,12 @@ export async function fetchMultiplyMarket(slug: string) {
   }
 }
 
-/** Multiply product — Interest Rate Model params for the IRM curve card. */
-export async function fetchMultiplyInterestRateModel(slug: string) {
-  const client = convexClient()
-  if (!client) return null
-  try {
-    return await client.query(api.multiply.interestRateModel.getInterestRateModel, { slug })
-  } catch {
-    return null
-  }
-}
-
-/** Multiply product — per-market allocation across contributing pools. */
-export async function fetchMultiplyAllocation(slug: string) {
-  const client = convexClient()
-  if (!client) return null
-  try {
-    const rows = await client.query(api.multiply.allocation.getAllocation, { slug })
-    return rows.length > 0 ? rows : null
-  } catch {
-    return null
-  }
-}
-
 /** Multiply supply/borrow/utilization series (Convex daily rows, "1Y" window). */
 export async function fetchMultiplySupplyBorrow(slug: string) {
   const client = convexClient()
   if (!client) return null
   try {
     return await client.query(api.markets.getMultiplySupplyBorrow, { slug })
-  } catch {
-    return null
-  }
-}
-
-/** Multiply historical utilization series (Convex daily rows, "1Y" window). */
-export async function fetchMultiplyHistoricalUtilization(slug: string) {
-  const client = convexClient()
-  if (!client) return null
-  try {
-    return await client.query(api.markets.getMultiplyHistoricalUtilization, { slug })
   } catch {
     return null
   }

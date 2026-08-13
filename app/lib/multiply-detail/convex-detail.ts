@@ -2,12 +2,9 @@ import "server-only"
 import { requestCache as cache } from "@/app/lib/detail-page/request-cache"
 import { buildHeroFeedFromConvexSeries } from "@/app/lib/chart-feeds"
 import {
-  fetchMultiplyAllocation,
   fetchMultiplyCashflowBreakdown,
   fetchMultiplyContent,
   fetchMultiplyContractAddresses,
-  fetchMultiplyHistoricalUtilization,
-  fetchMultiplyInterestRateModel,
   fetchMultiplyLiquidationRisk,
   fetchMultiplyMarket,
   fetchMultiplyMarketSnapshot,
@@ -178,9 +175,6 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
     siloedMarket,
     snapshot,
     supplyBorrow,
-    historicalUtilization,
-    allocation,
-    interestRateModel,
     contractAddresses,
   ] = await Promise.all([
     fetchMultiplySupplySeries(slug),
@@ -196,9 +190,6 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
     fetchMultiplyMarket(slug),
     fetchMultiplyMarketSnapshot(slug),
     fetchMultiplySupplyBorrow(slug),
-    fetchMultiplyHistoricalUtilization(slug),
-    fetchMultiplyAllocation(slug),
-    fetchMultiplyInterestRateModel(slug),
     fetchMultiplyContractAddresses(slug),
   ])
   // Fail closed in live mode when Convex has no snapshot — matches borrow detail
@@ -227,20 +218,6 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
       // reusing the PRNG mock in `detail.supplyBorrow`. Empty series render as no
       // points and the hero chart falls back to its own downstream local feed.
       supplyBorrow: supplyBorrow ?? buildEmptySupplyBorrow(slug),
-      // Fail closed: undefined when Convex returns null, so the section is unrendered
-      // rather than showing PRNG data.
-      historicalUtilization: historicalUtilization ?? undefined,
-      allocation: allocation ?? undefined,
-      interestRateModel: interestRateModel
-        ? {
-            utilizationPct: interestRateModel.utilizationPct,
-            borrowAprPct: interestRateModel.borrowAprPct,
-            optimalUtilizationPct: interestRateModel.optimalUtilizationPct,
-            slopeBelowOptimalPct: interestRateModel.slopeBelowOptimalPct,
-            slopeAboveOptimalPct: interestRateModel.slopeAboveOptimalPct,
-            baseBorrowRatePct: interestRateModel.baseBorrowRatePct,
-          }
-        : undefined,
     },
     content,
     { clearWhenMissing: resolveDataSourceMode() === "live" },
