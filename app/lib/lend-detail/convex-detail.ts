@@ -1,6 +1,5 @@
 import "server-only"
 import { requestCache as cache } from "@/app/lib/detail-page/request-cache"
-import { buildHeroFeedFromConvexSeries } from "@/app/lib/chart-feeds"
 import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
 import {
   fetchLendCashflowBreakdown,
@@ -12,10 +11,10 @@ import {
   fetchLendRecentTransactions,
   fetchLendRisk,
   fetchLendRiskParameters,
-  fetchLendSupplySeries,
   fetchTokenPrices,
 } from "@/app/lib/lend-system/market-hydration-server"
 import { applyDetailContentOverlay, mergeAliasedQuickStats } from "@/app/lib/detail-page/live-detail-helpers"
+import { QUICK_STAT_ALIASES } from "@/app/lib/detail-page/live-quick-stats"
 import { injectSiloedMarketQuickStats, overlayHeroIdentity } from "@/app/lib/detail-page/siloed-market-overlay"
 import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
 import { shouldFailClosedInLive } from "@/app/lib/detail-page/live-fallback"
@@ -39,16 +38,11 @@ import type { QuickStat } from "@/app/lib/borrow-detail"
  */
 
 /** Convex `getQuickStats` emits asset-style ids; map each to the mock ids it overrides. */
-const QUICK_STAT_ALIASES: Record<string, string[]> = {
-  supplyApy: ["supplyApy"],
-  borrowApy: ["borrowApy"],
-}
-
 function mergeConvexQuickStats(
   base: QuickStat[],
   convex: ReadonlyArray<{ id: string; value: string; delta?: QuickStat["delta"] }> | null,
 ): QuickStat[] {
-  return mergeAliasedQuickStats(base, convex, QUICK_STAT_ALIASES)
+  return mergeAliasedQuickStats(base, convex, QUICK_STAT_ALIASES.lend)
 }
 
 /** Overlay the real DefiLlama price onto the "price" quick stat for a base symbol. */
@@ -126,29 +120,19 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
       : undefined,
   )
 
-  const [
-    supplyPoints,
-    cashflow,
-    transactions,
-    risk,
-    quickStats,
-    prices,
-    content,
-    riskParameters,
-    interestRateModel,
-    siloedMarket,
-  ] = await Promise.all([
-    fetchLendSupplySeries(slug),
-    fetchLendCashflowBreakdown(slug),
-    fetchLendRecentTransactions(slug),
-    fetchLendRisk(slug),
-    fetchLendQuickStats(slug),
-    fetchTokenPrices(),
-    fetchLendContent(slug),
-    fetchLendRiskParameters(slug),
-    fetchLendInterestRateModel(slug),
-    fetchLendMarket(slug),
-  ])
+  // Supply hero series preloaded by the page (preloadLendHero) — not fetched here.
+  const [cashflow, transactions, risk, quickStats, prices, content, riskParameters, interestRateModel, siloedMarket] =
+    await Promise.all([
+      fetchLendCashflowBreakdown(slug),
+      fetchLendRecentTransactions(slug),
+      fetchLendRisk(slug),
+      fetchLendQuickStats(slug),
+      fetchTokenPrices(),
+      fetchLendContent(slug),
+      fetchLendRiskParameters(slug),
+      fetchLendInterestRateModel(slug),
+      fetchLendMarket(slug),
+    ])
 
   const headline = resolveLendHeadlineRates({
     snapshotBacked: Boolean(snapshot),
@@ -165,7 +149,7 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
         injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, market.asset.symbol),
         siloedMarket,
       ),
-      heroFeed: buildHeroFeedFromConvexSeries(supplyPoints, "usdCompact") ?? detail.heroFeed,
+      // heroFeed set by the page from preloadLendHero.
       cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
       transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
       risk: (risk as typeof detail.risk) ?? detail.risk,

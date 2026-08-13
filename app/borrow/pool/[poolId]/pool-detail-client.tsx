@@ -6,6 +6,9 @@ import { ActionIcon } from "@/app/components/action-icon"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
+import type { PoolHeroPreloads } from "@/app/lib/borrow-detail/hero-preload"
+import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
+import type { CashflowPreload } from "@/app/lib/detail-page/cashflow-preload"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { AssetsYouCanBorrowSection } from "@/app/borrow/_detail/ui/CrossMarketReferenceSections"
 import { LiquidationRiskSection } from "@/app/borrow/_detail/ui/LiquidationRiskSection"
@@ -40,7 +43,12 @@ const DetailFaqSection = dynamic(
   { ssr: false },
 )
 
-type Props = { detail: PoolDetail }
+type Props = {
+  detail: PoolDetail
+  heroPreloads?: PoolHeroPreloads | null
+  quickStatsPreload?: QuickStatsPreload | null
+  cashflowPreload?: CashflowPreload | null
+}
 
 /**
  * Two-column detail page for a single LP collateral pool.
@@ -49,7 +57,12 @@ type Props = { detail: PoolDetail }
  * CompactBorrowCard reused) sticks on the right. Mobile: sections stack and
  * the sidebar collapses into a bottom sheet triggered by a fixed button.
  */
-export function PoolDetailClient({ detail }: Props) {
+export function PoolDetailClient({
+  detail,
+  heroPreloads = null,
+  quickStatsPreload = null,
+  cashflowPreload = null,
+}: Props) {
   const { t } = useTranslation()
   const about = withGovernanceParameterView(detail.about, detail.protocolParameters)
 
@@ -77,7 +90,7 @@ export function PoolDetailClient({ detail }: Props) {
               </div>
 
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                <PoolHero detail={detail} hideIdentity className="mb-12" />
+                <PoolHero detail={detail} heroPreloads={heroPreloads} hideIdentity className="mb-12" />
 
                 <AboutNewsSection
                   about={about}
@@ -92,7 +105,12 @@ export function PoolDetailClient({ detail }: Props) {
                         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
                           Key Statistics
                         </h2>
-                        <QuickStatsGrid detail={detail} hideRisk />
+                        <QuickStatsGrid
+                          detail={detail}
+                          quickStatsPreload={quickStatsPreload}
+                          product="borrow"
+                          hideRisk
+                        />
                       </section>
                       <RiskSection detail={detail} />
                     </>
@@ -102,7 +120,7 @@ export function PoolDetailClient({ detail }: Props) {
 
                 <section aria-label={t("Pool analytics")} className={detailAnalyticsSectionClass}>
                   <DeferredDetailContent className={detailAnalyticsStackClass}>
-                    <CashflowCard detail={detail} />
+                    <CashflowCard detail={detail} cashflowPreload={cashflowPreload} />
                     <AssetsYouCanBorrowSection
                       collateralLabel={detail.hero.name}
                       assets={detail.borrowableAssets ?? resolveBorrowablesForPool(detail.row)}

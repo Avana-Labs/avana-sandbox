@@ -4,8 +4,11 @@ import * as React from "react"
 import { Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
+import type { AssetHeroPreloads } from "@/app/lib/borrow-detail/hero-preload"
+import { usePreloadedQuery } from "convex/react"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
-import { getAssetHeroFeed } from "@/app/lib/chart-feeds"
+import { buildHeroFeedFromConvexSeries, getAssetHeroFeed } from "@/app/lib/chart-feeds"
+import { useConvexLiveSession } from "@/app/lib/convex/use-convex-live-session"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
   buildFeedFromRangeSeries,
@@ -15,6 +18,7 @@ import {
 
 type Props = {
   detail: AssetDetail
+  heroPreloads?: AssetHeroPreloads | null
   leading?: React.ReactNode
   actions?: React.ReactNode
   className?: string
@@ -128,7 +132,40 @@ export function AssetHeroIdentity({
   )
 }
 
-export function AssetHero({ detail, leading, actions, className, hideIdentity = false }: Props) {
+/**
+ * Live wrapper (mirrors PoolHeroLive): hydrates the three asset hero series from the
+ * server-preloaded tokens via `usePreloadedQuery` (no client re-fetch) and subscribes for
+ * updates, overriding the server-built feed props. Only mounted where a Convex provider
+ * exists AND preload tokens were handed down — see the chooser below.
+ */
+function AssetHeroLive({ preloads, ...props }: Props & { preloads: AssetHeroPreloads }) {
+  const { detail } = props
+  const supply = usePreloadedQuery(preloads.supply)
+  const borrow = usePreloadedQuery(preloads.borrow)
+  const utilization = usePreloadedQuery(preloads.utilization)
+  const liveDetail = React.useMemo(
+    () => ({
+      ...detail,
+      heroFeed: buildHeroFeedFromConvexSeries(supply?.points ?? [], "usdCompact") ?? detail.heroFeed,
+      heroBorrowedFeed: buildHeroFeedFromConvexSeries(borrow?.points ?? [], "usdCompact") ?? detail.heroBorrowedFeed,
+      heroUtilizationFeed:
+        buildHeroFeedFromConvexSeries(utilization?.points ?? [], "percent") ?? detail.heroUtilizationFeed,
+    }),
+    [detail, supply, borrow, utilization],
+  )
+  return <AssetHeroView {...props} detail={liveDetail} />
+}
+
+export function AssetHero(props: Props) {
+  const live = useConvexLiveSession()
+  return live && props.heroPreloads ? (
+    <AssetHeroLive {...props} preloads={props.heroPreloads} />
+  ) : (
+    <AssetHeroView {...props} />
+  )
+}
+
+function AssetHeroView({ detail, leading, actions, className, hideIdentity = false }: Props) {
   const { t } = useTranslation()
   const metricTabs = React.useMemo(() => [t("Supplied"), t("Borrowed"), t("Utilization")], [t])
   const [activeMetricTab, setActiveMetricTab] = React.useState(metricTabs[0])

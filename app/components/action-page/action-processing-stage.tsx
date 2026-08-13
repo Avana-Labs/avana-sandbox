@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Check, LoaderCircle } from "@/app/components/icons"
+import { LoaderCircle } from "@/app/components/icons"
 import type { ActionPreviewUi, ActionStage } from "@/app/lib/action-system/contracts"
 import { ActionCard } from "@/app/components/action-page/action-metrics"
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
@@ -29,7 +29,7 @@ export function ActionProcessingStage({
     <div className="space-y-4" data-testid="action-processing-stage">
       <ActionCard className="overflow-hidden">
         <div className="relative px-4 pb-2 pt-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-1 text-[11px] font-medium text-violet-200">
+          <div className="inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand-soft px-3 py-1 text-[11px] font-medium text-brand-soft-foreground">
             <LoaderCircle className="size-3.5 animate-spin" />
             {t(
               stage === "submitted"
@@ -51,33 +51,10 @@ export function ActionProcessingStage({
             </h2>
           </div>
 
+          {/* The ProcessingNarration animation above already narrates each step per verb;
+              a second executionSteps list here (e.g. "Confirm in wallet" / "Submit") was
+              redundant across every action, so it's intentionally not rendered. */}
           <ProcessingNarration verb={verb} />
-
-          {preview?.executionSteps?.length ? (
-            <ol className="mt-5 space-y-2" aria-label={t("Execution steps")}>
-              {preview.executionSteps.map((step, index) => {
-                const completed = stage === "confirmed" || stage === "refreshing_position" || stage === "reconciled"
-                const active = !completed && index === 0
-                return (
-                  <li
-                    key={step.id}
-                    className="flex items-center gap-3 rounded-radius-md bg-surface-inset px-3 py-2 text-[13px]"
-                  >
-                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full border border-border text-[11px]">
-                      {completed ? (
-                        <Check className="size-3 text-success" />
-                      ) : active ? (
-                        <LoaderCircle className="size-3 animate-spin" />
-                      ) : (
-                        index + 1
-                      )}
-                    </span>
-                    <span className={completed ? "text-foreground" : "text-muted-foreground"}>{t(step.label)}</span>
-                  </li>
-                )
-              })}
-            </ol>
-          ) : null}
         </div>
       </ActionCard>
 

@@ -3,6 +3,10 @@ import { notFound } from "next/navigation"
 import { SchemaMarkup, buildBreadcrumbSchema, buildFaqSchema, buildWebPageSchema } from "@/app/components/seo/schema"
 import { getLendMarketDetail } from "@/app/lib/lend-detail"
 import { getLendMarketDetailFromConvex } from "@/app/lib/lend-detail/convex-detail"
+import { preloadLendHero } from "@/app/lib/lend-detail/hero-preload"
+import { preloadDetailQuickStats } from "@/app/lib/detail-page/quick-stats-preload"
+import { preloadDetailCashflow } from "@/app/lib/detail-page/cashflow-preload"
+import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { LendMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
@@ -14,7 +18,11 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { marketId } = await params
-  const detail = (await getLendMarketDetailFromConvex(marketId)) ?? getLendMarketDetail(marketId)
+  const detail = preferLive(
+    await getLendMarketDetailFromConvex(marketId),
+    getLendMarketDetail(marketId),
+    `lend market metadata:${marketId}`,
+  )
   if (!detail) return { title: "Lend market · Avana" }
   return buildSeoMetadata({
     title: `${detail.hero.name} · Avana Lend`,
@@ -30,6 +38,10 @@ export default async function LendMarketDetailPage({ params }: PageProps) {
 
   const detail = await getLendMarketDetailFromConvex(marketId)
   if (!detail) notFound()
+  const { preloads: heroPreloads, feeds } = await preloadLendHero(marketId)
+  const quickStatsPreload = await preloadDetailQuickStats("lend", marketId)
+  const cashflowPreload = await preloadDetailCashflow("lend", marketId)
+  const detailWithFeeds = { ...detail, ...feeds }
   const canonicalUrl = `https://avana.cc/lend/markets/${marketId}`
   return (
     <>
@@ -48,7 +60,12 @@ export default async function LendMarketDetailPage({ params }: PageProps) {
           buildFaqSchema(detail.faqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),
         ]}
       />
-      <LendMarketDetailClientShell detail={detail} />
+      <LendMarketDetailClientShell
+        detail={detailWithFeeds}
+        heroPreloads={heroPreloads}
+        quickStatsPreload={quickStatsPreload}
+        cashflowPreload={cashflowPreload}
+      />
     </>
   )
 }

@@ -3,6 +3,10 @@ import type { Metadata } from "next"
 import { SchemaMarkup, buildBreadcrumbSchema, buildFaqSchema, buildWebPageSchema } from "@/app/components/seo/schema"
 import { getPoolDetail } from "@/app/lib/borrow-detail"
 import { getPoolDetailFromConvex } from "@/app/lib/borrow-detail/convex-detail"
+import { preloadPoolHero } from "@/app/lib/borrow-detail/hero-preload"
+import { preloadDetailQuickStats } from "@/app/lib/detail-page/quick-stats-preload"
+import { preloadDetailCashflow } from "@/app/lib/detail-page/cashflow-preload"
+import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { BorrowMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
@@ -14,7 +18,11 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { marketId } = await params
-  const detail = (await getPoolDetailFromConvex(marketId)) ?? getPoolDetail(marketId)
+  const detail = preferLive(
+    await getPoolDetailFromConvex(marketId),
+    getPoolDetail(marketId),
+    `borrow market metadata:${marketId}`,
+  )
   if (!detail) return { title: "Market · Avana" }
   return buildSeoMetadata({
     title: `${detail.hero.name} · Avana Borrow`,
@@ -30,6 +38,12 @@ export default async function MarketDetailPage({ params }: PageProps) {
 
   const detail = await getPoolDetailFromConvex(marketId)
   if (!detail) notFound()
+  // Preload the hero series once on the server; build the initial feeds from the preloaded
+  // value and hand the tokens to the client so the live hero hydrates instead of re-fetching.
+  const { preloads: heroPreloads, feeds } = await preloadPoolHero(marketId)
+  const quickStatsPreload = await preloadDetailQuickStats("pool", marketId)
+  const cashflowPreload = await preloadDetailCashflow("pool", marketId)
+  const detailWithFeeds = { ...detail, ...feeds }
   const canonicalUrl = `https://avana.cc/borrow/markets/${marketId}`
   return (
     <>
@@ -48,7 +62,12 @@ export default async function MarketDetailPage({ params }: PageProps) {
           buildFaqSchema(detail.faqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),
         ]}
       />
-      <BorrowMarketDetailClientShell detail={detail} />
+      <BorrowMarketDetailClientShell
+        detail={detailWithFeeds}
+        heroPreloads={heroPreloads}
+        quickStatsPreload={quickStatsPreload}
+        cashflowPreload={cashflowPreload}
+      />
     </>
   )
 }

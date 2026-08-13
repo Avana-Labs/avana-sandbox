@@ -3,6 +3,10 @@ import type { Metadata } from "next"
 import { SchemaMarkup, buildBreadcrumbSchema, buildFaqSchema, buildWebPageSchema } from "@/app/components/seo/schema"
 import { getAssetDetail } from "@/app/lib/borrow-detail"
 import { getAssetDetailFromConvex } from "@/app/lib/borrow-detail/convex-detail"
+import { preloadAssetHero } from "@/app/lib/borrow-detail/hero-preload"
+import { preloadDetailQuickStats } from "@/app/lib/detail-page/quick-stats-preload"
+import { preloadDetailCashflow } from "@/app/lib/detail-page/cashflow-preload"
+import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { AssetDetailClient } from "@/app/borrow/asset/[assetId]/asset-detail-client"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
@@ -14,7 +18,11 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { assetId } = await params
-  const detail = (await getAssetDetailFromConvex(assetId)) ?? getAssetDetail(assetId)
+  const detail = preferLive(
+    await getAssetDetailFromConvex(assetId),
+    getAssetDetail(assetId),
+    `borrow asset metadata:${assetId}`,
+  )
   if (!detail) return { title: "Asset · Avana" }
   return buildSeoMetadata({
     title: `${detail.hero.symbol} · Avana Borrow`,
@@ -30,6 +38,10 @@ export default async function BorrowAssetPage({ params }: PageProps) {
 
   const detail = await getAssetDetailFromConvex(assetId)
   if (!detail) notFound()
+  const { preloads: heroPreloads, feeds } = await preloadAssetHero(assetId)
+  const quickStatsPreload = await preloadDetailQuickStats("asset", assetId)
+  const cashflowPreload = await preloadDetailCashflow("asset", assetId)
+  const detailWithFeeds = { ...detail, ...feeds }
   const canonicalUrl = `https://avana.cc/borrow/assets/${assetId}`
   return (
     <>
@@ -48,7 +60,12 @@ export default async function BorrowAssetPage({ params }: PageProps) {
           buildFaqSchema(detail.faqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),
         ]}
       />
-      <AssetDetailClient detail={detail} />
+      <AssetDetailClient
+        detail={detailWithFeeds}
+        heroPreloads={heroPreloads}
+        quickStatsPreload={quickStatsPreload}
+        cashflowPreload={cashflowPreload}
+      />
     </>
   )
 }

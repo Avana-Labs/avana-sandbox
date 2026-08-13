@@ -4,6 +4,9 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { ActionIcon } from "@/app/components/action-icon"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
+import type { AssetHeroPreloads } from "@/app/lib/borrow-detail/hero-preload"
+import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
+import type { CashflowPreload } from "@/app/lib/detail-page/cashflow-preload"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import {
@@ -50,9 +53,19 @@ function DeferredBlock({ className }: { className?: string }) {
   return <div className={cn("rounded-radius-md border border-border bg-surface-raised/60", className)} />
 }
 
-type Props = { detail: AssetDetail }
+type Props = {
+  detail: AssetDetail
+  heroPreloads?: AssetHeroPreloads | null
+  quickStatsPreload?: QuickStatsPreload | null
+  cashflowPreload?: CashflowPreload | null
+}
 
-export function AssetDetailClient({ detail }: Props) {
+export function AssetDetailClient({
+  detail,
+  heroPreloads = null,
+  quickStatsPreload = null,
+  cashflowPreload = null,
+}: Props) {
   const { t } = useTranslation()
   const closeHref = `/borrow/assets/${detail.row.id}`
   const about = withGovernanceParameterView(detail.about, detail.protocolParameters)
@@ -80,7 +93,7 @@ export function AssetDetailClient({ detail }: Props) {
               </div>
 
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                <AssetHero detail={detail} hideIdentity className="mb-12" />
+                <AssetHero detail={detail} heroPreloads={heroPreloads} hideIdentity className="mb-12" />
 
                 <AboutNewsSection
                   about={about}
@@ -95,7 +108,12 @@ export function AssetDetailClient({ detail }: Props) {
                         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
                           Key Statistics
                         </h2>
-                        <QuickStatsGrid detail={detail} hideRisk />
+                        <QuickStatsGrid
+                          detail={detail}
+                          quickStatsPreload={quickStatsPreload}
+                          product="borrow"
+                          hideRisk
+                        />
                       </section>
                       <RiskSection detail={detail} />
                     </>
@@ -107,7 +125,7 @@ export function AssetDetailClient({ detail }: Props) {
                   <DeferredDetailContent className={detailAnalyticsStackClass}>
                     <InterestRateModelCard {...interestRateModelFromAssetDetail(detail)} />
                     <AllocationBreakdownCard detail={detail} />
-                    <CashflowCard detail={detail} />
+                    <CashflowCard detail={detail} cashflowPreload={cashflowPreload} />
                     <DetailFaqSection
                       title={t("General FAQs")}
                       items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}

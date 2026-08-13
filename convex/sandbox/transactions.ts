@@ -729,6 +729,14 @@ export const recordSwap = mutation({
     outputAmount: v.number(),
     /** USD value of the input leg (what the swap moved). */
     amountUsd: v.number(),
+    /** Receipt detail — persisted so the synthetic-transaction receipt renders the full
+     *  swap breakdown from the durable row alone (cross-device / after session history). */
+    provider: v.optional(v.string()),
+    quoteId: v.optional(v.string()),
+    networkFeeUsd: v.optional(v.number()),
+    minOutputAmount: v.optional(v.number()),
+    priceImpactPct: v.optional(v.number()),
+    slippageBps: v.optional(v.number()),
     simulated: v.optional(v.boolean()),
     /** Optional client tx hash; a synthetic one is derived when absent. */
     syntheticTxHash: v.optional(v.string()),
@@ -794,6 +802,12 @@ export const recordSwap = mutation({
       swapOutputSymbol: args.outputSymbol,
       swapInputAmount: args.inputAmount,
       swapOutputAmount: args.outputAmount,
+      swapProvider: args.provider,
+      swapQuoteId: args.quoteId,
+      swapNetworkFeeUsd: args.networkFeeUsd,
+      swapMinOutputAmount: args.minOutputAmount,
+      swapPriceImpactPct: args.priceImpactPct,
+      swapSlippageBps: args.slippageBps,
       syntheticTxHash: hash,
       simulated,
       at: now,
