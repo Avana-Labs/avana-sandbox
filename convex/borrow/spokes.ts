@@ -4,7 +4,7 @@
  */
 
 import { v } from "convex/values"
-import { internalMutation, query } from "../_generated/server"
+import { internalMutation } from "../_generated/server"
 
 const tokenVisual = v.object({
   symbol: v.string(),
@@ -31,27 +31,6 @@ const spokeRow = {
   borrowableTokens: v.array(tokenVisual),
   isSmartSpoke: v.boolean(),
 }
-
-export const listSpokes = query({
-  args: {},
-  handler: async (ctx) => {
-    const rows = await ctx.db.query("spokes").collect()
-    return rows.map(({ _id: _mid, _creationTime: _mct, updatedAt: _mua, ...rest }) => rest)
-  },
-})
-
-export const getSpoke = query({
-  args: { id: v.string() },
-  handler: async (ctx, { id }) => {
-    const row = await ctx.db
-      .query("spokes")
-      .withIndex("by_key", (q) => q.eq("id", id))
-      .unique()
-    if (!row) return null
-    const { _id: _mid, _creationTime: _mct, updatedAt: _mua, ...rest } = row
-    return rest
-  },
-})
 
 export const upsertSpokes = internalMutation({
   args: { rows: v.array(v.object(spokeRow)) },
