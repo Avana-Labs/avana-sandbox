@@ -12,6 +12,7 @@ import { LendHero, LendHeroIdentity, LendSidebar } from "@/app/lend/_detail"
 import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
+import type { LendHeroPreloads } from "@/app/lib/lend-detail/hero-preload"
 import type { TxHistoryRow } from "@/app/lib/borrow-detail"
 import {
   DeferredDetailContent,
@@ -43,7 +44,7 @@ const TransactionHistoryCard = dynamic(
   { ssr: false },
 )
 
-type Props = { detail: LendMarketDetail }
+type Props = { detail: LendMarketDetail; heroPreloads?: LendHeroPreloads | null }
 
 /** Map a wallet's own sandbox lend actions into the shared TxHistoryRow shape. */
 function mapSessionRows(
@@ -75,7 +76,7 @@ function formatAge(elapsedMs: number) {
   return `${Math.floor(h / 24)}d`
 }
 
-export function LendMarketDetailClient({ detail }: Props) {
+export function LendMarketDetailClient({ detail, heroPreloads = null }: Props) {
   const session = useLendSessionContext()
   const { t } = useTranslation()
   const marketId = detail.row.marketId
@@ -109,7 +110,7 @@ export function LendMarketDetailClient({ detail }: Props) {
               </div>
 
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                <LendHero detail={detail} hideIdentity className="mb-12" />
+                <LendHero detail={detail} heroPreloads={heroPreloads} hideIdentity className="mb-12" />
 
                 <AboutNewsSection
                   about={detail.about}

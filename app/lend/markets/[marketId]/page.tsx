@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { SchemaMarkup, buildBreadcrumbSchema, buildFaqSchema, buildWebPageSchema } from "@/app/components/seo/schema"
 import { getLendMarketDetail } from "@/app/lib/lend-detail"
 import { getLendMarketDetailFromConvex } from "@/app/lib/lend-detail/convex-detail"
+import { preloadLendHero } from "@/app/lib/lend-detail/hero-preload"
 import { LendMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
@@ -30,6 +31,8 @@ export default async function LendMarketDetailPage({ params }: PageProps) {
 
   const detail = await getLendMarketDetailFromConvex(marketId)
   if (!detail) notFound()
+  const { preloads: heroPreloads, feeds } = await preloadLendHero(marketId)
+  const detailWithFeeds = { ...detail, ...feeds }
   const canonicalUrl = `https://avana.cc/lend/markets/${marketId}`
   return (
     <>
@@ -48,7 +51,7 @@ export default async function LendMarketDetailPage({ params }: PageProps) {
           buildFaqSchema(detail.faqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),
         ]}
       />
-      <LendMarketDetailClientShell detail={detail} />
+      <LendMarketDetailClientShell detail={detailWithFeeds} heroPreloads={heroPreloads} />
     </>
   )
 }

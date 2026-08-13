@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { SchemaMarkup, buildBreadcrumbSchema, buildFaqSchema, buildWebPageSchema } from "@/app/components/seo/schema"
 import { getAssetDetail } from "@/app/lib/borrow-detail"
 import { getAssetDetailFromConvex } from "@/app/lib/borrow-detail/convex-detail"
+import { preloadAssetHero } from "@/app/lib/borrow-detail/hero-preload"
 import { AssetDetailClient } from "@/app/borrow/asset/[assetId]/asset-detail-client"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
@@ -30,6 +31,8 @@ export default async function BorrowAssetPage({ params }: PageProps) {
 
   const detail = await getAssetDetailFromConvex(assetId)
   if (!detail) notFound()
+  const { preloads: heroPreloads, feeds } = await preloadAssetHero(assetId)
+  const detailWithFeeds = { ...detail, ...feeds }
   const canonicalUrl = `https://avana.cc/borrow/assets/${assetId}`
   return (
     <>
@@ -48,7 +51,7 @@ export default async function BorrowAssetPage({ params }: PageProps) {
           buildFaqSchema(detail.faqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),
         ]}
       />
-      <AssetDetailClient detail={detail} />
+      <AssetDetailClient detail={detailWithFeeds} heroPreloads={heroPreloads} />
     </>
   )
 }

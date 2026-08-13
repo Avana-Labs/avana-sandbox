@@ -1,6 +1,5 @@
 import "server-only"
 import { requestCache as cache } from "@/app/lib/detail-page/request-cache"
-import { buildHeroFeedFromConvexSeries } from "@/app/lib/chart-feeds"
 import {
   fetchMultiplyCashflowBreakdown,
   fetchMultiplyContent,
@@ -13,7 +12,6 @@ import {
   fetchMultiplyRisk,
   fetchMultiplyRiskParameters,
   fetchMultiplySupplyBorrow,
-  fetchMultiplySupplySeries,
   fetchTokenPrices,
   type ConvexContractAddressRow,
 } from "@/app/lib/multiply-system/market-hydration-server"
@@ -171,8 +169,8 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
   if (!detail) return null
   const slug = detail.id
 
+  // Supply hero series preloaded by the page (preloadMultiplyHero) — not fetched here.
   const [
-    supplyPoints,
     cashflow,
     transactions,
     risk,
@@ -186,7 +184,6 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
     supplyBorrow,
     contractAddresses,
   ] = await Promise.all([
-    fetchMultiplySupplySeries(slug),
     fetchMultiplyCashflowBreakdown(slug),
     fetchMultiplyRecentTransactions(slug),
     fetchMultiplyRisk(slug),
@@ -216,7 +213,7 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
         ),
         siloedMarket,
       ),
-      heroFeed: buildHeroFeedFromConvexSeries(supplyPoints, "usdCompact") ?? detail.heroFeed,
+      // heroFeed set by the page from preloadMultiplyHero.
       cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
       transactions: mapConvexTransactions(transactions) ?? detail.transactions,
       risk: (risk as typeof detail.risk) ?? detail.risk,

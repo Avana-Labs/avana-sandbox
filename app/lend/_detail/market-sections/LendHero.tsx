@@ -4,8 +4,8 @@ import * as React from "react"
 import { Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
-import { useQuery } from "convex/react"
-import { api } from "@/convex/_generated/api"
+import { usePreloadedQuery } from "convex/react"
+import type { LendHeroPreloads } from "@/app/lib/lend-detail/hero-preload"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { formatChartValue, type ChartFeed, type ChartRangeData, type ChartValueFormat } from "@/app/components/charts"
 import { buildHeroFeedFromConvexSeries, getLendMarketHeroFeed } from "@/app/lib/chart-feeds"
@@ -15,6 +15,7 @@ import { resolveHeroContractLabel } from "@/app/borrow/_detail/lib/hero-chart-fe
 
 type LendHeroProps = {
   detail: LendMarketDetail
+  heroPreloads?: LendHeroPreloads | null
   leading?: React.ReactNode
   actions?: React.ReactNode
   className?: string
@@ -101,14 +102,15 @@ export function LendHeroIdentity({
 }
 
 /**
- * Live wrapper: subscribes to the lend supply hero series and overrides the server
- * `heroFeed` (the Supplied tab) with live data, falling back to it while loading. Only
- * the Supplied metric has a hero-series query; Borrowed/Utilization stay on the server
- * `supplyBorrow` snapshot. Only mounted where a Convex provider exists.
+ * Live wrapper: hydrates the lend supply hero series from the server-preloaded token via
+ * `usePreloadedQuery` (no client re-fetch) and subscribes for updates, overriding the
+ * server `heroFeed` (the Supplied tab). Only the Supplied metric has a hero-series query;
+ * Borrowed/Utilization stay on the server `supplyBorrow` snapshot. Only mounted where a
+ * Convex provider exists AND preload tokens were handed down — see the chooser below.
  */
-function LendHeroLive(props: LendHeroProps) {
+function LendHeroLive({ preloads, ...props }: LendHeroProps & { preloads: LendHeroPreloads }) {
   const { detail } = props
-  const supply = useQuery(api.markets.getLendHeroSeries, { slug: detail.id, metric: "supply", range: "ALL" })
+  const supply = usePreloadedQuery(preloads.supply)
   const liveDetail = React.useMemo(
     () => ({
       ...detail,
@@ -121,7 +123,11 @@ function LendHeroLive(props: LendHeroProps) {
 
 export function LendHero(props: LendHeroProps) {
   const live = useConvexLiveSession()
-  return live ? <LendHeroLive {...props} /> : <LendHeroView {...props} />
+  return live && props.heroPreloads ? (
+    <LendHeroLive {...props} preloads={props.heroPreloads} />
+  ) : (
+    <LendHeroView {...props} />
+  )
 }
 
 function LendHeroView({ detail, leading, actions, className, hideIdentity = false }: LendHeroProps) {
