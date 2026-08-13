@@ -165,7 +165,7 @@ export const getQuickStats = query({
       const market = await resolveMarket(ctx, scope, slug)
       return market ? [] : null
     }
-    const delta = await liveMarketDeltaFromFold(ctx, slug)
+    const delta = await liveMarketDelta(ctx, slug)
     const suppliedUsd = Math.max(0, latest.suppliedUsd + delta.suppliedDeltaUsd)
     const borrowedUsd = Math.max(0, latest.borrowedUsd + delta.borrowedDeltaUsd)
     const availableUsd = Math.max(0, suppliedUsd - borrowedUsd)
@@ -857,20 +857,26 @@ const DELTAS_SINGLETON = "deltas"
  * every supply/borrow/withdraw/repay writes to, so it lets a chart's latest point track
  * real cross-wallet activity instead of freezing at the seeded history.
  */
-async function liveMarketDelta(ctx: QueryCtx, marketSlug: string) {
+/**
+ * Full folded delta set, cache-first: read the precomputed `liquidityDeltasCache`
+ * singleton (rebuilt on a schedule) and fold the raw ledger only on a cold cache.
+ * The list-snapshot and quickStats read paths run on every page; folding the raw
+ * baseline + delta tables on each call was two full-table scans per read, even
+ * though this cache exists for exactly that reason. The scheduled aggregator
+ * (`rollupDailyStats`) still folds directly — it rebuilds the cache, so it must read
+ * the true current ledger, not the value it is about to overwrite.
+ */
+async function foldedDeltasCacheFirst(ctx: QueryCtx): Promise<Awaited<ReturnType<typeof foldDeltas>>> {
   const cacheRows = await ctx.db
     .query("liquidityDeltasCache")
     .withIndex("by_singleton", (q) => q.eq("singleton", DELTAS_SINGLETON))
     .collect()
   const canonical = cacheRows.length ? cacheRows.reduce((a, b) => (b.updatedAt >= a.updatedAt ? b : a)) : null
-  const row = canonical?.rows.find((r) => r.marketSlug === marketSlug)
-  if (row) return { suppliedDeltaUsd: row.suppliedDeltaUsd, borrowedDeltaUsd: row.borrowedDeltaUsd }
-  // Cache miss / not yet rebuilt: fold the ledger directly so list/quickStats stay live.
-  return liveMarketDeltaFromFold(ctx, marketSlug)
+  return canonical ? canonical.rows : foldDeltas(ctx)
 }
 
-async function liveMarketDeltaFromFold(ctx: QueryCtx, marketSlug: string) {
-  const folded = await foldDeltas(ctx)
+async function liveMarketDelta(ctx: QueryCtx, marketSlug: string) {
+  const folded = await foldedDeltasCacheFirst(ctx)
   const row = folded.find((r) => r.marketSlug === marketSlug)
   return { suppliedDeltaUsd: row?.suppliedDeltaUsd ?? 0, borrowedDeltaUsd: row?.borrowedDeltaUsd ?? 0 }
 }
@@ -887,7 +893,7 @@ type SnapshotRow = {
 
 /** Overlay folded liquidity deltas onto cached/computed snapshot tips (tip + delta = live). */
 async function withLiveLiquidityDeltas<T extends SnapshotRow>(ctx: QueryCtx, rows: T[]): Promise<T[]> {
-  const folded = await foldDeltas(ctx)
+  const folded = await foldedDeltasCacheFirst(ctx)
   if (folded.length === 0) return rows
   const bySlug = new Map(folded.map((d) => [d.marketSlug, d]))
   let changed = false
