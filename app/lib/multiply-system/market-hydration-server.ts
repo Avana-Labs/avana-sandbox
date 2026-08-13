@@ -3,6 +3,7 @@ import { ConvexHttpClient } from "convex/browser"
 import { api } from "@/convex/_generated/api"
 import { type ConvexSeriesPoint } from "@/app/lib/borrow-system/market-hydration-server"
 import type { MultiplyConvexSnapshot } from "@/app/lib/multiply-system/market-hydration"
+import { requestCache } from "@/app/lib/detail-page/request-cache"
 
 /**
  * Server-side Convex fetchers for the multiply (leveraged loop) detail page + list.
@@ -24,7 +25,9 @@ export type MultiplyMarketSnapshot = {
   borrowAprPct: number
 }
 
-function convexClient(): ConvexHttpClient | null {
+// One client per request (request-scoped via React.cache); a fresh client per call
+// in the non-RSC test runtime, matching prior behavior.
+const convexClient = requestCache((): ConvexHttpClient | null => {
   const url = process.env.NEXT_PUBLIC_CONVEX_URL
   if (!url || !/^https?:\/\//.test(url)) return null
   try {
@@ -32,7 +35,7 @@ function convexClient(): ConvexHttpClient | null {
   } catch {
     return null
   }
-}
+})
 
 /** Latest-day reference snapshot for one multiply market (from `listMarketSnapshots`). */
 export async function fetchMultiplyMarketSnapshot(slug: string): Promise<MultiplyMarketSnapshot | null> {

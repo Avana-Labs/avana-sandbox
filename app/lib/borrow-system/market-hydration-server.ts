@@ -5,8 +5,12 @@ import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydrat
 import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
 import { allocationVenueLabel } from "@/app/lib/borrow-detail/allocation"
 import type { AllocationRow } from "@/app/lib/borrow-detail/types"
+import { requestCache } from "@/app/lib/detail-page/request-cache"
 
-function convexClient(): ConvexHttpClient | null {
+// One client per request instead of a fresh instance for each of the ~15 fetch*
+// helpers a detail render calls. request-scoped via React.cache; identity (a new
+// client each call, i.e. today's behavior) in the non-RSC test runtime.
+const convexClient = requestCache((): ConvexHttpClient | null => {
   const url = process.env.NEXT_PUBLIC_CONVEX_URL
   if (!url || !/^https?:\/\//.test(url)) return null
   try {
@@ -14,7 +18,7 @@ function convexClient(): ConvexHttpClient | null {
   } catch {
     return null
   }
-}
+})
 
 /**
  * Server-side fetch of the Convex market reference snapshots. Returns [] when no
