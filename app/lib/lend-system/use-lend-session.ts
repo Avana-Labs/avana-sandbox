@@ -33,6 +33,14 @@ function mergeReceipts(nextReceipt: LendTransactionResult, receipts: LendTransac
 }
 
 export type ConvexLendWalletData = {
+  lendBalances?: Array<{
+    marketId: string
+    assetId: string
+    symbol: string
+    amount: number
+    valueUsd: number
+    state: "available" | "deposited"
+  }>
   positions: Array<{
     _id: string
     product: "borrow" | "lend" | "multiply"
@@ -292,7 +300,12 @@ export function useLendSession({
           timestamp: transaction.at,
           hash: transaction.syntheticTxHash,
         }))
-      setState((current) => ({ ...current, positions }))
+      const walletBalances: LendSystemState["walletBalances"] = { [walletId]: {} }
+      for (const row of data.lendBalances ?? []) {
+        if (row.state !== "available") continue
+        walletBalances[walletId]![row.marketId] = row.amount
+      }
+      setState((current) => ({ ...current, positions, walletBalances }))
       setTransactionHistory(history)
       setTransactionReceipts(
         history.map((item) => ({

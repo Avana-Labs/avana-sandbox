@@ -18,6 +18,7 @@ import {
   useBorrowSessionContext,
   useLendSessionContext,
   useMultiplySessionContext,
+  useSwapSessionContext,
 } from "./avana-sessions-provider"
 import { ConvexMarketSnapshotHydrators } from "./convex-market-snapshot-hydrators"
 import { pendingHydrationIntentIds, shouldApplyHydration } from "./wallet-hydration-guard"
@@ -39,7 +40,13 @@ function ConvexWalletHydrators({
   const borrow = useBorrowSessionContext()
   const lend = useLendSessionContext()
   const multiply = useMultiplySessionContext()
+  const swap = useSwapSessionContext()
+  const ensureLiquidBalances = useMutation(api.wallet.balances.ensureLiquidBalances)
+  const ensureProductBalances = useMutation(api.wallet.productBalances.ensureOpenGateBalances)
+  const ensurePortfolioSnapshot = useMutation(api.sandbox.transactions.ensurePortfolioSnapshot)
   const session = useQuery(api.sandbox.transactions.getSessionState, { wallet: walletId })
+  const convexBalances = useQuery(api.wallet.balances.listBalances, { wallet: walletId })
+  const productBalances = useQuery(api.wallet.productBalances.listForWallet, { wallet: walletId })
   // Seeded initial per-wallet portfolio state lives in three tables (walletDebts /
   // walletCollateralPositions / walletClaimPositions) — the Convex swaps for the
   // HOME_INITIAL_DEBTS + HOME_COLLATERAL_POOLS + HOME_CLAIM_POSITIONS mocks. Read
@@ -58,6 +65,21 @@ function ConvexWalletHydrators({
     lend: lend.transactionHistory,
     multiply: multiply.transactionHistory,
   }
+  const ensuredRef = useRef(false)
+
+  useEffect(() => {
+    if (ensuredRef.current) return
+    ensuredRef.current = true
+    void (async () => {
+      try {
+        await ensureLiquidBalances({ wallet: walletId })
+        await ensureProductBalances({ wallet: walletId })
+        await ensurePortfolioSnapshot({ wallet: walletId })
+      } catch {
+        ensuredRef.current = false
+      }
+    })()
+  }, [ensureLiquidBalances, ensurePortfolioSnapshot, ensureProductBalances, walletId])
 
   useEffect(() => {
     if (!session) return
@@ -81,8 +103,27 @@ function ConvexWalletHydrators({
         marketId: row.marketId,
         totalUsd: row.totalUsd,
       })),
+      borrowBalances: productBalances?.borrow.map((row) => ({
+        marketId: row.marketId,
+        assetId: row.assetId,
+        poolId: row.poolId,
+        symbol: row.symbol,
+        amount: row.amount,
+        valueUsd: row.valueUsd,
+        state: row.state,
+      })),
     })
-    lend.hydrateWalletData(session)
+    lend.hydrateWalletData({
+      ...session,
+      lendBalances: productBalances?.lend.map((row) => ({
+        marketId: row.marketId,
+        assetId: row.assetId,
+        symbol: row.symbol,
+        amount: row.amount,
+        valueUsd: row.valueUsd,
+        state: row.state,
+      })),
+    })
     multiply.hydrateWalletData(session)
     onWalletHydrated(session.positions)
   }, [
@@ -91,10 +132,50 @@ function ConvexWalletHydrators({
     multiply.hydrateWalletData,
     onWalletHydrated,
     session,
+    productBalances,
     walletDebts,
     walletCollateralPositions,
     walletClaimPositions,
   ])
+
+  useEffect(() => {
+    if (productBalances?.liquid && productBalances.liquid.length > 0) {
+      swap.hydrateBalances(
+        productBalances.liquid.map((row) => ({
+          id: `${walletId}:${row.assetId}:liquid`,
+          walletId,
+          assetId: row.assetId,
+          amount: row.amount,
+          sourceType: "wallet" as const,
+        })),
+      )
+      return
+    }
+    if (convexBalances && convexBalances.length > 0) {
+      swap.hydrateBalances(
+        convexBalances.map((row) => ({
+          id: row.id,
+          walletId: row.walletId,
+          assetId: row.assetId,
+          amount: row.amount,
+          sourceType: "wallet" as const,
+          sourcePositionId: row.sourcePositionId ? String(row.sourcePositionId) : undefined,
+        })),
+      )
+      return
+    }
+    if (session?.balances && session.balances.length > 0) {
+      swap.hydrateBalances(
+        session.balances.map((row) => ({
+          id: `${walletId}:${row.assetSlug}:wallet`,
+          walletId,
+          assetId: row.assetSlug,
+          amount: row.amount,
+          sourceType: "wallet" as const,
+        })),
+      )
+    }
+  }, [convexBalances, productBalances?.liquid, session?.balances, swap.hydrateBalances, walletId])
 
   return null
 }
