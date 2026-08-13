@@ -9,57 +9,7 @@
  */
 
 import { v } from "convex/values"
-import { internalMutation, query } from "../_generated/server"
-
-export const getInterestRateModel = query({
-  args: { slug: v.string() },
-  handler: async (ctx, { slug }) => {
-    const row = await ctx.db
-      .query("multiplyInterestRateModels")
-      .withIndex("by_slug", (q) => q.eq("slug", slug))
-      .unique()
-    if (!row) return null
-
-    // Read current utilization/borrowApr from the multiply daily series so the
-    // curve renders against a live "you are here" marker.
-    const siloed = await ctx.db
-      .query("multiplyDailyStats")
-      .withIndex("by_slug_day", (q) => q.eq("slug", slug))
-      .order("desc")
-      .first()
-    let utilizationPct = siloed?.utilizationPct ?? 0
-    let borrowAprPct = siloed?.borrowAprPct ?? 0
-    if (!siloed) {
-      const market = await ctx.db
-        .query("markets")
-        .withIndex("by_scope_slug", (q) => q.eq("scope", "multiply").eq("slug", slug))
-        .unique()
-      if (market) {
-        const latest = await ctx.db
-          .query("marketDailyStats")
-          .withIndex("by_market_day", (q) => q.eq("marketId", market._id))
-          .order("desc")
-          .first()
-        if (latest) {
-          utilizationPct = latest.utilizationPct
-          borrowAprPct = latest.borrowAprPct
-        }
-      }
-    }
-
-    return {
-      slug: row.slug,
-      optimalUtilizationPct: row.optimalUtilizationPct,
-      slopeBelowOptimalPct: row.slopeBelowOptimalPct,
-      slopeAboveOptimalPct: row.slopeAboveOptimalPct,
-      baseBorrowRatePct: row.baseBorrowRatePct,
-      utilizationPct,
-      borrowAprPct,
-      updatedAt: row.updatedAt,
-      source: row.source,
-    }
-  },
-})
+import { internalMutation } from "../_generated/server"
 
 export const upsertInterestRateModels = internalMutation({
   args: {

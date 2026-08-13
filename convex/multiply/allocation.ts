@@ -8,28 +8,7 @@
  */
 
 import { v } from "convex/values"
-import { internalMutation, query } from "../_generated/server"
-
-export const getAllocation = query({
-  args: { slug: v.string() },
-  handler: async (ctx, { slug }) => {
-    const rows = await ctx.db
-      .query("multiplyMarketAllocations")
-      .withIndex("by_market", (q) => q.eq("marketSlug", slug))
-      .collect()
-    return rows.map((row) => ({
-      rowKey: row.rowKey,
-      poolSlug: row.poolSlug,
-      poolName: row.poolName,
-      venueLabel: row.venueLabel,
-      sharePct: row.sharePct,
-      valueUsd: row.valueUsd,
-      utilizationPct: row.utilizationPct,
-      borrowAprPct: row.borrowAprPct,
-      collateralFactorPct: row.collateralFactorPct,
-    }))
-  },
-})
+import { internalMutation } from "../_generated/server"
 
 export const upsertAllocation = internalMutation({
   args: {

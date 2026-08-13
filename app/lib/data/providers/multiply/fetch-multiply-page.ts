@@ -26,9 +26,7 @@ const multiplyPageSchema = z.object({
       .passthrough(),
   ),
   pageSize: z.number().int().positive(),
-  tokenBorrowApys: z.record(z.string(), z.string()),
   tokenLogos: z.record(z.string(), z.string()),
-  tokenSupplyApys: z.record(z.string(), z.string()),
 })
 
 function getMultiplyPageSource(source?: MultiplyPageSource) {

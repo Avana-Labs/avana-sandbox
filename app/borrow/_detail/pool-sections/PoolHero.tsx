@@ -148,7 +148,7 @@ export function PoolHero({ detail, leading, actions, className, hideIdentity = f
       <div className="pt-4" data-testid="pool-hero-chart-card">
         <MarketHeroChart
           feed={feed}
-          defaultRange="1D"
+          defaultRange="1M"
           gradientId={`poolHeroFill-${detail.id}`}
           height={310}
           showMeta={false}

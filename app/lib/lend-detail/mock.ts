@@ -19,12 +19,12 @@ import { SANDBOX_NOW } from "@/app/lib/deterministic"
 import { buildLendRiskAssessment } from "@/app/lib/borrow-detail/risk-model"
 import { buildLendFaqs } from "@/app/lib/borrow-detail/content-model"
 import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
-import { LEND_MARKET_CATALOG, getLendMarketById, resolveLendMarketId } from "@/app/lib/lend-system/catalog"
+import { getLendMarketById, resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import type { LendMarket } from "@/app/lib/lend-engine/types"
 import type { AboutCard, CashflowCard, DeltaStat, QuickStat, TxHistoryRow } from "@/app/lib/borrow-detail"
 import { buildInterestRateModelParameterRows } from "@/app/lib/borrow-detail/protocol-parameters"
 import { buildRiskParameterSet } from "@/app/lib/borrow-detail/risk-parameters"
-import type { LendMarketDetail, LendMarketHero, LendMarketRelatedSummary, LendTokenVisual } from "./types"
+import type { LendMarketDetail, LendMarketHero, LendTokenVisual } from "./types"
 
 /** Reference values from a Convex snapshot, threaded into the headline numbers. */
 export type LendDetailOverrides = {
@@ -365,21 +365,6 @@ function buildAbout(market: LendMarket, ref: Reference): AboutCard {
   }
 }
 
-function buildRelated(market: LendMarket): LendMarketRelatedSummary[] {
-  const peers = LEND_MARKET_CATALOG.filter((other) => other.marketId !== market.marketId)
-  const sameTier = peers.filter((other) => other.riskTier === market.riskTier)
-  const ordered = [...sameTier, ...peers.filter((other) => other.riskTier !== market.riskTier)]
-  return ordered.slice(0, 4).map((other) => ({
-    id: other.marketId,
-    name: other.asset.name,
-    symbol: other.asset.symbol,
-    visual: getVisual(other.asset.symbol),
-    apyLabel: formatPct(other.totalApy * 100, 2),
-    availableLabel: formatCompactUsd(other.availableLiquidity * other.assetPriceUsd),
-    utilizationPct: Math.round(other.utilization * 100),
-  }))
-}
-
 // -------------------------------------------------------------------------
 // Public
 // -------------------------------------------------------------------------
@@ -407,7 +392,6 @@ export function buildLendMarketDetail(market: LendMarket, overrides?: LendDetail
     about: buildAbout(market, ref),
     faqs: buildLendFaqs(market.asset.symbol, market.asset.name),
     transactions: buildTransactions(market),
-    related: buildRelated(market),
     row: market,
   }
 }

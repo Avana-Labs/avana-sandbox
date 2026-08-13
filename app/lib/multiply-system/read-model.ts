@@ -5,7 +5,7 @@ import { calculateMaxLeverageApy } from "@/app/lib/multiply-engine"
 import { resolveMultiplyMarketDisplayMaxLeverage } from "@/app/lib/multiply-system/leverage-limits"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import type { PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
-import { MULTIPLY_TOKEN_BORROW_APYS, MULTIPLY_TOKEN_LOGOS, MULTIPLY_TOKEN_SUPPLY_APYS } from "@/app/lib/multiply-sim"
+import { MULTIPLY_TOKEN_LOGOS } from "@/app/lib/multiply-sim"
 import { resolveMultiplyTokenLogo } from "@/lib/multiply-token-logo"
 import type { MultiplyMarketRow } from "@/app/lib/multiply-sim"
 import { MULTIPLY_MARKET_CATALOG } from "./catalog"
@@ -127,33 +127,18 @@ export type MultiplyTokenParameterRow = {
   iconUrl: string
 }
 
-function formatPctString(value: number): string {
-  return `${value.toFixed(2)}%`
-}
-
 /**
  * Client-side swap: when Convex has returned multiplyTokenParameters rows, build the
- * three token maps from those rows. Symbols line up 1:1 with MULTIPLY_TOKEN_LOGOS keys
+ * token-logo map from those rows. Symbols line up 1:1 with MULTIPLY_TOKEN_LOGOS keys
  * (all 16 loop assets), so the returned object satisfies the MultiplyPageData typing.
  */
-function buildTokenMapsFromConvex(
-  rows: readonly MultiplyTokenParameterRow[],
-): Pick<MultiplyPageData, "tokenBorrowApys" | "tokenSupplyApys" | "tokenLogos"> {
+function buildTokenLogosFromConvex(rows: readonly MultiplyTokenParameterRow[]): Pick<MultiplyPageData, "tokenLogos"> {
   type TokenSymbol = keyof typeof MULTIPLY_TOKEN_LOGOS
-  const borrow: Partial<Record<TokenSymbol, string>> = {}
-  const supply: Partial<Record<TokenSymbol, string>> = {}
   const logos: Partial<Record<TokenSymbol, string>> = {}
   for (const row of rows) {
-    const symbol = row.symbol as TokenSymbol
-    borrow[symbol] = formatPctString(row.borrowAprPct)
-    supply[symbol] = formatPctString(row.supplyApyPct)
-    logos[symbol] = row.iconUrl
+    logos[row.symbol as TokenSymbol] = row.iconUrl
   }
-  return {
-    tokenBorrowApys: borrow as MultiplyPageData["tokenBorrowApys"],
-    tokenSupplyApys: supply as MultiplyPageData["tokenSupplyApys"],
-    tokenLogos: logos as MultiplyPageData["tokenLogos"],
-  }
+  return { tokenLogos: logos as MultiplyPageData["tokenLogos"] }
 }
 
 export function buildMultiplyPageData(
@@ -179,15 +164,9 @@ export function buildMultiplyPageData(
         ) / marketCount
       : 0
 
-  // SSR/test path uses the multiply-sim constants; the client hydrator passes convexTokens
-  // and the three maps come from Convex multiplyTokenParameters (16 rows). Same shape either way.
-  const tokenMaps = convexTokens
-    ? buildTokenMapsFromConvex(convexTokens)
-    : {
-        tokenBorrowApys: MULTIPLY_TOKEN_BORROW_APYS,
-        tokenSupplyApys: MULTIPLY_TOKEN_SUPPLY_APYS,
-        tokenLogos: MULTIPLY_TOKEN_LOGOS,
-      }
+  // SSR/test path uses the multiply-sim logo constant; the client hydrator passes
+  // convexTokens and the logos come from Convex multiplyTokenParameters (16 rows).
+  const tokenMaps = convexTokens ? buildTokenLogosFromConvex(convexTokens) : { tokenLogos: MULTIPLY_TOKEN_LOGOS }
 
   return {
     markets: [...markets].map((market) => ({

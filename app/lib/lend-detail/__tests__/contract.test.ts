@@ -44,17 +44,6 @@ describe("lend detail contract", () => {
     expect(usdc!.hero.category).toBe("stable")
   })
 
-  it("keeps related markets within the lend set and excludes self", () => {
-    for (const market of LEND_MARKET_CATALOG.slice(0, 8)) {
-      const detail = getLendMarketDetail(market.marketId)!
-      expect(detail.related.length).toBeGreaterThan(0)
-      for (const rel of detail.related) {
-        expect(rel.id).not.toBe(detail.id)
-        expect(getLendMarketById(rel.id)).not.toBeNull()
-      }
-    }
-  })
-
   it("fills every section with well-formed data", () => {
     const detail = getLendMarketDetail("usdc")!
     expect(detail.quickStats.length).toBeGreaterThan(0)

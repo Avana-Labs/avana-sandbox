@@ -4,7 +4,7 @@
  */
 
 import { v } from "convex/values"
-import { internalMutation, query } from "../_generated/server"
+import { internalMutation } from "../_generated/server"
 
 const dexRow = {
   id: v.string(),
@@ -13,14 +13,6 @@ const dexRow = {
   bgClass: v.string(),
   textClass: v.string(),
 }
-
-export const listDexes = query({
-  args: {},
-  handler: async (ctx) => {
-    const rows = await ctx.db.query("dexes").collect()
-    return rows.map(({ _id: _mid, _creationTime: _mct, updatedAt: _mua, ...rest }) => rest)
-  },
-})
 
 export const upsertDexes = internalMutation({
   args: { rows: v.array(v.object(dexRow)) },

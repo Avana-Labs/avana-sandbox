@@ -45,8 +45,11 @@ export function buildBorrowInterestRateCurve(
       const t = optimalUtilization === 0 ? 1 : util / optimalUtilization
       apr = irm.baseBorrowRatePct + irm.slopeBelowOptimalPct * t
     } else {
-      const span = 100 - optimalUtilization
-      const t = span === 0 ? 1 : (util - optimalUtilization) / span
+      // Reached only when util > optimalUtilization; util caps at 100 (loop bound), so
+      // span = 100 - optimalUtilization is strictly > 0 here — no divide-by-zero guard
+      // needed. (When optimalUtilization === 100 the util <= optimalUtilization branch
+      // above claims every point.)
+      const t = (util - optimalUtilization) / (100 - optimalUtilization)
       apr = anchorApr + irm.slopeAboveOptimalPct * t
     }
     points.push({ utilization: util, apr })

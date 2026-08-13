@@ -49,8 +49,6 @@ export type {
   AssetDetailHero,
   QuickStat,
   DeltaStat,
-  RelatedPoolSummary,
-  RelatedAssetSummary,
   RiskAssessment,
   RiskBreakdownItem,
   RiskLevel,

@@ -3,6 +3,7 @@ import { ConvexHttpClient } from "convex/browser"
 import { api } from "@/convex/_generated/api"
 import { type ConvexSeriesPoint } from "@/app/lib/borrow-system/market-hydration-server"
 import type { MultiplyConvexSnapshot } from "@/app/lib/multiply-system/market-hydration"
+import { requestCache } from "@/app/lib/detail-page/request-cache"
 
 /**
  * Server-side Convex fetchers for the multiply (leveraged loop) detail page + list.
@@ -24,7 +25,9 @@ export type MultiplyMarketSnapshot = {
   borrowAprPct: number
 }
 
-function convexClient(): ConvexHttpClient | null {
+// One client per request (request-scoped via React.cache); a fresh client per call
+// in the non-RSC test runtime, matching prior behavior.
+const convexClient = requestCache((): ConvexHttpClient | null => {
   const url = process.env.NEXT_PUBLIC_CONVEX_URL
   if (!url || !/^https?:\/\//.test(url)) return null
   try {
@@ -32,7 +35,7 @@ function convexClient(): ConvexHttpClient | null {
   } catch {
     return null
   }
-}
+})
 
 /** Latest-day reference snapshot for one multiply market (from `listMarketSnapshots`). */
 export async function fetchMultiplyMarketSnapshot(slug: string): Promise<MultiplyMarketSnapshot | null> {
@@ -182,46 +185,12 @@ export async function fetchMultiplyMarket(slug: string) {
   }
 }
 
-/** Multiply product — Interest Rate Model params for the IRM curve card. */
-export async function fetchMultiplyInterestRateModel(slug: string) {
-  const client = convexClient()
-  if (!client) return null
-  try {
-    return await client.query(api.multiply.interestRateModel.getInterestRateModel, { slug })
-  } catch {
-    return null
-  }
-}
-
-/** Multiply product — per-market allocation across contributing pools. */
-export async function fetchMultiplyAllocation(slug: string) {
-  const client = convexClient()
-  if (!client) return null
-  try {
-    const rows = await client.query(api.multiply.allocation.getAllocation, { slug })
-    return rows.length > 0 ? rows : null
-  } catch {
-    return null
-  }
-}
-
 /** Multiply supply/borrow/utilization series (Convex daily rows, "1Y" window). */
 export async function fetchMultiplySupplyBorrow(slug: string) {
   const client = convexClient()
   if (!client) return null
   try {
     return await client.query(api.markets.getMultiplySupplyBorrow, { slug })
-  } catch {
-    return null
-  }
-}
-
-/** Multiply historical utilization series (Convex daily rows, "1Y" window). */
-export async function fetchMultiplyHistoricalUtilization(slug: string) {
-  const client = convexClient()
-  if (!client) return null
-  try {
-    return await client.query(api.markets.getMultiplyHistoricalUtilization, { slug })
   } catch {
     return null
   }

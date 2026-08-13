@@ -12,7 +12,6 @@ vi.mock("@/app/lib/i18n/use-translation", () => ({
 vi.mock("@/app/lend/_detail", () => ({
   LendHero: () => <div data-testid="lend-hero" />,
   LendHeroIdentity: () => <div data-testid="lend-hero-identity" />,
-  SupplyCard: () => <div data-testid="supply-card" />,
   LendSidebar: () => <div data-testid="lend-sidebar" />,
 }))
 vi.mock("@/app/borrow/_detail/ui", () => ({

@@ -123,7 +123,6 @@ export function catalogMarketToRow(market: LendMarket): LendMarketRow {
 
 export function buildLendPageData(_walletId: string, state?: LendSystemState): LendPageData {
   const markets = state ? Object.values(state.markets) : LEND_MARKET_CATALOG
-  const marketRows = [...markets].sort((a, b) => a.rank - b.rank).map(catalogMarketToRow)
   const assetGroups = LEND_ASSET_GROUPS.map((group) => ({
     ...group,
     rows: group.rows.map((row) => {
@@ -166,7 +165,6 @@ export function buildLendPageData(_walletId: string, state?: LendSystemState): L
   }))
 
   return {
-    tokens: [],
     markets: markets.map((market) => ({
       symbol: market.asset.symbol,
       name: market.asset.name,
@@ -182,13 +180,10 @@ export function buildLendPageData(_walletId: string, state?: LendSystemState): L
       soon: market.status !== "active",
       event: null,
     })),
-    activity: [],
-    chartSeries: [],
     featuredAssets: LEND_FEATURED_ASSETS,
     featuredSequence: LEND_FEATURED_SEQUENCE,
     featuredSnapshots: buildLendFeaturedSnapshots(markets),
     assetGroups,
-    marketRows,
   }
 }
 

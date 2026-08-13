@@ -1,10 +1,3 @@
-"use client"
-
-import { buildRangeData } from "@/app/components/charts"
-import type { PortfolioHeroData } from "@/app/lib/data/providers/portfolio"
-import { formatUsdExact } from "@/app/lib/borrow-sim"
-import { formatHealthFactor } from "@/app/lib/home-sim"
-
 export type BorrowSpokeBreakdown = {
   spokeId: string
   label: string
@@ -22,19 +15,4 @@ export type BorrowSnapshot = {
   averageHealthFactor: number | null
   currentLtvPct: number
   spokeBreakdown?: BorrowSpokeBreakdown[]
-}
-
-function buildApprovedCreditRangeData(approvedUsd: number) {
-  return buildRangeData(approvedUsd, Math.max(approvedUsd * 0.03, 750))
-}
-
-export function buildBorrowHeroData(template: PortfolioHeroData, snapshot: BorrowSnapshot): PortfolioHeroData {
-  return {
-    ...template,
-    headlineValue: formatUsdExact(snapshot.approvedUsd),
-    headlineDelta: `${snapshot.currentLtvPct.toFixed(2)}% current LTV`,
-    rangeData: buildApprovedCreditRangeData(snapshot.approvedUsd),
-    statOneValue: formatUsdExact(snapshot.totalBorrowedUsd),
-    statTwoValue: formatHealthFactor(snapshot.averageHealthFactor),
-  }
 }

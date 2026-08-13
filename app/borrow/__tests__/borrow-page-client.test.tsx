@@ -2,7 +2,6 @@ import type { ReactElement } from "react"
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import { BorrowPageHero } from "@/app/borrow/borrow-page-hero"
-import { BorrowWorkspaceClient } from "@/app/borrow/borrow-workspace-client"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
 
@@ -68,40 +67,6 @@ const basePageData = {
     outstandingLoansUsd: 159_800_000,
     totalTvlChangePct: 2.03,
   },
-  explore: {
-    trendingCollateral: [],
-    topMarkets: [
-      {
-        id: "market-1",
-        name: "WETH / USDC",
-        venue: "Uniswap v3",
-        feeTier: "0.30%",
-        tvlUsd: 100_000_000,
-        availableUsd: 25_000_000,
-        change24hPct: 1.1,
-        spoke: "uni-v3-bluechip",
-        ltv: 78,
-        dexes: [{ id: "uniswap", label: "Uniswap" }],
-        borrowableTokens: [],
-        aprMin: 4.7,
-        aprMax: 5.9,
-        riskPremiumBps: 70,
-        visuals: [
-          {
-            symbol: "WETH",
-            shortLabel: "W",
-            bgClass: "bg-indigo-100",
-            textClass: "text-indigo-700",
-            iconUrl: "/weth.png",
-          },
-          { symbol: "USDC", shortLabel: "U", bgClass: "bg-sky-100", textClass: "text-sky-700", iconUrl: "/usdc.png" },
-        ],
-        collateralExampleUsd: 1000,
-        trendUp: true,
-      },
-    ],
-    highApyPools: [],
-  },
   borrowableAssets: [],
   pendingRows: [],
   dexes: [],
@@ -117,7 +82,7 @@ const basePageData = {
 } as unknown as BorrowPageData
 
 describe("BorrowPageHero", () => {
-  it("renders fetched hero metrics and explore sections without recomputing them locally", () => {
+  it("renders fetched hero metrics and market rows without recomputing them locally", () => {
     renderWithPrefs(<BorrowPageHero pageData={basePageData} />)
 
     expect(screen.getByText("Borrow TVL")).toBeInTheDocument()
@@ -140,18 +105,10 @@ describe("BorrowPageHero", () => {
         outstandingLoansUsd: 159_800_000,
         totalTvlChangePct: 2.03,
       },
-      explore: { trendingCollateral: [], topMarkets: [], highApyPools: [] },
     } as unknown as BorrowPageData
 
     renderWithPrefs(<BorrowPageHero pageData={pageData} />)
 
     expect(screen.getByText("$6.9B")).toBeInTheDocument()
-  })
-})
-
-describe("BorrowWorkspaceClient", () => {
-  it("renders the deferred workspace shell", () => {
-    renderWithPrefs(<BorrowWorkspaceClient pageData={basePageData} />)
-    expect(screen.getByTestId("borrow-workspace-shell")).toBeInTheDocument()
   })
 })

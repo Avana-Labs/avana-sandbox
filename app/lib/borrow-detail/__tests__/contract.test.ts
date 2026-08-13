@@ -43,8 +43,6 @@ describe("borrow detail contract", () => {
     expect(curveUsdc?.id).toBe("curve-stable:usdc")
     expect(uniUsdc?.hero.subtitle).not.toBe(curveUsdc?.hero.subtitle)
     expect(uniUsdc?.row.id).not.toBe(curveUsdc?.row.id)
-    expect(uniUsdc?.related.every((asset) => asset.id.startsWith("uni-v3-stable:"))).toBe(true)
-    expect(curveUsdc?.related.every((asset) => asset.id.startsWith("curve-stable:"))).toBe(true)
     expect(listAllAssetDetails().length).toBe(64)
   })
 
