@@ -4,8 +4,11 @@ import * as React from "react"
 import { Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
+import { useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
-import { getMultiplyMarketHeroFeed } from "@/app/lib/chart-feeds"
+import { buildHeroFeedFromConvexSeries, getMultiplyMarketHeroFeed } from "@/app/lib/chart-feeds"
+import { useConvexLiveSession } from "@/app/lib/convex/use-convex-live-session"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { buildFeedFromSeries, resolveHeroContractLabel } from "@/app/borrow/_detail/lib/hero-chart-feeds"
 
@@ -95,7 +98,31 @@ export function MarketHeroIdentity({
   )
 }
 
-export function MarketHero({ detail, leading, actions, className, hideIdentity = false }: MarketHeroProps) {
+/**
+ * Live wrapper: subscribes to the multiply supply hero series and overrides the server
+ * `heroFeed` (Supplied tab) with live data, falling back to it while loading. Only the
+ * Supplied metric has a hero-series query; Borrowed/Utilization stay on the server
+ * `supplyBorrow` snapshot. Only mounted where a Convex provider exists.
+ */
+function MarketHeroLive(props: MarketHeroProps) {
+  const { detail } = props
+  const supply = useQuery(api.markets.getMultiplyHeroSeries, { slug: detail.id, metric: "supply", range: "ALL" })
+  const liveDetail = React.useMemo(
+    () => ({
+      ...detail,
+      heroFeed: buildHeroFeedFromConvexSeries(supply?.points ?? [], "usdCompact") ?? detail.heroFeed,
+    }),
+    [detail, supply],
+  )
+  return <MarketHeroView {...props} detail={liveDetail} />
+}
+
+export function MarketHero(props: MarketHeroProps) {
+  const live = useConvexLiveSession()
+  return live ? <MarketHeroLive {...props} /> : <MarketHeroView {...props} />
+}
+
+function MarketHeroView({ detail, leading, actions, className, hideIdentity = false }: MarketHeroProps) {
   const { t } = useTranslation()
   const metricTabs = React.useMemo(() => [t("Supplied"), t("Borrowed"), t("Utilization")], [t])
   const [activeMetricTab, setActiveMetricTab] = React.useState(metricTabs[0])
