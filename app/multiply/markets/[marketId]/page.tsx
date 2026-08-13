@@ -4,6 +4,7 @@ import { SchemaMarkup, buildBreadcrumbSchema, buildFaqSchema, buildWebPageSchema
 import { getMultiplyMarketDetail } from "@/app/lib/multiply-detail"
 import { getMultiplyMarketDetailFromConvex } from "@/app/lib/multiply-detail/convex-detail"
 import { preloadMultiplyHero } from "@/app/lib/multiply-detail/hero-preload"
+import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { MultiplyMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
@@ -15,7 +16,11 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { marketId } = await params
-  const detail = (await getMultiplyMarketDetailFromConvex(marketId)) ?? getMultiplyMarketDetail(marketId)
+  const detail = preferLive(
+    await getMultiplyMarketDetailFromConvex(marketId),
+    getMultiplyMarketDetail(marketId),
+    `multiply market metadata:${marketId}`,
+  )
   if (!detail) return { title: "Multiply market · Avana" }
   return buildSeoMetadata({
     title: `${detail.hero.name} · Avana Multiply`,

@@ -4,6 +4,7 @@ import { SchemaMarkup, buildBreadcrumbSchema, buildFaqSchema, buildWebPageSchema
 import { getLendMarketDetail } from "@/app/lib/lend-detail"
 import { getLendMarketDetailFromConvex } from "@/app/lib/lend-detail/convex-detail"
 import { preloadLendHero } from "@/app/lib/lend-detail/hero-preload"
+import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { LendMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
@@ -15,7 +16,11 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { marketId } = await params
-  const detail = (await getLendMarketDetailFromConvex(marketId)) ?? getLendMarketDetail(marketId)
+  const detail = preferLive(
+    await getLendMarketDetailFromConvex(marketId),
+    getLendMarketDetail(marketId),
+    `lend market metadata:${marketId}`,
+  )
   if (!detail) return { title: "Lend market · Avana" }
   return buildSeoMetadata({
     title: `${detail.hero.name} · Avana Lend`,
