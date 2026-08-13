@@ -1,9 +1,4 @@
-import {
-  MULTIPLY_MARKET_ROWS,
-  MULTIPLY_TOKEN_BORROW_APYS,
-  MULTIPLY_TOKEN_LOGOS,
-  MULTIPLY_TOKEN_SUPPLY_APYS,
-} from "@/app/lib/data/catalog/multiply"
+import { MULTIPLY_MARKET_ROWS, MULTIPLY_TOKEN_LOGOS } from "@/app/lib/data/catalog/multiply"
 import type { MultiplyTrendingSnapshot } from "@/app/lib/multiply-system/read-model"
 
 export type MultiplyMarket = {
@@ -40,7 +35,5 @@ export type MultiplyPageData = {
   lendRows: ReadonlyArray<(typeof MULTIPLY_MARKET_ROWS)[number]>
   trendingSnapshots: ReadonlyArray<MultiplyTrendingSnapshot>
   pageSize: number
-  tokenBorrowApys: typeof MULTIPLY_TOKEN_BORROW_APYS
   tokenLogos: typeof MULTIPLY_TOKEN_LOGOS
-  tokenSupplyApys: typeof MULTIPLY_TOKEN_SUPPLY_APYS
 }

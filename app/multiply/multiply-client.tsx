@@ -66,9 +66,7 @@ export function MultiplyClient({
           rows={livePageData.lendRows}
           trendingSnapshots={livePageData.trendingSnapshots}
           pageSize={livePageData.pageSize}
-          tokenBorrowApys={livePageData.tokenBorrowApys}
           tokenLogos={livePageData.tokenLogos}
-          tokenSupplyApys={livePageData.tokenSupplyApys}
           onOpenMultiply={(href) => {
             const market = resolveMarketFromRowHref(href)
             if (market) handleOpenMultiply(market.id)
