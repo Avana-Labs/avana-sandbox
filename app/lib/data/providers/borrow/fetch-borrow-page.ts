@@ -15,11 +15,6 @@ const borrowPageSchema = z.object({
     outstandingLoansUsd: z.number(),
     totalTvlChangePct: z.number(),
   }),
-  explore: z.object({
-    trendingCollateral: z.array(z.object({ id: z.string(), name: z.string() }).passthrough()),
-    topMarkets: z.array(z.object({ id: z.string(), name: z.string() }).passthrough()),
-    highApyPools: z.array(z.object({ id: z.string(), name: z.string() }).passthrough()),
-  }),
   borrowableAssets: z.array(z.object({ id: z.string(), symbol: z.string() }).passthrough()),
   pendingRows: z.array(z.object({}).passthrough()),
   dexes: z.array(z.object({ id: z.string() }).passthrough()),

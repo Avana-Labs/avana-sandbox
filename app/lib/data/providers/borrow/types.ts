@@ -17,11 +17,6 @@ export type BorrowPageData = {
     outstandingLoansUsd: number
     totalTvlChangePct: number
   }
-  explore: {
-    trendingCollateral: ReadonlyArray<(typeof BORROW_POOL_CATALOG)[number]>
-    topMarkets: ReadonlyArray<(typeof BORROW_POOL_CATALOG)[number]>
-    highApyPools: ReadonlyArray<(typeof BORROW_POOL_CATALOG)[number]>
-  }
   borrowableAssets: ReadonlyArray<BorrowableAsset>
   pendingRows: ReadonlyArray<(typeof BORROW_PENDING_ROWS)[number]>
   dexes: ReadonlyArray<(typeof BORROW_DEXES)[number]>
