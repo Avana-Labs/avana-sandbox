@@ -23,7 +23,7 @@ import {
   type FaqContent,
 } from "@/app/lib/borrow-detail/content-model"
 import { MULTIPLY_MARKET_ROWS, MULTIPLY_TOKEN_LOGOS, type MultiplyMarketRow } from "@/app/lib/multiply-sim"
-import { MULTIPLY_MARKET_CATALOG, getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
+import { getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
 import { catalogMarketToRow } from "@/app/lib/multiply-system/read-model"
 import { buildRiskParameterSet } from "@/app/lib/borrow-detail/risk-parameters"
 import { resolveHeroContractAddress } from "@/app/borrow/_detail/lib/hero-chart-feeds"
@@ -456,10 +456,4 @@ export function getMultiplyMarketDetail(id: string): MultiplyMarketDetail | null
     faqs: buildMultiplyFaqs(row.protocol, row.asset),
     row,
   }
-}
-
-export function listAllMultiplyMarketDetails(): MultiplyMarketDetail[] {
-  return MULTIPLY_MARKET_CATALOG.map((market) => getMultiplyMarketDetail(market.id)).filter(
-    (detail): detail is MultiplyMarketDetail => Boolean(detail),
-  )
 }

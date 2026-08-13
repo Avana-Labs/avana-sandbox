@@ -38,5 +38,3 @@ export function BorrowPageClient({
     </>
   )
 }
-
-export { HeroMarketCard, type HeroMarketCardProps } from "./borrow-hero-market-card"
