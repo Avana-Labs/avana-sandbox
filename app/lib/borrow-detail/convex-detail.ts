@@ -1,4 +1,5 @@
 import "server-only"
+import { requestCache as cache } from "@/app/lib/detail-page/request-cache"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import { mergeConvexMarketSnapshots } from "@/app/lib/borrow-system/market-hydration"
 import {
@@ -302,7 +303,7 @@ function applyRiskParametersToAbout<T extends { about: AssetDetail["about"] | Po
   }
 }
 
-export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | null> {
+async function getPoolDetailFromConvexUncached(id: string): Promise<PoolDetail | null> {
   const snapshots = await fetchConvexMarketSnapshots()
   if (shouldFailClosedWithoutSnapshots(resolveDataSourceMode(), snapshots.length)) return null
   const state = buildMockBorrowSystemState(detailWalletId)
@@ -395,7 +396,7 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
   return applyRiskParametersToAbout(withIdentity, riskParameters)
 }
 
-export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail | null> {
+async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail | null> {
   const routeSlug = normalizeBorrowAssetRouteId(id)
   // The route id may be a BASE-asset id ("usdc") or a spoke-scoped id ("uni-v2:usdc").
   // Convex markets are keyed by the spoke-scoped id, so resolve to the canonical
@@ -499,3 +500,9 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
     riskParameters,
   )
 }
+
+// Request-scoped memoization: `generateMetadata` and the page body both call these
+// builders per request. Without cache() each detail render runs the full Convex
+// fan-out twice. React.cache() dedups by argument for the lifetime of the request.
+export const getPoolDetailFromConvex = cache(getPoolDetailFromConvexUncached)
+export const getAssetDetailFromConvex = cache(getAssetDetailFromConvexUncached)
