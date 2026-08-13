@@ -4,6 +4,7 @@ import { SchemaMarkup, buildBreadcrumbSchema, buildFaqSchema, buildWebPageSchema
 import { getPoolDetail } from "@/app/lib/borrow-detail"
 import { getPoolDetailFromConvex } from "@/app/lib/borrow-detail/convex-detail"
 import { preloadPoolHero } from "@/app/lib/borrow-detail/hero-preload"
+import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { BorrowMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
@@ -15,7 +16,11 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { marketId } = await params
-  const detail = (await getPoolDetailFromConvex(marketId)) ?? getPoolDetail(marketId)
+  const detail = preferLive(
+    await getPoolDetailFromConvex(marketId),
+    getPoolDetail(marketId),
+    `borrow market metadata:${marketId}`,
+  )
   if (!detail) return { title: "Market · Avana" }
   return buildSeoMetadata({
     title: `${detail.hero.name} · Avana Borrow`,
