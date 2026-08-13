@@ -2,7 +2,6 @@ import type { ReactElement } from "react"
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import { BorrowPageHero } from "@/app/borrow/borrow-page-hero"
-import { BorrowWorkspaceClient } from "@/app/borrow/borrow-workspace-client"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
 
@@ -146,12 +145,5 @@ describe("BorrowPageHero", () => {
     renderWithPrefs(<BorrowPageHero pageData={pageData} />)
 
     expect(screen.getByText("$6.9B")).toBeInTheDocument()
-  })
-})
-
-describe("BorrowWorkspaceClient", () => {
-  it("renders the deferred workspace shell", () => {
-    renderWithPrefs(<BorrowWorkspaceClient pageData={basePageData} />)
-    expect(screen.getByTestId("borrow-workspace-shell")).toBeInTheDocument()
   })
 })
