@@ -22,8 +22,16 @@ import {
 import { MarketHero, MarketHeroIdentity, MarketSidebar } from "@/app/multiply/_detail"
 import { LiquidationRiskSection } from "@/app/borrow/_detail/ui/LiquidationRiskSection"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
+import type { MultiplyHeroPreloads } from "@/app/lib/multiply-detail/hero-preload"
+import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
+import type { CashflowPreload } from "@/app/lib/detail-page/cashflow-preload"
 
-type Props = { detail: MultiplyMarketDetail }
+type Props = {
+  detail: MultiplyMarketDetail
+  heroPreloads?: MultiplyHeroPreloads | null
+  quickStatsPreload?: QuickStatsPreload | null
+  cashflowPreload?: CashflowPreload | null
+}
 
 const CashflowCard = dynamic(
   () => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard),
@@ -42,7 +50,12 @@ const TransactionHistoryCard = dynamic(
   { ssr: false },
 )
 
-export function MarketDetailClient({ detail }: Props) {
+export function MarketDetailClient({
+  detail,
+  heroPreloads = null,
+  quickStatsPreload = null,
+  cashflowPreload = null,
+}: Props) {
   const session = useMultiplySessionContext()
   const { t } = useTranslation()
   const marketId = detail.id.toLowerCase().replaceAll("_", "-")
@@ -80,7 +93,7 @@ export function MarketDetailClient({ detail }: Props) {
               </div>
 
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                <MarketHero detail={detail} hideIdentity className="mb-12" />
+                <MarketHero detail={detail} heroPreloads={heroPreloads} hideIdentity className="mb-12" />
 
                 <AboutNewsSection
                   about={detail.about}
@@ -95,7 +108,7 @@ export function MarketDetailClient({ detail }: Props) {
                         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
                           Key Statistics
                         </h2>
-                        <QuickStatsGrid detail={detail} />
+                        <QuickStatsGrid detail={detail} quickStatsPreload={quickStatsPreload} product="multiply" />
                       </section>
                       <RiskSection detail={detail} />
                     </>
@@ -105,7 +118,7 @@ export function MarketDetailClient({ detail }: Props) {
 
                 <section aria-label={t("Multiply market analytics")} className={detailAnalyticsSectionClass}>
                   <DeferredDetailContent className={detailAnalyticsStackClass}>
-                    <CashflowCard detail={detail} />
+                    <CashflowCard detail={detail} cashflowPreload={cashflowPreload} />
                     {detail.liquidationRisk && detail.liquidationRisk.length > 0 ? (
                       <LiquidationRiskSection stats={detail.liquidationRisk} />
                     ) : null}

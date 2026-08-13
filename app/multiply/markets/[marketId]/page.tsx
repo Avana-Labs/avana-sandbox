@@ -3,6 +3,10 @@ import { notFound } from "next/navigation"
 import { SchemaMarkup, buildBreadcrumbSchema, buildFaqSchema, buildWebPageSchema } from "@/app/components/seo/schema"
 import { getMultiplyMarketDetail } from "@/app/lib/multiply-detail"
 import { getMultiplyMarketDetailFromConvex } from "@/app/lib/multiply-detail/convex-detail"
+import { preloadMultiplyHero } from "@/app/lib/multiply-detail/hero-preload"
+import { preloadDetailQuickStats } from "@/app/lib/detail-page/quick-stats-preload"
+import { preloadDetailCashflow } from "@/app/lib/detail-page/cashflow-preload"
+import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { MultiplyMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
@@ -14,7 +18,11 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { marketId } = await params
-  const detail = (await getMultiplyMarketDetailFromConvex(marketId)) ?? getMultiplyMarketDetail(marketId)
+  const detail = preferLive(
+    await getMultiplyMarketDetailFromConvex(marketId),
+    getMultiplyMarketDetail(marketId),
+    `multiply market metadata:${marketId}`,
+  )
   if (!detail) return { title: "Multiply market · Avana" }
   return buildSeoMetadata({
     title: `${detail.hero.name} · Avana Multiply`,
@@ -30,6 +38,10 @@ export default async function MarketDetailPage({ params }: PageProps) {
 
   const detail = await getMultiplyMarketDetailFromConvex(marketId)
   if (!detail) notFound()
+  const { preloads: heroPreloads, feeds } = await preloadMultiplyHero(marketId)
+  const quickStatsPreload = await preloadDetailQuickStats("multiply", marketId)
+  const cashflowPreload = await preloadDetailCashflow("multiply", marketId)
+  const detailWithFeeds = { ...detail, ...feeds }
   const canonicalUrl = `https://avana.cc/multiply/markets/${marketId}`
   return (
     <>
@@ -48,7 +60,12 @@ export default async function MarketDetailPage({ params }: PageProps) {
           buildFaqSchema(detail.faqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),
         ]}
       />
-      <MultiplyMarketDetailClientShell detail={detail} />
+      <MultiplyMarketDetailClientShell
+        detail={detailWithFeeds}
+        heroPreloads={heroPreloads}
+        quickStatsPreload={quickStatsPreload}
+        cashflowPreload={cashflowPreload}
+      />
     </>
   )
 }

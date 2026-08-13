@@ -260,6 +260,12 @@ export type RecordSwapArgs = {
   inputAmount: number
   outputAmount: number
   amountUsd: number
+  provider?: string
+  quoteId?: string
+  networkFeeUsd?: number
+  minOutputAmount?: number
+  priceImpactPct?: number
+  slippageBps?: number
   simulated: boolean
   syntheticTxHash?: string
 }
@@ -292,6 +298,12 @@ export function swapRecordToRecordSwapArgs(record: SwapTransactionRecord, wallet
     inputAmount: record.inputAmount,
     outputAmount: record.outputAmount,
     amountUsd: record.inputAmount * (input?.priceUsd ?? 0),
+    provider: record.provider,
+    quoteId: record.quoteId,
+    networkFeeUsd: record.networkFeeUsd,
+    minOutputAmount: record.minimumOutputAmount,
+    priceImpactPct: record.priceImpactPct,
+    slippageBps: record.slippageBps,
     simulated: true,
     syntheticTxHash: record.swapTransactionHash ?? undefined,
   }

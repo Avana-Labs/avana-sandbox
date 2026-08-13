@@ -27,17 +27,104 @@ function prettyKind(kind: string) {
   return KIND_VERB[kind] ?? `${kind.charAt(0).toUpperCase()}${kind.slice(1)}`
 }
 
-/** Map a stored synthetic transaction to the shared receipt shape. */
-function toReceiptData(receipt: {
+/**
+ * Shared swap-receipt builder so the in-session record and the durable Convex row
+ * render an identical breakdown. `succeeded` picks the summary line; optional economics
+ * are shown only when present (a durable row seeded before this change omits them, and a
+ * failed swap has no meaningful min-received / impact).
+ */
+function buildSwapReceiptData(input: {
+  inputSymbol: string
+  outputSymbol: string
+  inputAmount: number
+  outputAmount: number
+  amountUsd: number
+  hash: string
+  dateMs: number
+  succeeded: boolean
+  failureReason?: string
+  provider?: string | null
+  networkFeeUsd?: number
+  minOutputAmount?: number
+  priceImpactPct?: number
+  slippageBps?: number
+  quoteId?: string
+}): TransactionReceiptData {
+  const metrics: NonNullable<TransactionReceiptData["metrics"]> = []
+  if (input.minOutputAmount !== undefined) {
+    metrics.push({
+      id: "minimum-received",
+      label: "Minimum received",
+      value: `${input.minOutputAmount.toLocaleString()} ${input.outputSymbol}`,
+    })
+  }
+  if (input.priceImpactPct !== undefined) {
+    metrics.push({ id: "price-impact", label: "Price impact", value: `${input.priceImpactPct.toFixed(2)}%` })
+  }
+  if (input.slippageBps !== undefined) {
+    metrics.push({ id: "slippage", label: "Max slippage", value: `${(input.slippageBps / 100).toFixed(2)}%` })
+  }
+  return {
+    title: `Swap ${input.inputSymbol} for ${input.outputSymbol}`,
+    description: input.succeeded
+      ? `${input.inputAmount.toLocaleString()} ${input.inputSymbol} swapped for ${input.outputAmount.toLocaleString()} ${input.outputSymbol}.`
+      : (input.failureReason ?? "Swap did not complete."),
+    symbol: input.inputSymbol,
+    amountRowLabel: "Sold",
+    amountLabel: `${input.inputAmount.toLocaleString()} ${input.inputSymbol}`,
+    amountUsd: input.amountUsd,
+    rateLabel: "Received",
+    rateValue: `${input.outputAmount.toLocaleString()} ${input.outputSymbol}`,
+    marketValue: input.provider ?? null,
+    networkFeeUsd: input.networkFeeUsd ?? syntheticNetworkFeeUsdFromHash(input.hash),
+    block: syntheticBlockFromHash(input.hash),
+    dateMs: input.dateMs,
+    hash: input.hash,
+    metrics: metrics.length ? metrics : undefined,
+    quoteId: input.quoteId,
+  }
+}
+
+/** Map a stored synthetic transaction (durable Convex row) to the shared receipt shape. */
+export function toReceiptData(receipt: {
   at: number
   syntheticTxHash: string
   amountUsd: number
   product?: string
   kind?: string
+  status?: string
   marketSlug?: string | null
   assetId?: string | null
+  swapInputSymbol?: string
+  swapOutputSymbol?: string
+  swapInputAmount?: number
+  swapOutputAmount?: number
+  swapProvider?: string
+  swapQuoteId?: string
+  swapNetworkFeeUsd?: number
+  swapMinOutputAmount?: number
+  swapPriceImpactPct?: number
+  swapSlippageBps?: number
 }): TransactionReceiptData {
   const hash = receipt.syntheticTxHash
+  if (receipt.product === "swap") {
+    return buildSwapReceiptData({
+      inputSymbol: receipt.swapInputSymbol ?? "Asset",
+      outputSymbol: receipt.swapOutputSymbol ?? "Asset",
+      inputAmount: receipt.swapInputAmount ?? 0,
+      outputAmount: receipt.swapOutputAmount ?? 0,
+      amountUsd: receipt.amountUsd,
+      hash,
+      dateMs: receipt.at,
+      succeeded: receipt.status !== "failed",
+      provider: receipt.swapProvider,
+      networkFeeUsd: receipt.swapNetworkFeeUsd,
+      minOutputAmount: receipt.swapMinOutputAmount,
+      priceImpactPct: receipt.swapPriceImpactPct,
+      slippageBps: receipt.swapSlippageBps,
+      quoteId: receipt.swapQuoteId,
+    })
+  }
   const symbol = receipt.assetId ? receipt.assetId.toUpperCase() : "Asset"
   const verb = receipt.kind ? prettyKind(receipt.kind) : "Transaction"
   return {
@@ -56,37 +143,24 @@ function toReceiptData(receipt: {
 export function swapTransactionToReceiptData(transaction: SwapTransactionRecord): TransactionReceiptData {
   const inputAsset = getSwapAsset(transaction.inputAssetId)
   const outputAsset = getSwapAsset(transaction.outputAssetId)
-  const inputSymbol = inputAsset?.symbol ?? transaction.inputAssetId.toUpperCase()
-  const outputSymbol = outputAsset?.symbol ?? transaction.outputAssetId.toUpperCase()
   const hash = transaction.swapTransactionHash ?? transaction.approvalTransactionHash ?? transaction.id
-  return {
-    title: `Swap ${inputSymbol} for ${outputSymbol}`,
-    description:
-      transaction.status === "confirmed"
-        ? `${transaction.inputAmount.toLocaleString()} ${inputSymbol} swapped for ${transaction.outputAmount.toLocaleString()} ${outputSymbol}.`
-        : (transaction.failureReason ?? "Swap did not complete."),
-    symbol: inputSymbol,
-    amountRowLabel: "Sold",
-    amountLabel: `${transaction.inputAmount.toLocaleString()} ${inputSymbol}`,
+  return buildSwapReceiptData({
+    inputSymbol: inputAsset?.symbol ?? transaction.inputAssetId.toUpperCase(),
+    outputSymbol: outputAsset?.symbol ?? transaction.outputAssetId.toUpperCase(),
+    inputAmount: transaction.inputAmount,
+    outputAmount: transaction.outputAmount,
     amountUsd: transaction.inputAmount * (inputAsset?.priceUsd ?? 0),
-    rateLabel: "Received",
-    rateValue: `${transaction.outputAmount.toLocaleString()} ${outputSymbol}`,
-    marketValue: transaction.provider,
-    networkFeeUsd: transaction.networkFeeUsd,
-    block: syntheticBlockFromHash(hash),
-    dateMs: transaction.confirmedAt ?? transaction.createdAt,
     hash,
-    metrics: [
-      {
-        id: "minimum-received",
-        label: "Minimum received",
-        value: `${transaction.minimumOutputAmount.toLocaleString()} ${outputSymbol}`,
-      },
-      { id: "price-impact", label: "Price impact", value: `${transaction.priceImpactPct.toFixed(2)}%` },
-      { id: "slippage", label: "Max slippage", value: `${(transaction.slippageBps / 100).toFixed(2)}%` },
-    ],
+    dateMs: transaction.confirmedAt ?? transaction.createdAt,
+    succeeded: transaction.status === "confirmed",
+    failureReason: transaction.failureReason,
+    provider: transaction.provider,
+    networkFeeUsd: transaction.networkFeeUsd,
+    minOutputAmount: transaction.minimumOutputAmount,
+    priceImpactPct: transaction.priceImpactPct,
+    slippageBps: transaction.slippageBps,
     quoteId: transaction.quoteId,
-  }
+  })
 }
 
 export function SyntheticTransactionClient({ hash }: { hash: string }) {

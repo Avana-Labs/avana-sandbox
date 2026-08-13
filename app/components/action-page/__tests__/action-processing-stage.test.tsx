@@ -34,9 +34,11 @@ describe("ActionProcessingStage", () => {
     expect(screen.getByText("Pending")).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Depositing WETH" })).toBeInTheDocument()
     expect(screen.getByTestId("processing-narration")).toBeInTheDocument()
-    expect(screen.getByRole("list", { name: "Execution steps" })).toBeInTheDocument()
-    expect(screen.getByText("Loop 1: Borrow")).toBeInTheDocument()
     expect(screen.getByText("Connecting to Aave v4")).toBeInTheDocument()
+    // The redundant executionSteps list is intentionally NOT rendered — the narration
+    // animation above already conveys the per-verb steps (was duplicated on every action).
+    expect(screen.queryByRole("list", { name: "Execution steps" })).not.toBeInTheDocument()
+    expect(screen.queryByText("Loop 1: Borrow")).not.toBeInTheDocument()
     expect(screen.getByRole("link", { name: "Close" })).toHaveAttribute("href", "/lend")
   })
 

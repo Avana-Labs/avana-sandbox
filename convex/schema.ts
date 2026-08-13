@@ -1233,6 +1233,17 @@ export default defineSchema({
     swapOutputSymbol: v.optional(v.string()),
     swapInputAmount: v.optional(v.number()),
     swapOutputAmount: v.optional(v.number()),
+    /** Swap-only receipt detail (product === "swap"): the quote/provider/economics so the
+     *  synthetic-transaction receipt renders the full swap breakdown from the durable row
+     *  alone — cross-device, or after the in-session swap history is gone. Before this, a
+     *  durable-row-only receipt fell back to a generic card with a hash-derived network fee
+     *  and no min-received / price-impact / provider / quote id. */
+    swapProvider: v.optional(v.string()),
+    swapQuoteId: v.optional(v.string()),
+    swapNetworkFeeUsd: v.optional(v.number()),
+    swapMinOutputAmount: v.optional(v.number()),
+    swapPriceImpactPct: v.optional(v.number()),
+    swapSlippageBps: v.optional(v.number()),
     syntheticTxHash: v.string(),
     simulated: v.boolean(),
     at: v.number(),

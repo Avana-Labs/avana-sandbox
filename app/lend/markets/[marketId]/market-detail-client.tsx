@@ -12,6 +12,9 @@ import { LendHero, LendHeroIdentity, LendSidebar } from "@/app/lend/_detail"
 import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
+import type { LendHeroPreloads } from "@/app/lib/lend-detail/hero-preload"
+import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
+import type { CashflowPreload } from "@/app/lib/detail-page/cashflow-preload"
 import type { TxHistoryRow } from "@/app/lib/borrow-detail"
 import {
   DeferredDetailContent,
@@ -43,7 +46,12 @@ const TransactionHistoryCard = dynamic(
   { ssr: false },
 )
 
-type Props = { detail: LendMarketDetail }
+type Props = {
+  detail: LendMarketDetail
+  heroPreloads?: LendHeroPreloads | null
+  quickStatsPreload?: QuickStatsPreload | null
+  cashflowPreload?: CashflowPreload | null
+}
 
 /** Map a wallet's own sandbox lend actions into the shared TxHistoryRow shape. */
 function mapSessionRows(
@@ -75,7 +83,12 @@ function formatAge(elapsedMs: number) {
   return `${Math.floor(h / 24)}d`
 }
 
-export function LendMarketDetailClient({ detail }: Props) {
+export function LendMarketDetailClient({
+  detail,
+  heroPreloads = null,
+  quickStatsPreload = null,
+  cashflowPreload = null,
+}: Props) {
   const session = useLendSessionContext()
   const { t } = useTranslation()
   const marketId = detail.row.marketId
@@ -109,7 +122,7 @@ export function LendMarketDetailClient({ detail }: Props) {
               </div>
 
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                <LendHero detail={detail} hideIdentity className="mb-12" />
+                <LendHero detail={detail} heroPreloads={heroPreloads} hideIdentity className="mb-12" />
 
                 <AboutNewsSection
                   about={detail.about}
@@ -124,7 +137,7 @@ export function LendMarketDetailClient({ detail }: Props) {
                         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
                           Key Statistics
                         </h2>
-                        <QuickStatsGrid detail={detail} />
+                        <QuickStatsGrid detail={detail} quickStatsPreload={quickStatsPreload} product="lend" />
                       </section>
                       <RiskSection detail={detail} />
                     </>
@@ -139,7 +152,7 @@ export function LendMarketDetailClient({ detail }: Props) {
                       borrowAprPct={detail.borrowAprPct}
                       protocolParameters={detail.protocolParameters}
                     />
-                    <CashflowCard detail={detail} />
+                    <CashflowCard detail={detail} cashflowPreload={cashflowPreload} />
                     <DetailFaqSection
                       title={t("General FAQs")}
                       items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}

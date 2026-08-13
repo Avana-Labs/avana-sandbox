@@ -1,6 +1,5 @@
 import "server-only"
 import { requestCache as cache } from "@/app/lib/detail-page/request-cache"
-import { buildHeroFeedFromConvexSeries } from "@/app/lib/chart-feeds"
 import {
   fetchMultiplyCashflowBreakdown,
   fetchMultiplyContent,
@@ -13,12 +12,12 @@ import {
   fetchMultiplyRisk,
   fetchMultiplyRiskParameters,
   fetchMultiplySupplyBorrow,
-  fetchMultiplySupplySeries,
   fetchTokenPrices,
   type ConvexContractAddressRow,
 } from "@/app/lib/multiply-system/market-hydration-server"
 import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
 import { applyDetailContentOverlay, mergeAliasedQuickStats } from "@/app/lib/detail-page/live-detail-helpers"
+import { QUICK_STAT_ALIASES } from "@/app/lib/detail-page/live-quick-stats"
 import { buildMockLiquidationRiskStats } from "@/app/lib/detail-page/liquidation-risk"
 import {
   injectAvailableUsdQuickStat,
@@ -79,11 +78,6 @@ function mapConvexTransactions(
 }
 
 /** Convex `getQuickStats` emits asset-style ids; map each to the lend-style mock ids. */
-const QUICK_STAT_ALIASES: Record<string, string[]> = {
-  supplyApy: ["supplyApy"],
-  borrowApy: ["borrowApy"],
-}
-
 function injectRealPrice(
   quickStats: QuickStat[],
   prices: Record<string, number> | null,
@@ -99,7 +93,7 @@ function mergeConvexQuickStats(
   base: QuickStat[],
   convex: ReadonlyArray<{ id: string; value: string; delta?: QuickStat["delta"] }> | null,
 ): QuickStat[] {
-  return mergeAliasedQuickStats(base, convex, QUICK_STAT_ALIASES)
+  return mergeAliasedQuickStats(base, convex, QUICK_STAT_ALIASES.multiply)
 }
 
 function applyRiskParametersToAbout(
@@ -171,8 +165,8 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
   if (!detail) return null
   const slug = detail.id
 
+  // Supply hero series preloaded by the page (preloadMultiplyHero) — not fetched here.
   const [
-    supplyPoints,
     cashflow,
     transactions,
     risk,
@@ -186,7 +180,6 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
     supplyBorrow,
     contractAddresses,
   ] = await Promise.all([
-    fetchMultiplySupplySeries(slug),
     fetchMultiplyCashflowBreakdown(slug),
     fetchMultiplyRecentTransactions(slug),
     fetchMultiplyRisk(slug),
@@ -216,7 +209,7 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
         ),
         siloedMarket,
       ),
-      heroFeed: buildHeroFeedFromConvexSeries(supplyPoints, "usdCompact") ?? detail.heroFeed,
+      // heroFeed set by the page from preloadMultiplyHero.
       cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
       transactions: mapConvexTransactions(transactions) ?? detail.transactions,
       risk: (risk as typeof detail.risk) ?? detail.risk,
