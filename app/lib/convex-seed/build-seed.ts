@@ -470,32 +470,43 @@ function dailyWalk(
   base: number,
   asOf: number,
   days: number,
-  opts: { drift?: number; noise?: number; wave?: number } = {},
+  opts: { drift?: number; noise?: number; wave?: number; ramp?: boolean; startFraction?: number } = {},
 ): { day: string; value: number }[] {
   const rand = prngFromString(`${slug}:${metric}`)
+  const ramp = opts.ramp ?? false
   const drift = opts.drift ?? 1.06
   const volatility = opts.noise ?? 0.05
   const waveAmp = opts.wave ?? 0.07
+  const startFraction = opts.startFraction ?? 0.06
   // Random phases so harmonics don't line up across markets.
   const phaseA = rand() * Math.PI * 2
   const phaseB = rand() * Math.PI * 2
   const phaseC = rand() * Math.PI * 2
   const out: { day: string; value: number }[] = []
-  let level = base
+  // RAMP metrics (TVL / supplied — balances) grow organically from a small fraction of
+  // `base` up to `base` at the tip, so "All" reads as a market that filled from ~0 to its
+  // current size instead of a flat band pinned at the current value. FLAT metrics
+  // (utilization, APY — rates, not balances) oscillate around `base` the whole window.
+  const start = ramp ? base * startFraction : base
+  let level = start
   for (let i = 0; i < days; i++) {
     const progress = days <= 1 ? 1 : i / (days - 1)
-    const target = base * (1 + (drift - 1) * progress)
-    // Mean-revert toward the trend target, then take a volatile random step. This
-    // produces realistic drifts and reversals instead of a monotonic climb.
-    level += (target - level) * 0.08 + (rand() * 2 - 1) * base * volatility
+    const target = ramp
+      ? start + (base - start) * (progress * progress * (3 - 2 * progress)) // smoothstep → base at the tip
+      : base * (1 + (drift - 1) * progress)
+    // Anchor volatility + texture to the CURRENT level for ramp metrics (so early days
+    // wiggle proportionally small and the growth trend dominates the noise — no random
+    // down-endings), and to `base` for flat metrics.
+    const anchor = ramp ? level : base
+    level += (target - level) * (ramp ? 0.12 : 0.08) + (rand() * 2 - 1) * anchor * volatility
     // Multi-frequency texture (slow swings + faster chop).
     const wave =
-      base *
+      anchor *
       waveAmp *
       (Math.sin(progress * Math.PI * 8 + phaseA) * 0.5 +
         Math.sin(progress * Math.PI * 23 + phaseB) * 0.32 +
         Math.sin(progress * Math.PI * 57 + phaseC) * 0.18)
-    const value = Math.max(base * 0.05, level + wave)
+    const value = Math.max(ramp ? start * 0.35 : base * 0.05, level + wave)
     const day = isoDay(asOf - (days - 1 - i) * DAY_MS)
     out.push({ day, value })
   }
@@ -595,7 +606,7 @@ function dailyStatsForLendMarket(
   asOf: number,
   days: number,
 ): SeedDailyStatRow[] {
-  const supplied = dailyWalk(slug, "supplied", base.suppliedUsd, asOf, days, { drift: 1.06, noise: 0.04 })
+  const supplied = dailyWalk(slug, "supplied", base.suppliedUsd, asOf, days, { ramp: true, noise: 0.04 })
   const util = dailyWalk(slug, "util", base.utilizationPct, asOf, days, { drift: 1.0, noise: 0.06, wave: 0.05 })
   const apy = dailyWalk(slug, "supplyapy", base.supplyApyPct, asOf, days, { drift: 1.0, noise: 0.05, wave: 0.04 })
   return supplied.map((s, i) => {
@@ -658,7 +669,7 @@ function dailyStatsForMultiplyMarket(
   asOf: number,
   days: number,
 ): SeedDailyStatRow[] {
-  const supplied = dailyWalk(slug, "supplied", base.suppliedUsd, asOf, days, { drift: 1.05, noise: 0.05 })
+  const supplied = dailyWalk(slug, "supplied", base.suppliedUsd, asOf, days, { ramp: true, noise: 0.05 })
   const util = dailyWalk(slug, "util", base.utilizationPct, asOf, days, { drift: 1.0, noise: 0.06, wave: 0.05 })
   const apy = dailyWalk(slug, "supplyapy", base.supplyApyPct, asOf, days, { drift: 1.0, noise: 0.05, wave: 0.04 })
   return supplied.map((s, i) => {
@@ -689,7 +700,7 @@ function dailyStatsForMarket(
   asOf: number,
   days: number,
 ): SeedDailyStatRow[] {
-  const supplied = dailyWalk(slug, "supplied", base.suppliedUsd, asOf, days, { drift: 1.08, noise: 0.04 })
+  const supplied = dailyWalk(slug, "supplied", base.suppliedUsd, asOf, days, { ramp: true, noise: 0.04 })
   const util = dailyWalk(slug, "util", base.utilizationPct, asOf, days, { drift: 1.0, noise: 0.06, wave: 0.05 })
   const apr = dailyWalk(slug, "apr", base.borrowAprPct, asOf, days, { drift: 1.0, noise: 0.05, wave: 0.04 })
   return supplied.map((s, i) => {

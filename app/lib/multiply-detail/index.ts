@@ -23,7 +23,7 @@ import {
   type FaqContent,
 } from "@/app/lib/borrow-detail/content-model"
 import { MULTIPLY_MARKET_ROWS, MULTIPLY_TOKEN_LOGOS, type MultiplyMarketRow } from "@/app/lib/multiply-sim"
-import { MULTIPLY_MARKET_CATALOG, getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
+import { getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
 import { catalogMarketToRow } from "@/app/lib/multiply-system/read-model"
 import { buildRiskParameterSet } from "@/app/lib/borrow-detail/risk-parameters"
 import { resolveHeroContractAddress } from "@/app/borrow/_detail/lib/hero-chart-feeds"
@@ -46,33 +46,6 @@ export type MultiplyTokenVisual = {
   iconUrl?: string
 }
 
-export type MultiplyMarketRelatedSummary = {
-  id: string
-  name: string
-  venue: string
-  visuals: [MultiplyTokenVisual, MultiplyTokenVisual]
-  maxApyLabel: string
-  availableLabel: string
-}
-
-/**
- * One row in the multiply market's allocation breakdown table.
- *
- * @convex-source `multiplyMarketAllocations` — one row per contributing pool.
- * @convex-query  `multiply.allocation.getAllocation({ slug })`
- */
-export type MultiplyAllocationRow = {
-  rowKey: string
-  poolSlug: string
-  poolName: string
-  venueLabel: string
-  sharePct: number
-  valueUsd: number
-  utilizationPct: number
-  borrowAprPct: number
-  collateralFactorPct: number
-}
-
 export type MultiplyMarketDetail = {
   id: string
   hero: MultiplyMarketHero
@@ -90,38 +63,12 @@ export type MultiplyMarketDetail = {
   risk: RiskAssessment
   about: AboutCard
   faqs: FaqContent[]
-  related: MultiplyMarketRelatedSummary[]
   row: MultiplyMarketRow
   /**
    * Liquidation Risk KPIs — from product-siloed `multiplyLiquidationDaily`.
    * @convex-query multiply.liquidationRisk.getLiquidationRisk
    */
   liquidationRisk?: import("../detail-page/liquidation-risk").LiquidationRiskStat[]
-  /**
-   * Historical utilization series (Convex 1Y window). Set only by the Convex builder;
-   * absent when the query returns null (unseeded) to keep the section fail-closed.
-   * @convex-query markets.getMultiplyHistoricalUtilization
-   */
-  historicalUtilization?: Series
-  /**
-   * Per-pool allocation breakdown for the multiply market. Set only by the Convex
-   * builder; absent when unseeded (fail-closed, no silent mock fallback).
-   * @convex-query multiply.allocation.getAllocation
-   */
-  allocation?: MultiplyAllocationRow[]
-  /**
-   * Interest rate model curve params (matches the borrow IRM shape). Set only by the
-   * Convex builder; absent when unseeded (fail-closed).
-   * @convex-query multiply.interestRateModel.getInterestRateModel
-   */
-  interestRateModel?: {
-    utilizationPct: number
-    borrowAprPct: number
-    optimalUtilizationPct: number
-    slopeBelowOptimalPct: number
-    slopeAboveOptimalPct: number
-    baseBorrowRatePct: number
-  }
 }
 
 export type MultiplyTxHistoryRow = {
@@ -488,20 +435,6 @@ function resolveMultiplyRow(id: string): MultiplyMarketRow | null {
   )
 }
 
-function buildRelated(row: MultiplyMarketRow): MultiplyMarketRelatedSummary[] {
-  const catalogRows = MULTIPLY_MARKET_CATALOG.map(catalogMarketToRow)
-  const sameCollateral = catalogRows.filter((other) => other.protocol === row.protocol && other.asset !== row.asset)
-  const sameBorrowable = catalogRows.filter((other) => other.asset === row.asset && other.protocol !== row.protocol)
-  return [...sameCollateral, ...sameBorrowable].slice(0, 4).map((other) => ({
-    id: `${other.protocol}-${other.asset}`,
-    name: `${other.protocol} / ${other.asset}`,
-    venue: "Avana Multiply",
-    visuals: [getVisual(other.protocol), getVisual(other.asset)],
-    maxApyLabel: other.apy,
-    availableLabel: other.points ?? "—",
-  }))
-}
-
 export function getMultiplyMarketDetail(id: string): MultiplyMarketDetail | null {
   const row = resolveMultiplyRow(id)
   if (!row) return null
@@ -521,13 +454,6 @@ export function getMultiplyMarketDetail(id: string): MultiplyMarketDetail | null
     risk: buildRisk(row),
     about: buildAbout(row, resolvedId),
     faqs: buildMultiplyFaqs(row.protocol, row.asset),
-    related: buildRelated(row),
     row,
   }
-}
-
-export function listAllMultiplyMarketDetails(): MultiplyMarketDetail[] {
-  return MULTIPLY_MARKET_CATALOG.map((market) => getMultiplyMarketDetail(market.id)).filter(
-    (detail): detail is MultiplyMarketDetail => Boolean(detail),
-  )
 }

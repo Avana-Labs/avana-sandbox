@@ -29,15 +29,6 @@ describe("page providers", () => {
     expect(data.heroMetrics.totalCollateralUsd).toBeGreaterThan(0)
     expect(data.heroMetrics.availableCreditUsd).toBeGreaterThan(0)
     expect(data.heroMetrics.outstandingLoansUsd).toBeGreaterThan(0)
-    expect(data.explore.trendingCollateral).toHaveLength(3)
-    expect(data.explore.highApyPools).toHaveLength(3)
-    expect(data.explore.topMarkets).toHaveLength(3)
-    expect(data.explore.trendingCollateral[0]!.availableUsd).toBeGreaterThanOrEqual(
-      data.explore.trendingCollateral[1]!.availableUsd,
-    )
-    expect((data.explore.highApyPools[0]!.aprMin + data.explore.highApyPools[0]!.aprMax) / 2).toBeGreaterThanOrEqual(
-      (data.explore.highApyPools[1]!.aprMin + data.explore.highApyPools[1]!.aprMax) / 2,
-    )
   })
 
   it("accepts a borrow source override", async () => {
@@ -89,41 +80,6 @@ describe("page providers", () => {
               outstandingLoansUsd: 750,
               totalTvlChangePct: 1.2,
             },
-            explore: {
-              trendingCollateral: [
-                {
-                  id: "custom-eth-usdc",
-                  name: "ETH / USDC",
-                  tvlUsd: 1000,
-                  availableUsd: 250,
-                  totalBorrowedUsd: 750,
-                  aprMin: 4.5,
-                  aprMax: 5.5,
-                },
-              ],
-              topMarkets: [
-                {
-                  id: "custom-eth-usdc",
-                  name: "ETH / USDC",
-                  tvlUsd: 1000,
-                  availableUsd: 250,
-                  totalBorrowedUsd: 750,
-                  aprMin: 4.5,
-                  aprMax: 5.5,
-                },
-              ],
-              highApyPools: [
-                {
-                  id: "custom-eth-usdc",
-                  name: "ETH / USDC",
-                  tvlUsd: 1000,
-                  availableUsd: 250,
-                  totalBorrowedUsd: 750,
-                  aprMin: 4.5,
-                  aprMax: 5.5,
-                },
-              ],
-            },
           },
         }
       },
@@ -132,7 +88,6 @@ describe("page providers", () => {
     const data = await fetchBorrowPage(source)
     expect(data.poolCatalog[0]?.id).toBe("custom-eth-usdc")
     expect(data.heroMetrics.totalTvlUsd).toBe(1000)
-    expect(data.explore.highApyPools[0]?.id).toBe("custom-eth-usdc")
   })
 
   it("fetches lend page data from the default source", async () => {
@@ -142,7 +97,7 @@ describe("page providers", () => {
     expect(data.assetGroups.length).toBeGreaterThan(0)
     expect(data.featuredSequence.length).toBeGreaterThan(0)
     expect(data.featuredSnapshots.length).toBe(3)
-    expect(data.marketRows.length).toBeGreaterThan(10)
+    expect(data.assetGroups.flatMap((group) => group.rows).length).toBeGreaterThan(10)
   })
 
   it("accepts a lend source override", async () => {
@@ -199,7 +154,6 @@ describe("page providers", () => {
             } as unknown as LendPageData["featuredAssets"],
             featuredSequence: ["usdc"] as unknown as LendPageData["featuredSequence"],
             featuredSnapshots: [{ marketId: "usdc", symbol: "USDC", href: "/lend/markets/usdc", apyLabel: "3.20%" }],
-            marketRows: [{ marketId: "usdc", asset: "USDC", href: "/lend/markets/usdc" }],
             assetGroups: [
               { title: "Stablecoins", rows: [{ symbol: "USDC", name: "USD Coin", apy: "3.2%" }] },
             ] as unknown as LendPageData["assetGroups"],
@@ -256,9 +210,7 @@ describe("page providers", () => {
             ] as unknown as MultiplyPageData["lendRows"],
             trendingSnapshots: [],
             pageSize: 24,
-            tokenBorrowApys: { USDC: "5.00%" } as unknown as MultiplyPageData["tokenBorrowApys"],
             tokenLogos: { ETH: "https://example.com/eth.png" } as unknown as MultiplyPageData["tokenLogos"],
-            tokenSupplyApys: { ETH: "3.50%" } as unknown as MultiplyPageData["tokenSupplyApys"],
           },
         }
       },

@@ -5,8 +5,12 @@ import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydrat
 import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
 import { allocationVenueLabel } from "@/app/lib/borrow-detail/allocation"
 import type { AllocationRow } from "@/app/lib/borrow-detail/types"
+import { requestCache } from "@/app/lib/detail-page/request-cache"
 
-function convexClient(): ConvexHttpClient | null {
+// One client per request instead of a fresh instance for each of the ~15 fetch*
+// helpers a detail render calls. request-scoped via React.cache; identity (a new
+// client each call, i.e. today's behavior) in the non-RSC test runtime.
+const convexClient = requestCache((): ConvexHttpClient | null => {
   const url = process.env.NEXT_PUBLIC_CONVEX_URL
   if (!url || !/^https?:\/\//.test(url)) return null
   try {
@@ -14,7 +18,7 @@ function convexClient(): ConvexHttpClient | null {
   } catch {
     return null
   }
-}
+})
 
 /**
  * Server-side fetch of the Convex market reference snapshots. Returns [] when no
@@ -111,16 +115,33 @@ export async function fetchPoolUtilizationSeries(slug: string): Promise<ConvexSe
   }
 }
 
-/** Asset hero series = total borrows over the full window. */
-export async function fetchAssetBorrowSeries(slug: string): Promise<ConvexSeriesPoint[]> {
+async function fetchAssetHeroSeries(
+  slug: string,
+  metric: "supply" | "borrow" | "utilization",
+): Promise<ConvexSeriesPoint[]> {
   const client = convexClient()
   if (!client) return []
   try {
-    const res = await client.query(api.markets.getAssetHeroSeries, { slug, metric: "borrow", range: "ALL" })
+    const res = await client.query(api.markets.getAssetHeroSeries, { slug, metric, range: "ALL" })
     return (res?.points ?? []) as ConvexSeriesPoint[]
   } catch {
     return []
   }
+}
+
+/** Asset hero Supplied series over the full window. */
+export function fetchAssetSuppliedSeries(slug: string): Promise<ConvexSeriesPoint[]> {
+  return fetchAssetHeroSeries(slug, "supply")
+}
+
+/** Asset hero Borrowed series over the full window. */
+export function fetchAssetBorrowSeries(slug: string): Promise<ConvexSeriesPoint[]> {
+  return fetchAssetHeroSeries(slug, "borrow")
+}
+
+/** Asset hero Utilization series over the full window. */
+export function fetchAssetUtilizationSeries(slug: string): Promise<ConvexSeriesPoint[]> {
+  return fetchAssetHeroSeries(slug, "utilization")
 }
 
 /** Cashflow breakdown card (rows + monthly bars) from seeded revenue. */
@@ -261,6 +282,17 @@ export async function fetchBorrowRiskParameters(slug: string) {
   if (!client) return null
   try {
     return await client.query(api.borrow.riskParameters.getRiskParameters, { slug })
+  } catch {
+    return null
+  }
+}
+
+/** Borrow product — risk parameters for many slugs in one round-trip (allocation card). */
+export async function fetchBorrowRiskParametersForSlugs(slugs: string[]) {
+  const client = convexClient()
+  if (!client || slugs.length === 0) return null
+  try {
+    return await client.query(api.borrow.riskParameters.getRiskParametersForSlugs, { slugs })
   } catch {
     return null
   }

@@ -1,9 +1,12 @@
 import "server-only"
+import { requestCache as cache } from "@/app/lib/detail-page/request-cache"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import { mergeConvexMarketSnapshots } from "@/app/lib/borrow-system/market-hydration"
 import {
   fetchAllocation,
   fetchAssetBorrowSeries,
+  fetchAssetSuppliedSeries,
+  fetchAssetUtilizationSeries,
   fetchAssetCashflowTrend,
   fetchAssetContractAddresses,
   fetchBorrowInterestRateModel,
@@ -11,6 +14,7 @@ import {
   fetchBorrowMarket,
   fetchBorrowPoolBorrowables,
   fetchBorrowRiskParameters,
+  fetchBorrowRiskParametersForSlugs,
   fetchCashflowBreakdown,
   fetchContent,
   fetchConvexMarketSnapshots,
@@ -29,8 +33,6 @@ import {
 import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
 import { formatOraclePrice } from "@/app/lib/borrow-detail/formatters"
 import { formatBpsAsPct } from "@/app/lib/borrow-detail/allocation"
-import { formatCompactUsd } from "@/app/lib/borrow-sim"
-import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
 import { resolveAssetDetailFromState, resolvePoolDetailFromState } from "@/app/lib/borrow-system/read-model"
 import { resolveAsset } from "@/app/lib/borrow-detail/asset.mock"
 import {
@@ -44,14 +46,10 @@ import { buildHeroFeedFromConvexSeries } from "@/app/lib/chart-feeds"
 import { getDefaultWalletProfileId } from "@/app/lib/data/wallet/profiles"
 import { applyDetailContentOverlay, mergeAliasedQuickStats } from "@/app/lib/detail-page/live-detail-helpers"
 import { buildMockLiquidationRiskStats } from "@/app/lib/detail-page/liquidation-risk"
-import {
-  injectSiloedMarketQuickStats,
-  overlayAboutDescription,
-  overlayHeroIdentity,
-} from "@/app/lib/detail-page/siloed-market-overlay"
+import { injectSiloedMarketQuickStats, overlayHeroIdentity } from "@/app/lib/detail-page/siloed-market-overlay"
 import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
 import { shouldFailClosedWithoutSnapshots } from "@/app/lib/borrow-detail/live-fallback"
-import type { AllocationRow, AssetDetail, PoolDetail, QuickStat, RelatedPoolSummary } from "./types"
+import type { AllocationRow, AssetDetail, PoolDetail, QuickStat } from "./types"
 
 /**
  * Server-only Convex-hydrated detail builders. The borrow detail pages call these
@@ -139,25 +137,6 @@ export function syncQuickStatsRiskPremium(quickStats: QuickStat[], premiumBps: n
 }
 
 /**
- * Restate each Related-pools card's "Available" from the calibrated Convex pool snapshot
- * for that sibling — the SAME value the sibling shows as "Available to borrow" on its own
- * detail page (both derive from snap.availableUsd via the hydrated market state). Without
- * this the card reuses the raw catalog availableUsd, which diverges 3–7× from the sibling's
- * hydrated figure. Falls back to the existing label when a sibling has no snapshot.
- */
-export function syncRelatedAvailable(
-  related: RelatedPoolSummary[],
-  snapshots: ConvexMarketSnapshot[],
-): RelatedPoolSummary[] {
-  const poolAvailable = new Map(snapshots.filter((s) => s.scope === "pool").map((s) => [s.slug, s.availableUsd]))
-  if (poolAvailable.size === 0) return related
-  return related.map((card) => {
-    const available = poolAvailable.get(card.id)
-    return available === undefined ? card : { ...card, availableLabel: formatCompactUsd(available) }
-  })
-}
-
-/**
  * Fail-closed empty defaults used when a Convex query returns null. These stand in for
  * the removed nullish-mock cascades — the mock's shape survives (so UI type contracts
  * hold) but none of its VALUES leak into the hydrated detail. Each shape is the minimal
@@ -230,12 +209,12 @@ async function enrichAllocationWithCollateralFactors(
       }),
     ),
   ]
-  const riskRows = await Promise.all(poolSlugs.map((poolSlug) => fetchBorrowRiskParameters(poolSlug)))
+  const riskRows = await fetchBorrowRiskParametersForSlugs(poolSlugs)
   const cfByPool = new Map<string, number>()
-  poolSlugs.forEach((poolSlug, index) => {
-    const cf = collateralFactorFromRiskParameters(riskRows[index]?.parameters)
-    if (cf !== undefined) cfByPool.set(poolSlug, cf)
-  })
+  for (const row of riskRows ?? []) {
+    const cf = collateralFactorFromRiskParameters(row.parameters)
+    if (cf !== undefined) cfByPool.set(row.slug, cf)
+  }
   if (cfByPool.size === 0) return allocation
   return allocation.map((row) => {
     const prefix = `${assetId}-`
@@ -255,7 +234,14 @@ const CONTRACT_ADDRESS_LABEL_BY_SALT: Record<string, string> = {
   vault: "Vault Contract Address",
   token: "Token Contract Address",
   staking: "Staking Contract Address",
-  governance: "Governance Contract Address",
+}
+
+/** Only these three addresses show on About (matches the pre-migration 3-row spec — no Governance). */
+const CONTRACT_ADDRESS_SALTS = new Set(["vault", "token", "staking"])
+
+/** True for any stat that is a contract-address row (used to strip stale/duplicate ones). */
+function isContractAddressStat(stat: { label: string }): boolean {
+  return /Contract Address$/.test(stat.label)
 }
 
 function contractRowToStat(row: ConvexContractAddressRow): { label: string; value: string; href: string } {
@@ -266,16 +252,32 @@ function contractRowToStat(row: ConvexContractAddressRow): { label: string; valu
   }
 }
 
+/**
+ * Replace (not append) the About card's contract-address rows with the canonical
+ * Vault/Token/Staking set from Convex. Stripping any pre-existing contract rows first
+ * makes this idempotent against stale/double-seeded `content.stats` (deployments seeded
+ * before the mock stopped emitting these), so the card always shows exactly three —
+ * never the 6–7 duplicates the old append produced. When Convex has no rows (offline),
+ * leave the seeded stats untouched so the card still renders.
+ */
 function injectContractAddressStats<T extends { about: AssetDetail["about"] | PoolDetail["about"] }>(
   detail: T,
   rows: readonly ConvexContractAddressRow[],
 ): T {
-  if (rows.length === 0) return detail
+  const contractRows = rows.filter((row) => CONTRACT_ADDRESS_SALTS.has(row.salt))
+  if (contractRows.length === 0) return detail
+  const seen = new Set<string>()
+  const contractStats: Array<{ label: string; value: string; href: string }> = []
+  for (const stat of contractRows.map(contractRowToStat)) {
+    if (seen.has(stat.label)) continue
+    seen.add(stat.label)
+    contractStats.push(stat)
+  }
   return {
     ...detail,
     about: {
       ...detail.about,
-      stats: [...detail.about.stats, ...rows.map(contractRowToStat)],
+      stats: [...detail.about.stats.filter((stat) => !isContractAddressStat(stat)), ...contractStats],
     },
   }
 }
@@ -302,7 +304,7 @@ function applyRiskParametersToAbout<T extends { about: AssetDetail["about"] | Po
   }
 }
 
-export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | null> {
+async function getPoolDetailFromConvexUncached(id: string): Promise<PoolDetail | null> {
   const snapshots = await fetchConvexMarketSnapshots()
   if (shouldFailClosedWithoutSnapshots(resolveDataSourceMode(), snapshots.length)) return null
   const state = buildMockBorrowSystemState(detailWalletId)
@@ -366,7 +368,6 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
     {
       ...detail,
       quickStats: mergedQuickStats,
-      related: syncRelatedAvailable(detail.related, snapshots),
       heroFeed: buildHeroFeedFromConvexSeries(tvlPoints, "usdCompact") ?? undefined,
       heroBorrowedFeed: buildHeroFeedFromConvexSeries(borrowedPoints, "usdCompact") ?? undefined,
       heroUtilizationFeed: buildHeroFeedFromConvexSeries(utilizationPoints, "percent") ?? undefined,
@@ -386,7 +387,6 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
     {
       ...hydrated,
       hero: overlayHeroIdentity(hydrated.hero, siloedMarket),
-      about: overlayAboutDescription(hydrated.about, siloedMarket),
     },
     contractAddresses,
   )
@@ -395,7 +395,7 @@ export async function getPoolDetailFromConvex(id: string): Promise<PoolDetail | 
   return applyRiskParametersToAbout(withIdentity, riskParameters)
 }
 
-export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail | null> {
+async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail | null> {
   const routeSlug = normalizeBorrowAssetRouteId(id)
   // The route id may be a BASE-asset id ("usdc") or a spoke-scoped id ("uni-v2:usdc").
   // Convex markets are keyed by the spoke-scoped id, so resolve to the canonical
@@ -422,7 +422,9 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
   if (!detail) return null
 
   const [
+    suppliedPoints,
     borrowPoints,
+    utilizationPoints,
     supplyBorrow,
     historicalUtilization,
     cashflow,
@@ -438,7 +440,9 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
     siloedMarket,
     contractAddresses,
   ] = await Promise.all([
+    fetchAssetSuppliedSeries(slug),
     fetchAssetBorrowSeries(slug),
+    fetchAssetUtilizationSeries(slug),
     fetchSupplyBorrow(slug),
     fetchHistoricalUtilization(slug),
     fetchCashflowBreakdown("asset", slug),
@@ -464,7 +468,9 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
         injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, record.baseAssetId),
         siloedMarket,
       ),
-      heroFeed: buildHeroFeedFromConvexSeries(borrowPoints, "usdCompact") ?? undefined,
+      heroFeed: buildHeroFeedFromConvexSeries(suppliedPoints, "usdCompact") ?? undefined,
+      heroBorrowedFeed: buildHeroFeedFromConvexSeries(borrowPoints, "usdCompact") ?? undefined,
+      heroUtilizationFeed: buildHeroFeedFromConvexSeries(utilizationPoints, "percent") ?? undefined,
       supplyBorrow: (supplyBorrow as typeof detail.supplyBorrow | null) ?? EMPTY_SUPPLY_BORROW,
       historicalUtilization: (historicalUtilization as typeof detail.historicalUtilization | null) ?? EMPTY_SERIES,
       cashflow: (cashflow as typeof detail.cashflow | null) ?? EMPTY_CASHFLOW_CARD,
@@ -492,10 +498,15 @@ export async function getAssetDetailFromConvex(id: string): Promise<AssetDetail 
       {
         ...hydrated,
         hero: overlayHeroIdentity(hydrated.hero, siloedMarket),
-        about: overlayAboutDescription(hydrated.about, siloedMarket),
       },
       contractAddresses,
     ),
     riskParameters,
   )
 }
+
+// Request-scoped memoization: `generateMetadata` and the page body both call these
+// builders per request. Without cache() each detail render runs the full Convex
+// fan-out twice. React.cache() dedups by argument for the lifetime of the request.
+export const getPoolDetailFromConvex = cache(getPoolDetailFromConvexUncached)
+export const getAssetDetailFromConvex = cache(getAssetDetailFromConvexUncached)

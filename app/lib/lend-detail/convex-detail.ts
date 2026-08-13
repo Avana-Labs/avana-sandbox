@@ -1,4 +1,5 @@
 import "server-only"
+import { requestCache as cache } from "@/app/lib/detail-page/request-cache"
 import { buildHeroFeedFromConvexSeries } from "@/app/lib/chart-feeds"
 import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
 import {
@@ -15,11 +16,7 @@ import {
   fetchTokenPrices,
 } from "@/app/lib/lend-system/market-hydration-server"
 import { applyDetailContentOverlay, mergeAliasedQuickStats } from "@/app/lib/detail-page/live-detail-helpers"
-import {
-  injectSiloedMarketQuickStats,
-  overlayAboutDescription,
-  overlayHeroIdentity,
-} from "@/app/lib/detail-page/siloed-market-overlay"
+import { injectSiloedMarketQuickStats, overlayHeroIdentity } from "@/app/lib/detail-page/siloed-market-overlay"
 import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
 import { shouldFailClosedInLive } from "@/app/lib/detail-page/live-fallback"
 import { resolveLendHeadlineRates } from "./headline-rates"
@@ -106,7 +103,7 @@ function applyRiskParametersToAbout(
   }
 }
 
-export async function getLendMarketDetailFromConvex(id: string): Promise<LendMarketDetail | null> {
+async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMarketDetail | null> {
   const market = resolveLendMarket(id)
   if (!market) return null
   const slug = market.marketId
@@ -184,8 +181,11 @@ export async function getLendMarketDetailFromConvex(id: string): Promise<LendMar
     {
       ...hydrated,
       hero: overlayHeroIdentity(hydrated.hero, siloedMarket),
-      about: overlayAboutDescription(hydrated.about, siloedMarket),
     },
     riskParameters,
   )
 }
+
+// Request-scoped memoization so generateMetadata + the page body share one Convex
+// fan-out per request instead of running it twice.
+export const getLendMarketDetailFromConvex = cache(getLendMarketDetailFromConvexUncached)

@@ -114,9 +114,7 @@ type ExploreLoopsMarketsTableProps = {
   rows: MultiplyPageData["lendRows"]
   trendingSnapshots: MultiplyPageData["trendingSnapshots"]
   pageSize: MultiplyPageData["pageSize"]
-  tokenBorrowApys: MultiplyPageData["tokenBorrowApys"]
   tokenLogos: MultiplyPageData["tokenLogos"]
-  tokenSupplyApys: MultiplyPageData["tokenSupplyApys"]
   onOpenMultiply?: (href: string) => void
 }
 
@@ -137,9 +135,7 @@ export function ExploreLoopsMarketsTable({
   pageSize,
   rows,
   trendingSnapshots,
-  tokenBorrowApys,
   tokenLogos,
-  tokenSupplyApys,
 }: ExploreLoopsMarketsTableProps) {
   const { t } = useTranslation()
   const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all")
@@ -262,8 +258,6 @@ export function ExploreLoopsMarketsTable({
                 title={group.title}
                 rows={group.rows}
                 tokenLogos={tokenLogos}
-                tokenSupplyApys={tokenSupplyApys}
-                tokenBorrowApys={tokenBorrowApys}
               />
               {group.title === "Ethereum-Based" ? (
                 <div className="flex justify-center">
@@ -295,15 +289,11 @@ function LoopMarketsSection({
   title,
   rows,
   tokenLogos,
-  tokenSupplyApys,
-  tokenBorrowApys,
 }: {
   initialIsDesktop: boolean
   title: string
   rows: MultiplyPageData["lendRows"]
   tokenLogos: MultiplyPageData["tokenLogos"]
-  tokenSupplyApys: MultiplyPageData["tokenSupplyApys"]
-  tokenBorrowApys: MultiplyPageData["tokenBorrowApys"]
 }) {
   const { t } = useTranslation()
   const { compact } = useCurrency()
@@ -512,8 +502,6 @@ function LoopMarketsSection({
                       row={row}
                       index={index}
                       tokenLogos={tokenLogos}
-                      tokenSupplyApys={tokenSupplyApys}
-                      tokenBorrowApys={tokenBorrowApys}
                     />
                   ))}
                 </tbody>
@@ -534,8 +522,6 @@ function LoopTableRow({
   row: MultiplyPageData["lendRows"][number]
   index: number
   tokenLogos: MultiplyPageData["tokenLogos"]
-  tokenSupplyApys: MultiplyPageData["tokenSupplyApys"]
-  tokenBorrowApys: MultiplyPageData["tokenBorrowApys"]
 }) {
   const router = useRouter()
   const { t } = useTranslation()

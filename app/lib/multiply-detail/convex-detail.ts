@@ -1,12 +1,10 @@
 import "server-only"
+import { requestCache as cache } from "@/app/lib/detail-page/request-cache"
 import { buildHeroFeedFromConvexSeries } from "@/app/lib/chart-feeds"
 import {
-  fetchMultiplyAllocation,
   fetchMultiplyCashflowBreakdown,
   fetchMultiplyContent,
   fetchMultiplyContractAddresses,
-  fetchMultiplyHistoricalUtilization,
-  fetchMultiplyInterestRateModel,
   fetchMultiplyLiquidationRisk,
   fetchMultiplyMarket,
   fetchMultiplyMarketSnapshot,
@@ -25,7 +23,6 @@ import { buildMockLiquidationRiskStats } from "@/app/lib/detail-page/liquidation
 import {
   injectAvailableUsdQuickStat,
   injectSiloedMarketQuickStats,
-  overlayAboutDescription,
   overlayHeroIdentity,
 } from "@/app/lib/detail-page/siloed-market-overlay"
 import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
@@ -138,28 +135,38 @@ const MULTIPLY_CONTRACT_LABEL_BY_SALT: Record<string, string> = {
   staking: "Staking Contract Address",
 }
 
+const MULTIPLY_CONTRACT_SALTS = new Set(["vault", "token", "staking"])
+
+/**
+ * Replace (not append) the About card's contract-address rows with the canonical three
+ * from Convex. Multiply seeded these into BOTH `content.stats` and the contract-address
+ * table, so the old append produced exact duplicates (6 rows). Stripping existing
+ * contract rows first makes it idempotent — always exactly three, stale-seed-proof.
+ */
 function injectMultiplyContractAddressStats(
   detail: MultiplyMarketDetail,
   rows: readonly ConvexContractAddressRow[],
 ): MultiplyMarketDetail {
-  if (rows.length === 0) return detail
+  const contractRows = rows.filter((row) => MULTIPLY_CONTRACT_SALTS.has(row.salt))
+  if (contractRows.length === 0) return detail
+  const seen = new Set<string>()
+  const contractStats: Array<{ label: string; value: string; href: string }> = []
+  for (const row of contractRows) {
+    const label = MULTIPLY_CONTRACT_LABEL_BY_SALT[row.salt] ?? row.label
+    if (seen.has(label)) continue
+    seen.add(label)
+    contractStats.push({ label, value: row.label, href: row.href })
+  }
   return {
     ...detail,
     about: {
       ...detail.about,
-      stats: [
-        ...detail.about.stats,
-        ...rows.map((row) => ({
-          label: MULTIPLY_CONTRACT_LABEL_BY_SALT[row.salt] ?? row.label,
-          value: row.label,
-          href: row.href,
-        })),
-      ],
+      stats: [...detail.about.stats.filter((stat) => !/Contract Address$/.test(stat.label)), ...contractStats],
     },
   }
 }
 
-export async function getMultiplyMarketDetailFromConvex(id: string): Promise<MultiplyMarketDetail | null> {
+async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<MultiplyMarketDetail | null> {
   const detail = getMultiplyMarketDetail(id)
   if (!detail) return null
   const slug = detail.id
@@ -177,9 +184,6 @@ export async function getMultiplyMarketDetailFromConvex(id: string): Promise<Mul
     siloedMarket,
     snapshot,
     supplyBorrow,
-    historicalUtilization,
-    allocation,
-    interestRateModel,
     contractAddresses,
   ] = await Promise.all([
     fetchMultiplySupplySeries(slug),
@@ -195,9 +199,6 @@ export async function getMultiplyMarketDetailFromConvex(id: string): Promise<Mul
     fetchMultiplyMarket(slug),
     fetchMultiplyMarketSnapshot(slug),
     fetchMultiplySupplyBorrow(slug),
-    fetchMultiplyHistoricalUtilization(slug),
-    fetchMultiplyAllocation(slug),
-    fetchMultiplyInterestRateModel(slug),
     fetchMultiplyContractAddresses(slug),
   ])
   // Fail closed in live mode when Convex has no snapshot — matches borrow detail
@@ -226,20 +227,6 @@ export async function getMultiplyMarketDetailFromConvex(id: string): Promise<Mul
       // reusing the PRNG mock in `detail.supplyBorrow`. Empty series render as no
       // points and the hero chart falls back to its own downstream local feed.
       supplyBorrow: supplyBorrow ?? buildEmptySupplyBorrow(slug),
-      // Fail closed: undefined when Convex returns null, so the section is unrendered
-      // rather than showing PRNG data.
-      historicalUtilization: historicalUtilization ?? undefined,
-      allocation: allocation ?? undefined,
-      interestRateModel: interestRateModel
-        ? {
-            utilizationPct: interestRateModel.utilizationPct,
-            borrowAprPct: interestRateModel.borrowAprPct,
-            optimalUtilizationPct: interestRateModel.optimalUtilizationPct,
-            slopeBelowOptimalPct: interestRateModel.slopeBelowOptimalPct,
-            slopeAboveOptimalPct: interestRateModel.slopeAboveOptimalPct,
-            baseBorrowRatePct: interestRateModel.baseBorrowRatePct,
-          }
-        : undefined,
     },
     content,
     { clearWhenMissing: resolveDataSourceMode() === "live" },
@@ -250,7 +237,6 @@ export async function getMultiplyMarketDetailFromConvex(id: string): Promise<Mul
       {
         ...hydrated,
         hero: overlayHeroIdentity(hydrated.hero, siloedMarket),
-        about: overlayAboutDescription(hydrated.about, siloedMarket),
       },
       contractAddresses,
     ),
@@ -270,3 +256,7 @@ function buildEmptySupplyBorrow(slug: string): MultiplyMarketDetail["supplyBorro
     utilization: { id: `${slug}:sb:utilization`, label: "Utilization", points: [] },
   }
 }
+
+// Request-scoped memoization so generateMetadata + the page body share one Convex
+// fan-out per request instead of running it twice.
+export const getMultiplyMarketDetailFromConvex = cache(getMultiplyMarketDetailFromConvexUncached)

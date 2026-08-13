@@ -28,9 +28,6 @@ describe("borrow read adapters", () => {
     expect(markets).toHaveLength(Object.keys(state.markets).length)
     expect(borrowPage.walletId).toBe(walletId)
     expect(borrowPage.poolCatalog).toEqual(selectBorrowMarketSummaries(state, walletId))
-    expect(borrowPage.explore.trendingCollateral).toHaveLength(3)
-    expect(borrowPage.explore.topMarkets).toHaveLength(3)
-    expect(borrowPage.explore.highApyPools).toHaveLength(3)
 
     expect(portfolioBorrow.creditLines.totalCollateralUsd).toBeGreaterThan(0)
     expect(portfolioBorrow.collateralPositions.length).toBeGreaterThan(0)

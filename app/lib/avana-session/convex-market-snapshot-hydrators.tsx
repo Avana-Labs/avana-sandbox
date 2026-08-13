@@ -17,27 +17,30 @@ export function ConvexMarketSnapshotHydrators() {
   const borrow = useBorrowSessionContext()
   const lend = useLendSessionContext()
   const multiply = useMultiplySessionContext()
-  const borrowSnapshots = useQuery(api.markets.listBorrowMarketSnapshots)
-  const lendSnapshots = useQuery(api.markets.listLendMarketSnapshots)
-  const multiplySnapshots = useQuery(api.markets.listMultiplyMarketSnapshots)
+  // One reactive subscription for all products instead of three. The rows carry
+  // `scope`, so we partition client-side. Previously this component opened three
+  // separate subscriptions (borrow / lend / multiply) on EVERY route — each reading
+  // the same snapshot cache and filtering server-side — so visiting /borrow still
+  // subscribed to lend + multiply and re-rendered three times.
+  const snapshots = useQuery(api.markets.listMarketSnapshots)
 
   useEffect(() => {
-    if (borrowSnapshots && borrowSnapshots.length > 0) {
-      borrow.hydrateMarketData(borrowSnapshots as ConvexMarketSnapshot[])
-    }
-  }, [borrow.hydrateMarketData, borrowSnapshots])
+    if (!snapshots) return
+    const rows = snapshots.filter((row) => row.scope === "pool" || row.scope === "asset")
+    if (rows.length > 0) borrow.hydrateMarketData(rows as ConvexMarketSnapshot[])
+  }, [borrow.hydrateMarketData, snapshots])
 
   useEffect(() => {
-    if (lendSnapshots && lendSnapshots.length > 0) {
-      lend.hydrateMarketData(lendSnapshots as LendConvexSnapshot[])
-    }
-  }, [lend.hydrateMarketData, lendSnapshots])
+    if (!snapshots) return
+    const rows = snapshots.filter((row) => row.scope === "lend")
+    if (rows.length > 0) lend.hydrateMarketData(rows as LendConvexSnapshot[])
+  }, [lend.hydrateMarketData, snapshots])
 
   useEffect(() => {
-    if (multiplySnapshots && multiplySnapshots.length > 0) {
-      multiply.hydrateMarketData(multiplySnapshots as MultiplyConvexSnapshot[])
-    }
-  }, [multiply.hydrateMarketData, multiplySnapshots])
+    if (!snapshots) return
+    const rows = snapshots.filter((row) => row.scope === "multiply")
+    if (rows.length > 0) multiply.hydrateMarketData(rows as MultiplyConvexSnapshot[])
+  }, [multiply.hydrateMarketData, snapshots])
 
   return null
 }
