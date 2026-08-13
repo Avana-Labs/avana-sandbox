@@ -64,6 +64,7 @@ import type * as wallet_collateralPositions from "../wallet/collateralPositions.
 import type * as wallet_debts from "../wallet/debts.js";
 import type * as wallet_feeApyWads from "../wallet/feeApyWads.js";
 import type * as wallet_lpTokenPrices from "../wallet/lpTokenPrices.js";
+import type * as wallet_productBalances from "../wallet/productBalances.js";
 import type * as wallet_rewardsProgress from "../wallet/rewardsProgress.js";
 
 import type {
@@ -129,6 +130,7 @@ declare const fullApi: ApiFromModules<{
   "wallet/debts": typeof wallet_debts;
   "wallet/feeApyWads": typeof wallet_feeApyWads;
   "wallet/lpTokenPrices": typeof wallet_lpTokenPrices;
+  "wallet/productBalances": typeof wallet_productBalances;
   "wallet/rewardsProgress": typeof wallet_rewardsProgress;
 }>;
 

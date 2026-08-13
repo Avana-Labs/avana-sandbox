@@ -38,11 +38,10 @@ describe("useAvanaSession", () => {
     expect(lend.positions).toEqual({})
     expect(multiply.positions).toEqual({})
 
-    // Wallet HOLDINGS are intentional sandbox play money (practice funds per asset) so any
-    // market can be deposited into without a "you don't have this asset" dead-end. This is
-    // spendable balance only — not a position, and not summed into the portfolio total.
+    // Product balances hydrate from Convex onboarding buckets. The frontend seed is only
+    // the empty/base engine shell and must not mint practice funds locally.
     const lendHoldings = lend.walletBalances[wallet] ?? {}
-    expect(Object.keys(lendHoldings).length).toBeGreaterThan(0)
-    expect(Object.values(lendHoldings).every((amount) => amount > 0)).toBe(true)
+    expect(lendHoldings).toEqual({})
+    expect(borrow.accounts[wallet]?.walletLpBalancesUsd6).toEqual({})
   })
 })

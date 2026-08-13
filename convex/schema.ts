@@ -1406,6 +1406,69 @@ export default defineSchema({
     .index("by_wallet_asset_kind", ["wallet", "assetKind"]),
 
   /**
+   * Product-scoped onboarding + wallet balances. These are the source-of-truth
+   * buckets for authenticated sandbox wallets; frontend `buildConvex*SessionSeed`
+   * functions must not mint product funds locally.
+   */
+  walletLendBalances: defineTable({
+    wallet: v.string(),
+    marketId: v.string(),
+    assetId: v.string(),
+    symbol: v.string(),
+    amount: v.number(),
+    valueUsd: v.number(),
+    state: v.union(v.literal("available"), v.literal("deposited")),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_wallet_market_state", ["wallet", "marketId", "state"]),
+
+  walletBorrowBalances: defineTable({
+    wallet: v.string(),
+    marketId: v.optional(v.string()),
+    assetId: v.optional(v.string()),
+    poolId: v.optional(v.string()),
+    symbol: v.string(),
+    amount: v.number(),
+    valueUsd: v.number(),
+    state: v.union(
+      v.literal("poolAvailable"),
+      v.literal("collateral"),
+      v.literal("debt"),
+      v.literal("claimableFees"),
+    ),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_wallet_state", ["wallet", "state"])
+    .index("by_wallet_market_state", ["wallet", "marketId", "state"]),
+
+  walletMultiplyBalances: defineTable({
+    wallet: v.string(),
+    marketId: v.optional(v.string()),
+    assetId: v.string(),
+    symbol: v.string(),
+    amount: v.number(),
+    valueUsd: v.number(),
+    state: v.union(v.literal("available"), v.literal("collateral"), v.literal("debt"), v.literal("position")),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_wallet_asset_state", ["wallet", "assetId", "state"]),
+
+  walletLiquidBalances: defineTable({
+    wallet: v.string(),
+    assetId: v.string(),
+    symbol: v.string(),
+    amount: v.number(),
+    valueUsd: v.number(),
+    state: v.literal("available"),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_wallet_asset", ["wallet", "assetId"]),
+
+  /**
    * LP token spot price for a pool market (USD per LP token). Feeds pledge-flow
    * "you deposit N LP ≈ $X" previews across the borrow action pages. Kept per-slug
    * (not baked into marketDailyStats) because LP prices tick faster than daily
