@@ -4,8 +4,8 @@ import * as React from "react"
 import { Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
-import { useQuery } from "convex/react"
-import { api } from "@/convex/_generated/api"
+import { usePreloadedQuery } from "convex/react"
+import type { MultiplyHeroPreloads } from "@/app/lib/multiply-detail/hero-preload"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { buildHeroFeedFromConvexSeries, getMultiplyMarketHeroFeed } from "@/app/lib/chart-feeds"
 import { useConvexLiveSession } from "@/app/lib/convex/use-convex-live-session"
@@ -14,6 +14,7 @@ import { buildFeedFromSeries, resolveHeroContractLabel } from "@/app/borrow/_det
 
 type MarketHeroProps = {
   detail: MultiplyMarketDetail
+  heroPreloads?: MultiplyHeroPreloads | null
   leading?: React.ReactNode
   actions?: React.ReactNode
   className?: string
@@ -99,14 +100,15 @@ export function MarketHeroIdentity({
 }
 
 /**
- * Live wrapper: subscribes to the multiply supply hero series and overrides the server
- * `heroFeed` (Supplied tab) with live data, falling back to it while loading. Only the
- * Supplied metric has a hero-series query; Borrowed/Utilization stay on the server
- * `supplyBorrow` snapshot. Only mounted where a Convex provider exists.
+ * Live wrapper: hydrates the multiply supply hero series from the server-preloaded token
+ * via `usePreloadedQuery` (no client re-fetch) and subscribes for updates, overriding the
+ * server `heroFeed` (Supplied tab). Only the Supplied metric has a hero-series query;
+ * Borrowed/Utilization stay on the server `supplyBorrow` snapshot. Only mounted where a
+ * Convex provider exists AND preload tokens were handed down — see the chooser below.
  */
-function MarketHeroLive(props: MarketHeroProps) {
+function MarketHeroLive({ preloads, ...props }: MarketHeroProps & { preloads: MultiplyHeroPreloads }) {
   const { detail } = props
-  const supply = useQuery(api.markets.getMultiplyHeroSeries, { slug: detail.id, metric: "supply", range: "ALL" })
+  const supply = usePreloadedQuery(preloads.supply)
   const liveDetail = React.useMemo(
     () => ({
       ...detail,
@@ -119,7 +121,11 @@ function MarketHeroLive(props: MarketHeroProps) {
 
 export function MarketHero(props: MarketHeroProps) {
   const live = useConvexLiveSession()
-  return live ? <MarketHeroLive {...props} /> : <MarketHeroView {...props} />
+  return live && props.heroPreloads ? (
+    <MarketHeroLive {...props} preloads={props.heroPreloads} />
+  ) : (
+    <MarketHeroView {...props} />
+  )
 }
 
 function MarketHeroView({ detail, leading, actions, className, hideIdentity = false }: MarketHeroProps) {

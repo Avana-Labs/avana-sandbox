@@ -3,6 +3,7 @@ import { notFound } from "next/navigation"
 import { SchemaMarkup, buildBreadcrumbSchema, buildFaqSchema, buildWebPageSchema } from "@/app/components/seo/schema"
 import { getMultiplyMarketDetail } from "@/app/lib/multiply-detail"
 import { getMultiplyMarketDetailFromConvex } from "@/app/lib/multiply-detail/convex-detail"
+import { preloadMultiplyHero } from "@/app/lib/multiply-detail/hero-preload"
 import { MultiplyMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
@@ -30,6 +31,8 @@ export default async function MarketDetailPage({ params }: PageProps) {
 
   const detail = await getMultiplyMarketDetailFromConvex(marketId)
   if (!detail) notFound()
+  const { preloads: heroPreloads, feeds } = await preloadMultiplyHero(marketId)
+  const detailWithFeeds = { ...detail, ...feeds }
   const canonicalUrl = `https://avana.cc/multiply/markets/${marketId}`
   return (
     <>
@@ -48,7 +51,7 @@ export default async function MarketDetailPage({ params }: PageProps) {
           buildFaqSchema(detail.faqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),
         ]}
       />
-      <MultiplyMarketDetailClientShell detail={detail} />
+      <MultiplyMarketDetailClientShell detail={detailWithFeeds} heroPreloads={heroPreloads} />
     </>
   )
 }

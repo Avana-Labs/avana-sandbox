@@ -4,8 +4,8 @@ import * as React from "react"
 import { Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import { useQuery } from "convex/react"
-import { api } from "@/convex/_generated/api"
+import type { AssetHeroPreloads } from "@/app/lib/borrow-detail/hero-preload"
+import { usePreloadedQuery } from "convex/react"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { buildHeroFeedFromConvexSeries, getAssetHeroFeed } from "@/app/lib/chart-feeds"
 import { useConvexLiveSession } from "@/app/lib/convex/use-convex-live-session"
@@ -18,6 +18,7 @@ import {
 
 type Props = {
   detail: AssetDetail
+  heroPreloads?: AssetHeroPreloads | null
   leading?: React.ReactNode
   actions?: React.ReactNode
   className?: string
@@ -132,15 +133,16 @@ export function AssetHeroIdentity({
 }
 
 /**
- * Live wrapper (mirrors PoolHeroLive): subscribes to the three asset hero series and
- * overrides the server-built feed props with live data, falling back to the props while
- * loading. Only mounted where a Convex provider exists — see `useConvexLiveSession`.
+ * Live wrapper (mirrors PoolHeroLive): hydrates the three asset hero series from the
+ * server-preloaded tokens via `usePreloadedQuery` (no client re-fetch) and subscribes for
+ * updates, overriding the server-built feed props. Only mounted where a Convex provider
+ * exists AND preload tokens were handed down — see the chooser below.
  */
-function AssetHeroLive(props: Props) {
+function AssetHeroLive({ preloads, ...props }: Props & { preloads: AssetHeroPreloads }) {
   const { detail } = props
-  const supply = useQuery(api.markets.getAssetHeroSeries, { slug: detail.id, metric: "supply", range: "ALL" })
-  const borrow = useQuery(api.markets.getAssetHeroSeries, { slug: detail.id, metric: "borrow", range: "ALL" })
-  const utilization = useQuery(api.markets.getAssetHeroSeries, { slug: detail.id, metric: "utilization", range: "ALL" })
+  const supply = usePreloadedQuery(preloads.supply)
+  const borrow = usePreloadedQuery(preloads.borrow)
+  const utilization = usePreloadedQuery(preloads.utilization)
   const liveDetail = React.useMemo(
     () => ({
       ...detail,
@@ -156,7 +158,11 @@ function AssetHeroLive(props: Props) {
 
 export function AssetHero(props: Props) {
   const live = useConvexLiveSession()
-  return live ? <AssetHeroLive {...props} /> : <AssetHeroView {...props} />
+  return live && props.heroPreloads ? (
+    <AssetHeroLive {...props} preloads={props.heroPreloads} />
+  ) : (
+    <AssetHeroView {...props} />
+  )
 }
 
 function AssetHeroView({ detail, leading, actions, className, hideIdentity = false }: Props) {

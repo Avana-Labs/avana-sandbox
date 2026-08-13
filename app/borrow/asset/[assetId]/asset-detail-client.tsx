@@ -4,6 +4,7 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { ActionIcon } from "@/app/components/action-icon"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
+import type { AssetHeroPreloads } from "@/app/lib/borrow-detail/hero-preload"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import {
@@ -50,9 +51,9 @@ function DeferredBlock({ className }: { className?: string }) {
   return <div className={cn("rounded-radius-md border border-border bg-surface-raised/60", className)} />
 }
 
-type Props = { detail: AssetDetail }
+type Props = { detail: AssetDetail; heroPreloads?: AssetHeroPreloads | null }
 
-export function AssetDetailClient({ detail }: Props) {
+export function AssetDetailClient({ detail, heroPreloads = null }: Props) {
   const { t } = useTranslation()
   const closeHref = `/borrow/assets/${detail.row.id}`
   const about = withGovernanceParameterView(detail.about, detail.protocolParameters)
@@ -80,7 +81,7 @@ export function AssetDetailClient({ detail }: Props) {
               </div>
 
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                <AssetHero detail={detail} hideIdentity className="mb-12" />
+                <AssetHero detail={detail} heroPreloads={heroPreloads} hideIdentity className="mb-12" />
 
                 <AboutNewsSection
                   about={about}

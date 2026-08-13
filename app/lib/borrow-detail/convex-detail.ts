@@ -4,9 +4,6 @@ import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import { mergeConvexMarketSnapshots } from "@/app/lib/borrow-system/market-hydration"
 import {
   fetchAllocation,
-  fetchAssetBorrowSeries,
-  fetchAssetSuppliedSeries,
-  fetchAssetUtilizationSeries,
   fetchAssetCashflowTrend,
   fetchAssetContractAddresses,
   fetchBorrowInterestRateModel,
@@ -39,7 +36,6 @@ import {
 } from "@/app/lib/borrow-routes"
 import type { BorrowableAssetRef } from "@/app/lib/borrow-detail/cross-market"
 import { listSpokeBorrowables } from "@/app/lib/borrow-system/registry"
-import { buildHeroFeedFromConvexSeries } from "@/app/lib/chart-feeds"
 import { getDefaultWalletProfileId } from "@/app/lib/data/wallet/profiles"
 import { applyDetailContentOverlay, mergeAliasedQuickStats } from "@/app/lib/detail-page/live-detail-helpers"
 import { buildMockLiquidationRiskStats } from "@/app/lib/detail-page/liquidation-risk"
@@ -414,10 +410,8 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
   )
   if (!detail) return null
 
+  // Hero series preloaded by the page (preloadAssetHero) — not fetched here.
   const [
-    suppliedPoints,
-    borrowPoints,
-    utilizationPoints,
     supplyBorrow,
     historicalUtilization,
     cashflow,
@@ -433,9 +427,6 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
     siloedMarket,
     contractAddresses,
   ] = await Promise.all([
-    fetchAssetSuppliedSeries(slug),
-    fetchAssetBorrowSeries(slug),
-    fetchAssetUtilizationSeries(slug),
     fetchSupplyBorrow(slug),
     fetchHistoricalUtilization(slug),
     fetchCashflowBreakdown("asset", slug),
@@ -461,9 +452,7 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
         injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, record.baseAssetId),
         siloedMarket,
       ),
-      heroFeed: buildHeroFeedFromConvexSeries(suppliedPoints, "usdCompact") ?? undefined,
-      heroBorrowedFeed: buildHeroFeedFromConvexSeries(borrowPoints, "usdCompact") ?? undefined,
-      heroUtilizationFeed: buildHeroFeedFromConvexSeries(utilizationPoints, "percent") ?? undefined,
+      // heroFeed / heroBorrowedFeed / heroUtilizationFeed set by the page from preloadAssetHero.
       supplyBorrow: (supplyBorrow as typeof detail.supplyBorrow | null) ?? EMPTY_SUPPLY_BORROW,
       historicalUtilization: (historicalUtilization as typeof detail.historicalUtilization | null) ?? EMPTY_SERIES,
       cashflow: (cashflow as typeof detail.cashflow | null) ?? EMPTY_CASHFLOW_CARD,

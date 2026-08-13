@@ -22,8 +22,9 @@ import {
 import { MarketHero, MarketHeroIdentity, MarketSidebar } from "@/app/multiply/_detail"
 import { LiquidationRiskSection } from "@/app/borrow/_detail/ui/LiquidationRiskSection"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
+import type { MultiplyHeroPreloads } from "@/app/lib/multiply-detail/hero-preload"
 
-type Props = { detail: MultiplyMarketDetail }
+type Props = { detail: MultiplyMarketDetail; heroPreloads?: MultiplyHeroPreloads | null }
 
 const CashflowCard = dynamic(
   () => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard),
@@ -42,7 +43,7 @@ const TransactionHistoryCard = dynamic(
   { ssr: false },
 )
 
-export function MarketDetailClient({ detail }: Props) {
+export function MarketDetailClient({ detail, heroPreloads = null }: Props) {
   const session = useMultiplySessionContext()
   const { t } = useTranslation()
   const marketId = detail.id.toLowerCase().replaceAll("_", "-")
@@ -80,7 +81,7 @@ export function MarketDetailClient({ detail }: Props) {
               </div>
 
               <div className="min-w-0 lg:col-start-1 lg:row-start-2">
-                <MarketHero detail={detail} hideIdentity className="mb-12" />
+                <MarketHero detail={detail} heroPreloads={heroPreloads} hideIdentity className="mb-12" />
 
                 <AboutNewsSection
                   about={detail.about}
