@@ -45,16 +45,6 @@ export type LendMarketHero = {
   explorerUrl?: string
 }
 
-export type LendMarketRelatedSummary = {
-  id: string
-  name: string
-  symbol: string
-  visual: LendTokenVisual
-  apyLabel: string
-  availableLabel: string
-  utilizationPct: number
-}
-
 export type LendMarketDetail = {
   id: string
   hero: LendMarketHero
@@ -79,7 +69,6 @@ export type LendMarketDetail = {
   /** General FAQs (plain-text answers). */
   faqs: FaqContent[]
   transactions: TxHistoryRow[]
-  related: LendMarketRelatedSummary[]
   /** Passthrough reference so the sidebar / actions can stay in sync. */
   row: LendMarket
 }

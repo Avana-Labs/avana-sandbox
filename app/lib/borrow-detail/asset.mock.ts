@@ -9,11 +9,7 @@
  */
 
 import { BORROW_POOL_CATALOG, formatCompactUsd } from "@/app/lib/borrow-sim"
-import {
-  listSpokeBorrowables,
-  resolveSpokeBorrowable,
-  type SpokeBorrowableRecord,
-} from "@/app/lib/borrow-system/registry"
+import { resolveSpokeBorrowable, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
 import { buildSeries, buildSeriesFamily, prngFromString } from "./prng"
 import { SANDBOX_NOW } from "@/app/lib/deterministic"
 import { buildCuratedPriceFamily } from "./token-price-series"
@@ -34,7 +30,6 @@ import type {
   PerfPeriod,
   PerfTabDataset,
   QuickStat,
-  RelatedAssetSummary,
   RiskAssessment,
   Series,
   TimeRangeId,
@@ -590,21 +585,6 @@ function buildAssetAbout(
   }
 }
 
-function buildRelated(asset: SpokeBorrowableRecord): RelatedAssetSummary[] {
-  return listSpokeBorrowables()
-    .filter((other) => other.spokeId === asset.spokeId && other.id !== asset.id)
-    .slice(0, 4)
-    .map((other) => ({
-      id: other.id,
-      name: other.name,
-      symbol: other.symbol,
-      visual: other.visual,
-      aprLabel: `${other.borrowApr.toFixed(2)}%`,
-      availableLabel: formatCompactUsd(other.availableUsd),
-      utilizationPct: other.utilization,
-    }))
-}
-
 function buildTransactions(asset: SpokeBorrowableRecord): TxHistoryRow[] {
   const rand = prngFromString(`${asset.id}:tx`)
   const kinds: TxHistoryRow["kind"][] = ["supply", "borrow", "repay", "withdraw", "rewards", "liquidation"]
@@ -700,7 +680,6 @@ export function buildAssetDetail(asset: SpokeBorrowableRecord): AssetDetail {
     about: buildAssetAbout(asset, fixture, supplied, borrowed),
     faqs: buildAssetFaqs(asset.symbol, asset.name),
     transactions: buildTransactions(asset),
-    related: buildRelated(asset),
     row: asset,
   }
 }

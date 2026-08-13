@@ -273,15 +273,6 @@ export type AboutCard = {
   }
 }
 
-export type RelatedPoolSummary = {
-  id: string
-  name: string
-  venue: string
-  visuals: [BorrowAssetVisual, BorrowAssetVisual]
-  aprLabel: string
-  availableLabel: string
-}
-
 export type PoolDetail = {
   id: string
   hero: PoolDetailHero
@@ -301,7 +292,6 @@ export type PoolDetail = {
   /** General FAQs (plain-text answers). @convex-query borrow.content.getContent */
   faqs: FaqContent[]
   transactions: TxHistoryRow[]
-  related: RelatedPoolSummary[]
   /** Passthrough reference to the table row so sidebars can stay in sync. */
   row: BorrowPoolRow
   /**
@@ -394,16 +384,6 @@ export type AssetDetailHero = {
   xUrl?: string
 }
 
-export type RelatedAssetSummary = {
-  id: string
-  name: string
-  symbol: string
-  visual: BorrowAssetVisual
-  aprLabel: string
-  availableLabel: string
-  utilizationPct: number
-}
-
 export type AssetDetail = {
   id: string
   hero: AssetDetailHero
@@ -431,7 +411,6 @@ export type AssetDetail = {
   /** General FAQs (plain-text answers). @convex-query borrow.content.getContent */
   faqs: FaqContent[]
   transactions: TxHistoryRow[]
-  related: RelatedAssetSummary[]
   /** Passthrough reference so sidebars can stay in sync. */
   row: SpokeBorrowableRecord
   /**
