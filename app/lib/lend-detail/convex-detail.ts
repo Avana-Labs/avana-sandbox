@@ -14,6 +14,7 @@ import {
   fetchTokenPrices,
 } from "@/app/lib/lend-system/market-hydration-server"
 import { applyDetailContentOverlay, mergeAliasedQuickStats } from "@/app/lib/detail-page/live-detail-helpers"
+import { QUICK_STAT_ALIASES } from "@/app/lib/detail-page/live-quick-stats"
 import { injectSiloedMarketQuickStats, overlayHeroIdentity } from "@/app/lib/detail-page/siloed-market-overlay"
 import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
 import { shouldFailClosedInLive } from "@/app/lib/detail-page/live-fallback"
@@ -37,16 +38,11 @@ import type { QuickStat } from "@/app/lib/borrow-detail"
  */
 
 /** Convex `getQuickStats` emits asset-style ids; map each to the mock ids it overrides. */
-const QUICK_STAT_ALIASES: Record<string, string[]> = {
-  supplyApy: ["supplyApy"],
-  borrowApy: ["borrowApy"],
-}
-
 function mergeConvexQuickStats(
   base: QuickStat[],
   convex: ReadonlyArray<{ id: string; value: string; delta?: QuickStat["delta"] }> | null,
 ): QuickStat[] {
-  return mergeAliasedQuickStats(base, convex, QUICK_STAT_ALIASES)
+  return mergeAliasedQuickStats(base, convex, QUICK_STAT_ALIASES.lend)
 }
 
 /** Overlay the real DefiLlama price onto the "price" quick stat for a base symbol. */

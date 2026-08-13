@@ -13,6 +13,7 @@ import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-contex
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
 import type { LendHeroPreloads } from "@/app/lib/lend-detail/hero-preload"
+import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
 import type { TxHistoryRow } from "@/app/lib/borrow-detail"
 import {
   DeferredDetailContent,
@@ -44,7 +45,11 @@ const TransactionHistoryCard = dynamic(
   { ssr: false },
 )
 
-type Props = { detail: LendMarketDetail; heroPreloads?: LendHeroPreloads | null }
+type Props = {
+  detail: LendMarketDetail
+  heroPreloads?: LendHeroPreloads | null
+  quickStatsPreload?: QuickStatsPreload | null
+}
 
 /** Map a wallet's own sandbox lend actions into the shared TxHistoryRow shape. */
 function mapSessionRows(
@@ -76,7 +81,7 @@ function formatAge(elapsedMs: number) {
   return `${Math.floor(h / 24)}d`
 }
 
-export function LendMarketDetailClient({ detail, heroPreloads = null }: Props) {
+export function LendMarketDetailClient({ detail, heroPreloads = null, quickStatsPreload = null }: Props) {
   const session = useLendSessionContext()
   const { t } = useTranslation()
   const marketId = detail.row.marketId
@@ -125,7 +130,7 @@ export function LendMarketDetailClient({ detail, heroPreloads = null }: Props) {
                         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
                           Key Statistics
                         </h2>
-                        <QuickStatsGrid detail={detail} />
+                        <QuickStatsGrid detail={detail} quickStatsPreload={quickStatsPreload} product="lend" />
                       </section>
                       <RiskSection detail={detail} />
                     </>

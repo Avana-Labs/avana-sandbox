@@ -4,6 +4,7 @@ import { SchemaMarkup, buildBreadcrumbSchema, buildFaqSchema, buildWebPageSchema
 import { getLendMarketDetail } from "@/app/lib/lend-detail"
 import { getLendMarketDetailFromConvex } from "@/app/lib/lend-detail/convex-detail"
 import { preloadLendHero } from "@/app/lib/lend-detail/hero-preload"
+import { preloadDetailQuickStats } from "@/app/lib/detail-page/quick-stats-preload"
 import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { LendMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
@@ -37,6 +38,7 @@ export default async function LendMarketDetailPage({ params }: PageProps) {
   const detail = await getLendMarketDetailFromConvex(marketId)
   if (!detail) notFound()
   const { preloads: heroPreloads, feeds } = await preloadLendHero(marketId)
+  const quickStatsPreload = await preloadDetailQuickStats("lend", marketId)
   const detailWithFeeds = { ...detail, ...feeds }
   const canonicalUrl = `https://avana.cc/lend/markets/${marketId}`
   return (
@@ -56,7 +58,11 @@ export default async function LendMarketDetailPage({ params }: PageProps) {
           buildFaqSchema(detail.faqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),
         ]}
       />
-      <LendMarketDetailClientShell detail={detailWithFeeds} heroPreloads={heroPreloads} />
+      <LendMarketDetailClientShell
+        detail={detailWithFeeds}
+        heroPreloads={heroPreloads}
+        quickStatsPreload={quickStatsPreload}
+      />
     </>
   )
 }

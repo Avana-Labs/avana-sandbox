@@ -38,6 +38,7 @@ import type { BorrowableAssetRef } from "@/app/lib/borrow-detail/cross-market"
 import { listSpokeBorrowables } from "@/app/lib/borrow-system/registry"
 import { getDefaultWalletProfileId } from "@/app/lib/data/wallet/profiles"
 import { applyDetailContentOverlay, mergeAliasedQuickStats } from "@/app/lib/detail-page/live-detail-helpers"
+import { QUICK_STAT_ALIASES } from "@/app/lib/detail-page/live-quick-stats"
 import { buildMockLiquidationRiskStats } from "@/app/lib/detail-page/liquidation-risk"
 import { injectSiloedMarketQuickStats, overlayHeroIdentity } from "@/app/lib/detail-page/siloed-market-overlay"
 import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
@@ -64,24 +65,16 @@ const detailWalletId = getDefaultWalletProfileId()
  * Pool pages still use totalSupplied/totalBorrowed/apr; asset pages now follow the
  * lend headline set (available/supplyApy/borrowApy), so unused Convex ids no-op.
  */
-const QUICK_STAT_ALIASES: Record<string, string[]> = {
-  supplied: ["supplied", "totalSupplied"],
-  borrowed: ["borrowed", "totalBorrowed"],
-  utilization: ["utilization"],
-  supplyApy: ["supplyApy", "apr"],
-  borrowApy: ["borrowApy"],
-  available: ["available"],
-}
-
 /**
  * Overlay Convex Market-overview quick stats onto the mock headline numbers,
  * keeping mock-only stats (price, rewards, reserve factor, risk exposure) intact.
+ * Alias map is the single source in live-quick-stats.ts (shared with the client live grid).
  */
 function mergeConvexQuickStats(
   base: QuickStat[],
   convex: ReadonlyArray<{ id: string; value: string; delta?: QuickStat["delta"] }> | null,
 ): QuickStat[] {
-  return mergeAliasedQuickStats(base, convex, QUICK_STAT_ALIASES)
+  return mergeAliasedQuickStats(base, convex, QUICK_STAT_ALIASES.borrow)
 }
 
 /** Overlay the real DefiLlama price onto the "price" quick stat for a base symbol. */
