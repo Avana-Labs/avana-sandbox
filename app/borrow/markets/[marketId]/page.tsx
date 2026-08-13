@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { SchemaMarkup, buildBreadcrumbSchema, buildFaqSchema, buildWebPageSchema } from "@/app/components/seo/schema"
 import { getPoolDetail } from "@/app/lib/borrow-detail"
 import { getPoolDetailFromConvex } from "@/app/lib/borrow-detail/convex-detail"
+import { preloadPoolHero } from "@/app/lib/borrow-detail/hero-preload"
 import { BorrowMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
@@ -30,6 +31,10 @@ export default async function MarketDetailPage({ params }: PageProps) {
 
   const detail = await getPoolDetailFromConvex(marketId)
   if (!detail) notFound()
+  // Preload the hero series once on the server; build the initial feeds from the preloaded
+  // value and hand the tokens to the client so the live hero hydrates instead of re-fetching.
+  const { preloads: heroPreloads, feeds } = await preloadPoolHero(marketId)
+  const detailWithFeeds = { ...detail, ...feeds }
   const canonicalUrl = `https://avana.cc/borrow/markets/${marketId}`
   return (
     <>
@@ -48,7 +53,7 @@ export default async function MarketDetailPage({ params }: PageProps) {
           buildFaqSchema(detail.faqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),
         ]}
       />
-      <BorrowMarketDetailClientShell detail={detail} />
+      <BorrowMarketDetailClientShell detail={detailWithFeeds} heroPreloads={heroPreloads} />
     </>
   )
 }

@@ -4,8 +4,8 @@ import * as React from "react"
 import { Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { PoolDetail } from "@/app/lib/borrow-detail"
-import { useQuery } from "convex/react"
-import { api } from "@/convex/_generated/api"
+import type { PoolHeroPreloads } from "@/app/lib/borrow-detail/hero-preload"
+import { usePreloadedQuery } from "convex/react"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { buildHeroFeedFromConvexSeries, getPoolHeroFeed } from "@/app/lib/chart-feeds"
 import { useConvexLiveSession } from "@/app/lib/convex/use-convex-live-session"
@@ -14,6 +14,7 @@ import { buildFeedFromRangeSeries, resolveHeroContractLabel } from "@/app/borrow
 
 type PoolHeroProps = {
   detail: PoolDetail
+  heroPreloads?: PoolHeroPreloads | null
   leading?: React.ReactNode
   actions?: React.ReactNode
   className?: string
@@ -101,16 +102,16 @@ export function PoolHeroIdentity({
 
 /**
  * Live wrapper: when a Convex provider is present (open-gate / signed-in sandbox),
- * subscribe to the three hero series and override the server-built feed props with
- * live data. While a subscription is loading (`undefined`) it falls back to the
- * server prop, so the SSR paint and the first client render are identical (no shift).
- * Signed-out public pages never mount this — see `useConvexLiveSession`.
+ * hydrate the three hero series from the server-preloaded tokens via `usePreloadedQuery`
+ * and subscribe for live updates — no client re-fetch (the server already fetched them via
+ * preloadPoolHero). Overrides the server-built feed props with the live values. Signed-out
+ * public pages (or no preloads) render the static `PoolHeroView` — see the chooser below.
  */
-function PoolHeroLive(props: PoolHeroProps) {
+function PoolHeroLive({ preloads, ...props }: PoolHeroProps & { preloads: PoolHeroPreloads }) {
   const { detail } = props
-  const tvl = useQuery(api.markets.getPoolHeroSeries, { slug: detail.id, metric: "tvl", range: "ALL" })
-  const borrowed = useQuery(api.markets.getPoolHeroSeries, { slug: detail.id, metric: "borrowed", range: "ALL" })
-  const utilization = useQuery(api.markets.getPoolHeroSeries, { slug: detail.id, metric: "utilization", range: "ALL" })
+  const tvl = usePreloadedQuery(preloads.tvl)
+  const borrowed = usePreloadedQuery(preloads.borrowed)
+  const utilization = usePreloadedQuery(preloads.utilization)
   const liveDetail = React.useMemo(
     () => ({
       ...detail,
@@ -126,7 +127,13 @@ function PoolHeroLive(props: PoolHeroProps) {
 
 export function PoolHero(props: PoolHeroProps) {
   const live = useConvexLiveSession()
-  return live ? <PoolHeroLive {...props} /> : <PoolHeroView {...props} />
+  // Live only when a Convex provider is present AND the server handed us preload tokens
+  // (absent in no-backend builds — CI/Lighthouse — where the static view falls back cleanly).
+  return live && props.heroPreloads ? (
+    <PoolHeroLive {...props} preloads={props.heroPreloads} />
+  ) : (
+    <PoolHeroView {...props} />
+  )
 }
 
 function PoolHeroView({ detail, leading, actions, className, hideIdentity = false }: PoolHeroProps) {

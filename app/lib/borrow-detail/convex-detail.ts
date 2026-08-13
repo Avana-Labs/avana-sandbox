@@ -19,10 +19,7 @@ import {
   fetchContent,
   fetchConvexMarketSnapshots,
   fetchHistoricalUtilization,
-  fetchPoolBorrowedSeries,
   fetchPoolContractAddresses,
-  fetchPoolTvlSeries,
-  fetchPoolUtilizationSeries,
   fetchQuickStats,
   fetchRecentTransactions,
   fetchRisk,
@@ -312,10 +309,10 @@ async function getPoolDetailFromConvexUncached(id: string): Promise<PoolDetail |
   const detail = resolvePoolDetailFromState(hydratedState, detailWalletId, normalizeBorrowMarketRouteId(id))
   if (!detail) return null
 
+  // Hero series are no longer fetched here — the page preloads them via preloadPoolHero
+  // (convex/nextjs preloadQuery) and hands the tokens to the live hero, so the series is
+  // fetched exactly once and the client hydrates from it instead of re-fetching.
   const [
-    tvlPoints,
-    borrowedPoints,
-    utilizationPoints,
     cashflow,
     transactions,
     risk,
@@ -328,9 +325,6 @@ async function getPoolDetailFromConvexUncached(id: string): Promise<PoolDetail |
     siloedMarket,
     contractAddresses,
   ] = await Promise.all([
-    fetchPoolTvlSeries(detail.row.id),
-    fetchPoolBorrowedSeries(detail.row.id),
-    fetchPoolUtilizationSeries(detail.row.id),
     fetchCashflowBreakdown("pool", detail.row.id),
     fetchRecentTransactions("pool", detail.row.id),
     fetchRisk("pool", detail.row.id),
@@ -368,9 +362,8 @@ async function getPoolDetailFromConvexUncached(id: string): Promise<PoolDetail |
     {
       ...detail,
       quickStats: mergedQuickStats,
-      heroFeed: buildHeroFeedFromConvexSeries(tvlPoints, "usdCompact") ?? undefined,
-      heroBorrowedFeed: buildHeroFeedFromConvexSeries(borrowedPoints, "usdCompact") ?? undefined,
-      heroUtilizationFeed: buildHeroFeedFromConvexSeries(utilizationPoints, "percent") ?? undefined,
+      // heroFeed / heroBorrowedFeed / heroUtilizationFeed are set by the page from the
+      // preloaded hero series (preloadPoolHero), not built here.
       cashflow: (cashflow as typeof detail.cashflow | null) ?? EMPTY_CASHFLOW_CARD,
       transactions: (transactions as typeof detail.transactions | null) ?? [],
       risk: convexRisk ?? EMPTY_RISK_ASSESSMENT,
