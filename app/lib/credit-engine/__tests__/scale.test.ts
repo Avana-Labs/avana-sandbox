@@ -45,9 +45,7 @@ describe("borrow system scale", () => {
       expect(whaleBorrow.collateralPositions.length).toBeGreaterThan(0)
       expect(borrowPage.heroMetrics.totalTvlUsd).toBeGreaterThan(0)
       expect(Number.isFinite(borrowPage.heroMetrics.totalTvlUsd)).toBe(true)
-      expect(borrowPage.explore.highApyPools.length).toBeGreaterThan(0)
-      expect(borrowPage.explore.topMarkets.length).toBeGreaterThan(0)
-      expect(borrowPage.explore.trendingCollateral.length).toBeGreaterThan(0)
+      expect(borrowPage.poolCatalog.length).toBeGreaterThan(0)
     },
   )
 })
