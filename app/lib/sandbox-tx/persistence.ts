@@ -119,6 +119,10 @@ export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, 
   // price. Emit an explicit closed payload so the server marks the row closed (sets closedAt)
   // and releases the position's liquidity.
   const closedByDelete = !position && item.status === "success" && item.kind === "close" && Boolean(marketSlug)
+  const amountUsd =
+    item.kind === "deleverage" && result.preview
+      ? Math.max(0, result.preview.before.debtValueUsd - result.preview.after.debtValueUsd)
+      : item.amountUsd
 
   return {
     wallet,
@@ -126,9 +130,9 @@ export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, 
     product: "multiply",
     kind: item.kind,
     marketSlug,
-    requestedAmountUsd6: Math.round(item.amountUsd * 1_000_000).toString(),
-    executedAmountUsd6: Math.round(item.amountUsd * 1_000_000).toString(),
-    amountUsd: item.amountUsd,
+    requestedAmountUsd6: Math.round(amountUsd * 1_000_000).toString(),
+    executedAmountUsd6: Math.round(amountUsd * 1_000_000).toString(),
+    amountUsd,
     simulated: item.simulated,
     // Persist the leverage at THIS transaction so hydrated history shows the real before→after.
     multiplierBefore: item.multiplierBefore,
