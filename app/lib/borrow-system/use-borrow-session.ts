@@ -110,26 +110,6 @@ export type ConvexBorrowWalletData = {
   }>
   /** Remaining claimable per reward position from prior claims (usd6 strings). */
   rewardClaims?: Array<{ rewardPositionId: string; remainingUsd6: string }>
-  /**
-   * Seeded initial-debt rows the wallet holds at session start — the Convex
-   * replacement for the HOME_INITIAL_DEBTS mock. Converted into debtPositions
-   * in-place alongside any positions[].debt rows created by sandbox borrows.
-   */
-  walletDebts?: Array<{ marketId: string; debtAssetId: string; amountUsd: number }>
-  /**
-   * Seeded baseline collateral positions — the Convex replacement for
-   * HOME_COLLATERAL_POOLS. Appended to collateralPositions during hydration so
-   * the home portfolio card renders the per-wallet pledges instead of the mock
-   * catalog. `homePoolId` is the compact home id (e.g. "eth-usdc"); `marketId`
-   * is the state.markets key (e.g. "uni-v3-bluechip-weth-usdc").
-   */
-  walletCollateralPositions?: Array<{ homePoolId: string; marketId: string; collateralUsd: number }>
-  /**
-   * Seeded baseline claim positions — the Convex replacement for HOME_CLAIM_POSITIONS.
-   * REPLACES account.rewardPositions when non-empty so the open-gate wallet shows the seeded
-   * claim rows instead of the mock ones from rewardPositionsFromHomeClaims.
-   */
-  walletClaimPositions?: Array<{ claimId: string; marketId: string; totalUsd: number }>
 }
 
 function usd6FromNumber(value: number): bigint {
@@ -342,82 +322,11 @@ export function useBorrowSession({
             })
           }
         }
-        // Markets with a live borrow `positions` row own that market's debt/collateral —
-        // skip home-seed mirrors so walletDebts / walletCollateralPositions never double-count
-        // after the first recordTransaction for the market.
-        const marketsWithLiveBorrow = new Set(borrowPositions.map((position) => position.marketSlug))
-        // Seeded baseline debts (Convex walletDebts) — the fail-closed replacement for the
-        // HOME_INITIAL_DEBTS mock injection. Each row becomes a UserDebtPosition scoped to the
-        // wallet's market/asset via the current catalog (spokeId + borrowRateWad live there).
-        const hasProductDebtRows = (data.borrowBalances ?? []).some((row) => row.state === "debt" && row.valueUsd > 0)
-        for (const row of hasProductDebtRows ? [] : (data.walletDebts ?? [])) {
-          if (row.amountUsd <= 0) continue
-          if (marketsWithLiveBorrow.has(row.marketId)) continue
-          const market = current.markets[row.marketId]
-          if (!market) continue
-          const scopedAssetId = `${market.spokeId}:${row.debtAssetId}`
-          const asset = current.assets[scopedAssetId]
-          if (!asset) continue
-          const amountUsd6 = usd6FromNumber(row.amountUsd)
-          debtPositions.push({
-            id: `${walletId}:seeded:${scopedAssetId}:${row.marketId}`,
-            assetId: scopedAssetId,
-            baseAssetId: asset.baseAssetId,
-            spokeId: market.spokeId,
-            marketId: row.marketId,
-            debtSharesUsd6: amountUsd6,
-            debtIndexRay: RAY,
-            borrowRateWad: asset.borrowConfig.baseBorrowAprWad,
-            principalBorrowedUsd6: amountUsd6,
-          })
-        }
-        // Seeded baseline collateral (Convex walletCollateralPositions) — the fail-closed
-        // replacement for HOME_COLLATERAL_POOLS. Same derivation as the onboarding path
-        // above: USD → LP-token amount via the live market price, then shares via the
-        // supply index. Skipped when the market isn't in the catalog (fail-closed) or the
-        // wallet already carries a sandbox collateral row for that market (avoid duplicate
-        // pledges after a user supplyCollateral action lands).
-        const marketsAlreadyPledged = new Set([
-          ...collateralPositions.map((position) => position.marketId),
-          ...marketsWithLiveBorrow,
-        ])
         const walletLpBalancesUsd6: Record<string, bigint> = {}
         for (const row of data.borrowBalances ?? []) {
           if (row.state !== "poolAvailable" || !row.marketId || row.valueUsd <= 0) continue
           walletLpBalancesUsd6[row.marketId] = usd6FromNumber(row.valueUsd)
         }
-        for (const row of data.walletCollateralPositions ?? []) {
-          if (row.collateralUsd <= 0) continue
-          if (marketsAlreadyPledged.has(row.marketId)) continue
-          const market = current.markets[row.marketId]
-          if (!market) continue
-          const collateralValueUsd6 = usd6FromNumber(row.collateralUsd)
-          const priceUsd6 = market.snapshot.lpTokenPriceUsd6
-          const tokenAmount = priceUsd6 > 0n ? (collateralValueUsd6 * TOKEN_SCALE) / priceUsd6 : 0n
-          const collateralShares = assetsToShares(tokenAmount, market.snapshot.supplyIndexRay)
-          collateralPositions.push({
-            id: `${walletId}:seeded:collateral:${row.marketId}`,
-            marketId: row.marketId,
-            collateralShares,
-            principalTokenAmount: tokenAmount,
-            collateralEnabled: true,
-          })
-        }
-        // Seeded baseline claim positions (Convex walletClaimPositions) — the fail-closed
-        // replacement for HOME_CLAIM_POSITIONS. REPLACES account.rewardPositions when
-        // non-empty; on an empty Convex response the mock rewards from
-        // rewardPositionsFromHomeClaims survive (needed for the home-demo landing).
-        const seededRewardPositions = (data.walletClaimPositions ?? [])
-          .filter((row) => row.totalUsd > 0 && current.markets[row.marketId])
-          .map((row) => {
-            const totalUsd6 = usd6FromNumber(row.totalUsd)
-            return {
-              id: row.claimId,
-              marketId: row.marketId,
-              claimableUsd6: totalUsd6,
-              earnedUsd6: totalUsd6,
-            }
-          })
         const productRewardPositions = (data.borrowBalances ?? [])
           .filter((row) => row.state === "claimableFees" && row.valueUsd > 0 && row.marketId && current.markets[row.marketId])
           .map((row) => {
@@ -466,12 +375,7 @@ export function useBorrowSession({
               // returns walletClaimPositions rows, use THOSE as the seeded set — the mock
               // rewardPositions (rewardPositionsFromHomeClaims) only survive for wallets
               // whose Convex response is empty (the home-demo landing).
-              rewardPositions: (productRewardPositions.length > 0
-                ? productRewardPositions
-                : seededRewardPositions.length > 0
-                  ? seededRewardPositions
-                  : (account.rewardPositions ?? [])
-              ).map((position) => {
+              rewardPositions: productRewardPositions.map((position) => {
                 const claim = (data.rewardClaims ?? []).find((entry) => entry.rewardPositionId === position.id)
                 if (!claim) return position
                 const remaining = BigInt(claim.remainingUsd6)
