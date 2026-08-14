@@ -4,10 +4,8 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } f
 import { useRouter } from "next/navigation"
 import {
   useAvanaIdentity,
-  useBorrowSessionContext,
   useMultiplySessionContext,
 } from "@/app/lib/avana-session/avana-sessions-provider"
-import { formatFixed } from "@/app/lib/credit-engine"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor } from "@/app/lib/action-system/contracts"
 import {
@@ -74,14 +72,8 @@ export function MultiplyActionPageClient({
   const router = useRouter()
   const { walletId } = useAvanaIdentity()
   const session = useMultiplySessionContext()
-  const borrowSession = useBorrowSessionContext()
   const isExitKind = kind === "deleverage" || kind === "close"
   const priceFor = usePriceFor()
-  const walletCollateralBudgetUsd = useMemo(() => {
-    const balanceUsd6 = borrowSession.state.accounts[walletId]?.walletBalanceUsd6
-    if (balanceUsd6 == null) return Number.POSITIVE_INFINITY
-    return Number.parseFloat(formatFixed(balanceUsd6, 6))
-  }, [borrowSession.state.accounts, walletId])
   const walletPositions = useMemo(
     () => Object.values(session.state.positions).filter((entry) => entry.walletId === walletId),
     [session.state.positions, walletId],
@@ -112,6 +104,7 @@ export function MultiplyActionPageClient({
     return options.length > 1 ? options : undefined
   }, [kind, session.state.markets])
   const collateralPriceUsd = market ? (priceFor(market.collateralAsset.symbol) ?? market.collateralAsset.priceUsd) : 0
+  const walletCollateralBudgetUsd = market ? (session.state.walletBalancesUsd[walletId]?.[market.id] ?? 0) : 0
   // Cap a multiply position at the wallet's spendable balance (not the pool's
   // multi-million liquidity), still bounded by what the market can absorb. This
   // keeps Max affordable and rejects absurd inputs before the simulation engine.

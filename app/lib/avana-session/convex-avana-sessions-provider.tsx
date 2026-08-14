@@ -124,7 +124,17 @@ function ConvexWalletHydrators({
         state: row.state,
       })),
     })
-    multiply.hydrateWalletData(session)
+    multiply.hydrateWalletData({
+      ...session,
+      multiplyBalances: productBalances?.multiply.map((row) => ({
+        marketId: row.marketId,
+        assetId: row.assetId,
+        symbol: row.symbol,
+        amount: row.amount,
+        valueUsd: row.valueUsd,
+        state: row.state,
+      })),
+    })
     onWalletHydrated(session.positions)
   }, [
     borrow.hydrateWalletData,

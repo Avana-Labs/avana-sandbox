@@ -11,7 +11,7 @@ vi.mock("wagmi", () => ({
   useAccount: () => ({ isConnected: false, chainId: undefined }),
   useSwitchChain: () => ({ switchChainAsync: vi.fn(), isPending: false }),
 }))
-import { buildMockMultiplySystemStateWithSeedPosition } from "@/app/lib/multiply-system/mock"
+import { buildMockMultiplySystemState, buildMockMultiplySystemStateWithSeedPosition } from "@/app/lib/multiply-system/mock"
 import {
   readMultiplySessionState,
   writeMultiplySessionMetadata,
@@ -24,6 +24,10 @@ const DEMO_WALLET_ID = "demo-wallet"
 
 function seedExistingMultiplyPosition() {
   const state = buildMockMultiplySystemStateWithSeedPosition(DEMO_WALLET_ID)
+  state.walletBalancesUsd[DEMO_WALLET_ID] = {
+    ...(state.walletBalancesUsd[DEMO_WALLET_ID] ?? {}),
+    "eth-usdt": 12_500,
+  }
   writeMultiplySessionState(DEMO_WALLET_ID, state)
   writeMultiplySessionMetadata(DEMO_WALLET_ID, {
     transactionHistory: [
@@ -46,9 +50,19 @@ function seedExistingMultiplyPosition() {
   })
 }
 
+function seedMultiplyWalletBalances() {
+  const state = buildMockMultiplySystemState(DEMO_WALLET_ID)
+  state.walletBalancesUsd[DEMO_WALLET_ID] = {
+    "eth-usdt": 12_500,
+    "aave-gho": 12_500,
+  }
+  writeMultiplySessionState(DEMO_WALLET_ID, state)
+}
+
 describe("MultiplyActionPageClient", () => {
   beforeEach(() => {
     window.localStorage.clear()
+    seedMultiplyWalletBalances()
   })
 
   afterEach(() => {
