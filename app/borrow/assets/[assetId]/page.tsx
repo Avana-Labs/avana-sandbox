@@ -36,7 +36,11 @@ export default async function BorrowAssetPage({ params }: PageProps) {
   const { assetId } = await params
   if (isLighthouseAuditMode()) return <LighthouseAuditSurface title="Asset data" eyebrow={assetId} />
 
-  const detail = await getAssetDetailFromConvex(assetId)
+  const detail = preferLive(
+    await getAssetDetailFromConvex(assetId),
+    getAssetDetail(assetId),
+    `borrow asset page:${assetId}`,
+  )
   if (!detail) notFound()
   const { preloads: heroPreloads, feeds } = await preloadAssetHero(assetId)
   const quickStatsPreload = await preloadDetailQuickStats("asset", assetId)
