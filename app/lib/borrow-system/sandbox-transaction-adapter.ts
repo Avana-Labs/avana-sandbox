@@ -274,6 +274,7 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
       ...action,
       at: timestamp,
     } as BorrowAction)
+    const appliedTransaction = nextState.transactions.at(-1)
     const localReceipt = {
       id: this.generateId("receipt"),
       hash: this.generateId("sim"),
@@ -286,7 +287,7 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
       id: this.generateId("history"),
       intentId: intent.id,
       walletId: intent.walletId,
-      marketId: intent.marketId,
+      marketId: intent.marketId ?? appliedTransaction?.marketId,
       assetId: intent.assetId,
       kind: intent.actionType,
       status: "success",

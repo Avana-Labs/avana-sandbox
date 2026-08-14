@@ -215,7 +215,16 @@ export function borrowResultToRecordArgs(result: SandboxActionResult, wallet: st
     return rewardClaims.length > 0 ? { ...base, rewardClaims } : base
   }
 
-  const marketSlug = result.historyItem.marketId
+  const marketSlug =
+    result.historyItem.marketId ??
+    [...result.state.transactions]
+      .reverse()
+      .find(
+        (transaction) =>
+          transaction.walletId === wallet &&
+          transaction.at === result.historyItem.timestamp &&
+          transaction.kind === result.historyItem.kind,
+      )?.marketId
   if (!account || !marketSlug) return base
 
   const collateral = account.collateralPositions
@@ -250,6 +259,7 @@ export function borrowResultToRecordArgs(result: SandboxActionResult, wallet: st
 
   return {
     ...base,
+    marketSlug,
     position: {
       status: collateral.length === 0 && debt.length === 0 ? "closed" : "open",
       marketSlug,
