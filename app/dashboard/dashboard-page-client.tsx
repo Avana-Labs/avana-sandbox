@@ -350,13 +350,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
       multiplyNet = 0
     }
     return liquid + borrowNet + lendSupplied + multiplyNet
-  }, [
-    avana.borrow?.state,
-    avana.lend?.state,
-    avana.multiply?.state,
-    avana.swap?.state?.balances,
-    walletId,
-  ])
+  }, [avana.borrow?.state, avana.lend?.state, avana.multiply?.state, avana.swap?.state?.balances, walletId])
 
   const portfolioFeed = useDashboardPortfolioFeed(walletId, portfolioValueUsd)
 
@@ -605,10 +599,16 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
       id: item.id,
       at: new Date(item.timestamp).toISOString(),
       product: "multiply" as const,
-      kind: item.kind === "multiply" ? ("open" as const) : ("reduce" as const),
+      kind:
+        item.kind === "multiply" ? ("open" as const) : item.kind === "close" ? ("close" as const) : ("reduce" as const),
       status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
       amountUsd: item.kind === "multiply" ? item.amountUsd : -item.amountUsd,
-      primaryLabel: item.kind === "multiply" ? "Simulated multiply" : "Simulated deleverage",
+      primaryLabel:
+        item.kind === "multiply"
+          ? "Simulated multiply"
+          : item.kind === "close"
+            ? "Simulated close"
+            : "Simulated deleverage",
       secondaryLabel: `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
       txHash: item.hash,
     })),
