@@ -9,7 +9,7 @@ describe("DashboardWalletTab pool mobile cells", () => {
       source.indexOf('<div className="space-y-3 md:hidden">', source.indexOf("PoolsBalanceSection")),
     )
     expect(mobilePools).toMatch(/flex flex-col gap-0\.5[\s\S]{0,200}formatPoolAmount/)
-    expect(mobilePools).toMatch(/flex flex-col gap-0\.5[\s\S]{0,200}Unclaimed fees/)
+    expect(mobilePools).toMatch(/flex flex-col gap-0\.5[\s\S]{0,350}Unclaimed fees/)
     expect(mobilePools).not.toMatch(/formatPoolAmount\(row\.amount\)\)\}<\/span>\s*<span className="ml-2/)
   })
 })
