@@ -39,6 +39,11 @@ export function RewardsActionPageClient({
   const [amount, setAmount] = useState("")
   const [stage, setStage] = useState<ActionStage>("configure")
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
+  const [reviewQuote, setReviewQuote] = useState<{
+    preview: ActionPreviewUi
+    claimUsd: number
+    taskIds: string[]
+  } | null>(null)
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
   const [isPending, setIsPending] = useState(false)
   const claimSummary = useMemo(() => {
@@ -55,6 +60,7 @@ export function RewardsActionPageClient({
     return {
       claimUsd: summary.totalClaimableAmount,
       claimableTaskCount: summary.claimableTaskCount,
+      taskIds: progress.filter((entry) => entry.claimableAmount > 0).map((entry) => entry.taskId),
       tokenBreakdown: progress
         .filter((entry) => entry.claimableAmount > 0)
         .map((entry) => ({
@@ -88,6 +94,7 @@ export function RewardsActionPageClient({
   const handleBack = useCallback(() => {
     if (stage === "review") {
       setStage("configure")
+      setReviewQuote(null)
       setOutcome(null)
       return
     }
@@ -101,11 +108,12 @@ export function RewardsActionPageClient({
     }
     if (stage === "configure") {
       if (!previewUi.allowed) return
+      setReviewQuote({ preview: previewUi, claimUsd: claimSummary.claimUsd, taskIds: claimSummary.taskIds })
       setStage("review")
       return
     }
     if (stage !== "review") return
-    if (!previewUi.allowed) return
+    if (!reviewQuote?.preview.allowed) return
     if (networkGuard.isWrongNetwork) return
 
     setIsPending(true)
@@ -118,7 +126,8 @@ export function RewardsActionPageClient({
         needsAllowance: false,
         onStage: setStage,
         execute: async () => {
-          const result = await rewards.claimAllRewards()
+          const result = []
+          for (const taskId of reviewQuote.taskIds) result.push(await rewards.claimReward(taskId))
           if (!result.length) throw new Error("Nothing to claim")
           return {
             receipt: {
@@ -134,12 +143,12 @@ export function RewardsActionPageClient({
           title: `${descriptor.primaryVerb} successful`,
           // Uses the "{amount} processed." success sink (translated via translate()),
           // matching the borrow/lend/multiply confirmation copy.
-          description: `${formatActionUsd(claimSummary.claimUsd)} processed.`,
+          description: `${formatActionUsd(reviewQuote.claimUsd)} processed.`,
           receiptHash: claims.receipt.hash ?? null,
-          metrics: previewUi.metrics,
+          metrics: reviewQuote.preview.metrics,
           href: dashboardHrefForProduct("rewards"),
           primaryCtaLabel: successDashboardCtaLabel("rewards"),
-          preview: previewUi,
+          preview: reviewQuote.preview,
           verb: descriptor.primaryVerb,
         }),
       )
@@ -159,10 +168,12 @@ export function RewardsActionPageClient({
     }
   }, [
     claimSummary.claimUsd,
+    claimSummary.taskIds,
     closeHref,
     descriptor.primaryVerb,
     networkGuard.isWrongNetwork,
     previewUi,
+    reviewQuote,
     rewards,
     router,
     stage,
@@ -184,7 +195,12 @@ export function RewardsActionPageClient({
       simulated={rewards.readAdapter.mode === "sandbox"}
     >
       {isProcessingStage(stage) ? (
-        <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} stage={stage} />
+        <ActionProcessingStage
+          verb={descriptor.primaryVerb}
+          preview={reviewQuote?.preview ?? previewUi}
+          closeHref={closeHref}
+          stage={stage}
+        />
       ) : null}
 
       {stage === "review" ? (
@@ -192,7 +208,7 @@ export function RewardsActionPageClient({
           title={reviewStageTitle(descriptor.primaryVerb)}
           subtitle="Confirm the details below before signing."
           hideHeader={sidebar}
-          preview={previewUi}
+          preview={reviewQuote?.preview ?? previewUi}
           primaryLabel={descriptor.primaryVerb}
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}
