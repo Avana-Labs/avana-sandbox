@@ -140,13 +140,6 @@ async function applyLiquidAssetDelta(
       valueUsd6: String(Math.round(valueUsd * 1_000_000)),
     },
   ])
-  await upsertProductBalanceValue(ctx, "walletLiquidBalances", wallet, {
-    assetId,
-    symbol,
-    amount: nextAmount,
-    valueUsd,
-    state: "available",
-  })
 }
 
 async function upsertProductBalanceValue(
