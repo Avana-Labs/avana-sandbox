@@ -60,23 +60,27 @@ export function useConvexProductWalletBalances(walletId: string | null | undefin
       walletId: resolvedWalletId,
       assetId: row.poolId ?? row.assetId ?? row.marketId ?? row.symbol.toLowerCase(),
       amount: row.amount,
-      valueUsd: row.valueUsd,
+      valueUsd: row.state === "debt" ? -row.valueUsd : row.valueUsd,
       sourceType:
         row.state === "poolAvailable"
           ? "borrow_collateral_unpledged"
           : row.state === "collateral"
             ? "borrow_collateral_pledged"
-            : "protocol_locked",
+            : row.state === "debt"
+              ? "borrow_debt"
+              : "borrow_claimable",
     })
   }
   for (const row of buckets.multiply) {
+    if (row.state === "collateral") continue
     rows.push({
       id: String(row._id),
       walletId: resolvedWalletId,
       assetId: row.assetId,
       amount: row.amount,
-      valueUsd: row.valueUsd,
-      sourceType: row.state === "available" ? "multiply_available" : "multiply_active",
+      valueUsd: row.state === "debt" ? -row.valueUsd : row.valueUsd,
+      sourceType:
+        row.state === "available" ? "multiply_available" : row.state === "debt" ? "multiply_debt" : "multiply_active",
     })
   }
   return rows

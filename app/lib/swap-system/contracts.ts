@@ -3,8 +3,11 @@ export type SwapBalanceSource =
   | "lend_deposited"
   | "borrow_collateral_unpledged"
   | "borrow_collateral_pledged"
+  | "borrow_debt"
+  | "borrow_claimable"
   | "multiply_available"
   | "multiply_active"
+  | "multiply_debt"
   | "protocol_locked"
 
 export type SwapRestrictionReason =

@@ -73,10 +73,16 @@ function sourceLabel(sourceType: UserAssetBalance["sourceType"]) {
       return "Borrow collateral"
     case "borrow_collateral_pledged":
       return "Pledged collateral"
+    case "borrow_debt":
+      return "Borrow debt"
+    case "borrow_claimable":
+      return "Pool fees"
     case "multiply_available":
       return "Multiply available"
     case "multiply_active":
       return "Active loop"
+    case "multiply_debt":
+      return "Loop debt"
     case "protocol_locked":
       return "Protocol locked"
   }
