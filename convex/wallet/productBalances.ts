@@ -50,6 +50,9 @@ const liquidRow = v.object({
 
 type ProductBucket = "lend" | "borrow" | "multiply" | "liquid"
 
+const OPEN_GATE_BORROW_MARKET = "uni-v3-bluechip-weth-usdc"
+const OPEN_GATE_BORROW_VALUE_USD = 800
+
 const OPEN_GATE_LIQUID_ROWS: Array<Infer<typeof liquidRow>> = [
   { assetId: "eth", symbol: "ETH", amount: 0.012, valueUsd: 23.208, state: "available" },
   { assetId: "usdc", symbol: "USDC", amount: 840, valueUsd: 840, state: "available" },
@@ -74,6 +77,12 @@ const OPEN_GATE_BORROW_ROWS: Array<Infer<typeof borrowRow>> = [
 const OPEN_GATE_MULTIPLY_ROWS: Array<Infer<typeof multiplyRow>> = [
   { marketId: "aave-gho", assetId: "aave", symbol: "AAVE", amount: 0, valueUsd: 0, state: "available" },
 ]
+
+function usd6ToNumber(value: string | undefined): number {
+  if (!value) return 0
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed / 1_000_000 : 0
+}
 
 async function clearBucket(ctx: MutationCtx, wallet: string, bucket: ProductBucket) {
   const table =
@@ -190,12 +199,65 @@ export const ensureOpenGateBalances = mutation({
     ])
 
     const hasInvalidMultiplyAvailable = multiply.some((row) => row.state === "available" && row.valueUsd > 100_000)
+    const hasInvalidBorrowPoolRows = borrow.some(
+      (row) => (row.state === "poolAvailable" || row.state === "collateral") && row.poolId === row.marketId,
+    )
+    const openGateBorrowPosition = await ctx.db
+      .query("positions")
+      .withIndex("by_wallet_product_market", (q) =>
+        q.eq("wallet", wallet).eq("product", "borrow").eq("marketSlug", OPEN_GATE_BORROW_MARKET),
+      )
+      .filter((q) => q.eq(q.field("status"), "open"))
+      .first()
+    const openGateCollateral = openGateBorrowPosition
+      ? await ctx.db
+          .query("positionCollateral")
+          .withIndex("by_position", (q) => q.eq("positionId", openGateBorrowPosition._id))
+          .first()
+      : null
+    const openGatePledgedUsd = Math.min(
+      OPEN_GATE_BORROW_VALUE_USD,
+      Math.max(0, usd6ToNumber(openGateCollateral?.collateralValueUsd6 ?? openGateBorrowPosition?.collateralValueUsd6)),
+    )
+    const openGateBorrowValue = borrow
+      .filter(
+        (row) =>
+          row.marketId === OPEN_GATE_BORROW_MARKET && (row.state === "poolAvailable" || row.state === "collateral"),
+      )
+      .reduce((sum, row) => sum + row.valueUsd, 0)
+    const openGateProductPledgedUsd = borrow
+      .filter((row) => row.marketId === OPEN_GATE_BORROW_MARKET && row.state === "collateral")
+      .reduce((sum, row) => sum + row.valueUsd, 0)
+    const hasOverstatedOpenGateBorrow = openGateBorrowValue > OPEN_GATE_BORROW_VALUE_USD + 0.01
+    const hasMismatchedOpenGateBorrow = Math.abs(openGateProductPledgedUsd - openGatePledgedUsd) > 0.01
+    const buildBorrowRepairRows = async () => {
+      const pledgedUsd = openGatePledgedUsd
+      if (pledgedUsd <= 0) return OPEN_GATE_BORROW_ROWS
+      const availableUsd = Math.max(0, OPEN_GATE_BORROW_VALUE_USD - pledgedUsd)
+      return [
+        {
+          ...OPEN_GATE_BORROW_ROWS[0]!,
+          amount: availableUsd / 125,
+          valueUsd: availableUsd,
+          state: "poolAvailable" as const,
+        },
+        {
+          ...OPEN_GATE_BORROW_ROWS[0]!,
+          amount: pledgedUsd / 125,
+          valueUsd: pledgedUsd,
+          state: "collateral" as const,
+        },
+      ]
+    }
     if (
       lend.length > 0 &&
       borrow.length > 0 &&
       multiply.length > 0 &&
       liquid.length > 0 &&
-      !hasInvalidMultiplyAvailable
+      !hasInvalidMultiplyAvailable &&
+      !hasInvalidBorrowPoolRows &&
+      !hasOverstatedOpenGateBorrow &&
+      !hasMismatchedOpenGateBorrow
     ) {
       return { seeded: false as const }
     }
@@ -203,7 +265,10 @@ export const ensureOpenGateBalances = mutation({
     return replaceProductBalanceRows(ctx, wallet, {
       liquid: liquid.length > 0 ? undefined : OPEN_GATE_LIQUID_ROWS,
       lend: lend.length > 0 ? undefined : OPEN_GATE_LEND_ROWS,
-      borrow: borrow.length > 0 ? undefined : OPEN_GATE_BORROW_ROWS,
+      borrow:
+        borrow.length > 0 && !hasInvalidBorrowPoolRows && !hasOverstatedOpenGateBorrow && !hasMismatchedOpenGateBorrow
+          ? undefined
+          : await buildBorrowRepairRows(),
       multiply: multiply.length > 0 && !hasInvalidMultiplyAvailable ? undefined : OPEN_GATE_MULTIPLY_ROWS,
     })
   },
