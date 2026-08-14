@@ -1127,7 +1127,7 @@ export const recordTransaction = mutation({
         const signed = args.kind === "deposit" || args.kind === "repay" ? -tokenAmount : tokenAmount
         await applyLiquidAssetDelta(ctx, wallet, assetId, assetId.toUpperCase(), signed, now)
       }
-      await applyProductBucketDelta(ctx, wallet, args, marketSlug, now)
+      await applyProductBucketDelta(ctx, wallet, args, marketSlug, now, existingPosition)
       await appendPortfolioSnapshot(ctx, wallet, now)
     }
 
@@ -1155,6 +1155,7 @@ async function applyProductBucketDelta(
   },
   marketSlug: string | undefined,
   now: number,
+  priorPosition?: Doc<"positions">,
 ) {
   const assetId = liquidAssetIdFromArgs(args.assetId, marketSlug)
   if (args.product === "lend" && marketSlug) {
@@ -1260,6 +1261,20 @@ async function applyProductBucketDelta(
     const debtValueUsd = args.position.status === "closed" ? 0 : (args.position.debtValueUsd ?? 0)
     const collateralAmount =
       args.position.status === "closed" ? 0 : (args.position.collateralAmount ?? collateralValueUsd)
+    const previousEquityUsd = Math.max(
+      0,
+      (priorPosition?.collateralValueUsd ?? 0) - (priorPosition?.debtValueUsd ?? 0),
+    )
+    const nextEquityUsd = Math.max(0, collateralValueUsd - debtValueUsd)
+    await adjustProductBalanceUsd(
+      ctx,
+      "walletMultiplyBalances",
+      wallet,
+      { marketId: marketSlug, assetId: baseAsset, state: "available" },
+      baseAsset.toUpperCase(),
+      previousEquityUsd - nextEquityUsd,
+      now,
+    )
     await upsertProductBalanceValue(ctx, "walletMultiplyBalances", wallet, {
       marketId: marketSlug,
       assetId: baseAsset,
