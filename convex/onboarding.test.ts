@@ -66,6 +66,20 @@ describe("sandbox onboarding + economy caps", () => {
     expect(activity.some((entry) => entry.kind === "onboardingClaim")).toBe(true)
   })
 
+  test("open gate product bucket seed writes product-scoped balances", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+
+    const result = await asUser.mutation(api.wallet.productBalances.ensureOpenGateBalances, { wallet: WALLET })
+    expect("written" in result ? result.written : 0).toBeGreaterThan(0)
+
+    const balances = await asUser.query(api.wallet.productBalances.listForWallet, { wallet: WALLET })
+    expect(balances.liquid.length).toBeGreaterThan(0)
+    expect(balances.lend.length).toBeGreaterThan(0)
+    expect(balances.borrow.length).toBeGreaterThan(0)
+    expect(balances.multiply.length).toBeGreaterThan(0)
+  })
+
   test("refreshes a stale starter catalog after canonical markets are seeded", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
