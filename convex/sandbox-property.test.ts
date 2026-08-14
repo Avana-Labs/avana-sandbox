@@ -3,8 +3,7 @@
 // Property test (fast-check) for the recordTransaction write path. For ANY sequence of
 // actions — including replayed intentIds — the two server invariants must hold:
 //   1. exactly one transactions row per UNIQUE intentId (idempotency), and
-//   2. the aggregate ledger equals the sum of the FIRST occurrence of each intentId
-//      (a replay returns the existing row and never re-applies the delta).
+//   2. wallet actions never mutate protocol-wide liquidity.
 import { convexTest } from "convex-test"
 import { describe, test } from "vitest"
 import fc from "fast-check"
@@ -15,8 +14,8 @@ const modules = import.meta.glob("./**/*.*s")
 const WALLET = "0xAbC0000000000000000000000000000000000001"
 const SLUG = "uni-v2:usdc"
 
-describe("recordTransaction — idempotency + ledger property", () => {
-  test("ledger == Σ first-seen amounts; rows == unique intentIds", async () => {
+describe("recordTransaction — idempotency + protocol isolation", () => {
+  test("protocol ledger stays empty; rows == unique intentIds", async () => {
     await fc.assert(
       fc.asyncProperty(
         fc.array(fc.record({ intentKey: fc.integer({ min: 0, max: 4 }), amount: fc.integer({ min: 1, max: 1000 }) }), {
@@ -42,14 +41,13 @@ describe("recordTransaction — idempotency + ledger property", () => {
             })
           }
 
-          const expectedSum = [...firstSeenAmount.values()].reduce((s, v) => s + v, 0)
           const uniqueCount = firstSeenAmount.size
 
           const deltas = await asUser.query(api.liquidity.listDeltas)
           const row = deltas.find((d) => d.marketSlug === SLUG)
           const activity = await asUser.query(api.sandbox.transactions.getActivity, { wallet: WALLET, limit: 200 })
 
-          return (row?.borrowedDeltaUsd ?? 0) === expectedSum && activity.length === uniqueCount
+          return row === undefined && activity.length === uniqueCount
         },
       ),
       { numRuns: 15 },
