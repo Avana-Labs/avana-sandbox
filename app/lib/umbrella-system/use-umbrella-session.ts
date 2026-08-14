@@ -255,10 +255,35 @@ function cooldownLabel(position: ConvexUmbrellaSessionState["positions"][number]
   return { status: "cooling" as const, remaining: `${days}d ${hours}h`, removesIn: `${days}d ${hours}h` }
 }
 
+function emptyPosition(marketId: UmbrellaMarketId, now: number): UmbrellaPosition {
+  return {
+    marketId,
+    amount: 0,
+    valueUsd: 0,
+    pendingRewardsUsd: 0,
+    claimedRewardsUsd: 0,
+    cooldownAmount: 0,
+    cooldownValueUsd: 0,
+    cooldownStatus: "idle",
+    cooldownRemaining: "-",
+    removesIn: "After 20 days",
+    updatedAt: now,
+  }
+}
+
 function stateFromConvex(walletId: string, remote: ConvexUmbrellaSessionState): UmbrellaState {
   const fallback = buildDefaultUmbrellaState(walletId)
   const markets = remote.markets ?? fallback.markets
-  const positions = { ...fallback.positions }
+  const now = Date.now()
+  // Positions and balances come from Convex — never fold in the demo seed here or the UI
+  // shows fake stakes for a real wallet that hasn't onboarded. Start every market at idle
+  // and let the remote payload fill in the ones this wallet actually holds.
+  const positions: Record<UmbrellaMarketId, UmbrellaPosition> = {
+    gho: emptyPosition("gho", now),
+    usdc: emptyPosition("usdc", now),
+    usdt: emptyPosition("usdt", now),
+    weth: emptyPosition("weth", now),
+  }
   for (const remotePosition of remote.positions) {
     const market = markets[remotePosition.marketId]
     const labels = cooldownLabel(remotePosition)
@@ -276,9 +301,10 @@ function stateFromConvex(walletId: string, remote: ConvexUmbrellaSessionState): 
       updatedAt: remotePosition.lastUpdatedAt,
     }
   }
+  const emptyBalances: Record<UmbrellaMarketId, number> = { gho: 0, usdc: 0, usdt: 0, weth: 0 }
   return {
     walletId,
-    walletBalances: { ...fallback.walletBalances, ...remote.walletBalances },
+    walletBalances: { ...emptyBalances, ...remote.walletBalances },
     markets,
     positions,
     transactions: remote.transactions.map((row) => {
