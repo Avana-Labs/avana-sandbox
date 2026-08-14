@@ -338,8 +338,12 @@ export function useBorrowSession({
               earnedUsd6: totalUsd6,
             }
           })
+        const persistedDebtKeys = new Set(
+          debtPositions.map((position) => `${position.marketId ?? "wallet"}:${position.baseAssetId}`),
+        )
         for (const row of data.borrowBalances ?? []) {
           if (row.state !== "debt" || !row.assetId || row.valueUsd <= 0) continue
+          if (persistedDebtKeys.has(`${row.marketId ?? "wallet"}:${row.assetId}`)) continue
           const market = row.marketId ? current.markets[row.marketId] : undefined
           const scopedAssetId = market ? `${market.spokeId}:${row.assetId}` : row.assetId
           const asset = current.assets[scopedAssetId]
