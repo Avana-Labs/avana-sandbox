@@ -124,7 +124,7 @@ export const listForWallet = query({
         .collect(),
     ])
 
-    const pledgedByMarket = new Map<string, number>()
+    const pledgedByMarket = new Map<string, { valueUsd: number; updatedAt: number }>()
     for (const position of borrowPositions) {
       if (position.status !== "open") continue
       const legs = await ctx.db
@@ -136,7 +136,10 @@ export const listForWallet = query({
         Number(position.collateralValueUsd6 ?? "0") / 1_000_000,
         ...legs.map((leg) => Number(leg.collateralValueUsd6 ?? "0") / 1_000_000),
       )
-      pledgedByMarket.set(position.marketSlug, valueUsd)
+      const existing = pledgedByMarket.get(position.marketSlug)
+      if (!existing || position.lastUpdatedAt >= existing.updatedAt) {
+        pledgedByMarket.set(position.marketSlug, { valueUsd, updatedAt: position.lastUpdatedAt })
+      }
     }
     const poolTotals = new Map<string, number>()
     for (const row of rawBorrow) {
@@ -145,7 +148,7 @@ export const listForWallet = query({
     }
     const borrow = rawBorrow.map((row) => {
       if (!row.marketId || (row.state !== "poolAvailable" && row.state !== "collateral")) return row
-      const pledgedUsd = Math.min(poolTotals.get(row.marketId) ?? 0, pledgedByMarket.get(row.marketId) ?? 0)
+      const pledgedUsd = Math.min(poolTotals.get(row.marketId) ?? 0, pledgedByMarket.get(row.marketId)?.valueUsd ?? 0)
       const valueUsd = row.state === "collateral" ? pledgedUsd : Math.max(0, (poolTotals.get(row.marketId) ?? 0) - pledgedUsd)
       const priceUsd = row.amount > 0 && row.valueUsd > 0 ? row.valueUsd / row.amount : 1
       return { ...row, valueUsd, amount: priceUsd > 0 ? valueUsd / priceUsd : valueUsd }

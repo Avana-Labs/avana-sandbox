@@ -73,6 +73,7 @@ export type ConvexBorrowWalletData = {
   positions: Array<{
     product: "borrow" | "lend" | "multiply"
     marketSlug: string
+    lastUpdatedAt: number
     collateral: Array<{
       _id: string
       marketSlug: string
@@ -272,7 +273,15 @@ export function useBorrowSession({
 
   const hydrateWalletData = useCallback(
     (data: ConvexBorrowWalletData) => {
-      const borrowPositions = data.positions.filter((position) => position.product === "borrow")
+      const latestBorrowPositionByMarket = new Map<string, (typeof data.positions)[number]>()
+      for (const position of data.positions) {
+        if (position.product !== "borrow") continue
+        const current = latestBorrowPositionByMarket.get(position.marketSlug)
+        if (!current || position.lastUpdatedAt >= current.lastUpdatedAt) {
+          latestBorrowPositionByMarket.set(position.marketSlug, position)
+        }
+      }
+      const borrowPositions = [...latestBorrowPositionByMarket.values()]
       const nextHistory: TransactionHistoryItem[] = data.transactions
         .filter((transaction) => transaction.product === "borrow")
         .map((transaction) => ({
