@@ -9,6 +9,7 @@ export function buildMockMultiplySystemState(_walletId = "demo-wallet"): Multipl
     now: Date.UTC(2026, 5, 19),
     markets: buildMultiplyCatalogMarketsRecord(),
     positions: {},
+    walletBalancesUsd: { [_walletId]: {} },
     transactions: [],
   }
 }
