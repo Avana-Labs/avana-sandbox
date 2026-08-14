@@ -75,14 +75,15 @@ function UmbrellaHero() {
   const cooldownUsd = umbrella.marketOrder
     .filter((id) => umbrella.positions[id].cooldownStatus === "cooling")
     .reduce((sum, id) => sum + umbrella.positions[id].cooldownValueUsd, 0)
-  const readyUsd = umbrella.marketOrder
-    .filter((id) => umbrella.positions[id].cooldownStatus === "ready")
-    .reduce((sum, id) => sum + umbrella.positions[id].cooldownValueUsd, 0)
+  const readyIds = umbrella.marketOrder.filter((id) => umbrella.positions[id].cooldownStatus === "ready")
+  const readyUsd = readyIds.reduce((sum, id) => sum + umbrella.positions[id].cooldownValueUsd, 0)
+  const readySymbols = readyIds.map((id) => umbrella.markets[id].symbol).join(", ")
+  const cooldownShare = totalStakedUsd > 0 ? (cooldownUsd / totalStakedUsd) * 100 : 0
   const userUmbrellaSnapshot = [
-    { label: "Your Umbrella stake", value: formatUsd(totalStakedUsd), change: `${formatCompactUsd(totalMarketStakedUsd)} market`, tone: "positive" },
-    { label: "Weighted APY", value: `${formatPct(weightedApy)}%`, change: "live mix", tone: "positive" },
-    { label: "In cooldown", value: formatCompactUsd(cooldownUsd), change: `${formatPct((cooldownUsd / totalStakedUsd) * 100)}%`, tone: "warning" },
-    { label: "Withdrawal ready", value: formatCompactUsd(readyUsd), change: readyUsd > 0 ? "USDT" : "none", tone: "positive" },
+    { label: "Your Umbrella stake", value: formatUsd(totalStakedUsd), change: `${formatCompactUsd(totalMarketStakedUsd)} market`, tone: "muted" as const },
+    { label: "Weighted APY", value: `${formatPct(weightedApy)}%`, change: "live mix", tone: "muted" as const },
+    { label: "In cooldown", value: formatCompactUsd(cooldownUsd), change: `${formatPct(cooldownShare)}%`, tone: "warning" as const },
+    { label: "Withdrawal ready", value: formatCompactUsd(readyUsd), change: readySymbols || "none", tone: "muted" as const },
   ]
 
   return (
@@ -108,8 +109,8 @@ function UmbrellaHero() {
                     <span
                       className={cn(
                         "text-[13px] font-semibold tabular-nums lg:text-[14px]",
-                        item.tone === "positive" && "text-success",
                         item.tone === "warning" && "text-warning",
+                        item.tone === "muted" && "text-muted-foreground",
                       )}
                     >
                       {item.change}
@@ -189,7 +190,7 @@ function UmbrellaStress() {
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
               <div className="text-[18px] font-semibold tracking-[-0.04em] text-brand">
-                {formatPct((totalStakedUsd / targetCoverageUsd) * 100)}% covered
+                {formatPct(targetCoverageUsd > 0 ? (totalStakedUsd / targetCoverageUsd) * 100 : 0)}% covered
               </div>
               <div className="mt-2 text-[14px] font-medium text-muted-foreground">
                 {formatCompactUsd(totalStakedUsd)} staked · {formatCompactUsd(targetCoverageUsd)} target · 4 assets
@@ -200,7 +201,7 @@ function UmbrellaStress() {
                 {formatCompactUsd(cooldownUsd)} in cooldown
               </div>
               <div className="mt-2 text-[14px] font-medium text-muted-foreground">
-                {formatPct((cooldownUsd / totalStakedUsd) * 100)}% cooling · {formatCompactUsd(activeDeficitsUsd)} active deficits
+                {formatPct(totalStakedUsd > 0 ? (cooldownUsd / totalStakedUsd) * 100 : 0)}% cooling · {formatCompactUsd(activeDeficitsUsd)} active deficits
               </div>
             </div>
           </div>
@@ -533,7 +534,7 @@ export function UmbrellaActionSidebar({
   )
 }
 
-function UmbrellaPositions({ onUnstake }: { onUnstake: (id: UmbrellaModuleId) => void }) {
+function UmbrellaPositions() {
   const umbrella = useUmbrellaSessionContext()
   const umbrellaPositions = umbrella.marketOrder.map((id) => {
     const market = umbrella.markets[id]
@@ -618,14 +619,15 @@ function UmbrellaPositions({ onUnstake }: { onUnstake: (id: UmbrellaModuleId) =>
                   <td className={cn("py-3.5 pr-5", TABLE_ROW_HOVER_RIGHT)}>
                     <HoverActionGroup className="justify-end">
                       <Button
-                        type="button"
+                        asChild
                         size="table"
                         variant="table-primary"
                         className="w-auto"
-                        onClick={() => onUnstake(position.id)}
                       >
-                        <ActionIcon label="Unstake" />
-                        Unstake
+                        <Link href={actionPagePath("umbrella", "unstake", { market: position.id, return: "/umbrella" })}>
+                          <ActionIcon label="Unstake" />
+                          Unstake
+                        </Link>
                       </Button>
                     </HoverActionGroup>
                   </td>
@@ -757,7 +759,7 @@ function UmbrellaCooldown({ onRemove }: { onRemove: (id: string) => void }) {
                     disabled={!canRemove}
                     onClick={() => onRemove(position.id)}
                   >
-                    <ActionIcon label="Unstake" />
+                    <ActionIcon label="Remove" />
                     Remove
                   </Button>
                 </div>
@@ -774,22 +776,26 @@ function UmbrellaCooldown({ onRemove }: { onRemove: (id: string) => void }) {
 function UmbrellaActivity() {
   const umbrella = useUmbrellaSessionContext()
   const now = Date.now()
-  const rows: TxHistoryRow[] = umbrella.transactionHistory
-    .filter((row) => row.kind !== "startCooldown")
-    .slice(0, 8)
-    .map((row) => ({
-      id: row.id,
-      at: new Date(row.timestamp).toISOString(),
-      timeLabel: formatAge(now - row.timestamp),
-      kind: row.kind === "claim" ? "rewards" : row.kind === "unstake" ? "withdraw" : "supply",
-      amountLabel:
-        row.kind === "claim"
-          ? formatUsd(row.amountUsd)
-          : `${row.kind === "unstake" ? "-" : "+"}${formatUnits(row.amount)} ${row.symbol}`,
-      walletLabel: "Sandbox wallet",
-      txHashShort: row.hash.slice(0, 10),
-      source: "sandbox",
-    }))
+  const rows: TxHistoryRow[] = umbrella.transactionHistory.slice(0, 8).map((row) => ({
+    id: row.id,
+    at: new Date(row.timestamp).toISOString(),
+    timeLabel: formatAge(now - row.timestamp),
+    kind:
+      row.kind === "claim"
+        ? "rewards"
+        : row.kind === "unstake"
+          ? "withdraw"
+          : row.kind === "startCooldown"
+            ? "cooldown"
+            : "supply",
+    amountLabel:
+      row.kind === "claim"
+        ? formatUsd(row.amountUsd)
+        : `${row.kind === "unstake" ? "-" : "+"}${formatUnits(row.amount)} ${row.symbol}`,
+    walletLabel: "Sandbox wallet",
+    txHashShort: row.hash.slice(0, 10),
+    source: "sandbox",
+  }))
   if (rows.length === 0) return null
 
   return (
@@ -797,7 +803,7 @@ function UmbrellaActivity() {
       transactions={rows}
       assetSymbol="Umbrella"
       title="Umbrella activity"
-      kindLabelMap={{ supply: "Stake", withdraw: "Unstake", rewards: "Claim" }}
+      kindLabelMap={{ supply: "Stake", withdraw: "Unstake", rewards: "Claim", cooldown: "Cooldown" }}
       hideFilters
     />
   )
@@ -837,12 +843,7 @@ export default function UmbrellaPage() {
 
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
               <div className="min-w-0">
-                <UmbrellaPositions
-                  onUnstake={(id) => {
-                    setModuleId(id)
-                    setActionTab("unstake")
-                  }}
-                />
+                <UmbrellaPositions />
               </div>
 
               <aside className="hidden space-y-8 lg:block lg:self-start">
@@ -866,17 +867,31 @@ export default function UmbrellaPage() {
             <UmbrellaLearnSection />
           </div>
 
-          <MobileDetailActionBar className="grid grid-cols-2 gap-3">
+          <MobileDetailActionBar className="grid grid-cols-4 gap-2">
+            <Link
+              href={actionPagePath("umbrella", "claim", { market: moduleId, return: "/umbrella" })}
+              className={secondaryCtaClass({ size: "compact", className: "gap-1.5 font-bold [&_svg]:size-4" })}
+            >
+              <ActionIcon label="Claim" />
+              Claim
+            </Link>
+            <Link
+              href={actionPagePath("umbrella", "cooldown", { market: moduleId, return: "/umbrella" })}
+              className={secondaryCtaClass({ size: "compact", className: "gap-1.5 font-bold [&_svg]:size-4" })}
+            >
+              <ActionIcon label="Cooldown" />
+              Cooldown
+            </Link>
             <Link
               href={actionPagePath("umbrella", "unstake", { market: moduleId, return: "/umbrella" })}
-              className={secondaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
+              className={secondaryCtaClass({ size: "compact", className: "gap-1.5 font-bold [&_svg]:size-4" })}
             >
               <ActionIcon label="Unstake" />
               Unstake
             </Link>
             <Link
               href={actionPagePath("umbrella", "stake", { market: moduleId, return: "/umbrella" })}
-              className={primaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
+              className={primaryCtaClass({ size: "compact", className: "gap-1.5 font-bold [&_svg]:size-4" })}
             >
               <ActionIcon label="Stake" />
               Stake
