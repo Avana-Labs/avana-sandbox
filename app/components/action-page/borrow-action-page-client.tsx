@@ -46,6 +46,7 @@ import {
   borrowSelectItemsForMarket,
   claimSelectItemsForWallet,
   repaySelectItemsForWallet,
+  removeSelectItemsForWallet,
   resolveBorrowAssetId,
   resolveBorrowMarketForAsset,
   resolveBorrowTokenSelection,
@@ -287,7 +288,7 @@ export function BorrowActionPageClient({
     if (kind === "repay") return repaySelectItemsForWallet(session, walletId)
     if (kind === "claim") return claimSelectItemsForWallet(session, walletId)
     if (kind === "supply") return supplySelectItemsForWallet(session, walletId)
-    if (kind === "remove") return supplySelectItemsForWallet(session, walletId)
+    if (kind === "remove") return removeSelectItemsForWallet(session, walletId)
     return borrowSelectItemsForMarket(session, selectMarketId || undefined, walletId)
   }, [kind, selectMarketId, session, walletId])
 
