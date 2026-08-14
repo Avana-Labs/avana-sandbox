@@ -305,7 +305,6 @@ export function MultiplyActionPageClient({
       walletId,
       positionId: position.id,
       targetMultiplier: parsedMultiplier,
-      repayAmountUsd: parsedAmount ?? undefined,
     }
 
     void session
@@ -412,7 +411,6 @@ export function MultiplyActionPageClient({
                 walletId,
                 positionId: position!.id,
                 targetMultiplier: parsedMultiplier!,
-                repayAmountUsd: parsedAmount ?? undefined,
               }
 
       const intent = session.createIntent(action)
@@ -759,7 +757,7 @@ export function MultiplyActionPageClient({
           onMax={handleMaxCollateral}
           balanceLabel={collateralBalanceLabel}
           balanceValue={collateralBalanceValue}
-          hideAmountInput={useWorkspaceFields || kind === "close" || deleverageCloseOnly}
+          hideAmountInput={useWorkspaceFields || kind === "deleverage" || kind === "close" || deleverageCloseOnly}
           amountPlacement={useWorkspaceFields ? "stacked" : "inline"}
           homeLayout={isHomeLayout}
           singlePrimaryCta={sidebar || deleverageCloseOnly}
