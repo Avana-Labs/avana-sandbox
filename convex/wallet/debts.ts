@@ -5,7 +5,7 @@
  * every authenticated wallet's session.
  *
  * Reads are wallet-scoped (requireSandboxWallet). Upsert is internal-only.
- * Test wallet (open-gate address `0x…0a11`) is seeded with the mock's initial debts so
+ * Test wallet ("test-wallet-000") is seeded with the mock's initial debts so
  * the home page still renders populated cards in dev.
  */
 
