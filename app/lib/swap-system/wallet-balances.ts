@@ -96,17 +96,17 @@ export function buildDashboardWalletBalanceRows({
   context?: SwapContext
 }): DashboardWalletBalanceRow[] {
   return getUserSwapBalances(walletId, balances)
-    .filter((balance) => balance.sourceType === "wallet" || balance.sourceType === "multiply_available")
     .map((balance) => {
       const asset = getSwapAsset(balance.assetId)
       const eligibility = getSwapEligibility(balance, context)
+      const valueUsd = balance.valueUsd ?? balance.amount * (asset?.priceUsd ?? 0)
       return {
         id: balance.id,
         assetId: balance.assetId,
         symbol: asset?.symbol ?? balance.assetId.toUpperCase(),
         name: asset?.name ?? "Unsupported asset",
         amount: balance.amount,
-        valueUsd: balance.amount * (asset?.priceUsd ?? 0),
+        valueUsd,
         sourceLabel: sourceLabel(balance.sourceType),
         isLpToken: asset?.isLpToken ?? false,
         isWalletHeld: balance.sourceType === "wallet",

@@ -14,6 +14,7 @@ import type { RewardsPageData } from "@/app/lib/data/providers/rewards"
 import { useAvanaSessions, useRewardsSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { selectWalletBorrowSnapshot } from "@/app/lib/borrow-system/selectors"
 import { buildPortfolioLendData } from "@/app/lib/lend-system/read-model"
+import { getWalletBalanceForLendMarket } from "@/app/lib/lend-system/wallet-balances"
 import { buildPortfolioMultiplyData } from "@/app/lib/multiply-system/read-model"
 import { buildDashboardWalletBalanceRows } from "@/app/lib/swap-system"
 import type { RewardTask, UserRewardProgress } from "@/app/lib/rewards-engine"
@@ -29,6 +30,7 @@ import {
 import { RewardsPageSkeleton } from "@/app/components/loading-states"
 import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
 import { RewardsBalanceHero } from "@/app/dashboard/_rewards-components/rewards-balance-hero"
+import { useDashboardPortfolioFeed } from "@/app/dashboard/use-dashboard-portfolio-feed"
 import { DashboardWalletTab } from "./dashboard-wallet-tab"
 import { LearnSection } from "@/app/dashboard/_rewards-components/learn-section"
 import { RecentActivity } from "@/app/dashboard/recent-activity"
@@ -312,7 +314,6 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
   } = useRewardsSessionContext()
   // Full dashboard recent activity (all products) so the rewards table isn't claims-only.
   const { data: dashboardData } = useDashboardPage({ walletProfileId: walletId })
-
   const portfolioValueUsd = useMemo(() => {
     const walletRows = buildDashboardWalletBalanceRows({
       walletId,
@@ -349,7 +350,15 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
       multiplyNet = 0
     }
     return liquid + borrowNet + lendSupplied + multiplyNet
-  }, [avana.borrow?.state, avana.lend?.state, avana.multiply?.state, avana.swap?.state?.balances, walletId])
+  }, [
+    avana.borrow?.state,
+    avana.lend?.state,
+    avana.multiply?.state,
+    avana.swap?.state?.balances,
+    walletId,
+  ])
+
+  const portfolioFeed = useDashboardPortfolioFeed(walletId, portfolioValueUsd)
 
   const [now, setNow] = useState(0)
   const [isClaiming, setIsClaiming] = useState(false)
@@ -448,12 +457,13 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
   const handleSimulate = useCallback(
     async (product: "borrow" | "lend" | "multiply") => {
       if (product === "lend") {
+        const marketId = "gho"
         const intent = avana.lend.createIntent({
           type: "deposit",
           walletId,
-          marketId: "gho",
+          marketId,
           depositAmount: 100,
-          walletBalance: 10_000,
+          walletBalance: getWalletBalanceForLendMarket(avana.lend.state, walletId, { marketId }),
         })
         await avana.lend.previewTransaction(intent)
       } else if (product === "borrow") {
@@ -627,6 +637,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
           <RewardsBalanceHero
             claimHref={claimHref}
             portfolioValueUsd={portfolioValueUsd}
+            feed={portfolioFeed}
             earnedAmount={snapshot.summary.totalEarnedAmount}
             claimableAmount={snapshot.summary.totalClaimableAmount}
             activeTab={activeDashboardTab}
@@ -651,7 +662,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
 
           <div className="min-w-0">
             {activeDashboardTab === "wallet" ? (
-              <DashboardWalletTab walletId={walletId} balances={avana.swap.state.balances} />
+              <DashboardWalletTab walletId={walletId} />
             ) : activeDashboardTab === "rewards" ? (
               <DashboardRewardsTab questsByTab={questsByTab} onTaskAction={(taskId) => handleTaskAction(taskId)} />
             ) : activeDashboardTab === "transactions" ? (
