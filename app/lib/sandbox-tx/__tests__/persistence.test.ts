@@ -123,6 +123,49 @@ describe("borrowResultToRecordArgs — claim persistence", () => {
   })
 })
 
+describe("borrowResultToRecordArgs — collateral persistence", () => {
+  it("persists LP collateral in usd6 rather than 18-decimal token units", () => {
+    const result = {
+      historyItem: {
+        intentId: "intent-remove-1",
+        walletId: WALLET,
+        marketId: "weth-usdc",
+        kind: "withdraw",
+        status: "success",
+        requestedAmountUsd6: 250_000000n,
+        executedAmountUsd6: 250_000000n,
+        simulated: true,
+        timestamp: 1,
+      },
+      preview: { after: { collateralValueUsd6: 750_000000n, totalBorrowedUsd6: 0n } },
+      state: {
+        accounts: {
+          [WALLET]: {
+            collateralPositions: [
+              {
+                id: "position-1",
+                marketId: "weth-usdc",
+                collateralShares: 5n * 10n ** 18n,
+                principalTokenAmount: 5n * 10n ** 18n,
+                collateralEnabled: true,
+              },
+            ],
+            debtPositions: [],
+          },
+        },
+        markets: {
+          "weth-usdc": {
+            snapshot: { supplyIndexRay: 10n ** 27n, lpTokenPriceUsd6: 150_000000n },
+          },
+        },
+      },
+    } as unknown as SandboxActionResult
+
+    const args = borrowResultToRecordArgs(result, WALLET)
+    expect(args.position?.collateral?.[0]?.collateralValueUsd6).toBe("750000000")
+  })
+})
+
 describe("multiplyResultToRecordArgs — close persistence (regression: C-1)", () => {
   it("emits an explicit closed position payload when a successful close deleted the position", () => {
     const args = multiplyResultToRecordArgs(closeResult(), WALLET)
