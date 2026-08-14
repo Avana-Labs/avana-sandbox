@@ -56,4 +56,55 @@ describe("swap wallet balance classification", () => {
       valueUsd: 5802,
     })
   })
+
+  it("merges duplicate product rows and drops empty rows for dashboard display", () => {
+    const rows = buildDashboardWalletBalanceRows({
+      walletId: "w1",
+      balances: [
+        {
+          id: "available-lp",
+          walletId: "w1",
+          assetId: "eth-usdc-lp",
+          amount: 5.6,
+          valueUsd: 700,
+          sourceType: "borrow_collateral_unpledged",
+        },
+        {
+          id: "zero-lp",
+          walletId: "w1",
+          assetId: "eth-usdc-lp",
+          amount: 0,
+          valueUsd: 0,
+          sourceType: "borrow_collateral_unpledged",
+        },
+        {
+          id: "more-lp",
+          walletId: "w1",
+          assetId: "eth-usdc-lp",
+          amount: 0.8,
+          valueUsd: 100,
+          sourceType: "borrow_collateral_unpledged",
+        },
+      ],
+    })
+
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({
+      assetId: "eth-usdc-lp",
+      valueUsd: 800,
+    })
+    expect(rows[0]?.amount).toBeCloseTo(6.4, 6)
+  })
+
+  it("does not merge liquid and product-scoped token rows", () => {
+    const rows = buildDashboardWalletBalanceRows({
+      walletId: "w1",
+      balances: [
+        { id: "liquid-usdc", walletId: "w1", assetId: "usdc", amount: 840, valueUsd: 840, sourceType: "wallet" },
+        { id: "lend-usdc", walletId: "w1", assetId: "usdc", amount: 25, valueUsd: 25, sourceType: "lend_deposited" },
+      ],
+    })
+
+    expect(rows.map((row) => row.id).sort()).toEqual(["lend-usdc", "liquid-usdc"])
+  })
 })

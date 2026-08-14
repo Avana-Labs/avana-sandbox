@@ -95,7 +95,25 @@ export function buildDashboardWalletBalanceRows({
   balances?: UserAssetBalance[]
   context?: SwapContext
 }): DashboardWalletBalanceRow[] {
-  return getUserSwapBalances(walletId, balances)
+  const merged = new Map<string, UserAssetBalance>()
+  for (const balance of getUserSwapBalances(walletId, balances)) {
+    const valueUsd = balance.valueUsd ?? balance.amount * (getSwapAsset(balance.assetId)?.priceUsd ?? 0)
+    if (balance.amount <= 0 && valueUsd <= 0) continue
+    const asset = getSwapAsset(balance.assetId)
+    const key = asset?.isLpToken ? `${balance.assetId}:${balance.sourceType}` : balance.id
+    const existing = merged.get(key)
+    if (!existing) {
+      merged.set(key, { ...balance, valueUsd })
+      continue
+    }
+    merged.set(key, {
+      ...existing,
+      amount: existing.amount + balance.amount,
+      valueUsd: (existing.valueUsd ?? existing.amount * (getSwapAsset(existing.assetId)?.priceUsd ?? 0)) + valueUsd,
+    })
+  }
+
+  return [...merged.values()]
     .map((balance) => {
       const asset = getSwapAsset(balance.assetId)
       const eligibility = getSwapEligibility(balance, context)

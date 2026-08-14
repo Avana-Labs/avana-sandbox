@@ -26,10 +26,7 @@ import { requireSandboxWallet } from "./auth"
 import type { Doc } from "../_generated/dataModel"
 
 type ProductBalanceTable =
-  | "walletLendBalances"
-  | "walletBorrowBalances"
-  | "walletMultiplyBalances"
-  | "walletLiquidBalances"
+  "walletLendBalances" | "walletBorrowBalances" | "walletMultiplyBalances" | "walletLiquidBalances"
 
 /** Apply a successful swap to durable liquid balances (sandboxBalances + walletBalances). */
 async function applySwapBalanceDelta(
@@ -193,10 +190,18 @@ async function adjustProductBalanceUsd(
   const existing = rows.find(
     (candidate) =>
       candidate.state === match.state &&
-      ("marketId" in candidate ? candidate.marketId : undefined) === match.marketId &&
-      ("assetId" in candidate ? candidate.assetId : undefined) === match.assetId &&
-      ("poolId" in candidate ? candidate.poolId : undefined) === match.poolId,
+      (match.marketId === undefined || ("marketId" in candidate ? candidate.marketId : undefined) === match.marketId) &&
+      (match.assetId === undefined || ("assetId" in candidate ? candidate.assetId : undefined) === match.assetId) &&
+      (match.poolId === undefined || ("poolId" in candidate ? candidate.poolId : undefined) === match.poolId),
   )
+  const sibling =
+    existing ??
+    rows.find(
+      (candidate) =>
+        match.marketId !== undefined &&
+        ("marketId" in candidate ? candidate.marketId : undefined) === match.marketId &&
+        (match.assetId === undefined || ("assetId" in candidate ? candidate.assetId : undefined) === match.assetId),
+    )
   const nextValueUsd = Math.max(0, (existing?.valueUsd ?? 0) + deltaUsd)
   const priceUsd = existing && existing.amount > 0 && existing.valueUsd > 0 ? existing.valueUsd / existing.amount : 1
   const nextAmount = priceUsd > 0 ? nextValueUsd / priceUsd : nextValueUsd
@@ -209,8 +214,8 @@ async function adjustProductBalanceUsd(
     wallet,
     marketId: match.marketId,
     assetId: match.assetId,
-    poolId: match.poolId,
-    symbol,
+    poolId: match.poolId ?? (sibling && "poolId" in sibling ? sibling.poolId : undefined),
+    symbol: sibling?.symbol ?? symbol,
     amount: nextAmount,
     valueUsd: nextValueUsd,
     state: match.state,
@@ -1063,8 +1068,7 @@ export const recordTransaction = mutation({
           .unique()
         const priceUsd = sandbox?.priceUsd && sandbox.priceUsd > 0 ? sandbox.priceUsd : 1
         const tokenAmount = args.amountUsd / priceUsd
-        const signed =
-          args.kind === "deposit" || args.kind === "repay" ? -tokenAmount : tokenAmount
+        const signed = args.kind === "deposit" || args.kind === "repay" ? -tokenAmount : tokenAmount
         await applyLiquidAssetDelta(ctx, wallet, assetId, assetId.toUpperCase(), signed, now)
       }
       await applyProductBucketDelta(ctx, wallet, args, marketSlug, now)
@@ -1147,7 +1151,7 @@ async function applyProductBucketDelta(
         ctx,
         "walletBorrowBalances",
         wallet,
-        { marketId: marketSlug, poolId: marketSlug, state: "poolAvailable" },
+        { marketId: marketSlug, state: "poolAvailable" },
         marketSlug.toUpperCase(),
         -signed,
         now,
@@ -1156,7 +1160,7 @@ async function applyProductBucketDelta(
         ctx,
         "walletBorrowBalances",
         wallet,
-        { marketId: marketSlug, poolId: marketSlug, state: "collateral" },
+        { marketId: marketSlug, state: "collateral" },
         marketSlug.toUpperCase(),
         signed,
         now,
@@ -1194,7 +1198,8 @@ async function applyProductBucketDelta(
     const baseAsset = liquidAssetIdFromArgs(args.position.assetId ?? args.assetId, marketSlug)
     const collateralValueUsd = args.position.status === "closed" ? 0 : (args.position.collateralValueUsd ?? 0)
     const debtValueUsd = args.position.status === "closed" ? 0 : (args.position.debtValueUsd ?? 0)
-    const collateralAmount = args.position.status === "closed" ? 0 : (args.position.collateralAmount ?? collateralValueUsd)
+    const collateralAmount =
+      args.position.status === "closed" ? 0 : (args.position.collateralAmount ?? collateralValueUsd)
     await upsertProductBalanceValue(ctx, "walletMultiplyBalances", wallet, {
       marketId: marketSlug,
       assetId: baseAsset,
