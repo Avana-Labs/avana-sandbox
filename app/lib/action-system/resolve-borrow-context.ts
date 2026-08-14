@@ -4,7 +4,6 @@ import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { selectRewardClaimableTotals } from "@/app/lib/borrow-system/home-runtime"
 import { formatBorrowMarketContext } from "@/app/lib/borrow-system/market-labels"
 import { getWalletLpBalanceUsd } from "@/app/lib/borrow-system/wallet-lp-balances"
-import { HOME_CLAIM_POSITIONS } from "@/app/lib/borrow-system/home-contracts"
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
 
 function normalizeBorrowAssetKey(value: string) {
@@ -224,16 +223,17 @@ export function claimSelectItemsForWallet(session: BorrowContextSession, walletI
 
   const claimableById = selectRewardClaimableTotals(session.state, walletId)
 
-  return HOME_CLAIM_POSITIONS.map((position) => {
-    const engineClaimable = claimableById[position.id]
-    const claimableUsd = engineClaimable != null && engineClaimable > 0 ? engineClaimable : 0
+  return account.rewardPositions.map((position) => {
+    const market = session.state.markets[position.marketId]
+    const claimableUsd = claimableById[position.id] ?? 0
 
     return {
       id: position.id,
-      name: position.name,
-      symbol: position.name.split("/")[0]?.trim() ?? "Rewards",
+      name: market?.display.name ?? position.marketId,
+      symbol: market?.display.visuals?.[0]?.symbol ?? "Fees",
       trailingLabel: `${formatActionUsd(claimableUsd)} claimable`,
       claimableUsd,
+      marketId: position.marketId,
     }
   }).filter((item) => item.claimableUsd > 0)
 }

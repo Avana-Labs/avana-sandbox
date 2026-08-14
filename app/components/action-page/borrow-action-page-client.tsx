@@ -11,8 +11,6 @@ import {
   selectHomeRepayTokensForMarket,
 } from "@/app/lib/borrow-system/action-preview-runtime"
 import { buildRepayPreviewModel, buildWithdrawPreviewModel } from "@/app/lib/borrow-system/preview-builders"
-import { HOME_CLAIM_POSITIONS } from "@/app/lib/borrow-system/home-contracts"
-import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
 import { getBorrowSpoke } from "@/app/lib/borrow-system/registry"
 import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { ActionKind, ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
@@ -56,16 +54,19 @@ import {
 import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parseActionPercentBps, parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 
-function resolveClaimPositions(marketId: string, claimPositionId?: string) {
+function resolveClaimPositions(
+  session: ReturnType<typeof useBorrowSessionContext>,
+  walletId: string,
+  marketId: string,
+  claimPositionId?: string,
+) {
+  const positions = session.state.accounts[walletId]?.rewardPositions ?? []
   if (claimPositionId) {
-    const selected = HOME_CLAIM_POSITIONS.find((position) => position.id === claimPositionId)
+    const selected = positions.find((position) => position.id === claimPositionId)
     if (selected) return [selected]
   }
-  // No market chosen yet → all claimable (the standalone "claim everything" default).
-  if (!marketId) return HOME_CLAIM_POSITIONS
-  // A market IS chosen → claim strictly its fees (empty ⇒ $0), never fall back to all.
-  const poolId = Object.entries(HOME_POOL_TO_MARKET_ID).find(([, id]) => id === marketId)?.[0] ?? marketId
-  return HOME_CLAIM_POSITIONS.filter((position) => position.poolId === poolId || position.poolId === marketId)
+  if (!marketId) return positions
+  return positions.filter((position) => position.marketId === marketId)
 }
 
 function selectionsFromPositions(positions: ReadonlyArray<{ id: string }>) {
@@ -668,7 +669,7 @@ export function BorrowActionPageClient({
         setPreviewUi(null)
         return undefined
       }
-      const positions = resolveClaimPositions(marketId, claimPositionId)
+      const positions = resolveClaimPositions(session, walletId, marketId, claimPositionId)
       const selections = selectionsFromPositions(positions)
       const claimPreview = buildHomeClaimPreview(session.state, walletId, positions, selections, safeAmount || null)
       setPreviewUi(
@@ -867,7 +868,7 @@ export function BorrowActionPageClient({
           amountUsd6: parseFixed(safeAmount.toFixed(6), 6),
         })
       } else if (kind === "claim") {
-        const positions = resolveClaimPositions(marketId)
+        const positions = resolveClaimPositions(session, walletId, marketId)
         const selections = selectionsFromPositions(positions)
         const claimPreview = buildHomeClaimPreview(session.state, walletId, positions, selections, safeAmount || null)
         const action = buildClaimBorrowAction(walletId, claimPreview)
@@ -1206,12 +1207,12 @@ export function BorrowActionPageClient({
               return
             }
             if (kind === "claim") {
-              const claimItem = HOME_CLAIM_POSITIONS.find((entry) => entry.id === id)
+              const claimItem = session.state.accounts[walletId]?.rewardPositions.find((entry) => entry.id === id)
               if (!claimItem) return
               router.replace(
                 actionPagePath("borrow", "claim", {
                   position: id,
-                  market: resolveClaimMarketId(claimItem.poolId),
+                  market: resolveClaimMarketId(claimItem.marketId),
                 }),
               )
               return
@@ -1300,10 +1301,10 @@ export function BorrowActionPageClient({
               return
             }
             if (kind === "claim") {
-              const claimItem = HOME_CLAIM_POSITIONS.find((entry) => entry.id === id)
+              const claimItem = session.state.accounts[walletId]?.rewardPositions.find((entry) => entry.id === id)
               if (!claimItem) return
               setClaimPositionId(id)
-              setMarketId(resolveClaimMarketId(claimItem.poolId))
+              setMarketId(resolveClaimMarketId(claimItem.marketId))
               setAmount("")
               return
             }
