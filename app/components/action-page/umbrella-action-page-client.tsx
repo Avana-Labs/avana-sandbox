@@ -105,11 +105,15 @@ export function UmbrellaActionPageClient({
   closeHref = "/umbrella",
   initialMarketId,
   initialAmount = "",
+  embedded = false,
+  sidebar = false,
 }: {
   kind: UmbrellaActionKind
   closeHref?: string
   initialMarketId?: string
   initialAmount?: string
+  embedded?: boolean
+  sidebar?: boolean
 }) {
   const descriptor = getActionDescriptor("umbrella", kind)
   const router = useRouter()
@@ -204,7 +208,7 @@ export function UmbrellaActionPageClient({
     router.push(closeHref)
   }
 
-  const hideTitle = stage === "success" || isProcessingStage(stage) || stage === "review"
+  const hideTitle = embedded || stage === "success" || isProcessingStage(stage) || stage === "review"
   const amountReadOnly = kind === "claim"
 
   return (
@@ -213,7 +217,10 @@ export function UmbrellaActionPageClient({
       subtitle={hideTitle ? undefined : descriptor.subtitle}
       hideTitle={hideTitle}
       closeHref={closeHref}
-      flowHeaderStage={stage}
+      mode={embedded ? "embedded" : "page"}
+      density={sidebar ? "sidebar" : "default"}
+      hideClose={embedded}
+      flowHeaderStage={!embedded ? stage : undefined}
       simulated
     >
       {isProcessingStage(stage) ? <ActionProcessingStage verb={descriptor.primaryVerb} preview={preview} closeHref={closeHref} stage={stage} /> : null}
@@ -249,13 +256,14 @@ export function UmbrellaActionPageClient({
           isPending={isPending}
           outcome={outcome}
           amountReadOnly={amountReadOnly}
-          amountVariant="card"
+          amountVariant={sidebar ? "raised" : "card"}
           showBalance
           balanceLabel={preview.balanceLabel}
           balanceValue={preview.balanceValue}
           onMax={() => {
             if (preview.maxAmount != null) setAmount(String(preview.maxAmount))
           }}
+          singlePrimaryCta={sidebar}
         />
       ) : null}
     </ActionPageShell>
