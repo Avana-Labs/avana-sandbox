@@ -205,6 +205,7 @@ export function RewardsBalanceHero({
   earnedAmount = 0,
   claimableAmount = 0,
   activeTab,
+  feed: feedOverride,
 }: {
   claimHref?: string
   /** Live portfolio net value (wallet + positions). Required for a trustworthy hero. */
@@ -214,9 +215,11 @@ export function RewardsBalanceHero({
   /** AVA currently claimable. */
   claimableAmount?: number
   activeTab?: DashboardQuickActionsTab
+  /** Optional Convex-backed chart feed; when omitted, a synthetic series ending at portfolioValueUsd is used. */
+  feed?: ChartFeed
 }) {
   const { showDollarAmounts } = useAmountDisplayPreferences()
-  const feed = useMemo(() => buildPortfolioFeed(portfolioValueUsd), [portfolioValueUsd])
+  const feed = useMemo(() => feedOverride ?? buildPortfolioFeed(portfolioValueUsd), [feedOverride, portfolioValueUsd])
 
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">

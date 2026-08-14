@@ -12,6 +12,8 @@ import { buildHeroFeedFromConvexSeries, getLendMarketHeroFeed } from "@/app/lib/
 import { useConvexLiveSession } from "@/app/lib/convex/use-convex-live-session"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { resolveHeroContractLabel } from "@/app/borrow/_detail/lib/hero-chart-feeds"
+import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
+import { buildEmptyChartFeed, buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-feed"
 
 type LendHeroProps = {
   detail: LendMarketDetail
@@ -114,7 +116,7 @@ function LendHeroLive({ preloads, ...props }: LendHeroProps & { preloads: LendHe
   const liveDetail = React.useMemo(
     () => ({
       ...detail,
-      heroFeed: buildHeroFeedFromConvexSeries(supply?.points ?? [], "usdCompact") ?? detail.heroFeed,
+      heroFeed: buildHeroFeedFromConvexSeries(supply?.points ?? [], "usdCompact") ?? buildEmptyChartFeed(),
     }),
     [detail, supply],
   )
@@ -132,13 +134,25 @@ export function LendHero(props: LendHeroProps) {
 
 function LendHeroView({ detail, leading, actions, className, hideIdentity = false }: LendHeroProps) {
   const { t } = useTranslation()
-  const metricTabs = React.useMemo(() => [t("Supplied"), t("Borrowed"), t("Utilization")], [t])
+  const session = useLendSessionContext()
+  const metricTabs = React.useMemo(() => [t("Supplied"), t("Borrowed"), t("Utilization"), t("Your position")], [t])
   const [activeMetricTab, setActiveMetricTab] = React.useState(metricTabs[0])
   React.useEffect(() => {
     setActiveMetricTab(metricTabs[0])
   }, [metricTabs])
   const feed = React.useMemo(() => {
     const suppliedFeed = detail.heroFeed ?? getLendMarketHeroFeed(detail.id)
+    if (activeMetricTab === metricTabs[3]) {
+      const currentValueUsd = Object.values(session.state.positions)
+        .filter((position) => position.marketId === detail.id && position.status === "active")
+        .reduce((sum, position) => sum + position.suppliedValueUsd, 0)
+      return buildWalletPositionFeed(
+        currentValueUsd,
+        session.transactionHistory
+          .filter((item) => item.marketId === detail.id && item.status === "success" && item.kind !== "claim")
+          .map((item) => ({ timestamp: item.timestamp, deltaUsd: item.kind === "deposit" ? item.amount : -item.amount })),
+      )
+    }
     if (activeMetricTab === metricTabs[1]) {
       return buildLendMetricFeed(detail.supplyBorrow.borrowed, "usdCompact", suppliedFeed)
     }
@@ -156,6 +170,8 @@ function LendHeroView({ detail, leading, actions, className, hideIdentity = fals
     detail.supplyBorrow.borrowed,
     detail.supplyBorrow.utilization,
     metricTabs,
+    session.state.positions,
+    session.transactionHistory,
   ])
 
   return (

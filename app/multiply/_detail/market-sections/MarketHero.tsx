@@ -11,6 +11,8 @@ import { buildHeroFeedFromConvexSeries, getMultiplyMarketHeroFeed } from "@/app/
 import { useConvexLiveSession } from "@/app/lib/convex/use-convex-live-session"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { buildFeedFromSeries, resolveHeroContractLabel } from "@/app/borrow/_detail/lib/hero-chart-feeds"
+import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
+import { buildEmptyChartFeed, buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-feed"
 
 type MarketHeroProps = {
   detail: MultiplyMarketDetail
@@ -112,7 +114,7 @@ function MarketHeroLive({ preloads, ...props }: MarketHeroProps & { preloads: Mu
   const liveDetail = React.useMemo(
     () => ({
       ...detail,
-      heroFeed: buildHeroFeedFromConvexSeries(supply?.points ?? [], "usdCompact") ?? detail.heroFeed,
+      heroFeed: buildHeroFeedFromConvexSeries(supply?.points ?? [], "usdCompact") ?? buildEmptyChartFeed(),
     }),
     [detail, supply],
   )
@@ -130,7 +132,8 @@ export function MarketHero(props: MarketHeroProps) {
 
 function MarketHeroView({ detail, leading, actions, className, hideIdentity = false }: MarketHeroProps) {
   const { t } = useTranslation()
-  const metricTabs = React.useMemo(() => [t("Supplied"), t("Borrowed"), t("Utilization")], [t])
+  const session = useMultiplySessionContext()
+  const metricTabs = React.useMemo(() => [t("Supplied"), t("Borrowed"), t("Utilization"), t("Your position")], [t])
   const [activeMetricTab, setActiveMetricTab] = React.useState(metricTabs[0])
   React.useEffect(() => {
     setActiveMetricTab(metricTabs[0])
@@ -139,6 +142,20 @@ function MarketHeroView({ detail, leading, actions, className, hideIdentity = fa
   // local deterministic feed only when Convex is unreachable.
   const feed = React.useMemo(() => {
     const fallback = detail.heroFeed ?? getMultiplyMarketHeroFeed(detail.id)
+    if (activeMetricTab === metricTabs[3]) {
+      const currentValueUsd = Object.values(session.state.positions)
+        .filter((position) => position.marketId === detail.id)
+        .reduce((sum, position) => sum + position.collateralValueUsd, 0)
+      return buildWalletPositionFeed(
+        currentValueUsd,
+        session.transactionHistory
+          .filter((item) => item.marketId === detail.id && item.status === "success")
+          .map((item) => ({
+            timestamp: item.timestamp,
+            deltaUsd: item.kind === "multiply" ? item.amountUsd : -item.amountUsd,
+          })),
+      )
+    }
     if (activeMetricTab === metricTabs[1]) {
       return buildFeedFromSeries(detail.supplyBorrow.borrowed, "usdCompact", fallback)
     }
@@ -149,7 +166,7 @@ function MarketHeroView({ detail, leading, actions, className, hideIdentity = fa
       detail.heroFeed ??
       buildFeedFromSeries(detail.supplyBorrow.supplied, "usdCompact", getMultiplyMarketHeroFeed(detail.id))
     )
-  }, [activeMetricTab, detail.heroFeed, detail.id, detail.supplyBorrow, metricTabs])
+  }, [activeMetricTab, detail.heroFeed, detail.id, detail.supplyBorrow, metricTabs, session.state.positions, session.transactionHistory])
 
   return (
     <section className={cn("flex flex-col gap-5", className)} data-testid="market-hero">
