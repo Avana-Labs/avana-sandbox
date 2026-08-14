@@ -1108,20 +1108,6 @@ export const recordTransaction = mutation({
 
     // Unify products on the shared aggregate ledger (auth-gated, attributed write).
     if (status === "success") {
-      const ledger = canonicalLedgerDelta(
-        {
-          product: args.product,
-          kind: args.kind,
-          marketSlug,
-          assetId: args.assetId,
-          amountUsd: args.amountUsd,
-          position: args.position,
-        },
-        existingPosition,
-      )
-      if (ledger) {
-        await applyLedgerDelta(ctx, ledger.marketSlug, ledger.borrowedDeltaUsd, ledger.suppliedDeltaUsd, now)
-      }
       if (args.product === "borrow" && args.kind === "claim" && args.rewardClaims?.length) {
         await applyRewardClaims(ctx, wallet, args.rewardClaims, now)
       }

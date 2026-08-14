@@ -14,16 +14,14 @@ function liquidityReader(t: ReturnType<typeof convexTest>) {
 }
 
 /**
- * H20 — with the shared ledger written only inside the idempotent recordTransaction,
- * a single action that reaches Convex more than once (e.g. the same intent fired from
- * two open tabs) must move the shared market liquidity numbers EXACTLY once.
+ * H20 — wallet actions are idempotent across tabs and never alter protocol liquidity.
  *
  * The client "tabs" differ only in that each replays the SAME intentId; the intent is
  * the idempotency key, so the second call returns the existing row without re-applying
  * the ledger delta.
  */
-describe("shared ledger — no double-count across tabs (H20)", () => {
-  test("borrow: two tabs replaying one intent move borrowed liquidity once", async () => {
+describe("wallet actions do not alter protocol liquidity across tabs (H20)", () => {
+  test("borrow: two tabs replaying one intent leave protocol liquidity unchanged", async () => {
     const t = convexTest(schema, modules)
     const tabA = t.withIdentity({ subject: WALLET })
     const tabB = t.withIdentity({ subject: WALLET })
@@ -44,11 +42,10 @@ describe("shared ledger — no double-count across tabs (H20)", () => {
     expect(b.idempotent).toBe(true)
 
     const ledger = await liquidityReader(t).query(api.liquidity.listDeltas)
-    const row = ledger.find((r) => r.marketSlug === "uni-v2:usdc")
-    expect(row?.borrowedDeltaUsd).toBe(1000) // once, not 2000
+    expect(ledger).toEqual([])
   })
 
-  test("supply: two tabs replaying one deposit move supplied liquidity once", async () => {
+  test("supply: two tabs replaying one deposit leave protocol liquidity unchanged", async () => {
     const t = convexTest(schema, modules)
     const tabA = t.withIdentity({ subject: WALLET })
     const tabB = t.withIdentity({ subject: WALLET })
@@ -67,11 +64,10 @@ describe("shared ledger — no double-count across tabs (H20)", () => {
     await tabB.mutation(api.sandbox.transactions.recordTransaction, intent)
 
     const ledger = await liquidityReader(t).query(api.liquidity.listDeltas)
-    const row = ledger.find((r) => r.marketSlug === "usdc")
-    expect(row?.suppliedDeltaUsd).toBe(500) // once, not 1000
+    expect(ledger).toEqual([])
   })
 
-  test("multiply: two tabs replaying one open move exposure once (delta vs prior position)", async () => {
+  test("multiply: two tabs replaying one open leave protocol liquidity unchanged", async () => {
     const t = convexTest(schema, modules)
     const tabA = t.withIdentity({ subject: WALLET })
     const tabB = t.withIdentity({ subject: WALLET })
@@ -97,9 +93,7 @@ describe("shared ledger — no double-count across tabs (H20)", () => {
     await tabB.mutation(api.sandbox.transactions.recordTransaction, intent)
 
     const ledger = await liquidityReader(t).query(api.liquidity.listDeltas)
-    const row = ledger.find((r) => r.marketSlug === "eth-usdt")
-    expect(row?.suppliedDeltaUsd).toBe(3000) // collateral delta once, not 6000
-    expect(row?.borrowedDeltaUsd).toBe(2000) // debt delta once, not 4000
+    expect(ledger).toEqual([])
   })
 })
 

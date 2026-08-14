@@ -165,12 +165,9 @@ function selectCanonicalSnapshot<T extends { updatedAt: number }>(rows: T[]) {
   return rows.reduce((latest, row) => (row.updatedAt >= latest.updatedAt ? row : latest))
 }
 
-// The shared ledger is written ONLY as a server-side side-effect of a validated
-// `recordTransaction` (which recomputes the delta from the wallet-owned position, see
-// `convex/sandbox/transactions.ts:applyLedgerDelta`). There is intentionally no public,
-// free-standing recorder: a public one let any signed-in wallet fold an arbitrary delta
-// into any market, corrupting every client's numbers. This internal function exists only
-// for tests/tooling that need to seed a delta; it is absent from the public `api`.
+// Protocol liquidity is never derived from a wallet's simulated actions. This internal
+// recorder is reserved for protocol ingestion and tests; wallet transactions update only
+// wallet-owned product buckets and positions.
 export const recordDelta = internalMutation({
   args: {
     marketSlug: v.string(),

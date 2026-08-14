@@ -23,12 +23,10 @@ describe("liquidity.recordDelta is internal-only", () => {
     expect(internal.liquidity.recordDelta).toBeDefined()
   })
 
-  test("the shared ledger only moves via the validated recordTransaction write path", async () => {
+  test("wallet transactions cannot move the protocol liquidity ledger", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
 
-    // The ledger starts empty and only the validated recordTransaction write path moves it
-    // (there is no public recordDelta a client could call to fold an arbitrary delta).
     const before = await liquidityReader(t).query(api.liquidity.listDeltas)
     expect(before.find((r) => r.marketSlug === "uni-v2:usdc")).toBeUndefined()
 
@@ -46,7 +44,6 @@ describe("liquidity.recordDelta is internal-only", () => {
     })
 
     const after = await liquidityReader(t).query(api.liquidity.listDeltas)
-    // The server recomputed the delta from the action (borrow $1000 → +1000 on the asset).
-    expect(after.find((r) => r.marketSlug === "uni-v2:usdc")?.borrowedDeltaUsd).toBe(1000)
+    expect(after).toEqual([])
   })
 })
