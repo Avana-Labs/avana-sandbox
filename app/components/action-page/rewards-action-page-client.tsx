@@ -135,7 +135,7 @@ export function RewardsActionPageClient({
           const hash = result[0]?.syntheticTxHash ?? result[0]?.claimId ?? "sandbox-receipt"
           await recordRewardsClaim({
             wallet: walletId,
-            intentId: `rewards:${result.map((claim) => claim.claimId).join(":")}`,
+            intentId: `rewards:${result[0]!.claimId}:${result.length}`,
             amountUsd: reviewQuote.claimUsd,
             syntheticTxHash: hash,
           })
