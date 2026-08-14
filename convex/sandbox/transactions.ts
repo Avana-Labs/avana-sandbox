@@ -1141,6 +1141,40 @@ export const recordTransaction = mutation({
   },
 })
 
+export const recordRewardsClaim = mutation({
+  args: {
+    wallet: v.string(),
+    intentId: v.string(),
+    amountUsd: v.number(),
+    syntheticTxHash: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const prior = await ctx.db
+      .query("transactions")
+      .withIndex("by_wallet_intent", (q) => q.eq("wallet", wallet).eq("intentId", args.intentId))
+      .first()
+    if (prior) return { transactionId: prior._id, idempotent: true }
+    const now = Date.now()
+    const transactionId = await ctx.db.insert("transactions", {
+      wallet,
+      intentId: args.intentId,
+      product: "rewards",
+      kind: "claim",
+      status: "success",
+      assetId: "ava",
+      requestedAmountUsd6: String(Math.round(args.amountUsd * 1_000_000)),
+      executedAmountUsd6: String(Math.round(args.amountUsd * 1_000_000)),
+      amountUsd: args.amountUsd,
+      syntheticTxHash: args.syntheticTxHash,
+      simulated: true,
+      at: now,
+    })
+    await appendPortfolioSnapshot(ctx, wallet, now)
+    return { transactionId, idempotent: false }
+  },
+})
+
 async function applyProductBucketDelta(
   ctx: MutationCtx,
   wallet: string,

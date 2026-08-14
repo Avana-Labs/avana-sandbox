@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useMutation } from "convex/react"
+import { api } from "@/convex/_generated/api"
 import { useAvanaIdentity, useRewardsSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor } from "@/app/lib/action-system/contracts"
@@ -35,6 +37,7 @@ export function RewardsActionPageClient({
   const router = useRouter()
   const { walletId } = useAvanaIdentity()
   const rewards = useRewardsSessionContext()
+  const recordRewardsClaim = useMutation(api.sandbox.transactions.recordRewardsClaim)
   const networkGuard = useActionNetworkGuard()
   const [amount, setAmount] = useState("")
   const [stage, setStage] = useState<ActionStage>("configure")
@@ -129,10 +132,17 @@ export function RewardsActionPageClient({
           const result = []
           for (const taskId of reviewQuote.taskIds) result.push(await rewards.claimReward(taskId))
           if (!result.length) throw new Error("Nothing to claim")
+          const hash = result[0]?.syntheticTxHash ?? result[0]?.claimId ?? "sandbox-receipt"
+          await recordRewardsClaim({
+            wallet: walletId,
+            intentId: `rewards:${result.map((claim) => claim.claimId).join(":")}`,
+            amountUsd: reviewQuote.claimUsd,
+            syntheticTxHash: hash,
+          })
           return {
             receipt: {
               status: "success" as const,
-              hash: result[0]?.syntheticTxHash ?? result[0]?.claimId ?? "sandbox-receipt",
+              hash,
             },
           }
         },
@@ -173,6 +183,7 @@ export function RewardsActionPageClient({
     descriptor.primaryVerb,
     networkGuard.isWrongNetwork,
     previewUi,
+    recordRewardsClaim,
     reviewQuote,
     rewards,
     router,

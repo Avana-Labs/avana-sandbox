@@ -1210,7 +1210,13 @@ export default defineSchema({
   transactions: defineTable({
     wallet: v.string(),
     intentId: v.optional(v.string()),
-    product: v.union(v.literal("borrow"), v.literal("lend"), v.literal("multiply"), v.literal("swap")),
+    product: v.union(
+      v.literal("borrow"),
+      v.literal("lend"),
+      v.literal("multiply"),
+      v.literal("swap"),
+      v.literal("rewards"),
+    ),
     /** deposit | withdraw | borrow | repay | claim | liquidate | multiply | deleverage | swap */
     kind: v.string(),
     status: v.union(v.literal("success"), v.literal("failed"), v.literal("pending")),

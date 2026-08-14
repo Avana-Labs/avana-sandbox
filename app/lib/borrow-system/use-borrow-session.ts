@@ -97,7 +97,7 @@ export type ConvexBorrowWalletData = {
   transactions: Array<{
     _id: string
     intentId?: string
-    product: "borrow" | "lend" | "multiply" | "swap"
+    product: "borrow" | "lend" | "multiply" | "swap" | "rewards"
     kind: string
     status: "success" | "failed" | "pending"
     marketSlug?: string
