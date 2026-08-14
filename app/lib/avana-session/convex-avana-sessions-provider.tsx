@@ -13,6 +13,10 @@ import {
   swapRecordToRecordSwapArgs,
 } from "@/app/lib/sandbox-tx/persistence"
 import type { SwapTransactionRecord } from "@/app/lib/swap-system/transaction-adapter"
+import type {
+  ConvexUmbrellaSessionState,
+  PersistUmbrellaAction,
+} from "@/app/lib/umbrella-system/use-umbrella-session"
 import {
   AvanaSessionsProvider,
   useBorrowSessionContext,
@@ -73,8 +77,19 @@ function ConvexWalletHydrators({
     const { borrow: borrowHistory, lend: lendHistory, multiply: multiplyHistory } = historiesRef.current
     const pending = pendingHydrationIntentIds([...borrowHistory, ...lendHistory, ...multiplyHistory], Date.now())
     if (!shouldApplyHydration(session, pending)) return
-    borrow.hydrateWalletData({
+    type HydratablePosition = (typeof session.positions)[number] & { product: "borrow" | "lend" | "multiply" }
+    type HydratableTransaction = (typeof session.transactions)[number] & {
+      product: "borrow" | "lend" | "multiply" | "rewards" | "swap"
+    }
+    const productSession = {
       ...session,
+      positions: session.positions.filter((position) => position.product !== "umbrella") as HydratablePosition[],
+      transactions: session.transactions.filter(
+        (transaction) => transaction.product !== "umbrella",
+      ) as HydratableTransaction[],
+    }
+    borrow.hydrateWalletData({
+      ...productSession,
       borrowBalances: productBalances?.borrow.map((row) => ({
         marketId: row.marketId,
         assetId: row.assetId,
@@ -86,7 +101,7 @@ function ConvexWalletHydrators({
       })),
     })
     lend.hydrateWalletData({
-      ...session,
+      ...productSession,
       lendBalances: productBalances?.lend.map((row) => ({
         marketId: row.marketId,
         assetId: row.assetId,
@@ -98,7 +113,7 @@ function ConvexWalletHydrators({
       })),
     })
     multiply.hydrateWalletData({
-      ...session,
+      ...productSession,
       multiplyBalances: productBalances?.multiply.map((row) => ({
         marketId: row.marketId,
         assetId: row.assetId,
@@ -143,6 +158,8 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
   const durableSwapTransactions = useQuery(api.sandbox.transactions.getWalletSwapTransactions, { wallet: walletId })
   const saveRewardsState = useMutation(api.sandbox.rewards.saveState)
   const rewardsState = useQuery(api.sandbox.rewards.getState, { wallet: walletId })
+  const umbrellaSessionState = useQuery(api.sandbox.umbrella.getSessionState, { wallet: walletId })
+  const recordUmbrellaAction = useMutation(api.sandbox.umbrella.recordAction)
   const revisionByKeyRef = useRef(new Map<string, number>())
   const handleWalletHydrated = useCallback(
     (positions: readonly PositionRevisionSummary[]) => captureHydratedRevisions(revisionByKeyRef.current, positions),
@@ -224,7 +241,12 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
     },
     [recordSwap, walletId],
   )
-
+  const persistUmbrellaAction = useCallback<PersistUmbrellaAction>(
+    (args) => recordUmbrellaAction({ wallet: walletId, ...args }),
+    [recordUmbrellaAction, walletId],
+  )
+  const remoteUmbrellaState: ConvexUmbrellaSessionState | null | undefined =
+    umbrellaSessionState === undefined ? undefined : (umbrellaSessionState as unknown as ConvexUmbrellaSessionState)
   return (
     <AvanaSessionsProvider
       walletId={walletId}
@@ -237,6 +259,9 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
       remoteRewardsRevision={rewardsState?.revision ?? (rewardsState === null ? null : undefined)}
       persistRewardsState={persistRewardsState}
       persistLocalState={false}
+      remoteUmbrellaState={remoteUmbrellaState}
+      persistUmbrellaAction={persistUmbrellaAction}
+      persistUmbrellaState={false}
       sessionSource="convex"
     >
       <ConvexMarketSnapshotHydrators />
