@@ -4,7 +4,7 @@
  *
  * Reads are wallet-scoped (requireSandboxWallet). Upsert is internal-only
  * (seed writer + position-close mirror). Test wallet convention: rows are
- * seeded for "test-wallet-000" so dev sessions render populated cards without
+ * seeded for the open-gate wallet (`0x…0a11`) so dev sessions render populated cards without
  * a real wallet connection.
  */
 
