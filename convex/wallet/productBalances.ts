@@ -101,7 +101,7 @@ export const listForWallet = query({
   args: { wallet: v.string() },
   handler: async (ctx, { wallet }) => {
     const authed = await requireSandboxWallet(ctx, wallet)
-    const [lend, borrow, multiply, liquid] = await Promise.all([
+    const [lend, rawBorrow, multiply, liquid, borrowPositions] = await Promise.all([
       ctx.db
         .query("walletLendBalances")
         .withIndex("by_wallet", (q) => q.eq("wallet", authed))
@@ -118,7 +118,38 @@ export const listForWallet = query({
         .query("walletLiquidBalances")
         .withIndex("by_wallet", (q) => q.eq("wallet", authed))
         .collect(),
+      ctx.db
+        .query("positions")
+        .withIndex("by_wallet_product", (q) => q.eq("wallet", authed).eq("product", "borrow"))
+        .collect(),
     ])
+
+    const pledgedByMarket = new Map<string, number>()
+    for (const position of borrowPositions) {
+      if (position.status !== "open") continue
+      const legs = await ctx.db
+        .query("positionCollateral")
+        .withIndex("by_position", (q) => q.eq("positionId", position._id))
+        .collect()
+      const valueUsd = Math.max(
+        0,
+        Number(position.collateralValueUsd6 ?? "0") / 1_000_000,
+        ...legs.map((leg) => Number(leg.collateralValueUsd6 ?? "0") / 1_000_000),
+      )
+      pledgedByMarket.set(position.marketSlug, valueUsd)
+    }
+    const poolTotals = new Map<string, number>()
+    for (const row of rawBorrow) {
+      if (!row.marketId || (row.state !== "poolAvailable" && row.state !== "collateral")) continue
+      poolTotals.set(row.marketId, (poolTotals.get(row.marketId) ?? 0) + row.valueUsd)
+    }
+    const borrow = rawBorrow.map((row) => {
+      if (!row.marketId || (row.state !== "poolAvailable" && row.state !== "collateral")) return row
+      const pledgedUsd = Math.min(poolTotals.get(row.marketId) ?? 0, pledgedByMarket.get(row.marketId) ?? 0)
+      const valueUsd = row.state === "collateral" ? pledgedUsd : Math.max(0, (poolTotals.get(row.marketId) ?? 0) - pledgedUsd)
+      const priceUsd = row.amount > 0 && row.valueUsd > 0 ? row.valueUsd / row.amount : 1
+      return { ...row, valueUsd, amount: priceUsd > 0 ? valueUsd / priceUsd : valueUsd }
+    })
 
     return {
       lend,

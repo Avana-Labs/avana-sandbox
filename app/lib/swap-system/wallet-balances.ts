@@ -67,6 +67,8 @@ function sourceLabel(sourceType: UserAssetBalance["sourceType"]) {
   switch (sourceType) {
     case "wallet":
       return "Wallet"
+    case "lend_available":
+      return "Lend available"
     case "lend_deposited":
       return "Lend deposited"
     case "borrow_collateral_unpledged":
