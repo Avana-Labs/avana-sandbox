@@ -94,6 +94,7 @@ function ConvexWalletHydrators({
         amount: row.amount,
         valueUsd: row.valueUsd,
         state: row.state,
+        updatedAt: row.updatedAt,
       })),
     })
     multiply.hydrateWalletData({

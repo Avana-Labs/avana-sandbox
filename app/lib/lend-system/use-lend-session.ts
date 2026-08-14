@@ -40,6 +40,7 @@ export type ConvexLendWalletData = {
     amount: number
     valueUsd: number
     state: "available" | "deposited"
+    updatedAt?: number
   }>
   positions: Array<{
     _id: string
@@ -283,6 +284,30 @@ export function useLendSession({
           openedAt: position.openedAt,
           updatedAt: position.lastUpdatedAt,
           status: position.status === "open" ? ("active" as const) : ("closed" as const),
+        }
+      }
+      for (const row of data.lendBalances ?? []) {
+        if (row.state !== "deposited" || row.amount <= 0) continue
+        if (Object.values(positions).some((position) => position.marketId === row.marketId && position.status === "active")) {
+          continue
+        }
+        const market = stateRef.current.markets[row.marketId]
+        const id = `${walletId}:product:${row.marketId}`
+        positions[id] = {
+          positionId: id,
+          walletId,
+          marketId: row.marketId,
+          asset: market?.asset.symbol ?? row.symbol,
+          principalAmount: row.amount,
+          scaledBalance: row.amount,
+          liquidityIndexAtLastAction: market?.liquidityIndex ?? 1,
+          currentSuppliedAmount: row.amount,
+          interestEarned: 0,
+          rewardsEarnedUsd: 0,
+          suppliedValueUsd: row.valueUsd,
+          openedAt: row.updatedAt ?? 0,
+          updatedAt: row.updatedAt ?? 0,
+          status: "active",
         }
       }
       const history: LendTransactionHistoryItem[] = data.transactions
