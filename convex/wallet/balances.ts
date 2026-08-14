@@ -8,12 +8,24 @@
  * holdings are not public data.
  */
 
-import { v } from "convex/values"
+import { v, type Infer } from "convex/values"
+import type { MutationCtx } from "../_generated/server"
 import { internalMutation, query } from "../_generated/server"
 import { requireSandboxWallet } from "../sandbox/auth"
 
 const sourceType = v.union(v.literal("wallet"), v.literal("position"))
 const assetKind = v.union(v.literal("wallet"), v.literal("lp"), v.literal("returned-lp"))
+
+const walletBalanceRow = v.object({
+  wallet: v.string(),
+  assetId: v.string(),
+  amount: v.number(),
+  sourceType,
+  sourcePositionId: v.optional(v.id("positions")),
+  assetKind: v.optional(assetKind),
+  symbol: v.optional(v.string()),
+  valueUsd6: v.optional(v.string()),
+})
 
 /**
  * Wallet's own balances across all assets + sources.
@@ -56,45 +68,36 @@ export const listBalances = query({
  * mint tokens for a wallet they don't control — the caller (seed writer, position
  * upsert path) is trusted. Keyed by (wallet, assetId, sourceType, sourcePositionId).
  */
+export async function upsertWalletBalanceRows(ctx: MutationCtx, rows: Array<Infer<typeof walletBalanceRow>>) {
+  const now = Date.now()
+  for (const row of rows) {
+    const existing = await ctx.db
+      .query("walletBalances")
+      .withIndex("by_wallet_asset", (q) => q.eq("wallet", row.wallet).eq("assetId", row.assetId))
+      .collect()
+    const match = existing.find(
+      (candidate) => candidate.sourceType === row.sourceType && candidate.sourcePositionId === row.sourcePositionId,
+    )
+    if (match) {
+      await ctx.db.patch(match._id, {
+        amount: row.amount,
+        assetKind: row.assetKind,
+        symbol: row.symbol,
+        valueUsd6: row.valueUsd6,
+        updatedAt: now,
+      })
+    } else {
+      await ctx.db.insert("walletBalances", { ...row, updatedAt: now })
+    }
+  }
+  return { written: rows.length }
+}
+
 export const upsertBalances = internalMutation({
   args: {
-    rows: v.array(
-      v.object({
-        wallet: v.string(),
-        assetId: v.string(),
-        amount: v.number(),
-        sourceType,
-        sourcePositionId: v.optional(v.id("positions")),
-        assetKind: v.optional(assetKind),
-        symbol: v.optional(v.string()),
-        valueUsd6: v.optional(v.string()),
-      }),
-    ),
+    rows: v.array(walletBalanceRow),
   },
-  handler: async (ctx, { rows }) => {
-    const now = Date.now()
-    for (const row of rows) {
-      const existing = await ctx.db
-        .query("walletBalances")
-        .withIndex("by_wallet_asset", (q) => q.eq("wallet", row.wallet).eq("assetId", row.assetId))
-        .collect()
-      const match = existing.find(
-        (candidate) => candidate.sourceType === row.sourceType && candidate.sourcePositionId === row.sourcePositionId,
-      )
-      if (match) {
-        await ctx.db.patch(match._id, {
-          amount: row.amount,
-          assetKind: row.assetKind,
-          symbol: row.symbol,
-          valueUsd6: row.valueUsd6,
-          updatedAt: now,
-        })
-      } else {
-        await ctx.db.insert("walletBalances", { ...row, updatedAt: now })
-      }
-    }
-    return { written: rows.length }
-  },
+  handler: async (ctx, { rows }) => upsertWalletBalanceRows(ctx, rows),
 })
 
 /**

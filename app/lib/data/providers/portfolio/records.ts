@@ -1,4 +1,4 @@
-export type PortfolioActivityProduct = "borrow" | "pool" | "lend" | "multiply" | "rewards" | "swap"
+export type PortfolioActivityProduct = "borrow" | "pool" | "lend" | "multiply" | "rewards" | "swap" | "umbrella"
 
 export type PortfolioActivityKind =
   | "swap"
@@ -8,6 +8,9 @@ export type PortfolioActivityKind =
   | "repay"
   | "pledge"
   | "claim"
+  | "stake"
+  | "startCooldown"
+  | "unstake"
   | "open"
   | "addCollateral"
   | "reduce"

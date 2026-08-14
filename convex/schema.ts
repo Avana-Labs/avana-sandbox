@@ -1125,7 +1125,7 @@ export default defineSchema({
    */
   positions: defineTable({
     wallet: v.string(),
-    product: v.union(v.literal("borrow"), v.literal("multiply"), v.literal("lend")),
+    product: v.union(v.literal("borrow"), v.literal("multiply"), v.literal("lend"), v.literal("umbrella")),
     /** Joins to `markets.slug` or `pools.slug`. */
     marketSlug: v.string(),
     spokeId: v.optional(v.string()),
@@ -1137,6 +1137,11 @@ export default defineSchema({
     suppliedUsd6: v.optional(v.string()),
     earnedUsd6: v.optional(v.string()),
     supplyApyPct: v.optional(v.number()),
+    cooldownAmountUsd6: v.optional(v.string()),
+    cooldownStartedAt: v.optional(v.number()),
+    cooldownEndsAt: v.optional(v.number()),
+    withdrawalWindowEndsAt: v.optional(v.number()),
+    claimedRewardsUsd6: v.optional(v.string()),
     // multiply (number-native — see app/lib/multiply-engine/types.ts MultiplyPosition)
     collateralAmount: v.optional(v.number()),
     collateralValueUsd: v.optional(v.number()),
@@ -1216,6 +1221,7 @@ export default defineSchema({
       v.literal("multiply"),
       v.literal("swap"),
       v.literal("rewards"),
+      v.literal("umbrella"),
     ),
     /** deposit | withdraw | borrow | repay | claim | liquidate | multiply | deleverage | swap */
     kind: v.string(),
@@ -1473,6 +1479,25 @@ export default defineSchema({
   })
     .index("by_wallet", ["wallet"])
     .index("by_wallet_asset", ["wallet", "assetId"]),
+
+  walletUmbrellaBalances: defineTable({
+    wallet: v.string(),
+    marketId: v.string(),
+    assetId: v.string(),
+    symbol: v.string(),
+    amount: v.number(),
+    valueUsd: v.number(),
+    state: v.union(
+      v.literal("available"),
+      v.literal("staked"),
+      v.literal("cooling"),
+      v.literal("withdrawalWindow"),
+      v.literal("claimableRewards"),
+    ),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_wallet_market_state", ["wallet", "marketId", "state"]),
 
   /**
    * LP token spot price for a pool market (USD per LP token). Feeds pledge-flow

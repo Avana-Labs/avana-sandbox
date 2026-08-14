@@ -7,6 +7,7 @@ import { BorrowActionPageClient } from "@/app/components/action-page/borrow-acti
 import { LendActionPageClient } from "@/app/components/action-page/lend-action-page-client"
 import { MultiplyActionPageClient } from "@/app/components/action-page/multiply-action-page-client"
 import { RewardsActionPageClient } from "@/app/components/action-page/rewards-action-page-client"
+import { UmbrellaActionPageClient } from "@/app/components/action-page/umbrella-action-page-client"
 
 export function ActionPageClient({
   product,
@@ -31,7 +32,10 @@ export function ActionPageClient({
 }) {
   if (!isValidAction(product, kind)) {
     const fallbackHref =
-      closeHref ?? (product === "lend" || product === "multiply" || product === "borrow" ? `/${product}` : "/")
+      closeHref ??
+      (product === "lend" || product === "multiply" || product === "borrow" || product === "umbrella"
+        ? `/${product}`
+        : "/")
     return <ActionNotFound closeHref={fallbackHref} />
   }
 
@@ -70,6 +74,16 @@ export function ActionPageClient({
         initialMarketId={initialMarketId}
         initialAmount={initialAmount}
         initialMultiplier={initialMultiplier}
+      />
+    )
+  }
+
+  if (product === "umbrella") {
+    return (
+      <UmbrellaActionPageClient
+        kind={kind as "stake" | "claim" | "cooldown" | "unstake"}
+        closeHref={closeHref ?? "/umbrella"}
+        initialMarketId={initialMarketId}
       />
     )
   }
