@@ -104,9 +104,9 @@ export function lendResultToRecordArgs(result: LendSandboxActionResult, wallet: 
 
 export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, wallet: string): RecordTransactionArgs {
   const item = result.historyItem
-  const position =
-    (item.positionId ? result.state.positions[item.positionId] : undefined) ??
-    Object.values(result.state.positions).find((entry) => entry.marketId === item.marketId)
+  const position = Object.values(result.state.positions)
+    .filter((entry) => entry.marketId === item.marketId)
+    .sort((a, b) => b.lastUpdatedAt - a.lastUpdatedAt)[0]
   const marketSlug = position?.marketId ?? item.marketId
   const collateralAssetId = marketSlug
     ? result.state.markets?.[marketSlug]?.collateralAsset.symbol.toLowerCase()
