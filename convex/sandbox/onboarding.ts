@@ -609,7 +609,6 @@ export const claim = mutation({
         simulated: true,
         at: now,
       })
-      await applyMarketDelta(ctx, leg.marketSlug, leg.amountUsd, 0, now)
     }
 
     for (const [index, leg] of allocation.lend.entries()) {
@@ -652,7 +651,6 @@ export const claim = mutation({
         simulated: true,
         at: now,
       })
-      await applyMarketDelta(ctx, leg.marketSlug, leg.amountUsd, 0, now)
     }
 
     for (const [index, leg] of allocation.multiply.entries()) {
@@ -733,7 +731,6 @@ export const claim = mutation({
         simulated: true,
         at: now,
       })
-      await applyMarketDelta(ctx, leg.marketSlug, grossExposureUsd, debtValueUsd, now)
     }
 
     await ctx.db.insert("starterAllocations", {
