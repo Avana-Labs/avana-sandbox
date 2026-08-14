@@ -1198,6 +1198,9 @@ export function BorrowActionPageClient({
             if (kind === "repay") {
               const position = debtPositions.find((entry) => entry.id === id)
               if (!position) return
+              setDebtPositionId(position.id)
+              if (position.marketId) setMarketId(position.marketId)
+              setStage("configure")
               router.replace(
                 actionPagePath("borrow", "repay", {
                   debt: id,
@@ -1209,6 +1212,9 @@ export function BorrowActionPageClient({
             if (kind === "claim") {
               const claimItem = session.state.accounts[walletId]?.rewardPositions.find((entry) => entry.id === id)
               if (!claimItem) return
+              setClaimPositionId(id)
+              setMarketId(resolveClaimMarketId(claimItem.marketId))
+              setStage("configure")
               router.replace(
                 actionPagePath("borrow", "claim", {
                   position: id,
@@ -1218,10 +1224,15 @@ export function BorrowActionPageClient({
               return
             }
             if (kind === "supply") {
+              setMarketId(id)
+              setStage("configure")
               router.replace(actionPagePath("borrow", "supply", { market: id }))
               return
             }
             if (kind === "remove") {
+              setMarketId(id)
+              setPercent("25")
+              setStage("configure")
               router.replace(actionPagePath("borrow", "remove", { market: id }))
               return
             }
@@ -1306,11 +1317,13 @@ export function BorrowActionPageClient({
               setClaimPositionId(id)
               setMarketId(resolveClaimMarketId(claimItem.marketId))
               setAmount("")
+              setStage("configure")
               return
             }
             if (kind === "supply") {
               setMarketId(id)
               setAmount("")
+              setStage("configure")
               return
             }
             const selection = resolveBorrowTokenSelection(session, id, selectMarketId)
