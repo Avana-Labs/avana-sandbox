@@ -19,9 +19,11 @@ describe("swap wallet balance classification", () => {
     ])
   })
 
-  it("builds dashboard wallet rows from wallet-held balances only", () => {
+  it("builds dashboard wallet rows from every product-scoped balance", () => {
     expect(buildDashboardWalletBalanceRows({ walletId: "w1", balances }).map((row) => row.id)).toEqual([
+      "active-eth",
       "wallet-eth",
+      "lend-usdc",
       "wallet-lp",
     ])
   })
@@ -36,14 +38,22 @@ describe("swap wallet balance classification", () => {
     })
   })
 
-  it("keeps regular wallet tokens swappable and sorted by USD value", () => {
+  it("keeps regular wallet tokens swappable while product-held rows stay restricted", () => {
     const rows = buildDashboardWalletBalanceRows({ walletId: "w1", balances })
+    const walletEth = rows.find((row) => row.id === "wallet-eth")
+    const activeEth = rows.find((row) => row.id === "active-eth")
 
-    expect(rows[0]).toMatchObject({
+    expect(walletEth).toMatchObject({
       assetId: "eth",
       symbol: "ETH",
       swappable: true,
       valueUsd: 3868,
+    })
+    expect(activeEth).toMatchObject({
+      assetId: "eth",
+      symbol: "ETH",
+      swappable: false,
+      valueUsd: 5802,
     })
   })
 })

@@ -17,6 +17,7 @@ vi.mock("@/app/lib/currency/use-currency", () => ({
 // return undefined — the tab falls through to the DEMO_SWAP_BALANCES default.
 vi.mock("@/app/lib/swap-system/use-convex-wallet-balances", () => ({
   useConvexWalletBalances: () => undefined,
+  useConvexProductWalletBalances: () => undefined,
 }))
 
 function renderWalletTab(node: ReactNode) {

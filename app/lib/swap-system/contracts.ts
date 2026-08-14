@@ -56,6 +56,7 @@ export type UserAssetBalance = {
   walletId: string
   assetId: string
   amount: number
+  valueUsd?: number
   sourceType: SwapBalanceSource
   sourcePositionId?: string
 }
