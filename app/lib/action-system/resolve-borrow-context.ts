@@ -1,5 +1,5 @@
 import type { BorrowSystemState } from "@/app/lib/credit-engine"
-import { currentDebtValueUsd6, formatFixed } from "@/app/lib/credit-engine"
+import { currentCollateralValueUsd6, currentDebtValueUsd6, formatFixed } from "@/app/lib/credit-engine"
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { selectRewardClaimableTotals } from "@/app/lib/borrow-system/home-runtime"
 import { formatBorrowMarketContext } from "@/app/lib/borrow-system/market-labels"
@@ -168,6 +168,30 @@ export function supplySelectItemsForWallet(session: BorrowContextSession, wallet
     })
     .filter((item) => item.walletLpUsd > 0)
     .map(({ walletLpUsd: _walletLpUsd, ...item }) => item)
+}
+
+export function removeSelectItemsForWallet(session: BorrowContextSession, walletId: string) {
+  const account = session.state.accounts[walletId]
+  if (!account) return []
+
+  return account.collateralPositions
+    .map((position) => {
+      const market = session.state.markets[position.marketId]
+      if (!market) return null
+      const visuals = market.display.visuals ?? []
+      const collateralUsd = Number.parseFloat(formatFixed(currentCollateralValueUsd6(position, market), 6))
+      return {
+        id: market.id,
+        name: market.display.name,
+        symbol: visuals[0]?.symbol ?? market.display.name.split("/")[0]?.trim() ?? "LP",
+        pairSymbols: visuals.length >= 2 ? ([visuals[0]!.symbol, visuals[1]!.symbol] as [string, string]) : undefined,
+        sublabel: formatBorrowMarketContext({ venue: market.display.venue, feeTier: market.display.feeTier }),
+        trailingLabel: formatActionUsd(collateralUsd),
+        collateralUsd,
+      }
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item && item.collateralUsd > 0))
+    .map(({ collateralUsd: _collateralUsd, ...item }) => item)
 }
 
 export function borrowSelectItemsForMarket(
