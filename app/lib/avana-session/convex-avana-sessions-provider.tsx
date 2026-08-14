@@ -41,20 +41,9 @@ function ConvexWalletHydrators({
   const lend = useLendSessionContext()
   const multiply = useMultiplySessionContext()
   const swap = useSwapSessionContext()
-  const ensureLiquidBalances = useMutation(api.wallet.balances.ensureLiquidBalances)
-  const ensureProductBalances = useMutation(api.wallet.productBalances.ensureOpenGateBalances)
   const ensurePortfolioSnapshot = useMutation(api.sandbox.transactions.ensurePortfolioSnapshot)
   const session = useQuery(api.sandbox.transactions.getSessionState, { wallet: walletId })
-  const convexBalances = useQuery(api.wallet.balances.listBalances, { wallet: walletId })
   const productBalances = useQuery(api.wallet.productBalances.listForWallet, { wallet: walletId })
-  // Seeded initial per-wallet portfolio state lives in three tables (walletDebts /
-  // walletCollateralPositions / walletClaimPositions) — the Convex swaps for the
-  // HOME_INITIAL_DEBTS + HOME_COLLATERAL_POOLS + HOME_CLAIM_POSITIONS mocks. Read
-  // here and forward into the borrow hydrate so the home portfolio cards render
-  // per-wallet Convex data instead of the mock catalog.
-  const walletDebts = useQuery(api.wallet.debts.listForWallet, { wallet: walletId })
-  const walletCollateralPositions = useQuery(api.wallet.collateralPositions.listForWallet, { wallet: walletId })
-  const walletClaimPositions = useQuery(api.wallet.claimPositions.listForWallet, { wallet: walletId })
   const historiesRef = useRef({
     borrow: borrow.transactionHistory,
     lend: lend.transactionHistory,
@@ -72,14 +61,12 @@ function ConvexWalletHydrators({
     ensuredRef.current = true
     void (async () => {
       try {
-        await ensureLiquidBalances({ wallet: walletId })
-        await ensureProductBalances({ wallet: walletId })
         await ensurePortfolioSnapshot({ wallet: walletId })
       } catch {
         ensuredRef.current = false
       }
     })()
-  }, [ensureLiquidBalances, ensurePortfolioSnapshot, ensureProductBalances, walletId])
+  }, [ensurePortfolioSnapshot, walletId])
 
   useEffect(() => {
     if (!session) return
@@ -88,21 +75,6 @@ function ConvexWalletHydrators({
     if (!shouldApplyHydration(session, pending)) return
     borrow.hydrateWalletData({
       ...session,
-      walletDebts: walletDebts?.map((row) => ({
-        marketId: row.marketId,
-        debtAssetId: row.debtAssetId,
-        amountUsd: row.amountUsd,
-      })),
-      walletCollateralPositions: walletCollateralPositions?.map((row) => ({
-        homePoolId: row.homePoolId,
-        marketId: row.marketId,
-        collateralUsd: row.collateralUsd,
-      })),
-      walletClaimPositions: walletClaimPositions?.map((row) => ({
-        claimId: row.claimId,
-        marketId: row.marketId,
-        totalUsd: row.totalUsd,
-      })),
       borrowBalances: productBalances?.borrow.map((row) => ({
         marketId: row.marketId,
         assetId: row.assetId,
@@ -143,9 +115,6 @@ function ConvexWalletHydrators({
     onWalletHydrated,
     session,
     productBalances,
-    walletDebts,
-    walletCollateralPositions,
-    walletClaimPositions,
   ])
 
   useEffect(() => {
@@ -161,31 +130,8 @@ function ConvexWalletHydrators({
       )
       return
     }
-    if (convexBalances && convexBalances.length > 0) {
-      swap.hydrateBalances(
-        convexBalances.map((row) => ({
-          id: row.id,
-          walletId: row.walletId,
-          assetId: row.assetId,
-          amount: row.amount,
-          sourceType: "wallet" as const,
-          sourcePositionId: row.sourcePositionId ? String(row.sourcePositionId) : undefined,
-        })),
-      )
-      return
-    }
-    if (session?.balances && session.balances.length > 0) {
-      swap.hydrateBalances(
-        session.balances.map((row) => ({
-          id: `${walletId}:${row.assetSlug}:wallet`,
-          walletId,
-          assetId: row.assetSlug,
-          amount: row.amount,
-          sourceType: "wallet" as const,
-        })),
-      )
-    }
-  }, [convexBalances, productBalances?.liquid, session?.balances, swap.hydrateBalances, walletId])
+    if (productBalances?.liquid) swap.hydrateBalances([])
+  }, [productBalances?.liquid, swap.hydrateBalances, walletId])
 
   return null
 }
