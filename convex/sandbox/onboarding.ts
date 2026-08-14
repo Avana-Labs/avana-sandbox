@@ -39,6 +39,26 @@ const DEFAULT_BASKET = [
 
 const SEED_VERSION = 1
 
+const UMBRELLA_ONBOARDING_POSITIONS = [
+  { marketSlug: "usdc", symbol: "USDC", suppliedUsd: 8000, earnedUsd: 18.25, cooldownUsd: 0, cooldownOffsetMs: null },
+  { marketSlug: "weth", symbol: "WETH", suppliedUsd: 6720, earnedUsd: 9.1, cooldownUsd: 0, cooldownOffsetMs: null },
+  {
+    marketSlug: "gho",
+    symbol: "GHO",
+    suppliedUsd: 5000,
+    earnedUsd: 11.4,
+    cooldownUsd: 2500,
+    cooldownOffsetMs: 11 * 24 * 60 * 60 * 1000,
+  },
+] as const
+
+const UMBRELLA_ONBOARDING_BALANCES = [
+  { assetSlug: "usdc", symbol: "USDC", amount: 25_000, priceUsd: 1 },
+  { assetSlug: "usdt", symbol: "USDT", amount: 15_000, priceUsd: 1 },
+  { assetSlug: "gho", symbol: "GHO", amount: 20_000, priceUsd: 1 },
+  { assetSlug: "weth", symbol: "WETH", amount: 5, priceUsd: 1934 },
+] as const
+
 /** Shard count for the economy counters — spreads concurrent claim increments so no
  *  two claims collide on the same row under OCC. */
 const ECONOMY_SHARDS = 16
@@ -114,6 +134,33 @@ async function getOrSeedConfig(ctx: MutationCtx) {
   const rows = await ctx.db.query("sandboxConfig").collect()
   for (const row of rows) if (row._id !== id) await ctx.db.delete(row._id)
   return (await ctx.db.get(id))!
+}
+
+async function upsertSandboxBalance(
+  ctx: MutationCtx,
+  row: { wallet: string; assetSlug: string; symbol: string; amount: number; priceUsd: number; updatedAt: number },
+) {
+  const existing = await ctx.db
+    .query("sandboxBalances")
+    .withIndex("by_wallet_asset", (q) => q.eq("wallet", row.wallet).eq("assetSlug", row.assetSlug))
+    .unique()
+  const valueUsd = row.amount * row.priceUsd
+  if (existing) {
+    await ctx.db.patch(existing._id, { amount: Math.max(existing.amount, row.amount), valueUsd, priceUsd: row.priceUsd, updatedAt: row.updatedAt })
+  } else {
+    await ctx.db.insert("sandboxBalances", { ...row, valueUsd })
+  }
+  await upsertWalletBalanceRows(ctx, [
+    {
+      wallet: row.wallet,
+      assetId: row.assetSlug,
+      amount: existing ? Math.max(existing.amount, row.amount) : row.amount,
+      sourceType: "wallet",
+      assetKind: "wallet",
+      symbol: row.symbol,
+      valueUsd6: String(Math.round((existing ? Math.max(existing.amount, row.amount) : row.amount) * row.priceUsd * 1_000_000)),
+    },
+  ])
 }
 
 async function getOrSeedStarterCatalog(ctx: MutationCtx) {
@@ -213,23 +260,6 @@ async function profileForWallet(ctx: QueryCtx | MutationCtx, wallet: string) {
 function liquidAssetIdForMultiplyDebt(marketSlug: string) {
   const parts = marketSlug.toLowerCase().split(/[-_:]/)
   return parts.find((part) => part === "usdc" || part === "usdt" || part === "dai" || part === "gho") ?? "usdc"
-}
-
-async function applyMarketDelta(
-  ctx: MutationCtx,
-  marketSlug: string,
-  suppliedDeltaUsd: number,
-  borrowedDeltaUsd: number,
-  now: number,
-) {
-  // Append-only: never patch a shared per-market row (that put every concurrent
-  // claim on the same document under OCC). Readers fold these events per market.
-  await ctx.db.insert("marketLiquidityDeltas", {
-    marketSlug,
-    suppliedDeltaUsd,
-    borrowedDeltaUsd,
-    updatedAt: now,
-  })
 }
 
 /** Wallet-scoped onboarding state for the SandboxGate (own wallet only). */
@@ -731,6 +761,62 @@ export const claim = mutation({
         simulated: true,
         at: now,
       })
+    }
+
+    const existingUmbrella = await ctx.db
+      .query("positions")
+      .withIndex("by_wallet_product", (q) => q.eq("wallet", wallet).eq("product", "umbrella"))
+      .collect()
+    if (existingUmbrella.length === 0) {
+      for (const balance of UMBRELLA_ONBOARDING_BALANCES) {
+        await upsertSandboxBalance(ctx, { wallet, ...balance, updatedAt: now })
+      }
+      for (const [index, position] of UMBRELLA_ONBOARDING_POSITIONS.entries()) {
+        const suppliedUsd6 = Math.round(position.suppliedUsd * 1_000_000).toString()
+        const earnedUsd6 = Math.round(position.earnedUsd * 1_000_000).toString()
+        const cooldownAmountUsd6 = Math.round(position.cooldownUsd * 1_000_000).toString()
+        const cooldownStartedAt = position.cooldownOffsetMs == null ? undefined : now - position.cooldownOffsetMs
+        const cooldownEndsAt = position.cooldownOffsetMs == null ? undefined : cooldownStartedAt! + 20 * 24 * 60 * 60 * 1000
+        const withdrawalWindowEndsAt =
+          position.cooldownOffsetMs == null ? undefined : cooldownEndsAt! + 2 * 24 * 60 * 60 * 1000
+        const hash = `${syntheticTxHash}-umbrella-${index}`
+        receiptHashes.push(hash)
+        const positionId = await ctx.db.insert("positions", {
+          wallet,
+          product: "umbrella",
+          marketSlug: position.marketSlug,
+          assetId: position.marketSlug,
+          status: "open",
+          suppliedUsd6,
+          earnedUsd6,
+          supplyApyPct: position.marketSlug === "usdc" ? 4.84 : position.marketSlug === "weth" ? 5.05 : 6.4,
+          cooldownAmountUsd6,
+          cooldownStartedAt,
+          cooldownEndsAt,
+          withdrawalWindowEndsAt,
+          claimedRewardsUsd6: "0",
+          openedAt: now,
+          lastUpdatedAt: now,
+          openTxSynthetic: hash,
+          revision: 1,
+        })
+        await ctx.db.insert("transactions", {
+          wallet,
+          intentId: `onboarding-umbrella-${position.marketSlug}`,
+          product: "umbrella",
+          kind: "stake",
+          status: "success",
+          marketSlug: position.marketSlug,
+          assetId: position.marketSlug,
+          positionId,
+          requestedAmountUsd6: suppliedUsd6,
+          executedAmountUsd6: suppliedUsd6,
+          amountUsd: position.suppliedUsd,
+          syntheticTxHash: hash,
+          simulated: true,
+          at: now,
+        })
+      }
     }
 
     await ctx.db.insert("starterAllocations", {

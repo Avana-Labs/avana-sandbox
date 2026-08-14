@@ -7,6 +7,7 @@ const PRODUCT_TAB: Record<ActionProduct, DashboardTabKey> = {
   lend: "lend",
   multiply: "multiply",
   rewards: "wallet",
+  umbrella: "wallet",
 }
 
 const VALID_TABS = new Set<DashboardTabKey>([

@@ -18,6 +18,10 @@ vi.mock("@/app/components/action-page/rewards-action-page-client", () => ({
   RewardsActionPageClient: () => <div data-testid="rewards-action-page" />,
 }))
 
+vi.mock("@/app/components/action-page/umbrella-action-page-client", () => ({
+  UmbrellaActionPageClient: ({ kind }: { kind: string }) => <div data-testid="umbrella-action-page">{kind}</div>,
+}))
+
 describe("ActionPageClient", () => {
   it("routes borrow product actions", () => {
     render(<ActionPageClient product="borrow" kind="borrow" />)
@@ -37,5 +41,10 @@ describe("ActionPageClient", () => {
   it("routes rewards claim action", () => {
     render(<ActionPageClient product="rewards" kind="claim" />)
     expect(screen.getByTestId("rewards-action-page")).toBeInTheDocument()
+  })
+
+  it("routes umbrella product actions", () => {
+    render(<ActionPageClient product="umbrella" kind="stake" />)
+    expect(screen.getByTestId("umbrella-action-page")).toHaveTextContent("stake")
   })
 })
