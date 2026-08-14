@@ -223,6 +223,76 @@ async function adjustProductBalanceUsd(
   } as never)
 }
 
+async function syncBorrowProductCollateralRows(
+  ctx: MutationCtx,
+  wallet: string,
+  marketSlug: string,
+  position: Infer<typeof positionPayload>,
+  now: number,
+) {
+  const rows = await ctx.db
+    .query("walletBorrowBalances")
+    .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+    .collect()
+  const related = rows.filter((row) => row.marketId === marketSlug)
+  const poolRows = related.filter((row) => row.state === "poolAvailable" || row.state === "collateral")
+  const existingAvailable = poolRows.find((row) => row.state === "poolAvailable")
+  const existingCollateral = poolRows.find((row) => row.state === "collateral")
+  const sibling = existingAvailable ?? existingCollateral ?? poolRows[0]
+  const collateralFromLegs = (position.collateral ?? []).reduce(
+    (sum, leg) => sum + (leg.collateralValueUsd6 ? usd6Number(leg.collateralValueUsd6) : 0),
+    0,
+  )
+  const pledgedUsd =
+    position.status === "closed"
+      ? 0
+      : Math.max(
+          0,
+          position.collateralValueUsd ??
+            (position.collateralValueUsd6 ? usd6Number(position.collateralValueUsd6) : collateralFromLegs),
+        )
+  const totalPoolUsd = Math.max(
+    pledgedUsd,
+    poolRows.reduce((sum, row) => sum + row.valueUsd, 0),
+  )
+  const availableUsd = Math.max(0, totalPoolUsd - pledgedUsd)
+  const poolId = sibling?.poolId ?? marketSlug
+  const symbol = sibling?.symbol ?? marketSlug.toUpperCase()
+  const [pool, market] = sibling
+    ? [null, null]
+    : await Promise.all([
+        ctx.db
+          .query("pools")
+          .withIndex("by_slug", (q) => q.eq("slug", marketSlug))
+          .unique(),
+        ctx.db
+          .query("markets")
+          .withIndex("by_scope_slug", (q) => q.eq("scope", "pool").eq("slug", marketSlug))
+          .unique(),
+      ])
+  const priceUsd =
+    sibling && sibling.amount > 0 && sibling.valueUsd > 0
+      ? sibling.valueUsd / sibling.amount
+      : (pool?.lpTokenPriceUsd ?? market?.priceUsd ?? 1)
+
+  await upsertProductBalanceValue(ctx, "walletBorrowBalances", wallet, {
+    marketId: marketSlug,
+    poolId,
+    symbol,
+    amount: priceUsd > 0 ? availableUsd / priceUsd : availableUsd,
+    valueUsd: availableUsd,
+    state: "poolAvailable",
+  })
+  await upsertProductBalanceValue(ctx, "walletBorrowBalances", wallet, {
+    marketId: marketSlug,
+    poolId,
+    symbol,
+    amount: priceUsd > 0 ? pledgedUsd / priceUsd : pledgedUsd,
+    valueUsd: pledgedUsd,
+    state: "collateral",
+  })
+}
+
 function liquidAssetIdFromArgs(assetId?: string, marketSlug?: string): string {
   if (assetId) {
     const base = assetId.includes(":") ? assetId.split(":").pop() : assetId
@@ -1146,25 +1216,29 @@ async function applyProductBucketDelta(
 
   if (args.product === "borrow") {
     if (marketSlug && (args.kind === "deposit" || args.kind === "withdraw")) {
-      const signed = args.kind === "deposit" ? args.amountUsd : -args.amountUsd
-      await adjustProductBalanceUsd(
-        ctx,
-        "walletBorrowBalances",
-        wallet,
-        { marketId: marketSlug, state: "poolAvailable" },
-        marketSlug.toUpperCase(),
-        -signed,
-        now,
-      )
-      await adjustProductBalanceUsd(
-        ctx,
-        "walletBorrowBalances",
-        wallet,
-        { marketId: marketSlug, state: "collateral" },
-        marketSlug.toUpperCase(),
-        signed,
-        now,
-      )
+      if (args.position) {
+        await syncBorrowProductCollateralRows(ctx, wallet, marketSlug, args.position, now)
+      } else {
+        const signed = args.kind === "deposit" ? args.amountUsd : -args.amountUsd
+        await adjustProductBalanceUsd(
+          ctx,
+          "walletBorrowBalances",
+          wallet,
+          { marketId: marketSlug, state: "poolAvailable" },
+          marketSlug.toUpperCase(),
+          -signed,
+          now,
+        )
+        await adjustProductBalanceUsd(
+          ctx,
+          "walletBorrowBalances",
+          wallet,
+          { marketId: marketSlug, state: "collateral" },
+          marketSlug.toUpperCase(),
+          signed,
+          now,
+        )
+      }
     }
     if (args.kind === "borrow" || args.kind === "repay") {
       const debtAssetId = liquidAssetIdFromArgs(args.assetId, marketSlug)
