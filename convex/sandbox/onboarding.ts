@@ -12,6 +12,8 @@
 import { v } from "convex/values"
 import type { MutationCtx, QueryCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
+import { upsertWalletBalanceRows } from "../wallet/balances"
+import { replaceProductBalanceRows } from "../wallet/productBalances"
 import { requireSandboxWallet, getAuthSubject } from "./auth"
 import { assertCatalogCanSatisfyStarter, buildStarterAllocationPlan, STARTER_EQUITY_USD } from "./starterAllocation"
 
@@ -206,6 +208,11 @@ async function profileForWallet(ctx: QueryCtx | MutationCtx, wallet: string) {
     .query("sandboxProfiles")
     .withIndex("by_wallet", (q) => q.eq("wallet", wallet.toLowerCase()))
     .unique()
+}
+
+function liquidAssetIdForMultiplyDebt(marketSlug: string) {
+  const parts = marketSlug.toLowerCase().split(/[-_:]/)
+  return parts.find((part) => part === "usdc" || part === "usdt" || part === "dai" || part === "gho") ?? "usdc"
 }
 
 async function applyMarketDelta(
@@ -496,6 +503,11 @@ export const claim = mutation({
     const syntheticTxHash = `sim-claim-${(profile.tierSeed ?? "0").slice(0, 8)}-${now.toString(36)}`
     const receiptHashes: string[] = []
 
+    const productLiquidRows: Parameters<typeof replaceProductBalanceRows>[2]["liquid"] = []
+    const productLendRows: Parameters<typeof replaceProductBalanceRows>[2]["lend"] = []
+    const productBorrowRows: Parameters<typeof replaceProductBalanceRows>[2]["borrow"] = []
+    const productMultiplyRows: Parameters<typeof replaceProductBalanceRows>[2]["multiply"] = []
+
     for (const [index, leg] of allocation.liquid.entries()) {
       const market = marketBySlug.get(leg.marketSlug)
       // Skip a missing asset rather than failing the whole claim (the plan only ever
@@ -503,15 +515,34 @@ export const claim = mutation({
       if (!market) continue
       const symbol = market.symbol.toLowerCase()
       const priceUsd = catalogBySlug.get(leg.marketSlug)?.priceUsd ?? SANDBOX_TOKEN_PRICE_USD[symbol] ?? 1
+      const amount = leg.amountUsd / priceUsd
+      productLiquidRows.push({
+        assetId: leg.marketSlug,
+        symbol: market.symbol,
+        amount,
+        valueUsd: leg.amountUsd,
+        state: "available",
+      })
       await ctx.db.insert("sandboxBalances", {
         wallet,
         assetSlug: leg.marketSlug,
         symbol: market.symbol,
-        amount: leg.amountUsd / priceUsd,
+        amount,
         valueUsd: leg.amountUsd,
         priceUsd,
         updatedAt: now,
       })
+      await upsertWalletBalanceRows(ctx, [
+        {
+          wallet,
+          assetId: leg.marketSlug,
+          amount,
+          sourceType: "wallet",
+          assetKind: "wallet",
+          symbol: market.symbol,
+          valueUsd6: String(Math.round(leg.amountUsd * 1_000_000)),
+        },
+      ])
       const hash = `${syntheticTxHash}-asset-${index}`
       receiptHashes.push(hash)
       await ctx.db.insert("sandboxActivity", {
@@ -527,6 +558,16 @@ export const claim = mutation({
     for (const [index, leg] of allocation.collateral.entries()) {
       const amountUsd6 = Math.round(leg.amountUsd * 1_000_000).toString()
       const hash = `${syntheticTxHash}-pool-${index}`
+      const market = marketBySlug.get(leg.marketSlug)
+      const priceUsd = catalogBySlug.get(leg.marketSlug)?.priceUsd ?? market?.priceUsd ?? 1
+      productBorrowRows.push({
+        marketId: leg.marketSlug,
+        poolId: leg.marketSlug,
+        symbol: market?.symbol ?? leg.marketSlug.toUpperCase(),
+        amount: priceUsd > 0 ? leg.amountUsd / priceUsd : leg.amountUsd,
+        valueUsd: leg.amountUsd,
+        state: "collateral",
+      })
       receiptHashes.push(hash)
       const positionId = await ctx.db.insert("positions", {
         wallet,
@@ -574,6 +615,16 @@ export const claim = mutation({
     for (const [index, leg] of allocation.lend.entries()) {
       const amountUsd6 = Math.round(leg.amountUsd * 1_000_000).toString()
       const hash = `${syntheticTxHash}-lend-${index}`
+      const market = marketBySlug.get(leg.marketSlug)
+      const priceUsd = catalogBySlug.get(leg.marketSlug)?.priceUsd ?? market?.priceUsd ?? 1
+      productLendRows.push({
+        marketId: leg.marketSlug,
+        assetId: leg.marketSlug,
+        symbol: market?.symbol ?? leg.marketSlug.toUpperCase(),
+        amount: priceUsd > 0 ? leg.amountUsd / priceUsd : leg.amountUsd,
+        valueUsd: leg.amountUsd,
+        state: "deposited",
+      })
       receiptHashes.push(hash)
       const positionId = await ctx.db.insert("positions", {
         wallet,
@@ -624,6 +675,32 @@ export const claim = mutation({
       const collateralPriceUsd =
         catalogBySlug.get(leg.marketSlug)?.priceUsd ?? SANDBOX_TOKEN_PRICE_USD[multiplySymbol] ?? 1
       const collateralAmount = grossExposureUsd / collateralPriceUsd
+      productMultiplyRows.push(
+        {
+          marketId: leg.marketSlug,
+          assetId: multiplySymbol,
+          symbol: multiplyMarket?.symbol ?? multiplySymbol.toUpperCase(),
+          amount: collateralAmount,
+          valueUsd: grossExposureUsd,
+          state: "position",
+        },
+        {
+          marketId: leg.marketSlug,
+          assetId: multiplySymbol,
+          symbol: multiplyMarket?.symbol ?? multiplySymbol.toUpperCase(),
+          amount: collateralAmount,
+          valueUsd: grossExposureUsd,
+          state: "collateral",
+        },
+        {
+          marketId: leg.marketSlug,
+          assetId: liquidAssetIdForMultiplyDebt(leg.marketSlug),
+          symbol: liquidAssetIdForMultiplyDebt(leg.marketSlug).toUpperCase(),
+          amount: debtValueUsd,
+          valueUsd: debtValueUsd,
+          state: "debt",
+        },
+      )
       const positionId = await ctx.db.insert("positions", {
         wallet,
         product: "multiply",
@@ -669,6 +746,12 @@ export const claim = mutation({
       multiply: allocation.multiply,
       receiptHashes,
       createdAt: now,
+    })
+    await replaceProductBalanceRows(ctx, wallet, {
+      liquid: productLiquidRows,
+      lend: productLendRows,
+      borrow: productBorrowRows,
+      multiply: productMultiplyRows,
     })
     const liquidValueUsd = allocation.liquid.reduce((sum, leg) => sum + leg.amountUsd, 0)
     const collateralValueUsd = allocation.collateral.reduce((sum, leg) => sum + leg.amountUsd, 0)

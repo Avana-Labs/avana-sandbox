@@ -21,8 +21,224 @@
 import { v, type Infer } from "convex/values"
 import type { MutationCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
+import { upsertWalletBalanceRows } from "../wallet/balances"
 import { requireSandboxWallet } from "./auth"
 import type { Doc } from "../_generated/dataModel"
+
+type ProductBalanceTable =
+  | "walletLendBalances"
+  | "walletBorrowBalances"
+  | "walletMultiplyBalances"
+  | "walletLiquidBalances"
+
+/** Apply a successful swap to durable liquid balances (sandboxBalances + walletBalances). */
+async function applySwapBalanceDelta(
+  ctx: MutationCtx,
+  wallet: string,
+  args: {
+    inputAssetId: string
+    outputAssetId: string
+    inputSymbol: string
+    outputSymbol: string
+    inputAmount: number
+    outputAmount: number
+    amountUsd: number
+  },
+  now: number,
+) {
+  const legs = [
+    { assetId: args.inputAssetId, symbol: args.inputSymbol, delta: -args.inputAmount },
+    { assetId: args.outputAssetId, symbol: args.outputSymbol, delta: args.outputAmount },
+  ] as const
+
+  for (const leg of legs) {
+    const sandbox = await ctx.db
+      .query("sandboxBalances")
+      .withIndex("by_wallet_asset", (q) => q.eq("wallet", wallet).eq("assetSlug", leg.assetId))
+      .unique()
+    const nextAmount = Math.max(0, (sandbox?.amount ?? 0) + leg.delta)
+    const priceUsd =
+      sandbox?.priceUsd ??
+      (leg.assetId === args.inputAssetId && args.inputAmount > 0
+        ? args.amountUsd / args.inputAmount
+        : leg.assetId === args.outputAssetId && args.outputAmount > 0
+          ? args.amountUsd / args.outputAmount
+          : 1)
+    const valueUsd = nextAmount * priceUsd
+    if (sandbox) {
+      await ctx.db.patch(sandbox._id, { amount: nextAmount, valueUsd, priceUsd, updatedAt: now })
+    } else if (nextAmount > 0) {
+      await ctx.db.insert("sandboxBalances", {
+        wallet,
+        assetSlug: leg.assetId,
+        symbol: leg.symbol,
+        amount: nextAmount,
+        valueUsd,
+        priceUsd,
+        updatedAt: now,
+      })
+    }
+    await upsertWalletBalanceRows(ctx, [
+      {
+        wallet,
+        assetId: leg.assetId,
+        amount: nextAmount,
+        sourceType: "wallet",
+        assetKind: "wallet",
+        symbol: leg.symbol,
+        valueUsd6: String(Math.round(valueUsd * 1_000_000)),
+      },
+    ])
+    await upsertProductBalanceValue(ctx, "walletLiquidBalances", wallet, {
+      assetId: leg.assetId,
+      symbol: leg.symbol,
+      amount: nextAmount,
+      valueUsd,
+      state: "available",
+    })
+  }
+}
+
+/** Debit/credit one liquid asset in sandboxBalances + walletBalances (lend/borrow cash legs). */
+async function applyLiquidAssetDelta(
+  ctx: MutationCtx,
+  wallet: string,
+  assetId: string,
+  symbol: string,
+  delta: number,
+  now: number,
+) {
+  if (!Number.isFinite(delta) || delta === 0) return
+  const sandbox = await ctx.db
+    .query("sandboxBalances")
+    .withIndex("by_wallet_asset", (q) => q.eq("wallet", wallet).eq("assetSlug", assetId))
+    .unique()
+  const priceUsd = sandbox?.priceUsd && sandbox.priceUsd > 0 ? sandbox.priceUsd : 1
+  const nextAmount = Math.max(0, (sandbox?.amount ?? 0) + delta)
+  const valueUsd = nextAmount * priceUsd
+  if (sandbox) {
+    await ctx.db.patch(sandbox._id, { amount: nextAmount, valueUsd, priceUsd, updatedAt: now })
+  } else if (nextAmount > 0) {
+    await ctx.db.insert("sandboxBalances", {
+      wallet,
+      assetSlug: assetId,
+      symbol,
+      amount: nextAmount,
+      valueUsd,
+      priceUsd,
+      updatedAt: now,
+    })
+  }
+  await upsertWalletBalanceRows(ctx, [
+    {
+      wallet,
+      assetId,
+      amount: nextAmount,
+      sourceType: "wallet",
+      assetKind: "wallet",
+      symbol,
+      valueUsd6: String(Math.round(valueUsd * 1_000_000)),
+    },
+  ])
+  await upsertProductBalanceValue(ctx, "walletLiquidBalances", wallet, {
+    assetId,
+    symbol,
+    amount: nextAmount,
+    valueUsd,
+    state: "available",
+  })
+}
+
+async function upsertProductBalanceValue(
+  ctx: MutationCtx,
+  table: ProductBalanceTable,
+  wallet: string,
+  row: {
+    marketId?: string
+    assetId?: string
+    poolId?: string
+    symbol: string
+    amount: number
+    valueUsd: number
+    state: string
+  },
+) {
+  const rows = await ctx.db
+    .query(table)
+    .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+    .collect()
+  const existing = rows.find(
+    (candidate) =>
+      candidate.state === row.state &&
+      ("marketId" in candidate ? candidate.marketId : undefined) === row.marketId &&
+      ("assetId" in candidate ? candidate.assetId : undefined) === row.assetId &&
+      ("poolId" in candidate ? candidate.poolId : undefined) === row.poolId,
+  )
+  const next = { ...row, amount: Math.max(0, row.amount), valueUsd: Math.max(0, row.valueUsd), updatedAt: Date.now() }
+  if (existing) {
+    await ctx.db.patch(existing._id, next as never)
+    return
+  }
+  if (next.amount <= 0 && next.valueUsd <= 0) return
+  await ctx.db.insert(table, { ...next, wallet } as never)
+}
+
+async function adjustProductBalanceUsd(
+  ctx: MutationCtx,
+  table: ProductBalanceTable,
+  wallet: string,
+  match: { marketId?: string; assetId?: string; poolId?: string; state: string },
+  symbol: string,
+  deltaUsd: number,
+  now: number,
+) {
+  if (!Number.isFinite(deltaUsd) || deltaUsd === 0) return
+  const rows = await ctx.db
+    .query(table)
+    .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+    .collect()
+  const existing = rows.find(
+    (candidate) =>
+      candidate.state === match.state &&
+      ("marketId" in candidate ? candidate.marketId : undefined) === match.marketId &&
+      ("assetId" in candidate ? candidate.assetId : undefined) === match.assetId &&
+      ("poolId" in candidate ? candidate.poolId : undefined) === match.poolId,
+  )
+  const nextValueUsd = Math.max(0, (existing?.valueUsd ?? 0) + deltaUsd)
+  const priceUsd = existing && existing.amount > 0 && existing.valueUsd > 0 ? existing.valueUsd / existing.amount : 1
+  const nextAmount = priceUsd > 0 ? nextValueUsd / priceUsd : nextValueUsd
+  if (existing) {
+    await ctx.db.patch(existing._id, { amount: nextAmount, valueUsd: nextValueUsd, updatedAt: now })
+    return
+  }
+  if (nextValueUsd <= 0) return
+  await ctx.db.insert(table, {
+    wallet,
+    marketId: match.marketId,
+    assetId: match.assetId,
+    poolId: match.poolId,
+    symbol,
+    amount: nextAmount,
+    valueUsd: nextValueUsd,
+    state: match.state,
+    updatedAt: now,
+  } as never)
+}
+
+function liquidAssetIdFromArgs(assetId?: string, marketSlug?: string): string {
+  if (assetId) {
+    const base = assetId.includes(":") ? assetId.split(":").pop() : assetId
+    if (base) return base.toLowerCase()
+  }
+  if (marketSlug) {
+    const parts = marketSlug.toLowerCase().split(/[-_:]/)
+    const stable = parts.find((part) => part === "usdc" || part === "usdt" || part === "dai")
+    if (stable) return stable
+    const last = parts.at(-1)
+    if (last) return last
+  }
+  return "usdc"
+}
 
 /** Hourly per-wallet transaction cap (anti-abuse). Exported for tests. */
 export const MAX_TX_PER_HOUR = 200
@@ -317,7 +533,7 @@ function canonicalLedgerDelta(
 }
 
 export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, now: number) {
-  const [positions, balances] = await Promise.all([
+  const [positions, balances, walletDebts, walletCollateral] = await Promise.all([
     ctx.db
       .query("positions")
       .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
@@ -326,12 +542,31 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
       .query("sandboxBalances")
       .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
       .collect(),
+    ctx.db
+      .query("walletDebts")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("walletCollateralPositions")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
   ])
   const open = positions.filter((position) => position.status === "open")
   const liquid = balances.reduce((sum, balance) => sum + balance.valueUsd, 0)
   const borrowPositions = open.filter((position) => position.product === "borrow")
+  const marketsWithLiveBorrow = new Set(borrowPositions.map((position) => position.marketSlug))
   const borrowCollateral = borrowPositions.reduce((sum, position) => sum + usd6Number(position.collateralValueUsd6), 0)
   const borrowDebt = borrowPositions.reduce((sum, position) => sum + usd6Number(position.debtValueUsd6), 0)
+  // Home-seed tables fill markets that have not yet been written into `positions`, so the
+  // Convex portfolio chart matches the dashboard/home cards before the first borrow action.
+  const seedCollateral = walletCollateral
+    .filter((row) => !marketsWithLiveBorrow.has(row.marketId))
+    .reduce((sum, row) => sum + row.collateralUsd, 0)
+  const seedDebt = walletDebts
+    .filter((row) => !marketsWithLiveBorrow.has(row.marketId))
+    .reduce((sum, row) => sum + row.amountUsd, 0)
+  const totalBorrowCollateral = borrowCollateral + seedCollateral
+  const totalBorrowDebt = borrowDebt + seedDebt
   const lendSupplied = open
     .filter((position) => position.product === "lend")
     .reduce((sum, position) => sum + usd6Number(position.suppliedUsd6), 0)
@@ -346,7 +581,12 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
     .reduce((sum, position) => sum + (position.debtValueUsd ?? 0), 0)
 
   // ATB from per-pool collateral factors — never a hardcoded *0.7.
-  const borrowSlugs = [...new Set(borrowPositions.map((position) => position.marketSlug).filter(Boolean))]
+  const borrowSlugs = [
+    ...new Set([
+      ...borrowPositions.map((position) => position.marketSlug).filter(Boolean),
+      ...walletCollateral.filter((row) => !marketsWithLiveBorrow.has(row.marketId)).map((row) => row.marketId),
+    ]),
+  ]
   const borrowPools = await Promise.all(
     borrowSlugs.map((slug) =>
       ctx.db
@@ -360,19 +600,30 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
       .filter((pool): pool is NonNullable<typeof pool> => pool !== null)
       .map((pool) => [pool.slug, pool.maxLtvPct / 100] as const),
   )
-  const borrowCapacityUsd = borrowPositions.reduce((sum, position) => {
-    const collateralUsd = usd6Number(position.collateralValueUsd6)
-    const cf = maxLtvBySlug.get(position.marketSlug) ?? BORROW_FALLBACK_LIQUIDATION_PCT / 100
-    return sum + collateralUsd * cf
-  }, 0)
+  for (const row of walletCollateral) {
+    if (marketsWithLiveBorrow.has(row.marketId) || maxLtvBySlug.has(row.marketId)) continue
+    maxLtvBySlug.set(row.marketId, row.maxLtvPct / 100)
+  }
+  const borrowCapacityUsd =
+    borrowPositions.reduce((sum, position) => {
+      const collateralUsd = usd6Number(position.collateralValueUsd6)
+      const cf = maxLtvBySlug.get(position.marketSlug) ?? BORROW_FALLBACK_LIQUIDATION_PCT / 100
+      return sum + collateralUsd * cf
+    }, 0) +
+    walletCollateral
+      .filter((row) => !marketsWithLiveBorrow.has(row.marketId))
+      .reduce((sum, row) => {
+        const cf = maxLtvBySlug.get(row.marketId) ?? row.maxLtvPct / 100
+        return sum + row.collateralUsd * cf
+      }, 0)
 
   const snapshot = {
     wallet,
     at: now,
-    totalValueUsd: liquid + borrowCollateral - borrowDebt + lendSupplied + multiplyCollateral - multiplyDebt,
-    totalSuppliedUsd: borrowCollateral + lendSupplied + multiplyCollateral,
-    totalBorrowedUsd: borrowDebt + multiplyDebt,
-    availableToBorrowUsd: Math.max(0, borrowCapacityUsd - borrowDebt),
+    totalValueUsd: liquid + totalBorrowCollateral - totalBorrowDebt + lendSupplied + multiplyCollateral - multiplyDebt,
+    totalSuppliedUsd: totalBorrowCollateral + lendSupplied + multiplyCollateral,
+    totalBorrowedUsd: totalBorrowDebt + multiplyDebt,
+    availableToBorrowUsd: Math.max(0, borrowCapacityUsd - totalBorrowDebt),
     totalMultiplyExposureUsd: multiplyCollateral,
     totalEarnedUsd: earned,
   }
@@ -462,6 +713,119 @@ async function applyRewardClaims(
         updatedAt: now,
       })
     }
+    // Keep home claim cards (walletClaimPositions) aligned with the durable remaining.
+    const homeClaim = await ctx.db
+      .query("walletClaimPositions")
+      .withIndex("by_wallet_claim", (q) => q.eq("wallet", wallet).eq("claimId", claim.rewardPositionId))
+      .unique()
+    if (homeClaim) {
+      const remainingUsd = Number(claim.remainingUsd6) / 1_000_000
+      await ctx.db.patch(homeClaim._id, {
+        totalUsd: Number.isFinite(remainingUsd) ? Math.max(0, remainingUsd) : 0,
+        updatedAt: now,
+      })
+    }
+  }
+}
+
+/**
+ * Mirror a durable borrow `positions` row into the home-seed tables so home cards and
+ * dashboard hydrate stay on one truth after the first action for a market.
+ */
+async function syncHomeBorrowMirrors(
+  ctx: MutationCtx,
+  wallet: string,
+  marketSlug: string,
+  position: Infer<typeof positionPayload>,
+  now: number,
+) {
+  const closed = position.status === "closed"
+  const collateralFromLegs = (position.collateral ?? []).reduce(
+    (sum, leg) => sum + (leg.collateralValueUsd6 ? usd6Number(leg.collateralValueUsd6) : 0),
+    0,
+  )
+  const collateralUsd = closed
+    ? 0
+    : (position.collateralValueUsd ??
+      ((position.collateralValueUsd6 ? usd6Number(position.collateralValueUsd6) : 0) || collateralFromLegs))
+  const debtLegs =
+    position.debt?.map((leg) => ({
+      debtAssetId: leg.baseAssetId || leg.assetId.split(":").pop() || leg.assetId,
+      amountUsd: closed ? 0 : Number(leg.principalBorrowedUsd6) / 1_000_000,
+    })) ?? []
+  const debtUsd = closed
+    ? 0
+    : debtLegs.length > 0
+      ? debtLegs.reduce((sum, leg) => sum + (Number.isFinite(leg.amountUsd) ? leg.amountUsd : 0), 0)
+      : (position.debtValueUsd ?? usd6Number(position.debtValueUsd6))
+
+  const [collateralRows, debtRows] = await Promise.all([
+    ctx.db
+      .query("walletCollateralPositions")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("walletDebts")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+  ])
+  const collateralMatch = collateralRows.find((row) => row.marketId === marketSlug)
+  if (collateralMatch) {
+    if (closed || collateralUsd <= 0) {
+      await ctx.db.delete(collateralMatch._id)
+    } else {
+      const maxLtvPct = collateralMatch.maxLtvPct
+      await ctx.db.patch(collateralMatch._id, {
+        collateralUsd,
+        borrowPowerUsd: collateralUsd * (maxLtvPct / 100),
+        updatedAt: now,
+      })
+    }
+  }
+
+  const debtsForMarket = debtRows.filter((row) => row.marketId === marketSlug)
+  if (closed || debtUsd <= 0) {
+    for (const row of debtsForMarket) await ctx.db.delete(row._id)
+    return
+  }
+
+  if (debtLegs.length > 0) {
+    for (const leg of debtLegs) {
+      if (!(leg.amountUsd > 0)) continue
+      const existing = debtsForMarket.find((row) => row.debtAssetId === leg.debtAssetId)
+      if (existing) {
+        await ctx.db.patch(existing._id, { amountUsd: leg.amountUsd, updatedAt: now })
+      } else if (collateralMatch) {
+        await ctx.db.insert("walletDebts", {
+          wallet,
+          homePoolId: collateralMatch.homePoolId,
+          marketId: marketSlug,
+          debtAssetId: leg.debtAssetId,
+          amountUsd: leg.amountUsd,
+          updatedAt: now,
+        })
+      }
+    }
+    for (const row of debtsForMarket) {
+      if (!debtLegs.some((leg) => leg.debtAssetId === row.debtAssetId && leg.amountUsd > 0)) {
+        await ctx.db.delete(row._id)
+      }
+    }
+    return
+  }
+
+  const existing = debtsForMarket[0]
+  if (existing) {
+    await ctx.db.patch(existing._id, { amountUsd: debtUsd, updatedAt: now })
+  } else if (collateralMatch) {
+    await ctx.db.insert("walletDebts", {
+      wallet,
+      homePoolId: collateralMatch.homePoolId,
+      marketId: marketSlug,
+      debtAssetId: position.assetId?.split(":").pop() || "usdc",
+      amountUsd: debtUsd,
+      updatedAt: now,
+    })
   }
 }
 
@@ -647,6 +1011,7 @@ export const recordTransaction = mutation({
             updatedAt: now,
           })
         }
+        await syncHomeBorrowMirrors(ctx, wallet, marketSlug, args.position, now)
       }
     }
 
@@ -692,6 +1057,24 @@ export const recordTransaction = mutation({
       if (args.product === "borrow" && args.kind === "claim" && args.rewardClaims?.length) {
         await applyRewardClaims(ctx, wallet, args.rewardClaims, now)
       }
+      // Keep liquid wallet balances durable for cash-moving actions (lend deposit/withdraw,
+      // borrow/repay). Token delta is derived from USD via the existing sandbox price.
+      if (
+        (args.product === "lend" && (args.kind === "deposit" || args.kind === "withdraw")) ||
+        (args.product === "borrow" && (args.kind === "borrow" || args.kind === "repay"))
+      ) {
+        const assetId = liquidAssetIdFromArgs(args.assetId, marketSlug)
+        const sandbox = await ctx.db
+          .query("sandboxBalances")
+          .withIndex("by_wallet_asset", (q) => q.eq("wallet", wallet).eq("assetSlug", assetId))
+          .unique()
+        const priceUsd = sandbox?.priceUsd && sandbox.priceUsd > 0 ? sandbox.priceUsd : 1
+        const tokenAmount = args.amountUsd / priceUsd
+        const signed =
+          args.kind === "deposit" || args.kind === "repay" ? -tokenAmount : tokenAmount
+        await applyLiquidAssetDelta(ctx, wallet, assetId, assetId.toUpperCase(), signed, now)
+      }
+      await applyProductBucketDelta(ctx, wallet, args, marketSlug, now)
       await appendPortfolioSnapshot(ctx, wallet, now)
     }
 
@@ -705,15 +1088,156 @@ export const recordTransaction = mutation({
   },
 })
 
+async function applyProductBucketDelta(
+  ctx: MutationCtx,
+  wallet: string,
+  args: {
+    product: "borrow" | "lend" | "multiply"
+    kind: string
+    marketSlug?: string
+    assetId?: string
+    amountUsd: number
+    position?: Infer<typeof positionPayload>
+    rewardClaims?: Array<{ rewardPositionId: string; remainingUsd6: string }>
+  },
+  marketSlug: string | undefined,
+  now: number,
+) {
+  const assetId = liquidAssetIdFromArgs(args.assetId, marketSlug)
+  if (args.product === "lend" && marketSlug) {
+    if (args.kind === "deposit") {
+      await adjustProductBalanceUsd(
+        ctx,
+        "walletLendBalances",
+        wallet,
+        { marketId: marketSlug, assetId, state: "available" },
+        assetId.toUpperCase(),
+        -args.amountUsd,
+        now,
+      )
+      await adjustProductBalanceUsd(
+        ctx,
+        "walletLendBalances",
+        wallet,
+        { marketId: marketSlug, assetId, state: "deposited" },
+        assetId.toUpperCase(),
+        args.amountUsd,
+        now,
+      )
+    } else if (args.kind === "withdraw") {
+      await adjustProductBalanceUsd(
+        ctx,
+        "walletLendBalances",
+        wallet,
+        { marketId: marketSlug, assetId, state: "deposited" },
+        assetId.toUpperCase(),
+        -args.amountUsd,
+        now,
+      )
+      await adjustProductBalanceUsd(
+        ctx,
+        "walletLendBalances",
+        wallet,
+        { marketId: marketSlug, assetId, state: "available" },
+        assetId.toUpperCase(),
+        args.amountUsd,
+        now,
+      )
+    }
+    return
+  }
+
+  if (args.product === "borrow") {
+    if (marketSlug && (args.kind === "deposit" || args.kind === "withdraw")) {
+      const signed = args.kind === "deposit" ? args.amountUsd : -args.amountUsd
+      await adjustProductBalanceUsd(
+        ctx,
+        "walletBorrowBalances",
+        wallet,
+        { marketId: marketSlug, poolId: marketSlug, state: "poolAvailable" },
+        marketSlug.toUpperCase(),
+        -signed,
+        now,
+      )
+      await adjustProductBalanceUsd(
+        ctx,
+        "walletBorrowBalances",
+        wallet,
+        { marketId: marketSlug, poolId: marketSlug, state: "collateral" },
+        marketSlug.toUpperCase(),
+        signed,
+        now,
+      )
+    }
+    if (args.kind === "borrow" || args.kind === "repay") {
+      const debtAssetId = liquidAssetIdFromArgs(args.assetId, marketSlug)
+      await adjustProductBalanceUsd(
+        ctx,
+        "walletBorrowBalances",
+        wallet,
+        { marketId: marketSlug, assetId: debtAssetId, state: "debt" },
+        debtAssetId.toUpperCase(),
+        args.kind === "borrow" ? args.amountUsd : -args.amountUsd,
+        now,
+      )
+    }
+    if (args.kind === "claim" && args.rewardClaims?.length) {
+      for (const claim of args.rewardClaims) {
+        await adjustProductBalanceUsd(
+          ctx,
+          "walletBorrowBalances",
+          wallet,
+          { assetId: claim.rewardPositionId, state: "claimableFees" },
+          "Fees",
+          -args.amountUsd,
+          now,
+        )
+      }
+    }
+    return
+  }
+
+  if (args.product === "multiply" && marketSlug && args.position) {
+    const baseAsset = liquidAssetIdFromArgs(args.position.assetId ?? args.assetId, marketSlug)
+    const collateralValueUsd = args.position.status === "closed" ? 0 : (args.position.collateralValueUsd ?? 0)
+    const debtValueUsd = args.position.status === "closed" ? 0 : (args.position.debtValueUsd ?? 0)
+    const collateralAmount = args.position.status === "closed" ? 0 : (args.position.collateralAmount ?? collateralValueUsd)
+    await upsertProductBalanceValue(ctx, "walletMultiplyBalances", wallet, {
+      marketId: marketSlug,
+      assetId: baseAsset,
+      symbol: baseAsset.toUpperCase(),
+      amount: collateralAmount,
+      valueUsd: collateralValueUsd,
+      state: "position",
+    })
+    await upsertProductBalanceValue(ctx, "walletMultiplyBalances", wallet, {
+      marketId: marketSlug,
+      assetId: baseAsset,
+      symbol: baseAsset.toUpperCase(),
+      amount: collateralAmount,
+      valueUsd: collateralValueUsd,
+      state: "collateral",
+    })
+    await upsertProductBalanceValue(ctx, "walletMultiplyBalances", wallet, {
+      marketId: marketSlug,
+      assetId,
+      symbol: assetId.toUpperCase(),
+      amount: debtValueUsd,
+      valueUsd: debtValueUsd,
+      state: "debt",
+    })
+  }
+}
+
 /**
  * Persist an executed Express/standalone swap as a durable, server-owned transaction.
  *
  * A swap is a pure liquid-balance move (debit input token, credit output token) with no
  * position, so it takes the dedicated path here instead of `recordTransaction`'s
  * position-oriented transition validation. Same ownership + idempotency + rate-limit
- * guarantees. Balances remain client-session-driven for display; this row is the durable
- * server record + activity/receipt (#15). Swaps are USD-neutral, so no portfolio snapshot
- * is appended (the wallet's server-tracked net value is unchanged by a swap).
+ * guarantees. On success, sandboxBalances + walletBalances are updated so the dashboard
+ * Wallet tab and portfolio liquid legs stay durable. Swaps are USD-neutral at the
+ * portfolio-net level, so no portfolio snapshot is appended.
  */
 export const recordSwap = mutation({
   args: {
@@ -812,6 +1336,10 @@ export const recordSwap = mutation({
       simulated,
       at: now,
     })
+
+    if (status === "success") {
+      await applySwapBalanceDelta(ctx, wallet, args, now)
+    }
 
     return {
       idempotent: false,
@@ -1170,6 +1698,25 @@ export const getPortfolio = query({
       openPositions: positions.filter((p) => p.status === "open").length,
       positionCount: positions.length,
     }
+  },
+})
+
+/**
+ * Open-gate helper: write the first portfolioCurrent/snapshot when home seeds + liquid
+ * balances exist but no action has fired appendPortfolioSnapshot yet — so the dashboard
+ * chart can read Convex history instead of a synthetic series.
+ */
+export const ensurePortfolioSnapshot = mutation({
+  args: { wallet: v.string() },
+  handler: async (ctx, args) => {
+    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const current = await ctx.db
+      .query("portfolioCurrent")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .unique()
+    if (current) return { wrote: false as const }
+    await appendPortfolioSnapshot(ctx, wallet, Date.now())
+    return { wrote: true as const }
   },
 })
 
