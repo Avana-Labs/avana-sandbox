@@ -37,6 +37,7 @@ export type RecordTransactionArgs = {
   position?: {
     status: "open" | "closed"
     marketSlug?: string
+    assetId?: string
     collateralValueUsd6?: string
     debtValueUsd6?: string
     suppliedUsd6?: string
@@ -108,6 +109,9 @@ export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, 
     Object.keys(result.state.positions).find((id) => result.state.positions[id]?.marketId === item.marketId)
   const position = positionId ? result.state.positions[positionId] : undefined
   const marketSlug = position?.marketId ?? item.marketId
+  const collateralAssetId = marketSlug
+    ? result.state.markets?.[marketSlug]?.collateralAsset.symbol.toLowerCase()
+    : undefined
 
   // A successful close DELETES the position from engine state (multiply-engine/actions.ts), so
   // it can no longer be read back here. Without an explicit payload, recordTransaction skips its
@@ -140,6 +144,7 @@ export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, 
           // row was marked closed, flip-flopping on reload.
           status: "open",
           marketSlug: position.marketId,
+          assetId: collateralAssetId,
           collateralAmount: position.collateralAmount,
           collateralValueUsd: position.collateralValueUsd,
           debtValueUsd: position.debtValueUsd,
@@ -153,6 +158,7 @@ export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, 
         ? {
             status: "closed",
             marketSlug,
+            assetId: collateralAssetId,
             collateralAmount: 0,
             collateralValueUsd: 0,
             debtValueUsd: 0,
