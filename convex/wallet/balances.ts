@@ -9,50 +9,11 @@
  */
 
 import { v } from "convex/values"
-import type { Id } from "../_generated/dataModel"
-import type { MutationCtx } from "../_generated/server"
-import { internalMutation, mutation, query } from "../_generated/server"
+import { internalMutation, query } from "../_generated/server"
 import { requireSandboxWallet } from "../sandbox/auth"
 
 const sourceType = v.union(v.literal("wallet"), v.literal("position"))
 const assetKind = v.union(v.literal("wallet"), v.literal("lp"), v.literal("returned-lp"))
-
-export type WalletBalanceUpsertRow = {
-  wallet: string
-  assetId: string
-  amount: number
-  sourceType: "wallet" | "position"
-  sourcePositionId?: Id<"positions">
-  assetKind?: "wallet" | "lp" | "returned-lp"
-  symbol?: string
-  valueUsd6?: string
-}
-
-/** Shared upsert used by internalMutation + sandbox write paths (claim, swap). */
-export async function upsertWalletBalanceRows(ctx: MutationCtx, rows: WalletBalanceUpsertRow[]) {
-  const now = Date.now()
-  for (const row of rows) {
-    const existing = await ctx.db
-      .query("walletBalances")
-      .withIndex("by_wallet_asset", (q) => q.eq("wallet", row.wallet).eq("assetId", row.assetId))
-      .collect()
-    const match = existing.find(
-      (candidate) => candidate.sourceType === row.sourceType && candidate.sourcePositionId === row.sourcePositionId,
-    )
-    if (match) {
-      await ctx.db.patch(match._id, {
-        amount: row.amount,
-        assetKind: row.assetKind,
-        symbol: row.symbol,
-        valueUsd6: row.valueUsd6,
-        updatedAt: now,
-      })
-    } else {
-      await ctx.db.insert("walletBalances", { ...row, updatedAt: now })
-    }
-  }
-  return { written: rows.length }
-}
 
 /**
  * Wallet's own balances across all assets + sources.
@@ -110,7 +71,30 @@ export const upsertBalances = internalMutation({
       }),
     ),
   },
-  handler: async (ctx, { rows }) => upsertWalletBalanceRows(ctx, rows),
+  handler: async (ctx, { rows }) => {
+    const now = Date.now()
+    for (const row of rows) {
+      const existing = await ctx.db
+        .query("walletBalances")
+        .withIndex("by_wallet_asset", (q) => q.eq("wallet", row.wallet).eq("assetId", row.assetId))
+        .collect()
+      const match = existing.find(
+        (candidate) => candidate.sourceType === row.sourceType && candidate.sourcePositionId === row.sourcePositionId,
+      )
+      if (match) {
+        await ctx.db.patch(match._id, {
+          amount: row.amount,
+          assetKind: row.assetKind,
+          symbol: row.symbol,
+          valueUsd6: row.valueUsd6,
+          updatedAt: now,
+        })
+      } else {
+        await ctx.db.insert("walletBalances", { ...row, updatedAt: now })
+      }
+    }
+    return { written: rows.length }
+  },
 })
 
 /**
@@ -131,67 +115,5 @@ export const deleteBalances = internalMutation({
       deleted += 1
     }
     return { deleted }
-  },
-})
-
-/**
- * Open-gate / fresh wallet helper: if the wallet has no liquid rows yet, seed a
- * small practice basket into both sandboxBalances and walletBalances so swap +
- * dashboard Wallet tab have a durable Convex source of truth.
- */
-const OPEN_GATE_STARTER: Array<{
-  assetId: string
-  symbol: string
-  amount: number
-  priceUsd: number
-  assetKind: "wallet" | "lp"
-}> = [
-  { assetId: "eth", symbol: "ETH", amount: 0.012, priceUsd: 1934, assetKind: "wallet" },
-  { assetId: "usdc", symbol: "USDC", amount: 840, priceUsd: 1, assetKind: "wallet" },
-  { assetId: "link", symbol: "LINK", amount: 24, priceUsd: 18, assetKind: "wallet" },
-  { assetId: "eth-usdc-lp", symbol: "ETH-USDC LP", amount: 6.4, priceUsd: 125, assetKind: "lp" },
-]
-
-export const ensureLiquidBalances = mutation({
-  args: { wallet: v.string() },
-  handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
-    const existingSandbox = await ctx.db
-      .query("sandboxBalances")
-      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-      .first()
-    const existingWallet = await ctx.db
-      .query("walletBalances")
-      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-      .first()
-    if (existingSandbox || existingWallet) {
-      return { seeded: false as const }
-    }
-
-    const now = Date.now()
-    const upsertRows: WalletBalanceUpsertRow[] = []
-    for (const leg of OPEN_GATE_STARTER) {
-      const valueUsd = leg.amount * leg.priceUsd
-      await ctx.db.insert("sandboxBalances", {
-        wallet,
-        assetSlug: leg.assetId,
-        symbol: leg.symbol,
-        amount: leg.amount,
-        valueUsd,
-        priceUsd: leg.priceUsd,
-        updatedAt: now,
-      })
-      upsertRows.push({
-        wallet,
-        assetId: leg.assetId,
-        amount: leg.amount,
-        sourceType: "wallet",
-        assetKind: leg.assetKind,
-        symbol: leg.symbol,
-        valueUsd6: String(Math.round(valueUsd * 1_000_000)),
-      })
-    }
-    await upsertWalletBalanceRows(ctx, upsertRows)
-    return { seeded: true as const, count: OPEN_GATE_STARTER.length }
   },
 })
