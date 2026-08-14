@@ -1,5 +1,6 @@
 export type SwapBalanceSource =
   | "wallet"
+  | "lend_available"
   | "lend_deposited"
   | "borrow_collateral_unpledged"
   | "borrow_collateral_pledged"

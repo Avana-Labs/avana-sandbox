@@ -51,7 +51,7 @@ export function useConvexProductWalletBalances(walletId: string | null | undefin
       assetId: row.assetId,
       amount: row.amount,
       valueUsd: row.valueUsd,
-      sourceType: row.state === "available" ? "wallet" : "lend_deposited",
+      sourceType: row.state === "available" ? "lend_available" : "lend_deposited",
     })
   }
   for (const row of buckets.borrow) {
