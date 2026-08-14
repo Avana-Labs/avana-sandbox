@@ -207,7 +207,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
         cooldownAmount: 5000,
         cooldownValueUsd: 5000,
         cooldownStatus: "ready",
-        cooldownRemaining: "1d 8h",
+        cooldownRemaining: "Ready",
         removesIn: "0d 0h",
         updatedAt: now,
       },

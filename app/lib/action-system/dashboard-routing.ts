@@ -10,6 +10,16 @@ const PRODUCT_TAB: Record<ActionProduct, DashboardTabKey> = {
   umbrella: "wallet",
 }
 
+// Products that own a dedicated top-level surface get sent back there on
+// action success — the dashboard tab doesn't reflect their positions yet.
+const PRODUCT_SUCCESS_HREF: Partial<Record<ActionProduct, string>> = {
+  umbrella: "/umbrella",
+}
+
+const PRODUCT_SUCCESS_LABEL: Partial<Record<ActionProduct, string>> = {
+  umbrella: "Back to Umbrella",
+}
+
 const VALID_TABS = new Set<DashboardTabKey>([
   "wallet",
   "lend",
@@ -25,7 +35,7 @@ export function dashboardTabForProduct(product: ActionProduct): DashboardTabKey 
 }
 
 export function dashboardHrefForProduct(product: ActionProduct): string {
-  return `/dashboard?tab=${PRODUCT_TAB[product]}`
+  return PRODUCT_SUCCESS_HREF[product] ?? `/dashboard?tab=${PRODUCT_TAB[product]}`
 }
 
 export function parseDashboardTab(value: string | null | undefined): DashboardTabKey | null {
@@ -33,6 +43,6 @@ export function parseDashboardTab(value: string | null | undefined): DashboardTa
   return VALID_TABS.has(value as DashboardTabKey) ? (value as DashboardTabKey) : null
 }
 
-export function successDashboardCtaLabel(_product: ActionProduct): string {
-  return "View dashboard"
+export function successDashboardCtaLabel(product: ActionProduct): string {
+  return PRODUCT_SUCCESS_LABEL[product] ?? "View dashboard"
 }
