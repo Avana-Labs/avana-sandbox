@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useAvanaIdentity, useRewardsSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor } from "@/app/lib/action-system/contracts"
-import { evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
+import { calculateRewardSummary, evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
 import { mapRewardsClaimPreviewToActionUi } from "@/app/lib/action-system/adapters/rewards-preview-mapper"
 import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
@@ -41,38 +41,32 @@ export function RewardsActionPageClient({
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
   const [isPending, setIsPending] = useState(false)
-  const [claimSummary, setClaimSummary] = useState({
-    claimUsd: 0,
-    claimableTaskCount: 0,
-    tokenBreakdown: [] as Array<{ symbol: string; amount: number }>,
-  })
+  const claimSummary = useMemo(() => {
+    const input = {
+      tasks: rewards.tasks,
+      wallet: walletId,
+      events: rewards.state.events,
+      claims: rewards.state.claims,
+      now: Date.now(),
+      firstLoginAt: rewards.state.firstLoginAt,
+    }
+    const summary = calculateRewardSummary(input)
+    const progress = evaluateAllTasksForUser(input)
+    return {
+      claimUsd: summary.totalClaimableAmount,
+      claimableTaskCount: summary.claimableTaskCount,
+      tokenBreakdown: progress
+        .filter((entry) => entry.claimableAmount > 0)
+        .map((entry) => ({
+          symbol: rewards.tasks.find((item) => item.id === entry.taskId)?.rewardSymbol ?? "POINTS",
+          amount: entry.claimableAmount,
+        })),
+    }
+  }, [rewards.state.claims, rewards.state.events, rewards.state.firstLoginAt, rewards.tasks, walletId])
 
   useEffect(() => {
-    void rewards.readAdapter.readRewardSummary(walletId).then((summary) => {
-      const progress = evaluateAllTasksForUser({
-        tasks: rewards.tasks,
-        wallet: walletId,
-        events: rewards.state.events,
-        claims: rewards.state.claims,
-        now: Date.now(),
-      })
-      const tokenBreakdown = progress
-        .filter((entry) => entry.claimableAmount > 0)
-        .map((entry) => {
-          const task = rewards.tasks.find((item) => item.id === entry.taskId)
-          return {
-            symbol: task?.rewardSymbol ?? "POINTS",
-            amount: entry.claimableAmount,
-          }
-        })
-      setClaimSummary({
-        claimUsd: summary.totalClaimableAmount,
-        claimableTaskCount: summary.claimableTaskCount,
-        tokenBreakdown,
-      })
-      setAmount(String(summary.totalClaimableAmount || ""))
-    })
-  }, [rewards.readAdapter, rewards.state.claims, rewards.state.events, rewards.tasks, walletId])
+    setAmount(String(claimSummary.claimUsd || ""))
+  }, [claimSummary.claimUsd])
 
   const previewUi: ActionPreviewUi = useMemo(() => {
     const base = mapRewardsClaimPreviewToActionUi({

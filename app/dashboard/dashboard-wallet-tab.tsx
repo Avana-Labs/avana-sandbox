@@ -231,7 +231,9 @@ function WalletBalanceSection({
                       <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground">
                         {row.name}
                       </div>
-                      <div className="mt-0.5 text-[13px] text-muted-foreground">{row.symbol}</div>
+                      <div className="mt-0.5 text-[13px] text-muted-foreground">
+                        {row.symbol} · {row.sourceLabel}
+                      </div>
                     </div>
                   </div>
                 </td>
