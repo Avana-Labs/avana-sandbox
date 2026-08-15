@@ -62,8 +62,12 @@ describe("sandbox onboarding + economy caps", () => {
         .withIndex("by_wallet_at", (q) => q.eq("wallet", WALLET.toLowerCase()))
         .collect(),
     )
-    expect(activity).toHaveLength(13)
+    // 12 starter-basket asset grants + 1 onboardingClaim + 3 umbrella_stake rows
+    // (the umbrella-seed helper now writes a sandboxActivity row per seeded position,
+    // matching what recordAction produces — FIX 4).
+    expect(activity).toHaveLength(16)
     expect(activity.some((entry) => entry.kind === "onboardingClaim")).toBe(true)
+    expect(activity.filter((entry) => entry.kind === "umbrella_stake")).toHaveLength(3)
   })
 
   test("open gate balance check never grants product balances", async () => {

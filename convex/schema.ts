@@ -1142,6 +1142,14 @@ export default defineSchema({
     cooldownEndsAt: v.optional(v.number()),
     withdrawalWindowEndsAt: v.optional(v.number()),
     claimedRewardsUsd6: v.optional(v.string()),
+    /**
+     * Reward accrual checkpoint for umbrella positions — DISTINCT from
+     * `lastUpdatedAt` so balance-sync patches (which touch lastUpdatedAt on
+     * every mutation and every `syncPositionBalances` call) do NOT reset
+     * accrued rewards. Updated only when a stake / claim / startCooldown /
+     * unstake re-checkpoints `earnedUsd6`.
+     */
+    rewardCheckpointAt: v.optional(v.number()),
     // multiply (number-native — see app/lib/multiply-engine/types.ts MultiplyPosition)
     collateralAmount: v.optional(v.number()),
     collateralValueUsd: v.optional(v.number()),
@@ -1379,7 +1387,30 @@ export default defineSchema({
     seedVersion: v.number(),
     seededAt: v.optional(v.number()),
     lastSeenAt: v.number(),
+    /**
+     * Whether the wallet has been through the umbrella-onboarding seed. Set
+     * once by the onboarding claim so a second claim (or a restore/reset)
+     * does not re-seed umbrella positions/balances/activity. Independent of
+     * the `positions` idempotency gate because sandboxActivity + wallet
+     * balances would otherwise duplicate silently.
+     */
+    umbrellaSeeded: v.optional(v.boolean()),
   }).index("by_wallet", ["wallet"]),
+
+  /**
+   * Live per-market umbrella state that mutates outside the frozen catalog
+   * (currentDeficitUsd / deficitOffsetUsd / totalSlashedUsd). The
+   * UMBRELLA_MARKETS constant in `convex/sandbox/umbrella.ts` is the catalog
+   * fallback; this table is the source of truth once populated by
+   * `simulateDeficit` / `simulateSlash`.
+   */
+  umbrellaMarketState: defineTable({
+    marketId: v.string(),
+    currentDeficitUsd: v.number(),
+    deficitOffsetUsd: v.number(),
+    totalSlashedUsd: v.number(),
+    updatedAt: v.number(),
+  }).index("by_market", ["marketId"]),
 
   /**
    * Per-wallet token balances backing the swap flow + the dashboard "Wallet" tab.

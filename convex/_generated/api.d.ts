@@ -48,6 +48,7 @@ import type * as multiply_tokenParameters from "../multiply/tokenParameters.js";
 import type * as prices from "../prices.js";
 import type * as risk from "../risk.js";
 import type * as sandbox_auth from "../sandbox/auth.js";
+import type * as sandbox_dev from "../sandbox/dev.js";
 import type * as sandbox_liquidation from "../sandbox/liquidation.js";
 import type * as sandbox_migrations from "../sandbox/migrations.js";
 import type * as sandbox_onboarding from "../sandbox/onboarding.js";
@@ -115,6 +116,7 @@ declare const fullApi: ApiFromModules<{
   prices: typeof prices;
   risk: typeof risk;
   "sandbox/auth": typeof sandbox_auth;
+  "sandbox/dev": typeof sandbox_dev;
   "sandbox/liquidation": typeof sandbox_liquidation;
   "sandbox/migrations": typeof sandbox_migrations;
   "sandbox/onboarding": typeof sandbox_onboarding;
