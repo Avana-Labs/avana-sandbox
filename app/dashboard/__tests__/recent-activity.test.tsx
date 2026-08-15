@@ -1,8 +1,15 @@
-import { render, within } from "@testing-library/react"
-import { describe, expect, it } from "vitest"
+import { fireEvent, render, within } from "@testing-library/react"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import { RecentActivity } from "@/app/dashboard/recent-activity"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import type { PortfolioActivityRow } from "@/app/lib/data/providers/portfolio"
+
+const push = vi.fn()
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push }),
+  usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(),
+}))
 
 function makeRow(overrides: Partial<PortfolioActivityRow> & { id: string; txHash: string }): PortfolioActivityRow {
   return {
@@ -68,5 +75,66 @@ describe("RecentActivity txn links", () => {
     const link = hrefFor(container, realHash)
     expect(link?.getAttribute("href")).toBe(`https://etherscan.io/tx/${realHash}`)
     expect(link?.getAttribute("target")).toBe("_blank")
+  })
+})
+
+describe("RecentActivity whole-row navigation", () => {
+  beforeEach(() => {
+    push.mockClear()
+  })
+
+  it("opens the in-app receipt when a simulated row is clicked anywhere", () => {
+    const { container } = render(
+      <DisplayPreferencesProvider>
+        <RecentActivity rows={[makeRow({ id: "sim-1", txHash: "sim-abc123", primaryLabel: "Simulated deposit" })]} />
+      </DisplayPreferencesProvider>,
+    )
+    // Each row renders on both the mobile card and desktop table; both are links.
+    const rows = Array.from(container.querySelectorAll('[role="link"]')) as HTMLElement[]
+    expect(rows.length).toBeGreaterThan(0)
+    for (const row of rows) {
+      expect(row.getAttribute("aria-label")).toContain("Simulated deposit")
+      expect(row.getAttribute("tabindex")).toBe("0")
+    }
+    fireEvent.click(rows[0])
+    expect(push).toHaveBeenCalledWith("/sandbox/transactions/sim-abc123")
+  })
+
+  it("activates the row via the keyboard (Enter)", () => {
+    const { container } = render(
+      <DisplayPreferencesProvider>
+        <RecentActivity rows={[makeRow({ id: "sim-2", txHash: "sim-key456" })]} />
+      </DisplayPreferencesProvider>,
+    )
+    const row = container.querySelector('[role="link"]') as HTMLElement
+    fireEvent.keyDown(row, { key: "Enter" })
+    expect(push).toHaveBeenCalledWith("/sandbox/transactions/sim-key456")
+  })
+
+  it("routes a genuinely on-chain row to Etherscan instead of the in-app router", () => {
+    const realHash = `0x${"b".repeat(64)}`
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null)
+    const { container } = render(
+      <DisplayPreferencesProvider>
+        <RecentActivity rows={[makeRow({ id: "real-1", txHash: realHash })]} />
+      </DisplayPreferencesProvider>,
+    )
+    const row = container.querySelector('[role="link"]') as HTMLElement
+    fireEvent.click(row)
+    expect(push).not.toHaveBeenCalled()
+    expect(openSpy).toHaveBeenCalledWith(`https://etherscan.io/tx/${realHash}`, "_blank", "noopener,noreferrer")
+    openSpy.mockRestore()
+  })
+
+  it("does not double-navigate when the hash link inside the row is clicked", () => {
+    const { container } = render(
+      <DisplayPreferencesProvider>
+        <RecentActivity rows={[makeRow({ id: "sim-3", txHash: "sim-inner789" })]} />
+      </DisplayPreferencesProvider>,
+    )
+    const link = hrefFor(container, "sim-inner789") as HTMLAnchorElement
+    // The anchor has a real href; clicking it must not also fire the row's router.push.
+    fireEvent.click(link)
+    expect(push).not.toHaveBeenCalled()
   })
 })
