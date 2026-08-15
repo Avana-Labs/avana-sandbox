@@ -1,6 +1,6 @@
 "use client"
 
-import { useDeferredValue, useEffect, useMemo, useState } from "react"
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor } from "@/app/lib/action-system/contracts"
@@ -21,6 +21,7 @@ import {
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
 import type { UmbrellaMarketId } from "@/app/lib/umbrella-system/use-umbrella-session"
+import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 
 type UmbrellaActionKind = "stake" | "claim" | "cooldown" | "unstake"
 
@@ -215,6 +216,10 @@ export function UmbrellaActionPageClient({
   const [isPending, setIsPending] = useState(false)
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
   const [outcome, setOutcome] = useState<{ tone: "error"; title: string; message: string } | null>(null)
+  // Wrong-network submit gate (read via ref inside submit; mirrors lend/borrow).
+  const networkGuard = useActionNetworkGuard()
+  const networkGuardRef = useRef(networkGuard)
+  networkGuardRef.current = networkGuard
   const market = umbrella.markets[marketId]
   const position = umbrella.positions[marketId]
   // Reset amount + stage when the sidebar swaps `kind` (Stake↔Cooldown↔Unstake↔Claim).
@@ -255,6 +260,14 @@ export function UmbrellaActionPageClient({
       return
     }
     if (stage !== "review" || isPending || !preview.allowed) return
+    if (networkGuardRef.current.isWrongNetwork) {
+      setOutcome({
+        tone: "error",
+        title: "Wrong network",
+        message: networkGuardRef.current.blockedReason ?? "Switch networks to continue.",
+      })
+      return
+    }
     setIsPending(true)
     setOutcome(null)
     try {
@@ -374,6 +387,7 @@ export function UmbrellaActionPageClient({
           onPrimary={() => void submit()}
           onSecondary={back}
           primaryPending={isPending}
+          blockedReason={networkGuard.blockedReason}
         />
       ) : null}
       {stage === "success" && successUi ? <ActionSuccessStage success={successUi} closeHref={closeHref} /> : null}
