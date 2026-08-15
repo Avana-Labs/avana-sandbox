@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react"
-import { describe, expect, it, vi } from "vitest"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import type { PortfolioMultiplyCollateral } from "@/app/lib/data/providers/portfolio"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { MultiplyCollateralTable } from "@/app/dashboard/multiply-collateral-table"
@@ -31,7 +31,55 @@ const rows: PortfolioMultiplyCollateral[] = [
   },
 ]
 
+const ghostRows: PortfolioMultiplyCollateral[] = [
+  {
+    id: "demo-wallet:aave-gho",
+    marketId: "aave-gho",
+    label: "AAVE/GHO",
+    collateralToken: "AAVE",
+    borrowableToken: "GHO",
+    multiplier: 1,
+    protocol: "Avana Multiply",
+    healthFactor: Number.POSITIVE_INFINITY,
+    collateralUsd: 0,
+    borrowPowerUsd: 0,
+    debtUsd: 0,
+    ltvPct: 0,
+    liquidationPriceUsd: null,
+    netApyPct: 0,
+    status: "open",
+  },
+]
+
 describe("MultiplyCollateralTable", () => {
+  afterEach(() => {
+    cleanup()
+  })
+
+  it("hides zero-exposure ghost positions and shows a clean empty state", () => {
+    render(
+      <DisplayPreferencesProvider>
+        <MultiplyCollateralTable rows={ghostRows} />
+      </DisplayPreferencesProvider>,
+    )
+
+    expect(screen.getByText("No active Multiply positions")).toBeTruthy()
+    // No ghost card and no "1 positions" count for an effectively-empty position.
+    expect(screen.queryByText("AAVE/GHO")).toBeNull()
+    expect(screen.queryByText("1 positions")).toBeNull()
+  })
+
+  it("excludes closed positions from the active count", () => {
+    render(
+      <DisplayPreferencesProvider>
+        <MultiplyCollateralTable rows={[...rows, { ...rows[0]!, id: "closed", status: "closed" }]} />
+      </DisplayPreferencesProvider>,
+    )
+
+    // Two rows in, one closed: only the single open position is counted.
+    expect(screen.getByText("1 positions")).toBeTruthy()
+  })
+
   it("routes desktop deleverage to the multiply action page", () => {
     push.mockClear()
     render(
