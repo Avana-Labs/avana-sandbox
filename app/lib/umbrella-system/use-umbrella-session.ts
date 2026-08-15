@@ -20,6 +20,7 @@ export type UmbrellaMarket = {
   targetCoverageUsd: number
   currentDeficitUsd: number
   deficitOffsetUsd: number
+  amountInCooldownUsd: number
 }
 
 export type UmbrellaPosition = {
@@ -122,6 +123,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
       targetCoverageUsd: 22_000_000,
       currentDeficitUsd: 146,
       deficitOffsetUsd: 1_000_000,
+      amountInCooldownUsd: 2_500_000,
     },
     usdc: {
       id: "usdc",
@@ -136,6 +138,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
       targetCoverageUsd: 10_000_000,
       currentDeficitUsd: 51_371,
       deficitOffsetUsd: 500_000,
+      amountInCooldownUsd: 1_150_000,
     },
     usdt: {
       id: "usdt",
@@ -150,6 +153,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
       targetCoverageUsd: 9_500_000,
       currentDeficitUsd: 32_420,
       deficitOffsetUsd: 400_000,
+      amountInCooldownUsd: 980_000,
     },
     weth: {
       id: "weth",
@@ -164,6 +168,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
       targetCoverageUsd: 6_250_000,
       currentDeficitUsd: 52_973,
       deficitOffsetUsd: 250_000,
+      amountInCooldownUsd: 520_000,
     },
   }
 

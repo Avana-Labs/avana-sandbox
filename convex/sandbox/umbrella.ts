@@ -31,6 +31,7 @@ const UMBRELLA_MARKETS = {
     targetCoverageUsd: 22_000_000,
     currentDeficitUsd: 146,
     deficitOffsetUsd: 1_000_000,
+    amountInCooldownUsd: 2_500_000,
   },
   usdc: {
     id: "usdc",
@@ -45,6 +46,7 @@ const UMBRELLA_MARKETS = {
     targetCoverageUsd: 10_000_000,
     currentDeficitUsd: 51_371,
     deficitOffsetUsd: 500_000,
+    amountInCooldownUsd: 1_150_000,
   },
   usdt: {
     id: "usdt",
@@ -59,6 +61,7 @@ const UMBRELLA_MARKETS = {
     targetCoverageUsd: 9_500_000,
     currentDeficitUsd: 32_420,
     deficitOffsetUsd: 400_000,
+    amountInCooldownUsd: 980_000,
   },
   weth: {
     id: "weth",
@@ -73,6 +76,7 @@ const UMBRELLA_MARKETS = {
     targetCoverageUsd: 6_250_000,
     currentDeficitUsd: 52_973,
     deficitOffsetUsd: 250_000,
+    amountInCooldownUsd: 520_000,
   },
 } as const
 
