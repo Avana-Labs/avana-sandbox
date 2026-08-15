@@ -176,10 +176,14 @@ function hashString(input: string): number {
   return Math.abs(hash)
 }
 
+// These are simulated sandbox rows, not real on-chain transactions, so the hash
+// must NOT look like a canonical 0x+64hex hash — otherwise RecentActivity routes
+// it to Etherscan and produces a dead link. A "sim-" prefix keeps the value
+// deterministic per wallet/index while signalling it belongs to the in-app receipt.
 function buildTxHash(seed: number, index: number) {
   let value = seed + index * 7919
-  let hash = "0x"
-  for (let position = 0; position < 64; position += 1) {
+  let hash = "sim-"
+  for (let position = 0; position < 40; position += 1) {
     value = Math.imul(value ^ (value >>> 13), 1274126177)
     hash += ((value >>> 28) & 0xf).toString(16)
   }

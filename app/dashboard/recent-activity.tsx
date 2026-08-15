@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import { ChevronDown } from "@/app/components/icons"
 import {
   DropdownMenu,
@@ -126,9 +127,21 @@ function getTxnHref(txHash: string) {
 }
 
 function TxnLink({ txHash, className }: { txHash: string; className?: string }) {
+  // A row with no tx hash has no receipt to open, so render plain text (not a dead link).
+  if (!txHash) {
+    return <span className={className}>—</span>
+  }
   const external = !isSimulatedTxHash(txHash)
   return (
-    <a href={getTxnHref(txHash)} {...(external ? { target: "_blank", rel: "noreferrer" } : {})} className={className}>
+    <a
+      href={getTxnHref(txHash)}
+      {...(external ? { target: "_blank", rel: "noreferrer" } : {})}
+      className={className}
+      // The whole row is also a link to the same receipt; stop the click/Enter here
+      // from bubbling up and triggering a second (duplicate) navigation.
+      onClick={(event) => event.stopPropagation()}
+      onKeyDown={(event) => event.stopPropagation()}
+    >
       {shortHash(txHash)}
     </a>
   )
@@ -227,7 +240,40 @@ export function RecentActivity({
 }) {
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const { t } = useTranslation()
+  const router = useRouter()
   const amount = (row: PortfolioActivityRow) => (showDollarAmounts ? formatRowAmount(row) : MASK)
+
+  // Open the receipt for a row: in-app sandbox receipt for simulated rows, Etherscan
+  // (new tab) for genuinely on-chain hashes — same target as the visible hash link.
+  const openReceipt = React.useCallback(
+    (txHash: string) => {
+      if (!txHash) return
+      if (isSimulatedTxHash(txHash)) {
+        router.push(getTxnHref(txHash))
+      } else {
+        window.open(getTxnHref(txHash), "_blank", "noopener,noreferrer")
+      }
+    },
+    [router],
+  )
+
+  // Makes the entire row a keyboard-accessible link to its receipt. A row with no
+  // hash has no receipt, so it stays non-interactive.
+  const rowLinkProps = (row: PortfolioActivityRow) =>
+    row.txHash
+      ? {
+          role: "link" as const,
+          tabIndex: 0,
+          "aria-label": `${t("View transaction")}: ${row.primaryLabel}`,
+          onClick: () => openReceipt(row.txHash),
+          onKeyDown: (event: React.KeyboardEvent) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault()
+              openReceipt(row.txHash)
+            }
+          },
+        }
+      : {}
   const [products, setProducts] = React.useState<PortfolioActivityRow["product"][]>([])
   const [kinds, setKinds] = React.useState<PortfolioActivityRow["kind"][]>([])
   const [statuses, setStatuses] = React.useState<PortfolioActivityRow["status"][]>([])
@@ -313,7 +359,15 @@ export function RecentActivity({
       <div className="space-y-2 md:hidden">
         {visibleItems.length ? (
           displayItems.map((row) => (
-            <div key={row.id} className="rounded-radius-lg border border-border bg-card p-3.5">
+            <div
+              key={row.id}
+              {...rowLinkProps(row)}
+              className={cn(
+                "rounded-radius-lg border border-border bg-card p-3.5",
+                row.txHash &&
+                  "cursor-pointer transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
+              )}
+            >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-baseline gap-1.5">
                   <span className="text-[14px] font-medium text-foreground">{t(KIND_LABEL[row.kind])}</span>
@@ -382,7 +436,15 @@ export function RecentActivity({
             <tbody>
               {visibleItems.length ? (
                 displayItems.map((row) => (
-                  <tr key={row.id} className="transition-colors hover:bg-hover">
+                  <tr
+                    key={row.id}
+                    {...rowLinkProps(row)}
+                    className={cn(
+                      "transition-colors hover:bg-hover",
+                      row.txHash &&
+                        "cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/40",
+                    )}
+                  >
                     <td className="px-5 py-4 align-middle font-data text-[14px] tabular-nums text-foreground">
                       {formatRelativeTime(row.at)}
                     </td>
