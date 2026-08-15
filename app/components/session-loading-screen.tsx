@@ -36,14 +36,10 @@ export function SessionLoadingScreen() {
   if (pathname.startsWith("/dashboard")) {
     return <DashboardPageSkeleton />
   }
-  // Four canonical detail routes: /borrow/markets/[marketId],
-  // /borrow/assets/[assetId], /lend/markets/[marketId],
-  // /multiply/markets/[marketId]. (/borrow/pool and /borrow/asset are legacy
-  // singular aliases handled by resolveActionCloseHref; they redirect to the
-  // plural forms so a skeleton for them isn't needed.)
   if (
+    pathname.startsWith("/borrow/pool") ||
+    pathname.startsWith("/borrow/asset") ||
     pathname.startsWith("/borrow/markets/") ||
-    pathname.startsWith("/borrow/assets/") ||
     pathname.startsWith("/lend/markets/") ||
     pathname.startsWith("/multiply/markets/")
   ) {
