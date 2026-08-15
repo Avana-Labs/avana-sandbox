@@ -647,6 +647,15 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
   const multiplyDebt = open
     .filter((position) => position.product === "multiply")
     .reduce((sum, position) => sum + (position.debtValueUsd ?? 0), 0)
+  // Umbrella staked principal + accrued rewards are owned assets, so they belong in the
+  // portfolio value — the same basis the dashboard headline uses. Without them, stored history
+  // sits well below the live number and the hero chart shows a false jump. (Phase 2.5)
+  const umbrellaStaked = open
+    .filter((position) => position.product === "umbrella")
+    .reduce((sum, position) => sum + usd6Number(position.suppliedUsd6), 0)
+  const umbrellaRewards = open
+    .filter((position) => position.product === "umbrella")
+    .reduce((sum, position) => sum + usd6Number(position.earnedUsd6), 0)
 
   // ATB from per-pool collateral factors — never a hardcoded *0.7.
   const borrowSlugs = [
@@ -688,8 +697,16 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
   const snapshot = {
     wallet,
     at: now,
-    totalValueUsd: liquid + totalBorrowCollateral - totalBorrowDebt + lendSupplied + multiplyCollateral - multiplyDebt,
-    totalSuppliedUsd: totalBorrowCollateral + lendSupplied + multiplyCollateral,
+    totalValueUsd:
+      liquid +
+      totalBorrowCollateral -
+      totalBorrowDebt +
+      lendSupplied +
+      multiplyCollateral -
+      multiplyDebt +
+      umbrellaStaked +
+      umbrellaRewards,
+    totalSuppliedUsd: totalBorrowCollateral + lendSupplied + multiplyCollateral + umbrellaStaked,
     totalBorrowedUsd: totalBorrowDebt + multiplyDebt,
     availableToBorrowUsd: Math.max(0, borrowCapacityUsd - totalBorrowDebt),
     totalMultiplyExposureUsd: multiplyCollateral,
