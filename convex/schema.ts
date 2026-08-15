@@ -1137,11 +1137,23 @@ export default defineSchema({
     suppliedUsd6: v.optional(v.string()),
     earnedUsd6: v.optional(v.string()),
     supplyApyPct: v.optional(v.number()),
+    // umbrella-only: cooldown tranche + withdrawal-window timestamps and the
+    // running claimed-rewards total. Meaningful ONLY when product === "umbrella";
+    // the fields are optional to keep the shared positions table compatible with
+    // borrow/lend/multiply rows. See convex/sandbox/umbrella.ts for lifecycle.
+    // Multi-tranche support is a future refactor — today at most one active
+    // cooldown per position; startCooldown rejects while one is running.
     cooldownAmountUsd6: v.optional(v.string()),
     cooldownStartedAt: v.optional(v.number()),
     cooldownEndsAt: v.optional(v.number()),
     withdrawalWindowEndsAt: v.optional(v.number()),
     claimedRewardsUsd6: v.optional(v.string()),
+    /**
+     * Umbrella-only: cumulative principal removed by simulated slashes on this
+     * position. Used by dashboard/portfolio surfaces to report Slashed status
+     * and by historical reward math. Optional so pre-existing rows default to 0.
+     */
+    slashedAmountUsd6: v.optional(v.string()),
     /**
      * Reward accrual checkpoint for umbrella positions — DISTINCT from
      * `lastUpdatedAt` so balance-sync patches (which touch lastUpdatedAt on

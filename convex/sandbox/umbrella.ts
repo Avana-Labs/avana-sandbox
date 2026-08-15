@@ -338,6 +338,7 @@ export const getSessionState = query({
           cooldownEndsAt: position.cooldownEndsAt,
           withdrawalWindowEndsAt: position.withdrawalWindowEndsAt,
           withdrawalWindowExpired,
+          slashedAmountUsd: numberFromUsd6(position.slashedAmountUsd6),
           status: position.status,
           lastUpdatedAt: position.lastUpdatedAt,
         }
@@ -688,10 +689,13 @@ export const simulateSlash = mutation({
       const seizeCooldown = cooldownUsd * ratio
       const nextSupplied = Math.max(0, suppliedUsd - seizeStake)
       const nextCooldown = Math.max(0, cooldownUsd - seizeCooldown)
-      realized += seizeStake + seizeCooldown
+      const totalSeized = seizeStake + seizeCooldown
+      realized += totalSeized
+      const priorSlashed = numberFromUsd6(row.slashedAmountUsd6)
       await ctx.db.patch(row._id, {
         suppliedUsd6: usd6(nextSupplied),
         cooldownAmountUsd6: usd6(nextCooldown),
+        slashedAmountUsd6: usd6(priorSlashed + totalSeized),
         lastUpdatedAt: now,
         revision: (row.revision ?? 0) + 1,
       })
