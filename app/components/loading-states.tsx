@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
 import { HOME_MODE_ITEMS } from "@/app/components/home/home-workspace-card"
+import { Header } from "@/app/components/header"
 
 /**
  * Client-gated loading skeletons.
@@ -37,8 +38,9 @@ function Page({ children, className, mainClassName }: BlockProps & { mainClassNa
   return (
     // A single polite status region announces the load once; the placeholder blocks inside
     // are decorative (aria-hidden) so assistive tech isn't dragged across empty rectangles.
-    <div className="bg-background" role="status" aria-busy="true" aria-live="polite" aria-label={t("Loading")}>
+    <div className="min-h-screen bg-background" role="status" aria-busy="true" aria-live="polite" aria-label={t("Loading")}>
       <span className="sr-only">{t("Loading…")}</span>
+      <Header />
       <main className={cn("container mx-auto", mainClassName ?? "px-4 py-8")}>
         <div className={cn("skeleton-enter mx-auto max-w-[1152px]", className)}>{children}</div>
       </main>
@@ -80,7 +82,7 @@ export function HomeWorkspaceSkeleton() {
     // Keep the loading testid on the root so the initial-HTML shell assertion in
     // tests/e2e/route-performance.spec.ts still finds it.
     <div
-      className="bg-background"
+      className="min-h-screen bg-background"
       role="status"
       aria-busy="true"
       aria-live="polite"
@@ -88,6 +90,7 @@ export function HomeWorkspaceSkeleton() {
       data-testid="home-workspace-loading"
     >
       <span className="sr-only">{t("Loading…")}</span>
+      <Header />
       <section className="skeleton-enter flex min-h-[calc(100dvh-4rem)] justify-center px-4 pb-12 pt-14 md:pb-16 md:pt-20">
         <div className="w-full max-w-[480px]">
           {/* Mirror the real card's icon tab strip 1:1 (same ActionWorkspaceTabs,
@@ -287,15 +290,15 @@ function TableBlock({ rows = 5, columns = 5 }: { rows?: number; columns?: number
           style={{ gridTemplateColumns: `repeat(${columns}, minmax(0,1fr))` }}
         >
           <div className="flex items-center gap-2.5">
-            <Skeleton className="size-9 rounded-full" />
+            <Skeleton shimmer className="size-9 rounded-full" />
             <div className="min-w-0 flex-1 space-y-1.5">
-              <Skeleton className="h-3.5 w-24 rounded-xs" />
+              <Skeleton shimmer className="h-3.5 w-24 rounded-xs" />
               <Skeleton className="h-3 w-16 rounded-xs" />
             </div>
           </div>
           {Array.from({ length: columns - 1 }).map((_, cellIndex) => (
             <div key={`tr-${rowIndex}-td-${cellIndex}`} className="flex items-center">
-              <Skeleton className="h-4 w-20 rounded-xs" />
+              <Skeleton shimmer className="h-4 w-20 rounded-xs" />
             </div>
           ))}
         </div>
@@ -319,11 +322,11 @@ function SidebarActionCardBlock() {
           <Skeleton className="h-3.5 w-16 rounded-xs" />
           <Skeleton shimmer className="h-14 w-full rounded-radius-md" />
           <div className="space-y-2">
-            <Skeleton className="h-3.5 w-24 rounded-xs" />
-            <Skeleton className="h-3.5 w-full rounded-xs" />
+            <Skeleton shimmer className="h-3.5 w-24 rounded-xs" />
+            <Skeleton shimmer className="h-3.5 w-full rounded-xs" />
             <Skeleton className="h-3.5 w-4/5 rounded-xs" />
           </div>
-          <Skeleton className="h-11 w-full rounded-radius-md" />
+          <Skeleton shimmer className="h-11 w-full rounded-radius-md" />
         </div>
       </Surface>
     </aside>
@@ -337,15 +340,15 @@ function CarouselRow({ count = 3, cardHeight = "h-32" }: { count?: number; cardH
       {Array.from({ length: count }).map((_, index) => (
         <Surface key={`carousel-${index}`} className={cn("w-[min(320px,88%)] shrink-0 px-4 py-4 md:w-[360px]", cardHeight)}>
           <div className="flex items-center gap-3">
-            <Skeleton className="size-12 rounded-full" />
+            <Skeleton shimmer className="size-12 rounded-full" />
             <div className="min-w-0 flex-1 space-y-1.5">
-              <Skeleton className="h-4 w-24 rounded-xs" />
+              <Skeleton shimmer className="h-4 w-24 rounded-xs" />
               <Skeleton className="h-3 w-32 rounded-xs" />
             </div>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <Skeleton className="h-4 w-full rounded-xs" />
-            <Skeleton className="h-4 w-full rounded-xs" />
+            <Skeleton shimmer className="h-4 w-full rounded-xs" />
+            <Skeleton shimmer className="h-4 w-full rounded-xs" />
           </div>
         </Surface>
       ))}
