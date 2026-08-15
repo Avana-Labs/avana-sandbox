@@ -2,7 +2,6 @@
 
 import { Component, lazy, Suspense, type ReactNode } from "react"
 import { Header } from "@/app/components/header"
-import { OnboardingCardSkeleton } from "@/app/components/loading-states"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useHydrated, useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { useWalletGate } from "@/app/lib/web3/wallet-gate"
@@ -94,7 +93,7 @@ export function SandboxGate({ children }: { children: ReactNode }) {
     // for returning users before SIWE hydrates.
     return (
       <LockedShell>
-        <OnboardingCardSkeleton />
+        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-hidden />
       </LockedShell>
     )
   }
@@ -105,7 +104,7 @@ export function SandboxGate({ children }: { children: ReactNode }) {
   if (isSignedIn && !walletActive) {
     return (
       <LockedShell>
-        <OnboardingCardSkeleton />
+        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label={t("Restoring your session")} />
       </LockedShell>
     )
   }
@@ -121,7 +120,7 @@ export function SandboxGate({ children }: { children: ReactNode }) {
       <Suspense
         fallback={
           <LockedShell>
-            <OnboardingCardSkeleton />
+            <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label="Verifying onboarding access" />
           </LockedShell>
         }
       >
