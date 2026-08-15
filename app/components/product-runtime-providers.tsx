@@ -4,6 +4,7 @@ import dynamic from "next/dynamic"
 import { usePathname } from "next/navigation"
 import type { ReactNode } from "react"
 import { PreferencesProfileSync } from "@/app/components/preferences-profile-sync"
+import { SessionLoadingScreen } from "@/app/components/session-loading-screen"
 import { TokenPricesProvider } from "@/app/lib/prices/token-prices-context"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 
@@ -11,7 +12,7 @@ const AvanaSessionProviders = dynamic(
   () => import("@/app/components/avana-session-providers").then((mod) => mod.AvanaSessionProviders),
   {
     ssr: false,
-    loading: () => <div className="min-h-screen bg-background" />,
+    loading: () => <SessionLoadingScreen />,
   },
 )
 
