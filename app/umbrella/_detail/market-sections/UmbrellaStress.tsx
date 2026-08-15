@@ -48,6 +48,13 @@ function AssetCard({ market }: { market: UmbrellaMarket }) {
           <MetricLabel label="APY" tooltip="Estimated annual staking yield paid to stakers of this asset." />
           <span className="text-[15px] font-semibold tabular-nums">{formatPct(market.apy)}%</span>
         </div>
+        <div className="flex items-center justify-between gap-3">
+          <MetricLabel
+            label="Cooldown"
+            tooltip="Wait period between starting cooldown and being able to unstake. During cooldown the position keeps earning rewards and remains slashable."
+          />
+          <span className="text-[15px] font-semibold tabular-nums">20 days</span>
+        </div>
       </div>
 
       <div className="mt-5 border-t border-border pt-4">
