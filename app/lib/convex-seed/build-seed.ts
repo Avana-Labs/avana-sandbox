@@ -928,7 +928,13 @@ function walletEventsForMarket(slug: string, asOf: number, days: number): SeedWa
         wallet: wallets[Math.floor(rand() * wallets.length)]!,
         kind: WALLET_EVENT_KINDS[Math.floor(rand() * WALLET_EVENT_KINDS.length)]!,
         amountUsd: round(rand() * 50_000, 2),
-        txHash: `0x${hex(rand, 64)}`,
+        // Seeded wallet events are simulated, not real on-chain txs. A "sim-" prefix
+        // (instead of 0x) keeps the hash out of the canonical 0x+64hex form so the
+        // in-app activity/receipt routing treats it as a sandbox row rather than a
+        // dead Etherscan link. Only the prefix changes — the same hex draw is kept so
+        // the rest of the deterministic seed (blockNumber/at + later events) is
+        // byte-for-byte unchanged.
+        txHash: `sim-${hex(rand, 64)}`,
         blockNumber: 19_000_000 + Math.floor(rand() * 1_000_000),
         at: Math.floor(dayStart + rand() * DAY_MS),
       })
