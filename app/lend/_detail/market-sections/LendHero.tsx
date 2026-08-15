@@ -150,7 +150,10 @@ function LendHeroView({ detail, leading, actions, className, hideIdentity = fals
         currentValueUsd,
         session.transactionHistory
           .filter((item) => item.marketId === detail.id && item.status === "success" && item.kind !== "claim")
-          .map((item) => ({ timestamp: item.timestamp, deltaUsd: item.kind === "deposit" ? item.amount : -item.amount })),
+          .map((item) => ({
+            timestamp: item.timestamp,
+            deltaUsd: item.kind === "deposit" ? item.amount : -item.amount,
+          })),
       )
     }
     if (activeMetricTab === metricTabs[1]) {

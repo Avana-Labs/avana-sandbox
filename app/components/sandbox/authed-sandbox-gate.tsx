@@ -4,7 +4,6 @@ import { useEffect, useState, type ReactNode } from "react"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Header } from "@/app/components/header"
-import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { OnboardingFlow, OnboardingUnavailable, type OnboardingGateState } from "./onboarding-flow"
 
 type WalletOnlyState = Omit<OnboardingGateState, "economy">
@@ -32,7 +31,6 @@ function OfflineGate() {
 }
 
 export function AuthedSandboxGate({ wallet, children }: { wallet: string; children: ReactNode }) {
-  const { t } = useTranslation()
   const walletState = useQuery(api.sandbox.onboarding.getWalletOnboardingState, { wallet }) as
     WalletOnlyState | undefined
   const isDone = walletState?.onboardingStep === "done"
@@ -53,20 +51,10 @@ export function AuthedSandboxGate({ wallet, children }: { wallet: string; childr
 
   if (walletState === undefined) {
     if (timedOut) return <OfflineGate />
-    return (
-      <LockedShell>
-        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label={t("Verifying onboarding access")} />
-      </LockedShell>
-    )
+    return null
   }
   if (isDone) return <>{children}</>
-  if (economy === undefined) {
-    return (
-      <LockedShell>
-        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label={t("Verifying onboarding access")} />
-      </LockedShell>
-    )
-  }
+  if (economy === undefined) return null
   return (
     <LockedShell>
       <OnboardingFlow wallet={wallet} state={{ ...walletState, economy }} />

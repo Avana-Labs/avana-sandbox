@@ -149,7 +149,8 @@ export const listForWallet = query({
     const borrow = rawBorrow.map((row) => {
       if (!row.marketId || (row.state !== "poolAvailable" && row.state !== "collateral")) return row
       const pledgedUsd = Math.min(poolTotals.get(row.marketId) ?? 0, pledgedByMarket.get(row.marketId)?.valueUsd ?? 0)
-      const valueUsd = row.state === "collateral" ? pledgedUsd : Math.max(0, (poolTotals.get(row.marketId) ?? 0) - pledgedUsd)
+      const valueUsd =
+        row.state === "collateral" ? pledgedUsd : Math.max(0, (poolTotals.get(row.marketId) ?? 0) - pledgedUsd)
       const priceUsd = row.amount > 0 && row.valueUsd > 0 ? row.valueUsd / row.amount : 1
       return { ...row, valueUsd, amount: priceUsd > 0 ? valueUsd / priceUsd : valueUsd }
     })

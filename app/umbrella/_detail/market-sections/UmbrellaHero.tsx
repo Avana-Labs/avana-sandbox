@@ -24,10 +24,25 @@ export function UmbrellaHero() {
   const readySymbols = readyIds.map((id) => umbrella.markets[id].symbol).join(", ")
   const cooldownShare = totalStakedUsd > 0 ? (cooldownUsd / totalStakedUsd) * 100 : 0
   const userUmbrellaSnapshot = [
-    { label: "Your Umbrella stake", value: formatUsd(totalStakedUsd), change: `${formatCompactUsd(totalMarketStakedUsd)} market`, tone: "muted" as const },
+    {
+      label: "Your Umbrella stake",
+      value: formatUsd(totalStakedUsd),
+      change: `${formatCompactUsd(totalMarketStakedUsd)} market`,
+      tone: "muted" as const,
+    },
     { label: "Weighted APY", value: `${formatPct(weightedApy)}%`, change: "live mix", tone: "muted" as const },
-    { label: "In cooldown", value: formatCompactUsd(cooldownUsd), change: `${formatPct(cooldownShare)}%`, tone: "warning" as const },
-    { label: "Withdrawal ready", value: formatCompactUsd(readyUsd), change: readySymbols || "none", tone: "muted" as const },
+    {
+      label: "In cooldown",
+      value: formatCompactUsd(cooldownUsd),
+      change: `${formatPct(cooldownShare)}%`,
+      tone: "warning" as const,
+    },
+    {
+      label: "Withdrawal ready",
+      value: formatCompactUsd(readyUsd),
+      change: readySymbols || "none",
+      tone: "muted" as const,
+    },
   ]
 
   return (

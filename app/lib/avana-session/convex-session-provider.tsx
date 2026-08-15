@@ -2,14 +2,10 @@
 
 import { Component, type ErrorInfo, type ReactNode } from "react"
 import { useConvexAuth } from "convex/react"
-import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { ConvexAvanaSessionsProvider } from "./convex-avana-sessions-provider"
 import { AvanaSessionsProvider } from "./avana-sessions-provider"
 
-class ConvexSessionErrorBoundary extends Component<
-  { walletId: string; children: ReactNode },
-  { hasError: boolean }
-> {
+class ConvexSessionErrorBoundary extends Component<{ walletId: string; children: ReactNode }, { hasError: boolean }> {
   state = { hasError: false }
 
   static getDerivedStateFromError() {
@@ -32,15 +28,8 @@ class ConvexSessionErrorBoundary extends Component<
 
 export function ConvexSessionProvider({ walletId, children }: { walletId: string; children: ReactNode }) {
   const { isAuthenticated } = useConvexAuth()
-  const { t } = useTranslation()
 
-  if (!isAuthenticated) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label={t("Authenticating wallet session")} />
-      </div>
-    )
-  }
+  if (!isAuthenticated) return null
 
   return (
     <ConvexSessionErrorBoundary walletId={walletId}>

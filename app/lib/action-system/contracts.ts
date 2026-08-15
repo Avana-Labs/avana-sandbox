@@ -236,7 +236,13 @@ export function getActionDescriptor(product: ActionProduct, kind: ActionKind): A
 }
 
 export function isValidActionProduct(product: string): product is ActionProduct {
-  return product === "borrow" || product === "lend" || product === "multiply" || product === "rewards" || product === "umbrella"
+  return (
+    product === "borrow" ||
+    product === "lend" ||
+    product === "multiply" ||
+    product === "rewards" ||
+    product === "umbrella"
+  )
 }
 
 export function isValidAction(product: string, kind: string): product is ActionProduct {

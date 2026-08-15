@@ -223,19 +223,21 @@ export function claimSelectItemsForWallet(session: BorrowContextSession, walletI
 
   const claimableById = selectRewardClaimableTotals(session.state, walletId)
 
-  return account.rewardPositions.map((position) => {
-    const market = session.state.markets[position.marketId]
-    const claimableUsd = claimableById[position.id] ?? 0
+  return account.rewardPositions
+    .map((position) => {
+      const market = session.state.markets[position.marketId]
+      const claimableUsd = claimableById[position.id] ?? 0
 
-    return {
-      id: position.id,
-      name: market?.display.name ?? position.marketId,
-      symbol: market?.display.visuals?.[0]?.symbol ?? "Fees",
-      trailingLabel: `${formatActionUsd(claimableUsd)} claimable`,
-      claimableUsd,
-      marketId: position.marketId,
-    }
-  }).filter((item) => item.claimableUsd > 0)
+      return {
+        id: position.id,
+        name: market?.display.name ?? position.marketId,
+        symbol: market?.display.visuals?.[0]?.symbol ?? "Fees",
+        trailingLabel: `${formatActionUsd(claimableUsd)} claimable`,
+        claimableUsd,
+        marketId: position.marketId,
+      }
+    })
+    .filter((item) => item.claimableUsd > 0)
 }
 
 export function resolveClaimMarketId(marketOrPoolId: string) {

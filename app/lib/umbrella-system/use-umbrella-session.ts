@@ -252,7 +252,8 @@ function clampAmount(value: number) {
 
 function cooldownLabel(position: ConvexUmbrellaSessionState["positions"][number]) {
   const now = Date.now()
-  if (!position.cooldownEndsAt || position.cooldownUsd <= 0) return { status: "idle" as const, remaining: "-", removesIn: "After 20 days" }
+  if (!position.cooldownEndsAt || position.cooldownUsd <= 0)
+    return { status: "idle" as const, remaining: "-", removesIn: "After 20 days" }
   if (now >= position.cooldownEndsAt) return { status: "ready" as const, remaining: "Ready", removesIn: "0d 0h" }
   const remainingHours = Math.ceil((position.cooldownEndsAt - now) / (60 * 60 * 1000))
   const days = Math.floor(remainingHours / 24)
@@ -480,7 +481,10 @@ export function useUmbrellaSession({
       (marketId: UmbrellaMarketId, amount: number) => execute("startCooldown", marketId, amount),
       [execute],
     ),
-    unstake: useCallback((marketId: UmbrellaMarketId, amount: number) => execute("unstake", marketId, amount), [execute]),
+    unstake: useCallback(
+      (marketId: UmbrellaMarketId, amount: number) => execute("unstake", marketId, amount),
+      [execute],
+    ),
     reset,
   }
 }

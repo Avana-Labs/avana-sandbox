@@ -78,7 +78,6 @@ function GateUnavailable({ variant = "error" }: { variant?: "error" | "offline" 
 
 /** Every wallet stays inside the gate until Convex confirms completed onboarding. */
 export function SandboxGate({ children }: { children: ReactNode }) {
-  const { t } = useTranslation()
   const hydrated = useHydrated()
   const { authedWallet, isSignedIn } = useSiweAuth()
   const { active: walletActive } = useWalletGate()
@@ -88,26 +87,11 @@ export function SandboxGate({ children }: { children: ReactNode }) {
   // server and the first hydration render. Rendering OnboardingFlow in that window is
   // what flashed the onboarding screen at already-onboarded users on every load/refresh.
   // Hold a neutral placeholder until the client has hydrated — never onboarding.
-  if (!hydrated) {
-    // Neutral placeholder only — never GuestOnboardingFlow, which flashes welcome copy
-    // for returning users before SIWE hydrates.
-    return (
-      <LockedShell>
-        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-hidden />
-      </LockedShell>
-    )
-  }
-  // Signed-in from the persisted token, but the wallet SDK is still mounting (its chunk is
-  // deferred off the critical path). Hold a neutral loading state: rendering the authed app
-  // now would let action pages call wagmi hooks before the provider exists. This window is
-  // brief and only affects returning users — guests never mount the SDK here.
-  if (isSignedIn && !walletActive) {
-    return (
-      <LockedShell>
-        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label={t("Restoring your session")} />
-      </LockedShell>
-    )
-  }
+  // Never render onboarding until SIWE hydrates or the wallet SDK is mounted —
+  // return nothing during those windows. The top page-loading bar carries the
+  // "something is happening" signal; the page just stays blank until ready.
+  if (!hydrated) return null
+  if (isSignedIn && !walletActive) return null
   if (!isSignedIn || !authedWallet) {
     return (
       <LockedShell>
@@ -117,13 +101,7 @@ export function SandboxGate({ children }: { children: ReactNode }) {
   }
   return (
     <GateErrorBoundary key={authedWallet}>
-      <Suspense
-        fallback={
-          <LockedShell>
-            <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label="Verifying onboarding access" />
-          </LockedShell>
-        }
-      >
+      <Suspense fallback={null}>
         <AuthedGate wallet={authedWallet}>{children}</AuthedGate>
       </Suspense>
     </GateErrorBoundary>

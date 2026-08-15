@@ -45,19 +45,13 @@ function OpenGateSessionTree({ children }: { children: ReactNode }) {
     )
   }
 
-  if (!ready) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label="Authenticating wallet session" />
-      </div>
-    )
-  }
+  if (!ready) return null
 
   // After the bootstrap JWT is in sessionStorage, use the same authenticated
   // Convex wallet session path as SIWE — hydrators + recordTransaction/recordSwap.
   if (hasConvexClient) {
     return (
-      <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <Suspense fallback={null}>
         <ConvexSessionProvider walletId={TEST_MODE_WALLET_ADDRESS}>{children}</ConvexSessionProvider>
       </Suspense>
     )
@@ -83,7 +77,7 @@ export function AvanaSessionProviders({ walletId, children }: { walletId?: strin
   return (
     <MarketLiquidityProvider live={Boolean(hasConvexClient && isSignedIn && authedWallet)}>
       {hasConvexClient && isSignedIn && authedWallet ? (
-        <Suspense fallback={<div className="min-h-screen bg-background" />}>
+        <Suspense fallback={null}>
           <ConvexSessionProvider walletId={authedWallet}>{children}</ConvexSessionProvider>
         </Suspense>
       ) : (

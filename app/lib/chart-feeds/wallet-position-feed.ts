@@ -10,7 +10,9 @@ function ranges(points: ChartPoint[]): ChartRangeData {
 }
 
 export function buildWalletPositionFeed(currentValueUsd: number, events: WalletPositionEvent[]): ChartFeed {
-  const ordered = [...events].filter((event) => Number.isFinite(event.deltaUsd)).sort((a, b) => a.timestamp - b.timestamp)
+  const ordered = [...events]
+    .filter((event) => Number.isFinite(event.deltaUsd))
+    .sort((a, b) => a.timestamp - b.timestamp)
   const totalDelta = ordered.reduce((sum, event) => sum + event.deltaUsd, 0)
   let value = Math.max(0, currentValueUsd - totalDelta)
   const points: ChartPoint[] = [

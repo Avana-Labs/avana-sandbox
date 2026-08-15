@@ -146,7 +146,12 @@ async function upsertSandboxBalance(
     .unique()
   const valueUsd = row.amount * row.priceUsd
   if (existing) {
-    await ctx.db.patch(existing._id, { amount: Math.max(existing.amount, row.amount), valueUsd, priceUsd: row.priceUsd, updatedAt: row.updatedAt })
+    await ctx.db.patch(existing._id, {
+      amount: Math.max(existing.amount, row.amount),
+      valueUsd,
+      priceUsd: row.priceUsd,
+      updatedAt: row.updatedAt,
+    })
   } else {
     await ctx.db.insert("sandboxBalances", { ...row, valueUsd })
   }
@@ -158,7 +163,9 @@ async function upsertSandboxBalance(
       sourceType: "wallet",
       assetKind: "wallet",
       symbol: row.symbol,
-      valueUsd6: String(Math.round((existing ? Math.max(existing.amount, row.amount) : row.amount) * row.priceUsd * 1_000_000)),
+      valueUsd6: String(
+        Math.round((existing ? Math.max(existing.amount, row.amount) : row.amount) * row.priceUsd * 1_000_000),
+      ),
     },
   ])
 }
@@ -776,7 +783,8 @@ export const claim = mutation({
         const earnedUsd6 = Math.round(position.earnedUsd * 1_000_000).toString()
         const cooldownAmountUsd6 = Math.round(position.cooldownUsd * 1_000_000).toString()
         const cooldownStartedAt = position.cooldownOffsetMs == null ? undefined : now - position.cooldownOffsetMs
-        const cooldownEndsAt = position.cooldownOffsetMs == null ? undefined : cooldownStartedAt! + 20 * 24 * 60 * 60 * 1000
+        const cooldownEndsAt =
+          position.cooldownOffsetMs == null ? undefined : cooldownStartedAt! + 20 * 24 * 60 * 60 * 1000
         const withdrawalWindowEndsAt =
           position.cooldownOffsetMs == null ? undefined : cooldownEndsAt! + 2 * 24 * 60 * 60 * 1000
         const hash = `${syntheticTxHash}-umbrella-${index}`

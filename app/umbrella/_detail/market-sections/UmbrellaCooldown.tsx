@@ -86,7 +86,9 @@ export function UmbrellaCooldown() {
 
                     {canRemove ? (
                       <Button asChild size="sm" variant="brand" className="mt-4 h-10 w-full gap-2">
-                        <Link href={actionPagePath("umbrella", "unstake", { market: position.id, return: "/umbrella" })}>
+                        <Link
+                          href={actionPagePath("umbrella", "unstake", { market: position.id, return: "/umbrella" })}
+                        >
                           <ActionIcon label="Remove" />
                           Remove
                         </Link>
