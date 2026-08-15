@@ -121,39 +121,30 @@ function rewardAccruedUsd(position: Doc<"positions">, now: number) {
   return principalUsd * (market.rewardApy / 100) * (elapsedSeconds / SECONDS_PER_YEAR)
 }
 
-async function upsertUmbrellaBalance(
-  ctx: MutationCtx,
-  wallet: string,
-  row: {
-    marketId: UmbrellaMarketId
-    amount: number
-    valueUsd: number
-    state: "available" | "staked" | "cooling" | "withdrawalWindow" | "claimableRewards"
-  },
-  now: number,
-) {
-  const market = UMBRELLA_MARKETS[row.marketId]
-  const rows = await ctx.db
-    .query("walletUmbrellaBalances")
-    .withIndex("by_wallet_market_state", (q) =>
-      q.eq("wallet", wallet).eq("marketId", row.marketId).eq("state", row.state),
-    )
-    .collect()
-  const existing = rows[0]
-  const next = {
-    wallet,
-    marketId: row.marketId,
-    assetId: row.marketId,
-    symbol: market.symbol,
-    amount: Math.max(0, row.amount),
-    valueUsd: Math.max(0, row.valueUsd),
-    state: row.state,
-    updatedAt: now,
-  }
-  if (existing) await ctx.db.patch(existing._id, next)
-  else if (next.amount > 0 || next.valueUsd > 0) await ctx.db.insert("walletUmbrellaBalances", next)
-}
-
+/**
+ * Umbrella liquid-balance writer. Every umbrella stake/unstake mutates the
+ * user's spendable balance for the market's underlying token (gho / usdc /
+ * usdt / weth), so the write must land in every store that any other product
+ * reads:
+ *
+ *   1. `sandboxBalances` — read by the Convex portfolio snapshot
+ *      (`appendPortfolioSnapshot`) and by both `getSessionState` /
+ *      `getPortfolioPageState` in convex/sandbox/transactions.ts. If we skip
+ *      this, the portfolio "liquid" total drifts by whatever amount the wallet
+ *      staked. Onboarding writes the same shape (see convex/sandbox/onboarding.ts
+ *      around the starter-allocation loop), so keeping the write here is the
+ *      invariant, not a special case.
+ *   2. `walletLiquidBalances` — the source of truth Lend / Swap / Borrow read
+ *      through `productBalances.listForWallet`. This is the "one wallet
+ *      balance" every other product sees.
+ *   3. `walletBalances` (via `upsertWalletBalanceRows`) — the shared aggregate
+ *      ledger.
+ *
+ * The three stores are kept in lockstep here so umbrella's post-stake
+ * spendable balance is indistinguishable from what every other product would
+ * see: staking 100 GHO decrements the GHO row in each store by the same
+ * amount, in the same mutation.
+ */
 async function upsertLiquidBalance(
   ctx: MutationCtx,
   wallet: string,
@@ -191,7 +182,27 @@ async function upsertLiquidBalance(
       valueUsd6: usd6(valueUsd),
     },
   ])
-  await upsertUmbrellaBalance(ctx, wallet, { marketId, amount, valueUsd, state: "available" }, now)
+  // walletLiquidBalances mirrors the "available" bucket every other product
+  // reads via productBalances.listForWallet. Written here (not in
+  // upsertWalletBalanceRows) because the shared aggregate ledger doesn't own
+  // product-specific balance tables.
+  const liquidRows = await ctx.db
+    .query("walletLiquidBalances")
+    .withIndex("by_wallet_asset", (q) => q.eq("wallet", wallet).eq("assetId", marketId))
+    .collect()
+  const liquidExisting = liquidRows[0]
+  const liquidNext = {
+    wallet,
+    assetId: marketId,
+    symbol: market.symbol,
+    amount: Math.max(0, amount),
+    valueUsd: Math.max(0, valueUsd),
+    state: "available" as const,
+    updatedAt: now,
+  }
+  if (liquidExisting) await ctx.db.patch(liquidExisting._id, liquidNext)
+  else if (liquidNext.amount > 0 || liquidNext.valueUsd > 0)
+    await ctx.db.insert("walletLiquidBalances", liquidNext)
 }
 
 async function readLiquidBalance(ctx: QueryCtx | MutationCtx, wallet: string, marketId: UmbrellaMarketId) {
@@ -209,49 +220,6 @@ async function readUmbrellaPosition(ctx: QueryCtx | MutationCtx, wallet: string,
       q.eq("wallet", wallet).eq("product", "umbrella").eq("marketSlug", marketId),
     )
     .unique()
-}
-
-async function syncPositionBalances(ctx: MutationCtx, wallet: string, position: Doc<"positions">, now: number) {
-  const marketId = position.marketSlug as UmbrellaMarketId
-  const market = UMBRELLA_MARKETS[marketId]
-  if (!market) return
-  const stakedUsd = position.status === "open" ? numberFromUsd6(position.suppliedUsd6) : 0
-  const cooldownUsd = numberFromUsd6(position.cooldownAmountUsd6)
-  const claimableUsd = numberFromUsd6(position.earnedUsd6) + rewardAccruedUsd(position, now)
-  const cooldownState = position.cooldownEndsAt && now >= position.cooldownEndsAt ? "withdrawalWindow" : "cooling"
-  await upsertUmbrellaBalance(
-    ctx,
-    wallet,
-    {
-      marketId,
-      amount: tokenAmountFromUsd(marketId, stakedUsd),
-      valueUsd: stakedUsd,
-      state: "staked",
-    },
-    now,
-  )
-  await upsertUmbrellaBalance(
-    ctx,
-    wallet,
-    {
-      marketId,
-      amount: tokenAmountFromUsd(marketId, cooldownUsd),
-      valueUsd: cooldownUsd,
-      state: cooldownUsd > 0 ? cooldownState : "cooling",
-    },
-    now,
-  )
-  await upsertUmbrellaBalance(
-    ctx,
-    wallet,
-    {
-      marketId,
-      amount: claimableUsd,
-      valueUsd: claimableUsd,
-      state: "claimableRewards",
-    },
-    now,
-  )
 }
 
 /**
@@ -331,6 +299,11 @@ export const getSessionState = query({
         const base = UMBRELLA_MARKETS[marketId]
         const agg = aggregatesPerMarket.find((row) => row.marketId === marketId)
         const overlay = overlays[index]
+        // `agg.stakedUsd` and `agg.cooldownUsd` are sums over
+        // `positions.suppliedUsd6` / `cooldownAmountUsd6`, both non-negative
+        // by construction (usd6() clamps to Math.max(0, …) on every write in
+        // recordAction / simulateSlash). So `base + agg` stays >= base >= 0
+        // and no guard against a negative fold is needed here.
         return [
           marketId,
           {
@@ -497,9 +470,6 @@ export const recordAction = mutation({
       })
     }
 
-    const updatedPosition = nextPositionId ? await ctx.db.get(nextPositionId) : null
-    if (updatedPosition) await syncPositionBalances(ctx, wallet, updatedPosition, now)
-
     const syntheticTxHash = `sim-umbrella-${args.kind}-${args.marketId}-${now.toString(36)}`
     const receipt = await ctx.db.insert("transactions", {
       wallet,
@@ -634,8 +604,6 @@ export async function seedUmbrellaWallet(ctx: MutationCtx, wallet: string, now: 
       syntheticTxHash: hash,
       at: now,
     })
-    const inserted = await ctx.db.get(positionId)
-    if (inserted) await syncPositionBalances(ctx, wallet, inserted, now)
   }
 
   return { receiptHashes }
@@ -735,8 +703,6 @@ export const simulateSlash = mutation({
         syntheticTxHash: `sim-umbrella-slash-${args.marketId}-${row._id}-${now.toString(36)}`,
         at: now,
       })
-      const refreshed = await ctx.db.get(row._id)
-      if (refreshed) await syncPositionBalances(ctx, row.wallet, refreshed, now)
     }
 
     const nextOverlay = {
