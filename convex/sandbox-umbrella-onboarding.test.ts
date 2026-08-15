@@ -88,6 +88,19 @@ describe("sandbox umbrella onboarding seed", () => {
     // Wallet balances upserted for all four umbrella markets (available state
     // rows are created for every fixture balance regardless of stake amount).
     expect(await collectUmbrellaSandboxBalanceRows(t, WALLET)).toBeGreaterThan(0)
+
+    // Onboarding seed writes AT MOST ONE tranche per position. Only the GHO
+    // fixture has cooldownUsd > 0; USDC / USDT / WETH have no cooldown. The
+    // seed helper never splits a cooldown across tranches — that's a
+    // startCooldown behaviour.
+    const trancheCount = await t.run(async (ctx) =>
+      ctx.db
+        .query("umbrellaCooldownTranches")
+        .withIndex("by_wallet", (q) => q.eq("wallet", WALLET.toLowerCase()))
+        .collect()
+        .then((rows) => rows.length),
+    )
+    expect(trancheCount).toBe(1)
   })
 
   test("second claim call is a no-op — no double umbrella positions, activity, or balances", async () => {
@@ -122,9 +135,7 @@ describe("sandbox umbrella onboarding seed", () => {
     const transactionsBefore = await t.run(async (ctx) =>
       ctx.db
         .query("transactions")
-        .withIndex("by_wallet_product_at", (q) =>
-          q.eq("wallet", TEST_WALLET.toLowerCase()).eq("product", "umbrella"),
-        )
+        .withIndex("by_wallet_product_at", (q) => q.eq("wallet", TEST_WALLET.toLowerCase()).eq("product", "umbrella"))
         .collect(),
     )
 
@@ -136,9 +147,7 @@ describe("sandbox umbrella onboarding seed", () => {
     const transactionsAfter = await t.run(async (ctx) =>
       ctx.db
         .query("transactions")
-        .withIndex("by_wallet_product_at", (q) =>
-          q.eq("wallet", TEST_WALLET.toLowerCase()).eq("product", "umbrella"),
-        )
+        .withIndex("by_wallet_product_at", (q) => q.eq("wallet", TEST_WALLET.toLowerCase()).eq("product", "umbrella"))
         .collect(),
     )
     expect(transactionsAfter.length).toBe(transactionsBefore.length)

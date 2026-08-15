@@ -32,6 +32,21 @@ export type UmbrellaMarket = {
 /** Union used by cooldownLabel + UI: adds "expired" when the withdrawal window has passed. */
 export type UmbrellaCooldownStatus = "idle" | "cooling" | "ready" | "expired"
 
+/**
+ * Local mirror of the server tranche shape. Every startCooldown appends one
+ * of these; unstake consumes them FIFO across the "ready" bucket. Local
+ * status is derived from Date.now() every time the offline path enforces a
+ * rule, so idle time doesn't need a background sweep.
+ */
+export type UmbrellaTranche = {
+  id: string
+  amountUsd: number
+  startedAt: number
+  endsAt: number
+  windowEndsAt: number
+  status: "cooling" | "ready" | "expired"
+}
+
 export type UmbrellaPosition = {
   marketId: UmbrellaMarketId
   amount: number
@@ -43,14 +58,21 @@ export type UmbrellaPosition = {
   cooldownStatus: UmbrellaCooldownStatus
   cooldownRemaining: string
   removesIn: string
-  /** ms epoch — end of the 20-day cooldown; undefined when idle. Propagated so the UI can compute a countdown without a Convex round-trip. */
+  /** ms epoch — end of the earliest active tranche's 20-day cooldown; undefined when idle. */
   cooldownEndsAt?: number
-  /** ms epoch — end of the 2-day withdrawal window; undefined when idle. */
+  /** ms epoch — end of the earliest ready tranche's 2-day withdrawal window; undefined when idle. */
   withdrawalWindowEndsAt?: number
-  /** True when withdrawalWindowEndsAt < now and cooldownAmount > 0. */
+  /** True when at least one tranche is past its withdrawal window with cooling USD still on it. */
   withdrawalWindowExpired: boolean
   /** Cumulative USD principal removed by simulated slashes on this position. 0 when never slashed. */
   slashedValueUsd: number
+  /**
+   * Per-tranche breakdown — sorted by endsAt ascending. `cooldownAmount` /
+   * `cooldownValueUsd` are the sum. `cooldownStatus` is the worst live status
+   * across tranches (expired > ready > cooling > idle). Never contains an
+   * `"idle"` tranche.
+   */
+  tranches: UmbrellaTranche[]
   updatedAt: number
 }
 
@@ -95,6 +117,19 @@ export type ConvexUmbrellaSessionState = {
     slashedAmountUsd?: number
     status: "open" | "closed"
     lastUpdatedAt: number
+    /**
+     * Per-tranche cooldown breakdown. Optional so pre-tranche seeds and older
+     * server payloads still hydrate; when absent the aggregate cooldownUsd
+     * drives a synthetic single-tranche view.
+     */
+    tranches?: Array<{
+      _id: string
+      amountUsd: number
+      startedAt: number
+      endsAt: number
+      windowEndsAt: number
+      status: "cooling" | "ready" | "expired"
+    }>
   }>
   transactions: Array<{
     id: string
@@ -213,6 +248,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
         removesIn: "After 20 days",
         withdrawalWindowExpired: false,
         slashedValueUsd: 0,
+        tranches: [],
         updatedAt: now,
       },
       usdc: {
@@ -226,8 +262,20 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
         cooldownStatus: "cooling",
         cooldownRemaining: "4d 11h",
         removesIn: "4d 11h",
+        cooldownEndsAt: now + 4 * 24 * 60 * 60 * 1000 + 11 * 60 * 60 * 1000,
+        withdrawalWindowEndsAt: now + 4 * 24 * 60 * 60 * 1000 + 11 * 60 * 60 * 1000 + 2 * 24 * 60 * 60 * 1000,
         withdrawalWindowExpired: false,
         slashedValueUsd: 0,
+        tranches: [
+          {
+            id: `seed-usdc-cool`,
+            amountUsd: 3000,
+            startedAt: now - (20 - 4) * 24 * 60 * 60 * 1000 - 11 * 60 * 60 * 1000,
+            endsAt: now + 4 * 24 * 60 * 60 * 1000 + 11 * 60 * 60 * 1000,
+            windowEndsAt: now + 4 * 24 * 60 * 60 * 1000 + 11 * 60 * 60 * 1000 + 2 * 24 * 60 * 60 * 1000,
+            status: "cooling",
+          },
+        ],
         updatedAt: now,
       },
       usdt: {
@@ -241,8 +289,20 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
         cooldownStatus: "ready",
         cooldownRemaining: "Ready",
         removesIn: "0d 0h",
+        cooldownEndsAt: now - 1000,
+        withdrawalWindowEndsAt: now + 2 * 24 * 60 * 60 * 1000,
         withdrawalWindowExpired: false,
         slashedValueUsd: 0,
+        tranches: [
+          {
+            id: `seed-usdt-ready`,
+            amountUsd: 5000,
+            startedAt: now - 20 * 24 * 60 * 60 * 1000 - 1000,
+            endsAt: now - 1000,
+            windowEndsAt: now + 2 * 24 * 60 * 60 * 1000,
+            status: "ready",
+          },
+        ],
         updatedAt: now,
       },
       weth: {
@@ -258,6 +318,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
         removesIn: "After 20 days",
         withdrawalWindowExpired: false,
         slashedValueUsd: 0,
+        tranches: [],
         updatedAt: now,
       },
     },
@@ -281,28 +342,6 @@ function clampAmount(value: number) {
   return Number.isFinite(value) ? Math.max(0, value) : 0
 }
 
-/**
- * Derive cooldown UI labels + status. Recognises four states:
- *   idle     — no cooldown active.
- *   cooling  — inside the 20-day cooldown window.
- *   ready    — cooldown ended, still inside the 2-day withdrawal window.
- *   expired  — withdrawal window passed with cooldownUsd still > 0; the user
- *              must restart the cooldown for the cooling amount.
- */
-function cooldownLabel(position: ConvexUmbrellaSessionState["positions"][number]) {
-  const now = Date.now()
-  if (!position.cooldownEndsAt || position.cooldownUsd <= 0)
-    return { status: "idle" as const, remaining: "-", removesIn: "After 20 days" }
-  if (position.withdrawalWindowExpired || (position.withdrawalWindowEndsAt && now > position.withdrawalWindowEndsAt)) {
-    return { status: "expired" as const, remaining: "Expired", removesIn: "Restart cooldown" }
-  }
-  if (now >= position.cooldownEndsAt) return { status: "ready" as const, remaining: "Ready", removesIn: "0d 0h" }
-  const remainingHours = Math.ceil((position.cooldownEndsAt - now) / (60 * 60 * 1000))
-  const days = Math.floor(remainingHours / 24)
-  const hours = remainingHours % 24
-  return { status: "cooling" as const, remaining: `${days}d ${hours}h`, removesIn: `${days}d ${hours}h` }
-}
-
 function emptyPosition(marketId: UmbrellaMarketId, now: number): UmbrellaPosition {
   return {
     marketId,
@@ -317,8 +356,97 @@ function emptyPosition(marketId: UmbrellaMarketId, now: number): UmbrellaPositio
     removesIn: "After 20 days",
     withdrawalWindowExpired: false,
     slashedValueUsd: 0,
+    tranches: [],
     updatedAt: now,
   }
+}
+
+/**
+ * Derive the worst live status across an array of tranches: expired > ready
+ * > cooling > idle. Mirrors the server rule so the offline path and the Convex
+ * path agree on the CTA state.
+ */
+function statusFromTranches(tranches: UmbrellaTranche[]): UmbrellaCooldownStatus {
+  if (tranches.length === 0) return "idle"
+  if (tranches.some((t) => t.status === "expired" && t.amountUsd > 0)) return "expired"
+  if (tranches.some((t) => t.status === "ready")) return "ready"
+  if (tranches.some((t) => t.status === "cooling")) return "cooling"
+  return "idle"
+}
+
+/**
+ * Refresh each tranche's status against `now` and produce cooldown labels.
+ * Kept small so both the offline execute path and stateFromConvex use the
+ * same derivation.
+ */
+function refreshTranches(tranches: UmbrellaTranche[], now: number): UmbrellaTranche[] {
+  return tranches
+    .filter((t) => t.amountUsd > 0)
+    .map((t) => ({
+      ...t,
+      status: now < t.endsAt ? ("cooling" as const) : now < t.windowEndsAt ? ("ready" as const) : ("expired" as const),
+    }))
+}
+
+function formatRemaining(ms: number) {
+  const remainingHours = Math.ceil(ms / (60 * 60 * 1000))
+  const days = Math.floor(remainingHours / 24)
+  const hours = remainingHours % 24
+  return `${days}d ${hours}h`
+}
+
+/**
+ * Derive the aggregate cooldown labels from a set of tranches. The status
+ * label follows the worst-status rule so the CTA matches what the Convex
+ * server would return.
+ */
+function trancheLabels(
+  tranches: UmbrellaTranche[],
+  now: number,
+): {
+  status: UmbrellaCooldownStatus
+  remaining: string
+  removesIn: string
+  cooldownEndsAt?: number
+  withdrawalWindowEndsAt?: number
+  withdrawalWindowExpired: boolean
+} {
+  const status = statusFromTranches(tranches)
+  if (status === "idle") {
+    return {
+      status,
+      remaining: "-",
+      removesIn: "After 20 days",
+      withdrawalWindowExpired: false,
+    }
+  }
+  const activeEnds = tranches.filter((t) => t.status !== "expired").map((t) => t.endsAt)
+  const readyWindows = tranches.filter((t) => t.status === "ready").map((t) => t.windowEndsAt)
+  const cooldownEndsAt = activeEnds.length > 0 ? Math.min(...activeEnds) : tranches[0]?.endsAt
+  const withdrawalWindowEndsAt = readyWindows.length > 0 ? Math.min(...readyWindows) : tranches[0]?.windowEndsAt
+  const withdrawalWindowExpired = tranches.some((t) => t.status === "expired" && t.amountUsd > 0)
+  if (status === "expired") {
+    return {
+      status,
+      remaining: "Expired",
+      removesIn: "Restart cooldown",
+      cooldownEndsAt,
+      withdrawalWindowEndsAt,
+      withdrawalWindowExpired,
+    }
+  }
+  if (status === "ready") {
+    return {
+      status,
+      remaining: "Ready",
+      removesIn: "0d 0h",
+      cooldownEndsAt,
+      withdrawalWindowEndsAt,
+      withdrawalWindowExpired,
+    }
+  }
+  const remaining = cooldownEndsAt !== undefined ? formatRemaining(cooldownEndsAt - now) : "-"
+  return { status, remaining, removesIn: remaining, cooldownEndsAt, withdrawalWindowEndsAt, withdrawalWindowExpired }
 }
 
 function stateFromConvex(walletId: string, remote: ConvexUmbrellaSessionState): UmbrellaState {
@@ -336,7 +464,38 @@ function stateFromConvex(walletId: string, remote: ConvexUmbrellaSessionState): 
   }
   for (const remotePosition of remote.positions) {
     const market = markets[remotePosition.marketId]
-    const labels = cooldownLabel(remotePosition)
+    // Prefer the server's per-tranche breakdown; fall back to a single
+    // synthetic tranche derived from the aggregate for older/seeded payloads.
+    const remoteTranches: UmbrellaTranche[] = (remotePosition.tranches ?? []).map((t) => ({
+      id: t._id,
+      amountUsd: t.amountUsd,
+      startedAt: t.startedAt,
+      endsAt: t.endsAt,
+      windowEndsAt: t.windowEndsAt,
+      status: t.status,
+    }))
+    const tranches =
+      remoteTranches.length > 0
+        ? refreshTranches(remoteTranches, now)
+        : remotePosition.cooldownUsd > 0 &&
+            remotePosition.cooldownStartedAt !== undefined &&
+            remotePosition.cooldownEndsAt !== undefined &&
+            remotePosition.withdrawalWindowEndsAt !== undefined
+          ? refreshTranches(
+              [
+                {
+                  id: `synthetic-${remotePosition.marketId}`,
+                  amountUsd: remotePosition.cooldownUsd,
+                  startedAt: remotePosition.cooldownStartedAt,
+                  endsAt: remotePosition.cooldownEndsAt,
+                  windowEndsAt: remotePosition.withdrawalWindowEndsAt,
+                  status: "cooling",
+                },
+              ],
+              now,
+            )
+          : []
+    const labels = trancheLabels(tranches, now)
     positions[remotePosition.marketId] = {
       marketId: remotePosition.marketId,
       amount: remotePosition.amount,
@@ -348,10 +507,11 @@ function stateFromConvex(walletId: string, remote: ConvexUmbrellaSessionState): 
       cooldownStatus: labels.status,
       cooldownRemaining: labels.remaining,
       removesIn: labels.removesIn,
-      cooldownEndsAt: remotePosition.cooldownEndsAt,
-      withdrawalWindowEndsAt: remotePosition.withdrawalWindowEndsAt,
-      withdrawalWindowExpired: remotePosition.withdrawalWindowExpired,
+      cooldownEndsAt: labels.cooldownEndsAt ?? remotePosition.cooldownEndsAt,
+      withdrawalWindowEndsAt: labels.withdrawalWindowEndsAt ?? remotePosition.withdrawalWindowEndsAt,
+      withdrawalWindowExpired: labels.withdrawalWindowExpired || remotePosition.withdrawalWindowExpired,
       slashedValueUsd: remotePosition.slashedAmountUsd ?? 0,
+      tranches,
       updatedAt: remotePosition.lastUpdatedAt,
     }
   }
@@ -449,8 +609,12 @@ export function useUmbrellaSession({
         } catch (error) {
           throw error instanceof Error ? error : new Error(String(error))
         }
-        const amountUsd = kind === "claim" ? currentState.positions[marketId]?.pendingRewardsUsd ?? 0 : amount * market.priceUsd
-        const receipt = (result && typeof result === "object" && "receipt" in result ? (result as { receipt?: { syntheticTxHash?: string } }).receipt : undefined)
+        const amountUsd =
+          kind === "claim" ? (currentState.positions[marketId]?.pendingRewardsUsd ?? 0) : amount * market.priceUsd
+        const receipt =
+          result && typeof result === "object" && "receipt" in result
+            ? (result as { receipt?: { syntheticTxHash?: string } }).receipt
+            : undefined
         const hash = receipt?.syntheticTxHash ?? `pending-${intentId}`
         return {
           id: intentId,
@@ -466,40 +630,78 @@ export function useUmbrellaSession({
         }
       }
 
-      // Local-only (tests / offline): keep the optimistic-state mutation but
-      // enforce the same withdrawal-window-expired invariant Convex enforces —
-      // no unstake, no top-up cooldown while the previous one has expired.
+      // Local-only (tests / offline): mirror the Convex `recordAction` rules
+      // exactly, including the multi-tranche cooldown model — a user can hold
+      // multiple concurrent tranches per market, each with its own 20-day /
+      // 2-day clock. Every mutation re-derives tranche status from Date.now()
+      // so idle time promotes cooling → ready → expired without a background
+      // sweep.
       let result: UmbrellaTransaction | null = null
       setState((current) => {
         const market = current.markets[marketId]
         const position = current.positions[marketId]
         const balance = current.walletBalances[marketId] ?? 0
         const amountUsd = amount * market.priceUsd
+        const timestamp = Date.now()
+        const liveTranches = refreshTranches(position.tranches, timestamp)
+        const activeCoolingUsd = liveTranches.reduce((sum, t) => sum + t.amountUsd, 0)
 
         if (kind === "stake" && amount > balance) throw new Error(`Insufficient ${market.symbol} balance`)
         if (kind === "startCooldown") {
-          if (position.cooldownStatus === "expired") {
-            throw new Error(`Finish or unstake the current cooldown before starting a new one`)
-          }
-          if (amount > position.amount - position.cooldownAmount) {
+          if (amount > position.amount - activeCoolingUsd + 1e-9) {
             throw new Error(`Insufficient active ${market.symbol}`)
           }
         }
         if (kind === "unstake") {
-          if (position.cooldownStatus === "expired") {
-            throw new Error(`Withdrawal window expired — restart cooldown`)
+          const readyTranches = liveTranches.filter((t) => t.status === "ready").sort((a, b) => a.endsAt - b.endsAt)
+          const expiredWithCooling = liveTranches.some((t) => t.status === "expired" && t.amountUsd > 0)
+          const readyUsd = readyTranches.reduce((sum, t) => sum + t.amountUsd, 0)
+          if (readyTranches.length === 0) {
+            if (expiredWithCooling) throw new Error(`Withdrawal window expired — restart cooldown`)
+            throw new Error(`Cooldown not ready`)
           }
-          if (amount > position.cooldownAmount) {
-            throw new Error(`Insufficient cooled ${market.symbol}`)
-          }
+          if (amount > readyUsd + 1e-9) throw new Error(`Insufficient cooled ${market.symbol}`)
         }
         if (kind === "claim" && position.pendingRewardsUsd <= 0) throw new Error("No Umbrella rewards to claim")
+
+        // Post-mutation tranche list.
+        let nextTranches = liveTranches
+        if (kind === "startCooldown") {
+          nextTranches = [
+            ...liveTranches,
+            {
+              id: `local-tranche-${marketId}-${timestamp}`,
+              amountUsd,
+              startedAt: timestamp,
+              endsAt: timestamp + 20 * 24 * 60 * 60 * 1000,
+              windowEndsAt: timestamp + 22 * 24 * 60 * 60 * 1000,
+              status: "cooling",
+            },
+          ]
+        } else if (kind === "unstake") {
+          const sorted = [...liveTranches].sort((a, b) => a.endsAt - b.endsAt)
+          let remaining = amount
+          const consumed: UmbrellaTranche[] = []
+          for (const t of sorted) {
+            if (remaining <= 1e-9 || t.status !== "ready") {
+              consumed.push(t)
+              continue
+            }
+            const take = Math.min(t.amountUsd, remaining)
+            remaining -= take
+            const nextUsd = t.amountUsd - take
+            if (nextUsd > 1e-9) consumed.push({ ...t, amountUsd: nextUsd })
+          }
+          nextTranches = consumed
+        }
+        nextTranches = refreshTranches(nextTranches, timestamp)
+        const nextLabels = trancheLabels(nextTranches, timestamp)
+        const nextCoolingUsd = nextTranches.reduce((sum, t) => sum + t.amountUsd, 0)
 
         const nextBalance = kind === "stake" ? balance - amount : kind === "unstake" ? balance + amount : balance
         const nextPositionAmount =
           kind === "stake" ? position.amount + amount : kind === "unstake" ? position.amount - amount : position.amount
         const nextPositionValueUsd = nextPositionAmount * market.priceUsd
-        const timestamp = Date.now()
         const id = `umbrella-${kind}-${marketId}-${timestamp}`
         const txAmountUsd = kind === "claim" ? position.pendingRewardsUsd : amountUsd
         result = {
@@ -515,7 +717,6 @@ export function useUmbrellaSession({
           timestamp,
         }
 
-        const isStartCooldown = kind === "startCooldown"
         return {
           ...current,
           walletBalances: { ...current.walletBalances, [marketId]: nextBalance },
@@ -540,27 +741,15 @@ export function useUmbrellaSession({
               pendingRewardsUsd: kind === "claim" ? 0 : position.pendingRewardsUsd,
               claimedRewardsUsd:
                 kind === "claim" ? position.claimedRewardsUsd + position.pendingRewardsUsd : position.claimedRewardsUsd,
-              cooldownAmount:
-                kind === "startCooldown"
-                  ? position.cooldownAmount + amount
-                  : kind === "unstake"
-                    ? Math.max(0, position.cooldownAmount - amount)
-                    : position.cooldownAmount,
-              cooldownValueUsd:
-                kind === "startCooldown"
-                  ? position.cooldownValueUsd + amountUsd
-                  : kind === "unstake"
-                    ? Math.max(0, position.cooldownValueUsd - amountUsd)
-                    : position.cooldownValueUsd,
-              cooldownStatus:
-                kind === "startCooldown" ? "cooling" : kind === "stake" ? "idle" : position.cooldownStatus,
-              cooldownRemaining: isStartCooldown ? "20d 0h" : position.cooldownRemaining,
-              removesIn: isStartCooldown ? "20d 0h" : position.removesIn,
-              cooldownEndsAt: isStartCooldown ? timestamp + 20 * 24 * 60 * 60 * 1000 : position.cooldownEndsAt,
-              withdrawalWindowEndsAt: isStartCooldown
-                ? timestamp + 22 * 24 * 60 * 60 * 1000
-                : position.withdrawalWindowEndsAt,
-              withdrawalWindowExpired: isStartCooldown ? false : position.withdrawalWindowExpired,
+              cooldownAmount: market.priceUsd > 0 ? nextCoolingUsd / market.priceUsd : nextCoolingUsd,
+              cooldownValueUsd: nextCoolingUsd,
+              cooldownStatus: nextLabels.status,
+              cooldownRemaining: nextLabels.remaining,
+              removesIn: nextLabels.removesIn,
+              cooldownEndsAt: nextLabels.cooldownEndsAt,
+              withdrawalWindowEndsAt: nextLabels.withdrawalWindowEndsAt,
+              withdrawalWindowExpired: nextLabels.withdrawalWindowExpired,
+              tranches: nextTranches,
               updatedAt: timestamp,
             },
           },
