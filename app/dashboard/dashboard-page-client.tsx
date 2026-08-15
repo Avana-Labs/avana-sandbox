@@ -32,6 +32,9 @@ import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
 import { RewardsBalanceHero } from "@/app/dashboard/_rewards-components/rewards-balance-hero"
 import { useDashboardPortfolioFeed } from "@/app/dashboard/use-dashboard-portfolio-feed"
 import { DashboardWalletTab } from "./dashboard-wallet-tab"
+import { DashboardUmbrellaSection } from "./dashboard-umbrella-section"
+import { buildUmbrellaActivityRows } from "@/app/lib/umbrella-system/portfolio-mapper"
+import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { LearnSection } from "@/app/dashboard/_rewards-components/learn-section"
 import { RecentActivity } from "@/app/dashboard/recent-activity"
 import {
@@ -296,6 +299,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
   const { t } = useTranslation()
   const { exact } = useCurrency()
   const avana = useAvanaSessions()
+  const umbrella = useUmbrellaSessionContext()
   const {
     walletId,
     state,
@@ -614,6 +618,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
     })),
     ...buildLendActivityHistory(avana.lend.walletId, avana.lend.transactionHistory, avana.lend.state),
     ...swapActivityRows,
+    ...buildUmbrellaActivityRows(umbrella.transactionHistory),
     ...(dashboardData?.activity.rows ?? []),
     ...rewardActivityRows,
   ]
@@ -662,7 +667,10 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
 
           <div className="min-w-0">
             {activeDashboardTab === "wallet" ? (
-              <DashboardWalletTab walletId={walletId} />
+              <div className={detailSectionStackClass}>
+                <DashboardWalletTab walletId={walletId} />
+                <DashboardUmbrellaSection />
+              </div>
             ) : activeDashboardTab === "rewards" ? (
               <DashboardRewardsTab questsByTab={questsByTab} onTaskAction={(taskId) => handleTaskAction(taskId)} />
             ) : activeDashboardTab === "transactions" ? (
