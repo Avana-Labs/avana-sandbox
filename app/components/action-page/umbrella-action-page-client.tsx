@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useDeferredValue, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor } from "@/app/lib/action-system/contracts"
@@ -14,7 +14,12 @@ import { ActionConfigureStage } from "@/app/components/action-page/action-config
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
+import {
+  ActionSessionLoading,
+  shouldShowActionSessionLoading,
+} from "@/app/components/action-page/action-session-loading"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { usePriceFor } from "@/app/lib/prices/token-prices-context"
 import type { UmbrellaMarketId } from "@/app/lib/umbrella-system/use-umbrella-session"
 
 type UmbrellaActionKind = "stake" | "claim" | "cooldown" | "unstake"
@@ -27,21 +32,35 @@ function formatUnits(value: number) {
   return value.toLocaleString("en-US", { maximumFractionDigits: Number.isInteger(value) ? 0 : 4 })
 }
 
+function formatDurationShort(ms: number): string {
+  if (ms <= 0) return "0h"
+  const totalHours = Math.max(1, Math.ceil(ms / (60 * 60 * 1000)))
+  const days = Math.floor(totalHours / 24)
+  const hours = totalHours % 24
+  if (days <= 0) return `${hours}h`
+  return `${days}d ${hours}h`
+}
+
 function previewFor({
   kind,
   amount,
   marketId,
   umbrella,
+  livePriceUsd,
+  now,
 }: {
   kind: UmbrellaActionKind
   amount: number
   marketId: UmbrellaMarketId
   umbrella: ReturnType<typeof useUmbrellaSessionContext>
+  livePriceUsd: number
+  now: number
 }): ActionPreviewUi {
   const market = umbrella.markets[marketId]
   const position = umbrella.positions[marketId]
   const walletBalance = umbrella.walletBalances[marketId] ?? 0
   const activeStake = Math.max(0, position.amount - position.cooldownAmount)
+  const cooldownActive = position.cooldownAmount > 0 && position.cooldownStatus !== "expired"
   const maxAmount =
     kind === "stake"
       ? walletBalance
@@ -50,31 +69,85 @@ function previewFor({
         : kind === "unstake"
           ? position.cooldownAmount
           : null
-  const amountUsd = kind === "claim" ? position.pendingRewardsUsd : amount * market.priceUsd
+  const amountUsd = kind === "claim" ? position.pendingRewardsUsd : amount * livePriceUsd
   const blockedReason =
     kind === "stake" && amount > walletBalance
       ? `Insufficient ${market.symbol} balance`
       : kind === "cooldown" && amount > activeStake
         ? `Insufficient active ${market.symbol}`
-        : kind === "unstake" && amount > position.cooldownAmount
-          ? `Insufficient cooled ${market.symbol}`
-          : kind === "unstake" && position.cooldownStatus !== "ready"
-            ? "Cooldown is not ready"
-            : kind === "claim" && position.pendingRewardsUsd <= 0
-              ? "No Umbrella rewards to claim"
-              : null
+        : kind === "cooldown" && cooldownActive
+          ? "Finish or unstake the current cooldown before starting a new one."
+          : kind === "unstake" && amount > position.cooldownAmount
+            ? `Insufficient cooled ${market.symbol}`
+            : kind === "unstake" &&
+                (position.cooldownStatus === "expired" || position.withdrawalWindowExpired)
+              ? "Withdrawal window expired — restart cooldown."
+              : kind === "unstake" && position.cooldownStatus !== "ready"
+                ? "Cooldown is not ready"
+                : kind === "claim" && position.pendingRewardsUsd <= 0
+                  ? "No Umbrella rewards to claim"
+                  : null
   const allowed = kind === "claim" ? !blockedReason : amount > 0 && !blockedReason
   const verb =
     kind === "cooldown" ? "Start cooldown" : kind === "unstake" ? "Unstake" : kind === "claim" ? "Claim" : "Stake"
 
+  const warnings: string[] = []
+  if (kind === "unstake") {
+    if (
+      position.cooldownStatus === "ready" &&
+      typeof position.withdrawalWindowEndsAt === "number" &&
+      position.withdrawalWindowEndsAt > now
+    ) {
+      warnings.push(`Withdrawal window: ${formatDurationShort(position.withdrawalWindowEndsAt - now)} left`)
+    } else if (
+      position.cooldownStatus === "cooling" &&
+      typeof position.cooldownEndsAt === "number" &&
+      position.cooldownEndsAt > now
+    ) {
+      warnings.push(`Cooldown ends in ${formatDurationShort(position.cooldownEndsAt - now)}`)
+    } else {
+      warnings.push("Withdrawal only succeeds during the open withdrawal window.")
+    }
+  }
+
+  const metrics: ActionPreviewUi["metrics"] = [
+    { id: "coverage", label: "Coverage", value: market.coverage },
+    { id: "total-staked", label: "Market staked", value: formatUsd(market.totalStakedUsd) },
+    ...(kind === "cooldown"
+      ? [
+          { id: "cooldown", label: "Cooldown", value: "20 days" },
+          { id: "withdrawal-window", label: "Withdrawal window", value: "2 days" },
+        ]
+      : []),
+    ...(kind === "stake" && position.amount > 0
+      ? [
+          {
+            id: "current-stake",
+            label: "Current stake",
+            value: `${formatUnits(position.amount)} ${market.symbol}`,
+          },
+          ...(amount > 0
+            ? [
+                {
+                  id: "new-total",
+                  label: "New total",
+                  value: `${formatUnits(position.amount + amount)} ${market.symbol}`,
+                },
+              ]
+            : []),
+        ]
+      : []),
+  ]
+
   return {
     allowed,
+    // Claim label is always USD; success-screen receiptContext reuses this via preview.amountLabel.
     amountLabel: kind === "claim" ? formatUsd(position.pendingRewardsUsd) : `${formatUnits(amount)} ${market.symbol}`,
     amountUsd,
     amountUsdLabel: formatUsd(amountUsd),
     rateLabel: kind === "claim" ? "Claim total" : "Umbrella APY",
     rateValue: kind === "claim" ? formatUsd(position.pendingRewardsUsd) : `${market.apy.toFixed(2)}%`,
-    marketLabel: "Module",
+    marketLabel: "Umbrella market",
     marketValue: market.asset,
     balanceLabel:
       kind === "stake"
@@ -94,16 +167,7 @@ function previewFor({
             : `${formatUnits(position.cooldownAmount)} ${market.symbol}`,
     maxAmount,
     assetSymbol: market.symbol,
-    metrics: [
-      { id: "coverage", label: "Coverage", value: market.coverage },
-      { id: "total-staked", label: "Market staked", value: formatUsd(market.totalStakedUsd) },
-      ...(kind === "cooldown"
-        ? [
-            { id: "cooldown", label: "Cooldown", value: "20 days" },
-            { id: "withdrawal-window", label: "Withdrawal window", value: "2 days" },
-          ]
-        : []),
-    ],
+    metrics,
     networkFeeLabel: formatActionFeeSummary(0, 0.03),
     risk:
       kind === "stake" || kind === "cooldown"
@@ -115,7 +179,7 @@ function previewFor({
         : null,
     blockedReason,
     validationErrors: blockedReason ? [blockedReason] : [],
-    warnings: kind === "unstake" ? ["Withdrawal only succeeds during the open withdrawal window."] : [],
+    warnings,
     amountTitle: verb,
   }
 }
@@ -140,6 +204,7 @@ export function UmbrellaActionPageClient({
   const descriptor = getActionDescriptor("umbrella", kind)
   const router = useRouter()
   const umbrella = useUmbrellaSessionContext()
+  const priceFor = usePriceFor()
   const [marketId, setMarketId] = useState<UmbrellaMarketId>(
     initialMarketId && umbrella.marketOrder.includes(initialMarketId as UmbrellaMarketId)
       ? (initialMarketId as UmbrellaMarketId)
@@ -152,10 +217,13 @@ export function UmbrellaActionPageClient({
   const [outcome, setOutcome] = useState<{ tone: "error"; title: string; message: string } | null>(null)
   const market = umbrella.markets[marketId]
   const position = umbrella.positions[marketId]
-  const parsedAmount = parsePositiveActionAmount(amount) ?? 0
+  // Deferred so the preview runs on the settled input, not once per keystroke (INP lever).
+  const deferredAmount = useDeferredValue(amount)
+  const parsedAmount = parsePositiveActionAmount(deferredAmount) ?? 0
+  const livePriceUsd = priceFor(market.symbol) ?? market.priceUsd
   const preview = useMemo(
-    () => previewFor({ kind, amount: parsedAmount, marketId, umbrella }),
-    [kind, marketId, parsedAmount, umbrella],
+    () => previewFor({ kind, amount: parsedAmount, marketId, umbrella, livePriceUsd, now: Date.now() }),
+    [kind, marketId, parsedAmount, umbrella, livePriceUsd],
   )
   const assetOptions = umbrella.marketOrder.map((id) => ({
     id,
@@ -232,6 +300,23 @@ export function UmbrellaActionPageClient({
 
   const hideTitle = embedded || stage === "success" || isProcessingStage(stage) || stage === "review"
   const amountReadOnly = kind === "claim"
+
+  if (shouldShowActionSessionLoading(umbrella.isHydrated)) {
+    return (
+      <ActionPageShell
+        title={descriptor.title}
+        subtitle={descriptor.subtitle}
+        closeHref={closeHref}
+        mode={embedded ? "embedded" : "page"}
+        density={sidebar ? "sidebar" : "default"}
+        hideClose={embedded}
+        flowHeaderStage={!embedded ? stage : undefined}
+        simulated
+      >
+        <ActionSessionLoading />
+      </ActionPageShell>
+    )
+  }
 
   return (
     <ActionPageShell
