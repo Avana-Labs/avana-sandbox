@@ -81,7 +81,7 @@ export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref
     <section id="dashboard-borrow-account" className={`scroll-mt-24 ${detailSectionStackClass}`}>
       <DashboardCreditOverviewSection
         title={t("Borrow Balance")}
-        approvedCreditUsd={borrowSnapshot.approvedUsd}
+        netValueUsd={borrowSnapshot.totalCollateralUsd - borrowSnapshot.totalBorrowedUsd}
         totalBorrowedUsd={borrowSnapshot.totalBorrowedUsd}
         netApyPct={borrowDashboardMetrics.performance.netApyPct}
         totalCollateralUsd={borrowSnapshot.totalCollateralUsd}
