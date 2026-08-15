@@ -1166,6 +1166,10 @@ export default defineSchema({
     .index("by_wallet", ["wallet"])
     .index("by_wallet_product", ["wallet", "product"])
     .index("by_wallet_market", ["wallet", "marketSlug"])
+    // Cross-wallet aggregate scans (used by umbrella market-level Coverage /
+    // Amount-in-cooldown, computed live from every wallet's positions on top
+    // of the catalog baseline).
+    .index("by_product_market", ["product", "marketSlug"])
     // Direct (wallet, product, market) lookup so the position upsert is a `.unique()`
     // instead of collect()+find() over every position sharing a market slug.
     .index("by_wallet_product_market", ["wallet", "product", "marketSlug"]),

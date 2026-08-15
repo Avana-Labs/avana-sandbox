@@ -217,8 +217,9 @@ export const getSessionState = query({
   handler: async (ctx, { wallet }) => {
     const authed = await requireSandboxWallet(ctx, wallet)
     const now = Date.now()
-    const [balances, positions, transactions] = await Promise.all([
-      Promise.all((Object.keys(UMBRELLA_MARKETS) as UmbrellaMarketId[]).map((marketId) => readLiquidBalance(ctx, authed, marketId))),
+    const marketIds = Object.keys(UMBRELLA_MARKETS) as UmbrellaMarketId[]
+    const [balances, positions, transactions, aggregatesPerMarket] = await Promise.all([
+      Promise.all(marketIds.map((marketId) => readLiquidBalance(ctx, authed, marketId))),
       ctx.db
         .query("positions")
         .withIndex("by_wallet_product", (q) => q.eq("wallet", authed).eq("product", "umbrella"))
@@ -228,11 +229,46 @@ export const getSessionState = query({
         .withIndex("by_wallet_product_at", (q) => q.eq("wallet", authed).eq("product", "umbrella"))
         .order("desc")
         .collect(),
+      // Live market-level aggregates: sum every wallet's suppliedUsd6 and
+      // cooldownAmountUsd6 for each umbrella market so Coverage and Amount in
+      // cooldown move as users stake / cool / unstake. Added on top of the
+      // catalog baseline (which represents pre-existing external liquidity).
+      Promise.all(
+        marketIds.map(async (marketId) => {
+          const rows = await ctx.db
+            .query("positions")
+            .withIndex("by_product_market", (q) => q.eq("product", "umbrella").eq("marketSlug", marketId))
+            .collect()
+          let stakedUsd = 0
+          let cooldownUsd = 0
+          for (const row of rows) {
+            stakedUsd += numberFromUsd6(row.suppliedUsd6)
+            cooldownUsd += numberFromUsd6(row.cooldownAmountUsd6)
+          }
+          return { marketId, stakedUsd, cooldownUsd }
+        }),
+      ),
     ])
-    const marketIds = Object.keys(UMBRELLA_MARKETS) as UmbrellaMarketId[]
+    // Fold each per-wallet aggregate into the catalog baseline. The catalog
+    // holds Target / APY / Deficit Offset / Active Deficit / priceUsd as
+    // static config; only totalStakedUsd and amountInCooldownUsd move live.
+    const liveMarkets = Object.fromEntries(
+      marketIds.map((marketId) => {
+        const base = UMBRELLA_MARKETS[marketId]
+        const agg = aggregatesPerMarket.find((row) => row.marketId === marketId)
+        return [
+          marketId,
+          {
+            ...base,
+            totalStakedUsd: base.totalStakedUsd + (agg?.stakedUsd ?? 0),
+            amountInCooldownUsd: base.amountInCooldownUsd + (agg?.cooldownUsd ?? 0),
+          },
+        ]
+      }),
+    ) as typeof UMBRELLA_MARKETS
     return {
       walletId: authed,
-      markets: UMBRELLA_MARKETS,
+      markets: liveMarkets,
       walletBalances: Object.fromEntries(marketIds.map((marketId, index) => [marketId, balances[index] ?? 0])),
       positions: positions.map((position) => ({
         _id: position._id,
