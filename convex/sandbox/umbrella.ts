@@ -118,7 +118,9 @@ async function upsertUmbrellaBalance(
   const market = UMBRELLA_MARKETS[row.marketId]
   const rows = await ctx.db
     .query("walletUmbrellaBalances")
-    .withIndex("by_wallet_market_state", (q) => q.eq("wallet", wallet).eq("marketId", row.marketId).eq("state", row.state))
+    .withIndex("by_wallet_market_state", (q) =>
+      q.eq("wallet", wallet).eq("marketId", row.marketId).eq("state", row.state),
+    )
     .collect()
   const existing = rows[0]
   const next = {
@@ -135,7 +137,13 @@ async function upsertUmbrellaBalance(
   else if (next.amount > 0 || next.valueUsd > 0) await ctx.db.insert("walletUmbrellaBalances", next)
 }
 
-async function upsertLiquidBalance(ctx: MutationCtx, wallet: string, marketId: UmbrellaMarketId, amount: number, now: number) {
+async function upsertLiquidBalance(
+  ctx: MutationCtx,
+  wallet: string,
+  marketId: UmbrellaMarketId,
+  amount: number,
+  now: number,
+) {
   const market = UMBRELLA_MARKETS[marketId]
   const valueUsd = amount * market.priceUsd
   const existing = await ctx.db
@@ -180,7 +188,9 @@ async function readLiquidBalance(ctx: QueryCtx | MutationCtx, wallet: string, ma
 async function readUmbrellaPosition(ctx: QueryCtx | MutationCtx, wallet: string, marketId: UmbrellaMarketId) {
   return await ctx.db
     .query("positions")
-    .withIndex("by_wallet_product_market", (q) => q.eq("wallet", wallet).eq("product", "umbrella").eq("marketSlug", marketId))
+    .withIndex("by_wallet_product_market", (q) =>
+      q.eq("wallet", wallet).eq("product", "umbrella").eq("marketSlug", marketId),
+    )
     .unique()
 }
 
@@ -192,24 +202,39 @@ async function syncPositionBalances(ctx: MutationCtx, wallet: string, position: 
   const cooldownUsd = numberFromUsd6(position.cooldownAmountUsd6)
   const claimableUsd = numberFromUsd6(position.earnedUsd6) + rewardAccruedUsd(position, now)
   const cooldownState = position.cooldownEndsAt && now >= position.cooldownEndsAt ? "withdrawalWindow" : "cooling"
-  await upsertUmbrellaBalance(ctx, wallet, {
-    marketId,
-    amount: tokenAmountFromUsd(marketId, stakedUsd),
-    valueUsd: stakedUsd,
-    state: "staked",
-  }, now)
-  await upsertUmbrellaBalance(ctx, wallet, {
-    marketId,
-    amount: tokenAmountFromUsd(marketId, cooldownUsd),
-    valueUsd: cooldownUsd,
-    state: cooldownUsd > 0 ? cooldownState : "cooling",
-  }, now)
-  await upsertUmbrellaBalance(ctx, wallet, {
-    marketId,
-    amount: claimableUsd,
-    valueUsd: claimableUsd,
-    state: "claimableRewards",
-  }, now)
+  await upsertUmbrellaBalance(
+    ctx,
+    wallet,
+    {
+      marketId,
+      amount: tokenAmountFromUsd(marketId, stakedUsd),
+      valueUsd: stakedUsd,
+      state: "staked",
+    },
+    now,
+  )
+  await upsertUmbrellaBalance(
+    ctx,
+    wallet,
+    {
+      marketId,
+      amount: tokenAmountFromUsd(marketId, cooldownUsd),
+      valueUsd: cooldownUsd,
+      state: cooldownUsd > 0 ? cooldownState : "cooling",
+    },
+    now,
+  )
+  await upsertUmbrellaBalance(
+    ctx,
+    wallet,
+    {
+      marketId,
+      amount: claimableUsd,
+      valueUsd: claimableUsd,
+      state: "claimableRewards",
+    },
+    now,
+  )
 }
 
 export const getSessionState = query({
@@ -347,7 +372,9 @@ export const recordAction = mutation({
         openTxSynthetic: position?.openTxSynthetic,
         revision: (position?.revision ?? 0) + 1,
       }
-      nextPositionId = position ? position._id : await ctx.db.insert("positions", { ...payload, openTxSynthetic: `sim-umb-${now.toString(36)}` })
+      nextPositionId = position
+        ? position._id
+        : await ctx.db.insert("positions", { ...payload, openTxSynthetic: `sim-umb-${now.toString(36)}` })
       if (position) await ctx.db.patch(position._id, payload)
     } else if (args.kind === "claim") {
       if (!position || earnedUsd <= 0) throw new Error("NO_REWARDS")
@@ -371,7 +398,8 @@ export const recordAction = mutation({
       })
     } else {
       if (!position || !position.cooldownEndsAt || now < position.cooldownEndsAt) throw new Error("COOLDOWN_NOT_READY")
-      if (position.withdrawalWindowEndsAt && now > position.withdrawalWindowEndsAt) throw new Error("WITHDRAWAL_WINDOW_EXPIRED")
+      if (position.withdrawalWindowEndsAt && now > position.withdrawalWindowEndsAt)
+        throw new Error("WITHDRAWAL_WINDOW_EXPIRED")
       if (amountUsd > cooldownUsd) throw new Error("INSUFFICIENT_COOLDOWN_BALANCE")
       await upsertLiquidBalance(ctx, wallet, args.marketId, liquid + amount, now)
       const nextSuppliedUsd = Math.max(0, suppliedUsd - amountUsd)
@@ -440,7 +468,13 @@ const UMBRELLA_TEST_FIXTURE = {
     { assetSlug: "weth", symbol: "WETH", amount: 5, priceUsd: 2240 },
   ],
   positions: [
-    { marketId: "gho" as const, suppliedUsd: 5_000, earnedUsd: 11.4, cooldownUsd: 2_500, cooldownOffsetMs: 11 * 24 * 60 * 60 * 1000 },
+    {
+      marketId: "gho" as const,
+      suppliedUsd: 5_000,
+      earnedUsd: 11.4,
+      cooldownUsd: 2_500,
+      cooldownOffsetMs: 11 * 24 * 60 * 60 * 1000,
+    },
     { marketId: "usdc" as const, suppliedUsd: 8_000, earnedUsd: 18.25, cooldownUsd: 0, cooldownOffsetMs: null },
     { marketId: "usdt" as const, suppliedUsd: 0, earnedUsd: 0, cooldownUsd: 0, cooldownOffsetMs: null },
     { marketId: "weth" as const, suppliedUsd: 6_720, earnedUsd: 9.1, cooldownUsd: 0, cooldownOffsetMs: null },

@@ -231,9 +231,7 @@ export function borrowResultToRecordArgs(result: SandboxActionResult, wallet: st
     .filter((position) => position.marketId === marketSlug)
     .map((position) => {
       const market = result.state.markets[position.marketId]
-      const tokenAmount = market
-        ? (position.collateralShares * market.snapshot.supplyIndexRay) / 10n ** 27n
-        : 0n
+      const tokenAmount = market ? (position.collateralShares * market.snapshot.supplyIndexRay) / 10n ** 27n : 0n
       return {
         marketSlug: position.marketId,
         collateralShares: position.collateralShares.toString(),

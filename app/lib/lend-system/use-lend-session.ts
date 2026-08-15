@@ -288,7 +288,11 @@ export function useLendSession({
       }
       for (const row of data.lendBalances ?? []) {
         if (row.state !== "deposited" || row.amount <= 0) continue
-        if (Object.values(positions).some((position) => position.marketId === row.marketId && position.status === "active")) {
+        if (
+          Object.values(positions).some(
+            (position) => position.marketId === row.marketId && position.status === "active",
+          )
+        ) {
           continue
         }
         const market = stateRef.current.markets[row.marketId]

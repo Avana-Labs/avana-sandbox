@@ -228,7 +228,7 @@ async function syncBorrowProductCollateralRows(
   wallet: string,
   marketSlug: string,
   position: Infer<typeof positionPayload>,
-  now: number,
+  _now: number,
 ) {
   const rows = await ctx.db
     .query("walletBorrowBalances")
@@ -564,7 +564,7 @@ async function assertBorrowSolvent(
   }
 }
 
-function canonicalLedgerDelta(
+function _canonicalLedgerDelta(
   args: {
     product: "borrow" | "lend" | "multiply"
     kind: string
@@ -1295,10 +1295,7 @@ async function applyProductBucketDelta(
     const debtValueUsd = args.position.status === "closed" ? 0 : (args.position.debtValueUsd ?? 0)
     const collateralAmount =
       args.position.status === "closed" ? 0 : (args.position.collateralAmount ?? collateralValueUsd)
-    const previousEquityUsd = Math.max(
-      0,
-      (priorPosition?.collateralValueUsd ?? 0) - (priorPosition?.debtValueUsd ?? 0),
-    )
+    const previousEquityUsd = Math.max(0, (priorPosition?.collateralValueUsd ?? 0) - (priorPosition?.debtValueUsd ?? 0))
     const nextEquityUsd = Math.max(0, collateralValueUsd - debtValueUsd)
     await adjustProductBalanceUsd(
       ctx,

@@ -11,7 +11,10 @@ vi.mock("wagmi", () => ({
   useAccount: () => ({ isConnected: false, chainId: undefined }),
   useSwitchChain: () => ({ switchChainAsync: vi.fn(), isPending: false }),
 }))
-import { buildMockMultiplySystemState, buildMockMultiplySystemStateWithSeedPosition } from "@/app/lib/multiply-system/mock"
+import {
+  buildMockMultiplySystemState,
+  buildMockMultiplySystemStateWithSeedPosition,
+} from "@/app/lib/multiply-system/mock"
 import {
   readMultiplySessionState,
   writeMultiplySessionMetadata,

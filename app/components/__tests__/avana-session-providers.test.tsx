@@ -110,7 +110,7 @@ describe("AvanaSessionProviders", () => {
     expect(screen.queryByTestId("local-session")).not.toBeInTheDocument()
   })
 
-  it("open-gate shows auth placeholder until the bootstrap JWT is ready", async () => {
+  it("open-gate holds the wallet session until the bootstrap JWT is ready", async () => {
     mocks.openGate = true
     mocks.openGateReady = false
     mocks.siwe.isSignedIn = false
@@ -121,7 +121,11 @@ describe("AvanaSessionProviders", () => {
       </AvanaSessionProviders>,
     )
 
-    expect(await screen.findByLabelText("Authenticating wallet session")).toBeInTheDocument()
+    // Bootstrap not ready → nothing mounts. The top page-loading bar (rendered
+    // outside this component tree) carries the loading signal; no ad-hoc
+    // placeholder inside the session tree.
     expect(screen.queryByTestId("convex-session")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("local-session")).not.toBeInTheDocument()
+    expect(screen.queryByText("App content")).not.toBeInTheDocument()
   })
 })

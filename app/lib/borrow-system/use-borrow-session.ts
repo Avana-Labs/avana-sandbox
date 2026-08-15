@@ -328,7 +328,9 @@ export function useBorrowSession({
           walletLpBalancesUsd6[row.marketId] = usd6FromNumber(row.valueUsd)
         }
         const productRewardPositions = (data.borrowBalances ?? [])
-          .filter((row) => row.state === "claimableFees" && row.valueUsd > 0 && row.marketId && current.markets[row.marketId])
+          .filter(
+            (row) => row.state === "claimableFees" && row.valueUsd > 0 && row.marketId && current.markets[row.marketId],
+          )
           .map((row) => {
             const totalUsd6 = usd6FromNumber(row.valueUsd)
             return {

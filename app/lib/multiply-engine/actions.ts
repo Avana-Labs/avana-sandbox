@@ -109,7 +109,12 @@ export function applyMultiplyAction(state: MultiplySystemState, action: Multiply
 
     next.positions[position.id] = position
     applyBorrowLiquidityDelta(next, action.marketId, simulation.after.debtValueUsd - simulation.before.debtValueUsd)
-    adjustWalletBalanceUsd(next, action.walletId, action.marketId, -(action.collateralAmount * market.collateralAsset.priceUsd))
+    adjustWalletBalanceUsd(
+      next,
+      action.walletId,
+      action.marketId,
+      -(action.collateralAmount * market.collateralAsset.priceUsd),
+    )
     next.transactions.push({
       id: `tx-${next.transactions.length + 1}`,
       walletId: action.walletId,
@@ -132,7 +137,12 @@ export function applyMultiplyAction(state: MultiplySystemState, action: Multiply
     delete next.positions[position.id]
     // Repaying the outstanding debt returns that borrow capacity to the market.
     applyBorrowLiquidityDelta(next, position.marketId, -position.debtValueUsd)
-    adjustWalletBalanceUsd(next, action.walletId, position.marketId, Math.max(0, position.collateralValueUsd - position.debtValueUsd))
+    adjustWalletBalanceUsd(
+      next,
+      action.walletId,
+      position.marketId,
+      Math.max(0, position.collateralValueUsd - position.debtValueUsd),
+    )
     next.transactions.push({
       id: `tx-${next.transactions.length + 1}`,
       walletId: action.walletId,

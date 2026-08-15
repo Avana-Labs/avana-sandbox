@@ -1447,12 +1447,7 @@ export default defineSchema({
     symbol: v.string(),
     amount: v.number(),
     valueUsd: v.number(),
-    state: v.union(
-      v.literal("poolAvailable"),
-      v.literal("collateral"),
-      v.literal("debt"),
-      v.literal("claimableFees"),
-    ),
+    state: v.union(v.literal("poolAvailable"), v.literal("collateral"), v.literal("debt"), v.literal("claimableFees")),
     updatedAt: v.number(),
   })
     .index("by_wallet", ["wallet"])

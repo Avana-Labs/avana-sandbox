@@ -31,7 +31,11 @@ export function UmbrellaPositions() {
       pendingRewards: formatUsd(position.pendingRewardsUsd),
       cooldown: formatUnits(position.cooldownAmount),
       status:
-        position.cooldownStatus === "ready" ? "Withdrawal ready" : position.cooldownStatus === "cooling" ? "In cooldown" : "Earning",
+        position.cooldownStatus === "ready"
+          ? "Withdrawal ready"
+          : position.cooldownStatus === "cooling"
+            ? "In cooldown"
+            : "Earning",
     }
   })
 
@@ -101,7 +105,9 @@ export function UmbrellaPositions() {
                   <td className={cn("py-3.5 pr-5", TABLE_ROW_HOVER_RIGHT)}>
                     <HoverActionGroup className="justify-end">
                       <Button asChild size="table" variant="table-primary" className="w-auto">
-                        <Link href={actionPagePath("umbrella", "unstake", { market: position.id, return: "/umbrella" })}>
+                        <Link
+                          href={actionPagePath("umbrella", "unstake", { market: position.id, return: "/umbrella" })}
+                        >
                           <ActionIcon label="Unstake" />
                           Unstake
                         </Link>

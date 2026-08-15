@@ -166,7 +166,15 @@ function MarketHeroView({ detail, leading, actions, className, hideIdentity = fa
       detail.heroFeed ??
       buildFeedFromSeries(detail.supplyBorrow.supplied, "usdCompact", getMultiplyMarketHeroFeed(detail.id))
     )
-  }, [activeMetricTab, detail.heroFeed, detail.id, detail.supplyBorrow, metricTabs, session.state.positions, session.transactionHistory])
+  }, [
+    activeMetricTab,
+    detail.heroFeed,
+    detail.id,
+    detail.supplyBorrow,
+    metricTabs,
+    session.state.positions,
+    session.transactionHistory,
+  ])
 
   return (
     <section className={cn("flex flex-col gap-5", className)} data-testid="market-hero">

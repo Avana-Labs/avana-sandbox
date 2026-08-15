@@ -53,9 +53,7 @@ function AssetCard({ market }: { market: UmbrellaMarket }) {
             label="Cooldown"
             tooltip="Coverage currently in cooldown across all stakers of this asset. Cooldown positions still absorb losses until they finish the 20-day wait and are unstaked."
           />
-          <span className="text-[15px] font-semibold tabular-nums">
-            {formatCompactUsd(market.amountInCooldownUsd)}
-          </span>
+          <span className="text-[15px] font-semibold tabular-nums">{formatCompactUsd(market.amountInCooldownUsd)}</span>
         </div>
       </div>
 
@@ -75,9 +73,7 @@ function AssetCard({ market }: { market: UmbrellaMarket }) {
               <div className="relative h-full" style={{ width: `${offsetTrackShare}%` }}>
                 <div className="h-full bg-warning" style={{ width: `${consumedInsideTrack}%` }} />
               </div>
-              {exposureShare > 0 ? (
-                <div className="h-full bg-danger" style={{ width: `${exposureShare}%` }} />
-              ) : null}
+              {exposureShare > 0 ? <div className="h-full bg-danger" style={{ width: `${exposureShare}%` }} /> : null}
             </div>
           )
         })()}
@@ -103,9 +99,7 @@ function AssetCard({ market }: { market: UmbrellaMarket }) {
           </div>
         </div>
 
-        <div className="mt-2 text-[12px] text-muted-foreground">
-          {formatPct(coverageRatioPct)}% of target coverage.
-        </div>
+        <div className="mt-2 text-[12px] text-muted-foreground">{formatPct(coverageRatioPct)}% of target coverage.</div>
       </div>
     </div>
   )
@@ -184,7 +178,8 @@ export function UmbrellaStress() {
               </div>
               <div className="mt-2 text-[14px] font-medium text-muted-foreground">
                 {formatPct(totalStakedUsd > 0 ? (cooldownUsd / totalStakedUsd) * 100 : 0)}% of coverage cooling ·{" "}
-                {formatCompactUsd(activeDeficitsUsd)} deficits absorbed by {formatCompactUsd(totalDeficitOffsetUsd)} offset ·{" "}
+                {formatCompactUsd(activeDeficitsUsd)} deficits absorbed by {formatCompactUsd(totalDeficitOffsetUsd)}{" "}
+                offset ·{" "}
                 <span className={totalStakerExposureUsd > 0 ? "text-danger" : "text-success"}>
                   {formatCompactUsd(totalStakerExposureUsd)} on stakers
                 </span>
@@ -199,11 +194,7 @@ export function UmbrellaStress() {
         >
           <ul className="flex w-full gap-3">
             {umbrellaAssetSummaries.map((asset) => (
-              <li
-                key={asset.id}
-                data-carousel-card
-                className="w-[min(320px,88%)] shrink-0 snap-start md:w-[360px]"
-              >
+              <li key={asset.id} data-carousel-card className="w-[min(320px,88%)] shrink-0 snap-start md:w-[360px]">
                 <AssetCard market={asset} />
               </li>
             ))}

@@ -43,7 +43,13 @@ function previewFor({
   const walletBalance = umbrella.walletBalances[marketId] ?? 0
   const activeStake = Math.max(0, position.amount - position.cooldownAmount)
   const maxAmount =
-    kind === "stake" ? walletBalance : kind === "cooldown" ? activeStake : kind === "unstake" ? position.cooldownAmount : null
+    kind === "stake"
+      ? walletBalance
+      : kind === "cooldown"
+        ? activeStake
+        : kind === "unstake"
+          ? position.cooldownAmount
+          : null
   const amountUsd = kind === "claim" ? position.pendingRewardsUsd : amount * market.priceUsd
   const blockedReason =
     kind === "stake" && amount > walletBalance
@@ -58,7 +64,8 @@ function previewFor({
               ? "No Umbrella rewards to claim"
               : null
   const allowed = kind === "claim" ? !blockedReason : amount > 0 && !blockedReason
-  const verb = kind === "cooldown" ? "Start cooldown" : kind === "unstake" ? "Unstake" : kind === "claim" ? "Claim" : "Stake"
+  const verb =
+    kind === "cooldown" ? "Start cooldown" : kind === "unstake" ? "Unstake" : kind === "claim" ? "Claim" : "Stake"
 
   return {
     allowed,
@@ -100,7 +107,11 @@ function previewFor({
     networkFeeLabel: formatActionFeeSummary(0, 0.03),
     risk:
       kind === "stake" || kind === "cooldown"
-        ? { level: "warning", title: "Slashable stake", message: "Umbrella stake remains slashable while active and during cooldown." }
+        ? {
+            level: "warning",
+            title: "Slashable stake",
+            message: "Umbrella stake remains slashable while active and during cooldown.",
+          }
         : null,
     blockedReason,
     validationErrors: blockedReason ? [blockedReason] : [],
@@ -234,7 +245,9 @@ export function UmbrellaActionPageClient({
       flowHeaderStage={!embedded ? stage : undefined}
       simulated
     >
-      {isProcessingStage(stage) ? <ActionProcessingStage verb={descriptor.primaryVerb} preview={preview} closeHref={closeHref} stage={stage} /> : null}
+      {isProcessingStage(stage) ? (
+        <ActionProcessingStage verb={descriptor.primaryVerb} preview={preview} closeHref={closeHref} stage={stage} />
+      ) : null}
       {stage === "review" ? (
         <ActionReviewStage
           title={reviewStageTitle(descriptor.primaryVerb)}
