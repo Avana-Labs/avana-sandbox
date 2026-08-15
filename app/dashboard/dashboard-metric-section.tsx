@@ -105,20 +105,21 @@ export function DashboardOverviewSection({
 
 /**
  * Credit (Borrow) overview — a dedicated variant of the overview grid. Unlike the
- * shared DashboardOverviewSection (still used by the Looping tab), this surfaces
- * Approved credit + Net APY + Total Collateral, folding in what used to live in the
- * separate "Credit Performance" section.
+ * shared DashboardOverviewSection (still used by the Looping tab), this leads with
+ * Net Value (the same collateral − debt figure that feeds the portfolio headline) so
+ * the tab reconciles with "Your Portfolio", then shows its two components + Net APY.
+ * Approved borrowing capacity lives in the "Borrowing Power" card below.
  */
 export function DashboardCreditOverviewSection({
   title,
-  approvedCreditUsd,
+  netValueUsd,
   totalBorrowedUsd,
   netApyPct,
   totalCollateralUsd,
   hideHeading = false,
 }: {
   title: string
-  approvedCreditUsd: number
+  netValueUsd: number
   totalBorrowedUsd: number
   netApyPct: number
   totalCollateralUsd: number
@@ -138,9 +139,14 @@ export function DashboardCreditOverviewSection({
         labelOnTop
         metrics={[
           {
-            label: t("Approved credit"),
-            value: m(formatUsdExact(approvedCreditUsd)),
-            description: t("Total borrowing capacity approved against your collateral"),
+            label: t("Net Value"),
+            value: m(formatUsdExact(netValueUsd)),
+            description: t("Your collateral value minus what you owe — the equity this tab adds to your portfolio"),
+          },
+          {
+            label: t("Total Collateral"),
+            value: m(formatUsdExact(totalCollateralUsd)),
+            description: t("LP positions currently securing your loans"),
           },
           {
             label: t("Total Borrowed"),
@@ -151,11 +157,6 @@ export function DashboardCreditOverviewSection({
             label: t("Net APY"),
             value: showDollarAmounts ? formatPct(netApyPct) : MASK,
             description: t("Weighted average APY across all active positions"),
-          },
-          {
-            label: t("Total Collateral"),
-            value: m(formatUsdExact(totalCollateralUsd)),
-            description: t("LP positions currently securing your loans"),
           },
         ]}
       />
