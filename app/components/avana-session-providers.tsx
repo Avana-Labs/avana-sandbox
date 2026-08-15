@@ -7,6 +7,7 @@ import { hasConvexClient, MarketLiquidityProvider } from "@/app/lib/convex/marke
 import { useConvexSiweAuth, useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { useOpenGateAuthBootstrap } from "@/app/lib/siwe/use-open-gate-auth-bootstrap"
 import { shouldUseOpenGateSession, TEST_MODE_WALLET_ADDRESS } from "@/app/lib/test-mode"
+import { SessionLoadingScreen } from "@/app/components/session-loading-screen"
 
 const ConvexSessionProvider = lazy(async () => ({
   default: (await import("@/app/lib/avana-session/convex-session-provider")).ConvexSessionProvider,
@@ -46,18 +47,14 @@ function OpenGateSessionTree({ children }: { children: ReactNode }) {
   }
 
   if (!ready) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-2 w-40 animate-pulse rounded-full bg-muted" aria-label="Authenticating wallet session" />
-      </div>
-    )
+    return <SessionLoadingScreen />
   }
 
   // After the bootstrap JWT is in sessionStorage, use the same authenticated
   // Convex wallet session path as SIWE — hydrators + recordTransaction/recordSwap.
   if (hasConvexClient) {
     return (
-      <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <Suspense fallback={<SessionLoadingScreen />}>
         <ConvexSessionProvider walletId={TEST_MODE_WALLET_ADDRESS}>{children}</ConvexSessionProvider>
       </Suspense>
     )
@@ -83,7 +80,7 @@ export function AvanaSessionProviders({ walletId, children }: { walletId?: strin
   return (
     <MarketLiquidityProvider live={Boolean(hasConvexClient && isSignedIn && authedWallet)}>
       {hasConvexClient && isSignedIn && authedWallet ? (
-        <Suspense fallback={<div className="min-h-screen bg-background" />}>
+        <Suspense fallback={<SessionLoadingScreen />}>
           <ConvexSessionProvider walletId={authedWallet}>{children}</ConvexSessionProvider>
         </Suspense>
       ) : (
