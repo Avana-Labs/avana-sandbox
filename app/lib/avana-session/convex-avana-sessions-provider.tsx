@@ -46,6 +46,7 @@ function ConvexWalletHydrators({
   const multiply = useMultiplySessionContext()
   const swap = useSwapSessionContext()
   const ensurePortfolioSnapshot = useMutation(api.sandbox.transactions.ensurePortfolioSnapshot)
+  const ensureUmbrellaFixtures = useMutation(api.sandbox.umbrella.ensureTestWalletFixtures)
   const session = useQuery(api.sandbox.transactions.getSessionState, { wallet: walletId })
   const productBalances = useQuery(api.wallet.productBalances.listForWallet, { wallet: walletId })
   const historiesRef = useRef({
@@ -66,11 +67,16 @@ function ConvexWalletHydrators({
     void (async () => {
       try {
         await ensurePortfolioSnapshot({ wallet: walletId })
+        // Seed the open-gate/test wallet with umbrella fixtures on first mount.
+        // The mutation is a no-op for any wallet other than the canonical test
+        // address and for wallets that already have umbrella positions, so this
+        // is safe to fire unconditionally.
+        await ensureUmbrellaFixtures({ wallet: walletId })
       } catch {
         ensuredRef.current = false
       }
     })()
-  }, [ensurePortfolioSnapshot, walletId])
+  }, [ensurePortfolioSnapshot, ensureUmbrellaFixtures, walletId])
 
   useEffect(() => {
     if (!session) return

@@ -1,9 +1,95 @@
 "use client"
 
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { CarouselArrowButtons, useOverflowCarousel } from "@/app/components/carousel-arrow-buttons"
 import { TokenIcon } from "@/app/components/token-icon"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import type { UmbrellaMarket } from "@/app/lib/umbrella-system/use-umbrella-session"
 import { deficitOffsetPercent, formatCompactUsd, formatPct } from "../format"
+
+type MetricLabelProps = { label: string; tooltip: string }
+
+function MetricLabel({ label, tooltip }: MetricLabelProps) {
+  return (
+    <span className="inline-flex items-center gap-1.5 text-[14px] text-muted-foreground">
+      {label}
+      <ActionMetricHelp text={tooltip} topic={label} />
+    </span>
+  )
+}
+
+function AssetCard({ market }: { market: UmbrellaMarket }) {
+  const stakerExposure = Math.max(market.currentDeficitUsd - market.deficitOffsetUsd, 0)
+  const coverageRatioPct = market.targetCoverageUsd > 0 ? (market.totalStakedUsd / market.targetCoverageUsd) * 100 : 0
+
+  return (
+    <div className="h-full rounded-radius-md bg-card px-4 py-4">
+      <div className="flex items-center gap-3.5">
+        <TokenIcon symbol={market.symbol} size="table" className="size-16" />
+        <div>
+          <div className="text-[18px] font-semibold tracking-[-0.04em]">{market.symbol}</div>
+          <div className="mt-0.5 text-[14px] text-muted-foreground">{market.coverage}</div>
+        </div>
+      </div>
+
+      <div className="mt-5 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <MetricLabel
+            label="Coverage"
+            tooltip="Total user-staked capital available to absorb losses for this asset."
+          />
+          <span className="text-[15px] font-semibold tabular-nums">{formatCompactUsd(market.totalStakedUsd)}</span>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <MetricLabel label="Target" tooltip="Desired amount of user-staked coverage for this asset." />
+          <span className="text-[15px] font-semibold tabular-nums">{formatCompactUsd(market.targetCoverageUsd)}</span>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          <MetricLabel label="APY" tooltip="Estimated annual staking yield paid to stakers of this asset." />
+          <span className="text-[15px] font-semibold tabular-nums">{formatPct(market.apy)}%</span>
+        </div>
+      </div>
+
+      <div className="mt-5 border-t border-border pt-4">
+        <div className="flex h-2.5 overflow-hidden rounded-full">
+          <div
+            className="h-full bg-brand"
+            style={{ width: `${deficitOffsetPercent(market.deficitOffsetUsd, market.currentDeficitUsd)}%` }}
+          />
+          <div
+            className="h-full bg-danger"
+            style={{ width: `${100 - deficitOffsetPercent(market.deficitOffsetUsd, market.currentDeficitUsd)}%` }}
+          />
+        </div>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div>
+            <div className="inline-flex items-center gap-1.5 text-[16px] font-semibold tracking-[-0.04em] text-brand">
+              {formatCompactUsd(market.deficitOffsetUsd)} deficit offset
+              <ActionMetricHelp
+                text="Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset."
+                topic="Deficit Offset"
+              />
+            </div>
+          </div>
+          <div className="text-left sm:text-right">
+            <div className="inline-flex items-center gap-1.5 text-[16px] font-semibold tracking-[-0.04em] text-danger sm:flex-row-reverse">
+              {formatCompactUsd(market.currentDeficitUsd)} active deficit
+              <ActionMetricHelp
+                text={`Current realized shortfall in ${market.symbol}. Staker Exposure = max(Active Deficit − Deficit Offset, 0). Current staker exposure: ${formatCompactUsd(stakerExposure)}.`}
+                topic="Active Deficit"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-2 text-[12px] text-muted-foreground">
+          {formatPct(coverageRatioPct)}% of target coverage.
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export function UmbrellaStress() {
   const { scrollerRef, canPrev, canNext, scrollByCard } = useOverflowCarousel()
@@ -12,6 +98,11 @@ export function UmbrellaStress() {
   const totalStakedUsd = umbrellaAssetSummaries.reduce((sum, market) => sum + market.totalStakedUsd, 0)
   const targetCoverageUsd = umbrellaAssetSummaries.reduce((sum, market) => sum + market.targetCoverageUsd, 0)
   const activeDeficitsUsd = umbrellaAssetSummaries.reduce((sum, market) => sum + market.currentDeficitUsd, 0)
+  const totalDeficitOffsetUsd = umbrellaAssetSummaries.reduce((sum, market) => sum + market.deficitOffsetUsd, 0)
+  const totalStakerExposureUsd = umbrellaAssetSummaries.reduce(
+    (sum, market) => sum + Math.max(market.currentDeficitUsd - market.deficitOffsetUsd, 0),
+    0,
+  )
   const cooldownUsd = umbrella.marketOrder
     .filter((id) => umbrella.positions[id].cooldownStatus === "cooling")
     .reduce((sum, id) => sum + umbrella.markets[id].totalStakedUsd, 0)
@@ -49,7 +140,7 @@ export function UmbrellaStress() {
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
               <div className="text-[18px] font-semibold tracking-[-0.04em] text-brand">
-                {formatPct(targetCoverageUsd > 0 ? (totalStakedUsd / targetCoverageUsd) * 100 : 0)}% covered
+                {formatPct(targetCoverageUsd > 0 ? (totalStakedUsd / targetCoverageUsd) * 100 : 0)}% of target
               </div>
               <div className="mt-2 text-[14px] font-medium text-muted-foreground">
                 {formatCompactUsd(totalStakedUsd)} staked · {formatCompactUsd(targetCoverageUsd)} target · 4 assets
@@ -60,7 +151,9 @@ export function UmbrellaStress() {
                 {formatCompactUsd(cooldownUsd)} in cooldown
               </div>
               <div className="mt-2 text-[14px] font-medium text-muted-foreground">
-                {formatPct(totalStakedUsd > 0 ? (cooldownUsd / totalStakedUsd) * 100 : 0)}% cooling · {formatCompactUsd(activeDeficitsUsd)} active deficits
+                {formatPct(totalStakedUsd > 0 ? (cooldownUsd / totalStakedUsd) * 100 : 0)}% cooling ·{" "}
+                {formatCompactUsd(activeDeficitsUsd)} active deficits · {formatCompactUsd(totalStakerExposureUsd)}{" "}
+                on stakers of {formatCompactUsd(totalDeficitOffsetUsd)} offset
               </div>
             </div>
           </div>
@@ -77,66 +170,7 @@ export function UmbrellaStress() {
                 data-carousel-card
                 className="w-[min(320px,88%)] shrink-0 snap-start md:w-[360px]"
               >
-                <div className="h-full rounded-radius-md bg-card px-4 py-4">
-                  <div className="flex items-center gap-3.5">
-                    <TokenIcon symbol={asset.symbol} size="table" className="size-16" />
-                    <div>
-                      <div className="text-[18px] font-semibold tracking-[-0.04em]">{asset.symbol}</div>
-                      <div className="mt-0.5 text-[14px] text-muted-foreground">{asset.coverage}</div>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 space-y-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-[14px] text-muted-foreground">Coverage</span>
-                      <span className="text-[15px] font-semibold tabular-nums">{formatCompactUsd(asset.totalStakedUsd)}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-[14px] text-muted-foreground">Target</span>
-                      <span className="text-[15px] font-semibold tabular-nums">{formatCompactUsd(asset.targetCoverageUsd)}</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-[14px] text-muted-foreground">APY</span>
-                      <span className="text-[15px] font-semibold tabular-nums">{formatPct(asset.apy)}%</span>
-                    </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-[14px] text-muted-foreground">Action</span>
-                      <span className="text-[15px] font-semibold tabular-nums">Stake / Unstake</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 border-t border-border pt-4">
-                    <div className="flex h-2.5 overflow-hidden rounded-full">
-                      <div
-                        className="h-full bg-brand"
-                        style={{ width: `${deficitOffsetPercent(asset.deficitOffsetUsd, asset.currentDeficitUsd)}%` }}
-                      />
-                      <div
-                        className="h-full bg-danger"
-                        style={{ width: `${100 - deficitOffsetPercent(asset.deficitOffsetUsd, asset.currentDeficitUsd)}%` }}
-                      />
-                    </div>
-
-                    <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                      <div>
-                        <div className="text-[16px] font-semibold tracking-[-0.04em] text-brand">
-                          {formatCompactUsd(asset.deficitOffsetUsd)} offset
-                        </div>
-                        <div className="mt-1.5 text-[13px] font-medium text-muted-foreground">
-                          Buffer for {asset.symbol} deficits
-                        </div>
-                      </div>
-                      <div className="text-left sm:text-right">
-                        <div className="text-[16px] font-semibold tracking-[-0.04em] text-danger">
-                          {formatCompactUsd(asset.currentDeficitUsd)} current deficit
-                        </div>
-                        <div className="mt-1.5 text-[13px] font-medium text-muted-foreground">
-                          Active shortfall in {asset.symbol}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <AssetCard market={asset} />
               </li>
             ))}
           </ul>
