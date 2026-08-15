@@ -38,6 +38,24 @@ export const advanceCooldown = mutation({
       .unique()
     if (!position) return { advanced: 0 }
     const shift = (value: number | undefined) => (value === undefined ? undefined : value - args.byMs)
+    // Shift every active tranche (multi-tranche cooldowns exist since the
+    // umbrellaCooldownTranches source of truth landed). Aggregate rollups on
+    // the position row (cooldownStartedAt / cooldownEndsAt /
+    // withdrawalWindowEndsAt) also get shifted so pre-tranche seed rows +
+    // legacy readers stay coherent.
+    const tranches = await ctx.db
+      .query("umbrellaCooldownTranches")
+      .withIndex("by_position", (q) => q.eq("positionId", position._id))
+      .collect()
+    for (const tranche of tranches) {
+      if (tranche.status === "consumed") continue
+      await ctx.db.patch(tranche._id, {
+        startedAt: tranche.startedAt - args.byMs,
+        endsAt: tranche.endsAt - args.byMs,
+        windowEndsAt: tranche.windowEndsAt - args.byMs,
+        updatedAt: Date.now(),
+      })
+    }
     await ctx.db.patch(position._id, {
       cooldownStartedAt: shift(position.cooldownStartedAt),
       cooldownEndsAt: shift(position.cooldownEndsAt),

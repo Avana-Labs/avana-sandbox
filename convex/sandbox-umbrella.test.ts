@@ -456,10 +456,61 @@ describe("sandbox umbrella — recordAction lifecycle", () => {
     ).rejects.toThrow(/INVALID_COOLDOWN_AMOUNT/)
   })
 
-  test("startCooldown — active tranche blocks a new tranche; still blocked after window expires", async () => {
-    // A future refactor is planned to support multi-tranche cooldowns; until
-    // then, an unresolved tranche (either still cooling or expired-unclaimed)
-    // blocks a new tranche until the wallet unstakes the current one.
+  test("startCooldown — a second tranche can be added while the first is cooling (multi-tranche)", async () => {
+    // Multi-tranche cooldowns: a wallet can cool 400, then cool 200 more, and
+    // each tranche keeps its own 20-day / 2-day clock. The limit is the sum of
+    // active cooling <= supplied.
+    const t = convexTest(schema, modules)
+    await seedLiquidUsdc(t, WALLET_A, 2000)
+    const asUser = t.withIdentity({ subject: WALLET_A })
+    await asUser.mutation(api.sandbox.umbrella.recordAction, {
+      wallet: WALLET_A,
+      intentId: "s1",
+      kind: "stake",
+      marketId: "usdc",
+      amount: 1000,
+    })
+    await asUser.mutation(api.sandbox.umbrella.recordAction, {
+      wallet: WALLET_A,
+      intentId: "c1",
+      kind: "startCooldown",
+      marketId: "usdc",
+      amount: 400,
+    })
+    // Second tranche allowed while the first is still cooling.
+    await asUser.mutation(api.sandbox.umbrella.recordAction, {
+      wallet: WALLET_A,
+      intentId: "c2",
+      kind: "startCooldown",
+      marketId: "usdc",
+      amount: 200,
+    })
+    // But a third tranche that would exceed remaining active supplied rejects.
+    await expect(
+      asUser.mutation(api.sandbox.umbrella.recordAction, {
+        wallet: WALLET_A,
+        intentId: "c3",
+        kind: "startCooldown",
+        marketId: "usdc",
+        amount: 500, // active supplied = 1000 - 600 = 400, so 500 is over.
+      }),
+    ).rejects.toThrow(/INVALID_COOLDOWN_AMOUNT/)
+    // Aggregate rollup on the position mirrors the sum across tranches.
+    const position = await readPosition(t, WALLET_A, "usdc")
+    expect(num(position?.cooldownAmountUsd6)).toBeCloseTo(600, 6)
+    // Two active tranche rows exist.
+    const tranches = await t.run(async (ctx) =>
+      ctx.db
+        .query("umbrellaCooldownTranches")
+        .withIndex("by_wallet_market_status", (q) =>
+          q.eq("wallet", WALLET_A.toLowerCase()).eq("marketId", "usdc").eq("status", "cooling"),
+        )
+        .collect(),
+    )
+    expect(tranches).toHaveLength(2)
+  })
+
+  test("startCooldown — expired tranche does not block a fresh tranche (new tranche starts its own clock)", async () => {
     const t = convexTest(schema, modules)
     process.env.SANDBOX_DEV_CONTROLS = "true"
     await seedLiquidUsdc(t, WALLET_A, 2000)
@@ -478,30 +529,20 @@ describe("sandbox umbrella — recordAction lifecycle", () => {
       marketId: "usdc",
       amount: 400,
     })
-    await expect(
-      asUser.mutation(api.sandbox.umbrella.recordAction, {
-        wallet: WALLET_A,
-        intentId: "c2",
-        kind: "startCooldown",
-        marketId: "usdc",
-        amount: 200,
-      }),
-    ).rejects.toThrow(/COOLDOWN_ALREADY_ACTIVE/)
-    // Push cooldown/window entirely into the past — tranche still unresolved.
+    // Push cooldown/window entirely into the past — first tranche is expired.
     await asUser.mutation(api.sandbox.dev.advanceCooldown, {
       wallet: WALLET_A,
       marketId: "usdc",
       byMs: 25 * DAY_MS,
     })
-    await expect(
-      asUser.mutation(api.sandbox.umbrella.recordAction, {
-        wallet: WALLET_A,
-        intentId: "c3",
-        kind: "startCooldown",
-        marketId: "usdc",
-        amount: 200,
-      }),
-    ).rejects.toThrow(/COOLDOWN_ALREADY_ACTIVE/)
+    // A fresh tranche is allowed — active supplied = 1000 - 400 cooling = 600.
+    await asUser.mutation(api.sandbox.umbrella.recordAction, {
+      wallet: WALLET_A,
+      intentId: "c2",
+      kind: "startCooldown",
+      marketId: "usdc",
+      amount: 200,
+    })
     delete process.env.SANDBOX_DEV_CONTROLS
   })
 
@@ -627,13 +668,15 @@ describe("sandbox umbrella — recordAction lifecycle", () => {
       marketId: "usdc",
       amount: 1000,
     })
-    await asUser.mutation(api.sandbox.umbrella.recordAction, {
-      wallet: WALLET_A,
-      marketId: "usdc",
-      intentId: "adv",
-      kind: "claim",
-      amount: 0,
-    }).catch(() => {}) // Ignore — this claim path is defensive.
+    await asUser
+      .mutation(api.sandbox.umbrella.recordAction, {
+        wallet: WALLET_A,
+        marketId: "usdc",
+        intentId: "adv",
+        kind: "claim",
+        amount: 0,
+      })
+      .catch(() => {}) // Ignore — this claim path is defensive.
     await asUser.mutation(api.sandbox.dev.advanceCooldown, {
       wallet: WALLET_A,
       marketId: "usdc",
@@ -960,7 +1003,7 @@ describe("sandbox umbrella — dev controls, deficit + slash", () => {
     const session = await asA.query(api.sandbox.umbrella.getSessionState, { wallet: WALLET_A })
     const position = session.positions.find((row) => row.marketId === "usdc")
     // Post-slash principal is 900, so 24h rewards are principal * apy * 1/365.
-    const expected = 900 * (USDC_REWARD_APY / 100) * ((DAY_MS / 1000) / SECONDS_PER_YEAR)
+    const expected = 900 * (USDC_REWARD_APY / 100) * (DAY_MS / 1000 / SECONDS_PER_YEAR)
     expect(position?.pendingRewardsUsd).toBeGreaterThan(expected * 0.99)
     expect(position?.pendingRewardsUsd).toBeLessThan(expected * 1.01)
   })

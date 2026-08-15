@@ -1137,12 +1137,21 @@ export default defineSchema({
     suppliedUsd6: v.optional(v.string()),
     earnedUsd6: v.optional(v.string()),
     supplyApyPct: v.optional(v.number()),
-    // umbrella-only: cooldown tranche + withdrawal-window timestamps and the
-    // running claimed-rewards total. Meaningful ONLY when product === "umbrella";
+    // umbrella-only: cooldown tranche AGGREGATE fields + withdrawal-window timestamps
+    // and the running claimed-rewards total. Meaningful ONLY when product === "umbrella";
     // the fields are optional to keep the shared positions table compatible with
     // borrow/lend/multiply rows. See convex/sandbox/umbrella.ts for lifecycle.
-    // Multi-tranche support is a future refactor — today at most one active
-    // cooldown per position; startCooldown rejects while one is running.
+    //
+    // Multi-tranche support: the per-tranche source of truth is
+    // `umbrellaCooldownTranches` (one row per startCooldown call). These fields are
+    // kept as the derived aggregate rollup so backwards-compat callers (portfolio
+    // snapshots, older UI, cross-wallet market scans) still see one number per
+    // position:
+    //   - cooldownAmountUsd6      = sum(amountUsd6 of active tranches)
+    //   - cooldownStartedAt       = min(startedAt) across active tranches
+    //   - cooldownEndsAt          = min(endsAt) across active tranches
+    //   - withdrawalWindowEndsAt  = min(windowEndsAt) across active tranches
+    // Recomputed after every tranche mutation (startCooldown / unstake / simulateSlash).
     cooldownAmountUsd6: v.optional(v.string()),
     cooldownStartedAt: v.optional(v.number()),
     cooldownEndsAt: v.optional(v.number()),
@@ -1422,6 +1431,39 @@ export default defineSchema({
     totalSlashedUsd: v.number(),
     updatedAt: v.number(),
   }).index("by_market", ["marketId"]),
+
+  /**
+   * Per-tranche umbrella cooldown source of truth. Each call to
+   * `startCooldown` inserts one row — a user can therefore have multiple
+   * concurrent tranches per (wallet, market), each with its own 20-day
+   * cooldown clock and 2-day withdrawal window. `positions.cooldownAmountUsd6`
+   * / `cooldownStartedAt` / `cooldownEndsAt` / `withdrawalWindowEndsAt` are the
+   * derived aggregate rollup over the active tranches (see comments on
+   * `positions`); this table is what the umbrella lifecycle actually reads
+   * and mutates.
+   *
+   * `status` is the last-mutated persisted value. Read-time
+   * (getSessionState) recomputes it by comparing `now` against endsAt /
+   * windowEndsAt so idle time doesn't need a background sweep. `consumed` =
+   * fully unstaked or slashed to zero; kept for activity history but excluded
+   * from every live total.
+   */
+  umbrellaCooldownTranches: defineTable({
+    positionId: v.id("positions"),
+    wallet: v.string(),
+    marketId: v.string(),
+    amountUsd6: v.string(),
+    startedAt: v.number(),
+    endsAt: v.number(),
+    windowEndsAt: v.number(),
+    status: v.union(v.literal("cooling"), v.literal("ready"), v.literal("expired"), v.literal("consumed")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_position", ["positionId"])
+    .index("by_wallet_market_status", ["wallet", "marketId", "status"])
+    .index("by_market_status", ["marketId", "status"]),
 
   /**
    * Per-wallet token balances backing the swap flow + the dashboard "Wallet" tab.

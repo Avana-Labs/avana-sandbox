@@ -201,8 +201,7 @@ async function upsertLiquidBalance(
     updatedAt: now,
   }
   if (liquidExisting) await ctx.db.patch(liquidExisting._id, liquidNext)
-  else if (liquidNext.amount > 0 || liquidNext.valueUsd > 0)
-    await ctx.db.insert("walletLiquidBalances", liquidNext)
+  else if (liquidNext.amount > 0 || liquidNext.valueUsd > 0) await ctx.db.insert("walletLiquidBalances", liquidNext)
 }
 
 async function readLiquidBalance(ctx: QueryCtx | MutationCtx, wallet: string, marketId: UmbrellaMarketId) {
@@ -220,6 +219,78 @@ async function readUmbrellaPosition(ctx: QueryCtx | MutationCtx, wallet: string,
       q.eq("wallet", wallet).eq("product", "umbrella").eq("marketSlug", marketId),
     )
     .unique()
+}
+
+/**
+ * Fetch every active tranche (not "consumed") for a (wallet, market). The
+ * caller re-derives status vs. `now` at read time — the persisted `status`
+ * only matters to filter out consumed rows without a table scan.
+ */
+async function listActiveTranches(ctx: QueryCtx | MutationCtx, wallet: string, marketId: UmbrellaMarketId) {
+  const [cooling, ready, expired] = await Promise.all([
+    ctx.db
+      .query("umbrellaCooldownTranches")
+      .withIndex("by_wallet_market_status", (q) =>
+        q.eq("wallet", wallet).eq("marketId", marketId).eq("status", "cooling"),
+      )
+      .collect(),
+    ctx.db
+      .query("umbrellaCooldownTranches")
+      .withIndex("by_wallet_market_status", (q) =>
+        q.eq("wallet", wallet).eq("marketId", marketId).eq("status", "ready"),
+      )
+      .collect(),
+    ctx.db
+      .query("umbrellaCooldownTranches")
+      .withIndex("by_wallet_market_status", (q) =>
+        q.eq("wallet", wallet).eq("marketId", marketId).eq("status", "expired"),
+      )
+      .collect(),
+  ])
+  return [...cooling, ...ready, ...expired]
+}
+
+/**
+ * Derive live status by comparing `now` to a tranche's endsAt / windowEndsAt.
+ * Never returns "consumed" — callers pre-filter those.
+ */
+function deriveTrancheStatus(tranche: Doc<"umbrellaCooldownTranches">, now: number): "cooling" | "ready" | "expired" {
+  if (now < tranche.endsAt) return "cooling"
+  if (now < tranche.windowEndsAt) return "ready"
+  return "expired"
+}
+
+/**
+ * Recompute position.cooldownAmountUsd6 + timestamp rollups from the active
+ * tranches. Called after every startCooldown / unstake / slash tranche
+ * mutation so backwards-compat callers (portfolio snapshots, older UI) see a
+ * coherent aggregate.
+ */
+async function recomputePositionAggregate(
+  ctx: MutationCtx,
+  wallet: string,
+  marketId: UmbrellaMarketId,
+  positionId: Id<"positions">,
+  now: number,
+) {
+  const active = await listActiveTranches(ctx, wallet, marketId)
+  let totalUsd6 = 0n
+  let minStartedAt: number | undefined
+  let minEndsAt: number | undefined
+  let minWindowEndsAt: number | undefined
+  for (const tranche of active) {
+    totalUsd6 += BigInt(tranche.amountUsd6)
+    if (minStartedAt === undefined || tranche.startedAt < minStartedAt) minStartedAt = tranche.startedAt
+    if (minEndsAt === undefined || tranche.endsAt < minEndsAt) minEndsAt = tranche.endsAt
+    if (minWindowEndsAt === undefined || tranche.windowEndsAt < minWindowEndsAt) minWindowEndsAt = tranche.windowEndsAt
+  }
+  await ctx.db.patch(positionId, {
+    cooldownAmountUsd6: totalUsd6.toString(),
+    cooldownStartedAt: minStartedAt,
+    cooldownEndsAt: minEndsAt,
+    withdrawalWindowEndsAt: minWindowEndsAt,
+    lastUpdatedAt: now,
+  })
 }
 
 /**
@@ -257,7 +328,7 @@ export const getSessionState = query({
     const authed = await requireSandboxWallet(ctx, wallet)
     const now = Date.now()
     const marketIds = Object.keys(UMBRELLA_MARKETS) as UmbrellaMarketId[]
-    const [balances, positions, transactions, aggregatesPerMarket, overlays] = await Promise.all([
+    const [balances, positions, transactions, aggregatesPerMarket, overlays, tranchesByWallet] = await Promise.all([
       Promise.all(marketIds.map((marketId) => readLiquidBalance(ctx, authed, marketId))),
       ctx.db
         .query("positions")
@@ -288,6 +359,12 @@ export const getSessionState = query({
         }),
       ),
       Promise.all(marketIds.map((marketId) => readUmbrellaMarketOverlay(ctx, marketId))),
+      // Every active tranche for this wallet, folded per market below. Reads
+      // the by_wallet index once — cheaper than per-position round-trips.
+      ctx.db
+        .query("umbrellaCooldownTranches")
+        .withIndex("by_wallet", (q) => q.eq("wallet", authed))
+        .collect(),
     ])
     // Fold each per-wallet aggregate + the live umbrellaMarketState overlay
     // into the catalog baseline. The catalog holds Target / APY / priceUsd as
@@ -322,25 +399,61 @@ export const getSessionState = query({
       markets: liveMarkets,
       walletBalances: Object.fromEntries(marketIds.map((marketId, index) => [marketId, balances[index] ?? 0])),
       positions: positions.map((position) => {
-        const withdrawalWindowExpired =
-          !!position.withdrawalWindowEndsAt &&
-          now > position.withdrawalWindowEndsAt &&
-          numberFromUsd6(position.cooldownAmountUsd6) > 0
+        const marketId = position.marketSlug as UmbrellaMarketId
+        // Fold this wallet's active tranches for this market into the
+        // aggregate + the per-tranche list the UI can render. Consumed
+        // tranches never surface.
+        const positionTranches = tranchesByWallet
+          .filter((row) => row.positionId === position._id && row.status !== "consumed")
+          .map((row) => ({
+            _id: row._id,
+            amountUsd: numberFromUsd6(row.amountUsd6),
+            startedAt: row.startedAt,
+            endsAt: row.endsAt,
+            windowEndsAt: row.windowEndsAt,
+            status: deriveTrancheStatus(row, now),
+          }))
+          .sort((a, b) => a.endsAt - b.endsAt)
+        const anyExpiredWithCooling = positionTranches.some((t) => t.status === "expired" && t.amountUsd > 0)
+        const withdrawalWindowExpired = anyExpiredWithCooling
+        // Aggregate rollups from tranches (source of truth); fall back to the
+        // stored aggregate for pre-tranche seed rows.
+        const trancheTotalUsd = positionTranches.reduce((sum, t) => sum + t.amountUsd, 0)
+        const cooldownUsd = positionTranches.length > 0 ? trancheTotalUsd : numberFromUsd6(position.cooldownAmountUsd6)
+        const activeEndsCandidates = positionTranches.filter((t) => t.status !== "expired").map((t) => t.endsAt)
+        const readyWindowCandidates = positionTranches.filter((t) => t.status === "ready").map((t) => t.windowEndsAt)
+        const cooldownEndsAt =
+          positionTranches.length > 0
+            ? activeEndsCandidates.length > 0
+              ? Math.min(...activeEndsCandidates)
+              : positionTranches[0]?.endsAt
+            : position.cooldownEndsAt
+        const withdrawalWindowEndsAt =
+          positionTranches.length > 0
+            ? readyWindowCandidates.length > 0
+              ? Math.min(...readyWindowCandidates)
+              : positionTranches[0]?.windowEndsAt
+            : position.withdrawalWindowEndsAt
+        const cooldownStartedAt =
+          positionTranches.length > 0
+            ? Math.min(...positionTranches.map((t) => t.startedAt))
+            : position.cooldownStartedAt
         return {
           _id: position._id,
-          marketId: position.marketSlug as UmbrellaMarketId,
+          marketId,
           suppliedUsd: numberFromUsd6(position.suppliedUsd6),
-          amount: tokenAmountFromUsd(position.marketSlug as UmbrellaMarketId, numberFromUsd6(position.suppliedUsd6)),
+          amount: tokenAmountFromUsd(marketId, numberFromUsd6(position.suppliedUsd6)),
           pendingRewardsUsd: numberFromUsd6(position.earnedUsd6) + rewardAccruedUsd(position, now),
           claimedRewardsUsd: numberFromUsd6(position.claimedRewardsUsd6),
-          cooldownUsd: numberFromUsd6(position.cooldownAmountUsd6),
-          cooldownStartedAt: position.cooldownStartedAt,
-          cooldownEndsAt: position.cooldownEndsAt,
-          withdrawalWindowEndsAt: position.withdrawalWindowEndsAt,
+          cooldownUsd,
+          cooldownStartedAt,
+          cooldownEndsAt,
+          withdrawalWindowEndsAt,
           withdrawalWindowExpired,
           slashedAmountUsd: numberFromUsd6(position.slashedAmountUsd6),
           status: position.status,
           lastUpdatedAt: position.lastUpdatedAt,
+          tranches: positionTranches,
         }
       }),
       transactions: transactions.map((row) => ({
@@ -425,50 +538,85 @@ export const recordAction = mutation({
         revision: (position.revision ?? 0) + 1,
       })
     } else if (args.kind === "startCooldown") {
-      if (!position || amountUsd > suppliedUsd - cooldownUsd) throw new Error("INVALID_COOLDOWN_AMOUNT")
-      // Reject a second cooldown tranche while another one is still active.
-      // The schema stores a single cooldownStartedAt/EndsAt/windowEndsAt per
-      // position, so multi-tranche cooldowns would need per-tranche rows —
-      // that's a future refactor. Until then, force the user to finish or
-      // unstake the current cooldown before starting a new one. This block
-      // also catches the "expired-and-unclaimed" case (window passed but
-      // cooldownAmount > 0) so we never silently overwrite the expired
-      // tranche's cooldownStartedAt with the new one.
-      const hasActiveCooldown =
-        cooldownUsd > 0 &&
-        !!position.cooldownEndsAt &&
-        (now < position.cooldownEndsAt ||
-          (position.withdrawalWindowEndsAt !== undefined && now >= position.cooldownEndsAt))
-      if (hasActiveCooldown) throw new Error("COOLDOWN_ALREADY_ACTIVE")
+      if (!position) throw new Error("INVALID_COOLDOWN_AMOUNT")
+      // Fold every active tranche to enforce "can only cool the active portion,
+      // not a portion already cooling". The user can now hold multiple concurrent
+      // tranches per market — each with its own 20-day / 2-day clock — as long
+      // as the total cooling <= supplied.
+      const activeTranches = await listActiveTranches(ctx, wallet, args.marketId)
+      const activeCoolingUsd6 = activeTranches.reduce((sum, t) => sum + BigInt(t.amountUsd6), 0n)
+      const activeCoolingUsd = Number(activeCoolingUsd6) / 1_000_000
+      if (amountUsd > suppliedUsd - activeCoolingUsd + 1e-9) throw new Error("INVALID_COOLDOWN_AMOUNT")
+      await ctx.db.insert("umbrellaCooldownTranches", {
+        positionId: position._id,
+        wallet,
+        marketId: args.marketId,
+        amountUsd6: usd6(amountUsd),
+        startedAt: now,
+        endsAt: now + COOLDOWN_MS,
+        windowEndsAt: now + COOLDOWN_MS + WITHDRAWAL_WINDOW_MS,
+        status: "cooling",
+        createdAt: now,
+        updatedAt: now,
+      })
       await ctx.db.patch(position._id, {
         earnedUsd6: usd6(earnedUsd),
-        cooldownAmountUsd6: usd6(cooldownUsd + amountUsd),
-        cooldownStartedAt: now,
-        cooldownEndsAt: now + COOLDOWN_MS,
-        withdrawalWindowEndsAt: now + COOLDOWN_MS + WITHDRAWAL_WINDOW_MS,
-        lastUpdatedAt: now,
         // earnedUsd6 folds in accrual up to `now`, so the reward clock restarts.
         rewardCheckpointAt: now,
         revision: (position.revision ?? 0) + 1,
       })
+      await recomputePositionAggregate(ctx, wallet, args.marketId, position._id, now)
     } else {
-      if (!position || !position.cooldownEndsAt || now < position.cooldownEndsAt) throw new Error("COOLDOWN_NOT_READY")
-      if (position.withdrawalWindowEndsAt && now > position.withdrawalWindowEndsAt)
-        throw new Error("WITHDRAWAL_WINDOW_EXPIRED")
-      if (amountUsd > cooldownUsd) throw new Error("INSUFFICIENT_COOLDOWN_BALANCE")
+      if (!position) throw new Error("COOLDOWN_NOT_READY")
+      // Fold tranches into ready / expired buckets. Unstake consumes ready
+      // tranches FIFO (earliest endsAt first). An expired tranche with cooling
+      // USD still on it means "user let the window lapse — must restart";
+      // don't silently swallow it.
+      const activeTranches = await listActiveTranches(ctx, wallet, args.marketId)
+      const readyTranches = activeTranches
+        .filter((t) => now >= t.endsAt && now < t.windowEndsAt)
+        .sort((a, b) => a.endsAt - b.endsAt)
+      const expiredTranches = activeTranches.filter((t) => now >= t.windowEndsAt)
+      const readyUsd6 = readyTranches.reduce((sum, t) => sum + BigInt(t.amountUsd6), 0n)
+      const readyUsd = Number(readyUsd6) / 1_000_000
+      if (readyTranches.length === 0) {
+        if (expiredTranches.length > 0) throw new Error("WITHDRAWAL_WINDOW_EXPIRED")
+        throw new Error("COOLDOWN_NOT_READY")
+      }
+      if (amountUsd > readyUsd + 1e-9) throw new Error("INSUFFICIENT_COOLDOWN_BALANCE")
+      // Consume FIFO across ready tranches.
+      let remaining = amountUsd
+      for (const tranche of readyTranches) {
+        if (remaining <= 1e-9) break
+        const trancheUsd = Number(BigInt(tranche.amountUsd6)) / 1_000_000
+        const take = Math.min(trancheUsd, remaining)
+        remaining -= take
+        const nextUsd = trancheUsd - take
+        if (nextUsd <= 1e-9) {
+          await ctx.db.patch(tranche._id, {
+            amountUsd6: "0",
+            status: "consumed",
+            updatedAt: now,
+          })
+        } else {
+          await ctx.db.patch(tranche._id, {
+            amountUsd6: usd6(nextUsd),
+            updatedAt: now,
+          })
+        }
+      }
       await upsertLiquidBalance(ctx, wallet, args.marketId, liquid + amount, now)
       const nextSuppliedUsd = Math.max(0, suppliedUsd - amountUsd)
       await ctx.db.patch(position._id, {
         status: nextSuppliedUsd > 0 ? "open" : "closed",
         suppliedUsd6: usd6(nextSuppliedUsd),
         earnedUsd6: usd6(earnedUsd),
-        cooldownAmountUsd6: usd6(Math.max(0, cooldownUsd - amountUsd)),
-        lastUpdatedAt: now,
         // earnedUsd6 folds accrual up to `now`; reset the clock.
         rewardCheckpointAt: now,
         closedAt: nextSuppliedUsd > 0 ? undefined : now,
         revision: (position.revision ?? 0) + 1,
       })
+      await recomputePositionAggregate(ctx, wallet, args.marketId, position._id, now)
     }
 
     const syntheticTxHash = `sim-umbrella-${args.kind}-${args.marketId}-${now.toString(36)}`
@@ -578,6 +726,31 @@ export async function seedUmbrellaWallet(ctx: MutationCtx, wallet: string, now: 
       openTxSynthetic: hash,
       revision: 1,
     })
+    // Fixture positions with cooldownUsd > 0 seed exactly ONE tranche so the
+    // per-tranche source of truth stays consistent with the aggregate. Never
+    // splits into multiple rows — that's a startCooldown behaviour, not a
+    // seeding behaviour.
+    if (
+      position.cooldownUsd > 0 &&
+      cooldownStartedAt !== undefined &&
+      cooldownEndsAt !== undefined &&
+      withdrawalWindowEndsAt !== undefined
+    ) {
+      const seededStatus: "cooling" | "ready" | "expired" =
+        now < cooldownEndsAt ? "cooling" : now < withdrawalWindowEndsAt ? "ready" : "expired"
+      await ctx.db.insert("umbrellaCooldownTranches", {
+        positionId,
+        wallet,
+        marketId: position.marketId,
+        amountUsd6: usd6(position.cooldownUsd),
+        startedAt: cooldownStartedAt,
+        endsAt: cooldownEndsAt,
+        windowEndsAt: withdrawalWindowEndsAt,
+        status: seededStatus,
+        createdAt: now,
+        updatedAt: now,
+      })
+    }
     await ctx.db.insert("transactions", {
       wallet,
       intentId: `seed-umbrella-${position.marketId}`,
@@ -688,17 +861,30 @@ export const simulateSlash = mutation({
       const seizeStake = suppliedUsd * ratio
       const seizeCooldown = cooldownUsd * ratio
       const nextSupplied = Math.max(0, suppliedUsd - seizeStake)
-      const nextCooldown = Math.max(0, cooldownUsd - seizeCooldown)
       const totalSeized = seizeStake + seizeCooldown
       realized += totalSeized
       const priorSlashed = numberFromUsd6(row.slashedAmountUsd6)
+      // Distribute the cooling seizure pro-rata across every active tranche
+      // for this (wallet, market). A tranche driven to zero becomes
+      // "consumed"; we still fold the aggregate below.
+      const tranches = await listActiveTranches(ctx, row.wallet, args.marketId)
+      for (const tranche of tranches) {
+        const trancheUsd = Number(BigInt(tranche.amountUsd6)) / 1_000_000
+        const seize = trancheUsd * ratio
+        const nextUsd = Math.max(0, trancheUsd - seize)
+        if (nextUsd <= 1e-9) {
+          await ctx.db.patch(tranche._id, { amountUsd6: "0", status: "consumed", updatedAt: now })
+        } else {
+          await ctx.db.patch(tranche._id, { amountUsd6: usd6(nextUsd), updatedAt: now })
+        }
+      }
       await ctx.db.patch(row._id, {
         suppliedUsd6: usd6(nextSupplied),
-        cooldownAmountUsd6: usd6(nextCooldown),
         slashedAmountUsd6: usd6(priorSlashed + totalSeized),
         lastUpdatedAt: now,
         revision: (row.revision ?? 0) + 1,
       })
+      await recomputePositionAggregate(ctx, row.wallet, args.marketId, row._id, now)
       await ctx.db.insert("sandboxActivity", {
         wallet: row.wallet,
         kind: "umbrella_slash",

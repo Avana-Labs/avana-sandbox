@@ -137,7 +137,7 @@ describe("umbrella recordAction — lifecycle invariants (fast-check)", () => {
     )
   })
 
-  test("I2: position.suppliedUsd6 >= position.cooldownAmountUsd6 always (BigInt comparison)", async () => {
+  test("I2: position.suppliedUsd6 >= sum(active tranche amountUsd6) always (BigInt comparison)", async () => {
     await fc.assert(
       fc.asyncProperty(fc.array(actionArb, { minLength: 1, maxLength: 8 }), async (actions) => {
         const t = convexTest(schema, modules)
@@ -182,8 +182,24 @@ describe("umbrella recordAction — lifecycle invariants (fast-check)", () => {
           const position = await readPosition(t)
           if (position) {
             const supplied = BigInt(position.suppliedUsd6 ?? "0")
-            const cooling = BigInt(position.cooldownAmountUsd6 ?? "0")
+            // Sum across every active tranche (multi-tranche cooldowns land
+            // in umbrellaCooldownTranches; the aggregate rollup on `positions`
+            // is the same sum). The invariant now spans the sum, not a
+            // single-tranche field.
+            const tranches = await t.run(async (ctx) =>
+              ctx.db
+                .query("umbrellaCooldownTranches")
+                .withIndex("by_position", (q) => q.eq("positionId", position._id))
+                .collect(),
+            )
+            let cooling = 0n
+            for (const tranche of tranches) {
+              if (tranche.status === "consumed") continue
+              cooling += BigInt(tranche.amountUsd6)
+            }
             if (supplied < cooling) return false
+            // Aggregate rollup on the position row must match the sum.
+            if (BigInt(position.cooldownAmountUsd6 ?? "0") !== cooling) return false
           }
         }
         return true
