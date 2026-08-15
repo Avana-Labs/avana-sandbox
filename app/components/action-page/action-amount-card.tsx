@@ -135,16 +135,29 @@ export function ActionAmountCard({
     }
   }, [menuOpen, useMenuSheet])
 
+  const selectOption = (id: string) => {
+    onAssetSelect!(id)
+    setMenuOpen(false)
+  }
   const renderAssetOption = (option: ActionAssetOption) => (
     <button
       key={option.id}
       type="button"
       role="option"
       aria-selected={option.id === selectedAssetId}
+      // Select on pointerdown (fires before the document-level outside-click
+      // handler races to close the menu) AND on click (keyboard / touch
+      // fallback). stopPropagation prevents the document listener from ever
+      // seeing this pointerdown, so the menu closes cleanly through our own
+      // setMenuOpen call.
       onMouseDown={(event) => event.preventDefault()}
-      onClick={() => {
-        onAssetSelect!(option.id)
-        setMenuOpen(false)
+      onPointerDown={(event) => {
+        event.stopPropagation()
+        selectOption(option.id)
+      }}
+      onClick={(event) => {
+        event.stopPropagation()
+        selectOption(option.id)
       }}
       className={cn(
         "flex w-full items-start gap-2 rounded-radius-md px-2.5 py-2.5 text-left text-[14px] transition-colors hover:bg-hover",
