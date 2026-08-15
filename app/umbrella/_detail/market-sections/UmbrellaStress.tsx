@@ -51,9 +51,11 @@ function AssetCard({ market }: { market: UmbrellaMarket }) {
         <div className="flex items-center justify-between gap-3">
           <MetricLabel
             label="Cooldown"
-            tooltip="Wait period between starting cooldown and being able to unstake. During cooldown the position keeps earning rewards and remains slashable."
+            tooltip="Coverage currently in cooldown across all stakers of this asset. Cooldown positions still absorb losses until they finish the 20-day wait and are unstaked."
           />
-          <span className="text-[15px] font-semibold tabular-nums">20 days</span>
+          <span className="text-[15px] font-semibold tabular-nums">
+            {formatCompactUsd(market.amountInCooldownUsd)}
+          </span>
         </div>
       </div>
 
