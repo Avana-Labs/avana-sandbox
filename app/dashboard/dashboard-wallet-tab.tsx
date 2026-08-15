@@ -152,6 +152,14 @@ function PnlCell({
   )
 }
 
+// Debt is a liability, not a holding, and claimable pool fees are not a wallet token (they show
+// as "Unclaimed fees" on the pool rows instead) — so keep both out of the wallet holdings view.
+const HIDDEN_WALLET_SOURCE_TYPES: ReadonlySet<UserAssetBalance["sourceType"]> = new Set([
+  "borrow_debt",
+  "multiply_debt",
+  "borrow_claimable",
+])
+
 export function DashboardWalletTab({ walletId, balances }: { walletId: string; balances?: UserAssetBalance[] }) {
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const { exact } = useCurrency()
@@ -159,7 +167,9 @@ export function DashboardWalletTab({ walletId, balances }: { walletId: string; b
   // Dashboard wallet is the aggregate view of all product-scoped onboarding buckets.
   const convexBalances = useConvexProductWalletBalances(balances === undefined ? walletId : null)
   const effectiveBalances = balances ?? convexBalances ?? undefined
-  const rows = buildDashboardWalletBalanceRows({ walletId, balances: effectiveBalances })
+  const rows = buildDashboardWalletBalanceRows({ walletId, balances: effectiveBalances }).filter(
+    (row) => !HIDDEN_WALLET_SOURCE_TYPES.has(row.sourceType),
+  )
   const tokens = rows.filter((row) => !row.isLpToken)
   const lps = rows.filter((row) => row.isLpToken)
   const totalWalletUsd = rows.reduce((total, row) => total + row.valueUsd, 0)
@@ -276,7 +286,9 @@ function WalletBalanceSection({
                 <TokenIcon symbol={row.symbol} size="md" />
                 <div className="min-w-0">
                   <div className="truncate font-medium text-foreground">{row.name}</div>
-                  <div className="text-[13px] text-muted-foreground">{row.symbol}</div>
+                  <div className="text-[13px] text-muted-foreground">
+                    {row.symbol} · {row.sourceLabel}
+                  </div>
                 </div>
               </div>
               <div className="text-right">
