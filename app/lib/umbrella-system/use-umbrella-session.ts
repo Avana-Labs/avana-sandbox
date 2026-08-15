@@ -21,7 +21,16 @@ export type UmbrellaMarket = {
   currentDeficitUsd: number
   deficitOffsetUsd: number
   amountInCooldownUsd: number
+  /**
+   * Cumulative slashed USD from `umbrellaMarketState.totalSlashedUsd`. Optional
+   * because the fallback (default) markets have no live overlay row and the
+   * catalog doesn't carry this field.
+   */
+  totalSlashedUsd?: number
 }
+
+/** Union used by cooldownLabel + UI: adds "expired" when the withdrawal window has passed. */
+export type UmbrellaCooldownStatus = "idle" | "cooling" | "ready" | "expired"
 
 export type UmbrellaPosition = {
   marketId: UmbrellaMarketId
@@ -31,9 +40,15 @@ export type UmbrellaPosition = {
   claimedRewardsUsd: number
   cooldownAmount: number
   cooldownValueUsd: number
-  cooldownStatus: "idle" | "cooling" | "ready"
+  cooldownStatus: UmbrellaCooldownStatus
   cooldownRemaining: string
   removesIn: string
+  /** ms epoch — end of the 20-day cooldown; undefined when idle. Propagated so the UI can compute a countdown without a Convex round-trip. */
+  cooldownEndsAt?: number
+  /** ms epoch — end of the 2-day withdrawal window; undefined when idle. */
+  withdrawalWindowEndsAt?: number
+  /** True when withdrawalWindowEndsAt < now and cooldownAmount > 0. */
+  withdrawalWindowExpired: boolean
   updatedAt: number
 }
 
@@ -72,6 +87,8 @@ export type ConvexUmbrellaSessionState = {
     cooldownStartedAt?: number
     cooldownEndsAt?: number
     withdrawalWindowEndsAt?: number
+    /** Server-computed: withdrawalWindowEndsAt < now && cooldownUsd > 0. */
+    withdrawalWindowExpired: boolean
     status: "open" | "closed"
     lastUpdatedAt: number
   }>
@@ -86,12 +103,14 @@ export type ConvexUmbrellaSessionState = {
   }>
 }
 
+export type PersistUmbrellaActionResult = { receipt?: { syntheticTxHash?: string } } | undefined | void | unknown
+
 export type PersistUmbrellaAction = (args: {
   intentId: string
   kind: UmbrellaActionKind
   marketId: UmbrellaMarketId
   amount: number
-}) => Promise<unknown>
+}) => Promise<PersistUmbrellaActionResult>
 
 const UMBRELLA_STATE_PREFIX = `avana.umbrella.session.${SESSION_CACHE_VERSION}`
 
@@ -188,6 +207,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
         cooldownStatus: "idle",
         cooldownRemaining: "-",
         removesIn: "After 20 days",
+        withdrawalWindowExpired: false,
         updatedAt: now,
       },
       usdc: {
@@ -201,6 +221,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
         cooldownStatus: "cooling",
         cooldownRemaining: "4d 11h",
         removesIn: "4d 11h",
+        withdrawalWindowExpired: false,
         updatedAt: now,
       },
       usdt: {
@@ -214,6 +235,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
         cooldownStatus: "ready",
         cooldownRemaining: "Ready",
         removesIn: "0d 0h",
+        withdrawalWindowExpired: false,
         updatedAt: now,
       },
       weth: {
@@ -227,6 +249,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
         cooldownStatus: "idle",
         cooldownRemaining: "-",
         removesIn: "After 20 days",
+        withdrawalWindowExpired: false,
         updatedAt: now,
       },
     },
@@ -250,10 +273,21 @@ function clampAmount(value: number) {
   return Number.isFinite(value) ? Math.max(0, value) : 0
 }
 
+/**
+ * Derive cooldown UI labels + status. Recognises four states:
+ *   idle     — no cooldown active.
+ *   cooling  — inside the 20-day cooldown window.
+ *   ready    — cooldown ended, still inside the 2-day withdrawal window.
+ *   expired  — withdrawal window passed with cooldownUsd still > 0; the user
+ *              must restart the cooldown for the cooling amount.
+ */
 function cooldownLabel(position: ConvexUmbrellaSessionState["positions"][number]) {
   const now = Date.now()
   if (!position.cooldownEndsAt || position.cooldownUsd <= 0)
     return { status: "idle" as const, remaining: "-", removesIn: "After 20 days" }
+  if (position.withdrawalWindowExpired || (position.withdrawalWindowEndsAt && now > position.withdrawalWindowEndsAt)) {
+    return { status: "expired" as const, remaining: "Expired", removesIn: "Restart cooldown" }
+  }
   if (now >= position.cooldownEndsAt) return { status: "ready" as const, remaining: "Ready", removesIn: "0d 0h" }
   const remainingHours = Math.ceil((position.cooldownEndsAt - now) / (60 * 60 * 1000))
   const days = Math.floor(remainingHours / 24)
@@ -273,6 +307,7 @@ function emptyPosition(marketId: UmbrellaMarketId, now: number): UmbrellaPositio
     cooldownStatus: "idle",
     cooldownRemaining: "-",
     removesIn: "After 20 days",
+    withdrawalWindowExpired: false,
     updatedAt: now,
   }
 }
@@ -304,6 +339,9 @@ function stateFromConvex(walletId: string, remote: ConvexUmbrellaSessionState): 
       cooldownStatus: labels.status,
       cooldownRemaining: labels.remaining,
       removesIn: labels.removesIn,
+      cooldownEndsAt: remotePosition.cooldownEndsAt,
+      withdrawalWindowEndsAt: remotePosition.withdrawalWindowEndsAt,
+      withdrawalWindowExpired: remotePosition.withdrawalWindowExpired,
       updatedAt: remotePosition.lastUpdatedAt,
     }
   }
@@ -346,6 +384,26 @@ export function useUmbrellaSession({
   const [state, setState] = useState<UmbrellaState>(seededState)
   const stateRef = useRef(state)
   stateRef.current = state
+  // Hydration semantics (mirrors lend/borrow):
+  //  - true once `remoteState` has been non-undefined at least once (Convex responded).
+  //  - true when `persistState === false` and no remoteState is expected
+  //    (test / SSR-only use — nothing to wait on).
+  //  - false otherwise (still fetching).
+  const remoteSettledRef = useRef(false)
+  const [isHydrated, setIsHydrated] = useState(() => !persistState && remoteState === undefined)
+
+  useEffect(() => {
+    if (remoteState !== undefined) {
+      remoteSettledRef.current = true
+      setIsHydrated(true)
+    } else if (!persistState) {
+      remoteSettledRef.current = false
+      setIsHydrated(true)
+    } else {
+      remoteSettledRef.current = false
+      setIsHydrated(false)
+    }
+  }, [persistState, remoteState])
 
   useEffect(() => {
     if (remoteState) {
@@ -361,19 +419,46 @@ export function useUmbrellaSession({
   }, [persistState, state, walletId])
 
   const execute = useCallback(
-    async (kind: UmbrellaActionKind, marketId: UmbrellaMarketId, rawAmount: number) => {
+    async (kind: UmbrellaActionKind, marketId: UmbrellaMarketId, rawAmount: number): Promise<UmbrellaTransaction> => {
       const amount = clampAmount(rawAmount)
       if (kind !== "claim" && amount <= 0) throw new Error("Amount must be positive")
 
+      // When Convex is the source of truth, Convex owns validation, accrual, and
+      // withdrawal-window checks. The old local setState re-implemented those
+      // rules but skipped reward accrual + the expired-window state, so between
+      // persistAction resolving and the Convex reactivity round-trip the UI
+      // could disagree with the server. Trust Convex; don't lie for a beat.
       if (persistAction) {
-        await persistAction({
-          intentId: `umbrella-${kind}-${marketId}-${Date.now()}`,
+        const currentState = stateRef.current
+        const market = currentState.markets[marketId]
+        const timestamp = Date.now()
+        const intentId = `umbrella-${kind}-${marketId}-${timestamp}`
+        let result: PersistUmbrellaActionResult
+        try {
+          result = await persistAction({ intentId, kind, marketId, amount })
+        } catch (error) {
+          throw error instanceof Error ? error : new Error(String(error))
+        }
+        const amountUsd = kind === "claim" ? currentState.positions[marketId]?.pendingRewardsUsd ?? 0 : amount * market.priceUsd
+        const receipt = (result && typeof result === "object" && "receipt" in result ? (result as { receipt?: { syntheticTxHash?: string } }).receipt : undefined)
+        const hash = receipt?.syntheticTxHash ?? `pending-${intentId}`
+        return {
+          id: intentId,
+          walletId,
           kind,
           marketId,
+          symbol: market.symbol,
           amount,
-        })
+          amountUsd,
+          status: "success",
+          hash,
+          timestamp,
+        }
       }
 
+      // Local-only (tests / offline): keep the optimistic-state mutation but
+      // enforce the same withdrawal-window-expired invariant Convex enforces —
+      // no unstake, no top-up cooldown while the previous one has expired.
       let result: UmbrellaTransaction | null = null
       setState((current) => {
         const market = current.markets[marketId]
@@ -382,11 +467,21 @@ export function useUmbrellaSession({
         const amountUsd = amount * market.priceUsd
 
         if (kind === "stake" && amount > balance) throw new Error(`Insufficient ${market.symbol} balance`)
-        if (kind === "startCooldown" && amount > position.amount - position.cooldownAmount) {
-          throw new Error(`Insufficient active ${market.symbol}`)
+        if (kind === "startCooldown") {
+          if (position.cooldownStatus === "expired") {
+            throw new Error(`Finish or unstake the current cooldown before starting a new one`)
+          }
+          if (amount > position.amount - position.cooldownAmount) {
+            throw new Error(`Insufficient active ${market.symbol}`)
+          }
         }
-        if (kind === "unstake" && amount > position.cooldownAmount) {
-          throw new Error(`Insufficient cooled ${market.symbol}`)
+        if (kind === "unstake") {
+          if (position.cooldownStatus === "expired") {
+            throw new Error(`Withdrawal window expired — restart cooldown`)
+          }
+          if (amount > position.cooldownAmount) {
+            throw new Error(`Insufficient cooled ${market.symbol}`)
+          }
         }
         if (kind === "claim" && position.pendingRewardsUsd <= 0) throw new Error("No Umbrella rewards to claim")
 
@@ -410,6 +505,7 @@ export function useUmbrellaSession({
           timestamp,
         }
 
+        const isStartCooldown = kind === "startCooldown"
         return {
           ...current,
           walletBalances: { ...current.walletBalances, [marketId]: nextBalance },
@@ -448,8 +544,13 @@ export function useUmbrellaSession({
                     : position.cooldownValueUsd,
               cooldownStatus:
                 kind === "startCooldown" ? "cooling" : kind === "stake" ? "idle" : position.cooldownStatus,
-              cooldownRemaining: kind === "startCooldown" ? "20d 0h" : position.cooldownRemaining,
-              removesIn: kind === "startCooldown" ? "20d 0h" : position.removesIn,
+              cooldownRemaining: isStartCooldown ? "20d 0h" : position.cooldownRemaining,
+              removesIn: isStartCooldown ? "20d 0h" : position.removesIn,
+              cooldownEndsAt: isStartCooldown ? timestamp + 20 * 24 * 60 * 60 * 1000 : position.cooldownEndsAt,
+              withdrawalWindowEndsAt: isStartCooldown
+                ? timestamp + 22 * 24 * 60 * 60 * 1000
+                : position.withdrawalWindowEndsAt,
+              withdrawalWindowExpired: isStartCooldown ? false : position.withdrawalWindowExpired,
               updatedAt: timestamp,
             },
           },
@@ -475,6 +576,7 @@ export function useUmbrellaSession({
     walletBalances: state.walletBalances,
     positions: state.positions,
     transactionHistory: state.transactions,
+    isHydrated,
     stake: useCallback((marketId: UmbrellaMarketId, amount: number) => execute("stake", marketId, amount), [execute]),
     claim: useCallback((marketId: UmbrellaMarketId) => execute("claim", marketId, 0), [execute]),
     startCooldown: useCallback(
