@@ -15,7 +15,7 @@ import {
   TABLE_ROW_HOVER_RIGHT,
 } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
-import { formatPct, formatUsd } from "../format"
+import { formatCompactUsd, formatPct, formatUsd } from "../format"
 
 type PositionRow = {
   id: UmbrellaMarketId
@@ -36,6 +36,9 @@ type PositionRow = {
   cooldownStatus: "idle" | "cooling" | "ready" | "expired"
   hasClaim: boolean
   hasUnstake: boolean
+  coverageRatioPct: number
+  coverageRatioLabel: string
+  targetLiquidityLabel: string
 }
 
 function statusLabel(status: PositionRow["cooldownStatus"]) {
@@ -61,6 +64,8 @@ export function UmbrellaPositions({
     const market = umbrella.markets[id]
     const position = umbrella.positions[id]
     const activeStakeUsd = Math.max(position.valueUsd - position.cooldownValueUsd, 0)
+    const coverageRatioPct =
+      market.targetCoverageUsd > 0 ? (market.totalStakedUsd / market.targetCoverageUsd) * 100 : 0
     return {
       id,
       asset: market.asset,
@@ -80,6 +85,9 @@ export function UmbrellaPositions({
       cooldownStatus: position.cooldownStatus,
       hasClaim: position.pendingRewardsUsd > 0,
       hasUnstake: position.cooldownStatus === "ready",
+      coverageRatioPct,
+      coverageRatioLabel: `${formatPct(coverageRatioPct)}% of target`,
+      targetLiquidityLabel: `${formatCompactUsd(market.targetCoverageUsd)} target`,
     }
   })
 
@@ -155,7 +163,9 @@ export function UmbrellaPositions({
                           <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
                             {row.asset}
                           </span>
-                          <span className="mt-0.5 text-[13px] text-muted-foreground">{row.coverage}</span>
+                          <span className="mt-0.5 truncate text-[13px] text-muted-foreground">
+                            {row.coverage} · {row.coverageRatioLabel}
+                          </span>
                         </div>
                       </div>
                     </td>
@@ -179,7 +189,10 @@ export function UmbrellaPositions({
                         <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                           {row.apyTotal} total
                         </span>
-                        <span className="mt-0.5 text-[12px] text-muted-foreground">
+                        <span
+                          className="mt-0.5 text-[12px] text-muted-foreground"
+                          title={row.targetLiquidityLabel}
+                        >
                           base {row.apyBase} + reward {row.apyReward}
                         </span>
                       </div>
@@ -269,7 +282,10 @@ export function UmbrellaPositions({
                 <TokenIcon symbol={row.symbol} size="table" />
                 <div>
                   <div className="font-semibold text-foreground">{row.asset}</div>
-                  <div className="text-[13px] text-muted-foreground">{row.coverage}</div>
+                  <div className="text-[13px] text-muted-foreground">
+                    {row.coverage} · {row.coverageRatioLabel}
+                  </div>
+                  <div className="text-[12px] text-muted-foreground">{row.targetLiquidityLabel}</div>
                 </div>
               </div>
 
