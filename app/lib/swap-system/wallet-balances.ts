@@ -9,6 +9,7 @@ export type DashboardWalletBalanceRow = {
   name: string
   amount: number
   valueUsd: number
+  sourceType: UserAssetBalance["sourceType"]
   sourceLabel: string
   isLpToken: boolean
   isWalletHeld: boolean
@@ -133,6 +134,7 @@ export function buildDashboardWalletBalanceRows({
         name: asset?.name ?? "Unsupported asset",
         amount: balance.amount,
         valueUsd,
+        sourceType: balance.sourceType,
         sourceLabel: sourceLabel(balance.sourceType),
         isLpToken: asset?.isLpToken ?? false,
         isWalletHeld: balance.sourceType === "wallet",
