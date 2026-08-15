@@ -49,6 +49,8 @@ export type UmbrellaPosition = {
   withdrawalWindowEndsAt?: number
   /** True when withdrawalWindowEndsAt < now and cooldownAmount > 0. */
   withdrawalWindowExpired: boolean
+  /** Cumulative USD principal removed by simulated slashes on this position. 0 when never slashed. */
+  slashedValueUsd: number
   updatedAt: number
 }
 
@@ -89,6 +91,8 @@ export type ConvexUmbrellaSessionState = {
     withdrawalWindowEndsAt?: number
     /** Server-computed: withdrawalWindowEndsAt < now && cooldownUsd > 0. */
     withdrawalWindowExpired: boolean
+    /** Cumulative USD principal removed by simulated slashes on this position. */
+    slashedAmountUsd?: number
     status: "open" | "closed"
     lastUpdatedAt: number
   }>
@@ -208,6 +212,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
         cooldownRemaining: "-",
         removesIn: "After 20 days",
         withdrawalWindowExpired: false,
+        slashedValueUsd: 0,
         updatedAt: now,
       },
       usdc: {
@@ -222,6 +227,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
         cooldownRemaining: "4d 11h",
         removesIn: "4d 11h",
         withdrawalWindowExpired: false,
+        slashedValueUsd: 0,
         updatedAt: now,
       },
       usdt: {
@@ -236,6 +242,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
         cooldownRemaining: "Ready",
         removesIn: "0d 0h",
         withdrawalWindowExpired: false,
+        slashedValueUsd: 0,
         updatedAt: now,
       },
       weth: {
@@ -250,6 +257,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
         cooldownRemaining: "-",
         removesIn: "After 20 days",
         withdrawalWindowExpired: false,
+        slashedValueUsd: 0,
         updatedAt: now,
       },
     },
@@ -308,6 +316,7 @@ function emptyPosition(marketId: UmbrellaMarketId, now: number): UmbrellaPositio
     cooldownRemaining: "-",
     removesIn: "After 20 days",
     withdrawalWindowExpired: false,
+    slashedValueUsd: 0,
     updatedAt: now,
   }
 }
@@ -342,6 +351,7 @@ function stateFromConvex(walletId: string, remote: ConvexUmbrellaSessionState): 
       cooldownEndsAt: remotePosition.cooldownEndsAt,
       withdrawalWindowEndsAt: remotePosition.withdrawalWindowEndsAt,
       withdrawalWindowExpired: remotePosition.withdrawalWindowExpired,
+      slashedValueUsd: remotePosition.slashedAmountUsd ?? 0,
       updatedAt: remotePosition.lastUpdatedAt,
     }
   }

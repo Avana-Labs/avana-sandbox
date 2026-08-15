@@ -16,13 +16,12 @@ export type UmbrellaPositionStatus =
  * mobile cards, and any future rollups (e.g. a status count on the section
  * header) without drifting.
  *
- * NOTE: `slashed` is reserved for when `totalSlashedUsd` is exposed per-position
- * (today it's only market-wide, so we can't tell which staker's stake was
- * slashed). TODO: once the per-position slashed field lands, branch on it before
- * the cooldown checks so a slashed position doesn't look like a plain "closed".
+ * `slashed` takes precedence over `closed` so a wallet that was slashed to 0
+ * still shows the incident in the dashboard status column instead of the
+ * neutral "closed" state.
  */
 export function deriveUmbrellaPositionStatus(position: UmbrellaPosition): UmbrellaPositionStatus {
-  if (position.amount === 0) return "closed"
+  if (position.amount === 0) return position.slashedValueUsd > 0 ? "slashed" : "closed"
   if (position.cooldownStatus === "expired") return "cooldownExpired"
   if (position.cooldownStatus === "ready") return "readyToUnstake"
   if (position.cooldownStatus === "cooling") {
