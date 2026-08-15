@@ -275,16 +275,30 @@ export function UmbrellaActionPageClient({
         },
       })
       if (result.receipt.status !== "success") throw new Error("Transaction failed")
+      // "Stake more" — surface a distinct success verb when the user added to an
+      // existing position instead of opening a fresh one. Keeps the descriptor
+      // constants untouched (all four kinds still funnel through one action page).
+      const isStakeMore = kind === "stake" && position.amount > 0
+      const successVerb = isStakeMore ? "Stake more" : descriptor.primaryVerb
+      // Claim-rewards upsell — when a stake / stake-more / cooldown succeeds and
+      // the user still has pending rewards, route the secondary CTA to /actions/
+      // umbrella/claim instead of dumping them back on the landing page. Keeps
+      // the "Back to Umbrella" fallback for actions where nothing else is queued.
+      const nextPendingRewardsUsd = umbrella.positions[marketId].pendingRewardsUsd
+      const shouldUpsellClaim =
+        (kind === "stake" || kind === "cooldown") && nextPendingRewardsUsd > 0
       setSuccessUi({
-        title: `${descriptor.primaryVerb} successful`,
+        title: `${successVerb} successful`,
         description: `${preview.amountLabel} processed in ${market.asset}.`,
         receiptHash: result.receipt.hash ?? null,
         metrics: preview.metrics,
-        primaryCtaLabel: successDashboardCtaLabel("umbrella"),
-        primaryCtaHref: dashboardHrefForProduct("umbrella"),
+        primaryCtaLabel: shouldUpsellClaim ? "Claim rewards" : successDashboardCtaLabel("umbrella"),
+        primaryCtaHref: shouldUpsellClaim
+          ? `/actions/umbrella/claim?market=${marketId}&return=${encodeURIComponent(closeHref)}`
+          : dashboardHrefForProduct("umbrella"),
         secondaryCtaLabel: "Back to Umbrella",
         receiptContext: {
-          verb: descriptor.primaryVerb,
+          verb: successVerb,
           amountUsd: preview.amountUsd,
           amountLabel: preview.amountLabel,
           rateLabel: preview.rateLabel,
@@ -330,9 +344,15 @@ export function UmbrellaActionPageClient({
     )
   }
 
+  // "Stake more" verb variant when the user already holds this market — the
+  // descriptor stays generic; we swap the visible verb so review/processing/CTA
+  // read correctly for top-ups.
+  const dynamicVerb =
+    kind === "stake" && position.amount > 0 ? "Stake more" : descriptor.primaryVerb
+
   return (
     <ActionPageShell
-      title={descriptor.title}
+      title={kind === "stake" && position.amount > 0 ? "Stake more" : descriptor.title}
       subtitle={hideTitle ? undefined : descriptor.subtitle}
       hideTitle={hideTitle}
       closeHref={closeHref}
@@ -343,14 +363,14 @@ export function UmbrellaActionPageClient({
       simulated
     >
       {isProcessingStage(stage) ? (
-        <ActionProcessingStage verb={descriptor.primaryVerb} preview={preview} closeHref={closeHref} stage={stage} />
+        <ActionProcessingStage verb={dynamicVerb} preview={preview} closeHref={closeHref} stage={stage} />
       ) : null}
       {stage === "review" ? (
         <ActionReviewStage
-          title={reviewStageTitle(descriptor.primaryVerb)}
+          title={reviewStageTitle(dynamicVerb)}
           subtitle="Confirm the details below before signing."
           preview={preview}
-          primaryLabel={descriptor.primaryVerb}
+          primaryLabel={dynamicVerb}
           onPrimary={() => void submit()}
           onSecondary={back}
           primaryPending={isPending}
@@ -360,7 +380,7 @@ export function UmbrellaActionPageClient({
       {isConfigureVisibleStage(stage) ? (
         <ActionConfigureStage
           stage={stage === "error" ? "configure" : stage}
-          verb={descriptor.primaryVerb}
+          verb={dynamicVerb}
           amount={kind === "claim" ? String(position.pendingRewardsUsd) : amount}
           onAmountChange={setAmount}
           preview={preview}
