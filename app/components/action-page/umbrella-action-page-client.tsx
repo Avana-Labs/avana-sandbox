@@ -1,6 +1,6 @@
 "use client"
 
-import { useDeferredValue, useMemo, useState } from "react"
+import { useDeferredValue, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor } from "@/app/lib/action-system/contracts"
@@ -217,6 +217,18 @@ export function UmbrellaActionPageClient({
   const [outcome, setOutcome] = useState<{ tone: "error"; title: string; message: string } | null>(null)
   const market = umbrella.markets[marketId]
   const position = umbrella.positions[marketId]
+  // Reset amount + stage when the sidebar swaps `kind` (Stake↔Cooldown↔Unstake↔Claim).
+  // Lets UmbrellaSidebar drop its `key={tab}` remount hack (Fix #34) so React can
+  // reuse the tree — cheaper, no picker/animation flash — while the input still
+  // clears between tabs. Claim seeds pending rewards; other kinds start empty.
+  useEffect(() => {
+    setAmount(kind === "claim" ? String(position.pendingRewardsUsd) : "")
+    setStage("configure")
+    setOutcome(null)
+    setSuccessUi(null)
+    // Intentionally only depends on `kind`: switching markets already re-seeds via
+    // the picker's onAssetSelect handler; positions refresh must not clobber user input.
+  }, [kind])
   // Deferred so the preview runs on the settled input, not once per keystroke (INP lever).
   const deferredAmount = useDeferredValue(amount)
   const parsedAmount = parsePositiveActionAmount(deferredAmount) ?? 0

@@ -1,12 +1,10 @@
 "use client"
 
-import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { useState } from "react"
 import { ActionIcon } from "@/app/components/action-icon"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import { detailSectionStackClass, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
-import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { UmbrellaMarketId } from "@/app/lib/umbrella-system/use-umbrella-session"
 import { UmbrellaActivity } from "./_detail/market-sections/UmbrellaActivity"
@@ -15,6 +13,8 @@ import { UmbrellaHero } from "./_detail/market-sections/UmbrellaHero"
 import { UmbrellaLearn } from "./_detail/market-sections/UmbrellaLearn"
 import { UmbrellaPositions } from "./_detail/market-sections/UmbrellaPositions"
 import { UmbrellaStress } from "./_detail/market-sections/UmbrellaStress"
+import { UmbrellaDevControls } from "./_detail/UmbrellaDevControls"
+import { UmbrellaMobileSidebarSheet, type UmbrellaMobileSheetTrigger } from "./_detail/UmbrellaMobileSidebarSheet"
 import { UmbrellaSidebar } from "./_detail/sidebars/UmbrellaSidebar"
 
 const VALID_MARKETS: readonly UmbrellaMarketId[] = ["gho", "usdc", "usdt", "weth"]
@@ -38,6 +38,24 @@ export default function UmbrellaPage() {
     if (withValue.length > 0 && withValue[0].value > 0) return withValue[0].id
     return "usdc"
   })
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false)
+  const [mobileSheetInitialTab, setMobileSheetInitialTab] = useState<UmbrellaMobileSheetTrigger>("stake")
+  const position = umbrella.positions[selectedMarket]
+  // "More" button jumps straight to whichever tab is most useful given wallet state:
+  // ready-to-withdraw > cooling > has-rewards > cooldown-entry.
+  const moreDefaultTab: UmbrellaMobileSheetTrigger =
+    position?.cooldownStatus === "ready"
+      ? "unstake"
+      : position?.cooldownStatus === "cooling"
+        ? "cooldown"
+        : (position?.pendingRewardsUsd ?? 0) > 0
+          ? "claim"
+          : "cooldown"
+
+  const openSheet = (tab: UmbrellaMobileSheetTrigger) => {
+    setMobileSheetInitialTab(tab)
+    setMobileSheetOpen(true)
+  }
 
   return (
     <div className="bg-background">
@@ -63,23 +81,36 @@ export default function UmbrellaPage() {
           </div>
 
           <MobileDetailActionBar className="grid grid-cols-2 gap-3">
-            <Link
-              href={actionPagePath("umbrella", "unstake", { market: selectedMarket, return: "/umbrella" })}
+            <button
+              type="button"
+              onClick={() => openSheet(moreDefaultTab)}
+              aria-label="More umbrella actions"
               className={secondaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
             >
-              <ActionIcon label="Unstake" />
-              Unstake
-            </Link>
-            <Link
-              href={actionPagePath("umbrella", "stake", { market: selectedMarket, return: "/umbrella" })}
+              <ActionIcon label="More" />
+              More
+            </button>
+            <button
+              type="button"
+              onClick={() => openSheet("stake")}
+              aria-label="Stake in umbrella"
               className={primaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
             >
               <ActionIcon label="Stake" />
               Stake
-            </Link>
+            </button>
           </MobileDetailActionBar>
+
+          <UmbrellaMobileSidebarSheet
+            open={mobileSheetOpen}
+            onOpenChange={setMobileSheetOpen}
+            moduleId={selectedMarket}
+            onMarketChange={setSelectedMarket}
+            initialTab={mobileSheetInitialTab}
+          />
         </div>
       </main>
+      <UmbrellaDevControls />
     </div>
   )
 }

@@ -42,14 +42,7 @@ export function UmbrellaSidebar({
     <aside className="flex w-full flex-col" aria-label="Umbrella actions">
       <DetailActionTabs items={UMBRELLA_ACTION_TABS} value={tab} onChange={setTab} ariaLabel="Umbrella actions" />
       <div className="mt-2">
-        {/* key={tab} forces the embedded action page to remount when the tab
-            changes; without it React reuses the previous instance's state and
-            (a) the picker shows the wrong ticker, (b) the amount field keeps
-            the previous tab's value. TODO: once the action page resets its
-            amount internally on `kind` change we can drop the remount and
-            share input state across tabs. */}
         <ResponsiveUmbrellaAction
-          key={tab}
           kind={tab}
           market={localMarket}
           closeHref={closeHref}
