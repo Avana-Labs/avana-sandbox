@@ -12,7 +12,7 @@ import {
 } from "@/app/lib/data/rewards/catalog"
 import type { RewardsPageData } from "@/app/lib/data/providers/rewards"
 import { useAvanaSessions, useRewardsSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
-import { selectWalletBorrowSnapshot } from "@/app/lib/borrow-system/selectors"
+import { buildBorrowDashboardMetrics } from "@/app/dashboard/dashboard-tab-metrics"
 import { buildPortfolioLendData } from "@/app/lib/lend-system/read-model"
 import { getWalletBalanceForLendMarket } from "@/app/lib/lend-system/wallet-balances"
 import { buildPortfolioMultiplyData } from "@/app/lib/multiply-system/read-model"
@@ -318,21 +318,47 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
   } = useRewardsSessionContext()
   // Full dashboard recent activity (all products) so the rewards table isn't claims-only.
   const { data: dashboardData } = useDashboardPage({ walletProfileId: walletId })
-  const portfolioValueUsd = useMemo(() => {
+  const portfolioBreakdown = useMemo(() => {
+    // Wallet liquid — WALLET-HELD balances only. Product-held buckets (lend deposited,
+    // multiply collateral, pledged collateral, borrow debt) are each counted in their own
+    // leg below; summing them here too would double-count the same asset. (Phase 1.2)
     const walletRows = buildDashboardWalletBalanceRows({
       walletId,
       balances: avana.swap?.state?.balances ?? [],
     })
-    const liquid = walletRows.reduce((sum, row) => sum + row.valueUsd, 0)
-    let borrowNet = 0
+    const liquid = walletRows.filter((row) => row.isWalletHeld).reduce((sum, row) => sum + row.valueUsd, 0)
+
+    // Borrow leg. Collateral and debt are the position. Borrowed proceeds still sitting in the
+    // wallet are an ASSET that offsets the debt, so a pure borrow stays net-neutral. We infer the
+    // held proceeds from the borrow account's wallet-cash balance above the wallet-liquid baseline,
+    // clamped to [0, debt]: 0 when the proceeds were re-supplied as collateral (leverage) and equal
+    // to the debt when they're still liquid. This clamp also bounds any seed/hydration drift in the
+    // raw wallet-cash figure. LP returned to the wallet by a collateral withdrawal is an owned asset
+    // too. (Phase 1.1)
+    let borrowCollateral = 0
+    let borrowDebt = 0
+    let borrowedCashHeld = 0
+    let returnedLpUsd = 0
     try {
-      if (avana.borrow?.state) {
-        const borrow = selectWalletBorrowSnapshot(avana.borrow.state, walletId)
-        borrowNet = borrow.totalCollateralUsd - borrow.totalBorrowedUsd
+      const borrowState = avana.borrow?.state
+      const account = borrowState?.accounts?.[walletId]
+      if (borrowState && account) {
+        const metrics = buildBorrowDashboardMetrics(borrowState, walletId)
+        borrowCollateral = metrics.performance.poolCollateralUsd
+        borrowDebt = metrics.overview.totalBorrowedUsd
+        const walletCashUsd = Number(account.walletBalanceUsd6 ?? 0n) / 1_000_000
+        returnedLpUsd =
+          Object.values(account.walletReturnedLpBalancesUsd6 ?? {}).reduce((sum, value) => sum + Number(value), 0) /
+          1_000_000
+        borrowedCashHeld = Math.min(Math.max(0, walletCashUsd - liquid), borrowDebt)
       }
     } catch {
-      borrowNet = 0
+      borrowCollateral = 0
+      borrowDebt = 0
+      borrowedCashHeld = 0
+      returnedLpUsd = 0
     }
+
     let lendSupplied = 0
     try {
       if (avana.lend?.state?.positions) {
@@ -344,17 +370,53 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
     } catch {
       lendSupplied = 0
     }
-    let multiplyNet = 0
+
+    let multiplyCollateral = 0
+    let multiplyDebt = 0
     try {
       if (avana.multiply?.state?.positions) {
         const multiply = buildPortfolioMultiplyData(walletId, avana.multiply.state)
-        multiplyNet = multiply.creditLines.totalCollateralUsd - multiply.creditLines.totalBorrowedUsd
+        multiplyCollateral = multiply.creditLines.totalCollateralUsd
+        multiplyDebt = multiply.creditLines.totalBorrowedUsd
       }
     } catch {
-      multiplyNet = 0
+      multiplyCollateral = 0
+      multiplyDebt = 0
     }
-    return liquid + borrowNet + lendSupplied + multiplyNet
-  }, [avana.borrow?.state, avana.lend?.state, avana.multiply?.state, avana.swap?.state?.balances, walletId])
+
+    // Umbrella staked principal + pending rewards are economically owned assets. (Phase 1.4)
+    let umbrellaAssets = 0
+    try {
+      if (umbrella.isHydrated) {
+        umbrellaAssets = umbrella.marketOrder.reduce((sum, marketId) => {
+          const position = umbrella.positions[marketId]
+          if (!position) return sum
+          return sum + position.valueUsd + position.pendingRewardsUsd
+        }, 0)
+      }
+    } catch {
+      umbrellaAssets = 0
+    }
+
+    // Net Portfolio Value = Assets − Liabilities. Every owned position is marked to market once;
+    // debt is counted once, in `debtUsd`. Borrowed cash held offsets its debt, so borrowing nets to
+    // zero.
+    const assetsUsd =
+      liquid + borrowCollateral + borrowedCashHeld + returnedLpUsd + lendSupplied + multiplyCollateral + umbrellaAssets
+    const debtUsd = borrowDebt + multiplyDebt
+    const netUsd = assetsUsd - debtUsd
+    return { netUsd, assetsUsd, debtUsd }
+  }, [
+    avana.borrow?.state,
+    avana.lend?.state,
+    avana.multiply?.state,
+    avana.swap?.state?.balances,
+    umbrella.isHydrated,
+    umbrella.marketOrder,
+    umbrella.positions,
+    walletId,
+  ])
+  const portfolioValueUsd = portfolioBreakdown.netUsd
 
   const portfolioFeed = useDashboardPortfolioFeed(walletId, portfolioValueUsd)
 
@@ -642,6 +704,8 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
           <RewardsBalanceHero
             claimHref={claimHref}
             portfolioValueUsd={portfolioValueUsd}
+            assetsUsd={portfolioBreakdown.assetsUsd}
+            debtUsd={portfolioBreakdown.debtUsd}
             feed={portfolioFeed}
             earnedAmount={snapshot.summary.totalEarnedAmount}
             claimableAmount={snapshot.summary.totalClaimableAmount}
