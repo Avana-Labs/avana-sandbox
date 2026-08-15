@@ -54,11 +54,7 @@ function CooldownCardView({ card }: { card: CooldownCard }) {
           : card.removesInFallback
 
   const removesTone =
-    card.cooldownStatus === "ready"
-      ? "text-success"
-      : card.cooldownStatus === "expired"
-        ? "text-danger"
-        : undefined
+    card.cooldownStatus === "ready" ? "text-success" : card.cooldownStatus === "expired" ? "text-danger" : undefined
 
   const statusTone =
     card.cooldownStatus === "expired"

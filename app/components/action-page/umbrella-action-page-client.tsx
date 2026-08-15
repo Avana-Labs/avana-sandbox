@@ -80,8 +80,7 @@ function previewFor({
           ? "Finish or unstake the current cooldown before starting a new one."
           : kind === "unstake" && amount > position.cooldownAmount
             ? `Insufficient cooled ${market.symbol}`
-            : kind === "unstake" &&
-                (position.cooldownStatus === "expired" || position.withdrawalWindowExpired)
+            : kind === "unstake" && (position.cooldownStatus === "expired" || position.withdrawalWindowExpired)
               ? "Withdrawal window expired — restart cooldown."
               : kind === "unstake" && position.cooldownStatus !== "ready"
                 ? "Cooldown is not ready"
@@ -298,8 +297,7 @@ export function UmbrellaActionPageClient({
       // umbrella/claim instead of dumping them back on the landing page. Keeps
       // the "Back to Umbrella" fallback for actions where nothing else is queued.
       const nextPendingRewardsUsd = umbrella.positions[marketId].pendingRewardsUsd
-      const shouldUpsellClaim =
-        (kind === "stake" || kind === "cooldown") && nextPendingRewardsUsd > 0
+      const shouldUpsellClaim = (kind === "stake" || kind === "cooldown") && nextPendingRewardsUsd > 0
       setSuccessUi({
         title: `${successVerb} successful`,
         description: `${preview.amountLabel} processed in ${market.asset}.`,
@@ -360,8 +358,7 @@ export function UmbrellaActionPageClient({
   // "Stake more" verb variant when the user already holds this market — the
   // descriptor stays generic; we swap the visible verb so review/processing/CTA
   // read correctly for top-ups.
-  const dynamicVerb =
-    kind === "stake" && position.amount > 0 ? "Stake more" : descriptor.primaryVerb
+  const dynamicVerb = kind === "stake" && position.amount > 0 ? "Stake more" : descriptor.primaryVerb
 
   return (
     <ActionPageShell
