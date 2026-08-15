@@ -203,7 +203,6 @@ export function DebtsPanel({
             ReturnType<typeof homeVisualToBorrowVisual>,
             ReturnType<typeof homeVisualToBorrowVisual>,
           ]
-          const meta = BORROW_SUPPLY_META[row.pool.id]
           const rowKey = row.id ?? `${row.pool.id}-${index}`
           return (
             <MarketMobileCard key={rowKey} clickable onClick={() => router.push(`/borrow/markets/${row.pool.id}`)}>
@@ -233,7 +232,6 @@ export function DebtsPanel({
                   value={showBalance ? `+${exact(row.dailyInterestUsd)}/${t("day")}` : MASK}
                   valueClassName="text-rose-500"
                 />
-                <MarketMobileStatRow label={t("Opened")} value={meta?.openedLabel ?? "—"} />
               </MarketMobileStatList>
               <div className="mt-4 flex gap-2">
                 <MarketMobileSecondaryAction
@@ -276,6 +274,10 @@ export function CurrentLtvCard({
   const { t } = useTranslation()
   const { compact } = useCurrency()
   const masked = !showBalance
+  // With no collateral AND no debt there is no position to assess. Treat this as
+  // a neutral/empty state rather than letting the "0 borrowing power" branch read
+  // as RISK for a wallet that simply hasn't opened anything.
+  const hasPosition = collateralUsd > 0 || borrowedUsd > 0
   const liquidationValueUsd = collateralUsd * LIQUIDATION_LTV
   const remainingBorrowingPowerUsd = Math.max(0, liquidationValueUsd - borrowedUsd)
   const liqUtilizationPct = liquidationValueUsd > 0 ? Math.min(100, (borrowedUsd / liquidationValueUsd) * 100) : 0
@@ -286,7 +288,8 @@ export function CurrentLtvCard({
   const usedTicks = Math.max(1, Math.round((barFillPct / 100) * TICK_COUNT))
   const tone = liqUtilizationBarClass(liqUtilizationPct)
   const liqPercentTone = liqUtilizationPercentTextClass(liqUtilizationPct)
-  const statusLabel = remainingBorrowingPowerUsd > 0 ? t("GOOD") : t("RISK")
+  const statusLabel = !hasPosition ? t("NONE") : remainingBorrowingPowerUsd > 0 ? t("GOOD") : t("RISK")
+  const statusToneClass = hasPosition ? "bg-emerald-500/10 text-success" : "bg-muted text-muted-foreground"
 
   return (
     <div className="mb-4 rounded-radius-md border border-border bg-card px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
@@ -303,7 +306,9 @@ export function CurrentLtvCard({
             )}
           />
         </div>
-        <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-success">
+        <span
+          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${statusToneClass}`}
+        >
           {statusLabel}
         </span>
       </div>
