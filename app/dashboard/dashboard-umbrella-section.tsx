@@ -2,21 +2,14 @@
 
 import Link from "next/link"
 import { ActionIcon } from "@/app/components/action-icon"
-import {
-  DesktopTableSurface,
-  HoverActionGroup,
-  SilentActionHeader,
-} from "@/app/components/market-table-primitives"
+import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { UmbrellaMarket, UmbrellaPosition } from "@/app/lib/umbrella-system/use-umbrella-session"
-import {
-  deriveUmbrellaPositionStatus,
-  type UmbrellaPositionStatus,
-} from "@/app/lib/umbrella-system/portfolio-mapper"
+import { deriveUmbrellaPositionStatus, type UmbrellaPositionStatus } from "@/app/lib/umbrella-system/portfolio-mapper"
 import {
   TABLE_HEADER_CELL,
   TABLE_ROW_HOVER_BG,
@@ -131,7 +124,12 @@ function ActionButtons({
             </Link>
           </Button>
         ) : null}
-        <Button asChild size="table" variant={canClaim || canUnstake ? "table-secondary" : "table-primary"} className="w-auto">
+        <Button
+          asChild
+          size="table"
+          variant={canClaim || canUnstake ? "table-secondary" : "table-primary"}
+          className="w-auto"
+        >
           <Link href={`/umbrella?market=${marketId}`}>
             <ActionIcon label="Manage" />
             Manage
@@ -218,9 +216,7 @@ export function DashboardUmbrellaSection() {
     <section id="dashboard-umbrella" className="min-w-0">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">
-            {t("Umbrella")}
-          </h2>
+          <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{t("Umbrella")}</h2>
           <p className="mt-1 text-[13px] text-muted-foreground">
             {rows.length > 0
               ? `${m(formatUsd(totalStakedUsd))} ${t("staked across coverage markets")}`
@@ -291,7 +287,8 @@ export function DashboardUmbrellaSection() {
                           {m(formatUsd(row.position.valueUsd))}
                         </div>
                         <div className="text-[13px] text-muted-foreground">
-                          {row.position.amount.toLocaleString("en-US", { maximumFractionDigits: 4 })} {row.market.symbol}
+                          {row.position.amount.toLocaleString("en-US", { maximumFractionDigits: 4 })}{" "}
+                          {row.market.symbol}
                         </div>
                       </td>
                       <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
@@ -362,9 +359,7 @@ export function DashboardUmbrellaSection() {
                   </div>
                   <div>
                     <div className="text-muted-foreground">{t("Active / Cooling")}</div>
-                    <div className="mt-1 font-data tabular-nums text-foreground">
-                      {m(formatUsd(row.activeUsd))}
-                    </div>
+                    <div className="mt-1 font-data tabular-nums text-foreground">{m(formatUsd(row.activeUsd))}</div>
                     <div className="text-[12px] text-muted-foreground">
                       {t("Cooling")} {m(formatUsd(row.coolingUsd))}
                     </div>

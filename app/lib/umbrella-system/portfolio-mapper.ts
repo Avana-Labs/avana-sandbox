@@ -2,13 +2,7 @@ import type { PortfolioActivityRow } from "@/app/lib/data/providers/portfolio"
 import type { UmbrellaPosition, UmbrellaTransaction } from "./use-umbrella-session"
 
 export type UmbrellaPositionStatus =
-  | "active"
-  | "partiallyCooling"
-  | "coolingDown"
-  | "readyToUnstake"
-  | "cooldownExpired"
-  | "slashed"
-  | "closed"
+  "active" | "partiallyCooling" | "coolingDown" | "readyToUnstake" | "cooldownExpired" | "slashed" | "closed"
 
 /**
  * Reduce an UmbrellaPosition down to the single high-level state the dashboard

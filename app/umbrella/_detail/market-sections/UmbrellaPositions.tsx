@@ -54,18 +54,13 @@ function statusLabel(status: PositionRow["cooldownStatus"]) {
   }
 }
 
-export function UmbrellaPositions({
-  onSelectMarket,
-}: {
-  onSelectMarket?: (marketId: UmbrellaMarketId) => void
-}) {
+export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (marketId: UmbrellaMarketId) => void }) {
   const umbrella = useUmbrellaSessionContext()
   const rows: PositionRow[] = umbrella.marketOrder.map((id) => {
     const market = umbrella.markets[id]
     const position = umbrella.positions[id]
     const activeStakeUsd = Math.max(position.valueUsd - position.cooldownValueUsd, 0)
-    const coverageRatioPct =
-      market.targetCoverageUsd > 0 ? (market.totalStakedUsd / market.targetCoverageUsd) * 100 : 0
+    const coverageRatioPct = market.targetCoverageUsd > 0 ? (market.totalStakedUsd / market.targetCoverageUsd) * 100 : 0
     return {
       id,
       asset: market.asset,
@@ -91,8 +86,7 @@ export function UmbrellaPositions({
     }
   })
 
-  const idleRow = (row: PositionRow) =>
-    row.activeStakeUsd === 0 && row.coolingUsd === 0 && row.pendingRewards === 0
+  const idleRow = (row: PositionRow) => row.activeStakeUsd === 0 && row.coolingUsd === 0 && row.pendingRewards === 0
   const nonIdle = rows.filter((row) => !idleRow(row))
   const showEmptyState = nonIdle.length === 0
   const visible = showEmptyState ? [] : nonIdle
@@ -137,9 +131,7 @@ export function UmbrellaPositions({
                 <tr>
                   <td colSpan={7} className="py-8 pl-5 pr-5 text-center">
                     <div className="flex flex-wrap items-center justify-center gap-3">
-                      <span className="text-[14px] text-muted-foreground">
-                        You have no Umbrella positions yet.
-                      </span>
+                      <span className="text-[14px] text-muted-foreground">You have no Umbrella positions yet.</span>
                       <Button asChild size="table" variant="table-primary" className="w-auto">
                         <Link href={actionPagePath("umbrella", "stake", { return: "/umbrella" })}>
                           <ActionIcon label="Stake" />
@@ -189,10 +181,7 @@ export function UmbrellaPositions({
                         <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                           {row.apyTotal} total
                         </span>
-                        <span
-                          className="mt-0.5 text-[12px] text-muted-foreground"
-                          title={row.targetLiquidityLabel}
-                        >
+                        <span className="mt-0.5 text-[12px] text-muted-foreground" title={row.targetLiquidityLabel}>
                           base {row.apyBase} + reward {row.apyReward}
                         </span>
                       </div>
@@ -211,9 +200,7 @@ export function UmbrellaPositions({
                       <span
                         className={cn(
                           "inline-block max-w-full whitespace-normal text-[15px] font-normal leading-5 tracking-[-0.03em]",
-                          row.cooldownStatus === "expired"
-                            ? "text-danger"
-                            : "text-foreground dark:text-white",
+                          row.cooldownStatus === "expired" ? "text-danger" : "text-foreground dark:text-white",
                         )}
                       >
                         {row.status}
@@ -273,11 +260,7 @@ export function UmbrellaPositions({
           </div>
         ) : (
           visible.map((row) => (
-            <div
-              key={row.id}
-              className="rounded-radius-md bg-card px-3 py-3"
-              onClick={() => handleRowClick(row.id)}
-            >
+            <div key={row.id} className="rounded-radius-md bg-card px-3 py-3" onClick={() => handleRowClick(row.id)}>
               <div className="flex items-center gap-3">
                 <TokenIcon symbol={row.symbol} size="table" />
                 <div>
@@ -296,9 +279,7 @@ export function UmbrellaPositions({
                 </div>
                 <div>
                   <div className="text-[13px] text-muted-foreground">Cooling</div>
-                  <div
-                    className={cn("font-medium", row.coolingUsd > 0 ? "text-warning" : "text-muted-foreground")}
-                  >
+                  <div className={cn("font-medium", row.coolingUsd > 0 ? "text-warning" : "text-muted-foreground")}>
                     {row.coolingLabel}
                   </div>
                 </div>
@@ -311,29 +292,19 @@ export function UmbrellaPositions({
                 </div>
                 <div>
                   <div className="text-[13px] text-muted-foreground">Status</div>
-                  <div
-                    className={cn(
-                      "font-medium",
-                      row.cooldownStatus === "expired" && "text-danger",
-                    )}
-                  >
+                  <div className={cn("font-medium", row.cooldownStatus === "expired" && "text-danger")}>
                     {row.status}
                   </div>
                 </div>
                 <div className="col-span-2">
                   <div className="text-[13px] text-muted-foreground">Rewards</div>
                   <div className="font-medium text-success">{row.pendingRewardsLabel} pending</div>
-                  <div className="text-[12px] text-muted-foreground">
-                    {row.claimedRewardsLabel} claimed
-                  </div>
+                  <div className="text-[12px] text-muted-foreground">{row.claimedRewardsLabel} claimed</div>
                 </div>
               </div>
 
               {(row.hasClaim || row.hasUnstake) && (
-                <div
-                  className="mt-3 flex flex-wrap gap-2"
-                  onClick={(event) => event.stopPropagation()}
-                >
+                <div className="mt-3 flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()}>
                   {row.hasClaim ? (
                     <Button asChild size="sm" variant="brand-secondary" className="h-9 flex-1 gap-2">
                       <Link
