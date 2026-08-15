@@ -112,9 +112,9 @@ export function UmbrellaStress() {
     (sum, market) => sum + Math.max(market.currentDeficitUsd - market.deficitOffsetUsd, 0),
     0,
   )
-  const cooldownUsd = umbrella.marketOrder
-    .filter((id) => umbrella.positions[id].cooldownStatus === "cooling")
-    .reduce((sum, id) => sum + umbrella.markets[id].totalStakedUsd, 0)
+  // Market-wide cooldown = sum of each market's cooling coverage. Not
+  // dependent on the viewing wallet's own cooldown state.
+  const cooldownUsd = umbrellaAssetSummaries.reduce((sum, market) => sum + market.amountInCooldownUsd, 0)
 
   return (
     <section>
