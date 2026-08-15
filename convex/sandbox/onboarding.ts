@@ -737,14 +737,11 @@ export const claim = mutation({
       .query("sandboxSessions")
       .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
       .unique()
-    if (existingUmbrella.length === 0 && !existingSession?.umbrellaSeeded) {
-      // Reference UMBRELLA_ONBOARDING_TOKEN_PRICES so a stale import gets flagged
-      // if the constant is renamed. seedUmbrellaWallet reads UMBRELLA_MARKETS
-      // internally — this line documents the price-source contract.
-      void UMBRELLA_ONBOARDING_TOKEN_PRICES
-      const seedResult = await seedUmbrellaWallet(ctx, wallet, now)
-      receiptHashes.push(...seedResult.receiptHashes)
-    }
+    const shouldSeedUmbrella = existingUmbrella.length === 0 && !existingSession?.umbrellaSeeded
+    // Reference UMBRELLA_ONBOARDING_TOKEN_PRICES so a stale import gets flagged
+    // if the constant is renamed. seedUmbrellaWallet reads UMBRELLA_MARKETS
+    // internally — this line documents the price-source contract.
+    void UMBRELLA_ONBOARDING_TOKEN_PRICES
 
     await ctx.db.insert("starterAllocations", {
       wallet,
@@ -763,6 +760,15 @@ export const claim = mutation({
       borrow: productBorrowRows,
       multiply: productMultiplyRows,
     })
+    // Seed umbrella AFTER replaceProductBalanceRows: that helper wipes
+    // walletLiquidBalances for the whole wallet before re-inserting only the
+    // starter-basket productLiquidRows, so umbrella's walletLiquidBalances
+    // writes must land after it or they get silently deleted (bug found by
+    // the umbrella onboarding property test).
+    if (shouldSeedUmbrella) {
+      const seedResult = await seedUmbrellaWallet(ctx, wallet, now)
+      receiptHashes.push(...seedResult.receiptHashes)
+    }
     const liquidValueUsd = allocation.liquid.reduce((sum, leg) => sum + leg.amountUsd, 0)
     const collateralValueUsd = allocation.collateral.reduce((sum, leg) => sum + leg.amountUsd, 0)
     const lendValueUsd = allocation.lend.reduce((sum, leg) => sum + leg.amountUsd, 0)
