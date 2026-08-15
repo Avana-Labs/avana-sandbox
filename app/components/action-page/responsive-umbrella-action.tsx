@@ -9,12 +9,14 @@ export function ResponsiveUmbrellaAction({
   closeHref,
   label,
   sidebar = false,
+  onMarketChange,
 }: {
   kind: "stake" | "claim" | "cooldown" | "unstake"
   market: string
   closeHref: string
   label?: string
   sidebar?: boolean
+  onMarketChange?: (marketId: "gho" | "usdc" | "usdt" | "weth") => void
 }) {
   return (
     <ResponsiveDetailAction
@@ -31,6 +33,7 @@ export function ResponsiveUmbrellaAction({
         sidebar={sidebar}
         closeHref={closeHref}
         initialMarketId={market}
+        onMarketChange={onMarketChange}
       />
     </ResponsiveDetailAction>
   )

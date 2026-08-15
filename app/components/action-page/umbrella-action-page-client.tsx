@@ -69,13 +69,22 @@ function previewFor({
     rateValue: kind === "claim" ? formatUsd(position.pendingRewardsUsd) : `${market.apy.toFixed(2)}%`,
     marketLabel: "Module",
     marketValue: market.asset,
-    balanceLabel: kind === "stake" ? "Wallet balance" : kind === "cooldown" ? "Active stake" : "Cooled stake",
+    balanceLabel:
+      kind === "stake"
+        ? "Wallet balance"
+        : kind === "cooldown"
+          ? "Active stake"
+          : kind === "claim"
+            ? "Pending rewards"
+            : "Cooled stake",
     balanceValue:
       kind === "stake"
         ? `${formatUnits(walletBalance)} ${market.symbol}`
         : kind === "cooldown"
           ? `${formatUnits(activeStake)} ${market.symbol}`
-          : `${formatUnits(position.cooldownAmount)} ${market.symbol}`,
+          : kind === "claim"
+            ? formatUsd(position.pendingRewardsUsd)
+            : `${formatUnits(position.cooldownAmount)} ${market.symbol}`,
     maxAmount,
     assetSymbol: market.symbol,
     metrics: [
@@ -107,6 +116,7 @@ export function UmbrellaActionPageClient({
   initialAmount = "",
   embedded = false,
   sidebar = false,
+  onMarketChange,
 }: {
   kind: UmbrellaActionKind
   closeHref?: string
@@ -114,6 +124,7 @@ export function UmbrellaActionPageClient({
   initialAmount?: string
   embedded?: boolean
   sidebar?: boolean
+  onMarketChange?: (marketId: UmbrellaMarketId) => void
 }) {
   const descriptor = getActionDescriptor("umbrella", kind)
   const router = useRouter()
@@ -247,8 +258,10 @@ export function UmbrellaActionPageClient({
           assetOptions={assetOptions}
           selectedAssetId={marketId}
           onAssetSelect={(id) => {
-            setMarketId(id as UmbrellaMarketId)
+            const next = id as UmbrellaMarketId
+            setMarketId(next)
             setAmount("")
+            onMarketChange?.(next)
           }}
           onPrimary={() => void submit()}
           onSecondary={back}
