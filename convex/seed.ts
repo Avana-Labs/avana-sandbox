@@ -298,3 +298,19 @@ export const insertWalletEvents = internalMutation({
     return { written: rows.length }
   },
 })
+
+/**
+ * Delete stored portfolio history in bounded batches. Used once to drop snapshots
+ * written under an older portfolio-value basis (before Umbrella / net-debt were folded
+ * into totalValueUsd), so the hero chart rebuilds clean, on-basis history going forward.
+ * `portfolioCurrent` is left alone — it is overwritten on the next snapshot write.
+ */
+export const clearPortfolioSnapshots = internalMutation({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, { limit }) => {
+    const batch = Math.min(Math.max(1, limit ?? 2_000), 4_000)
+    const rows = await ctx.db.query("portfolioSnapshots").take(batch)
+    for (const row of rows) await ctx.db.delete(row._id)
+    return { deleted: rows.length, done: rows.length < batch }
+  },
+})
