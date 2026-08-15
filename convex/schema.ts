@@ -1145,9 +1145,8 @@ export default defineSchema({
     /**
      * Reward accrual checkpoint for umbrella positions — DISTINCT from
      * `lastUpdatedAt` so balance-sync patches (which touch lastUpdatedAt on
-     * every mutation and every `syncPositionBalances` call) do NOT reset
-     * accrued rewards. Updated only when a stake / claim / startCooldown /
-     * unstake re-checkpoints `earnedUsd6`.
+     * every mutation) do NOT reset accrued rewards. Updated only when a
+     * stake / claim / startCooldown / unstake re-checkpoints `earnedUsd6`.
      */
     rewardCheckpointAt: v.optional(v.number()),
     // multiply (number-native — see app/lib/multiply-engine/types.ts MultiplyPosition)
@@ -1509,25 +1508,6 @@ export default defineSchema({
   })
     .index("by_wallet", ["wallet"])
     .index("by_wallet_asset", ["wallet", "assetId"]),
-
-  walletUmbrellaBalances: defineTable({
-    wallet: v.string(),
-    marketId: v.string(),
-    assetId: v.string(),
-    symbol: v.string(),
-    amount: v.number(),
-    valueUsd: v.number(),
-    state: v.union(
-      v.literal("available"),
-      v.literal("staked"),
-      v.literal("cooling"),
-      v.literal("withdrawalWindow"),
-      v.literal("claimableRewards"),
-    ),
-    updatedAt: v.number(),
-  })
-    .index("by_wallet", ["wallet"])
-    .index("by_wallet_market_state", ["wallet", "marketId", "state"]),
 
   /**
    * LP token spot price for a pool market (USD per LP token). Feeds pledge-flow
