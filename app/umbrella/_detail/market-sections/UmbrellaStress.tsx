@@ -179,13 +179,15 @@ export function UmbrellaStress() {
               </div>
             </div>
             <div className="text-left sm:text-right">
-              <div className="text-[18px] font-semibold tracking-[-0.04em] text-danger">
+              <div className="text-[18px] font-semibold tracking-[-0.04em] text-warning">
                 {formatCompactUsd(cooldownUsd)} in cooldown
               </div>
               <div className="mt-2 text-[14px] font-medium text-muted-foreground">
-                {formatPct(totalStakedUsd > 0 ? (cooldownUsd / totalStakedUsd) * 100 : 0)}% cooling ·{" "}
-                {formatCompactUsd(activeDeficitsUsd)} active deficits · {formatCompactUsd(totalStakerExposureUsd)}{" "}
-                on stakers of {formatCompactUsd(totalDeficitOffsetUsd)} offset
+                {formatPct(totalStakedUsd > 0 ? (cooldownUsd / totalStakedUsd) * 100 : 0)}% of coverage cooling ·{" "}
+                {formatCompactUsd(activeDeficitsUsd)} deficits absorbed by {formatCompactUsd(totalDeficitOffsetUsd)} offset ·{" "}
+                <span className={totalStakerExposureUsd > 0 ? "text-danger" : "text-success"}>
+                  {formatCompactUsd(totalStakerExposureUsd)} on stakers
+                </span>
               </div>
             </div>
           </div>
