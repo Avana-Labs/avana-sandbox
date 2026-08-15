@@ -5,7 +5,7 @@ import { CarouselArrowButtons, useOverflowCarousel } from "@/app/components/caro
 import { TokenIcon } from "@/app/components/token-icon"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { UmbrellaMarket } from "@/app/lib/umbrella-system/use-umbrella-session"
-import { deficitOffsetPercent, formatCompactUsd, formatPct } from "../format"
+import { formatCompactUsd, formatPct } from "../format"
 
 type MetricLabelProps = { label: string; tooltip: string }
 
@@ -60,16 +60,27 @@ function AssetCard({ market }: { market: UmbrellaMarket }) {
       </div>
 
       <div className="mt-5 border-t border-border pt-4">
-        <div className="flex h-2.5 overflow-hidden rounded-full">
-          <div
-            className="h-full bg-brand"
-            style={{ width: `${deficitOffsetPercent(market.deficitOffsetUsd, market.currentDeficitUsd)}%` }}
-          />
-          <div
-            className="h-full bg-danger"
-            style={{ width: `${100 - deficitOffsetPercent(market.deficitOffsetUsd, market.currentDeficitUsd)}%` }}
-          />
-        </div>
+        {/* Loss waterfall: the full bar is Avana's offset capacity. Amber fill
+            grows with the current active deficit; if the deficit spills past
+            the offset a red segment extends past 100% to visualise Staker
+            Exposure. */}
+        {(() => {
+          const offsetSpan = Math.max(market.deficitOffsetUsd, 1)
+          const consumedShare = Math.min(1, market.currentDeficitUsd / offsetSpan) * 100
+          const exposureShare = stakerExposure > 0 ? Math.min(60, (stakerExposure / offsetSpan) * 100) : 0
+          const offsetTrackShare = 100 - Math.min(100, exposureShare)
+          const consumedInsideTrack = (consumedShare / 100) * offsetTrackShare
+          return (
+            <div className="flex h-2.5 overflow-hidden rounded-full bg-brand/25">
+              <div className="relative h-full" style={{ width: `${offsetTrackShare}%` }}>
+                <div className="h-full bg-warning" style={{ width: `${consumedInsideTrack}%` }} />
+              </div>
+              {exposureShare > 0 ? (
+                <div className="h-full bg-danger" style={{ width: `${exposureShare}%` }} />
+              ) : null}
+            </div>
+          )
+        })()}
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
@@ -141,9 +152,21 @@ export function UmbrellaStress() {
             </p>
           </div>
 
-          <div className="mt-5 flex h-2.5 overflow-hidden rounded-full">
-            <div className="h-full min-w-0 flex-[1] bg-brand" />
-            <div className="h-full min-w-0 flex-[0.7] bg-danger" />
+          {/* Total coverage bar: split between active coverage (blue) and coverage
+              currently in cooldown (amber). Widths reflect the real ratios. */}
+          <div className="mt-5 flex h-2.5 overflow-hidden rounded-full bg-muted/60">
+            <div
+              className="h-full bg-brand"
+              style={{
+                width: `${totalStakedUsd > 0 ? ((totalStakedUsd - cooldownUsd) / totalStakedUsd) * 100 : 0}%`,
+              }}
+            />
+            <div
+              className="h-full bg-warning"
+              style={{
+                width: `${totalStakedUsd > 0 ? (cooldownUsd / totalStakedUsd) * 100 : 0}%`,
+              }}
+            />
           </div>
 
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
