@@ -703,7 +703,6 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
           </div>
           <RewardsBalanceHero
             claimHref={claimHref}
-            portfolioValueUsd={portfolioValueUsd}
             assetsUsd={portfolioBreakdown.assetsUsd}
             debtUsd={portfolioBreakdown.debtUsd}
             feed={portfolioFeed}

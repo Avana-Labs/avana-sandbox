@@ -126,7 +126,6 @@ export function PortfolioRewardsCards({
 
 export function RewardsBalanceHero({
   claimHref,
-  portfolioValueUsd = 0,
   assetsUsd,
   debtUsd,
   earnedAmount = 0,
@@ -135,8 +134,6 @@ export function RewardsBalanceHero({
   feed,
 }: {
   claimHref?: string
-  /** Live portfolio net value (wallet + positions). Required for a trustworthy hero. */
-  portfolioValueUsd?: number
   /** Gross assets marked to market (wallet + all position assets + borrowed cash held). */
   assetsUsd?: number
   /** Outstanding liabilities (borrow + Multiply debt). */
