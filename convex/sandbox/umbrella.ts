@@ -30,7 +30,7 @@ const UMBRELLA_MARKETS = {
     priceUsd: 1,
     targetCoverageUsd: 22_000_000,
     currentDeficitUsd: 146,
-    deficitOffsetUsd: 3_000_000,
+    deficitOffsetUsd: 1_000_000,
   },
   usdc: {
     id: "usdc",
@@ -44,7 +44,7 @@ const UMBRELLA_MARKETS = {
     priceUsd: 1,
     targetCoverageUsd: 10_000_000,
     currentDeficitUsd: 51_371,
-    deficitOffsetUsd: 2_000_000,
+    deficitOffsetUsd: 500_000,
   },
   usdt: {
     id: "usdt",
@@ -58,7 +58,7 @@ const UMBRELLA_MARKETS = {
     priceUsd: 1,
     targetCoverageUsd: 9_500_000,
     currentDeficitUsd: 32_420,
-    deficitOffsetUsd: 1_500_000,
+    deficitOffsetUsd: 400_000,
   },
   weth: {
     id: "weth",
@@ -72,7 +72,7 @@ const UMBRELLA_MARKETS = {
     priceUsd: 2240,
     targetCoverageUsd: 6_250_000,
     currentDeficitUsd: 52_973,
-    deficitOffsetUsd: 750_000,
+    deficitOffsetUsd: 250_000,
   },
 } as const
 
@@ -375,5 +375,101 @@ export const recordAction = mutation({
       at: now,
     })
     return { idempotent: false, receipt: (await ctx.db.get(receipt))! }
+  },
+})
+
+/**
+ * Fixture seed for the open-gate test wallet (0x0000…0a11). Populates the four
+ * umbrella markets with staked positions, cooldown state, pending rewards, and
+ * a matching set of wallet balances so /umbrella has content to demo against
+ * without walking through the full onboarding flow.
+ *
+ * Guardrails:
+ *  - Requires an authenticated sandbox wallet.
+ *  - Only the canonical test wallet address is allowed to call this — production
+ *    users always run through the real onboarding claim.
+ *  - Idempotent: exits early if the wallet already has any umbrella positions.
+ */
+const TEST_WALLET_ADDRESS = "0x0000000000000000000000000000000000000a11"
+
+const UMBRELLA_TEST_FIXTURE = {
+  balances: [
+    { assetSlug: "gho", symbol: "GHO", amount: 20_000, priceUsd: 1 },
+    { assetSlug: "usdc", symbol: "USDC", amount: 25_000, priceUsd: 1 },
+    { assetSlug: "usdt", symbol: "USDT", amount: 15_000, priceUsd: 1 },
+    { assetSlug: "weth", symbol: "WETH", amount: 5, priceUsd: 2240 },
+  ],
+  positions: [
+    { marketId: "gho" as const, suppliedUsd: 5_000, earnedUsd: 11.4, cooldownUsd: 2_500, cooldownOffsetMs: 11 * 24 * 60 * 60 * 1000 },
+    { marketId: "usdc" as const, suppliedUsd: 8_000, earnedUsd: 18.25, cooldownUsd: 0, cooldownOffsetMs: null },
+    { marketId: "usdt" as const, suppliedUsd: 0, earnedUsd: 0, cooldownUsd: 0, cooldownOffsetMs: null },
+    { marketId: "weth" as const, suppliedUsd: 6_720, earnedUsd: 9.1, cooldownUsd: 0, cooldownOffsetMs: null },
+  ],
+} as const
+
+export const ensureTestWalletFixtures = mutation({
+  args: { wallet: v.string() },
+  handler: async (ctx, args) => {
+    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    if (wallet !== TEST_WALLET_ADDRESS) return { seeded: false, reason: "not-test-wallet" as const }
+
+    const existing = await ctx.db
+      .query("positions")
+      .withIndex("by_wallet_product", (q) => q.eq("wallet", wallet).eq("product", "umbrella"))
+      .collect()
+    if (existing.length > 0) return { seeded: false, reason: "already-seeded" as const }
+
+    const now = Date.now()
+    for (const balance of UMBRELLA_TEST_FIXTURE.balances) {
+      const marketId = balance.assetSlug as UmbrellaMarketId
+      await upsertLiquidBalance(ctx, wallet, marketId, balance.amount, now)
+    }
+
+    for (const position of UMBRELLA_TEST_FIXTURE.positions) {
+      if (position.suppliedUsd <= 0) continue
+      const cooldownStartedAt = position.cooldownOffsetMs == null ? undefined : now - position.cooldownOffsetMs
+      const cooldownEndsAt = cooldownStartedAt == null ? undefined : cooldownStartedAt + COOLDOWN_MS
+      const withdrawalWindowEndsAt = cooldownEndsAt == null ? undefined : cooldownEndsAt + WITHDRAWAL_WINDOW_MS
+      const hash = `sim-umbrella-fixture-${position.marketId}-${now.toString(36)}`
+      const positionId = await ctx.db.insert("positions", {
+        wallet,
+        product: "umbrella",
+        marketSlug: position.marketId,
+        assetId: position.marketId,
+        status: "open",
+        suppliedUsd6: usd6(position.suppliedUsd),
+        earnedUsd6: usd6(position.earnedUsd),
+        supplyApyPct: UMBRELLA_MARKETS[position.marketId].apy,
+        cooldownAmountUsd6: usd6(position.cooldownUsd),
+        cooldownStartedAt,
+        cooldownEndsAt,
+        withdrawalWindowEndsAt,
+        claimedRewardsUsd6: "0",
+        openedAt: now,
+        lastUpdatedAt: now,
+        openTxSynthetic: hash,
+        revision: 1,
+      })
+      await ctx.db.insert("transactions", {
+        wallet,
+        intentId: `fixture-umbrella-${position.marketId}`,
+        product: "umbrella",
+        kind: "stake",
+        status: "success",
+        marketSlug: position.marketId,
+        assetId: position.marketId,
+        positionId,
+        requestedAmountUsd6: usd6(position.suppliedUsd),
+        executedAmountUsd6: usd6(position.suppliedUsd),
+        amountUsd: position.suppliedUsd,
+        syntheticTxHash: hash,
+        simulated: true,
+        at: now,
+      })
+      const inserted = await ctx.db.get(positionId)
+      if (inserted) await syncPositionBalances(ctx, wallet, inserted, now)
+    }
+
+    return { seeded: true }
   },
 })
