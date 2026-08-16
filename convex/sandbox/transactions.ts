@@ -431,6 +431,12 @@ function validateTransactionTransition(
     position?: Infer<typeof positionPayload>
   },
   existing?: Doc<"positions">,
+  // Authoritative pre-transaction lend supplied for this market, read from the product-balance
+  // ledger (walletLendBalances) — the same source the client computes its new balance from. The
+  // `positions` row can lag behind it (a stale/closed row after an earlier desync), so preferring
+  // the ledger keeps a legitimate deposit/withdraw from tripping the transition check. The write
+  // that follows rewrites both to the new value, re-syncing them.
+  lendSuppliedBeforeUsd?: number,
 ) {
   requireUnsignedInteger(args.requestedAmountUsd6, "requestedAmountUsd6")
   requireUnsignedInteger(args.executedAmountUsd6, "executedAmountUsd6")
@@ -454,10 +460,15 @@ function validateTransactionTransition(
 
   if (!args.position) return
   if (args.product === "lend" && args.kind !== "claim") {
-    const before = usd6Number(existing?.suppliedUsd6)
+    const before = lendSuppliedBeforeUsd ?? usd6Number(existing?.suppliedUsd6)
     const after = usd6Number(args.position.suppliedUsd6)
     const expected = args.kind === "deposit" ? before + args.amountUsd : before - args.amountUsd
-    assertClose(after, Math.max(0, expected), "lend supplied balance")
+    if (!Number.isFinite(after) || Math.abs(after - Math.max(0, expected)) > 0.02) {
+      throw new Error(
+        `INVALID_TRANSITION: lend supplied balance does not match the server recomputation ` +
+          `(before=${before}, after=${after}, amount=${args.amountUsd}, expected=${Math.max(0, expected)}).`,
+      )
+    }
   }
   if (args.product === "multiply") {
     const collateral = args.position.collateralValueUsd ?? 0
@@ -998,6 +1009,20 @@ export const recordTransaction = mutation({
     const marketSlug = args.position?.marketSlug ?? args.marketSlug
     const hash = `sim-${args.product}-${args.kind}-${args.intentId.slice(0, 8)}-${now.toString(36)}`
 
+    // Authoritative pre-transaction lend supplied for this market, from the product-balance
+    // ledger (walletLendBalances) — the same source the client derives its new balance from. Used
+    // by the transition check instead of the positions row, which can lag out of sync.
+    let lendSuppliedBeforeUsd: number | undefined
+    if (args.product === "lend" && marketSlug && args.kind !== "claim") {
+      const lendRows = await ctx.db
+        .query("walletLendBalances")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect()
+      lendSuppliedBeforeUsd = lendRows
+        .filter((row) => row.marketId === marketSlug && row.state === "deposited")
+        .reduce((sum, row) => sum + row.valueUsd, 0)
+    }
+
     // Upsert the (wallet, product, market) position on success.
     let positionId: import("../_generated/dataModel").Id<"positions"> | undefined
     let existingPosition: Doc<"positions"> | undefined
@@ -1029,7 +1054,7 @@ export const recordTransaction = mutation({
             `(expected revision ${args.expectedRevision}, found ${currentRevision}); reload and retry.`,
         )
       }
-      validateTransactionTransition(args, existing)
+      validateTransactionTransition(args, existing, lendSuppliedBeforeUsd)
       await assertBorrowSolvent(ctx, args)
       const fields = {
         spokeId: args.position.spokeId,
@@ -1100,7 +1125,7 @@ export const recordTransaction = mutation({
       }
     }
 
-    if (!args.position) validateTransactionTransition(args)
+    if (!args.position) validateTransactionTransition(args, undefined, lendSuppliedBeforeUsd)
 
     const transactionId = await ctx.db.insert("transactions", {
       wallet,
