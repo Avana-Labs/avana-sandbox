@@ -22,16 +22,17 @@ export function UmbrellaMobileSidebarSheet({
   onOpenChange,
   moduleId,
   onMarketChange,
-  initialTab: _initialTab,
+  initialTab = "stake",
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   moduleId: UmbrellaMarketId
   onMarketChange?: (marketId: UmbrellaMarketId) => void
-  // The trigger the user tapped. UmbrellaSidebar owns its own tab state and
-  // resets to "stake" on remount, so `initialTab` is currently accepted but
-  // handled by the sidebar's default. If we later need Stake→More to jump to
-  // a specific tab, thread this into UmbrellaSidebar as a new prop.
+  // The trigger the user tapped in the mobile action bar. Threaded into
+  // UmbrellaSidebar as its `initialTab` so the "More" button opens on the tab
+  // most useful for the position state (unstake / cooldown / claim) instead of
+  // always landing on Stake. The sidebar is remounted on every open (see the
+  // `sessionKey` below), so the new initialTab takes effect each time.
   initialTab?: UmbrellaMobileSheetTrigger
 }) {
   // Force a remount of UmbrellaSidebar when the sheet is (re)opened so the
@@ -72,7 +73,12 @@ export function UmbrellaMobileSidebarSheet({
           </button>
         </div>
         <div className="flex-1 overflow-y-auto px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 md:px-0 md:pt-0">
-          <UmbrellaSidebar key={sessionKey} moduleId={moduleId} onMarketChange={onMarketChange} />
+          <UmbrellaSidebar
+            key={sessionKey}
+            moduleId={moduleId}
+            onMarketChange={onMarketChange}
+            initialTab={initialTab}
+          />
         </div>
       </DialogContent>
     </Dialog>
