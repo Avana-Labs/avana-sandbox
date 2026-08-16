@@ -222,7 +222,11 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
       apy: 5.05,
       baseApy: 2.65,
       rewardApy: 2.4,
-      priceUsd: 2240,
+      // WETH is priced at the app-wide canonical oracle price (see the sandbox token
+      // price table: eth/weth = 1934). The seeded WETH position value below is derived
+      // from this so `valueUsd === amount × priceUsd`, matching how the session recomputes
+      // displayed value after every action.
+      priceUsd: 1934,
       targetCoverageUsd: 6_250_000,
       currentDeficitUsd: 52_973,
       deficitOffsetUsd: 250_000,
@@ -308,7 +312,8 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
       weth: {
         marketId: "weth",
         amount: 3.125,
-        valueUsd: 7000,
+        // 3.125 WETH × 1934 = 6043.75. Kept consistent with the market priceUsd above.
+        valueUsd: 6043.75,
         pendingRewardsUsd: 9.2,
         claimedRewardsUsd: 0,
         cooldownAmount: 0,
