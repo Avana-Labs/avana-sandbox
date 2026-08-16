@@ -67,16 +67,24 @@ function sourceLabel(sourceType: UserAssetBalance["sourceType"]) {
   switch (sourceType) {
     case "wallet":
       return "Wallet"
+    case "lend_available":
+      return "Lend available"
     case "lend_deposited":
       return "Lend deposited"
     case "borrow_collateral_unpledged":
       return "Borrow collateral"
     case "borrow_collateral_pledged":
       return "Pledged collateral"
+    case "borrow_debt":
+      return "Borrow debt"
+    case "borrow_claimable":
+      return "Pool fees"
     case "multiply_available":
       return "Multiply available"
     case "multiply_active":
       return "Active loop"
+    case "multiply_debt":
+      return "Loop debt"
     case "protocol_locked":
       return "Protocol locked"
   }
@@ -95,18 +103,36 @@ export function buildDashboardWalletBalanceRows({
   balances?: UserAssetBalance[]
   context?: SwapContext
 }): DashboardWalletBalanceRow[] {
-  return getUserSwapBalances(walletId, balances)
-    .filter((balance) => balance.sourceType === "wallet" || balance.sourceType === "multiply_available")
+  const merged = new Map<string, UserAssetBalance>()
+  for (const balance of getUserSwapBalances(walletId, balances)) {
+    const valueUsd = balance.valueUsd ?? balance.amount * (getSwapAsset(balance.assetId)?.priceUsd ?? 0)
+    if (balance.amount <= 0 && valueUsd <= 0) continue
+    const asset = getSwapAsset(balance.assetId)
+    const key = asset?.isLpToken ? `${balance.assetId}:${balance.sourceType}` : balance.id
+    const existing = merged.get(key)
+    if (!existing) {
+      merged.set(key, { ...balance, valueUsd })
+      continue
+    }
+    merged.set(key, {
+      ...existing,
+      amount: existing.amount + balance.amount,
+      valueUsd: (existing.valueUsd ?? existing.amount * (getSwapAsset(existing.assetId)?.priceUsd ?? 0)) + valueUsd,
+    })
+  }
+
+  return [...merged.values()]
     .map((balance) => {
       const asset = getSwapAsset(balance.assetId)
       const eligibility = getSwapEligibility(balance, context)
+      const valueUsd = balance.valueUsd ?? balance.amount * (asset?.priceUsd ?? 0)
       return {
         id: balance.id,
         assetId: balance.assetId,
         symbol: asset?.symbol ?? balance.assetId.toUpperCase(),
         name: asset?.name ?? "Unsupported asset",
         amount: balance.amount,
-        valueUsd: balance.amount * (asset?.priceUsd ?? 0),
+        valueUsd,
         sourceLabel: sourceLabel(balance.sourceType),
         isLpToken: asset?.isLpToken ?? false,
         isWalletHeld: balance.sourceType === "wallet",

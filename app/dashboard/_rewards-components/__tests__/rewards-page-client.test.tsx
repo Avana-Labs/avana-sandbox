@@ -176,6 +176,24 @@ vi.mock("@/app/dashboard/use-dashboard-page", () => ({
 // return undefined — the tab falls through to the DEMO_SWAP_BALANCES default.
 vi.mock("@/app/lib/swap-system/use-convex-wallet-balances", () => ({
   useConvexWalletBalances: () => undefined,
+  useConvexProductWalletBalances: () => undefined,
+}))
+
+vi.mock("@/app/dashboard/use-dashboard-portfolio-feed", () => ({
+  useDashboardPortfolioFeed: () => ({
+    headlineValue: "$0",
+    headlineDelta: "$0 (0.00%)",
+    deltaTone: "positive",
+    rangeData: {
+      "1D": [{ time: 0, value: 0, label: "Now" }],
+      "1W": [{ time: 0, value: 0, label: "Now" }],
+      "1M": [{ time: 0, value: 0, label: "Now" }],
+      "3M": [{ time: 0, value: 0, label: "Now" }],
+      "1Y": [{ time: 0, value: 0, label: "Now" }],
+      All: [{ time: 0, value: 0, label: "Now" }],
+    },
+    valueFormat: "usdCompact",
+  }),
 }))
 
 // Inspect the raw rows fed into the combined activity table.

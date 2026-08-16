@@ -34,7 +34,7 @@ function bySlug(rows: Array<{ marketSlug: string; borrowedDeltaUsd: number; supp
 }
 
 describe("liquidity bounded fold (compaction) matches the naive sum", () => {
-  test("deltas across two markets via recordTransaction fold to the exact totals, unchanged by compaction", async () => {
+  test("wallet transactions do not enter the protocol-liquidity fold", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
 
@@ -116,40 +116,35 @@ describe("liquidity bounded fold (compaction) matches the naive sum", () => {
       position: { status: "open", marketSlug: "usdc", suppliedUsd6: "750000000" },
     })
 
-    // Expected naive totals: asset borrowed 1000-400=600; usdc supplied 500+250=750.
-    const expected = new Map([
-      ["uni-v2:usdc", { borrowedDeltaUsd: 600, suppliedDeltaUsd: 0 }],
-      ["usdc", { borrowedDeltaUsd: 0, suppliedDeltaUsd: 750 }],
-    ])
-
-    // BEFORE compaction: everything is in the raw table; baseline is empty.
+    // Wallet-owned actions update product buckets and positions only. Protocol
+    // liquidity is populated by the independent market-ingestion path.
     const preFold = bySlug(await liquidityReader(t).query(api.liquidity.listDeltas))
-    expect(preFold).toEqual(expected)
+    expect(preFold).toEqual(new Map())
     const rawBefore = await t.run((ctx) => ctx.db.query("marketLiquidityDeltas").collect())
     const baselineBefore = await t.run((ctx) => ctx.db.query("marketLiquidityBaseline").collect())
-    expect(rawBefore.length).toBe(4) // 4 ledger-moving actions → 4 append rows
+    expect(rawBefore.length).toBe(0)
     expect(baselineBefore.length).toBe(0)
 
     // Compact: raw rows fold into per-market baseline rows and are deleted.
     const res = await t.mutation(internal.liquidity.compactDeltas, {})
-    expect(res.compacted).toBe(4)
-    expect(res.markets).toBe(2)
+    expect(res.compacted).toBe(0)
+    expect(res.markets).toBe(0)
 
     // AFTER compaction: identical totals, but now served entirely from the baseline.
     const postFold = bySlug(await liquidityReader(t).query(api.liquidity.listDeltas))
-    expect(postFold).toEqual(expected)
+    expect(postFold).toEqual(new Map())
     const rawAfter = await t.run((ctx) => ctx.db.query("marketLiquidityDeltas").collect())
     const baselineAfter = await t.run((ctx) => ctx.db.query("marketLiquidityBaseline").collect())
     expect(rawAfter.length).toBe(0) // raw rows pruned
-    expect(baselineAfter.length).toBe(2) // one cumulative row per market
+    expect(baselineAfter.length).toBe(0)
 
     // The app-wide snapshot rebuilt from the bounded fold matches too.
     await t.mutation(internal.liquidity.rebuildDeltaSnapshot, {})
     const snap = bySlug(await liquidityReader(t).query(api.liquidity.listDeltaSnapshot))
-    expect(snap).toEqual(expected)
+    expect(snap).toEqual(new Map())
   })
 
-  test("a delta appended AFTER compaction adds to (not replaces) the baseline", async () => {
+  test("wallet transactions remain outside the fold after compaction", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
 
@@ -164,7 +159,7 @@ describe("liquidity bounded fold (compaction) matches the naive sum", () => {
       amountUsd: 500,
       position: { status: "open", marketSlug: "usdc", suppliedUsd6: "500000000" },
     })
-    await t.mutation(internal.liquidity.compactDeltas, {}) // baseline usdc = 500
+    await t.mutation(internal.liquidity.compactDeltas, {})
 
     // A later supply appends a fresh raw row; the fold must add it to the baseline.
     await asUser.mutation(api.sandbox.transactions.recordTransaction, {
@@ -180,21 +175,13 @@ describe("liquidity bounded fold (compaction) matches the naive sum", () => {
       position: { status: "open", marketSlug: "usdc", suppliedUsd6: "800000000" },
     })
 
-    // baseline (500) + un-compacted raw (300) = 800, before a second compaction.
-    expect(bySlug(await liquidityReader(t).query(api.liquidity.listDeltas)).get("usdc")).toEqual({
-      borrowedDeltaUsd: 0,
-      suppliedDeltaUsd: 800,
-    })
+    expect(bySlug(await liquidityReader(t).query(api.liquidity.listDeltas)).get("usdc")).toBeUndefined()
 
     // A second compaction folds the new row into the SAME baseline row (no duplicate).
     await t.mutation(internal.liquidity.compactDeltas, {})
     const baseline = await t.run((ctx) => ctx.db.query("marketLiquidityBaseline").collect())
-    expect(baseline.length).toBe(1)
-    expect(baseline[0]?.suppliedDeltaUsd).toBe(800)
-    expect(bySlug(await liquidityReader(t).query(api.liquidity.listDeltas)).get("usdc")).toEqual({
-      borrowedDeltaUsd: 0,
-      suppliedDeltaUsd: 800,
-    })
+    expect(baseline.length).toBe(0)
+    expect(bySlug(await liquidityReader(t).query(api.liquidity.listDeltas)).get("usdc")).toBeUndefined()
   })
 })
 

@@ -24,7 +24,7 @@ describe("sandbox rewards OCC", () => {
     ).rejects.toThrow(/REVISION_REQUIRED/)
   })
 
-  it("p1-10: saveState rejects stale expectedRevision", async () => {
+  it("p1-10: saveState reports stale expectedRevision without overwriting", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
     await asUser.mutation(api.sandbox.rewards.saveState, {
@@ -38,12 +38,14 @@ describe("sandbox rewards OCC", () => {
       stateJson: JSON.stringify({ events: [{ id: "e1" }], claims: [] }),
     })
 
-    await expect(
-      asUser.mutation(api.sandbox.rewards.saveState, {
-        wallet: WALLET,
-        expectedRevision: 0,
-        stateJson: JSON.stringify({ events: [{ id: "e2" }], claims: [] }),
-      }),
-    ).rejects.toThrow(/STALE_WRITE/)
+    const result = await asUser.mutation(api.sandbox.rewards.saveState, {
+      wallet: WALLET,
+      expectedRevision: 0,
+      stateJson: JSON.stringify({ events: [{ id: "e2" }], claims: [] }),
+    })
+    expect(result).toMatchObject({ revision: 1, stale: true })
+
+    const state = await asUser.query(api.sandbox.rewards.getState, { wallet: WALLET })
+    expect(JSON.parse(state?.stateJson ?? "{}")).toEqual({ events: [{ id: "e1" }], claims: [] })
   })
 })

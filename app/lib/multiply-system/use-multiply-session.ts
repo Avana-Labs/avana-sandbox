@@ -54,7 +54,7 @@ export type ConvexMultiplyWalletData = {
   transactions: Array<{
     _id: string
     intentId?: string
-    product: "borrow" | "lend" | "multiply" | "swap"
+    product: "borrow" | "lend" | "multiply" | "swap" | "rewards"
     kind: string
     status: "success" | "failed" | "pending"
     marketSlug?: string
@@ -65,6 +65,14 @@ export type ConvexMultiplyWalletData = {
     syntheticTxHash: string
     simulated: boolean
     at: number
+  }>
+  multiplyBalances?: Array<{
+    marketId?: string
+    assetId: string
+    symbol: string
+    amount: number
+    valueUsd: number
+    state: "available" | "collateral" | "debt" | "position"
   }>
 }
 
@@ -229,6 +237,12 @@ export function useMultiplySession({
   const hydrateWalletData = useCallback(
     (data: ConvexMultiplyWalletData) => {
       const positions: Record<string, MultiplySystemState["positions"][string]> = {}
+      const walletBalancesUsd: MultiplySystemState["walletBalancesUsd"] = { [walletId]: {} }
+      for (const row of data.multiplyBalances ?? []) {
+        if (row.state !== "available") continue
+        const marketId = row.marketId ?? row.assetId
+        walletBalancesUsd[walletId]![marketId] = (walletBalancesUsd[walletId]?.[marketId] ?? 0) + row.valueUsd
+      }
       for (const position of data.positions) {
         if (position.product !== "multiply") continue
         const id = String(position._id)
@@ -289,7 +303,7 @@ export function useMultiplySession({
           const market = current.markets[position.marketId]
           revalued[id] = market ? revalueMultiplyPosition(position, market) : position
         }
-        return { ...current, positions: revalued }
+        return { ...current, positions: revalued, walletBalancesUsd }
       })
       setTransactionHistory(history)
       setTransactionReceipts(buildSyntheticReceipts(history))

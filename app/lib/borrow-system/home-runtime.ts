@@ -428,7 +428,7 @@ export function buildClaimBorrowAction(walletId: string, preview: ClaimPreview):
 export function buildHomeClaimPreview(
   state: BorrowSystemState,
   walletId: string,
-  positions: HomeClaimPosition[],
+  positions: Array<Pick<HomeClaimPosition, "id"> & Partial<Pick<HomeClaimPosition, "breakdown">>>,
   selections: Record<string, boolean>,
   partialAmountUsd: number | null,
 ): ClaimPreview {
@@ -437,7 +437,19 @@ export function buildHomeClaimPreview(
   for (const position of positions) {
     claimableTotals[position.id] = engineTotals[position.id] ?? 0
   }
-  return calculateClaimPreview(positions, claimableTotals, selections, partialAmountUsd)
+  return calculateClaimPreview(
+    positions.map((position) => ({
+      id: position.id,
+      poolId: "",
+      name: "",
+      subtitle: "",
+      totalUsd: claimableTotals[position.id] ?? 0,
+      breakdown: position.breakdown ?? [],
+    })),
+    claimableTotals,
+    selections,
+    partialAmountUsd,
+  )
 }
 
 export type SupplyPreview = {

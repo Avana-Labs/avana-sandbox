@@ -12,6 +12,8 @@
 import { v } from "convex/values"
 import type { MutationCtx, QueryCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
+import { upsertWalletBalanceRows } from "../wallet/balances"
+import { replaceProductBalanceRows } from "../wallet/productBalances"
 import { requireSandboxWallet, getAuthSubject } from "./auth"
 import { assertCatalogCanSatisfyStarter, buildStarterAllocationPlan, STARTER_EQUITY_USD } from "./starterAllocation"
 
@@ -36,6 +38,26 @@ const DEFAULT_BASKET = [
 ]
 
 const SEED_VERSION = 1
+
+const UMBRELLA_ONBOARDING_POSITIONS = [
+  { marketSlug: "usdc", symbol: "USDC", suppliedUsd: 8000, earnedUsd: 18.25, cooldownUsd: 0, cooldownOffsetMs: null },
+  { marketSlug: "weth", symbol: "WETH", suppliedUsd: 6720, earnedUsd: 9.1, cooldownUsd: 0, cooldownOffsetMs: null },
+  {
+    marketSlug: "gho",
+    symbol: "GHO",
+    suppliedUsd: 5000,
+    earnedUsd: 11.4,
+    cooldownUsd: 2500,
+    cooldownOffsetMs: 11 * 24 * 60 * 60 * 1000,
+  },
+] as const
+
+const UMBRELLA_ONBOARDING_BALANCES = [
+  { assetSlug: "usdc", symbol: "USDC", amount: 25_000, priceUsd: 1 },
+  { assetSlug: "usdt", symbol: "USDT", amount: 15_000, priceUsd: 1 },
+  { assetSlug: "gho", symbol: "GHO", amount: 20_000, priceUsd: 1 },
+  { assetSlug: "weth", symbol: "WETH", amount: 5, priceUsd: 1934 },
+] as const
 
 /** Shard count for the economy counters — spreads concurrent claim increments so no
  *  two claims collide on the same row under OCC. */
@@ -112,6 +134,40 @@ async function getOrSeedConfig(ctx: MutationCtx) {
   const rows = await ctx.db.query("sandboxConfig").collect()
   for (const row of rows) if (row._id !== id) await ctx.db.delete(row._id)
   return (await ctx.db.get(id))!
+}
+
+async function upsertSandboxBalance(
+  ctx: MutationCtx,
+  row: { wallet: string; assetSlug: string; symbol: string; amount: number; priceUsd: number; updatedAt: number },
+) {
+  const existing = await ctx.db
+    .query("sandboxBalances")
+    .withIndex("by_wallet_asset", (q) => q.eq("wallet", row.wallet).eq("assetSlug", row.assetSlug))
+    .unique()
+  const valueUsd = row.amount * row.priceUsd
+  if (existing) {
+    await ctx.db.patch(existing._id, {
+      amount: Math.max(existing.amount, row.amount),
+      valueUsd,
+      priceUsd: row.priceUsd,
+      updatedAt: row.updatedAt,
+    })
+  } else {
+    await ctx.db.insert("sandboxBalances", { ...row, valueUsd })
+  }
+  await upsertWalletBalanceRows(ctx, [
+    {
+      wallet: row.wallet,
+      assetId: row.assetSlug,
+      amount: existing ? Math.max(existing.amount, row.amount) : row.amount,
+      sourceType: "wallet",
+      assetKind: "wallet",
+      symbol: row.symbol,
+      valueUsd6: String(
+        Math.round((existing ? Math.max(existing.amount, row.amount) : row.amount) * row.priceUsd * 1_000_000),
+      ),
+    },
+  ])
 }
 
 async function getOrSeedStarterCatalog(ctx: MutationCtx) {
@@ -208,21 +264,9 @@ async function profileForWallet(ctx: QueryCtx | MutationCtx, wallet: string) {
     .unique()
 }
 
-async function applyMarketDelta(
-  ctx: MutationCtx,
-  marketSlug: string,
-  suppliedDeltaUsd: number,
-  borrowedDeltaUsd: number,
-  now: number,
-) {
-  // Append-only: never patch a shared per-market row (that put every concurrent
-  // claim on the same document under OCC). Readers fold these events per market.
-  await ctx.db.insert("marketLiquidityDeltas", {
-    marketSlug,
-    suppliedDeltaUsd,
-    borrowedDeltaUsd,
-    updatedAt: now,
-  })
+function liquidAssetIdForMultiplyDebt(marketSlug: string) {
+  const parts = marketSlug.toLowerCase().split(/[-_:]/)
+  return parts.find((part) => part === "usdc" || part === "usdt" || part === "dai" || part === "gho") ?? "usdc"
 }
 
 /** Wallet-scoped onboarding state for the SandboxGate (own wallet only). */
@@ -496,6 +540,11 @@ export const claim = mutation({
     const syntheticTxHash = `sim-claim-${(profile.tierSeed ?? "0").slice(0, 8)}-${now.toString(36)}`
     const receiptHashes: string[] = []
 
+    const productLiquidRows: Parameters<typeof replaceProductBalanceRows>[2]["liquid"] = []
+    const productLendRows: Parameters<typeof replaceProductBalanceRows>[2]["lend"] = []
+    const productBorrowRows: Parameters<typeof replaceProductBalanceRows>[2]["borrow"] = []
+    const productMultiplyRows: Parameters<typeof replaceProductBalanceRows>[2]["multiply"] = []
+
     for (const [index, leg] of allocation.liquid.entries()) {
       const market = marketBySlug.get(leg.marketSlug)
       // Skip a missing asset rather than failing the whole claim (the plan only ever
@@ -503,15 +552,34 @@ export const claim = mutation({
       if (!market) continue
       const symbol = market.symbol.toLowerCase()
       const priceUsd = catalogBySlug.get(leg.marketSlug)?.priceUsd ?? SANDBOX_TOKEN_PRICE_USD[symbol] ?? 1
+      const amount = leg.amountUsd / priceUsd
+      productLiquidRows.push({
+        assetId: leg.marketSlug,
+        symbol: market.symbol,
+        amount,
+        valueUsd: leg.amountUsd,
+        state: "available",
+      })
       await ctx.db.insert("sandboxBalances", {
         wallet,
         assetSlug: leg.marketSlug,
         symbol: market.symbol,
-        amount: leg.amountUsd / priceUsd,
+        amount,
         valueUsd: leg.amountUsd,
         priceUsd,
         updatedAt: now,
       })
+      await upsertWalletBalanceRows(ctx, [
+        {
+          wallet,
+          assetId: leg.marketSlug,
+          amount,
+          sourceType: "wallet",
+          assetKind: "wallet",
+          symbol: market.symbol,
+          valueUsd6: String(Math.round(leg.amountUsd * 1_000_000)),
+        },
+      ])
       const hash = `${syntheticTxHash}-asset-${index}`
       receiptHashes.push(hash)
       await ctx.db.insert("sandboxActivity", {
@@ -527,6 +595,16 @@ export const claim = mutation({
     for (const [index, leg] of allocation.collateral.entries()) {
       const amountUsd6 = Math.round(leg.amountUsd * 1_000_000).toString()
       const hash = `${syntheticTxHash}-pool-${index}`
+      const market = marketBySlug.get(leg.marketSlug)
+      const priceUsd = catalogBySlug.get(leg.marketSlug)?.priceUsd ?? market?.priceUsd ?? 1
+      productBorrowRows.push({
+        marketId: leg.marketSlug,
+        poolId: leg.marketSlug,
+        symbol: market?.symbol ?? leg.marketSlug.toUpperCase(),
+        amount: priceUsd > 0 ? leg.amountUsd / priceUsd : leg.amountUsd,
+        valueUsd: leg.amountUsd,
+        state: "collateral",
+      })
       receiptHashes.push(hash)
       const positionId = await ctx.db.insert("positions", {
         wallet,
@@ -568,12 +646,21 @@ export const claim = mutation({
         simulated: true,
         at: now,
       })
-      await applyMarketDelta(ctx, leg.marketSlug, leg.amountUsd, 0, now)
     }
 
     for (const [index, leg] of allocation.lend.entries()) {
       const amountUsd6 = Math.round(leg.amountUsd * 1_000_000).toString()
       const hash = `${syntheticTxHash}-lend-${index}`
+      const market = marketBySlug.get(leg.marketSlug)
+      const priceUsd = catalogBySlug.get(leg.marketSlug)?.priceUsd ?? market?.priceUsd ?? 1
+      productLendRows.push({
+        marketId: leg.marketSlug,
+        assetId: leg.marketSlug,
+        symbol: market?.symbol ?? leg.marketSlug.toUpperCase(),
+        amount: priceUsd > 0 ? leg.amountUsd / priceUsd : leg.amountUsd,
+        valueUsd: leg.amountUsd,
+        state: "deposited",
+      })
       receiptHashes.push(hash)
       const positionId = await ctx.db.insert("positions", {
         wallet,
@@ -601,7 +688,6 @@ export const claim = mutation({
         simulated: true,
         at: now,
       })
-      await applyMarketDelta(ctx, leg.marketSlug, leg.amountUsd, 0, now)
     }
 
     for (const [index, leg] of allocation.multiply.entries()) {
@@ -624,6 +710,32 @@ export const claim = mutation({
       const collateralPriceUsd =
         catalogBySlug.get(leg.marketSlug)?.priceUsd ?? SANDBOX_TOKEN_PRICE_USD[multiplySymbol] ?? 1
       const collateralAmount = grossExposureUsd / collateralPriceUsd
+      productMultiplyRows.push(
+        {
+          marketId: leg.marketSlug,
+          assetId: multiplySymbol,
+          symbol: multiplyMarket?.symbol ?? multiplySymbol.toUpperCase(),
+          amount: collateralAmount,
+          valueUsd: grossExposureUsd,
+          state: "position",
+        },
+        {
+          marketId: leg.marketSlug,
+          assetId: multiplySymbol,
+          symbol: multiplyMarket?.symbol ?? multiplySymbol.toUpperCase(),
+          amount: collateralAmount,
+          valueUsd: grossExposureUsd,
+          state: "collateral",
+        },
+        {
+          marketId: leg.marketSlug,
+          assetId: liquidAssetIdForMultiplyDebt(leg.marketSlug),
+          symbol: liquidAssetIdForMultiplyDebt(leg.marketSlug).toUpperCase(),
+          amount: debtValueUsd,
+          valueUsd: debtValueUsd,
+          state: "debt",
+        },
+      )
       const positionId = await ctx.db.insert("positions", {
         wallet,
         product: "multiply",
@@ -656,7 +768,63 @@ export const claim = mutation({
         simulated: true,
         at: now,
       })
-      await applyMarketDelta(ctx, leg.marketSlug, grossExposureUsd, debtValueUsd, now)
+    }
+
+    const existingUmbrella = await ctx.db
+      .query("positions")
+      .withIndex("by_wallet_product", (q) => q.eq("wallet", wallet).eq("product", "umbrella"))
+      .collect()
+    if (existingUmbrella.length === 0) {
+      for (const balance of UMBRELLA_ONBOARDING_BALANCES) {
+        await upsertSandboxBalance(ctx, { wallet, ...balance, updatedAt: now })
+      }
+      for (const [index, position] of UMBRELLA_ONBOARDING_POSITIONS.entries()) {
+        const suppliedUsd6 = Math.round(position.suppliedUsd * 1_000_000).toString()
+        const earnedUsd6 = Math.round(position.earnedUsd * 1_000_000).toString()
+        const cooldownAmountUsd6 = Math.round(position.cooldownUsd * 1_000_000).toString()
+        const cooldownStartedAt = position.cooldownOffsetMs == null ? undefined : now - position.cooldownOffsetMs
+        const cooldownEndsAt =
+          position.cooldownOffsetMs == null ? undefined : cooldownStartedAt! + 20 * 24 * 60 * 60 * 1000
+        const withdrawalWindowEndsAt =
+          position.cooldownOffsetMs == null ? undefined : cooldownEndsAt! + 2 * 24 * 60 * 60 * 1000
+        const hash = `${syntheticTxHash}-umbrella-${index}`
+        receiptHashes.push(hash)
+        const positionId = await ctx.db.insert("positions", {
+          wallet,
+          product: "umbrella",
+          marketSlug: position.marketSlug,
+          assetId: position.marketSlug,
+          status: "open",
+          suppliedUsd6,
+          earnedUsd6,
+          supplyApyPct: position.marketSlug === "usdc" ? 4.84 : position.marketSlug === "weth" ? 5.05 : 6.4,
+          cooldownAmountUsd6,
+          cooldownStartedAt,
+          cooldownEndsAt,
+          withdrawalWindowEndsAt,
+          claimedRewardsUsd6: "0",
+          openedAt: now,
+          lastUpdatedAt: now,
+          openTxSynthetic: hash,
+          revision: 1,
+        })
+        await ctx.db.insert("transactions", {
+          wallet,
+          intentId: `onboarding-umbrella-${position.marketSlug}`,
+          product: "umbrella",
+          kind: "stake",
+          status: "success",
+          marketSlug: position.marketSlug,
+          assetId: position.marketSlug,
+          positionId,
+          requestedAmountUsd6: suppliedUsd6,
+          executedAmountUsd6: suppliedUsd6,
+          amountUsd: position.suppliedUsd,
+          syntheticTxHash: hash,
+          simulated: true,
+          at: now,
+        })
+      }
     }
 
     await ctx.db.insert("starterAllocations", {
@@ -669,6 +837,12 @@ export const claim = mutation({
       multiply: allocation.multiply,
       receiptHashes,
       createdAt: now,
+    })
+    await replaceProductBalanceRows(ctx, wallet, {
+      liquid: productLiquidRows,
+      lend: productLendRows,
+      borrow: productBorrowRows,
+      multiply: productMultiplyRows,
     })
     const liquidValueUsd = allocation.liquid.reduce((sum, leg) => sum + leg.amountUsd, 0)
     const collateralValueUsd = allocation.collateral.reduce((sum, leg) => sum + leg.amountUsd, 0)

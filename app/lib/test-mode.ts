@@ -68,4 +68,5 @@ export function shouldUseMockDataSource(): boolean {
 export const IS_DEV_SHORTCUT_MODE = shouldUseOpenGateSession()
 export const IS_OPEN_GATE_TEST_MODE = IS_DEV_SHORTCUT_MODE
 
-export const TEST_MODE_WALLET_ADDRESS = "0x0000000000000000000000000000000000000a11"
+/** Same address as Convex seed `TEST_WALLET_ADDRESS` — open-gate JWT + seeded portfolio rows. */
+export { TEST_WALLET_ADDRESS as TEST_MODE_WALLET_ADDRESS } from "@/app/lib/convex-seed/test-wallet"

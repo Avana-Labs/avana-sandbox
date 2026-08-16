@@ -92,13 +92,12 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
 
     // The aggregate ledger delta is recomputed server-side (there is no client ledger
     // arg), keyed by the borrowed asset, never anything the client could dictate.
-    const ledger = await asUser.query(api.liquidity.listDeltas)
-    const row = ledger.find((r) => r.marketSlug === "uni-v2:usdc")
-    expect(row?.borrowedDeltaUsd).toBe(1000)
+    expect(await asUser.query(api.liquidity.listDeltas)).toEqual([])
 
     const portfolio = await asUser.query(api.sandbox.transactions.getPortfolio, { wallet: WALLET })
     expect(portfolio.latest?.totalBorrowedUsd).toBe(1000)
-    expect(portfolio.latest?.totalValueUsd).toBe(-1000)
+    // Borrow credits the liquid wallet, so net portfolio stays flat (cash +1000, debt +1000).
+    expect(portfolio.latest?.totalValueUsd).toBe(0)
   })
 
   test("rejects malformed fixed-point position state before writing", async () => {

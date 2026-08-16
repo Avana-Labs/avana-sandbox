@@ -19,8 +19,9 @@ export function maxMultiplyCollateralAmount(
 ): number | null {
   if (!Number.isFinite(availableLiquidityUsd) || availableLiquidityUsd <= 0) return null
   if (!Number.isFinite(collateralPriceUsd) || collateralPriceUsd <= 0) return null
+  if (Number.isFinite(walletBalanceUsd) && walletBalanceUsd <= 0) return 0
   const capUsd = Math.min(availableLiquidityUsd, Math.max(0, walletBalanceUsd))
-  if (capUsd <= 0) return null
+  if (capUsd <= 0) return Number.isFinite(walletBalanceUsd) ? 0 : null
   return capUsd / collateralPriceUsd
 }
 

@@ -14,6 +14,7 @@ const KIND_LABEL: Record<TxHistoryRow["kind"], string> = {
   repay: "Repay",
   liquidation: "Liquidation",
   rewards: "Rewards",
+  cooldown: "Cooldown",
 }
 
 const KIND_TONE: Record<TxHistoryRow["kind"], string> = {
@@ -23,6 +24,7 @@ const KIND_TONE: Record<TxHistoryRow["kind"], string> = {
   repay: "text-success",
   liquidation: "text-amber-600 dark:text-amber-400",
   rewards: "text-success",
+  cooldown: "text-amber-600 dark:text-amber-400",
 }
 
 type Props = {
@@ -31,6 +33,7 @@ type Props = {
   title?: string
   subtitle?: string
   kindLabelMap?: Partial<Record<TxHistoryRow["kind"], string>>
+  hideFilters?: boolean
 }
 
 const FILTERS = [
@@ -67,6 +70,7 @@ export function TransactionHistoryCard({
   title = "Transactions",
   subtitle,
   kindLabelMap,
+  hideFilters = false,
 }: Props) {
   const { t, language } = useTranslation()
   const locale = LANGUAGE_HTML_LANG[language] ?? "en"
@@ -83,13 +87,15 @@ export function TransactionHistoryCard({
           </h2>
           {subtitle ? <p className="mt-1 text-[12px] text-muted-foreground">{t(subtitle)}</p> : null}
         </div>
-        <PillTabStrip
-          items={FILTERS.map((filter) => ({ id: filter.id, label: t(filter.label) }))}
-          value={activeFilter}
-          onChange={setActiveFilter}
-          ariaLabel={t("Filter transactions")}
-          className="flex-nowrap"
-        />
+        {hideFilters ? null : (
+          <PillTabStrip
+            items={FILTERS.map((filter) => ({ id: filter.id, label: t(filter.label) }))}
+            value={activeFilter}
+            onChange={setActiveFilter}
+            ariaLabel={t("Filter transactions")}
+            className="flex-nowrap"
+          />
+        )}
       </div>
       <div className="overflow-hidden">
         <div className="hidden md:block">

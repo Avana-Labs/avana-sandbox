@@ -27,6 +27,7 @@ const KIND_LABEL: Record<TxHistoryRow["kind"], string> = {
   repay: "Repay",
   liquidation: "Liquidation",
   rewards: "Claim",
+  cooldown: "Cooldown",
 }
 
 const KIND_TONE: Record<TxHistoryRow["kind"], string> = {
@@ -36,6 +37,7 @@ const KIND_TONE: Record<TxHistoryRow["kind"], string> = {
   repay: "text-success",
   liquidation: "text-amber-600 dark:text-amber-400",
   rewards: "text-slate-700 dark:text-slate-300",
+  cooldown: "text-amber-600 dark:text-amber-400",
 }
 
 type Props = {

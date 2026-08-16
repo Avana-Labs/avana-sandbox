@@ -144,7 +144,7 @@ export const livePortfolioPageSource: PortfolioPageSource = {
       id: String(transaction._id),
       walletProfileId: wallet,
       at: new Date(transaction.at).toISOString(),
-      product: transaction.product === "borrow" ? "borrow" : transaction.product === "lend" ? "lend" : "multiply",
+      product: transaction.product,
       kind:
         transaction.kind === "deposit"
           ? "supply"

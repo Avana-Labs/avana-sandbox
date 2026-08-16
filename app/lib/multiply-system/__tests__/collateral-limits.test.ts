@@ -20,6 +20,12 @@ describe("multiply collateral limits", () => {
     expect(maxMultiplyCollateralAmount(1_400, 280, 12_500)).toBeCloseTo(1_400 / 280, 6)
   })
 
+  it("treats zero wallet balance as a zero cap, not an unknown cap", () => {
+    const max = maxMultiplyCollateralAmount(8_400_000, 280, 0)
+    expect(max).toBe(0)
+    expect(exceedsMultiplyCollateralCap(1, max)).toBe(true)
+  })
+
   it("returns null when liquidity or price is missing or non-finite", () => {
     expect(maxMultiplyCollateralAmount(0, 280)).toBeNull()
     expect(maxMultiplyCollateralAmount(8_400_000, 0)).toBeNull()

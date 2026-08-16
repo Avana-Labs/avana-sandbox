@@ -11,6 +11,9 @@ import { buildHeroFeedFromConvexSeries, getPoolHeroFeed } from "@/app/lib/chart-
 import { useConvexLiveSession } from "@/app/lib/convex/use-convex-live-session"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { buildFeedFromRangeSeries, resolveHeroContractLabel } from "@/app/borrow/_detail/lib/hero-chart-feeds"
+import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { currentCollateralValueUsd6 } from "@/app/lib/credit-engine"
+import { buildEmptyChartFeed, buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-feed"
 
 type PoolHeroProps = {
   detail: PoolDetail
@@ -115,10 +118,10 @@ function PoolHeroLive({ preloads, ...props }: PoolHeroProps & { preloads: PoolHe
   const liveDetail = React.useMemo(
     () => ({
       ...detail,
-      heroFeed: buildHeroFeedFromConvexSeries(tvl?.points ?? [], "usdCompact") ?? detail.heroFeed,
-      heroBorrowedFeed: buildHeroFeedFromConvexSeries(borrowed?.points ?? [], "usdCompact") ?? detail.heroBorrowedFeed,
+      heroFeed: buildHeroFeedFromConvexSeries(tvl?.points ?? [], "usdCompact") ?? buildEmptyChartFeed(),
+      heroBorrowedFeed: buildHeroFeedFromConvexSeries(borrowed?.points ?? [], "usdCompact") ?? buildEmptyChartFeed(),
       heroUtilizationFeed:
-        buildHeroFeedFromConvexSeries(utilization?.points ?? [], "percent") ?? detail.heroUtilizationFeed,
+        buildHeroFeedFromConvexSeries(utilization?.points ?? [], "percent") ?? buildEmptyChartFeed("percent"),
     }),
     [detail, tvl, borrowed, utilization],
   )
@@ -138,7 +141,9 @@ export function PoolHero(props: PoolHeroProps) {
 
 function PoolHeroView({ detail, leading, actions, className, hideIdentity = false }: PoolHeroProps) {
   const { t } = useTranslation()
-  const metricTabs = React.useMemo(() => [t("Supplied"), t("Borrowed"), t("Utilization")], [t])
+  const session = useBorrowSessionContext()
+  const { walletId } = useAvanaIdentity()
+  const metricTabs = React.useMemo(() => [t("Supplied"), t("Borrowed"), t("Utilization"), t("Your position")], [t])
   const [activeMetricTab, setActiveMetricTab] = React.useState(metricTabs[0])
   React.useEffect(() => {
     setActiveMetricTab(metricTabs[0])
@@ -147,6 +152,25 @@ function PoolHeroView({ detail, leading, actions, className, hideIdentity = fals
   // read mock series seeded from spoke.liquidityUsd (~$1.25B), which disagreed
   // with Convex Supplied (~$63M) on the same page.
   const feed = React.useMemo(() => {
+    if (activeMetricTab === metricTabs[3]) {
+      const account = session.state.accounts[walletId]
+      const currentValueUsd = (account?.collateralPositions ?? [])
+        .filter((position) => position.marketId === detail.id)
+        .reduce((sum, position) => {
+          const market = session.state.markets[position.marketId]
+          return sum + (market ? Number(currentCollateralValueUsd6(position, market)) / 1_000_000 : 0)
+        }, 0)
+      return buildWalletPositionFeed(
+        currentValueUsd,
+        session.transactionHistory
+          .filter((item) => item.marketId === detail.id && item.status === "success")
+          .filter((item) => item.kind === "deposit" || item.kind === "withdraw")
+          .map((item) => ({
+            timestamp: item.timestamp,
+            deltaUsd: (item.kind === "deposit" ? 1 : -1) * (Number(item.executedAmountUsd6) / 1_000_000),
+          })),
+      )
+    }
     if (activeMetricTab === metricTabs[1]) {
       return (
         detail.heroBorrowedFeed ??
@@ -179,6 +203,9 @@ function PoolHeroView({ detail, leading, actions, className, hideIdentity = fals
     detail.heroUtilizationFeed,
     detail.id,
     metricTabs,
+    session.state,
+    session.transactionHistory,
+    walletId,
   ])
 
   return (
