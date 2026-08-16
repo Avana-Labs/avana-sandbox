@@ -44,6 +44,19 @@ describe("shared risk-model (single source for mock + Convex seed)", () => {
     }
   })
 
+  it("labels APR quantities as APR, not APY (sandbox accrual is linear, no compounding)", () => {
+    // The borrow-rate metric is an APR (id already 'borrowApr'); its label must not claim APY.
+    const asset = listSpokeBorrowables()[0]!
+    const borrowMetric = buildAssetRiskAssessment(asset).metrics.find((metric) => metric.id === "borrowApr")!
+    expect(borrowMetric.label).toContain("APR")
+    expect(borrowMetric.label).not.toContain("APY")
+
+    // The pool assessment's rate range is an APR range (aprRangeLabel), not APY.
+    const aprMetric = buildPoolRiskAssessment(BORROW_POOL_CATALOG[0]!).metrics.find((metric) => metric.id === "apr")!
+    expect(aprMetric.label).toContain("APR")
+    expect(aprMetric.label).not.toContain("APY")
+  })
+
   it("gives every asset + pool a distinct, finite premium", () => {
     for (const asset of listSpokeBorrowables()) {
       const r = buildAssetRiskAssessment(asset)
