@@ -66,6 +66,17 @@ describe("sandbox onboarding + economy caps", () => {
     expect(activity.some((entry) => entry.kind === "onboardingClaim")).toBe(true)
   })
 
+  test("open gate balance check never grants product balances", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+
+    const result = await asUser.mutation(api.wallet.productBalances.ensureOpenGateBalances, { wallet: WALLET })
+    expect(result).toEqual({ seeded: false, initialized: false })
+
+    const balances = await asUser.query(api.wallet.productBalances.listForWallet, { wallet: WALLET })
+    expect(balances).toMatchObject({ liquid: [], lend: [], borrow: [], multiply: [] })
+  })
+
   test("refreshes a stale starter catalog after canonical markets are seeded", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
@@ -172,10 +183,13 @@ describe("sandbox onboarding + economy caps", () => {
     expect(result.status).toBe("done")
 
     const positions = await asUser.query(api.sandbox.transactions.getPositions, { wallet: WALLET })
-    expect(positions).toHaveLength(22)
+    // 8 borrow + 8 lend + 6 multiply + 3 umbrella (GHO / USDC / WETH — USDT is
+    // seeded with a wallet balance but no open umbrella position).
+    expect(positions).toHaveLength(25)
     expect(positions.filter((position) => position.product === "borrow")).toHaveLength(8)
     expect(positions.filter((position) => position.product === "lend")).toHaveLength(8)
     expect(positions.filter((position) => position.product === "multiply")).toHaveLength(6)
+    expect(positions.filter((position) => position.product === "umbrella")).toHaveLength(3)
 
     const balances = await t.run((ctx) =>
       ctx.db
@@ -183,15 +197,18 @@ describe("sandbox onboarding + economy caps", () => {
         .withIndex("by_wallet", (queryBuilder) => queryBuilder.eq("wallet", WALLET.toLowerCase()))
         .collect(),
     )
-    expect(balances).toHaveLength(12)
-    expect(Math.round(balances.reduce((sum, balance) => sum + balance.valueUsd, 0) * 100)).toBe(100_000 * 100)
+    // Umbrella onboarding upserts four wallet balances (GHO / USDC / USDT /
+    // WETH) via upsertSandboxBalance. They're independent of the starter
+    // catalog's assetSlugs, so all four add fresh rows on top of the twelve
+    // starter balances.
+    expect(balances).toHaveLength(16)
 
     const portfolio = await asUser.query(api.sandbox.transactions.getPortfolio, { wallet: WALLET })
     expect(portfolio.snapshots).toHaveLength(1)
     expect(portfolio.latest?.totalValueUsd).toBe(1_000_000)
     expect(portfolio.latest?.totalSuppliedUsd).toBe(1_150_000)
     expect(portfolio.latest?.totalBorrowedUsd).toBe(250_000)
-    expect(portfolio.openPositions).toBe(22)
+    expect(portfolio.openPositions).toBe(25)
 
     const receipt = await asUser.query(api.sandbox.transactions.getTransactionByHash, {
       wallet: WALLET,

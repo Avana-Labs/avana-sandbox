@@ -15,6 +15,9 @@ import {
   formatHeroContractLabel,
   resolveHeroContractAddress,
 } from "@/app/borrow/_detail/lib/hero-chart-feeds"
+import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { currentDebtValueUsd6 } from "@/app/lib/credit-engine"
+import { buildEmptyChartFeed, buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-feed"
 
 type Props = {
   detail: AssetDetail
@@ -146,10 +149,10 @@ function AssetHeroLive({ preloads, ...props }: Props & { preloads: AssetHeroPrel
   const liveDetail = React.useMemo(
     () => ({
       ...detail,
-      heroFeed: buildHeroFeedFromConvexSeries(supply?.points ?? [], "usdCompact") ?? detail.heroFeed,
-      heroBorrowedFeed: buildHeroFeedFromConvexSeries(borrow?.points ?? [], "usdCompact") ?? detail.heroBorrowedFeed,
+      heroFeed: buildHeroFeedFromConvexSeries(supply?.points ?? [], "usdCompact") ?? buildEmptyChartFeed(),
+      heroBorrowedFeed: buildHeroFeedFromConvexSeries(borrow?.points ?? [], "usdCompact") ?? buildEmptyChartFeed(),
       heroUtilizationFeed:
-        buildHeroFeedFromConvexSeries(utilization?.points ?? [], "percent") ?? detail.heroUtilizationFeed,
+        buildHeroFeedFromConvexSeries(utilization?.points ?? [], "percent") ?? buildEmptyChartFeed("percent"),
     }),
     [detail, supply, borrow, utilization],
   )
@@ -167,7 +170,9 @@ export function AssetHero(props: Props) {
 
 function AssetHeroView({ detail, leading, actions, className, hideIdentity = false }: Props) {
   const { t } = useTranslation()
-  const metricTabs = React.useMemo(() => [t("Supplied"), t("Borrowed"), t("Utilization")], [t])
+  const session = useBorrowSessionContext()
+  const { walletId } = useAvanaIdentity()
+  const metricTabs = React.useMemo(() => [t("Supplied"), t("Borrowed"), t("Utilization"), t("Your position")], [t])
   const [activeMetricTab, setActiveMetricTab] = React.useState(metricTabs[0])
   React.useEffect(() => {
     setActiveMetricTab(metricTabs[0])
@@ -177,6 +182,25 @@ function AssetHeroView({ detail, leading, actions, className, hideIdentity = fal
   // unseeded, so all three tabs agree with the live market size.
   const feed = React.useMemo(() => {
     const fallback = detail.heroFeed ?? getAssetHeroFeed(detail.id)
+    if (activeMetricTab === metricTabs[3]) {
+      const currentValueUsd = (session.state.accounts[walletId]?.debtPositions ?? [])
+        .filter((position) => position.baseAssetId === detail.id || position.assetId.endsWith(`:${detail.id}`))
+        .reduce((sum, position) => sum + Number(currentDebtValueUsd6(position)) / 1_000_000, 0)
+      return buildWalletPositionFeed(
+        currentValueUsd,
+        session.transactionHistory
+          .filter(
+            (item) =>
+              item.status === "success" &&
+              (item.assetId === detail.id || item.assetId?.endsWith(`:${detail.id}`)) &&
+              (item.kind === "borrow" || item.kind === "repay"),
+          )
+          .map((item) => ({
+            timestamp: item.timestamp,
+            deltaUsd: (item.kind === "borrow" ? 1 : -1) * (Number(item.executedAmountUsd6) / 1_000_000),
+          })),
+      )
+    }
     if (activeMetricTab === metricTabs[1]) {
       return (
         detail.heroBorrowedFeed ?? buildFeedFromRangeSeries(detail.heroMetric.series.borrow, "usdCompact", fallback)
@@ -200,6 +224,9 @@ function AssetHeroView({ detail, leading, actions, className, hideIdentity = fal
     detail.heroMetric.series,
     detail.id,
     metricTabs,
+    session.state,
+    session.transactionHistory,
+    walletId,
   ])
 
   return (

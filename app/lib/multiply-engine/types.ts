@@ -75,6 +75,7 @@ export type MultiplySystemState = {
   now: number
   markets: Record<string, MultiplyMarketRecord>
   positions: Record<string, MultiplyPosition>
+  walletBalancesUsd: Record<string, Record<string, number>>
   transactions: MultiplyTransaction[]
 }
 

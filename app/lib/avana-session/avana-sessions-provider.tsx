@@ -10,6 +10,11 @@ import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 import { useLendSession } from "@/app/lib/lend-system/use-lend-session"
 import { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-session"
 import { useSwapSession, type DurableSwapTransaction } from "@/app/lib/swap-system/use-swap-session"
+import {
+  useUmbrellaSession,
+  type ConvexUmbrellaSessionState,
+  type PersistUmbrellaAction,
+} from "@/app/lib/umbrella-system/use-umbrella-session"
 import type { SwapTransactionRecord } from "@/app/lib/swap-system/transaction-adapter"
 import { useAvanaSession } from "./use-avana-session"
 
@@ -18,6 +23,7 @@ type MultiplySession = ReturnType<typeof useMultiplySession>
 type LendSession = ReturnType<typeof useLendSession>
 type RewardsSession = ReturnType<typeof useRewardsSession>
 type SwapSession = ReturnType<typeof useSwapSession>
+type UmbrellaSession = ReturnType<typeof useUmbrellaSession>
 
 function usd6ToNumber(value: bigint) {
   return Number(value) / 1_000_000
@@ -166,6 +172,7 @@ export type AvanaSessions = {
   lend: LendSession
   rewards: RewardsSession
   swap: SwapSession
+  umbrella: UmbrellaSession
 }
 
 export type AvanaIdentity = Pick<AvanaSessions, "walletId" | "walletAddress" | "sandboxMode">
@@ -177,6 +184,7 @@ const MultiplySessionContext = createContext<MultiplySession | null>(null)
 const LendSessionContext = createContext<LendSession | null>(null)
 const RewardsSessionContext = createContext<RewardsSession | null>(null)
 const SwapSessionContext = createContext<SwapSession | null>(null)
+const UmbrellaSessionContext = createContext<UmbrellaSession | null>(null)
 
 export function AvanaSessionsProvider({
   walletId,
@@ -190,6 +198,9 @@ export function AvanaSessionsProvider({
   remoteRewardsRevision,
   persistRewardsState,
   persistLocalState = true,
+  persistUmbrellaState,
+  remoteUmbrellaState,
+  persistUmbrellaAction,
   sessionSource = "demo",
 }: {
   walletId?: string
@@ -212,6 +223,9 @@ export function AvanaSessionsProvider({
     expectedRevision?: number
   }) => Promise<{ revision?: number } | unknown>
   persistLocalState?: boolean
+  persistUmbrellaState?: boolean
+  remoteUmbrellaState?: ConvexUmbrellaSessionState | null
+  persistUmbrellaAction?: PersistUmbrellaAction
   sessionSource?: "demo" | "convex"
 }) {
   const { deltas: liquidityDeltas } = useMarketLiquidity()
@@ -253,6 +267,12 @@ export function AvanaSessionsProvider({
     persistTransaction: persistSwapTransaction,
     remoteTransactions: remoteSwapTransactions,
   })
+  const umbrella = useUmbrellaSession({
+    walletId: avana.walletId,
+    persistState: persistUmbrellaState ?? persistLocalState,
+    remoteState: remoteUmbrellaState,
+    persistAction: persistUmbrellaAction,
+  })
 
   useRewardsEventBridge({
     walletId: avana.walletId,
@@ -274,8 +294,9 @@ export function AvanaSessionsProvider({
       lend,
       rewards,
       swap,
+      umbrella,
     }),
-    [avana.walletId, avana.walletAddress, avana.sandboxMode, borrow, multiply, lend, rewards, swap],
+    [avana.walletId, avana.walletAddress, avana.sandboxMode, borrow, multiply, lend, rewards, swap, umbrella],
   )
   const identity = useMemo<AvanaIdentity>(
     () => ({
@@ -293,7 +314,9 @@ export function AvanaSessionsProvider({
           <MultiplySessionContext.Provider value={multiply}>
             <LendSessionContext.Provider value={lend}>
               <RewardsSessionContext.Provider value={rewards}>
-                <SwapSessionContext.Provider value={swap}>{children}</SwapSessionContext.Provider>
+                <SwapSessionContext.Provider value={swap}>
+                  <UmbrellaSessionContext.Provider value={umbrella}>{children}</UmbrellaSessionContext.Provider>
+                </SwapSessionContext.Provider>
               </RewardsSessionContext.Provider>
             </LendSessionContext.Provider>
           </MultiplySessionContext.Provider>
@@ -369,6 +392,14 @@ export function useSwapSessionContext() {
   const context = useContext(SwapSessionContext)
   if (!context) {
     throw new Error("useSwapSessionContext must be used within AvanaSessionsProvider")
+  }
+  return context
+}
+
+export function useUmbrellaSessionContext() {
+  const context = useContext(UmbrellaSessionContext)
+  if (!context) {
+    throw new Error("useUmbrellaSessionContext must be used within AvanaSessionsProvider")
   }
   return context
 }

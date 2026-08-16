@@ -1,10 +1,11 @@
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { AvanaSessionProviders } from "../avana-session-providers"
 
 const mocks = vi.hoisted(() => ({
   convexAuthenticated: false,
   openGate: false,
+  openGateReady: true,
   siwe: {
     authedWallet: "0x1111111111111111111111111111111111111111",
     isSignedIn: true,
@@ -16,9 +17,6 @@ vi.mock("convex/react", () => ({
     isAuthenticated: mocks.convexAuthenticated,
     isLoading: !mocks.convexAuthenticated,
   }),
-  // Module-level `new ConvexReactClient(...)` at the top of avana-session-providers.tsx
-  // needs a constructor even when the tests never render the open-gate provider — the
-  // real client would try to touch localStorage on import. Stub it here.
   ConvexReactClient: class {
     constructor() {}
   },
@@ -27,9 +25,11 @@ vi.mock("convex/react", () => ({
 
 vi.mock("@/app/lib/siwe/use-siwe-auth", () => ({
   useSiweAuth: () => mocks.siwe,
-  // Convex provider mounts this hook even in open-gate mode; return a stable stub so
-  // the ConvexProviderWithAuth callable-auth signature is satisfied without a token.
   useConvexSiweAuth: () => ({ isLoading: false, isAuthenticated: false, fetchAccessToken: async () => null }),
+}))
+
+vi.mock("@/app/lib/siwe/use-open-gate-auth-bootstrap", () => ({
+  useOpenGateAuthBootstrap: () => ({ ready: mocks.openGateReady, error: null }),
 }))
 
 vi.mock("@/app/lib/test-mode", () => ({
@@ -57,10 +57,6 @@ vi.mock("@/app/lib/avana-session/convex-session-provider", () => ({
     ),
 }))
 
-vi.mock("@/app/lib/avana-session/convex-market-snapshot-hydrators", () => ({
-  ConvexMarketSnapshotHydrators: () => <div data-testid="open-gate-market-hydrate" />,
-}))
-
 describe("AvanaSessionProviders", () => {
   afterEach(() => {
     cleanup()
@@ -70,6 +66,7 @@ describe("AvanaSessionProviders", () => {
     mocks.convexAuthenticated = false
     mocks.siwe.isSignedIn = true
     mocks.openGate = false
+    mocks.openGateReady = true
   })
 
   it("does not mount wallet queries before Convex confirms the SIWE token", async () => {
@@ -95,8 +92,27 @@ describe("AvanaSessionProviders", () => {
     expect(await screen.findByTestId("convex-session")).toHaveTextContent("App content")
   })
 
-  it("open-gate hydrates public market snapshots without authed wallet session", async () => {
+  it("open-gate waits for bootstrap then mounts the authenticated Convex wallet session", async () => {
     mocks.openGate = true
+    mocks.siwe.isSignedIn = false
+    mocks.openGateReady = true
+    mocks.convexAuthenticated = true
+
+    render(
+      <AvanaSessionProviders>
+        <div>App content</div>
+      </AvanaSessionProviders>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId("convex-session")).toHaveTextContent("App content")
+    })
+    expect(screen.queryByTestId("local-session")).not.toBeInTheDocument()
+  })
+
+  it("open-gate holds the wallet session until the bootstrap JWT is ready", async () => {
+    mocks.openGate = true
+    mocks.openGateReady = false
     mocks.siwe.isSignedIn = false
 
     render(
@@ -105,8 +121,11 @@ describe("AvanaSessionProviders", () => {
       </AvanaSessionProviders>,
     )
 
-    expect(await screen.findByTestId("local-session")).toHaveTextContent("App content")
-    expect(screen.getByTestId("open-gate-market-hydrate")).toBeInTheDocument()
-    expect(screen.queryByLabelText("Authenticating wallet session")).not.toBeInTheDocument()
+    // Bootstrap not ready → nothing mounts. The top page-loading bar (rendered
+    // outside this component tree) carries the loading signal; no ad-hoc
+    // placeholder inside the session tree.
+    expect(screen.queryByTestId("convex-session")).not.toBeInTheDocument()
+    expect(screen.queryByTestId("local-session")).not.toBeInTheDocument()
+    expect(screen.queryByText("App content")).not.toBeInTheDocument()
   })
 })

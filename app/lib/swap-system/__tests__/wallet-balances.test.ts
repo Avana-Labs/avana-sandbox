@@ -19,9 +19,11 @@ describe("swap wallet balance classification", () => {
     ])
   })
 
-  it("builds dashboard wallet rows from wallet-held balances only", () => {
+  it("builds dashboard wallet rows from every product-scoped balance", () => {
     expect(buildDashboardWalletBalanceRows({ walletId: "w1", balances }).map((row) => row.id)).toEqual([
+      "active-eth",
       "wallet-eth",
+      "lend-usdc",
       "wallet-lp",
     ])
   })
@@ -36,14 +38,73 @@ describe("swap wallet balance classification", () => {
     })
   })
 
-  it("keeps regular wallet tokens swappable and sorted by USD value", () => {
+  it("keeps regular wallet tokens swappable while product-held rows stay restricted", () => {
     const rows = buildDashboardWalletBalanceRows({ walletId: "w1", balances })
+    const walletEth = rows.find((row) => row.id === "wallet-eth")
+    const activeEth = rows.find((row) => row.id === "active-eth")
 
-    expect(rows[0]).toMatchObject({
+    expect(walletEth).toMatchObject({
       assetId: "eth",
       symbol: "ETH",
       swappable: true,
       valueUsd: 3868,
     })
+    expect(activeEth).toMatchObject({
+      assetId: "eth",
+      symbol: "ETH",
+      swappable: false,
+      valueUsd: 5802,
+    })
+  })
+
+  it("merges duplicate product rows and drops empty rows for dashboard display", () => {
+    const rows = buildDashboardWalletBalanceRows({
+      walletId: "w1",
+      balances: [
+        {
+          id: "available-lp",
+          walletId: "w1",
+          assetId: "eth-usdc-lp",
+          amount: 5.6,
+          valueUsd: 700,
+          sourceType: "borrow_collateral_unpledged",
+        },
+        {
+          id: "zero-lp",
+          walletId: "w1",
+          assetId: "eth-usdc-lp",
+          amount: 0,
+          valueUsd: 0,
+          sourceType: "borrow_collateral_unpledged",
+        },
+        {
+          id: "more-lp",
+          walletId: "w1",
+          assetId: "eth-usdc-lp",
+          amount: 0.8,
+          valueUsd: 100,
+          sourceType: "borrow_collateral_unpledged",
+        },
+      ],
+    })
+
+    expect(rows).toHaveLength(1)
+    expect(rows[0]).toMatchObject({
+      assetId: "eth-usdc-lp",
+      valueUsd: 800,
+    })
+    expect(rows[0]?.amount).toBeCloseTo(6.4, 6)
+  })
+
+  it("does not merge liquid and product-scoped token rows", () => {
+    const rows = buildDashboardWalletBalanceRows({
+      walletId: "w1",
+      balances: [
+        { id: "liquid-usdc", walletId: "w1", assetId: "usdc", amount: 840, valueUsd: 840, sourceType: "wallet" },
+        { id: "lend-usdc", walletId: "w1", assetId: "usdc", amount: 25, valueUsd: 25, sourceType: "lend_deposited" },
+      ],
+    })
+
+    expect(rows.map((row) => row.id).sort()).toEqual(["lend-usdc", "liquid-usdc"])
   })
 })

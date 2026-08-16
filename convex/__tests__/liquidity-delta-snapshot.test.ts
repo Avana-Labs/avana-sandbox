@@ -13,21 +13,6 @@ function liquidityReader(t: any) {
   return t.withIdentity({ subject: WALLET })
 }
 
-function borrowIntent(intentId: string) {
-  return {
-    wallet: WALLET,
-    intentId,
-    product: "borrow" as const,
-    kind: "borrow",
-    assetId: "uni-v2:usdc",
-    marketSlug: "uni-v3-bluechip-weth-usdc",
-    requestedAmountUsd6: "1000000000",
-    executedAmountUsd6: "1000000000",
-    amountUsd: 1000,
-    simulated: true,
-  }
-}
-
 async function insertSnapshotRow(
   t: any,
   rows: Array<{ marketSlug: string; borrowedDeltaUsd: number; suppliedDeltaUsd: number; updatedAt: number }>,
@@ -51,15 +36,16 @@ describe("listDeltaSnapshot decouples the app-wide read from the hot write path 
 
   test("a write updates the raw event fold but NOT the snapshot until it is rebuilt", async () => {
     const t = convexTest(schema, modules)
-    const asUser = t.withIdentity({ subject: WALLET })
 
     // Seed the snapshot cache empty so the app-wide subscription reads the cache doc
     // (not the cold-cache fold fallback).
     await t.mutation(internal.liquidity.rebuildDeltaSnapshot, {})
     expect(await liquidityReader(t).query(api.liquidity.listDeltaSnapshot)).toEqual([])
 
-    // A user's action appends to the append-only ledger.
-    await asUser.mutation(api.sandbox.transactions.recordTransaction, borrowIntent("i1"))
+    await t.mutation(internal.liquidity.recordDelta, {
+      marketSlug: "uni-v2:usdc",
+      borrowedDeltaUsd: 1000,
+    })
 
     // The raw fold reflects it immediately...
     const raw = await liquidityReader(t).query(api.liquidity.listDeltas)
@@ -78,8 +64,10 @@ describe("listDeltaSnapshot decouples the app-wide read from the hot write path 
 
   test("cold cache (never built) folds the raw events so the app still hydrates", async () => {
     const t = convexTest(schema, modules)
-    const asUser = t.withIdentity({ subject: WALLET })
-    await asUser.mutation(api.sandbox.transactions.recordTransaction, borrowIntent("i1"))
+    await t.mutation(internal.liquidity.recordDelta, {
+      marketSlug: "uni-v2:usdc",
+      borrowedDeltaUsd: 1000,
+    })
     // No rebuild has run — the snapshot query falls back to folding the raw events.
     const snap = await liquidityReader(t).query(api.liquidity.listDeltaSnapshot)
     expect(snap.find((r) => r.marketSlug === "uni-v2:usdc")?.borrowedDeltaUsd).toBe(1000)
@@ -105,7 +93,6 @@ describe("listDeltaSnapshot decouples the app-wide read from the hot write path 
 
   test("rebuildDeltaSnapshot heals duplicate singleton rows back to one canonical cache doc", async () => {
     const t = convexTest(schema, modules)
-    const asUser = t.withIdentity({ subject: WALLET })
 
     await insertSnapshotRow(
       t,
@@ -118,7 +105,10 @@ describe("listDeltaSnapshot decouples the app-wide read from the hot write path 
       150,
     )
 
-    await asUser.mutation(api.sandbox.transactions.recordTransaction, borrowIntent("i1"))
+    await t.mutation(internal.liquidity.recordDelta, {
+      marketSlug: "uni-v2:usdc",
+      borrowedDeltaUsd: 1000,
+    })
     const res = await t.mutation(internal.liquidity.rebuildDeltaSnapshot, {})
     expect(res.markets).toBe(1)
 

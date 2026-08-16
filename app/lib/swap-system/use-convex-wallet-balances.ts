@@ -15,14 +15,73 @@ import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import type { UserAssetBalance } from "./contracts"
 
-// Cast until `npx convex dev` regenerates api.d.ts with the new wallet.balances module.
-// After codegen this line becomes `api.wallet.balances.listBalances`.
-const listBalancesRef = (api as unknown as { wallet: { balances: { listBalances: unknown } } }).wallet.balances
-  .listBalances
-
 export function useConvexWalletBalances(walletId: string | null | undefined): UserAssetBalance[] | undefined {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const balances = useQuery(listBalancesRef as any, walletId ? { wallet: walletId } : "skip")
+  const balances = useQuery(api.wallet.balances.listBalances, walletId ? { wallet: walletId } : "skip")
   if (!balances) return balances === undefined ? undefined : []
-  return balances as UserAssetBalance[]
+  return balances.map((row) => ({
+    id: row.id,
+    walletId: row.walletId,
+    assetId: row.assetId,
+    amount: row.amount,
+    sourceType: "wallet" as const,
+    sourcePositionId: row.sourcePositionId ? String(row.sourcePositionId) : undefined,
+  }))
+}
+
+export function useConvexProductWalletBalances(walletId: string | null | undefined): UserAssetBalance[] | undefined {
+  const buckets = useQuery(api.wallet.productBalances.listForWallet, walletId ? { wallet: walletId } : "skip")
+  if (!buckets) return buckets === undefined ? undefined : []
+  const resolvedWalletId = walletId ?? ""
+
+  const rows: UserAssetBalance[] = []
+  for (const row of buckets.liquid) {
+    rows.push({
+      id: String(row._id),
+      walletId: resolvedWalletId,
+      assetId: row.assetId,
+      amount: row.amount,
+      valueUsd: row.valueUsd,
+      sourceType: "wallet",
+    })
+  }
+  for (const row of buckets.lend) {
+    rows.push({
+      id: String(row._id),
+      walletId: resolvedWalletId,
+      assetId: row.assetId,
+      amount: row.amount,
+      valueUsd: row.valueUsd,
+      sourceType: row.state === "available" ? "lend_available" : "lend_deposited",
+    })
+  }
+  for (const row of buckets.borrow) {
+    rows.push({
+      id: String(row._id),
+      walletId: resolvedWalletId,
+      assetId: row.poolId ?? row.assetId ?? row.marketId ?? row.symbol.toLowerCase(),
+      amount: row.amount,
+      valueUsd: row.state === "debt" ? -row.valueUsd : row.valueUsd,
+      sourceType:
+        row.state === "poolAvailable"
+          ? "borrow_collateral_unpledged"
+          : row.state === "collateral"
+            ? "borrow_collateral_pledged"
+            : row.state === "debt"
+              ? "borrow_debt"
+              : "borrow_claimable",
+    })
+  }
+  for (const row of buckets.multiply) {
+    if (row.state === "collateral") continue
+    rows.push({
+      id: String(row._id),
+      walletId: resolvedWalletId,
+      assetId: row.assetId,
+      amount: row.amount,
+      valueUsd: row.state === "debt" ? -row.valueUsd : row.valueUsd,
+      sourceType:
+        row.state === "available" ? "multiply_available" : row.state === "debt" ? "multiply_debt" : "multiply_active",
+    })
+  }
+  return rows
 }

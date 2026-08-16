@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useMutation } from "convex/react"
+import { api } from "@/convex/_generated/api"
 import { useAvanaIdentity, useRewardsSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor } from "@/app/lib/action-system/contracts"
-import { evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
+import { calculateRewardSummary, evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
 import { mapRewardsClaimPreviewToActionUi } from "@/app/lib/action-system/adapters/rewards-preview-mapper"
 import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
@@ -35,44 +37,45 @@ export function RewardsActionPageClient({
   const router = useRouter()
   const { walletId } = useAvanaIdentity()
   const rewards = useRewardsSessionContext()
+  const recordRewardsClaim = useMutation(api.sandbox.transactions.recordRewardsClaim)
   const networkGuard = useActionNetworkGuard()
   const [amount, setAmount] = useState("")
   const [stage, setStage] = useState<ActionStage>("configure")
   const [successUi, setSuccessUi] = useState<ActionSuccessUi | null>(null)
+  const [reviewQuote, setReviewQuote] = useState<{
+    preview: ActionPreviewUi
+    claimUsd: number
+    taskIds: string[]
+  } | null>(null)
   const [outcome, setOutcome] = useState<{ tone: "error" | "success"; title: string; message: string } | null>(null)
   const [isPending, setIsPending] = useState(false)
-  const [claimSummary, setClaimSummary] = useState({
-    claimUsd: 0,
-    claimableTaskCount: 0,
-    tokenBreakdown: [] as Array<{ symbol: string; amount: number }>,
-  })
+  const claimSummary = useMemo(() => {
+    const input = {
+      tasks: rewards.tasks,
+      wallet: walletId,
+      events: rewards.state.events,
+      claims: rewards.state.claims,
+      now: Date.now(),
+      firstLoginAt: rewards.state.firstLoginAt,
+    }
+    const summary = calculateRewardSummary(input)
+    const progress = evaluateAllTasksForUser(input)
+    return {
+      claimUsd: summary.totalClaimableAmount,
+      claimableTaskCount: summary.claimableTaskCount,
+      taskIds: progress.filter((entry) => entry.claimableAmount > 0).map((entry) => entry.taskId),
+      tokenBreakdown: progress
+        .filter((entry) => entry.claimableAmount > 0)
+        .map((entry) => ({
+          symbol: rewards.tasks.find((item) => item.id === entry.taskId)?.rewardSymbol ?? "POINTS",
+          amount: entry.claimableAmount,
+        })),
+    }
+  }, [rewards.state.claims, rewards.state.events, rewards.state.firstLoginAt, rewards.tasks, walletId])
 
   useEffect(() => {
-    void rewards.readAdapter.readRewardSummary(walletId).then((summary) => {
-      const progress = evaluateAllTasksForUser({
-        tasks: rewards.tasks,
-        wallet: walletId,
-        events: rewards.state.events,
-        claims: rewards.state.claims,
-        now: Date.now(),
-      })
-      const tokenBreakdown = progress
-        .filter((entry) => entry.claimableAmount > 0)
-        .map((entry) => {
-          const task = rewards.tasks.find((item) => item.id === entry.taskId)
-          return {
-            symbol: task?.rewardSymbol ?? "POINTS",
-            amount: entry.claimableAmount,
-          }
-        })
-      setClaimSummary({
-        claimUsd: summary.totalClaimableAmount,
-        claimableTaskCount: summary.claimableTaskCount,
-        tokenBreakdown,
-      })
-      setAmount(String(summary.totalClaimableAmount || ""))
-    })
-  }, [rewards.readAdapter, rewards.state.claims, rewards.state.events, rewards.tasks, walletId])
+    setAmount(String(claimSummary.claimUsd || ""))
+  }, [claimSummary.claimUsd])
 
   const previewUi: ActionPreviewUi = useMemo(() => {
     const base = mapRewardsClaimPreviewToActionUi({
@@ -94,6 +97,7 @@ export function RewardsActionPageClient({
   const handleBack = useCallback(() => {
     if (stage === "review") {
       setStage("configure")
+      setReviewQuote(null)
       setOutcome(null)
       return
     }
@@ -107,11 +111,12 @@ export function RewardsActionPageClient({
     }
     if (stage === "configure") {
       if (!previewUi.allowed) return
+      setReviewQuote({ preview: previewUi, claimUsd: claimSummary.claimUsd, taskIds: claimSummary.taskIds })
       setStage("review")
       return
     }
     if (stage !== "review") return
-    if (!previewUi.allowed) return
+    if (!reviewQuote?.preview.allowed) return
     if (networkGuard.isWrongNetwork) return
 
     setIsPending(true)
@@ -124,12 +129,20 @@ export function RewardsActionPageClient({
         needsAllowance: false,
         onStage: setStage,
         execute: async () => {
-          const result = await rewards.claimAllRewards()
+          const result = []
+          for (const taskId of reviewQuote.taskIds) result.push(await rewards.claimReward(taskId))
           if (!result.length) throw new Error("Nothing to claim")
+          const hash = result[0]?.syntheticTxHash ?? result[0]?.claimId ?? "sandbox-receipt"
+          await recordRewardsClaim({
+            wallet: walletId,
+            intentId: `rewards:${result[0]!.claimId}:${result.length}`,
+            amountUsd: reviewQuote.claimUsd,
+            syntheticTxHash: hash,
+          })
           return {
             receipt: {
               status: "success" as const,
-              hash: result[0]?.syntheticTxHash ?? result[0]?.claimId ?? "sandbox-receipt",
+              hash,
             },
           }
         },
@@ -140,12 +153,12 @@ export function RewardsActionPageClient({
           title: `${descriptor.primaryVerb} successful`,
           // Uses the "{amount} processed." success sink (translated via translate()),
           // matching the borrow/lend/multiply confirmation copy.
-          description: `${formatActionUsd(claimSummary.claimUsd)} processed.`,
+          description: `${formatActionUsd(reviewQuote.claimUsd)} processed.`,
           receiptHash: claims.receipt.hash ?? null,
-          metrics: previewUi.metrics,
+          metrics: reviewQuote.preview.metrics,
           href: dashboardHrefForProduct("rewards"),
           primaryCtaLabel: successDashboardCtaLabel("rewards"),
-          preview: previewUi,
+          preview: reviewQuote.preview,
           verb: descriptor.primaryVerb,
         }),
       )
@@ -165,10 +178,13 @@ export function RewardsActionPageClient({
     }
   }, [
     claimSummary.claimUsd,
+    claimSummary.taskIds,
     closeHref,
     descriptor.primaryVerb,
     networkGuard.isWrongNetwork,
     previewUi,
+    recordRewardsClaim,
+    reviewQuote,
     rewards,
     router,
     stage,
@@ -190,7 +206,12 @@ export function RewardsActionPageClient({
       simulated={rewards.readAdapter.mode === "sandbox"}
     >
       {isProcessingStage(stage) ? (
-        <ActionProcessingStage verb={descriptor.primaryVerb} preview={previewUi} closeHref={closeHref} stage={stage} />
+        <ActionProcessingStage
+          verb={descriptor.primaryVerb}
+          preview={reviewQuote?.preview ?? previewUi}
+          closeHref={closeHref}
+          stage={stage}
+        />
       ) : null}
 
       {stage === "review" ? (
@@ -198,7 +219,7 @@ export function RewardsActionPageClient({
           title={reviewStageTitle(descriptor.primaryVerb)}
           subtitle="Confirm the details below before signing."
           hideHeader={sidebar}
-          preview={previewUi}
+          preview={reviewQuote?.preview ?? previewUi}
           primaryLabel={descriptor.primaryVerb}
           onPrimary={() => void handlePrimary()}
           onSecondary={handleBack}

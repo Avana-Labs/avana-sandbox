@@ -359,7 +359,7 @@ export type TxHistoryRow = {
   at: string
   /** Short relative label shown in the transaction table. */
   timeLabel?: string
-  kind: "supply" | "withdraw" | "borrow" | "repay" | "liquidation" | "rewards"
+  kind: "supply" | "withdraw" | "borrow" | "repay" | "liquidation" | "rewards" | "cooldown"
   amountLabel: string
   token0AmountLabel?: string
   token1AmountLabel?: string

@@ -17,6 +17,7 @@ vi.mock("@/app/lib/currency/use-currency", () => ({
 // return undefined — the tab falls through to the DEMO_SWAP_BALANCES default.
 vi.mock("@/app/lib/swap-system/use-convex-wallet-balances", () => ({
   useConvexWalletBalances: () => undefined,
+  useConvexProductWalletBalances: () => undefined,
 }))
 
 function renderWalletTab(node: ReactNode) {
@@ -59,5 +60,35 @@ describe("DashboardWalletTab", () => {
 
     expect(screen.getAllByText("USD Coin").length).toBeGreaterThan(0)
     expect(screen.getAllByText("123 USDC").length).toBeGreaterThan(0)
+  })
+
+  it("labels available and pledged LP balances by product source", { timeout: 20_000 }, () => {
+    renderWalletTab(
+      <DashboardWalletTab
+        walletId="wallet-live"
+        balances={[
+          {
+            id: "available-lp",
+            walletId: "wallet-live",
+            assetId: "eth-usdc-lp",
+            amount: 5.6,
+            valueUsd: 700,
+            sourceType: "borrow_collateral_unpledged",
+          },
+          {
+            id: "pledged-lp",
+            walletId: "wallet-live",
+            assetId: "eth-usdc-lp",
+            amount: 0.8,
+            valueUsd: 100,
+            sourceType: "borrow_collateral_pledged",
+          },
+        ]}
+      />,
+    )
+
+    expect(screen.getAllByText("Borrow collateral").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("Pledged collateral").length).toBeGreaterThan(0)
+    expect(screen.queryByText("Wallet LP")).toBeNull()
   })
 })

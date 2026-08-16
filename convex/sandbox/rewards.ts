@@ -38,13 +38,11 @@ export const saveState = mutation({
         throw new Error("REVISION_REQUIRED: rewards state already exists; reload it and submit its expectedRevision.")
       }
       if (args.expectedRevision !== currentRevision) {
-        throw new Error(
-          `STALE_WRITE: rewards state changed since it was read (expected revision ${args.expectedRevision}, found ${currentRevision}); reload and retry.`,
-        )
+        return { id: existing._id, revision: currentRevision, stale: true }
       }
       const revision = currentRevision + 1
       await ctx.db.patch(existing._id, { stateJson: args.stateJson, updatedAt, revision })
-      return { id: existing._id, revision }
+      return { id: existing._id, revision, stale: false }
     }
     const id = await ctx.db.insert("sandboxRewards", {
       wallet,
@@ -52,6 +50,6 @@ export const saveState = mutation({
       updatedAt,
       revision: 0,
     })
-    return { id, revision: 0 }
+    return { id, revision: 0, stale: false }
   },
 })

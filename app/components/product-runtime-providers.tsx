@@ -11,7 +11,7 @@ const AvanaSessionProviders = dynamic(
   () => import("@/app/components/avana-session-providers").then((mod) => mod.AvanaSessionProviders),
   {
     ssr: false,
-    loading: () => <div className="min-h-screen bg-background" />,
+    loading: () => null,
   },
 )
 
@@ -24,6 +24,7 @@ const PRODUCT_RUNTIME_ROUTES = [
   "/dashboard",
   "/sandbox",
   "/onboarding",
+  "/umbrella",
 ]
 
 function needsProductRuntime(pathname: string) {

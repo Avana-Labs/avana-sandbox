@@ -54,6 +54,7 @@ import type * as sandbox_onboarding from "../sandbox/onboarding.js";
 import type * as sandbox_rewards from "../sandbox/rewards.js";
 import type * as sandbox_starterAllocation from "../sandbox/starterAllocation.js";
 import type * as sandbox_transactions from "../sandbox/transactions.js";
+import type * as sandbox_umbrella from "../sandbox/umbrella.js";
 import type * as seed from "../seed.js";
 import type * as seedAdmin from "../seedAdmin.js";
 import type * as starterTestMarkets from "../starterTestMarkets.js";
@@ -64,6 +65,7 @@ import type * as wallet_collateralPositions from "../wallet/collateralPositions.
 import type * as wallet_debts from "../wallet/debts.js";
 import type * as wallet_feeApyWads from "../wallet/feeApyWads.js";
 import type * as wallet_lpTokenPrices from "../wallet/lpTokenPrices.js";
+import type * as wallet_productBalances from "../wallet/productBalances.js";
 import type * as wallet_rewardsProgress from "../wallet/rewardsProgress.js";
 
 import type {
@@ -119,6 +121,7 @@ declare const fullApi: ApiFromModules<{
   "sandbox/rewards": typeof sandbox_rewards;
   "sandbox/starterAllocation": typeof sandbox_starterAllocation;
   "sandbox/transactions": typeof sandbox_transactions;
+  "sandbox/umbrella": typeof sandbox_umbrella;
   seed: typeof seed;
   seedAdmin: typeof seedAdmin;
   starterTestMarkets: typeof starterTestMarkets;
@@ -129,6 +132,7 @@ declare const fullApi: ApiFromModules<{
   "wallet/debts": typeof wallet_debts;
   "wallet/feeApyWads": typeof wallet_feeApyWads;
   "wallet/lpTokenPrices": typeof wallet_lpTokenPrices;
+  "wallet/productBalances": typeof wallet_productBalances;
   "wallet/rewardsProgress": typeof wallet_rewardsProgress;
 }>;
 

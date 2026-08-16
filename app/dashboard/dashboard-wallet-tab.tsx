@@ -9,7 +9,7 @@ import { getTokenIconMeta } from "@/app/lib/token-icons"
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 import { buildDashboardWalletBalanceRows, type DashboardWalletBalanceRow } from "@/app/lib/swap-system"
 import type { UserAssetBalance } from "@/app/lib/swap-system"
-import { useConvexWalletBalances } from "@/app/lib/swap-system/use-convex-wallet-balances"
+import { useConvexProductWalletBalances } from "@/app/lib/swap-system/use-convex-wallet-balances"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { BorrowAssetVisual } from "@/app/lib/data/borrow-domain"
@@ -39,19 +39,7 @@ function tokenPnl(_row: DashboardWalletBalanceRow): { pnlUsd: number; pnlPct: nu
 }
 
 function poolUiDetail(row: DashboardWalletBalanceRow) {
-  return LP_UI_DETAILS[row.assetId] ?? { feesUsd: 0, status: "inactive" as const, protocol: "Wallet LP" }
-}
-
-function poolStatusCopy(status: "in_range" | "out_of_range" | "inactive", t: (key: string) => string) {
-  if (status === "in_range") return t("In range")
-  if (status === "out_of_range") return t("Out of range")
-  return t("Inactive")
-}
-
-function poolStatusClass(status: "in_range" | "out_of_range" | "inactive") {
-  if (status === "in_range") return "bg-emerald-50 text-emerald-700"
-  if (status === "out_of_range") return "bg-amber-50 text-amber-700"
-  return "bg-muted text-muted-foreground"
+  return LP_UI_DETAILS[row.assetId] ?? { feesUsd: 0, status: "inactive" as const, protocol: row.sourceLabel }
 }
 
 function toBorrowVisual(symbol: string): BorrowAssetVisual {
@@ -93,29 +81,17 @@ function PoolIdentity({ row }: { row: DashboardWalletBalanceRow }) {
   return <TokenPairCell visuals={visuals} name={row.name} subtitle={detail.protocol} size="md" />
 }
 
-function RangeStatus({ status }: { status: "in_range" | "out_of_range" | "inactive" }) {
-  const { t } = useTranslation()
-  const inRange = status === "in_range"
-  const inactive = status === "inactive"
-
+function PoolSourceStatus({ row }: { row: DashboardWalletBalanceRow }) {
+  const pledged = row.sourceLabel === "Pledged collateral"
   return (
     <span
       className={[
         "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium",
-        inactive
-          ? "bg-muted text-muted-foreground"
-          : inRange
-            ? "bg-success/12 text-success"
-            : "bg-amber-500/12 text-amber-600 dark:text-amber-400",
+        pledged ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
       ].join(" ")}
     >
-      <span
-        className={[
-          "size-1.5 rounded-full",
-          inactive ? "bg-muted-foreground/60" : inRange ? "bg-emerald-500" : "bg-amber-500",
-        ].join(" ")}
-      />
-      {poolStatusCopy(status, t)}
+      <span className={["size-1.5 rounded-full", pledged ? "bg-primary" : "bg-muted-foreground/60"].join(" ")} />
+      {row.sourceLabel}
     </span>
   )
 }
@@ -180,10 +156,8 @@ export function DashboardWalletTab({ walletId, balances }: { walletId: string; b
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const { exact } = useCurrency()
   const { t } = useTranslation()
-  // Prefer Convex-backed balances when no explicit override was passed. Falls through
-  // to the DEMO_SWAP_BALANCES default (via buildDashboardWalletBalanceRows) when Convex
-  // returns undefined (loading) — the tab renders skeleton, not stale mock.
-  const convexBalances = useConvexWalletBalances(balances === undefined ? walletId : null)
+  // Dashboard wallet is the aggregate view of all product-scoped onboarding buckets.
+  const convexBalances = useConvexProductWalletBalances(balances === undefined ? walletId : null)
   const effectiveBalances = balances ?? convexBalances ?? undefined
   const rows = buildDashboardWalletBalanceRows({ walletId, balances: effectiveBalances })
   const tokens = rows.filter((row) => !row.isLpToken)
@@ -257,7 +231,9 @@ function WalletBalanceSection({
                       <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground">
                         {row.name}
                       </div>
-                      <div className="mt-0.5 text-[13px] text-muted-foreground">{row.symbol}</div>
+                      <div className="mt-0.5 text-[13px] text-muted-foreground">
+                        {row.symbol} · {row.sourceLabel}
+                      </div>
                     </div>
                   </div>
                 </td>
@@ -377,20 +353,19 @@ function PoolsBalanceSection({
           </thead>
           <tbody>
             {rows.map((row) => {
-              const detail = poolUiDetail(row)
               return (
                 <tr key={row.id} className="group">
                   <td className={`px-5 py-4 align-middle ${TABLE_ROW_HOVER_LEFT}`}>
                     <PoolIdentity row={row} />
                   </td>
                   <td className={`px-4 py-4 ${TABLE_ROW_HOVER_BG}`}>
-                    <RangeStatus status={detail.status} />
+                    <PoolSourceStatus row={row} />
                   </td>
                   <td className={`px-4 py-4 text-right ${TABLE_ROW_HOVER_BG}`}>
                     <TokenUsdCell token={m(formatPoolAmount(row.amount))} usd={m(exact(row.valueUsd))} />
                   </td>
                   <td className={`px-4 py-4 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
-                    <TokenUsdCell token={m(exact(detail.feesUsd))} usd={m(t("Unclaimed fees"))} />
+                    <TokenUsdCell token={m(exact(poolUiDetail(row).feesUsd))} usd={m(t("Unclaimed fees"))} />
                   </td>
                 </tr>
               )
@@ -408,24 +383,19 @@ function PoolsBalanceSection({
 
       <div className="space-y-3 md:hidden">
         {rows.map((row) => {
-          const detail = poolUiDetail(row)
           return (
             <div key={row.id} className="rounded-radius-lg border border-border bg-card p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
                   <PoolIdentity row={row} />
                 </div>
-                <span
-                  className={`inline-flex rounded-full px-3 py-1 text-[12px] font-medium ${poolStatusClass(detail.status)}`}
-                >
-                  {poolStatusCopy(detail.status, t)}
-                </span>
+                <PoolSourceStatus row={row} />
               </div>
               <div className="mt-4 grid grid-cols-2 gap-3 text-[13px]">
                 <div>
                   <div className="text-muted-foreground">{t("Status")}</div>
                   <div className="mt-1">
-                    <RangeStatus status={detail.status} />
+                    <PoolSourceStatus row={row} />
                   </div>
                 </div>
                 <div>
@@ -440,7 +410,9 @@ function PoolsBalanceSection({
                 <div>
                   <div className="text-muted-foreground">{t("Fees")}</div>
                   <div className="mt-1 flex flex-col gap-0.5">
-                    <span className="font-data tabular-nums text-foreground">{m(exact(detail.feesUsd))}</span>
+                    <span className="font-data tabular-nums text-foreground">
+                      {m(exact(poolUiDetail(row).feesUsd))}
+                    </span>
                     <span className="text-[13px] text-muted-foreground">{m(t("Unclaimed fees"))}</span>
                   </div>
                 </div>

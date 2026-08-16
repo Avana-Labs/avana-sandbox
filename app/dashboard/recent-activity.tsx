@@ -28,6 +28,7 @@ const PRODUCT_OPTIONS: Array<{
   { id: "multiply", label: "Multiply" },
   { id: "rewards", label: "Rewards" },
   { id: "swap", label: "Swap" },
+  { id: "umbrella", label: "Umbrella" },
 ]
 
 const ACTION_OPTIONS: Array<{
@@ -41,6 +42,9 @@ const ACTION_OPTIONS: Array<{
   { id: "repay", label: "Repay" },
   { id: "pledge", label: "Pledge" },
   { id: "claim", label: "Claim" },
+  { id: "stake", label: "Stake" },
+  { id: "startCooldown", label: "Cooldown" },
+  { id: "unstake", label: "Unstake" },
   { id: "open", label: "Open" },
   { id: "addCollateral", label: "Add collateral" },
   { id: "reduce", label: "Reduce" },
@@ -67,6 +71,9 @@ const KIND_LABEL: Record<PortfolioActivityRow["kind"], string> = {
   repay: "Repay",
   pledge: "Pledge",
   claim: "Claim",
+  stake: "Stake",
+  startCooldown: "Cooldown",
+  unstake: "Unstake",
   open: "Open",
   addCollateral: "Add collateral",
   reduce: "Reduce",

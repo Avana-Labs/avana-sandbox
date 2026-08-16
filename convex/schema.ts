@@ -1125,7 +1125,7 @@ export default defineSchema({
    */
   positions: defineTable({
     wallet: v.string(),
-    product: v.union(v.literal("borrow"), v.literal("multiply"), v.literal("lend")),
+    product: v.union(v.literal("borrow"), v.literal("multiply"), v.literal("lend"), v.literal("umbrella")),
     /** Joins to `markets.slug` or `pools.slug`. */
     marketSlug: v.string(),
     spokeId: v.optional(v.string()),
@@ -1137,6 +1137,11 @@ export default defineSchema({
     suppliedUsd6: v.optional(v.string()),
     earnedUsd6: v.optional(v.string()),
     supplyApyPct: v.optional(v.number()),
+    cooldownAmountUsd6: v.optional(v.string()),
+    cooldownStartedAt: v.optional(v.number()),
+    cooldownEndsAt: v.optional(v.number()),
+    withdrawalWindowEndsAt: v.optional(v.number()),
+    claimedRewardsUsd6: v.optional(v.string()),
     // multiply (number-native — see app/lib/multiply-engine/types.ts MultiplyPosition)
     collateralAmount: v.optional(v.number()),
     collateralValueUsd: v.optional(v.number()),
@@ -1161,6 +1166,10 @@ export default defineSchema({
     .index("by_wallet", ["wallet"])
     .index("by_wallet_product", ["wallet", "product"])
     .index("by_wallet_market", ["wallet", "marketSlug"])
+    // Cross-wallet aggregate scans (used by umbrella market-level Coverage /
+    // Amount-in-cooldown, computed live from every wallet's positions on top
+    // of the catalog baseline).
+    .index("by_product_market", ["product", "marketSlug"])
     // Direct (wallet, product, market) lookup so the position upsert is a `.unique()`
     // instead of collect()+find() over every position sharing a market slug.
     .index("by_wallet_product_market", ["wallet", "product", "marketSlug"]),
@@ -1210,7 +1219,14 @@ export default defineSchema({
   transactions: defineTable({
     wallet: v.string(),
     intentId: v.optional(v.string()),
-    product: v.union(v.literal("borrow"), v.literal("lend"), v.literal("multiply"), v.literal("swap")),
+    product: v.union(
+      v.literal("borrow"),
+      v.literal("lend"),
+      v.literal("multiply"),
+      v.literal("swap"),
+      v.literal("rewards"),
+      v.literal("umbrella"),
+    ),
     /** deposit | withdraw | borrow | repay | claim | liquidate | multiply | deleverage | swap */
     kind: v.string(),
     status: v.union(v.literal("success"), v.literal("failed"), v.literal("pending")),
@@ -1404,6 +1420,83 @@ export default defineSchema({
     .index("by_wallet", ["wallet"])
     .index("by_wallet_asset", ["wallet", "assetId"])
     .index("by_wallet_asset_kind", ["wallet", "assetKind"]),
+
+  /**
+   * Product-scoped onboarding + wallet balances. These are the source-of-truth
+   * buckets for authenticated sandbox wallets; frontend `buildConvex*SessionSeed`
+   * functions must not mint product funds locally.
+   */
+  walletLendBalances: defineTable({
+    wallet: v.string(),
+    marketId: v.string(),
+    assetId: v.string(),
+    symbol: v.string(),
+    amount: v.number(),
+    valueUsd: v.number(),
+    state: v.union(v.literal("available"), v.literal("deposited")),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_wallet_market_state", ["wallet", "marketId", "state"]),
+
+  walletBorrowBalances: defineTable({
+    wallet: v.string(),
+    marketId: v.optional(v.string()),
+    assetId: v.optional(v.string()),
+    poolId: v.optional(v.string()),
+    symbol: v.string(),
+    amount: v.number(),
+    valueUsd: v.number(),
+    state: v.union(v.literal("poolAvailable"), v.literal("collateral"), v.literal("debt"), v.literal("claimableFees")),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_wallet_state", ["wallet", "state"])
+    .index("by_wallet_market_state", ["wallet", "marketId", "state"]),
+
+  walletMultiplyBalances: defineTable({
+    wallet: v.string(),
+    marketId: v.optional(v.string()),
+    assetId: v.string(),
+    symbol: v.string(),
+    amount: v.number(),
+    valueUsd: v.number(),
+    state: v.union(v.literal("available"), v.literal("collateral"), v.literal("debt"), v.literal("position")),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_wallet_asset_state", ["wallet", "assetId", "state"]),
+
+  walletLiquidBalances: defineTable({
+    wallet: v.string(),
+    assetId: v.string(),
+    symbol: v.string(),
+    amount: v.number(),
+    valueUsd: v.number(),
+    state: v.literal("available"),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_wallet_asset", ["wallet", "assetId"]),
+
+  walletUmbrellaBalances: defineTable({
+    wallet: v.string(),
+    marketId: v.string(),
+    assetId: v.string(),
+    symbol: v.string(),
+    amount: v.number(),
+    valueUsd: v.number(),
+    state: v.union(
+      v.literal("available"),
+      v.literal("staked"),
+      v.literal("cooling"),
+      v.literal("withdrawalWindow"),
+      v.literal("claimableRewards"),
+    ),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_wallet_market_state", ["wallet", "marketId", "state"]),
 
   /**
    * LP token spot price for a pool market (USD per LP token). Feeds pledge-flow

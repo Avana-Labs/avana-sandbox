@@ -1,10 +1,9 @@
 import type { BorrowSystemState } from "@/app/lib/credit-engine"
-import { currentDebtValueUsd6, formatFixed } from "@/app/lib/credit-engine"
+import { currentCollateralValueUsd6, currentDebtValueUsd6, formatFixed } from "@/app/lib/credit-engine"
 import { formatActionUsd } from "@/app/lib/action-system/formatters"
 import { selectRewardClaimableTotals } from "@/app/lib/borrow-system/home-runtime"
 import { formatBorrowMarketContext } from "@/app/lib/borrow-system/market-labels"
 import { getWalletLpBalanceUsd } from "@/app/lib/borrow-system/wallet-lp-balances"
-import { HOME_CLAIM_POSITIONS } from "@/app/lib/borrow-system/home-contracts"
 import { HOME_POOL_TO_MARKET_ID } from "@/app/lib/borrow-system/mock"
 
 function normalizeBorrowAssetKey(value: string) {
@@ -170,6 +169,30 @@ export function supplySelectItemsForWallet(session: BorrowContextSession, wallet
     .map(({ walletLpUsd: _walletLpUsd, ...item }) => item)
 }
 
+export function removeSelectItemsForWallet(session: BorrowContextSession, walletId: string) {
+  const account = session.state.accounts[walletId]
+  if (!account) return []
+
+  return account.collateralPositions
+    .map((position) => {
+      const market = session.state.markets[position.marketId]
+      if (!market) return null
+      const visuals = market.display.visuals ?? []
+      const collateralUsd = Number.parseFloat(formatFixed(currentCollateralValueUsd6(position, market), 6))
+      return {
+        id: market.id,
+        name: market.display.name,
+        symbol: visuals[0]?.symbol ?? market.display.name.split("/")[0]?.trim() ?? "LP",
+        pairSymbols: visuals.length >= 2 ? ([visuals[0]!.symbol, visuals[1]!.symbol] as [string, string]) : undefined,
+        sublabel: formatBorrowMarketContext({ venue: market.display.venue, feeTier: market.display.feeTier }),
+        trailingLabel: formatActionUsd(collateralUsd),
+        collateralUsd,
+      }
+    })
+    .filter((item): item is NonNullable<typeof item> => Boolean(item && item.collateralUsd > 0))
+    .map(({ collateralUsd: _collateralUsd, ...item }) => item)
+}
+
 export function borrowSelectItemsForMarket(
   session: BorrowContextSession,
   marketId: string | undefined,
@@ -200,18 +223,21 @@ export function claimSelectItemsForWallet(session: BorrowContextSession, walletI
 
   const claimableById = selectRewardClaimableTotals(session.state, walletId)
 
-  return HOME_CLAIM_POSITIONS.map((position) => {
-    const engineClaimable = claimableById[position.id]
-    const claimableUsd = engineClaimable != null && engineClaimable > 0 ? engineClaimable : 0
+  return account.rewardPositions
+    .map((position) => {
+      const market = session.state.markets[position.marketId]
+      const claimableUsd = claimableById[position.id] ?? 0
 
-    return {
-      id: position.id,
-      name: position.name,
-      symbol: position.name.split("/")[0]?.trim() ?? "Rewards",
-      trailingLabel: `${formatActionUsd(claimableUsd)} claimable`,
-      claimableUsd,
-    }
-  }).filter((item) => item.claimableUsd > 0)
+      return {
+        id: position.id,
+        name: market?.display.name ?? position.marketId,
+        symbol: market?.display.visuals?.[0]?.symbol ?? "Fees",
+        trailingLabel: `${formatActionUsd(claimableUsd)} claimable`,
+        claimableUsd,
+        marketId: position.marketId,
+      }
+    })
+    .filter((item) => item.claimableUsd > 0)
 }
 
 export function resolveClaimMarketId(marketOrPoolId: string) {

@@ -159,6 +159,19 @@ export function useSwapSession({
     [adapter, persistTransaction, walletId],
   )
 
+  const hydrateBalances = useCallback(
+    (balances: UserAssetBalance[]) => {
+      setState((current) => ({
+        ...current,
+        balances: balances.map((balance) => ({
+          ...balance,
+          walletId: balance.walletId || walletId,
+        })),
+      }))
+    },
+    [walletId],
+  )
+
   return {
     walletId,
     isHydrated: hydratedWalletId === walletId,
@@ -172,6 +185,7 @@ export function useSwapSession({
     requiresApproval,
     approve,
     executeSwap,
+    hydrateBalances,
   }
 }
 

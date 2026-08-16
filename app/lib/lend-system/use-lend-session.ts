@@ -33,6 +33,15 @@ function mergeReceipts(nextReceipt: LendTransactionResult, receipts: LendTransac
 }
 
 export type ConvexLendWalletData = {
+  lendBalances?: Array<{
+    marketId: string
+    assetId: string
+    symbol: string
+    amount: number
+    valueUsd: number
+    state: "available" | "deposited"
+    updatedAt?: number
+  }>
   positions: Array<{
     _id: string
     product: "borrow" | "lend" | "multiply"
@@ -47,7 +56,7 @@ export type ConvexLendWalletData = {
   transactions: Array<{
     _id: string
     intentId?: string
-    product: "borrow" | "lend" | "multiply" | "swap"
+    product: "borrow" | "lend" | "multiply" | "swap" | "rewards"
     kind: string
     status: "success" | "failed" | "pending"
     marketSlug?: string
@@ -277,6 +286,34 @@ export function useLendSession({
           status: position.status === "open" ? ("active" as const) : ("closed" as const),
         }
       }
+      for (const row of data.lendBalances ?? []) {
+        if (row.state !== "deposited" || row.amount <= 0) continue
+        if (
+          Object.values(positions).some(
+            (position) => position.marketId === row.marketId && position.status === "active",
+          )
+        ) {
+          continue
+        }
+        const market = stateRef.current.markets[row.marketId]
+        const id = `${walletId}:product:${row.marketId}`
+        positions[id] = {
+          positionId: id,
+          walletId,
+          marketId: row.marketId,
+          asset: market?.asset.symbol ?? row.symbol,
+          principalAmount: row.amount,
+          scaledBalance: row.amount,
+          liquidityIndexAtLastAction: market?.liquidityIndex ?? 1,
+          currentSuppliedAmount: row.amount,
+          interestEarned: 0,
+          rewardsEarnedUsd: 0,
+          suppliedValueUsd: row.valueUsd,
+          openedAt: row.updatedAt ?? 0,
+          updatedAt: row.updatedAt ?? 0,
+          status: "active",
+        }
+      }
       const history: LendTransactionHistoryItem[] = data.transactions
         .filter((transaction) => transaction.product === "lend")
         .map((transaction) => ({
@@ -292,7 +329,12 @@ export function useLendSession({
           timestamp: transaction.at,
           hash: transaction.syntheticTxHash,
         }))
-      setState((current) => ({ ...current, positions }))
+      const walletBalances: LendSystemState["walletBalances"] = { [walletId]: {} }
+      for (const row of data.lendBalances ?? []) {
+        if (row.state !== "available") continue
+        walletBalances[walletId]![row.marketId] = row.amount
+      }
+      setState((current) => ({ ...current, positions, walletBalances }))
       setTransactionHistory(history)
       setTransactionReceipts(
         history.map((item) => ({

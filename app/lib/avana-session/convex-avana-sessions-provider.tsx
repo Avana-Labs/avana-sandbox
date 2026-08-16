@@ -13,11 +13,13 @@ import {
   swapRecordToRecordSwapArgs,
 } from "@/app/lib/sandbox-tx/persistence"
 import type { SwapTransactionRecord } from "@/app/lib/swap-system/transaction-adapter"
+import type { ConvexUmbrellaSessionState, PersistUmbrellaAction } from "@/app/lib/umbrella-system/use-umbrella-session"
 import {
   AvanaSessionsProvider,
   useBorrowSessionContext,
   useLendSessionContext,
   useMultiplySessionContext,
+  useSwapSessionContext,
 } from "./avana-sessions-provider"
 import { ConvexMarketSnapshotHydrators } from "./convex-market-snapshot-hydrators"
 import { pendingHydrationIntentIds, shouldApplyHydration } from "./wallet-hydration-guard"
@@ -39,15 +41,11 @@ function ConvexWalletHydrators({
   const borrow = useBorrowSessionContext()
   const lend = useLendSessionContext()
   const multiply = useMultiplySessionContext()
+  const swap = useSwapSessionContext()
+  const ensurePortfolioSnapshot = useMutation(api.sandbox.transactions.ensurePortfolioSnapshot)
+  const ensureUmbrellaFixtures = useMutation(api.sandbox.umbrella.ensureTestWalletFixtures)
   const session = useQuery(api.sandbox.transactions.getSessionState, { wallet: walletId })
-  // Seeded initial per-wallet portfolio state lives in three tables (walletDebts /
-  // walletCollateralPositions / walletClaimPositions) — the Convex swaps for the
-  // HOME_INITIAL_DEBTS + HOME_COLLATERAL_POOLS + HOME_CLAIM_POSITIONS mocks. Read
-  // here and forward into the borrow hydrate so the home portfolio cards render
-  // per-wallet Convex data instead of the mock catalog.
-  const walletDebts = useQuery(api.wallet.debts.listForWallet, { wallet: walletId })
-  const walletCollateralPositions = useQuery(api.wallet.collateralPositions.listForWallet, { wallet: walletId })
-  const walletClaimPositions = useQuery(api.wallet.claimPositions.listForWallet, { wallet: walletId })
+  const productBalances = useQuery(api.wallet.productBalances.listForWallet, { wallet: walletId })
   const historiesRef = useRef({
     borrow: borrow.transactionHistory,
     lend: lend.transactionHistory,
@@ -58,32 +56,76 @@ function ConvexWalletHydrators({
     lend: lend.transactionHistory,
     multiply: multiply.transactionHistory,
   }
+  const ensuredRef = useRef(false)
+
+  useEffect(() => {
+    if (ensuredRef.current) return
+    ensuredRef.current = true
+    void (async () => {
+      try {
+        await ensurePortfolioSnapshot({ wallet: walletId })
+        // Seed the open-gate/test wallet with umbrella fixtures on first mount.
+        // The mutation is a no-op for any wallet other than the canonical test
+        // address and for wallets that already have umbrella positions, so this
+        // is safe to fire unconditionally.
+        await ensureUmbrellaFixtures({ wallet: walletId })
+      } catch {
+        ensuredRef.current = false
+      }
+    })()
+  }, [ensurePortfolioSnapshot, ensureUmbrellaFixtures, walletId])
 
   useEffect(() => {
     if (!session) return
     const { borrow: borrowHistory, lend: lendHistory, multiply: multiplyHistory } = historiesRef.current
     const pending = pendingHydrationIntentIds([...borrowHistory, ...lendHistory, ...multiplyHistory], Date.now())
     if (!shouldApplyHydration(session, pending)) return
-    borrow.hydrateWalletData({
+    type HydratablePosition = (typeof session.positions)[number] & { product: "borrow" | "lend" | "multiply" }
+    type HydratableTransaction = (typeof session.transactions)[number] & {
+      product: "borrow" | "lend" | "multiply" | "rewards" | "swap"
+    }
+    const productSession = {
       ...session,
-      walletDebts: walletDebts?.map((row) => ({
+      positions: session.positions.filter((position) => position.product !== "umbrella") as HydratablePosition[],
+      transactions: session.transactions.filter(
+        (transaction) => transaction.product !== "umbrella",
+      ) as HydratableTransaction[],
+    }
+    borrow.hydrateWalletData({
+      ...productSession,
+      borrowBalances: productBalances?.borrow.map((row) => ({
         marketId: row.marketId,
-        debtAssetId: row.debtAssetId,
-        amountUsd: row.amountUsd,
-      })),
-      walletCollateralPositions: walletCollateralPositions?.map((row) => ({
-        homePoolId: row.homePoolId,
-        marketId: row.marketId,
-        collateralUsd: row.collateralUsd,
-      })),
-      walletClaimPositions: walletClaimPositions?.map((row) => ({
-        claimId: row.claimId,
-        marketId: row.marketId,
-        totalUsd: row.totalUsd,
+        assetId: row.assetId,
+        poolId: row.poolId,
+        symbol: row.symbol,
+        amount: row.amount,
+        valueUsd: row.valueUsd,
+        state: row.state,
       })),
     })
-    lend.hydrateWalletData(session)
-    multiply.hydrateWalletData(session)
+    lend.hydrateWalletData({
+      ...productSession,
+      lendBalances: productBalances?.lend.map((row) => ({
+        marketId: row.marketId,
+        assetId: row.assetId,
+        symbol: row.symbol,
+        amount: row.amount,
+        valueUsd: row.valueUsd,
+        state: row.state,
+        updatedAt: row.updatedAt,
+      })),
+    })
+    multiply.hydrateWalletData({
+      ...productSession,
+      multiplyBalances: productBalances?.multiply.map((row) => ({
+        marketId: row.marketId,
+        assetId: row.assetId,
+        symbol: row.symbol,
+        amount: row.amount,
+        valueUsd: row.valueUsd,
+        state: row.state,
+      })),
+    })
     onWalletHydrated(session.positions)
   }, [
     borrow.hydrateWalletData,
@@ -91,10 +133,24 @@ function ConvexWalletHydrators({
     multiply.hydrateWalletData,
     onWalletHydrated,
     session,
-    walletDebts,
-    walletCollateralPositions,
-    walletClaimPositions,
+    productBalances,
   ])
+
+  useEffect(() => {
+    if (productBalances?.liquid && productBalances.liquid.length > 0) {
+      swap.hydrateBalances(
+        productBalances.liquid.map((row) => ({
+          id: `${walletId}:${row.assetId}:liquid`,
+          walletId,
+          assetId: row.assetId,
+          amount: row.amount,
+          sourceType: "wallet" as const,
+        })),
+      )
+      return
+    }
+    if (productBalances?.liquid) swap.hydrateBalances([])
+  }, [productBalances?.liquid, swap.hydrateBalances, walletId])
 
   return null
 }
@@ -105,6 +161,8 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
   const durableSwapTransactions = useQuery(api.sandbox.transactions.getWalletSwapTransactions, { wallet: walletId })
   const saveRewardsState = useMutation(api.sandbox.rewards.saveState)
   const rewardsState = useQuery(api.sandbox.rewards.getState, { wallet: walletId })
+  const umbrellaSessionState = useQuery(api.sandbox.umbrella.getSessionState, { wallet: walletId })
+  const recordUmbrellaAction = useMutation(api.sandbox.umbrella.recordAction)
   const revisionByKeyRef = useRef(new Map<string, number>())
   const handleWalletHydrated = useCallback(
     (positions: readonly PositionRevisionSummary[]) => captureHydratedRevisions(revisionByKeyRef.current, positions),
@@ -186,7 +244,12 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
     },
     [recordSwap, walletId],
   )
-
+  const persistUmbrellaAction = useCallback<PersistUmbrellaAction>(
+    (args) => recordUmbrellaAction({ wallet: walletId, ...args }),
+    [recordUmbrellaAction, walletId],
+  )
+  const remoteUmbrellaState: ConvexUmbrellaSessionState | null | undefined =
+    umbrellaSessionState === undefined ? undefined : (umbrellaSessionState as unknown as ConvexUmbrellaSessionState)
   return (
     <AvanaSessionsProvider
       walletId={walletId}
@@ -199,6 +262,9 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
       remoteRewardsRevision={rewardsState?.revision ?? (rewardsState === null ? null : undefined)}
       persistRewardsState={persistRewardsState}
       persistLocalState={false}
+      remoteUmbrellaState={remoteUmbrellaState}
+      persistUmbrellaAction={persistUmbrellaAction}
+      persistUmbrellaState={false}
       sessionSource="convex"
     >
       <ConvexMarketSnapshotHydrators />

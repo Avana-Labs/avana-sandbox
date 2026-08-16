@@ -37,6 +37,7 @@ export type RecordTransactionArgs = {
   position?: {
     status: "open" | "closed"
     marketSlug?: string
+    assetId?: string
     collateralValueUsd6?: string
     debtValueUsd6?: string
     suppliedUsd6?: string
@@ -103,11 +104,13 @@ export function lendResultToRecordArgs(result: LendSandboxActionResult, wallet: 
 
 export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, wallet: string): RecordTransactionArgs {
   const item = result.historyItem
-  const positionId =
-    item.positionId ??
-    Object.keys(result.state.positions).find((id) => result.state.positions[id]?.marketId === item.marketId)
-  const position = positionId ? result.state.positions[positionId] : undefined
+  const position = Object.values(result.state.positions)
+    .filter((entry) => entry.marketId === item.marketId)
+    .sort((a, b) => b.lastUpdatedAt - a.lastUpdatedAt)[0]
   const marketSlug = position?.marketId ?? item.marketId
+  const collateralAssetId = marketSlug
+    ? result.state.markets?.[marketSlug]?.collateralAsset.symbol.toLowerCase()
+    : undefined
 
   // A successful close DELETES the position from engine state (multiply-engine/actions.ts), so
   // it can no longer be read back here. Without an explicit payload, recordTransaction skips its
@@ -116,6 +119,10 @@ export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, 
   // price. Emit an explicit closed payload so the server marks the row closed (sets closedAt)
   // and releases the position's liquidity.
   const closedByDelete = !position && item.status === "success" && item.kind === "close" && Boolean(marketSlug)
+  const amountUsd =
+    item.kind === "deleverage" && result.preview
+      ? Math.max(0, result.preview.before.debtValueUsd - result.preview.after.debtValueUsd)
+      : item.amountUsd
 
   return {
     wallet,
@@ -123,9 +130,9 @@ export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, 
     product: "multiply",
     kind: item.kind,
     marketSlug,
-    requestedAmountUsd6: Math.round(item.amountUsd * 1_000_000).toString(),
-    executedAmountUsd6: Math.round(item.amountUsd * 1_000_000).toString(),
-    amountUsd: item.amountUsd,
+    requestedAmountUsd6: Math.round(amountUsd * 1_000_000).toString(),
+    executedAmountUsd6: Math.round(amountUsd * 1_000_000).toString(),
+    amountUsd,
     simulated: item.simulated,
     // Persist the leverage at THIS transaction so hydrated history shows the real before→after.
     multiplierBefore: item.multiplierBefore,
@@ -140,6 +147,7 @@ export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, 
           // row was marked closed, flip-flopping on reload.
           status: "open",
           marketSlug: position.marketId,
+          assetId: collateralAssetId,
           collateralAmount: position.collateralAmount,
           collateralValueUsd: position.collateralValueUsd,
           debtValueUsd: position.debtValueUsd,
@@ -153,6 +161,7 @@ export function multiplyResultToRecordArgs(result: MultiplySandboxActionResult, 
         ? {
             status: "closed",
             marketSlug,
+            assetId: collateralAssetId,
             collateralAmount: 0,
             collateralValueUsd: 0,
             debtValueUsd: 0,
@@ -206,20 +215,30 @@ export function borrowResultToRecordArgs(result: SandboxActionResult, wallet: st
     return rewardClaims.length > 0 ? { ...base, rewardClaims } : base
   }
 
-  const marketSlug = result.historyItem.marketId
+  const marketSlug =
+    result.historyItem.marketId ??
+    [...result.state.transactions]
+      .reverse()
+      .find(
+        (transaction) =>
+          transaction.walletId === wallet &&
+          transaction.at === result.historyItem.timestamp &&
+          transaction.kind === result.historyItem.kind,
+      )?.marketId
   if (!account || !marketSlug) return base
 
   const collateral = account.collateralPositions
     .filter((position) => position.marketId === marketSlug)
     .map((position) => {
       const market = result.state.markets[position.marketId]
+      const tokenAmount = market ? (position.collateralShares * market.snapshot.supplyIndexRay) / 10n ** 27n : 0n
       return {
         marketSlug: position.marketId,
         collateralShares: position.collateralShares.toString(),
         principalTokenAmount: position.principalTokenAmount.toString(),
         collateralEnabled: position.collateralEnabled,
         collateralValueUsd6: market
-          ? ((position.collateralShares * market.snapshot.supplyIndexRay) / 10n ** 27n).toString()
+          ? ((tokenAmount * market.snapshot.lpTokenPriceUsd6) / 10n ** 18n).toString()
           : undefined,
       }
     })
@@ -238,6 +257,7 @@ export function borrowResultToRecordArgs(result: SandboxActionResult, wallet: st
 
   return {
     ...base,
+    marketSlug,
     position: {
       status: collateral.length === 0 && debt.length === 0 ? "closed" : "open",
       marketSlug,

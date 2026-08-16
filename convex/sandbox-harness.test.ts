@@ -84,13 +84,12 @@ describe("multi-user harness — capRush", () => {
   })
 })
 
-describe("multi-user harness — calm + borrowHeavy (ledger invariant)", () => {
-  test("aggregate marketLiquidityDeltas equals the sum of issued deltas across all wallets", async () => {
+describe("multi-user harness — calm + borrowHeavy (protocol isolation)", () => {
+  test("wallet borrows do not mutate aggregate protocol liquidity", async () => {
     const t = convexTest(schema, modules)
     const SLUG = "uni-v2:usdc"
     const random = rng(1337)
     const WALLETS = 6
-    let expectedBorrowed = 0
 
     for (let i = 0; i < WALLETS; i++) {
       const w = wallet(i)
@@ -98,7 +97,6 @@ describe("multi-user harness — calm + borrowHeavy (ledger invariant)", () => {
       const actions = 1 + Math.floor(random() * 4) // 1..4 borrows each
       for (let a = 0; a < actions; a++) {
         const amount = Math.round(100 + random() * 900) // $100..$1000
-        expectedBorrowed += amount
         await asUser.mutation(api.sandbox.transactions.recordTransaction, {
           wallet: w,
           intentId: `${w}-${a}`,
@@ -130,10 +128,10 @@ describe("multi-user harness — calm + borrowHeavy (ledger invariant)", () => {
       }
     }
 
-    // Invariant 1: the shared ledger row equals the summed deltas.
+    // Wallet positions are isolated from protocol-wide TVL/liquidity ingestion.
     const deltas = await t.withIdentity({ subject: wallet(0) }).query(api.liquidity.listDeltas)
     const row = deltas.find((d) => d.marketSlug === SLUG)
-    expect(row?.borrowedDeltaUsd).toBeCloseTo(expectedBorrowed, 6)
+    expect(row).toBeUndefined()
 
     // Invariant 2: each wallet sees only its own activity + a single open position per market.
     for (let i = 0; i < WALLETS; i++) {
