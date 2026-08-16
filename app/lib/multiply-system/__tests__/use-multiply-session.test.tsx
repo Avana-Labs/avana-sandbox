@@ -180,6 +180,28 @@ describe("useMultiplySession", () => {
     expect(position.debtValueUsd).toBe(debtValueUsd)
   })
 
+  it("derives the per-market open budget from the wallet's liquid holdings when no 'available' row exists (E1)", () => {
+    const walletId = "demo-wallet"
+    const sessionSeed = buildMultiplySessionSeed(walletId)
+    const { result } = renderHook(() => useMultiplySession({ walletId, sessionSeed, persistState: false }))
+
+    const marketId = "usdc-gho"
+    const collateralSymbol = result.current.state.markets[marketId]!.collateralAsset.symbol
+
+    act(() => {
+      result.current.hydrateWalletData({
+        positions: [],
+        transactions: [],
+        // No multiplyBalances "available" row for this market — the wallet simply holds
+        // the collateral token liquid. Previously this left the bucket at 0 → "Max 0".
+        multiplyBalances: [],
+        balances: [{ symbol: collateralSymbol, valueUsd: 25_000 }],
+      })
+    })
+
+    expect(result.current.state.walletBalancesUsd[walletId]?.[marketId]).toBe(25_000)
+  })
+
   it("exposes a real isPending signal during execution (issue #142)", async () => {
     const walletId = "demo-wallet"
     const sessionSeed = buildMultiplySessionSeed(walletId)
