@@ -256,6 +256,9 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
           rateLabel: t("Received"),
           rateValue: `${formatAmount(executionQuote.estimatedOutputAmount)} ${outputAsset.symbol}`,
           marketValue: executionQuote.provider,
+          // Carry the real quote fee so the inline receipt matches the estimate
+          // and the permalink receipt instead of a hash-derived amount.
+          networkFeeUsd: executionQuote.networkFeeUsd,
         },
       })
       setStage("success")
