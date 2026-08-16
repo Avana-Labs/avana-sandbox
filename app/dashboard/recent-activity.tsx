@@ -90,21 +90,47 @@ const STATUS_TONE: Record<PortfolioActivityRow["status"], string> = {
   failed: "border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300",
 }
 
-function formatSignedUsd(amountUsd: number) {
-  const absoluteValue = Math.abs(amountUsd)
-  const formatted = formatCompactUsd(absoluteValue)
-  return amountUsd > 0 ? `+${formatted}` : amountUsd < 0 ? `-${formatted}` : formatted
+// Amount-column sign convention: user CASH FLOW, read like a bank statement.
+//   +  funds moving INTO the user's wallet (they received cash)
+//   −  funds moving OUT of the user's wallet (they paid or committed cash)
+//   0  value-neutral / accrual rows with no wallet cash movement (shown unsigned)
+// The sign is derived from the action KIND, not from the raw amount's stored sign
+// (which upstream records inconsistently — the cause of Repay reading "+" while
+// Withdraw read "-"). Deriving here guarantees every row reads the same way. (#F2)
+export const AMOUNT_SIGN_BY_KIND: Record<PortfolioActivityRow["kind"], 1 | -1 | 0> = {
+  // Cash in — the user receives funds
+  borrow: 1,
+  withdraw: 1,
+  claim: 1,
+  unstake: 1,
+  reduce: 1,
+  close: 1,
+  // Cash out — the user pays or locks up funds
+  supply: -1,
+  repay: -1,
+  pledge: -1,
+  stake: -1,
+  open: -1,
+  addCollateral: -1,
+  liquidation: -1,
+  // No net wallet cash flow (asset swap, cooldown timer, rebalance, interest accrual)
+  swap: 0,
+  startCooldown: 0,
+  rebalance: 0,
+  interest: 0,
 }
 
-// Reward claims are denominated in AVA points, not USD, so the amount column
-// shows "+25 AVA" rather than a misleading "$" figure.
-function formatSignedAva(amount: number) {
-  const formatted = `${Math.abs(amount).toLocaleString()} AVA`
-  return amount > 0 ? `+${formatted}` : amount < 0 ? `-${formatted}` : formatted
+function applyAmountSign(sign: 1 | -1 | 0, body: string) {
+  return sign > 0 ? `+${body}` : sign < 0 ? `-${body}` : body
 }
 
 function formatRowAmount(row: PortfolioActivityRow) {
-  return row.product === "rewards" ? formatSignedAva(row.amountUsd) : formatSignedUsd(row.amountUsd)
+  const sign = AMOUNT_SIGN_BY_KIND[row.kind]
+  const magnitude = Math.abs(row.amountUsd)
+  // Reward claims are denominated in AVA points, not USD, so the amount column
+  // shows "+25 AVA" rather than a misleading "$" figure.
+  const body = row.product === "rewards" ? `${magnitude.toLocaleString()} AVA` : formatCompactUsd(magnitude)
+  return applyAmountSign(sign, body)
 }
 
 function shortHash(txHash: string) {
@@ -354,6 +380,11 @@ export function RecentActivity({
           onChange={setStatuses}
         />
       </div>
+
+      {/* Sign legend: amounts follow user cash flow, read like a bank statement. */}
+      <p className="mb-3 text-[12px] leading-snug text-muted-foreground">
+        {t("Amounts show cash flow: + received into your wallet, − paid out.")}
+      </p>
 
       {/* Mobile: card list (the wide table is unusable on phones) */}
       <div className="space-y-2 md:hidden">
