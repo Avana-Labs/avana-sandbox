@@ -1,4 +1,4 @@
-import { calculateCreditMetrics, usd6ToNumber } from "@/app/lib/credit-engine"
+import { accrueBorrowSystemState, calculateCreditMetrics, usd6ToNumber } from "@/app/lib/credit-engine"
 import type { BorrowSystemState } from "@/app/lib/credit-engine"
 import type { MultiplySystemState } from "@/app/lib/multiply-engine"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
@@ -61,14 +61,25 @@ export function buildBorrowDashboardMetricsFromSnapshot(
   }
 }
 
-export function buildBorrowDashboardMetrics(state: BorrowSystemState, walletId: string): DashboardTabMetrics {
-  const metrics = calculateCreditMetrics(state, walletId)
+export function buildBorrowDashboardMetrics(
+  state: BorrowSystemState,
+  walletId: string,
+  now: number = Date.now(),
+): DashboardTabMetrics {
+  // Accrue debt/collateral indexes to `now` before reading the credit engine, so the
+  // headline debt is the CURRENT-index total — the same canonical accrual the Borrow
+  // tab already applies (buildPortfolioBorrowData -> accrueBorrowSystemState). Without
+  // this the headline read the stored index frozen at the last action's `state.now`,
+  // so it lagged the tab by the interest that had ticked since (the D3 $6.73 vs $6.80
+  // gap). accrueBorrowSystemState is immutable and no-ops when now <= state.now.
+  const accrued = accrueBorrowSystemState(state, now)
+  const metrics = calculateCreditMetrics(accrued, walletId)
 
   // The engine's net account value excludes LP that has been returned to the wallet
   // after a collateral withdrawal. Count only the tracked returned LP bucket here:
   // the sandbox still pre-seeds pledgeable LP across the catalog, and that idle seed
   // balance should not inflate Net Value.
-  const account = state.accounts[walletId]
+  const account = accrued.accounts[walletId]
   const returnedLpBalancesUsd6 = account
     ? Object.values(account.walletReturnedLpBalancesUsd6 ?? {}).reduce((sum, value) => sum + value, 0n)
     : 0n
