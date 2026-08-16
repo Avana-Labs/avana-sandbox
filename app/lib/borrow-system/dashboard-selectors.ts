@@ -11,6 +11,7 @@ import {
 } from "@/app/lib/credit-engine"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import {
+  resolveBorrowAprPct,
   selectAllAvailableCollateralPools,
   selectBorrowCollateralPools,
   selectInitialBorrowDebts,
@@ -96,14 +97,17 @@ export function selectPortfolioDebtRows(state: BorrowSystemState, walletId: stri
     const pool = position.marketId ? poolById.get(position.marketId) : undefined
     if (!pool) continue
     const borrowedUsd = fixedToNumber(currentDebtValueUsd6(position), 6)
-    // Single-source the borrow APR to the current market rate (base + risk premium),
-    // matching the action page and borrow list, instead of the stored position rate.
+    // Single-source the borrow APR to the current market rate (base + risk premium) via the
+    // shared resolveBorrowAprPct helper — the SAME source the borrow list and action page use —
+    // instead of the stored position rate, so the three surfaces can never disagree (C2).
     const asset = state.assets[position.assetId]
-    const borrowRateWad =
+    const borrowApr =
       asset != null
-        ? asset.borrowConfig.baseBorrowAprWad +
-          calculateSpokeCreditMetrics(state, walletId, position.spokeId).riskPremiumWad
-        : position.borrowRateWad
+        ? resolveBorrowAprPct(
+            asset.borrowConfig.baseBorrowAprWad,
+            calculateSpokeCreditMetrics(state, walletId, position.spokeId).riskPremiumWad,
+          )
+        : fixedToNumber(position.borrowRateWad, 18) * 100
     rows.push({
       id: position.id,
       pool,
@@ -111,9 +115,9 @@ export function selectPortfolioDebtRows(state: BorrowSystemState, walletId: stri
       borrowedUsd,
       liquidationThresholdUsd: pool.liquidationUsd,
       healthFactor: debtHealthFactor(state, walletId, position, walletHealthFactor),
-      borrowApr: fixedToNumber(borrowRateWad, 18) * 100,
+      borrowApr,
       accruedInterestUsd: fixedToNumber(debtInterestOwedUsd6(position), 6),
-      dailyInterestUsd: (borrowedUsd * fixedToNumber(borrowRateWad, 18)) / 365,
+      dailyInterestUsd: (borrowedUsd * (borrowApr / 100)) / 365,
     })
   }
 

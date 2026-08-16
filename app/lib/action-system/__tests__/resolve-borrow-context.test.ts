@@ -73,4 +73,20 @@ describe("resolve borrow context", () => {
     // The two rows must not read the same figure.
     expect(items[0]?.trailingLabel).not.toBe(items[1]?.trailingLabel)
   })
+
+  it("labels the borrow-rate fallback as APR, not APY (sandbox accrual is linear)", () => {
+    // No asset liquidity in state → the trailing label falls back to the borrow rate,
+    // which is an APR and must be labelled as such.
+    const session = {
+      state: { assets: {} } as unknown as Parameters<typeof borrowSelectItemsForMarket>[0]["state"],
+      marketSummaries: [],
+      collateralPools: [],
+      borrowableAssets: [],
+      getBorrowableAssetsForMarket: () => [{ id: "gho", name: "GHO", symbol: "GHO", borrowApr: 4.1 }],
+    }
+
+    const items = borrowSelectItemsForMarket(session, "uni-v3-bluechip", "demo-wallet")
+    expect(items[0]?.trailingLabel).toBe("4.10% APR")
+    expect(items[0]?.trailingLabel).not.toContain("APY")
+  })
 })
