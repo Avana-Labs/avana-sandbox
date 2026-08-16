@@ -543,10 +543,27 @@ export const recordAction = mutation({
       // not a portion already cooling". The user can now hold multiple concurrent
       // tranches per market — each with its own 20-day / 2-day clock — as long
       // as the total cooling <= supplied.
+      //
+      // EXPIRED tranches are excluded from the active-cooling budget. Once a
+      // tranche's 2-day withdrawal window lapses its stake is no longer
+      // withdrawable via that tranche, but the principal was never removed from
+      // `suppliedUsd` — it has effectively returned to the active pool. Counting
+      // it as "cooling" here left the funds stuck forever (neither withdrawable
+      // nor re-coolable). So the budget is `supplied - (cooling + ready)`, and
+      // the expired amount is re-coolable.
       const activeTranches = await listActiveTranches(ctx, wallet, args.marketId)
-      const activeCoolingUsd6 = activeTranches.reduce((sum, t) => sum + BigInt(t.amountUsd6), 0n)
+      const expiredTranches = activeTranches.filter((t) => deriveTrancheStatus(t, now) === "expired")
+      const nonExpiredTranches = activeTranches.filter((t) => deriveTrancheStatus(t, now) !== "expired")
+      const activeCoolingUsd6 = nonExpiredTranches.reduce((sum, t) => sum + BigInt(t.amountUsd6), 0n)
       const activeCoolingUsd = Number(activeCoolingUsd6) / 1_000_000
       if (amountUsd > suppliedUsd - activeCoolingUsd + 1e-9) throw new Error("INVALID_COOLDOWN_AMOUNT")
+      // Budget check passed — retire the now-recovered expired tranches so they
+      // stop lingering in the aggregate (recomputePositionAggregate folds only
+      // non-consumed tranches) and can never be double-counted against the new
+      // tranche. This is the "restart cooldown" recovery path the UI promises.
+      for (const tranche of expiredTranches) {
+        await ctx.db.patch(tranche._id, { amountUsd6: "0", status: "consumed", updatedAt: now })
+      }
       await ctx.db.insert("umbrellaCooldownTranches", {
         positionId: position._id,
         wallet,

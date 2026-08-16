@@ -17,11 +17,17 @@ export type UmbrellaActionTab = (typeof UMBRELLA_ACTION_TABS)[number]["id"]
 export function UmbrellaSidebar({
   moduleId,
   onMarketChange,
+  initialTab = "stake",
 }: {
   moduleId: UmbrellaMarketId
   onMarketChange?: (marketId: UmbrellaMarketId) => void
+  // Which tab to land on for this mount. The mobile sheet remounts the sidebar
+  // on every open (via a changing `key`), so this initializer runs afresh each
+  // time the sheet is opened — letting the "More" button jump straight to the
+  // tab most useful for the position state (unstake / cooldown / claim).
+  initialTab?: UmbrellaActionTab
 }) {
-  const [tab, setTab] = useState<UmbrellaActionTab>("stake")
+  const [tab, setTab] = useState<UmbrellaActionTab>(initialTab)
   // Selected market is shared across tabs so switching Stake → Cooldown → Unstake
   // stays on the same asset. The picker inside each embedded action page reports
   // back so the parent can push it into the next tab's initialMarketId.
