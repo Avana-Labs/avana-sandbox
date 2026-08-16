@@ -10,7 +10,13 @@ import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { buildHeroFeedFromConvexSeries, getPoolHeroFeed } from "@/app/lib/chart-feeds"
 import { useConvexLiveSession } from "@/app/lib/convex/use-convex-live-session"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { buildFeedFromRangeSeries, resolveHeroContractLabel } from "@/app/borrow/_detail/lib/hero-chart-feeds"
+import {
+  buildFeedFromRangeSeries,
+  isPlaceholderHeroContractAddress,
+  isSafeHeroLink,
+  resolveHeroContractAddress,
+  resolveHeroContractLabel,
+} from "@/app/borrow/_detail/lib/hero-chart-feeds"
 import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { currentCollateralValueUsd6 } from "@/app/lib/credit-engine"
 import { buildEmptyChartFeed, buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-feed"
@@ -37,6 +43,12 @@ export function PoolHeroIdentity({
 }) {
   const { t } = useTranslation()
   const contractLabel = resolveHeroContractLabel(detail.id, detail.hero.explorerUrl)
+  // Suppress copy + Etherscan when the address is a synthetic placeholder that
+  // points at no real contract.
+  const isPlaceholderContract = isPlaceholderHeroContractAddress(
+    resolveHeroContractAddress(detail.id, detail.hero.explorerUrl),
+  )
+  const websiteHref = isSafeHeroLink(detail.hero.explorerUrl) ? detail.hero.explorerUrl : null
 
   return (
     <header className={cn("pb-5", className)}>
@@ -59,17 +71,23 @@ export function PoolHeroIdentity({
             <div className="mt-2 flex flex-wrap items-center gap-3 text-[15px] font-medium text-foreground/75">
               <span className="leading-none text-foreground/75">{detail.hero.chain}</span>
               <span aria-hidden className="h-5 w-px bg-border" />
-              <button
-                type="button"
-                onClick={async () => {
-                  await navigator.clipboard.writeText(contractLabel)
-                }}
-                className="inline-flex min-h-8 items-center gap-1.5 rounded-full text-[15px] font-medium leading-none text-foreground/75 transition-colors hover:text-foreground"
-                aria-label={`${t("Copy")} ${contractLabel}`}
-              >
-                <Copy className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
-                <span>{contractLabel}</span>
-              </button>
+              {isPlaceholderContract ? (
+                <span className="inline-flex min-h-8 items-center text-[15px] font-medium leading-none text-foreground/75">
+                  {contractLabel}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(contractLabel)
+                  }}
+                  className="inline-flex min-h-8 items-center gap-1.5 rounded-full text-[15px] font-medium leading-none text-foreground/75 transition-colors hover:text-foreground"
+                  aria-label={`${t("Copy")} ${contractLabel}`}
+                >
+                  <Copy className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+                  <span>{contractLabel}</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -78,8 +96,8 @@ export function PoolHeroIdentity({
           <HeroIcon
             label={t("Website")}
             onClick={() => {
-              if (!detail.hero.explorerUrl) return
-              window.open(detail.hero.explorerUrl, "_blank")
+              if (!websiteHref) return
+              window.open(websiteHref, "_blank")
             }}
           >
             <Globe className="h-[18px] w-[18px]" />

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { SESSION_CACHE_VERSION } from "@/app/lib/session-cache-version"
 import { safeReadParsed, safeRemoveItem, safeSetItem } from "@/app/lib/safe-local-storage"
+import { sandboxBaselinePriceUsd } from "@/app/lib/prices/sandbox-baseline-prices"
 
 export type UmbrellaMarketId = "gho" | "usdc" | "usdt" | "weth"
 export type UmbrellaActionKind = "stake" | "claim" | "startCooldown" | "unstake"
@@ -177,7 +178,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
       apy: 6.4,
       baseApy: 0,
       rewardApy: 6.4,
-      priceUsd: 1,
+      priceUsd: sandboxBaselinePriceUsd("GHO"),
       targetCoverageUsd: 22_000_000,
       currentDeficitUsd: 146,
       deficitOffsetUsd: 1_000_000,
@@ -192,7 +193,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
       apy: 4.84,
       baseApy: 1.72,
       rewardApy: 3.12,
-      priceUsd: 1,
+      priceUsd: sandboxBaselinePriceUsd("USDC"),
       targetCoverageUsd: 10_000_000,
       currentDeficitUsd: 51_371,
       deficitOffsetUsd: 500_000,
@@ -207,7 +208,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
       apy: 4.19,
       baseApy: 1.34,
       rewardApy: 2.85,
-      priceUsd: 1,
+      priceUsd: sandboxBaselinePriceUsd("USDT"),
       targetCoverageUsd: 9_500_000,
       currentDeficitUsd: 32_420,
       deficitOffsetUsd: 400_000,
@@ -222,7 +223,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
       apy: 5.05,
       baseApy: 2.65,
       rewardApy: 2.4,
-      priceUsd: 2240,
+      priceUsd: sandboxBaselinePriceUsd("WETH"),
       targetCoverageUsd: 6_250_000,
       currentDeficitUsd: 52_973,
       deficitOffsetUsd: 250_000,
@@ -644,7 +645,15 @@ export function useUmbrellaSession({
         const amountUsd = amount * market.priceUsd
         const timestamp = Date.now()
         const liveTranches = refreshTranches(position.tranches, timestamp)
-        const activeCoolingUsd = liveTranches.reduce((sum, t) => sum + t.amountUsd, 0)
+        // Expired tranches (past their 2-day withdrawal window) release their stake
+        // back to the active pool — the withdrawal never happened, so the funds are
+        // still staked and can be re-cooled. Only cooling/ready tranches lock stake,
+        // so only they count against the "active supplied" budget. Without this, an
+        // expired tranche was summed as cooling forever and its stake could never be
+        // re-cooldownable. Mirrors the Convex read model (active ends exclude expired).
+        const activeCoolingUsd = liveTranches
+          .filter((t) => t.status !== "expired")
+          .reduce((sum, t) => sum + t.amountUsd, 0)
 
         if (kind === "stake" && amount > balance) throw new Error(`Insufficient ${market.symbol} balance`)
         if (kind === "startCooldown") {
@@ -667,8 +676,11 @@ export function useUmbrellaSession({
         // Post-mutation tranche list.
         let nextTranches = liveTranches
         if (kind === "startCooldown") {
+          // Drop expired tranches: their stake has already returned to the active
+          // pool, so carrying them forward would leave the position stuck showing
+          // "expired" and keep counting that stake as cooling.
           nextTranches = [
-            ...liveTranches,
+            ...liveTranches.filter((t) => t.status !== "expired"),
             {
               id: `local-tranche-${marketId}-${timestamp}`,
               amountUsd,
@@ -683,6 +695,8 @@ export function useUmbrellaSession({
           let remaining = amount
           const consumed: UmbrellaTranche[] = []
           for (const t of sorted) {
+            // Expired tranches return to active — never carry them forward.
+            if (t.status === "expired") continue
             if (remaining <= 1e-9 || t.status !== "ready") {
               consumed.push(t)
               continue
