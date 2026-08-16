@@ -80,6 +80,36 @@ describe("multiply preview mappers", () => {
     expect(ui.metrics.find((row) => row.id === "looped-exposure")?.value).toBe("$1,000")
   })
 
+  it("flags a health factor in [1.15, 1.2) as danger, aligned with the shared danger band", () => {
+    // 1.18 sits above the old 1.15 cutoff but inside the shared danger band (hf < 1.2).
+    // The red HF bar and this banner must now agree instead of firing at different points.
+    const nearLiquidation = multiplyPreviewFixture({
+      riskLabel: "warning",
+      after: {
+        collateralValueUsd: 12_000,
+        debtValueUsd: 7_500,
+        multiplier: 2.5,
+        ltv: 0.62,
+        healthFactor: 1.18,
+        netApy: 8.1,
+      },
+    })
+    const ui = mapMultiplyPreviewToActionUi(nearLiquidation, {
+      collateralSymbol: "WETH",
+      borrowSymbol: "USDC",
+      collateralAmount: 2,
+      collateralPriceUsd: 3_500,
+      marketLabel: "WETH · USDC",
+      collateralApy: 0.0382,
+      borrowApy: 0.048,
+      multiplier: 2.5,
+      maxLtv: 0.8,
+    })
+
+    expect(ui.risk?.level).toBe("danger")
+    expect(ui.metrics.find((row) => row.id === "hf")?.tone).toBe("danger")
+  })
+
   it("maps deleverage unwind metrics", () => {
     const ui = mapDeleveragePreviewToActionUi(preview, {
       marketLabel: "WETH · USDC",

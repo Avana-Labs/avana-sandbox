@@ -190,6 +190,11 @@ export function DashboardPerformanceSection({
             value: showDollarAmounts ? formatPct(metrics.netApyPct) : MASK,
             description: t("Weighted average APY across all active positions"),
           },
+          {
+            label: t("Interest Owed"),
+            value: m(formatUsdExact(metrics.interestOwedUsd)),
+            description: t("Total interest accrued on your outstanding loans"),
+          },
         ]}
       />
     </section>

@@ -82,6 +82,8 @@ export function DebtsPanel({
           borrowedUsd={totals.totalBorrowed}
           collateralUsd={totals.totalCollateral}
           showBalance={showBalance}
+          dailyInterestUsd={totals.dailyInterest}
+          accruedInterestUsd={totals.accruedInterest}
         />
       ) : null}
       {showHeading ? (
@@ -94,11 +96,12 @@ export function DebtsPanel({
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
-                <col className="w-[28%]" />
-                <col className="w-[16%]" />
-                <col className="w-[16%]" />
-                <col className="w-[16%]" />
-                <col className="w-[24%]" />
+                <col className="w-[26%]" />
+                <col className="w-[15%]" />
+                <col className="w-[14%]" />
+                <col className="w-[13%]" />
+                <col className="w-[13%]" />
+                <col className="w-[19%]" />
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
@@ -107,6 +110,9 @@ export function DebtsPanel({
                   </th>
                   <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Borrowed")}
+                  </th>
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    {t("Interest / day")}
                   </th>
                   <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Health")}
@@ -148,6 +154,12 @@ export function DebtsPanel({
                         <div className="text-[11px] text-muted-foreground">
                           {showBalance ? `${row.borrowedUsd.toFixed(0)} ${debtSymbol}` : MASK}
                         </div>
+                      </td>
+                      <td className={`py-3 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
+                        <div className="font-data text-[13px] tabular-nums text-rose-500">
+                          {showBalance ? `+${exact(row.dailyInterestUsd)}` : MASK}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">{t("per day")}</div>
                       </td>
                       <td className={`py-3 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
                         <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
@@ -266,13 +278,19 @@ export function CurrentLtvCard({
   borrowedUsd,
   collateralUsd,
   showBalance,
+  dailyInterestUsd,
+  accruedInterestUsd,
 }: {
   borrowedUsd: number
   collateralUsd: number
   showBalance: boolean
+  // Borrowing cost. Optional so callers that only have the LTV inputs (multiply
+  // health card) render the card unchanged; the borrow tab passes both.
+  dailyInterestUsd?: number
+  accruedInterestUsd?: number
 }) {
   const { t } = useTranslation()
-  const { compact } = useCurrency()
+  const { compact, exact } = useCurrency()
   const masked = !showBalance
   // With no collateral AND no debt there is no position to assess. Treat this as
   // a neutral/empty state rather than letting the "0 borrowing power" branch read
@@ -355,6 +373,19 @@ export function CurrentLtvCard({
           </span>
         </span>
       </div>
+
+      {dailyInterestUsd != null || accruedInterestUsd != null ? (
+        <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-[11px] font-medium text-muted-foreground">
+          <span>
+            {t("Interest / day")}{" "}
+            <span className="font-semibold text-rose-500">{masked ? "••" : exact(dailyInterestUsd ?? 0)}</span>
+          </span>
+          <span>
+            {t("Accrued interest")}{" "}
+            <span className="font-semibold text-foreground">{masked ? "••" : exact(accruedInterestUsd ?? 0)}</span>
+          </span>
+        </div>
+      ) : null}
     </div>
   )
 }
