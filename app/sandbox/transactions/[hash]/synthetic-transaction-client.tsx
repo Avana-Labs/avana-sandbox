@@ -7,6 +7,7 @@ import { api } from "@/convex/_generated/api"
 import { Skeleton } from "@/components/ui/skeleton"
 import { TransactionReceipt, type TransactionReceiptData } from "@/app/components/action-page/transaction-receipt"
 import { syntheticBlockFromHash, syntheticNetworkFeeUsdFromHash } from "@/app/lib/action-system/synthetic-receipt"
+import { SANDBOX_NETWORK_FEE_USD } from "@/app/lib/action-system/formatters"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useSwapSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
@@ -125,15 +126,21 @@ export function toReceiptData(receipt: {
       quoteId: receipt.swapQuoteId,
     })
   }
-  const symbol = receipt.assetId ? receipt.assetId.toUpperCase() : "Asset"
+  // Prefer the traded asset for the icon/title, then fall back to the market slug so a
+  // row that only recorded its market (common for lend deposits) still resolves a real
+  // token icon instead of the "?" placeholder + a missing-asset 404.
+  const symbol = (receipt.assetId ?? receipt.marketSlug ?? "").toUpperCase() || "Asset"
   const verb = receipt.kind ? prettyKind(receipt.kind) : "Transaction"
   return {
     title: symbol !== "Asset" ? `${verb} ${symbol}` : verb,
     symbol,
     amountRowLabel: verb,
     amountUsd: receipt.amountUsd,
-    marketValue: receipt.marketSlug ?? null,
-    networkFeeUsd: syntheticNetworkFeeUsdFromHash(hash),
+    // Market slugs are stored lowercase ("usdc"); show the ticker uppercased ("USDC").
+    marketValue: receipt.marketSlug ? receipt.marketSlug.toUpperCase() : null,
+    // The review estimate and the receipt read one canonical fee, so a "~$0.03"
+    // estimate can no longer confirm as "$0.89" (#F1).
+    networkFeeUsd: SANDBOX_NETWORK_FEE_USD,
     block: syntheticBlockFromHash(hash),
     dateMs: receipt.at,
     hash,
