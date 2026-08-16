@@ -4,6 +4,7 @@ import {
   toReceiptData,
 } from "@/app/sandbox/transactions/[hash]/synthetic-transaction-client"
 import type { SwapTransactionRecord } from "@/app/lib/swap-system"
+import { SANDBOX_NETWORK_FEE_USD, formatActionFeeSummary } from "@/app/lib/action-system/formatters"
 
 describe("swapTransactionToReceiptData", () => {
   it("maps canonical swap metadata to the shared receipt", () => {
@@ -98,5 +99,44 @@ describe("toReceiptData — durable swap row (cross-device / no in-session histo
     expect(data.metrics).toBeUndefined()
     // Falls back to a hash-derived network fee when none was persisted.
     expect(data.networkFeeUsd).toBeGreaterThan(0)
+  })
+})
+
+describe("toReceiptData — synthetic (non-swap) row", () => {
+  const baseRow = {
+    at: 1_700_000_002_000,
+    syntheticTxHash: "sim_lend_abc123",
+    amountUsd: 1000,
+    product: "lend",
+    kind: "deposit",
+    status: "success",
+    marketSlug: "usdc",
+  }
+
+  it("records the single canonical network fee — equal to the review estimate (#F1)", () => {
+    const data = toReceiptData(baseRow)
+    // The recorded receipt fee is exactly the constant the preview reads, so the
+    // "~$0.03" estimate can never confirm as a ~30x-larger "$0.89".
+    expect(data.networkFeeUsd).toBe(SANDBOX_NETWORK_FEE_USD)
+    expect(formatActionFeeSummary(baseRow.amountUsd)).toBe(`~ $${SANDBOX_NETWORK_FEE_USD.toFixed(2)}`)
+  })
+
+  it("derives a real token symbol from the market slug when no asset is stored (#F3)", () => {
+    // No assetId → fall back to the market slug so the icon resolves instead of "?".
+    const data = toReceiptData(baseRow)
+    expect(data.symbol).toBe("USDC")
+    expect(data.symbol).not.toBe("Asset")
+    expect(data.title).toBe("Deposit USDC")
+  })
+
+  it("uppercases the lowercase market label (#F3)", () => {
+    const data = toReceiptData(baseRow)
+    expect(data.marketValue).toBe("USDC")
+  })
+
+  it("prefers the explicit asset id over the market slug for the symbol", () => {
+    const data = toReceiptData({ ...baseRow, assetId: "weth", marketSlug: "usdc" })
+    expect(data.symbol).toBe("WETH")
+    expect(data.marketValue).toBe("USDC")
   })
 })
