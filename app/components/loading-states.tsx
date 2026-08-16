@@ -121,7 +121,10 @@ export function HomeWorkspaceSkeleton() {
                   </span>
                 </div>
                 <div className="mt-1 flex items-center justify-between gap-3 text-[14px]">
-                  <span className="min-w-0 truncate text-foreground/60">$0.00</span>
+                  {/* Neutral placeholder while data loads — never a literal "$0.00",
+                      which reads as a real (zero) value. Matches the app-wide "—"
+                      missing-value convention. */}
+                  <span className="min-w-0 truncate text-foreground/60">—</span>
                 </div>
               </HomeFieldSkeleton>
 
@@ -139,7 +142,10 @@ export function HomeWorkspaceSkeleton() {
                   </span>
                 </div>
                 <div className="mt-1 flex items-center justify-between gap-3 text-[14px]">
-                  <span className="min-w-0 truncate text-foreground/60">$0.00</span>
+                  {/* Neutral placeholder while data loads — never a literal "$0.00",
+                      which reads as a real (zero) value. Matches the app-wide "—"
+                      missing-value convention. */}
+                  <span className="min-w-0 truncate text-foreground/60">—</span>
                 </div>
               </HomeFieldSkeleton>
             </div>
