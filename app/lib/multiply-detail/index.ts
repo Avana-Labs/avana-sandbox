@@ -117,10 +117,15 @@ function buildQuickStats(row: MultiplyMarketRow, marketId: string): QuickStat[] 
   const supplyApyPct = (record?.economics.supplyApy ?? 0) * 100
   const borrowApyPct = (record?.economics.borrowApy ?? 0) * 100
   const reserveFactorPct = record?.risk.riskTier === "low" ? 10 : record?.risk.riskTier === "medium" ? 12 : 15
+  // E7: the trending card headlines a leveraged loop APY, so the detail must surface the
+  // same figure — not just the base supply APY. estimatedMaxApy is the single loop-APY
+  // source (calculateMaxLeverageApy at the public max), kept in sync by market-hydration.
+  const loopApyPct = (record?.economics.estimatedMaxApy ?? supplyApyPct / 100) * 100
 
   return [
     { id: "price", label: "Price", value: formatTokenPrice(price), delta: deltaFromPct(0.1) },
     { id: "available", label: "Available Liquidity", value: available, delta: deltaUp(1.4) },
+    { id: "loopApy", label: "Max loop APY", value: formatPct(loopApyPct, 2), delta: deltaUp(1.1) },
     { id: "supplyApy", label: "Supply APY", value: formatPct(supplyApyPct, 2), delta: deltaFromPct(0.1) },
     { id: "rewardsApy", label: "Rewards APY", value: "No rewards" },
     { id: "borrowApy", label: "Borrow APY", value: formatPct(borrowApyPct, 2), delta: deltaFromPct(0.08) },
