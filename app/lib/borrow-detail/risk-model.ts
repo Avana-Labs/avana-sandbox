@@ -111,7 +111,7 @@ export function buildAssetRiskAssessment(asset: SpokeBorrowableRecord): RiskAsse
         ],
     metrics: [
       { id: "category", label: "Category", value: asset.category === "stable" ? "Stablecoin" : "Volatile" },
-      { id: "borrowApr", label: "Borrow APY", value: `${asset.borrowApr.toFixed(2)}%` },
+      { id: "borrowApr", label: "Borrow APR", value: `${asset.borrowApr.toFixed(2)}%` },
       { id: "utilization", label: "Utilization", value: `${asset.utilization.toFixed(1)}%` },
       { id: "available", label: "Available", value: formatCompactUsd(asset.availableUsd) },
     ],
@@ -294,7 +294,7 @@ export function buildPoolRiskAssessment(row: BorrowPoolRow): RiskAssessment {
       },
       { id: "spoke", label: "Spoke", value: getSpokeById(row.spoke).label },
       { id: "maxLtv", label: "Max LTV", value: formatPct(row.ltv, 0) },
-      { id: "apr", label: "Supply APY range", value: aprRangeLabel(row) },
+      { id: "apr", label: "Supply APR range", value: aprRangeLabel(row) },
     ],
   }
 }
