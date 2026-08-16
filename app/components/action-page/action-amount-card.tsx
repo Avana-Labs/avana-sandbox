@@ -106,7 +106,7 @@ export function ActionAmountCard({
   const menuRef = useRef<HTMLDivElement>(null)
   // On mobile the inline "menu" selector opens as a bottom-sheet (matching the
   // dialog picker and the search sheet); the anchored popover stays on desktop.
-  const isDesktop = useMediaQuery("(min-width: 640px)", true)
+  const isDesktop = useMediaQuery("(min-width: 640px)", true, true)
   const useMenuSheet = switchable && !useDialogPicker && !isDesktop
 
   useEffect(() => {
