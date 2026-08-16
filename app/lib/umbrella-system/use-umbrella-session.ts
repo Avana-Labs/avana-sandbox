@@ -644,7 +644,15 @@ export function useUmbrellaSession({
         const amountUsd = amount * market.priceUsd
         const timestamp = Date.now()
         const liveTranches = refreshTranches(position.tranches, timestamp)
-        const activeCoolingUsd = liveTranches.reduce((sum, t) => sum + t.amountUsd, 0)
+        // Expired tranches (past their 2-day withdrawal window) release their stake
+        // back to the active pool — the withdrawal never happened, so the funds are
+        // still staked and can be re-cooled. Only cooling/ready tranches lock stake,
+        // so only they count against the "active supplied" budget. Without this, an
+        // expired tranche was summed as cooling forever and its stake could never be
+        // re-cooldownable. Mirrors the Convex read model (active ends exclude expired).
+        const activeCoolingUsd = liveTranches
+          .filter((t) => t.status !== "expired")
+          .reduce((sum, t) => sum + t.amountUsd, 0)
 
         if (kind === "stake" && amount > balance) throw new Error(`Insufficient ${market.symbol} balance`)
         if (kind === "startCooldown") {
@@ -667,8 +675,11 @@ export function useUmbrellaSession({
         // Post-mutation tranche list.
         let nextTranches = liveTranches
         if (kind === "startCooldown") {
+          // Drop expired tranches: their stake has already returned to the active
+          // pool, so carrying them forward would leave the position stuck showing
+          // "expired" and keep counting that stake as cooling.
           nextTranches = [
-            ...liveTranches,
+            ...liveTranches.filter((t) => t.status !== "expired"),
             {
               id: `local-tranche-${marketId}-${timestamp}`,
               amountUsd,
@@ -683,6 +694,8 @@ export function useUmbrellaSession({
           let remaining = amount
           const consumed: UmbrellaTranche[] = []
           for (const t of sorted) {
+            // Expired tranches return to active — never carry them forward.
+            if (t.status === "expired") continue
             if (remaining <= 1e-9 || t.status !== "ready") {
               consumed.push(t)
               continue
