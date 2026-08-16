@@ -12,11 +12,13 @@ import {
   fetchMultiplyRisk,
   fetchMultiplyRiskParameters,
   fetchMultiplySupplyBorrow,
-  fetchTokenPrices,
   type ConvexContractAddressRow,
 } from "@/app/lib/multiply-system/market-hydration-server"
-import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
-import { applyDetailContentOverlay, mergeAliasedQuickStats } from "@/app/lib/detail-page/live-detail-helpers"
+import {
+  applyDetailContentOverlay,
+  injectBaselinePrice,
+  mergeAliasedQuickStats,
+} from "@/app/lib/detail-page/live-detail-helpers"
 import { QUICK_STAT_ALIASES } from "@/app/lib/detail-page/live-quick-stats"
 import { buildMockLiquidationRiskStats } from "@/app/lib/detail-page/liquidation-risk"
 import {
@@ -75,18 +77,6 @@ function mapConvexTransactions(
     walletLabel: r.walletLabel,
     txHashShort: r.txHashShort,
   }))
-}
-
-/** Convex `getQuickStats` emits asset-style ids; map each to the lend-style mock ids. */
-function injectRealPrice(
-  quickStats: QuickStat[],
-  prices: Record<string, number> | null,
-  baseSymbol: string,
-): QuickStat[] {
-  if (!prices) return quickStats
-  const price = prices[priceKey(baseSymbol)]
-  if (price === undefined) return quickStats
-  return quickStats.map((s) => (s.id === "price" ? { ...s, value: formatTokenPrice(price) } : s))
 }
 
 function mergeConvexQuickStats(
@@ -171,7 +161,6 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
     transactions,
     risk,
     quickStats,
-    prices,
     content,
     riskParameters,
     liquidationRisk,
@@ -184,7 +173,6 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
     fetchMultiplyRecentTransactions(slug),
     fetchMultiplyRisk(slug),
     fetchMultiplyQuickStats(slug),
-    fetchTokenPrices(),
     fetchMultiplyContent(slug),
     fetchMultiplyRiskParameters(slug),
     fetchMultiplyLiquidationRisk(slug),
@@ -203,7 +191,7 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
       ...detail,
       quickStats: injectSiloedMarketQuickStats(
         injectAvailableUsdQuickStat(
-          injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, detail.row.protocol),
+          injectBaselinePrice(mergeConvexQuickStats(detail.quickStats, quickStats), detail.row.protocol),
           snapshot?.availableUsd,
           formatCompactUsd,
         ),
