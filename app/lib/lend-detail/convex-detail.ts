@@ -1,6 +1,5 @@
 import "server-only"
 import { requestCache as cache } from "@/app/lib/detail-page/request-cache"
-import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
 import {
   fetchLendCashflowBreakdown,
   fetchLendContent,
@@ -11,9 +10,12 @@ import {
   fetchLendRecentTransactions,
   fetchLendRisk,
   fetchLendRiskParameters,
-  fetchTokenPrices,
 } from "@/app/lib/lend-system/market-hydration-server"
-import { applyDetailContentOverlay, mergeAliasedQuickStats } from "@/app/lib/detail-page/live-detail-helpers"
+import {
+  applyDetailContentOverlay,
+  injectBaselinePrice,
+  mergeAliasedQuickStats,
+} from "@/app/lib/detail-page/live-detail-helpers"
 import { QUICK_STAT_ALIASES } from "@/app/lib/detail-page/live-quick-stats"
 import { injectSiloedMarketQuickStats, overlayHeroIdentity } from "@/app/lib/detail-page/siloed-market-overlay"
 import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
@@ -31,7 +33,7 @@ import type { QuickStat } from "@/app/lib/borrow-detail"
  *   - HERO chart (total supplied)                                ← Convex daily series
  *   - engagement / cashflow / risk / about / faqs / transactions ← Convex queries
  *   - risk parameters / IRM                                      ← lend* product silos
- *   - real price                                                 ← Convex oracle (DefiLlama)
+ *   - "Price" quick stat                                         ← deterministic sandbox baseline
  * Each Convex read falls back to the catalog/mock value when unreachable, so the
  * page always renders. Kept OUT of `./index.ts` because that barrel is also imported
  * by client components and `market-hydration-server.ts` is `server-only`.
@@ -43,18 +45,6 @@ function mergeConvexQuickStats(
   convex: ReadonlyArray<{ id: string; value: string; delta?: QuickStat["delta"] }> | null,
 ): QuickStat[] {
   return mergeAliasedQuickStats(base, convex, QUICK_STAT_ALIASES.lend)
-}
-
-/** Overlay the real DefiLlama price onto the "price" quick stat for a base symbol. */
-function injectRealPrice(
-  quickStats: QuickStat[],
-  prices: Record<string, number> | null,
-  baseSymbol: string,
-): QuickStat[] {
-  if (!prices) return quickStats
-  const price = prices[priceKey(baseSymbol)]
-  if (price === undefined) return quickStats
-  return quickStats.map((s) => (s.id === "price" ? { ...s, value: formatTokenPrice(price) } : s))
 }
 
 function formatPct(value: number, digits = 2) {
@@ -121,13 +111,12 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
   )
 
   // Supply hero series preloaded by the page (preloadLendHero) — not fetched here.
-  const [cashflow, transactions, risk, quickStats, prices, content, riskParameters, interestRateModel, siloedMarket] =
+  const [cashflow, transactions, risk, quickStats, content, riskParameters, interestRateModel, siloedMarket] =
     await Promise.all([
       fetchLendCashflowBreakdown(slug),
       fetchLendRecentTransactions(slug),
       fetchLendRisk(slug),
       fetchLendQuickStats(slug),
-      fetchTokenPrices(),
       fetchLendContent(slug),
       fetchLendRiskParameters(slug),
       fetchLendInterestRateModel(slug),
@@ -146,7 +135,7 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
     {
       ...detail,
       quickStats: injectSiloedMarketQuickStats(
-        injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, market.asset.symbol),
+        injectBaselinePrice(mergeConvexQuickStats(detail.quickStats, quickStats), market.asset.symbol),
         siloedMarket,
       ),
       // heroFeed set by the page from preloadLendHero.
