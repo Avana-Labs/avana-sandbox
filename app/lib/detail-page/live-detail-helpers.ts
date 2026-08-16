@@ -1,7 +1,25 @@
+import { formatTokenPrice } from "@/app/lib/prices/format"
+import { sandboxBaselinePriceUsd } from "@/app/lib/prices/sandbox-baseline-prices"
+
 type DetailQuickStat = {
   id: string
   value: string
   delta?: unknown
+}
+
+/**
+ * Pin the detail-page "Price" quick stat to the deterministic sandbox baseline for
+ * `baseSymbol` — the SAME price that VALUES this token everywhere else in the sandbox
+ * (catalog/read-model valuations). Every product detail builder used to overlay the live
+ * DefiLlama oracle here instead, so the tile disagreed with the valuation it sat next to
+ * (e.g. multiply aave-gho showed AAVE ~$86 while 5 AAVE of collateral was valued at the
+ * $105 baseline). Reading the baseline keeps the tile and the valuation in agreement and
+ * makes the sandbox internally consistent and deterministic across borrow, lend, and
+ * multiply detail pages.
+ */
+export function injectBaselinePrice<T extends DetailQuickStat>(quickStats: T[], baseSymbol: string): T[] {
+  const value = formatTokenPrice(sandboxBaselinePriceUsd(baseSymbol))
+  return quickStats.map((stat) => (stat.id === "price" ? { ...stat, value } : stat))
 }
 
 export function mergeAliasedQuickStats<T extends DetailQuickStat>(

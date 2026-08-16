@@ -9,9 +9,11 @@
  * surface and the live DefiLlama oracle used on detail pages (ETH ~$1.9k, not $3.5k).
  *
  * Any product that needs a static USD price for a symbol MUST read it from here.
- * Keys are UPPERCASE symbols. Detail-page "Price"/"Oracle price" tiles continue to
- * use the live Convex `tokenPrices` (DefiLlama) via token-prices-context — this map
- * is only the deterministic baseline for catalog/read-model valuations.
+ * Keys are UPPERCASE symbols. The detail-page single-asset "Price" quick-stat tile also
+ * reads this baseline (via injectBaselinePrice in detail-page/live-detail-helpers), so the
+ * tile agrees with the collateral valuation shown beside it instead of drifting to the live
+ * oracle. The live Convex `tokenPrices` (DefiLlama) via token-prices-context is still used
+ * for the borrow-list pair exchange-rate cells, which are intentionally live.
  */
 export const SANDBOX_BASELINE_PRICES_USD: Record<string, number> = {
   // Stablecoins

@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest"
-import { applyDetailContentOverlay, mergeAliasedQuickStats } from "@/app/lib/detail-page/live-detail-helpers"
+import {
+  applyDetailContentOverlay,
+  injectBaselinePrice,
+  mergeAliasedQuickStats,
+} from "@/app/lib/detail-page/live-detail-helpers"
+import { formatTokenPrice } from "@/app/lib/prices/format"
+import { sandboxBaselinePriceUsd } from "@/app/lib/prices/sandbox-baseline-prices"
 
 describe("applyDetailContentOverlay", () => {
   const mockDetail = {
@@ -49,6 +55,43 @@ describe("applyDetailContentOverlay", () => {
     expect(next.about.history).toEqual([])
     expect(next.faqs).toEqual([])
     expect(next.about.governanceParameters).toEqual(mockDetail.about.governanceParameters)
+  })
+})
+
+describe("injectBaselinePrice", () => {
+  it("pins the 'price' quick stat to the deterministic sandbox baseline (AAVE → $105.00)", () => {
+    const base = [
+      { id: "price", label: "Price", value: "$86.08" },
+      { id: "available", label: "Available Liquidity", value: "$6M" },
+    ]
+
+    const next = injectBaselinePrice(base, "AAVE")
+
+    expect(sandboxBaselinePriceUsd("AAVE")).toBe(105)
+    expect(next.find((s) => s.id === "price")?.value).toBe("$105.00")
+    expect(next.find((s) => s.id === "price")?.value).toBe(formatTokenPrice(sandboxBaselinePriceUsd("AAVE")))
+  })
+
+  it("does NOT let a live oracle value override the baseline", () => {
+    // The overlay takes only the base stats + symbol — there is no live-price channel to
+    // override the tile. Whatever the mock/catalog seeded, the tile becomes the baseline.
+    const base = [{ id: "price", label: "Price", value: "$999999.99" }]
+
+    const next = injectBaselinePrice(base, "AAVE")
+
+    expect(next[0].value).toBe("$105.00")
+  })
+
+  it("leaves non-price stats untouched and resolves the symbol case-insensitively", () => {
+    const base = [
+      { id: "price", label: "Price", value: "x" },
+      { id: "supplyApy", label: "Supply APY", value: "3.20%" },
+    ]
+
+    const next = injectBaselinePrice(base, "weth")
+
+    expect(next.find((s) => s.id === "price")?.value).toBe(formatTokenPrice(sandboxBaselinePriceUsd("WETH")))
+    expect(next.find((s) => s.id === "supplyApy")?.value).toBe("3.20%")
   })
 })
 
