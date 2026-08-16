@@ -72,7 +72,10 @@ const UMBRELLA_MARKETS = {
     apy: 5.05,
     rewardApy: 2.4,
     baseApy: 2.65,
-    priceUsd: 2240,
+    // Must equal the app-wide baseline (app/lib/prices/sandbox-baseline-prices.ts → WETH:1934).
+    // Convex can't import app/, so this is hand-synced; it previously drifted to 2240, valuing
+    // the same WETH ~16% higher in Umbrella than everywhere else.
+    priceUsd: 1934,
     targetCoverageUsd: 6_250_000,
     currentDeficitUsd: 52_973,
     deficitOffsetUsd: 250_000,
