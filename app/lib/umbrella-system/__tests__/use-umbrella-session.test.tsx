@@ -1,11 +1,13 @@
 import { act, renderHook } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
+  buildDefaultUmbrellaState,
   useUmbrellaSession,
   type UmbrellaMarketId,
   type UmbrellaPosition,
   type UmbrellaTransaction,
 } from "@/app/lib/umbrella-system/use-umbrella-session"
+import { sandboxBaselinePriceUsd } from "@/app/lib/prices/sandbox-baseline-prices"
 
 const DAY_MS = 24 * 60 * 60 * 1000
 const BASE = Date.UTC(2026, 7, 14, 12)
@@ -41,6 +43,19 @@ async function runAction(
   view.unmount()
   return { tx, position: (marketId) => positions[marketId] }
 }
+
+describe("buildDefaultUmbrellaState seed prices", () => {
+  it("prices the WETH stake from the shared sandbox baseline, not a hardcoded 2240", () => {
+    const state = buildDefaultUmbrellaState("seed-wallet")
+    expect(sandboxBaselinePriceUsd("WETH")).toBe(1934)
+    expect(state.markets.weth.priceUsd).toBe(1934)
+    expect(state.markets.weth.priceUsd).not.toBe(2240)
+    // Stable-like markets stay at $1 (the baseline also returns 1 for these).
+    expect(state.markets.gho.priceUsd).toBe(sandboxBaselinePriceUsd("GHO"))
+    expect(state.markets.usdc.priceUsd).toBe(sandboxBaselinePriceUsd("USDC"))
+    expect(state.markets.usdt.priceUsd).toBe(sandboxBaselinePriceUsd("USDT"))
+  })
+})
 
 describe("useUmbrellaSession (offline execute)", () => {
   beforeEach(() => {
