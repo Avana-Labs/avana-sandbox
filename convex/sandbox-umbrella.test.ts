@@ -546,6 +546,130 @@ describe("sandbox umbrella — recordAction lifecycle", () => {
     delete process.env.SANDBOX_DEV_CONTROLS
   })
 
+  test("startCooldown — an expired tranche is recoverable (re-coolable; excluded from the active-cooling budget)", async () => {
+    // A2 regression: once a tranche's 2-day withdrawal window lapses the stake
+    // was counted as "cooling" forever — startCooldown's activeCooling fold
+    // included expired tranches, so the budget check rejected any re-cooldown
+    // and unstake threw WITHDRAWAL_WINDOW_EXPIRED without consuming it. The
+    // funds were neither withdrawable nor re-coolable. Fix: expired amounts are
+    // excluded from the active-cooling budget and retired on re-cooldown so the
+    // stake returns to the active pool and can be cooled again.
+    const t = convexTest(schema, modules)
+    process.env.SANDBOX_DEV_CONTROLS = "true"
+    await seedLiquidUsdc(t, WALLET_A, 1000)
+    const asUser = t.withIdentity({ subject: WALLET_A })
+    await asUser.mutation(api.sandbox.umbrella.recordAction, {
+      wallet: WALLET_A,
+      intentId: "s1",
+      kind: "stake",
+      marketId: "usdc",
+      amount: 1000,
+    })
+    await asUser.mutation(api.sandbox.umbrella.recordAction, {
+      wallet: WALLET_A,
+      intentId: "c1",
+      kind: "startCooldown",
+      marketId: "usdc",
+      amount: 1000,
+    })
+    // Let the whole 20d cooldown + 2d window lapse — the tranche is now expired.
+    await asUser.mutation(api.sandbox.dev.advanceCooldown, {
+      wallet: WALLET_A,
+      marketId: "usdc",
+      byMs: 25 * DAY_MS,
+    })
+    // Pre-condition: the position reads as expired (funds appear stuck).
+    let session = await asUser.query(api.sandbox.umbrella.getSessionState, { wallet: WALLET_A })
+    let position = session.positions.find((row) => row.marketId === "usdc")
+    expect(position?.withdrawalWindowExpired).toBe(true)
+
+    // Recovery: because the expired amount is EXCLUDED from the active-cooling
+    // budget, the full 1000 can be cooled again in one call. If the expired
+    // tranche still counted as cooling, this would throw INVALID_COOLDOWN_AMOUNT
+    // (budget 1000 - 1000 = 0).
+    await asUser.mutation(api.sandbox.umbrella.recordAction, {
+      wallet: WALLET_A,
+      intentId: "c2",
+      kind: "startCooldown",
+      marketId: "usdc",
+      amount: 1000,
+    })
+
+    // Exactly one fresh cooling tranche of 1000; the expired one is retired
+    // (consumed), so the aggregate is 1000 — not double-counted as 2000.
+    const coolingTranches = await t.run(async (ctx) =>
+      ctx.db
+        .query("umbrellaCooldownTranches")
+        .withIndex("by_wallet_market_status", (q) =>
+          q.eq("wallet", WALLET_A.toLowerCase()).eq("marketId", "usdc").eq("status", "cooling"),
+        )
+        .collect(),
+    )
+    expect(coolingTranches).toHaveLength(1)
+    expect(num(coolingTranches[0]?.amountUsd6)).toBeCloseTo(1000, 6)
+    const dbPosition = await readPosition(t, WALLET_A, "usdc")
+    expect(num(dbPosition?.cooldownAmountUsd6)).toBeCloseTo(1000, 6)
+    // Principal was never lost — the whole 1000 is still supplied.
+    expect(num(dbPosition?.suppliedUsd6)).toBeCloseTo(1000, 6)
+
+    // Session no longer reports the position as expired/stuck.
+    session = await asUser.query(api.sandbox.umbrella.getSessionState, { wallet: WALLET_A })
+    position = session.positions.find((row) => row.marketId === "usdc")
+    expect(position?.withdrawalWindowExpired).toBe(false)
+    delete process.env.SANDBOX_DEV_CONTROLS
+  })
+
+  test("startCooldown — a partial re-cooldown after expiry returns the remainder to active", async () => {
+    // Cooling only part of an expired tranche recovers the whole amount to the
+    // active pool (expired tranche retired) and cools the requested slice; the
+    // remainder stays active (still counted in suppliedUsd, not cooling).
+    const t = convexTest(schema, modules)
+    process.env.SANDBOX_DEV_CONTROLS = "true"
+    await seedLiquidUsdc(t, WALLET_A, 1000)
+    const asUser = t.withIdentity({ subject: WALLET_A })
+    await asUser.mutation(api.sandbox.umbrella.recordAction, {
+      wallet: WALLET_A,
+      intentId: "s1",
+      kind: "stake",
+      marketId: "usdc",
+      amount: 1000,
+    })
+    await asUser.mutation(api.sandbox.umbrella.recordAction, {
+      wallet: WALLET_A,
+      intentId: "c1",
+      kind: "startCooldown",
+      marketId: "usdc",
+      amount: 1000,
+    })
+    await asUser.mutation(api.sandbox.dev.advanceCooldown, {
+      wallet: WALLET_A,
+      marketId: "usdc",
+      byMs: 25 * DAY_MS,
+    })
+    // Re-cool only 300 of the recovered 1000.
+    await asUser.mutation(api.sandbox.umbrella.recordAction, {
+      wallet: WALLET_A,
+      intentId: "c2",
+      kind: "startCooldown",
+      marketId: "usdc",
+      amount: 300,
+    })
+    const position = await readPosition(t, WALLET_A, "usdc")
+    expect(num(position?.suppliedUsd6)).toBeCloseTo(1000, 6)
+    expect(num(position?.cooldownAmountUsd6)).toBeCloseTo(300, 6)
+    // The remaining 700 is active again, so a further 700 cooldown is accepted.
+    await asUser.mutation(api.sandbox.umbrella.recordAction, {
+      wallet: WALLET_A,
+      intentId: "c3",
+      kind: "startCooldown",
+      marketId: "usdc",
+      amount: 700,
+    })
+    const after = await readPosition(t, WALLET_A, "usdc")
+    expect(num(after?.cooldownAmountUsd6)).toBeCloseTo(1000, 6)
+    delete process.env.SANDBOX_DEV_CONTROLS
+  })
+
   test("stake during cooldown — new stake does not inherit cooldown", async () => {
     const t = convexTest(schema, modules)
     await seedLiquidUsdc(t, WALLET_A, 2000)
