@@ -11,10 +11,15 @@ import { buildBorrowDashboardMetrics } from "@/app/dashboard/dashboard-tab-metri
 // One dollar of rounding tolerance for share-index arithmetic.
 const TOLERANCE = 1
 
+// buildBorrowDashboardMetrics now accrues to `now` (defaulting to Date.now()). These
+// invariance checks read each state at its OWN settlement index (state.now / next.now)
+// so the assertion isolates the ACTION's effect on Net Value, not the interest that
+// ticks with wall-clock time between two reads.
+
 describe("credit overview Net Value stays flat on net-neutral actions", () => {
   it("does not drift when borrowing (cash received offsets debt owed)", () => {
     const state = makeExampleBorrowSystemState()
-    const before = buildBorrowDashboardMetrics(state, "wallet-1").overview.netValueUsd
+    const before = buildBorrowDashboardMetrics(state, "wallet-1", state.now).overview.netValueUsd
 
     const next = applyBorrowAction(state, {
       type: "borrow",
@@ -23,14 +28,14 @@ describe("credit overview Net Value stays flat on net-neutral actions", () => {
       assetId: EXAMPLE_UNI_USDC_ASSET_ID,
       amountUsd6: parseFixed("16", 6),
     })
-    const after = buildBorrowDashboardMetrics(next, "wallet-1").overview.netValueUsd
+    const after = buildBorrowDashboardMetrics(next, "wallet-1", next.now).overview.netValueUsd
 
     expect(Math.abs(after - before)).toBeLessThanOrEqual(TOLERANCE)
   })
 
   it("does not drift when removing fairly-valued collateral (value moves into LP balance)", () => {
     const state = makeExampleBorrowSystemState()
-    const before = buildBorrowDashboardMetrics(state, "wallet-1").overview.netValueUsd
+    const before = buildBorrowDashboardMetrics(state, "wallet-1", state.now).overview.netValueUsd
 
     const next = applyBorrowAction(state, {
       type: "removeCollateral",
@@ -38,7 +43,7 @@ describe("credit overview Net Value stays flat on net-neutral actions", () => {
       positionId: "wallet-1:weth-usdc",
       amountUsd6: parseFixed("210", 6),
     })
-    const after = buildBorrowDashboardMetrics(next, "wallet-1").overview.netValueUsd
+    const after = buildBorrowDashboardMetrics(next, "wallet-1", next.now).overview.netValueUsd
 
     // Before this fix the LP balance the collateral moved into was uncounted, so
     // Net Value fell by the full ~$210 removed.
@@ -47,7 +52,7 @@ describe("credit overview Net Value stays flat on net-neutral actions", () => {
 
   it("does not drift when fully removing a collateral market that leaves no position row behind", () => {
     const state = makeExampleBorrowSystemState()
-    const before = buildBorrowDashboardMetrics(state, "wallet-1").overview.netValueUsd
+    const before = buildBorrowDashboardMetrics(state, "wallet-1", state.now).overview.netValueUsd
 
     const next = applyBorrowAction(state, {
       type: "removeCollateral",
@@ -55,7 +60,7 @@ describe("credit overview Net Value stays flat on net-neutral actions", () => {
       positionId: "wallet-1:curve-eth-usdt",
       percentBps: 10_000,
     })
-    const after = buildBorrowDashboardMetrics(next, "wallet-1").overview.netValueUsd
+    const after = buildBorrowDashboardMetrics(next, "wallet-1", next.now).overview.netValueUsd
 
     expect(
       next.accounts["wallet-1"]!.collateralPositions.some((position) => position.id === "wallet-1:curve-eth-usdt"),
@@ -65,7 +70,7 @@ describe("credit overview Net Value stays flat on net-neutral actions", () => {
 
   it("does not drift when re-supplying LP that was first returned from collateral removal", () => {
     const state = makeExampleBorrowSystemState()
-    const before = buildBorrowDashboardMetrics(state, "wallet-1").overview.netValueUsd
+    const before = buildBorrowDashboardMetrics(state, "wallet-1", state.now).overview.netValueUsd
 
     const afterRemove = applyBorrowAction(state, {
       type: "removeCollateral",
@@ -80,7 +85,7 @@ describe("credit overview Net Value stays flat on net-neutral actions", () => {
       marketId: EXAMPLE_UNI_MARKET_ID,
       amountUsd6: parseFixed("1000", 6),
     })
-    const after = buildBorrowDashboardMetrics(next, "wallet-1").overview.netValueUsd
+    const after = buildBorrowDashboardMetrics(next, "wallet-1", next.now).overview.netValueUsd
 
     expect(Math.abs(after - before)).toBeLessThanOrEqual(TOLERANCE)
   })
