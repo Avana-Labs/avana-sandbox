@@ -27,6 +27,7 @@ import {
   type PendingMarketRow,
 } from "@/app/lib/data/borrow-domain"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
+import { formatBorrowPairLabel, formatLtvPct } from "@/app/lib/borrow-sim"
 import { BorrowableAssetsPanel } from "./borrowable-assets-table"
 import { PillButton, TokenBubble, TokenPairCell } from "./atoms"
 import { formatApy } from "@/app/lib/format"
@@ -129,9 +130,10 @@ function SortIcon() {
 function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
   const { compact } = useCurrency()
   const { t } = useTranslation()
-  // Just the pool TVL — no venue prefix (the DEX/LP-type string was noise). The
-  // version is already conveyed by the group heading + the market detail page.
-  const subtitle = `${compact(pool.tvlUsd)} ${t("TVL")}`
+  // Lead with the fee tier so two rows sharing a pair label within the SAME
+  // section (e.g. Curve Crypto's two WBTC/WETH pools) are distinguishable — the
+  // group heading only conveys the DEX/version, not the per-pool tier.
+  const subtitle = `${pool.feeTier} · ${compact(pool.tvlUsd)} ${t("TVL")}`
   return (
     <div className="flex min-w-0 items-center gap-4">
       <div className="flex items-center">
@@ -144,7 +146,7 @@ function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
       </div>
       <div className="min-w-0">
         <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
-          {pool.visuals[0].symbol} / {pool.visuals[1].symbol}
+          {formatBorrowPairLabel(pool)}
         </div>
         <div className="mt-1 truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
           {subtitle}
@@ -342,7 +344,7 @@ function CollateralDesktopTable({
               </td>
               <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
                 <div className="font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white">
-                  {Math.round(pool.ltv)}%
+                  {formatLtvPct(pool.ltv)}
                 </div>
                 <div className="mt-0.5 font-data text-[12px] tabular-nums text-muted-foreground">
                   {t("LT")}: {poolLiquidationThresholdPct(pool)}%
@@ -646,7 +648,7 @@ function SpokeMobileSection({
                 <li key={pool.id}>
                   <MarketMobileCard clickable onClick={() => onViewMarket(pool)}>
                     <MarketMobileCardHeader
-                      identity={<TokenPairCell visuals={pool.visuals} name={pool.name} size="md" />}
+                      identity={<TokenPairCell visuals={pool.visuals} name={formatBorrowPairLabel(pool)} size="md" />}
                       metric={
                         <MarketMobileMetric
                           value={formatApy((pool.aprMin + pool.aprMax) / 2)}
@@ -663,7 +665,7 @@ function SpokeMobileSection({
                     <MarketMobileStatList className="mt-3">
                       <MarketMobileStatRow label={t("TVL")} value={compact(pool.tvlUsd)} />
                       <MarketMobileStatRow label={t("Available")} value={compact(pool.availableUsd)} />
-                      <MarketMobileStatRow label={t("Max LTV")} value={`${pool.ltv}%`} />
+                      <MarketMobileStatRow label={t("Max LTV")} value={formatLtvPct(pool.ltv)} />
                       <MarketMobileStatRow label={t("Premium")} value={formatRiskPremium(pool.riskPremiumBps)} />
                     </MarketMobileStatList>
                     <div className="mt-4 flex gap-2">
