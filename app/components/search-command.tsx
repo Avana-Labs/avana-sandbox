@@ -58,7 +58,9 @@ async function getSearchResults(
     id: `pool-${pool.id}`,
     tab: "pools" as const,
     title: pool.name,
-    subtitle: `${pool.venue} / ${pool.feeTier} / ${formatCompactCurrency(pool.availableUsd)} ${t("available")}`,
+    // Label the pool's swap fee TIER explicitly ("0.30% pool fee") so it reads
+    // distinctly from the annualized borrow "Fees" APR shown on borrow tables / Explore.
+    subtitle: `${pool.venue} / ${pool.feeTier} ${t("pool fee")} / ${formatCompactCurrency(pool.availableUsd)} ${t("available")}`,
     eyebrow: "Collateral pool",
     metric: `${pool.ltv}% LTV`,
     href: `/borrow/markets/${pool.id}`,
