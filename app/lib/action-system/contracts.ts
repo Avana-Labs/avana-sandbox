@@ -92,6 +92,12 @@ export type ActionSuccessUi = {
     rateLabel: string
     rateValue: string
     marketValue: string
+    /**
+     * Real network fee (USD) for this receipt. Set by swaps to their quote fee so
+     * the inline receipt matches the estimate and permalink. Left undefined for
+     * non-swap actions, which fall back to the canonical SANDBOX_NETWORK_FEE_USD.
+     */
+    networkFeeUsd?: number
   }
 }
 

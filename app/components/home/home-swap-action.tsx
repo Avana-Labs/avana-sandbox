@@ -211,6 +211,9 @@ export function HomeSwapAction() {
           rateLabel: t("Received"),
           rateValue: `${formatAmount(quote.estimatedOutputAmount)} ${outputAsset.symbol}`,
           marketValue: quote.provider,
+          // Carry the real quote fee so the inline receipt matches the estimate
+          // and the permalink receipt instead of a hash-derived amount.
+          networkFeeUsd: quote.networkFeeUsd,
         },
       })
       setStage("success")
