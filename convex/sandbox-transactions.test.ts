@@ -310,7 +310,8 @@ describe("liquidation recording", () => {
         marketSlug: "uni-v3-bluechip-weth-usdc",
         status: "open",
         collateralValueUsd6: "2000000000",
-        debtValueUsd6: "1200000000",
+        // Underwater: $2000 collateral @ 85% fallback LT = $1700 < $2000 debt.
+        debtValueUsd6: "2000000000",
         openedAt: 1,
         lastUpdatedAt: 1,
       })
@@ -329,10 +330,10 @@ describe("liquidation recording", () => {
         positionId,
         assetId: "uni-v2:usdc",
         baseAssetId: "usdc",
-        debtSharesUsd6: "1200000000",
+        debtSharesUsd6: "2000000000",
         debtIndexRay: "1000000000000000000000000000",
         borrowRateWad: "50000000000000000",
-        principalBorrowedUsd6: "1200000000",
+        principalBorrowedUsd6: "2000000000",
         updatedAt: 1,
       })
       return { positionId, debtPositionId }
@@ -366,9 +367,9 @@ describe("liquidation recording", () => {
         .withIndex("by_wallet_at", (q) => q.eq("wallet", WALLET.toLowerCase()))
         .collect(),
     }))
-    expect(state.position?.debtValueUsd6).toBe("700000000")
+    expect(state.position?.debtValueUsd6).toBe("1500000000")
     expect(state.position?.collateralValueUsd6).toBe("1450000000")
-    expect(state.debt?.principalBorrowedUsd6).toBe("700000000")
+    expect(state.debt?.principalBorrowedUsd6).toBe("1500000000")
     expect(state.collateral?.collateralValueUsd6).toBe("1450000000")
     expect(state.transactions).toHaveLength(1)
     expect(state.transactions[0]?.kind).toBe("liquidation")
@@ -384,7 +385,8 @@ describe("liquidation recording", () => {
         marketSlug: "uni-v3-bluechip-weth-usdc",
         status: "open",
         collateralValueUsd6: "2000000000",
-        debtValueUsd6: "1200000000",
+        // Underwater: $2000 collateral @ 85% fallback LT = $1700 < $2000 debt.
+        debtValueUsd6: "2000000000",
         revision: 0,
         openedAt: 1,
         lastUpdatedAt: 1,
@@ -404,10 +406,10 @@ describe("liquidation recording", () => {
         positionId,
         assetId: "uni-v2:usdc",
         baseAssetId: "usdc",
-        debtSharesUsd6: "1200000000",
+        debtSharesUsd6: "2000000000",
         debtIndexRay: "1000000000000000000000000000",
         borrowRateWad: "50000000000000000",
-        principalBorrowedUsd6: "1200000000",
+        principalBorrowedUsd6: "2000000000",
         updatedAt: 1,
       })
       return { positionId, debtPositionId }

@@ -1,7 +1,17 @@
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
 
+/**
+ * Escape the characters that could break out of the `<script>` element when a
+ * JSON-LD payload is injected via `dangerouslySetInnerHTML`. `<`, `>` and `&`
+ * are rewritten to their `\uXXXX` escapes — still valid JSON, but inert as HTML,
+ * so a string value like `</script>` cannot close the tag or inject markup.
+ */
+function escapeJsonLd(json: string): string {
+  return json.replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026")
+}
+
 export function SchemaMarkup({ data }: { data: JsonValue | JsonValue[] }) {
-  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }} />
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(JSON.stringify(data)) }} />
 }
 
 export function buildWebPageSchema(input: { name: string; description: string; url: string }) {
