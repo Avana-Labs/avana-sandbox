@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { SESSION_CACHE_VERSION } from "@/app/lib/session-cache-version"
 import { safeReadParsed, safeRemoveItem, safeSetItem } from "@/app/lib/safe-local-storage"
+import { sandboxBaselinePriceUsd } from "@/app/lib/prices/sandbox-baseline-prices"
 
 export type UmbrellaMarketId = "gho" | "usdc" | "usdt" | "weth"
 export type UmbrellaActionKind = "stake" | "claim" | "startCooldown" | "unstake"
@@ -177,7 +178,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
       apy: 6.4,
       baseApy: 0,
       rewardApy: 6.4,
-      priceUsd: 1,
+      priceUsd: sandboxBaselinePriceUsd("GHO"),
       targetCoverageUsd: 22_000_000,
       currentDeficitUsd: 146,
       deficitOffsetUsd: 1_000_000,
@@ -192,7 +193,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
       apy: 4.84,
       baseApy: 1.72,
       rewardApy: 3.12,
-      priceUsd: 1,
+      priceUsd: sandboxBaselinePriceUsd("USDC"),
       targetCoverageUsd: 10_000_000,
       currentDeficitUsd: 51_371,
       deficitOffsetUsd: 500_000,
@@ -207,7 +208,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
       apy: 4.19,
       baseApy: 1.34,
       rewardApy: 2.85,
-      priceUsd: 1,
+      priceUsd: sandboxBaselinePriceUsd("USDT"),
       targetCoverageUsd: 9_500_000,
       currentDeficitUsd: 32_420,
       deficitOffsetUsd: 400_000,
@@ -222,7 +223,7 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
       apy: 5.05,
       baseApy: 2.65,
       rewardApy: 2.4,
-      priceUsd: 2240,
+      priceUsd: sandboxBaselinePriceUsd("WETH"),
       targetCoverageUsd: 6_250_000,
       currentDeficitUsd: 52_973,
       deficitOffsetUsd: 250_000,
