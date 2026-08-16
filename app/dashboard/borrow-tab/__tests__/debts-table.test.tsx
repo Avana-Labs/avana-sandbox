@@ -63,6 +63,29 @@ describe("DebtsPanel", () => {
     expect(container.textContent).not.toMatch(/6200\s+USDC/)
   })
 
+  it("surfaces the per-position daily borrowing cost as a desktop column", () => {
+    const { container } = render(
+      <DebtsPanel
+        rows={[usdtDebt]}
+        totals={{
+          totalBorrowed: 6_200,
+          totalCollateral: 10_000,
+          averageHf: 1.8,
+          accruedInterest: 33.6,
+          dailyInterest: 0.94,
+        }}
+        onRepay={vi.fn()}
+        onManage={vi.fn()}
+        showSummary={false}
+        showHeading={false}
+      />,
+    )
+
+    // The daily interest (mobile-only before) now has a dedicated desktop column.
+    expect(container.textContent).toMatch(/Interest \/ day/)
+    expect(container.textContent).toMatch(/0\.94/)
+  })
+
   it("does not render a bare Opened placeholder row", () => {
     const { container } = render(
       <DebtsPanel
@@ -100,5 +123,27 @@ describe("CurrentLtvCard borrowing-power status", () => {
   it("reads GOOD when a healthy position has remaining borrowing power", () => {
     const { container } = render(<CurrentLtvCard borrowedUsd={2_000} collateralUsd={10_000} showBalance />)
     expect(container.textContent).toMatch(/GOOD/)
+  })
+
+  it("surfaces borrowing cost (interest per day + accrued) when provided", () => {
+    const { container } = render(
+      <CurrentLtvCard
+        borrowedUsd={6_200}
+        collateralUsd={10_000}
+        showBalance
+        dailyInterestUsd={0.94}
+        accruedInterestUsd={33.6}
+      />,
+    )
+    expect(container.textContent).toMatch(/Interest \/ day/)
+    expect(container.textContent).toMatch(/Accrued interest/)
+    expect(container.textContent).toMatch(/0\.94/)
+    expect(container.textContent).toMatch(/33\.60/)
+  })
+
+  it("omits the borrowing-cost row when no interest figures are passed", () => {
+    const { container } = render(<CurrentLtvCard borrowedUsd={2_000} collateralUsd={10_000} showBalance />)
+    expect(container.textContent).not.toMatch(/Interest \/ day/)
+    expect(container.textContent).not.toMatch(/Accrued interest/)
   })
 })
