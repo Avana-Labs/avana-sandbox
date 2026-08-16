@@ -88,6 +88,29 @@ export function resolveHeroContractLabel(id: string, explorerUrl?: string): stri
   return formatHeroContractLabel(resolveHeroContractAddress(id, explorerUrl))
 }
 
+/**
+ * Synthetic contract addresses are built as an 8-hex chunk repeated five times
+ * (see convex-seed/inputs/contract-addresses-seed.ts), e.g.
+ * 0x730DF60E730DF60E730DF60E730DF60E730DF60E. They point at no real contract, so
+ * the detail-page hero must not offer an Etherscan link or a copy action for them.
+ */
+export function isPlaceholderHeroContractAddress(address?: string | null): boolean {
+  const body = address?.match(/^0x([a-fA-F0-9]{40})$/)?.[1]
+  if (!body) return false
+  const chunk = body.slice(0, 8).toLowerCase()
+  return body.toLowerCase() === chunk.repeat(5)
+}
+
+/**
+ * Whether an explorer/website URL is safe to open. Unsafe when it only wraps a
+ * synthetic placeholder contract address (a fake Etherscan link); a real project
+ * website or a real on-chain address stays safe.
+ */
+export function isSafeHeroLink(url?: string | null): boolean {
+  if (!url) return false
+  return !isPlaceholderHeroContractAddress(addressFromExplorerUrl(url))
+}
+
 function makeRangeData(points: ChartFeed["rangeData"]["1D"]): ChartRangeData {
   return {
     "1D": points,
