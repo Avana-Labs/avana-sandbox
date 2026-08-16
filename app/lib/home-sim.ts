@@ -379,7 +379,11 @@ export const HOME_DEFAULT_SELECTIONS = {
 }
 
 export function formatUsd(value: number) {
-  return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  // Currency-aware (matches the sibling formatCompactUsd and the header switcher);
+  // previously hardcoded "$", so "Claim $X in fees" stayed USD under EUR/etc.
+  const { symbol, rate } = getActiveCurrency()
+  const converted = value * rate
+  return `${symbol}${converted.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
 export function formatCompactUsd(usdValue: number) {
