@@ -14,6 +14,18 @@ const COLLATERAL_RISK_MULTIPLIER_WAD = parseFixed("0.04", 18)
 const UTILIZATION_PREMIUM_MULTIPLIER_WAD = parseFixed("0.03", 18)
 const LOW_HEALTH_TRIGGER_WAD = parseFixed("1.5", 18)
 const LOW_HEALTH_MULTIPLIER_WAD = parseFixed("0.05", 18)
+// Net APY divides annual carry by net equity. As equity approaches zero the ratio
+// explodes into meaningless territory (e.g. $1 equity → −2990% headline). Clamp the
+// magnitude so the dashboard stays sane; ±1000% is far above any legitimate net APY
+// in this system, so real values are never clipped.
+export const MAX_NET_APY_MAGNITUDE_WAD = parseFixed("10", 18)
+
+/** Bound net APY to ±1000% so a near-zero-equity denominator can't produce an absurd headline. */
+export function clampNetApyWad(rawWad: bigint): bigint {
+  if (rawWad > MAX_NET_APY_MAGNITUDE_WAD) return MAX_NET_APY_MAGNITUDE_WAD
+  if (rawWad < -MAX_NET_APY_MAGNITUDE_WAD) return -MAX_NET_APY_MAGNITUDE_WAD
+  return rawWad
+}
 
 export type BorrowCreditMetrics = {
   netAccountValueUsd6: bigint
@@ -114,8 +126,9 @@ function calculateMetricsForAccount(state: BorrowSystemState, account: BorrowAcc
   const baseBorrowAprWad = weightedBaseBorrowAprWad(account, state, totalBorrowedUsd6)
   const borrowAprWad = baseBorrowAprWad + riskPremiumWad
   const annualBorrowCostUsd6 = mulDiv(totalBorrowedUsd6, borrowAprWad, WAD)
-  const netApyWad =
+  const rawNetApyWad =
     netAccountValueUsd6 > 0n ? mulDiv(annualYieldEarnedUsd6 - annualBorrowCostUsd6, WAD, netAccountValueUsd6) : 0n
+  const netApyWad = clampNetApyWad(rawNetApyWad)
 
   return {
     netAccountValueUsd6,
