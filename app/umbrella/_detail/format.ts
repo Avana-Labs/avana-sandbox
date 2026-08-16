@@ -15,9 +15,9 @@ export function formatCompactUsd(value: number) {
   return formatCompactUsdCanonical(value)
 }
 
-/** Percent body only (callers append "%"); fixed 2dp to match the asset-APY convention. */
+/** Percent body only (callers append "%"). Unchanged: variable precision, currency-agnostic. */
 export function formatPct(value: number) {
-  return Number.isFinite(value) ? value.toFixed(2) : "0.00"
+  return value.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })
 }
 
 export function formatUnits(value: number) {

@@ -19,8 +19,9 @@ describe("umbrella formatters delegate to the currency-aware canonical helpers",
     expect(formatCompactUsd(2_000_000_000)).toContain("B")
   })
 
-  it("formatPct is a fixed 2dp body (callers append %)", () => {
-    expect(formatPct(6.4)).toBe("6.40")
-    expect(formatPct(5)).toBe("5.00")
+  it("formatPct is a bare percent body (callers append %), variable precision", () => {
+    expect(formatPct(6.4)).toBe("6.4")
+    expect(formatPct(5)).toBe("5")
+    expect(formatPct(4.84)).toBe("4.84")
   })
 })
