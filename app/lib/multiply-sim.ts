@@ -1,5 +1,7 @@
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
+import { calculateMaxLeverageApy } from "@/app/lib/multiply-engine/formulas"
+import { MULTIPLY_ACTION_MAX_LEVERAGE } from "@/app/lib/multiply-system/leverage-limits"
 
 export const MULTIPLY_TOKEN_LOGOS = {
   ETH: getLocalAssetIcon("ETH"),
@@ -179,20 +181,42 @@ function formatFactor(value: number) {
   return `${value.toFixed(2)}x`
 }
 
-function buildMultiplyMarketRow(
+/**
+ * Largest looped leverage a liquidation threshold theoretically supports, `1/(1−LT)`,
+ * guarded so a degenerate LT (≥ 1 → divide-by-zero → Infinity, or ≤ 0) collapses to the
+ * global action ceiling instead of a non-finite value. This legacy per-token path is only a
+ * fallback for markets absent from the catalog; every catalog market renders the
+ * publicMaxMultiplier-based figure via read-model, keeping the table and the trending card
+ * on one number. (E3)
+ */
+function safeTheoreticalMaxLeverage(liquidationThreshold: number): number {
+  if (!Number.isFinite(liquidationThreshold) || liquidationThreshold <= 0 || liquidationThreshold >= 1) {
+    return MULTIPLY_ACTION_MAX_LEVERAGE
+  }
+  return Math.min(MULTIPLY_ACTION_MAX_LEVERAGE, 1 / (1 - liquidationThreshold))
+}
+
+export function buildMultiplyMarketRow(
   collateral: keyof typeof MULTIPLY_TOKEN_LOGOS,
   borrowable: keyof typeof MULTIPLY_TOKEN_LOGOS,
+  overrides?: { liquidationThreshold?: number },
 ): MultiplyMarketRow | null {
   const supplyApy = parsePct(MULTIPLY_TOKEN_SUPPLY_APYS[collateral])
   const borrowApy = parsePct(MULTIPLY_TOKEN_BORROW_APYS[borrowable])
   const cf = MULTIPLY_COLLATERAL_FACTORS[collateral]
-  const lt = MULTIPLY_LIQUIDATION_THRESHOLDS[collateral]
+  const lt = overrides?.liquidationThreshold ?? MULTIPLY_LIQUIDATION_THRESHOLDS[collateral]
   const availableUsd = MULTIPLY_TOKEN_AVAILABLE_USD[borrowable]
 
-  if (!cf || !lt || !availableUsd) return null
+  if (!cf || lt == null || !availableUsd) return null
 
-  const maxLeverage = 1 / (1 - lt)
-  const maxLoopApy = maxLeverage * supplyApy - (maxLeverage - 1) * borrowApy
+  const maxLeverage = safeTheoreticalMaxLeverage(lt)
+  // Single loop-APY source: the SAME formula read-model uses for the trending card, so a
+  // given leverage always maps to one APY across surfaces (no divergent inline math).
+  const maxLoopApy = calculateMaxLeverageApy({
+    supplyApy: supplyApy / 100,
+    borrowApy: borrowApy / 100,
+    safeMaxMultiplier: maxLeverage,
+  })
   const id = `${collateral}-${borrowable}`
 
   return {
@@ -201,7 +225,8 @@ function buildMultiplyMarketRow(
     protocolLogo: MULTIPLY_TOKEN_LOGOS[collateral],
     asset: borrowable,
     kind: "Loop",
-    apy: formatPct(maxLoopApy),
+    // calculateMaxLeverageApy returns a ratio; formatPct expects percent units.
+    apy: formatPct(maxLoopApy * 100),
     apyLabel: "APY derived from supply and borrow APRs",
     points: formatCompactUsd(availableUsd),
     rewardRows: [
