@@ -1,14 +1,6 @@
 import { getActiveCurrency, withCurrencySymbol } from "@/app/lib/currency/active-rate"
 import { formatHealthFactor } from "@/app/lib/home-sim"
 
-/**
- * Canonical sandbox network fee (USD) for non-swap actions. The synthetic ledger
- * charges no protocol fee, so a single flat network fee keeps the estimate, the
- * inline post-confirm receipt, and the permalink receipt in agreement instead of
- * drifting to a hash-derived amount. Swaps carry their own real quote fee.
- */
-export const SANDBOX_NETWORK_FEE_USD = 0.03
-
 export function formatActionInputAmount(value: number, maxDecimals = 6) {
   if (!Number.isFinite(value)) return "0"
   return String(Number(value.toFixed(maxDecimals)))
