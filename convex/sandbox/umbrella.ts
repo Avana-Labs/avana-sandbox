@@ -320,8 +320,15 @@ async function readUmbrellaMarketOverlay(ctx: QueryCtx | MutationCtx, marketId: 
  * Shared dev-controls guard. `simulateDeficit`, `simulateSlash`, and
  * `dev.advanceCooldown` all check this so production wallets can never trigger
  * time-warp / stress mutations. The env var is set only in `.env.local`.
+ *
+ * Production floor: even if `SANDBOX_DEV_CONTROLS` is somehow "true" in a deploy
+ * (a mis-set Convex env var), the guard FAILS CLOSED when the deployment runs as
+ * production — mirroring the app-side `isProductionBuild()` floor in
+ * app/lib/test-mode.ts. The opt-in flag can only ever unlock these mutations in a
+ * non-production (local dev) deployment.
  */
 export function assertSandboxDevControlsEnabled() {
+  if (process.env.NODE_ENV === "production") throw new Error("DEV_CONTROLS_DISABLED")
   if (process.env.SANDBOX_DEV_CONTROLS !== "true") throw new Error("DEV_CONTROLS_DISABLED")
 }
 
