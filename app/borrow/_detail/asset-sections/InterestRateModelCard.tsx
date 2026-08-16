@@ -91,6 +91,11 @@ export function InterestRateModelCard({ utilizationPct, borrowAprPct, protocolPa
 
   const helpText = t("Borrow APR rises as utilization increases and steepens past the optimal threshold.")
 
+  const curve = React.useMemo(
+    () => buildBorrowInterestRateCurve(currentUtilization, currentBorrowApr, irm),
+    [currentUtilization, currentBorrowApr, irm],
+  )
+
   const paramRows = [
     {
       id: "optimalUtilization",
@@ -108,16 +113,14 @@ export function InterestRateModelCard({ utilizationPct, borrowAprPct, protocolPa
       value: formatPct(irm.slopeAboveOptimalPct),
     },
     {
+      // Base rate is read off the anchored curve (its 0%-utilization value) so the
+      // displayed base rate is consistent with the plotted curve + "Current" marker,
+      // rather than the slug-hashed param that has no relation to the paid APR.
       id: "baseBorrowRate",
       label: "Base borrow rate",
-      value: formatPct(irm.baseBorrowRatePct),
+      value: formatPct(curve.baseApr),
     },
   ] as const
-
-  const curve = React.useMemo(
-    () => buildBorrowInterestRateCurve(currentUtilization, currentBorrowApr, irm),
-    [currentUtilization, currentBorrowApr, irm],
-  )
 
   const pathD = React.useMemo(
     () =>

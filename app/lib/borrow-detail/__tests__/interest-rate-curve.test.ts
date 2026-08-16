@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import {
+  borrowAprAtUtilization,
   buildBorrowInterestRateCurve,
   buildPercentAxisTicks,
   niceCeil,
@@ -35,6 +36,46 @@ describe("interest-rate-curve", () => {
     expect(atFull.apr).toBeCloseTo(64.5, 5)
     expect(curve.maxApr).toBeGreaterThanOrEqual(64.5)
     expect(curve.yTicks.at(-1)).toBe(curve.maxApr)
+  })
+
+  // C1: the curve must be anchored to the rate actually paid — the curve value AT the
+  // current utilization has to equal the displayed/paid APR, regardless of the (slug-hashed)
+  // base-rate param. Otherwise the "Current" marker points at a curve value that is NOT the
+  // headline APR (the marker-vs-headline mismatch this test guards against).
+  const irm = {
+    optimalUtilizationPct: 80,
+    slopeBelowOptimalPct: 4,
+    slopeAboveOptimalPct: 60,
+    baseBorrowRatePct: 0.5,
+  }
+
+  it("anchors the curve so curve(currentUtilization) === paid APR even when base param disagrees", () => {
+    // Unanchored, apr(50) would be 0.5 + 4·(50/80) = 3.0 — but the engine charges 8.0.
+    const paidApr = 8
+    const curve = buildBorrowInterestRateCurve(50, paidApr, irm)
+    const atCurrent = curve.points.find((point) => point.utilization === 50)!
+    expect(atCurrent.apr).toBeCloseTo(paidApr, 6)
+    expect(borrowAprAtUtilization(50, irm, { utilization: 50, apr: paidApr })).toBeCloseTo(paidApr, 6)
+    // The kinked shape is preserved (slopes intact) around the anchor.
+    expect(curve.points.find((p) => p.utilization === 100)!.apr).toBeGreaterThan(paidApr)
+  })
+
+  it("holds the anchor for a flat, utilization-independent paid APR at any utilization", () => {
+    for (const [util, paidApr] of [
+      [20, 6.2],
+      [64, 8],
+      [95, 12.5],
+    ] as const) {
+      const curve = buildBorrowInterestRateCurve(util, paidApr, irm)
+      expect(curve.points.find((p) => p.utilization === util)!.apr).toBeCloseTo(paidApr, 6)
+    }
+  })
+
+  it("exposes the anchored base APR (curve value at 0% util) for the displayed base-rate row", () => {
+    const paidApr = 8
+    const curve = buildBorrowInterestRateCurve(50, paidApr, irm)
+    expect(curve.baseApr).toBeCloseTo(curve.points.find((p) => p.utilization === 0)!.apr, 6)
+    expect(curve.baseApr).toBeGreaterThanOrEqual(0)
   })
 })
 
