@@ -41,7 +41,8 @@ import {
   mapConvexSwapTransactionsToActivityRows,
   mapSwapTransactionHistoryToActivityRows,
 } from "@/app/dashboard/swap-activity"
-import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
+import { buildPortfolioBorrowData, mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
+import { HealthRiskBanner, type HealthRiskProduct } from "@/app/dashboard/health-risk-banner"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
 import { useDashboardPage } from "@/app/dashboard/use-dashboard-page"
 import { ActionIcon } from "@/app/components/action-icon"
@@ -418,6 +419,36 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
   ])
   const portfolioValueUsd = portfolioBreakdown.netUsd
 
+  // Closest-to-liquidation position across products. Borrow uses its aggregate HF
+  // (the hero definition); multiply's creditLines.averageHealthFactor is already the
+  // worst active position. We surface whichever is lower so the banner deep-links to
+  // the action that actually reduces that position's risk.
+  const healthRisk = useMemo<{ product: HealthRiskProduct; hf: number } | null>(() => {
+    const candidates: Array<{ product: HealthRiskProduct; hf: number | null }> = []
+    try {
+      if (avana.borrow?.state?.accounts?.[walletId]) {
+        const borrow = buildPortfolioBorrowData(avana.borrow.state, walletId)
+        candidates.push({ product: "borrow", hf: borrow.creditLines.averageHealthFactor })
+      }
+    } catch {
+      /* borrow session not ready */
+    }
+    try {
+      if (avana.multiply?.state?.positions) {
+        const multiply = buildPortfolioMultiplyData(walletId, avana.multiply.state)
+        candidates.push({ product: "multiply", hf: multiply.creditLines.averageHealthFactor })
+      }
+    } catch {
+      /* multiply session not ready */
+    }
+    const finite = candidates.filter(
+      (candidate): candidate is { product: HealthRiskProduct; hf: number } =>
+        candidate.hf != null && Number.isFinite(candidate.hf),
+    )
+    if (finite.length === 0) return null
+    return finite.reduce((worst, candidate) => (candidate.hf < worst.hf ? candidate : worst))
+  }, [avana.borrow?.state, avana.multiply?.state, walletId])
+
   const portfolioFeed = useDashboardPortfolioFeed(walletId, portfolioValueUsd)
 
   const [now, setNow] = useState(0)
@@ -694,6 +725,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
   return (
     <>
       <div className={detailSectionStackClass}>
+        {healthRisk ? <HealthRiskBanner healthFactor={healthRisk.hf} product={healthRisk.product} /> : null}
         <div>
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
