@@ -299,6 +299,83 @@ describe("MultiplyActionPageClient", () => {
     })
   })
 
+  it("E2: dragging to the recommended max is a valid, non-blocked action", async () => {
+    renderWithProviders(
+      <AvanaSessionsProvider>
+        <MultiplyActionPageClient kind="multiply" initialMarketId="aave-gho" initialMultiplier="1.7" />
+      </AvanaSessionsProvider>,
+    )
+
+    const input = await screen.findByLabelText("Collateral amount")
+    fireEvent.change(input, { target: { value: "5" } })
+
+    // The recommended marker sits on a reachable step (1.7x), NOT rounded up to 1.8x.
+    await waitFor(() => expect(screen.getByText("Recommended up to 1.7x")).toBeInTheDocument())
+
+    // At the recommended max the action is allowed (Review is offered, not blocked).
+    await waitFor(() => expect(screen.getByRole("button", { name: "Review" })).toBeInTheDocument())
+    expect(screen.getByRole("button", { name: "Review" })).not.toBeDisabled()
+    expect(screen.queryByText(/health factor is below the market minimum/i)).not.toBeInTheDocument()
+  })
+
+  it("E2: the public max (above the recommended cap) is still blocked on min health factor", async () => {
+    renderWithProviders(
+      <AvanaSessionsProvider>
+        <MultiplyActionPageClient kind="multiply" initialMarketId="aave-gho" initialMultiplier="1.8" />
+      </AvanaSessionsProvider>,
+    )
+
+    const input = await screen.findByLabelText("Collateral amount")
+    fireEvent.change(input, { target: { value: "5" } })
+
+    // 1.8x → HF ≈ 1.46 < 1.5, so it must NOT offer Review.
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Review" })).not.toBeInTheDocument())
+  })
+
+  it("E6: setting leverage via the number input keeps slider, number and summary on one value", async () => {
+    renderWithProviders(
+      <AvanaSessionsProvider>
+        <MultiplyActionPageClient kind="multiply" initialMarketId="eth-usdt" initialMultiplier="2" />
+      </AvanaSessionsProvider>,
+    )
+
+    const numberInput = (await screen.findByLabelText("Custom Target leverage")) as HTMLInputElement
+    // A half-step value the slider grid rounds to 1.8x — the state must follow the grid
+    // so the number input, the slider and the projection do not desync.
+    fireEvent.change(numberInput, { target: { value: "1.75" } })
+
+    const slider = screen.getByRole("slider", { name: "Target leverage multiplier" }) as HTMLInputElement
+    await waitFor(() => expect(slider.value).toBe("1.8"))
+    expect(numberInput.value).toBe("1.8")
+  })
+
+  it("E4: the displayed Collateral APY matches the supply APY used in Net APY", async () => {
+    // Diverge the live supply APY from the seed collateralAsset.apy (the post-Convex-
+    // hydration case) so the test fails if the panel shows the stale collateral apy.
+    const state = buildMockMultiplySystemState(DEMO_WALLET_ID)
+    state.walletBalancesUsd[DEMO_WALLET_ID] = { "aave-gho": 12_500 }
+    const aave = state.markets["aave-gho"]!
+    state.markets["aave-gho"] = {
+      ...aave,
+      collateralAsset: { ...aave.collateralAsset, apy: 0.076 },
+      economics: { ...aave.economics, supplyApy: 0.0794 },
+    }
+    writeMultiplySessionState(DEMO_WALLET_ID, state)
+
+    renderWithProviders(
+      <AvanaSessionsProvider>
+        <MultiplyActionPageClient kind="multiply" initialMarketId="aave-gho" initialMultiplier="1.5" />
+      </AvanaSessionsProvider>,
+    )
+
+    const input = await screen.findByLabelText("Collateral amount")
+    fireEvent.change(input, { target: { value: "5" } })
+
+    // The Collateral APY row must read 7.94% (the value fed into Net APY), not 7.60%.
+    await waitFor(() => expect(screen.getByText(/AAVE · 7\.94%/)).toBeInTheDocument())
+    expect(screen.queryByText(/AAVE · 7\.60%/)).not.toBeInTheDocument()
+  })
+
   it("falls back to a usable market instead of dead-ending on an unknown id", async () => {
     renderWithProviders(
       <AvanaSessionsProvider>
