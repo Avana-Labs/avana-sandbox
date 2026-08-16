@@ -10,8 +10,10 @@ type HeroBalanceDisplayProps = {
   hidden?: boolean
   /** Small uppercase metric label shown above the value (e.g. "Total borrows"). */
   label?: string
-  /** Inline node rendered right next to the value (e.g. a show/hide toggle). */
+  /** Inline node rendered right next to the value (e.g. a show/hide toggle or an info tooltip). */
   valueSuffix?: ReactNode
+  /** Optional node rendered under the delta (e.g. an "Assets · Debt" breakdown). Masked when hidden. */
+  subtitle?: ReactNode
   variant?: "default" | "strong" | "quiet"
   className?: string
 }
@@ -68,6 +70,7 @@ export function HeroBalanceDisplay({
   hidden = false,
   label,
   valueSuffix,
+  subtitle,
   variant = "default",
   className,
 }: HeroBalanceDisplayProps) {
@@ -98,6 +101,7 @@ export function HeroBalanceDisplay({
       ) : (
         <HeroDeltaText value={delta} tone={deltaTone} meta={meta} variant={variant} />
       )}
+      {subtitle ? <div className="text-[13px] text-muted-foreground">{hidden ? "••••••••" : subtitle}</div> : null}
     </div>
   )
 }

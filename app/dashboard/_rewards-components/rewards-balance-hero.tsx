@@ -1,12 +1,13 @@
 "use client"
 
-import { useMemo, type ReactNode } from "react"
+import { type ReactNode } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { CircleDollarSign, Info } from "@/app/components/icons"
 import { Button } from "@/components/ui/button"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
-import { formatChartValue, type ChartFeed, type ChartPoint, type ChartRangeData } from "@/app/components/charts"
+import { formatChartValue, type ChartFeed } from "@/app/components/charts"
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { DashboardQuickActions, type DashboardQuickActionsTab } from "@/app/dashboard/dashboard-quick-actions"
@@ -19,82 +20,6 @@ import { DashboardQuickActions, type DashboardQuickActionsTab } from "@/app/dash
 function formatAva(amount: number): string {
   const safe = Number.isFinite(amount) ? amount : 0
   return `${safe.toLocaleString(undefined, { maximumFractionDigits: 0 })} AVA`
-}
-
-const PORTFOLIO_TIME_LABELS = ["6:00 AM", "9:00 AM", "12:00 PM", "3:00 PM", "6:00 PM", "9:00 PM", "Now"]
-
-function seededRandom(seed: number): () => number {
-  let state = seed % 2147483647
-  if (state <= 0) state += 2147483646
-  return () => {
-    state = (state * 16807) % 2147483647
-    return (state - 1) / 2147483646
-  }
-}
-
-/**
- * Deterministic portfolio-value series that ends at `endUsd` so the chart and
- * headline share one live portfolio source of truth.
- */
-export function buildPortfolioSeries(endUsd: number): ChartPoint[] {
-  const COUNT = 64
-  const end = Math.max(0, endUsd)
-  const start = end > 0 ? end * 1.0395 : 0
-  const random = seededRandom(20_260_716 + Math.round(end * 100))
-  const values: number[] = []
-  let value = start
-  let velocity = 0
-  for (let index = 0; index < COUNT; index += 1) {
-    const progress = index / (COUNT - 1)
-    const target = start + (end - start) * progress
-    const meanReversion = (target - value) * 0.12
-    velocity = velocity * 0.78 + meanReversion + (random() - 0.5) * Math.max(start, 1) * 0.006
-    value += velocity
-    values.push(Math.round(value * 100) / 100)
-  }
-  values[0] = Math.round(start * 100) / 100
-  values[COUNT - 1] = Math.round(end * 100) / 100
-  const tickIndexes = PORTFOLIO_TIME_LABELS.map((_, index) =>
-    Math.round((index / (PORTFOLIO_TIME_LABELS.length - 1)) * (COUNT - 1)),
-  )
-  return values.map((point, index) => {
-    const labelIndex = tickIndexes.findIndex((tickIndex, tickPosition) => {
-      const nextTick = tickIndexes[tickPosition + 1] ?? COUNT
-      return index >= tickIndex && index < nextTick
-    })
-    return {
-      time: index,
-      value: point,
-      label: PORTFOLIO_TIME_LABELS[labelIndex] ?? PORTFOLIO_TIME_LABELS[PORTFOLIO_TIME_LABELS.length - 1],
-    }
-  })
-}
-
-function makePortfolioRangeData(points: ChartPoint[]): ChartRangeData {
-  return {
-    "1D": points,
-    "1W": points,
-    "1M": points,
-    "3M": points,
-    "1Y": points,
-    All: points,
-  }
-}
-
-function buildPortfolioFeed(portfolioValueUsd: number): ChartFeed {
-  const points = buildPortfolioSeries(portfolioValueUsd)
-  const first = points[0]?.value ?? portfolioValueUsd
-  const last = points[points.length - 1]?.value ?? portfolioValueUsd
-  const changeAbs = last - first
-  const pct = first ? (changeAbs / first) * 100 : 0
-  return {
-    headlineValue: formatChartValue("usd", portfolioValueUsd),
-    headlineDelta: `${formatChartValue("usd", Math.abs(changeAbs))} (${Math.abs(pct).toFixed(2)}%)`,
-    deltaTone: pct >= 0 ? "positive" : "negative",
-    rangeData: makePortfolioRangeData(points.length ? points : [{ time: 0, value: portfolioValueUsd, label: "Now" }]),
-    // Same axis formatting as lend/market heroes; resting headline stays exact USD above.
-    valueFormat: "usdCompact",
-  }
 }
 
 function AvanaCoin() {
@@ -201,25 +126,44 @@ export function PortfolioRewardsCards({
 
 export function RewardsBalanceHero({
   claimHref,
-  portfolioValueUsd = 0,
+  assetsUsd,
+  debtUsd,
   earnedAmount = 0,
   claimableAmount = 0,
   activeTab,
-  feed: feedOverride,
+  feed,
 }: {
   claimHref?: string
-  /** Live portfolio net value (wallet + positions). Required for a trustworthy hero. */
-  portfolioValueUsd?: number
+  /** Gross assets marked to market (wallet + all position assets + borrowed cash held). */
+  assetsUsd?: number
+  /** Outstanding liabilities (borrow + Multiply debt). */
+  debtUsd?: number
   /** Total AVA earned across completed quests. */
   earnedAmount?: number
   /** AVA currently claimable. */
   claimableAmount?: number
   activeTab?: DashboardQuickActionsTab
-  /** Optional Convex-backed chart feed; when omitted, a synthetic series ending at portfolioValueUsd is used. */
-  feed?: ChartFeed
+  /** Convex-backed live portfolio chart feed. */
+  feed: ChartFeed
 }) {
   const { showDollarAmounts } = useAmountDisplayPreferences()
-  const feed = useMemo(() => feedOverride ?? buildPortfolioFeed(portfolioValueUsd), [feedOverride, portfolioValueUsd])
+  const { t } = useTranslation()
+
+  // (i) explainer next to the headline — what the number means and why borrowing doesn't move it.
+  const explainer = t(
+    "Net Portfolio Value = Assets − Debt. Assets: wallet balances, lending supplied, borrow collateral, any borrowed funds you still hold, your Multiply position value, and Umbrella staked + rewards. Debt: borrow loans and Multiply borrowing. Borrowing doesn't change this number — the cash you receive is an asset that offsets the new debt.",
+  )
+  const info = <ActionMetricHelp text={explainer} topic="Portfolio Value" />
+
+  // "$X Assets · $Y Debt" breakdown under the headline (masked with the privacy toggle).
+  const breakdown =
+    assetsUsd != null && debtUsd != null ? (
+      <span>
+        <span className="tabular-nums text-foreground">{formatChartValue("usd", assetsUsd)}</span> {t("Assets")}
+        {" · "}
+        <span className="tabular-nums text-foreground">{formatChartValue("usd", debtUsd)}</span> {t("Debt")}
+      </span>
+    ) : undefined
 
   return (
     <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
@@ -235,6 +179,8 @@ export function RewardsBalanceHero({
           hideValue={!showDollarAmounts}
           balanceVariant="quiet"
           balanceClassName="absolute left-2.5 top-0 z-10 -translate-y-0.5"
+          balanceSuffix={info}
+          balanceSubtitle={breakdown}
         />
       </section>
 

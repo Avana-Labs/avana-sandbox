@@ -22,7 +22,27 @@ export function UmbrellaHero() {
   const readyIds = umbrella.marketOrder.filter((id) => umbrella.positions[id].cooldownStatus === "ready")
   const readyUsd = readyIds.reduce((sum, id) => sum + umbrella.positions[id].cooldownValueUsd, 0)
   const readySymbols = readyIds.map((id) => umbrella.markets[id].symbol).join(", ")
+  const expiredIds = umbrella.marketOrder.filter((id) => umbrella.positions[id].cooldownStatus === "expired")
+  const expiredUsd = expiredIds.reduce((sum, id) => sum + umbrella.positions[id].cooldownValueUsd, 0)
+  const expiredSymbols = expiredIds.map((id) => umbrella.markets[id].symbol).join(", ")
   const cooldownShare = totalStakedUsd > 0 ? (cooldownUsd / totalStakedUsd) * 100 : 0
+  const withdrawalReadyTile = (() => {
+    if (expiredIds.length > 0) {
+      const combinedValue = readyUsd + expiredUsd
+      return {
+        label: "Withdrawal ready",
+        value: formatCompactUsd(combinedValue),
+        change: `${expiredSymbols} expired — restart cooldown`,
+        tone: "danger" as const,
+      }
+    }
+    return {
+      label: "Withdrawal ready",
+      value: formatCompactUsd(readyUsd),
+      change: readySymbols || "none",
+      tone: readyUsd > 0 ? ("success" as const) : ("muted" as const),
+    }
+  })()
   const userUmbrellaSnapshot = [
     {
       label: "Your Umbrella stake",
@@ -37,12 +57,7 @@ export function UmbrellaHero() {
       change: `${formatPct(cooldownShare)}%`,
       tone: "warning" as const,
     },
-    {
-      label: "Withdrawal ready",
-      value: formatCompactUsd(readyUsd),
-      change: readySymbols || "none",
-      tone: "muted" as const,
-    },
+    withdrawalReadyTile,
   ]
 
   return (
@@ -69,6 +84,8 @@ export function UmbrellaHero() {
                       className={cn(
                         "text-[13px] font-semibold tabular-nums lg:text-[14px]",
                         item.tone === "warning" && "text-warning",
+                        item.tone === "danger" && "text-danger",
+                        item.tone === "success" && "text-success",
                         item.tone === "muted" && "text-muted-foreground",
                       )}
                     >

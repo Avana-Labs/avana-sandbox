@@ -7,6 +7,7 @@ import { TokenIcon } from "@/app/components/token-icon"
 import { Button } from "@/components/ui/button"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import type { UmbrellaMarketId } from "@/app/lib/umbrella-system/use-umbrella-session"
 import {
   TABLE_HEADER_CELL,
   TABLE_ROW_HOVER_BG,
@@ -14,30 +15,85 @@ import {
   TABLE_ROW_HOVER_RIGHT,
 } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
-import { formatPct, formatUnits, formatUsd } from "../format"
+import { formatCompactUsd, formatPct, formatUsd } from "../format"
 
-export function UmbrellaPositions() {
+type PositionRow = {
+  id: UmbrellaMarketId
+  asset: string
+  symbol: string
+  coverage: string
+  activeStakeUsd: number
+  coolingUsd: number
+  activeStakeLabel: string
+  coolingLabel: string
+  apyTotal: string
+  apyBase: string
+  apyReward: string
+  pendingRewards: number
+  pendingRewardsLabel: string
+  claimedRewardsLabel: string
+  status: string
+  cooldownStatus: "idle" | "cooling" | "ready" | "expired"
+  hasClaim: boolean
+  hasUnstake: boolean
+  coverageRatioPct: number
+  coverageRatioLabel: string
+  targetLiquidityLabel: string
+}
+
+function statusLabel(status: PositionRow["cooldownStatus"]) {
+  switch (status) {
+    case "ready":
+      return "Withdrawal ready"
+    case "cooling":
+      return "In cooldown"
+    case "expired":
+      return "Cooldown expired"
+    default:
+      return "Earning"
+  }
+}
+
+export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (marketId: UmbrellaMarketId) => void }) {
   const umbrella = useUmbrellaSessionContext()
-  const umbrellaPositions = umbrella.marketOrder.map((id) => {
+  const rows: PositionRow[] = umbrella.marketOrder.map((id) => {
     const market = umbrella.markets[id]
     const position = umbrella.positions[id]
+    const activeStakeUsd = Math.max(position.valueUsd - position.cooldownValueUsd, 0)
+    const coverageRatioPct = market.targetCoverageUsd > 0 ? (market.totalStakedUsd / market.targetCoverageUsd) * 100 : 0
     return {
       id,
       asset: market.asset,
       symbol: market.symbol,
-      staked: formatUsd(position.valueUsd),
-      apy: `${formatPct(market.apy)}%`,
       coverage: market.coverage,
-      pendingRewards: formatUsd(position.pendingRewardsUsd),
-      cooldown: formatUnits(position.cooldownAmount),
-      status:
-        position.cooldownStatus === "ready"
-          ? "Withdrawal ready"
-          : position.cooldownStatus === "cooling"
-            ? "In cooldown"
-            : "Earning",
+      activeStakeUsd,
+      coolingUsd: position.cooldownValueUsd,
+      activeStakeLabel: formatUsd(activeStakeUsd),
+      coolingLabel: formatUsd(position.cooldownValueUsd),
+      apyTotal: `${formatPct(market.apy)}%`,
+      apyBase: `${formatPct(market.baseApy)}%`,
+      apyReward: `${formatPct(market.rewardApy)}%`,
+      pendingRewards: position.pendingRewardsUsd,
+      pendingRewardsLabel: formatUsd(position.pendingRewardsUsd),
+      claimedRewardsLabel: formatUsd(position.claimedRewardsUsd),
+      status: statusLabel(position.cooldownStatus),
+      cooldownStatus: position.cooldownStatus,
+      hasClaim: position.pendingRewardsUsd > 0,
+      hasUnstake: position.cooldownStatus === "ready",
+      coverageRatioPct,
+      coverageRatioLabel: `${formatPct(coverageRatioPct)}% of target`,
+      targetLiquidityLabel: `${formatCompactUsd(market.targetCoverageUsd)} target`,
     }
   })
+
+  const idleRow = (row: PositionRow) => row.activeStakeUsd === 0 && row.coolingUsd === 0 && row.pendingRewards === 0
+  const nonIdle = rows.filter((row) => !idleRow(row))
+  const showEmptyState = nonIdle.length === 0
+  const visible = showEmptyState ? [] : nonIdle
+
+  const handleRowClick = (id: UmbrellaMarketId) => {
+    onSelectMarket?.(id)
+  }
 
   return (
     <section>
@@ -49,19 +105,21 @@ export function UmbrellaPositions() {
 
       <div className="hidden md:block">
         <DesktopTableSurface className="!rounded-none">
-          <table className="w-full min-w-[720px] table-fixed border-separate border-spacing-0 text-[13px]">
+          <table className="w-full min-w-[860px] table-fixed border-separate border-spacing-0 text-[13px]">
             <colgroup>
-              <col className="w-[24%]" />
-              <col className="w-[14%]" />
-              <col className="w-[9%]" />
-              <col className="w-[12%]" />
               <col className="w-[22%]" />
-              <col className="w-[19%]" />
+              <col className="w-[13%]" />
+              <col className="w-[12%]" />
+              <col className="w-[13%]" />
+              <col className="w-[13%]" />
+              <col className="w-[13%]" />
+              <col className="w-[14%]" />
             </colgroup>
             <thead>
               <tr className="text-left">
                 <th className={cn(TABLE_HEADER_CELL, "pl-5")}>Asset</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>Your stake</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>Active stake</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>Cooling</th>
                 <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>APY</th>
                 <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>Rewards</th>
                 <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>Status</th>
@@ -69,89 +127,215 @@ export function UmbrellaPositions() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border dark:divide-white/6">
-              {umbrellaPositions.map((position) => (
-                <tr key={position.id} className="group transition-colors">
-                  <td className={cn("py-3.5 pl-5", TABLE_ROW_HOVER_LEFT)}>
-                    <div className="flex items-center gap-2.5">
-                      <TokenIcon symbol={position.symbol} size="table" />
-                      <div className="flex min-w-0 flex-col">
-                        <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
-                          {position.asset}
-                        </span>
-                        <span className="mt-0.5 text-[13px] text-muted-foreground">{position.coverage}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
-                    <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
-                      {position.staked}
-                    </span>
-                  </td>
-                  <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
-                    <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
-                      {position.apy}
-                    </span>
-                  </td>
-                  <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
-                    <span className="text-[15px] font-normal tracking-[-0.03em] text-success">
-                      {position.pendingRewards}
-                    </span>
-                  </td>
-                  <td className={cn("py-3.5 px-4 text-center", TABLE_ROW_HOVER_BG)}>
-                    <span className="inline-block max-w-full whitespace-normal text-[15px] font-normal leading-5 tracking-[-0.03em] text-foreground dark:text-white">
-                      {position.status}
-                    </span>
-                  </td>
-                  <td className={cn("py-3.5 pr-5", TABLE_ROW_HOVER_RIGHT)}>
-                    <HoverActionGroup className="justify-end">
+              {showEmptyState ? (
+                <tr>
+                  <td colSpan={7} className="py-8 pl-5 pr-5 text-center">
+                    <div className="flex flex-wrap items-center justify-center gap-3">
+                      <span className="text-[14px] text-muted-foreground">You have no Umbrella positions yet.</span>
                       <Button asChild size="table" variant="table-primary" className="w-auto">
-                        <Link
-                          href={actionPagePath("umbrella", "unstake", { market: position.id, return: "/umbrella" })}
-                        >
-                          <ActionIcon label="Unstake" />
-                          Unstake
+                        <Link href={actionPagePath("umbrella", "stake", { return: "/umbrella" })}>
+                          <ActionIcon label="Stake" />
+                          Stake
                         </Link>
                       </Button>
-                    </HoverActionGroup>
+                    </div>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                visible.map((row) => (
+                  <tr
+                    key={row.id}
+                    className="group cursor-pointer transition-colors"
+                    onClick={() => handleRowClick(row.id)}
+                  >
+                    <td className={cn("py-3.5 pl-5", TABLE_ROW_HOVER_LEFT)}>
+                      <div className="flex items-center gap-2.5">
+                        <TokenIcon symbol={row.symbol} size="table" />
+                        <div className="flex min-w-0 flex-col">
+                          <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                            {row.asset}
+                          </span>
+                          <span className="mt-0.5 truncate text-[13px] text-muted-foreground">
+                            {row.coverage} · {row.coverageRatioLabel}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
+                      <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+                        {row.activeStakeLabel}
+                      </span>
+                    </td>
+                    <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
+                      <span
+                        className={cn(
+                          "text-[15px] font-normal tracking-[-0.03em]",
+                          row.coolingUsd > 0 ? "text-warning" : "text-muted-foreground",
+                        )}
+                      >
+                        {row.coolingLabel}
+                      </span>
+                    </td>
+                    <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
+                      <div className="flex flex-col items-end">
+                        <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+                          {row.apyTotal} total
+                        </span>
+                        <span className="mt-0.5 text-[12px] text-muted-foreground" title={row.targetLiquidityLabel}>
+                          base {row.apyBase} + reward {row.apyReward}
+                        </span>
+                      </div>
+                    </td>
+                    <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
+                      <div className="flex flex-col items-end">
+                        <span className="text-[15px] font-normal tracking-[-0.03em] text-success">
+                          {row.pendingRewardsLabel}
+                        </span>
+                        <span className="mt-0.5 text-[12px] text-muted-foreground">
+                          {row.claimedRewardsLabel} claimed
+                        </span>
+                      </div>
+                    </td>
+                    <td className={cn("py-3.5 px-4 text-center", TABLE_ROW_HOVER_BG)}>
+                      <span
+                        className={cn(
+                          "inline-block max-w-full whitespace-normal text-[15px] font-normal leading-5 tracking-[-0.03em]",
+                          row.cooldownStatus === "expired" ? "text-danger" : "text-foreground dark:text-white",
+                        )}
+                      >
+                        {row.status}
+                      </span>
+                    </td>
+                    <td
+                      className={cn("py-3.5 pr-5", TABLE_ROW_HOVER_RIGHT)}
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      <HoverActionGroup className="justify-end">
+                        {row.hasClaim ? (
+                          <Button asChild size="table" variant="table-secondary" className="w-auto">
+                            <Link
+                              href={actionPagePath("umbrella", "claim", {
+                                market: row.id,
+                                return: "/umbrella",
+                              })}
+                            >
+                              <ActionIcon label="Claim" />
+                              Claim
+                            </Link>
+                          </Button>
+                        ) : null}
+                        {row.hasUnstake ? (
+                          <Button asChild size="table" variant="table-primary" className="w-auto">
+                            <Link
+                              href={actionPagePath("umbrella", "unstake", {
+                                market: row.id,
+                                return: "/umbrella",
+                              })}
+                            >
+                              <ActionIcon label="Unstake" />
+                              Unstake
+                            </Link>
+                          </Button>
+                        ) : null}
+                      </HoverActionGroup>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </DesktopTableSurface>
       </div>
 
       <div className="space-y-2 md:hidden">
-        {umbrellaPositions.map((position) => (
-          <div key={position.id} className="rounded-radius-md bg-card px-3 py-3">
-            <div className="flex items-center gap-3">
-              <TokenIcon symbol={position.symbol} size="table" />
-              <div>
-                <div className="font-semibold text-foreground">{position.asset}</div>
-                <div className="text-[13px] text-muted-foreground">{position.coverage}</div>
-              </div>
-            </div>
-
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <div>
-                <div className="text-[13px] text-muted-foreground">Staked</div>
-                <div className="font-medium">{position.staked}</div>
-              </div>
-              <div>
-                <div className="text-[13px] text-muted-foreground">APY</div>
-                <div className="font-medium">{position.apy}</div>
-              </div>
-              <div>
-                <div className="text-[13px] text-muted-foreground">Status</div>
-                <div className="font-medium">{position.status}</div>
-              </div>
-              <div>
-                <div className="text-[13px] text-muted-foreground">Rewards</div>
-                <div className="font-medium text-success">{position.pendingRewards}</div>
-              </div>
-            </div>
+        {showEmptyState ? (
+          <div className="flex flex-col items-center gap-3 rounded-radius-md bg-card px-3 py-6 text-center">
+            <span className="text-[14px] text-muted-foreground">You have no Umbrella positions yet.</span>
+            <Button asChild size="sm" variant="brand" className="h-10 w-full gap-2">
+              <Link href={actionPagePath("umbrella", "stake", { return: "/umbrella" })}>
+                <ActionIcon label="Stake" />
+                Stake
+              </Link>
+            </Button>
           </div>
-        ))}
+        ) : (
+          visible.map((row) => (
+            <div key={row.id} className="rounded-radius-md bg-card px-3 py-3" onClick={() => handleRowClick(row.id)}>
+              <div className="flex items-center gap-3">
+                <TokenIcon symbol={row.symbol} size="table" />
+                <div>
+                  <div className="font-semibold text-foreground">{row.asset}</div>
+                  <div className="text-[13px] text-muted-foreground">
+                    {row.coverage} · {row.coverageRatioLabel}
+                  </div>
+                  <div className="text-[12px] text-muted-foreground">{row.targetLiquidityLabel}</div>
+                </div>
+              </div>
+
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <div>
+                  <div className="text-[13px] text-muted-foreground">Active stake</div>
+                  <div className="font-medium">{row.activeStakeLabel}</div>
+                </div>
+                <div>
+                  <div className="text-[13px] text-muted-foreground">Cooling</div>
+                  <div className={cn("font-medium", row.coolingUsd > 0 ? "text-warning" : "text-muted-foreground")}>
+                    {row.coolingLabel}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[13px] text-muted-foreground">APY</div>
+                  <div className="font-medium">{row.apyTotal}</div>
+                  <div className="text-[12px] text-muted-foreground">
+                    base {row.apyBase} + reward {row.apyReward}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[13px] text-muted-foreground">Status</div>
+                  <div className={cn("font-medium", row.cooldownStatus === "expired" && "text-danger")}>
+                    {row.status}
+                  </div>
+                </div>
+                <div className="col-span-2">
+                  <div className="text-[13px] text-muted-foreground">Rewards</div>
+                  <div className="font-medium text-success">{row.pendingRewardsLabel} pending</div>
+                  <div className="text-[12px] text-muted-foreground">{row.claimedRewardsLabel} claimed</div>
+                </div>
+              </div>
+
+              {(row.hasClaim || row.hasUnstake) && (
+                <div className="mt-3 flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()}>
+                  {row.hasClaim ? (
+                    <Button asChild size="sm" variant="brand-secondary" className="h-9 flex-1 gap-2">
+                      <Link
+                        href={actionPagePath("umbrella", "claim", {
+                          market: row.id,
+                          return: "/umbrella",
+                        })}
+                      >
+                        <ActionIcon label="Claim" />
+                        Claim
+                      </Link>
+                    </Button>
+                  ) : null}
+                  {row.hasUnstake ? (
+                    <Button asChild size="sm" variant="brand" className="h-9 flex-1 gap-2">
+                      <Link
+                        href={actionPagePath("umbrella", "unstake", {
+                          market: row.id,
+                          return: "/umbrella",
+                        })}
+                      >
+                        <ActionIcon label="Unstake" />
+                        Unstake
+                      </Link>
+                    </Button>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          ))
+        )}
       </div>
     </section>
   )

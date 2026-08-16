@@ -1,10 +1,11 @@
 "use client"
 
-import Link from "next/link"
+import { useSearchParams } from "next/navigation"
+import { useState } from "react"
 import { ActionIcon } from "@/app/components/action-icon"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import { detailSectionStackClass, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
-import { actionPagePath } from "@/app/lib/action-system/contracts"
+import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { UmbrellaMarketId } from "@/app/lib/umbrella-system/use-umbrella-session"
 import { UmbrellaActivity } from "./_detail/market-sections/UmbrellaActivity"
 import { UmbrellaCooldown } from "./_detail/market-sections/UmbrellaCooldown"
@@ -12,10 +13,49 @@ import { UmbrellaHero } from "./_detail/market-sections/UmbrellaHero"
 import { UmbrellaLearn } from "./_detail/market-sections/UmbrellaLearn"
 import { UmbrellaPositions } from "./_detail/market-sections/UmbrellaPositions"
 import { UmbrellaStress } from "./_detail/market-sections/UmbrellaStress"
+import { UmbrellaDevControls } from "./_detail/UmbrellaDevControls"
+import { UmbrellaMobileSidebarSheet, type UmbrellaMobileSheetTrigger } from "./_detail/UmbrellaMobileSidebarSheet"
 import { UmbrellaSidebar } from "./_detail/sidebars/UmbrellaSidebar"
 
+const VALID_MARKETS: readonly UmbrellaMarketId[] = ["gho", "usdc", "usdt", "weth"]
+
+function isUmbrellaMarketId(value: string | null): value is UmbrellaMarketId {
+  return value != null && (VALID_MARKETS as readonly string[]).includes(value)
+}
+
 export default function UmbrellaPage() {
-  const moduleId: UmbrellaMarketId = "gho"
+  const searchParams = useSearchParams()
+  const umbrella = useUmbrellaSessionContext()
+  const marketParam = searchParams.get("market")
+  // Fallback: if the URL didn't pick a market, choose the one this wallet actually holds
+  // most of. Empty state → "usdc". Lazy state initializer runs once on mount so the
+  // seed doesn't fight later user selections when positions refresh.
+  const [selectedMarket, setSelectedMarket] = useState<UmbrellaMarketId>(() => {
+    if (isUmbrellaMarketId(marketParam)) return marketParam
+    const withValue = umbrella.marketOrder
+      .map((id) => ({ id, value: umbrella.positions[id]?.valueUsd ?? 0 }))
+      .sort((a, b) => b.value - a.value)
+    if (withValue.length > 0 && withValue[0].value > 0) return withValue[0].id
+    return "usdc"
+  })
+  const [mobileSheetOpen, setMobileSheetOpen] = useState(false)
+  const [mobileSheetInitialTab, setMobileSheetInitialTab] = useState<UmbrellaMobileSheetTrigger>("stake")
+  const position = umbrella.positions[selectedMarket]
+  // "More" button jumps straight to whichever tab is most useful given wallet state:
+  // ready-to-withdraw > cooling > has-rewards > cooldown-entry.
+  const moreDefaultTab: UmbrellaMobileSheetTrigger =
+    position?.cooldownStatus === "ready"
+      ? "unstake"
+      : position?.cooldownStatus === "cooling"
+        ? "cooldown"
+        : (position?.pendingRewardsUsd ?? 0) > 0
+          ? "claim"
+          : "cooldown"
+
+  const openSheet = (tab: UmbrellaMobileSheetTrigger) => {
+    setMobileSheetInitialTab(tab)
+    setMobileSheetOpen(true)
+  }
 
   return (
     <div className="bg-background">
@@ -26,11 +66,11 @@ export default function UmbrellaPage() {
 
             <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
               <div className="min-w-0">
-                <UmbrellaPositions />
+                <UmbrellaPositions onSelectMarket={setSelectedMarket} />
               </div>
 
               <aside className="hidden space-y-8 lg:block lg:self-start">
-                <UmbrellaSidebar moduleId={moduleId} />
+                <UmbrellaSidebar moduleId={selectedMarket} onMarketChange={setSelectedMarket} />
               </aside>
             </div>
 
@@ -41,23 +81,36 @@ export default function UmbrellaPage() {
           </div>
 
           <MobileDetailActionBar className="grid grid-cols-2 gap-3">
-            <Link
-              href={actionPagePath("umbrella", "unstake", { market: moduleId, return: "/umbrella" })}
+            <button
+              type="button"
+              onClick={() => openSheet(moreDefaultTab)}
+              aria-label="More umbrella actions"
               className={secondaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
             >
-              <ActionIcon label="Unstake" />
-              Unstake
-            </Link>
-            <Link
-              href={actionPagePath("umbrella", "stake", { market: moduleId, return: "/umbrella" })}
+              <ActionIcon label="More" />
+              More
+            </button>
+            <button
+              type="button"
+              onClick={() => openSheet("stake")}
+              aria-label="Stake in umbrella"
               className={primaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
             >
               <ActionIcon label="Stake" />
               Stake
-            </Link>
+            </button>
           </MobileDetailActionBar>
+
+          <UmbrellaMobileSidebarSheet
+            open={mobileSheetOpen}
+            onOpenChange={setMobileSheetOpen}
+            moduleId={selectedMarket}
+            onMarketChange={setSelectedMarket}
+            initialTab={mobileSheetInitialTab}
+          />
         </div>
       </main>
+      <UmbrellaDevControls />
     </div>
   )
 }

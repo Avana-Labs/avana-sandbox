@@ -467,3 +467,12 @@ export const getCounts = action({
     return ctx.runQuery(internal.seed.getCounts, {})
   },
 })
+
+/** Secret-gated: clear stale portfolio-history snapshots (batched; loop until done=true). */
+export const clearPortfolioSnapshots = action({
+  args: { seedSecret: v.string(), limit: v.optional(v.number()) },
+  handler: async (ctx, { seedSecret, limit }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    return ctx.runMutation(internal.seed.clearPortfolioSnapshots, { limit })
+  },
+})
