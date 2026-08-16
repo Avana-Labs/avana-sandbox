@@ -1,15 +1,23 @@
+import { formatCompactUsd as formatCompactUsdCanonical, formatUsdExact } from "@/app/lib/borrow-sim"
+
+// Umbrella money display MUST go through the same currency-aware formatters as
+// every other Avana surface. Previously these hardcoded "$" and ignored the
+// header currency switcher, so picking EUR left the whole Umbrella block in USD
+// while the rest of the page converted — mixed €/$ on one screen.
+
+/** Currency-aware exact USD (honours the active currency + its rate/symbol). */
 export function formatUsd(value: number) {
-  return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  return formatUsdExact(value)
 }
 
+/** Currency-aware compact USD (K/M/B), shared with borrow/lend/multiply. */
 export function formatCompactUsd(value: number) {
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(2)}M`
-  if (value >= 1_000) return `$${(value / 1_000).toFixed(value >= 10_000 ? 1 : 2)}K`
-  return formatUsd(value)
+  return formatCompactUsdCanonical(value)
 }
 
+/** Percent body only (callers append "%"); fixed 2dp to match the asset-APY convention. */
 export function formatPct(value: number) {
-  return value.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })
+  return Number.isFinite(value) ? value.toFixed(2) : "0.00"
 }
 
 export function formatUnits(value: number) {
