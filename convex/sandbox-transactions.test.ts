@@ -132,6 +132,58 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
     expect(await asUser.query(api.sandbox.transactions.getActivity, { wallet: WALLET })).toHaveLength(0)
   })
 
+  test("lend deposit succeeds when the positions row lags the product-balance ledger", async () => {
+    const t = convexTest(schema, modules)
+    // Desync: the product-balance ledger has a live $50 USDC deposit, but the positions row for
+    // the same market is stale/closed at $0. Before the fix this made the next deposit fail with
+    // INVALID_TRANSITION because the transition check read the stale positions row (before=0).
+    const w = WALLET.toLowerCase()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("positions", {
+        wallet: w,
+        product: "lend",
+        marketSlug: "usdc",
+        status: "closed",
+        suppliedUsd6: "0",
+        earnedUsd6: "0",
+        openedAt: 1,
+        lastUpdatedAt: 1,
+        revision: 0,
+      })
+      await ctx.db.insert("walletLendBalances", {
+        wallet: w,
+        marketId: "usdc",
+        assetId: "usdc",
+        symbol: "USDC",
+        amount: 50,
+        valueUsd: 50,
+        state: "deposited",
+        updatedAt: 1,
+      })
+    })
+    const asUser = t.withIdentity({ subject: WALLET })
+    const res = await asUser.mutation(api.sandbox.transactions.recordTransaction, {
+      wallet: WALLET,
+      intentId: "lend-desync",
+      product: "lend" as const,
+      kind: "deposit",
+      marketSlug: "usdc",
+      assetId: "usdc",
+      requestedAmountUsd6: "10000000",
+      executedAmountUsd6: "10000000",
+      amountUsd: 10,
+      simulated: true,
+      expectedRevision: 0,
+      position: { status: "open" as const, marketSlug: "usdc", suppliedUsd6: "60000000", earnedUsd6: "0" },
+    })
+    expect(res.receipt.status).toBe("success")
+    // The write re-syncs both sources to the new $60 balance.
+    const positions = await asUser.query(api.sandbox.transactions.getPositions, { wallet: WALLET })
+    const lend = positions.find((p) => p.product === "lend")
+    expect(lend?.suppliedUsd6).toBe("60000000")
+    expect(lend?.status).toBe("open")
+  })
+
   test("idempotent on intentId — a replay returns the existing row and does not double-apply", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })

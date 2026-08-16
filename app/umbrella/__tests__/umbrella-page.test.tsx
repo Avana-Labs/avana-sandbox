@@ -19,40 +19,45 @@ afterEach(() => {
 })
 
 describe("Umbrella page", () => {
-  it("renders each seeded market with its stake and APY", () => {
+  it("renders each seeded market with its APY breakdown", () => {
     renderUmbrellaPage()
 
     expect(screen.getByText("Your Umbrella stake")).toBeInTheDocument()
     expect(screen.getAllByText("$55.00M market").length).toBeGreaterThan(0)
 
+    // Asset headings in the positions table
     expect(screen.getAllByText("Stake GHO").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("$9,500.00").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("6.4%").length).toBeGreaterThan(0)
-
     expect(screen.getAllByText("Stake USDC").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("$12,000.00").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("4.84%").length).toBeGreaterThan(0)
-
     expect(screen.getAllByText("Stake USDT").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("$11,000.00").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("4.19%").length).toBeGreaterThan(0)
-
     expect(screen.getAllByText("Stake WETH").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("$7,000.00").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("5.05%").length).toBeGreaterThan(0)
+
+    // APY column now renders as "<total>% total" alongside the base + reward split.
+    expect(screen.getAllByText("6.4% total").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("4.84% total").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("4.19% total").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("5.05% total").length).toBeGreaterThan(0)
   })
 
-  it("routes each row's Unstake action to /actions/umbrella/unstake with the market slug", () => {
+  it("shows status labels including cooldown states", () => {
+    renderUmbrellaPage()
+
+    expect(screen.getAllByText("Earning").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("In cooldown").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("Withdrawal ready").length).toBeGreaterThan(0)
+  })
+
+  it("only routes Unstake links for positions whose cooldown is ready", () => {
     renderUmbrellaPage()
 
     const unstakeLinks = screen
       .getAllByRole("link")
       .filter((link) => link.getAttribute("href")?.startsWith("/actions/umbrella/unstake"))
-    const hrefs = unstakeLinks.map((link) => link.getAttribute("href"))
+    const hrefs = unstakeLinks.map((link) => link.getAttribute("href")).filter(Boolean) as string[]
 
-    for (const slug of ["gho", "usdc", "usdt", "weth"]) {
-      expect(hrefs.some((href) => href?.includes(`market=${slug}`))).toBe(true)
-    }
+    // USDT is seeded with cooldownStatus === "ready", so its Unstake CTA renders.
+    expect(hrefs.some((href) => href.includes("market=usdt"))).toBe(true)
+    // Idle positions (GHO, WETH) never render an Unstake row action anymore.
+    expect(hrefs.some((href) => href.includes("market=gho") && !href.includes("cooldown"))).toBe(false)
   })
 
   it("exposes the four action tabs in the sidebar rail", () => {

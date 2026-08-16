@@ -275,6 +275,28 @@ export function applyActivityEvent(state: RewardsEngineState, event: RewardActiv
   return { ...state, events }
 }
 
+// Reward claims are simulated sandbox actions, not real on-chain transactions, so
+// the receipt hash must NOT look like a canonical 0x+64hex hash — otherwise
+// RecentActivity routes it to Etherscan and produces a dead link. A "sim-" prefix
+// keeps the value deterministic and unique per wallet/task/time while routing the
+// activity row to the in-app sandbox receipt. The whole seed string is folded in
+// (FNV-1a) so wallet, task, and timestamp all influence the hash — the value is
+// used only as an opaque receipt key (convex getTransactionByHash / dedup), so the
+// format change is transparent to lookups.
+function buildSyntheticTxHash(seed: string): string {
+  let value = 2166136261
+  for (let index = 0; index < seed.length; index += 1) {
+    value ^= seed.charCodeAt(index)
+    value = Math.imul(value, 16777619)
+  }
+  let hash = "sim-"
+  for (let position = 0; position < 40; position += 1) {
+    value = Math.imul(value ^ (value >>> 13), 1274126177)
+    hash += ((value >>> 28) & 0xf).toString(16)
+  }
+  return hash
+}
+
 export function claimReward({
   wallet,
   task,
@@ -297,7 +319,7 @@ export function claimReward({
     amount: task.rewardAmount,
     rewardSymbol: task.rewardSymbol,
     status: "confirmed",
-    syntheticTxHash: `0x${Buffer.from(`${wallet}:${task.id}:${now}`).toString("hex").slice(0, 64).padEnd(64, "0")}`,
+    syntheticTxHash: buildSyntheticTxHash(`${wallet}:${task.id}:${now}`),
     claimedAt: now,
   }
 

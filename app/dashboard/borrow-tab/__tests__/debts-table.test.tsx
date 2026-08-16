@@ -1,6 +1,6 @@
 import { render, cleanup } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { DebtsPanel } from "../debts-table"
+import { CurrentLtvCard, DebtsPanel } from "../debts-table"
 import type { DebtRowContext } from "@/app/lib/data/borrow-position-types"
 
 const pool = {
@@ -61,5 +61,44 @@ describe("DebtsPanel", () => {
     expect(container.textContent).toMatch(/6200\s+USDT/)
     // No hardcoded USDC quantity is emitted for a USDT debt.
     expect(container.textContent).not.toMatch(/6200\s+USDC/)
+  })
+
+  it("does not render a bare Opened placeholder row", () => {
+    const { container } = render(
+      <DebtsPanel
+        rows={[usdtDebt]}
+        totals={{
+          totalBorrowed: 6_200,
+          totalCollateral: 10_000,
+          averageHf: 1.8,
+          accruedInterest: 33.6,
+          dailyInterest: 0.94,
+        }}
+        onRepay={vi.fn()}
+        onManage={vi.fn()}
+        showSummary={false}
+        showHeading={false}
+      />,
+    )
+
+    expect(container.textContent).not.toMatch(/Opened/)
+    expect(container.textContent).not.toMatch(/—/)
+  })
+})
+
+describe("CurrentLtvCard borrowing-power status", () => {
+  afterEach(() => {
+    cleanup()
+  })
+
+  it("reads NONE (not RISK) when there is no collateral and no debt", () => {
+    const { container } = render(<CurrentLtvCard borrowedUsd={0} collateralUsd={0} showBalance />)
+    expect(container.textContent).toMatch(/NONE/)
+    expect(container.textContent).not.toMatch(/RISK/)
+  })
+
+  it("reads GOOD when a healthy position has remaining borrowing power", () => {
+    const { container } = render(<CurrentLtvCard borrowedUsd={2_000} collateralUsd={10_000} showBalance />)
+    expect(container.textContent).toMatch(/GOOD/)
   })
 })

@@ -43,7 +43,27 @@ export function MultiplyCollateralTable({
   const { t } = useTranslation()
   const usd = (value: number) => (showDollarAmounts ? formatCompactUsd(value) : MASK)
 
-  if (rows.length === 0) return null
+  // Only render positions with real exposure. A closed or effectively-empty
+  // position (collateral value <= 0) is not an active card — surfacing it as a
+  // 1.00x / $0 "ghost" row misrepresents the account.
+  const activeRows = rows.filter((row) => row.status === "open" && row.collateralUsd > 0)
+
+  if (activeRows.length === 0) {
+    return (
+      <section>
+        {showHeading ? (
+          <div className="mb-4">
+            <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
+              {t("Multiply Positions")}
+            </h3>
+          </div>
+        ) : null}
+        <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-[13px] text-muted-foreground">
+          {t("No active Multiply positions")}
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section>
@@ -53,7 +73,7 @@ export function MultiplyCollateralTable({
             {t("Multiply Positions")}
           </h3>
           <p className="mt-1 text-[13px] text-muted-foreground">
-            {t("{count} positions").replace("{count}", String(rows.length))}
+            {t("{count} positions").replace("{count}", String(activeRows.length))}
           </p>
         </div>
       ) : null}
@@ -94,7 +114,7 @@ export function MultiplyCollateralTable({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border dark:divide-white/6">
-                {rows.map((row) => (
+                {activeRows.map((row) => (
                   <tr
                     key={row.id}
                     className="group cursor-pointer transition-colors"
@@ -203,7 +223,7 @@ export function MultiplyCollateralTable({
         </div>
 
         <div className="space-y-3 px-3 py-3 md:hidden">
-          {rows.map((row, index) => (
+          {activeRows.map((row, index) => (
             <MarketMobileCard
               key={row.id}
               clickable

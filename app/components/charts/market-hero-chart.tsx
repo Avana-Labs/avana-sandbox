@@ -1,7 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { useMemo, useState } from "react"
+import { useMemo, useState, type ReactNode } from "react"
 import { resolveAvailableRanges, resolveSeriesChange, resolveSeriesTone } from "./chart-data"
 import { ChartRangeSelector } from "./chart-range-selector"
 import { formatChartAxis, formatChartValue } from "./format"
@@ -40,6 +40,10 @@ type MarketHeroChartProps = {
   chartTone?: "positive" | "negative" | "neutral"
   balanceVariant?: "default" | "strong" | "quiet"
   balanceClassName?: string
+  /** Inline node next to the headline value (e.g. an info tooltip). */
+  balanceSuffix?: ReactNode
+  /** Node under the headline delta (e.g. an "Assets · Debt" breakdown). */
+  balanceSubtitle?: ReactNode
   /** When false, lock to `defaultRange` and hide the 1D/1W/… pills. */
   showRangeSelector?: boolean
 }
@@ -63,6 +67,8 @@ export function MarketHeroChart({
   chartTone,
   balanceVariant = "default",
   balanceClassName,
+  balanceSuffix,
+  balanceSubtitle,
   showRangeSelector = true,
 }: MarketHeroChartProps) {
   // Only offer ranges the feed can actually populate. Daily-granularity feeds omit
@@ -123,6 +129,8 @@ export function MarketHeroChart({
         hidden={hideValue}
         variant={balanceVariant}
         className={balanceClassName}
+        valueSuffix={balanceSuffix}
+        subtitle={balanceSubtitle}
       />
       <HeroAreaChart
         data={points}

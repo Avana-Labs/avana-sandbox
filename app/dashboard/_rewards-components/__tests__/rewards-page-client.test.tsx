@@ -28,6 +28,7 @@ const multiplyPreviewTransaction = vi.fn(async () => ({ allowed: true }))
 // Injectable product transaction history for the combined activity table.
 let borrowTxHistory: Array<Record<string, unknown>> = []
 let multiplyTxHistory: Array<Record<string, unknown>> = []
+const umbrellaTxHistory: Array<Record<string, unknown>> = []
 let dateNowSpy: ReturnType<typeof vi.spyOn> | null = null
 const now = Date.UTC(2026, 5, 19)
 const rewardsState = {
@@ -100,6 +101,7 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
   useLendSessionContext: () => lendSessionContext,
   useBorrowSessionContext: () => borrowSessionContext,
   useMultiplySessionContext: () => multiplySessionContext,
+  useUmbrellaSessionContext: () => umbrellaSessionContext,
   useAvanaSessions: () => ({
     walletId: "demo-wallet",
     lend: {
@@ -164,6 +166,21 @@ const multiplySessionContext = {
       twapOrders: [],
       history: [],
     })),
+  },
+}
+
+// The dashboard page reads Umbrella session state to render its section + weave
+// staking activity into the combined recent-activity feed. Empty is fine for
+// this suite; per-test tweaks assign `umbrellaTxHistory` before rendering.
+const umbrellaSessionContext = {
+  walletId: "demo-wallet",
+  isHydrated: true,
+  markets: {},
+  marketOrder: [],
+  walletBalances: {},
+  positions: {},
+  get transactionHistory() {
+    return umbrellaTxHistory
   },
 }
 

@@ -28,6 +28,14 @@ function feedFromEndUsd(portfolioValueUsd: number): ChartFeed {
   }
 }
 
+// The stored history and the live headline must be on the SAME accounting basis, or the hero
+// chart shows a false crash/spike. When the server that writes snapshots has not yet been
+// redeployed with the current portfolio formula (e.g. before net-debt / Umbrella were folded in),
+// its rows sit far from the live number. We detect that by comparing the NEWEST snapshot to the
+// live value: if they disagree by more than this fraction, the whole series is treated as
+// off-basis and we show just the current point rather than a misleading jump. (Phase 2.5)
+const BASIS_TOLERANCE = 0.25
+
 function feedFromSnapshots(
   snapshots: Array<{ at: number; totalValueUsd: number }>,
   portfolioValueUsd: number,
@@ -37,6 +45,12 @@ function feedFromSnapshots(
 
   const last = chronological[chronological.length - 1]!
   const endUsd = Number.isFinite(portfolioValueUsd) && portfolioValueUsd > 0 ? portfolioValueUsd : last.totalValueUsd
+
+  // Only trust the series when its newest point already agrees with the live basis.
+  if (endUsd <= 0 || Math.abs(last.totalValueUsd - endUsd) > endUsd * BASIS_TOLERANCE) {
+    return feedFromEndUsd(portfolioValueUsd)
+  }
+
   const points: ChartPoint[] = chronological.map((snapshot, index) => {
     const isLast = index === chronological.length - 1
     return {
