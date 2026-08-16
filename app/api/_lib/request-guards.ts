@@ -11,7 +11,12 @@ export function clientKey(request: Request) {
 export function assertSameOrigin(request: Request) {
   const origin = request.headers.get("origin")
   const host = request.headers.get("host")
-  if (!origin || !host) return true
+  // Fail CLOSED: these guards protect state-changing POST endpoints (SIWE
+  // nonce/verify/dev-token), and browsers always attach an Origin to such
+  // cross-origin-capable requests. A missing Origin or Host is treated as a
+  // mismatch rather than waved through, so a forged request stripped of its
+  // Origin can't bypass the check.
+  if (!origin || !host) return false
   try {
     return new URL(origin).host === host
   } catch {
