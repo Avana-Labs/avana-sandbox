@@ -12,7 +12,14 @@ import type { UmbrellaMarketId } from "@/app/lib/umbrella-system/use-umbrella-se
 // `assertSandboxDevControlsEnabled` — this check just decides whether we ever
 // render the drawer trigger. Rendering nothing when the flag is off is the
 // production-safe posture (no floating pill leaking sandbox affordances).
-const DEV_CONTROLS_ENABLED = process.env.NEXT_PUBLIC_SANDBOX_DEV_CONTROLS === "true"
+//
+// Hard production floor: even if `NEXT_PUBLIC_SANDBOX_DEV_CONTROLS` is somehow
+// "true" in a deploy build, the drawer must never render. This mirrors the
+// `isProductionBuild()` floor in app/lib/test-mode.ts (which is not exported, so
+// the NODE_ENV check is replicated here); every `next build` runs with
+// NODE_ENV="production", so the flag can only unlock the drawer in local dev.
+const IS_PRODUCTION_BUILD = process.env.NODE_ENV === "production"
+const DEV_CONTROLS_ENABLED = process.env.NEXT_PUBLIC_SANDBOX_DEV_CONTROLS === "true" && !IS_PRODUCTION_BUILD
 
 const UMBRELLA_MARKETS: readonly { id: UmbrellaMarketId; label: string }[] = [
   { id: "gho", label: "GHO" },
