@@ -652,7 +652,9 @@ function SpokeMobileSection({
                       metric={
                         <MarketMobileMetric
                           value={formatApy((pool.aprMin + pool.aprMax) / 2)}
-                          label={t("APY")}
+                          // Borrow has no APY here — this is the pool's LP trading fee,
+                          // so label it "Fees" to match the desktop FEES column.
+                          label={t("Fees")}
                           valueClassName={aprToneClass((pool.aprMin + pool.aprMax) / 2)}
                         />
                       }
