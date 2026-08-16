@@ -13,14 +13,71 @@
  */
 
 import { v } from "convex/values"
+import type { MutationCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
 import { getAuthedWallet, requireSandboxWallet } from "./auth"
 import { appendPortfolioSnapshot, applyLedgerDelta } from "./transactions"
+
+/** A single liquidation may repay at most this share of outstanding debt (50%). */
+const LIQUIDATION_CLOSE_FACTOR_BPS = 5_000
+/** Keeper seize premium assumed when the client omits one. */
+const DEFAULT_LIQUIDATION_BONUS_BPS = 1_000
+/** Hard server-side ceiling on the seize premium (defends a tampered client). */
+const MAX_LIQUIDATION_BONUS_BPS = 2_000
+/**
+ * Liquidation-threshold basis, hand-synced with the borrow path's server-side
+ * solvency re-derivation (convex/sandbox/transactions.ts
+ * `serverCollateralValueUsd` / `liquidationThresholdFromMaxLtv`) which itself
+ * mirrors the client credit engine. Convex can't import app/lib and those
+ * helpers aren't exported, so the minimal formula is replicated here: LT =
+ * explicit `liquidationThresholdPct`, else maxLtv + 10pp capped at 95%, else 85%.
+ */
+const BORROW_FALLBACK_LIQUIDATION_PCT = 85
+const LIQUIDATION_THRESHOLD_SPREAD_PCT = 10
+const LIQUIDATION_THRESHOLD_CAP_PCT = 95
 
 function requirePositiveUsd6(value: string, field: string) {
   if (!/^\d+$/.test(value) || BigInt(value) <= 0n) {
     throw new Error(`INVALID_LIQUIDATION: ${field} must be a positive usd6 integer.`)
   }
+}
+
+/**
+ * Revalue a victim collateral leg from shares/principal + the pool/market oracle
+ * (never the spoofable client `collateralValueUsd6`) and return its liquidation
+ * threshold. Replicates the borrow path's `serverCollateralValueUsd` so the
+ * liquidation solvency check uses the same basis the borrow write does.
+ */
+async function victimCollateralLiquidationValue(
+  ctx: MutationCtx,
+  row: { marketSlug: string; collateralShares: string; principalTokenAmount: string },
+) {
+  const principal = BigInt(row.principalTokenAmount)
+  const shares = BigInt(row.collateralShares)
+  const raw = principal > 0n ? principal : shares
+  const [pool, market] = await Promise.all([
+    ctx.db
+      .query("pools")
+      .withIndex("by_slug", (q) => q.eq("slug", row.marketSlug))
+      .unique(),
+    ctx.db
+      .query("markets")
+      .withIndex("by_scope_slug", (q) => q.eq("scope", "pool").eq("slug", row.marketSlug))
+      .unique(),
+  ])
+  const priceUsd = pool?.lpTokenPriceUsd ?? market?.priceUsd
+  // 18-dec token notional (engine) vs usd6 microdollars (sandbox tests / persistence).
+  let valueUsd = 0
+  if (raw > 0n) {
+    valueUsd =
+      raw >= 10n ** 12n ? (priceUsd && priceUsd > 0 ? (Number(raw) / 1e18) * priceUsd : 0) : Number(raw) / 1_000_000
+  }
+  const thresholdPct =
+    pool?.liquidationThresholdPct ??
+    (pool?.maxLtvPct != null
+      ? Math.min(pool.maxLtvPct + LIQUIDATION_THRESHOLD_SPREAD_PCT, LIQUIDATION_THRESHOLD_CAP_PCT)
+      : BORROW_FALLBACK_LIQUIDATION_PCT)
+  return { valueUsd, thresholdPct }
 }
 
 /** Persist a liquidation preview for the owner's own position (analytics audit). */
@@ -95,7 +152,45 @@ export const recordLiquidation = mutation({
       const debt = args.debtPositionId ? debtRows.find((row) => row._id === args.debtPositionId) : debtRows[0]
       if (!debt) throw new Error("INVALID_LIQUIDATION: debt position was not found.")
 
+      // ── Server-side solvency + sizing gate (P1-2) ──────────────────────────
+      // `healthFactorWadBefore` above is CLIENT-supplied and spoofable — a caller
+      // could pass "0" to liquidate a solvent victim. Independently recompute the
+      // victim's health factor from stored collateral/debt + the pool oracle
+      // (same basis as the borrow path's `assertBorrowSolvent`) and cap repay/seize
+      // by a real close factor × liquidation bonus, not just "positive and ≤ value".
+      const debtTotalUsd6 = debtRows.reduce((sum, row) => sum + BigInt(row.principalBorrowedUsd6), 0n)
+      if (debtTotalUsd6 <= 0n) {
+        throw new Error("INVALID_LIQUIDATION: the victim position has no debt to liquidate.")
+      }
+      let liquidationValueUsd = 0
+      for (const collateral of collateralRows) {
+        if (collateral.collateralEnabled === false) continue
+        const { valueUsd, thresholdPct } = await victimCollateralLiquidationValue(ctx, collateral)
+        liquidationValueUsd += valueUsd * (thresholdPct / 100)
+      }
+      const debtTotalUsd = Number(debtTotalUsd6) / 1_000_000
+      // HF = risk-adjusted collateral / debt; the victim is solvent (HF ≥ 1) when
+      // that collateral still covers the debt. Reject solvent victims outright.
+      if (liquidationValueUsd >= debtTotalUsd) {
+        throw new Error("INVALID_LIQUIDATION: the victim position is not underwater.")
+      }
       const repay = BigInt(args.repaidUsd6)
+      // Close factor: repay at most 50% of the outstanding debt per liquidation.
+      if (repay * 10_000n > debtTotalUsd6 * BigInt(LIQUIDATION_CLOSE_FACTOR_BPS)) {
+        throw new Error("INVALID_LIQUIDATION: repay exceeds the close factor.")
+      }
+      // Seize ≤ repay × (1 + liquidation bonus), with the bonus clamped server-side.
+      const bonusBps = BigInt(
+        Math.min(
+          Math.max(0, Math.round(args.liquidationBonusBps ?? DEFAULT_LIQUIDATION_BONUS_BPS)),
+          MAX_LIQUIDATION_BONUS_BPS,
+        ),
+      )
+      const maxSeizeUsd6 = (repay * (10_000n + bonusBps)) / 10_000n
+      if (BigInt(args.seizedCollateralUsd6) > maxSeizeUsd6) {
+        throw new Error("INVALID_LIQUIDATION: seized collateral exceeds the close-factor × bonus cap.")
+      }
+
       const currentPrincipal = BigInt(debt.principalBorrowedUsd6)
       const nextPrincipal = currentPrincipal > repay ? currentPrincipal - repay : 0n
       const currentShares = BigInt(debt.debtSharesUsd6)
