@@ -1,6 +1,6 @@
 import { mintSandboxJwt, resolveIssuer } from "@/app/lib/siwe/jwt"
 import { shouldUseOpenGateSession, TEST_MODE_WALLET_ADDRESS } from "@/app/lib/test-mode"
-import { assertSameOrigin, clientKey, rateLimit } from "../../_lib/request-guards"
+import { assertSameOrigin, clientKey, rateLimitShared } from "../../_lib/request-guards"
 
 export const dynamic = "force-dynamic"
 
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "dev token unavailable" }, { status: 404 })
   }
   if (!assertSameOrigin(req)) return Response.json({ error: "origin not allowed" }, { status: 403 })
-  if (!rateLimit(`siwe-dev-token:${clientKey(req)}`, 30, 60_000)) {
+  if (!(await rateLimitShared(`siwe-dev-token:${clientKey(req)}`, 30, 60_000))) {
     return Response.json({ error: "too many requests" }, { status: 429 })
   }
 

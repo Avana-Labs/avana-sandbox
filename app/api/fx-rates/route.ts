@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server"
+import { assertSameOrigin } from "../_lib/request-guards"
 
 const ENDPOINT = "https://open.er-api.com/v6/latest/USD"
 const REVALIDATE_SECONDS = 6 * 60 * 60
 
-export async function GET() {
+export async function GET(request: Request) {
+  // Same-origin only. The response is cached and cheap to serve, but exposing the
+  // route cross-origin lets any site borrow this app's egress quota for the
+  // upstream FX endpoint. Aligns with the other API routes' guard posture.
+  if (!assertSameOrigin(request)) {
+    return NextResponse.json({ error: "origin not allowed" }, { status: 403 })
+  }
+
   const res = await fetch(ENDPOINT, {
     cache: "force-cache",
     next: { revalidate: REVALIDATE_SECONDS },
