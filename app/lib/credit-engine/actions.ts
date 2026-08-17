@@ -107,6 +107,8 @@ function applyBorrowDebtAction(state: BorrowSystemState, action: Extract<BorrowA
       debtIndexRay,
       borrowRateWad: asset.borrowConfig.baseBorrowAprWad,
       principalBorrowedUsd6: action.amountUsd6,
+      // Capture the borrowed asset's price so the debt can be repriced to spot later (§7 / D2).
+      priceAtBorrowUsd6: asset.snapshot.priceUsd6,
     })
   }
 

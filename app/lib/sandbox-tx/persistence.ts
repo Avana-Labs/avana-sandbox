@@ -10,6 +10,7 @@
 import type { SandboxActionResult, TransactionHistoryItem } from "@/app/lib/borrow-system/contracts"
 import type { LendSandboxActionResult } from "@/app/lib/lend-system/contracts"
 import type { MultiplySandboxActionResult } from "@/app/lib/multiply-system/contracts"
+import { RAY, TOKEN_SCALE } from "@/app/lib/credit-engine/units"
 import { getSwapAsset } from "@/app/lib/swap-system/catalog"
 import type { SwapTransactionRecord } from "@/app/lib/swap-system/transaction-adapter"
 
@@ -231,14 +232,14 @@ export function borrowResultToRecordArgs(result: SandboxActionResult, wallet: st
     .filter((position) => position.marketId === marketSlug)
     .map((position) => {
       const market = result.state.markets[position.marketId]
-      const tokenAmount = market ? (position.collateralShares * market.snapshot.supplyIndexRay) / 10n ** 27n : 0n
+      const tokenAmount = market ? (position.collateralShares * market.snapshot.supplyIndexRay) / RAY : 0n
       return {
         marketSlug: position.marketId,
         collateralShares: position.collateralShares.toString(),
         principalTokenAmount: position.principalTokenAmount.toString(),
         collateralEnabled: position.collateralEnabled,
         collateralValueUsd6: market
-          ? ((tokenAmount * market.snapshot.lpTokenPriceUsd6) / 10n ** 18n).toString()
+          ? ((tokenAmount * market.snapshot.lpTokenPriceUsd6) / TOKEN_SCALE).toString()
           : undefined,
       }
     })

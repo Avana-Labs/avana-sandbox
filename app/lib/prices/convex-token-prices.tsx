@@ -3,8 +3,12 @@
 import * as React from "react"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
+import { setCanonicalPrices } from "./canonical"
 import { priceKey } from "./format"
 import { PriceStatusContext, TokenPricesContext } from "./token-prices-context"
+import { applyLiveRates } from "@/app/lib/currency/rates"
+import { FX_RATES_UPDATED_EVENT } from "@/app/lib/currency/rates"
+import type { CurrencyCode } from "@/app/components/display-preferences"
 
 class TokenPricesErrorBoundary extends React.Component<
   { children: React.ReactNode; fallbackChildren: React.ReactNode },
@@ -29,6 +33,30 @@ function ConvexTokenPricesQuery({ children }: { children: React.ReactNode }) {
     for (const row of rows ?? []) next[priceKey(row.symbol)] = row.priceUsd
     return next
   }, [rows])
+  // Overlay the live oracle prices onto the canonical store so the engine + every surface value
+  // positions at the refreshed price (not just the fixture). Effect, not render, to avoid a
+  // side-effect during render; keyed on the row set.
+  React.useEffect(() => {
+    if (rows && rows.length > 0) {
+      setCanonicalPrices(Object.fromEntries(rows.map((row) => [row.symbol, row.priceUsd])))
+    }
+  }, [rows])
+
+  // Fiat FX rates from the validated Convex layer (convex/fx.ts). Apply them onto the currency
+  // overlay so conversion flows through Convex rather than only the client poll, then notify the
+  // preferences provider to re-render currency consumers. Falls back to the /api/fx-rates client
+  // path when Convex has no rows yet.
+  const fx = useQuery(api.fx.getFxRates, {})
+  const fxRows = fx?.rates
+  React.useEffect(() => {
+    if (fxRows && fxRows.length > 0) {
+      applyLiveRates(
+        Object.fromEntries(fxRows.map((r) => [r.currency, r.usdPerUnit])) as Partial<Record<CurrencyCode, number>>,
+      )
+      window.dispatchEvent(new Event(FX_RATES_UPDATED_EVENT))
+    }
+  }, [fxRows])
+
   return (
     <TokenPricesContext.Provider value={map}>
       <PriceStatusContext.Provider value={status}>{children}</PriceStatusContext.Provider>

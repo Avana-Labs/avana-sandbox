@@ -84,6 +84,7 @@ export const upsertMarkets = internalMutation({
           ),
         ),
         resources: v.optional(v.array(v.object({ label: v.string(), href: v.string() }))),
+        constituents: v.optional(v.array(v.object({ symbol: v.string(), weight: v.number() }))),
         createdAt: v.number(),
       }),
     ),

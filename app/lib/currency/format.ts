@@ -1,5 +1,16 @@
 import type { CurrencyCode } from "@/app/components/display-preferences"
+import { getActiveLocale } from "@/app/lib/currency/active-rate"
 import { currencySymbolFor, exchangeRateFor, ZERO_DECIMAL_CURRENCIES } from "@/app/lib/currency/rates"
+
+/**
+ * Format the NUMBER part with the viewer's active locale (grouping + decimal separators) via
+ * Intl.NumberFormat, instead of a hardcoded "en-US". The custom currency symbol is applied
+ * separately by the callers, so this fixes locale-correct grouping (incl. Indian lakh grouping)
+ * without changing the app's deliberate symbols. Defaults to en-US, so SSR/tests are unchanged.
+ */
+function formatNumber(value: number, options: Intl.NumberFormatOptions): string {
+  return new Intl.NumberFormat(getActiveLocale(), options).format(value)
+}
 
 export type CurrencyContext = {
   currency: CurrencyCode
@@ -26,13 +37,14 @@ export function formatCompactCurrency(usd: number, ctx: CurrencyContext): string
   const value = convertFromUsd(usd, ctx)
   const abs = Math.abs(value)
   const sign = value < 0 ? "-" : ""
-  if (abs >= 1_000_000_000) return `${sign}${ctx.symbol}${(abs / 1_000_000_000).toFixed(1)}B`
-  if (abs >= 1_000_000) return `${sign}${ctx.symbol}${(abs / 1_000_000).toFixed(1)}M`
-  if (abs >= 1_000) return `${sign}${ctx.symbol}${(abs / 1_000).toFixed(1)}K`
+  const mantissa = (n: number) => formatNumber(n, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+  if (abs >= 1_000_000_000) return `${sign}${ctx.symbol}${mantissa(abs / 1_000_000_000)}B`
+  if (abs >= 1_000_000) return `${sign}${ctx.symbol}${mantissa(abs / 1_000_000)}M`
+  if (abs >= 1_000) return `${sign}${ctx.symbol}${mantissa(abs / 1_000)}K`
   // Sub-$1000 shows the plain amount; keep cents for decimal currencies (JPY/KRW/etc. drop
   // them). The old ternary returned 0 in BOTH branches, rounding e.g. $500.50 to "$501".
   const decimals = ZERO_DECIMAL_CURRENCIES.has(ctx.currency) ? 0 : 2
-  return `${sign}${ctx.symbol}${abs.toLocaleString("en-US", { maximumFractionDigits: decimals })}`
+  return `${sign}${ctx.symbol}${formatNumber(abs, { maximumFractionDigits: decimals })}`
 }
 
 /**
@@ -43,16 +55,17 @@ export function formatCompactCurrency(usd: number, ctx: CurrencyContext): string
 export function formatTokenQuantity(value: number, symbol: string): string {
   if (!Number.isFinite(value)) return `— ${symbol}`
   if (value > 0 && value < 0.01) return `<0.01 ${symbol}`
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(2)}M ${symbol}`
-  if (value >= 1_000) return `${(value / 1_000).toFixed(2)}K ${symbol}`
-  return `${value.toLocaleString("en-US", { maximumFractionDigits: 2 })} ${symbol}`
+  const twoDp = (n: number) => formatNumber(n, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  if (value >= 1_000_000) return `${twoDp(value / 1_000_000)}M ${symbol}`
+  if (value >= 1_000) return `${twoDp(value / 1_000)}K ${symbol}`
+  return `${formatNumber(value, { maximumFractionDigits: 2 })} ${symbol}`
 }
 
 /** Exact currency formatting from a USD value, with currency-appropriate decimals. */
 export function formatExactCurrency(usd: number, ctx: CurrencyContext): string {
   const value = convertFromUsd(usd, ctx)
   const decimals = ZERO_DECIMAL_CURRENCIES.has(ctx.currency) ? 0 : 2
-  return `${value < 0 ? "-" : ""}${ctx.symbol}${Math.abs(value).toLocaleString("en-US", {
+  return `${value < 0 ? "-" : ""}${ctx.symbol}${formatNumber(Math.abs(value), {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   })}`

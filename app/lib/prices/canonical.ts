@@ -1,18 +1,43 @@
 import { priceKey } from "./format"
-import { SANDBOX_BASELINE_PRICES_USD } from "./sandbox-baseline-prices"
+import { PRICE_FIXTURE } from "./price-fixture"
 
 /**
- * Canonical per-token USD price — the SINGLE basis every surface reads: the borrow list
- * price + token quantities, the detail "Price" tile, the pool pair price, the swap catalog,
- * and (via sandboxBaselinePriceUsd) the engine valuation. Collapsing to one basis means the
- * same token can never show two different prices one click apart (list vs detail), and pool
- * pair prices are exact PA/PB ratios of the per-token prices shown elsewhere.
+ * Canonical per-token USD price — the SINGLE basis every surface reads: the borrow list price +
+ * token quantities, the detail "Price" tile, the pool pair price, the swap catalog, and (via
+ * sandboxBaselinePriceUsd) the engine valuation. One basis means a token can never show two prices
+ * one click apart, and pool pair prices are exact PA/PB ratios of the per-token prices.
  *
- * Values are the deterministic sandbox snapshot (SANDBOX_BASELINE_PRICES_USD). The live
- * DefiLlama oracle (convex/prices.ts) is what a refresh job snapshots FROM and what drives the
- * freshness hint (usePriceFreshness) — no surface renders a different, live-ticking number than
- * the engine values positions at.
+ * The values live in a mutable module store seeded with the deterministic PRICE_FIXTURE so SSR,
+ * tests, and offline renders are stable. At runtime the live Convex oracle (convex/prices.ts,
+ * DefiLlama) overlays it via `setCanonicalPrices` — so connected clients value positions at the
+ * real refreshed price, and a token the oracle doesn't cover falls back to the fixture. A symbol
+ * in NEITHER resolves to `undefined` (unavailable), never a fabricated number.
  */
+
+/** UPPERCASE symbol → USD price. Seeded with the fixture; overlaid by the live oracle. */
+let priceStore: Record<string, number> = { ...PRICE_FIXTURE }
+
+function normalizePrices(next: Record<string, number>): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const [symbol, price] of Object.entries(next)) {
+    if (Number.isFinite(price) && price > 0) out[symbol.toUpperCase()] = price
+  }
+  return out
+}
+
+/**
+ * Overlay live oracle prices onto the canonical store (client-only). Kept on TOP of the fixture so
+ * a partial oracle response (missing an exotic token) still resolves the covered majors instead of
+ * going unavailable. Non-finite/non-positive quotes are dropped.
+ */
+export function setCanonicalPrices(next: Record<string, number>): void {
+  priceStore = { ...PRICE_FIXTURE, ...normalizePrices(next) }
+}
+
+/** Reset the store to the deterministic fixture (used by test setup to prevent cross-test leakage). */
+export function resetCanonicalPrices(): void {
+  priceStore = { ...PRICE_FIXTURE }
+}
 
 export type CanonicalPrice = {
   /** Uppercase token symbol. */
@@ -22,17 +47,17 @@ export type CanonicalPrice = {
   source: string
 }
 
-export const CANONICAL_PRICE_SOURCE = "sandbox-snapshot"
+export const CANONICAL_PRICE_SOURCE = "canonical-store"
 
 /**
- * Canonical USD price for a symbol, or `undefined` when the token is not in the snapshot.
- * Deliberately strict (no `?? 1` default) so callers fall back to their own label instead of
- * silently rendering "$1.00" for an unpriced asset. Engine code that needs a guaranteed number
- * keeps using `sandboxBaselinePriceUsd` (same values, defaults to 1).
+ * Canonical USD price for a symbol, or `undefined` when neither the live oracle nor the fixture
+ * covers it. Deliberately strict (no `?? 1` default) so callers fall back to their own label
+ * instead of silently rendering "$1.00" for an unpriced asset. Engine code that needs a guaranteed
+ * number uses `sandboxBaselinePriceUsd` (same store, last-resort default of 1).
  */
 export function canonicalPriceUsd(symbol: string): number | undefined {
   if (!symbol) return undefined
-  return SANDBOX_BASELINE_PRICES_USD[symbol.toUpperCase()]
+  return priceStore[symbol.toUpperCase()]
 }
 
 /** The full canonical object for a symbol, or `undefined` when unpriced. */
@@ -49,7 +74,7 @@ export function getCanonicalPrice(symbol: string): CanonicalPrice | undefined {
  */
 export function canonicalPriceMap(): Record<string, number> {
   const map: Record<string, number> = {}
-  for (const [symbol, priceUsd] of Object.entries(SANDBOX_BASELINE_PRICES_USD)) {
+  for (const [symbol, priceUsd] of Object.entries(priceStore)) {
     map[priceKey(symbol)] = priceUsd
   }
   return map
