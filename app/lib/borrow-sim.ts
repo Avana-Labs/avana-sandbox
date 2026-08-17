@@ -1,4 +1,3 @@
-import { canonicalPriceUsd } from "@/app/lib/prices/canonical"
 import { getTokenIconMeta } from "@/app/lib/token-icons"
 import { getActiveCurrency, withCurrencySymbol } from "@/app/lib/currency/active-rate"
 import { healthFactorBand } from "@/app/lib/health/health-factor-bands"
@@ -91,24 +90,15 @@ export type BorrowPoolRow = {
 }
 
 /**
- * USD price of a single LP token for a collateral pool, derived from its CONSTITUENT token
- * prices — the constant-product (Uniswap v2) fair LP price per unit of liquidity, 2·√(P0·P1),
- * where P0/P1 are the canonical USD prices of the pair. This replaces the old constant
- * (collateralExampleUsd/2.5), which ignored the components entirely so the LP value could not
- * move with its underlying prices.
- *
- * Still the SINGLE source of truth shared by the client market snapshot (borrow-system/mock.ts)
- * and the Convex seed (convex-seed/build-seed.ts): both derive and re-value 18-decimal LP-token
- * collateral amounts through this one function, so server solvency and the client preview stay
- * consistent. Falls back to the example-position heuristic only when a leg is unpriced (exotic
- * pairs the canonical snapshot doesn't cover).
+ * USD price of a single LP token for a collateral pool. An LP pair has no
+ * single-token oracle price, so we derive a stable per-token price from the
+ * pool's example collateral position. This is the SINGLE source of truth shared
+ * by the client market snapshot (borrow-system/mock.ts) and the Convex seed
+ * (convex-seed/build-seed.ts) so the server values 18-decimal LP-token collateral
+ * amounts with the exact price the client used to derive those amounts. If the two
+ * diverged, server solvency would reject borrows the client preview allowed.
  */
-export function poolLpTokenPriceUsd(pool: Pick<BorrowPoolRow, "collateralExampleUsd" | "visuals">): number {
-  const p0 = canonicalPriceUsd(pool.visuals[0]?.symbol ?? "")
-  const p1 = canonicalPriceUsd(pool.visuals[1]?.symbol ?? "")
-  if (p0 !== undefined && p1 !== undefined && p0 > 0 && p1 > 0) {
-    return Math.max(1, 2 * Math.sqrt(p0 * p1))
-  }
+export function poolLpTokenPriceUsd(pool: Pick<BorrowPoolRow, "collateralExampleUsd">): number {
   return Math.max(1, pool.collateralExampleUsd / 2.5)
 }
 
