@@ -22,3 +22,16 @@ export const LANGUAGE_HTML_LANG: Record<LanguageCode, string> = {
   PT: "pt",
   RU: "ru",
 }
+
+/**
+ * Which of the 13 languages are written right-to-left. `display-preferences`
+ * mirrors this into `document.documentElement.dir` alongside the `lang`
+ * attribute so a viewer switching to Arabic sees the app in RTL. Kept in this
+ * lightweight module (no locale-dict dependency) so the RTL flag can be
+ * consulted anywhere without pulling in translation payloads.
+ */
+export const RTL_LANGUAGES: ReadonlySet<LanguageCode> = new Set(["AR"])
+
+export function isRtlLanguage(language: LanguageCode): boolean {
+  return RTL_LANGUAGES.has(language)
+}
