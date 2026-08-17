@@ -1,3 +1,5 @@
+import { PRICE_FIXTURE } from "./price-fixture"
+
 /**
  * Single source of truth for sandbox baseline token prices (USD).
  *
@@ -15,41 +17,9 @@
  * oracle. The live Convex `tokenPrices` (DefiLlama) via token-prices-context is still used
  * for the borrow-list pair exchange-rate cells, which are intentionally live.
  */
-export const SANDBOX_BASELINE_PRICES_USD: Record<string, number> = {
-  // Stablecoins
-  USDC: 1,
-  USDT: 1,
-  DAI: 1,
-  GHO: 1,
-  CRVUSD: 1,
-  FRXUSD: 1,
-  USDG: 1,
-  RLUSD: 1,
-  EURC: 1.08,
-  // ETH and liquid-staking derivatives (ratios to ETH preserved from the prior maps)
-  ETH: 1934,
-  WETH: 1934,
-  STETH: 1930,
-  WSTETH: 2100,
-  RETH: 2045,
-  CBETH: 1990,
-  WEETH: 2017,
-  // BTC family
-  BTC: 65000,
-  WBTC: 65000,
-  CBBTC: 65000,
-  // Governance / other majors
-  AAVE: 105,
-  UNI: 12,
-  CRV: 0.5,
-  LDO: 2,
-  BAL: 3.3,
-  GNO: 220,
-  AERO: 2.25,
-  ARB: 0.6,
-  OP: 1.46,
-  LINK: 18,
-}
+// Single source of the values: the deterministic PRICE_FIXTURE (see price-fixture.ts). Kept as a
+// named export for existing callers; the canonical store overlays these with live oracle prices.
+export const SANDBOX_BASELINE_PRICES_USD: Record<string, number> = PRICE_FIXTURE
 
 /** Baseline USD price for a symbol, defaulting to $1 for unknown/stable-like ids. */
 export function sandboxBaselinePriceUsd(symbol: string): number {
