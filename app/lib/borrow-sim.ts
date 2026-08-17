@@ -1,7 +1,8 @@
 import { getTokenIconMeta } from "@/app/lib/token-icons"
 import { getActiveCurrency, withCurrencySymbol } from "@/app/lib/currency/active-rate"
 import { healthFactorBand } from "@/app/lib/health/health-factor-bands"
-import { normalizeWeights, type WeightedConstituent } from "@/app/lib/prices/lp-token-price"
+import { lpTokenPriceUsd, normalizeWeights, type WeightedConstituent } from "@/app/lib/prices/lp-token-price"
+import { canonicalPriceUsd } from "@/app/lib/prices/canonical"
 
 export type BorrowDexId = "uniswap" | "curve" | "balancer" | "aerodrome"
 
@@ -98,15 +99,22 @@ export type BorrowPoolRow = {
 }
 
 /**
- * USD price of a single LP token for a collateral pool. An LP pair has no
- * single-token oracle price, so we derive a stable per-token price from the
- * pool's example collateral position. This is the SINGLE source of truth shared
- * by the client market snapshot (borrow-system/mock.ts) and the Convex seed
- * (convex-seed/build-seed.ts) so the server values 18-decimal LP-token collateral
- * amounts with the exact price the client used to derive those amounts. If the two
- * diverged, server solvency would reject borrows the client preview allowed.
+ * USD price of a single LP token = Σ(weightᵢ × canonicalPriceᵢ) over the pool's constituents
+ * (the one Avana LP-collateral model — see lp-token-price.ts). This is the SINGLE source of
+ * truth shared by the client market snapshot (borrow-system/mock.ts) and the Convex seed
+ * (convex-seed/build-seed.ts), so the server values 18-decimal LP-token collateral amounts with
+ * the exact price the client derived them from; a divergence would make server solvency reject
+ * borrows the client preview allowed.
+ *
+ * Fallback: when a constituent leg has no canonical price (exotic Aerodrome/boosted tokens the
+ * snapshot doesn't cover), the weighted sum is unavailable and we fall back to the example-
+ * position heuristic so the sandbox pool still functions. This is NOT a competing model — it is
+ * only reached when Σ(weight×price) genuinely can't be computed, and disappears once the oracle
+ * covers those legs.
  */
-export function poolLpTokenPriceUsd(pool: Pick<BorrowPoolRow, "collateralExampleUsd">): number {
+export function poolLpTokenPriceUsd(pool: Pick<BorrowPoolRow, "constituents" | "collateralExampleUsd">): number {
+  const result = lpTokenPriceUsd(pool.constituents, canonicalPriceUsd)
+  if (result.ok) return result.priceUsd
   return Math.max(1, pool.collateralExampleUsd / 2.5)
 }
 
