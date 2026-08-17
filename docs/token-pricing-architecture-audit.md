@@ -20,7 +20,7 @@ basis** and **LP valuation**:
    hooks (`usePriceFor`, `usePriceFreshness`, `fetchTokenPrices`) and the whole `lpTokenPrices`
    table are dead code.
 2. **LP price is not `Σ(weightᵢ × priceᵢ)`.** Current `poolLpTokenPriceUsd = max(1,
-   collateralExampleUsd / 2.5)` where `collateralExampleUsd = 1500 + index*320` — a catalog
+collateralExampleUsd / 2.5)` where `collateralExampleUsd = 1500 + index*320` — a catalog
    index counter, unrelated to components. A commit that switched to `2·√(P0·P1)` (the forbidden
    formula) was just reverted (`4bda575f` → `7ae903a0`). Pools carry **no weights/composition** —
    3-token and 80/20 pools exist only as display strings in `name`; `pair`/`visuals` are 2-tuples.
@@ -40,24 +40,24 @@ current/history split for portfolio) is largely correct.
 
 ## 1. Current vs Target — by requirement section
 
-| # | Requirement | Current state (evidence) | Verdict |
-|---|---|---|---|
-| 1 | One canonical financial-data layer; UI reads normalized Convex data; components don't fetch from providers | UI reads Convex queries and no component hits a provider (good). BUT the *values* rendered come from the static `SANDBOX_BASELINE_PRICES_USD` map, not the Convex `tokenPrices` oracle. `canonical.ts:33`, `sandbox-baseline-prices.ts:18` | ⚠️ Partial — plumbing right, basis wrong |
-| 2 | Refresh ~10 min; store `{sourceUpdatedAt, fetchedAt, snapshotAt, status}`; failed refresh never looks fresh | Hourly cron (`crons.ts:24`). Only `updatedAt` + `source`. No status enum, no 4-timestamp model. Failed-refresh safety exists for `tokenPrices` only; `lpTokenPrices` never refreshed | ❌ Gap |
-| 3 | Canonical token USD prices; validate; prefer chainId+contract; `unavailable` over invented | Real oracle exists & is well-guarded (finite, >0, confidence≥0.8, throws on empty — `prices.ts:174,179,191`). Identity is **symbol-only** (`by_symbol`); chain/contract buried in opaque `llamaId`, never parsed. But the oracle isn't the rendered basis | ⚠️ Partial |
-| 4 | Pair rates = A_USD / B_USD | `poolPairPriceUsd(base,quote)=P0/P1` correct (`canonical.ts:68`) — off the static map | ✅ (basis aside) |
-| 5 | LP collateral = `Σ(weightᵢ × priceᵢ)`; 2/3/4+; weighted | Not implemented. `max(1, collateralExampleUsd/2.5)` (`borrow-sim.ts:101`). No weights anywhere | ❌ Gap (core) |
-| 6 | Remove `2·√(P0·P1)` and reserves/supply LP math | Neither is live (the `2·√` attempt was reverted). Current heuristic must still be removed | ⚠️ Partial |
-| 7 | Borrowed assets = amount × own token price; never LP-valued | Debt is **never** LP-priced (correct separation — `valuation.ts:30`, `transactions.ts:553`). BUT debt is fixed-USD + interest index; not re-priced by the borrowed token's spot price | ⚠️ Partial |
-| 8 | Keep supply & borrow accounting separate | Correct — separate paths, LP price confined to collateral | ✅ |
-| 9 | Stablecoins can depeg; use current price | USDC/USDT/DAI/GHO hardcoded `=1`; unknown → `$1` default (`sandbox-baseline-prices.ts:20-27,55`) | ❌ Gap |
-| 10 | Fiat via USD → selected fiat; `Intl.NumberFormat` | Manual symbol concatenation + hardcoded `en-US` grouping, prefix-only (`currency/format.ts:29-58`); FX via client poll of `open.er-api.com`, not Convex; staleness silent | ❌ Gap |
-| 11 | Convex snapshots store coherent bundles from one price snapshot | No `underlyingPrices[] / lpWeights / lpPriceUsd / status` on any table; daily stats carry price over while liquidity is simulated → can drift | ❌ Gap |
-| 12 | Separate current vs historical | Only `portfolioCurrent` / `portfolioSnapshots` split; prices are current-only (no history table); market price history smeared into `marketDailyStats.priceUsd` | ⚠️ Partial |
-| 13 | Remove fake production financial data | Whole app is seeded-by-design; nothing fakes a *live* feed, but the static price map + `/2.5` LP heuristic + hard-1 stables are the offending pieces for the price layer | ⚠️ Partial (see Decisions) |
-| 14 | Decimal-safe calculations | Core engine is bigint `mulDiv` (good). Seams: `Number(raw)/1e18*priceUsd` in `transactions.ts:528`, `liquidation.ts:73`; float→`Math.round` usd6 at `persistence.ts:89-98`; magic `10n**27n/10n**18n` literals | ⚠️ Partial |
-| 15 | Required automated tests | LP-composition cluster entirely MISSING (no code to test yet); depeg, wrong-chain, wrong-contract, weights≠100%, N-token, negative amount, external reward-token MISSING; borrow/lend/multiply flow + fiat largely COVERED | ❌ Gap |
-| 16 | Final UI test across device/locale/action | Not done as part of this work | ▫️ To do |
+| #   | Requirement                                                                                                 | Current state (evidence)                                                                                                                                                                                                                                  | Verdict                                  |
+| --- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| 1   | One canonical financial-data layer; UI reads normalized Convex data; components don't fetch from providers  | UI reads Convex queries and no component hits a provider (good). BUT the _values_ rendered come from the static `SANDBOX_BASELINE_PRICES_USD` map, not the Convex `tokenPrices` oracle. `canonical.ts:33`, `sandbox-baseline-prices.ts:18`                | ⚠️ Partial — plumbing right, basis wrong |
+| 2   | Refresh ~10 min; store `{sourceUpdatedAt, fetchedAt, snapshotAt, status}`; failed refresh never looks fresh | Hourly cron (`crons.ts:24`). Only `updatedAt` + `source`. No status enum, no 4-timestamp model. Failed-refresh safety exists for `tokenPrices` only; `lpTokenPrices` never refreshed                                                                      | ❌ Gap                                   |
+| 3   | Canonical token USD prices; validate; prefer chainId+contract; `unavailable` over invented                  | Real oracle exists & is well-guarded (finite, >0, confidence≥0.8, throws on empty — `prices.ts:174,179,191`). Identity is **symbol-only** (`by_symbol`); chain/contract buried in opaque `llamaId`, never parsed. But the oracle isn't the rendered basis | ⚠️ Partial                               |
+| 4   | Pair rates = A_USD / B_USD                                                                                  | `poolPairPriceUsd(base,quote)=P0/P1` correct (`canonical.ts:68`) — off the static map                                                                                                                                                                     | ✅ (basis aside)                         |
+| 5   | LP collateral = `Σ(weightᵢ × priceᵢ)`; 2/3/4+; weighted                                                     | Not implemented. `max(1, collateralExampleUsd/2.5)` (`borrow-sim.ts:101`). No weights anywhere                                                                                                                                                            | ❌ Gap (core)                            |
+| 6   | Remove `2·√(P0·P1)` and reserves/supply LP math                                                             | Neither is live (the `2·√` attempt was reverted). Current heuristic must still be removed                                                                                                                                                                 | ⚠️ Partial                               |
+| 7   | Borrowed assets = amount × own token price; never LP-valued                                                 | Debt is **never** LP-priced (correct separation — `valuation.ts:30`, `transactions.ts:553`). BUT debt is fixed-USD + interest index; not re-priced by the borrowed token's spot price                                                                     | ⚠️ Partial                               |
+| 8   | Keep supply & borrow accounting separate                                                                    | Correct — separate paths, LP price confined to collateral                                                                                                                                                                                                 | ✅                                       |
+| 9   | Stablecoins can depeg; use current price                                                                    | USDC/USDT/DAI/GHO hardcoded `=1`; unknown → `$1` default (`sandbox-baseline-prices.ts:20-27,55`)                                                                                                                                                          | ❌ Gap                                   |
+| 10  | Fiat via USD → selected fiat; `Intl.NumberFormat`                                                           | Manual symbol concatenation + hardcoded `en-US` grouping, prefix-only (`currency/format.ts:29-58`); FX via client poll of `open.er-api.com`, not Convex; staleness silent                                                                                 | ❌ Gap                                   |
+| 11  | Convex snapshots store coherent bundles from one price snapshot                                             | No `underlyingPrices[] / lpWeights / lpPriceUsd / status` on any table; daily stats carry price over while liquidity is simulated → can drift                                                                                                             | ❌ Gap                                   |
+| 12  | Separate current vs historical                                                                              | Only `portfolioCurrent` / `portfolioSnapshots` split; prices are current-only (no history table); market price history smeared into `marketDailyStats.priceUsd`                                                                                           | ⚠️ Partial                               |
+| 13  | Remove fake production financial data                                                                       | Whole app is seeded-by-design; nothing fakes a _live_ feed, but the static price map + `/2.5` LP heuristic + hard-1 stables are the offending pieces for the price layer                                                                                  | ⚠️ Partial (see Decisions)               |
+| 14  | Decimal-safe calculations                                                                                   | Core engine is bigint `mulDiv` (good). Seams: `Number(raw)/1e18*priceUsd` in `transactions.ts:528`, `liquidation.ts:73`; float→`Math.round` usd6 at `persistence.ts:89-98`; magic `10n**27n/10n**18n` literals                                            | ⚠️ Partial                               |
+| 15  | Required automated tests                                                                                    | LP-composition cluster entirely MISSING (no code to test yet); depeg, wrong-chain, wrong-contract, weights≠100%, N-token, negative amount, external reward-token MISSING; borrow/lend/multiply flow + fiat largely COVERED                                | ❌ Gap                                   |
+| 16  | Final UI test across device/locale/action                                                                   | Not done as part of this work                                                                                                                                                                                                                             | ▫️ To do                                 |
 
 ---
 
@@ -91,7 +91,7 @@ current/history split for portfolio) is largely correct.
 - **D3 — Static baseline map: DELETE ENTIRELY.** No static fallback. Convex `tokenPrices` is the
   sole basis; unknown/unpriced/stale → `unavailable` (never a fabricated number). Delete
   `SANDBOX_BASELINE_PRICES_USD`, `SANDBOX_TOKEN_PRICE_USD` (`onboarding.ts`), and the `umbrella.ts`
-  copy. **Consequence:** the map's *determinism* role for tests + `test-mode`/e2e (which run with
+  copy. **Consequence:** the map's _determinism_ role for tests + `test-mode`/e2e (which run with
   NO Convex/SIWE — see `ci.yml` `e2e-smoke`) must be replaced by an explicit **test-only price
   fixture**, seeded into the price context under `NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE`/audit mode —
   NOT a production default. This is new work: see **C0** below.
@@ -111,7 +111,8 @@ green at the end, and is independently revertable. Money = bigint fixed-point (`
 
 ### Phase 0 — Determinism safety net (required by D3: delete the static map)
 
-**C0. Test-only deterministic price fixture** *(D3 consequence)*
+**C0. Test-only deterministic price fixture** _(D3 consequence)_
+
 - Test: `app/lib/prices/__tests__/test-mode-prices.test.ts` — under `test-mode`/audit mode the
   price context resolves a fixed fixture (the values the deleted map used to guarantee); in a
   normal build the fixture is absent and prices come only from Convex; the fixture is never a
@@ -123,21 +124,24 @@ green at the end, and is independently revertable. Money = bigint fixed-point (`
 
 ### Phase 1 — Make the Convex oracle the single canonical basis
 
-**C1. Canonical price record: add chain/contract/status/timestamps** *(D3)*
+**C1. Canonical price record: add chain/contract/status/timestamps** _(D3)_
+
 - Test: `convex/__tests__/prices-record.test.ts` — a stored price row carries `chainId`,
   `contractAddress`, `symbol`, `priceUsd`, `source`, `sourceUpdatedAt`, `fetchedAt`,
   `snapshotAt`, `status`; identity is `(chainId, contractAddress)` not symbol-only.
 - Impl: extend `tokenPrices` schema (`schema.ts:605`), parse `llamaId` into chain+contract in
   `refreshPrices`, add a `by_chain_contract` index, populate the new fields.
 
-**C2. Status + freshness thresholds (10-min refresh)** *(req §2)*
+**C2. Status + freshness thresholds (10-min refresh)** _(req §2)_
+
 - Test: `prices-freshness.test.ts` — `status ∈ {fresh, stale, invalid}` from age vs thresholds
   (refresh 10m, stale 20m, invalid 30–60m); a failed refresh keeps rows and flips `fresh→stale`
   (never stale-as-fresh); partial refresh is only as fresh as its stalest token.
 - Impl: constants (`REFRESH 10m / STALE 20m / INVALID 30-60m`), compute/store `status`, cron →
   `{ minutes: 10 }` (`crons.ts:24`).
 
-**C3. Convex is the sole basis; DELETE the static maps** *(D3, req §1)*
+**C3. Convex is the sole basis; DELETE the static maps** _(D3, req §1)_
+
 - Test: `app/lib/prices/__tests__/canonical-source.test.ts` — the canonical reader returns the
   Convex value + status; unknown/unpriced/stale → `unavailable` (NEVER `$1`); no import of a
   static production price map survives (grep guard in the test).
@@ -147,20 +151,23 @@ green at the end, and is independently revertable. Money = bigint fixed-point (`
   claim-gate and umbrella markets read `tokenPrices` from Convex. Depends on **C0** for
   test/e2e determinism.
 
-**C4. Wire freshness into the UI; delete dead hooks or connect them** *(req §2)*
+**C4. Wire freshness into the UI; delete dead hooks or connect them** _(req §2)_
+
 - Test: component test asserting a "prices may be stale" affordance renders when status≠fresh.
 - Impl: connect `usePriceFreshness`/`usePriceFor` to real consumers (borrow list, detail tile,
-  charts) or remove them; ensure stale values are *visibly* stale.
+  charts) or remove them; ensure stale values are _visibly_ stale.
 
-**C5. Stablecoin depeg + unavailable-over-wrong** *(req §9, §3)*
+**C5. Stablecoin depeg + unavailable-over-wrong** _(req §9, §3)_
+
 - Test: `app/lib/prices/__tests__/stablecoin-depeg.test.ts` — with USDT=0.999 / DAI=1.001 /
   GHO=0.998, pair prices, LP prices, borrow totals reflect the deviation; an unpriced leg yields
   `unavailable`, never a fabricated number.
 - Impl: remove hard `=1`; source stables from the oracle like any token.
 
-### Phase 2 — LP collateral valuation `Σ(weightᵢ × priceᵢ)` *(req §5, §6, §15 — core)*
+### Phase 2 — LP collateral valuation `Σ(weightᵢ × priceᵢ)` _(req §5, §6, §15 — core)_
 
 **C6. Pool composition + weights data model (2/3/4+ tokens)**
+
 - Test: `app/lib/prices/__tests__/pool-weights.test.ts` — every catalog pool has
   `constituents: {symbol, weightBps}[]` with `Σ weightBps === 10000`; 3-token & 80/20 pools are
   real composition (not `name` strings); 2/3/4-token shapes representable.
@@ -169,7 +176,8 @@ green at the end, and is independently revertable. Money = bigint fixed-point (`
   converting the string-encoded 3-token (`DAI / USDC / USDT`, `USDC / WBTC / ETH`, …) and 80/20
   (`80/20 WETH/AAVE`, …) pools.
 
-**C7. Pure `lpTokenPriceUsd(constituents, prices) = Σ wᵢ·pᵢ`** *(the required tests)*
+**C7. Pure `lpTokenPriceUsd(constituents, prices) = Σ wᵢ·pᵢ`** _(the required tests)_
+
 - Test: `app/lib/prices/__tests__/lp-token-price.test.ts` — the four spec fixtures:
   stable USDC=1/USDT=0.999 50/50 → 0.9995 (×12000 → 11994); volatile ETH=1900/USDC=1 50/50 →
   950.50; 3-asset equal-weight (ETH+GHO+WBTC)/3; weighted ETH/LDO/GHO 50/25/25. Plus: 2/3/4-token,
@@ -177,7 +185,8 @@ green at the end, and is independently revertable. Money = bigint fixed-point (`
   negative amount → rejected, decimal handling (bigint).
 - Impl: new pure function in `app/lib/prices/lp-token-price.ts`.
 
-**C8. Replace the `/2.5` heuristic everywhere; enforce single-source parity** *(req §6)*
+**C8. Replace the `/2.5` heuristic everywhere; enforce single-source parity** _(req §6)_
+
 - Test: `pool-lp-price-parity.test.ts` — seed `markets.priceUsd` == engine `lpTokenPriceUsd6` for
   the same pool; LP value moves with its components (WBTC/ETH ≫ stable/stable); the old
   `collateralExampleUsd/2.5` path is gone.
@@ -185,22 +194,25 @@ green at the end, and is independently revertable. Money = bigint fixed-point (`
   prices; update `mock.ts:146,176`, `build-seed.ts:534`; delete `collateralExampleUsd/2.5`
   and (if now unused) `collateralExampleUsd` itself.
 
-**C9. Refresh `lpTokenPrices` from a job (derived from token prices × weights)** *(req §2)*
+**C9. Refresh `lpTokenPrices` from a job (derived from token prices × weights)** _(req §2)_
+
 - Test: `convex/__tests__/lp-prices-refresh.test.ts` — a scheduled action recomputes each pool's
   LP price from current `tokenPrices` × weights, writes `lpTokenPrices` with status; server
   solvency reads the derived LP price; a stale/unavailable leg marks the LP price unavailable.
 - Impl: implement a caller for `wallet/lpTokenPrices.upsertPrices` (currently dead); add to the
   10-min cron; `transactions.ts:523` / `liquidation.ts:68` read the refreshed value.
 
-**C10. SuppliedUSD end-to-end + weight-aware exposure** *(req §5)*
+**C10. SuppliedUSD end-to-end + weight-aware exposure** _(req §5)_
+
 - Test: extend `credit-engine/__tests__/valuation.test.ts` — `SuppliedUSD = SuppliedLPAmount ×
-  LPPriceUSD` with the new prices; `exposure-aggregator` splits by real weights, not 50/50.
+LPPriceUSD` with the new prices; `exposure-aggregator` splits by real weights, not 50/50.
 - Impl: replace the 50/50 split in `exposure-aggregator.ts:52-62` and
   `portfolio-exposure-by-asset.tsx` with constituent weights.
 
-### Phase 3 — Coherent snapshots + current/history *(req §8, §11, §12)*
+### Phase 3 — Coherent snapshots + current/history _(req §8, §11, §12)_
 
 **C11. Coherent market-snapshot bundle from one price snapshot**
+
 - Test: `convex/__tests__/market-snapshot-bundle.test.ts` — a snapshot stores `underlyingPrices[]`,
   `lpWeights`, `lpPriceUsd`, `suppliedLpAmount`, `suppliedUsd`, `borrowedAssets[]`,
   `totalBorrowedUsd`, `status`, and `lpPriceUsd === Σ(weight×underlyingPrice)` within the bundle
@@ -209,66 +221,75 @@ green at the end, and is independently revertable. Money = bigint fixed-point (`
   from one price read.
 
 **C12. Current vs historical separation for prices/snapshots**
+
 - Test: current queries read the current bundle; chart queries read history; a stale current
   bundle is flagged, never silently shown as live.
 - Impl: add `tokenPricesHistory` (or document the derived model) and a
   `marketSnapshotsCurrent`/`…History` split mirroring the portfolio pattern (`schema.ts:1392-1413`).
 
-### Phase 4 — Accounting corrections *(req §7, lend/multiply)*
+### Phase 4 — Accounting corrections _(req §7, lend/multiply)_
 
-**C13. Borrowed asset = amount × current token price** *(D2, req §7)*
+**C13. Borrowed asset = amount × current token price** _(D2, req §7)_
+
 - Test: `borrow-valuation.test.ts` — 2 WBTC + 8000 USDC → `2×WBTC + 8000×USDC` at current prices;
   `TotalBorrowedUSD = Σ`; debt is never LP-valued; a depegged borrowed stable moves the total.
 - Impl: reprice debt notional by current token price on revaluation (`valuation.ts`,
   `transactions.ts` solvency), preserving interest accrual.
 
-**C14. Lend Convex-hydration fixes** *(found defects)*
+**C14. Lend Convex-hydration fixes** _(found defects)_
+
 - Test: `lend-system/__tests__/hydration-units.test.ts` — for a non-$1 asset (ETH),
   `principalAmount`/`interestEarned` are token amounts (not USD), and `rewardsEarnedUsd` survives
-  hydration; an external reward token is valued at *its own* price (`RewardUSD = amount ×
-  rewardTokenPrice`).
+  hydration; an external reward token is valued at _its own_ price (`RewardUSD = amount ×
+rewardTokenPrice`).
 - Impl: fix `use-lend-session.ts:277,281-282,310` (`interestEarned = earnedUsd/price`,
   `principalAmount = supplied − earnedUsd/price`, stop hardcoding `rewardsEarnedUsd:0`); add
   external-reward-token valuation.
 
-**C15. Multiply guards: stale-oracle block + hard deleverage HF** *(multiply gaps)*
+**C15. Multiply guards: stale-oracle block + hard deleverage HF** _(multiply gaps)_
+
 - Test: `multiply-engine/__tests__/guards.test.ts` — a stale/aged oracle price blocks open/adjust;
-  partial unwind is *hard-blocked* (not warn-only) below min HF; USDC depeg lowers HF; insufficient
+  partial unwind is _hard-blocked_ (not warn-only) below min HF; USDC depeg lowers HF; insufficient
   liquidity and slippage-over-limit hard-block.
 - Impl: add oracle-age guard (`validation.ts`, `simulation.ts:81-84`); make
   `validateDeleverageAction` (`validation.ts:113-115`) return `allowed:false` below min HF.
 
-### Phase 5 — Fiat *(req §10)*
+### Phase 5 — Fiat _(req §10)_
 
 **C16. Locale-aware `Intl.NumberFormat` currency formatter**
+
 - Test: `currency/__tests__/intl-format.test.ts` — per-locale grouping and symbol placement
   (e.g. `1.234,56 €` / `€1,234.56`), zero-decimal currencies (JPY/KRW/…), negatives; replaces
   the `redenominateCompactUsd` regex path.
 - Impl: single `formatCurrency(amountUsd, currency, locale)` on `Intl.NumberFormat({style:
-  "currency"})`; migrate the ~16 `$`-baking sites to convert from raw USD numbers.
+"currency"})`; migrate the ~16 `$`-baking sites to convert from raw USD numbers.
 
 **C17. FX through the validated Convex layer**
+
 - Test: `convex/__tests__/fx-rates.test.ts` — an action fetches+validates FX, writes an `fxRates`
   table with `status`+timestamps; client reads from Convex; stale FX is visibly stale; USD forced
   to 1.
 - Impl: `fxRates` table + refresh action + 10-min cron; `exchange-rates.ts` reads Convex;
   surface staleness in `display-preferences`.
 
-### Phase 6 — Decimal hardening *(req §14)*
+### Phase 6 — Decimal hardening _(req §14)_
 
 **C18. Bigint server valuation; kill float seams**
+
 - Test: `convex/__tests__/valuation-precision.test.ts` — large-notional LP collateral values match
   the bigint oracle within ≤1 unit; no `Number(raw)/1e18` in solvency/liquidation.
 - Impl: convert `transactions.ts:528` / `liquidation.ts:73` to `mulDiv` bigint; replace magic
   `10n**27n`/`10n**18n` with `RAY`/`WAD` (`persistence.ts:234,241`).
 
-### Phase 7 — Cleanup + full UI verification *(req §13, §16)*
+### Phase 7 — Cleanup + full UI verification _(req §13, §16)_
 
-**C19. Remove/relabel remaining live-looking fake constants** *(D1)*
+**C19. Remove/relabel remaining live-looking fake constants** _(D1)_
+
 - Ensure no simulated TVL/liquidity is presented as a live feed; `unavailable` beats a wrong
   number everywhere; grep sweep from §13 comes back clean of production-facing fakes.
 
-**C20. Production-like build + manual UI matrix** *(req §16)*
+**C20. Production-like build + manual UI matrix** _(req §16)_
+
 - `npm run build` + serve; walk every action (dashboard, pool/asset/market pages, connect/switch
   wallet, switch network, switch fiat, supply/withdraw LP collateral, borrow/repay, add/remove
   collateral, approve, tx preview/submit/success/failure, insufficient balance, stale price,
