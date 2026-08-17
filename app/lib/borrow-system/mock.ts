@@ -17,6 +17,7 @@ import {
 import { listSpokeBorrowables, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
 import { HOME_COLLATERAL_POOLS, HOME_CLAIM_POSITIONS } from "@/app/lib/borrow-system/home-contracts"
 import { liquidationThresholdPctFromMaxLtvPct } from "@/app/lib/borrow-system/liquidation-threshold"
+import { canonicalPriceUsd } from "@/app/lib/prices/canonical"
 
 export const HOME_POOL_TO_MARKET_ID: Record<string, string> = {
   "eth-usdc": "uni-v3-bluechip-weth-usdc",
@@ -117,17 +118,16 @@ function estimateLiquidationThresholdWad(pool: BorrowPoolRow) {
   return wadFromRatio(liquidationThresholdPctFromMaxLtvPct(pool.ltv) / 100)
 }
 
-function assetPriceUsd6(asset: SpokeBorrowableRecord) {
+export function assetPriceUsd6(asset: SpokeBorrowableRecord) {
+  // Canonical basis wins so the ENGINE values debt/collateral at the SAME price the UI shows.
+  // ASSET_PRICE_USD used to carry an independent snapshot (e.g. ETH $2021.44) that drifted from
+  // the $1934 canonical baseline on the tiles, so a health factor was computed at a price shown
+  // nowhere. Fall back to the local seed map only for tokens the canonical snapshot omits.
+  const canonical = canonicalPriceUsd(asset.baseAssetId) ?? canonicalPriceUsd(asset.id)
+  if (canonical !== undefined) return usd6(canonical)
   const byId = ASSET_PRICE_USD[asset.id]
   const byBaseAssetId = ASSET_PRICE_USD[asset.baseAssetId]
-  const fallback =
-    asset.category === "stable"
-      ? "1"
-      : asset.category === "btc"
-        ? "68422.18"
-        : asset.category === "eth"
-          ? "2021.44"
-          : "8.5"
+  const fallback = asset.category === "stable" ? "1" : asset.category === "btc" ? "68422.18" : "8.5"
   return usd6(byId ?? byBaseAssetId ?? fallback)
 }
 
