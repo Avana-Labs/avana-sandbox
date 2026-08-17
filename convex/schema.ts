@@ -607,10 +607,27 @@ export default defineSchema({
     symbol: v.string(),
     /** DefiLlama coin id used to fetch it (chain:address or coingecko:id). */
     llamaId: v.string(),
+    /**
+     * Canonical on-chain identity parsed from `llamaId`. Prefer (chainId, contractAddress) over
+     * symbol for identification — two different-chain tokens can share a symbol. Optional because
+     * coingecko-id-sourced quotes (e.g. native ETH) carry no contract.
+     */
+    chainId: v.optional(v.number()),
+    contractAddress: v.optional(v.string()),
     priceUsd: v.number(),
     decimals: v.optional(v.number()),
     /** DefiLlama price confidence (0..1). */
     confidence: v.optional(v.number()),
+    /**
+     * Freshness lineage. sourceUpdatedAt = the provider's own quote timestamp (when known);
+     * fetchedAt = when our action received the response; snapshotAt = when we wrote the row. A
+     * failed refresh writes nothing, so these never advance on stale data. `status` is the
+     * classification at write time (fresh|stale|invalid); the client re-derives live age too.
+     */
+    sourceUpdatedAt: v.optional(v.number()),
+    fetchedAt: v.optional(v.number()),
+    snapshotAt: v.optional(v.number()),
+    status: v.optional(v.union(v.literal("fresh"), v.literal("stale"), v.literal("invalid"))),
     /**
      * Where the row came from: "defillama" is the hourly refreshed live spot;
      * "baseline" is the seeded snapshot used until the first live refresh lands
@@ -625,7 +642,9 @@ export default defineSchema({
      */
     priceChange24hWad: v.optional(v.string()),
     updatedAt: v.number(),
-  }).index("by_symbol", ["symbol"]),
+  })
+    .index("by_symbol", ["symbol"])
+    .index("by_chain_contract", ["chainId", "contractAddress"]),
 
   /**
    * Legacy shared editorial content (About / history / FAQs), keyed by `markets` id.

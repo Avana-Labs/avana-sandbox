@@ -37,12 +37,39 @@ export const TOKEN_LLAMA_IDS: Record<string, string> = {
 }
 
 /**
- * Prices are considered stale after this age. The refresh cron runs hourly (see
- * crons.ts), so 3h tolerates one or two missed runs (network blip / DefiLlama outage)
- * before the UI flags staleness — long enough to avoid false positives, short enough
- * that a genuinely wedged cron surfaces within a few hours.
+ * Freshness thresholds. The refresh cron runs every 10 minutes (see crons.ts): a row older than
+ * one missed run (20m) is `stale`, and older than several (45m) is `invalid` — a wedged cron
+ * surfaces quickly without false positives from a single network blip. A failed refresh writes
+ * nothing, so old rows keep their old timestamp and age past these thresholds honestly.
  */
-export const PRICE_STALE_AFTER_MS = 3 * 60 * 60 * 1000
+export const PRICE_REFRESH_INTERVAL_MS = 10 * 60 * 1000
+export const PRICE_STALE_AFTER_MS = 20 * 60 * 1000
+export const PRICE_INVALID_AFTER_MS = 45 * 60 * 1000
+
+/** DefiLlama chain-name → EVM chainId, for parsing `chain:address` coin ids. */
+const LLAMA_CHAIN_IDS: Record<string, number> = {
+  ethereum: 1,
+  base: 8453,
+  arbitrum: 42161,
+  optimism: 10,
+  polygon: 137,
+}
+
+/** Parse a DefiLlama coin id into on-chain identity. coingecko-slug ids carry no contract. */
+export function parseLlamaId(llamaId: string): { chainId?: number; contractAddress?: string } {
+  const [chain, ref] = llamaId.split(":")
+  if (!ref || chain === "coingecko") return {}
+  const chainId = LLAMA_CHAIN_IDS[chain]
+  if (ref.startsWith("0x")) return { chainId, contractAddress: ref.toLowerCase() }
+  return chainId ? { chainId } : {}
+}
+
+/** Classify a price row's age against the freshness thresholds. */
+export function classifyPriceStatus(ageMs: number): "fresh" | "stale" | "invalid" {
+  if (ageMs >= PRICE_INVALID_AFTER_MS) return "invalid"
+  if (ageMs >= PRICE_STALE_AFTER_MS) return "stale"
+  return "fresh"
+}
 
 /**
  * Minimum DefiLlama `confidence` (0–1 scale) to accept a quote. Our tracked coins normally
@@ -58,9 +85,12 @@ export const getPrices = query({
     const rows = await ctx.db.query("tokenPrices").collect()
     return rows.map((r) => ({
       symbol: r.symbol,
+      chainId: r.chainId,
+      contractAddress: r.contractAddress,
       priceUsd: r.priceUsd,
       confidence: r.confidence,
       source: r.source,
+      status: r.status,
       priceChange24hWad: r.priceChange24hWad,
       updatedAt: r.updatedAt,
     }))
@@ -120,10 +150,16 @@ export const upsertPrices = internalMutation({
       v.object({
         symbol: v.string(),
         llamaId: v.string(),
+        chainId: v.optional(v.number()),
+        contractAddress: v.optional(v.string()),
         priceUsd: v.number(),
         decimals: v.optional(v.number()),
         confidence: v.optional(v.number()),
         source: v.string(),
+        sourceUpdatedAt: v.optional(v.number()),
+        fetchedAt: v.optional(v.number()),
+        snapshotAt: v.optional(v.number()),
+        status: v.optional(v.union(v.literal("fresh"), v.literal("stale"), v.literal("invalid"))),
         updatedAt: v.number(),
       }),
     ),
@@ -142,7 +178,7 @@ export const upsertPrices = internalMutation({
 })
 
 type LlamaResponse = {
-  coins: Record<string, { price: number; decimals?: number; confidence?: number; symbol?: string }>
+  coins: Record<string, { price: number; decimals?: number; confidence?: number; symbol?: string; timestamp?: number }>
 }
 
 /**
@@ -177,13 +213,23 @@ export const refreshPrices = internalAction({
           // treat as the real price. Missing confidence is treated as acceptable so an omitted
           // field never empties the whole batch.
           if (typeof coin.confidence === "number" && coin.confidence < PRICE_MIN_CONFIDENCE) return null
+          const { chainId, contractAddress } = parseLlamaId(llamaId)
+          // DefiLlama returns per-coin `timestamp` in SECONDS; fall back to now when absent so a
+          // provider that omits it never looks artificially ancient.
+          const sourceUpdatedAt = typeof coin.timestamp === "number" ? coin.timestamp * 1000 : now
           return {
             symbol,
             llamaId,
+            chainId,
+            contractAddress,
             priceUsd: coin.price,
             decimals: coin.decimals,
             confidence: coin.confidence,
             source: "defillama",
+            sourceUpdatedAt,
+            fetchedAt: now,
+            snapshotAt: now,
+            status: classifyPriceStatus(Math.max(0, now - sourceUpdatedAt)),
             updatedAt: now,
           }
         })
