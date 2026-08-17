@@ -1,3 +1,4 @@
+import { sandboxBaselinePriceUsd } from "@/app/lib/prices/sandbox-baseline-prices"
 import type { SwapAsset, SwapPair } from "./contracts"
 
 export const SWAP_CHAIN_ID = 1
@@ -14,7 +15,7 @@ export const SWAP_ASSETS: SwapAsset[] = [
     isNative: true,
     isLpToken: false,
     isSwapEnabled: true,
-    priceUsd: 1934,
+    priceUsd: sandboxBaselinePriceUsd("ETH"),
     minimumSwapAmount: 0.00001,
     maximumSwapAmount: 500,
   },
@@ -28,7 +29,7 @@ export const SWAP_ASSETS: SwapAsset[] = [
     isNative: false,
     isLpToken: false,
     isSwapEnabled: true,
-    priceUsd: 1,
+    priceUsd: sandboxBaselinePriceUsd("USDC"),
     minimumSwapAmount: 1,
     maximumSwapAmount: 1_000_000,
   },
@@ -42,7 +43,7 @@ export const SWAP_ASSETS: SwapAsset[] = [
     isNative: false,
     isLpToken: false,
     isSwapEnabled: true,
-    priceUsd: 1,
+    priceUsd: sandboxBaselinePriceUsd("GHO"),
     minimumSwapAmount: 1,
     maximumSwapAmount: 1_000_000,
   },
@@ -57,7 +58,7 @@ export const SWAP_ASSETS: SwapAsset[] = [
     isLpToken: false,
     isSwapEnabled: true,
     // Aligned with the single sandbox baseline (see prices/sandbox-baseline-prices.ts).
-    priceUsd: 65_000,
+    priceUsd: sandboxBaselinePriceUsd("WBTC"),
     minimumSwapAmount: 0.00001,
     maximumSwapAmount: 50,
   },
@@ -71,7 +72,7 @@ export const SWAP_ASSETS: SwapAsset[] = [
     isNative: false,
     isLpToken: false,
     isSwapEnabled: true,
-    priceUsd: 18,
+    priceUsd: sandboxBaselinePriceUsd("LINK"),
     minimumSwapAmount: 0.01,
     maximumSwapAmount: 500_000,
   },
@@ -86,7 +87,7 @@ export const SWAP_ASSETS: SwapAsset[] = [
     isLpToken: false,
     isSwapEnabled: true,
     // Aligned with the single sandbox baseline (see prices/sandbox-baseline-prices.ts).
-    priceUsd: 105,
+    priceUsd: sandboxBaselinePriceUsd("AAVE"),
     minimumSwapAmount: 0.001,
     maximumSwapAmount: 100_000,
   },

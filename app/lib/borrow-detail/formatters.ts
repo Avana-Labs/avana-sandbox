@@ -5,7 +5,9 @@
 
 export function formatOraclePrice(value: number): string {
   if (!Number.isFinite(value)) return "—"
-  if (value >= 100) return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  // Force en-US grouping: the currency switcher's redenomination regex parses this en-US
+  // format, so a locale-dependent grouping (e.g. "1.234,56") would fail to re-denominate.
+  if (value >= 100) return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   if (value >= 1) return `$${value.toFixed(4)}`
   return `$${value.toFixed(6)}`
 }

@@ -21,9 +21,9 @@ import {
   fetchRecentTransactions,
   fetchRisk,
   fetchSupplyBorrow,
-  fetchTokenPrices,
   type ConvexContractAddressRow,
 } from "@/app/lib/borrow-system/market-hydration-server"
+import { canonicalPriceMap } from "@/app/lib/prices/canonical"
 import { priceKey } from "@/app/lib/prices/format"
 import { formatOraclePrice } from "@/app/lib/borrow-detail/formatters"
 import { formatBpsAsPct } from "@/app/lib/borrow-detail/allocation"
@@ -82,11 +82,11 @@ function mergeConvexQuickStats(
 }
 
 /**
- * Overlay the pool "Oracle price" quick stat with the real pair rate derived from the
- * DefiLlama token oracle (price0 / price1), so an asset shows one consistent oracle price
- * across borrow-detail, the lend list, and the multiply catalog. When either leg is
- * unpriced or the oracle is unavailable, the stat is DROPPED rather than left showing the
- * fabricated mock fallback — the display path never surfaces a hardcoded oracle price.
+ * Overlay the pool "Oracle price" quick stat with the pair rate derived from the canonical
+ * per-token prices (price0 / price1), so the pool price is an exact PA/PB ratio of the same
+ * single-token prices shown on the rows and tiles — one consistent basis everywhere. When
+ * either leg is unpriced, the stat is DROPPED rather than left showing the fabricated mock
+ * fallback — the display path never surfaces a hardcoded price.
  */
 export function injectPoolOraclePrice(
   quickStats: QuickStat[],
@@ -298,7 +298,6 @@ async function getPoolDetailFromConvexUncached(id: string): Promise<PoolDetail |
     transactions,
     risk,
     quickStats,
-    prices,
     content,
     riskParameters,
     poolBorrowables,
@@ -310,7 +309,6 @@ async function getPoolDetailFromConvexUncached(id: string): Promise<PoolDetail |
     fetchRecentTransactions("pool", detail.row.id),
     fetchRisk("pool", detail.row.id),
     fetchQuickStats("pool", detail.row.id),
-    fetchTokenPrices(),
     fetchContent("pool", detail.row.id),
     fetchBorrowRiskParameters(detail.row.id),
     fetchBorrowPoolBorrowables(detail.row.id),
@@ -331,7 +329,7 @@ async function getPoolDetailFromConvexUncached(id: string): Promise<PoolDetail |
     injectSiloedMarketQuickStats(
       injectPoolOraclePrice(
         mergeConvexQuickStats(detail.quickStats, quickStats),
-        prices,
+        canonicalPriceMap(),
         detail.row.visuals[0].symbol,
         detail.row.visuals[1].symbol,
       ),
