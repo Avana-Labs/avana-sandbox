@@ -172,8 +172,38 @@ export const upsertPrices = internalMutation({
         .unique()
       if (existing) await ctx.db.patch(existing._id, row)
       else await ctx.db.insert("tokenPrices", row)
+
+      // Append to the SEPARATE history table (one row per symbol per UTC day) so charts have a
+      // price series without ever reading the current row. Upsert keeps growth bounded.
+      const day = new Date(row.updatedAt).toISOString().slice(0, 10)
+      const historyRow = await ctx.db
+        .query("tokenPricesHistory")
+        .withIndex("by_symbol_day", (q) => q.eq("symbol", row.symbol).eq("day", day))
+        .unique()
+      if (historyRow) await ctx.db.patch(historyRow._id, { priceUsd: row.priceUsd, updatedAt: row.updatedAt })
+      else
+        await ctx.db.insert("tokenPricesHistory", {
+          symbol: row.symbol,
+          day,
+          priceUsd: row.priceUsd,
+          updatedAt: row.updatedAt,
+        })
     }
     return { written: rows.length }
+  },
+})
+
+/** Historical daily price series for a token (charts). Separate from the current `getPrices`. */
+export const getTokenPriceHistory = query({
+  args: { symbol: v.string() },
+  handler: async (ctx, { symbol }) => {
+    const rows = await ctx.db
+      .query("tokenPricesHistory")
+      .withIndex("by_symbol_day", (q) => q.eq("symbol", symbol.toLowerCase()))
+      .collect()
+    return rows
+      .map((r) => ({ day: r.day, priceUsd: r.priceUsd }))
+      .sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0))
   },
 })
 
