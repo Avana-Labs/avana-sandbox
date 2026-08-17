@@ -18,6 +18,7 @@ import {
   resolveHeroContractLabel,
 } from "@/app/borrow/_detail/lib/hero-chart-feeds"
 import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useDashboardBorrowLive } from "@/app/dashboard/use-dashboard-borrow-live"
 import { currentCollateralValueUsd6 } from "@/app/lib/credit-engine"
 import { buildEmptyChartFeed, buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-feed"
 
@@ -161,6 +162,10 @@ function PoolHeroView({ detail, leading, actions, className, hideIdentity = fals
   const { t } = useTranslation()
   const session = useBorrowSessionContext()
   const { walletId } = useAvanaIdentity()
+  // Convex-backed portfolio (same adapter the dashboard uses) so "Your position"
+  // reflects the onboarded + live collateral in this pool even when the in-memory
+  // session hasn't hydrated those positions on this route. (D4)
+  const portfolioBorrow = useDashboardBorrowLive(walletId, session)
   const metricTabs = React.useMemo(() => [t("Supplied"), t("Borrowed"), t("Utilization"), t("Your position")], [t])
   const [activeMetricTab, setActiveMetricTab] = React.useState(metricTabs[0])
   React.useEffect(() => {
@@ -172,12 +177,16 @@ function PoolHeroView({ detail, leading, actions, className, hideIdentity = fals
   const feed = React.useMemo(() => {
     if (activeMetricTab === metricTabs[3]) {
       const account = session.state.accounts[walletId]
-      const currentValueUsd = (account?.collateralPositions ?? [])
+      const sessionValueUsd = (account?.collateralPositions ?? [])
         .filter((position) => position.marketId === detail.id)
         .reduce((sum, position) => {
           const market = session.state.markets[position.marketId]
           return sum + (market ? Number(currentCollateralValueUsd6(position, market)) / 1_000_000 : 0)
         }, 0)
+      const convexValueUsd = (portfolioBorrow?.collateralPositions ?? [])
+        .filter((row) => row.pool.id === detail.id)
+        .reduce((sum, row) => sum + row.pool.collateralUsd, 0)
+      const currentValueUsd = convexValueUsd > 0 ? convexValueUsd : sessionValueUsd
       return buildWalletPositionFeed(
         currentValueUsd,
         session.transactionHistory
@@ -221,6 +230,7 @@ function PoolHeroView({ detail, leading, actions, className, hideIdentity = fals
     detail.heroUtilizationFeed,
     detail.id,
     metricTabs,
+    portfolioBorrow,
     session.state,
     session.transactionHistory,
     walletId,

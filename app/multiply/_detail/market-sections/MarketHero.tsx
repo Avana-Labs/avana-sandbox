@@ -18,6 +18,8 @@ import {
   resolveHeroContractLabel,
 } from "@/app/borrow/_detail/lib/hero-chart-feeds"
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
+import { useAvanaIdentity } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useDashboardMultiplyLive } from "@/app/dashboard/use-dashboard-multiply-live"
 import { buildEmptyChartFeed, buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-feed"
 
 type MarketHeroProps = {
@@ -145,6 +147,12 @@ export function MarketHero(props: MarketHeroProps) {
 function MarketHeroView({ detail, leading, actions, className, hideIdentity = false }: MarketHeroProps) {
   const { t } = useTranslation()
   const session = useMultiplySessionContext()
+  const { walletId } = useAvanaIdentity()
+  // Multiply positions aren't synthesized into the in-memory session from onboarding
+  // balances, so "Your position" read only actively-opened positions and showed $0.
+  // Read the authoritative Convex-backed portfolio (same adapter the dashboard uses)
+  // so it reflects the real onboarded + live collateral in this market. (D4)
+  const portfolioMultiply = useDashboardMultiplyLive(walletId, session)
   const metricTabs = React.useMemo(() => [t("Supplied"), t("Borrowed"), t("Utilization"), t("Your position")], [t])
   const [activeMetricTab, setActiveMetricTab] = React.useState(metricTabs[0])
   React.useEffect(() => {
@@ -155,9 +163,13 @@ function MarketHeroView({ detail, leading, actions, className, hideIdentity = fa
   const feed = React.useMemo(() => {
     const fallback = detail.heroFeed ?? getMultiplyMarketHeroFeed(detail.id)
     if (activeMetricTab === metricTabs[3]) {
-      const currentValueUsd = Object.values(session.state.positions)
+      const convexValueUsd = (portfolioMultiply?.lpCollaterals ?? [])
+        .filter((row) => row.marketId === detail.id && row.status === "open")
+        .reduce((sum, row) => sum + row.collateralUsd, 0)
+      const sessionValueUsd = Object.values(session.state.positions)
         .filter((position) => position.marketId === detail.id)
         .reduce((sum, position) => sum + position.collateralValueUsd, 0)
+      const currentValueUsd = convexValueUsd > 0 ? convexValueUsd : sessionValueUsd
       return buildWalletPositionFeed(
         currentValueUsd,
         session.transactionHistory
@@ -184,6 +196,7 @@ function MarketHeroView({ detail, leading, actions, className, hideIdentity = fa
     detail.id,
     detail.supplyBorrow,
     metricTabs,
+    portfolioMultiply,
     session.state.positions,
     session.transactionHistory,
   ])

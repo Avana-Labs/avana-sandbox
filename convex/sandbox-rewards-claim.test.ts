@@ -73,7 +73,7 @@ describe("recordRewardsClaim — server-authoritative payout", () => {
     ).rejects.toThrow(/TASK_ALREADY_CLAIMED/)
   })
 
-  test("empty taskIds are rejected", async () => {
+  test("empty taskIds AND no legacy amount are rejected", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
     await expect(
@@ -84,6 +84,26 @@ describe("recordRewardsClaim — server-authoritative payout", () => {
         syntheticTxHash: "0xhash-empty",
       }),
     ).rejects.toThrow(/EMPTY_CLAIM/)
+  })
+
+  test("legacy amountUsd path (no taskIds) still records for a rollout-old client", async () => {
+    // A still-deployed old client calls with amountUsd and no taskIds. The deploy
+    // must not break it: the amount is trusted verbatim (transitional), the row is
+    // written, but it carries no claimedTaskIds (so it can't be double-claim-guarded).
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    const result = await asUser.mutation(api.sandbox.transactions.recordRewardsClaim, {
+      wallet: WALLET,
+      intentId: "rewards:test:legacy",
+      amountUsd: 12.5,
+      syntheticTxHash: "0xhash-legacy",
+    })
+    expect(result.idempotent).toBe(false)
+    expect(result.amountUsd).toBe(12.5)
+    const rows = await t.run(async (ctx) => await ctx.db.query("transactions").collect())
+    const row = rows.find((r) => r.intentId === "rewards:test:legacy")
+    expect(row?.amountUsd).toBe(12.5)
+    expect(row?.claimedTaskIds).toBeUndefined()
   })
 
   test("prior intent id still short-circuits idempotently", async () => {

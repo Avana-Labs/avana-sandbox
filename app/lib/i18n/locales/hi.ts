@@ -1208,6 +1208,7 @@ const dict: TranslationDictionary = {
   "{time} left": "{time} शेष",
   "{value} total": "कुल {value}",
   Earning: "अर्जन",
+  "{amount} cooling": "{amount} कूलिंग में",
 }
 
 export default dict
