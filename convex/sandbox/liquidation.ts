@@ -16,6 +16,7 @@ import { v } from "convex/values"
 import type { MutationCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
 import { getAuthedWallet, requireSandboxWallet } from "./auth"
+import { tokenNotionalToUsd } from "./collateral-usd"
 import { appendPortfolioSnapshot, applyLedgerDelta } from "./transactions"
 
 /** A single liquidation may repay at most this share of outstanding debt (50%). */
@@ -67,10 +68,10 @@ async function victimCollateralLiquidationValue(
   ])
   const priceUsd = pool?.lpTokenPriceUsd ?? market?.priceUsd
   // 18-dec token notional (engine) vs usd6 microdollars (sandbox tests / persistence).
+  // Bigint mulDiv for the 18-dec path — see collateral-usd.tokenNotionalToUsd.
   let valueUsd = 0
   if (raw > 0n) {
-    valueUsd =
-      raw >= 10n ** 12n ? (priceUsd && priceUsd > 0 ? (Number(raw) / 1e18) * priceUsd : 0) : Number(raw) / 1_000_000
+    valueUsd = raw >= 10n ** 12n ? tokenNotionalToUsd(raw, priceUsd ?? 0) : Number(raw) / 1_000_000
   }
   const thresholdPct =
     pool?.liquidationThresholdPct ??
