@@ -56,6 +56,36 @@ Currently both are `https://avana-webapp.vercel.app` ✅.
 3. Send users to the canonical origin only. Retire/redirect stale aliases like `avana-ashen.vercel.app`.
 4. The issuer origin must serve `/.well-known/openid-configuration` + `/.well-known/jwks.json` (rewritten in `next.config.mjs`) and be reachable by the Convex backend.
 
+## Staging for load tests (`scripts/load/live-concurrency.k6.js`)
+
+The concurrency stress test **must not** run against `resolute-eel-426`. Stand up a dedicated staging deployment before running the k6 script or any other load harness:
+
+1. Create a new Convex deployment (fresh project or a second `dev:` deployment on the existing project):
+   ```
+   npx convex init --team <team> --project avana-staging
+   ```
+   Note the deployment URL — it will look like `https://<name>-<number>.convex.cloud`. The equivalent WebSocket URL is `wss://<name>-<number>.convex.cloud`.
+2. Point a **separate** Vercel/preview environment at that deployment. Set:
+   - `NEXT_PUBLIC_CONVEX_URL=https://<staging>.convex.cloud`
+   - `NEXT_PUBLIC_CONVEX_SITE_URL=https://<staging>.convex.site`
+   - `NEXT_PUBLIC_SIWE_ISSUER=https://<staging-app-host>` (must equal Convex `SIWE_JWT_ISSUER` on the staging deployment)
+   - `CONVEX_DEPLOY_KEY=` a **staging** deploy key, never the prod one.
+3. Seed the staging deployment: `npx convex run --deployment <staging> ...` or run `scripts/seed-convex.ts` with the staging URL exported.
+4. Run the load test:
+   ```
+   BASE_URL=https://<staging-app-host> \
+   CONVEX_WS_URL=wss://<staging>.convex.cloud \
+   PEAK_VUS=1000 \
+   k6 run scripts/load/live-concurrency.k6.js
+   ```
+
+The script's `setup()` refuses to run when `BASE_URL` or `CONVEX_WS_URL` matches any of the prod-shaped patterns (`avana.cc`, `www.avana`, `.prod.`, `production`). Add your prod hostnames to `looksLikeProd` in the script if they don't already trip it.
+
+The subscription scenario (`convexSubscribe`) is only mounted when `CONVEX_WS_URL` is set. Every VU opens one WebSocket to Convex, holds it for `WS_HOLD_SECONDS` (default 60s), and closes cleanly. The threshold `ws_upgrade_success rate > 0.99` fails the run if Convex refuses upgrades under concurrent load. Overrides:
+
+- `WS_VUS` — number of concurrent long-lived subscribers (default 200).
+- `WS_HOLD_SECONDS` — how long each socket stays open (default 60s).
+
 ## Env var reference
 
 | Var                           | Scope  | Set on            | Purpose                                                 |
