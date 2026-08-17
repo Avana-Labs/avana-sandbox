@@ -61,10 +61,11 @@ const DEFAULT_CONFIG = {
 // onboarding NEVER depends on the price cron having run. It must cover every token the starter
 // buckets can select whose price isn't seeded on the market row — i.e. all ASSET-market base
 // tokens (pool/lend/multiply carry their own `markets.priceUsd`). Values mirror the app's static
-// catalog prices. These MUST mirror the single client baseline in
-// app/lib/prices/sandbox-baseline-prices.ts (Convex can't import app/ modules, so keep
-// them in sync by hand). Without full coverage here, a fresh deployment (empty
-// `tokenPrices`) resolves those asset legs to $0 and the claim gate rejects every wallet.
+// catalog prices. These MUST mirror the single client fixture in app/lib/prices/price-fixture.ts
+// (Convex can't import app/ modules, so they're hand-copied) — the drift is now ENFORCED by
+// convex/__tests__/price-copy-drift.test.ts, which fails CI if any value here diverges from the
+// fixture. Without full coverage here, a fresh deployment (empty `tokenPrices`) resolves those
+// asset legs to $0 and the claim gate rejects every wallet.
 export const SANDBOX_TOKEN_PRICE_USD: Record<string, number> = {
   usdc: 1,
   usdt: 1,
