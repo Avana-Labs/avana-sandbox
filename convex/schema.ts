@@ -654,6 +654,19 @@ export default defineSchema({
     .index("by_chain_contract", ["chainId", "contractAddress"]),
 
   /**
+   * Historical token prices, one row per (symbol, UTC day) — the last price seen that day. Kept
+   * SEPARATE from the current `tokenPrices` table (§12): current UI reads `tokenPrices`, charts
+   * read this history, so an old value can never be mistaken for the live price. Bounded growth
+   * (one row per token per day) via upsert on (symbol, day).
+   */
+  tokenPricesHistory: defineTable({
+    symbol: v.string(),
+    day: v.string(),
+    priceUsd: v.number(),
+    updatedAt: v.number(),
+  }).index("by_symbol_day", ["symbol", "day"]),
+
+  /**
    * Fiat FX rates, refreshed by a Convex job from a live provider (open.er-api.com) so fiat
    * conversion flows through the validated data layer instead of independent client polling.
    * `usdPerUnit` = units of the currency per 1 USD (USD row is always 1). Same freshness lineage
