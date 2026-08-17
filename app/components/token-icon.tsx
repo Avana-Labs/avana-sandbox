@@ -42,10 +42,13 @@ export function TokenIcon({
   return (
     <span
       className={cn(
-        "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold",
-        ring && "ring-2 ring-background",
+        "relative inline-flex shrink-0 items-center justify-center font-semibold",
         box,
-        showIcon ? "bg-card" : cn(meta.bgClass, meta.textClass, text),
+        // A real token icon renders as a bare transparent PNG — no circular plate, card
+        // background, ring or clip. Only the letter fallback keeps the colored avatar circle.
+        showIcon
+          ? null
+          : cn("overflow-hidden rounded-full", ring && "ring-2 ring-background", meta.bgClass, meta.textClass, text),
         className,
       )}
     >

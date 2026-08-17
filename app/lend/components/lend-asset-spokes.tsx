@@ -92,7 +92,7 @@ function SortIcon() {
 function AssetIcon({ row, eager = false }: { row: AssetRow; eager?: boolean }) {
   if (row.logoSrc) {
     return (
-      <span className="relative flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-transparent">
+      <span className="relative flex size-12 shrink-0 items-center justify-center bg-transparent">
         <Image
           alt={row.logoAlt ?? `${row.symbol} logo`}
           src={row.logoSrc}
@@ -108,7 +108,7 @@ function AssetIcon({ row, eager = false }: { row: AssetRow; eager?: boolean }) {
     )
   }
 
-  return <TokenIcon symbol={row.symbol} size="table" ring className="bg-card dark:bg-card" eager={eager} />
+  return <TokenIcon symbol={row.symbol} size="table" eager={eager} />
 }
 
 function AssetRowView({

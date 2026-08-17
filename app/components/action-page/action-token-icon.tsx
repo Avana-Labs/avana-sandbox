@@ -34,7 +34,7 @@ function ActionTokenIconBase({
       : symbol.slice(0, 3)
 
   if (icon.iconUrl && !isPlaceholder) {
-    return <img src={icon.iconUrl} alt="" className={cn(box, "rounded-full object-cover", className)} />
+    return <img src={icon.iconUrl} alt="" className={cn(box, "object-contain", className)} />
   }
 
   return (
@@ -73,16 +73,8 @@ export function ActionTokenPairIcon({
 
   return (
     <span className={cn("relative inline-flex shrink-0 items-center", container, className)} aria-hidden>
-      <ActionTokenIconBase
-        symbol={collateralSymbol}
-        size={size}
-        className="absolute left-0 top-0 z-10 ring-2 ring-background"
-      />
-      <ActionTokenIconBase
-        symbol={borrowSymbol}
-        size={size}
-        className={cn("absolute top-0 ring-2 ring-background", offset)}
-      />
+      <ActionTokenIconBase symbol={collateralSymbol} size={size} className="absolute left-0 top-0 z-10" />
+      <ActionTokenIconBase symbol={borrowSymbol} size={size} className={cn("absolute top-0", offset)} />
     </span>
   )
 }
