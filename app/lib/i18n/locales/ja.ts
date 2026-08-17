@@ -1255,6 +1255,7 @@ const dict: TranslationDictionary = {
   "{symbols} expired — restart cooldown": "{symbols} が期限切れ — クールダウンを再開",
   "{time} left": "残り {time}",
   "{value} total": "合計 {value}",
+  Earning: "獲得中",
 }
 
 export default dict

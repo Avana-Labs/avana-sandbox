@@ -1210,6 +1210,7 @@ const dict: TranslationDictionary = {
   "{symbols} expired — restart cooldown": "{symbols} süresi doldu — cooldown'ı yeniden başlat",
   "{time} left": "{time} kaldı",
   "{value} total": "toplam {value}",
+  Earning: "Kazanıyor",
 }
 
 export default dict

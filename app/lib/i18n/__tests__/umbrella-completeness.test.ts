@@ -28,6 +28,7 @@ export const UMBRELLA_TRANSLATION_KEYS: readonly string[] = [
   "Deficit Offset",
   "Desired amount of user-staked coverage for this asset.",
   "Dynamic rewards",
+  "Earning",
   "Each Umbrella stake token covers deficits for its matching borrowed asset on the same network.",
   "Emissions adjust against target liquidity, and each staked asset can earn multiple reward tokens.",
   "Estimated annual staking yield paid to stakers of this asset.",
