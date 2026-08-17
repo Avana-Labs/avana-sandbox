@@ -1169,6 +1169,92 @@ const dict: TranslationDictionary = {
     "セッションは安全です。これは一時的な接続の問題であり、お客様のウォレットの問題ではありません。",
   "Something went wrong.": "問題が発生しました。",
   "We couldn't load this page.": "このページを読み込めませんでした。",
+  "Active Deficit": "アクティブ不足額",
+  "Active stake": "アクティブなステーク",
+  "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
+    "ユーザーがステークしたカバレッジがさらされる前に、Avana がまずカバーする金額。ステーカーは、実現した不足額がこのオフセットを超えたときにのみ損失を負担します。",
+  "Close umbrella actions": "Umbrella のアクションを閉じる",
+  Cooldown: "クールダウン",
+  Cooling: "クールダウン中",
+  Coverage: "カバレッジ",
+  "Coverage currently in cooldown across all stakers of this asset. Cooldown positions still absorb losses until they finish the 20-day wait and are unstaked.":
+    "このアセットの全ステーカーで現在クールダウン中のカバレッジ。クールダウン中のポジションは 20 日間の待機を終えてアンステークされるまで損失を吸収し続けます。",
+  "Current realized shortfall in {symbol}. Staker Exposure = max(Active Deficit − Deficit Offset, 0). Current staker exposure: {exposure}.":
+    "{symbol} における現在の実現不足額。ステーカーエクスポージャー = max(アクティブ不足額 − 不足額オフセット, 0)。現在のステーカーエクスポージャー：{exposure}。",
+  "Deficit Offset": "不足額オフセット",
+  "Desired amount of user-staked coverage for this asset.":
+    "このアセットに対する、ユーザーがステークするカバレッジの目標額。",
+  "Dynamic rewards": "ダイナミック報酬",
+  "Each Umbrella stake token covers deficits for its matching borrowed asset on the same network.":
+    "各 Umbrella ステークトークンは、同一ネットワーク上で対応する借入アセットの不足額をカバーします。",
+  "Emissions adjust against target liquidity, and each staked asset can earn multiple reward tokens.":
+    "エミッションはターゲット流動性に応じて調整され、各ステーク済みアセットは複数の報酬トークンを獲得できます。",
+  "Estimated annual staking yield paid to stakers of this asset.":
+    "このアセットのステーカーに支払われる年間ステーキング利回りの推定値。",
+  "In cooldown": "クールダウン中",
+  "Isolated slashing": "分離型スラッシング",
+  "Learn Umbrella": "Umbrella について学ぶ",
+  "Market Level Risk": "マーケットレベルのリスク",
+  "Module assets": "モジュールアセット",
+  More: "その他",
+  "More umbrella actions": "その他の Umbrella アクション",
+  "Next cooldown": "次のクールダウン",
+  "Next market risk": "次のマーケットリスク",
+  "Once cooldown finishes, users can unstake during the withdrawal window before cooldown has to be restarted.":
+    "クールダウンが終了すると、クールダウンを再開する必要が生じる前に、引き出しウィンドウ中にアンステークできます。",
+  "Previous cooldown": "前回のクールダウン",
+  "Previous market risk": "前回のマーケットリスク",
+  Ready: "準備完了",
+  "Removes in": "解除まで",
+  "Restart cooldown": "クールダウンを再開",
+  Stake: "ステーク",
+  "Stake in umbrella": "Umbrella にステーク",
+  "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
+    "Umbrella セーフティモジュールでステーク、報酬の請求、クールダウン開始、アンステークを行えます。",
+  "Stake, claim, cooldown, unstake": "ステーク・請求・クールダウン・アンステーク",
+  "Start cooldown before withdrawing. During cooldown, the position keeps earning incentives and remains slashable.":
+    "引き出す前にクールダウンを開始してください。クールダウン中もポジションはインセンティブを獲得し続け、スラッシングの対象となります。",
+  Target: "ターゲット",
+  "Total coverage": "総カバレッジ",
+  "Total user-staked capital available to absorb losses for this asset.":
+    "このアセットの損失を吸収するために利用可能な、ユーザーがステークした資本の合計。",
+  Umbrella: "Umbrella",
+  "Umbrella Cooldown": "Umbrella クールダウン",
+  "Umbrella actions": "Umbrella アクション",
+  "Umbrella activity": "Umbrella のアクティビティ",
+  "Umbrella positions": "Umbrella ポジション",
+  "Umbrella positions are split by asset and network, so each stake token has its own risk and reward profile.":
+    "Umbrella ポジションはアセットとネットワークで分割されるため、各ステークトークンは独自のリスクと報酬プロファイルを持ちます。",
+  Unstake: "アンステーク",
+  "Unstake window": "アンステークウィンドウ",
+  "Weighted APY": "加重 APY",
+  "Withdrawal ready": "引き出し可能",
+  "Withdrawal window": "引き出しウィンドウ",
+  "You have no Umbrella positions yet.": "Umbrella ポジションはまだありません。",
+  "Your Umbrella": "あなたの Umbrella",
+  "Your Umbrella stake": "あなたの Umbrella ステーク",
+  "After cooldown completes, there is a short window to unstake. If it expires, cooldown must be started again.":
+    "クールダウン完了後、アンステーク可能な短いウィンドウがあります。期限が切れると、クールダウンを再度開始する必要があります。",
+  "base {base} + reward {reward}": "ベース {base} + 報酬 {reward}",
+  "live mix": "ライブミックス",
+  none: "なし",
+  "{amount} active deficit": "アクティブ不足額 {amount}",
+  "{amount} claimed": "{amount} を請求済み",
+  "{amount} deficit offset": "不足額オフセット {amount}",
+  "{amount} in cooldown": "クールダウン中 {amount}",
+  "{amount} market": "マーケット {amount}",
+  "{amount} on stakers": "ステーカー負担 {amount}",
+  "{amount} pending": "{amount} 保留中",
+  "{amount} target": "ターゲット {amount}",
+  "{pct}% of coverage cooling · {deficits} deficits absorbed by {offset} offset · ":
+    "カバレッジのうちクールダウン中 {pct}% · {deficits} の不足額をオフセット {offset} が吸収 · ",
+  "{pct}% of target": "ターゲットの {pct}%",
+  "{pct}% of target coverage.": "ターゲットカバレッジの {pct}%。",
+  "{staked} staked · {target} target · {count} assets":
+    "ステーク済み {staked} · ターゲット {target} · {count} アセット",
+  "{symbols} expired — restart cooldown": "{symbols} が期限切れ — クールダウンを再開",
+  "{time} left": "残り {time}",
+  "{value} total": "合計 {value}",
 }
 
 export default dict

@@ -1179,6 +1179,91 @@ const dict: TranslationDictionary = {
     "Sua sessão está segura. Este é um problema temporário de conexão, não da sua carteira.",
   "Something went wrong.": "Algo deu errado.",
   "We couldn't load this page.": "Não foi possível carregar esta página.",
+  "Active Deficit": "Déficit ativo",
+  "Active stake": "Stake ativo",
+  "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
+    "Valor que a Avana cobre primeiro antes de expor a cobertura em stake dos usuários. Os stakers só assumem perdas quando os déficits realizados excedem este offset.",
+  "Close umbrella actions": "Fechar ações do Umbrella",
+  Cooldown: "Cooldown",
+  Cooling: "Em cooldown",
+  Coverage: "Cobertura",
+  "Coverage currently in cooldown across all stakers of this asset. Cooldown positions still absorb losses until they finish the 20-day wait and are unstaked.":
+    "Cobertura atualmente em cooldown entre todos os stakers deste ativo. As posições em cooldown continuam absorvendo perdas até completarem a espera de 20 dias e serem retiradas.",
+  "Current realized shortfall in {symbol}. Staker Exposure = max(Active Deficit − Deficit Offset, 0). Current staker exposure: {exposure}.":
+    "Déficit realizado atual em {symbol}. Exposição do staker = máx(Déficit ativo − Offset de déficit, 0). Exposição atual do staker: {exposure}.",
+  "Deficit Offset": "Offset de déficit",
+  "Desired amount of user-staked coverage for this asset.":
+    "Quantidade desejada de cobertura em stake pelos usuários para este ativo.",
+  "Dynamic rewards": "Recompensas dinâmicas",
+  "Each Umbrella stake token covers deficits for its matching borrowed asset on the same network.":
+    "Cada token de stake do Umbrella cobre os déficits do ativo emprestado correspondente na mesma rede.",
+  "Emissions adjust against target liquidity, and each staked asset can earn multiple reward tokens.":
+    "As emissões se ajustam conforme a liquidez alvo, e cada ativo em stake pode gerar vários tokens de recompensa.",
+  "Estimated annual staking yield paid to stakers of this asset.":
+    "Rendimento anual estimado do staking pago aos stakers deste ativo.",
+  "In cooldown": "Em cooldown",
+  "Isolated slashing": "Slashing isolado",
+  "Learn Umbrella": "Saiba mais sobre o Umbrella",
+  "Market Level Risk": "Risco em nível de mercado",
+  "Module assets": "Ativos do módulo",
+  More: "Mais",
+  "More umbrella actions": "Mais ações do Umbrella",
+  "Next cooldown": "Próximo cooldown",
+  "Next market risk": "Próximo risco de mercado",
+  "Once cooldown finishes, users can unstake during the withdrawal window before cooldown has to be restarted.":
+    "Quando o cooldown termina, os usuários podem retirar o stake durante a janela de retirada antes que o cooldown precise ser reiniciado.",
+  "Previous cooldown": "Cooldown anterior",
+  "Previous market risk": "Risco de mercado anterior",
+  Ready: "Pronto",
+  "Removes in": "Removido em",
+  "Restart cooldown": "Reiniciar cooldown",
+  Stake: "Stake",
+  "Stake in umbrella": "Fazer stake no Umbrella",
+  "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
+    "Faça stake, resgate recompensas, inicie o cooldown ou retire o stake do módulo de segurança Umbrella.",
+  "Stake, claim, cooldown, unstake": "Stake, resgatar, cooldown, retirar",
+  "Start cooldown before withdrawing. During cooldown, the position keeps earning incentives and remains slashable.":
+    "Inicie o cooldown antes de sacar. Durante o cooldown, a posição continua ganhando incentivos e permanece sujeita a slashing.",
+  Target: "Meta",
+  "Total coverage": "Cobertura total",
+  "Total user-staked capital available to absorb losses for this asset.":
+    "Capital total em stake pelos usuários disponível para absorver perdas deste ativo.",
+  Umbrella: "Umbrella",
+  "Umbrella Cooldown": "Cooldown do Umbrella",
+  "Umbrella actions": "Ações do Umbrella",
+  "Umbrella activity": "Atividade do Umbrella",
+  "Umbrella positions": "Posições do Umbrella",
+  "Umbrella positions are split by asset and network, so each stake token has its own risk and reward profile.":
+    "As posições do Umbrella são separadas por ativo e rede, portanto cada token de stake tem seu próprio perfil de risco e recompensa.",
+  Unstake: "Retirar stake",
+  "Unstake window": "Janela de retirada",
+  "Weighted APY": "APY ponderado",
+  "Withdrawal ready": "Pronto para saque",
+  "Withdrawal window": "Janela de retirada",
+  "You have no Umbrella positions yet.": "Você ainda não tem posições no Umbrella.",
+  "Your Umbrella": "Seu Umbrella",
+  "Your Umbrella stake": "Seu stake no Umbrella",
+  "After cooldown completes, there is a short window to unstake. If it expires, cooldown must be started again.":
+    "Quando o cooldown termina, há uma janela curta para retirar o stake. Se ela expirar, o cooldown precisa ser iniciado novamente.",
+  "base {base} + reward {reward}": "base {base} + recompensa {reward}",
+  "live mix": "mix ao vivo",
+  none: "nenhum",
+  "{amount} active deficit": "{amount} de déficit ativo",
+  "{amount} claimed": "{amount} resgatado",
+  "{amount} deficit offset": "{amount} de offset de déficit",
+  "{amount} in cooldown": "{amount} em cooldown",
+  "{amount} market": "{amount} do mercado",
+  "{amount} on stakers": "{amount} sobre stakers",
+  "{amount} pending": "{amount} pendente",
+  "{amount} target": "meta {amount}",
+  "{pct}% of coverage cooling · {deficits} deficits absorbed by {offset} offset · ":
+    "{pct}% da cobertura em cooldown · {deficits} de déficits absorvidos por {offset} de offset · ",
+  "{pct}% of target": "{pct}% da meta",
+  "{pct}% of target coverage.": "{pct}% da cobertura-alvo.",
+  "{staked} staked · {target} target · {count} assets": "{staked} em stake · meta {target} · {count} ativos",
+  "{symbols} expired — restart cooldown": "{symbols} expirado — reinicie o cooldown",
+  "{time} left": "{time} restantes",
+  "{value} total": "{value} no total",
 }
 
 export default dict

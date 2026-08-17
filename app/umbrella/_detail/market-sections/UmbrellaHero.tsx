@@ -3,10 +3,12 @@
 import { AmountVisibilityToggle } from "@/app/components/amount-visibility-toggle"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
 import { formatCompactUsd, formatPct, formatUsd } from "../format"
 
 export function UmbrellaHero() {
+  const { t } = useTranslation()
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const umbrella = useUmbrellaSessionContext()
   const totalMarketStakedUsd = umbrella.marketOrder.reduce((sum, id) => sum + umbrella.markets[id].totalStakedUsd, 0)
@@ -30,29 +32,29 @@ export function UmbrellaHero() {
     if (expiredIds.length > 0) {
       const combinedValue = readyUsd + expiredUsd
       return {
-        label: "Withdrawal ready",
+        label: t("Withdrawal ready"),
         value: formatCompactUsd(combinedValue),
-        change: `${expiredSymbols} expired — restart cooldown`,
+        change: t("{symbols} expired — restart cooldown").replace("{symbols}", expiredSymbols),
         tone: "danger" as const,
       }
     }
     return {
-      label: "Withdrawal ready",
+      label: t("Withdrawal ready"),
       value: formatCompactUsd(readyUsd),
-      change: readySymbols || "none",
+      change: readySymbols || t("none"),
       tone: readyUsd > 0 ? ("success" as const) : ("muted" as const),
     }
   })()
   const userUmbrellaSnapshot = [
     {
-      label: "Your Umbrella stake",
+      label: t("Your Umbrella stake"),
       value: formatUsd(totalStakedUsd),
-      change: `${formatCompactUsd(totalMarketStakedUsd)} market`,
+      change: t("{amount} market").replace("{amount}", formatCompactUsd(totalMarketStakedUsd)),
       tone: "muted" as const,
     },
-    { label: "Weighted APY", value: `${formatPct(weightedApy)}%`, change: "live mix", tone: "muted" as const },
+    { label: t("Weighted APY"), value: `${formatPct(weightedApy)}%`, change: t("live mix"), tone: "muted" as const },
     {
-      label: "In cooldown",
+      label: t("In cooldown"),
       value: formatCompactUsd(cooldownUsd),
       change: `${formatPct(cooldownShare)}%`,
       tone: "warning" as const,
@@ -64,7 +66,7 @@ export function UmbrellaHero() {
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
-          Your Umbrella
+          {t("Your Umbrella")}
         </h2>
         <AmountVisibilityToggle />
       </div>

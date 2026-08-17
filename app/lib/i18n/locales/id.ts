@@ -1127,6 +1127,91 @@ const dict: TranslationDictionary = {
     "Sesi Anda aman. Ini masalah koneksi sementara, bukan dompet Anda.",
   "Something went wrong.": "Terjadi kesalahan.",
   "We couldn't load this page.": "Kami tidak dapat memuat halaman ini.",
+  "Active Deficit": "Defisit Aktif",
+  "Active stake": "Stake aktif",
+  "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
+    "Jumlah yang ditutup Avana terlebih dahulu sebelum cakupan yang di-stake pengguna terekspos. Staker hanya menanggung kerugian setelah defisit riil melebihi offset ini.",
+  "Close umbrella actions": "Tutup tindakan Umbrella",
+  Cooldown: "Cooldown",
+  Cooling: "Sedang cooldown",
+  Coverage: "Cakupan",
+  "Coverage currently in cooldown across all stakers of this asset. Cooldown positions still absorb losses until they finish the 20-day wait and are unstaked.":
+    "Cakupan yang saat ini sedang cooldown di seluruh staker aset ini. Posisi cooldown tetap menyerap kerugian hingga menyelesaikan tunggu 20 hari lalu di-unstake.",
+  "Current realized shortfall in {symbol}. Staker Exposure = max(Active Deficit − Deficit Offset, 0). Current staker exposure: {exposure}.":
+    "Kekurangan riil saat ini dalam {symbol}. Eksposur Staker = maks(Defisit Aktif − Offset Defisit, 0). Eksposur staker saat ini: {exposure}.",
+  "Deficit Offset": "Offset Defisit",
+  "Desired amount of user-staked coverage for this asset.":
+    "Jumlah cakupan yang di-stake pengguna yang diinginkan untuk aset ini.",
+  "Dynamic rewards": "Reward dinamis",
+  "Each Umbrella stake token covers deficits for its matching borrowed asset on the same network.":
+    "Setiap token stake Umbrella menutupi defisit aset pinjaman yang sesuai pada jaringan yang sama.",
+  "Emissions adjust against target liquidity, and each staked asset can earn multiple reward tokens.":
+    "Emisi menyesuaikan terhadap likuiditas target, dan setiap aset yang di-stake dapat memperoleh beberapa token reward.",
+  "Estimated annual staking yield paid to stakers of this asset.":
+    "Estimasi imbal hasil staking tahunan yang dibayarkan kepada staker aset ini.",
+  "In cooldown": "Sedang cooldown",
+  "Isolated slashing": "Slashing terisolasi",
+  "Learn Umbrella": "Pelajari Umbrella",
+  "Market Level Risk": "Risiko level pasar",
+  "Module assets": "Aset modul",
+  More: "Lainnya",
+  "More umbrella actions": "Tindakan Umbrella lainnya",
+  "Next cooldown": "Cooldown berikutnya",
+  "Next market risk": "Risiko pasar berikutnya",
+  "Once cooldown finishes, users can unstake during the withdrawal window before cooldown has to be restarted.":
+    "Setelah cooldown selesai, pengguna dapat unstake selama jendela penarikan sebelum cooldown harus dimulai ulang.",
+  "Previous cooldown": "Cooldown sebelumnya",
+  "Previous market risk": "Risiko pasar sebelumnya",
+  Ready: "Siap",
+  "Removes in": "Dihapus dalam",
+  "Restart cooldown": "Mulai ulang cooldown",
+  Stake: "Stake",
+  "Stake in umbrella": "Stake di Umbrella",
+  "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
+    "Stake, klaim reward, mulai cooldown, atau unstake dari modul keamanan Umbrella.",
+  "Stake, claim, cooldown, unstake": "Stake, klaim, cooldown, unstake",
+  "Start cooldown before withdrawing. During cooldown, the position keeps earning incentives and remains slashable.":
+    "Mulai cooldown sebelum menarik. Selama cooldown, posisi tetap memperoleh insentif dan masih dapat di-slashing.",
+  Target: "Target",
+  "Total coverage": "Total cakupan",
+  "Total user-staked capital available to absorb losses for this asset.":
+    "Total modal yang di-stake pengguna yang tersedia untuk menyerap kerugian aset ini.",
+  Umbrella: "Umbrella",
+  "Umbrella Cooldown": "Cooldown Umbrella",
+  "Umbrella actions": "Tindakan Umbrella",
+  "Umbrella activity": "Aktivitas Umbrella",
+  "Umbrella positions": "Posisi Umbrella",
+  "Umbrella positions are split by asset and network, so each stake token has its own risk and reward profile.":
+    "Posisi Umbrella dipisahkan per aset dan jaringan, sehingga setiap token stake memiliki profil risiko dan reward-nya sendiri.",
+  Unstake: "Unstake",
+  "Unstake window": "Jendela unstake",
+  "Weighted APY": "APY tertimbang",
+  "Withdrawal ready": "Siap ditarik",
+  "Withdrawal window": "Jendela penarikan",
+  "You have no Umbrella positions yet.": "Anda belum memiliki posisi Umbrella.",
+  "Your Umbrella": "Umbrella Anda",
+  "Your Umbrella stake": "Stake Umbrella Anda",
+  "After cooldown completes, there is a short window to unstake. If it expires, cooldown must be started again.":
+    "Setelah cooldown selesai, ada jendela singkat untuk unstake. Jika kedaluwarsa, cooldown harus dimulai ulang.",
+  "base {base} + reward {reward}": "dasar {base} + reward {reward}",
+  "live mix": "campuran langsung",
+  none: "tidak ada",
+  "{amount} active deficit": "{amount} defisit aktif",
+  "{amount} claimed": "{amount} diklaim",
+  "{amount} deficit offset": "{amount} offset defisit",
+  "{amount} in cooldown": "{amount} dalam cooldown",
+  "{amount} market": "{amount} dari pasar",
+  "{amount} on stakers": "{amount} pada staker",
+  "{amount} pending": "{amount} tertunda",
+  "{amount} target": "target {amount}",
+  "{pct}% of coverage cooling · {deficits} deficits absorbed by {offset} offset · ":
+    "{pct}% cakupan cooldown · {deficits} defisit diserap oleh {offset} offset · ",
+  "{pct}% of target": "{pct}% dari target",
+  "{pct}% of target coverage.": "{pct}% dari cakupan target.",
+  "{staked} staked · {target} target · {count} assets": "{staked} di-stake · target {target} · {count} aset",
+  "{symbols} expired — restart cooldown": "{symbols} kedaluwarsa — mulai ulang cooldown",
+  "{time} left": "{time} tersisa",
+  "{value} total": "total {value}",
 }
 
 export default dict

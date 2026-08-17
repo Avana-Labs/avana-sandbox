@@ -1,4 +1,7 @@
+"use client"
+
 import { Circle, CircleArrowUp, Coins, ShieldCheck, Umbrella, Unlock } from "@/app/components/icons"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 const learnCards = [
   {
@@ -34,19 +37,20 @@ const learnCards = [
 ]
 
 export function UmbrellaLearn() {
+  const { t } = useTranslation()
   return (
     <section>
       <div className="mb-6 flex items-center justify-between">
         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
-          Learn Umbrella
+          {t("Learn Umbrella")}
         </h2>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {learnCards.map((card) => (
           <article key={card.title} className="rounded-radius-md bg-card px-4 py-4">
             <card.icon className="h-6 w-6 text-brand" />
-            <h3 className="mt-4 text-[17px] font-semibold tracking-[-0.03em]">{card.title}</h3>
-            <p className="mt-2 text-[14px] leading-6 text-muted-foreground">{card.body}</p>
+            <h3 className="mt-4 text-[17px] font-semibold tracking-[-0.03em]">{t(card.title)}</h3>
+            <p className="mt-2 text-[14px] leading-6 text-muted-foreground">{t(card.body)}</p>
           </article>
         ))}
       </div>

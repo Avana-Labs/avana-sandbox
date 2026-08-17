@@ -1178,6 +1178,91 @@ const dict: TranslationDictionary = {
     "Votre session est en sécurité. Il s'agit d'un problème de connexion temporaire, pas de votre portefeuille.",
   "Something went wrong.": "Une erreur s'est produite.",
   "We couldn't load this page.": "Nous n'avons pas pu charger cette page.",
+  "Active Deficit": "Déficit actif",
+  "Active stake": "Stake actif",
+  "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
+    "Montant qu'Avana couvre en premier avant d'exposer la couverture stakée par les utilisateurs. Les stakers ne subissent des pertes que lorsque les déficits réalisés dépassent cet offset.",
+  "Close umbrella actions": "Fermer les actions Umbrella",
+  Cooldown: "Cooldown",
+  Cooling: "En cooldown",
+  Coverage: "Couverture",
+  "Coverage currently in cooldown across all stakers of this asset. Cooldown positions still absorb losses until they finish the 20-day wait and are unstaked.":
+    "Couverture actuellement en cooldown chez l'ensemble des stakers de cet actif. Les positions en cooldown continuent d'absorber les pertes jusqu'à la fin de l'attente de 20 jours et leur retrait.",
+  "Current realized shortfall in {symbol}. Staker Exposure = max(Active Deficit − Deficit Offset, 0). Current staker exposure: {exposure}.":
+    "Déficit réalisé actuel en {symbol}. Exposition du staker = max(Déficit actif − Offset de déficit, 0). Exposition actuelle du staker : {exposure}.",
+  "Deficit Offset": "Offset de déficit",
+  "Desired amount of user-staked coverage for this asset.":
+    "Montant souhaité de couverture stakée par les utilisateurs pour cet actif.",
+  "Dynamic rewards": "Récompenses dynamiques",
+  "Each Umbrella stake token covers deficits for its matching borrowed asset on the same network.":
+    "Chaque jeton de stake Umbrella couvre les déficits de l'actif emprunté correspondant sur le même réseau.",
+  "Emissions adjust against target liquidity, and each staked asset can earn multiple reward tokens.":
+    "Les émissions s'ajustent en fonction de la liquidité cible, et chaque actif staké peut générer plusieurs jetons de récompense.",
+  "Estimated annual staking yield paid to stakers of this asset.":
+    "Rendement annuel estimé du staking versé aux stakers de cet actif.",
+  "In cooldown": "En cooldown",
+  "Isolated slashing": "Slashing isolé",
+  "Learn Umbrella": "En savoir plus sur Umbrella",
+  "Market Level Risk": "Risque au niveau du marché",
+  "Module assets": "Actifs du module",
+  More: "Plus",
+  "More umbrella actions": "Plus d'actions Umbrella",
+  "Next cooldown": "Prochain cooldown",
+  "Next market risk": "Prochain risque de marché",
+  "Once cooldown finishes, users can unstake during the withdrawal window before cooldown has to be restarted.":
+    "Une fois le cooldown terminé, les utilisateurs peuvent retirer pendant la fenêtre de retrait avant de devoir redémarrer le cooldown.",
+  "Previous cooldown": "Cooldown précédent",
+  "Previous market risk": "Risque de marché précédent",
+  Ready: "Prêt",
+  "Removes in": "Retiré dans",
+  "Restart cooldown": "Redémarrer le cooldown",
+  Stake: "Staker",
+  "Stake in umbrella": "Staker dans Umbrella",
+  "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
+    "Stakez, réclamez des récompenses, démarrez un cooldown ou retirez votre stake du module de sécurité Umbrella.",
+  "Stake, claim, cooldown, unstake": "Staker, réclamer, cooldown, retirer",
+  "Start cooldown before withdrawing. During cooldown, the position keeps earning incentives and remains slashable.":
+    "Démarrez le cooldown avant le retrait. Pendant le cooldown, la position continue à gagner des incitations et reste exposée au slashing.",
+  Target: "Cible",
+  "Total coverage": "Couverture totale",
+  "Total user-staked capital available to absorb losses for this asset.":
+    "Capital total staké par les utilisateurs disponible pour absorber les pertes sur cet actif.",
+  Umbrella: "Umbrella",
+  "Umbrella Cooldown": "Cooldown Umbrella",
+  "Umbrella actions": "Actions Umbrella",
+  "Umbrella activity": "Activité Umbrella",
+  "Umbrella positions": "Positions Umbrella",
+  "Umbrella positions are split by asset and network, so each stake token has its own risk and reward profile.":
+    "Les positions Umbrella sont séparées par actif et par réseau : chaque jeton de stake a donc son propre profil de risque et de récompense.",
+  Unstake: "Retirer le stake",
+  "Unstake window": "Fenêtre de retrait",
+  "Weighted APY": "APY pondéré",
+  "Withdrawal ready": "Prêt à retirer",
+  "Withdrawal window": "Fenêtre de retrait",
+  "You have no Umbrella positions yet.": "Vous n'avez encore aucune position Umbrella.",
+  "Your Umbrella": "Votre Umbrella",
+  "Your Umbrella stake": "Votre stake Umbrella",
+  "After cooldown completes, there is a short window to unstake. If it expires, cooldown must be started again.":
+    "Une fois le cooldown terminé, une courte fenêtre permet de retirer. Si elle expire, le cooldown doit être redémarré.",
+  "base {base} + reward {reward}": "base {base} + récompense {reward}",
+  "live mix": "mix en direct",
+  none: "aucun",
+  "{amount} active deficit": "{amount} de déficit actif",
+  "{amount} claimed": "{amount} réclamé",
+  "{amount} deficit offset": "{amount} d'offset de déficit",
+  "{amount} in cooldown": "{amount} en cooldown",
+  "{amount} market": "{amount} du marché",
+  "{amount} on stakers": "{amount} sur les stakers",
+  "{amount} pending": "{amount} en attente",
+  "{amount} target": "{amount} cible",
+  "{pct}% of coverage cooling · {deficits} deficits absorbed by {offset} offset · ":
+    "{pct}% de la couverture en cooldown · {deficits} de déficits absorbés par {offset} d'offset · ",
+  "{pct}% of target": "{pct}% de la cible",
+  "{pct}% of target coverage.": "{pct}% de la couverture cible.",
+  "{staked} staked · {target} target · {count} assets": "{staked} staké · cible {target} · {count} actifs",
+  "{symbols} expired — restart cooldown": "{symbols} expiré — redémarrez le cooldown",
+  "{time} left": "{time} restant",
+  "{value} total": "{value} au total",
 }
 
 export default dict
