@@ -22,7 +22,7 @@ export const getInterestRateModel = query({
       .order("desc")
       .first()
     let utilizationPct = siloed?.utilizationPct ?? 0
-    let borrowAprPct = siloed?.borrowAprPct ?? 0
+    let baseBorrowAprPct = siloed?.borrowAprPct ?? 0
     if (!siloed) {
       const market = await ctx.db
         .query("markets")
@@ -36,10 +36,21 @@ export const getInterestRateModel = query({
           .first()
         if (latest) {
           utilizationPct = latest.utilizationPct
-          borrowAprPct = latest.borrowAprPct
+          baseBorrowAprPct = latest.borrowAprPct
         }
       }
     }
+
+    // The daily-stat APR is the BASE rate only. The rate the engine actually charges — and
+    // what the borrow list / dashboard display — is base + risk premium. Add the per-asset
+    // risk premium here so the detail IRM headline uses the same "base + risk premium" source
+    // as every other surface (C2), instead of the base-only walked value.
+    const assessment = await ctx.db
+      .query("borrowRiskAssessments")
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .first()
+    const riskPremiumPct = assessment ? assessment.premiumBps / 100 : 0
+    const borrowAprPct = baseBorrowAprPct + riskPremiumPct
 
     return {
       slug: row.slug,

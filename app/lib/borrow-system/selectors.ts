@@ -18,6 +18,16 @@ function fixedToNumber(value: bigint, decimals: number) {
   return Number.parseFloat(formatFixed(value, decimals))
 }
 
+/**
+ * Single source of truth for a borrowable asset's displayed/paid borrow APR:
+ * the base borrow rate PLUS the risk premium. The borrow list, the dashboard debt
+ * rows, and the action page all resolve the headline rate through this one helper so
+ * they can never drift to base-only on one surface and base+premium on another (C2).
+ */
+export function resolveBorrowAprPct(baseBorrowAprWad: bigint, riskPremiumWad: bigint): number {
+  return fixedToNumber(baseBorrowAprWad + riskPremiumWad, 18) * 100
+}
+
 function visualToUi(visual: BorrowSystemState["markets"][string]["display"]["visuals"][number]): BorrowAssetVisual {
   return {
     symbol: visual.symbol,
@@ -144,7 +154,7 @@ export function selectBorrowableAssets(
         symbol: asset.symbol,
         name: asset.display.name,
         subtitle: asset.display.subtitle,
-        borrowApr: fixedToNumber(asset.borrowConfig.baseBorrowAprWad + scopedMetrics.riskPremiumWad, 18) * 100,
+        borrowApr: resolveBorrowAprPct(asset.borrowConfig.baseBorrowAprWad, scopedMetrics.riskPremiumWad),
         totalBorrowedUsd: fixedToNumber(asset.snapshot.totalBorrowedUsd6, 6),
         utilization,
         availableUsd: fixedToNumber(asset.snapshot.availableLiquidityUsd6, 6),

@@ -20,7 +20,7 @@ export const getInterestRateModel = query({
       .order("desc")
       .first()
     let utilizationPct = siloed?.utilizationPct ?? 0
-    let borrowAprPct = siloed?.borrowAprPct ?? 0
+    let baseBorrowAprPct = siloed?.borrowAprPct ?? 0
     if (!siloed) {
       const market = await ctx.db
         .query("markets")
@@ -34,10 +34,20 @@ export const getInterestRateModel = query({
           .first()
         if (latest) {
           utilizationPct = latest.utilizationPct
-          borrowAprPct = latest.borrowAprPct
+          baseBorrowAprPct = latest.borrowAprPct
         }
       }
     }
+
+    // The daily-stat APR is the BASE rate only; the displayed/paid rate is base + risk premium.
+    // Add the per-market risk premium so the lend IRM headline uses the same source as the
+    // other surfaces (C2), mirroring the borrow product.
+    const assessment = await ctx.db
+      .query("lendRiskAssessments")
+      .withIndex("by_slug", (q) => q.eq("slug", slug))
+      .first()
+    const riskPremiumPct = assessment ? assessment.premiumBps / 100 : 0
+    const borrowAprPct = baseBorrowAprPct + riskPremiumPct
 
     return {
       slug: row.slug,

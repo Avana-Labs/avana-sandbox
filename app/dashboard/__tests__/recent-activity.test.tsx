@@ -1,6 +1,6 @@
 import { fireEvent, render, within } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { RecentActivity } from "@/app/dashboard/recent-activity"
+import { AMOUNT_SIGN_BY_KIND, RecentActivity } from "@/app/dashboard/recent-activity"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import type { PortfolioActivityRow } from "@/app/lib/data/providers/portfolio"
 
@@ -136,5 +136,66 @@ describe("RecentActivity whole-row navigation", () => {
     // The anchor has a real href; clicking it must not also fire the row's router.push.
     fireEvent.click(link)
     expect(push).not.toHaveBeenCalled()
+  })
+})
+
+describe("RecentActivity amount sign convention (#F2)", () => {
+  // One convention, applied by action kind: user cash flow (+ in / − out).
+  it("assigns a consistent cash-flow sign to every action kind", () => {
+    const cashIn: PortfolioActivityRow["kind"][] = ["borrow", "withdraw", "claim", "unstake", "reduce", "close"]
+    const cashOut: PortfolioActivityRow["kind"][] = [
+      "supply",
+      "repay",
+      "pledge",
+      "stake",
+      "open",
+      "addCollateral",
+      "liquidation",
+    ]
+    const neutral: PortfolioActivityRow["kind"][] = ["swap", "startCooldown", "rebalance", "interest"]
+
+    for (const kind of cashIn) expect(AMOUNT_SIGN_BY_KIND[kind]).toBe(1)
+    for (const kind of cashOut) expect(AMOUNT_SIGN_BY_KIND[kind]).toBe(-1)
+    for (const kind of neutral) expect(AMOUNT_SIGN_BY_KIND[kind]).toBe(0)
+
+    // The four rows called out in the finding now read the right way round: cash the
+    // user receives is +, cash they pay out is −.
+    expect(AMOUNT_SIGN_BY_KIND.borrow).toBe(1) // was "-$5"
+    expect(AMOUNT_SIGN_BY_KIND.withdraw).toBe(1) // was "-$127"
+    expect(AMOUNT_SIGN_BY_KIND.repay).toBe(-1) // was "+$40"
+    expect(AMOUNT_SIGN_BY_KIND.pledge).toBe(-1) // was "+$10"
+  })
+
+  it("renders the sign from the kind, not the raw amount's stored sign", () => {
+    // Same positive stored magnitude, opposite displayed sign — proof the sign is
+    // derived from the kind and the magnitude is taken as an absolute value.
+    const { container } = render(
+      <DisplayPreferencesProvider>
+        <RecentActivity
+          rows={[
+            makeRow({ id: "borrow", txHash: "sim-borrow", product: "borrow", kind: "borrow", amountUsd: 5 }),
+            makeRow({ id: "repay", txHash: "sim-repay", product: "borrow", kind: "repay", amountUsd: 40 }),
+            makeRow({ id: "swap", txHash: "sim-swap", product: "swap", kind: "swap", amountUsd: 12 }),
+          ]}
+        />
+      </DisplayPreferencesProvider>,
+    )
+    const view = within(container)
+    // Rows render on both the mobile card and the desktop table, so each string appears twice.
+    expect(view.getAllByText("+$5").length).toBeGreaterThan(0)
+    expect(view.getAllByText("-$40").length).toBeGreaterThan(0)
+    // A value-neutral swap carries no sign.
+    expect(view.getAllByText("$12").length).toBeGreaterThan(0)
+    expect(view.queryByText("+$12")).not.toBeInTheDocument()
+    expect(view.queryByText("-$12")).not.toBeInTheDocument()
+  })
+
+  it("shows the cash-flow legend", () => {
+    const { container } = render(
+      <DisplayPreferencesProvider>
+        <RecentActivity rows={[makeRow({ id: "sim-1", txHash: "sim-abc" })]} />
+      </DisplayPreferencesProvider>,
+    )
+    expect(within(container).getByText(/cash flow/i)).toBeInTheDocument()
   })
 })

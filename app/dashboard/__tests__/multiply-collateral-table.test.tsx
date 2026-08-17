@@ -80,6 +80,30 @@ describe("MultiplyCollateralTable", () => {
     expect(screen.getByText("1 positions")).toBeTruthy()
   })
 
+  it("shows the projected liquidation price for an active position", () => {
+    render(
+      <DisplayPreferencesProvider>
+        <MultiplyCollateralTable rows={rows} />
+      </DisplayPreferencesProvider>,
+    )
+
+    // liquidationPriceUsd (2100) is surfaced exact (once per responsive layout:
+    // desktop table + mobile card) rather than compacted to "$2.1K".
+    expect(screen.getAllByText("$2,100").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("Liq. price").length).toBeGreaterThan(0)
+  })
+
+  it("renders a dash when a position has no liquidation price (debt-free)", () => {
+    render(
+      <DisplayPreferencesProvider>
+        <MultiplyCollateralTable rows={[{ ...rows[0]!, debtUsd: 0, liquidationPriceUsd: null }]} />
+      </DisplayPreferencesProvider>,
+    )
+
+    // A debt-free position has no liquidation price; it must read "—", not "$0".
+    expect(screen.getAllByText("—").length).toBeGreaterThan(0)
+  })
+
   it("routes desktop deleverage to the multiply action page", () => {
     push.mockClear()
     render(

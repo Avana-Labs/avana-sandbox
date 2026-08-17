@@ -24,7 +24,7 @@ import {
   fetchTokenPrices,
   type ConvexContractAddressRow,
 } from "@/app/lib/borrow-system/market-hydration-server"
-import { formatTokenPrice, priceKey } from "@/app/lib/prices/format"
+import { priceKey } from "@/app/lib/prices/format"
 import { formatOraclePrice } from "@/app/lib/borrow-detail/formatters"
 import { formatBpsAsPct } from "@/app/lib/borrow-detail/allocation"
 import { resolveAssetDetailFromState, resolvePoolDetailFromState } from "@/app/lib/borrow-system/read-model"
@@ -37,7 +37,11 @@ import {
 import type { BorrowableAssetRef } from "@/app/lib/borrow-detail/cross-market"
 import { listSpokeBorrowables } from "@/app/lib/borrow-system/registry"
 import { getDefaultWalletProfileId } from "@/app/lib/data/wallet/profiles"
-import { applyDetailContentOverlay, mergeAliasedQuickStats } from "@/app/lib/detail-page/live-detail-helpers"
+import {
+  applyDetailContentOverlay,
+  injectBaselinePrice,
+  mergeAliasedQuickStats,
+} from "@/app/lib/detail-page/live-detail-helpers"
 import { QUICK_STAT_ALIASES } from "@/app/lib/detail-page/live-quick-stats"
 import { buildMockLiquidationRiskStats } from "@/app/lib/detail-page/liquidation-risk"
 import { injectSiloedMarketQuickStats, overlayHeroIdentity } from "@/app/lib/detail-page/siloed-market-overlay"
@@ -75,18 +79,6 @@ function mergeConvexQuickStats(
   convex: ReadonlyArray<{ id: string; value: string; delta?: QuickStat["delta"] }> | null,
 ): QuickStat[] {
   return mergeAliasedQuickStats(base, convex, QUICK_STAT_ALIASES.borrow)
-}
-
-/** Overlay the real DefiLlama price onto the "price" quick stat for a base symbol. */
-function injectRealPrice(
-  quickStats: QuickStat[],
-  prices: Record<string, number> | null,
-  baseSymbol: string,
-): QuickStat[] {
-  if (!prices) return quickStats
-  const price = prices[priceKey(baseSymbol)]
-  if (price === undefined) return quickStats
-  return quickStats.map((s) => (s.id === "price" ? { ...s, value: formatTokenPrice(price) } : s))
 }
 
 /**
@@ -413,7 +405,6 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
     allocation,
     risk,
     quickStats,
-    prices,
     content,
     riskParameters,
     interestRateModel,
@@ -428,7 +419,6 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
     fetchAllocation(slug),
     fetchRisk("asset", slug),
     fetchQuickStats("asset", slug),
-    fetchTokenPrices(),
     fetchContent("asset", slug),
     fetchBorrowRiskParameters(slug),
     fetchBorrowInterestRateModel(slug),
@@ -442,7 +432,7 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
     {
       ...detail,
       quickStats: injectSiloedMarketQuickStats(
-        injectRealPrice(mergeConvexQuickStats(detail.quickStats, quickStats), prices, record.baseAssetId),
+        injectBaselinePrice(mergeConvexQuickStats(detail.quickStats, quickStats), record.baseAssetId),
         siloedMarket,
       ),
       // heroFeed / heroBorrowedFeed / heroUtilizationFeed set by the page from preloadAssetHero.

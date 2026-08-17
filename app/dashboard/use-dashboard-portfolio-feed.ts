@@ -36,7 +36,7 @@ function feedFromEndUsd(portfolioValueUsd: number): ChartFeed {
 // off-basis and we show just the current point rather than a misleading jump. (Phase 2.5)
 const BASIS_TOLERANCE = 0.25
 
-function feedFromSnapshots(
+export function feedFromSnapshots(
   snapshots: Array<{ at: number; totalValueUsd: number }>,
   portfolioValueUsd: number,
 ): ChartFeed {
@@ -46,22 +46,27 @@ function feedFromSnapshots(
   const last = chronological[chronological.length - 1]!
   const endUsd = Number.isFinite(portfolioValueUsd) && portfolioValueUsd > 0 ? portfolioValueUsd : last.totalValueUsd
 
-  // Only trust the series when its newest point already agrees with the live basis.
+  // Only trust the series when its newest point sits within a sane distance of the live
+  // basis; a wildly-off newest snapshot means the stored series is from a different
+  // portfolio state (stale seed), so fall back to just the current point.
   if (endUsd <= 0 || Math.abs(last.totalValueUsd - endUsd) > endUsd * BASIS_TOLERANCE) {
     return feedFromEndUsd(portfolioValueUsd)
   }
 
+  // Rebase the ENTIRE stored series onto the live basis by a single constant offset, so
+  // the hero delta reflects the REAL movement inside the series — not the stored-vs-live
+  // basis gap. Previously the earlier points kept the stored basis while only the last
+  // point used the live value, so a portfolio that was flat on a basis $X below live
+  // rendered a fabricated "+$X (…%)" gain that never happened.
+  const offset = endUsd - last.totalValueUsd
   const points: ChartPoint[] = chronological.map((snapshot, index) => {
     const isLast = index === chronological.length - 1
     return {
       time: index,
-      value: isLast ? endUsd : snapshot.totalValueUsd,
+      value: isLast ? endUsd : snapshot.totalValueUsd + offset,
       label: isLast ? "Now" : new Date(snapshot.at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
     }
   })
-  if (points[points.length - 1]?.value !== endUsd) {
-    points.push({ time: points.length, value: endUsd, label: "Now" })
-  }
 
   const first = points[0]?.value ?? endUsd
   const changeAbs = endUsd - first

@@ -9,10 +9,13 @@ import {
   formatActionRatioPercent,
   formatActionUsd,
 } from "@/app/lib/action-system/formatters"
+import { HEALTH_BANDS } from "@/app/lib/health/health-factor-bands"
 
-// Within ~15% of the 1.0 liquidation floor there is almost no safety buffer, so
-// this should read as danger (a firm "Risk of liquidation"), not a soft caution.
-const NEAR_LIQUIDATION_HF = 1.15
+// Near the 1.0 liquidation floor there is almost no safety buffer, so this reads as
+// danger (a firm "Risk of liquidation"), not a soft caution. Single-sourced from the
+// shared danger band (hf < 1.2) so the red HF bar and this banner fire together
+// rather than at different thresholds.
+const NEAR_LIQUIDATION_HF = HEALTH_BANDS.find((band) => band.id === "danger")?.max ?? 1.2
 
 function hfTone(value: number) {
   if (!Number.isFinite(value)) return "positive" as const

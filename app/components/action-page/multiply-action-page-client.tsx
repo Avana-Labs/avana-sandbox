@@ -34,11 +34,14 @@ import {
   isDeleverageCloseOnly,
   resolveDefaultMultiplyLeverage,
   resolveMultiplyMarketMaxLeverage,
+  resolveRecommendedActionLeverage,
+  snapMultiplierToStep,
 } from "@/app/lib/multiply-system/leverage-limits"
 import {
   buildMultiplyOverCapPreviewUi,
   exceedsMultiplyCollateralCap,
   maxMultiplyCollateralAmount,
+  resolveMultiplyCollateralPriceUsd,
 } from "@/app/lib/multiply-system/collateral-limits"
 import { formatActionAmount } from "@/app/lib/action-system/formatters"
 import { usePriceFor } from "@/app/lib/prices/token-prices-context"
@@ -100,7 +103,13 @@ export function MultiplyActionPageClient({
     }))
     return options.length > 1 ? options : undefined
   }, [kind, session.state.markets])
-  const collateralPriceUsd = market ? (priceFor(market.collateralAsset.symbol) ?? market.collateralAsset.priceUsd) : 0
+  // Value the collateral at the live oracle price when it is usable, else the catalog price
+  // — the SAME guard the engine applies to the exposure. `??` alone passed a 0/NaN oracle
+  // reading through and zeroed the displayed collateral USD while the exposure stayed at the
+  // catalog price ("$0 under the field vs ~$525 exposure"). (E5)
+  const collateralPriceUsd = market
+    ? resolveMultiplyCollateralPriceUsd(priceFor(market.collateralAsset.symbol), market.collateralAsset.priceUsd)
+    : 0
   const walletCollateralBudgetUsd = market ? (session.state.walletBalancesUsd[walletId]?.[market.id] ?? 0) : 0
   // Cap a multiply position at the wallet's spendable balance (not the pool's
   // multi-million liquidity), still bounded by what the market can absorb. This
@@ -168,11 +177,11 @@ export function MultiplyActionPageClient({
       kind === "deleverage"
         ? getDeleverageMultiplierMax(position?.multiplier ?? Number.NaN, 0.1)
         : resolveMultiplyMarketMaxLeverage(market.risk.publicMaxMultiplier)
-    // Clamp to the valid RANGE only. Snapping to a handful of discrete presets made
-    // the slider feel broken (e.g. a 1.8x-max market had just 1.5/1.8 reachable);
-    // the ruler steps in 0.1 within [min, max] and stays continuous.
-    const clamped = Math.min(effectiveMax, Math.max(multiplierMin, parsed))
-    const next = String(Number(clamped.toFixed(2)))
+    // Snap the canonical multiplier to the SAME 0.1 step grid the ruler thumb uses, and
+    // clamp to [min, max]. Binding the state to the slider's grid keeps the slider label,
+    // the number input and the projection summary on one value instead of drifting apart
+    // (e.g. the number input reading 1.8x while the projection simulated 1.75x). (E6)
+    const next = String(snapMultiplierToStep(parsed, multiplierMin, effectiveMax, 0.1))
     if (next !== multiplier) setMultiplier(next)
   }, [kind, market, multiplier, multiplierMin, position?.multiplier])
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
@@ -277,7 +286,11 @@ export function MultiplyActionPageClient({
               // exactly equal to the persisted/dashboard position.
               catalogCollateralPriceUsd: collateralPriceUsd,
               marketLabel: formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
-              collateralApy: market.collateralAsset.apy,
+              // Display the SAME supply APY the engine feeds into Net APY. After a Convex
+              // snapshot updates economics.supplyApy but leaves the seed collateralAsset.apy
+              // untouched, the two diverge — showing "Collateral APY 7.60%" while Net APY
+              // reconciles with 7.94%. Single-source it from economics.supplyApy. (E4)
+              collateralApy: market.economics.supplyApy,
               borrowApy: market.borrowAsset.borrowApy,
               multiplier: parsedMultiplier,
               maxLtv: market.risk.maxLtv,
@@ -424,7 +437,8 @@ export function MultiplyActionPageClient({
               collateralPriceUsd,
               catalogCollateralPriceUsd: collateralPriceUsd,
               multiplier: parsedMultiplier!,
-              collateralApy: market.collateralAsset.apy,
+              // Same source as Net APY — see the configure-preview note above. (E4)
+              collateralApy: market.economics.supplyApy,
               borrowApy: market.borrowAsset.borrowApy,
               maxLtv: market.risk.maxLtv,
             })
@@ -605,6 +619,19 @@ export function MultiplyActionPageClient({
   const effectiveMultiplierMax = isExitKind
     ? getDeleverageMultiplierMax(position?.multiplier ?? Number.NaN, 0.1)
     : resolveMultiplyMarketMaxLeverage(market.risk.publicMaxMultiplier)
+  // The "Recommended up to Nx" marker must sit on a leverage the slider can actually
+  // land on (0.1 grid) that still clears the market minimum health factor — otherwise a
+  // drag to the marker snapped UP past the safe max and the action came back blocked. (E2)
+  const recommendedActionLeverage =
+    kind === "multiply"
+      ? resolveRecommendedActionLeverage({
+          recommendedMaxMultiplier: market.risk.recommendedMaxMultiplier,
+          liquidationThreshold: market.risk.liquidationThreshold,
+          minHealthFactor: market.risk.minHealthFactor,
+          actionMax: effectiveMultiplierMax,
+          step: 0.1,
+        })
+      : undefined
   const useWorkspaceFields = embedded && isHomeLayout && isConfigureVisibleStage(stage)
   // Surface the market-liquidity cap as the collateral input balance, with a Max button.
   const showCollateralBalance = kind === "multiply" && maxCollateralAmount != null && maxCollateralAmount > 0
@@ -657,9 +684,7 @@ export function MultiplyActionPageClient({
             }}
             min={multiplierMin}
             max={effectiveMultiplierMax}
-            recommendedMax={
-              kind === "multiply" ? Math.min(effectiveMultiplierMax, market.risk.recommendedMaxMultiplier) : undefined
-            }
+            recommendedMax={recommendedActionLeverage}
             step={0.1}
             label="Target leverage"
             exposureBaseUsd={leverageExposureBaseUsd}
@@ -734,9 +759,7 @@ export function MultiplyActionPageClient({
           }
           multiplierMin={multiplierMin}
           multiplierMax={effectiveMultiplierMax}
-          multiplierRecommendedMax={
-            kind === "multiply" ? Math.min(effectiveMultiplierMax, market.risk.recommendedMaxMultiplier) : undefined
-          }
+          multiplierRecommendedMax={recommendedActionLeverage}
           multiplierLabel="Target leverage"
           multiplierExposureBaseUsd={leverageExposureBaseUsd}
           onPrimary={() => {

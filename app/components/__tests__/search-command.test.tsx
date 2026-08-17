@@ -65,6 +65,14 @@ describe("SearchCommand keyboard navigation", () => {
     expect(push).toHaveBeenCalledTimes(1)
   })
 
+  it("labels a pool's fee tier as a 'pool fee' to distinguish it from the annualized borrow Fees APR", async () => {
+    await openAndLoad()
+
+    // Pool result subtitles read like "Venue / 0.30% pool fee / …" so the swap
+    // fee tier isn't confused with the annualized "Fees" APR on borrow tables.
+    await waitFor(() => expect(screen.getAllByText(/pool fee/i).length).toBeGreaterThan(0))
+  })
+
   it("closes on a single Escape even when a query is present", async () => {
     const input = await openAndLoad()
 
