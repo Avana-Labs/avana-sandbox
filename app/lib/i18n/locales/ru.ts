@@ -1132,6 +1132,91 @@ const dict: TranslationDictionary = {
     "Ваша сессия в безопасности. Это временная проблема с подключением, а не с вашим кошельком.",
   "Something went wrong.": "Что-то пошло не так.",
   "We couldn't load this page.": "Не удалось загрузить эту страницу.",
+  "Active Deficit": "Активный дефицит",
+  "Active stake": "Активный стейк",
+  "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
+    "Сумма, которую Avana покрывает первой, прежде чем задействуется застейканное пользователями покрытие. Стейкеры несут убытки, только когда реализованные дефициты превышают этот офсет.",
+  "Close umbrella actions": "Закрыть действия Umbrella",
+  Cooldown: "Кулдаун",
+  Cooling: "На кулдауне",
+  Coverage: "Покрытие",
+  "Coverage currently in cooldown across all stakers of this asset. Cooldown positions still absorb losses until they finish the 20-day wait and are unstaked.":
+    "Покрытие, находящееся сейчас на кулдауне у всех стейкеров этого актива. Позиции на кулдауне продолжают поглощать убытки, пока не завершится 20-дневное ожидание и они не будут выведены.",
+  "Current realized shortfall in {symbol}. Staker Exposure = max(Active Deficit − Deficit Offset, 0). Current staker exposure: {exposure}.":
+    "Текущий реализованный дефицит в {symbol}. Экспозиция стейкера = max(Активный дефицит − Офсет дефицита, 0). Текущая экспозиция стейкера: {exposure}.",
+  "Deficit Offset": "Офсет дефицита",
+  "Desired amount of user-staked coverage for this asset.":
+    "Желаемая сумма застейканного пользователями покрытия для этого актива.",
+  "Dynamic rewards": "Динамические награды",
+  "Each Umbrella stake token covers deficits for its matching borrowed asset on the same network.":
+    "Каждый стейк-токен Umbrella покрывает дефициты соответствующего заимствованного актива в той же сети.",
+  "Emissions adjust against target liquidity, and each staked asset can earn multiple reward tokens.":
+    "Эмиссия подстраивается под целевую ликвидность, и каждый застейканный актив может зарабатывать несколько токенов наград.",
+  "Estimated annual staking yield paid to stakers of this asset.":
+    "Ориентировочная годовая доходность стейкинга, выплачиваемая стейкерам этого актива.",
+  "In cooldown": "На кулдауне",
+  "Isolated slashing": "Изолированный слэшинг",
+  "Learn Umbrella": "Узнать про Umbrella",
+  "Market Level Risk": "Риск на уровне рынка",
+  "Module assets": "Активы модуля",
+  More: "Ещё",
+  "More umbrella actions": "Ещё действия Umbrella",
+  "Next cooldown": "Следующий кулдаун",
+  "Next market risk": "Следующий рыночный риск",
+  "Once cooldown finishes, users can unstake during the withdrawal window before cooldown has to be restarted.":
+    "После завершения кулдауна пользователи могут вывести стейк в окне вывода, прежде чем кулдаун нужно будет запускать заново.",
+  "Previous cooldown": "Предыдущий кулдаун",
+  "Previous market risk": "Предыдущий рыночный риск",
+  Ready: "Готово",
+  "Removes in": "Удалится через",
+  "Restart cooldown": "Перезапустить кулдаун",
+  Stake: "Застейкать",
+  "Stake in umbrella": "Застейкать в Umbrella",
+  "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
+    "Стейкайте, забирайте награды, запускайте кулдаун или выводите стейк из модуля безопасности Umbrella.",
+  "Stake, claim, cooldown, unstake": "Стейкать, забирать, кулдаун, выводить",
+  "Start cooldown before withdrawing. During cooldown, the position keeps earning incentives and remains slashable.":
+    "Запустите кулдаун перед выводом. Во время кулдауна позиция продолжает получать поощрения и остаётся подверженной слэшингу.",
+  Target: "Цель",
+  "Total coverage": "Общее покрытие",
+  "Total user-staked capital available to absorb losses for this asset.":
+    "Общий капитал, застейканный пользователями и доступный для поглощения убытков этого актива.",
+  Umbrella: "Umbrella",
+  "Umbrella Cooldown": "Кулдаун Umbrella",
+  "Umbrella actions": "Действия Umbrella",
+  "Umbrella activity": "Активность Umbrella",
+  "Umbrella positions": "Позиции Umbrella",
+  "Umbrella positions are split by asset and network, so each stake token has its own risk and reward profile.":
+    "Позиции Umbrella разделены по активу и сети, поэтому у каждого стейк-токена собственный профиль риска и наград.",
+  Unstake: "Вывести стейк",
+  "Unstake window": "Окно вывода",
+  "Weighted APY": "Взвешенный APY",
+  "Withdrawal ready": "Готово к выводу",
+  "Withdrawal window": "Окно вывода",
+  "You have no Umbrella positions yet.": "У вас пока нет позиций Umbrella.",
+  "Your Umbrella": "Ваш Umbrella",
+  "Your Umbrella stake": "Ваш стейк в Umbrella",
+  "After cooldown completes, there is a short window to unstake. If it expires, cooldown must be started again.":
+    "После завершения кулдауна открывается короткое окно для вывода. Если оно истечёт, кулдаун придётся запускать заново.",
+  "base {base} + reward {reward}": "база {base} + награда {reward}",
+  "live mix": "живой микс",
+  none: "нет",
+  "{amount} active deficit": "{amount} активного дефицита",
+  "{amount} claimed": "{amount} получено",
+  "{amount} deficit offset": "{amount} офсета дефицита",
+  "{amount} in cooldown": "{amount} на кулдауне",
+  "{amount} market": "{amount} рынка",
+  "{amount} on stakers": "{amount} на стейкерах",
+  "{amount} pending": "{amount} в ожидании",
+  "{amount} target": "цель {amount}",
+  "{pct}% of coverage cooling · {deficits} deficits absorbed by {offset} offset · ":
+    "{pct}% покрытия на кулдауне · {deficits} дефицитов поглощены офсетом {offset} · ",
+  "{pct}% of target": "{pct}% от цели",
+  "{pct}% of target coverage.": "{pct}% целевого покрытия.",
+  "{staked} staked · {target} target · {count} assets": "застейкано {staked} · цель {target} · активов {count}",
+  "{symbols} expired — restart cooldown": "{symbols} истёк — перезапустите кулдаун",
+  "{time} left": "осталось {time}",
+  "{value} total": "всего {value}",
 }
 
 export default dict

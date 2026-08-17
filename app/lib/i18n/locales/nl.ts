@@ -1128,6 +1128,91 @@ const dict: TranslationDictionary = {
   "Your session is safe. This is a temporary connection issue, not your wallet.":
     "Je sessie is veilig. Dit is een tijdelijk verbindingsprobleem, niet je Wallet.",
   "We couldn't load this page.": "We konden deze pagina niet laden.",
+  "Active Deficit": "Actief tekort",
+  "Active stake": "Actieve stake",
+  "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
+    "Bedrag dat Avana eerst dekt voordat door gebruikers gestakete dekking wordt blootgesteld. Stakers dragen pas verlies wanneer gerealiseerde tekorten deze offset overschrijden.",
+  "Close umbrella actions": "Umbrella-acties sluiten",
+  Cooldown: "Cooldown",
+  Cooling: "In cooldown",
+  Coverage: "Dekking",
+  "Coverage currently in cooldown across all stakers of this asset. Cooldown positions still absorb losses until they finish the 20-day wait and are unstaked.":
+    "Dekking die momenteel in cooldown staat bij alle stakers van dit asset. Cooldown-posities blijven verliezen absorberen tot ze de wachttijd van 20 dagen hebben afgerond en worden ge-unstaked.",
+  "Current realized shortfall in {symbol}. Staker Exposure = max(Active Deficit − Deficit Offset, 0). Current staker exposure: {exposure}.":
+    "Actueel gerealiseerd tekort in {symbol}. Staker-blootstelling = max(Actief tekort − Tekort-offset, 0). Huidige staker-blootstelling: {exposure}.",
+  "Deficit Offset": "Tekort-offset",
+  "Desired amount of user-staked coverage for this asset.":
+    "Gewenste hoeveelheid door gebruikers gestakete dekking voor dit asset.",
+  "Dynamic rewards": "Dynamische beloningen",
+  "Each Umbrella stake token covers deficits for its matching borrowed asset on the same network.":
+    "Elk Umbrella-staketoken dekt tekorten voor het bijbehorende geleende asset op hetzelfde netwerk.",
+  "Emissions adjust against target liquidity, and each staked asset can earn multiple reward tokens.":
+    "Emissies passen zich aan de doelliquiditeit aan, en elk gestaket asset kan meerdere beloningstokens verdienen.",
+  "Estimated annual staking yield paid to stakers of this asset.":
+    "Geschatte jaarlijkse staking-opbrengst uitbetaald aan stakers van dit asset.",
+  "In cooldown": "In cooldown",
+  "Isolated slashing": "Geïsoleerde slashing",
+  "Learn Umbrella": "Meer over Umbrella",
+  "Market Level Risk": "Marktniveau-risico",
+  "Module assets": "Module-assets",
+  More: "Meer",
+  "More umbrella actions": "Meer Umbrella-acties",
+  "Next cooldown": "Volgende cooldown",
+  "Next market risk": "Volgend marktrisico",
+  "Once cooldown finishes, users can unstake during the withdrawal window before cooldown has to be restarted.":
+    "Zodra de cooldown eindigt, kunnen gebruikers tijdens het opnamevenster unstaken voordat de cooldown opnieuw moet worden gestart.",
+  "Previous cooldown": "Vorige cooldown",
+  "Previous market risk": "Vorig marktrisico",
+  Ready: "Klaar",
+  "Removes in": "Verwijderd over",
+  "Restart cooldown": "Cooldown opnieuw starten",
+  Stake: "Staken",
+  "Stake in umbrella": "Staken in Umbrella",
+  "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
+    "Stake, claim beloningen, start de cooldown of unstake uit de Umbrella-veiligheidsmodule.",
+  "Stake, claim, cooldown, unstake": "Staken, claimen, cooldown, unstaken",
+  "Start cooldown before withdrawing. During cooldown, the position keeps earning incentives and remains slashable.":
+    "Start de cooldown voordat je opneemt. Tijdens de cooldown blijft de positie incentives verdienen en blijft ze onderworpen aan slashing.",
+  Target: "Doel",
+  "Total coverage": "Totale dekking",
+  "Total user-staked capital available to absorb losses for this asset.":
+    "Totaal door gebruikers gestaket kapitaal beschikbaar om verliezen op dit asset op te vangen.",
+  Umbrella: "Umbrella",
+  "Umbrella Cooldown": "Umbrella-cooldown",
+  "Umbrella actions": "Umbrella-acties",
+  "Umbrella activity": "Umbrella-activiteit",
+  "Umbrella positions": "Umbrella-posities",
+  "Umbrella positions are split by asset and network, so each stake token has its own risk and reward profile.":
+    "Umbrella-posities zijn opgesplitst per asset en netwerk, dus elk staketoken heeft zijn eigen risico- en beloningsprofiel.",
+  Unstake: "Unstaken",
+  "Unstake window": "Unstake-venster",
+  "Weighted APY": "Gewogen APY",
+  "Withdrawal ready": "Klaar om op te nemen",
+  "Withdrawal window": "Opnamevenster",
+  "You have no Umbrella positions yet.": "Je hebt nog geen Umbrella-posities.",
+  "Your Umbrella": "Jouw Umbrella",
+  "Your Umbrella stake": "Jouw Umbrella-stake",
+  "After cooldown completes, there is a short window to unstake. If it expires, cooldown must be started again.":
+    "Na afloop van de cooldown is er een kort venster om te unstaken. Verloopt dat, dan moet de cooldown opnieuw worden gestart.",
+  "base {base} + reward {reward}": "basis {base} + beloning {reward}",
+  "live mix": "live mix",
+  none: "geen",
+  "{amount} active deficit": "{amount} actief tekort",
+  "{amount} claimed": "{amount} geclaimd",
+  "{amount} deficit offset": "{amount} tekort-offset",
+  "{amount} in cooldown": "{amount} in cooldown",
+  "{amount} market": "{amount} markt",
+  "{amount} on stakers": "{amount} op stakers",
+  "{amount} pending": "{amount} in behandeling",
+  "{amount} target": "{amount} doel",
+  "{pct}% of coverage cooling · {deficits} deficits absorbed by {offset} offset · ":
+    "{pct}% van de dekking in cooldown · {deficits} aan tekorten opgevangen door {offset} offset · ",
+  "{pct}% of target": "{pct}% van het doel",
+  "{pct}% of target coverage.": "{pct}% van de doeldekking.",
+  "{staked} staked · {target} target · {count} assets": "{staked} gestaked · doel {target} · {count} assets",
+  "{symbols} expired — restart cooldown": "{symbols} verlopen — start de cooldown opnieuw",
+  "{time} left": "{time} resterend",
+  "{value} total": "{value} totaal",
 }
 
 export default dict

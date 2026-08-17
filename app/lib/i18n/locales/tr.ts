@@ -1125,6 +1125,91 @@ const dict: TranslationDictionary = {
     "Oturumunuz güvende. Bu, cüzdanınızla değil, geçici bir bağlantı sorunuyla ilgili.",
   "Something went wrong.": "Bir şeyler ters gitti.",
   "We couldn't load this page.": "Bu sayfayı yükleyemedik.",
+  "Active Deficit": "Aktif açık",
+  "Active stake": "Aktif stake",
+  "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
+    "Kullanıcıların stake ettiği teminatın açığa çıkmasından önce Avana'nın öncelikle karşıladığı tutar. Stake sahipleri, yalnızca gerçekleşen açık bu ofseti aştığında zarar yazar.",
+  "Close umbrella actions": "Umbrella işlemlerini kapat",
+  Cooldown: "Cooldown",
+  Cooling: "Cooldown'da",
+  Coverage: "Teminat",
+  "Coverage currently in cooldown across all stakers of this asset. Cooldown positions still absorb losses until they finish the 20-day wait and are unstaked.":
+    "Bu varlığın tüm stake sahipleri arasında şu anda cooldown'da olan teminat. Cooldown'daki pozisyonlar 20 günlük süreyi tamamlayıp çekilene kadar zararı üstlenmeye devam eder.",
+  "Current realized shortfall in {symbol}. Staker Exposure = max(Active Deficit − Deficit Offset, 0). Current staker exposure: {exposure}.":
+    "{symbol} cinsinden mevcut gerçekleşen açık. Stake sahibi maruziyeti = max(Aktif Açık − Açık Ofseti, 0). Şu anki stake sahibi maruziyeti: {exposure}.",
+  "Deficit Offset": "Açık ofseti",
+  "Desired amount of user-staked coverage for this asset.":
+    "Bu varlık için hedeflenen kullanıcı stake teminatı miktarı.",
+  "Dynamic rewards": "Dinamik ödüller",
+  "Each Umbrella stake token covers deficits for its matching borrowed asset on the same network.":
+    "Her Umbrella stake tokenı, aynı ağdaki eşleşen ödünç alınmış varlığın açığını karşılar.",
+  "Emissions adjust against target liquidity, and each staked asset can earn multiple reward tokens.":
+    "Emisyonlar hedef likiditeye göre ayarlanır ve stake edilen her varlık birden çok ödül tokenı kazanabilir.",
+  "Estimated annual staking yield paid to stakers of this asset.":
+    "Bu varlığın stake sahiplerine ödenen tahmini yıllık staking getirisi.",
+  "In cooldown": "Cooldown'da",
+  "Isolated slashing": "İzole slashing",
+  "Learn Umbrella": "Umbrella'yı öğren",
+  "Market Level Risk": "Piyasa düzeyi riski",
+  "Module assets": "Modül varlıkları",
+  More: "Daha fazla",
+  "More umbrella actions": "Daha fazla Umbrella işlemi",
+  "Next cooldown": "Sonraki cooldown",
+  "Next market risk": "Sonraki piyasa riski",
+  "Once cooldown finishes, users can unstake during the withdrawal window before cooldown has to be restarted.":
+    "Cooldown bittiğinde kullanıcılar, cooldown'ı yeniden başlatmak zorunda kalmadan çekim penceresinde stake'i geri çekebilir.",
+  "Previous cooldown": "Önceki cooldown",
+  "Previous market risk": "Önceki piyasa riski",
+  Ready: "Hazır",
+  "Removes in": "Kaldırılma süresi",
+  "Restart cooldown": "Cooldown'ı yeniden başlat",
+  Stake: "Stake et",
+  "Stake in umbrella": "Umbrella'ya stake et",
+  "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
+    "Umbrella güvenlik modülünde stake et, ödül al, cooldown başlat veya stake'i geri çek.",
+  "Stake, claim, cooldown, unstake": "Stake, al, cooldown, geri çek",
+  "Start cooldown before withdrawing. During cooldown, the position keeps earning incentives and remains slashable.":
+    "Çekimden önce cooldown'ı başlat. Cooldown sırasında pozisyon teşvik kazanmaya devam eder ve slashing'e açık kalır.",
+  Target: "Hedef",
+  "Total coverage": "Toplam teminat",
+  "Total user-staked capital available to absorb losses for this asset.":
+    "Bu varlığın zararını karşılamak üzere kullanılabilir toplam kullanıcı stake sermayesi.",
+  Umbrella: "Umbrella",
+  "Umbrella Cooldown": "Umbrella cooldown",
+  "Umbrella actions": "Umbrella işlemleri",
+  "Umbrella activity": "Umbrella etkinliği",
+  "Umbrella positions": "Umbrella pozisyonları",
+  "Umbrella positions are split by asset and network, so each stake token has its own risk and reward profile.":
+    "Umbrella pozisyonları varlık ve ağa göre ayrılır; bu nedenle her stake tokenı kendine özgü risk ve ödül profiline sahiptir.",
+  Unstake: "Geri çek",
+  "Unstake window": "Geri çekme penceresi",
+  "Weighted APY": "Ağırlıklı APY",
+  "Withdrawal ready": "Çekime hazır",
+  "Withdrawal window": "Çekim penceresi",
+  "You have no Umbrella positions yet.": "Henüz Umbrella pozisyonun yok.",
+  "Your Umbrella": "Umbrella'n",
+  "Your Umbrella stake": "Umbrella stake'in",
+  "After cooldown completes, there is a short window to unstake. If it expires, cooldown must be started again.":
+    "Cooldown bittikten sonra geri çekmek için kısa bir pencere vardır. Süresi dolarsa cooldown yeniden başlatılmalıdır.",
+  "base {base} + reward {reward}": "temel {base} + ödül {reward}",
+  "live mix": "canlı karışım",
+  none: "yok",
+  "{amount} active deficit": "{amount} aktif açık",
+  "{amount} claimed": "{amount} alındı",
+  "{amount} deficit offset": "{amount} açık ofseti",
+  "{amount} in cooldown": "{amount} cooldown'da",
+  "{amount} market": "{amount} piyasa",
+  "{amount} on stakers": "{amount} stake sahiplerinde",
+  "{amount} pending": "{amount} beklemede",
+  "{amount} target": "{amount} hedef",
+  "{pct}% of coverage cooling · {deficits} deficits absorbed by {offset} offset · ":
+    "teminatın %{pct}'i cooldown'da · {deficits} açık {offset} ofset tarafından karşılandı · ",
+  "{pct}% of target": "hedefin %{pct}'i",
+  "{pct}% of target coverage.": "hedef teminatın %{pct}'i.",
+  "{staked} staked · {target} target · {count} assets": "{staked} stake · hedef {target} · {count} varlık",
+  "{symbols} expired — restart cooldown": "{symbols} süresi doldu — cooldown'ı yeniden başlat",
+  "{time} left": "{time} kaldı",
+  "{value} total": "toplam {value}",
 }
 
 export default dict

@@ -7,6 +7,7 @@ import { TokenIcon } from "@/app/components/token-icon"
 import { Button } from "@/components/ui/button"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { UmbrellaMarketId } from "@/app/lib/umbrella-system/use-umbrella-session"
 import { cn } from "@/lib/utils"
 import { useCooldownCountdown } from "../use-cooldown-countdown"
@@ -25,13 +26,14 @@ type CooldownCard = {
   withdrawalWindowEndsAt: number | undefined
 }
 
-function statusLabel(status: CooldownStatus) {
+function statusLabelKey(status: CooldownStatus): string {
   if (status === "ready") return "Withdrawal ready"
   if (status === "expired") return "Cooldown expired"
   return "In cooldown"
 }
 
 function CooldownCardView({ card }: { card: CooldownCard }) {
+  const { t } = useTranslation()
   const cooldown = useCooldownCountdown(card.cooldownEndsAt)
   const withdrawal = useCooldownCountdown(card.withdrawalWindowEndsAt)
   const cooldownLabel =
@@ -40,15 +42,15 @@ function CooldownCardView({ card }: { card: CooldownCard }) {
         ? cooldown.remainingLabel
         : card.cooldownRemainingFallback
       : card.cooldownStatus === "expired"
-        ? "Expired"
-        : "Ready"
+        ? t("Expired")
+        : t("Ready")
   const removesLabel =
     card.cooldownStatus === "ready"
       ? card.withdrawalWindowEndsAt && withdrawal.remainingMs > 0
-        ? `${withdrawal.remainingLabel} left`
+        ? t("{time} left").replace("{time}", withdrawal.remainingLabel)
         : card.removesInFallback
       : card.cooldownStatus === "expired"
-        ? "Restart cooldown"
+        ? t("Restart cooldown")
         : card.cooldownEndsAt
           ? cooldown.remainingLabel
           : card.removesInFallback
@@ -67,7 +69,7 @@ function CooldownCardView({ card }: { card: CooldownCard }) {
     card.cooldownStatus === "expired"
       ? actionPagePath("umbrella", "cooldown", { market: card.id, return: "/umbrella" })
       : actionPagePath("umbrella", "unstake", { market: card.id, return: "/umbrella" })
-  const ctaLabel = card.cooldownStatus === "expired" ? "Restart cooldown" : "Remove"
+  const ctaLabel = card.cooldownStatus === "expired" ? t("Restart cooldown") : t("Remove")
   const ctaDisabled = card.cooldownStatus === "cooling"
 
   return (
@@ -81,16 +83,16 @@ function CooldownCardView({ card }: { card: CooldownCard }) {
       </div>
 
       <div className={cn("mt-3 text-[12px] font-semibold uppercase tracking-wide", statusTone)}>
-        {statusLabel(card.cooldownStatus)}
+        {t(statusLabelKey(card.cooldownStatus))}
       </div>
 
       <div className="mt-2 grid grid-cols-2 gap-2">
         <div>
-          <div className="text-[13px] text-muted-foreground">Cooldown</div>
+          <div className="text-[13px] text-muted-foreground">{t("Cooldown")}</div>
           <div className="mt-1 text-[20px] font-semibold tracking-[-0.04em] tabular-nums">{cooldownLabel}</div>
         </div>
         <div>
-          <div className="text-[13px] text-muted-foreground">Removes in</div>
+          <div className="text-[13px] text-muted-foreground">{t("Removes in")}</div>
           <div className={cn("mt-1 text-[20px] font-semibold tracking-[-0.04em] tabular-nums", removesTone)}>
             {removesLabel}
           </div>
@@ -115,6 +117,7 @@ function CooldownCardView({ card }: { card: CooldownCard }) {
 }
 
 export function UmbrellaCooldown() {
+  const { t } = useTranslation()
   const { scrollerRef, canPrev, canNext, scrollByCard } = useOverflowCarousel()
   const umbrella = useUmbrellaSessionContext()
   const coolingPositions: CooldownCard[] = umbrella.marketOrder
@@ -140,15 +143,15 @@ export function UmbrellaCooldown() {
     <section>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
-          Umbrella Cooldown
+          {t("Umbrella Cooldown")}
         </h2>
         <CarouselArrowButtons
           canPrev={canPrev}
           canNext={canNext}
           onPrev={() => scrollByCard(-1)}
           onNext={() => scrollByCard(1)}
-          prevLabel="Previous cooldown"
-          nextLabel="Next cooldown"
+          prevLabel={t("Previous cooldown")}
+          nextLabel={t("Next cooldown")}
         />
       </div>
 
