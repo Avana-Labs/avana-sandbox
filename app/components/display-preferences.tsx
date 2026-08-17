@@ -3,7 +3,7 @@
 import type { ReactNode } from "react"
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 import { LANGUAGE_HTML_LANG, isRtlLanguage } from "@/app/lib/i18n/language-html-lang"
-import { setActiveCurrency } from "@/app/lib/currency/active-rate"
+import { setActiveCurrency, setActiveLocale } from "@/app/lib/currency/active-rate"
 import { applyCachedLiveRates, fetchLiveRates } from "@/app/lib/currency/exchange-rates"
 
 const STORAGE_KEY = "avana-show-dollar-amounts"
@@ -148,6 +148,9 @@ export function DisplayPreferencesProvider({ children }: { children: ReactNode }
   useEffect(() => {
     document.documentElement.lang = LANGUAGE_HTML_LANG[language] ?? "en"
     document.documentElement.dir = isRtlLanguage(language) ? "rtl" : "ltr"
+    // Point the shared number formatters at this locale so currency/amount grouping and decimal
+    // separators follow the selected language (client-only; SSR stays en-US).
+    setActiveLocale(language)
   }, [language])
 
   useEffect(() => {
