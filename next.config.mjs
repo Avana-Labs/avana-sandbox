@@ -1,7 +1,12 @@
 import process from "node:process"
 import { URL } from "node:url"
+import bundleAnalyzer from "@next/bundle-analyzer"
 
 const isDev = process.env.NODE_ENV === "development"
+
+// Opt-in bundle analysis: `npm run analyze` (ANALYZE=1) opens the treemap after a build so the
+// first-load JS impact of optimizePackageImports / demand-loading changes is measurable.
+const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === "1" })
 
 /**
  * Convex's reactive client connects over a WebSocket (https→wss, http→ws) and also
@@ -174,4 +179,4 @@ const nextConfig = {
   },
 }
 
-export default nextConfig
+export default withBundleAnalyzer(nextConfig)

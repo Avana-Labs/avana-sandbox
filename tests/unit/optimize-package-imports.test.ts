@@ -10,7 +10,8 @@ import { describe, expect, it } from "vitest"
  */
 describe("next.config optimizePackageImports", () => {
   const config = readFileSync(path.resolve(__dirname, "../../next.config.mjs"), "utf8")
-  const line = config.split("\n").find((l) => l.includes("optimizePackageImports")) ?? ""
+  // Match the config KEY (with colon), not prose mentioning the option in a comment.
+  const line = config.split("\n").find((l) => l.includes("optimizePackageImports:")) ?? ""
 
   it("tree-shakes the Hugeicons barrels", () => {
     expect(line).toContain("@hugeicons/react")

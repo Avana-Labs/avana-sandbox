@@ -36,6 +36,7 @@
     "dev:test": "NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1 npm run dev",
     "dev:turbo": "node scripts/run-next.mjs dev --turbopack",
     "build": "node scripts/run-next.mjs build",
+    "analyze": "ANALYZE=1 node scripts/run-next.mjs build",
     "dev:clean": "npm run clean && npm run dev",
     "lint": "eslint .",
     "format": "prettier --write .",
@@ -90,6 +91,7 @@
   "devDependencies": {
     "@edge-runtime/vm": "^5.0.0",
     "@eslint/js": "^10.0.1",
+    "@next/bundle-analyzer": "^16.3.1",
     "@next/eslint-plugin-next": "^16.2.12",
     "@playwright/test": "^1.62.1",
     "@testing-library/dom": "^10.4.1",
