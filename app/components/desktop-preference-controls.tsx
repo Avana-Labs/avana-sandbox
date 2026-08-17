@@ -8,6 +8,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { PriceFreshnessNotice } from "./prices/price-freshness-notice"
 import { CurrencyFlag } from "./currency-flag"
 import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useLocaleDisplayPreferences } from "./display-preferences"
 import { useTheme } from "./theme-provider"
@@ -67,6 +68,7 @@ export function DesktopPreferenceControls() {
             <DropdownMenuLabel className="px-3 py-2.5 text-[16px] font-medium normal-case tracking-normal text-foreground dark:text-white">
               {t("Global preferences")}
             </DropdownMenuLabel>
+            <PriceFreshnessNotice className="px-3 pb-1" />
             <div className="space-y-2 px-3 pb-1">
               <div className="flex items-center justify-between gap-3">
                 <span className="text-[14px] text-muted-foreground dark:text-white/64">{t("Theme")}</span>
