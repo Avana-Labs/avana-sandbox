@@ -23,7 +23,9 @@ describe("Umbrella page", () => {
     renderUmbrellaPage()
 
     expect(screen.getByText("Your Umbrella stake")).toBeInTheDocument()
-    expect(screen.getAllByText("$55.00M market").length).toBeGreaterThan(0)
+    // Canonical compact USD is one decimal ($55.0M), shared with the rest of the app
+    // (previously the Umbrella-only formatter emitted two decimals, "$55.00M").
+    expect(screen.getAllByText("$55.0M market").length).toBeGreaterThan(0)
 
     // Asset headings in the positions table
     expect(screen.getAllByText("Stake GHO").length).toBeGreaterThan(0)

@@ -72,7 +72,10 @@ const UMBRELLA_MARKETS = {
     apy: 5.05,
     rewardApy: 2.4,
     baseApy: 2.65,
-    priceUsd: 2240,
+    // Must equal the app-wide baseline (app/lib/prices/sandbox-baseline-prices.ts → WETH:1934).
+    // Convex can't import app/, so this is hand-synced; it previously drifted to 2240, valuing
+    // the same WETH ~16% higher in Umbrella than everywhere else.
+    priceUsd: 1934,
     targetCoverageUsd: 6_250_000,
     currentDeficitUsd: 52_973,
     deficitOffsetUsd: 250_000,
@@ -317,8 +320,15 @@ async function readUmbrellaMarketOverlay(ctx: QueryCtx | MutationCtx, marketId: 
  * Shared dev-controls guard. `simulateDeficit`, `simulateSlash`, and
  * `dev.advanceCooldown` all check this so production wallets can never trigger
  * time-warp / stress mutations. The env var is set only in `.env.local`.
+ *
+ * Production floor: even if `SANDBOX_DEV_CONTROLS` is somehow "true" in a deploy
+ * (a mis-set Convex env var), the guard FAILS CLOSED when the deployment runs as
+ * production — mirroring the app-side `isProductionBuild()` floor in
+ * app/lib/test-mode.ts. The opt-in flag can only ever unlock these mutations in a
+ * non-production (local dev) deployment.
  */
 export function assertSandboxDevControlsEnabled() {
+  if (process.env.NODE_ENV === "production") throw new Error("DEV_CONTROLS_DISABLED")
   if (process.env.SANDBOX_DEV_CONTROLS !== "true") throw new Error("DEV_CONTROLS_DISABLED")
 }
 
@@ -543,10 +553,27 @@ export const recordAction = mutation({
       // not a portion already cooling". The user can now hold multiple concurrent
       // tranches per market — each with its own 20-day / 2-day clock — as long
       // as the total cooling <= supplied.
+      //
+      // EXPIRED tranches are excluded from the active-cooling budget. Once a
+      // tranche's 2-day withdrawal window lapses its stake is no longer
+      // withdrawable via that tranche, but the principal was never removed from
+      // `suppliedUsd` — it has effectively returned to the active pool. Counting
+      // it as "cooling" here left the funds stuck forever (neither withdrawable
+      // nor re-coolable). So the budget is `supplied - (cooling + ready)`, and
+      // the expired amount is re-coolable.
       const activeTranches = await listActiveTranches(ctx, wallet, args.marketId)
-      const activeCoolingUsd6 = activeTranches.reduce((sum, t) => sum + BigInt(t.amountUsd6), 0n)
+      const expiredTranches = activeTranches.filter((t) => deriveTrancheStatus(t, now) === "expired")
+      const nonExpiredTranches = activeTranches.filter((t) => deriveTrancheStatus(t, now) !== "expired")
+      const activeCoolingUsd6 = nonExpiredTranches.reduce((sum, t) => sum + BigInt(t.amountUsd6), 0n)
       const activeCoolingUsd = Number(activeCoolingUsd6) / 1_000_000
       if (amountUsd > suppliedUsd - activeCoolingUsd + 1e-9) throw new Error("INVALID_COOLDOWN_AMOUNT")
+      // Budget check passed — retire the now-recovered expired tranches so they
+      // stop lingering in the aggregate (recomputePositionAggregate folds only
+      // non-consumed tranches) and can never be double-counted against the new
+      // tranche. This is the "restart cooldown" recovery path the UI promises.
+      for (const tranche of expiredTranches) {
+        await ctx.db.patch(tranche._id, { amountUsd6: "0", status: "consumed", updatedAt: now })
+      }
       await ctx.db.insert("umbrellaCooldownTranches", {
         positionId: position._id,
         wallet,

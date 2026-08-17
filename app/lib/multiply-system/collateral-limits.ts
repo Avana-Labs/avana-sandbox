@@ -25,6 +25,19 @@ export function maxMultiplyCollateralAmount(
   return capUsd / collateralPriceUsd
 }
 
+/**
+ * Resolve the collateral price the action panel should VALUE the position at. Prefer the
+ * live oracle price, but only when it is a usable positive number — otherwise fall back to
+ * the catalog price. A plain `livePrice ?? catalogPrice` let a 0/NaN oracle reading through,
+ * which zeroed every client-side USD figure (the collateral sublabel and value) while the
+ * engine — which independently guards for a positive override — still valued the exposure at
+ * the catalog price. Sharing this guard binds the displayed valuation to the exposure. (E5)
+ */
+export function resolveMultiplyCollateralPriceUsd(livePriceUsd: number | undefined, catalogPriceUsd: number): number {
+  if (livePriceUsd != null && Number.isFinite(livePriceUsd) && livePriceUsd > 0) return livePriceUsd
+  return catalogPriceUsd
+}
+
 /** True when the collateral amount exceeds what the market's liquidity can support. */
 export function exceedsMultiplyCollateralCap(collateralAmount: number, maxCollateralAmount: number | null): boolean {
   if (maxCollateralAmount == null) return false

@@ -473,6 +473,6 @@ export const clearPortfolioSnapshots = action({
   args: { seedSecret: v.string(), limit: v.optional(v.number()) },
   handler: async (ctx, { seedSecret, limit }): Promise<unknown> => {
     requireSeedSecret(seedSecret)
-    return ctx.runMutation(internal.seed.clearPortfolioSnapshots, { limit })
+    return ctx.runMutation(internal.seed.clearPortfolioSnapshots, { limit: safeClearLimit(limit) })
   },
 })

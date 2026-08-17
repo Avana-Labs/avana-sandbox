@@ -8,7 +8,7 @@ import { assertStableRecordIds, dedupeByStableId } from "@/app/lib/data/core/sou
 import { getPortfolioHeroFeed } from "@/app/lib/chart-feeds"
 import { toActive, withCurrencySymbol } from "@/app/lib/currency/active-rate"
 import { calculateLiquidationNumberUsd } from "./liquidation"
-import type { PortfolioPageData, PortfolioHeroData, PortfolioTabKey } from "./types"
+import type { PortfolioPageData, PortfolioHeroData, PortfolioPool, PortfolioTabKey } from "./types"
 import type { PortfolioPageRecords, PortfolioSnapshotRecord } from "./source"
 
 function buildHero(rangeData?: ChartRangeData, overrides: Partial<PortfolioHeroData> = {}): PortfolioHeroData {
@@ -35,6 +35,32 @@ function formatUsd(value: number) {
 function computeHealthFactor(liquidationUsd: number, borrowedUsd: number) {
   if (borrowedUsd <= 0) return null
   return liquidationUsd / borrowedUsd
+}
+
+// Placeholder pool for a debt that has NO collateral row at all (e.g. a failed
+// action that left debt without collateral). Without this the debt-mapping below
+// dereferenced `walletCollaterals[0].pool` and crashed the entire portfolio map
+// when the collateral list was empty. Rendering a debt-only row is strictly better
+// than taking the whole page down.
+function debtOnlyPool(poolId: string, debtAssetSymbol: string): PortfolioPool {
+  const visual = {
+    symbol: debtAssetSymbol,
+    shortLabel: debtAssetSymbol,
+    bgClassName: "bg-muted",
+    textClassName: "text-muted-foreground",
+  }
+  return {
+    id: poolId,
+    name: debtAssetSymbol,
+    venue: "—",
+    category: "—",
+    collateralUsd: 0,
+    maxLtv: 0,
+    borrowPowerUsd: 0,
+    liquidationUsd: 0,
+    pairApr: 0,
+    visuals: [visual, visual],
+  }
 }
 
 const RANGE_LENGTH: Record<ChartRangeOption, number> = {
@@ -317,8 +343,10 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
   const averageHealthFactor = totalDebtUsd > 0 ? liquidationThresholdUsd / totalDebtUsd : null
   const totalSuppliedUsd = walletSupplies.reduce((sum, row) => sum + row.suppliedUsd, 0)
   const totalEarnedUsd = walletSupplies.reduce((sum, row) => sum + row.earnedUsd, 0)
-  const averageApyPct = walletSupplies.length
-    ? walletSupplies.reduce((sum, row) => sum + row.apyPct, 0) / walletSupplies.length
+  // Balance-weighted, not a flat mean: an unweighted average let a tiny high-APY
+  // position dominate the headline (e.g. $10k@2% + $100@40% → 21% instead of ~2.4%).
+  const averageApyPct = totalSuppliedUsd
+    ? walletSupplies.reduce((sum, row) => sum + row.apyPct * row.suppliedUsd, 0) / totalSuppliedUsd
     : 0
   const heroByTab: Record<PortfolioTabKey, PortfolioHeroData> = {
     overview: buildHero(undefined, {
@@ -409,7 +437,11 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
         // collateral pool (cross-collateralized debt), show the account-level HF
         // (total liquidation value / total debt) instead of a bogus per-pool one.
         const matchingCollateral = walletCollaterals.find((row) => row.pool.id === debt.poolId)
-        const resolvedCollateral = matchingCollateral ?? walletCollaterals[0]
+        // Guard the fallback: `walletCollaterals[0]` is `undefined` when a debt has
+        // no collateral at all, and `.pool` on it crashed the whole map. Fall back to
+        // a debt-derived placeholder pool so the row still renders.
+        const resolvedPool =
+          matchingCollateral?.pool ?? walletCollaterals[0]?.pool ?? debtOnlyPool(debt.poolId, debt.debtAssetSymbol)
         const healthFactor = matchingCollateral
           ? computeHealthFactor(matchingCollateral.pool.liquidationUsd, debt.borrowedUsd)
           : totalDebtUsd > 0
@@ -418,10 +450,10 @@ export function mapPortfolioPage(records: PortfolioPageRecords): PortfolioPageDa
 
         return {
           id: debt.id,
-          pool: resolvedCollateral.pool,
+          pool: resolvedPool,
           debtAssetSymbol: debt.debtAssetSymbol,
           borrowedUsd: debt.borrowedUsd,
-          liquidationThresholdUsd: resolvedCollateral.pool.liquidationUsd,
+          liquidationThresholdUsd: resolvedPool.liquidationUsd,
           healthFactor,
           borrowApr: debt.borrowAprPct,
           accruedInterestUsd: debt.accruedInterestUsd,

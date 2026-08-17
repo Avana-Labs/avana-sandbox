@@ -4,7 +4,8 @@ import { useState } from "react"
 import type { ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { ActionFooter } from "@/app/components/action-page/action-amount-card"
 import { TransactionReceipt, type TransactionReceiptData } from "@/app/components/action-page/transaction-receipt"
-import { syntheticBlockFromHash, syntheticNetworkFeeUsdFromHash } from "@/app/lib/action-system/synthetic-receipt"
+import { syntheticBlockFromHash } from "@/app/lib/action-system/synthetic-receipt"
+import { SANDBOX_NETWORK_FEE_USD } from "@/app/lib/action-system/formatters"
 import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 
 export function ActionSuccessStage({
@@ -42,7 +43,10 @@ export function ActionSuccessStage({
     rateLabel: receipt?.rateLabel ?? null,
     rateValue: receipt?.rateValue ?? null,
     marketValue: receipt?.marketValue ?? null,
-    networkFeeUsd: hash ? syntheticNetworkFeeUsdFromHash(hash) : null,
+    // Swaps carry their real quote fee on the receipt context; every other action
+    // uses the canonical flat fee so the inline receipt matches the estimate and
+    // the permalink instead of drifting to a hash-derived amount.
+    networkFeeUsd: hash ? (receipt?.networkFeeUsd ?? SANDBOX_NETWORK_FEE_USD) : null,
     block: hash ? syntheticBlockFromHash(hash) : null,
     dateMs,
     hash,

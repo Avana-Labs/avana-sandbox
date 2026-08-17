@@ -212,7 +212,7 @@ export function borrowSelectItemsForMarket(
       trailingLabel:
         liquidityUsd != null
           ? `${formatActionUsd(liquidityUsd, { compact: true })} available`
-          : `${asset.borrowApr.toFixed(2)}% APY`,
+          : `${asset.borrowApr.toFixed(2)}% APR`,
     }
   })
 }

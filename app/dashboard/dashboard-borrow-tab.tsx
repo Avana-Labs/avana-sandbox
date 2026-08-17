@@ -113,6 +113,8 @@ export function DashboardBorrowTab({
                 borrowedUsd={debtTotals.totalBorrowed}
                 collateralUsd={debtTotals.totalCollateral}
                 showBalance={showDollarAmounts}
+                dailyInterestUsd={debtTotals.dailyInterest}
+                accruedInterestUsd={debtTotals.accruedInterest}
               />
             </div>
           ) : null}

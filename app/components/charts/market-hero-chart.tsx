@@ -5,6 +5,20 @@ import { useMemo, useState, type ReactNode } from "react"
 import { resolveAvailableRanges, resolveSeriesChange, resolveSeriesTone } from "./chart-data"
 import { ChartRangeSelector } from "./chart-range-selector"
 import { formatChartAxis, formatChartValue } from "./format"
+import type { ChartValueFormat } from "./types"
+
+/** Masked axis characters shown when the privacy toggle hides amounts. */
+export const HERO_AXIS_MASK = "••"
+
+/**
+ * Y-axis label formatter. When the privacy toggle hides amounts (`hideValue`), the
+ * axis is masked too — otherwise the chart still leaks the portfolio magnitude via
+ * its "$40.7K" gridline labels while the headline reads "••••".
+ */
+export function heroAxisFormatter(valueFormat: ChartValueFormat, hideValue: boolean): (value: number) => string {
+  if (hideValue) return () => HERO_AXIS_MASK
+  return (value: number) => formatChartAxis(valueFormat, value)
+}
 import { HeroBalanceDisplay } from "./hero-balance-display"
 import type { ChartFeed, ChartRangeOption } from "./types"
 import { redenominateCompactUsd } from "@/app/lib/currency/format"
@@ -139,7 +153,7 @@ export function MarketHeroChart({
         gradientId={gradientId}
         tone={chartTone ?? (hoverPoint ? tone : rangeTone)}
         formatValue={(v) => formatChartValue(feed.valueFormat, v)}
-        formatYAxis={(v) => formatChartAxis(feed.valueFormat, v)}
+        formatYAxis={heroAxisFormatter(feed.valueFormat, hideValue)}
         onActiveIndexChange={setHoverIndex}
       />
       {showFooter ? (

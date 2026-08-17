@@ -4,6 +4,7 @@ import {
   exceedsMultiplyCollateralCap,
   maxMultiplyCollateralAmount,
   multiplyOverCapReason,
+  resolveMultiplyCollateralPriceUsd,
 } from "@/app/lib/multiply-system/collateral-limits"
 
 describe("multiply collateral limits", () => {
@@ -44,6 +45,17 @@ describe("multiply collateral limits", () => {
 
   it("never blocks when no cap is known", () => {
     expect(exceedsMultiplyCollateralCap(999_999_999, null)).toBe(false)
+  })
+
+  it("E5: values collateral at the live price only when it is a usable positive number", () => {
+    // Healthy oracle reading wins.
+    expect(resolveMultiplyCollateralPriceUsd(86.08, 105)).toBe(86.08)
+    // A 0 / NaN / negative oracle reading falls back to the catalog price so the displayed
+    // collateral USD matches the engine-valued exposure instead of collapsing to $0.
+    expect(resolveMultiplyCollateralPriceUsd(0, 105)).toBe(105)
+    expect(resolveMultiplyCollateralPriceUsd(Number.NaN, 105)).toBe(105)
+    expect(resolveMultiplyCollateralPriceUsd(-1, 105)).toBe(105)
+    expect(resolveMultiplyCollateralPriceUsd(undefined, 105)).toBe(105)
   })
 
   it("builds a blocked preview with a clear over-cap reason", () => {
