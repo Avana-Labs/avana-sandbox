@@ -129,7 +129,7 @@ const nextConfig = {
     inlineCss: true,
     // Tree-shake heavy barrel packages so a 2-icon import doesn't pull the whole library.
     // @fluentui/react-icons especially ships thousands of icons behind one barrel.
-    optimizePackageImports: ["framer-motion"],
+    optimizePackageImports: ["framer-motion", "@hugeicons/react", "@hugeicons/core-free-icons"],
   },
   async redirects() {
     return [
