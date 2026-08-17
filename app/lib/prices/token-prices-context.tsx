@@ -3,7 +3,6 @@
 import * as React from "react"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { isLighthouseAuditMode, shouldUseOpenGateSession } from "@/app/lib/test-mode"
-import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { priceKey } from "./format"
 
 /**
@@ -79,12 +78,12 @@ export function usePriceFreshness(): PriceFreshness {
  * static labels, no staleness banner. Mirrors `MarketLiquidityErrorBoundary`.
  */
 export function TokenPricesProvider({ children }: { children: React.ReactNode }) {
-  const { isSignedIn } = useSiweAuth()
-  // Lighthouse's isolated artifact uses the static catalog intentionally. Do not
-  // open a live oracle subscription there: it adds no audited UI data and a stale
-  // remote Convex deployment turns the expected fallback into console errors and
-  // retry work. Production and normal local sessions keep the live subscription.
-  if (!hasConvexClient || !isSignedIn || shouldUseOpenGateSession() || isLighthouseAuditMode()) return <>{children}</>
+  // Token prices are PUBLIC data — value positions live for signed-out visitors too,
+  // not just authenticated sessions (the sign-in gate left public/SSR surfaces on the
+  // stale fixture). Still skip when there's no Convex client (nothing to query), and in
+  // the open-gate/Lighthouse test surfaces, which deliberately use the static catalog to
+  // keep e2e/audit runs deterministic and free of remote-Convex flakiness.
+  if (!hasConvexClient || shouldUseOpenGateSession() || isLighthouseAuditMode()) return <>{children}</>
   return (
     <React.Suspense fallback={children}>
       <ConvexTokenPrices>{children}</ConvexTokenPrices>
