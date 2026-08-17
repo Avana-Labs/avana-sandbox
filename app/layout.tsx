@@ -19,7 +19,7 @@ import { SandboxGate } from "./components/sandbox/sandbox-gate"
 import { CurrencyDisplayBoundary } from "./components/currency-display-boundary"
 import { ProductRuntimeProviders } from "./components/product-runtime-providers"
 import { isLighthouseAuditMode } from "./lib/test-mode"
-import { hydrateCanonicalPricesFromConvex } from "./lib/prices/server-hydrate"
+import { loadServerTokenPrices } from "./lib/prices/server-hydrate"
 // Only load Vercel Analytics / Speed Insights when actually running on Vercel — their
 // scripts are served by Vercel's edge (/_vercel/*), so a local `next start` build 404s
 // on them and logs console errors (a Lighthouse best-practices failure). On Vercel the
@@ -115,10 +115,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     )
   }
 
-  // Seed the canonical price store with the live oracle BEFORE the page segment renders,
-  // so server-computed price surfaces (detail "Price" tile, pool pair spot) reflect the
-  // refreshed oracle instead of the deterministic fixture. Fail-open: never blocks render.
-  await hydrateCanonicalPricesFromConvex()
+  // Fetch the live oracle prices once on the server: this hydrates the server-side canonical
+  // store (server-computed price surfaces render live) AND yields the seed handed to the client
+  // TokenPricesContext, so CLIENT-rendered prices (lend list, borrow table, action pages) are
+  // live from SSR without depending on the realtime subscription (which only mounts on
+  // authenticated product routes). Fail-open: returns {} and never blocks render.
+  const initialTokenPrices = await loadServerTokenPrices()
 
   return (
     <html
@@ -145,7 +147,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <WalletGateProvider>
               <Web3ProviderBoundary>
                 <SandboxGate>
-                  <ProductRuntimeProviders>
+                  <ProductRuntimeProviders initialTokenPrices={initialTokenPrices}>
                     <CurrencyDisplayBoundary>
                       <ConditionalSiteChrome>
                         <Suspense fallback={null}>

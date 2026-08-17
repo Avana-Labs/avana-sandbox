@@ -4,7 +4,10 @@ import { LendAssetSpokes, paginateLendAssetGroups } from "@/app/lend/components/
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }))
-vi.mock("@/app/lib/prices/token-prices-context", () => ({ usePriceFor: () => () => undefined }))
+vi.mock("@/app/lib/prices/token-prices-context", () => ({
+  usePriceFor: () => () => undefined,
+  useCanonicalPriceFor: () => () => undefined,
+}))
 
 afterEach(cleanup)
 
