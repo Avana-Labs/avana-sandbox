@@ -23,6 +23,7 @@ import type { MutationCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
 import { upsertWalletBalanceRows } from "../wallet/balances"
 import { requireSandboxWallet } from "./auth"
+import { tokenNotionalToUsd } from "./collateral-usd"
 import { deriveClaimAmountUsd } from "./rewards_catalog"
 import type { Doc } from "../_generated/dataModel"
 
@@ -522,10 +523,11 @@ async function serverCollateralValueUsd(
   ])
   const priceUsd = pool?.lpTokenPriceUsd ?? market?.priceUsd
   // 18-dec token notional (engine) vs usd6 microdollars (sandbox tests / persistence).
+  // Bigint mulDiv for the 18-dec path — see collateral-usd.tokenNotionalToUsd.
   const valueUsd =
     raw >= 10n ** 12n
       ? priceUsd && priceUsd > 0
-        ? (Number(raw) / 1e18) * priceUsd
+        ? tokenNotionalToUsd(raw, priceUsd)
         : (() => {
             throw new Error(`INVALID_TRANSITION: collateral ${row.marketSlug} has no server-verifiable value.`)
           })()
