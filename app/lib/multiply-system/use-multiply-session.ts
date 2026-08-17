@@ -366,19 +366,38 @@ export function useMultiplySession({
     setTransactionReceipts([])
   }, [seededState, shouldPersistState, walletId])
 
-  return {
-    walletId,
-    state,
-    readAdapter,
-    transactionHistory,
-    transactionReceipts,
-    hydrateMarketData,
-    hydrateWalletData,
-    createIntent,
-    previewTransaction,
-    executeTransaction,
-    reset,
-    isPending,
-    isHydrated: hasHydratedStorage && hydratedWalletId === walletId,
-  }
+  const isHydrated = hasHydratedStorage && hydratedWalletId === walletId
+
+  return useMemo(
+    () => ({
+      walletId,
+      state,
+      readAdapter,
+      transactionHistory,
+      transactionReceipts,
+      hydrateMarketData,
+      hydrateWalletData,
+      createIntent,
+      previewTransaction,
+      executeTransaction,
+      reset,
+      isPending,
+      isHydrated,
+    }),
+    [
+      walletId,
+      state,
+      readAdapter,
+      transactionHistory,
+      transactionReceipts,
+      hydrateMarketData,
+      hydrateWalletData,
+      createIntent,
+      previewTransaction,
+      executeTransaction,
+      reset,
+      isPending,
+      isHydrated,
+    ],
+  )
 }
