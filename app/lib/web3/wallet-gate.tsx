@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { getSiweToken, subscribeSiwe } from "@/app/lib/siwe/auth-store"
 import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
+import { scheduleIdle } from "./schedule-idle"
 
 /**
  * The wallet gate keeps the heavy wallet SDK (wagmi + viem + connectkit + walletconnect +
@@ -63,18 +64,23 @@ export function WalletGateProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // Returning signed-in users: a persisted SIWE token means the wallet stack is worth
-  // mounting (account pill, wrong-network detection, disconnect). Do it in an effect — AFTER
-  // first paint — so hydration matches the server (which renders no wallet SDK) and the heavy
-  // JS is deferred off the critical path. Guests (no token) never trip this. The dev
-  // open-gate/test mode has no real wallet, so it never mounts the SDK either.
+  // mounting (account pill, wrong-network detection, disconnect). Do it AFTER first paint so
+  // hydration matches the server (which renders no wallet SDK) and the heavy JS is off the
+  // critical path — and defer the initial mount to browser idle (scheduleIdle) so downloading
+  // and initializing ~1MB of wallet SDK never competes with hydration or the first INP. Guests
+  // (no token) never trip this. Dev open-gate/test mode has no real wallet, so it never mounts.
   useEffect(() => {
     if (IS_DEV_SHORTCUT_MODE) return
-    if (getSiweToken() != null) activate()
-    // A token can also appear later — e.g. sign-in completing in another tab.
+    const cancelIdle = getSiweToken() != null ? scheduleIdle(activate) : () => {}
+    // A token can also appear later — e.g. sign-in completing in another tab. That is a direct
+    // response to user intent, so mount immediately rather than waiting for idle.
     const unsubscribe = subscribeSiwe(() => {
       if (getSiweToken() != null) activate()
     })
-    return unsubscribe
+    return () => {
+      cancelIdle()
+      unsubscribe()
+    }
   }, [activate])
 
   const value = useMemo<WalletGate>(
