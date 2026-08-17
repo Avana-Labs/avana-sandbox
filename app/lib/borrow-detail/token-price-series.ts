@@ -2,6 +2,7 @@
  * Curated token price curves — smooth trend + natural micro-moves (Tokens-style).
  */
 
+import { canonicalPriceUsd } from "@/app/lib/prices/canonical"
 import { createPrng, hashString } from "./prng"
 import type { Point, Series, TimeRangeId } from "./types"
 
@@ -36,6 +37,40 @@ export function buildCuratedPriceFamily(assetId: string, label: string): Record<
     }
   }
 
+  return out
+}
+
+/**
+ * Re-anchor a price series family to the canonical basis: rescale every range so its TERMINAL
+ * (latest) point equals `canonicalPriceUsd(symbol)` — the exact number the detail-page "Price"
+ * tile shows (it reads the same baseline via injectBaselinePrice). The whole curve is scaled by a
+ * single factor per range, so the SHAPE (trend / volatility / dates / point count) is preserved and
+ * only the level moves; the chart therefore ends where the tile sits. Returns the family unchanged
+ * when the symbol is not in the canonical snapshot.
+ */
+export function anchorPriceFamilyToCanonical(
+  family: Record<TimeRangeId, Series>,
+  symbol: string,
+): Record<TimeRangeId, Series> {
+  const canonical = canonicalPriceUsd(symbol)
+  if (canonical === undefined) return family
+
+  const out = {} as Record<TimeRangeId, Series>
+  for (const range of Object.keys(family) as TimeRangeId[]) {
+    const series = family[range]
+    const lastIdx = series.points.length - 1
+    const terminal = lastIdx >= 0 ? series.points[lastIdx].v : 0
+    const scale = terminal > 0 ? canonical / terminal : 1
+    const points = series.points.map((p, i) =>
+      // Pin the terminal to the exact canonical value; scale the rest to keep the shape.
+      i === lastIdx ? { ...p, v: canonical } : { ...p, v: Math.round(p.v * scale * 100) / 100 },
+    )
+    out[range] = {
+      ...series,
+      points,
+      aggregate: points.reduce((sum, p) => sum + p.v, 0) / points.length,
+    }
+  }
   return out
 }
 

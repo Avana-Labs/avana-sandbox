@@ -55,11 +55,11 @@ describe("SwapAssetPickerDialog token icons", () => {
     renderPicker(assets)
 
     const expectedSrc: Record<string, string> = {
-      ETH: "/asset-icons/eth.svg",
-      USDC: "/asset-icons/usdc.svg",
-      GHO: "/asset-icons/gho.svg",
-      WBTC: "/asset-icons/wbtc.svg",
-      AAVE: "/asset-icons/aave.svg",
+      ETH: "/asset-icons/eth.png",
+      USDC: "/asset-icons/usdc.png",
+      GHO: "/asset-icons/gho.png",
+      WBTC: "/asset-icons/wbtc.png",
+      AAVE: "/asset-icons/aave.png",
     }
 
     for (const item of assets) {

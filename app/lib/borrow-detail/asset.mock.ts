@@ -12,7 +12,8 @@ import { BORROW_POOL_CATALOG, formatCompactUsd } from "@/app/lib/borrow-sim"
 import { resolveSpokeBorrowable, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
 import { buildSeries, buildSeriesFamily, prngFromString } from "./prng"
 import { SANDBOX_NOW } from "@/app/lib/deterministic"
-import { buildCuratedPriceFamily } from "./token-price-series"
+import { anchorPriceFamilyToCanonical, buildCuratedPriceFamily } from "./token-price-series"
+import { canonicalPriceUsd } from "@/app/lib/prices/canonical"
 import { computeAssetAllocation } from "./allocation"
 import { buildAssetRiskAssessment } from "./risk-model"
 import { buildAssetProtocolParameters } from "./protocol-parameters"
@@ -220,6 +221,20 @@ const ASSET_FIXTURES: Record<string, AssetFixture> = {
 // Helpers
 // -------------------------------------------------------------------------
 
+/**
+ * Hero "Price" basis for a borrowable. Prefers the canonical snapshot (`canonicalPriceUsd`) so the
+ * mock tile shows the SAME number as the Convex tile (which reads the same baseline via
+ * injectBaselinePrice) and the price chart's canonical-anchored terminal. Falls back to the fixture
+ * pin, then a per-category default, only when the symbol is unpriced.
+ */
+function resolveHeroPriceUsd(asset: SpokeBorrowableRecord, fixture: AssetFixture | undefined): number {
+  return (
+    canonicalPriceUsd(asset.symbol) ??
+    fixture?.heroPriceUsd ??
+    (asset.category === "stable" ? 1 : asset.category === "btc" ? 68422.18 : 2019.96)
+  )
+}
+
 function deltaFromPct(pct: number): DeltaStat {
   if (pct === 0) return { value: 0, direction: "flat", label: "0.0%" }
   return pct > 0
@@ -258,8 +273,7 @@ function buildQuickStats(
   borrowed: number,
   fixture: AssetFixture | undefined,
 ): QuickStat[] {
-  const heroPriceUsd =
-    fixture?.heroPriceUsd ?? (asset.category === "stable" ? 1 : asset.category === "btc" ? 68422.18 : 2019.96)
+  const heroPriceUsd = resolveHeroPriceUsd(asset, fixture)
   const availableUsd = Math.max(0, supplied - borrowed)
   const defaults: QuickStat[] = [
     { id: "price", label: "Price", value: formatUsdPrice(heroPriceUsd), delta: deltaFromPct(0.1) },
@@ -297,20 +311,23 @@ function buildHeroSeries(
 ): Record<AssetChartMetricId, Record<TimeRangeId, Series>> {
   const utilizationBase = Math.max(1, Math.min(95, (borrowed / supplied) * 100))
   const apyBase = asset.borrowApr
-  const priceBase =
-    fixture?.heroPriceUsd ?? (asset.category === "stable" ? 1 : asset.category === "btc" ? 68422.18 : 2019.96)
+  const priceBase = resolveHeroPriceUsd(asset, fixture)
   const curatedPrice = buildCuratedPriceFamily(asset.baseAssetId, "Price")
   return {
-    price:
+    // Anchor the price chart's terminal to the canonical basis so the chart ends exactly where the
+    // "Price" tile sits (see anchorPriceFamilyToCanonical); the synthetic base is canonical too.
+    price: anchorPriceFamilyToCanonical(
       curatedPrice ??
-      buildSeriesFamily(`${asset.id}:price`, "Price", {
-        base: priceBase,
-        driftMultiplier: 0.98,
-        noise: 0.02,
-        wave: 0.035,
-        nonNegative: true,
-        roundTo: 2,
-      }),
+        buildSeriesFamily(`${asset.id}:price`, "Price", {
+          base: priceBase,
+          driftMultiplier: 0.98,
+          noise: 0.02,
+          wave: 0.035,
+          nonNegative: true,
+          roundTo: 2,
+        }),
+      asset.symbol,
+    ),
     supply: buildSeriesFamily(`${asset.id}:supply`, "Total Supplied", {
       base: supplied,
       driftMultiplier: 1.08,
@@ -647,8 +664,7 @@ export function buildAssetDetail(asset: SpokeBorrowableRecord): AssetDetail {
   const supplied = fixture?.baseSuppliedUsd ?? Math.max(asset.totalBorrowedUsd + asset.availableUsd, 1)
   const borrowed = fixture?.baseBorrowedUsd ?? asset.totalBorrowedUsd
   const allocation: AllocationRow[] = computeAssetAllocation(asset, BORROW_POOL_CATALOG)
-  const heroPriceUsd =
-    fixture?.heroPriceUsd ?? (asset.category === "stable" ? 1 : asset.category === "btc" ? 68422.18 : 2019.96)
+  const heroPriceUsd = resolveHeroPriceUsd(asset, fixture)
   const heroPriceChangePct = fixture?.heroPriceChangePct ?? -2.14
   return {
     id: asset.id,
