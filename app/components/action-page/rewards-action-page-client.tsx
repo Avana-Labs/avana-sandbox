@@ -136,7 +136,7 @@ export function RewardsActionPageClient({
           await recordRewardsClaim({
             wallet: walletId,
             intentId: `rewards:${result[0]!.claimId}:${result.length}`,
-            amountUsd: reviewQuote.claimUsd,
+            taskIds: reviewQuote.taskIds,
             syntheticTxHash: hash,
           })
           return {
