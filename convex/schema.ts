@@ -80,6 +80,13 @@ export default defineSchema({
      * gate and by assertBorrowSolvent to revalue an 18-decimal LP-token pledge.
      */
     priceUsd: v.optional(v.number()),
+    /**
+     * Pool composition with NORMALIZED weights (fractions summing to 1). Present on POOL markets so
+     * the LP price can be recomputed live from the token oracle as Σ(weightᵢ × priceᵢ)
+     * (prices.refreshPoolLpPrices) instead of staying frozen at the seed value. Seeded from the app
+     * catalog's constituents (build-seed).
+     */
+    constituents: v.optional(v.array(v.object({ symbol: v.string(), weight: v.number() }))),
     visuals: v.optional(
       v.array(
         v.object({

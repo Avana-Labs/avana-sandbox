@@ -177,6 +177,57 @@ export const upsertPrices = internalMutation({
   },
 })
 
+/**
+ * Recompute POOL-market LP prices live from the token oracle: LPPriceUSD = Σ(weightᵢ × priceᵢ) over
+ * the market's stored constituents. Keeps the server-side LP valuation (assertBorrowSolvent reads
+ * markets.priceUsd) tracking the underlying token prices instead of a frozen seed value, so the
+ * client preview (which values LP collateral live) and the server solvency check stay consistent.
+ *
+ * A pool with ANY unpriced/stale/invalid leg is SKIPPED (its priceUsd is left unchanged rather than
+ * derived from incomplete data) — unavailable over wrong. Internal-only; run by the 10-min cron.
+ */
+export const refreshPoolLpPrices = internalMutation({
+  args: {},
+  handler: async (ctx): Promise<{ updated: number; skipped: number }> => {
+    const priceRows = await ctx.db.query("tokenPrices").collect()
+    const priceBySymbol = new Map<string, { priceUsd: number; status?: string }>()
+    for (const row of priceRows) {
+      priceBySymbol.set(row.symbol.toLowerCase(), { priceUsd: row.priceUsd, status: row.status })
+    }
+    const poolMarkets = await ctx.db
+      .query("markets")
+      .withIndex("by_scope_slug", (q) => q.eq("scope", "pool"))
+      .collect()
+    let updated = 0
+    let skipped = 0
+    for (const market of poolMarkets) {
+      const constituents = market.constituents
+      if (!constituents || constituents.length === 0) {
+        skipped++
+        continue
+      }
+      let priceUsd = 0
+      let usable = true
+      for (const leg of constituents) {
+        const quote = priceBySymbol.get(leg.symbol.toLowerCase())
+        // Unpriced, non-positive, or invalid-status leg → the whole LP price is unavailable.
+        if (!quote || !Number.isFinite(quote.priceUsd) || quote.priceUsd <= 0 || quote.status === "invalid") {
+          usable = false
+          break
+        }
+        priceUsd += leg.weight * quote.priceUsd
+      }
+      if (!usable || !(priceUsd > 0)) {
+        skipped++
+        continue
+      }
+      await ctx.db.patch(market._id, { priceUsd })
+      updated++
+    }
+    return { updated, skipped }
+  },
+})
+
 type LlamaResponse = {
   coins: Record<string, { price: number; decimals?: number; confidence?: number; symbol?: string; timestamp?: number }>
 }
@@ -240,6 +291,9 @@ export const refreshPrices = internalAction({
         throw new Error("DefiLlama returned no usable prices")
       }
       await ctx.runMutation(internal.prices.upsertPrices, { rows })
+      // Recompute pool LP prices from the freshly-written token prices × pool weights so the
+      // server-side LP valuation tracks the oracle instead of a frozen seed value.
+      await ctx.runMutation(internal.prices.refreshPoolLpPrices, {})
       return { written: rows.length, fetched: Object.keys(json.coins).length }
     } catch (err) {
       console.error("[prices] refreshPrices failed; UI will surface staleness via getPriceStatus:", err)
