@@ -72,7 +72,7 @@ function normalizeGraphPath(path: string) {
 export function AssetIcon({ asset }: { asset: FeaturedAsset }) {
   return (
     <span
-      className="relative inline-flex size-[64px] shrink-0 items-center justify-center overflow-hidden rounded-full"
+      className="relative inline-flex size-[64px] shrink-0 items-center justify-center"
       style={{ width: 64, height: 64 }}
     >
       <Image
