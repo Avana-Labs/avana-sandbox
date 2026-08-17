@@ -23,6 +23,7 @@ import type { MutationCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
 import { upsertWalletBalanceRows } from "../wallet/balances"
 import { requireSandboxWallet } from "./auth"
+import { deriveClaimAmountUsd } from "./rewards_catalog"
 import type { Doc } from "../_generated/dataModel"
 
 type ProductBalanceTable =
@@ -1187,7 +1188,7 @@ export const recordRewardsClaim = mutation({
   args: {
     wallet: v.string(),
     intentId: v.string(),
-    amountUsd: v.number(),
+    taskIds: v.array(v.string()),
     syntheticTxHash: v.string(),
   },
   handler: async (ctx, args) => {
@@ -1197,6 +1198,34 @@ export const recordRewardsClaim = mutation({
       .withIndex("by_wallet_intent", (q) => q.eq("wallet", wallet).eq("intentId", args.intentId))
       .first()
     if (prior) return { transactionId: prior._id, idempotent: true }
+    if (args.taskIds.length === 0) {
+      throw new Error("EMPTY_CLAIM: at least one taskId is required")
+    }
+    // Server-authoritative payout. The client no longer sends `amountUsd`; we derive
+    // it from the on-server catalog so a forged inflated value has nothing to
+    // inflate. Unknown ids trip the catalog throw and reject the whole claim.
+    const amountUsd = deriveClaimAmountUsd(args.taskIds)
+
+    // Server-authoritative single-claim guard: reject a claim that re-uses any
+    // task id already paid out on a prior successful rewards-claim row for this
+    // wallet. This is durable — the client's rewards state blob can go stale
+    // (multi-device, cold reload) without opening a double-claim window.
+    const priorClaims = await ctx.db
+      .query("transactions")
+      .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+      .collect()
+    const alreadyClaimed = new Set<string>()
+    for (const row of priorClaims) {
+      if (row.product === "rewards" && row.kind === "claim" && row.status === "success" && row.claimedTaskIds) {
+        for (const id of row.claimedTaskIds) alreadyClaimed.add(id)
+      }
+    }
+    for (const id of args.taskIds) {
+      if (alreadyClaimed.has(id)) {
+        throw new Error(`TASK_ALREADY_CLAIMED: ${id}`)
+      }
+    }
+
     const now = Date.now()
     const transactionId = await ctx.db.insert("transactions", {
       wallet,
@@ -1205,15 +1234,16 @@ export const recordRewardsClaim = mutation({
       kind: "claim",
       status: "success",
       assetId: "ava",
-      requestedAmountUsd6: String(Math.round(args.amountUsd * 1_000_000)),
-      executedAmountUsd6: String(Math.round(args.amountUsd * 1_000_000)),
-      amountUsd: args.amountUsd,
+      requestedAmountUsd6: String(Math.round(amountUsd * 1_000_000)),
+      executedAmountUsd6: String(Math.round(amountUsd * 1_000_000)),
+      amountUsd,
+      claimedTaskIds: args.taskIds,
       syntheticTxHash: args.syntheticTxHash,
       simulated: true,
       at: now,
     })
     await appendPortfolioSnapshot(ctx, wallet, now)
-    return { transactionId, idempotent: false }
+    return { transactionId, idempotent: false, amountUsd }
   },
 })
 

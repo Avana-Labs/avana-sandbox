@@ -450,15 +450,6 @@ export const upsertWalletClaimPositions = action({
   },
 })
 
-export const upsertWalletRewardsProgress = action({
-  args: perWalletRowsArgs,
-  handler: async (ctx, { seedSecret, wallet, rows }): Promise<unknown> => {
-    requireSeedSecret(seedSecret)
-    requireSafeSeedRows(rows)
-    return ctx.runMutation(internal.wallet.rewardsProgress.upsertForWallet, { wallet, rows })
-  },
-})
-
 /** Secret-gated seed-verification counts (the internal getCounts, but not anon-callable). */
 export const getCounts = action({
   args: { seedSecret: v.string() },
