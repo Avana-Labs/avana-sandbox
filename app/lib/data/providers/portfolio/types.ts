@@ -90,6 +90,8 @@ export type PortfolioSupplyPosition = {
   apyPct: number
   principalAmount?: number
   interestEarned?: number
+  interestUsd?: number
+  rewardsEarnedUsd?: number
   availableToWithdraw?: number
   walletBalance?: number
   status?: "active" | "closed"

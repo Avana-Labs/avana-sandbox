@@ -6,6 +6,7 @@ import { ActionIcon } from "@/app/components/action-icon"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import { detailSectionStackClass, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { UmbrellaMarketId } from "@/app/lib/umbrella-system/use-umbrella-session"
 import { UmbrellaActivity } from "./_detail/market-sections/UmbrellaActivity"
 import { UmbrellaCooldown } from "./_detail/market-sections/UmbrellaCooldown"
@@ -24,6 +25,7 @@ function isUmbrellaMarketId(value: string | null): value is UmbrellaMarketId {
 }
 
 export default function UmbrellaPage() {
+  const { t } = useTranslation()
   const searchParams = useSearchParams()
   const umbrella = useUmbrellaSessionContext()
   const marketParam = searchParams.get("market")
@@ -84,20 +86,20 @@ export default function UmbrellaPage() {
             <button
               type="button"
               onClick={() => openSheet(moreDefaultTab)}
-              aria-label="More umbrella actions"
+              aria-label={t("More umbrella actions")}
               className={secondaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
             >
-              <ActionIcon label="More" />
-              More
+              <ActionIcon label={t("More")} />
+              {t("More")}
             </button>
             <button
               type="button"
               onClick={() => openSheet("stake")}
-              aria-label="Stake in umbrella"
+              aria-label={t("Stake in umbrella")}
               className={primaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
             >
-              <ActionIcon label="Stake" />
-              Stake
+              <ActionIcon label={t("Stake")} />
+              {t("Stake")}
             </button>
           </MobileDetailActionBar>
 

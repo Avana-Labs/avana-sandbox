@@ -4,6 +4,7 @@ import { ActionMetricHelp } from "@/app/components/action-page/action-metric-hel
 import { CarouselArrowButtons, useOverflowCarousel } from "@/app/components/carousel-arrow-buttons"
 import { TokenIcon } from "@/app/components/token-icon"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { UmbrellaMarket } from "@/app/lib/umbrella-system/use-umbrella-session"
 import { formatCompactUsd, formatPct } from "../format"
 
@@ -19,6 +20,7 @@ function MetricLabel({ label, tooltip }: MetricLabelProps) {
 }
 
 function AssetCard({ market }: { market: UmbrellaMarket }) {
+  const { t } = useTranslation()
   const stakerExposure = Math.max(market.currentDeficitUsd - market.deficitOffsetUsd, 0)
   const coverageRatioPct = market.targetCoverageUsd > 0 ? (market.totalStakedUsd / market.targetCoverageUsd) * 100 : 0
 
@@ -35,23 +37,25 @@ function AssetCard({ market }: { market: UmbrellaMarket }) {
       <div className="mt-5 space-y-3">
         <div className="flex items-center justify-between gap-3">
           <MetricLabel
-            label="Coverage"
-            tooltip="Total user-staked capital available to absorb losses for this asset."
+            label={t("Coverage")}
+            tooltip={t("Total user-staked capital available to absorb losses for this asset.")}
           />
           <span className="text-[15px] font-semibold tabular-nums">{formatCompactUsd(market.totalStakedUsd)}</span>
         </div>
         <div className="flex items-center justify-between gap-3">
-          <MetricLabel label="Target" tooltip="Desired amount of user-staked coverage for this asset." />
+          <MetricLabel label={t("Target")} tooltip={t("Desired amount of user-staked coverage for this asset.")} />
           <span className="text-[15px] font-semibold tabular-nums">{formatCompactUsd(market.targetCoverageUsd)}</span>
         </div>
         <div className="flex items-center justify-between gap-3">
-          <MetricLabel label="APY" tooltip="Estimated annual staking yield paid to stakers of this asset." />
+          <MetricLabel label={t("APY")} tooltip={t("Estimated annual staking yield paid to stakers of this asset.")} />
           <span className="text-[15px] font-semibold tabular-nums">{formatPct(market.apy)}%</span>
         </div>
         <div className="flex items-center justify-between gap-3">
           <MetricLabel
-            label="Cooldown"
-            tooltip="Coverage currently in cooldown across all stakers of this asset. Cooldown positions still absorb losses until they finish the 20-day wait and are unstaked."
+            label={t("Cooldown")}
+            tooltip={t(
+              "Coverage currently in cooldown across all stakers of this asset. Cooldown positions still absorb losses until they finish the 20-day wait and are unstaked.",
+            )}
           />
           <span className="text-[15px] font-semibold tabular-nums">{formatCompactUsd(market.amountInCooldownUsd)}</span>
         </div>
@@ -81,31 +85,40 @@ function AssetCard({ market }: { market: UmbrellaMarket }) {
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
             <div className="inline-flex items-center gap-1.5 text-[16px] font-semibold tracking-[-0.04em] text-brand">
-              {formatCompactUsd(market.deficitOffsetUsd)} deficit offset
+              {t("{amount} deficit offset").replace("{amount}", formatCompactUsd(market.deficitOffsetUsd))}
               <ActionMetricHelp
-                text="Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset."
-                topic="Deficit Offset"
+                text={t(
+                  "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.",
+                )}
+                topic={t("Deficit Offset")}
               />
             </div>
           </div>
           <div className="text-left sm:text-right">
             <div className="inline-flex items-center gap-1.5 text-[16px] font-semibold tracking-[-0.04em] text-danger sm:flex-row-reverse">
-              {formatCompactUsd(market.currentDeficitUsd)} active deficit
+              {t("{amount} active deficit").replace("{amount}", formatCompactUsd(market.currentDeficitUsd))}
               <ActionMetricHelp
-                text={`Current realized shortfall in ${market.symbol}. Staker Exposure = max(Active Deficit − Deficit Offset, 0). Current staker exposure: ${formatCompactUsd(stakerExposure)}.`}
-                topic="Active Deficit"
+                text={t(
+                  "Current realized shortfall in {symbol}. Staker Exposure = max(Active Deficit − Deficit Offset, 0). Current staker exposure: {exposure}.",
+                )
+                  .replace("{symbol}", market.symbol)
+                  .replace("{exposure}", formatCompactUsd(stakerExposure))}
+                topic={t("Active Deficit")}
               />
             </div>
           </div>
         </div>
 
-        <div className="mt-2 text-[12px] text-muted-foreground">{formatPct(coverageRatioPct)}% of target coverage.</div>
+        <div className="mt-2 text-[12px] text-muted-foreground">
+          {t("{pct}% of target coverage.").replace("{pct}", formatPct(coverageRatioPct))}
+        </div>
       </div>
     </div>
   )
 }
 
 export function UmbrellaStress() {
+  const { t } = useTranslation()
   const { scrollerRef, canPrev, canNext, scrollByCard } = useOverflowCarousel()
   const umbrella = useUmbrellaSessionContext()
   const umbrellaAssetSummaries = umbrella.marketOrder.map((id) => umbrella.markets[id])
@@ -125,22 +138,22 @@ export function UmbrellaStress() {
     <section>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
-          Market Level Risk
+          {t("Market Level Risk")}
         </h2>
         <CarouselArrowButtons
           canPrev={canPrev}
           canNext={canNext}
           onPrev={() => scrollByCard(-1)}
           onNext={() => scrollByCard(1)}
-          prevLabel="Previous market risk"
-          nextLabel="Next market risk"
+          prevLabel={t("Previous market risk")}
+          nextLabel={t("Next market risk")}
         />
       </div>
 
       <div className="space-y-3">
         <div className="rounded-radius-md bg-card px-4 py-4">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <p className="text-[13px] text-muted-foreground">Total coverage</p>
+            <p className="text-[13px] text-muted-foreground">{t("Total coverage")}</p>
             <p className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
               {formatCompactUsd(totalStakedUsd)}
             </p>
@@ -166,22 +179,29 @@ export function UmbrellaStress() {
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <div>
               <div className="text-[18px] font-semibold tracking-[-0.04em] text-brand">
-                {formatPct(targetCoverageUsd > 0 ? (totalStakedUsd / targetCoverageUsd) * 100 : 0)}% of target
+                {t("{pct}% of target").replace(
+                  "{pct}",
+                  formatPct(targetCoverageUsd > 0 ? (totalStakedUsd / targetCoverageUsd) * 100 : 0),
+                )}
               </div>
               <div className="mt-2 text-[14px] font-medium text-muted-foreground">
-                {formatCompactUsd(totalStakedUsd)} staked · {formatCompactUsd(targetCoverageUsd)} target · 4 assets
+                {t("{staked} staked · {target} target · {count} assets")
+                  .replace("{staked}", formatCompactUsd(totalStakedUsd))
+                  .replace("{target}", formatCompactUsd(targetCoverageUsd))
+                  .replace("{count}", String(umbrellaAssetSummaries.length))}
               </div>
             </div>
             <div className="text-left sm:text-right">
               <div className="text-[18px] font-semibold tracking-[-0.04em] text-warning">
-                {formatCompactUsd(cooldownUsd)} in cooldown
+                {t("{amount} in cooldown").replace("{amount}", formatCompactUsd(cooldownUsd))}
               </div>
               <div className="mt-2 text-[14px] font-medium text-muted-foreground">
-                {formatPct(totalStakedUsd > 0 ? (cooldownUsd / totalStakedUsd) * 100 : 0)}% of coverage cooling ·{" "}
-                {formatCompactUsd(activeDeficitsUsd)} deficits absorbed by {formatCompactUsd(totalDeficitOffsetUsd)}{" "}
-                offset ·{" "}
+                {t("{pct}% of coverage cooling · {deficits} deficits absorbed by {offset} offset · ")
+                  .replace("{pct}", formatPct(totalStakedUsd > 0 ? (cooldownUsd / totalStakedUsd) * 100 : 0))
+                  .replace("{deficits}", formatCompactUsd(activeDeficitsUsd))
+                  .replace("{offset}", formatCompactUsd(totalDeficitOffsetUsd))}
                 <span className={totalStakerExposureUsd > 0 ? "text-danger" : "text-success"}>
-                  {formatCompactUsd(totalStakerExposureUsd)} on stakers
+                  {t("{amount} on stakers").replace("{amount}", formatCompactUsd(totalStakerExposureUsd))}
                 </span>
               </div>
             </div>

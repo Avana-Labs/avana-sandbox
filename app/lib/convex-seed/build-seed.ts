@@ -273,7 +273,6 @@ export type SeedData = {
   walletCollateralPositions?: SeedWalletCollateralPositionRow[]
   walletDebts?: SeedWalletDebtRow[]
   walletClaimPositions?: SeedWalletClaimPositionRow[]
-  walletRewardsProgress?: SeedWalletRewardsProgressRow[]
 }
 
 // -----------------------------------------------------------------------------
@@ -407,16 +406,6 @@ export type SeedWalletClaimPositionRow = {
   subtitle: string
   totalUsd: number
   breakdown: SeedWalletClaimBreakdownRow[]
-}
-
-export type SeedWalletRewardsProgressRow = {
-  wallet: string
-  taskId: string
-  status: "locked" | "available" | "in-progress" | "completed" | "claimed"
-  earnedAmount: number
-  claimableAmount: number
-  claimedAmount: number
-  completedAt?: number
 }
 
 /** Re-export TEST_WALLET_ADDRESS at its original path so existing consumers keep working. */

@@ -177,17 +177,25 @@ export function buildLendDashboardMetrics(data: PortfolioLendTabData) {
     totalSuppliedUsd > 0
       ? investments.reduce((sum, item) => sum + item.apyPct * item.suppliedUsd, 0) / totalSuppliedUsd
       : 0
-  // Interest earned is the sum of per-position earned interest — the same figure the
-  // dashboard hero's "Earned" stat sums (map-portfolio-page totalEarnedUsd). Don't
-  // prefer rewardsSummary.totalEarnedUsd here: it drifted a cent from the hero and
-  // conflated protocol rewards with supply interest.
-  const interestEarnedUsd = investments.reduce((sum, item) => sum + item.earnedUsd, 0)
+  // Split supply interest from protocol rewards on the tile. The read-model now
+  // exposes each investment's interestUsd (unit interest × price) and rewardsEarnedUsd
+  // separately, so the "Interest Earned" tile shows pure supply interest and the
+  // "Rewards Earned" tile shows the reward component. When a position hasn't been
+  // migrated to the split shape yet, fall back to the legacy conflated earnedUsd so
+  // the tile still reconciles with the hero — that fallback disappears as positions
+  // pick up the new fields.
+  const interestEarnedUsd = investments.reduce(
+    (sum, item) => sum + (item.interestUsd ?? item.earnedUsd - (item.rewardsEarnedUsd ?? 0)),
+    0,
+  )
+  const rewardsEarnedUsd = investments.reduce((sum, item) => sum + (item.rewardsEarnedUsd ?? 0), 0)
   const claimableRewardsUsd = data.rewardsSummary?.claimableUsd ?? 0
 
   return {
     totalSuppliedUsd,
     netApyPct,
     interestEarnedUsd,
+    rewardsEarnedUsd,
     claimableRewardsUsd,
   }
 }

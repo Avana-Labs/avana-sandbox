@@ -213,6 +213,36 @@ vi.mock("@/app/dashboard/use-dashboard-portfolio-feed", () => ({
   }),
 }))
 
+// The hero's metric toggle reads getPortfolio via Convex. This bare-render test
+// doesn't wrap a ConvexProvider, so stub the hook with static per-metric feeds.
+vi.mock("@/app/dashboard/use-dashboard-history-feeds", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/app/dashboard/use-dashboard-history-feeds")>()
+  const flat = {
+    headlineValue: "$0",
+    headlineDelta: "$0 (0.00%)",
+    deltaTone: "positive" as const,
+    rangeData: {
+      "1D": [{ time: 0, value: 0, label: "Now" }],
+      "1W": [{ time: 0, value: 0, label: "Now" }],
+      "1M": [{ time: 0, value: 0, label: "Now" }],
+      "3M": [{ time: 0, value: 0, label: "Now" }],
+      "1Y": [{ time: 0, value: 0, label: "Now" }],
+      All: [{ time: 0, value: 0, label: "Now" }],
+    },
+    valueFormat: "usdCompact" as const,
+  }
+  return {
+    ...actual,
+    useDashboardMetricFeeds: () => ({
+      netValue: flat,
+      supplied: flat,
+      borrowed: flat,
+      earned: flat,
+      multiplyExposure: flat,
+    }),
+  }
+})
+
 // Inspect the raw rows fed into the combined activity table.
 vi.mock("@/app/dashboard/recent-activity", () => ({
   RecentActivity: ({

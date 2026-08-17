@@ -1105,6 +1105,93 @@ const dict: TranslationDictionary = {
     "جلستك آمنة. هذه مشكلة اتصال مؤقتة، وليست في محفظتك.",
   "Something went wrong.": "حدث خطأ ما.",
   "We couldn't load this page.": "تعذّر علينا تحميل هذه الصفحة.",
+  "Active Deficit": "العجز النشط",
+  "Active stake": "الحصة النشطة",
+  "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
+    "المبلغ الذي تغطيه Avana أولاً قبل تعريض التغطية المُودعة من المستخدمين. لا يتحمّل المودعون خسائر إلا عندما تتجاوز العجوزات المحقّقة هذا الإزاحة.",
+  "Close umbrella actions": "إغلاق إجراءات Umbrella",
+  Cooldown: "فترة التبريد",
+  Cooling: "في التبريد",
+  Coverage: "التغطية",
+  "Coverage currently in cooldown across all stakers of this asset. Cooldown positions still absorb losses until they finish the 20-day wait and are unstaked.":
+    "التغطية الحالية في فترة التبريد لدى جميع مودعي هذا الأصل. لا تزال المراكز في التبريد تتحمّل الخسائر حتى انتهاء الانتظار البالغ 20 يوماً والسحب.",
+  "Current realized shortfall in {symbol}. Staker Exposure = max(Active Deficit − Deficit Offset, 0). Current staker exposure: {exposure}.":
+    "العجز المحقّق الحالي بـ {symbol}. تعرّض المودع = max(العجز النشط − إزاحة العجز، 0). تعرّض المودع الحالي: {exposure}.",
+  "Deficit Offset": "إزاحة العجز",
+  "Desired amount of user-staked coverage for this asset.":
+    "المقدار المطلوب من التغطية المُودعة من المستخدمين لهذا الأصل.",
+  "Dynamic rewards": "مكافآت ديناميكية",
+  "Each Umbrella stake token covers deficits for its matching borrowed asset on the same network.":
+    "يغطّي كل رمز إيداع Umbrella عجوزات الأصل المقترض المقابل على الشبكة نفسها.",
+  "Emissions adjust against target liquidity, and each staked asset can earn multiple reward tokens.":
+    "تتكيّف الإصدارات مع السيولة المستهدفة، ويمكن لكل أصل مُودَع كسب رموز مكافآت متعدّدة.",
+  "Estimated annual staking yield paid to stakers of this asset.":
+    "العائد السنوي التقديري للإيداع الذي يُدفع لمودعي هذا الأصل.",
+  "In cooldown": "في فترة التبريد",
+  "Isolated slashing": "خصم معزول",
+  "Learn Umbrella": "تعرّف على Umbrella",
+  "Market Level Risk": "مخاطر على مستوى السوق",
+  "Module assets": "أصول الوحدة",
+  More: "المزيد",
+  "More umbrella actions": "المزيد من إجراءات Umbrella",
+  "Next cooldown": "التبريد التالي",
+  "Next market risk": "مخاطر السوق التالية",
+  "Once cooldown finishes, users can unstake during the withdrawal window before cooldown has to be restarted.":
+    "بعد انتهاء فترة التبريد، يمكن للمستخدمين السحب خلال نافذة السحب قبل الحاجة إلى إعادة تشغيل التبريد.",
+  "Previous cooldown": "التبريد السابق",
+  "Previous market risk": "مخاطر السوق السابقة",
+  Ready: "جاهز",
+  "Removes in": "يُزال خلال",
+  "Restart cooldown": "إعادة تشغيل التبريد",
+  Stake: "إيداع",
+  "Stake in umbrella": "إيداع في Umbrella",
+  "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
+    "أودِع، اطلب المكافآت، ابدأ التبريد، أو اسحب من وحدة أمان Umbrella.",
+  "Stake, claim, cooldown, unstake": "إيداع، مطالبة، تبريد، سحب",
+  "Start cooldown before withdrawing. During cooldown, the position keeps earning incentives and remains slashable.":
+    "ابدأ التبريد قبل السحب. خلال التبريد يستمر المركز في كسب الحوافز ويبقى عرضة للخصم.",
+  Target: "الهدف",
+  "Total coverage": "إجمالي التغطية",
+  "Total user-staked capital available to absorb losses for this asset.":
+    "إجمالي رأس المال المُودَع من المستخدمين والمتاح لاستيعاب خسائر هذا الأصل.",
+  Umbrella: "Umbrella",
+  "Umbrella Cooldown": "تبريد Umbrella",
+  "Umbrella actions": "إجراءات Umbrella",
+  "Umbrella activity": "نشاط Umbrella",
+  "Umbrella positions": "مراكز Umbrella",
+  "Umbrella positions are split by asset and network, so each stake token has its own risk and reward profile.":
+    "تُقسَّم مراكز Umbrella بحسب الأصل والشبكة، لذا يمتلك كل رمز إيداع ملف مخاطر ومكافآت خاصاً به.",
+  Unstake: "سحب الإيداع",
+  "Unstake window": "نافذة السحب",
+  "Weighted APY": "APY مرجّح",
+  "Withdrawal ready": "جاهز للسحب",
+  "Withdrawal window": "نافذة السحب",
+  "You have no Umbrella positions yet.": "ليست لديك مراكز Umbrella بعد.",
+  "Your Umbrella": "Umbrella الخاصة بك",
+  "Your Umbrella stake": "إيداعك في Umbrella",
+  "After cooldown completes, there is a short window to unstake. If it expires, cooldown must be started again.":
+    "بعد اكتمال التبريد، تتوفّر نافذة قصيرة للسحب. إذا انتهت، يجب إعادة بدء التبريد.",
+  "base {base} + reward {reward}": "أساسي {base} + مكافأة {reward}",
+  "live mix": "مزيج مباشر",
+  none: "لا شيء",
+  "{amount} active deficit": "{amount} عجز نشط",
+  "{amount} claimed": "تمت المطالبة بـ {amount}",
+  "{amount} deficit offset": "{amount} إزاحة عجز",
+  "{amount} in cooldown": "{amount} في التبريد",
+  "{amount} market": "{amount} من السوق",
+  "{amount} on stakers": "{amount} على المودعين",
+  "{amount} pending": "{amount} معلّق",
+  "{amount} target": "{amount} كهدف",
+  "{pct}% of coverage cooling · {deficits} deficits absorbed by {offset} offset · ":
+    "{pct}% من التغطية في التبريد · {deficits} من العجوزات استوعبتها {offset} إزاحة · ",
+  "{pct}% of target": "{pct}% من الهدف",
+  "{pct}% of target coverage.": "{pct}% من التغطية المستهدفة.",
+  "{staked} staked · {target} target · {count} assets": "{staked} مُودَع · {target} هدف · {count} أصول",
+  "{symbols} expired — restart cooldown": "{symbols} منتهية الصلاحية — أعد تشغيل التبريد",
+  "{time} left": "{time} متبقٍ",
+  "{value} total": "{value} إجمالاً",
+  Earning: "يكسب",
+  "{amount} cooling": "{amount} قيد التبريد",
 }
 
 export default dict

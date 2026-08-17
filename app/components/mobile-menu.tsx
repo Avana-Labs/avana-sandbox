@@ -252,7 +252,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
   }
 
   const rootSettingsClass =
-    "flex w-full items-center justify-between gap-4 text-left text-[1.2rem] font-medium leading-[1.14] text-foreground"
+    "flex w-full items-center justify-between gap-4 text-start text-[1.2rem] font-medium leading-[1.14] text-foreground"
   const rootSettingsLabelClass = "flex items-center gap-3"
   const rootSettingsIconClass = `h-[1.15rem] w-[1.15rem] stroke-[1.9] ${accentClass}`
   const dividerClass = "border-brand/25 dark:border-brand/35"
@@ -464,7 +464,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
                 setLanguage(option.code)
                 closeSelectorSheet()
               }}
-              className="flex w-full items-center justify-between gap-4 rounded-radius-lg px-3 py-4 text-left"
+              className="flex w-full items-center justify-between gap-4 rounded-radius-lg px-3 py-4 text-start"
             >
               <span className="text-[1.15rem] font-medium leading-tight text-foreground">{option.label}</span>
               {option.code === language ? <Check className="h-6 w-6 text-brand" /> : null}
@@ -488,7 +488,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
                 setCurrency(option.code)
                 closeSelectorSheet()
               }}
-              className="flex w-full items-center justify-between gap-4 rounded-radius-lg px-3 py-4 text-left"
+              className="flex w-full items-center justify-between gap-4 rounded-radius-lg px-3 py-4 text-start"
             >
               <span className="flex items-center gap-4">
                 <CurrencyFlag code={option.code} className="h-6 w-6" />
@@ -510,7 +510,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
         <li>
           <button
             type="button"
-            className="flex w-full items-center justify-between gap-4 rounded-radius-lg px-3 py-4 text-left"
+            className="flex w-full items-center justify-between gap-4 rounded-radius-lg px-3 py-4 text-start"
             onClick={closeSelectorSheet}
           >
             <span className="text-[1.15rem] font-medium leading-tight text-foreground">{t("Sandbox")}</span>
@@ -519,7 +519,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
         </li>
         {["Ethereum", "Avalanche", "Base", "Arbitrum", "Robinhood"].map((network) => (
           <li key={network}>
-            <div className="flex w-full items-center justify-between gap-4 rounded-radius-lg px-3 py-4 text-left opacity-70">
+            <div className="flex w-full items-center justify-between gap-4 rounded-radius-lg px-3 py-4 text-start opacity-70">
               <span className="text-[1.15rem] font-medium leading-tight text-foreground">{network}</span>
               <span className="text-[0.82rem] text-muted-foreground">{t("Unavailable")}</span>
             </div>

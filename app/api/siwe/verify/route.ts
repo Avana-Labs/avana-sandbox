@@ -3,7 +3,7 @@ import type { Address, Hex } from "viem"
 import { extractSiweAddress, extractSiweDomain, extractSiweNonce, extractSiweUri } from "@/app/lib/siwe/message"
 import { mintSandboxJwt, resolveIssuer } from "@/app/lib/siwe/jwt"
 import { verifySiweSignature } from "@/app/lib/siwe/signature"
-import { assertSameOrigin, clientKey, rateLimit } from "../../_lib/request-guards"
+import { assertSameOrigin, clientKey, rateLimitShared } from "../../_lib/request-guards"
 
 export const dynamic = "force-dynamic"
 
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic"
  */
 export async function POST(req: Request) {
   if (!assertSameOrigin(req)) return Response.json({ error: "origin not allowed" }, { status: 403 })
-  if (!rateLimit(`siwe-verify:${clientKey(req)}`, 20, 60_000)) {
+  if (!(await rateLimitShared(`siwe-verify:${clientKey(req)}`, 20, 60_000))) {
     return Response.json({ error: "too many verification attempts" }, { status: 429 })
   }
 

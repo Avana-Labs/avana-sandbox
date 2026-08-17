@@ -116,6 +116,7 @@ export function DashboardCreditOverviewSection({
   totalBorrowedUsd,
   netApyPct,
   totalCollateralUsd,
+  interestOwedUsd,
   hideHeading = false,
 }: {
   title: string
@@ -123,6 +124,11 @@ export function DashboardCreditOverviewSection({
   totalBorrowedUsd: number
   netApyPct: number
   totalCollateralUsd: number
+  // Cumulative interest already accrued against the outstanding debt. Optional so
+  // legacy callers (Looping tab) don't have to plumb it before they wire the
+  // credit engine's interestOwedUsd6; when omitted the tile is dropped rather
+  // than showing a false zero.
+  interestOwedUsd?: number
   // When the section title is already provided by an enclosing tab, suppress the h2.
   hideHeading?: boolean
 }) {
@@ -130,36 +136,42 @@ export function DashboardCreditOverviewSection({
   const { t } = useTranslation()
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
+  const metrics: MetricItem[] = [
+    {
+      label: t("Net Value"),
+      value: m(formatUsdExact(netValueUsd)),
+      description: t("Your collateral value minus what you owe — the equity this tab adds to your portfolio"),
+    },
+    {
+      label: t("Total Collateral"),
+      value: m(formatUsdExact(totalCollateralUsd)),
+      description: t("LP positions currently securing your loans"),
+    },
+    {
+      label: t("Total Borrowed"),
+      value: m(formatUsdExact(totalBorrowedUsd)),
+      description: t("Current outstanding loan balance"),
+    },
+    {
+      label: t("Net APY"),
+      value: showDollarAmounts ? formatPct(netApyPct) : MASK,
+      description: t("Weighted average APY across all active positions"),
+    },
+  ]
+  if (interestOwedUsd !== undefined) {
+    metrics.push({
+      label: t("Interest Owed"),
+      value: m(formatUsdExact(interestOwedUsd)),
+      description: t("Total interest accrued on your outstanding loans"),
+    })
+  }
+
   return (
     <section className="space-y-4 pb-3">
       {hideHeading ? null : (
         <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
       )}
-      <MetricGrid
-        labelOnTop
-        metrics={[
-          {
-            label: t("Net Value"),
-            value: m(formatUsdExact(netValueUsd)),
-            description: t("Your collateral value minus what you owe — the equity this tab adds to your portfolio"),
-          },
-          {
-            label: t("Total Collateral"),
-            value: m(formatUsdExact(totalCollateralUsd)),
-            description: t("LP positions currently securing your loans"),
-          },
-          {
-            label: t("Total Borrowed"),
-            value: m(formatUsdExact(totalBorrowedUsd)),
-            description: t("Current outstanding loan balance"),
-          },
-          {
-            label: t("Net APY"),
-            value: showDollarAmounts ? formatPct(netApyPct) : MASK,
-            description: t("Weighted average APY across all active positions"),
-          },
-        ]}
-      />
+      <MetricGrid labelOnTop metrics={metrics} />
     </section>
   )
 }
@@ -205,6 +217,7 @@ export type DashboardLendPerformanceMetrics = {
   totalSuppliedUsd: number
   netApyPct: number
   interestEarnedUsd: number
+  rewardsEarnedUsd: number
   claimableRewardsUsd: number
 }
 
@@ -242,7 +255,12 @@ export function DashboardLendPerformanceSection({
           {
             label: t("Interest Earned"),
             value: m(formatUsdExact(metrics.interestEarnedUsd)),
-            description: t("Total yield accrued across your lending positions"),
+            description: t("Supply interest accrued across your lending positions (excludes protocol rewards)"),
+          },
+          {
+            label: t("Rewards Earned"),
+            value: m(formatUsdExact(metrics.rewardsEarnedUsd)),
+            description: t("Protocol rewards accrued across your lending positions"),
           },
         ]}
       />

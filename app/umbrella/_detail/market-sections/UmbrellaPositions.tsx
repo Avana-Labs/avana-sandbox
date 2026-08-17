@@ -7,6 +7,7 @@ import { TokenIcon } from "@/app/components/token-icon"
 import { Button } from "@/components/ui/button"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { UmbrellaMarketId } from "@/app/lib/umbrella-system/use-umbrella-session"
 import {
   TABLE_HEADER_CELL,
@@ -41,7 +42,7 @@ type PositionRow = {
   targetLiquidityLabel: string
 }
 
-function statusLabel(status: PositionRow["cooldownStatus"]) {
+function statusLabelKey(status: PositionRow["cooldownStatus"]): string {
   switch (status) {
     case "ready":
       return "Withdrawal ready"
@@ -55,6 +56,7 @@ function statusLabel(status: PositionRow["cooldownStatus"]) {
 }
 
 export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (marketId: UmbrellaMarketId) => void }) {
+  const { t } = useTranslation()
   const umbrella = useUmbrellaSessionContext()
   const rows: PositionRow[] = umbrella.marketOrder.map((id) => {
     const market = umbrella.markets[id]
@@ -76,13 +78,13 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
       pendingRewards: position.pendingRewardsUsd,
       pendingRewardsLabel: formatUsd(position.pendingRewardsUsd),
       claimedRewardsLabel: formatUsd(position.claimedRewardsUsd),
-      status: statusLabel(position.cooldownStatus),
+      status: t(statusLabelKey(position.cooldownStatus)),
       cooldownStatus: position.cooldownStatus,
       hasClaim: position.pendingRewardsUsd > 0,
       hasUnstake: position.cooldownStatus === "ready",
       coverageRatioPct,
-      coverageRatioLabel: `${formatPct(coverageRatioPct)}% of target`,
-      targetLiquidityLabel: `${formatCompactUsd(market.targetCoverageUsd)} target`,
+      coverageRatioLabel: t("{pct}% of target").replace("{pct}", formatPct(coverageRatioPct)),
+      targetLiquidityLabel: t("{amount} target").replace("{amount}", formatCompactUsd(market.targetCoverageUsd)),
     }
   })
 
@@ -99,43 +101,43 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
     <section>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
-          Umbrella positions
+          {t("Umbrella positions")}
         </h2>
       </div>
 
       <div className="hidden md:block">
         <DesktopTableSurface className="!rounded-none">
-          <table className="w-full min-w-[860px] table-fixed border-separate border-spacing-0 text-[13px]">
+          <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
             <colgroup>
-              <col className="w-[22%]" />
+              <col className="w-[30%]" />
+              <col className="w-[16%]" />
               <col className="w-[13%]" />
-              <col className="w-[12%]" />
-              <col className="w-[13%]" />
-              <col className="w-[13%]" />
+              <col className="w-[14%]" />
               <col className="w-[13%]" />
               <col className="w-[14%]" />
             </colgroup>
             <thead>
               <tr className="text-left">
-                <th className={cn(TABLE_HEADER_CELL, "pl-5")}>Asset</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>Active stake</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>Cooling</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>APY</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>Rewards</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>Status</th>
+                <th className={cn(TABLE_HEADER_CELL, "pl-5")}>{t("Asset")}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("Stake")}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("APY")}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("Rewards")}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("Status")}</th>
                 <SilentActionHeader className="!rounded-none pr-5" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border dark:divide-white/6">
               {showEmptyState ? (
                 <tr>
-                  <td colSpan={7} className="py-8 pl-5 pr-5 text-center">
+                  <td colSpan={6} className="py-8 pl-5 pr-5 text-center">
                     <div className="flex flex-wrap items-center justify-center gap-3">
-                      <span className="text-[14px] text-muted-foreground">You have no Umbrella positions yet.</span>
+                      <span className="text-[14px] text-muted-foreground">
+                        {t("You have no Umbrella positions yet.")}
+                      </span>
                       <Button asChild size="table" variant="table-primary" className="w-auto">
                         <Link href={actionPagePath("umbrella", "stake", { return: "/umbrella" })}>
-                          <ActionIcon label="Stake" />
-                          Stake
+                          <ActionIcon label={t("Stake")} />
+                          {t("Stake")}
                         </Link>
                       </Button>
                     </div>
@@ -155,46 +157,36 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                           <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
                             {row.asset}
                           </span>
-                          <span className="mt-0.5 truncate text-[13px] text-muted-foreground">
-                            {row.coverage} · {row.coverageRatioLabel}
-                          </span>
+                          <span className="mt-0.5 truncate text-[13px] text-muted-foreground">{row.coverage}</span>
                         </div>
                       </div>
                     </td>
                     <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
-                      <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
-                        {row.activeStakeLabel}
-                      </span>
+                      <div className="flex flex-col items-end">
+                        <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+                          {row.activeStakeLabel}
+                        </span>
+                        {row.coolingUsd > 0 ? (
+                          <span className="mt-0.5 text-[12px] text-warning">
+                            {t("{amount} cooling").replace("{amount}", row.coolingLabel)}
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
                     <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
                       <span
-                        className={cn(
-                          "text-[15px] font-normal tracking-[-0.03em]",
-                          row.coolingUsd > 0 ? "text-warning" : "text-muted-foreground",
-                        )}
+                        className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white"
+                        title={t("base {base} + reward {reward}")
+                          .replace("{base}", row.apyBase)
+                          .replace("{reward}", row.apyReward)}
                       >
-                        {row.coolingLabel}
+                        {row.apyTotal}
                       </span>
                     </td>
                     <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
-                      <div className="flex flex-col items-end">
-                        <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
-                          {row.apyTotal} total
-                        </span>
-                        <span className="mt-0.5 text-[12px] text-muted-foreground" title={row.targetLiquidityLabel}>
-                          base {row.apyBase} + reward {row.apyReward}
-                        </span>
-                      </div>
-                    </td>
-                    <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
-                      <div className="flex flex-col items-end">
-                        <span className="text-[15px] font-normal tracking-[-0.03em] text-success">
-                          {row.pendingRewardsLabel}
-                        </span>
-                        <span className="mt-0.5 text-[12px] text-muted-foreground">
-                          {row.claimedRewardsLabel} claimed
-                        </span>
-                      </div>
+                      <span className="text-[15px] font-normal tracking-[-0.03em] text-success">
+                        {row.pendingRewardsLabel}
+                      </span>
                     </td>
                     <td className={cn("py-3.5 px-4 text-center", TABLE_ROW_HOVER_BG)}>
                       <span
@@ -219,8 +211,8 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                                 return: "/umbrella",
                               })}
                             >
-                              <ActionIcon label="Claim" />
-                              Claim
+                              <ActionIcon label={t("Claim")} />
+                              {t("Claim")}
                             </Link>
                           </Button>
                         ) : null}
@@ -232,8 +224,8 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                                 return: "/umbrella",
                               })}
                             >
-                              <ActionIcon label="Unstake" />
-                              Unstake
+                              <ActionIcon label={t("Unstake")} />
+                              {t("Unstake")}
                             </Link>
                           </Button>
                         ) : null}
@@ -250,11 +242,11 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
       <div className="space-y-2 md:hidden">
         {showEmptyState ? (
           <div className="flex flex-col items-center gap-3 rounded-radius-md bg-card px-3 py-6 text-center">
-            <span className="text-[14px] text-muted-foreground">You have no Umbrella positions yet.</span>
+            <span className="text-[14px] text-muted-foreground">{t("You have no Umbrella positions yet.")}</span>
             <Button asChild size="sm" variant="brand" className="h-10 w-full gap-2">
               <Link href={actionPagePath("umbrella", "stake", { return: "/umbrella" })}>
-                <ActionIcon label="Stake" />
-                Stake
+                <ActionIcon label={t("Stake")} />
+                {t("Stake")}
               </Link>
             </Button>
           </div>
@@ -274,32 +266,38 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
 
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <div>
-                  <div className="text-[13px] text-muted-foreground">Active stake</div>
+                  <div className="text-[13px] text-muted-foreground">{t("Active stake")}</div>
                   <div className="font-medium">{row.activeStakeLabel}</div>
                 </div>
                 <div>
-                  <div className="text-[13px] text-muted-foreground">Cooling</div>
+                  <div className="text-[13px] text-muted-foreground">{t("Cooling")}</div>
                   <div className={cn("font-medium", row.coolingUsd > 0 ? "text-warning" : "text-muted-foreground")}>
                     {row.coolingLabel}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[13px] text-muted-foreground">APY</div>
+                  <div className="text-[13px] text-muted-foreground">{t("APY")}</div>
                   <div className="font-medium">{row.apyTotal}</div>
                   <div className="text-[12px] text-muted-foreground">
-                    base {row.apyBase} + reward {row.apyReward}
+                    {t("base {base} + reward {reward}")
+                      .replace("{base}", row.apyBase)
+                      .replace("{reward}", row.apyReward)}
                   </div>
                 </div>
                 <div>
-                  <div className="text-[13px] text-muted-foreground">Status</div>
+                  <div className="text-[13px] text-muted-foreground">{t("Status")}</div>
                   <div className={cn("font-medium", row.cooldownStatus === "expired" && "text-danger")}>
                     {row.status}
                   </div>
                 </div>
                 <div className="col-span-2">
-                  <div className="text-[13px] text-muted-foreground">Rewards</div>
-                  <div className="font-medium text-success">{row.pendingRewardsLabel} pending</div>
-                  <div className="text-[12px] text-muted-foreground">{row.claimedRewardsLabel} claimed</div>
+                  <div className="text-[13px] text-muted-foreground">{t("Rewards")}</div>
+                  <div className="font-medium text-success">
+                    {t("{amount} pending").replace("{amount}", row.pendingRewardsLabel)}
+                  </div>
+                  <div className="text-[12px] text-muted-foreground">
+                    {t("{amount} claimed").replace("{amount}", row.claimedRewardsLabel)}
+                  </div>
                 </div>
               </div>
 
