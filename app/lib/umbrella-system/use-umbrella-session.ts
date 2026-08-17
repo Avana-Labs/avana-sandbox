@@ -786,24 +786,52 @@ export function useUmbrellaSession({
     setState(buildDefaultUmbrellaState(walletId))
   }, [persistState, walletId])
 
-  return {
-    walletId,
-    markets: state.markets,
-    marketOrder: UMBRELLA_MARKET_ORDER,
-    walletBalances: state.walletBalances,
-    positions: state.positions,
-    transactionHistory: state.transactions,
-    isHydrated,
-    stake: useCallback((marketId: UmbrellaMarketId, amount: number) => execute("stake", marketId, amount), [execute]),
-    claim: useCallback((marketId: UmbrellaMarketId) => execute("claim", marketId, 0), [execute]),
-    startCooldown: useCallback(
-      (marketId: UmbrellaMarketId, amount: number) => execute("startCooldown", marketId, amount),
-      [execute],
-    ),
-    unstake: useCallback(
-      (marketId: UmbrellaMarketId, amount: number) => execute("unstake", marketId, amount),
-      [execute],
-    ),
-    reset,
-  }
+  const stake = useCallback(
+    (marketId: UmbrellaMarketId, amount: number) => execute("stake", marketId, amount),
+    [execute],
+  )
+  const claim = useCallback((marketId: UmbrellaMarketId) => execute("claim", marketId, 0), [execute])
+  const startCooldown = useCallback(
+    (marketId: UmbrellaMarketId, amount: number) => execute("startCooldown", marketId, amount),
+    [execute],
+  )
+  const unstake = useCallback(
+    (marketId: UmbrellaMarketId, amount: number) => execute("unstake", marketId, amount),
+    [execute],
+  )
+
+  const markets = state.markets
+  const walletBalances = state.walletBalances
+  const positions = state.positions
+  const transactionHistory = state.transactions
+
+  return useMemo(
+    () => ({
+      walletId,
+      markets,
+      marketOrder: UMBRELLA_MARKET_ORDER,
+      walletBalances,
+      positions,
+      transactionHistory,
+      isHydrated,
+      stake,
+      claim,
+      startCooldown,
+      unstake,
+      reset,
+    }),
+    [
+      walletId,
+      markets,
+      walletBalances,
+      positions,
+      transactionHistory,
+      isHydrated,
+      stake,
+      claim,
+      startCooldown,
+      unstake,
+      reset,
+    ],
+  )
 }

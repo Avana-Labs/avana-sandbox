@@ -172,21 +172,40 @@ export function useSwapSession({
     [walletId],
   )
 
-  return {
-    walletId,
-    isHydrated: hydratedWalletId === walletId,
-    state,
-    walletBalances,
-    transactionHistory: state.transactions,
-    /** Durable swaps from Convex (empty in demo mode); merged with the in-session history by
-     *  the dashboard, deduped by swap id, so persisted swaps survive reload. (#15 follow-on) */
-    durableTransactions: remoteTransactions ?? EMPTY_DURABLE_TRANSACTIONS,
-    getQuote,
-    requiresApproval,
-    approve,
-    executeSwap,
-    hydrateBalances,
-  }
+  const isHydrated = hydratedWalletId === walletId
+  const transactionHistory = state.transactions
+  /** Durable swaps from Convex (empty in demo mode); merged with the in-session history by
+   *  the dashboard, deduped by swap id, so persisted swaps survive reload. (#15 follow-on) */
+  const durableTransactions = remoteTransactions ?? EMPTY_DURABLE_TRANSACTIONS
+
+  return useMemo(
+    () => ({
+      walletId,
+      isHydrated,
+      state,
+      walletBalances,
+      transactionHistory,
+      durableTransactions,
+      getQuote,
+      requiresApproval,
+      approve,
+      executeSwap,
+      hydrateBalances,
+    }),
+    [
+      walletId,
+      isHydrated,
+      state,
+      walletBalances,
+      transactionHistory,
+      durableTransactions,
+      getQuote,
+      requiresApproval,
+      approve,
+      executeSwap,
+      hydrateBalances,
+    ],
+  )
 }
 
 const EMPTY_DURABLE_TRANSACTIONS: DurableSwapTransaction[] = []
