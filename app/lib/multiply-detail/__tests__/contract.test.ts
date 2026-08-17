@@ -26,11 +26,16 @@ describe("multiply detail about contract", () => {
     expect(detail.quickStats.map((stat) => stat.label)).toEqual([
       "Price",
       "Available Liquidity",
+      "Max loop APY",
       "Supply APY",
       "Rewards APY",
       "Borrow APY",
       "Reserve Factor",
     ])
+    // E7: the detail surfaces the SAME leveraged loop APY the trending card advertises
+    // (economics.estimatedMaxApy), not just the base supply APY.
+    const loopStat = detail.quickStats.find((stat) => stat.label === "Max loop APY")!
+    expect(loopStat.value).toBe("10.56%")
     expect(detail.about.governanceParameters?.parameters.map((parameter) => parameter.label)).toEqual([
       "Collateral factor",
       "Collateral risk",

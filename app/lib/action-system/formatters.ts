@@ -64,15 +64,27 @@ export function formatActionNetworkFee(value: number) {
   return `~ ${formatActionUsd(value)}`
 }
 
+/**
+ * The single canonical sandbox network-fee estimate (USD).
+ *
+ * The sandbox engines do NOT deduct a real gas fee, so both the review/preview
+ * summary and the confirmed receipt must read this one number. Otherwise the
+ * estimate and the recorded fee drift apart — a "~$0.03" review estimate that
+ * confirmed as "$0.89" was the symptom this constant fixes. (#F1)
+ */
+export const SANDBOX_NETWORK_FEE_USD = 0.03
+
 /** Avana protocol fee (bps) plus estimated network gas for action summaries. */
 /**
  * One honest fee story: the sandbox engines do NOT deduct a protocol/Avana fee,
- * so the only real cost is the network fee. Surface just that — matching the
- * receipt's "Network fee" row — instead of a fabricated bps protocol fee. The
- * amount/bps params are retained for call-site compatibility but unused. (#30)
+ * so the only real cost is the network fee. Every action preview reads the single
+ * SANDBOX_NETWORK_FEE_USD constant — the same value the receipt records — so the
+ * estimate always equals the recorded fee instead of a fabricated per-product
+ * guess. The amount/networkFee/bps params are retained for call-site
+ * compatibility but unused. (#30, #F1)
  */
-export function formatActionFeeSummary(_amountUsd: number, networkFeeUsd: number, _bps = 30) {
-  return formatActionNetworkFee(networkFeeUsd)
+export function formatActionFeeSummary(_amountUsd: number, _networkFeeUsd = SANDBOX_NETWORK_FEE_USD, _bps = 30) {
+  return formatActionNetworkFee(SANDBOX_NETWORK_FEE_USD)
 }
 
 export function formatActionAmount(assetAmount: number, symbol: string, digits = 6) {

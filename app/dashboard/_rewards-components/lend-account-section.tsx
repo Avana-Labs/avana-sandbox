@@ -6,6 +6,13 @@ import { ActionIcon } from "@/app/components/action-icon"
 import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
 import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
+import {
+  MarketMobileCard,
+  MarketMobileCardHeader,
+  MarketMobileMetric,
+  MarketMobileStatList,
+  MarketMobileStatRow,
+} from "@/app/components/market-card-primitives"
 import { useAvanaIdentity, useLendSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useDashboardLendLive } from "@/app/dashboard/use-dashboard-lend-live"
 import { buildLendDashboardMetrics } from "@/app/dashboard/dashboard-tab-metrics"
@@ -81,87 +88,139 @@ function LendOpportunitySection({
           {t("No curated opportunities right now. Browse markets on the lend page to supply assets.")}
         </div>
       ) : (
-        <DesktopTableSurface className="!rounded-none">
-          <table className="w-full min-w-[620px] table-fixed border-separate border-spacing-0 text-[13px]">
-            <colgroup>
-              <col className="w-[32%]" />
-              <col className="w-[18%]" />
-              <col className="w-[18%]" />
-              <col className="w-[32%]" />
-            </colgroup>
-            <thead>
-              <tr className="text-left">
-                <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  {t("Asset")}
-                </th>
-                <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  {t("APY")}
-                </th>
-                <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                  {t("TVL")}
-                </th>
-                <SilentActionHeader className="!rounded-none pr-5" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border dark:divide-white/6">
-              {opportunities.map((pool) => {
-                const detailHref = `/lend/markets/${pool.marketId}`
-                return (
-                  <tr
-                    key={`${pool.bucketTitle}-${pool.symbol}`}
-                    className="group cursor-pointer transition-colors"
-                    onClick={() => router.push(detailHref)}
-                  >
-                    <td className={`py-3.5 pl-5 ${TABLE_ROW_HOVER_LEFT}`}>
-                      <div className="flex items-center gap-2.5">
+        <>
+          <div className="hidden overflow-x-auto md:block">
+            <DesktopTableSurface className="!rounded-none">
+              <table className="w-full min-w-[620px] table-fixed border-separate border-spacing-0 text-[13px]">
+                <colgroup>
+                  <col className="w-[32%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[32%]" />
+                </colgroup>
+                <thead>
+                  <tr className="text-left">
+                    <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                      {t("Asset")}
+                    </th>
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                      {t("APY")}
+                    </th>
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                      {t("TVL")}
+                    </th>
+                    <SilentActionHeader className="!rounded-none pr-5" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border dark:divide-white/6">
+                  {opportunities.map((pool) => {
+                    const detailHref = `/lend/markets/${pool.marketId}`
+                    return (
+                      <tr
+                        key={`${pool.bucketTitle}-${pool.symbol}`}
+                        className="group cursor-pointer transition-colors"
+                        onClick={() => router.push(detailHref)}
+                      >
+                        <td className={`py-3.5 pl-5 ${TABLE_ROW_HOVER_LEFT}`}>
+                          <div className="flex items-center gap-2.5">
+                            <TokenIcon symbol={pool.symbol} size="table" />
+                            <div className="flex min-w-0 flex-col">
+                              <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                                {pool.name}
+                              </span>
+                              <span className="mt-0.5 text-[13px] text-muted-foreground">{pool.bucketDescription}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className={`py-3.5 text-right ${TABLE_ROW_HOVER_BG}`}>
+                          <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+                            {pool.apyPct.toFixed(2)}%
+                          </div>
+                          <div className="text-[13px] text-muted-foreground">{pool.bucketTitle}</div>
+                        </td>
+                        <td
+                          className={`py-3.5 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+                        >
+                          {formatUsdExact(pool.tvlUsd)}
+                        </td>
+                        <td className={`py-3.5 pr-5 ${TABLE_ROW_HOVER_RIGHT}`}>
+                          <HoverActionGroup className="justify-end">
+                            <Button
+                              type="button"
+                              size="table"
+                              variant="table-primary"
+                              className="w-auto"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                router.push(
+                                  actionPagePath("lend", "deposit", {
+                                    market: pool.marketId,
+                                    return: returnHref,
+                                  }),
+                                )
+                              }}
+                            >
+                              <ActionIcon label="Deposit" />
+                              {t("Deposit")}
+                            </Button>
+                          </HoverActionGroup>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </DesktopTableSurface>
+          </div>
+
+          <div className="space-y-3 md:hidden">
+            {opportunities.map((pool) => {
+              const detailHref = `/lend/markets/${pool.marketId}`
+              return (
+                <MarketMobileCard
+                  key={`${pool.bucketTitle}-${pool.symbol}`}
+                  clickable
+                  className="space-y-2"
+                  onClick={() => router.push(detailHref)}
+                >
+                  <MarketMobileCardHeader
+                    identity={
+                      <div className="flex min-w-0 items-center gap-2.5">
                         <TokenIcon symbol={pool.symbol} size="table" />
-                        <div className="flex min-w-0 flex-col">
-                          <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
-                            {pool.name}
-                          </span>
-                          <span className="mt-0.5 text-[13px] text-muted-foreground">{pool.bucketDescription}</span>
+                        <div className="min-w-0">
+                          <div className="truncate text-[13px] font-medium text-foreground">{pool.name}</div>
+                          <div className="truncate text-[11px] text-muted-foreground">{pool.bucketDescription}</div>
                         </div>
                       </div>
-                    </td>
-                    <td className={`py-3.5 text-right ${TABLE_ROW_HOVER_BG}`}>
-                      <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
-                        {pool.apyPct.toFixed(2)}%
-                      </div>
-                      <div className="text-[13px] text-muted-foreground">{pool.bucketTitle}</div>
-                    </td>
-                    <td
-                      className={`py-3.5 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
-                    >
-                      {formatUsdExact(pool.tvlUsd)}
-                    </td>
-                    <td className={`py-3.5 pr-5 ${TABLE_ROW_HOVER_RIGHT}`}>
-                      <HoverActionGroup className="justify-end">
-                        <Button
-                          type="button"
-                          size="table"
-                          variant="table-primary"
-                          className="w-auto"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            router.push(
-                              actionPagePath("lend", "deposit", {
-                                market: pool.marketId,
-                                return: returnHref,
-                              }),
-                            )
-                          }}
-                        >
-                          <ActionIcon label="Deposit" />
-                          {t("Deposit")}
-                        </Button>
-                      </HoverActionGroup>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </DesktopTableSurface>
+                    }
+                    metric={<MarketMobileMetric value={`${pool.apyPct.toFixed(2)}%`} label={t("APY")} />}
+                  />
+                  <MarketMobileStatList>
+                    <MarketMobileStatRow label={t("TVL")} value={formatUsdExact(pool.tvlUsd)} />
+                    <MarketMobileStatRow label={t("Strategy")} value={pool.bucketTitle} />
+                  </MarketMobileStatList>
+                  <Button
+                    type="button"
+                    variant="brand"
+                    className="h-11 w-full gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      router.push(
+                        actionPagePath("lend", "deposit", {
+                          market: pool.marketId,
+                          return: returnHref,
+                        }),
+                      )
+                    }}
+                  >
+                    <ActionIcon label="Deposit" />
+                    {t("Deposit")}
+                  </Button>
+                </MarketMobileCard>
+              )
+            })}
+          </div>
+        </>
       )}
     </section>
   )

@@ -47,6 +47,31 @@ function netApyForPositionState(
   })
 }
 
+/**
+ * The USD amount recorded on an activity row for a multiply action.
+ *  - multiply: the collateral added to the position (position growth).
+ *  - close: the equity returned to the user (collateral withdrawn minus debt repaid).
+ *  - deleverage: the size of the unwind, i.e. the debt repaid. A reduce sells
+ *    collateral to repay debt without returning cash, so its equity delta is ~0 —
+ *    recording that would show a bogus "$0"/"-$0.01" row. The debt repaid is the
+ *    real, nonzero magnitude of the transaction.
+ */
+function recordedAmountUsd(actionType: MultiplyAction["type"], preview: MultiplyTransactionPreview): number {
+  if (actionType === "multiply") {
+    return Math.max(0, preview.after.collateralValueUsd - preview.before.collateralValueUsd)
+  }
+  if (actionType === "deleverage") {
+    return Math.max(0, preview.before.debtValueUsd - preview.after.debtValueUsd)
+  }
+  // close
+  return Math.max(
+    0,
+    preview.before.collateralValueUsd -
+      preview.after.collateralValueUsd -
+      (preview.before.debtValueUsd - preview.after.debtValueUsd),
+  )
+}
+
 function multiplyRiskLabel(simulation: ReturnType<typeof simulateMultiply>): "danger" | "safe" | "warning" {
   if (!simulation.validation.allowed) return "danger"
   const healthFactor = simulation.after.healthFactor
@@ -251,10 +276,7 @@ export class SandboxMultiplyTransactionAdapter implements MultiplyTransactionAda
         positionId: intent.positionId,
         kind: intent.actionType,
         status: "failed",
-        amountUsd:
-          action.type === "multiply"
-            ? Math.max(0, preview.after.collateralValueUsd - preview.before.collateralValueUsd)
-            : 0,
+        amountUsd: recordedAmountUsd(action.type, preview),
         multiplierBefore: preview.before.multiplier,
         multiplierAfter: preview.after.multiplier,
         simulated: true,
@@ -296,18 +318,7 @@ export class SandboxMultiplyTransactionAdapter implements MultiplyTransactionAda
       positionId: intent.positionId,
       kind: intent.actionType,
       status: "success",
-      amountUsd:
-        action.type === "multiply"
-          ? Math.max(0, preview.after.collateralValueUsd - preview.before.collateralValueUsd)
-          : // Close/deleverage: the amount MOVED is the equity unwound (collateral reduction
-            // minus debt repaid), not the gross collateral — otherwise a 2.2x close overstates
-            // what the user received by the repaid-debt portion.
-            Math.max(
-              0,
-              preview.before.collateralValueUsd -
-                preview.after.collateralValueUsd -
-                (preview.before.debtValueUsd - preview.after.debtValueUsd),
-            ),
+      amountUsd: recordedAmountUsd(action.type, preview),
       multiplierBefore: preview.before.multiplier,
       multiplierAfter: preview.after.multiplier,
       simulated: true,

@@ -9,7 +9,7 @@ import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app
 import type { PortfolioMultiplyCollateral } from "@/app/lib/data/providers/portfolio"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { Button } from "@/components/ui/button"
-import { formatCompactUsd } from "@/app/lib/borrow-sim"
+import { formatCompactUsd, formatUsdExact } from "@/app/lib/borrow-sim"
 import {
   MarketMobileCard,
   MarketMobileCardHeader,
@@ -42,6 +42,9 @@ export function MultiplyCollateralTable({
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const { t } = useTranslation()
   const usd = (value: number) => (showDollarAmounts ? formatCompactUsd(value) : MASK)
+  // A liquidation price is a per-token price, not a balance: show it exact (not
+  // compacted to "$2.1K") so it's legible, and "—" when the position is debt-free.
+  const liqPrice = (value: number | null) => (value == null ? "—" : showDollarAmounts ? formatUsdExact(value) : MASK)
 
   // Only render positions with real exposure. A closed or effectively-empty
   // position (collateral value <= 0) is not an active card — surfacing it as a
@@ -82,13 +85,14 @@ export function MultiplyCollateralTable({
           <DesktopTableSurface className="!rounded-none">
             <table className="w-full min-w-[700px] table-fixed border-separate border-spacing-0 text-[13px]">
               <colgroup>
-                <col className="w-[22%]" />
-                <col className="w-[12%]" />
+                <col className="w-[20%]" />
+                <col className="w-[11%]" />
+                <col className="w-[9%]" />
+                <col className="w-[11%]" />
+                <col className="w-[9%]" />
                 <col className="w-[10%]" />
-                <col className="w-[12%]" />
-                <col className="w-[9%]" />
-                <col className="w-[9%]" />
-                <col className="w-[26%]" />
+                <col className="w-[8%]" />
+                <col className="w-[22%]" />
               </colgroup>
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
@@ -106,6 +110,9 @@ export function MultiplyCollateralTable({
                   </th>
                   <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Health")}
+                  </th>
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    {t("Liq. price")}
                   </th>
                   <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Net APY")}
@@ -152,6 +159,11 @@ export function MultiplyCollateralTable({
                       className={`px-4 py-3 text-right font-data tabular-nums text-[13px] ${healthFactorBand(row.healthFactor).textClass} ${TABLE_ROW_HOVER_BG}`}
                     >
                       {formatHealthFactor(row.healthFactor)}
+                    </td>
+                    <td
+                      className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+                    >
+                      {liqPrice(row.liquidationPriceUsd)}
                     </td>
                     <td
                       className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
@@ -262,6 +274,7 @@ export function MultiplyCollateralTable({
                   value={formatHealthFactor(row.healthFactor)}
                   valueClassName={healthFactorBand(row.healthFactor).textClass}
                 />
+                <MarketMobileStatRow label={t("Liq. price")} value={liqPrice(row.liquidationPriceUsd)} />
                 <MarketMobileStatRow
                   label={t("Net APY")}
                   value={formatPct(row.netApyPct)}

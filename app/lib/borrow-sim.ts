@@ -102,6 +102,45 @@ export function poolLpTokenPriceUsd(pool: Pick<BorrowPoolRow, "collateralExample
   return Math.max(1, pool.collateralExampleUsd / 2.5)
 }
 
+// ----- Discovery label helpers ----------------------------------------------
+
+/**
+ * Single source of truth for rendering a pool/market LTV (collateral factor) as
+ * a percent string. Every borrow discovery surface (explore, list desktop +
+ * mobile, search) routes through this so the same collateral factor never reads
+ * as 79.5% in one place and 80% in another. Keeps one decimal of precision — the
+ * granularity the collateral factor itself carries — and trims a trailing ".0"
+ * so whole-number factors stay clean (65% rather than 65.0%).
+ */
+export function formatLtvPct(ltv: number): string {
+  const rounded = Math.round(ltv * 10) / 10
+  return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)}%`
+}
+
+/**
+ * Canonicalize a token symbol for display. The borrow catalog mixes native
+ * "ETH" and wrapped "WETH" labels for the same underlying collateral asset;
+ * collapse the bare native symbol to WETH so an identical asset never reads as
+ * two different tokens. ETH-suffixed LSTs (stETH, wstETH, weETH, rETH, cbETH)
+ * are distinct assets and are left untouched.
+ */
+export function normalizeBorrowTokenSymbol(symbol: string): string {
+  return symbol === "ETH" ? "WETH" : symbol
+}
+
+/**
+ * Canonical pair label for a borrow pool row, shared by every discovery surface
+ * so the same pool reads identically everywhere. Uses the pool's display name
+ * (which keeps multi-token compositions like "USDC / WBTC / ETH" distinct from a
+ * plain "WBTC / ETH" pool) and applies token-symbol normalization (ETH -> WETH).
+ */
+export function formatBorrowPairLabel(pool: Pick<BorrowPoolRow, "name">): string {
+  return pool.name
+    .split(" / ")
+    .map((part) => normalizeBorrowTokenSymbol(part.trim()))
+    .join(" / ")
+}
+
 export type BorrowableAssetCategory = "stable" | "eth" | "btc" | "crypto"
 
 export type BorrowableAsset = {
