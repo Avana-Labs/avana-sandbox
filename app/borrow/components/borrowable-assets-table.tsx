@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { memo, useMemo, useState } from "react"
 import { ActionIcon } from "@/app/components/action-icon"
 import { useRouter } from "next/navigation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
@@ -54,8 +54,6 @@ export function BorrowableAssetsPanel({
   groupByCategory = true,
   variant = "default",
 }: BorrowableAssetsTableProps) {
-  const router = useRouter()
-  const { compact } = useCurrency()
   const { t } = useTranslation()
   if (rows.length === 0) {
     return (
@@ -102,59 +100,15 @@ export function BorrowableAssetsPanel({
               </div>
             ) : null}
             <ul className="space-y-2">
-              {group.assets.map((asset, index) => {
-                const aprTone = aprToneClass(asset.borrowApr)
-                return (
-                  <li key={asset.id}>
-                    <MarketMobileCard
-                      clickable
-                      onClick={() => {
-                        onViewMarket?.(asset)
-                        router.push(borrowAssetDetailPath(asset.id))
-                      }}
-                    >
-                      <MarketMobileCardHeader
-                        identity={
-                          <div className="flex items-center gap-2.5">
-                            <TokenBubble visual={asset.visual} size="table" eager={index < 2} />
-                            <div className="min-w-0">
-                              <div className="text-[14px] font-medium text-foreground">{asset.symbol}</div>
-                              <div className="text-[12px] text-muted-foreground">{asset.name}</div>
-                            </div>
-                          </div>
-                        }
-                        metric={
-                          <MarketMobileMetric
-                            value={`${asset.borrowApr.toFixed(2)}%`}
-                            label={t("Borrow APR")}
-                            valueClassName={aprTone}
-                          />
-                        }
-                      />
-
-                      <MarketMobileStatList className="mt-4">
-                        <MarketMobileStatRow label={t("Total Borrows")} value={compact(asset.totalBorrowedUsd)} />
-                        <MarketMobileStatRow label={t("Available")} value={compact(asset.availableUsd)} />
-                        <MarketMobileStatRow
-                          label={t("Utilization")}
-                          value={formatUtilizationPct(asset.utilization)}
-                          valueClassName={utilizationToneClass(asset.utilization)}
-                        />
-                      </MarketMobileStatList>
-
-                      <MarketMobilePrimaryAction
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          onBorrow(asset)
-                        }}
-                      >
-                        <ActionIcon label="Borrow" />
-                        {t("Borrow")}
-                      </MarketMobilePrimaryAction>
-                    </MarketMobileCard>
-                  </li>
-                )
-              })}
+              {group.assets.map((asset, index) => (
+                <BorrowableMobileCardRow
+                  key={asset.id}
+                  asset={asset}
+                  index={index}
+                  onBorrow={onBorrow}
+                  onViewMarket={onViewMarket}
+                />
+              ))}
             </ul>
           </section>
         ))}
@@ -162,6 +116,76 @@ export function BorrowableAssetsPanel({
     </div>
   )
 }
+
+// Memoized so an unchanged card doesn't re-render when a sibling row's data changes.
+// Reads router/currency/translation from hooks internally, keeping props to stable
+// primitives + references (asset, index, callbacks) so React.memo can bail out.
+const BorrowableMobileCardRow = memo(function BorrowableMobileCardRow({
+  asset,
+  index,
+  onBorrow,
+  onViewMarket,
+}: {
+  asset: BorrowableAsset
+  index: number
+  onBorrow: (asset: BorrowableAsset) => void
+  onViewMarket?: (asset: BorrowableAsset) => void
+}) {
+  const router = useRouter()
+  const { compact } = useCurrency()
+  const { t } = useTranslation()
+  const aprTone = aprToneClass(asset.borrowApr)
+  return (
+    <li>
+      <MarketMobileCard
+        clickable
+        onClick={() => {
+          onViewMarket?.(asset)
+          router.push(borrowAssetDetailPath(asset.id))
+        }}
+      >
+        <MarketMobileCardHeader
+          identity={
+            <div className="flex items-center gap-2.5">
+              <TokenBubble visual={asset.visual} size="table" eager={index < 2} />
+              <div className="min-w-0">
+                <div className="text-[14px] font-medium text-foreground">{asset.symbol}</div>
+                <div className="text-[12px] text-muted-foreground">{asset.name}</div>
+              </div>
+            </div>
+          }
+          metric={
+            <MarketMobileMetric
+              value={`${asset.borrowApr.toFixed(2)}%`}
+              label={t("Borrow APR")}
+              valueClassName={aprTone}
+            />
+          }
+        />
+
+        <MarketMobileStatList className="mt-4">
+          <MarketMobileStatRow label={t("Total Borrows")} value={compact(asset.totalBorrowedUsd)} />
+          <MarketMobileStatRow label={t("Available")} value={compact(asset.availableUsd)} />
+          <MarketMobileStatRow
+            label={t("Utilization")}
+            value={formatUtilizationPct(asset.utilization)}
+            valueClassName={utilizationToneClass(asset.utilization)}
+          />
+        </MarketMobileStatList>
+
+        <MarketMobilePrimaryAction
+          onClick={(event) => {
+            event.stopPropagation()
+            onBorrow(asset)
+          }}
+        >
+          <ActionIcon label="Borrow" />
+          {t("Borrow")}
+        </MarketMobilePrimaryAction>
+      </MarketMobileCard>
+    </li>
+  )
+})
 
 function SortIcon() {
   return (
@@ -177,6 +201,114 @@ function SortIcon() {
   )
 }
 
+// Memoized loan-variant row: reads price via the stable `canonicalPriceUsd` module
+// function and pulls router/currency/translation from hooks internally, so the only
+// props are stable (asset, index, onBorrow) and React.memo can skip unchanged rows.
+const LoanAssetsRow = memo(function LoanAssetsRow({
+  asset,
+  index,
+  onBorrow,
+}: {
+  asset: BorrowableAsset
+  index: number
+  onBorrow: (asset: BorrowableAsset) => void
+}) {
+  const priceFor = canonicalPriceUsd
+  const router = useRouter()
+  const { compact } = useCurrency()
+  const { t } = useTranslation()
+  return (
+    <tr
+      className="asset-swap group cursor-pointer transition-colors"
+      onClick={() => router.push(borrowAssetDetailPath(asset.id))}
+      style={{ animationDelay: `${index * 40}ms` }}
+    >
+      <td
+        className={`py-2.5 pl-6 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
+      >
+        {index + 1}
+      </td>
+      <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
+        <div className="flex min-w-0 items-center gap-4">
+          <TokenBubble visual={asset.visual} size="table" ring={false} className="bg-transparent" eager={index < 2} />
+          <div className="min-w-0">
+            <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
+              {asset.name}
+            </div>
+            <div className="mt-1 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[13px]">
+              {asset.symbol}
+            </div>
+          </div>
+        </div>
+      </td>
+      <td
+        className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px] ${TABLE_ROW_HOVER_BG}`}
+      >
+        <div className="flex items-center gap-2">
+          <span className="tabular-nums">{asset.borrowApr.toFixed(2)}%</span>
+        </div>
+      </td>
+      <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
+        <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
+          <span className="tabular-nums">
+            {formatTokenQuantity(asset.totalBorrowedUsd / (priceFor(asset.symbol) ?? 1), asset.symbol)}
+          </span>
+        </div>
+        <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
+          <span className="tabular-nums">{compact(asset.totalBorrowedUsd)}</span>
+        </div>
+      </td>
+      <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
+        <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
+          <span className="tabular-nums">
+            {formatTokenQuantity(asset.availableUsd / (priceFor(asset.symbol) ?? 1), asset.symbol)}
+          </span>
+        </div>
+        <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
+          <span className="tabular-nums">{compact(asset.availableUsd)}</span>
+        </div>
+      </td>
+      <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
+        <HoverActionGroup className="gap-2">
+          <Button
+            type="button"
+            size="table"
+            variant="table-primary"
+            className="w-auto"
+            onClick={(event) => {
+              event.stopPropagation()
+              const lendMarketId = resolveLendMarketId(asset.symbol)
+              if (!lendMarketId) return
+              router.push(
+                actionPagePath("lend", "deposit", {
+                  market: lendMarketId,
+                  return: borrowAssetDetailPath(asset.id),
+                }),
+              )
+            }}
+          >
+            <ActionIcon label="Deposit" />
+            {t("Deposit")}
+          </Button>
+          <Button
+            type="button"
+            size="table"
+            variant="table-secondary"
+            className="w-auto"
+            onClick={(event) => {
+              event.stopPropagation()
+              onBorrow(asset)
+            }}
+          >
+            <ActionIcon label="Borrow" />
+            {t("Borrow")}
+          </Button>
+        </HoverActionGroup>
+      </td>
+    </tr>
+  )
+})
+
 function LoanAssetsSection({
   assets,
   onBorrow,
@@ -188,9 +320,6 @@ function LoanAssetsSection({
 }) {
   const [sortKey, setSortKey] = useState<"asset" | "apy" | "borrows" | "liquidity">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-  const priceFor = canonicalPriceUsd
-  const router = useRouter()
-  const { compact } = useCurrency()
   const { t } = useTranslation()
 
   const toggleSort = (nextKey: typeof sortKey) => {
@@ -293,101 +422,7 @@ function LoanAssetsSection({
 
         <tbody key={`loan-${sortKey}-${sortDirection}-${sortedAssets.length}`}>
           {sortedAssets.map((asset, index) => (
-            <tr
-              key={asset.id}
-              className="asset-swap group cursor-pointer transition-colors"
-              onClick={() => router.push(borrowAssetDetailPath(asset.id))}
-              style={{ animationDelay: `${index * 40}ms` }}
-            >
-              <td
-                className={`py-2.5 pl-6 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
-              >
-                {index + 1}
-              </td>
-              <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-                <div className="flex min-w-0 items-center gap-4">
-                  <TokenBubble
-                    visual={asset.visual}
-                    size="table"
-                    ring={false}
-                    className="bg-transparent"
-                    eager={index < 2}
-                  />
-                  <div className="min-w-0">
-                    <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
-                      {asset.name}
-                    </div>
-                    <div className="mt-1 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[13px]">
-                      {asset.symbol}
-                    </div>
-                  </div>
-                </div>
-              </td>
-              <td
-                className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px] ${TABLE_ROW_HOVER_BG}`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="tabular-nums">{asset.borrowApr.toFixed(2)}%</span>
-                </div>
-              </td>
-              <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-                <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
-                  <span className="tabular-nums">
-                    {formatTokenQuantity(asset.totalBorrowedUsd / (priceFor(asset.symbol) ?? 1), asset.symbol)}
-                  </span>
-                </div>
-                <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
-                  <span className="tabular-nums">{compact(asset.totalBorrowedUsd)}</span>
-                </div>
-              </td>
-              <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-                <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
-                  <span className="tabular-nums">
-                    {formatTokenQuantity(asset.availableUsd / (priceFor(asset.symbol) ?? 1), asset.symbol)}
-                  </span>
-                </div>
-                <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
-                  <span className="tabular-nums">{compact(asset.availableUsd)}</span>
-                </div>
-              </td>
-              <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
-                <HoverActionGroup className="gap-2">
-                  <Button
-                    type="button"
-                    size="table"
-                    variant="table-primary"
-                    className="w-auto"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      const lendMarketId = resolveLendMarketId(asset.symbol)
-                      if (!lendMarketId) return
-                      router.push(
-                        actionPagePath("lend", "deposit", {
-                          market: lendMarketId,
-                          return: borrowAssetDetailPath(asset.id),
-                        }),
-                      )
-                    }}
-                  >
-                    <ActionIcon label="Deposit" />
-                    {t("Deposit")}
-                  </Button>
-                  <Button
-                    type="button"
-                    size="table"
-                    variant="table-secondary"
-                    className="w-auto"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      onBorrow(asset)
-                    }}
-                  >
-                    <ActionIcon label="Borrow" />
-                    {t("Borrow")}
-                  </Button>
-                </HoverActionGroup>
-              </td>
-            </tr>
+            <LoanAssetsRow key={asset.id} asset={asset} index={index} onBorrow={onBorrow} />
           ))}
         </tbody>
       </table>
@@ -405,6 +440,109 @@ function LoanAssetsSection({
   )
 }
 
+// Memoized grouped-variant row. Price comes from the stable `canonicalPriceUsd` module
+// function; router/currency/translation are read from hooks internally so the props stay
+// stable (asset, index, onBorrow) and React.memo can bail out of unchanged rows.
+const AssetsRow = memo(function AssetsRow({
+  asset,
+  index,
+  onBorrow,
+}: {
+  asset: BorrowableAsset
+  index: number
+  onBorrow: (asset: BorrowableAsset) => void
+}) {
+  const priceFor = canonicalPriceUsd
+  const router = useRouter()
+  const { compact } = useCurrency()
+  const { t } = useTranslation()
+  return (
+    <tr className="group cursor-pointer transition-colors" onClick={() => router.push(borrowAssetDetailPath(asset.id))}>
+      <td
+        className={`py-2.5 pl-5 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
+      >
+        {index + 1}
+      </td>
+      <td className={`py-2.5 pl-5 ${TABLE_ROW_HOVER_BG}`}>
+        <TokenSingleCell
+          visual={asset.visual}
+          name={asset.name}
+          subtitle={(() => {
+            const p = priceFor(asset.symbol)
+            return p !== undefined ? formatTokenPrice(p) : asset.subtitle
+          })()}
+          size="md"
+          eager={index < 2}
+        />
+      </td>
+      <td className={`py-2.5 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
+        <span className={cn("font-data text-[13px] font-medium tabular-nums", aprToneClass(asset.borrowApr))}>
+          {formatApy(asset.borrowApr)}
+        </span>
+      </td>
+      <td className={`py-2.5 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
+        <span className={cn("font-data text-[13px] font-medium tabular-nums", utilizationToneClass(asset.utilization))}>
+          {formatUtilizationPct(asset.utilization)}
+        </span>
+      </td>
+      <td className={`py-2.5 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}>
+        {compact(asset.availableUsd)}
+      </td>
+      <td
+        className={cn(
+          "py-2.5 pl-4 text-right font-data text-[13px] tabular-nums",
+          asset.hasWalletBalance ? "text-foreground" : "text-muted-foreground",
+          TABLE_ROW_HOVER_BG,
+        )}
+      >
+        {asset.walletBalanceLabel}
+      </td>
+      <td className={`py-2.5 pl-4 ${TABLE_ROW_HOVER_BG}`}>
+        <div className="flex justify-end">
+          <TrendSpark isPositive={asset.trendUp} seed={`asset-${asset.id}`} values={asset.trendValues} />
+        </div>
+      </td>
+      <td className={`py-2.5 pl-4 pr-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
+        <HoverActionGroup className="gap-2">
+          <Button
+            type="button"
+            size="table"
+            variant="table-primary"
+            className="w-auto"
+            onClick={(event) => {
+              event.stopPropagation()
+              const lendMarketId = resolveLendMarketId(asset.symbol)
+              if (!lendMarketId) return
+              router.push(
+                actionPagePath("lend", "deposit", {
+                  market: lendMarketId,
+                  return: borrowAssetDetailPath(asset.id),
+                }),
+              )
+            }}
+          >
+            <ActionIcon label="Deposit" />
+            {t("Deposit")}
+          </Button>
+          <Button
+            type="button"
+            size="table"
+            variant="table-secondary"
+            className="w-auto"
+            onClick={(event) => {
+              event.stopPropagation()
+              onBorrow(asset)
+            }}
+          >
+            <ActionIcon label="Borrow" />
+            {t("Borrow")}
+          </Button>
+        </HoverActionGroup>
+      </td>
+    </tr>
+  )
+})
+
 function AssetsSection({
   label,
   dotClass,
@@ -418,9 +556,6 @@ function AssetsSection({
   onBorrow: (asset: BorrowableAsset) => void
   hideHeader?: boolean
 }) {
-  const priceFor = canonicalPriceUsd
-  const router = useRouter()
-  const { compact } = useCurrency()
   const { t } = useTranslation()
   return (
     <section className="mb-2">
@@ -464,102 +599,7 @@ function AssetsSection({
             </thead>
             <tbody>
               {assets.map((asset, index) => (
-                <tr
-                  key={asset.id}
-                  className="group cursor-pointer transition-colors"
-                  onClick={() => router.push(borrowAssetDetailPath(asset.id))}
-                >
-                  <td
-                    className={`py-2.5 pl-5 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
-                  >
-                    {index + 1}
-                  </td>
-                  <td className={`py-2.5 pl-5 ${TABLE_ROW_HOVER_BG}`}>
-                    <TokenSingleCell
-                      visual={asset.visual}
-                      name={asset.name}
-                      subtitle={(() => {
-                        const p = priceFor(asset.symbol)
-                        return p !== undefined ? formatTokenPrice(p) : asset.subtitle
-                      })()}
-                      size="md"
-                      eager={index < 2}
-                    />
-                  </td>
-                  <td className={`py-2.5 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
-                    <span
-                      className={cn("font-data text-[13px] font-medium tabular-nums", aprToneClass(asset.borrowApr))}
-                    >
-                      {formatApy(asset.borrowApr)}
-                    </span>
-                  </td>
-                  <td className={`py-2.5 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
-                    <span
-                      className={cn(
-                        "font-data text-[13px] font-medium tabular-nums",
-                        utilizationToneClass(asset.utilization),
-                      )}
-                    >
-                      {formatUtilizationPct(asset.utilization)}
-                    </span>
-                  </td>
-                  <td
-                    className={`py-2.5 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}
-                  >
-                    {compact(asset.availableUsd)}
-                  </td>
-                  <td
-                    className={cn(
-                      "py-2.5 pl-4 text-right font-data text-[13px] tabular-nums",
-                      asset.hasWalletBalance ? "text-foreground" : "text-muted-foreground",
-                      TABLE_ROW_HOVER_BG,
-                    )}
-                  >
-                    {asset.walletBalanceLabel}
-                  </td>
-                  <td className={`py-2.5 pl-4 ${TABLE_ROW_HOVER_BG}`}>
-                    <div className="flex justify-end">
-                      <TrendSpark isPositive={asset.trendUp} seed={`asset-${asset.id}`} values={asset.trendValues} />
-                    </div>
-                  </td>
-                  <td className={`py-2.5 pl-4 pr-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
-                    <HoverActionGroup className="gap-2">
-                      <Button
-                        type="button"
-                        size="table"
-                        variant="table-primary"
-                        className="w-auto"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          const lendMarketId = resolveLendMarketId(asset.symbol)
-                          if (!lendMarketId) return
-                          router.push(
-                            actionPagePath("lend", "deposit", {
-                              market: lendMarketId,
-                              return: borrowAssetDetailPath(asset.id),
-                            }),
-                          )
-                        }}
-                      >
-                        <ActionIcon label="Deposit" />
-                        {t("Deposit")}
-                      </Button>
-                      <Button
-                        type="button"
-                        size="table"
-                        variant="table-secondary"
-                        className="w-auto"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          onBorrow(asset)
-                        }}
-                      >
-                        <ActionIcon label="Borrow" />
-                        {t("Borrow")}
-                      </Button>
-                    </HoverActionGroup>
-                  </td>
-                </tr>
+                <AssetsRow key={asset.id} asset={asset} index={index} onBorrow={onBorrow} />
               ))}
             </tbody>
           </table>

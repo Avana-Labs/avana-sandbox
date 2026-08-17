@@ -514,7 +514,10 @@ function LoopMarketsSection({
   )
 }
 
-function LoopTableRow({
+// Memoized so an unchanged row doesn't re-render when a sibling row changes (e.g. a
+// re-sort or a keystroke that leaves this row's props identical). Props are stable
+// references (row, tokenLogos) plus a primitive index; hooks are read internally.
+const LoopTableRow = React.memo(function LoopTableRow({
   row,
   index,
   tokenLogos,
@@ -684,9 +687,11 @@ function LoopTableRow({
       </td>
     </tr>
   )
-}
+})
 
-function MobileLoopCard({
+// Memoized mobile card — same rationale as LoopTableRow; props are stable references
+// plus primitives so React.memo can skip cards whose data hasn't changed.
+const MobileLoopCard = React.memo(function MobileLoopCard({
   row,
   index,
   protocolLogo,
@@ -764,7 +769,7 @@ function MobileLoopCard({
       </MarketMobileCard>
     </Link>
   )
-}
+})
 
 function TrendingLoopCard({
   snapshot,
