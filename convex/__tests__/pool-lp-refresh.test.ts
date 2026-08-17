@@ -2,7 +2,7 @@
 import { convexTest } from "convex-test"
 import { describe, expect, test } from "vitest"
 import schema from "../schema"
-import { api, internal } from "../_generated/api"
+import { internal } from "../_generated/api"
 
 const modules = import.meta.glob("../**/*.*s")
 
