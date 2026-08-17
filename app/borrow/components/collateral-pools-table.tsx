@@ -164,6 +164,106 @@ function poolLiquidationThresholdPct(pool: BorrowPoolRow) {
   return Math.min(97, Math.round(pool.ltv) + 5)
 }
 
+// Memoized pool row: router/currency/translation are read from hooks internally, so the
+// props are stable references (pool, callbacks) plus a primitive index, letting
+// React.memo skip rows whose data hasn't changed when a sibling row updates.
+const CollateralPoolRow = memo(function CollateralPoolRow({
+  pool,
+  index,
+  onViewMarket,
+  onUseAsCollateral,
+}: {
+  pool: BorrowPoolRow
+  index: number
+  onViewMarket: (pool: BorrowPoolRow) => void
+  onUseAsCollateral?: (pool: BorrowPoolRow) => void
+}) {
+  const router = useRouter()
+  const { compact } = useCurrency()
+  const { t } = useTranslation()
+  return (
+    <tr
+      className="asset-swap group cursor-pointer transition-colors"
+      onClick={() => onViewMarket(pool)}
+      style={{ animationDelay: `${index * 40}ms` }}
+    >
+      <td
+        className={`py-2.5 pl-6 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
+      >
+        {index + 1}
+      </td>
+      <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
+        <CollateralAssetCell pool={pool} />
+      </td>
+      <td
+        className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+      >
+        <span className="tabular-nums">{formatApy((pool.aprMin + pool.aprMax) / 2)}</span>
+      </td>
+      <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
+        <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+          <span className="tabular-nums">{compact(pool.tvlUsd)}</span>
+        </div>
+      </td>
+      <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
+        <div className="font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white">
+          {formatLtvPct(pool.ltv)}
+        </div>
+        <div className="mt-0.5 font-data text-[12px] tabular-nums text-muted-foreground">
+          {t("LT")}: {poolLiquidationThresholdPct(pool)}%
+        </div>
+      </td>
+      <td
+        className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+      >
+        <span className="tabular-nums">{formatRiskPremium(pool.riskPremiumBps)}</span>
+      </td>
+      <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
+        <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+          <span className="tabular-nums">{compact(pool.availableUsd)}</span>
+        </div>
+      </td>
+      <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
+        <HoverActionGroup className="gap-2">
+          {onUseAsCollateral ? (
+            <Button
+              type="button"
+              size="table"
+              variant="table-primary"
+              className="w-auto"
+              onClick={(event) => {
+                event.stopPropagation()
+                onUseAsCollateral(pool)
+              }}
+            >
+              <ActionIcon label="Pledge" />
+              {t("Pledge")}
+            </Button>
+          ) : null}
+          <Button
+            type="button"
+            size="table"
+            variant="table-secondary"
+            className="w-auto"
+            onClick={(event) => {
+              event.stopPropagation()
+              router.push(
+                actionPagePath("borrow", "borrow", {
+                  market: pool.id,
+                  return: `/borrow/markets/${pool.id}`,
+                }),
+              )
+            }}
+          >
+            <ActionIcon label="Borrow" />
+            {t("Borrow")}
+          </Button>
+        </HoverActionGroup>
+      </td>
+    </tr>
+  )
+})
+
 function CollateralDesktopTable({
   rows,
   pending,
@@ -177,8 +277,6 @@ function CollateralDesktopTable({
   onUseAsCollateral?: (pool: BorrowPoolRow) => void
   embedded?: boolean
 }) {
-  const router = useRouter()
-  const { compact } = useCurrency()
   const { t } = useTranslation()
   const [sortKey, setSortKey] = useState<"asset" | "apy" | "deposits" | "cf" | "risk" | "supplied">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
@@ -318,86 +416,13 @@ function CollateralDesktopTable({
         </thead>
         <tbody key={`collateral-${sortKey}-${sortDirection}-${sortedRows.length}`}>
           {sortedRows.map((pool, index) => (
-            <tr
+            <CollateralPoolRow
               key={pool.id}
-              className="asset-swap group cursor-pointer transition-colors"
-              onClick={() => onViewMarket(pool)}
-              style={{ animationDelay: `${index * 40}ms` }}
-            >
-              <td
-                className={`py-2.5 pl-6 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
-              >
-                {index + 1}
-              </td>
-              <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-                <CollateralAssetCell pool={pool} />
-              </td>
-              <td
-                className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
-              >
-                <span className="tabular-nums">{formatApy((pool.aprMin + pool.aprMax) / 2)}</span>
-              </td>
-              <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-                <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
-                  <span className="tabular-nums">{compact(pool.tvlUsd)}</span>
-                </div>
-              </td>
-              <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-                <div className="font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white">
-                  {formatLtvPct(pool.ltv)}
-                </div>
-                <div className="mt-0.5 font-data text-[12px] tabular-nums text-muted-foreground">
-                  {t("LT")}: {poolLiquidationThresholdPct(pool)}%
-                </div>
-              </td>
-              <td
-                className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
-              >
-                <span className="tabular-nums">{formatRiskPremium(pool.riskPremiumBps)}</span>
-              </td>
-              <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-                <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
-                  <span className="tabular-nums">{compact(pool.availableUsd)}</span>
-                </div>
-              </td>
-              <td className={`py-2.5 px-5 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
-                <HoverActionGroup className="gap-2">
-                  {onUseAsCollateral ? (
-                    <Button
-                      type="button"
-                      size="table"
-                      variant="table-primary"
-                      className="w-auto"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        onUseAsCollateral(pool)
-                      }}
-                    >
-                      <ActionIcon label="Pledge" />
-                      {t("Pledge")}
-                    </Button>
-                  ) : null}
-                  <Button
-                    type="button"
-                    size="table"
-                    variant="table-secondary"
-                    className="w-auto"
-                    onClick={(event) => {
-                      event.stopPropagation()
-                      router.push(
-                        actionPagePath("borrow", "borrow", {
-                          market: pool.id,
-                          return: `/borrow/markets/${pool.id}`,
-                        }),
-                      )
-                    }}
-                  >
-                    <ActionIcon label="Borrow" />
-                    {t("Borrow")}
-                  </Button>
-                </HoverActionGroup>
-              </td>
-            </tr>
+              pool={pool}
+              index={index}
+              onViewMarket={onViewMarket}
+              onUseAsCollateral={onUseAsCollateral}
+            />
           ))}
           {pending.map((row) => (
             <tr key={row.id}>
