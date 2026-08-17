@@ -1179,6 +1179,93 @@ const dict: TranslationDictionary = {
     "Deine Sitzung ist sicher. Das ist ein vorübergehendes Verbindungsproblem, nicht dein Wallet.",
   "Something went wrong.": "Etwas ist schiefgelaufen.",
   "We couldn't load this page.": "Wir konnten diese Seite nicht laden.",
+  "Active Deficit": "Aktives Defizit",
+  "Active stake": "Aktiver Stake",
+  "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
+    "Betrag, den Avana zuerst deckt, bevor die von Nutzern gestakte Absicherung exponiert wird. Staker tragen Verluste erst, wenn realisierte Defizite diesen Offset übersteigen.",
+  "Close umbrella actions": "Umbrella-Aktionen schließen",
+  Cooldown: "Cooldown",
+  Cooling: "Kühlt ab",
+  Coverage: "Absicherung",
+  "Coverage currently in cooldown across all stakers of this asset. Cooldown positions still absorb losses until they finish the 20-day wait and are unstaked.":
+    "Absicherung, die sich aktuell bei allen Stakern dieses Assets im Cooldown befindet. Cooldown-Positionen absorbieren weiterhin Verluste, bis die 20-Tage-Wartezeit abgelaufen ist und sie unstaked werden.",
+  "Current realized shortfall in {symbol}. Staker Exposure = max(Active Deficit − Deficit Offset, 0). Current staker exposure: {exposure}.":
+    "Aktueller realisierter Fehlbetrag in {symbol}. Staker-Exponierung = max(Aktives Defizit − Defizit-Offset, 0). Aktuelle Staker-Exponierung: {exposure}.",
+  "Deficit Offset": "Defizit-Offset",
+  "Desired amount of user-staked coverage for this asset.":
+    "Gewünschte Menge nutzergestakter Absicherung für dieses Asset.",
+  "Dynamic rewards": "Dynamische Belohnungen",
+  "Each Umbrella stake token covers deficits for its matching borrowed asset on the same network.":
+    "Jedes Umbrella-Stake-Token deckt Defizite für das entsprechende geliehene Asset im selben Netzwerk.",
+  "Emissions adjust against target liquidity, and each staked asset can earn multiple reward tokens.":
+    "Emissionen richten sich nach der Ziel-Liquidität, und jedes gestakte Asset kann mehrere Belohnungs-Tokens verdienen.",
+  "Estimated annual staking yield paid to stakers of this asset.":
+    "Geschätzte jährliche Staking-Rendite, die an Staker dieses Assets ausgezahlt wird.",
+  "In cooldown": "Im Cooldown",
+  "Isolated slashing": "Isoliertes Slashing",
+  "Learn Umbrella": "Umbrella kennenlernen",
+  "Market Level Risk": "Marktebenen-Risiko",
+  "Module assets": "Modul-Assets",
+  More: "Mehr",
+  "More umbrella actions": "Weitere Umbrella-Aktionen",
+  "Next cooldown": "Nächster Cooldown",
+  "Next market risk": "Nächstes Marktrisiko",
+  "Once cooldown finishes, users can unstake during the withdrawal window before cooldown has to be restarted.":
+    "Nach Ende des Cooldowns können Nutzer während des Auszahlungsfensters unstaken, bevor der Cooldown neu gestartet werden muss.",
+  "Previous cooldown": "Vorheriger Cooldown",
+  "Previous market risk": "Vorheriges Marktrisiko",
+  Ready: "Bereit",
+  "Removes in": "Entfällt in",
+  "Restart cooldown": "Cooldown neu starten",
+  Stake: "Staken",
+  "Stake in umbrella": "In Umbrella staken",
+  "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
+    "Staken, Belohnungen einfordern, Cooldown starten oder aus dem Umbrella-Sicherheitsmodul unstaken.",
+  "Stake, claim, cooldown, unstake": "Staken, einfordern, Cooldown, unstaken",
+  "Start cooldown before withdrawing. During cooldown, the position keeps earning incentives and remains slashable.":
+    "Starte den Cooldown vor der Auszahlung. Während des Cooldowns verdient die Position weiter Anreize und bleibt slashbar.",
+  Target: "Ziel",
+  "Total coverage": "Gesamte Absicherung",
+  "Total user-staked capital available to absorb losses for this asset.":
+    "Gesamtes von Nutzern gestaktes Kapital, das Verluste für dieses Asset absorbieren kann.",
+  Umbrella: "Umbrella",
+  "Umbrella Cooldown": "Umbrella-Cooldown",
+  "Umbrella actions": "Umbrella-Aktionen",
+  "Umbrella activity": "Umbrella-Aktivität",
+  "Umbrella positions": "Umbrella-Positionen",
+  "Umbrella positions are split by asset and network, so each stake token has its own risk and reward profile.":
+    "Umbrella-Positionen werden nach Asset und Netzwerk getrennt, jedes Stake-Token hat somit sein eigenes Risiko- und Belohnungsprofil.",
+  Unstake: "Unstaken",
+  "Unstake window": "Unstake-Fenster",
+  "Weighted APY": "Gewichteter APY",
+  "Withdrawal ready": "Bereit zur Auszahlung",
+  "Withdrawal window": "Auszahlungsfenster",
+  "You have no Umbrella positions yet.": "Du hast noch keine Umbrella-Positionen.",
+  "Your Umbrella": "Dein Umbrella",
+  "Your Umbrella stake": "Dein Umbrella-Stake",
+  "After cooldown completes, there is a short window to unstake. If it expires, cooldown must be started again.":
+    "Nach Ende des Cooldowns bleibt ein kurzes Fenster zum Unstaken. Läuft es ab, muss der Cooldown neu gestartet werden.",
+  "base {base} + reward {reward}": "Basis {base} + Belohnung {reward}",
+  "live mix": "Live-Mix",
+  none: "keine",
+  "{amount} active deficit": "{amount} aktives Defizit",
+  "{amount} claimed": "{amount} beansprucht",
+  "{amount} deficit offset": "{amount} Defizit-Offset",
+  "{amount} in cooldown": "{amount} im Cooldown",
+  "{amount} market": "{amount} Markt",
+  "{amount} on stakers": "{amount} bei Stakern",
+  "{amount} pending": "{amount} ausstehend",
+  "{amount} target": "{amount} Ziel",
+  "{pct}% of coverage cooling · {deficits} deficits absorbed by {offset} offset · ":
+    "{pct}% der Absicherung im Cooldown · {deficits} an Defiziten durch {offset} Offset absorbiert · ",
+  "{pct}% of target": "{pct}% des Ziels",
+  "{pct}% of target coverage.": "{pct}% der Zielabsicherung.",
+  "{staked} staked · {target} target · {count} assets": "{staked} gestakt · Ziel {target} · {count} Assets",
+  "{symbols} expired — restart cooldown": "{symbols} abgelaufen — Cooldown neu starten",
+  "{time} left": "{time} verbleibend",
+  "{value} total": "{value} insgesamt",
+  Earning: "Erträge werden erzielt",
+  "{amount} cooling": "{amount} in Abkühlung",
 }
 
 export default dict

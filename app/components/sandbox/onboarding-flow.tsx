@@ -137,7 +137,7 @@ function StatusRow({ wallet, pct }: { wallet: string | null; pct: number }) {
     <div className="mb-9 sm:mb-11">
       {wallet ? (
         <div className="mb-2.5 text-right text-xs text-muted-foreground">
-          {t("Wallet")} <strong className="ml-1 font-medium text-foreground">{shortWallet(wallet)}</strong>
+          {t("Wallet")} <strong className="ms-1 font-medium text-foreground">{shortWallet(wallet)}</strong>
         </div>
       ) : null}
       <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
@@ -309,7 +309,7 @@ function BasketPanel({ busy, onClaim }: { busy: boolean; onClaim: () => void }) 
         ))}
       </ul>
       <button className={`${PRIMARY} mt-7 w-full`} disabled={busy} onClick={onClaim} type="button">
-        {busy ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : null}
+        {busy ? <LoaderCircle className="me-2 size-4 animate-spin" /> : null}
         {busy ? t("Claiming allocation…") : t("Claim your allocation")}
       </button>
     </div>
@@ -399,7 +399,7 @@ function StepActions({
   return (
     <div className="mt-10 flex flex-col gap-3 sm:flex-row">
       <button className={PRIMARY} disabled={saving} onClick={onContinue} type="button">
-        {saving ? <LoaderCircle className="mr-2 size-4 animate-spin" /> : null}
+        {saving ? <LoaderCircle className="me-2 size-4 animate-spin" /> : null}
         {t(continueLabel)}
       </button>
       {onBack ? (
@@ -870,7 +870,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
             </div>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <a className={PRIMARY} href={intentHref} rel="noreferrer" target="_blank">
-                {t("Open X")} <MoveUpRight className="ml-2 size-4" />
+                {t("Open X")} <MoveUpRight className="ms-2 size-4" />
               </a>
               <button
                 className={SECONDARY}
@@ -925,7 +925,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
                 {t("Open dashboard")}
               </Link>
               <a className={SECONDARY} href={intentHref} rel="noreferrer" target="_blank">
-                {t("Share on X")} <MoveUpRight className="ml-2 size-4" />
+                {t("Share on X")} <MoveUpRight className="ms-2 size-4" />
               </a>
             </div>
           </>

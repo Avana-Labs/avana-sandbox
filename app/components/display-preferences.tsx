@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react"
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
-import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/language-html-lang"
+import { LANGUAGE_HTML_LANG, isRtlLanguage } from "@/app/lib/i18n/language-html-lang"
 import { setActiveCurrency } from "@/app/lib/currency/active-rate"
 import { applyCachedLiveRates, fetchLiveRates } from "@/app/lib/currency/exchange-rates"
 
@@ -140,9 +140,14 @@ export function DisplayPreferencesProvider({ children }: { children: ReactNode }
   }, [language])
 
   // Keep the document language attribute in sync so the browser (and assistive
-  // tech) treat the page as the selected locale.
+  // tech) treat the page as the selected locale. Mirror the RTL flag onto `dir`
+  // so Arabic renders right-to-left — Tailwind's `logical` utilities we've
+  // migrated to (ms-/me-/ps-/pe-/text-start/end) flip automatically once `dir`
+  // is set. LTR locales keep `dir="ltr"` explicitly so a stale RTL bit from a
+  // language swap doesn't linger.
   useEffect(() => {
     document.documentElement.lang = LANGUAGE_HTML_LANG[language] ?? "en"
+    document.documentElement.dir = isRtlLanguage(language) ? "rtl" : "ltr"
   }, [language])
 
   useEffect(() => {

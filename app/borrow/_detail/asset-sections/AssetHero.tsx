@@ -9,6 +9,7 @@ import { usePreloadedQuery } from "convex/react"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { buildHeroFeedFromConvexSeries, getAssetHeroFeed } from "@/app/lib/chart-feeds"
 import { useConvexLiveSession } from "@/app/lib/convex/use-convex-live-session"
+import { useDashboardBorrowLive } from "@/app/dashboard/use-dashboard-borrow-live"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
   buildFeedFromRangeSeries,
@@ -190,6 +191,12 @@ function AssetHeroView({ detail, leading, actions, className, hideIdentity = fal
   const { t } = useTranslation()
   const session = useBorrowSessionContext()
   const { walletId } = useAvanaIdentity()
+  // The in-memory borrow session on a detail page doesn't carry the wallet's
+  // onboarded debt positions (those live in Convex; the session hydrates them
+  // inconsistently across routes). Read the authoritative Convex-backed portfolio
+  // via the same read adapter the dashboard uses, so "Your position" reflects the
+  // real onboarded + live debt in this asset instead of a flat $0. (D4)
+  const portfolioBorrow = useDashboardBorrowLive(walletId, session)
   const metricTabs = React.useMemo(() => [t("Supplied"), t("Borrowed"), t("Utilization"), t("Your position")], [t])
   const [activeMetricTab, setActiveMetricTab] = React.useState(metricTabs[0])
   React.useEffect(() => {
@@ -201,9 +208,16 @@ function AssetHeroView({ detail, leading, actions, className, hideIdentity = fal
   const feed = React.useMemo(() => {
     const fallback = detail.heroFeed ?? getAssetHeroFeed(detail.id)
     if (activeMetricTab === metricTabs[3]) {
-      const currentValueUsd = (session.state.accounts[walletId]?.debtPositions ?? [])
+      // Current value from the Convex-backed portfolio (has the onboarded debt);
+      // fall back to the in-memory session only if the adapter hasn't resolved yet.
+      const symbol = detail.hero.symbol.toLowerCase()
+      const convexValueUsd = (portfolioBorrow?.debtPositions ?? [])
+        .filter((row) => row.debtAssetSymbol.toLowerCase() === symbol)
+        .reduce((sum, row) => sum + row.borrowedUsd, 0)
+      const sessionValueUsd = (session.state.accounts[walletId]?.debtPositions ?? [])
         .filter((position) => position.baseAssetId === detail.id || position.assetId.endsWith(`:${detail.id}`))
         .reduce((sum, position) => sum + Number(currentDebtValueUsd6(position)) / 1_000_000, 0)
+      const currentValueUsd = convexValueUsd > 0 ? convexValueUsd : sessionValueUsd
       return buildWalletPositionFeed(
         currentValueUsd,
         session.transactionHistory
@@ -240,8 +254,10 @@ function AssetHeroView({ detail, leading, actions, className, hideIdentity = fal
     detail.heroBorrowedFeed,
     detail.heroUtilizationFeed,
     detail.heroMetric.series,
+    detail.hero.symbol,
     detail.id,
     metricTabs,
+    portfolioBorrow,
     session.state,
     session.transactionHistory,
     walletId,

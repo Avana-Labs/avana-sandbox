@@ -46,6 +46,7 @@ import type * as multiply_riskAssessment from "../multiply/riskAssessment.js";
 import type * as multiply_riskParameters from "../multiply/riskParameters.js";
 import type * as multiply_tokenParameters from "../multiply/tokenParameters.js";
 import type * as prices from "../prices.js";
+import type * as rateLimits from "../rateLimits.js";
 import type * as risk from "../risk.js";
 import type * as sandbox_auth from "../sandbox/auth.js";
 import type * as sandbox_dev from "../sandbox/dev.js";
@@ -53,6 +54,7 @@ import type * as sandbox_liquidation from "../sandbox/liquidation.js";
 import type * as sandbox_migrations from "../sandbox/migrations.js";
 import type * as sandbox_onboarding from "../sandbox/onboarding.js";
 import type * as sandbox_rewards from "../sandbox/rewards.js";
+import type * as sandbox_rewards_catalog from "../sandbox/rewards_catalog.js";
 import type * as sandbox_starterAllocation from "../sandbox/starterAllocation.js";
 import type * as sandbox_transactions from "../sandbox/transactions.js";
 import type * as sandbox_umbrella from "../sandbox/umbrella.js";
@@ -67,7 +69,6 @@ import type * as wallet_debts from "../wallet/debts.js";
 import type * as wallet_feeApyWads from "../wallet/feeApyWads.js";
 import type * as wallet_lpTokenPrices from "../wallet/lpTokenPrices.js";
 import type * as wallet_productBalances from "../wallet/productBalances.js";
-import type * as wallet_rewardsProgress from "../wallet/rewardsProgress.js";
 
 import type {
   ApiFromModules,
@@ -114,6 +115,7 @@ declare const fullApi: ApiFromModules<{
   "multiply/riskParameters": typeof multiply_riskParameters;
   "multiply/tokenParameters": typeof multiply_tokenParameters;
   prices: typeof prices;
+  rateLimits: typeof rateLimits;
   risk: typeof risk;
   "sandbox/auth": typeof sandbox_auth;
   "sandbox/dev": typeof sandbox_dev;
@@ -121,6 +123,7 @@ declare const fullApi: ApiFromModules<{
   "sandbox/migrations": typeof sandbox_migrations;
   "sandbox/onboarding": typeof sandbox_onboarding;
   "sandbox/rewards": typeof sandbox_rewards;
+  "sandbox/rewards_catalog": typeof sandbox_rewards_catalog;
   "sandbox/starterAllocation": typeof sandbox_starterAllocation;
   "sandbox/transactions": typeof sandbox_transactions;
   "sandbox/umbrella": typeof sandbox_umbrella;
@@ -135,7 +138,6 @@ declare const fullApi: ApiFromModules<{
   "wallet/feeApyWads": typeof wallet_feeApyWads;
   "wallet/lpTokenPrices": typeof wallet_lpTokenPrices;
   "wallet/productBalances": typeof wallet_productBalances;
-  "wallet/rewardsProgress": typeof wallet_rewardsProgress;
 }>;
 
 /**

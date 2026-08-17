@@ -31,6 +31,9 @@ import { RewardsPageSkeleton } from "@/app/components/loading-states"
 import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
 import { RewardsBalanceHero } from "@/app/dashboard/_rewards-components/rewards-balance-hero"
 import { useDashboardPortfolioFeed } from "@/app/dashboard/use-dashboard-portfolio-feed"
+import { useDashboardMetricFeeds } from "@/app/dashboard/use-dashboard-history-feeds"
+import { PortfolioExposureBySymbol } from "@/app/dashboard/portfolio-exposure-by-asset"
+import type { ExposureInputs } from "@/app/lib/portfolio/exposure-aggregator"
 import { DashboardWalletTab } from "./dashboard-wallet-tab"
 import { DashboardUmbrellaSection } from "./dashboard-umbrella-section"
 import { buildUmbrellaActivityRows } from "@/app/lib/umbrella-system/portfolio-mapper"
@@ -361,15 +364,16 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
     }
 
     let lendSupplied = 0
+    let lendEarned = 0
     try {
       if (avana.lend?.state?.positions) {
-        lendSupplied = buildPortfolioLendData(walletId, avana.lend.state).investments.reduce(
-          (sum, row) => sum + row.suppliedUsd,
-          0,
-        )
+        const lendInvestments = buildPortfolioLendData(walletId, avana.lend.state).investments
+        lendSupplied = lendInvestments.reduce((sum, row) => sum + row.suppliedUsd, 0)
+        lendEarned = lendInvestments.reduce((sum, row) => sum + row.earnedUsd, 0)
       }
     } catch {
       lendSupplied = 0
+      lendEarned = 0
     }
 
     let multiplyCollateral = 0
@@ -406,7 +410,17 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
       liquid + borrowCollateral + borrowedCashHeld + returnedLpUsd + lendSupplied + multiplyCollateral + umbrellaAssets
     const debtUsd = borrowDebt + multiplyDebt
     const netUsd = assetsUsd - debtUsd
-    return { netUsd, assetsUsd, debtUsd }
+    // Live per-metric anchors for the hero's metric toggle. Each mirrors the basis
+    // of the matching field appendPortfolioSnapshot writes server-side, so the
+    // rebased history chart agrees with the headline.
+    const metricLive = {
+      netValue: netUsd,
+      supplied: borrowCollateral + lendSupplied + multiplyCollateral + umbrellaAssets,
+      borrowed: debtUsd,
+      earned: lendEarned,
+      multiplyExposure: multiplyCollateral,
+    }
+    return { netUsd, assetsUsd, debtUsd, metricLive }
   }, [
     avana.borrow?.state,
     avana.lend?.state,
@@ -418,6 +432,63 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
     walletId,
   ])
   const portfolioValueUsd = portfolioBreakdown.netUsd
+
+  // Cross-product exposure roll-up. Rebuilds when any product session changes;
+  // aggregator itself is a pure function so a stale slice (e.g. borrow not yet
+  // ready) simply contributes nothing that render pass.
+  const exposureInputs = useMemo<ExposureInputs>(() => {
+    let borrowCollateral: ExposureInputs["borrowCollateral"] = undefined
+    let borrowDebt: ExposureInputs["borrowDebt"] = undefined
+    try {
+      if (avana.borrow?.state?.accounts?.[walletId]) {
+        const borrow = buildPortfolioBorrowData(avana.borrow.state, walletId)
+        borrowCollateral = borrow.collateralPositions
+        borrowDebt = borrow.debtPositions
+      }
+    } catch {
+      /* borrow session not ready */
+    }
+    let lend: ExposureInputs["lend"] = null
+    try {
+      if (avana.lend?.state?.positions) {
+        lend = buildPortfolioLendData(walletId, avana.lend.state)
+      }
+    } catch {
+      lend = null
+    }
+    let multiply: ExposureInputs["multiply"] = null
+    try {
+      if (avana.multiply?.state?.positions) {
+        multiply = buildPortfolioMultiplyData(walletId, avana.multiply.state)
+      }
+    } catch {
+      multiply = null
+    }
+    const umbrellaRows = umbrella.isHydrated
+      ? umbrella.marketOrder
+          .map((marketId) => {
+            const position = umbrella.positions[marketId]
+            const market = umbrella.markets[marketId]
+            if (!position || !market) return null
+            return {
+              symbol: market.symbol,
+              valueUsd: position.valueUsd,
+              pendingRewardsUsd: position.pendingRewardsUsd,
+            }
+          })
+          .filter((row): row is NonNullable<typeof row> => row !== null)
+      : undefined
+    return { lend, borrowCollateral, borrowDebt, multiply, umbrella: umbrellaRows }
+  }, [
+    avana.borrow?.state,
+    avana.lend?.state,
+    avana.multiply?.state,
+    umbrella.isHydrated,
+    umbrella.marketOrder,
+    umbrella.markets,
+    umbrella.positions,
+    walletId,
+  ])
 
   // Closest-to-liquidation position across products. Borrow uses its aggregate HF
   // (the hero definition); multiply's creditLines.averageHealthFactor is already the
@@ -450,6 +521,10 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
   }, [avana.borrow?.state, avana.multiply?.state, walletId])
 
   const portfolioFeed = useDashboardPortfolioFeed(walletId, portfolioValueUsd)
+  // Per-metric rebased feeds for the hero's metric toggle (Net Value / Supplied /
+  // Borrowed / Earned / Multiply Exposure). Reads getPortfolio (already deployed)
+  // and anchors each to the live client value so numbers agree with the headline.
+  const portfolioMetricFeeds = useDashboardMetricFeeds(walletId, portfolioBreakdown.metricLive)
 
   const [now, setNow] = useState(0)
   const [isClaiming, setIsClaiming] = useState(false)
@@ -738,11 +813,14 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
             assetsUsd={portfolioBreakdown.assetsUsd}
             debtUsd={portfolioBreakdown.debtUsd}
             feed={portfolioFeed}
+            metricFeeds={portfolioMetricFeeds}
             earnedAmount={snapshot.summary.totalEarnedAmount}
             claimableAmount={snapshot.summary.totalClaimableAmount}
             activeTab={activeDashboardTab}
           />
         </div>
+
+        <PortfolioExposureBySymbol inputs={exposureInputs} />
 
         <section>
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">

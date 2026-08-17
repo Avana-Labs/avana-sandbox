@@ -1025,6 +1025,18 @@ export default defineSchema({
   }).index("by_wallet", ["wallet"]),
 
   /**
+   * Shared per-key rate-limit buckets. Used by Next API route guards (SIWE nonce/verify/
+   * dev-token) so a horizontally-scaled deploy enforces one limit across all instances
+   * instead of one bucket per Node process. `resetAt` is the epoch ms when the current
+   * window ends; `count` is the number of requests already served in it.
+   */
+  rateLimitBuckets: defineTable({
+    key: v.string(),
+    count: v.number(),
+    resetAt: v.number(),
+  }).index("by_key", ["key"]),
+
+  /**
    * Per-wallet remaining claimable on each borrow LP-fee reward position. One row per
    * (wallet, rewardPositionId). `remainingUsd6` is the claimable left AFTER the wallet's
    * claims (decimal usd6 string), so hydration reduces the statically-seeded claimable to
@@ -1288,6 +1300,11 @@ export default defineSchema({
     swapMinOutputAmount: v.optional(v.number()),
     swapPriceImpactPct: v.optional(v.number()),
     swapSlippageBps: v.optional(v.number()),
+    /** Rewards-only (product === "rewards"): the concrete quest ids this claim paid
+     *  out. Populated by `recordRewardsClaim` so the mutation can reject a later
+     *  attempt to re-claim any of these tasks — the "server-authoritative single-
+     *  claim" guarantee no longer relies on the client filtering its state blob. */
+    claimedTaskIds: v.optional(v.array(v.string())),
     syntheticTxHash: v.string(),
     simulated: v.boolean(),
     at: v.number(),
@@ -1846,18 +1863,4 @@ export default defineSchema({
   })
     .index("by_wallet", ["wallet"])
     .index("by_wallet_claim", ["wallet", "claimId"]),
-
-  /** Per-wallet quest completion + claim state. */
-  walletRewardsProgress: defineTable({
-    wallet: v.string(),
-    taskId: v.string(),
-    status: v.string(),
-    earnedAmount: v.number(),
-    claimableAmount: v.number(),
-    claimedAmount: v.number(),
-    completedAt: v.optional(v.number()),
-    updatedAt: v.number(),
-  })
-    .index("by_wallet", ["wallet"])
-    .index("by_wallet_task", ["wallet", "taskId"]),
 })

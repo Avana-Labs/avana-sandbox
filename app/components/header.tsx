@@ -26,7 +26,7 @@ export function Header() {
   const renderMobileBrand = () => <BrandIcon />
   const renderMobileActions = () => (
     <>
-      <span className="-mr-1 flex items-center">
+      <span className="-me-1 flex items-center">
         {mounted ? <LazySearchCommandIconOnly tone="brand" /> : <SearchCommandIconPlaceholder tone="brand" />}
       </span>
       <span className="flex items-center">
@@ -101,7 +101,7 @@ export function Header() {
           } ${isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
         >
           {Icon ? (
-            <span className="mr-2 inline-flex h-5 w-5 items-center justify-center text-current">
+            <span className="me-2 inline-flex h-5 w-5 items-center justify-center text-current">
               <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
             </span>
           ) : null}
@@ -132,7 +132,7 @@ export function Header() {
           {Icon ? (
             <span
               className={`inline-flex items-center justify-center text-current transition-transform duration-200 ease-out group-hover:-translate-y-[1px] ${
-                compact ? "h-9 w-9" : "mr-2 h-6 w-6"
+                compact ? "h-9 w-9" : "me-2 h-6 w-6"
               }`}
             >
               <Icon className="h-5 w-5 shrink-0" strokeWidth={2} />
