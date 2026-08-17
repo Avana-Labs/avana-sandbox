@@ -24,23 +24,26 @@ class TokenPricesErrorBoundary extends React.Component<
   }
 }
 
-function ConvexTokenPricesQuery({ children }: { children: React.ReactNode }) {
+function ConvexTokenPricesQuery({ children, seed = {} }: { children: React.ReactNode; seed?: Record<string, number> }) {
   const snapshot = useQuery(api.prices.getPriceSnapshot, {})
   const rows = snapshot?.prices
   const status = snapshot?.status
+  // Start from the server seed (live prices fetched during SSR) and overlay the realtime rows
+  // on top when the subscription delivers them — so consumers stay live even while the query is
+  // loading or when it never resolves (no realtime client on this route).
   const map = React.useMemo(() => {
-    const next: Record<string, number> = {}
+    const next: Record<string, number> = { ...seed }
     for (const row of rows ?? []) next[priceKey(row.symbol)] = row.priceUsd
     return next
-  }, [rows])
-  // Overlay the live oracle prices onto the canonical store so the engine + every surface value
-  // positions at the refreshed price (not just the fixture). Effect, not render, to avoid a
-  // side-effect during render; keyed on the row set.
+  }, [rows, seed])
+  // Overlay the same seed+live prices onto the module canonical store so the engine + any
+  // non-reactive `canonicalPriceUsd` reader also sees the refreshed price (not just the
+  // fixture). Effect, not render, to avoid a side-effect during render.
   React.useEffect(() => {
-    if (rows && rows.length > 0) {
-      setCanonicalPrices(Object.fromEntries(rows.map((row) => [row.symbol, row.priceUsd])))
-    }
-  }, [rows])
+    const merged: Record<string, number> = { ...seed }
+    for (const row of rows ?? []) merged[row.symbol] = row.priceUsd
+    if (Object.keys(merged).length > 0) setCanonicalPrices(merged)
+  }, [rows, seed])
 
   // Fiat FX rates from the validated Convex layer (convex/fx.ts). Apply them onto the currency
   // overlay so conversion flows through Convex rather than only the client poll, then notify the
@@ -64,10 +67,16 @@ function ConvexTokenPricesQuery({ children }: { children: React.ReactNode }) {
   )
 }
 
-export default function ConvexTokenPrices({ children }: { children: React.ReactNode }) {
+export default function ConvexTokenPrices({
+  children,
+  seed,
+}: {
+  children: React.ReactNode
+  seed?: Record<string, number>
+}) {
   return (
     <TokenPricesErrorBoundary fallbackChildren={children}>
-      <ConvexTokenPricesQuery>{children}</ConvexTokenPricesQuery>
+      <ConvexTokenPricesQuery seed={seed}>{children}</ConvexTokenPricesQuery>
     </TokenPricesErrorBoundary>
   )
 }

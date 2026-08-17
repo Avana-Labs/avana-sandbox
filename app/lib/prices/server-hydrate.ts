@@ -20,10 +20,28 @@ import { setCanonicalPrices } from "./canonical"
  * must never break SSR.
  */
 export async function hydrateCanonicalPricesFromConvex(): Promise<void> {
+  await loadServerTokenPrices()
+}
+
+/**
+ * Fetch the live oracle prices ONCE on the server: hydrate the server-side canonical store
+ * (so server-rendered surfaces are live) AND return the price map (keys = lowercase symbol,
+ * i.e. `priceKey` form) so the root layout can seed the client `TokenPricesContext` with it.
+ *
+ * This seed is what makes CLIENT-rendered prices (the lend list, borrow table, action pages)
+ * live even though the realtime Convex subscription only mounts on authenticated product
+ * routes — the client no longer depends on that subscription to escape the fixture. Returns an
+ * empty map when no deployment is configured / it is unreachable (client falls back to fixture).
+ */
+export async function loadServerTokenPrices(): Promise<Record<string, number>> {
   try {
     const prices = await fetchTokenPrices()
-    if (prices) setCanonicalPrices(prices)
+    if (prices) {
+      setCanonicalPrices(prices)
+      return prices
+    }
   } catch {
     // Leave the fixture in place; the client overlay still refreshes once mounted.
   }
+  return {}
 }

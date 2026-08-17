@@ -21,7 +21,7 @@ import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { cn } from "@/lib/utils"
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
-import { canonicalPriceUsd } from "@/app/lib/prices/canonical"
+import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { formatTokenPrice } from "@/app/lib/prices/format"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar"
@@ -33,7 +33,7 @@ import { redenominateCompactUsd } from "@/app/lib/currency/format"
 
 /** Real DefiLlama price under the asset name; falls back to the symbol when unpriced. */
 function AssetSubLabel({ symbol }: { symbol: string }) {
-  const priceFor = canonicalPriceUsd
+  const priceFor = useCanonicalPriceFor()
   const price = priceFor(symbol)
   return <>{price !== undefined ? formatTokenPrice(price) : symbol}</>
 }

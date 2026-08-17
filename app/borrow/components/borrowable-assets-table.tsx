@@ -25,7 +25,7 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
 import { formatApy } from "@/app/lib/format"
 import { TokenBubble, TokenSingleCell, TrendSpark } from "./atoms"
-import { canonicalPriceUsd } from "@/app/lib/prices/canonical"
+import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { formatTokenPrice } from "@/app/lib/prices/format"
 import { cn } from "@/lib/utils"
 import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
@@ -201,9 +201,9 @@ function SortIcon() {
   )
 }
 
-// Memoized loan-variant row: reads price via the stable `canonicalPriceUsd` module
-// function and pulls router/currency/translation from hooks internally, so the only
-// props are stable (asset, index, onBorrow) and React.memo can skip unchanged rows.
+// Memoized loan-variant row: reads price via the reactive `useCanonicalPriceFor` hook
+// and pulls router/currency/translation from hooks internally, so the only props are
+// stable (asset, index, onBorrow) and React.memo can skip unchanged rows.
 const LoanAssetsRow = memo(function LoanAssetsRow({
   asset,
   index,
@@ -213,7 +213,7 @@ const LoanAssetsRow = memo(function LoanAssetsRow({
   index: number
   onBorrow: (asset: BorrowableAsset) => void
 }) {
-  const priceFor = canonicalPriceUsd
+  const priceFor = useCanonicalPriceFor()
   const router = useRouter()
   const { compact } = useCurrency()
   const { t } = useTranslation()
@@ -440,8 +440,8 @@ function LoanAssetsSection({
   )
 }
 
-// Memoized grouped-variant row. Price comes from the stable `canonicalPriceUsd` module
-// function; router/currency/translation are read from hooks internally so the props stay
+// Memoized grouped-variant row. Price comes from the reactive `useCanonicalPriceFor`
+// hook; router/currency/translation are read from hooks internally so the props stay
 // stable (asset, index, onBorrow) and React.memo can bail out of unchanged rows.
 const AssetsRow = memo(function AssetsRow({
   asset,
@@ -452,7 +452,7 @@ const AssetsRow = memo(function AssetsRow({
   index: number
   onBorrow: (asset: BorrowableAsset) => void
 }) {
-  const priceFor = canonicalPriceUsd
+  const priceFor = useCanonicalPriceFor()
   const router = useRouter()
   const { compact } = useCurrency()
   const { t } = useTranslation()

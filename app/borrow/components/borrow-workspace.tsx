@@ -14,7 +14,6 @@ import { useMarketLiquidity } from "@/app/lib/convex/market-liquidity-provider"
 import { applyBorrowableAssetDelta } from "@/app/lib/market-liquidity/apply"
 import { TabsBar, isPoolTab, type BorrowTabId, type PoolTabId } from "./tabs-bar"
 import { CollateralPoolsList, CollateralPoolsTable } from "./collateral-pools-table"
-import { TokenPricesProvider } from "@/app/lib/prices/token-prices-context"
 import { useMediaQuery } from "@/app/lib/use-media-query"
 import { categorizeMarket, type MarketCategory } from "@/app/lib/markets/category"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -207,33 +206,33 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
       />
 
       <div className="pt-3 pb-6">
-        <TokenPricesProvider>
-          {isPoolTab(currentTab) ? (
-            visiblePools.length === 0 ? (
-              <NoMarketsState query={search.trim()} hasFilters={hasActiveFilters} onClear={clearFilters} />
-            ) : isDesktop ? (
-              <CollateralPoolsTable
-                groups={poolGroups}
-                borrowAssetsBySpoke={borrowAssetsBySpoke}
-                pending={pendingRows}
-                onViewMarket={handleMarketDetail}
-                onUseAsCollateral={handlePoolsSupply}
-                onBorrowAssetDesktop={handleAssetBorrowDesktop}
-                onBorrowAssetMobile={handleAssetBorrowMobile}
-              />
-            ) : (
-              <CollateralPoolsList
-                groups={poolGroups}
-                borrowAssetsBySpoke={borrowAssetsBySpoke}
-                pending={pendingRows}
-                onViewMarket={handleMarketDetail}
-                onUseAsCollateral={handlePoolsSupply}
-                onBorrowAssetDesktop={handleAssetBorrowDesktop}
-                onBorrowAssetMobile={handleAssetBorrowMobile}
-              />
-            )
-          ) : null}
-        </TokenPricesProvider>
+        {/* Prices come from the global seeded TokenPricesProvider (ProductRuntimeProviders); a
+            local provider here would shadow that seed with an empty context → fixture prices. */}
+        {isPoolTab(currentTab) ? (
+          visiblePools.length === 0 ? (
+            <NoMarketsState query={search.trim()} hasFilters={hasActiveFilters} onClear={clearFilters} />
+          ) : isDesktop ? (
+            <CollateralPoolsTable
+              groups={poolGroups}
+              borrowAssetsBySpoke={borrowAssetsBySpoke}
+              pending={pendingRows}
+              onViewMarket={handleMarketDetail}
+              onUseAsCollateral={handlePoolsSupply}
+              onBorrowAssetDesktop={handleAssetBorrowDesktop}
+              onBorrowAssetMobile={handleAssetBorrowMobile}
+            />
+          ) : (
+            <CollateralPoolsList
+              groups={poolGroups}
+              borrowAssetsBySpoke={borrowAssetsBySpoke}
+              pending={pendingRows}
+              onViewMarket={handleMarketDetail}
+              onUseAsCollateral={handlePoolsSupply}
+              onBorrowAssetDesktop={handleAssetBorrowDesktop}
+              onBorrowAssetMobile={handleAssetBorrowMobile}
+            />
+          )
+        ) : null}
       </div>
 
       {isPoolTab(currentTab) && hasMore ? <RevealSentinel sentinelRef={sentinelRef} active={isRevealing} /> : null}
