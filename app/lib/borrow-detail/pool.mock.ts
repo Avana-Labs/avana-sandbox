@@ -23,6 +23,7 @@ import { HOME_COLLATERAL_POOLS } from "@/app/lib/borrow-system/home-contracts"
 import { buildSeriesFamily, prngFromString } from "./prng"
 import { formatBpsAsPct, formatPct } from "./allocation"
 import { formatOraclePrice } from "./formatters"
+import { sandboxBaselinePriceUsd } from "@/app/lib/prices/sandbox-baseline-prices"
 import { buildPoolRiskAssessment } from "./risk-model"
 import { buildPoolFaqs } from "./content-model"
 import { buildPoolProtocolParameters } from "./protocol-parameters"
@@ -460,15 +461,11 @@ function buildHeroMetricSeries(
 }
 
 function pairReferencePrice(row: BorrowPoolRow): number {
-  const [a, b] = row.visuals.map((x) => x.symbol.toUpperCase())
-  if (a === b) return 1
-  if (a === "WBTC" && b === "WETH") return 15.8
-  if (a === "WETH" && b === "USDC") return 3_450
-  if (a === "USDC" && b === "USDT") return 1
-  if (a === "ETH" && b.includes("ETH")) return 1
-  if (a.includes("BTC") && b.includes("ETH")) return 15.8
-  if (b === "USDC" || b === "USDT" || b === "DAI") return 1_200
-  return 1
+  // The pool "Price" stat is the BASE asset's USD price (the live path shows the oracle's
+  // price0, not the base-in-quote cross rate). Mirror that here so the deterministic fallback
+  // also shows a USD value — e.g. cbBTC/WETH resolves to ~$65k, not a ~33 ETH ratio.
+  const baseSymbol = row.visuals[0]?.symbol ?? "USDC"
+  return sandboxBaselinePriceUsd(baseSymbol)
 }
 
 function buildCashflow(row: BorrowPoolRow, fixture: FixtureOverride | undefined): CashflowCard {

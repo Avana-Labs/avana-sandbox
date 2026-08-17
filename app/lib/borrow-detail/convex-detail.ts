@@ -82,11 +82,16 @@ function mergeConvexQuickStats(
 }
 
 /**
- * Overlay the pool "Oracle price" quick stat with the pair rate derived from the canonical
- * per-token prices (price0 / price1), so the pool price is an exact PA/PB ratio of the same
- * single-token prices shown on the rows and tiles — one consistent basis everywhere. When
- * either leg is unpriced, the stat is DROPPED rather than left showing the fabricated mock
- * fallback — the display path never surfaces a hardcoded price.
+ * Overlay the pool "Price" quick stat with the base asset's USD price (price0) from the
+ * canonical per-token prices — a real USD value, NOT the base-in-quote pair ratio.
+ *
+ * The pair ratio (price0 / price1) is only a USD price when the quote is a USD-pegged asset;
+ * for a pool like cbBTC / WETH it is the cross rate (~33.7 WETH per cbBTC), which shown with a
+ * "$" prefix reads as a bogus "$33.75" instead of cbBTC's true ~$64k. Showing price0 gives the
+ * correct USD figure for every pool and is unchanged for USD-quoted pools (price1 ≈ 1, so
+ * price0/price1 ≈ price0). The pair exchange rate still belongs on a dedicated rate line, not
+ * on a "$"-formatted USD stat. Both legs must be priced (a fully-priced pool); otherwise the
+ * stat is DROPPED rather than surfacing the fabricated mock fallback.
  */
 export function injectPoolOraclePrice(
   quickStats: QuickStat[],
@@ -99,7 +104,7 @@ export function injectPoolOraclePrice(
   if (p0 === undefined || p1 === undefined || p1 === 0) {
     return quickStats.filter((s) => s.id !== "price" && s.id !== "oraclePrice")
   }
-  const value = formatOraclePrice(p0 / p1)
+  const value = formatOraclePrice(p0)
   return quickStats.map((s) => (s.id === "price" || s.id === "oraclePrice" ? { ...s, value } : s))
 }
 
