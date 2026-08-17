@@ -4,6 +4,7 @@ import { CarouselArrowButtons, useOverflowCarousel } from "@/app/components/caro
 import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
+import { formatBorrowPairLabel, formatLtvPct } from "@/app/lib/borrow-sim"
 import { formatApy } from "@/app/lib/format"
 import { HeroMarketCard } from "./borrow-hero-market-card"
 import { BorrowHeroLiveMetrics } from "./borrow-hero-live-metrics"
@@ -44,11 +45,14 @@ function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => stri
       id: `${prefix}-${pool.id}`,
       href: borrowMarketDetailPath(pool.id),
       pool,
-      title: pool.name,
-      subtitle: `${compact(pool.tvlUsd)} TVL`,
+      title: formatBorrowPairLabel(pool),
+      // Lead the subtitle with the DEX/tier (venue) so two pools that share a pair
+      // label (e.g. WBTC/USDC on Uniswap v2 vs v3 Blue-Chip) are distinguishable —
+      // the same context the global search palette shows.
+      subtitle: `${pool.venue} · ${compact(pool.tvlUsd)} TVL`,
       // LTV is the headline (more important than availability); the line below is the
       // pool's own trading-fee APR — label it "Fees", not "APY" (it isn't our yield).
-      value: `${pool.ltv}% LTV`,
+      value: `${formatLtvPct(pool.ltv)} LTV`,
       delta: `${formatApy(averageApr(pool))} Fees`,
       deltaClassName: "text-apy-positive",
     }))

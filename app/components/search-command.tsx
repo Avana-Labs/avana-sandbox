@@ -10,6 +10,7 @@ import { triggerPageLoading } from "@/app/lib/page-loading"
 import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
 import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import type { BorrowAssetVisual } from "@/app/lib/borrow-sim"
+import { formatBorrowPairLabel, formatLtvPct } from "@/app/lib/borrow-sim"
 import { TOKEN_ICON_TABLE_PX } from "@/app/lib/token-icon-sizes"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -57,10 +58,12 @@ async function getSearchResults(
   const poolResults = hydratedPools.slice(0, 18).map((pool) => ({
     id: `pool-${pool.id}`,
     tab: "pools" as const,
-    title: pool.name,
-    subtitle: `${pool.venue} / ${pool.feeTier} / ${formatCompactCurrency(pool.availableUsd)} ${t("available")}`,
+    title: formatBorrowPairLabel(pool),
+    // Label the pool's swap fee TIER explicitly ("0.30% pool fee") so it reads
+    // distinctly from the annualized borrow "Fees" APR shown on borrow tables / Explore.
+    subtitle: `${pool.venue} / ${pool.feeTier} ${t("pool fee")} / ${formatCompactCurrency(pool.availableUsd)} ${t("available")}`,
     eyebrow: "Collateral pool",
-    metric: `${pool.ltv}% LTV`,
+    metric: `${formatLtvPct(pool.ltv)} LTV`,
     href: `/borrow/markets/${pool.id}`,
     keywords: `${pool.name} ${pool.venue} ${pool.spoke} collateral lp pool liquidity ${pool.borrowableTokens
       .map((token) => token.symbol)

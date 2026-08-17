@@ -193,3 +193,15 @@ describe("credit metrics", () => {
     expect(healthFactor!).toBeLessThan(parseFixed("1", 18))
   })
 })
+
+describe("net APY clamp (C5)", () => {
+  it("bounds an exploding near-zero-equity ratio to ±1000%", async () => {
+    const { clampNetApyWad, MAX_NET_APY_MAGNITUDE_WAD } = await import("@/app/lib/credit-engine/metrics")
+    // $1000 collateral @5%, $999 debt @8%, ~$1 equity would raw out to ≈ -2990%.
+    expect(clampNetApyWad(parseFixed("-29.9", 18))).toBe(-MAX_NET_APY_MAGNITUDE_WAD)
+    expect(clampNetApyWad(parseFixed("50", 18))).toBe(MAX_NET_APY_MAGNITUDE_WAD)
+    // Legitimate values pass through untouched.
+    expect(clampNetApyWad(parseFixed("0.1124", 18))).toBe(parseFixed("0.1124", 18))
+    expect(clampNetApyWad(parseFixed("-0.5", 18))).toBe(parseFixed("-0.5", 18))
+  })
+})

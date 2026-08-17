@@ -25,6 +25,7 @@ import {
 } from "./storage"
 import { MULTIPLY_SESSION_SYNC_EVENT } from "./session-sync"
 import { isLegacySeedOnlyMultiplyState } from "./mock"
+import { deriveMultiplyCollateralBudgetUsd } from "./wallet-collateral-budget"
 
 function mergeHistory(nextItem: MultiplyTransactionHistoryItem, history: MultiplyTransactionHistoryItem[]) {
   return [nextItem, ...history.filter((item) => item.id !== nextItem.id)]
@@ -73,6 +74,14 @@ export type ConvexMultiplyWalletData = {
     amount: number
     valueUsd: number
     state: "available" | "collateral" | "debt" | "position"
+  }>
+  // The wallet's real liquid token holdings (sandboxBalances). Already delivered by
+  // the Convex session hydrator, used to derive a per-market "available" collateral
+  // budget for markets that have no explicit multiplyBalances "available" row so a
+  // market whose collateral the wallet actually holds is openable (not "Max 0").
+  balances?: Array<{
+    symbol: string
+    valueUsd: number
   }>
 }
 
@@ -237,12 +246,13 @@ export function useMultiplySession({
   const hydrateWalletData = useCallback(
     (data: ConvexMultiplyWalletData) => {
       const positions: Record<string, MultiplySystemState["positions"][string]> = {}
-      const walletBalancesUsd: MultiplySystemState["walletBalancesUsd"] = { [walletId]: {} }
+      const explicitBucketsUsd: Record<string, number> = {}
       for (const row of data.multiplyBalances ?? []) {
         if (row.state !== "available") continue
         const marketId = row.marketId ?? row.assetId
-        walletBalancesUsd[walletId]![marketId] = (walletBalancesUsd[walletId]?.[marketId] ?? 0) + row.valueUsd
+        explicitBucketsUsd[marketId] = (explicitBucketsUsd[marketId] ?? 0) + row.valueUsd
       }
+      const liquidHoldings = data.balances ?? []
       for (const position of data.positions) {
         if (position.product !== "multiply") continue
         const id = String(position._id)
@@ -302,6 +312,15 @@ export function useMultiplySession({
         for (const [id, position] of Object.entries(positions)) {
           const market = current.markets[position.marketId]
           revalued[id] = market ? revalueMultiplyPosition(position, market) : position
+        }
+        // Derive here (not above) because the per-market fallback needs each market's
+        // collateral symbol, which only exists once market data is hydrated into state.
+        const walletBalancesUsd: MultiplySystemState["walletBalancesUsd"] = {
+          [walletId]: deriveMultiplyCollateralBudgetUsd({
+            explicitBucketsUsd,
+            markets: current.markets,
+            liquidHoldings,
+          }),
         }
         return { ...current, positions: revalued, walletBalancesUsd }
       })

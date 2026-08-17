@@ -13,6 +13,8 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
   buildFeedFromRangeSeries,
   formatHeroContractLabel,
+  isPlaceholderHeroContractAddress,
+  isSafeHeroLink,
   resolveHeroContractAddress,
 } from "@/app/borrow/_detail/lib/hero-chart-feeds"
 import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
@@ -40,11 +42,20 @@ export function AssetHeroIdentity({
   className?: string
 }) {
   const { t } = useTranslation()
-  const contractAddress =
+  const providedContractAddress =
     detail.hero.contractAddress && /^0x[a-fA-F0-9]{40}$/i.test(detail.hero.contractAddress)
       ? detail.hero.contractAddress
-      : resolveHeroContractAddress(detail.id)
+      : null
+  const contractAddress = providedContractAddress ?? resolveHeroContractAddress(detail.id)
   const contractLabel = detail.hero.contractLabel ?? formatHeroContractLabel(contractAddress)
+  // A synthetic placeholder (or a purely id-derived fallback address) points at no
+  // real contract — suppress the copy action and the Etherscan link for it.
+  const isPlaceholderContract = !providedContractAddress || isPlaceholderHeroContractAddress(providedContractAddress)
+  const websiteHref = isSafeHeroLink(detail.hero.websiteUrl)
+    ? detail.hero.websiteUrl
+    : isPlaceholderContract
+      ? null
+      : `https://etherscan.io/address/${contractAddress}`
   const showSymbol =
     detail.hero.symbol.trim().length > 0 &&
     detail.hero.symbol.trim().toLowerCase() !== detail.hero.name.trim().toLowerCase()
@@ -90,17 +101,23 @@ export function AssetHeroIdentity({
             <div className="mt-2 flex flex-wrap items-center gap-3 text-[15px] font-medium text-foreground/75">
               <span className="leading-none text-foreground/75">{detail.hero.chain}</span>
               <span aria-hidden className="h-5 w-px bg-border" />
-              <button
-                type="button"
-                onClick={async () => {
-                  await navigator.clipboard.writeText(contractAddress)
-                }}
-                className="inline-flex min-h-8 items-center gap-1.5 rounded-full text-[15px] font-medium leading-none text-foreground/75 transition-colors hover:text-foreground"
-                aria-label={`${t("Copy")} ${contractLabel}`}
-              >
-                <Copy className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
-                <span>{contractLabel}</span>
-              </button>
+              {isPlaceholderContract ? (
+                <span className="inline-flex min-h-8 items-center text-[15px] font-medium leading-none text-foreground/75">
+                  {contractLabel}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(contractAddress)
+                  }}
+                  className="inline-flex min-h-8 items-center gap-1.5 rounded-full text-[15px] font-medium leading-none text-foreground/75 transition-colors hover:text-foreground"
+                  aria-label={`${t("Copy")} ${contractLabel}`}
+                >
+                  <Copy className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
+                  <span>{contractLabel}</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -108,9 +125,10 @@ export function AssetHeroIdentity({
         <div className="hidden shrink-0 items-center gap-2 self-center pl-5 lg:flex">
           <HeroIcon
             label={t("Website")}
-            onClick={() =>
-              window.open(detail.hero.websiteUrl ?? `https://etherscan.io/address/${contractAddress}`, "_blank")
-            }
+            onClick={() => {
+              if (!websiteHref) return
+              window.open(websiteHref, "_blank")
+            }}
           >
             <Globe className="h-[18px] w-[18px]" />
           </HeroIcon>

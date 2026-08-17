@@ -160,6 +160,16 @@ const HIDDEN_WALLET_SOURCE_TYPES: ReadonlySet<UserAssetBalance["sourceType"]> = 
   "borrow_claimable",
 ])
 
+/**
+ * "Wallet Value" is what's actually in the wallet. Pledged collateral has LEFT the
+ * wallet (it's locked in a borrow position and already shown on the Borrow tab), so
+ * counting it here overstated wallet value and double-counted against Borrow. The
+ * pledged row still renders in the pools list for visibility — it just isn't summed.
+ */
+export function sumWalletValueUsd(rows: ReadonlyArray<{ valueUsd: number; sourceLabel: string }>): number {
+  return rows.reduce((total, row) => total + (row.sourceLabel === "Pledged collateral" ? 0 : row.valueUsd), 0)
+}
+
 export function DashboardWalletTab({ walletId, balances }: { walletId: string; balances?: UserAssetBalance[] }) {
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const { exact } = useCurrency()
@@ -172,7 +182,7 @@ export function DashboardWalletTab({ walletId, balances }: { walletId: string; b
   )
   const tokens = rows.filter((row) => !row.isLpToken)
   const lps = rows.filter((row) => row.isLpToken)
-  const totalWalletUsd = rows.reduce((total, row) => total + row.valueUsd, 0)
+  const totalWalletUsd = sumWalletValueUsd(rows)
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
   return (

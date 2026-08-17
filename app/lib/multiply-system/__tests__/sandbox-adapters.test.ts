@@ -134,6 +134,13 @@ describe("SandboxMultiplyTransactionAdapter", () => {
     expect(deleverageResult.receipt.status).toBe("success")
     expect(deleverageResult.preview.after.debtValueUsd).toBeLessThan(deleverageResult.preview.before.debtValueUsd)
 
+    // A reduce/deleverage records a real, nonzero USD amount on its activity row —
+    // the size of the unwind (debt repaid), not the ~$0 equity delta. Regression
+    // guard for the dashboard All-Transactions "$0"/"-$0.01" reduce rows.
+    const debtRepaidUsd = deleverageResult.preview.before.debtValueUsd - deleverageResult.preview.after.debtValueUsd
+    expect(deleverageResult.historyItem.amountUsd).toBeGreaterThan(0)
+    expect(deleverageResult.historyItem.amountUsd).toBeCloseTo(debtRepaidUsd)
+
     expect(borrowState.accounts["wallet-1"]?.debtPositions.length).toBeGreaterThan(0)
     expect(Object.keys(multiplyState.positions).length).toBeGreaterThan(0)
   })

@@ -8,6 +8,7 @@ import { formatActionFeeSummary } from "@/app/lib/action-system/formatters"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
+import { formatUsdExact } from "@/app/lib/borrow-sim"
 import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/action-system/dashboard-routing"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionConfigureStage } from "@/app/components/action-page/action-configure-stage"
@@ -25,8 +26,10 @@ import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 
 type UmbrellaActionKind = "stake" | "claim" | "cooldown" | "unstake"
 
+// Currency-aware: matches the header currency switcher like every other surface
+// (previously hardcoded "$", leaving the Umbrella action page in USD under EUR/etc.).
 function formatUsd(value: number) {
-  return `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  return formatUsdExact(value)
 }
 
 function formatUnits(value: number) {
