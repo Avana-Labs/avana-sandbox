@@ -423,6 +423,7 @@ function HomeSwapAssetField({
   readOnly?: boolean
   tone: "raised" | "inset"
 }) {
+  const { t } = useTranslation()
   const asset = SWAP_ASSETS.find((item) => item.id === assetId) ?? null
   return (
     <SwapStyleField label={label} tone={tone} className="py-3">
@@ -461,7 +462,7 @@ function HomeSwapAssetField({
               <span>{asset.symbol}</span>
             </>
           ) : (
-            <span>Select Asset</span>
+            <span>{t("Select Asset")}</span>
           )}
           <span aria-hidden className="text-muted-foreground">
             ▾
