@@ -7,7 +7,7 @@ const dict: TranslationDictionary = {
   Express: "سريع",
   Borrow: "اقتراض",
   Lend: "إقراض",
-  Multiply: "رافعة",
+  Multiply: "مضاعفة",
   Dashboard: "لوحة التحكم",
   Rewards: "المكافآت",
   "Support center": "مركز الدعم",

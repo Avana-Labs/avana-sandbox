@@ -7,7 +7,7 @@ const dict: TranslationDictionary = {
   Express: "Express",
   Borrow: "Lenen",
   Lend: "Uitlenen",
-  Multiply: "Hefboom",
+  Multiply: "Multiply",
   Dashboard: "Dashboard",
   Rewards: "Beloningen",
   "Support center": "Helpcentrum",
@@ -1133,7 +1133,7 @@ const dict: TranslationDictionary = {
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "Bedrag dat Avana eerst dekt voordat door gebruikers gestakete dekking wordt blootgesteld. Stakers dragen pas verlies wanneer gerealiseerde tekorten deze offset overschrijden.",
   "Close umbrella actions": "Umbrella-acties sluiten",
-  Cooldown: "Cooldown",
+  Cooldown: "Afkoelperiode",
   Cooling: "In cooldown",
   Coverage: "Dekking",
   "Coverage currently in cooldown across all stakers of this asset. Cooldown positions still absorb losses until they finish the 20-day wait and are unstaked.":
