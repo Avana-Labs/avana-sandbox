@@ -1,3 +1,4 @@
+import { canonicalPriceUsd } from "./canonical"
 import { PRICE_FIXTURE } from "./price-fixture"
 
 /**
@@ -21,7 +22,11 @@ import { PRICE_FIXTURE } from "./price-fixture"
 // named export for existing callers; the canonical store overlays these with live oracle prices.
 export const SANDBOX_BASELINE_PRICES_USD: Record<string, number> = PRICE_FIXTURE
 
-/** Baseline USD price for a symbol, defaulting to $1 for unknown/stable-like ids. */
+/**
+ * Guaranteed-number price for engine code that cannot render "unavailable" mid-calculation. Reads
+ * the live canonical store (fixture overlaid by the oracle) and falls back to $1 only for a symbol
+ * neither source covers. Surfaces that CAN show unavailable use `canonicalPriceUsd` (strict) instead.
+ */
 export function sandboxBaselinePriceUsd(symbol: string): number {
-  return SANDBOX_BASELINE_PRICES_USD[symbol?.toUpperCase()] ?? 1
+  return canonicalPriceUsd(symbol) ?? 1
 }
