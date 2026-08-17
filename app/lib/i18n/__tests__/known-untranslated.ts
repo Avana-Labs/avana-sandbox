@@ -35,6 +35,7 @@ export const KNOWN_UNTRANSLATED: readonly string[] = [
   "Help",
   "HF",
   "Home",
+  "Prices may be stale",
   "In cooldown",
   "Lending",
   "Leverage",
