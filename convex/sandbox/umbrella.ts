@@ -88,7 +88,8 @@ type UmbrellaMarketId = keyof typeof UMBRELLA_MARKETS
 /**
  * Single source of truth for the onboarding wallet seed's per-token prices.
  * Onboarding and ensureTestWalletFixtures reference these instead of hard-coding
- * a divergent price (weth previously drifted: 1934 in onboarding, 2240 here).
+ * a divergent price (weth previously drifted: 1934 in onboarding, 2240 here). Consistency with
+ * the app fixture is enforced by convex/__tests__/price-copy-drift.test.ts.
  */
 export const UMBRELLA_ONBOARDING_TOKEN_PRICES: Record<UmbrellaMarketId, number> = {
   gho: UMBRELLA_MARKETS.gho.priceUsd,
