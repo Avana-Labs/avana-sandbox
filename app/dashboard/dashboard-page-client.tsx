@@ -32,6 +32,8 @@ import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
 import { RewardsBalanceHero } from "@/app/dashboard/_rewards-components/rewards-balance-hero"
 import { useDashboardPortfolioFeed } from "@/app/dashboard/use-dashboard-portfolio-feed"
 import { PortfolioHistoryCharts } from "@/app/dashboard/portfolio-history-charts"
+import { PortfolioExposureBySymbol } from "@/app/dashboard/portfolio-exposure-by-asset"
+import type { ExposureInputs } from "@/app/lib/portfolio/exposure-aggregator"
 import { DashboardWalletTab } from "./dashboard-wallet-tab"
 import { DashboardUmbrellaSection } from "./dashboard-umbrella-section"
 import { buildUmbrellaActivityRows } from "@/app/lib/umbrella-system/portfolio-mapper"
@@ -420,6 +422,63 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
   ])
   const portfolioValueUsd = portfolioBreakdown.netUsd
 
+  // Cross-product exposure roll-up. Rebuilds when any product session changes;
+  // aggregator itself is a pure function so a stale slice (e.g. borrow not yet
+  // ready) simply contributes nothing that render pass.
+  const exposureInputs = useMemo<ExposureInputs>(() => {
+    let borrowCollateral: ExposureInputs["borrowCollateral"] = undefined
+    let borrowDebt: ExposureInputs["borrowDebt"] = undefined
+    try {
+      if (avana.borrow?.state?.accounts?.[walletId]) {
+        const borrow = buildPortfolioBorrowData(avana.borrow.state, walletId)
+        borrowCollateral = borrow.collateralPositions
+        borrowDebt = borrow.debtPositions
+      }
+    } catch {
+      /* borrow session not ready */
+    }
+    let lend: ExposureInputs["lend"] = null
+    try {
+      if (avana.lend?.state?.positions) {
+        lend = buildPortfolioLendData(walletId, avana.lend.state)
+      }
+    } catch {
+      lend = null
+    }
+    let multiply: ExposureInputs["multiply"] = null
+    try {
+      if (avana.multiply?.state?.positions) {
+        multiply = buildPortfolioMultiplyData(walletId, avana.multiply.state)
+      }
+    } catch {
+      multiply = null
+    }
+    const umbrellaRows = umbrella.isHydrated
+      ? umbrella.marketOrder
+          .map((marketId) => {
+            const position = umbrella.positions[marketId]
+            const market = umbrella.markets[marketId]
+            if (!position || !market) return null
+            return {
+              symbol: market.symbol,
+              valueUsd: position.valueUsd,
+              pendingRewardsUsd: position.pendingRewardsUsd,
+            }
+          })
+          .filter((row): row is NonNullable<typeof row> => row !== null)
+      : undefined
+    return { lend, borrowCollateral, borrowDebt, multiply, umbrella: umbrellaRows }
+  }, [
+    avana.borrow?.state,
+    avana.lend?.state,
+    avana.multiply?.state,
+    umbrella.isHydrated,
+    umbrella.marketOrder,
+    umbrella.markets,
+    umbrella.positions,
+    walletId,
+  ])
+
   // Closest-to-liquidation position across products. Borrow uses its aggregate HF
   // (the hero definition); multiply's creditLines.averageHealthFactor is already the
   // worst active position. We surface whichever is lower so the banner deep-links to
@@ -746,6 +805,8 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
         </div>
 
         <PortfolioHistoryCharts walletId={walletId} />
+
+        <PortfolioExposureBySymbol inputs={exposureInputs} />
 
         <section>
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
