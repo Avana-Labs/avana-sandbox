@@ -20,7 +20,7 @@ import {
   shouldShowActionSessionLoading,
 } from "@/app/components/action-page/action-session-loading"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
-import { usePriceFor } from "@/app/lib/prices/token-prices-context"
+import { canonicalPriceUsd } from "@/app/lib/prices/canonical"
 import type { UmbrellaMarketId } from "@/app/lib/umbrella-system/use-umbrella-session"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 
@@ -207,7 +207,7 @@ export function UmbrellaActionPageClient({
   const descriptor = getActionDescriptor("umbrella", kind)
   const router = useRouter()
   const umbrella = useUmbrellaSessionContext()
-  const priceFor = usePriceFor()
+  const priceFor = canonicalPriceUsd
   const [marketId, setMarketId] = useState<UmbrellaMarketId>(
     initialMarketId && umbrella.marketOrder.includes(initialMarketId as UmbrellaMarketId)
       ? (initialMarketId as UmbrellaMarketId)

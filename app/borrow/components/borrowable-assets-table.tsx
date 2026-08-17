@@ -25,7 +25,7 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
 import { formatApy } from "@/app/lib/format"
 import { TokenBubble, TokenSingleCell, TrendSpark } from "./atoms"
-import { usePriceFor } from "@/app/lib/prices/token-prices-context"
+import { canonicalPriceUsd } from "@/app/lib/prices/canonical"
 import { formatTokenPrice } from "@/app/lib/prices/format"
 import { cn } from "@/lib/utils"
 import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
@@ -188,7 +188,7 @@ function LoanAssetsSection({
 }) {
   const [sortKey, setSortKey] = useState<"asset" | "apy" | "borrows" | "liquidity">("asset")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-  const priceFor = usePriceFor()
+  const priceFor = canonicalPriceUsd
   const router = useRouter()
   const { compact } = useCurrency()
   const { t } = useTranslation()
@@ -418,7 +418,7 @@ function AssetsSection({
   onBorrow: (asset: BorrowableAsset) => void
   hideHeader?: boolean
 }) {
-  const priceFor = usePriceFor()
+  const priceFor = canonicalPriceUsd
   const router = useRouter()
   const { compact } = useCurrency()
   const { t } = useTranslation()
