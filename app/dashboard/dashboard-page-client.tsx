@@ -31,6 +31,7 @@ import { RewardsPageSkeleton } from "@/app/components/loading-states"
 import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
 import { RewardsBalanceHero } from "@/app/dashboard/_rewards-components/rewards-balance-hero"
 import { useDashboardPortfolioFeed } from "@/app/dashboard/use-dashboard-portfolio-feed"
+import { PortfolioHistoryCharts } from "@/app/dashboard/portfolio-history-charts"
 import { DashboardWalletTab } from "./dashboard-wallet-tab"
 import { DashboardUmbrellaSection } from "./dashboard-umbrella-section"
 import { buildUmbrellaActivityRows } from "@/app/lib/umbrella-system/portfolio-mapper"
@@ -743,6 +744,8 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
             activeTab={activeDashboardTab}
           />
         </div>
+
+        <PortfolioHistoryCharts walletId={walletId} />
 
         <section>
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3">

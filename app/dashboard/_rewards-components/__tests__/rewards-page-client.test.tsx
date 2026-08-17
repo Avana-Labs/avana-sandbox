@@ -213,6 +213,13 @@ vi.mock("@/app/dashboard/use-dashboard-portfolio-feed", () => ({
   }),
 }))
 
+// PortfolioHistoryCharts mounts under the hero and reads Convex directly. This
+// bare-render test doesn't wrap a ConvexProvider — the null child is fine, the
+// production component gracefully renders nothing when there's no data.
+vi.mock("@/app/dashboard/portfolio-history-charts", () => ({
+  PortfolioHistoryCharts: () => null,
+}))
+
 // Inspect the raw rows fed into the combined activity table.
 vi.mock("@/app/dashboard/recent-activity", () => ({
   RecentActivity: ({
