@@ -89,7 +89,7 @@ jobs:
       # trips Playwright's transform hook) and free of timing/pixel assertions.
       # onboarding.spec.ts stays out (needs real auth + Convex).
       - name: E2E smoke (test-mode routes render)
-        run: npx playwright test --project=chromium tests/e2e/portfolio-routing.spec.ts tests/e2e/borrow-detail-routes.spec.ts
+        run: npx playwright test --project=chromium tests/e2e/portfolio-routing.spec.ts tests/e2e/borrow-detail-routes.spec.ts tests/e2e/locale-overflow.spec.ts
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
