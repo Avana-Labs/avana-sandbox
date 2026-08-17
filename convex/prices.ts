@@ -14,7 +14,11 @@ import { internal } from "./_generated/api"
 
 /**
  * Base symbol (lowercase, = SpokeBorrowableRecord.baseAssetId) → DefiLlama coin id.
- * Addresses are Ethereum-mainnet; all 14 verified to resolve at confidence 0.99.
+ * Must cover EVERY symbol the sandbox catalogs can display — any symbol missing here falls
+ * back to the deterministic PRICE_FIXTURE, which drifts badly from reality for volatile
+ * governance tokens (ARB, GNO, LDO, OP, BAL, AERO…). All ids verified to resolve at
+ * confidence ≥ 0.99 (mainnet contract where the token lives on Ethereum, coingecko slug for
+ * L2-native or non-ERC20 assets like BTC).
  */
 export const TOKEN_LLAMA_IDS: Record<string, string> = {
   usdc: "ethereum:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
@@ -22,18 +26,32 @@ export const TOKEN_LLAMA_IDS: Record<string, string> = {
   dai: "ethereum:0x6B175474E89094C44Da98b954EedeAC495271d0F",
   weth: "ethereum:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
   wbtc: "ethereum:0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+  btc: "coingecko:bitcoin",
   crvusd: "ethereum:0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
   gho: "ethereum:0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f",
   eth: "coingecko:ethereum",
   steth: "ethereum:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84",
   wsteth: "ethereum:0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
   reth: "ethereum:0xae78736Cd615f374D3085123A210448E74Fc6393",
+  weeth: "ethereum:0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee",
   eurc: "ethereum:0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c",
   cbeth: "ethereum:0xBe9895146f7AF43049ca1c1AE358B0541Ea49704",
   cbbtc: "ethereum:0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
   aave: "coingecko:aave",
   uni: "coingecko:uniswap",
   crv: "coingecko:curve-dao-token",
+  // Governance / L2 tokens — fixture values here are wildly stale, so live coverage matters.
+  arb: "coingecko:arbitrum",
+  op: "coingecko:optimism",
+  gno: "ethereum:0x6810e776880C02933D47DB1b9fc05908e5386b96",
+  ldo: "ethereum:0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32",
+  bal: "ethereum:0xba100000625a3754423978a60c9317c58a424e3D",
+  aero: "coingecko:aerodrome-finance",
+  // Stablecoins (≈ $1, but track the real depeg instead of a pinned fixture).
+  usde: "coingecko:ethena-usde",
+  frxusd: "coingecko:frax-usd",
+  usdg: "coingecko:global-dollar",
+  rlusd: "coingecko:ripple-usd",
 }
 
 /**
