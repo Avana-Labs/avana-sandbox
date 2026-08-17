@@ -16,7 +16,7 @@ import { v } from "convex/values"
 import type { MutationCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
 import { getAuthedWallet, requireSandboxWallet } from "./auth"
-import { tokenNotionalToUsd } from "./collateral-usd"
+import { tokenNotionalToUsd } from "./collateralUsd"
 import { appendPortfolioSnapshot, applyLedgerDelta } from "./transactions"
 
 /** A single liquidation may repay at most this share of outstanding debt (50%). */

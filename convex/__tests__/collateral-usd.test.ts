@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { tokenNotionalToUsd } from "../sandbox/collateral-usd"
+import { tokenNotionalToUsd } from "../sandbox/collateralUsd"
 
 const wad = (tokens: number) => BigInt(Math.round(tokens * 1e6)) * 10n ** 12n // exact for 6-dp inputs
 
