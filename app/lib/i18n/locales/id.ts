@@ -7,7 +7,7 @@ const dict: TranslationDictionary = {
   Express: "Ekspres",
   Borrow: "Pinjam",
   Lend: "Pinjamkan",
-  Multiply: "Leverage",
+  Multiply: "Multiply",
   Dashboard: "Dasbor",
   Rewards: "Hadiah",
   "Support center": "Pusat bantuan",

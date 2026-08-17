@@ -7,7 +7,7 @@ const dict: TranslationDictionary = {
   Express: "익스프레스",
   Borrow: "대출",
   Lend: "예치",
-  Multiply: "레버리지",
+  Multiply: "멀티플라이",
   Dashboard: "대시보드",
   Rewards: "리워드",
   "Support center": "고객 지원",
