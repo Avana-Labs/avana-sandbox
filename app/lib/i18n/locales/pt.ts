@@ -1264,6 +1264,7 @@ const dict: TranslationDictionary = {
   "{symbols} expired — restart cooldown": "{symbols} expirado — reinicie o cooldown",
   "{time} left": "{time} restantes",
   "{value} total": "{value} no total",
+  Earning: "Rendendo",
 }
 
 export default dict

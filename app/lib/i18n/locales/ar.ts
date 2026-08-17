@@ -1190,6 +1190,7 @@ const dict: TranslationDictionary = {
   "{symbols} expired — restart cooldown": "{symbols} منتهية الصلاحية — أعد تشغيل التبريد",
   "{time} left": "{time} متبقٍ",
   "{value} total": "{value} إجمالاً",
+  Earning: "يكسب",
 }
 
 export default dict

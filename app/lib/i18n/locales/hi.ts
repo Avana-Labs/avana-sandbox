@@ -1207,6 +1207,7 @@ const dict: TranslationDictionary = {
   "{symbols} expired — restart cooldown": "{symbols} समाप्त — कूलडाउन दोबारा शुरू करें",
   "{time} left": "{time} शेष",
   "{value} total": "कुल {value}",
+  Earning: "अर्जन",
 }
 
 export default dict

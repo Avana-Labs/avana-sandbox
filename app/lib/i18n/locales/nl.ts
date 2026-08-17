@@ -1213,6 +1213,7 @@ const dict: TranslationDictionary = {
   "{symbols} expired — restart cooldown": "{symbols} verlopen — start de cooldown opnieuw",
   "{time} left": "{time} resterend",
   "{value} total": "{value} totaal",
+  Earning: "Verdient",
 }
 
 export default dict

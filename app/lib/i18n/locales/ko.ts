@@ -1194,6 +1194,7 @@ const dict: TranslationDictionary = {
   "{symbols} expired — restart cooldown": "{symbols} 만료됨 — 쿨다운을 다시 시작하세요",
   "{time} left": "{time} 남음",
   "{value} total": "합계 {value}",
+  Earning: "수익 중",
 }
 
 export default dict
