@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { LANGUAGE_HTML_LANG, isRtlLanguage } from "@/app/lib/i18n/language-html-lang"
 import { setActiveCurrency, setActiveLocale } from "@/app/lib/currency/active-rate"
 import { applyCachedLiveRates, fetchLiveRates } from "@/app/lib/currency/exchange-rates"
+import { FX_RATES_UPDATED_EVENT } from "@/app/lib/currency/rates"
 
 const STORAGE_KEY = "avana-show-dollar-amounts"
 const LANGUAGE_STORAGE_KEY = "avana-language"
@@ -121,6 +122,17 @@ export function DisplayPreferencesProvider({ children }: { children: ReactNode }
     return () => {
       cancelled = true
     }
+  }, [])
+
+  // Re-render currency consumers when live FX rates are applied from ANY source — the client poll
+  // above or the validated Convex FX subscription (which dispatches FX_RATES_UPDATED_EVENT).
+  useEffect(() => {
+    const onFxUpdated = () => {
+      setActiveCurrency(currencyRef.current)
+      setRatesVersion((version) => version + 1)
+    }
+    window.addEventListener(FX_RATES_UPDATED_EVENT, onFxUpdated)
+    return () => window.removeEventListener(FX_RATES_UPDATED_EVENT, onFxUpdated)
   }, [])
 
   useEffect(() => {

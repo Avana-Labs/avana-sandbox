@@ -647,6 +647,22 @@ export default defineSchema({
     .index("by_chain_contract", ["chainId", "contractAddress"]),
 
   /**
+   * Fiat FX rates, refreshed by a Convex job from a live provider (open.er-api.com) so fiat
+   * conversion flows through the validated data layer instead of independent client polling.
+   * `usdPerUnit` = units of the currency per 1 USD (USD row is always 1). Same freshness lineage
+   * as tokenPrices; a failed refresh writes nothing so old rows age honestly.
+   */
+  fxRates: defineTable({
+    currency: v.string(),
+    usdPerUnit: v.number(),
+    source: v.string(),
+    status: v.optional(v.union(v.literal("fresh"), v.literal("stale"), v.literal("invalid"))),
+    sourceUpdatedAt: v.optional(v.number()),
+    fetchedAt: v.optional(v.number()),
+    updatedAt: v.number(),
+  }).index("by_currency", ["currency"]),
+
+  /**
    * Legacy shared editorial content (About / history / FAQs), keyed by `markets` id.
    * Prefer product-siloed `borrowMarketContent` / `lendMarketContent` / `multiplyMarketContent`.
    * Kept for dual-read during decoupling; seed still dual-writes for now.
