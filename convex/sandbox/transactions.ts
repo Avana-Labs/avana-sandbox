@@ -1842,6 +1842,28 @@ export const getPortfolioPageState = query({
 })
 
 /** Wallet-scoped portfolio: the snapshot time series + position summary. */
+/**
+ * Historical health-factor series for a wallet. `riskSnapshots` are written on
+ * every account-touching action (see recordTransaction / recordDeleverage), so the
+ * chart resolution matches action density rather than a fixed cadence. Values are
+ * shipped as decimal-WAD strings — the dashboard converts them to plain numbers
+ * once (WAD → hf) and skips null rows so a debt-free window doesn't render as 0.
+ */
+export const getRiskSeries = query({
+  args: { wallet: v.string() },
+  handler: async (ctx, args) => {
+    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const rows = await ctx.db
+      .query("riskSnapshots")
+      .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+      .order("desc")
+      .take(MAX_PORTFOLIO_HISTORY_ROWS)
+    return rows
+      .reverse()
+      .map((row) => ({ at: row.at, healthFactorWad: row.healthFactorWad, trigger: row.trigger ?? null }))
+  },
+})
+
 export const getPortfolio = query({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
