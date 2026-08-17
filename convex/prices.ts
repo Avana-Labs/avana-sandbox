@@ -44,6 +44,13 @@ export const TOKEN_LLAMA_IDS: Record<string, string> = {
  */
 export const PRICE_STALE_AFTER_MS = 3 * 60 * 60 * 1000
 
+/**
+ * Minimum DefiLlama `confidence` (0–1 scale) to accept a quote. Our tracked coins normally
+ * resolve at 0.99; a value under this is a thin/unreliable quote we'd rather drop (and flag as
+ * stale) than store as the authoritative price. Missing confidence is treated as acceptable.
+ */
+export const PRICE_MIN_CONFIDENCE = 0.8
+
 /** All token prices (one row per base symbol). Small table — safe to collect. */
 export const getPrices = query({
   args: {},
@@ -160,7 +167,16 @@ export const refreshPrices = internalAction({
       const rows = entries
         .map(([symbol, llamaId]) => {
           const coin = json.coins[llamaId]
-          if (!coin || typeof coin.price !== "number") return null
+          if (!coin) return null
+          // Guard the STORED value: `typeof NaN === "number"` (and 0 / negatives are numbers),
+          // so a plain type check lets insane quotes through to be stored as authoritative and
+          // divided by downstream. Require a finite, strictly-positive USD price.
+          if (!Number.isFinite(coin.price) || coin.price <= 0) return null
+          // Reject shaky quotes. DefiLlama reports `confidence` on a 0–1 scale (our tracked
+          // coins normally resolve at 0.99); anything under the threshold is too unreliable to
+          // treat as the real price. Missing confidence is treated as acceptable so an omitted
+          // field never empties the whole batch.
+          if (typeof coin.confidence === "number" && coin.confidence < PRICE_MIN_CONFIDENCE) return null
           return {
             symbol,
             llamaId,

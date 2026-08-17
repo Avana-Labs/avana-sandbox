@@ -396,20 +396,40 @@ export function useLendSession({
     setTransactionReceipts([])
   }, [seededState, shouldPersistState, walletId])
 
-  return {
-    walletId,
-    state,
-    readAdapter,
-    transactionHistory,
-    transactionReceipts,
-    hydrateMarketData,
-    hydrateWalletData,
-    createIntent,
-    previewTransaction,
-    executeTransaction,
-    claimRewards,
-    reset,
-    isPending,
-    isHydrated: hydratedWalletId === walletId,
-  }
+  const isHydrated = hydratedWalletId === walletId
+
+  return useMemo(
+    () => ({
+      walletId,
+      state,
+      readAdapter,
+      transactionHistory,
+      transactionReceipts,
+      hydrateMarketData,
+      hydrateWalletData,
+      createIntent,
+      previewTransaction,
+      executeTransaction,
+      claimRewards,
+      reset,
+      isPending,
+      isHydrated,
+    }),
+    [
+      walletId,
+      state,
+      readAdapter,
+      transactionHistory,
+      transactionReceipts,
+      hydrateMarketData,
+      hydrateWalletData,
+      createIntent,
+      previewTransaction,
+      executeTransaction,
+      claimRewards,
+      reset,
+      isPending,
+      isHydrated,
+    ],
+  )
 }

@@ -3,8 +3,8 @@ import { getLocalAssetIcon, LOCAL_ASSET_ICON_FALLBACK } from "@/app/lib/local-as
 
 describe("getLocalAssetIcon", () => {
   it("resolves the LINK token symbol to the Chainlink icon, not the placeholder (#42)", () => {
-    expect(getLocalAssetIcon("LINK")).toBe("/asset-icons/chainlink.svg")
-    expect(getLocalAssetIcon("link")).toBe("/asset-icons/chainlink.svg")
+    expect(getLocalAssetIcon("LINK")).toBe("/asset-icons/chainlink.png")
+    expect(getLocalAssetIcon("link")).toBe("/asset-icons/chainlink.png")
   })
 
   it("falls back to the neutral placeholder for an unmapped symbol", () => {
