@@ -1188,7 +1188,15 @@ export const recordRewardsClaim = mutation({
   args: {
     wallet: v.string(),
     intentId: v.string(),
-    taskIds: v.array(v.string()),
+    // Server-authoritative path (current client): the concrete quest ids being
+    // claimed. The payout is derived on-server from these, so a forged amount
+    // can't inflate totals.
+    taskIds: v.optional(v.array(v.string())),
+    // Backward-compat (legacy client): a pre-computed USD amount. Only trusted
+    // when `taskIds` is absent, so a still-deployed old client keeps working
+    // through a rollout where this function is deployed before that client is.
+    // Ignored entirely when taskIds is present.
+    amountUsd: v.optional(v.number()),
     syntheticTxHash: v.string(),
   },
   handler: async (ctx, args) => {
@@ -1198,31 +1206,40 @@ export const recordRewardsClaim = mutation({
       .withIndex("by_wallet_intent", (q) => q.eq("wallet", wallet).eq("intentId", args.intentId))
       .first()
     if (prior) return { transactionId: prior._id, idempotent: true }
-    if (args.taskIds.length === 0) {
-      throw new Error("EMPTY_CLAIM: at least one taskId is required")
+
+    const taskIds = args.taskIds ?? []
+    const usingCatalog = taskIds.length > 0
+
+    if (!usingCatalog && args.amountUsd == null) {
+      throw new Error("EMPTY_CLAIM: taskIds (preferred) or a legacy amountUsd is required")
     }
-    // Server-authoritative payout. The client no longer sends `amountUsd`; we derive
-    // it from the on-server catalog so a forged inflated value has nothing to
-    // inflate. Unknown ids trip the catalog throw and reject the whole claim.
-    const amountUsd = deriveClaimAmountUsd(args.taskIds)
+
+    // Server-authoritative payout when taskIds are provided: derive it from the
+    // on-server catalog so a forged inflated value has nothing to inflate. Unknown
+    // ids trip the catalog throw and reject the whole claim. The legacy amountUsd
+    // path is only reached when no taskIds are sent (old client during rollout).
+    const amountUsd = usingCatalog ? deriveClaimAmountUsd(taskIds) : (args.amountUsd ?? 0)
 
     // Server-authoritative single-claim guard: reject a claim that re-uses any
     // task id already paid out on a prior successful rewards-claim row for this
     // wallet. This is durable — the client's rewards state blob can go stale
-    // (multi-device, cold reload) without opening a double-claim window.
-    const priorClaims = await ctx.db
-      .query("transactions")
-      .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
-      .collect()
-    const alreadyClaimed = new Set<string>()
-    for (const row of priorClaims) {
-      if (row.product === "rewards" && row.kind === "claim" && row.status === "success" && row.claimedTaskIds) {
-        for (const id of row.claimedTaskIds) alreadyClaimed.add(id)
+    // (multi-device, cold reload) without opening a double-claim window. Only
+    // enforceable on the catalog path (legacy claims carry no task ids).
+    if (usingCatalog) {
+      const priorClaims = await ctx.db
+        .query("transactions")
+        .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+        .collect()
+      const alreadyClaimed = new Set<string>()
+      for (const row of priorClaims) {
+        if (row.product === "rewards" && row.kind === "claim" && row.status === "success" && row.claimedTaskIds) {
+          for (const id of row.claimedTaskIds) alreadyClaimed.add(id)
+        }
       }
-    }
-    for (const id of args.taskIds) {
-      if (alreadyClaimed.has(id)) {
-        throw new Error(`TASK_ALREADY_CLAIMED: ${id}`)
+      for (const id of taskIds) {
+        if (alreadyClaimed.has(id)) {
+          throw new Error(`TASK_ALREADY_CLAIMED: ${id}`)
+        }
       }
     }
 
@@ -1237,7 +1254,7 @@ export const recordRewardsClaim = mutation({
       requestedAmountUsd6: String(Math.round(amountUsd * 1_000_000)),
       executedAmountUsd6: String(Math.round(amountUsd * 1_000_000)),
       amountUsd,
-      claimedTaskIds: args.taskIds,
+      claimedTaskIds: usingCatalog ? taskIds : undefined,
       syntheticTxHash: args.syntheticTxHash,
       simulated: true,
       at: now,

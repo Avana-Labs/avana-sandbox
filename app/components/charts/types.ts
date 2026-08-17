@@ -11,7 +11,7 @@ export type ChartPoint = {
 export type ChartRangeData = Record<ChartRangeOption, ChartPoint[]>
 
 /** How raw chart values are rendered in the headline, tooltip, and Y-axis. */
-export type ChartValueFormat = "usd" | "usdCompact" | "price" | "percent"
+export type ChartValueFormat = "usd" | "usdCompact" | "price" | "percent" | "ratio"
 
 /**
  * A complete, render-ready payload for any hero chart (portfolio, pool, asset).

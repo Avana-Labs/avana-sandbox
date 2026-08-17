@@ -1256,6 +1256,7 @@ const dict: TranslationDictionary = {
   "{time} left": "残り {time}",
   "{value} total": "合計 {value}",
   Earning: "獲得中",
+  "{amount} cooling": "{amount} クールダウン中",
 }
 
 export default dict

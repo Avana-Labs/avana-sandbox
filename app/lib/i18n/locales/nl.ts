@@ -1214,6 +1214,7 @@ const dict: TranslationDictionary = {
   "{time} left": "{time} resterend",
   "{value} total": "{value} totaal",
   Earning: "Verdient",
+  "{amount} cooling": "{amount} in afkoeling",
 }
 
 export default dict

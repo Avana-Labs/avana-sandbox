@@ -33,6 +33,10 @@ export function formatChartValue(format: ChartValueFormat, value: number): strin
   switch (format) {
     case "percent":
       return `${value.toFixed(2)}%`
+    case "ratio":
+      // A plain unitless ratio (e.g. a health factor 1.60). Not a currency, not a
+      // percent — rendered with an "x" suffix so it reads as a multiple.
+      return `${value.toFixed(2)}x`
     case "usdCompact":
       return formatCompactUsd(value)
     case "price":
@@ -49,6 +53,8 @@ export function formatChartAxis(format: ChartValueFormat, value: number): string
   switch (format) {
     case "percent":
       return `${value.toFixed(value >= 10 ? 0 : 1)}%`
+    case "ratio":
+      return value.toFixed(value >= 10 ? 0 : 1)
     case "usdCompact":
       return formatCompactAxis(value)
     case "price":

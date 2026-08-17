@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest"
 import {
-  buildPortfolioMetricFeeds,
+  buildRebasedMetricFeeds,
   buildRiskSeriesFeed,
   sliceSnapshotsByRange,
 } from "@/app/dashboard/use-dashboard-history-feeds"
+
+const LIVE = { netValue: 1000, supplied: 800, borrowed: 200, earned: 8, multiplyExposure: 400 }
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
@@ -44,21 +46,39 @@ describe("sliceSnapshotsByRange", () => {
   })
 })
 
-describe("buildPortfolioMetricFeeds", () => {
-  it("produces a feed per metric, sharing the same time axis", () => {
+describe("buildRebasedMetricFeeds", () => {
+  it("produces a feed per metric anchored to the live value (basis matches)", () => {
+    // Newest snapshot equals the live values, so the series is on-basis and the
+    // "Now" point equals the live anchor for each metric.
     const snapshots = [snapshot(30), snapshot(15), snapshot(0)]
-    const feeds = buildPortfolioMetricFeeds(snapshots)
+    const feeds = buildRebasedMetricFeeds(snapshots, LIVE)
     expect(Object.keys(feeds).sort()).toEqual(["borrowed", "earned", "multiplyExposure", "netValue", "supplied"].sort())
-    // Every metric surfaces the same "All" length; only values differ.
-    const lengths = Object.values(feeds).map((feed) => feed.rangeData.All.length)
-    expect(new Set(lengths).size).toBe(1)
     expect(feeds.netValue.rangeData.All.at(-1)?.value).toBe(1000)
     expect(feeds.borrowed.rangeData.All.at(-1)?.value).toBe(200)
+    expect(feeds.supplied.rangeData.All.at(-1)?.value).toBe(800)
   })
 
-  it("returns empty range data for an empty snapshot series", () => {
-    const feeds = buildPortfolioMetricFeeds([])
-    expect(feeds.netValue.rangeData.All).toEqual([])
+  it("falls back to a flat live-value line when the stored series is off-basis", () => {
+    // Newest snapshot netValue is 1000 but the live value is 40000 (stale seed) →
+    // off-basis by far more than tolerance → show only the live point, flat.
+    const snapshots = [snapshot(30), snapshot(0)]
+    const feeds = buildRebasedMetricFeeds(snapshots, { ...LIVE, netValue: 40000 })
+    const net = feeds.netValue.rangeData.All
+    expect(net).toHaveLength(1)
+    expect(net[0]!.value).toBe(40000)
+  })
+
+  it("renders a flat $0 line for a legitimately-zero metric", () => {
+    const snapshots = [snapshot(0)]
+    const feeds = buildRebasedMetricFeeds(snapshots, { ...LIVE, borrowed: 0 })
+    expect(feeds.borrowed.rangeData.All).toHaveLength(1)
+    expect(feeds.borrowed.rangeData.All[0]!.value).toBe(0)
+  })
+
+  it("returns a single live point when there are no snapshots", () => {
+    const feeds = buildRebasedMetricFeeds([], LIVE)
+    expect(feeds.netValue.rangeData.All).toHaveLength(1)
+    expect(feeds.netValue.rangeData.All[0]!.value).toBe(1000)
   })
 })
 

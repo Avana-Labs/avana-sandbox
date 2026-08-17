@@ -33,11 +33,12 @@ describe("Umbrella page", () => {
     expect(screen.getAllByText("Stake USDT").length).toBeGreaterThan(0)
     expect(screen.getAllByText("Stake WETH").length).toBeGreaterThan(0)
 
-    // APY column now renders as "<total>% total" alongside the base + reward split.
-    expect(screen.getAllByText("6.4% total").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("4.84% total").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("4.19% total").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("5.05% total").length).toBeGreaterThan(0)
+    // APY column renders the total percent (the base + reward split moved to a tooltip
+    // to declutter the table).
+    expect(screen.getAllByText("6.4%").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("4.84%").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("4.19%").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("5.05%").length).toBeGreaterThan(0)
   })
 
   it("shows status labels including cooldown states", () => {

@@ -80,6 +80,7 @@ export const UMBRELLA_TRANSLATION_KEYS: readonly string[] = [
   "none",
   "{amount} active deficit",
   "{amount} claimed",
+  "{amount} cooling",
   "{amount} deficit offset",
   "{amount} in cooldown",
   "{amount} market",
