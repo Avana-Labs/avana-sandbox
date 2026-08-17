@@ -279,6 +279,8 @@ export function buildPortfolioLendData(
       suppliedUsd: position.suppliedValueUsd,
       principalUsd: position.principalAmount * market.assetPriceUsd,
       earnedUsd: position.interestEarned * market.assetPriceUsd + position.rewardsEarnedUsd,
+      interestUsd: position.interestEarned * market.assetPriceUsd,
+      rewardsEarnedUsd: position.rewardsEarnedUsd,
       dailyEarnedUsd: (position.suppliedValueUsd * market.totalApy) / 365,
       apyPct: market.totalApy * 100,
       principalAmount: position.principalAmount,

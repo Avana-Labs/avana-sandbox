@@ -1,13 +1,13 @@
 import crypto from "node:crypto"
 import { cookies } from "next/headers"
-import { assertSameOrigin, clientKey, rateLimit } from "../../_lib/request-guards"
+import { assertSameOrigin, clientKey, rateLimitShared } from "../../_lib/request-guards"
 
 export const dynamic = "force-dynamic"
 
 /** Issue a single-use SIWE nonce, bound to the client via an httpOnly cookie. */
 export async function GET(request: Request) {
   if (!assertSameOrigin(request)) return Response.json({ error: "origin not allowed" }, { status: 403 })
-  if (!rateLimit(`siwe-nonce:${clientKey(request)}`, 30, 60_000)) {
+  if (!(await rateLimitShared(`siwe-nonce:${clientKey(request)}`, 30, 60_000))) {
     return Response.json({ error: "too many nonce requests" }, { status: 429 })
   }
 

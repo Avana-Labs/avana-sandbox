@@ -85,6 +85,7 @@ export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref
         totalBorrowedUsd={borrowSnapshot.totalBorrowedUsd}
         netApyPct={borrowDashboardMetrics.performance.netApyPct}
         totalCollateralUsd={borrowSnapshot.totalCollateralUsd}
+        interestOwedUsd={borrowDashboardMetrics.performance.interestOwedUsd}
       />
 
       <AccountModuleBoundary>
