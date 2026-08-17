@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
+import { setCanonicalPrices } from "./canonical"
 import { priceKey } from "./format"
 import { PriceStatusContext, TokenPricesContext } from "./token-prices-context"
 
@@ -28,6 +29,14 @@ function ConvexTokenPricesQuery({ children }: { children: React.ReactNode }) {
     const next: Record<string, number> = {}
     for (const row of rows ?? []) next[priceKey(row.symbol)] = row.priceUsd
     return next
+  }, [rows])
+  // Overlay the live oracle prices onto the canonical store so the engine + every surface value
+  // positions at the refreshed price (not just the fixture). Effect, not render, to avoid a
+  // side-effect during render; keyed on the row set.
+  React.useEffect(() => {
+    if (rows && rows.length > 0) {
+      setCanonicalPrices(Object.fromEntries(rows.map((row) => [row.symbol, row.priceUsd])))
+    }
   }, [rows])
   return (
     <TokenPricesContext.Provider value={map}>
