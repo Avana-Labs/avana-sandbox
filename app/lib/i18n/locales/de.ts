@@ -1260,6 +1260,9 @@ const dict: TranslationDictionary = {
     "{pct}% der Absicherung im Cooldown · {deficits} an Defiziten durch {offset} Offset absorbiert · ",
   "{pct}% of target": "{pct}% des Ziels",
   "{pct}% of target coverage.": "{pct}% der Zielabsicherung.",
+  "{staked} staked · {target} target": "{staked} gestakt · Ziel {target}",
+  "{pct}% of coverage cooling · {deficits} deficits absorbed":
+    "{pct}% der Absicherung im Cooldown · {deficits} an Defiziten absorbiert",
   "{staked} staked · {target} target · {count} assets": "{staked} gestakt · Ziel {target} · {count} Assets",
   "{symbols} expired — restart cooldown": "{symbols} abgelaufen — Cooldown neu starten",
   "{time} left": "{time} verbleibend",
@@ -1474,6 +1477,56 @@ const dict: TranslationDictionary = {
   TVL: "TVL",
   Txn: "Txn",
   X: "X",
+  "1 year": "1 Jahr",
+  "30 days": "30 Tage",
+  "90 days": "90 Tage",
+  "Adjust leverage": "Hebel anpassen",
+  "At today's borrow rate.": "Zum heutigen Kreditzins.",
+  "At {lev}x, health factor moves ~1:1 with collateral price.":
+    "Bei {lev}x bewegt sich der Gesundheitsfaktor ~1:1 mit dem Sicherheitenpreis.",
+  "Borrow Outlook": "Kredit-Ausblick",
+  "Borrow cost exceeds yield — leverage is reducing your return, not increasing it.":
+    "Kreditkosten übersteigen die Rendite — der Hebel senkt deinen Ertrag, statt ihn zu erhöhen.",
+  "Borrow more": "Mehr leihen",
+  "Collateral price move": "Preisbewegung der Sicherheiten",
+  "Debt change amount": "Betrag der Schuldenänderung",
+  "Drop buffer": "Puffer bis zum Kursverfall",
+  "Equity value at this leverage, by scenario.": "Eigenkapitalwert bei diesem Hebel, nach Szenario.",
+  "Estimate on {equity} equity. Assumes rates hold; leverage amplifies both gains and losses.":
+    "Schätzung auf {equity} Eigenkapital. Annahme: Zinsen bleiben stabil; der Hebel verstärkt Gewinne und Verluste.",
+  "Estimate. Variable rate — actual cost will differ.":
+    "Schätzung. Variabler Zins — die tatsächlichen Kosten weichen ab.",
+  Horizon: "Zeithorizont",
+  "Lend Outlook": "Verleih-Ausblick",
+  "Leverage multiplier": "Hebel-Multiplikator",
+  Liquidated: "Liquidiert",
+  "Liquidation price": "Liquidationspreis",
+  "Liquidation prices": "Liquidationspreise",
+  "Move collateral prices or your debt and watch health factor respond.":
+    "Verändere die Sicherheitenpreise oder deine Schulden und beobachte den Gesundheitsfaktor.",
+  "Multiply Outlook": "Multiply-Ausblick",
+  Next: "Weiter",
+  "Price sensitivity": "Preissensitivität",
+  "Projected interest cost": "Voraussichtliche Zinskosten",
+  "Projected value": "Voraussichtlicher Wert",
+  Scenario: "Szenario",
+  "The price each collateral would hit to reach liquidation, holding your other collateral steady.":
+    "Der Preis, den jede Sicherheit bis zur Liquidation erreichen würde, während deine anderen Sicherheiten konstant bleiben.",
+  "Total debt": "Gesamtschuld",
+  "What a drop in collateral price does to your health factor.":
+    "Was ein Kursrückgang der Sicherheiten mit deinem Gesundheitsfaktor macht.",
+  "What-if simulator": "Was-wäre-wenn-Simulator",
+  "Your Dashboard": "Dein Dashboard",
+  below: "darunter",
+  cost: "Kosten",
+  from: "von",
+  "max safe": "max. sicher",
+  safe: "sicher",
+  yield: "Rendite",
+  "“Safe” means a fall in that asset alone can't liquidate you — your other collateral covers the debt.":
+    "„Sicher“ bedeutet, dass ein Rückgang allein dieses Assets dich nicht liquidieren kann — deine anderen Sicherheiten decken die Schuld.",
+  "How it works": "So funktioniert's",
+  "Learn Avana": "Avana kennenlernen",
 }
 
 export default dict

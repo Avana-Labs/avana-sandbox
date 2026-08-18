@@ -1,133 +1,74 @@
 "use client"
 
 import type { LucideIcon } from "@/app/components/icons"
-import {
-  ArrowUpRight,
-  ChevronRight,
-  Compass,
-  GraduationCap,
-  Repeat,
-  Sparkles,
-  Umbrella,
-  Unlock,
-} from "@/app/components/icons"
-import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
+import { Compass, GraduationCap, Repeat, ShieldCheck, Umbrella, Unlock } from "@/app/components/icons"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-
-const BLOG_BASE = AVANA_EXTERNAL_LINKS.blog
 
 type LearnCard = {
   title: string
-  category: string
-  slug: string
+  body: string
   icon: LucideIcon
 }
 
-type LearnSectionProps = {
-  layout?: "default" | "sidebar"
-}
-
+/**
+ * "Learn Avana" explainer cards — the full-card teaching layout used by
+ * "Learn Umbrella" (icon + title + body, no links). Copy is drawn from the Avana
+ * FAQ topics (keep your LP position, borrowing power, drawdowns, isolated risk,
+ * repay/close) plus a product overview. Kept as plain (English) copy — long-form
+ * teaching content; only the section heading is localized.
+ */
 const LEARN_CARDS: LearnCard[] = [
-  { title: "A Beginner's Guide to LP Collateral", category: "Guide", slug: "lp-collateral-guide", icon: GraduationCap },
-  { title: "What LP Collateral Makes Possible", category: "Guide", slug: "unleashing-lp-tokens", icon: Unlock },
-  { title: "Thinking Clearly About Yield Looping", category: "Guide", slug: "yield-looping-playbook", icon: Repeat },
-  { title: "How to Hedge an LP Position", category: "Guide", slug: "hedge-lp-position", icon: Umbrella },
-  { title: "Making LP Collateral Usable", category: "Guide", slug: "defi-ux-challenges", icon: Sparkles },
   {
-    title: "Avana and the Next Step for Liquidity Providers",
-    category: "Strategy",
-    slug: "avana-lp-collateral",
+    title: "Keep your LP position",
+    body: "Borrow against your LP tokens without selling or exiting. Your liquidity keeps earning trading fees while you unlock cash to use elsewhere.",
+    icon: Unlock,
+  },
+  {
+    title: "What you can borrow",
+    body: "Your borrowing power is a share of your collateral's value, set by each pool's loan-to-value. A health factor shows how much room you have before liquidation.",
+    icon: GraduationCap,
+  },
+  {
+    title: "If your LP value drops",
+    body: "As collateral falls, your health factor drops with it. If it reaches the limit, part of your collateral is liquidated to repay the loan — keeping a buffer protects your position.",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Isolated risk",
+    body: "Every pool is risk-scored on its own and kept isolated. Exposure stays contained to the market you use, so trouble in one pool doesn't cascade into your other positions.",
+    icon: Umbrella,
+  },
+  {
+    title: "Repay or close anytime",
+    body: "Repay part or all of your loan whenever you want, or close the position entirely. Add or withdraw collateral at any time to manage your health factor.",
+    icon: Repeat,
+  },
+  {
+    title: "Ways to use Avana",
+    body: "Lend to earn yield, borrow against LP collateral, Multiply for leveraged exposure, or stake in Umbrella to backstop markets and earn rewards.",
     icon: Compass,
   },
 ]
 
-export function LearnSection({ layout = "default" }: LearnSectionProps) {
+export function LearnSection() {
   const { t } = useTranslation()
-  const isSidebar = layout === "sidebar"
 
   return (
-    <section className="min-w-0 space-y-4">
-      <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{t("Learn")}</h2>
-
-      {isSidebar ? (
-        <div className="space-y-2.5">
-          {LEARN_CARDS.map((card) => {
-            const Icon = card.icon
-            return (
-              <a
-                key={card.slug}
-                href={`${BLOG_BASE}/${card.slug}`}
-                target="_blank"
-                rel="noreferrer"
-                className="group flex items-start gap-3 rounded-radius-md border border-border bg-card px-4 py-3.5 transition-colors hover:bg-hover"
-              >
-                <Icon className="mt-0.5 h-5 w-5 flex-none text-brand" strokeWidth={1.75} aria-hidden="true" />
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[14px] font-medium leading-snug text-foreground">{t(card.title)}</span>
-                  <span className="mt-1 block text-[12px] text-muted-foreground">{t(card.category)}</span>
-                </span>
-                <ArrowUpRight
-                  className="mt-0.5 h-4 w-4 flex-none text-muted-foreground/70 transition-colors group-hover:text-foreground"
-                  aria-hidden="true"
-                />
-              </a>
-            )
-          })}
-        </div>
-      ) : (
-        <>
-          {/* Desktop / tablet: media rows on the Explore card surface (borderless bg-card) */}
-          <div className="hidden gap-3 md:grid md:grid-cols-2 md:gap-4 xl:grid-cols-3">
-            {LEARN_CARDS.map((card) => {
-              const Icon = card.icon
-              return (
-                <a
-                  key={card.slug}
-                  href={`${BLOG_BASE}/${card.slug}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group flex items-center gap-3.5 rounded-radius-md border-0 bg-card p-4 shadow-none transition-colors hover:bg-hover"
-                >
-                  <Icon className="h-6 w-6 flex-none text-brand" strokeWidth={1.75} aria-hidden="true" />
-                  <span className="min-w-0">
-                    <span className="block truncate text-[14px] font-medium leading-snug text-foreground">
-                      {t(card.title)}
-                    </span>
-                    <span className="mt-0.5 block text-[12px] text-muted-foreground">{t(card.category)}</span>
-                  </span>
-                  <ArrowUpRight
-                    className="ml-auto h-4 w-4 flex-none text-muted-foreground/70 transition-colors group-hover:text-foreground"
-                    aria-hidden="true"
-                  />
-                </a>
-              )
-            })}
-          </div>
-
-          {/* Mobile: bordered list rows */}
-          <div className="overflow-hidden rounded-radius-md border border-border md:hidden">
-            {LEARN_CARDS.map((card, index) => {
-              const Icon = card.icon
-              return (
-                <a
-                  key={card.slug}
-                  href={`${BLOG_BASE}/${card.slug}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={`flex items-center gap-3 px-4 py-3.5 transition-colors hover:bg-hover ${
-                    index < LEARN_CARDS.length - 1 ? "border-b border-border" : ""
-                  }`}
-                >
-                  <Icon className="h-[18px] w-5 shrink-0 text-brand" strokeWidth={1.75} aria-hidden="true" />
-                  <span className="flex-1 truncate text-[14px] font-medium text-foreground">{t(card.title)}</span>
-                  <span className="text-[12px] text-muted-foreground">{t(card.category)}</span>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/70" aria-hidden="true" />
-                </a>
-              )
-            })}
-          </div>
-        </>
-      )}
+    <section className="min-w-0">
+      <div className="mb-6 flex items-center justify-between">
+        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+          {t("Learn Avana")}
+        </h2>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {LEARN_CARDS.map((card) => (
+          <article key={card.title} className="rounded-radius-md bg-card px-4 py-4">
+            <card.icon className="h-6 w-6 text-brand" strokeWidth={1.75} />
+            <h3 className="mt-4 text-[17px] font-semibold tracking-[-0.03em]">{card.title}</h3>
+            <p className="mt-2 text-[14px] leading-6 text-muted-foreground">{card.body}</p>
+          </article>
+        ))}
+      </div>
     </section>
   )
 }

@@ -15,6 +15,47 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useMediaQuery } from "@/app/lib/use-media-query"
 import type { HomeBorrowToken } from "@/app/lib/borrow-system/home-contracts"
 
+// The amount text scales down as the number grows so it always stays fully
+// visible (Uniswap-style), rather than clipping under the asset pill. A hidden
+// mirror measures the value's natural width at max size; the visible element
+// scales to fit the available column width, down to a legible floor.
+const MAX_AMOUNT_FONT_PX = 32
+const MIN_AMOUNT_FONT_PX = 15
+
+function useFitAmountFontSize(text: string) {
+  const containerRef = useRef<HTMLDivElement & HTMLLabelElement>(null)
+  const mirrorRef = useRef<HTMLSpanElement>(null)
+  const [fontPx, setFontPx] = useState(MAX_AMOUNT_FONT_PX)
+
+  useEffect(() => {
+    const container = containerRef.current
+    const mirror = mirrorRef.current
+    if (!container || !mirror) return
+
+    const recompute = () => {
+      const available = container.clientWidth - 2 // small safety margin
+      const natural = mirror.scrollWidth // measured at MAX_AMOUNT_FONT_PX
+      if (available <= 0 || natural <= 0) return
+      const next =
+        natural <= available
+          ? MAX_AMOUNT_FONT_PX
+          : Math.max(MIN_AMOUNT_FONT_PX, Math.floor((MAX_AMOUNT_FONT_PX * available) / natural))
+      setFontPx(next)
+    }
+
+    recompute()
+    // Refit when the column width changes (asset pill width, viewport, sidebar).
+    const observer = new ResizeObserver(recompute)
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [text])
+
+  return { containerRef, mirrorRef, fontPx }
+}
+
+const AMOUNT_MIRROR_CLASS =
+  "pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap font-medium leading-none tracking-[-0.04em]"
+
 export type ActionAssetOption = {
   id: string
   label: string
@@ -53,6 +94,10 @@ type ActionAmountCardProps = {
   assetPickerDisabled?: boolean
   assetPickerHint?: string
   onAssetPickerBlocked?: () => void
+  /** Keep the asset picker interactive even when the amount is read-only (e.g. the
+   *  Umbrella Claim tab: the amount is the fixed pending-rewards total, but the user
+   *  still needs to choose which market's rewards to claim). */
+  allowAssetSwitchWhenReadOnly?: boolean
 }
 
 export function ActionAmountCard({
@@ -82,9 +127,11 @@ export function ActionAmountCard({
   assetPickerDisabled = false,
   assetPickerHint,
   onAssetPickerBlocked,
+  allowAssetSwitchWhenReadOnly = false,
 }: ActionAmountCardProps) {
   const { t } = useTranslation()
   const symbol = assetSymbol ?? assetLabel.split(" ").slice(-1)[0] ?? "Asset"
+  const fit = useFitAmountFontSize(amount || "0")
   // No asset picked yet: the default label is the literal word "Asset". Show a clear
   // "Select Asset" call-to-action (and drop the neutral "?" glyph) instead.
   const isAssetPlaceholder = /^asset$/i.test(assetLabel.trim())
@@ -93,7 +140,7 @@ export function ActionAmountCard({
   const switchable = Boolean(
     !hideAssetSelector &&
     onAssetSelect &&
-    !readOnly &&
+    (!readOnly || allowAssetSwitchWhenReadOnly) &&
     (useDialogPicker ? pickerTokens!.length > 1 : assetOptions && assetOptions.length > 1),
   )
   // When gated (no wallet / no collateral), the pill still renders as an interactive
@@ -200,20 +247,34 @@ export function ActionAmountCard({
   const amountRow = (
     <div className="mt-1.5 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
       {readOnly ? (
-        <div
-          className={cn(
-            "min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em]",
-            amount && amount !== "0" ? "text-foreground" : "text-muted-foreground/60",
-          )}
-        >
-          {amount || "0"}
+        <div ref={fit.containerRef} className="relative min-w-0 flex-1 overflow-hidden">
+          <div
+            title={amount || "0"}
+            style={{ fontSize: `${fit.fontPx}px` }}
+            className={cn(
+              "truncate font-medium leading-none tracking-[-0.04em]",
+              amount && amount !== "0" ? "text-foreground" : "text-muted-foreground/60",
+            )}
+          >
+            {amount || "0"}
+          </div>
+          <span
+            ref={fit.mirrorRef}
+            aria-hidden
+            className={AMOUNT_MIRROR_CLASS}
+            style={{ fontSize: `${MAX_AMOUNT_FONT_PX}px` }}
+          >
+            {amount || "0"}
+          </span>
         </div>
       ) : (
-        <label className="min-w-0 flex-1 max-[360px]:w-full">
-          <span className="sr-only">{t("{label} amount").replace("{label}", t(label))}</span>
+        <div ref={fit.containerRef} className="relative min-w-0 flex-1 overflow-hidden max-[360px]:w-full">
           <input
             type="text"
             inputMode="decimal"
+            // aria-label (not a wrapping <label>) so the measuring mirror below can
+            // live in this container without polluting the input's accessible name.
+            aria-label={t("{label} amount").replace("{label}", t(label))}
             // Numbers-only: numeric keypad on mobile (never the alphabet), and no
             // OS autofill/spellcheck that could inject letters. Any non-digit is
             // stripped on change (covers typing AND paste) by sanitizeDecimalInput.
@@ -223,13 +284,22 @@ export function ActionAmountCard({
             spellCheck={false}
             value={amount}
             onChange={(event) => onAmountChange(sanitizeDecimalInput(event.target.value))}
+            style={{ fontSize: `${fit.fontPx}px` }}
             className={cn(
-              "w-full border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] outline-none placeholder:text-muted-foreground/60",
+              "w-full border-0 bg-transparent p-0 font-medium leading-none tracking-[-0.04em] outline-none placeholder:text-muted-foreground/60",
               amount && amount !== "0" ? "text-foreground" : "text-muted-foreground/60",
             )}
             placeholder="0"
           />
-        </label>
+          <span
+            ref={fit.mirrorRef}
+            aria-hidden
+            className={AMOUNT_MIRROR_CLASS}
+            style={{ fontSize: `${MAX_AMOUNT_FONT_PX}px` }}
+          >
+            {amount || "0"}
+          </span>
+        </div>
       )}
       {!hideAssetSelector ? (
         <div className="relative shrink-0 max-[360px]:self-end" ref={switchable ? menuRef : undefined}>
@@ -255,7 +325,7 @@ export function ActionAmountCard({
               aria-haspopup={!gated && !useDialogPicker ? "listbox" : undefined}
               aria-expanded={!gated && !useDialogPicker ? menuOpen : undefined}
               aria-label={t("Change asset, current {asset}").replace("{asset}", assetLabel)}
-              disabled={readOnly || (gated && !gatedClickable)}
+              disabled={(readOnly && !allowAssetSwitchWhenReadOnly) || (gated && !gatedClickable)}
               className={cn(
                 "inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground hover:bg-surface-hover",
                 gated ? (gatedClickable ? "opacity-60" : "cursor-default opacity-60") : "cursor-pointer",

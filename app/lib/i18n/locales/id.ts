@@ -1208,6 +1208,8 @@ const dict: TranslationDictionary = {
     "{pct}% cakupan cooldown · {deficits} defisit diserap oleh {offset} offset · ",
   "{pct}% of target": "{pct}% dari target",
   "{pct}% of target coverage.": "{pct}% dari cakupan target.",
+  "{staked} staked · {target} target": "{staked} di-stake · target {target}",
+  "{pct}% of coverage cooling · {deficits} deficits absorbed": "{pct}% cakupan cooldown · {deficits} defisit diserap",
   "{staked} staked · {target} target · {count} assets": "{staked} di-stake · target {target} · {count} aset",
   "{symbols} expired — restart cooldown": "{symbols} kedaluwarsa — mulai ulang cooldown",
   "{time} left": "{time} tersisa",
@@ -1415,6 +1417,56 @@ const dict: TranslationDictionary = {
   "Your position": "Posisi Anda",
   "Approval failed.": "Persetujuan gagal.",
   "Swap failed.": "Swap gagal.",
+  "1 year": "1 tahun",
+  "30 days": "30 hari",
+  "90 days": "90 hari",
+  "Adjust leverage": "Sesuaikan leverage",
+  "At today's borrow rate.": "Pada suku bunga pinjaman hari ini.",
+  "At {lev}x, health factor moves ~1:1 with collateral price.":
+    "Pada {lev}x, faktor kesehatan bergerak ~1:1 dengan harga agunan.",
+  "Borrow Outlook": "Prospek pinjam",
+  "Borrow cost exceeds yield — leverage is reducing your return, not increasing it.":
+    "Biaya pinjaman melebihi imbal hasil — leverage justru mengurangi return Anda, bukan menambah.",
+  "Borrow more": "Pinjam lebih",
+  "Collateral price move": "Pergerakan harga agunan",
+  "Debt change amount": "Jumlah perubahan utang",
+  "Drop buffer": "Buffer penurunan",
+  "Equity value at this leverage, by scenario.": "Nilai ekuitas pada leverage ini, per skenario.",
+  "Estimate on {equity} equity. Assumes rates hold; leverage amplifies both gains and losses.":
+    "Perkiraan atas ekuitas {equity}. Mengasumsikan suku bunga tetap; leverage memperbesar keuntungan dan kerugian.",
+  "Estimate. Variable rate — actual cost will differ.":
+    "Perkiraan. Suku bunga variabel — biaya sebenarnya akan berbeda.",
+  Horizon: "Jangka waktu",
+  "Lend Outlook": "Prospek pinjamkan",
+  "Leverage multiplier": "Pengali leverage",
+  Liquidated: "Terlikuidasi",
+  "Liquidation price": "Harga likuidasi",
+  "Liquidation prices": "Harga likuidasi per aset",
+  "Move collateral prices or your debt and watch health factor respond.":
+    "Ubah harga agunan atau utang Anda dan lihat respons faktor kesehatan.",
+  "Multiply Outlook": "Prospek Multiply",
+  Next: "Berikutnya",
+  "Price sensitivity": "Sensitivitas harga",
+  "Projected interest cost": "Perkiraan biaya bunga",
+  "Projected value": "Perkiraan nilai",
+  Scenario: "Skenario",
+  "The price each collateral would hit to reach liquidation, holding your other collateral steady.":
+    "Harga yang akan dicapai setiap agunan hingga likuidasi, dengan agunan lain tetap.",
+  "Total debt": "Total utang",
+  "What a drop in collateral price does to your health factor.":
+    "Apa yang terjadi pada faktor kesehatan Anda saat harga agunan turun.",
+  "What-if simulator": "Simulator andai",
+  "Your Dashboard": "Dasbor Anda",
+  below: "di bawah",
+  cost: "biaya",
+  from: "dari",
+  "max safe": "maks. aman",
+  safe: "aman",
+  yield: "imbal hasil",
+  "“Safe” means a fall in that asset alone can't liquidate you — your other collateral covers the debt.":
+    "“Aman” berarti penurunan aset itu saja tidak dapat melikuidasi Anda — agunan lain menutupi utang.",
+  "How it works": "Cara kerjanya",
+  "Learn Avana": "Pelajari Avana",
 }
 
 export default dict

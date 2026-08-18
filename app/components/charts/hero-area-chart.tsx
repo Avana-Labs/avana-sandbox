@@ -32,6 +32,11 @@ type HeroAreaChartProps = {
   className?: string
   tone?: "positive" | "negative" | "neutral"
   onActiveIndexChange?: (index: number | null) => void
+  /** Horizontal threshold lines (e.g. health-factor = 1). Drawn over the series. */
+  referenceLines?: Array<{ value: number; label?: string; color?: string }>
+  /** Explicit y-axis domain. Overrides the default padded auto-domain per bound. */
+  domainMin?: number
+  domainMax?: number
 }
 
 type PlotPoint = ChartPoint & { x: number; y: number }
@@ -71,6 +76,8 @@ export function buildHeroAreaGeometry(
   height: number,
   activeRange: ChartRangeOption = "1D",
   formatYAxis: (value: number) => string = (value) => String(Math.round(value)),
+  domainMin?: number,
+  domainMax?: number,
 ) {
   if (data.length === 0) {
     return {
@@ -83,6 +90,8 @@ export function buildHeroAreaGeometry(
       right: 0,
       top: 0,
       bottom: 0,
+      min: 0,
+      max: 0,
     }
   }
   // Match lend/market detail chart padding. Unique series labels keep custom
@@ -95,8 +104,11 @@ export function buildHeroAreaGeometry(
   const rawMin = Math.min(...values)
   const rawMax = Math.max(...values)
   const valueSpan = Math.max(1, rawMax - rawMin)
-  const min = rawMin - Math.max(4, valueSpan * 0.08)
-  const max = rawMax + Math.max(4, valueSpan * 0.28)
+  // Explicit domain overrides let small-magnitude series (health factor, APY %)
+  // opt out of the dollar-oriented ±4 padding floor that would otherwise show
+  // nonsensical (e.g. negative) axis ticks.
+  const min = domainMin ?? rawMin - Math.max(4, valueSpan * 0.08)
+  const max = domainMax ?? rawMax + Math.max(4, valueSpan * 0.28)
   const range = Math.max(1, max - min)
   const plotHeight = Math.max(1, height - top - bottom)
   const plotWidth = Math.max(1, width - left - right)
@@ -145,7 +157,7 @@ export function buildHeroAreaGeometry(
   const labeledXAxisTicks = xAxisTicks.filter((tick) => tick.label.trim().length > 0)
   const linePath = monotoneLinePath(points)
   const areaPath = `${linePath} L ${points[points.length - 1].x} ${height - bottom} L ${points[0].x} ${height - bottom} Z`
-  return { points, linePath, areaPath, axisTicks, xAxisTicks: labeledXAxisTicks, left, right, top, bottom }
+  return { points, linePath, areaPath, axisTicks, xAxisTicks: labeledXAxisTicks, left, right, top, bottom, min, max }
 }
 
 export function HeroAreaChart({
@@ -159,6 +171,9 @@ export function HeroAreaChart({
   className,
   tone,
   onActiveIndexChange,
+  referenceLines,
+  domainMin,
+  domainMax,
 }: HeroAreaChartProps) {
   const shellRef = useRef<HTMLDivElement | null>(null)
   const [dimensions, setDimensions] = useState({ width: 1_000, height })
@@ -192,8 +207,9 @@ export function HeroAreaChart({
     tone ?? (data.length >= 2 && data[data.length - 1].value < data[0].value ? "negative" : "positive")
   const color = TONE_COLORS[resolvedTone]
   const geometry = useMemo(
-    () => buildHeroAreaGeometry(data, dimensions.width, dimensions.height, activeRange, formatYAxis),
-    [activeRange, data, dimensions, formatYAxis],
+    () =>
+      buildHeroAreaGeometry(data, dimensions.width, dimensions.height, activeRange, formatYAxis, domainMin, domainMax),
+    [activeRange, data, dimensions, formatYAxis, domainMin, domainMax],
   )
   const cursorBottom = geometry.bottom || 34
   const activePoint = activeIndex == null ? null : geometry.points[activeIndex]
@@ -324,6 +340,36 @@ export function HeroAreaChart({
             </>
           ) : null}
         </g>
+        {referenceLines && referenceLines.length > 0 && geometry.max > geometry.min ? (
+          <g aria-hidden="true">
+            {referenceLines.map((line) => {
+              const range = geometry.max - geometry.min
+              const plotHeight = Math.max(1, dimensions.height - geometry.top - geometry.bottom)
+              const rawY = geometry.top + ((geometry.max - line.value) / range) * plotHeight
+              const y = Math.min(dimensions.height - geometry.bottom, Math.max(geometry.top, rawY))
+              const stroke = line.color ?? "#F0444C"
+              return (
+                <g key={`ref-${line.value}`}>
+                  <line
+                    x1={0}
+                    x2={dimensions.width}
+                    y1={y}
+                    y2={y}
+                    stroke={stroke}
+                    strokeWidth="1.5"
+                    strokeDasharray="5 4"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                  {line.label ? (
+                    <text x={4} y={y - 5} className="font-data text-[11px] font-semibold" fill={stroke}>
+                      {line.label}
+                    </text>
+                  ) : null}
+                </g>
+              )
+            })}
+          </g>
+        ) : null}
         {geometry.axisTicks.length > 0 ? (
           <g aria-hidden="true">
             {geometry.axisTicks.map((tick) => (

@@ -33,26 +33,12 @@ type PositionRow = {
   pendingRewards: number
   pendingRewardsLabel: string
   claimedRewardsLabel: string
-  status: string
   cooldownStatus: "idle" | "cooling" | "ready" | "expired"
   hasClaim: boolean
   hasUnstake: boolean
   coverageRatioPct: number
   coverageRatioLabel: string
   targetLiquidityLabel: string
-}
-
-function statusLabelKey(status: PositionRow["cooldownStatus"]): string {
-  switch (status) {
-    case "ready":
-      return "Withdrawal ready"
-    case "cooling":
-      return "In cooldown"
-    case "expired":
-      return "Cooldown expired"
-    default:
-      return "Earning"
-  }
 }
 
 export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (marketId: UmbrellaMarketId) => void }) {
@@ -78,7 +64,6 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
       pendingRewards: position.pendingRewardsUsd,
       pendingRewardsLabel: formatUsd(position.pendingRewardsUsd),
       claimedRewardsLabel: formatUsd(position.claimedRewardsUsd),
-      status: t(statusLabelKey(position.cooldownStatus)),
       cooldownStatus: position.cooldownStatus,
       hasClaim: position.pendingRewardsUsd > 0,
       hasUnstake: position.cooldownStatus === "ready",
@@ -109,12 +94,11 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
         <DesktopTableSurface className="!rounded-none">
           <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
             <colgroup>
-              <col className="w-[30%]" />
-              <col className="w-[16%]" />
-              <col className="w-[13%]" />
-              <col className="w-[14%]" />
-              <col className="w-[13%]" />
-              <col className="w-[14%]" />
+              <col className="w-[34%]" />
+              <col className="w-[18%]" />
+              <col className="w-[15%]" />
+              <col className="w-[15%]" />
+              <col className="w-[18%]" />
             </colgroup>
             <thead>
               <tr className="text-left">
@@ -122,14 +106,13 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                 <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("Stake")}</th>
                 <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("APY")}</th>
                 <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("Rewards")}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("Status")}</th>
                 <SilentActionHeader className="!rounded-none pr-5" />
               </tr>
             </thead>
             <tbody className="divide-y divide-border dark:divide-white/6">
               {showEmptyState ? (
                 <tr>
-                  <td colSpan={6} className="py-8 pl-5 pr-5 text-center">
+                  <td colSpan={5} className="py-8 pl-5 pr-5 text-center">
                     <div className="flex flex-wrap items-center justify-center gap-3">
                       <span className="text-[14px] text-muted-foreground">
                         {t("You have no Umbrella positions yet.")}
@@ -186,16 +169,6 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                     <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
                       <span className="text-[15px] font-normal tracking-[-0.03em] text-success">
                         {row.pendingRewardsLabel}
-                      </span>
-                    </td>
-                    <td className={cn("py-3.5 px-4 text-center", TABLE_ROW_HOVER_BG)}>
-                      <span
-                        className={cn(
-                          "inline-block max-w-full whitespace-normal text-[15px] font-normal leading-5 tracking-[-0.03em]",
-                          row.cooldownStatus === "expired" ? "text-danger" : "text-foreground dark:text-white",
-                        )}
-                      >
-                        {row.status}
                       </span>
                     </td>
                     <td
@@ -284,12 +257,6 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                       .replace("{reward}", row.apyReward)}
                   </div>
                 </div>
-                <div>
-                  <div className="text-[13px] text-muted-foreground">{t("Status")}</div>
-                  <div className={cn("font-medium", row.cooldownStatus === "expired" && "text-danger")}>
-                    {row.status}
-                  </div>
-                </div>
                 <div className="col-span-2">
                   <div className="text-[13px] text-muted-foreground">{t("Rewards")}</div>
                   <div className="font-medium text-success">
@@ -301,34 +268,19 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                 </div>
               </div>
 
-              {(row.hasClaim || row.hasUnstake) && (
+              {row.hasUnstake && (
                 <div className="mt-3 flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()}>
-                  {row.hasClaim ? (
-                    <Button asChild size="sm" variant="brand-secondary" className="h-9 flex-1 gap-2">
-                      <Link
-                        href={actionPagePath("umbrella", "claim", {
-                          market: row.id,
-                          return: "/umbrella",
-                        })}
-                      >
-                        <ActionIcon label="Claim" />
-                        Claim
-                      </Link>
-                    </Button>
-                  ) : null}
-                  {row.hasUnstake ? (
-                    <Button asChild size="sm" variant="brand" className="h-9 flex-1 gap-2">
-                      <Link
-                        href={actionPagePath("umbrella", "unstake", {
-                          market: row.id,
-                          return: "/umbrella",
-                        })}
-                      >
-                        <ActionIcon label="Unstake" />
-                        Unstake
-                      </Link>
-                    </Button>
-                  ) : null}
+                  <Button asChild size="sm" variant="brand" className="h-9 flex-1 gap-2">
+                    <Link
+                      href={actionPagePath("umbrella", "unstake", {
+                        market: row.id,
+                        return: "/umbrella",
+                      })}
+                    >
+                      <ActionIcon label="Unstake" />
+                      Unstake
+                    </Link>
+                  </Button>
                 </div>
               )}
             </div>

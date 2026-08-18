@@ -17,6 +17,7 @@ import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { CarouselArrowButtons } from "@/app/components/carousel-arrow-buttons"
+import { HowItWorks } from "@/app/components/how-it-works"
 import {
   HIGHLIGHT_CARD_CLASS,
   HighlightCarousel,
@@ -216,14 +217,17 @@ export function ExploreLoopsMarketsTable({
         <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">
           {t("Trending")}
         </h2>
-        <CarouselArrowButtons
-          canPrev
-          canNext
-          onPrev={() => carouselRef.current?.step(-1)}
-          onNext={() => carouselRef.current?.step(1)}
-          prevLabel="Previous trending"
-          nextLabel="Next trending"
-        />
+        <div className="flex items-center gap-2.5">
+          <HowItWorks topic="multiply" className="hidden md:inline-flex" />
+          <CarouselArrowButtons
+            canPrev
+            canNext
+            onPrev={() => carouselRef.current?.step(-1)}
+            onNext={() => carouselRef.current?.step(1)}
+            prevLabel="Previous trending"
+            nextLabel="Next trending"
+          />
+        </div>
       </div>
 
       <HighlightCarousel

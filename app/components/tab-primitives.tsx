@@ -100,6 +100,7 @@ export function UnderlineTabStrip<T extends string>({
   ariaLabel,
   className,
   listClassName,
+  tabClassName,
 }: {
   items: readonly SharedTabItem<T>[]
   value: T
@@ -107,6 +108,7 @@ export function UnderlineTabStrip<T extends string>({
   ariaLabel: string
   className?: string
   listClassName?: string
+  tabClassName?: string
 }) {
   return (
     <div
@@ -136,6 +138,7 @@ export function UnderlineTabStrip<T extends string>({
               className={cn(
                 "relative h-auto shrink-0 rounded-none border-0 px-0 pb-3 pt-0 text-[15px] font-normal text-muted-foreground transition-colors after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-full after:rounded-full after:bg-transparent sm:pb-4",
                 active ? "text-[16px] text-foreground after:bg-foreground" : "hover:text-foreground",
+                tabClassName,
               )}
             >
               {item.label}

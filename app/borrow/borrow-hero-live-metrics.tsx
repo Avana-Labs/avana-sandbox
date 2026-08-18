@@ -1,5 +1,6 @@
 "use client"
 
+import { HowItWorks } from "@/app/components/how-it-works"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
@@ -18,7 +19,7 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
     <div className="flex w-full items-start justify-between gap-4 pb-4">
       <div className="min-w-0 space-y-1.5">
         <p className="text-[13px] text-muted-foreground">{t("Borrow TVL")}</p>
-        <p className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-normal tabular-nums text-foreground">
+        <p className="font-data text-[17px] md:text-[18px] font-medium leading-none tracking-normal tabular-nums text-foreground">
           {fc.compact(metrics.totalTvlUsd)}
         </p>
       </div>
@@ -29,7 +30,7 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
             <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
             {t("Available Credit")}
           </p>
-          <p className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-normal tabular-nums text-foreground">
+          <p className="font-data text-[17px] md:text-[18px] font-medium leading-none tracking-normal tabular-nums text-foreground">
             {fc.compact(metrics.availableCreditUsd)}
           </p>
         </div>
@@ -39,11 +40,13 @@ function MetricsView({ metrics }: { metrics: BorrowHeroMetrics }) {
             <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
             {t("Outstanding Loans")}
           </p>
-          <p className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-normal tabular-nums text-foreground">
+          <p className="font-data text-[17px] md:text-[18px] font-medium leading-none tracking-normal tabular-nums text-foreground">
             {fc.compact(metrics.outstandingLoansUsd)}
           </p>
         </div>
       </div>
+
+      <HowItWorks topic="borrow" className="self-center md:hidden" />
     </div>
   )
 }

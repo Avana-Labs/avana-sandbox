@@ -87,6 +87,16 @@ type ActionConfigureStageProps = {
    *  collateral before borrowing), the primary CTA stays active and navigates
    *  here instead of sitting disabled. */
   blockedRedirectHref?: string | null
+  /** Product-specific detail content that replaces the generic rate/market/metrics
+   *  block (e.g. the Umbrella market-risk card). The risk banner + network fee row
+   *  still render around it. */
+  detailsSlot?: ReactNode
+  /** Progressive disclosure: when true, the risk banner and network-fee row stay
+   *  hidden until the user has entered an amount, keeping the empty state clean.
+   *  (detailsSlot content is always shown — the slot decides its own reveal.) */
+  deferDetailsUntilAmount?: boolean
+  /** Keep the asset picker interactive even when the amount is read-only (Claim). */
+  allowAssetSwitchWhenReadOnly?: boolean
 }
 
 export function ActionConfigureAmountSection({
@@ -118,6 +128,7 @@ export function ActionConfigureAmountSection({
   assetLabel,
   amountUnitLabel,
   inputLabel,
+  allowAssetSwitchWhenReadOnly,
 }: Pick<
   ActionConfigureStageProps,
   | "verb"
@@ -148,6 +159,7 @@ export function ActionConfigureAmountSection({
   | "balanceValue"
   | "assetLabel"
   | "amountUnitLabel"
+  | "allowAssetSwitchWhenReadOnly"
 >) {
   const { exact } = useCurrency()
   const pillLabel = assetLabel ?? assetSymbol ?? preview?.amountLabel.split(" ").slice(-1)[0] ?? "Asset"
@@ -180,6 +192,7 @@ export function ActionConfigureAmountSection({
       assetPickerDisabled={assetPickerDisabled}
       assetPickerHint={assetPickerHint}
       onAssetPickerBlocked={onAssetPickerBlocked}
+      allowAssetSwitchWhenReadOnly={allowAssetSwitchWhenReadOnly}
     />
   )
 }
@@ -232,11 +245,17 @@ export function ActionConfigureStage({
   amountUnitLabel,
   inputLabel,
   blockedRedirectHref,
+  detailsSlot,
+  deferDetailsUntilAmount = false,
+  allowAssetSwitchWhenReadOnly = false,
 }: ActionConfigureStageProps) {
   const { t } = useTranslation()
   const router = useRouter()
   const configureStage = stage === "error" ? "configure" : stage
   const isValid = Boolean(preview?.allowed)
+  // Progressive disclosure (opt-in): keep the risk banner + network-fee row hidden
+  // until an amount is entered, so the empty state stays clean.
+  const showDeferredDetails = !deferDetailsUntilAmount || parsePositiveActionAmount(amount) != null
   const blockedReason = preview?.blockedReason ?? null
   // Only reasons the label mapper flags as "redirect" (e.g. no collateral) turn
   // the CTA into an active navigation; every other block leaves it disabled.
@@ -333,6 +352,7 @@ export function ActionConfigureStage({
           assetLabel={assetLabel}
           amountUnitLabel={amountUnitLabel}
           inputLabel={inputLabel}
+          allowAssetSwitchWhenReadOnly={allowAssetSwitchWhenReadOnly}
         />
       ) : null}
 
@@ -378,43 +398,49 @@ export function ActionConfigureStage({
 
       {preview && showHomeDetails ? (
         <div className={cn(previewMotionClassName, "space-y-3")}>
-          {preview.rateLabel || preview.marketValue || preview.marketBreakdown ? (
-            <ActionCard>
-              {preview.rateLabel ? (
-                <ActionInfoRow
-                  label={preview.rateLabel}
-                  value={preview.rateValue}
-                  tooltip={/rate/i.test(preview.rateLabel) && /=/.test(preview.rateValue) ? "fxRate" : "rate"}
-                />
+          {detailsSlot ? (
+            detailsSlot
+          ) : (
+            <>
+              {preview.rateLabel || preview.marketValue || preview.marketBreakdown ? (
+                <ActionCard>
+                  {preview.rateLabel ? (
+                    <ActionInfoRow
+                      label={preview.rateLabel}
+                      value={preview.rateValue}
+                      tooltip={/rate/i.test(preview.rateLabel) && /=/.test(preview.rateValue) ? "fxRate" : "rate"}
+                    />
+                  ) : null}
+                  {preview.marketBreakdown ? (
+                    <>
+                      <ActionInfoRow
+                        label="Collateral APY"
+                        value={`${preview.marketBreakdown.collateral.symbol} · ${preview.marketBreakdown.collateral.apy}`}
+                        tooltip="collateralApy"
+                      />
+                      <ActionInfoRow
+                        label="Borrow APY"
+                        value={`${preview.marketBreakdown.borrow.symbol} · ${preview.marketBreakdown.borrow.apy}`}
+                        tooltip="borrowApy"
+                      />
+                    </>
+                  ) : preview.marketValue ? (
+                    <ActionInfoRow label="Market" value={preview.marketValue} tooltip="market" />
+                  ) : null}
+                </ActionCard>
               ) : null}
-              {preview.marketBreakdown ? (
-                <>
-                  <ActionInfoRow
-                    label="Collateral APY"
-                    value={`${preview.marketBreakdown.collateral.symbol} · ${preview.marketBreakdown.collateral.apy}`}
-                    tooltip="collateralApy"
-                  />
-                  <ActionInfoRow
-                    label="Borrow APY"
-                    value={`${preview.marketBreakdown.borrow.symbol} · ${preview.marketBreakdown.borrow.apy}`}
-                    tooltip="borrowApy"
-                  />
-                </>
-              ) : preview.marketValue ? (
-                <ActionInfoRow label="Market" value={preview.marketValue} tooltip="market" />
-              ) : null}
-            </ActionCard>
-          ) : null}
 
-          {!previewBlocked && preview.metrics.length > 0 ? <ActionMetricsBlock rows={preview.metrics} /> : null}
+              {!previewBlocked && preview.metrics.length > 0 ? <ActionMetricsBlock rows={preview.metrics} /> : null}
+            </>
+          )}
 
-          {preview?.risk?.title && preview.risk.message ? (
+          {showDeferredDetails && preview?.risk?.title && preview.risk.message ? (
             <ActionRiskBanner level={preview.risk.level} title={preview.risk.title} message={preview.risk.message} />
           ) : null}
         </div>
       ) : null}
 
-      {preview && showHomeDetails ? (
+      {preview && showHomeDetails && showDeferredDetails ? (
         <ActionCard>
           <ActionInfoRow label="Network fee" value={preview.networkFeeLabel} tooltip="fee" />
         </ActionCard>

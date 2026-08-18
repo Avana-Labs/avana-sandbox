@@ -8,13 +8,12 @@ import { detailSectionStackClass, MobileDetailActionBar } from "@/app/components
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { UmbrellaMarketId } from "@/app/lib/umbrella-system/use-umbrella-session"
-import { UmbrellaActivity } from "./_detail/market-sections/UmbrellaActivity"
+import { cn } from "@/lib/utils"
 import { UmbrellaCooldown } from "./_detail/market-sections/UmbrellaCooldown"
 import { UmbrellaHero } from "./_detail/market-sections/UmbrellaHero"
 import { UmbrellaLearn } from "./_detail/market-sections/UmbrellaLearn"
 import { UmbrellaPositions } from "./_detail/market-sections/UmbrellaPositions"
 import { UmbrellaStress } from "./_detail/market-sections/UmbrellaStress"
-import { UmbrellaDevControls } from "./_detail/UmbrellaDevControls"
 import { UmbrellaMobileSidebarSheet, type UmbrellaMobileSheetTrigger } from "./_detail/UmbrellaMobileSidebarSheet"
 import { UmbrellaSidebar } from "./_detail/sidebars/UmbrellaSidebar"
 
@@ -63,23 +62,25 @@ export default function UmbrellaPage() {
     <div className="bg-background">
       <main className="container mx-auto px-3 py-6 pb-28 sm:px-4 md:py-10 lg:pb-10">
         <div className="mx-auto max-w-[1152px]">
-          <div className={detailSectionStackClass}>
-            <UmbrellaHero />
-
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
-              <div className="min-w-0">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
+            <div className={cn(detailSectionStackClass, "min-w-0")}>
+              {/* Hero + positions share one block so no divider falls between them
+                  (the section dividers resume from Cooldown down), but keep a
+                  comfortable gap so the two aren't cramped together. */}
+              <div className="space-y-10">
+                <UmbrellaHero />
                 <UmbrellaPositions onSelectMarket={setSelectedMarket} />
               </div>
-
-              <aside className="hidden space-y-8 lg:block lg:self-start">
-                <UmbrellaSidebar moduleId={selectedMarket} onMarketChange={setSelectedMarket} />
-              </aside>
+              <UmbrellaCooldown />
+              <UmbrellaStress />
+              <UmbrellaLearn />
             </div>
 
-            <UmbrellaCooldown />
-            <UmbrellaActivity />
-            <UmbrellaStress />
-            <UmbrellaLearn />
+            <aside className="hidden lg:block lg:self-start" aria-label={t("Umbrella actions")}>
+              <div className="sticky top-20 space-y-8">
+                <UmbrellaSidebar moduleId={selectedMarket} onMarketChange={setSelectedMarket} />
+              </div>
+            </aside>
           </div>
 
           <MobileDetailActionBar className="grid grid-cols-2 gap-3">
@@ -112,7 +113,6 @@ export default function UmbrellaPage() {
           />
         </div>
       </main>
-      <UmbrellaDevControls />
     </div>
   )
 }

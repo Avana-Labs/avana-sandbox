@@ -1250,6 +1250,9 @@ const dict: TranslationDictionary = {
     "カバレッジのうちクールダウン中 {pct}% · {deficits} の不足額をオフセット {offset} が吸収 · ",
   "{pct}% of target": "ターゲットの {pct}%",
   "{pct}% of target coverage.": "ターゲットカバレッジの {pct}%。",
+  "{staked} staked · {target} target": "ステーク済み {staked} · ターゲット {target}",
+  "{pct}% of coverage cooling · {deficits} deficits absorbed":
+    "カバレッジのうちクールダウン中 {pct}% · {deficits} の不足額を吸収",
   "{staked} staked · {target} target · {count} assets":
     "ステーク済み {staked} · ターゲット {target} · {count} アセット",
   "{symbols} expired — restart cooldown": "{symbols} が期限切れ — クールダウンを再開",
@@ -1455,6 +1458,54 @@ const dict: TranslationDictionary = {
   "Your position": "あなたのポジション",
   "Approval failed.": "承認に失敗しました。",
   "Swap failed.": "スワップに失敗しました。",
+  "1 year": "1年",
+  "30 days": "30日",
+  "90 days": "90日",
+  "Adjust leverage": "レバレッジを調整",
+  "At today's borrow rate.": "本日の借入金利で。",
+  "At {lev}x, health factor moves ~1:1 with collateral price.":
+    "{lev}x では、ヘルスファクターは担保価格とほぼ1:1で連動します。",
+  "Borrow Outlook": "借入アウトルック",
+  "Borrow cost exceeds yield — leverage is reducing your return, not increasing it.":
+    "借入コストが利回りを上回っています — レバレッジはリターンを増やすどころか減らしています。",
+  "Borrow more": "さらに借入",
+  "Collateral price move": "担保価格の変動",
+  "Debt change amount": "負債変更額",
+  "Drop buffer": "下落バッファ",
+  "Equity value at this leverage, by scenario.": "このレバレッジでのエクイティ価値（シナリオ別）。",
+  "Estimate on {equity} equity. Assumes rates hold; leverage amplifies both gains and losses.":
+    "{equity} のエクイティに基づく見積もり。金利は一定と仮定。レバレッジは利益も損失も拡大します。",
+  "Estimate. Variable rate — actual cost will differ.": "見積もり。変動金利 — 実際のコストは異なります。",
+  Horizon: "期間",
+  "Lend Outlook": "貸出アウトルック",
+  "Leverage multiplier": "レバレッジ倍率",
+  Liquidated: "清算済み",
+  "Liquidation price": "清算価格",
+  "Liquidation prices": "清算価格（各担保）",
+  "Move collateral prices or your debt and watch health factor respond.":
+    "担保価格や負債を動かして、ヘルスファクターの反応を確認しましょう。",
+  "Multiply Outlook": "Multiply アウトルック",
+  Next: "次へ",
+  "Price sensitivity": "価格感応度",
+  "Projected interest cost": "予想利息コスト",
+  "Projected value": "予想価値",
+  Scenario: "シナリオ",
+  "The price each collateral would hit to reach liquidation, holding your other collateral steady.":
+    "他の担保を一定に保ったまま、各担保が清算に達する価格。",
+  "Total debt": "負債合計",
+  "What a drop in collateral price does to your health factor.": "担保価格の下落がヘルスファクターに与える影響。",
+  "What-if simulator": "ホワットイフ シミュレーター",
+  "Your Dashboard": "あなたのダッシュボード",
+  below: "以下",
+  cost: "コスト",
+  from: "から",
+  "max safe": "最大安全",
+  safe: "安全",
+  yield: "利回り",
+  "“Safe” means a fall in that asset alone can't liquidate you — your other collateral covers the debt.":
+    "「安全」とは、その資産だけの下落では清算されないことを意味します — 他の担保が負債をカバーします。",
+  "How it works": "仕組み",
+  "Learn Avana": "Avana を学ぶ",
 }
 
 export default dict

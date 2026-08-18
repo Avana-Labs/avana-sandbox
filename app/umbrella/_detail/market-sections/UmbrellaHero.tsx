@@ -1,7 +1,8 @@
 "use client"
 
-import { AmountVisibilityToggle } from "@/app/components/amount-visibility-toggle"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
+import { HowItWorks } from "@/app/components/how-it-works"
+import { Eye, EyeOff } from "@/app/components/icons"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
@@ -9,9 +10,8 @@ import { formatCompactUsd, formatPct, formatUsd } from "../format"
 
 export function UmbrellaHero() {
   const { t } = useTranslation()
-  const { showDollarAmounts } = useAmountDisplayPreferences()
+  const { showDollarAmounts, setShowDollarAmounts } = useAmountDisplayPreferences()
   const umbrella = useUmbrellaSessionContext()
-  const totalMarketStakedUsd = umbrella.marketOrder.reduce((sum, id) => sum + umbrella.markets[id].totalStakedUsd, 0)
   const totalStakedUsd = umbrella.marketOrder.reduce((sum, id) => sum + umbrella.positions[id].valueUsd, 0)
   const weightedApy =
     totalStakedUsd > 0
@@ -27,7 +27,6 @@ export function UmbrellaHero() {
   const expiredIds = umbrella.marketOrder.filter((id) => umbrella.positions[id].cooldownStatus === "expired")
   const expiredUsd = expiredIds.reduce((sum, id) => sum + umbrella.positions[id].cooldownValueUsd, 0)
   const expiredSymbols = expiredIds.map((id) => umbrella.markets[id].symbol).join(", ")
-  const cooldownShare = totalStakedUsd > 0 ? (cooldownUsd / totalStakedUsd) * 100 : 0
   const withdrawalReadyTile = (() => {
     if (expiredIds.length > 0) {
       const combinedValue = readyUsd + expiredUsd
@@ -41,34 +40,34 @@ export function UmbrellaHero() {
     return {
       label: t("Withdrawal ready"),
       value: formatCompactUsd(readyUsd),
-      change: readySymbols || t("none"),
+      change: readySymbols,
       tone: readyUsd > 0 ? ("success" as const) : ("muted" as const),
     }
   })()
   const userUmbrellaSnapshot = [
-    {
-      label: t("Your Umbrella stake"),
-      value: formatUsd(totalStakedUsd),
-      change: t("{amount} market").replace("{amount}", formatCompactUsd(totalMarketStakedUsd)),
-      tone: "muted" as const,
-    },
-    { label: t("Weighted APY"), value: `${formatPct(weightedApy)}%`, change: t("live mix"), tone: "muted" as const },
-    {
-      label: t("In cooldown"),
-      value: formatCompactUsd(cooldownUsd),
-      change: `${formatPct(cooldownShare)}%`,
-      tone: "warning" as const,
-    },
+    { label: t("Your Umbrella stake"), value: formatUsd(totalStakedUsd), change: "", tone: "muted" as const },
+    { label: t("Weighted APY"), value: `${formatPct(weightedApy)}%`, change: "", tone: "muted" as const },
+    { label: t("In cooldown"), value: formatCompactUsd(cooldownUsd), change: "", tone: "warning" as const },
     withdrawalReadyTile,
   ]
 
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
-          {t("Your Umbrella")}
-        </h2>
-        <AmountVisibilityToggle />
+        <div className="flex items-center gap-2.5">
+          <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+            {t("Your Umbrella")}
+          </h2>
+          <button
+            type="button"
+            onClick={() => setShowDollarAmounts(!showDollarAmounts)}
+            aria-label={showDollarAmounts ? t("Hide Numbers") : t("Show Numbers")}
+            className="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            {showDollarAmounts ? <Eye className="size-[22px]" /> : <EyeOff className="size-[22px]" />}
+          </button>
+        </div>
+        <HowItWorks topic="umbrella" />
       </div>
       <section className="relative overflow-hidden rounded-radius-md bg-card px-4 py-5 dark:bg-white/[0.04] sm:px-5">
         <div className="pointer-events-none absolute inset-0 opacity-40 [background-image:radial-gradient(circle,rgba(148,163,184,0.16)_1px,transparent_1.2px)] [background-position:18px_18px] [background-size:16px_16px] dark:opacity-20 dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.07)_1px,transparent_1.2px)]" />
@@ -81,7 +80,7 @@ export function UmbrellaHero() {
                   <span className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
                     {showDollarAmounts ? item.value : "••••"}
                   </span>
-                  {showDollarAmounts ? (
+                  {showDollarAmounts && item.change ? (
                     <span
                       className={cn(
                         "text-[13px] font-semibold tabular-nums lg:text-[14px]",

@@ -46,6 +46,7 @@ export const KNOWN_UNTRANSLATED: readonly string[] = [
   "LOOP APY",
   "LP APR",
   "LT",
+  "LTV",
   "Multiply",
   "Multiply {name}",
   "Multiply TVL",

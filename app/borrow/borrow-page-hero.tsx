@@ -1,6 +1,7 @@
 "use client"
 
 import { CarouselArrowButtons, useOverflowCarousel } from "@/app/components/carousel-arrow-buttons"
+import { HowItWorks } from "@/app/components/how-it-works"
 import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
@@ -86,14 +87,17 @@ export function BorrowPageHero({ pageData }: { pageData: BorrowPageData }) {
       <div className="mt-6 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">Explore</h2>
-          <CarouselArrowButtons
-            canPrev={canPrev}
-            canNext={canNext}
-            onPrev={() => scrollByCard(-1)}
-            onNext={() => scrollByCard(1)}
-            prevLabel="Previous explore"
-            nextLabel="Next explore"
-          />
+          <div className="flex items-center gap-2.5">
+            <HowItWorks topic="borrow" className="hidden md:inline-flex" />
+            <CarouselArrowButtons
+              canPrev={canPrev}
+              canNext={canNext}
+              onPrev={() => scrollByCard(-1)}
+              onNext={() => scrollByCard(1)}
+              prevLabel="Previous explore"
+              nextLabel="Next explore"
+            />
+          </div>
         </div>
 
         <div

@@ -18,6 +18,7 @@ import { useDashboardLendLive } from "@/app/dashboard/use-dashboard-lend-live"
 import { buildLendDashboardMetrics } from "@/app/dashboard/dashboard-tab-metrics"
 import { DashboardLendPerformanceSection } from "@/app/dashboard/dashboard-metric-section"
 import { DashboardInvestments } from "@/app/dashboard/dashboard-investments"
+import { LendOutlook } from "@/app/dashboard/_outlook/lend-outlook"
 import type {
   PortfolioLendTabData,
   PortfolioStrategyBucket,
@@ -41,22 +42,25 @@ function marketIdFromSymbol(symbol: string) {
 
 function buildLendOpportunities(buckets: PortfolioStrategyBucket[], investments: PortfolioSupplyPosition[]) {
   const suppliedSymbols = new Set(investments.map((position) => position.symbol.toUpperCase()))
-  return buckets
-    .flatMap((bucket) =>
-      bucket.pools.map((pool) => {
-        const symbol = symbolFromPoolName(pool.name)
-        return {
-          ...pool,
-          symbol,
-          marketId: marketIdFromSymbol(symbol),
-          bucketTitle: bucket.title,
-          bucketDescription: bucket.description,
-        }
-      }),
-    )
-    .filter((pool) => !suppliedSymbols.has(pool.symbol.toUpperCase()))
-    .sort((a, b) => b.apyPct - a.apyPct)
-    .slice(0, 5)
+  return (
+    buckets
+      .flatMap((bucket) =>
+        bucket.pools.map((pool) => {
+          const symbol = symbolFromPoolName(pool.name)
+          return {
+            ...pool,
+            symbol,
+            marketId: marketIdFromSymbol(symbol),
+            bucketTitle: bucket.title,
+            bucketDescription: bucket.description,
+          }
+        }),
+      )
+      .filter((pool) => !suppliedSymbols.has(pool.symbol.toUpperCase()))
+      .sort((a, b) => b.apyPct - a.apyPct)
+      // Drop the top 2 highest-APY (aggressive) opportunities.
+      .slice(2, 7)
+  )
 }
 
 function LendOpportunitySection({
@@ -263,6 +267,7 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
         countLabel={t("{count} assets").replace("{count}", String(lendTabData.investments.length))}
         returnHref={returnHref}
       />
+      <LendOutlook />
       <LendOpportunitySection
         buckets={lendTabData.strategyBuckets}
         investments={lendTabData.investments}
