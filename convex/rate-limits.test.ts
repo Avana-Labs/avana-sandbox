@@ -19,9 +19,9 @@ describe("rateLimits.consume — bounds + counting", () => {
 
   test("rejects an out-of-bounds limit", async () => {
     const t = convexTest(schema, modules)
-    await expect(
-      t.mutation(api.rateLimits.consume, { key: "k2", limit: 1_000_000, windowMs: 60_000 }),
-    ).rejects.toThrow(/INVALID_RATE_LIMIT/)
+    await expect(t.mutation(api.rateLimits.consume, { key: "k2", limit: 1_000_000, windowMs: 60_000 })).rejects.toThrow(
+      /INVALID_RATE_LIMIT/,
+    )
   })
 
   test("rejects an out-of-bounds window", async () => {

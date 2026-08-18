@@ -189,24 +189,51 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
     const w = WALLET.toLowerCase()
     await t.run(async (ctx) => {
       await ctx.db.insert("positions", {
-        wallet: w, product: "lend", marketSlug: "usdc", status: "open",
-        suppliedUsd6: "0", earnedUsd6: "0", openedAt: 1, lastUpdatedAt: 1, revision: 0,
+        wallet: w,
+        product: "lend",
+        marketSlug: "usdc",
+        status: "open",
+        suppliedUsd6: "0",
+        earnedUsd6: "0",
+        openedAt: 1,
+        lastUpdatedAt: 1,
+        revision: 0,
       })
       await ctx.db.insert("walletLendBalances", {
-        wallet: w, marketId: "usdc", assetId: "usdc", symbol: "USDC",
-        amount: 0, valueUsd: 0, state: "deposited", updatedAt: 1,
+        wallet: w,
+        marketId: "usdc",
+        assetId: "usdc",
+        symbol: "USDC",
+        amount: 0,
+        valueUsd: 0,
+        state: "deposited",
+        updatedAt: 1,
       })
       // Only $5 of liquid USDC on hand.
       await ctx.db.insert("sandboxBalances", {
-        wallet: w, assetSlug: "usdc", symbol: "USDC", amount: 5, valueUsd: 5, priceUsd: 1, updatedAt: 1,
+        wallet: w,
+        assetSlug: "usdc",
+        symbol: "USDC",
+        amount: 5,
+        valueUsd: 5,
+        priceUsd: 1,
+        updatedAt: 1,
       })
     })
     const asUser = t.withIdentity({ subject: WALLET })
     await expect(
       asUser.mutation(api.sandbox.transactions.recordTransaction, {
-        wallet: WALLET, intentId: "afford-over", product: "lend" as const, kind: "deposit",
-        marketSlug: "usdc", assetId: "usdc", requestedAmountUsd6: "10000000", executedAmountUsd6: "10000000",
-        amountUsd: 10, simulated: true, expectedRevision: 0,
+        wallet: WALLET,
+        intentId: "afford-over",
+        product: "lend" as const,
+        kind: "deposit",
+        marketSlug: "usdc",
+        assetId: "usdc",
+        requestedAmountUsd6: "10000000",
+        executedAmountUsd6: "10000000",
+        amountUsd: 10,
+        simulated: true,
+        expectedRevision: 0,
         position: { status: "open" as const, marketSlug: "usdc", suppliedUsd6: "10000000", earnedUsd6: "0" },
       }),
     ).rejects.toThrow(/INSUFFICIENT_BALANCE/)
@@ -217,22 +244,49 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
     const w = WALLET.toLowerCase()
     await t.run(async (ctx) => {
       await ctx.db.insert("positions", {
-        wallet: w, product: "lend", marketSlug: "usdc", status: "open",
-        suppliedUsd6: "0", earnedUsd6: "0", openedAt: 1, lastUpdatedAt: 1, revision: 0,
+        wallet: w,
+        product: "lend",
+        marketSlug: "usdc",
+        status: "open",
+        suppliedUsd6: "0",
+        earnedUsd6: "0",
+        openedAt: 1,
+        lastUpdatedAt: 1,
+        revision: 0,
       })
       await ctx.db.insert("walletLendBalances", {
-        wallet: w, marketId: "usdc", assetId: "usdc", symbol: "USDC",
-        amount: 0, valueUsd: 0, state: "deposited", updatedAt: 1,
+        wallet: w,
+        marketId: "usdc",
+        assetId: "usdc",
+        symbol: "USDC",
+        amount: 0,
+        valueUsd: 0,
+        state: "deposited",
+        updatedAt: 1,
       })
       await ctx.db.insert("sandboxBalances", {
-        wallet: w, assetSlug: "usdc", symbol: "USDC", amount: 100, valueUsd: 100, priceUsd: 1, updatedAt: 1,
+        wallet: w,
+        assetSlug: "usdc",
+        symbol: "USDC",
+        amount: 100,
+        valueUsd: 100,
+        priceUsd: 1,
+        updatedAt: 1,
       })
     })
     const asUser = t.withIdentity({ subject: WALLET })
     const res = await asUser.mutation(api.sandbox.transactions.recordTransaction, {
-      wallet: WALLET, intentId: "afford-ok", product: "lend" as const, kind: "deposit",
-      marketSlug: "usdc", assetId: "usdc", requestedAmountUsd6: "10000000", executedAmountUsd6: "10000000",
-      amountUsd: 10, simulated: true, expectedRevision: 0,
+      wallet: WALLET,
+      intentId: "afford-ok",
+      product: "lend" as const,
+      kind: "deposit",
+      marketSlug: "usdc",
+      assetId: "usdc",
+      requestedAmountUsd6: "10000000",
+      executedAmountUsd6: "10000000",
+      amountUsd: 10,
+      simulated: true,
+      expectedRevision: 0,
       position: { status: "open" as const, marketSlug: "usdc", suppliedUsd6: "10000000", earnedUsd6: "0" },
     })
     expect(res.receipt.status).toBe("success")

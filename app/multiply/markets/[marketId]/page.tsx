@@ -33,7 +33,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     `multiply market metadata:${marketId}`,
   )
   if (!detail)
-    return { title: "Multiply market · Avana", description: "Explore multiply market details, leverage strategies, and total value locked on Avana." }
+    return {
+      title: "Multiply market · Avana",
+      description: "Explore multiply market details, leverage strategies, and total value locked on Avana.",
+    }
   return buildSeoMetadata({
     title: `${detail.hero.name} · Avana Multiply`,
     description: detail.about.description,

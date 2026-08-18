@@ -33,7 +33,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     `borrow market metadata:${marketId}`,
   )
   if (!detail)
-    return { title: "Market · Avana", description: "Explore borrow market details, supported collateral, and available liquidity on Avana." }
+    return {
+      title: "Market · Avana",
+      description: "Explore borrow market details, supported collateral, and available liquidity on Avana.",
+    }
   return buildSeoMetadata({
     title: `${detail.hero.name} · Avana Borrow`,
     description: detail.about.description,
