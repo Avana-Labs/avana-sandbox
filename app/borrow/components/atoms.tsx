@@ -38,11 +38,19 @@ export function TokenBubble({
   return (
     <span
       className={cn(
-        "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full font-medium",
-        ring && "ring-2 ring-background",
+        "relative inline-flex shrink-0 items-center justify-center font-medium",
         box,
-        showIcon ? "bg-card" : `${visual.bgClass} ${visual.textClass}`,
-        !showIcon && text,
+        // A real token icon renders as a bare transparent PNG — no circular plate, card
+        // background, ring or clip. Only the initials fallback keeps the colored avatar circle.
+        showIcon
+          ? null
+          : cn(
+              "overflow-hidden rounded-full",
+              ring && "ring-2 ring-background",
+              visual.bgClass,
+              visual.textClass,
+              text,
+            ),
         className,
       )}
     >

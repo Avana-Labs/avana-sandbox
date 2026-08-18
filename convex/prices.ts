@@ -14,7 +14,11 @@ import { internal } from "./_generated/api"
 
 /**
  * Base symbol (lowercase, = SpokeBorrowableRecord.baseAssetId) → DefiLlama coin id.
- * Addresses are Ethereum-mainnet; all 14 verified to resolve at confidence 0.99.
+ * Must cover EVERY symbol the sandbox catalogs can display — any symbol missing here falls
+ * back to the deterministic PRICE_FIXTURE, which drifts badly from reality for volatile
+ * governance tokens (ARB, GNO, LDO, OP, BAL, AERO…). All ids verified to resolve at
+ * confidence ≥ 0.99 (mainnet contract where the token lives on Ethereum, coingecko slug for
+ * L2-native or non-ERC20 assets like BTC).
  */
 export const TOKEN_LLAMA_IDS: Record<string, string> = {
   usdc: "ethereum:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
@@ -22,27 +26,68 @@ export const TOKEN_LLAMA_IDS: Record<string, string> = {
   dai: "ethereum:0x6B175474E89094C44Da98b954EedeAC495271d0F",
   weth: "ethereum:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
   wbtc: "ethereum:0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+  btc: "coingecko:bitcoin",
   crvusd: "ethereum:0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
   gho: "ethereum:0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f",
   eth: "coingecko:ethereum",
   steth: "ethereum:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84",
   wsteth: "ethereum:0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0",
   reth: "ethereum:0xae78736Cd615f374D3085123A210448E74Fc6393",
+  weeth: "ethereum:0xCd5fE23C85820F7B72D0926FC9b05b43E359b7ee",
   eurc: "ethereum:0x1aBaEA1f7C830bD89Acc67eC4af516284b1bC33c",
   cbeth: "ethereum:0xBe9895146f7AF43049ca1c1AE358B0541Ea49704",
   cbbtc: "ethereum:0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
   aave: "coingecko:aave",
   uni: "coingecko:uniswap",
   crv: "coingecko:curve-dao-token",
+  // Governance / L2 tokens — fixture values here are wildly stale, so live coverage matters.
+  arb: "coingecko:arbitrum",
+  op: "coingecko:optimism",
+  gno: "ethereum:0x6810e776880C02933D47DB1b9fc05908e5386b96",
+  ldo: "ethereum:0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32",
+  bal: "ethereum:0xba100000625a3754423978a60c9317c58a424e3D",
+  aero: "coingecko:aerodrome-finance",
+  // Stablecoins (≈ $1, but track the real depeg instead of a pinned fixture).
+  usde: "coingecko:ethena-usde",
+  frxusd: "coingecko:frax-usd",
+  usdg: "coingecko:global-dollar",
+  rlusd: "coingecko:ripple-usd",
 }
 
 /**
- * Prices are considered stale after this age. The refresh cron runs hourly (see
- * crons.ts), so 3h tolerates one or two missed runs (network blip / DefiLlama outage)
- * before the UI flags staleness — long enough to avoid false positives, short enough
- * that a genuinely wedged cron surfaces within a few hours.
+ * Freshness thresholds. The refresh cron runs every 10 minutes (see crons.ts): a row older than
+ * one missed run (20m) is `stale`, and older than several (45m) is `invalid` — a wedged cron
+ * surfaces quickly without false positives from a single network blip. A failed refresh writes
+ * nothing, so old rows keep their old timestamp and age past these thresholds honestly.
  */
-export const PRICE_STALE_AFTER_MS = 3 * 60 * 60 * 1000
+export const PRICE_REFRESH_INTERVAL_MS = 10 * 60 * 1000
+export const PRICE_STALE_AFTER_MS = 20 * 60 * 1000
+export const PRICE_INVALID_AFTER_MS = 45 * 60 * 1000
+
+/** DefiLlama chain-name → EVM chainId, for parsing `chain:address` coin ids. */
+const LLAMA_CHAIN_IDS: Record<string, number> = {
+  ethereum: 1,
+  base: 8453,
+  arbitrum: 42161,
+  optimism: 10,
+  polygon: 137,
+}
+
+/** Parse a DefiLlama coin id into on-chain identity. coingecko-slug ids carry no contract. */
+export function parseLlamaId(llamaId: string): { chainId?: number; contractAddress?: string } {
+  const [chain, ref] = llamaId.split(":")
+  if (!ref || chain === "coingecko") return {}
+  const chainId = LLAMA_CHAIN_IDS[chain]
+  if (ref.startsWith("0x")) return { chainId, contractAddress: ref.toLowerCase() }
+  return chainId ? { chainId } : {}
+}
+
+/** Classify a price row's age against the freshness thresholds. */
+export function classifyPriceStatus(ageMs: number): "fresh" | "stale" | "invalid" {
+  if (ageMs >= PRICE_INVALID_AFTER_MS) return "invalid"
+  if (ageMs >= PRICE_STALE_AFTER_MS) return "stale"
+  return "fresh"
+}
 
 /**
  * Minimum DefiLlama `confidence` (0–1 scale) to accept a quote. Our tracked coins normally
@@ -58,9 +103,12 @@ export const getPrices = query({
     const rows = await ctx.db.query("tokenPrices").collect()
     return rows.map((r) => ({
       symbol: r.symbol,
+      chainId: r.chainId,
+      contractAddress: r.contractAddress,
       priceUsd: r.priceUsd,
       confidence: r.confidence,
       source: r.source,
+      status: r.status,
       priceChange24hWad: r.priceChange24hWad,
       updatedAt: r.updatedAt,
     }))
@@ -120,10 +168,16 @@ export const upsertPrices = internalMutation({
       v.object({
         symbol: v.string(),
         llamaId: v.string(),
+        chainId: v.optional(v.number()),
+        contractAddress: v.optional(v.string()),
         priceUsd: v.number(),
         decimals: v.optional(v.number()),
         confidence: v.optional(v.number()),
         source: v.string(),
+        sourceUpdatedAt: v.optional(v.number()),
+        fetchedAt: v.optional(v.number()),
+        snapshotAt: v.optional(v.number()),
+        status: v.optional(v.union(v.literal("fresh"), v.literal("stale"), v.literal("invalid"))),
         updatedAt: v.number(),
       }),
     ),
@@ -136,13 +190,94 @@ export const upsertPrices = internalMutation({
         .unique()
       if (existing) await ctx.db.patch(existing._id, row)
       else await ctx.db.insert("tokenPrices", row)
+
+      // Append to the SEPARATE history table (one row per symbol per UTC day) so charts have a
+      // price series without ever reading the current row. Upsert keeps growth bounded.
+      const day = new Date(row.updatedAt).toISOString().slice(0, 10)
+      const historyRow = await ctx.db
+        .query("tokenPricesHistory")
+        .withIndex("by_symbol_day", (q) => q.eq("symbol", row.symbol).eq("day", day))
+        .unique()
+      if (historyRow) await ctx.db.patch(historyRow._id, { priceUsd: row.priceUsd, updatedAt: row.updatedAt })
+      else
+        await ctx.db.insert("tokenPricesHistory", {
+          symbol: row.symbol,
+          day,
+          priceUsd: row.priceUsd,
+          updatedAt: row.updatedAt,
+        })
     }
     return { written: rows.length }
   },
 })
 
+/** Historical daily price series for a token (charts). Separate from the current `getPrices`. */
+export const getTokenPriceHistory = query({
+  args: { symbol: v.string() },
+  handler: async (ctx, { symbol }) => {
+    const rows = await ctx.db
+      .query("tokenPricesHistory")
+      .withIndex("by_symbol_day", (q) => q.eq("symbol", symbol.toLowerCase()))
+      .collect()
+    return rows
+      .map((r) => ({ day: r.day, priceUsd: r.priceUsd }))
+      .sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : 0))
+  },
+})
+
+/**
+ * Recompute POOL-market LP prices live from the token oracle: LPPriceUSD = Σ(weightᵢ × priceᵢ) over
+ * the market's stored constituents. Keeps the server-side LP valuation (assertBorrowSolvent reads
+ * markets.priceUsd) tracking the underlying token prices instead of a frozen seed value, so the
+ * client preview (which values LP collateral live) and the server solvency check stay consistent.
+ *
+ * A pool with ANY unpriced/stale/invalid leg is SKIPPED (its priceUsd is left unchanged rather than
+ * derived from incomplete data) — unavailable over wrong. Internal-only; run by the 10-min cron.
+ */
+export const refreshPoolLpPrices = internalMutation({
+  args: {},
+  handler: async (ctx): Promise<{ updated: number; skipped: number }> => {
+    const priceRows = await ctx.db.query("tokenPrices").collect()
+    const priceBySymbol = new Map<string, { priceUsd: number; status?: string }>()
+    for (const row of priceRows) {
+      priceBySymbol.set(row.symbol.toLowerCase(), { priceUsd: row.priceUsd, status: row.status })
+    }
+    const poolMarkets = await ctx.db
+      .query("markets")
+      .withIndex("by_scope_slug", (q) => q.eq("scope", "pool"))
+      .collect()
+    let updated = 0
+    let skipped = 0
+    for (const market of poolMarkets) {
+      const constituents = market.constituents
+      if (!constituents || constituents.length === 0) {
+        skipped++
+        continue
+      }
+      let priceUsd = 0
+      let usable = true
+      for (const leg of constituents) {
+        const quote = priceBySymbol.get(leg.symbol.toLowerCase())
+        // Unpriced, non-positive, or invalid-status leg → the whole LP price is unavailable.
+        if (!quote || !Number.isFinite(quote.priceUsd) || quote.priceUsd <= 0 || quote.status === "invalid") {
+          usable = false
+          break
+        }
+        priceUsd += leg.weight * quote.priceUsd
+      }
+      if (!usable || !(priceUsd > 0)) {
+        skipped++
+        continue
+      }
+      await ctx.db.patch(market._id, { priceUsd })
+      updated++
+    }
+    return { updated, skipped }
+  },
+})
+
 type LlamaResponse = {
-  coins: Record<string, { price: number; decimals?: number; confidence?: number; symbol?: string }>
+  coins: Record<string, { price: number; decimals?: number; confidence?: number; symbol?: string; timestamp?: number }>
 }
 
 /**
@@ -177,13 +312,23 @@ export const refreshPrices = internalAction({
           // treat as the real price. Missing confidence is treated as acceptable so an omitted
           // field never empties the whole batch.
           if (typeof coin.confidence === "number" && coin.confidence < PRICE_MIN_CONFIDENCE) return null
+          const { chainId, contractAddress } = parseLlamaId(llamaId)
+          // DefiLlama returns per-coin `timestamp` in SECONDS; fall back to now when absent so a
+          // provider that omits it never looks artificially ancient.
+          const sourceUpdatedAt = typeof coin.timestamp === "number" ? coin.timestamp * 1000 : now
           return {
             symbol,
             llamaId,
+            chainId,
+            contractAddress,
             priceUsd: coin.price,
             decimals: coin.decimals,
             confidence: coin.confidence,
             source: "defillama",
+            sourceUpdatedAt,
+            fetchedAt: now,
+            snapshotAt: now,
+            status: classifyPriceStatus(Math.max(0, now - sourceUpdatedAt)),
             updatedAt: now,
           }
         })
@@ -194,6 +339,9 @@ export const refreshPrices = internalAction({
         throw new Error("DefiLlama returned no usable prices")
       }
       await ctx.runMutation(internal.prices.upsertPrices, { rows })
+      // Recompute pool LP prices from the freshly-written token prices × pool weights so the
+      // server-side LP valuation tracks the oracle instead of a frozen seed value.
+      await ctx.runMutation(internal.prices.refreshPoolLpPrices, {})
       return { written: rows.length, fetched: Object.keys(json.coins).length }
     } catch (err) {
       console.error("[prices] refreshPrices failed; UI will surface staleness via getPriceStatus:", err)

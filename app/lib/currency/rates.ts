@@ -1,6 +1,15 @@
 import type { CurrencyCode } from "@/app/components/display-preferences"
 
 /**
+ * Dispatched (window Event) after live FX rates are applied — by the client poll
+ * (exchange-rates.fetchLiveRates) OR by the validated Convex FX subscription
+ * (app/lib/prices/convex-token-prices). DisplayPreferencesProvider listens and bumps its rate
+ * version so currency consumers re-render with the new rates. Defined here (a module no test
+ * mocks) so importing it never trips a strict module mock.
+ */
+export const FX_RATES_UPDATED_EVENT = "avana:fx-rates-updated"
+
+/**
  * Approximate FX rates expressed as "units of the currency per 1 USD". The app's
  * economy is computed and stored in USD (the oracle prices are USD); these rates
  * convert that USD figure for display when the user picks a non-USD currency.

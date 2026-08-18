@@ -107,9 +107,8 @@ function TokenAvatar({ visual }: { visual: BorrowAssetVisual }) {
   return (
     <span
       className={cn(
-        "flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full text-[10px] font-medium",
-        visual.bgClass,
-        visual.textClass,
+        "flex size-8 shrink-0 items-center justify-center text-[10px] font-medium",
+        visual.iconUrl ? undefined : cn("overflow-hidden rounded-full", visual.bgClass, visual.textClass),
       )}
     >
       {visual.iconUrl ? (
@@ -118,7 +117,7 @@ function TokenAvatar({ visual }: { visual: BorrowAssetVisual }) {
           alt=""
           width={TOKEN_ICON_TABLE_PX}
           height={TOKEN_ICON_TABLE_PX}
-          className="size-full rounded-full object-cover"
+          className="size-full object-contain"
         />
       ) : (
         visual.shortLabel
@@ -132,9 +131,10 @@ function PoolAvatar({ visuals }: { visuals: [BorrowAssetVisual, BorrowAssetVisua
     <span className="relative flex h-9 w-11 shrink-0 items-center">
       <span
         className={cn(
-          "absolute left-0 flex size-8 items-center justify-center overflow-hidden rounded-full ring-2 ring-background",
-          visuals[0].bgClass,
-          visuals[0].textClass,
+          "absolute left-0 flex size-8 items-center justify-center",
+          visuals[0].iconUrl
+            ? undefined
+            : cn("overflow-hidden rounded-full ring-2 ring-background", visuals[0].bgClass, visuals[0].textClass),
         )}
       >
         {visuals[0].iconUrl ? (
@@ -143,7 +143,7 @@ function PoolAvatar({ visuals }: { visuals: [BorrowAssetVisual, BorrowAssetVisua
             alt=""
             width={TOKEN_ICON_TABLE_PX}
             height={TOKEN_ICON_TABLE_PX}
-            className="size-full rounded-full object-cover"
+            className="size-full object-contain"
           />
         ) : (
           <span className="text-[9px] font-medium">{visuals[0].shortLabel}</span>
@@ -151,9 +151,10 @@ function PoolAvatar({ visuals }: { visuals: [BorrowAssetVisual, BorrowAssetVisua
       </span>
       <span
         className={cn(
-          "absolute left-5 flex size-8 items-center justify-center overflow-hidden rounded-full ring-2 ring-background",
-          visuals[1].bgClass,
-          visuals[1].textClass,
+          "absolute left-5 flex size-8 items-center justify-center",
+          visuals[1].iconUrl
+            ? undefined
+            : cn("overflow-hidden rounded-full ring-2 ring-background", visuals[1].bgClass, visuals[1].textClass),
         )}
       >
         {visuals[1].iconUrl ? (
@@ -162,7 +163,7 @@ function PoolAvatar({ visuals }: { visuals: [BorrowAssetVisual, BorrowAssetVisua
             alt=""
             width={TOKEN_ICON_TABLE_PX}
             height={TOKEN_ICON_TABLE_PX}
-            className="size-full rounded-full object-cover"
+            className="size-full object-contain"
           />
         ) : (
           <span className="text-[9px] font-medium">{visuals[1].shortLabel}</span>

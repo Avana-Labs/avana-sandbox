@@ -11,6 +11,7 @@ import type { AssetDetail } from "@/app/lib/borrow-detail"
 import { resolveCollateralForAsset } from "@/app/lib/borrow-detail/cross-market"
 import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { useCurrency } from "@/app/lib/currency/use-currency"
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
 
@@ -77,6 +78,7 @@ function ViewDetailButton({ href, label }: { href: string; label: string }) {
 
 export function AllocationBreakdownCard({ detail, id }: Props) {
   const { t } = useTranslation()
+  const { compact } = useCurrency()
   const router = useRouter()
   const [sortKey, setSortKey] = useState<SortKey>("allocation")
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc")
@@ -221,8 +223,9 @@ export function AllocationBreakdownCard({ detail, id }: Props) {
                           <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
                             {row.poolName}
                           </div>
-                          <div className="mt-1 truncate text-[13px] font-normal tracking-[-0.03em] tabular-nums text-brand">
-                            {row.utilizationPct.toFixed(2)}% {t("Utilization")}
+                          <div className="mt-1 truncate text-[13px] font-normal tracking-[-0.03em] tabular-nums text-muted-foreground dark:text-white/38">
+                            {row.feeTier ? `${row.feeTier} · ` : ""}
+                            {row.tvlUsd !== undefined ? `${compact(row.tvlUsd)} ${t("TVL")}` : ""}
                           </div>
                         </div>
                       </div>

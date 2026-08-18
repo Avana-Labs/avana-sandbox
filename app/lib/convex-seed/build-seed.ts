@@ -88,6 +88,8 @@ export type SeedMarketRow = {
     iconUrl?: string
   }>
   resources?: Array<{ label: string; href: string }>
+  /** Pool composition with normalized weights, for live LP-price recomputation (Σ weightᵢ×priceᵢ). */
+  constituents?: Array<{ symbol: string; weight: number }>
   /**
    * Canonical USD price for the market, used by the onboarding starter-allocation gate.
    * The live token oracle (convex/prices.ts) only covers single-token bluechip symbols, so
@@ -532,6 +534,9 @@ function poolMarketRow(pool: BorrowPoolRow, createdAt: number): SeedMarketRow {
     // server rejected borrows the client preview allowed. `pools.lpTokenPriceUsd` (unseeded
     // in this deployment) still takes precedence when present.
     priceUsd: poolLpTokenPriceUsd(pool),
+    // Pool composition + weights, so the Convex oracle job (prices.refreshPoolLpPrices) can
+    // recompute this LP price live as Σ(weightᵢ × priceᵢ) instead of leaving the seed value frozen.
+    constituents: pool.constituents.map((c) => ({ symbol: c.symbol, weight: c.weight })),
     createdAt,
   }
 }

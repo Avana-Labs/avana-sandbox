@@ -1,5 +1,7 @@
 import type { PortfolioLendTabData, PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
+import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
+import { normalizeWeights, type WeightedConstituent } from "@/app/lib/prices/lp-token-price"
 
 /**
  * Which product surface this exposure came from. Kept fine-grained so the UI
@@ -50,15 +52,19 @@ function upsertLeg(map: Map<string, SymbolExposure>, symbol: string, leg: Exposu
 }
 
 /**
- * Split an LP-pair collateral USD across its two legs 50/50. The borrow read-model
- * only carries a single `lpTokenPriceUsd6` per LP token — there's no per-constituent
- * reserve breakdown available — so a naive constant-product split is the best signal
- * we can give without adding an oracle. Callers that later gain per-leg weights can
- * swap this helper without touching the aggregator API.
+ * Resolve an LP pool's constituents + normalized weights so its collateral USD can be attributed
+ * per underlying asset. Uses the pool's real composition from the catalog (by id, then name) —
+ * covering 80/20 and 3+/4-token pools correctly — and falls back to an equal-weight split over the
+ * two display visuals for pools the catalog doesn't cover (e.g. hydrated markets not in it).
  */
-function splitPairUsd(usd: number): [number, number] {
-  const half = usd / 2
-  return [half, half]
+function resolvePoolConstituents(pool: SupplyRowContext["pool"]): WeightedConstituent[] {
+  const catalogPool =
+    BORROW_POOL_CATALOG.find((p) => p.id === pool.id) ?? BORROW_POOL_CATALOG.find((p) => p.name === pool.name)
+  if (catalogPool && catalogPool.constituents.length > 0) return catalogPool.constituents
+  return normalizeWeights([
+    { symbol: pool.visuals[0].symbol, weight: 1 },
+    { symbol: pool.visuals[1].symbol, weight: 1 },
+  ])
 }
 
 function aggregateLend(map: Map<string, SymbolExposure>, lend: PortfolioLendTabData | undefined | null): void {
@@ -80,20 +86,17 @@ function aggregateBorrow(
 ): void {
   if (collateralRows) {
     for (const row of collateralRows) {
-      const { visuals } = row.pool
-      const [aUsd, bUsd] = splitPairUsd(Math.max(0, row.pool.collateralUsd))
-      upsertLeg(map, visuals[0].symbol, {
-        source: "borrow-collateral",
-        usd: aUsd,
-        direction: "long",
-        detail: row.pool.name,
-      })
-      upsertLeg(map, visuals[1].symbol, {
-        source: "borrow-collateral",
-        usd: bUsd,
-        direction: "long",
-        detail: row.pool.name,
-      })
+      const collateralUsd = Math.max(0, row.pool.collateralUsd)
+      // Attribute the LP collateral USD across ALL constituents by their real weights (80/20,
+      // tri-stable, …), not a flat 50/50 over the two display legs.
+      for (const constituent of resolvePoolConstituents(row.pool)) {
+        upsertLeg(map, constituent.symbol, {
+          source: "borrow-collateral",
+          usd: collateralUsd * constituent.weight,
+          direction: "long",
+          detail: row.pool.name,
+        })
+      }
     }
   }
   if (debtRows) {

@@ -1,6 +1,8 @@
 import { getTokenIconMeta } from "@/app/lib/token-icons"
 import { getActiveCurrency, withCurrencySymbol } from "@/app/lib/currency/active-rate"
 import { healthFactorBand } from "@/app/lib/health/health-factor-bands"
+import { lpTokenPriceUsd, normalizeWeights, type WeightedConstituent } from "@/app/lib/prices/lp-token-price"
+import { canonicalPriceUsd } from "@/app/lib/prices/canonical"
 
 export type BorrowDexId = "uniswap" | "curve" | "balancer" | "aerodrome"
 
@@ -83,6 +85,13 @@ export type BorrowPoolRow = {
   availableUsd: number
   riskPremiumBps: number
   visuals: [BorrowAssetVisual, BorrowAssetVisual]
+  /**
+   * Full pool composition with NORMALIZED weights (fractions summing to 1), supporting 2/3/4+
+   * tokens. This is what LP-collateral valuation reads: LPPriceUSD = Σ(weightᵢ × priceᵢ). The
+   * two-leg `visuals` above remain for display only. Symbols are display/visual symbols; the
+   * pricing layer normalizes them (ETH→WETH, upper-cases) before resolving canonical prices.
+   */
+  constituents: WeightedConstituent[]
   collateralExampleUsd: number
   trendUp: boolean
   trendValues?: number[]
@@ -90,15 +99,22 @@ export type BorrowPoolRow = {
 }
 
 /**
- * USD price of a single LP token for a collateral pool. An LP pair has no
- * single-token oracle price, so we derive a stable per-token price from the
- * pool's example collateral position. This is the SINGLE source of truth shared
- * by the client market snapshot (borrow-system/mock.ts) and the Convex seed
- * (convex-seed/build-seed.ts) so the server values 18-decimal LP-token collateral
- * amounts with the exact price the client used to derive those amounts. If the two
- * diverged, server solvency would reject borrows the client preview allowed.
+ * USD price of a single LP token = Σ(weightᵢ × canonicalPriceᵢ) over the pool's constituents
+ * (the one Avana LP-collateral model — see lp-token-price.ts). This is the SINGLE source of
+ * truth shared by the client market snapshot (borrow-system/mock.ts) and the Convex seed
+ * (convex-seed/build-seed.ts), so the server values 18-decimal LP-token collateral amounts with
+ * the exact price the client derived them from; a divergence would make server solvency reject
+ * borrows the client preview allowed.
+ *
+ * Fallback: when a constituent leg has no canonical price (exotic Aerodrome/boosted tokens the
+ * snapshot doesn't cover), the weighted sum is unavailable and we fall back to the example-
+ * position heuristic so the sandbox pool still functions. This is NOT a competing model — it is
+ * only reached when Σ(weight×price) genuinely can't be computed, and disappears once the oracle
+ * covers those legs.
  */
-export function poolLpTokenPriceUsd(pool: Pick<BorrowPoolRow, "collateralExampleUsd">): number {
+export function poolLpTokenPriceUsd(pool: Pick<BorrowPoolRow, "constituents" | "collateralExampleUsd">): number {
+  const result = lpTokenPriceUsd(pool.constituents, canonicalPriceUsd)
+  if (result.ok) return result.priceUsd
   return Math.max(1, pool.collateralExampleUsd / 2.5)
 }
 
@@ -728,6 +744,13 @@ type PoolSeed = {
   name?: string
   trendUp?: boolean
   feeTier?: string
+  /**
+   * Explicit pool composition as raw proportional weights (normalized at build time). Omit for a
+   * plain equal-weight 2-token pool over `pair`. Declare it for 3+/weighted pools whose real
+   * composition the two-leg `pair` can't express — e.g. equal-weight `[2,1,1]` → 50/25/25,
+   * 80/20 → `[4,1]`, tri-stable → `[1,1,1]`.
+   */
+  composition?: { symbol: VisualSymbol; weight: number }[]
 }
 
 const SPOKE_DEFAULT_FEE_TIER: Record<BorrowSpokeId, string> = {
@@ -777,7 +800,16 @@ const POOL_SEEDS: Record<BorrowSpokeId, PoolSeed[]> = {
   ],
   "curve-stable": [
     { pair: ["USDC", "USDT"], trendUp: true },
-    { pair: ["DAI", "USDC"], name: "DAI / USDC / USDT", trendUp: true },
+    {
+      pair: ["DAI", "USDC"],
+      name: "DAI / USDC / USDT",
+      trendUp: true,
+      composition: [
+        { symbol: "DAI", weight: 1 },
+        { symbol: "USDC", weight: 1 },
+        { symbol: "USDT", weight: 1 },
+      ],
+    },
     { pair: ["crvUSD", "USDC"], trendUp: true },
     { pair: ["USDe", "USDC"], trendUp: true },
     { pair: ["FRAX", "USDC"], trendUp: false },
@@ -793,10 +825,28 @@ const POOL_SEEDS: Record<BorrowSpokeId, PoolSeed[]> = {
     { pair: ["USDT", "ETH"], trendUp: true },
     { pair: ["WBTC", "ETH"], trendUp: true },
     { pair: ["CRV", "ETH"], trendUp: false },
-    { pair: ["WBTC", "ETH"], name: "USDC / WBTC / ETH", trendUp: true },
+    {
+      pair: ["WBTC", "ETH"],
+      name: "USDC / WBTC / ETH",
+      trendUp: true,
+      composition: [
+        { symbol: "USDC", weight: 1 },
+        { symbol: "WBTC", weight: 1 },
+        { symbol: "ETH", weight: 1 },
+      ],
+    },
   ],
   "bal-stable": [
-    { pair: ["USDC", "DAI"], name: "USDC / DAI / USDT", trendUp: true },
+    {
+      pair: ["USDC", "DAI"],
+      name: "USDC / DAI / USDT",
+      trendUp: true,
+      composition: [
+        { symbol: "USDC", weight: 1 },
+        { symbol: "DAI", weight: 1 },
+        { symbol: "USDT", weight: 1 },
+      ],
+    },
     { pair: ["GHO", "USDC"], trendUp: true },
     { pair: ["EURC", "USDC"], trendUp: false },
     { pair: ["sDAI", "USDC"], trendUp: true },
@@ -808,16 +858,58 @@ const POOL_SEEDS: Record<BorrowSpokeId, PoolSeed[]> = {
     { pair: ["weETH", "WETH"], trendUp: true },
   ],
   "bal-weighted": [
-    { pair: ["WETH", "AAVE"], name: "80/20 WETH/AAVE", trendUp: true },
-    { pair: ["BAL", "WETH"], name: "80/20 BAL/WETH", trendUp: false },
-    { pair: ["GNO", "WETH"], name: "80/20 GNO/WETH", trendUp: true },
-    { pair: ["AURA", "WETH"], name: "80/20 AURA/WETH", trendUp: false },
+    {
+      pair: ["WETH", "AAVE"],
+      name: "80/20 WETH/AAVE",
+      trendUp: true,
+      composition: [
+        { symbol: "WETH", weight: 4 },
+        { symbol: "AAVE", weight: 1 },
+      ],
+    },
+    {
+      pair: ["BAL", "WETH"],
+      name: "80/20 BAL/WETH",
+      trendUp: false,
+      composition: [
+        { symbol: "BAL", weight: 4 },
+        { symbol: "WETH", weight: 1 },
+      ],
+    },
+    {
+      pair: ["GNO", "WETH"],
+      name: "80/20 GNO/WETH",
+      trendUp: true,
+      composition: [
+        { symbol: "GNO", weight: 4 },
+        { symbol: "WETH", weight: 1 },
+      ],
+    },
+    {
+      pair: ["AURA", "WETH"],
+      name: "80/20 AURA/WETH",
+      trendUp: false,
+      composition: [
+        { symbol: "AURA", weight: 4 },
+        { symbol: "WETH", weight: 1 },
+      ],
+    },
   ],
   "bal-boosted": [
-    { pair: ["USDC", "DAI"], name: "bb-a-USDC / bb-a-DAI / bb-a-USDT", trendUp: true },
+    {
+      pair: ["USDC", "DAI"],
+      name: "bb-a-USDC / bb-a-DAI / bb-a-USDT",
+      trendUp: true,
+      composition: [
+        { symbol: "USDC", weight: 1 },
+        { symbol: "DAI", weight: 1 },
+        { symbol: "USDT", weight: 1 },
+      ],
+    },
     { pair: ["sDAI", "USDC"], trendUp: true },
-    { pair: ["USDC", "USDC"], name: "waUSDC / USDC", trendUp: false },
-    { pair: ["DAI", "DAI"], name: "waDAI / DAI", trendUp: true },
+    // Single-asset boosted pools (aToken wrapper + underlying) — value tracks the underlying.
+    { pair: ["USDC", "USDC"], name: "waUSDC / USDC", trendUp: false, composition: [{ symbol: "USDC", weight: 1 }] },
+    { pair: ["DAI", "DAI"], name: "waDAI / DAI", trendUp: true, composition: [{ symbol: "DAI", weight: 1 }] },
   ],
   "bal-reclamm": [
     { pair: ["WETH", "USDC"], trendUp: true },
@@ -835,7 +927,7 @@ const POOL_SEEDS: Record<BorrowSpokeId, PoolSeed[]> = {
     { pair: ["DEGEN", "USDC"], trendUp: false },
     { pair: ["BRETT", "WETH"], trendUp: true },
     { pair: ["WELL", "WETH"], trendUp: false },
-    { pair: ["MOG", "WETH"], trendUp: true },
+    { pair: ["AURA", "WETH"], trendUp: true },
   ],
   "aero-slipstream-bluechip": [
     { pair: ["WETH", "USDC"], trendUp: true },
@@ -909,6 +1001,13 @@ function buildPoolCatalog(): BorrowPoolRow[] {
       const [a, b] = seed.pair
       const name = seed.name ?? `${a} / ${b}`
       const visuals: [BorrowAssetVisual, BorrowAssetVisual] = [v(a), v(b)]
+      // Normalized pool composition (fractions summing to 1). Equal-weight over the two-leg
+      // `pair` unless the seed declares an explicit multi-token / weighted composition.
+      const rawComposition = seed.composition ?? [
+        { symbol: a, weight: 1 },
+        { symbol: b, weight: 1 },
+      ]
+      const constituents: WeightedConstituent[] = normalizeWeights(rawComposition)
       const totalSeeds = seeds.length || 1
       const shareOfLiquidity = spoke.liquidityUsd * (0.55 + (0.4 * (totalSeeds - index)) / totalSeeds) * 0.6
       const availableUsd = Math.round(shareOfLiquidity / totalSeeds / 1000) * 1000
@@ -948,6 +1047,7 @@ function buildPoolCatalog(): BorrowPoolRow[] {
         availableUsd: Math.max(availableUsd, 250_000),
         riskPremiumBps,
         visuals,
+        constituents,
         collateralExampleUsd: 1_500 + index * 320,
         trendUp: seed.trendUp ?? index % 2 === 0,
         trendValues: buildPoolTrendValues(id),

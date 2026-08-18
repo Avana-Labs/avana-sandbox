@@ -9,6 +9,7 @@ import {
 } from "@/app/lib/credit-engine"
 import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
 import type { BorrowAssetVisual, BorrowPoolRow, BorrowableAsset } from "@/app/lib/borrow-sim"
+import { normalizeWeights } from "@/app/lib/prices/lp-token-price"
 import type { HomeCollateralPool } from "@/app/lib/borrow-system/home-contracts"
 
 /** Intrinsic per-market risk premium (bps) from the catalog — the same value the pool detail renders. */
@@ -113,6 +114,11 @@ export function selectBorrowMarketSummaries(state: BorrowSystemState, walletId: 
       availableUsd: fixedToNumber(market.snapshot.availableUsd6, 6),
       riskPremiumBps,
       visuals: toPairVisuals(market.display.visuals.map(visualToUi)),
+      // Equal-weight fallback from the display pair until Convex markets carry authoritative
+      // pool composition (see credit-engine market snapshot). Keeps LP valuation well-formed.
+      constituents: normalizeWeights(
+        toPairVisuals(market.display.visuals.map(visualToUi)).map((vis) => ({ symbol: vis.symbol, weight: 1 })),
+      ),
       collateralExampleUsd: positionUsd,
       trendUp: feeApyPct >= 4,
       trendValues: [0.62, 0.66, 0.64, 0.7, 0.73].map((value) => value * feeApyPct),

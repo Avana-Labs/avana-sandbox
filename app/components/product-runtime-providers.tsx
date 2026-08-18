@@ -31,18 +31,26 @@ function needsProductRuntime(pathname: string) {
   return PRODUCT_RUNTIME_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`))
 }
 
-export function ProductRuntimeProviders({ children }: { children: ReactNode }) {
+export function ProductRuntimeProviders({
+  children,
+  initialTokenPrices,
+}: {
+  children: ReactNode
+  initialTokenPrices?: Record<string, number>
+}) {
   const pathname = usePathname()
   const { isSignedIn } = useSiweAuth()
 
   if (!isSignedIn && !needsProductRuntime(pathname)) {
-    return <>{children}</>
+    // Still provide the server-seeded prices so any price consumer rendered outside the
+    // product runtime resolves live values instead of the fixture.
+    return <TokenPricesProvider initialPrices={initialTokenPrices}>{children}</TokenPricesProvider>
   }
 
   return (
     <AvanaSessionProviders>
       <PreferencesProfileSync />
-      <TokenPricesProvider>{children}</TokenPricesProvider>
+      <TokenPricesProvider initialPrices={initialTokenPrices}>{children}</TokenPricesProvider>
     </AvanaSessionProviders>
   )
 }

@@ -76,8 +76,17 @@ export function simulateMultiply(params: {
   selectedMultiplier: number
   existingPosition?: MultiplyPosition | null
   collateralPriceOverrideUsd?: number
+  /** True when the collateral oracle price is stale/unavailable — blocks the leverage open. */
+  collateralPriceStale?: boolean
 }): MultiplySimulation {
-  const { market, collateralAmount, selectedMultiplier, existingPosition, collateralPriceOverrideUsd } = params
+  const {
+    market,
+    collateralAmount,
+    selectedMultiplier,
+    existingPosition,
+    collateralPriceOverrideUsd,
+    collateralPriceStale,
+  } = params
   const collateralPriceUsd =
     collateralPriceOverrideUsd != null && Number.isFinite(collateralPriceOverrideUsd) && collateralPriceOverrideUsd > 0
       ? collateralPriceOverrideUsd
@@ -171,6 +180,7 @@ export function simulateMultiply(params: {
     borrowApy: market.economics.borrowApy,
     liquidationPrice,
     collateralPriceUsd,
+    oracleStale: collateralPriceStale,
   })
 
   return {

@@ -23,6 +23,7 @@ import {
   type HighlightCarouselHandle,
 } from "@/app/components/highlight-carousel"
 import { hasImageSrc, resolveImageSrc } from "@/lib/image-src"
+import { resolveMultiplyTokenLogo } from "@/lib/multiply-token-logo"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar"
 import { CATEGORY_CHIPS, categorizeMarket, type CategoryChip } from "@/app/lib/markets/category"
@@ -364,7 +365,9 @@ function LoopMarketsSection({
                   row={row}
                   index={index}
                   protocolLogo={getResolvedLogo(row.protocolLogo)}
-                  assetLogo={getResolvedLogo(tokenLogos[row.asset as keyof typeof tokenLogos])}
+                  assetLogo={getResolvedLogo(
+                    tokenLogos[row.asset as keyof typeof tokenLogos] ?? resolveMultiplyTokenLogo(row.asset),
+                  )}
                   availableLabel={
                     parseCompactUsdLabel(row.points) == null
                       ? (row.points ?? "—")
@@ -529,7 +532,12 @@ const LoopTableRow = React.memo(function LoopTableRow({
   const router = useRouter()
   const { t } = useTranslation()
   const { compact } = useCurrency()
-  const assetLogo = tokenLogos[row.asset as keyof typeof tokenLogos]
+  // Resolve case-insensitively: the Convex-hydrated tokenLogos keys can differ in case from
+  // the catalog's mixed-case symbols (cbBTC/crvUSD/wstETH), so a strict lookup misses them —
+  // fall back to the local resolver, which normalizes case.
+  const assetLogo = resolveImageSrc(
+    tokenLogos[row.asset as keyof typeof tokenLogos] ?? resolveMultiplyTokenLogo(row.asset),
+  )
   const hasNegativeApy = isNegativeMultiplyApy(row.apy)
 
   return (
@@ -552,7 +560,7 @@ const LoopTableRow = React.memo(function LoopTableRow({
                 src={row.protocolLogo}
                 alt=""
                 aria-hidden="true"
-                className="size-12 shrink-0 rounded-full bg-card object-cover"
+                className="size-12 shrink-0 object-contain"
                 loading={index < 2 ? "eager" : "lazy"}
                 fetchPriority={index < 2 ? "high" : undefined}
               />
@@ -577,7 +585,7 @@ const LoopTableRow = React.memo(function LoopTableRow({
                 src={assetLogo}
                 alt=""
                 aria-hidden="true"
-                className="size-12 shrink-0 rounded-full bg-card object-cover"
+                className="size-12 shrink-0 object-contain"
                 loading={index < 2 ? "eager" : "lazy"}
                 fetchPriority={index < 2 ? "high" : undefined}
               />
@@ -714,26 +722,26 @@ const MobileLoopCard = React.memo(function MobileLoopCard({
               <div className="flex items-center gap-3">
                 <div className="relative flex h-12 w-[72px] items-center">
                   {protocolLogo ? (
-                    <div className="absolute left-0 top-0 z-10 flex size-12 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+                    <div className="absolute left-0 top-0 z-10 flex size-12 items-center justify-center">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={protocolLogo}
                         alt=""
                         aria-hidden="true"
-                        className="size-full object-cover"
+                        className="size-full object-contain"
                         loading={index < 2 ? "eager" : "lazy"}
                         fetchPriority={index < 2 ? "high" : undefined}
                       />
                     </div>
                   ) : null}
                   {assetLogo ? (
-                    <div className="absolute left-6 top-0 flex size-12 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+                    <div className="absolute left-6 top-0 flex size-12 items-center justify-center">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={assetLogo}
                         alt=""
                         aria-hidden="true"
-                        className="size-full object-cover"
+                        className="size-full object-contain"
                         loading={index < 2 ? "eager" : "lazy"}
                         fetchPriority={index < 2 ? "high" : undefined}
                       />
@@ -791,15 +799,15 @@ function TrendingLoopCard({
             single icon on the Lend "Featured" cards (64px). */}
         <div className="relative flex h-16 w-[96px] shrink-0 items-center">
           {collateralSrc ? (
-            <span className="absolute left-0 top-1/2 z-10 flex size-16 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+            <span className="absolute left-0 top-1/2 z-10 flex size-16 -translate-y-1/2 items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={collateralSrc} alt="" aria-hidden="true" className="size-full object-cover" />
+              <img src={collateralSrc} alt="" aria-hidden="true" className="size-full object-contain" />
             </span>
           ) : null}
           {borrowSrc ? (
-            <span className="absolute left-8 top-1/2 flex size-16 -translate-y-1/2 items-center justify-center overflow-hidden rounded-full border border-border bg-card">
+            <span className="absolute left-8 top-1/2 flex size-16 -translate-y-1/2 items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={borrowSrc} alt="" aria-hidden="true" className="size-full object-cover" />
+              <img src={borrowSrc} alt="" aria-hidden="true" className="size-full object-contain" />
             </span>
           ) : null}
         </div>

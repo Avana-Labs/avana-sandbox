@@ -11,3 +11,14 @@ export function formatOraclePrice(value: number): string {
   if (value >= 1) return `$${value.toFixed(4)}`
   return `$${value.toFixed(6)}`
 }
+
+/**
+ * Pair spot rate WITHOUT a currency symbol — the base leg priced in the quote leg's own units
+ * (callers append the quote symbol, e.g. "33.71 WETH"). Deliberately not "$"-prefixed: the rate
+ * is quote-denominated, not USD, so a "$" would misread it (the cbBTC/WETH "$33.75" bug).
+ */
+export function formatPairRate(rate: number): string {
+  if (!Number.isFinite(rate)) return "—"
+  if (rate >= 1) return rate.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return rate.toFixed(6)
+}

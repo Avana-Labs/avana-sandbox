@@ -136,7 +136,10 @@ function buildTokenLogosFromConvex(rows: readonly MultiplyTokenParameterRow[]): 
   type TokenSymbol = keyof typeof MULTIPLY_TOKEN_LOGOS
   const logos: Partial<Record<TokenSymbol, string>> = {}
   for (const row of rows) {
-    logos[row.symbol as TokenSymbol] = row.iconUrl
+    // Resolve icons from the LOCAL png map (same source the working collateral
+    // column uses) rather than trusting row.iconUrl — the deployed Convex seed
+    // still carries stale `.svg` paths that 404 in the Borrowable column.
+    logos[row.symbol as TokenSymbol] = resolveMultiplyTokenLogo(row.symbol)
   }
   return { tokenLogos: logos as MultiplyPageData["tokenLogos"] }
 }
