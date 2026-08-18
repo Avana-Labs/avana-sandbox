@@ -142,6 +142,8 @@ export function computeAssetAllocation(
         valueUsd,
         utilizationPct,
         borrowAprPct,
+        feeTier: pool.feeTier,
+        tvlUsd: pool.tvlUsd,
       }
     },
   )

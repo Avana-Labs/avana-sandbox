@@ -25,7 +25,7 @@ import {
 } from "@/app/lib/borrow-system/market-hydration-server"
 import { canonicalPriceMap } from "@/app/lib/prices/canonical"
 import { priceKey } from "@/app/lib/prices/format"
-import { formatOraclePrice } from "@/app/lib/borrow-detail/formatters"
+import { formatOraclePrice, formatPairRate } from "@/app/lib/borrow-detail/formatters"
 import { formatBpsAsPct } from "@/app/lib/borrow-detail/allocation"
 import { resolveAssetDetailFromState, resolvePoolDetailFromState } from "@/app/lib/borrow-system/read-model"
 import { resolveAsset } from "@/app/lib/borrow-detail/asset.mock"
@@ -104,8 +104,15 @@ export function injectPoolOraclePrice(
   if (p0 === undefined || p1 === undefined || p1 === 0) {
     return quickStats.filter((s) => s.id !== "price" && s.id !== "oraclePrice")
   }
-  const value = formatOraclePrice(p0)
-  return quickStats.map((s) => (s.id === "price" || s.id === "oraclePrice" ? { ...s, value } : s))
+  // Pool price = the pair spot rate: the base leg priced in the QUOTE leg's units (not USD), so
+  // it differs per pool (cbBTC/WETH ≈ 33.7 WETH vs cbBTC/USDC ≈ 64k USDC) and never mislabels a
+  // non-USD rate with a "$". The tooltip carries the Uniswap-style reference with the USD value.
+  const rate = p0 / p1
+  const value = `${formatPairRate(rate)} ${symbol1}`
+  const tooltip =
+    `1 ${symbol0} = ${formatPairRate(rate)} ${symbol1} (${formatOraclePrice(p0)}) — the pair spot rate, ` +
+    `P(${symbol0}) ÷ P(${symbol1}) from the oracle, with the USD value of ${symbol0} shown in parentheses.`
+  return quickStats.map((s) => (s.id === "price" || s.id === "oraclePrice" ? { ...s, value, tooltip } : s))
 }
 
 /**
@@ -165,6 +172,9 @@ function mapConvexBorrowables(
         textClass: "text-foreground",
       },
       apy: row.borrowAprPct,
+      // Convex poolBorrowables carries no liquidity, so pull the supply-side TVL from the
+      // catalog asset (borrowed + available) for the "… Supply" sub-label.
+      tvlUsd: asset ? asset.totalBorrowedUsd + asset.availableUsd : undefined,
       href: borrowAssetDetailPath(row.id),
     }
   })

@@ -22,7 +22,7 @@ import {
 import { HOME_COLLATERAL_POOLS } from "@/app/lib/borrow-system/home-contracts"
 import { buildSeriesFamily, prngFromString } from "./prng"
 import { formatBpsAsPct, formatPct } from "./allocation"
-import { formatOraclePrice } from "./formatters"
+import { formatPairRate } from "./formatters"
 import { sandboxBaselinePriceUsd } from "@/app/lib/prices/sandbox-baseline-prices"
 import { buildPoolRiskAssessment } from "./risk-model"
 import { buildPoolFaqs } from "./content-model"
@@ -380,7 +380,12 @@ function isStablePool(row: BorrowPoolRow) {
 function buildDefaultQuickStats(row: BorrowPoolRow): QuickStat[] {
   const supplyApy = (row.aprMin + row.aprMax) / 2
   return [
-    { id: "price", label: "Price", value: formatOraclePrice(pairReferencePrice(row)), delta: deltaUp(0.1) },
+    {
+      id: "price",
+      label: "Price",
+      value: `${formatPairRate(pairReferencePrice(row))} ${row.visuals[1]?.symbol ?? "USDC"}`,
+      delta: deltaUp(0.1),
+    },
     {
       id: "available",
       label: "Available Liquidity",
@@ -461,11 +466,13 @@ function buildHeroMetricSeries(
 }
 
 function pairReferencePrice(row: BorrowPoolRow): number {
-  // The pool "Price" stat is the BASE asset's USD price (the live path shows the oracle's
-  // price0, not the base-in-quote cross rate). Mirror that here so the deterministic fallback
-  // also shows a USD value — e.g. cbBTC/WETH resolves to ~$65k, not a ~33 ETH ratio.
-  const baseSymbol = row.visuals[0]?.symbol ?? "USDC"
-  return sandboxBaselinePriceUsd(baseSymbol)
+  // The pool "Price" stat is the pair spot rate — the base leg priced in the quote leg (the live
+  // path shows P(base) ÷ P(quote), the caller appends the quote symbol). Mirror that here so the
+  // deterministic fallback matches, e.g. cbBTC/WETH → ~33.7 (WETH per cbBTC), not a "$" value.
+  const base = row.visuals[0]?.symbol ?? "USDC"
+  const quote = row.visuals[1]?.symbol ?? "USDC"
+  const quotePrice = sandboxBaselinePriceUsd(quote)
+  return quotePrice > 0 ? sandboxBaselinePriceUsd(base) / quotePrice : 0
 }
 
 function buildCashflow(row: BorrowPoolRow, fixture: FixtureOverride | undefined): CashflowCard {

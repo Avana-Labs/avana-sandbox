@@ -927,7 +927,7 @@ const POOL_SEEDS: Record<BorrowSpokeId, PoolSeed[]> = {
     { pair: ["DEGEN", "USDC"], trendUp: false },
     { pair: ["BRETT", "WETH"], trendUp: true },
     { pair: ["WELL", "WETH"], trendUp: false },
-    { pair: ["MOG", "WETH"], trendUp: true },
+    { pair: ["AURA", "WETH"], trendUp: true },
   ],
   "aero-slipstream-bluechip": [
     { pair: ["WETH", "USDC"], trendUp: true },
