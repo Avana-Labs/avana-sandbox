@@ -73,8 +73,38 @@ jobs:
           node -e "require.resolve('@rolldown/binding-linux-x64-gnu')" \
             || npm install --no-save @rolldown/binding-linux-x64-gnu@$(node -p "require('./package.json').optionalDependencies['@rolldown/binding-linux-x64-gnu'] || require('./package-lock.json').packages['node_modules/@rolldown/binding-linux-x64-gnu'].version")
 
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      # `playwright install --with-deps` shells out to apt and the browser CDN,
+      # both of which occasionally hang on hosted runners. Without a bound, a hang
+      # consumed the whole 15-minute job budget. Cache the browser binaries, skip
+      # the download on a cache hit (only system libs needed), and cap each attempt
+      # with `timeout` + retry so a hang fails fast and self-heals instead of
+      # stalling the job.
       - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+        shell: bash
+        run: |
+          set -uo pipefail
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = "true" ]; then
+            cmd="npx playwright install-deps chromium"
+          else
+            cmd="npx playwright install --with-deps chromium"
+          fi
+          for attempt in 1 2 3; do
+            echo "Playwright install attempt ${attempt}: ${cmd}"
+            if timeout 300 bash -c "${cmd}"; then
+              exit 0
+            fi
+            echo "::warning::Playwright install attempt ${attempt} failed or timed out (5m cap); retrying"
+            sleep 5
+          done
+          echo "::error::Playwright install failed after 3 attempts"
+          exit 1
 
       # Playwright's webServer (playwright.config.ts) boots `npm run dev` with
       # NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1, which opens the onboarding gate,
