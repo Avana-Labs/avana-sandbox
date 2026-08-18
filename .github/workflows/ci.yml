@@ -80,31 +80,30 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
-      # `playwright install --with-deps` shells out to apt and the browser CDN,
-      # both of which occasionally hang on hosted runners. Without a bound, a hang
-      # consumed the whole 15-minute job budget. Cache the browser binaries, skip
-      # the download on a cache hit (only system libs needed), and cap each attempt
-      # with `timeout` + retry so a hang fails fast and self-heals instead of
-      # stalling the job.
+      # Install the Chromium *browser* only. We deliberately do NOT use
+      # `--with-deps` here: that shells out to apt, which intermittently hangs for
+      # the full job budget on hosted runners, and ubuntu-latest already ships the
+      # libraries Chromium needs. The browser download (fast, reliable CDN) is
+      # wrapped in a bounded retry; on a cache hit it's skipped entirely.
       - name: Install Playwright Chromium
         shell: bash
         run: |
           set -uo pipefail
-          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = "true" ]; then
-            cmd="npx playwright install-deps chromium"
-          else
-            cmd="npx playwright install --with-deps chromium"
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" != "true" ]; then
+            for attempt in 1 2 3; do
+              echo "playwright install chromium (attempt ${attempt})"
+              timeout 180 npx playwright install chromium && break
+              [ "${attempt}" = "3" ] && { echo "::error::browser install failed after 3 attempts"; exit 1; }
+              echo "::warning::browser install attempt ${attempt} timed out/failed; retrying"
+              sleep 5
+            done
           fi
-          for attempt in 1 2 3; do
-            echo "Playwright install attempt ${attempt}: ${cmd}"
-            if timeout 300 bash -c "${cmd}"; then
-              exit 0
-            fi
-            echo "::warning::Playwright install attempt ${attempt} failed or timed out (5m cap); retrying"
-            sleep 5
-          done
-          echo "::error::Playwright install failed after 3 attempts"
-          exit 1
+
+      # System libs as a best-effort safety net: bounded and non-fatal so apt can
+      # never hang or fail the job (ubuntu-latest normally already has them).
+      - name: Install Playwright system deps (best effort)
+        shell: bash
+        run: timeout 120 npx playwright install-deps chromium || echo "::warning::install-deps skipped (timeout/failure); relying on preinstalled runner libs"
 
       # Playwright's webServer (playwright.config.ts) boots `npm run dev` with
       # NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1, which opens the onboarding gate,
