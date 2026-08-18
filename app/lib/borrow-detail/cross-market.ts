@@ -17,6 +17,8 @@ export type BorrowableAssetRef = {
   visual: BorrowAssetVisual
   /** Borrow APY percent (e.g. 4.2). */
   apy: number
+  /** Total supply-side liquidity in USD (borrowed + available) — for the "… Supply" sub-label. */
+  tvlUsd?: number
   href: string
 }
 
@@ -40,6 +42,7 @@ export function resolveBorrowablesForPool(pool: Pick<BorrowPoolRow, "id" | "spok
       symbol: asset.symbol,
       visual: asset.visual,
       apy: asset.borrowApr,
+      tvlUsd: asset.totalBorrowedUsd + asset.availableUsd,
       href: borrowAssetDetailPath(asset.id),
     }))
     .sort((a, b) => a.name.localeCompare(b.name))

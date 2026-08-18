@@ -343,6 +343,10 @@ export type AllocationRow = {
    * when hydrated; AllocationBreakdownCard falls back to catalog if absent.
    */
   collateralFactorPct?: number
+  /** Pool fee tier (e.g. "0.30%") — for the "Supported Collateral" sub-label. */
+  feeTier?: string
+  /** Pool TVL in USD — for the "Supported Collateral" sub-label. */
+  tvlUsd?: number
 }
 
 /**
