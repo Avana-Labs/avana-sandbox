@@ -1,5 +1,6 @@
 import "./globals.css"
 import type { Metadata } from "next"
+import { headers } from "next/headers"
 import localFont from "next/font/local"
 import type React from "react"
 import { Suspense } from "react"
@@ -121,6 +122,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // live from SSR without depending on the realtime subscription (which only mounts on
   // authenticated product routes). Fail-open: returns {} and never blocks render.
   const initialTokenPrices = await loadServerTokenPrices()
+  // Per-request CSP nonce (set by middleware) for the inline theme-bootstrap script below.
+  const nonce = (await headers()).get("x-nonce") ?? undefined
 
   return (
     <html
@@ -139,7 +142,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
         <link rel="preload" as="image" href="/avana-icon-64.png" />
         {/* Inline to avoid a render-blocking theme-bootstrap network request. */}
-        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>
       <body className="min-h-screen bg-background">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
