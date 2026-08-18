@@ -205,6 +205,10 @@ export async function fetchAllocation(slug: string): Promise<AllocationRow[] | n
         valueUsd: row.valueUsd,
         utilizationPct: row.utilizationPct,
         borrowAprPct: row.borrowAprPct,
+        // Convex allocation carries no fee tier / TVL, so pull them from the catalog pool for
+        // the "Supported Collateral" sub-label (otherwise it renders blank on the live path).
+        feeTier: pool.feeTier,
+        tvlUsd: pool.tvlUsd,
       })
     }
     return out.length > 0 ? out : null
