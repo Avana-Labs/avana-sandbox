@@ -235,8 +235,8 @@ const LoanAssetsRow = memo(function LoanAssetsRow({
             <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
               {asset.name}
             </div>
-            <div className="mt-1 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38 md:text-[13px]">
-              {asset.symbol}
+            <div className="mt-1 truncate text-[13px] font-normal tracking-[-0.03em] tabular-nums text-muted-foreground dark:text-white/38 md:text-[13px]">
+              {compact(asset.totalBorrowedUsd + asset.availableUsd)} {t("Supply")}
             </div>
           </div>
         </div>
