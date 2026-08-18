@@ -57,7 +57,7 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
-  # Unit/integration suite (~400 specs) sharded across parallel runners so the
+  # Unit/integration suite (~400 specs) sharded across 4 parallel runners so the
   # slowest job is roughly the suite time divided by the shard count.
   test:
     name: test (${{ matrix.shard }})
@@ -66,7 +66,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: ["1/2", "2/2"]
+        shard: ["1/4", "2/4", "3/4", "4/4"]
     steps:
       - name: Checkout
         uses: actions/checkout@v7
