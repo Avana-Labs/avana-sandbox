@@ -1216,6 +1216,9 @@ const dict: TranslationDictionary = {
     "{pct}% покрытия на кулдауне · {deficits} дефицитов поглощены офсетом {offset} · ",
   "{pct}% of target": "{pct}% от цели",
   "{pct}% of target coverage.": "{pct}% целевого покрытия.",
+  "{staked} staked · {target} target": "застейкано {staked} · цель {target}",
+  "{pct}% of coverage cooling · {deficits} deficits absorbed":
+    "{pct}% покрытия на кулдауне · {deficits} дефицитов поглощено",
   "{staked} staked · {target} target · {count} assets": "застейкано {staked} · цель {target} · активов {count}",
   "{symbols} expired — restart cooldown": "{symbols} истёк — перезапустите кулдаун",
   "{time} left": "осталось {time}",
@@ -1419,6 +1422,56 @@ const dict: TranslationDictionary = {
   "Your exposure by asset": "Ваша экспозиция по активам",
   "Your Portfolio": "Ваш портфель",
   "Your position": "Ваша позиция",
+  "1 year": "1 год",
+  "30 days": "30 дней",
+  "90 days": "90 дней",
+  "Adjust leverage": "Изменить плечо",
+  "At today's borrow rate.": "По текущей ставке заимствования.",
+  "At {lev}x, health factor moves ~1:1 with collateral price.":
+    "При {lev}x фактор здоровья меняется ~1:1 с ценой залога.",
+  "Borrow Outlook": "Прогноз по займам",
+  "Borrow cost exceeds yield — leverage is reducing your return, not increasing it.":
+    "Стоимость займа превышает доходность — плечо снижает вашу прибыль, а не увеличивает её.",
+  "Borrow more": "Занять больше",
+  "Collateral price move": "Изменение цены залога",
+  "Debt change amount": "Сумма изменения долга",
+  "Drop buffer": "Запас на падение",
+  "Equity value at this leverage, by scenario.": "Стоимость собственного капитала при этом плече, по сценариям.",
+  "Estimate on {equity} equity. Assumes rates hold; leverage amplifies both gains and losses.":
+    "Оценка на {equity} собственного капитала. Предполагает неизменные ставки; плечо усиливает и прибыль, и убытки.",
+  "Estimate. Variable rate — actual cost will differ.":
+    "Оценка. Плавающая ставка — фактическая стоимость будет отличаться.",
+  Horizon: "Горизонт",
+  "Lend Outlook": "Прогноз по кредитованию",
+  "Leverage multiplier": "Множитель плеча",
+  Liquidated: "Ликвидировано",
+  "Liquidation price": "Цена ликвидации",
+  "Liquidation prices": "Цены ликвидации",
+  "Move collateral prices or your debt and watch health factor respond.":
+    "Меняйте цены залога или долг и наблюдайте за реакцией фактора здоровья.",
+  "Multiply Outlook": "Multiply: прогноз",
+  Next: "Далее",
+  "Price sensitivity": "Чувствительность к цене",
+  "Projected interest cost": "Прогнозируемые процентные расходы",
+  "Projected value": "Прогнозируемая стоимость",
+  Scenario: "Сценарий",
+  "The price each collateral would hit to reach liquidation, holding your other collateral steady.":
+    "Цена, до которой дошёл бы каждый залог для ликвидации, при неизменных прочих залогах.",
+  "Total debt": "Общий долг",
+  "What a drop in collateral price does to your health factor.":
+    "Как падение цены залога влияет на ваш фактор здоровья.",
+  "What-if simulator": "Симулятор «что если»",
+  "Your Dashboard": "Ваша панель",
+  below: "ниже",
+  cost: "стоимость",
+  from: "от",
+  "max safe": "макс. безопасно",
+  safe: "безопасно",
+  yield: "доходность",
+  "“Safe” means a fall in that asset alone can't liquidate you — your other collateral covers the debt.":
+    "«Безопасно» означает, что падение только этого актива не приведёт к ликвидации — остальной залог покрывает долг.",
+  "How it works": "Как это работает",
+  "Learn Avana": "Знакомство с Avana",
 }
 
 export default dict

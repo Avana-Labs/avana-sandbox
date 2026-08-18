@@ -1329,6 +1329,9 @@ const dict: TranslationDictionary = {
     "{pct}% de la cobertura en enfriamiento · {deficits} de déficits absorbidos por {offset} de offset · ",
   "{pct}% of target": "{pct}% del objetivo",
   "{pct}% of target coverage.": "{pct}% de la cobertura objetivo.",
+  "{staked} staked · {target} target": "{staked} en stake · objetivo {target}",
+  "{pct}% of coverage cooling · {deficits} deficits absorbed":
+    "{pct}% de la cobertura en enfriamiento · {deficits} de déficits absorbidos",
   "{staked} staked · {target} target · {count} assets": "{staked} en stake · objetivo {target} · {count} activos",
   "{symbols} expired — restart cooldown": "{symbols} expirado — reinicia el enfriamiento",
   "{time} left": "{time} restantes",
@@ -1530,6 +1533,55 @@ const dict: TranslationDictionary = {
   Swap: "Swap",
   Tokens: "Tokens",
   X: "X",
+  "1 year": "1 año",
+  "30 days": "30 días",
+  "90 days": "90 días",
+  "Adjust leverage": "Ajustar apalancamiento",
+  "At today's borrow rate.": "A la tasa de préstamo de hoy.",
+  "At {lev}x, health factor moves ~1:1 with collateral price.":
+    "A {lev}x, el factor de salud se mueve ~1:1 con el precio de la garantía.",
+  "Borrow Outlook": "Perspectiva de préstamo",
+  "Borrow cost exceeds yield — leverage is reducing your return, not increasing it.":
+    "El costo del préstamo supera el rendimiento — el apalancamiento reduce tu retorno en lugar de aumentarlo.",
+  "Borrow more": "Pedir más prestado",
+  "Collateral price move": "Movimiento del precio de la garantía",
+  "Debt change amount": "Monto de cambio de deuda",
+  "Drop buffer": "Margen de caída",
+  "Equity value at this leverage, by scenario.": "Valor del capital con este apalancamiento, por escenario.",
+  "Estimate on {equity} equity. Assumes rates hold; leverage amplifies both gains and losses.":
+    "Estimación sobre {equity} de capital. Supone tasas estables; el apalancamiento amplifica ganancias y pérdidas.",
+  "Estimate. Variable rate — actual cost will differ.": "Estimación. Tasa variable — el costo real diferirá.",
+  Horizon: "Horizonte",
+  "Lend Outlook": "Perspectiva de suministro",
+  "Leverage multiplier": "Multiplicador de apalancamiento",
+  Liquidated: "Liquidado",
+  "Liquidation price": "Precio de liquidación",
+  "Liquidation prices": "Precios de liquidación",
+  "Move collateral prices or your debt and watch health factor respond.":
+    "Mueve los precios de la garantía o tu deuda y observa cómo responde el factor de salud.",
+  "Multiply Outlook": "Perspectiva de Multiply",
+  Next: "Siguiente",
+  "Price sensitivity": "Sensibilidad al precio",
+  "Projected interest cost": "Costo de interés proyectado",
+  "Projected value": "Valor proyectado",
+  Scenario: "Escenario",
+  "The price each collateral would hit to reach liquidation, holding your other collateral steady.":
+    "El precio que alcanzaría cada garantía para llegar a la liquidación, manteniendo el resto de tus garantías constantes.",
+  "Total debt": "Deuda total",
+  "What a drop in collateral price does to your health factor.":
+    "Qué le hace a tu factor de salud una caída en el precio de la garantía.",
+  "What-if simulator": "Simulador de hipótesis",
+  "Your Dashboard": "Tu panel",
+  below: "por debajo",
+  cost: "costo",
+  from: "desde",
+  "max safe": "máx. seguro",
+  safe: "seguro",
+  yield: "rendimiento",
+  "“Safe” means a fall in that asset alone can't liquidate you — your other collateral covers the debt.":
+    "“Seguro” significa que una caída solo de ese activo no puede liquidarte — tus otras garantías cubren la deuda.",
+  "How it works": "Cómo funciona",
+  "Learn Avana": "Conoce Avana",
 }
 
 export default dict

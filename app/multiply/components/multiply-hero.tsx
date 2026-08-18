@@ -1,6 +1,7 @@
 "use client"
 
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
+import { HowItWorks } from "@/app/components/how-it-works"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { MultiplyHeroMetrics } from "@/app/lib/data/providers/multiply"
@@ -22,7 +23,7 @@ export function MultiplyHero({ metrics }: { metrics: MultiplyHeroMetrics }) {
       <div className="flex w-full items-start justify-between gap-4 pb-4">
         <div className="min-w-0 space-y-1.5">
           <p className="text-[13px] text-muted-foreground">{t("Multiply TVL")}</p>
-          <p className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-normal tabular-nums text-foreground">
+          <p className="font-data text-[17px] md:text-[18px] font-medium leading-none tracking-normal tabular-nums text-foreground">
             {showDollarAmounts ? fc.compact(metrics.totalLiquidityUsd) : HIDDEN}
           </p>
         </div>
@@ -34,12 +35,14 @@ export function MultiplyHero({ metrics }: { metrics: MultiplyHeroMetrics }) {
                 <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
                 {metric.label}
               </p>
-              <p className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-normal tabular-nums text-foreground">
+              <p className="font-data text-[17px] md:text-[18px] font-medium leading-none tracking-normal tabular-nums text-foreground">
                 {metric.sensitive && !showDollarAmounts ? HIDDEN : metric.value}
               </p>
             </div>
           ))}
         </div>
+
+        <HowItWorks topic="multiply" className="self-center md:hidden" />
       </div>
     </section>
   )

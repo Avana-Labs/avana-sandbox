@@ -117,6 +117,7 @@ export function DashboardCreditOverviewSection({
   netApyPct,
   totalCollateralUsd,
   interestOwedUsd,
+  liquidationBufferUsd,
   hideHeading = false,
 }: {
   title: string
@@ -129,6 +130,9 @@ export function DashboardCreditOverviewSection({
   // credit engine's interestOwedUsd6; when omitted the tile is dropped rather
   // than showing a false zero.
   interestOwedUsd?: number
+  // USD distance from liquidation (liquidation value − debt). Optional so callers
+  // that don't have a solvency snapshot can omit the tile rather than show a zero.
+  liquidationBufferUsd?: number
   // When the section title is already provided by an enclosing tab, suppress the h2.
   hideHeading?: boolean
 }) {
@@ -152,12 +156,19 @@ export function DashboardCreditOverviewSection({
       value: m(formatUsdExact(totalBorrowedUsd)),
       description: t("Current outstanding loan balance"),
     },
-    {
-      label: t("Net APY"),
-      value: showDollarAmounts ? formatPct(netApyPct) : MASK,
-      description: t("Weighted average APY across all active positions"),
-    },
   ]
+  if (liquidationBufferUsd !== undefined) {
+    metrics.push({
+      label: t("Liquidation Buffer"),
+      value: m(formatUsdExact(liquidationBufferUsd)),
+      description: t("Distance from liquidation based on current collateral value"),
+    })
+  }
+  metrics.push({
+    label: t("Net APY"),
+    value: showDollarAmounts ? formatPct(netApyPct) : MASK,
+    description: t("Weighted average APY across all active positions"),
+  })
   if (interestOwedUsd !== undefined) {
     metrics.push({
       label: t("Interest Owed"),

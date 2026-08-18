@@ -1206,6 +1206,9 @@ const dict: TranslationDictionary = {
     "teminatın %{pct}'i cooldown'da · {deficits} açık {offset} ofset tarafından karşılandı · ",
   "{pct}% of target": "hedefin %{pct}'i",
   "{pct}% of target coverage.": "hedef teminatın %{pct}'i.",
+  "{staked} staked · {target} target": "{staked} stake · hedef {target}",
+  "{pct}% of coverage cooling · {deficits} deficits absorbed":
+    "teminatın %{pct}'i cooldown'da · {deficits} açık karşılandı",
   "{staked} staked · {target} target · {count} assets": "{staked} stake · hedef {target} · {count} varlık",
   "{symbols} expired — restart cooldown": "{symbols} süresi doldu — cooldown'ı yeniden başlat",
   "{time} left": "{time} kaldı",
@@ -1420,6 +1423,55 @@ const dict: TranslationDictionary = {
   "Your position": "Pozisyonunuz",
   "Approval failed.": "Onay başarısız oldu.",
   "Swap failed.": "Takas başarısız oldu.",
+  "1 year": "1 yıl",
+  "30 days": "30 gün",
+  "90 days": "90 gün",
+  "Adjust leverage": "Kaldıracı ayarla",
+  "At today's borrow rate.": "Bugünkü borçlanma oranıyla.",
+  "At {lev}x, health factor moves ~1:1 with collateral price.":
+    "{lev}x'te sağlık faktörü teminat fiyatıyla ~1:1 hareket eder.",
+  "Borrow Outlook": "Borçlanma görünümü",
+  "Borrow cost exceeds yield — leverage is reducing your return, not increasing it.":
+    "Borçlanma maliyeti getiriyi aşıyor — kaldıraç getirinizi artırmak yerine azaltıyor.",
+  "Borrow more": "Daha fazla borçlan",
+  "Collateral price move": "Teminat fiyat hareketi",
+  "Debt change amount": "Borç değişim tutarı",
+  "Drop buffer": "Düşüş tamponu",
+  "Equity value at this leverage, by scenario.": "Bu kaldıraçta öz sermaye değeri, senaryoya göre.",
+  "Estimate on {equity} equity. Assumes rates hold; leverage amplifies both gains and losses.":
+    "{equity} öz sermaye üzerinden tahmin. Oranların sabit kaldığı varsayılır; kaldıraç hem kazancı hem kaybı büyütür.",
+  "Estimate. Variable rate — actual cost will differ.": "Tahmin. Değişken oran — gerçek maliyet farklı olacaktır.",
+  Horizon: "Ufuk",
+  "Lend Outlook": "Borç verme görünümü",
+  "Leverage multiplier": "Kaldıraç çarpanı",
+  Liquidated: "Tasfiye edildi",
+  "Liquidation price": "Tasfiye fiyatı",
+  "Liquidation prices": "Tasfiye fiyatları",
+  "Move collateral prices or your debt and watch health factor respond.":
+    "Teminat fiyatlarını veya borcunuzu değiştirin ve sağlık faktörünün tepkisini izleyin.",
+  "Multiply Outlook": "Multiply görünümü",
+  Next: "İleri",
+  "Price sensitivity": "Fiyat duyarlılığı",
+  "Projected interest cost": "Öngörülen faiz maliyeti",
+  "Projected value": "Öngörülen değer",
+  Scenario: "Senaryo",
+  "The price each collateral would hit to reach liquidation, holding your other collateral steady.":
+    "Diğer teminatlarınız sabitken her teminatın tasfiyeye ulaşmak için göreceği fiyat.",
+  "Total debt": "Toplam borç",
+  "What a drop in collateral price does to your health factor.":
+    "Teminat fiyatındaki düşüşün sağlık faktörünüze etkisi.",
+  "What-if simulator": "Olasılık simülatörü",
+  "Your Dashboard": "Paneliniz",
+  below: "altında",
+  cost: "maliyet",
+  from: "-den",
+  "max safe": "azami güvenli",
+  safe: "güvenli",
+  yield: "getiri",
+  "“Safe” means a fall in that asset alone can't liquidate you — your other collateral covers the debt.":
+    "“Güvenli”, yalnızca o varlığın düşüşünün sizi tasfiye edemeyeceği anlamına gelir — diğer teminatınız borcu karşılar.",
+  "How it works": "Nasıl çalışır",
+  "Learn Avana": "Avana'yı öğren",
 }
 
 export default dict

@@ -20,6 +20,7 @@ import {
   shouldShowActionSessionLoading,
 } from "@/app/components/action-page/action-session-loading"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { UmbrellaMarketRiskMetricsCard } from "@/app/umbrella/_detail/market-sections/UmbrellaStress"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import type { UmbrellaMarketId } from "@/app/lib/umbrella-system/use-umbrella-session"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
@@ -363,6 +364,15 @@ export function UmbrellaActionPageClient({
   // read correctly for top-ups.
   const dynamicVerb = kind === "stake" && position.amount > 0 ? "Stake more" : descriptor.primaryVerb
 
+  // Immediate (non-deferred) amount the configure stage sees. Drives both the
+  // stage's deferred-details gating and the risk card's `expanded` reveal so the
+  // waterfall, risk banner, and network fee appear/disappear together.
+  // Claim amount is the fixed pending-rewards total (read-only). Round to 4dp and
+  // drop trailing zeros so it reads cleanly (e.g. "20.6007", not "20.6006661022")
+  // while staying comma-free so the configure stage can still parse it.
+  const stageAmount = kind === "claim" ? String(Number(position.pendingRewardsUsd.toFixed(4))) : amount
+  const hasAmountEntered = parsePositiveActionAmount(stageAmount) != null
+
   return (
     <ActionPageShell
       title={kind === "stake" && position.amount > 0 ? "Stake more" : descriptor.title}
@@ -395,7 +405,7 @@ export function UmbrellaActionPageClient({
         <ActionConfigureStage
           stage={stage === "error" ? "configure" : stage}
           verb={dynamicVerb}
-          amount={kind === "claim" ? String(position.pendingRewardsUsd) : amount}
+          amount={stageAmount}
           onAmountChange={setAmount}
           preview={preview}
           assetSymbol={market.symbol}
@@ -421,6 +431,9 @@ export function UmbrellaActionPageClient({
             if (preview.maxAmount != null) setAmount(String(preview.maxAmount))
           }}
           singlePrimaryCta={sidebar}
+          detailsSlot={<UmbrellaMarketRiskMetricsCard market={market} expanded={hasAmountEntered} />}
+          deferDetailsUntilAmount
+          allowAssetSwitchWhenReadOnly
         />
       ) : null}
     </ActionPageShell>

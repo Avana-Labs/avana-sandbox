@@ -1209,6 +1209,9 @@ const dict: TranslationDictionary = {
     "{pct}% van de dekking in cooldown · {deficits} aan tekorten opgevangen door {offset} offset · ",
   "{pct}% of target": "{pct}% van het doel",
   "{pct}% of target coverage.": "{pct}% van de doeldekking.",
+  "{staked} staked · {target} target": "{staked} gestaked · doel {target}",
+  "{pct}% of coverage cooling · {deficits} deficits absorbed":
+    "{pct}% van de dekking in cooldown · {deficits} aan tekorten opgevangen",
   "{staked} staked · {target} target · {count} assets": "{staked} gestaked · doel {target} · {count} assets",
   "{symbols} expired — restart cooldown": "{symbols} verlopen — start de cooldown opnieuw",
   "{time} left": "{time} resterend",
@@ -1417,6 +1420,55 @@ const dict: TranslationDictionary = {
   Txn: "Txn",
   was: "was",
   X: "X",
+  "1 year": "1 jaar",
+  "30 days": "30 dagen",
+  "90 days": "90 dagen",
+  "Adjust leverage": "Hefboom aanpassen",
+  "At today's borrow rate.": "Tegen de huidige leenrente.",
+  "At {lev}x, health factor moves ~1:1 with collateral price.":
+    "Bij {lev}x beweegt de gezondheidsfactor ~1:1 met de onderpandprijs.",
+  "Borrow Outlook": "Leen-vooruitzicht",
+  "Borrow cost exceeds yield — leverage is reducing your return, not increasing it.":
+    "Leenkosten overtreffen het rendement — hefboom verlaagt je rendement in plaats van het te verhogen.",
+  "Borrow more": "Meer lenen",
+  "Collateral price move": "Prijsbeweging onderpand",
+  "Debt change amount": "Bedrag schuldwijziging",
+  "Drop buffer": "Dalingsbuffer",
+  "Equity value at this leverage, by scenario.": "Eigenvermogenswaarde bij deze hefboom, per scenario.",
+  "Estimate on {equity} equity. Assumes rates hold; leverage amplifies both gains and losses.":
+    "Schatting op {equity} eigen vermogen. Gaat uit van gelijkblijvende rentes; hefboom versterkt winst én verlies.",
+  "Estimate. Variable rate — actual cost will differ.": "Schatting. Variabele rente — de werkelijke kosten wijken af.",
+  Horizon: "Looptijd",
+  "Lend Outlook": "Uitleen-vooruitzicht",
+  "Leverage multiplier": "Hefboomvermenigvuldiger",
+  Liquidated: "Geliquideerd",
+  "Liquidation price": "Liquidatieprijs",
+  "Liquidation prices": "Liquidatieprijzen",
+  "Move collateral prices or your debt and watch health factor respond.":
+    "Wijzig de onderpandprijzen of je schuld en zie hoe de gezondheidsfactor reageert.",
+  "Multiply Outlook": "Multiply-vooruitzicht",
+  Next: "Volgende",
+  "Price sensitivity": "Prijsgevoeligheid",
+  "Projected interest cost": "Verwachte rentekosten",
+  "Projected value": "Verwachte waarde",
+  Scenario: "scenario",
+  "The price each collateral would hit to reach liquidation, holding your other collateral steady.":
+    "De prijs die elk onderpand zou bereiken tot liquidatie, terwijl je andere onderpand gelijk blijft.",
+  "Total debt": "Totale schuld",
+  "What a drop in collateral price does to your health factor.":
+    "Wat een daling van de onderpandprijs met je gezondheidsfactor doet.",
+  "What-if simulator": "Wat-als-simulator",
+  "Your Dashboard": "Jouw dashboard",
+  below: "onder",
+  cost: "kosten",
+  from: "van",
+  "max safe": "max. veilig",
+  safe: "veilig",
+  yield: "rendement",
+  "“Safe” means a fall in that asset alone can't liquidate you — your other collateral covers the debt.":
+    "“Veilig” betekent dat een daling van alleen dat asset je niet kan liquideren — je andere onderpand dekt de schuld.",
+  "How it works": "Hoe het werkt",
+  "Learn Avana": "Leer Avana kennen",
 }
 
 export default dict

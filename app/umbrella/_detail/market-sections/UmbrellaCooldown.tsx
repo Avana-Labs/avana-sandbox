@@ -145,14 +145,16 @@ export function UmbrellaCooldown() {
         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
           {t("Umbrella Cooldown")}
         </h2>
-        <CarouselArrowButtons
-          canPrev={canPrev}
-          canNext={canNext}
-          onPrev={() => scrollByCard(-1)}
-          onNext={() => scrollByCard(1)}
-          prevLabel={t("Previous cooldown")}
-          nextLabel={t("Next cooldown")}
-        />
+        {canPrev || canNext ? (
+          <CarouselArrowButtons
+            canPrev={canPrev}
+            canNext={canNext}
+            onPrev={() => scrollByCard(-1)}
+            onNext={() => scrollByCard(1)}
+            prevLabel={t("Previous cooldown")}
+            nextLabel={t("Next cooldown")}
+          />
+        ) : null}
       </div>
 
       <div className="overflow-hidden">

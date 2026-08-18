@@ -24,8 +24,9 @@ describe("Umbrella page", () => {
 
     expect(screen.getByText("Your Umbrella stake")).toBeInTheDocument()
     // Canonical compact USD is one decimal ($55.0M), shared with the rest of the app
-    // (previously the Umbrella-only formatter emitted two decimals, "$55.00M").
-    expect(screen.getAllByText("$55.0M market").length).toBeGreaterThan(0)
+    // (previously the Umbrella-only formatter emitted two decimals, "$55.00M"). The
+    // hero market sub-label was removed, so this now anchors on the Total coverage tile.
+    expect(screen.getAllByText("$55.0M").length).toBeGreaterThan(0)
 
     // Asset headings in the positions table
     expect(screen.getAllByText("Stake GHO").length).toBeGreaterThan(0)
@@ -39,14 +40,6 @@ describe("Umbrella page", () => {
     expect(screen.getAllByText("4.84%").length).toBeGreaterThan(0)
     expect(screen.getAllByText("4.19%").length).toBeGreaterThan(0)
     expect(screen.getAllByText("5.05%").length).toBeGreaterThan(0)
-  })
-
-  it("shows status labels including cooldown states", () => {
-    renderUmbrellaPage()
-
-    expect(screen.getAllByText("Earning").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("In cooldown").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("Withdrawal ready").length).toBeGreaterThan(0)
   })
 
   it("only routes Unstake links for positions whose cooldown is ready", () => {

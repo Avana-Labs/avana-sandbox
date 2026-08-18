@@ -2,6 +2,7 @@
 
 import { useMemo } from "react"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
+import { HowItWorks } from "@/app/components/how-it-works"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { aggregateLendHeroFromMarkets } from "@/app/lib/lend-system/lend-hero-aggregates"
@@ -24,7 +25,7 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
       <div className="flex w-full items-start justify-between gap-4 pb-4">
         <div className="min-w-0 space-y-1.5">
           <p className="text-[13px] text-muted-foreground">{t("Lend TVL")}</p>
-          <p className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-normal tabular-nums text-foreground">
+          <p className="font-data text-[17px] md:text-[18px] font-medium leading-none tracking-normal tabular-nums text-foreground">
             {showDollarAmounts ? fc.compact(metrics.totalTvl) : "••••••••"}
           </p>
         </div>
@@ -36,7 +37,7 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
                 <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
                 {t(metric.label)}
               </p>
-              <p className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-normal tabular-nums text-foreground">
+              <p className="font-data text-[17px] md:text-[18px] font-medium leading-none tracking-normal tabular-nums text-foreground">
                 {showDollarAmounts
                   ? metric.key === "averageApy"
                     ? `${metrics.weightedApy.toFixed(2)}%`
@@ -46,6 +47,8 @@ export function LendHero({ markets }: { markets: ReadonlyArray<LendPageData["mar
             </div>
           ))}
         </div>
+
+        <HowItWorks topic="lend" className="self-center md:hidden" />
       </div>
     </section>
   )

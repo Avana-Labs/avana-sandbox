@@ -1,13 +1,15 @@
 import { describe, expect, it } from "vitest"
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
-import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
 
-describe("LearnSection blog links", () => {
-  it("P2-06: points Learn cards at the production blog base URL", () => {
+describe("LearnSection (Learn Avana explainers)", () => {
+  it("P2-06: renders full-card explainers with no outbound links", () => {
     const source = readFileSync(resolve(__dirname, "../learn-section.tsx"), "utf8")
-    expect(source).toMatch(/AVANA_EXTERNAL_LINKS\.blog/)
+    // The Learn section is now a teaching-card grid ("Learn Avana"), like Learn
+    // Umbrella — icon + title + body, with no blog / external links.
+    expect(source).toMatch(/Learn Avana/)
+    expect(source).not.toMatch(/AVANA_EXTERNAL_LINKS/)
+    expect(source).not.toMatch(/href=/)
     expect(source).not.toMatch(/avana-ashen\.vercel\.app/)
-    expect(AVANA_EXTERNAL_LINKS.blog).toBe("https://avana.cc/blog")
   })
 })

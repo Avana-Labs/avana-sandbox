@@ -13,6 +13,7 @@ import type { PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfoli
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { MultiplyOutlook } from "@/app/dashboard/_outlook/multiply-outlook"
 import { AccountModuleBoundary } from "./account-sections-shared"
 
 const MultiplyCollateralTable = lazy(async () => ({
@@ -100,6 +101,8 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
       <AccountModuleBoundary>
         <MultiplyWhatIfPanel state={multiplySession.state} walletId={walletId ?? null} />
       </AccountModuleBoundary>
+
+      <MultiplyOutlook />
     </section>
   )
 }

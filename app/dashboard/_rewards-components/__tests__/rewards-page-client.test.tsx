@@ -386,7 +386,7 @@ describe("DashboardPageClient", () => {
     expect(screen.getByRole("tab", { name: "Rewards" })).toBeInTheDocument()
     expect(screen.getByRole("tab", { name: "All Transactions" })).toBeInTheDocument()
     expect(screen.queryByRole("link", { name: "Rewards" })).toBeNull()
-    expect(screen.getByRole("heading", { name: "Your Portfolio" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Your Dashboard" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Wallet Balance" })).toBeInTheDocument()
   })
 
