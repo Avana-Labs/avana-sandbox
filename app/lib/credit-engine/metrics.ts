@@ -80,7 +80,9 @@ function scopeAccountBySpoke(
 
 function calculateMetricsForAccount(state: BorrowSystemState, account: BorrowAccountState): BorrowCreditMetrics {
   const poolCollateralValueUsd6 = totalCollateralValueUsd6(account, state.markets)
-  const totalBorrowedUsd6 = totalDebtValueUsd6(account)
+  // Reprice debt to each borrowed asset's current spot price (§7). A no-op when prices are
+  // unchanged, so a volatile/depegged debt moves HF but a stable position is unaffected.
+  const totalBorrowedUsd6 = totalDebtValueUsd6(account, state.assets)
   const interestEarnedUsd6 = totalInterestEarnedUsd6(account, state.markets)
   const interestOwedUsd6 = totalInterestOwedUsd6(account)
 

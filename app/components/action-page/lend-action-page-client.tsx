@@ -32,7 +32,7 @@ import { formatLendMarketDropdownSublabel, formatLendMarketValueLabel } from "@/
 import { formatActionAmount, formatActionFeeSummary } from "@/app/lib/action-system/formatters"
 import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
-import { canonicalPriceUsd } from "@/app/lib/prices/canonical"
+import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 
 export function LendActionPageClient({
@@ -58,7 +58,7 @@ export function LendActionPageClient({
   const { t } = useTranslation()
   const { walletId } = useAvanaIdentity()
   const session = useLendSessionContext()
-  const priceFor = canonicalPriceUsd
+  const priceFor = useCanonicalPriceFor()
   const depositItems = useMemo(
     () => (kind === "deposit" ? lendDepositSelectItems(session, walletId) : []),
     [kind, session, walletId],

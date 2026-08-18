@@ -25,7 +25,7 @@ import {
 } from "@/app/lib/borrow-system/market-hydration-server"
 import { canonicalPriceMap } from "@/app/lib/prices/canonical"
 import { priceKey } from "@/app/lib/prices/format"
-import { formatOraclePrice } from "@/app/lib/borrow-detail/formatters"
+import { formatOraclePrice, formatPairRate } from "@/app/lib/borrow-detail/formatters"
 import { formatBpsAsPct } from "@/app/lib/borrow-detail/allocation"
 import { resolveAssetDetailFromState, resolvePoolDetailFromState } from "@/app/lib/borrow-system/read-model"
 import { resolveAsset } from "@/app/lib/borrow-detail/asset.mock"
@@ -82,11 +82,16 @@ function mergeConvexQuickStats(
 }
 
 /**
- * Overlay the pool "Oracle price" quick stat with the pair rate derived from the canonical
- * per-token prices (price0 / price1), so the pool price is an exact PA/PB ratio of the same
- * single-token prices shown on the rows and tiles — one consistent basis everywhere. When
- * either leg is unpriced, the stat is DROPPED rather than left showing the fabricated mock
- * fallback — the display path never surfaces a hardcoded price.
+ * Overlay the pool "Price" quick stat with the base asset's USD price (price0) from the
+ * canonical per-token prices — a real USD value, NOT the base-in-quote pair ratio.
+ *
+ * The pair ratio (price0 / price1) is only a USD price when the quote is a USD-pegged asset;
+ * for a pool like cbBTC / WETH it is the cross rate (~33.7 WETH per cbBTC), which shown with a
+ * "$" prefix reads as a bogus "$33.75" instead of cbBTC's true ~$64k. Showing price0 gives the
+ * correct USD figure for every pool and is unchanged for USD-quoted pools (price1 ≈ 1, so
+ * price0/price1 ≈ price0). The pair exchange rate still belongs on a dedicated rate line, not
+ * on a "$"-formatted USD stat. Both legs must be priced (a fully-priced pool); otherwise the
+ * stat is DROPPED rather than surfacing the fabricated mock fallback.
  */
 export function injectPoolOraclePrice(
   quickStats: QuickStat[],
@@ -99,8 +104,15 @@ export function injectPoolOraclePrice(
   if (p0 === undefined || p1 === undefined || p1 === 0) {
     return quickStats.filter((s) => s.id !== "price" && s.id !== "oraclePrice")
   }
-  const value = formatOraclePrice(p0 / p1)
-  return quickStats.map((s) => (s.id === "price" || s.id === "oraclePrice" ? { ...s, value } : s))
+  // Pool price = the pair spot rate: the base leg priced in the QUOTE leg's units (not USD), so
+  // it differs per pool (cbBTC/WETH ≈ 33.7 WETH vs cbBTC/USDC ≈ 64k USDC) and never mislabels a
+  // non-USD rate with a "$". The tooltip carries the Uniswap-style reference with the USD value.
+  const rate = p0 / p1
+  const value = `${formatPairRate(rate)} ${symbol1}`
+  const tooltip =
+    `1 ${symbol0} = ${formatPairRate(rate)} ${symbol1} (${formatOraclePrice(p0)}) — the pair spot rate, ` +
+    `P(${symbol0}) ÷ P(${symbol1}) from the oracle, with the USD value of ${symbol0} shown in parentheses.`
+  return quickStats.map((s) => (s.id === "price" || s.id === "oraclePrice" ? { ...s, value, tooltip } : s))
 }
 
 /**
@@ -160,6 +172,9 @@ function mapConvexBorrowables(
         textClass: "text-foreground",
       },
       apy: row.borrowAprPct,
+      // Convex poolBorrowables carries no liquidity, so pull the supply-side TVL from the
+      // catalog asset (borrowed + available) for the "… Supply" sub-label.
+      tvlUsd: asset ? asset.totalBorrowedUsd + asset.availableUsd : undefined,
       href: borrowAssetDetailPath(row.id),
     }
   })

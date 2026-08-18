@@ -44,7 +44,7 @@ import {
   resolveMultiplyCollateralPriceUsd,
 } from "@/app/lib/multiply-system/collateral-limits"
 import { formatActionAmount } from "@/app/lib/action-system/formatters"
-import { canonicalPriceUsd } from "@/app/lib/prices/canonical"
+import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
@@ -73,7 +73,7 @@ export function MultiplyActionPageClient({
   const { walletId } = useAvanaIdentity()
   const session = useMultiplySessionContext()
   const isExitKind = kind === "deleverage" || kind === "close"
-  const priceFor = canonicalPriceUsd
+  const priceFor = useCanonicalPriceFor()
   const walletPositions = useMemo(
     () => Object.values(session.state.positions).filter((entry) => entry.walletId === walletId),
     [session.state.positions, walletId],

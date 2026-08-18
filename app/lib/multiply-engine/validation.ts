@@ -22,10 +22,20 @@ export function validateMultiplyAction(params: {
   borrowApy: number
   liquidationPrice: number | null
   collateralPriceUsd: number
+  /**
+   * Set when the collateral oracle price backing this leverage decision is stale/unavailable.
+   * A leveraged open sized off a stale price can breach LTV/HF the moment the real price lands,
+   * so block it rather than size against a number we can't trust. Optional so callers that don't
+   * yet thread freshness are unaffected.
+   */
+  oracleStale?: boolean
 }) {
   const errors: string[] = []
   const warnings: string[] = []
 
+  if (params.oracleStale) {
+    errors.push("Collateral price is stale — refresh before adjusting leverage.")
+  }
   if (params.selectedMultiplier < 1) errors.push("Multiplier must be at least 1x.")
   if (params.selectedMultiplier > MULTIPLY_ACTION_MAX_LEVERAGE)
     errors.push(`Multiplier cannot exceed ${MULTIPLY_ACTION_MAX_LEVERAGE}x.`)

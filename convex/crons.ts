@@ -1,7 +1,7 @@
 /**
  * Scheduled jobs.
- *   - refresh token prices from DefiLlama hourly so the sandbox "Price" tracks
- *     production (token prices move slowly; the batched request is cheap).
+ *   - refresh token prices from DefiLlama every 10 minutes so the sandbox "Price" tracks
+ *     production and staleness surfaces within ~20m of a wedged cron (the batched request is cheap).
  *   - roll up daily market stats near end-of-day UTC: flush the running liquidity
  *     delta into a persistent `marketDailyStats` snapshot so the chart series grows
  *     over calendar time with real activity (seed = starting history only).
@@ -20,7 +20,9 @@ import { internal } from "./_generated/api"
 
 const crons = cronJobs()
 
-crons.interval("refresh token prices", { hours: 1 }, internal.prices.refreshPrices, {})
+crons.interval("refresh token prices", { minutes: 10 }, internal.prices.refreshPrices, {})
+// FX moves slowly (daily provider updates); hourly keeps the validated fiat layer fresh cheaply.
+crons.interval("refresh fx rates", { hours: 1 }, internal.fx.refreshFxRates, {})
 // Flush each market's running liquidity delta into a persistent daily snapshot near
 // end-of-day UTC, so the chart series lengthens over calendar time with real activity
 // (the seed is just the starting history). See `markets.rollupDailyStats`.

@@ -19,6 +19,7 @@ import { SandboxGate } from "./components/sandbox/sandbox-gate"
 import { CurrencyDisplayBoundary } from "./components/currency-display-boundary"
 import { ProductRuntimeProviders } from "./components/product-runtime-providers"
 import { isLighthouseAuditMode } from "./lib/test-mode"
+import { loadServerTokenPrices } from "./lib/prices/server-hydrate"
 // Only load Vercel Analytics / Speed Insights when actually running on Vercel — their
 // scripts are served by Vercel's edge (/_vercel/*), so a local `next start` build 404s
 // on them and logs console errors (a Lighthouse best-practices failure). On Vercel the
@@ -103,7 +104,7 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const isAuditMode = isLighthouseAuditMode()
 
   if (isAuditMode) {
@@ -113,6 +114,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </html>
     )
   }
+
+  // Fetch the live oracle prices once on the server: this hydrates the server-side canonical
+  // store (server-computed price surfaces render live) AND yields the seed handed to the client
+  // TokenPricesContext, so CLIENT-rendered prices (lend list, borrow table, action pages) are
+  // live from SSR without depending on the realtime subscription (which only mounts on
+  // authenticated product routes). Fail-open: returns {} and never blocks render.
+  const initialTokenPrices = await loadServerTokenPrices()
 
   return (
     <html
@@ -139,7 +147,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <WalletGateProvider>
               <Web3ProviderBoundary>
                 <SandboxGate>
-                  <ProductRuntimeProviders>
+                  <ProductRuntimeProviders initialTokenPrices={initialTokenPrices}>
                     <CurrencyDisplayBoundary>
                       <ConditionalSiteChrome>
                         <Suspense fallback={null}>

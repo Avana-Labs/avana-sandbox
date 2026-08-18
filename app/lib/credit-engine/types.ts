@@ -164,6 +164,12 @@ export type UserDebtPosition = {
   debtIndexRay: bigint
   borrowRateWad: bigint
   principalBorrowedUsd6: bigint
+  /**
+   * USD6 price of the borrowed asset captured at borrow time. Lets the debt USD value be repriced
+   * to the borrowed token's current spot price (§7 / D2) via the ratio currentPrice/priceAtBorrow.
+   * Optional: legacy positions without it reprice as a no-op (value stays fixed-USD).
+   */
+  priceAtBorrowUsd6?: bigint
 }
 
 export type UserRewardPosition = {

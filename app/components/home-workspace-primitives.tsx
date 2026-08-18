@@ -70,8 +70,8 @@ export function TokenBubble({ visual, className }: TokenBubbleProps) {
   return (
     <span
       className={cn(
-        "inline-flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full font-data text-[11px] font-medium",
-        showIcon ? "bg-surface-raised ring-1 ring-border" : cn(visual.bgClassName, visual.textClassName),
+        "inline-flex size-10 shrink-0 items-center justify-center font-data text-[11px] font-medium",
+        showIcon ? undefined : cn("overflow-hidden rounded-full", visual.bgClassName, visual.textClassName),
         className,
       )}
       aria-hidden
@@ -97,8 +97,8 @@ export function TokenBubble({ visual, className }: TokenBubbleProps) {
 export function PairVisual({ visuals, className }: PairVisualProps) {
   return (
     <div className={cn("relative h-10 w-[3.25rem] shrink-0", className)} aria-hidden>
-      <TokenBubble visual={visuals[0]} className="absolute left-0 top-0 ring-2 ring-background" />
-      <TokenBubble visual={visuals[1]} className="absolute left-5 top-0 ring-2 ring-background" />
+      <TokenBubble visual={visuals[0]} className="absolute left-0 top-0" />
+      <TokenBubble visual={visuals[1]} className="absolute left-5 top-0" />
     </div>
   )
 }

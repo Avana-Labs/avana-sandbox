@@ -1,3 +1,4 @@
+import { repriceDebtValueUsd6 } from "./borrowed-asset-valuation"
 import { TOKEN_SCALE, mulDiv, sharesToAssets } from "./units"
 import type {
   BorrowAccountState,
@@ -27,8 +28,14 @@ export function collateralInterestEarnedUsd6(position: UserCollateralPosition, m
   return tokenAmountToUsd6(earnedAmount, market.snapshot.lpTokenPriceUsd6)
 }
 
-export function currentDebtValueUsd6(position: UserDebtPosition) {
-  return sharesToAssets(position.debtSharesUsd6, position.debtIndexRay)
+/**
+ * Current USD6 debt for a position. Fixed-USD (principal + accrued interest) by default; when a
+ * `currentPriceUsd6` for the borrowed asset is supplied, the value is repriced to that spot price
+ * (§7 / D2). Passing no price — every legacy caller — keeps the exact prior behavior.
+ */
+export function currentDebtValueUsd6(position: UserDebtPosition, currentPriceUsd6?: bigint) {
+  const atBorrow = sharesToAssets(position.debtSharesUsd6, position.debtIndexRay)
+  return repriceDebtValueUsd6(atBorrow, position.priceAtBorrowUsd6, currentPriceUsd6)
 }
 
 export function debtInterestOwedUsd6(position: UserDebtPosition) {
@@ -52,8 +59,16 @@ export function totalInterestEarnedUsd6(account: BorrowAccountState, markets: Re
   }, 0n)
 }
 
-export function totalDebtValueUsd6(account: BorrowAccountState) {
-  return account.debtPositions.reduce((sum, position) => sum + currentDebtValueUsd6(position), 0n)
+/**
+ * Canonical TotalBorrowedUSD (§7) = Σ over borrowed single-token positions. Pass `assets` to
+ * reprice each position to its borrowed asset's current spot price; omit it to keep the fixed-USD
+ * total (identical under a constant price). Debt is never LP-valued.
+ */
+export function totalDebtValueUsd6(account: BorrowAccountState, assets?: Record<string, BorrowAssetRecord>) {
+  return account.debtPositions.reduce((sum, position) => {
+    const currentPriceUsd6 = assets?.[position.assetId]?.snapshot.priceUsd6
+    return sum + currentDebtValueUsd6(position, currentPriceUsd6)
+  }, 0n)
 }
 
 export function totalInterestOwedUsd6(account: BorrowAccountState) {

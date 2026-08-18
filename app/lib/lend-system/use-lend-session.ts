@@ -24,6 +24,28 @@ import {
 } from "./storage"
 import { LEND_SESSION_SYNC_EVENT } from "./session-sync"
 
+/**
+ * Convert a Convex lend position's USD figures into the token-denominated amounts the engine
+ * state expects. The server stores supplied/earned in USD6; `suppliedAmount`, `principalAmount`,
+ * and `interestEarned` are TOKEN amounts (consumers re-multiply by the asset price to get USD).
+ * Dividing by the asset price is required — omitting it (the previous behavior) both mis-derived
+ * principal and inflated interest by the price factor for any non-$1 asset (e.g. ~1934× for ETH).
+ */
+export function deriveLendPositionAmounts(
+  suppliedValueUsd: number,
+  earnedUsd: number,
+  assetPriceUsd: number | undefined,
+): { suppliedAmount: number; principalAmount: number; interestEarnedAmount: number } {
+  const price = assetPriceUsd && assetPriceUsd > 0 ? assetPriceUsd : 1
+  const suppliedAmount = suppliedValueUsd / price
+  const interestEarnedAmount = earnedUsd / price
+  return {
+    suppliedAmount,
+    interestEarnedAmount,
+    principalAmount: Math.max(0, suppliedAmount - interestEarnedAmount),
+  }
+}
+
 function mergeHistory(nextItem: LendTransactionHistoryItem, history: LendTransactionHistoryItem[]) {
   return [nextItem, ...history.filter((item) => item.id !== nextItem.id)]
 }
@@ -266,19 +288,19 @@ export function useLendSession({
         if (position.product !== "lend") continue
         const market = stateRef.current.markets[position.marketSlug]
         const suppliedValueUsd = Number(BigInt(position.suppliedUsd6 ?? "0")) / 1_000_000
-        const suppliedAmount = market?.assetPriceUsd ? suppliedValueUsd / market.assetPriceUsd : suppliedValueUsd
         const earnedUsd = Number(BigInt(position.earnedUsd6 ?? "0")) / 1_000_000
+        const amounts = deriveLendPositionAmounts(suppliedValueUsd, earnedUsd, market?.assetPriceUsd)
         const id = String(position._id)
         positions[id] = {
           positionId: id,
           walletId,
           marketId: position.marketSlug,
           asset: market?.asset.symbol ?? position.marketSlug,
-          principalAmount: Math.max(0, suppliedAmount - earnedUsd),
-          scaledBalance: suppliedAmount,
+          principalAmount: amounts.principalAmount,
+          scaledBalance: amounts.suppliedAmount,
           liquidityIndexAtLastAction: market?.liquidityIndex ?? 1,
-          currentSuppliedAmount: suppliedAmount,
-          interestEarned: earnedUsd,
+          currentSuppliedAmount: amounts.suppliedAmount,
+          interestEarned: amounts.interestEarnedAmount,
           rewardsEarnedUsd: 0,
           suppliedValueUsd,
           openedAt: position.openedAt,

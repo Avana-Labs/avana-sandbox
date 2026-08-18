@@ -31,6 +31,8 @@ import { formatBorrowPairLabel, formatLtvPct } from "@/app/lib/borrow-sim"
 import { BorrowableAssetsPanel } from "./borrowable-assets-table"
 import { PillButton, TokenBubble, TokenPairCell } from "./atoms"
 import { formatApy } from "@/app/lib/format"
+import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
+import { formatPairRate } from "@/app/lib/borrow-detail/formatters"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
@@ -130,10 +132,18 @@ function SortIcon() {
 function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
   const { compact } = useCurrency()
   const { t } = useTranslation()
-  // Lead with the fee tier so two rows sharing a pair label within the SAME
-  // section (e.g. Curve Crypto's two WBTC/WETH pools) are distinguishable — the
-  // group heading only conveys the DEX/version, not the per-pool tier.
-  const subtitle = `${pool.feeTier} · ${compact(pool.tvlUsd)} ${t("TVL")}`
+  const priceFor = useCanonicalPriceFor()
+  // Sub-label is the live pool price — the pair spot rate: the base leg priced in the quote leg
+  // (WBTC/WETH → "33.71 WETH", WBTC/USDC → "64,426.09 USDC"), so it differs per pool and is never
+  // a mislabeled "$" for a non-USD pair. Falls back to fee tier + TVL when either leg is unpriced.
+  const base = pool.visuals[0].symbol
+  const quote = pool.visuals[1].symbol
+  const p0 = priceFor(base)
+  const p1 = priceFor(quote)
+  const subtitle =
+    p0 !== undefined && p1 !== undefined && p1 > 0
+      ? `${formatPairRate(p0 / p1)} ${quote}`
+      : `${pool.feeTier} · ${compact(pool.tvlUsd)} ${t("TVL")}`
   return (
     <div className="flex min-w-0 items-center gap-4">
       <div className="flex items-center">
