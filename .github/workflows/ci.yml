@@ -14,10 +14,11 @@ permissions:
   contents: read
 
 jobs:
-  test:
+  # Static checks (format + security + lint + typecheck) run once, in parallel
+  # with the sharded unit tests below.
+  lint:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -28,7 +29,15 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Cache node_modules
+        id: node-modules-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node22-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Ensure rolldown Linux binding
@@ -48,8 +57,44 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
 
-      - name: Unit tests
-        run: npm test
+  # Unit/integration suite (~400 specs) sharded across parallel runners so the
+  # slowest job is roughly the suite time divided by the shard count.
+  test:
+    name: test (${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ["1/2", "2/2"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Cache node_modules
+        id: node-modules-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node22-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Ensure rolldown Linux binding
+        run: |
+          node -e "require.resolve('@rolldown/binding-linux-x64-gnu')" \
+            || npm install --no-save @rolldown/binding-linux-x64-gnu@$(node -p "require('./package.json').optionalDependencies['@rolldown/binding-linux-x64-gnu'] || require('./package-lock.json').packages['node_modules/@rolldown/binding-linux-x64-gnu'].version")
+
+      - name: Unit tests (shard ${{ matrix.shard }})
+        run: npx vitest run --shard=${{ matrix.shard }}
 
   e2e-smoke:
     runs-on: ubuntu-latest
@@ -65,7 +110,15 @@ jobs:
           node-version: 22
           cache: npm
 
+      - name: Cache node_modules
+        id: node-modules-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node22-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Ensure rolldown Linux binding
@@ -99,12 +152,6 @@ jobs:
             done
           fi
 
-      # System libs as a best-effort safety net: bounded and non-fatal so apt can
-      # never hang or fail the job (ubuntu-latest normally already has them).
-      - name: Install Playwright system deps (best effort)
-        shell: bash
-        run: timeout 120 npx playwright install-deps chromium || echo "::warning::install-deps skipped (timeout/failure); relying on preinstalled runner libs"
-
       # Playwright's webServer (playwright.config.ts) boots `npm run dev` with
       # NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1, which opens the onboarding gate,
       # injects the test wallet, and serves mock data — so this needs neither a
@@ -129,11 +176,12 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
 
-# NOTE: CI's required gate is the `test` job — lint + typecheck + the full
-# unit/integration suite (`npm test`) — run on every PR into main and on push to
-# main. `e2e-smoke` is a scoped Playwright smoke (see the step comment) kept as a
-# separate, non-required job for now; promote it to a required check once it has
-# proven stable. The timing/pixel-sensitive e2e suites (route-performance,
-# app-audit) and onboarding.spec.ts remain local-only: they need a running Convex
-# backend and/or a signed-in wallet, which CI does not provision. Run them against
-# `npm run dev` (NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1 + a SIWE token + `npx convex dev`).
+# NOTE: CI's required gate is `lint` + the sharded `test (N/2)` jobs — format +
+# security + lint + typecheck, plus the full unit/integration suite (vitest,
+# sharded) — run on every PR into main and on push to main. `e2e-smoke` is a
+# scoped Playwright smoke (see the step comment) kept as a separate, non-required
+# job for now; promote it to a required check once it has proven stable. The
+# timing/pixel-sensitive e2e suites (route-performance, app-audit) and
+# onboarding.spec.ts remain local-only: they need a running Convex backend and/or
+# a signed-in wallet, which CI does not provision. Run them against `npm run dev`
+# (NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1 + a SIWE token + `npx convex dev`).
