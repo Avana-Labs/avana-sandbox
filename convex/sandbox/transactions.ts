@@ -1170,6 +1170,14 @@ export const recordTransaction = mutation({
         const priceUsd = sandbox?.priceUsd && sandbox.priceUsd > 0 ? sandbox.priceUsd : 1
         const tokenAmount = args.amountUsd / priceUsd
         const signed = args.kind === "deposit" || args.kind === "repay" ? -tokenAmount : tokenAmount
+        // Affordability: a cash-out (deposit/repay debits liquid) cannot spend more than the wallet
+        // holds. Without this the liquid debit clamps to 0 while the product bucket still credits the
+        // full amount — minting net worth. Enforced when a liquid row exists (seeded wallets); a
+        // wallet with no row for this asset falls through to the existing clamp (fail-open so
+        // unseeded/test flows are unaffected).
+        if (signed < 0 && sandbox && sandbox.amount + signed < -1e-6) {
+          throw new Error("INSUFFICIENT_BALANCE: not enough liquid balance for this action.")
+        }
         await applyLiquidAssetDelta(ctx, wallet, assetId, assetId.toUpperCase(), signed, now)
       }
       await applyProductBucketDelta(ctx, wallet, args, marketSlug, now, existingPosition)

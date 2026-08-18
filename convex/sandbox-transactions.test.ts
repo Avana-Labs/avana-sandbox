@@ -184,6 +184,60 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
     expect(lend?.status).toBe("open")
   })
 
+  test("rejects a deposit that exceeds the wallet's liquid balance (affordability)", async () => {
+    const t = convexTest(schema, modules)
+    const w = WALLET.toLowerCase()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("positions", {
+        wallet: w, product: "lend", marketSlug: "usdc", status: "open",
+        suppliedUsd6: "0", earnedUsd6: "0", openedAt: 1, lastUpdatedAt: 1, revision: 0,
+      })
+      await ctx.db.insert("walletLendBalances", {
+        wallet: w, marketId: "usdc", assetId: "usdc", symbol: "USDC",
+        amount: 0, valueUsd: 0, state: "deposited", updatedAt: 1,
+      })
+      // Only $5 of liquid USDC on hand.
+      await ctx.db.insert("sandboxBalances", {
+        wallet: w, assetSlug: "usdc", symbol: "USDC", amount: 5, valueUsd: 5, priceUsd: 1, updatedAt: 1,
+      })
+    })
+    const asUser = t.withIdentity({ subject: WALLET })
+    await expect(
+      asUser.mutation(api.sandbox.transactions.recordTransaction, {
+        wallet: WALLET, intentId: "afford-over", product: "lend" as const, kind: "deposit",
+        marketSlug: "usdc", assetId: "usdc", requestedAmountUsd6: "10000000", executedAmountUsd6: "10000000",
+        amountUsd: 10, simulated: true, expectedRevision: 0,
+        position: { status: "open" as const, marketSlug: "usdc", suppliedUsd6: "10000000", earnedUsd6: "0" },
+      }),
+    ).rejects.toThrow(/INSUFFICIENT_BALANCE/)
+  })
+
+  test("allows a deposit within the wallet's liquid balance", async () => {
+    const t = convexTest(schema, modules)
+    const w = WALLET.toLowerCase()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("positions", {
+        wallet: w, product: "lend", marketSlug: "usdc", status: "open",
+        suppliedUsd6: "0", earnedUsd6: "0", openedAt: 1, lastUpdatedAt: 1, revision: 0,
+      })
+      await ctx.db.insert("walletLendBalances", {
+        wallet: w, marketId: "usdc", assetId: "usdc", symbol: "USDC",
+        amount: 0, valueUsd: 0, state: "deposited", updatedAt: 1,
+      })
+      await ctx.db.insert("sandboxBalances", {
+        wallet: w, assetSlug: "usdc", symbol: "USDC", amount: 100, valueUsd: 100, priceUsd: 1, updatedAt: 1,
+      })
+    })
+    const asUser = t.withIdentity({ subject: WALLET })
+    const res = await asUser.mutation(api.sandbox.transactions.recordTransaction, {
+      wallet: WALLET, intentId: "afford-ok", product: "lend" as const, kind: "deposit",
+      marketSlug: "usdc", assetId: "usdc", requestedAmountUsd6: "10000000", executedAmountUsd6: "10000000",
+      amountUsd: 10, simulated: true, expectedRevision: 0,
+      position: { status: "open" as const, marketSlug: "usdc", suppliedUsd6: "10000000", earnedUsd6: "0" },
+    })
+    expect(res.receipt.status).toBe("success")
+  })
+
   test("idempotent on intentId — a replay returns the existing row and does not double-apply", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
