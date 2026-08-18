@@ -1434,6 +1434,37 @@ async function applyProductBucketDelta(
  * Wallet tab and portfolio liquid legs stay durable. Swaps are USD-neutral at the
  * portfolio-net level, so no portfolio snapshot is appended.
  */
+/**
+ * Server-side USD price for a swap leg: the live token oracle (tokenPrices, keyed by lowercase
+ * symbol) first, then the wallet's own held sandbox row as a fallback for assets the oracle does
+ * not cover. Returns null when no trustworthy server price exists (validation is then skipped for
+ * that leg). Never trusts a client-supplied price.
+ */
+async function swapLegServerPriceUsd(
+  ctx: MutationCtx,
+  wallet: string,
+  assetId: string,
+  symbol: string,
+): Promise<number | null> {
+  const oracle = await ctx.db
+    .query("tokenPrices")
+    .withIndex("by_symbol", (q) => q.eq("symbol", symbol.toLowerCase()))
+    .first()
+  if (oracle && oracle.priceUsd > 0 && oracle.status !== "invalid") return oracle.priceUsd
+  const held = await ctx.db
+    .query("sandboxBalances")
+    .withIndex("by_wallet_asset", (q) => q.eq("wallet", wallet).eq("assetSlug", assetId))
+    .unique()
+  if (held?.priceUsd && held.priceUsd > 0) return held.priceUsd
+  return null
+}
+
+// A successful swap may deviate from the pure oracle rate by fees, price impact and slippage —
+// realistically a few percent. This bound is intentionally loose (2x) so it never rejects a real
+// swap, while still catching the order-of-magnitude discrepancies that indicate a forged
+// output/USD value (the arbitrary-mint vector).
+const SWAP_ORACLE_MAX_DEVIATION = 1
+
 export const recordSwap = mutation({
   args: {
     wallet: v.string(),
@@ -1501,6 +1532,20 @@ export const recordSwap = mutation({
     const outputAmountValid = status === "success" ? args.outputAmount > 0 : args.outputAmount >= 0
     if (!(args.inputAmount > 0) || !outputAmountValid || !(args.amountUsd >= 0)) {
       throw new Error("INVALID_SWAP: input must be positive, output positive on success, USD non-negative.")
+    }
+    // Oracle-value bound (arbitrary-mint guard): a successful swap cannot claim more USD than its
+    // input is worth, nor more output units than that USD buys at the server rate. This stops a
+    // client from forging outputAmount/amountUsd to mint balance. Legs the oracle can't price are
+    // skipped (fail-open) so real swaps of unlisted assets still record.
+    if (status === "success") {
+      const inputPrice = await swapLegServerPriceUsd(ctx, wallet, args.inputAssetId, args.inputSymbol)
+      if (inputPrice && args.amountUsd > args.inputAmount * inputPrice * (1 + SWAP_ORACLE_MAX_DEVIATION)) {
+        throw new Error("INVALID_SWAP: claimed USD value exceeds the oracle value of the input leg.")
+      }
+      const outputPrice = await swapLegServerPriceUsd(ctx, wallet, args.outputAssetId, args.outputSymbol)
+      if (outputPrice && args.outputAmount > (args.amountUsd / outputPrice) * (1 + SWAP_ORACLE_MAX_DEVIATION)) {
+        throw new Error("INVALID_SWAP: output amount exceeds what the oracle rate yields for this USD value.")
+      }
     }
     // Only a successful swap moved value; failed/expired executed nothing.
     const executedUsd6 = status === "success" ? String(Math.round(args.amountUsd * 1_000_000)) : "0"
