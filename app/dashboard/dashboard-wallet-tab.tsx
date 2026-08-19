@@ -154,7 +154,7 @@ function PnlCell({
 
 // Debt is a liability, not a holding, and claimable pool fees are not a wallet token (they show
 // as "Unclaimed fees" on the pool rows instead) — so keep both out of the wallet holdings view.
-const HIDDEN_WALLET_SOURCE_TYPES: ReadonlySet<UserAssetBalance["sourceType"]> = new Set([
+export const HIDDEN_WALLET_SOURCE_TYPES: ReadonlySet<UserAssetBalance["sourceType"]> = new Set([
   "borrow_debt",
   "multiply_debt",
   "borrow_claimable",
