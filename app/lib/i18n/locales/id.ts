@@ -1470,6 +1470,8 @@ const dict: TranslationDictionary = {
   "How it works": "Cara kerjanya",
   "Learn Avana": "Pelajari Avana",
   "Dashboard Positions": "Posisi Dasbor",
+  "Available to use": "Tersedia untuk digunakan",
+  "Available to deposit": "Tersedia untuk disetor",
   "against {pool}": "terhadap {pool}",
   Locked: "Terkunci",
   "Merkl Rewards": "Hadiah Merkl",

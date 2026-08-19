@@ -29,6 +29,7 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { formatUsdExact } from "@/app/lib/borrow-sim"
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 import { Button } from "@/components/ui/button"
+import { ProductAvailableCard } from "./account-sections-shared"
 
 const EMPTY_LEND_TAB: PortfolioLendTabData = { investments: [], positions: [], strategyBuckets: [], history: [] }
 
@@ -257,6 +258,11 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
   return (
     <section id="dashboard-lend-account" className={`scroll-mt-24 ${detailSectionStackClass}`}>
       <DashboardLendPerformanceSection title={t("Lend Balance")} metrics={metrics} />
+      <ProductAvailableCard
+        walletId={walletId ?? ""}
+        sourceTypes={["lend_available"]}
+        title={t("Available to deposit")}
+      />
       <DashboardInvestments
         investments={lendTabData.investments}
         rewardsSummary={lendTabData.rewardsSummary}

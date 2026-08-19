@@ -1506,6 +1506,8 @@ const dict: TranslationDictionary = {
   "How it works": "工作原理",
   "Learn Avana": "了解 Avana",
   "Dashboard Positions": "仪表盘持仓",
+  "Available to use": "可使用",
+  "Available to deposit": "可存入",
   "against {pool}": "对 {pool}",
   Locked: "已锁定",
   "Merkl Rewards": "Merkl 奖励",

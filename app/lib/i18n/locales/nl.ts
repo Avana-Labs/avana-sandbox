@@ -1472,6 +1472,8 @@ const dict: TranslationDictionary = {
   "How it works": "Hoe het werkt",
   "Learn Avana": "Leer Avana kennen",
   "Dashboard Positions": "Dashboardposities",
+  "Available to use": "Beschikbaar voor gebruik",
+  "Available to deposit": "Beschikbaar om te storten",
   "against {pool}": "tegen {pool}",
   Locked: "Vergrendeld",
   "Merkl Rewards": "Merkl-beloningen",

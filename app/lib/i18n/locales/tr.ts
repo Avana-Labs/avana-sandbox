@@ -1475,6 +1475,8 @@ const dict: TranslationDictionary = {
   "How it works": "Nasıl çalışır",
   "Learn Avana": "Avana'yı öğren",
   "Dashboard Positions": "Panel pozisyonları",
+  "Available to use": "Kullanıma hazır",
+  "Available to deposit": "Yatırmaya hazır",
   "against {pool}": "{pool} karşılığında",
   Locked: "Kilitli",
   "Merkl Rewards": "Merkl Ödülleri",
