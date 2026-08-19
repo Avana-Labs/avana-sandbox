@@ -32,7 +32,7 @@ type SandboxRewardsActionAdapterOptions = {
 }
 
 function buildReferralCode(wallet: string) {
-  return `AVA-${wallet
+  return `Avana${wallet
     .replace(/[^a-z0-9]/gi, "")
     .slice(-8)
     .toUpperCase()}`
@@ -67,7 +67,7 @@ export class SandboxRewardsActionAdapter implements RewardsActionAdapter {
     const referralProfile: ReferralProfile = {
       wallet,
       referralCode: buildReferralCode(wallet),
-      referralLink: `https://avana.cc/dashboard?tab=referrals&ref=${buildReferralCode(wallet)}`,
+      referralLink: `https://avana.cc/?ref=${buildReferralCode(wallet)}`,
       activeReferralCount: 0,
       fundedReferralCount: 0,
       referralVolumeUsd: 0,
@@ -422,10 +422,13 @@ export class SandboxRewardsActionAdapter implements RewardsActionAdapter {
     // by scanning this (referred) wallet's isolated session, which only ever holds its own
     // profile, so a scan turned every legitimate cross-wallet referral into "Unknown
     // referral code" (silently swallowed by the dashboard's `.catch`).
-    const code = referralCode.trim().toUpperCase()
-    if (!/^AVA-[A-Z0-9]+$/.test(code)) {
+    // Canonicalize any-case input (URLs may lowercase it) to the exact form
+    // `buildReferralCode` mints: "Avana" + an uppercased 8-char suffix.
+    const match = referralCode.trim().match(/^avana([a-z0-9]+)$/i)
+    if (!match) {
       throw new Error(`Invalid referral code ${referralCode}`)
     }
+    const code = `Avana${match[1].toUpperCase()}`
     if (buildReferralCode(wallet) === code) throw new Error("Wallet cannot refer itself")
 
     const [initializedState, profile] = this.ensureReferralProfile(this.readState(), wallet)
