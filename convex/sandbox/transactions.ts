@@ -23,6 +23,7 @@ import type { MutationCtx, QueryCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
 import { upsertWalletBalanceRows } from "../wallet/balances"
 import { requireSandboxWallet } from "./auth"
+import { computeSwapQuoteMath } from "./swapQuoteEngine"
 import { tokenNotionalToUsd } from "./collateralUsd"
 import { deriveClaimAmountUsd } from "./rewards_catalog"
 import type { Doc } from "../_generated/dataModel"
@@ -1528,22 +1529,38 @@ export const recordSwap = mutation({
     if (!(args.inputAmount > 0) || !outputAmountValid || !(args.amountUsd >= 0)) {
       throw new Error("INVALID_SWAP: input must be positive, output positive on success, USD non-negative.")
     }
-    // Oracle-value bound (arbitrary-mint guard): a successful swap cannot claim more USD than its
-    // input is worth, nor more output units than that USD buys at the server rate. This stops a
-    // client from forging outputAmount/amountUsd to mint balance. Legs the oracle can't price are
-    // skipped (fail-open) so real swaps of unlisted assets still record.
+    // Server-authoritative execution: recompute the output + USD from the LIVE oracle via the
+    // shared swap engine, so the client's quoted values never determine the result (no minting,
+    // no client-computed swap). When both legs are priced the engine's output is used for the
+    // balance delta AND the persisted row. When a leg is unpriced (unlisted asset) we fail open
+    // to the client's values, still bounded by the oracle anti-mint guard for the priced leg.
+    let executedOutputAmount = args.outputAmount
+    let executedAmountUsd = args.amountUsd
     if (status === "success") {
-      const inputPrice = await swapLegServerPriceUsd(ctx, wallet, args.inputAssetId, args.inputSymbol)
-      if (inputPrice && args.amountUsd > args.inputAmount * inputPrice * (1 + SWAP_ORACLE_MAX_DEVIATION)) {
-        throw new Error("INVALID_SWAP: claimed USD value exceeds the oracle value of the input leg.")
-      }
-      const outputPrice = await swapLegServerPriceUsd(ctx, wallet, args.outputAssetId, args.outputSymbol)
-      if (outputPrice && args.outputAmount > (args.amountUsd / outputPrice) * (1 + SWAP_ORACLE_MAX_DEVIATION)) {
-        throw new Error("INVALID_SWAP: output amount exceeds what the oracle rate yields for this USD value.")
+      const [inputPrice, outputPrice] = await Promise.all([
+        swapLegServerPriceUsd(ctx, wallet, args.inputAssetId, args.inputSymbol),
+        swapLegServerPriceUsd(ctx, wallet, args.outputAssetId, args.outputSymbol),
+      ])
+      if (inputPrice && outputPrice) {
+        const math = computeSwapQuoteMath({
+          inputAmount: args.inputAmount,
+          inputPriceUsd: inputPrice,
+          outputPriceUsd: outputPrice,
+          slippageBps: args.slippageBps ?? 50,
+        })
+        executedOutputAmount = math.estimatedOutputAmount
+        executedAmountUsd = math.amountUsd
+      } else {
+        if (inputPrice && args.amountUsd > args.inputAmount * inputPrice * (1 + SWAP_ORACLE_MAX_DEVIATION)) {
+          throw new Error("INVALID_SWAP: claimed USD value exceeds the oracle value of the input leg.")
+        }
+        if (outputPrice && args.outputAmount > (args.amountUsd / outputPrice) * (1 + SWAP_ORACLE_MAX_DEVIATION)) {
+          throw new Error("INVALID_SWAP: output amount exceeds what the oracle rate yields for this USD value.")
+        }
       }
     }
     // Only a successful swap moved value; failed/expired executed nothing.
-    const executedUsd6 = status === "success" ? String(Math.round(args.amountUsd * 1_000_000)) : "0"
+    const executedUsd6 = status === "success" ? String(Math.round(executedAmountUsd * 1_000_000)) : "0"
     const requestedUsd6 = String(Math.round(args.amountUsd * 1_000_000))
     const hash = args.syntheticTxHash ?? `sim-swap-${args.intentId.slice(0, 8)}-${now.toString(36)}`
 
@@ -1556,11 +1573,11 @@ export const recordSwap = mutation({
       assetId: args.inputAssetId,
       requestedAmountUsd6: requestedUsd6,
       executedAmountUsd6: executedUsd6,
-      amountUsd: status === "success" ? args.amountUsd : 0,
+      amountUsd: status === "success" ? executedAmountUsd : 0,
       swapInputSymbol: args.inputSymbol,
       swapOutputSymbol: args.outputSymbol,
       swapInputAmount: args.inputAmount,
-      swapOutputAmount: args.outputAmount,
+      swapOutputAmount: status === "success" ? executedOutputAmount : args.outputAmount,
       swapProvider: args.provider,
       swapQuoteId: args.quoteId,
       swapNetworkFeeUsd: args.networkFeeUsd,
@@ -1573,7 +1590,13 @@ export const recordSwap = mutation({
     })
 
     if (status === "success") {
-      await applySwapBalanceDelta(ctx, wallet, args, now)
+      // Apply the SERVER-computed output/USD, not the client's quoted values.
+      await applySwapBalanceDelta(
+        ctx,
+        wallet,
+        { ...args, outputAmount: executedOutputAmount, amountUsd: executedAmountUsd },
+        now,
+      )
     }
 
     return {

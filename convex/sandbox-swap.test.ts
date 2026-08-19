@@ -110,37 +110,61 @@ describe("recordSwap — durable swap persistence (#15)", () => {
     })
   }
 
-  test("mint guard: rejects an output amount impossible at the oracle rate", async () => {
+  test("authoritative: recomputes the output from the oracle, ignoring a forged high output", async () => {
     const t = convexTest(schema, modules)
     await seedPrice(t, "eth", 2000)
     await seedPrice(t, "wbtc", 65000)
     const asUser = t.withIdentity({ subject: WALLET })
-    // Forge 1000 WBTC (~$65M) out of a 0.5 ETH input for a claimed $967.
-    await expect(
-      asUser.mutation(
-        api.sandbox.transactions.recordSwap,
-        swapIntent("mint1", { outputAssetId: "wbtc", outputSymbol: "WBTC", outputAmount: 1000, amountUsd: 967 }),
-      ),
-    ).rejects.toThrow(/INVALID_SWAP/)
+    // Client forges 1000 WBTC (~$65M) out of a 0.5 ETH input. With both legs priced the server
+    // COMPUTES the output (no mint possible): 0.5 ETH=$1000 → 1000/65000 gross, −0.30% fee −0.35% impact.
+    const res = await asUser.mutation(
+      api.sandbox.transactions.recordSwap,
+      swapIntent("mint1", { outputAssetId: "wbtc", outputSymbol: "WBTC", outputAmount: 1000, amountUsd: 967 }),
+    )
+    expect(res.receipt.status).toBe("success")
+    const rows = await asUser.query(api.sandbox.transactions.getWalletSwapTransactions, { wallet: WALLET })
+    expect(rows[0].outputAmount).toBeCloseTo(0.0152846, 5) // server value, NOT the forged 1000
+    expect(rows[0].outputAmount).toBeLessThan(1)
+    expect(rows[0].amountUsd).toBeCloseTo(1000, 6) // 0.5 ETH × $2000, not the client's $967
   })
 
-  test("mint guard: rejects a claimed USD value far above the input's oracle value", async () => {
+  test("authoritative: recomputes amountUsd from the oracle, ignoring a forged high USD", async () => {
     const t = convexTest(schema, modules)
     await seedPrice(t, "usdc", 1)
     await seedPrice(t, "eth", 2000)
     const asUser = t.withIdentity({ subject: WALLET })
-    // Claim $65M moved from a single USDC input.
+    // Client claims $65M moved from a single USDC input; server recomputes amountUsd = 1×$1 = $1.
+    const res = await asUser.mutation(
+      api.sandbox.transactions.recordSwap,
+      swapIntent("mint2", {
+        inputAssetId: "usdc",
+        inputSymbol: "USDC",
+        inputAmount: 1,
+        outputAssetId: "eth",
+        outputSymbol: "ETH",
+        outputAmount: 1,
+        amountUsd: 65_000_000,
+      }),
+    )
+    expect(res.receipt.status).toBe("success")
+    const rows = await asUser.query(api.sandbox.transactions.getWalletSwapTransactions, { wallet: WALLET })
+    expect(rows[0].amountUsd).toBeCloseTo(1, 6) // server value, NOT the forged $65M
+  })
+
+  test("unpriced-fallback mint guard: still rejects a forged USD above the priced input leg", async () => {
+    const t = convexTest(schema, modules)
+    // Only the INPUT leg (eth) is priced; the output (wbtc) is unpriced → fail-open path, where
+    // the oracle anti-mint bound on the priced input leg still applies.
+    await seedPrice(t, "eth", 2000)
+    const asUser = t.withIdentity({ subject: WALLET })
     await expect(
       asUser.mutation(
         api.sandbox.transactions.recordSwap,
-        swapIntent("mint2", {
-          inputAssetId: "usdc",
-          inputSymbol: "USDC",
-          inputAmount: 1,
-          outputAssetId: "eth",
-          outputSymbol: "ETH",
-          outputAmount: 1,
-          amountUsd: 65_000_000,
+        swapIntent("mint3", {
+          outputAssetId: "wbtc",
+          outputSymbol: "WBTC",
+          outputAmount: 1000,
+          amountUsd: 65_000_000, // far above 0.5 ETH × $2000
         }),
       ),
     ).rejects.toThrow(/INVALID_SWAP/)
