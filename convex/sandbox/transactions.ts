@@ -2030,14 +2030,19 @@ async function computePortfolioNetApyPct(
       if (base > 0) legs.push({ weight: base, rate: position.netApyPct ?? 0 })
     } else if (position.product === "borrow") {
       const base = usd6Number(position.collateralValueUsd6) - usd6Number(position.debtValueUsd6)
-      if (base > 0) legs.push({ weight: base, rate: pairAprBySlug.get(position.marketSlug) ?? 0 })
+      const rate = pairAprBySlug.get(position.marketSlug)
+      // Skip when the pool rate is unknown rather than blending in a fake 0% — an
+      // unresolved slug would otherwise add a large 0%-rate weight and crush the blend.
+      if (base > 0 && rate != null) legs.push({ weight: base, rate })
     }
     // product === "umbrella": intentionally skipped.
   }
-  // Home-seed borrow collateral not yet represented by a live position.
+  // Home-seed borrow collateral not yet represented by a live position — only when its
+  // pool rate resolves (stale/unmatched seed slugs must not drag the blend toward 0%).
   for (const row of walletCollateral) {
     if (liveBorrowSlugs.has(row.marketId)) continue
-    if (row.collateralUsd > 0) legs.push({ weight: row.collateralUsd, rate: pairAprBySlug.get(row.marketId) ?? 0 })
+    const rate = pairAprBySlug.get(row.marketId)
+    if (row.collateralUsd > 0 && rate != null) legs.push({ weight: row.collateralUsd, rate })
   }
 
   const totalWeight = legs.reduce((sum, leg) => sum + leg.weight, 0)
