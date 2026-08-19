@@ -1,40 +1,37 @@
 "use client"
 
 /**
- * "Your Dashboard" summary section: a title with an eye (numbers) toggle and
- * ‹ › arrows, over an auto-scrolling carousel of stat cards — Net Value, Total
- * Value, Total APR, Supplied, Borrowed, Earned, Multiply Exposure. Each card is
- * the Lend "Featured" card: same HIGHLIGHT_CARD_CLASS shell, same line chart
- * (the real LEND_FEATURED_ASSETS paths, normalized exactly like that page), and
- * the same hover popup. The carousel is the shared HighlightCarousel marquee.
- *
- * UI-only phase — mock values (some metrics have no live data yet). Wiring later
- * feeds real portfolio totals + per-metric series; the card shape stays as-is.
+ * "Your Dashboard" summary section: a title with an eye (numbers) toggle over
+ * three stat cards — Wallet Balance (live from Convex), Net Value, and Net
+ * APY. Cards live in a snap-scroll carousel: on desktop the row fits (arrows
+ * hide themselves), on mobile the row overflows and arrows appear — same
+ * pattern as UmbrellaCooldown.
  */
 
-import { useMemo, useRef, useState, type PointerEvent } from "react"
+import { useMemo, useState, type PointerEvent } from "react"
 import { cn } from "@/lib/utils"
-import {
-  HIGHLIGHT_CARD_CLASS,
-  HighlightCarousel,
-  type HighlightCarouselHandle,
-} from "@/app/components/highlight-carousel"
-import { CarouselArrowButtons } from "@/app/components/carousel-arrow-buttons"
+import { CarouselArrowButtons, useOverflowCarousel } from "@/app/components/carousel-arrow-buttons"
 import { Eye, EyeOff } from "@/app/components/icons"
+import { HIGHLIGHT_CARD_CLASS } from "@/app/components/highlight-carousel"
 import { LEND_FEATURED_ASSETS } from "@/app/lib/data/catalog/lend/featured-assets"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
+import { useAvanaIdentity } from "@/app/lib/avana-session/avana-sessions-provider"
+import { buildDashboardWalletBalanceRows } from "@/app/lib/swap-system"
+import { useConvexProductWalletBalances } from "@/app/lib/swap-system/use-convex-wallet-balances"
+import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { DashboardQuickActions, type DashboardQuickActionsTab } from "./dashboard-quick-actions"
+import { sumWalletValueUsd } from "./dashboard-wallet-tab"
+import { useDashboardPortfolioSummary } from "./use-dashboard-portfolio-summary"
 
 const MASK = "••••"
 
-// Match the Lend Featured graph geometry + tone colors.
 const GRAPH_WIDTH = 396
 const GRAPH_HEIGHT = 72
 const GRAPH_PADDING_Y = 8
 const TONE_UP = "#58d89a"
 const TONE_DOWN = "#f0444c"
 
-// The exact curves the Lend "Featured" cards draw.
 const FEATURED_PATHS = [LEND_FEATURED_ASSETS.usdt.path, LEND_FEATURED_ASSETS.usdc.path, LEND_FEATURED_ASSETS.gho.path]
 
 const TIME_LABELS = [
@@ -59,96 +56,13 @@ type StatCard = {
   label: string
   value: string
   format: ValueFormat
-  /** The metric's current level; hover values derive from this ± amplitude. */
   base: number
   amplitude: number
   maskable: boolean
   isPositive: boolean
   deltaPct?: number
-  claim?: boolean
 }
 
-const CARDS: StatCard[] = [
-  {
-    key: "net-value",
-    label: "Net Value",
-    value: "$549.94",
-    format: "usdCents",
-    base: 549.94,
-    amplitude: 0.05,
-    maskable: true,
-    isPositive: true,
-    deltaPct: 2.5,
-  },
-  {
-    key: "total-value",
-    label: "Total Value",
-    value: "$6,300",
-    format: "usd",
-    base: 6300,
-    amplitude: 0.03,
-    maskable: true,
-    isPositive: true,
-    deltaPct: 2.5,
-  },
-  {
-    key: "total-apr",
-    label: "Total APR",
-    value: "14.2%",
-    format: "percent",
-    base: 14.2,
-    amplitude: 0.06,
-    maskable: false,
-    isPositive: false,
-    deltaPct: -0.8,
-  },
-  {
-    key: "supplied",
-    label: "Supplied",
-    value: "$5,204",
-    format: "usd",
-    base: 5204,
-    amplitude: 0.025,
-    maskable: true,
-    isPositive: true,
-    deltaPct: 1.2,
-  },
-  {
-    key: "borrowed",
-    label: "Borrowed",
-    value: "$1,240",
-    format: "usd",
-    base: 1240,
-    amplitude: 0.04,
-    maskable: true,
-    isPositive: false,
-    deltaPct: -0.9,
-  },
-  {
-    key: "earned",
-    label: "Earned",
-    value: "$214.7",
-    format: "usdCents",
-    base: 214.7,
-    amplitude: 0.05,
-    maskable: true,
-    isPositive: true,
-    claim: true,
-  },
-  {
-    key: "multiply-exposure",
-    label: "Multiply Exposure",
-    value: "$3,180",
-    format: "usd",
-    base: 3180,
-    amplitude: 0.05,
-    maskable: true,
-    isPositive: true,
-    deltaPct: 4.1,
-  },
-]
-
-/** Parse the "M0,14L4.7,14…" featured path into raw {x, y} points. */
 function parsePathPoints(path: string) {
   return Array.from(path.matchAll(/[ML]([\d.]+),([\d.]+)/g), (m) => ({ x: Number(m[1]), y: Number(m[2]) }))
 }
@@ -164,7 +78,61 @@ function formatValue(value: number, format: ValueFormat): string {
   }
 }
 
-function StatCardView({ card, graphPath, interactive }: { card: StatCard; graphPath: string; interactive: boolean }) {
+/**
+ * The three "Your Dashboard" cards, all sourced from Convex + the live oracle:
+ *  - Wallet Balance — only unallocated wallet funds (sourceType "wallet"), same scope as the Wallet tab.
+ *  - Net Value — client aggregate: wallet-liquid + Lend + Borrow + Multiply net (umbrella excluded).
+ *  - Net APY — net-equity-weighted blend of the same products (umbrella excluded).
+ * No fabricated deltas: a card shows a delta only when a real basis exists (none yet).
+ */
+function useStatCards(): StatCard[] {
+  const { walletId } = useAvanaIdentity()
+  const convexBalances = useConvexProductWalletBalances(walletId)
+  const { netValueUsd, netApyPct } = useDashboardPortfolioSummary(walletId)
+  const priceFor = useCanonicalPriceFor()
+
+  const walletRows = buildDashboardWalletBalanceRows({
+    walletId,
+    balances: convexBalances ?? undefined,
+    priceFor,
+  }).filter((row) => row.sourceType === "wallet")
+  const walletTotal = sumWalletValueUsd(walletRows)
+
+  return [
+    {
+      key: "wallet-balance",
+      label: "Wallet Balance",
+      value: formatValue(walletTotal, "usd"),
+      format: "usd",
+      base: walletTotal > 0 ? walletTotal : 1,
+      amplitude: 0.03,
+      maskable: true,
+      isPositive: true,
+    },
+    {
+      key: "net-value",
+      label: "Net Value",
+      value: formatValue(netValueUsd, "usd"),
+      format: "usd",
+      base: netValueUsd > 0 ? netValueUsd : 1,
+      amplitude: 0.05,
+      maskable: true,
+      isPositive: netValueUsd >= 0,
+    },
+    {
+      key: "net-apy",
+      label: "Net APY",
+      value: formatValue(netApyPct, "percent"),
+      format: "percent",
+      base: netApyPct !== 0 ? Math.abs(netApyPct) : 1,
+      amplitude: 0.06,
+      maskable: false,
+      isPositive: netApyPct >= 0,
+    },
+  ]
+}
+
+function StatCardView({ card, graphPath }: { card: StatCard; graphPath: string }) {
   const { t } = useTranslation()
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const [hover, setHover] = useState<{ index: number; left: number } | null>(null)
@@ -176,10 +144,8 @@ function StatCardView({ card, graphPath, interactive }: { card: StatCard; graphP
     const maxY = Math.max(...ys)
     const rangeY = maxY - minY || 1
     const inner = GRAPH_HEIGHT - GRAPH_PADDING_Y * 2
-    // Same normalization as the Lend page's normalizeGraphPath.
     const pts = raw.map((p) => ({ x: p.x, y: GRAPH_PADDING_Y + ((p.y - minY) / rangeY) * inner }))
     const d = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y.toFixed(3)}`).join("")
-    // Higher on the chart (smaller y) → higher value.
     const vals = raw.map((p) => card.base * (1 + ((maxY - p.y) / rangeY - 0.5) * 2 * card.amplitude))
     return { points: pts, path: d, values: vals }
   }, [graphPath, card])
@@ -189,7 +155,6 @@ function StatCardView({ card, graphPath, interactive }: { card: StatCard; graphP
   const active = hover ? points[hover.index] : null
 
   const handleMove = (event: PointerEvent<HTMLDivElement>) => {
-    if (!interactive) return
     const bounds = event.currentTarget.getBoundingClientRect()
     const ratio = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width))
     const index = Math.round(ratio * (values.length - 1))
@@ -199,7 +164,7 @@ function StatCardView({ card, graphPath, interactive }: { card: StatCard; graphP
 
   return (
     <div
-      className={cn(HIGHLIGHT_CARD_CLASS, "h-[176px] w-[min(372px,calc(100vw-2rem))]")}
+      className={cn(HIGHLIGHT_CARD_CLASS, "h-[176px] w-full")}
       onPointerMove={handleMove}
       onPointerLeave={() => setHover(null)}
     >
@@ -209,14 +174,7 @@ function StatCardView({ card, graphPath, interactive }: { card: StatCard; graphP
           <span className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
             {value}
           </span>
-          {card.claim ? (
-            <button
-              type="button"
-              className="rounded-full border border-border bg-background px-3.5 py-1 text-[13px] font-medium text-foreground transition-colors hover:bg-muted"
-            >
-              {t("Claim")}
-            </button>
-          ) : card.deltaPct !== undefined ? (
+          {card.deltaPct !== undefined ? (
             <span
               className={cn(
                 "inline-flex items-center gap-0.5 text-[15px] font-medium tabular-nums",
@@ -286,20 +244,12 @@ function StatCardView({ card, graphPath, interactive }: { card: StatCard; graphP
   )
 }
 
-export function PortfolioStatCards() {
+export function PortfolioStatCards({ activeTab }: { activeTab?: DashboardQuickActionsTab }) {
   const { t } = useTranslation()
   const { showDollarAmounts, setShowDollarAmounts } = useAmountDisplayPreferences()
-  const carouselRef = useRef<HighlightCarouselHandle>(null)
+  const { scrollerRef, canPrev, canNext, scrollByCard } = useOverflowCarousel()
 
-  const renderSequence = (interactive: boolean) =>
-    CARDS.map((card, i) => (
-      <StatCardView
-        key={`${interactive ? "a" : "b"}-${card.key}`}
-        card={card}
-        graphPath={FEATURED_PATHS[i % FEATURED_PATHS.length]}
-        interactive={interactive}
-      />
-    ))
+  const cards = useStatCards()
 
   return (
     <div>
@@ -317,22 +267,42 @@ export function PortfolioStatCards() {
             {showDollarAmounts ? <Eye className="size-[22px]" /> : <EyeOff className="size-[22px]" />}
           </button>
         </div>
-        <CarouselArrowButtons
-          canPrev
-          canNext
-          onPrev={() => carouselRef.current?.step(-1)}
-          onNext={() => carouselRef.current?.step(1)}
-          prevLabel={t("Previous")}
-          nextLabel={t("Next")}
-        />
+        {/* Desktop-only quick actions — mobile shows them above the rewards summary instead. */}
+        <div className="hidden lg:block">
+          <DashboardQuickActions activeTab={activeTab} />
+        </div>
+        {canPrev || canNext ? (
+          <div className="lg:hidden">
+            <CarouselArrowButtons
+              canPrev={canPrev}
+              canNext={canNext}
+              onPrev={() => scrollByCard(-1)}
+              onNext={() => scrollByCard(1)}
+              prevLabel={t("Previous")}
+              nextLabel={t("Next")}
+            />
+          </div>
+        ) : null}
       </div>
 
-      <HighlightCarousel
-        ref={carouselRef}
-        className="h-[176px]"
-        durationSeconds={104}
-        renderSequence={renderSequence}
-      />
+      <div className="overflow-hidden">
+        <div
+          ref={scrollerRef}
+          className="overflow-x-auto pb-1 [scrollbar-width:none] snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
+        >
+          <ul className="flex w-full gap-3">
+            {cards.map((card, i) => (
+              <li
+                key={card.key}
+                data-carousel-card
+                className="w-[min(320px,88%)] shrink-0 snap-start sm:w-[calc((100%-0.75rem)/2)] lg:w-[calc((100%-1.5rem)/3)]"
+              >
+                <StatCardView card={card} graphPath={FEATURED_PATHS[i % FEATURED_PATHS.length]!} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </div>
   )
 }

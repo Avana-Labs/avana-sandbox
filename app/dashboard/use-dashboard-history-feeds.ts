@@ -62,7 +62,7 @@ const METRIC_VALUE: Record<PortfolioHistoryMetricId, (row: PortfolioSnapshotRow)
  * If the newest stored snapshot for a metric sits more than this fraction away
  * from the live value, the whole stored series is treated as off-basis and we show
  * only the live point (a flat line at the correct number) instead of a misleading
- * jump. Mirrors BASIS_TOLERANCE in use-dashboard-portfolio-feed.ts.
+ * jump. Same basis-tolerance discipline the portfolio feeds use.
  */
 const BASIS_TOLERANCE = 0.25
 

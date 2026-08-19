@@ -105,15 +105,14 @@ describe("sandbox rewards adapters", () => {
     await actionAdapter.initializeRewardsForWallet(wallet)
     const claims = await actionAdapter.claimAllRewards(wallet)
 
-    expect(claims).toHaveLength(2)
-    expect(state.claims).toHaveLength(2)
+    // Only connect-wallet is claimable straight after init now that create-profile
+    // was retired from the catalog.
+    expect(claims).toHaveLength(1)
+    expect(state.claims).toHaveLength(1)
 
     const summary = await readAdapter.readRewardSummary(wallet)
-    expect(summary.totalClaimedAmount).toBe(45)
-    expect(summary.claimableTaskCount).toBe(1)
-    expect(summary.totalClaimableAmount).toBe(30)
-
-    const progressAfterClaimAll = await actionAdapter.refreshTaskProgress(wallet)
-    expect(progressAfterClaimAll.find((item) => item.taskId === "first-reward-claim")?.status).toBe("claimable")
+    expect(summary.totalClaimedAmount).toBe(25)
+    expect(summary.claimableTaskCount).toBe(0)
+    expect(summary.totalClaimableAmount).toBe(0)
   })
 })

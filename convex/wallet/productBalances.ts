@@ -146,13 +146,51 @@ export const listForWallet = query({
       if (!row.marketId || (row.state !== "poolAvailable" && row.state !== "collateral")) continue
       poolTotals.set(row.marketId, (poolTotals.get(row.marketId) ?? 0) + row.valueUsd)
     }
+
+    // Reprice borrow-collateral LP value at the pool's LIVE LP price rather than the
+    // frozen claim-time USD. `markets.priceUsd` (scope "pool") is Σ(weightᵢ × priceᵢ)
+    // refreshed from the token oracle (convex/prices.ts refreshPoolLpPrices), the same
+    // basis the credit engine / borrow tab use — so a fall in a collateral token now
+    // shows up in Net Value here and the two surfaces reconcile. We scale the frozen
+    // split by liveLp / claimLp: the per-pool claim price comes from the collateral row
+    // (valueUsd / amount), which is the one row carrying a reliable unit count. Falls back
+    // to the frozen basis when the pool has no live price (e.g. an unpriced constituent)
+    // or no claim-price anchor, so unpriced pools degrade gracefully instead of zeroing.
+    const poolSlugs = [...new Set(rawBorrow.map((row) => row.marketId).filter((slug): slug is string => Boolean(slug)))]
+    const poolMarkets = await Promise.all(
+      poolSlugs.map((slug) =>
+        ctx.db
+          .query("markets")
+          .withIndex("by_scope_slug", (q) => q.eq("scope", "pool").eq("slug", slug))
+          .unique(),
+      ),
+    )
+    const liveLpBySlug = new Map<string, number>()
+    for (const market of poolMarkets) {
+      if (market && typeof market.priceUsd === "number" && Number.isFinite(market.priceUsd) && market.priceUsd > 0) {
+        liveLpBySlug.set(market.slug, market.priceUsd)
+      }
+    }
+    const claimLpBySlug = new Map<string, number>()
+    for (const row of rawBorrow) {
+      if (row.state !== "collateral" || !row.marketId) continue
+      if (row.amount > 0 && row.valueUsd > 0) claimLpBySlug.set(row.marketId, row.valueUsd / row.amount)
+    }
+
     const borrow = rawBorrow.map((row) => {
       if (!row.marketId || (row.state !== "poolAvailable" && row.state !== "collateral")) return row
       const pledgedUsd = Math.min(poolTotals.get(row.marketId) ?? 0, pledgedByMarket.get(row.marketId)?.valueUsd ?? 0)
-      const valueUsd =
+      const frozenValueUsd =
         row.state === "collateral" ? pledgedUsd : Math.max(0, (poolTotals.get(row.marketId) ?? 0) - pledgedUsd)
-      const priceUsd = row.amount > 0 && row.valueUsd > 0 ? row.valueUsd / row.amount : 1
-      return { ...row, valueUsd, amount: priceUsd > 0 ? valueUsd / priceUsd : valueUsd }
+      const claimPrice = row.amount > 0 && row.valueUsd > 0 ? row.valueUsd / row.amount : 1
+
+      const liveLp = liveLpBySlug.get(row.marketId)
+      const claimLp = claimLpBySlug.get(row.marketId)
+      if (liveLp !== undefined && claimLp !== undefined && claimLp > 0) {
+        const valueUsd = frozenValueUsd * (liveLp / claimLp)
+        return { ...row, valueUsd, amount: valueUsd / liveLp }
+      }
+      return { ...row, valueUsd: frozenValueUsd, amount: claimPrice > 0 ? frozenValueUsd / claimPrice : frozenValueUsd }
     })
 
     return {

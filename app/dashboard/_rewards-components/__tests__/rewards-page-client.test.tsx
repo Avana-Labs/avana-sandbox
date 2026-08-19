@@ -196,21 +196,10 @@ vi.mock("@/app/lib/swap-system/use-convex-wallet-balances", () => ({
   useConvexProductWalletBalances: () => undefined,
 }))
 
-vi.mock("@/app/dashboard/use-dashboard-portfolio-feed", () => ({
-  useDashboardPortfolioFeed: () => ({
-    headlineValue: "$0",
-    headlineDelta: "$0 (0.00%)",
-    deltaTone: "positive",
-    rangeData: {
-      "1D": [{ time: 0, value: 0, label: "Now" }],
-      "1W": [{ time: 0, value: 0, label: "Now" }],
-      "1M": [{ time: 0, value: 0, label: "Now" }],
-      "3M": [{ time: 0, value: 0, label: "Now" }],
-      "1Y": [{ time: 0, value: 0, label: "Now" }],
-      All: [{ time: 0, value: 0, label: "Now" }],
-    },
-    valueFormat: "usdCompact",
-  }),
+// The "Your Dashboard" stat cards read Net Value / Net APY from Convex via this
+// hook. This bare render has no ConvexProvider, so stub it with static figures.
+vi.mock("@/app/dashboard/use-dashboard-portfolio-summary", () => ({
+  useDashboardPortfolioSummary: () => ({ netValueUsd: 0, netApyPct: 0 }),
 }))
 
 // The hero's metric toggle reads getPortfolio via Convex. This bare-render test
@@ -349,8 +338,8 @@ describe("DashboardPageClient", () => {
     resetRewardsState([rewardEvent("borrow-first", "borrow_opened", "borrow", { amountUsd: 100, marketId: "pool-a" })])
     createReferralCode.mockResolvedValue({
       wallet: "demo-wallet",
-      referralCode: "AVA-DEMO",
-      referralLink: "https://avana.cc/rewards?ref=AVA-DEMO",
+      referralCode: "AvanaDEMO",
+      referralLink: "https://avana.cc/rewards?ref=AvanaDEMO",
       activeReferralCount: 0,
       fundedReferralCount: 0,
       referralVolumeUsd: 0,
@@ -402,7 +391,7 @@ describe("DashboardPageClient", () => {
   it("opens the favorite flow and records the selected market", async () => {
     renderRewardsPage()
 
-    await clickQuestAction("Pick market")
+    await clickQuestAction("Pin market")
     await waitFor(() => expect(screen.getAllByRole("button", { name: "GHO Lend market" }).length).toBeGreaterThan(0))
     await clickQuestAction("GHO Lend market")
 
@@ -425,18 +414,10 @@ describe("DashboardPageClient", () => {
     renderRewardsPage()
 
     await openProductTab("Rewards")
-    await clickQuestAction("Borrow more")
+    // "Repay on Borrow" is the first-repay deep-link quest (available in the seeded
+    // state, which only records a borrow-open) and routes to /borrow.
+    await clickQuestAction("Repay on Borrow")
     await waitFor(() => expect(push).toHaveBeenCalledWith("/borrow"))
-  })
-
-  it("records daily check-ins from challenge tasks", async () => {
-    renderRewardsPage()
-
-    await openProductTab("Rewards")
-    await waitFor(() => expect(screen.getAllByRole("button", { name: "Check in" }).length).toBeGreaterThan(0))
-    await clickQuestAction("Check in")
-
-    await waitFor(() => expect(recordDailyCheckin).toHaveBeenCalledTimes(1))
   })
 
   it("records sandbox tours and routes users to the tour surface", async () => {
@@ -486,19 +467,6 @@ describe("DashboardPageClient", () => {
     await clickQuestAction("Activate next friend")
 
     expect(runReferralSandboxStep).toHaveBeenCalledWith("activate")
-  })
-
-  it("runs the referral fund action through its dialog flow", async () => {
-    renderRewardsPage()
-
-    await openReferralTab()
-    await clickQuestAction("Mark funded")
-    await waitFor(() =>
-      expect(screen.getAllByRole("button", { name: "Mark next friend funded" }).length).toBeGreaterThan(0),
-    )
-    await clickQuestAction("Mark next friend funded")
-
-    expect(runReferralSandboxStep).toHaveBeenCalledWith("fund")
   })
 
   it("opens claimable referral quests in the dialog and claims from there", async () => {

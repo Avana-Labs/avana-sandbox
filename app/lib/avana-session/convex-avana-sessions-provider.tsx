@@ -1,8 +1,9 @@
 "use client"
 
 import { useCallback, useEffect, useRef, type ReactNode } from "react"
-import { useMutation, useQuery } from "convex/react"
+import { useConvex, useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
+import type { SwapQuote, SwapQuoteRequest } from "@/app/lib/swap-system/quote-provider"
 import type { SandboxActionResult } from "@/app/lib/borrow-system/contracts"
 import type { LendSandboxActionResult, LendTransactionResult } from "@/app/lib/lend-system/contracts"
 import type { MultiplySandboxActionResult, MultiplyTransactionResult } from "@/app/lib/multiply-system/contracts"
@@ -244,6 +245,20 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
     },
     [recordSwap, walletId],
   )
+  const convex = useConvex()
+  const serverGetSwapQuote = useCallback(
+    async (request: SwapQuoteRequest): Promise<SwapQuote> => {
+      const quote = await convex.query(api.sandbox.swap.getQuote, {
+        wallet: walletId,
+        inputAssetId: request.inputAssetId,
+        outputAssetId: request.outputAssetId,
+        inputAmount: request.inputAmount,
+        slippageBps: request.slippageBps,
+      })
+      return quote as unknown as SwapQuote
+    },
+    [convex, walletId],
+  )
   const persistUmbrellaAction = useCallback<PersistUmbrellaAction>(
     (args) => recordUmbrellaAction({ wallet: walletId, ...args }),
     [recordUmbrellaAction, walletId],
@@ -257,6 +272,7 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
       persistLendTransaction={persistLendTransaction}
       persistMultiplyTransaction={persistMultiplyTransaction}
       persistSwapTransaction={persistSwapTransaction}
+      serverGetSwapQuote={serverGetSwapQuote}
       remoteSwapTransactions={durableSwapTransactions ?? undefined}
       remoteRewardsState={rewardsState?.stateJson ?? (rewardsState === null ? null : undefined)}
       remoteRewardsRevision={rewardsState?.revision ?? (rewardsState === null ? null : undefined)}

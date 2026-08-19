@@ -141,8 +141,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           imageSizes="220px"
         />
         <link rel="preload" as="image" href="/avana-icon-64.png" />
-        {/* Inline to avoid a render-blocking theme-bootstrap network request. */}
-        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+        {/* Inline to avoid a render-blocking theme-bootstrap network request.
+            suppressHydrationWarning: the browser clears the `nonce` content attribute after
+            parsing the HTML (a CSP anti-exfiltration measure), so React's hydration diff sees
+            server `nonce="…"` vs. live `nonce=""`. The script is already CSP-authorized at parse
+            time; there is nothing to patch up, so silence the expected mismatch. */}
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} suppressHydrationWarning />
       </head>
       <body className="min-h-screen bg-background">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>

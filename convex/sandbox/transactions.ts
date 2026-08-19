@@ -19,10 +19,11 @@
  */
 
 import { v, type Infer } from "convex/values"
-import type { MutationCtx } from "../_generated/server"
+import type { MutationCtx, QueryCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
 import { upsertWalletBalanceRows } from "../wallet/balances"
 import { requireSandboxWallet } from "./auth"
+import { computeSwapQuoteMath } from "./swapQuoteEngine"
 import { tokenNotionalToUsd } from "./collateralUsd"
 import { deriveClaimAmountUsd } from "./rewards_catalog"
 import type { Doc } from "../_generated/dataModel"
@@ -661,15 +662,10 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
   const multiplyDebt = open
     .filter((position) => position.product === "multiply")
     .reduce((sum, position) => sum + (position.debtValueUsd ?? 0), 0)
-  // Umbrella staked principal + accrued rewards are owned assets, so they belong in the
-  // portfolio value — the same basis the dashboard headline uses. Without them, stored history
-  // sits well below the live number and the hero chart shows a false jump. (Phase 2.5)
-  const umbrellaStaked = open
-    .filter((position) => position.product === "umbrella")
-    .reduce((sum, position) => sum + usd6Number(position.suppliedUsd6), 0)
-  const umbrellaRewards = open
-    .filter((position) => position.product === "umbrella")
-    .reduce((sum, position) => sum + usd6Number(position.earnedUsd6), 0)
+  // Umbrella is intentionally NOT part of portfolio value here — it lives on its own page and
+  // is excluded from the dashboard headline, the Net APY blend, and the onboarding snapshot
+  // (convex/sandbox/onboarding.ts). Folding it in only here made stored history diverge from
+  // the live headline by the staked amount, tripping the hero chart's basis-tolerance gate.
 
   // ATB from per-pool collateral factors — never a hardcoded *0.7.
   const borrowSlugs = [
@@ -711,16 +707,8 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
   const snapshot = {
     wallet,
     at: now,
-    totalValueUsd:
-      liquid +
-      totalBorrowCollateral -
-      totalBorrowDebt +
-      lendSupplied +
-      multiplyCollateral -
-      multiplyDebt +
-      umbrellaStaked +
-      umbrellaRewards,
-    totalSuppliedUsd: totalBorrowCollateral + lendSupplied + multiplyCollateral + umbrellaStaked,
+    totalValueUsd: liquid + totalBorrowCollateral - totalBorrowDebt + lendSupplied + multiplyCollateral - multiplyDebt,
+    totalSuppliedUsd: totalBorrowCollateral + lendSupplied + multiplyCollateral,
     totalBorrowedUsd: totalBorrowDebt + multiplyDebt,
     availableToBorrowUsd: Math.max(0, borrowCapacityUsd - totalBorrowDebt),
     totalMultiplyExposureUsd: multiplyCollateral,
@@ -1541,22 +1529,38 @@ export const recordSwap = mutation({
     if (!(args.inputAmount > 0) || !outputAmountValid || !(args.amountUsd >= 0)) {
       throw new Error("INVALID_SWAP: input must be positive, output positive on success, USD non-negative.")
     }
-    // Oracle-value bound (arbitrary-mint guard): a successful swap cannot claim more USD than its
-    // input is worth, nor more output units than that USD buys at the server rate. This stops a
-    // client from forging outputAmount/amountUsd to mint balance. Legs the oracle can't price are
-    // skipped (fail-open) so real swaps of unlisted assets still record.
+    // Server-authoritative execution: recompute the output + USD from the LIVE oracle via the
+    // shared swap engine, so the client's quoted values never determine the result (no minting,
+    // no client-computed swap). When both legs are priced the engine's output is used for the
+    // balance delta AND the persisted row. When a leg is unpriced (unlisted asset) we fail open
+    // to the client's values, still bounded by the oracle anti-mint guard for the priced leg.
+    let executedOutputAmount = args.outputAmount
+    let executedAmountUsd = args.amountUsd
     if (status === "success") {
-      const inputPrice = await swapLegServerPriceUsd(ctx, wallet, args.inputAssetId, args.inputSymbol)
-      if (inputPrice && args.amountUsd > args.inputAmount * inputPrice * (1 + SWAP_ORACLE_MAX_DEVIATION)) {
-        throw new Error("INVALID_SWAP: claimed USD value exceeds the oracle value of the input leg.")
-      }
-      const outputPrice = await swapLegServerPriceUsd(ctx, wallet, args.outputAssetId, args.outputSymbol)
-      if (outputPrice && args.outputAmount > (args.amountUsd / outputPrice) * (1 + SWAP_ORACLE_MAX_DEVIATION)) {
-        throw new Error("INVALID_SWAP: output amount exceeds what the oracle rate yields for this USD value.")
+      const [inputPrice, outputPrice] = await Promise.all([
+        swapLegServerPriceUsd(ctx, wallet, args.inputAssetId, args.inputSymbol),
+        swapLegServerPriceUsd(ctx, wallet, args.outputAssetId, args.outputSymbol),
+      ])
+      if (inputPrice && outputPrice) {
+        const math = computeSwapQuoteMath({
+          inputAmount: args.inputAmount,
+          inputPriceUsd: inputPrice,
+          outputPriceUsd: outputPrice,
+          slippageBps: args.slippageBps ?? 50,
+        })
+        executedOutputAmount = math.estimatedOutputAmount
+        executedAmountUsd = math.amountUsd
+      } else {
+        if (inputPrice && args.amountUsd > args.inputAmount * inputPrice * (1 + SWAP_ORACLE_MAX_DEVIATION)) {
+          throw new Error("INVALID_SWAP: claimed USD value exceeds the oracle value of the input leg.")
+        }
+        if (outputPrice && args.outputAmount > (args.amountUsd / outputPrice) * (1 + SWAP_ORACLE_MAX_DEVIATION)) {
+          throw new Error("INVALID_SWAP: output amount exceeds what the oracle rate yields for this USD value.")
+        }
       }
     }
     // Only a successful swap moved value; failed/expired executed nothing.
-    const executedUsd6 = status === "success" ? String(Math.round(args.amountUsd * 1_000_000)) : "0"
+    const executedUsd6 = status === "success" ? String(Math.round(executedAmountUsd * 1_000_000)) : "0"
     const requestedUsd6 = String(Math.round(args.amountUsd * 1_000_000))
     const hash = args.syntheticTxHash ?? `sim-swap-${args.intentId.slice(0, 8)}-${now.toString(36)}`
 
@@ -1569,11 +1573,11 @@ export const recordSwap = mutation({
       assetId: args.inputAssetId,
       requestedAmountUsd6: requestedUsd6,
       executedAmountUsd6: executedUsd6,
-      amountUsd: status === "success" ? args.amountUsd : 0,
+      amountUsd: status === "success" ? executedAmountUsd : 0,
       swapInputSymbol: args.inputSymbol,
       swapOutputSymbol: args.outputSymbol,
       swapInputAmount: args.inputAmount,
-      swapOutputAmount: args.outputAmount,
+      swapOutputAmount: status === "success" ? executedOutputAmount : args.outputAmount,
       swapProvider: args.provider,
       swapQuoteId: args.quoteId,
       swapNetworkFeeUsd: args.networkFeeUsd,
@@ -1586,7 +1590,13 @@ export const recordSwap = mutation({
     })
 
     if (status === "success") {
-      await applySwapBalanceDelta(ctx, wallet, args, now)
+      // Apply the SERVER-computed output/USD, not the client's quoted values.
+      await applySwapBalanceDelta(
+        ctx,
+        wallet,
+        { ...args, outputAmount: executedOutputAmount, amountUsd: executedAmountUsd },
+        now,
+      )
     }
 
     return {
@@ -1940,7 +1950,7 @@ export const getPortfolio = query({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
-    const [snapshotRows, current, positions] = await Promise.all([
+    const [snapshotRows, current, positions, walletCollateral] = await Promise.all([
       ctx.db
         .query("portfolioSnapshots")
         .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
@@ -1954,6 +1964,10 @@ export const getPortfolio = query({
         .query("positions")
         .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
         .collect(),
+      ctx.db
+        .query("walletCollateralPositions")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect(),
     ])
     const snapshots = snapshotRows.reverse()
     const latest = current ?? snapshots.at(-1) ?? null
@@ -1962,14 +1976,89 @@ export const getPortfolio = query({
     // past the nominal _id mismatch (runtime-identical to the prior push; keeps `tsc --noEmit`
     // green, which CI gates on).
     if (current && snapshots.at(-1)?.at !== current.at) snapshots.push(current as unknown as (typeof snapshots)[number])
+
+    const netApyPct = await computePortfolioNetApyPct(ctx, positions, walletCollateral)
+
     return {
       snapshots,
       latest,
+      netApyPct,
       openPositions: positions.filter((p) => p.status === "open").length,
       positionCount: positions.length,
     }
   },
 })
+
+/**
+ * Blended portfolio Net APY for the dashboard, value-weighted by NET equity across the
+ * wallet's productive legs — lend (`supplyApyPct`), multiply (`netApyPct`), and borrow
+ * (collateral pair APR from `pools`). Home-seed borrow collateral with no live `positions`
+ * row is folded in on the same basis. UMBRELLA IS EXCLUDED (own page, not a dashboard
+ * figure). Computed read-time, so it always reflects current rates without a stored field.
+ */
+async function computePortfolioNetApyPct(
+  ctx: QueryCtx,
+  positions: Array<Doc<"positions">>,
+  walletCollateral: Array<Doc<"walletCollateralPositions">>,
+): Promise<number> {
+  const open = positions.filter((position) => position.status === "open")
+  const liveBorrowSlugs = new Set(
+    open.filter((position) => position.product === "borrow").map((position) => position.marketSlug),
+  )
+
+  // Fetch pair APR for every borrow slug we need (live positions + non-shadowed seed collateral).
+  const borrowSlugs = [
+    ...new Set([
+      ...open.filter((position) => position.product === "borrow").map((position) => position.marketSlug),
+      ...walletCollateral.filter((row) => !liveBorrowSlugs.has(row.marketId)).map((row) => row.marketId),
+    ]),
+  ].filter(Boolean)
+  const borrowPools = await Promise.all(
+    borrowSlugs.map((slug) =>
+      ctx.db
+        .query("pools")
+        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .unique(),
+    ),
+  )
+  const pairAprBySlug = new Map(
+    borrowPools
+      .filter((pool): pool is NonNullable<typeof pool> => pool !== null)
+      .map((pool) => [pool.slug, pool.pairAprPct] as const),
+  )
+
+  // Value-weighted by NET equity (collateral − debt), matching how Net Value is built, so the
+  // two headlines tell the same story. UMBRELLA IS EXCLUDED — it is not part of the dashboard
+  // (it has its own page), so it must not contribute to the global Net APY.
+  const legs: Array<{ weight: number; rate: number }> = []
+  for (const position of open) {
+    if (position.product === "lend") {
+      const base = usd6Number(position.suppliedUsd6)
+      if (base > 0) legs.push({ weight: base, rate: position.supplyApyPct ?? 0 })
+    } else if (position.product === "multiply") {
+      const base = (position.collateralValueUsd ?? 0) - (position.debtValueUsd ?? 0)
+      if (base > 0) legs.push({ weight: base, rate: position.netApyPct ?? 0 })
+    } else if (position.product === "borrow") {
+      const base = usd6Number(position.collateralValueUsd6) - usd6Number(position.debtValueUsd6)
+      const rate = pairAprBySlug.get(position.marketSlug)
+      // Skip when the pool rate is unknown rather than blending in a fake 0% — an
+      // unresolved slug would otherwise add a large 0%-rate weight and crush the blend.
+      if (base > 0 && rate != null) legs.push({ weight: base, rate })
+    }
+    // product === "umbrella": intentionally skipped.
+  }
+  // Home-seed borrow collateral not yet represented by a live position — only when its
+  // pool rate resolves (stale/unmatched seed slugs must not drag the blend toward 0%).
+  for (const row of walletCollateral) {
+    if (liveBorrowSlugs.has(row.marketId)) continue
+    const rate = pairAprBySlug.get(row.marketId)
+    if (row.collateralUsd > 0 && rate != null) legs.push({ weight: row.collateralUsd, rate })
+  }
+
+  const totalWeight = legs.reduce((sum, leg) => sum + leg.weight, 0)
+  if (totalWeight <= 0) return 0
+  return legs.reduce((sum, leg) => sum + leg.weight * leg.rate, 0) / totalWeight
+}
 
 /**
  * Open-gate helper: write the first portfolioCurrent/snapshot when home seeds + liquid

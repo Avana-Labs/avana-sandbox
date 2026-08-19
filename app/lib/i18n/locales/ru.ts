@@ -1007,6 +1007,8 @@ const dict: TranslationDictionary = {
   "reCLAMM BPT": "reCLAMM BPT",
   "Stable LP tokens": "Stable LP-токены",
   "Change language": "Изменить язык",
+  "Ask AI": "Спросить ИИ",
+  "Search markets…": "Поиск рынков…",
   "Search Avana": "Поиск в Avana",
   "Search pools, borrow, lend, and more": "Поиск пулов, займов и кредитования",
   "Search pools, borrow assets, lend assets": "Поиск пулов и активов",
@@ -1472,6 +1474,15 @@ const dict: TranslationDictionary = {
     "«Безопасно» означает, что падение только этого актива не приведёт к ликвидации — остальной залог покрывает долг.",
   "How it works": "Как это работает",
   "Learn Avana": "Знакомство с Avana",
+  "Dashboard Positions": "Позиции дашборда",
+  "Available to use": "Доступно для использования",
+  "Available to deposit": "Доступно для депозита",
+  "against {pool}": "против {pool}",
+  Locked: "Заблокировано",
+  "Merkl Rewards": "Награды Merkl",
+  "Next rewards": "Следующие награды",
+  "Open on Launch Date": "Откроется в день запуска",
+  "Previous rewards": "Предыдущие награды",
 }
 
 export default dict

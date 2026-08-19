@@ -21,8 +21,10 @@ function withReturn(href: string) {
 export type DashboardQuickActionsTab = "wallet" | "lend" | "borrow" | "multiply" | "rewards" | "transactions"
 
 /**
- * Compact icon quick-action rail shown under the claim/rewards cards in the
- * dashboard hero. Icon-first to match the mobile rail, without the giant cards.
+ * Compact icon quick-action rail used across the dashboard hero — a bare row
+ * of six circular icon buttons. The heading is intentionally omitted; the
+ * buttons themselves communicate the affordance in every position they're
+ * slotted (desktop stat-cards header, mobile rewards summary).
  */
 export function DashboardQuickActions({ activeTab }: { activeTab?: DashboardQuickActionsTab }) {
   const { t } = useTranslation()
@@ -69,24 +71,21 @@ export function DashboardQuickActions({ activeTab }: { activeTab?: DashboardQuic
   ]
 
   return (
-    <section aria-label={t("Quick actions")} className="min-w-0">
-      <h3 className="mb-3 text-[14px] font-semibold tracking-tight text-foreground">{t("Quick actions")}</h3>
-      <div className="flex flex-wrap gap-2">
-        {actions.map((action) => {
-          const Icon = action.icon
-          return (
-            <Link
-              key={action.id}
-              href={action.href}
-              aria-label={action.label}
-              title={action.label}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-field-bottom text-foreground shadow-sm transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 active:scale-[0.98] dark:bg-field-bottom dark:text-white dark:hover:bg-hover"
-            >
-              <Icon className="size-4 shrink-0" aria-hidden />
-            </Link>
-          )
-        })}
-      </div>
-    </section>
+    <div aria-label={t("Quick actions")} role="group" className="flex flex-wrap gap-2">
+      {actions.map((action) => {
+        const Icon = action.icon
+        return (
+          <Link
+            key={action.id}
+            href={action.href}
+            aria-label={action.label}
+            title={action.label}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-field-bottom text-foreground shadow-sm transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 active:scale-[0.98] dark:bg-field-bottom dark:text-white dark:hover:bg-hover"
+          >
+            <Icon className="size-4 shrink-0" aria-hidden />
+          </Link>
+        )
+      })}
+    </div>
   )
 }

@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
-  REWARDS_QUESTS_PER_TAB,
   emptyRewardsQuestsByTab,
+  imageForTask,
   resolveRewardsPromoTab,
   type RewardsPromoTabId,
   type RewardsQuest,
@@ -54,9 +54,10 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { UnderlineTabStrip } from "@/app/components/tab-primitives"
 import { RewardsPromoContent, RewardsQuestSection } from "@/app/dashboard/_rewards-components/quests-tab"
+import { MerklRewardsSection } from "@/app/dashboard/_rewards-components/merkl-rewards-section"
 import Link from "next/link"
 
-type DashboardPromoTabId = Extract<RewardsPromoTabId, "lend" | "borrow" | "multiply" | "referrals">
+type DashboardPromoTabId = Extract<RewardsPromoTabId, "getting-started" | "lend" | "borrow" | "multiply" | "referrals">
 type DashboardAccountTabId = Extract<RewardsPromoTabId, "lend" | "borrow" | "multiply">
 type DashboardTabId = "wallet" | DashboardAccountTabId | "rewards" | "transactions"
 
@@ -70,10 +71,11 @@ const DASHBOARD_TABS: readonly { id: DashboardTabId; label: string }[] = [
 ]
 
 const CURATED_REWARD_TASK_IDS: Record<DashboardPromoTabId, readonly string[]> = {
-  lend: ["review-risk-basics", "favorite-market", "run-first-simulation", "first-lend-deposit", "supply-5k-lend"],
-  borrow: ["first-borrow", "borrow-2k", "use-curve-position", "first-repay"],
-  multiply: ["first-multiply", "4-week-activity-streak", "open-2x-multiply", "first-deleverage"],
-  referrals: ["share-referral-link", "invite-first-wallet", "first-funded-referral", "bring-3-active-users"],
+  "getting-started": ["connect-wallet", "review-risk-basics", "run-first-simulation"],
+  lend: ["first-lend-deposit", "favorite-market", "supply-5k-lend"],
+  borrow: ["first-borrow", "first-repay", "use-curve-position"],
+  multiply: ["first-multiply", "first-deleverage", "use-uniswap-v4-position"],
+  referrals: ["share-referral-link", "invite-first-wallet", "bring-3-active-users"],
 }
 
 function resolveDashboardTab(tab: string | null): DashboardTabId {
@@ -242,6 +244,7 @@ function DashboardRewardsTab({
   onTaskAction: (taskId: string) => Promise<unknown>
 }) {
   const sections: Array<{ id: DashboardPromoTabId; title: string }> = [
+    { id: "getting-started", title: "Getting Started" },
     { id: "lend", title: "Lend Rewards" },
     { id: "borrow", title: "Borrow Rewards" },
     { id: "multiply", title: "Multiply Rewards" },
@@ -255,6 +258,7 @@ function DashboardRewardsTab({
         if (quests.length === 0) return null
         return <RewardsQuestSection key={id} title={title} quests={quests} onTaskAction={onTaskAction} />
       })}
+      <MerklRewardsSection />
     </div>
   )
 }
@@ -282,6 +286,7 @@ function mapTaskToQuest(
             : task.actionLabel,
     category: titleCase(task.tag),
     iconId: tagToIconId(task.tag),
+    image: imageForTask(task.id),
     status: progress.status,
     progressLabel: buildProgressLabel(task, progress, firstLoginAt, now, t, exact),
   }
@@ -411,17 +416,9 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
       return accumulator
     }, emptyRewardsQuestsByTab<RewardCardViewModel>())
 
-    // "Getting started" is no longer its own tab — its quests now lead the Lend tab.
-    grouped.lend = [...grouped["getting-started"], ...grouped.lend]
-    grouped["getting-started"] = []
-
-    // Curate the core product tabs down to the strongest three cards; referrals
-    // keeps the broader cap because that tab is its own funnel.
+    // Each group holds exactly three curated quests; keep the intended order.
     for (const key of Object.keys(grouped) as RewardsPromoTabId[]) {
-      grouped[key] =
-        key === "lend" || key === "borrow" || key === "multiply"
-          ? curateDashboardQuests(key, grouped[key], 3)
-          : grouped[key].slice(0, REWARDS_QUESTS_PER_TAB)
+      grouped[key] = curateDashboardQuests(key, grouped[key], 3)
     }
     return grouped
   }, [tasks, snapshot, state.firstLoginAt, now, t, exact])
@@ -621,11 +618,26 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
         {healthRisk ? <HealthRiskBanner healthFactor={healthRisk.hf} product={healthRisk.product} /> : null}
         <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-20">
           <div className="min-w-0 pb-8 lg:col-span-2">
-            <PortfolioStatCards />
+            <PortfolioStatCards activeTab={activeDashboardTab} />
           </div>
 
-          <div className="min-w-0 pt-8 lg:col-start-1 lg:row-start-2">
+          <aside className="min-w-0 lg:col-start-2 lg:row-start-2 lg:pt-8">
+            <PortfolioRewardsCards
+              claimHref={claimHref}
+              earnedAmount={snapshot.summary.totalEarnedAmount}
+              claimableAmount={snapshot.summary.totalClaimableAmount}
+              activeTab={activeDashboardTab}
+              showQuickActions
+            />
+          </aside>
+
+          <div className="min-w-0 lg:col-start-1 lg:row-start-2 lg:pt-8">
             <section>
+              <div className="mb-6 mt-10 border-t border-border pt-10 md:mt-12 md:pt-12 lg:hidden">
+                <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground">
+                  {t("Dashboard Positions")}
+                </h2>
+              </div>
               <UnderlineTabStrip
                 items={DASHBOARD_TABS.map((tab) => ({ id: tab.id, label: t(tab.label) }))}
                 value={activeDashboardTab}
@@ -654,21 +666,11 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
                 )}
               </div>
 
-              <div className="mt-10 pb-24 lg:pb-0">
+              <div className="mt-10 border-t border-border pt-10 pb-24 md:mt-12 md:pt-12 lg:pb-0">
                 <LearnSection />
               </div>
             </section>
           </div>
-
-          <aside className="min-w-0 pt-8 lg:col-start-2 lg:row-start-2">
-            <PortfolioRewardsCards
-              claimHref={claimHref}
-              earnedAmount={snapshot.summary.totalEarnedAmount}
-              claimableAmount={snapshot.summary.totalClaimableAmount}
-              activeTab={activeDashboardTab}
-              showQuickActions
-            />
-          </aside>
         </div>
       </div>
 
