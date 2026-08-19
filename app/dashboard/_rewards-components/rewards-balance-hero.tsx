@@ -110,6 +110,12 @@ export function PortfolioRewardsCards({
   const { showDollarAmounts } = useAmountDisplayPreferences()
   return (
     <section className="min-w-0 space-y-4">
+      {/* Mobile only — the desktop rail lives in the "Your Dashboard" header. */}
+      {showQuickActions ? (
+        <div className="lg:hidden">
+          <DashboardQuickActions activeTab={activeTab} />
+        </div>
+      ) : null}
       <div className="space-y-3">
         <FeeCard label={t("Total Rewards earned")} value={formatAva(earnedAmount)} hidden={!showDollarAmounts} />
         <FeeCard
@@ -133,7 +139,6 @@ export function PortfolioRewardsCards({
           }
         />
       </div>
-      {showQuickActions ? <DashboardQuickActions activeTab={activeTab} /> : null}
     </section>
   )
 }
