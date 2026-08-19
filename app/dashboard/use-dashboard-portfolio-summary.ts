@@ -17,12 +17,18 @@ export type DashboardPortfolioSummary = {
 /**
  * Global Net Value = the signed sum of the wallet's canonical product balances
  * (walletLiquid + lend + borrow + multiply buckets), with debt rows negative.
- * Non-LP tokens are valued off the live oracle (`priceFor`); LP rows keep their
- * stored canonical basis. Umbrella is NEVER part of productBalances, so it is
- * excluded by construction — matching the rule that Umbrella lives on its own page.
+ * Non-LP tokens are valued off the live oracle (`priceFor`); LP rows carry the
+ * live-repriced basis productBalances now returns (convex/wallet/productBalances.ts
+ * reprices collateral LP at the pool's live price). Umbrella is NEVER part of
+ * productBalances, so it is excluded by construction — Umbrella lives on its own page.
  *
- * This reconciles with the Wallet tab and the per-product tabs because it reads the
- * exact same `productBalances` source those surfaces read — no separate server snapshot.
+ * Reconciliation, precisely: the Wallet card + Wallet tab read this exact
+ * `productBalances` source. The Lend / Borrow / Multiply tabs compute their own net
+ * figures from the client session read-models (credit-engine / multiply / lend state)
+ * — which are HYDRATED from this same productBalances query (see
+ * ConvexAvanaSessionsProvider), so they share an origin but re-derive on the client.
+ * They should reconcile, but are NOT identical by construction; the aggregation
+ * invariant (hero == Σ product nets) is pinned by dashboard-net-value-parity.test.ts.
  */
 export function aggregateNetValueUsd(
   rows: readonly UserAssetBalance[],
