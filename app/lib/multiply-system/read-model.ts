@@ -302,6 +302,22 @@ export function buildPortfolioMultiplyData(
   }
 }
 
+/**
+ * Canonical Multiply Net APY: EQUITY-weighted mean of each position's netApy (a fraction) —
+ * weight = max(0, collateral − debt). Shared by the Multiply dashboard tab and the Multiply
+ * detail wallet snapshot so a large loop dominates the headline more than a tiny one, and so
+ * both agree with the server blend (computePortfolioNetApyPct weights multiply legs by net
+ * equity). Returns a fraction (multiply by 100 for a percent). (#21)
+ */
+export function multiplyNetApyFraction(
+  positions: ReadonlyArray<{ collateralValueUsd: number; debtValueUsd: number; netApy: number }>,
+): number {
+  const weights = positions.map((position) => Math.max(0, position.collateralValueUsd - position.debtValueUsd))
+  const totalWeight = weights.reduce((sum, weight) => sum + weight, 0)
+  if (totalWeight <= 0) return 0
+  return positions.reduce((sum, position, index) => sum + position.netApy * weights[index]!, 0) / totalWeight
+}
+
 export function buildMultiplyWalletSnapshot(
   walletId: string,
   state: MultiplySystemState,
@@ -310,16 +326,10 @@ export function buildMultiplyWalletSnapshot(
   const portfolio = buildPortfolioMultiplyData(walletId, state, transactionHistory)
   const walletPositions = Object.values(state.positions).filter((position) => position.walletId === walletId)
 
-  // Blend at the portfolio level by EQUITY, not as a flat per-position average — a
-  // large loop must dominate the headline more than a tiny one. The aggregate
-  // multiplier is the true portfolio leverage (total exposure / total equity), and
-  // netApy is the equity-weighted mean of each position's net APY. (#21)
+  // The aggregate multiplier is the true portfolio leverage (total exposure / total equity);
+  // netApy is the equity-weighted mean via the shared multiplyNetApyFraction helper.
   const totalCollateralUsd = portfolio.creditLines.totalCollateralUsd
   const totalEquityUsd = totalCollateralUsd - portfolio.creditLines.totalBorrowedUsd
-  const equityWeights = walletPositions.map((position) =>
-    Math.max(0, position.collateralValueUsd - position.debtValueUsd),
-  )
-  const totalEquityWeight = equityWeights.reduce((sum, weight) => sum + weight, 0)
 
   return {
     walletId,
@@ -334,11 +344,7 @@ export function buildMultiplyWalletSnapshot(
       healthFactor: Number.isFinite(portfolio.creditLines.averageHealthFactor)
         ? (portfolio.creditLines.averageHealthFactor as number)
         : "infinity",
-      netApy:
-        totalEquityWeight > 0
-          ? walletPositions.reduce((sum, position, index) => sum + position.netApy * equityWeights[index], 0) /
-            totalEquityWeight
-          : 0,
+      netApy: multiplyNetApyFraction(walletPositions),
     },
     riskSnapshots: buildMockMultiplyRiskSnapshots(state).filter((snapshot) =>
       Object.values(state.positions).some(
