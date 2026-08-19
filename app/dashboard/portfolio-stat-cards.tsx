@@ -18,9 +18,11 @@ import { useAmountDisplayPreferences } from "@/app/components/display-preference
 import { useAvanaIdentity } from "@/app/lib/avana-session/avana-sessions-provider"
 import { buildDashboardWalletBalanceRows } from "@/app/lib/swap-system"
 import { useConvexProductWalletBalances } from "@/app/lib/swap-system/use-convex-wallet-balances"
+import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { DashboardQuickActions, type DashboardQuickActionsTab } from "./dashboard-quick-actions"
-import { HIDDEN_WALLET_SOURCE_TYPES, sumWalletValueUsd } from "./dashboard-wallet-tab"
+import { sumWalletValueUsd } from "./dashboard-wallet-tab"
+import { useDashboardPortfolioSummary } from "./use-dashboard-portfolio-summary"
 
 const MASK = "••••"
 
@@ -76,49 +78,58 @@ function formatValue(value: number, format: ValueFormat): string {
   }
 }
 
-/** Live Wallet Balance from Convex — mirrors the wallet-tab computation exactly. */
-function useWalletBalanceCard(): StatCard {
+/**
+ * The three "Your Dashboard" cards, all sourced from Convex + the live oracle:
+ *  - Wallet Balance — only unallocated wallet funds (sourceType "wallet"), same scope as the Wallet tab.
+ *  - Net Value — client aggregate: wallet-liquid + Lend + Borrow + Multiply net (umbrella excluded).
+ *  - Net APY — net-equity-weighted blend of the same products (umbrella excluded).
+ * No fabricated deltas: a card shows a delta only when a real basis exists (none yet).
+ */
+function useStatCards(): StatCard[] {
   const { walletId } = useAvanaIdentity()
   const convexBalances = useConvexProductWalletBalances(walletId)
-  const rows = buildDashboardWalletBalanceRows({ walletId, balances: convexBalances ?? undefined }).filter(
-    (row) => !HIDDEN_WALLET_SOURCE_TYPES.has(row.sourceType),
-  )
-  const total = sumWalletValueUsd(rows)
-  return {
-    key: "wallet-balance",
-    label: "Wallet Balance",
-    value: formatValue(total, "usd"),
-    format: "usd",
-    base: total > 0 ? total : 1,
-    amplitude: 0.03,
-    maskable: true,
-    isPositive: true,
-  }
-}
+  const { netValueUsd, netApyPct } = useDashboardPortfolioSummary(walletId)
+  const priceFor = useCanonicalPriceFor()
 
-// Mock values for the two summary cards — UI-only until portfolio wiring lands.
-const NET_VALUE_CARD: StatCard = {
-  key: "net-value",
-  label: "Net Value",
-  value: "$549.94",
-  format: "usdCents",
-  base: 549.94,
-  amplitude: 0.05,
-  maskable: true,
-  isPositive: true,
-  deltaPct: 2.5,
-}
+  const walletRows = buildDashboardWalletBalanceRows({
+    walletId,
+    balances: convexBalances ?? undefined,
+    priceFor,
+  }).filter((row) => row.sourceType === "wallet")
+  const walletTotal = sumWalletValueUsd(walletRows)
 
-const NET_APY_CARD: StatCard = {
-  key: "net-apy",
-  label: "Net APY",
-  value: "14.20%",
-  format: "percent",
-  base: 14.2,
-  amplitude: 0.06,
-  maskable: false,
-  isPositive: true,
-  deltaPct: 0.8,
+  return [
+    {
+      key: "wallet-balance",
+      label: "Wallet Balance",
+      value: formatValue(walletTotal, "usd"),
+      format: "usd",
+      base: walletTotal > 0 ? walletTotal : 1,
+      amplitude: 0.03,
+      maskable: true,
+      isPositive: true,
+    },
+    {
+      key: "net-value",
+      label: "Net Value",
+      value: formatValue(netValueUsd, "usd"),
+      format: "usd",
+      base: netValueUsd > 0 ? netValueUsd : 1,
+      amplitude: 0.05,
+      maskable: true,
+      isPositive: netValueUsd >= 0,
+    },
+    {
+      key: "net-apy",
+      label: "Net APY",
+      value: formatValue(netApyPct, "percent"),
+      format: "percent",
+      base: netApyPct !== 0 ? Math.abs(netApyPct) : 1,
+      amplitude: 0.06,
+      maskable: false,
+      isPositive: netApyPct >= 0,
+    },
+  ]
 }
 
 function StatCardView({ card, graphPath }: { card: StatCard; graphPath: string }) {
@@ -238,8 +249,7 @@ export function PortfolioStatCards({ activeTab }: { activeTab?: DashboardQuickAc
   const { showDollarAmounts, setShowDollarAmounts } = useAmountDisplayPreferences()
   const { scrollerRef, canPrev, canNext, scrollByCard } = useOverflowCarousel()
 
-  const walletCard = useWalletBalanceCard()
-  const cards: StatCard[] = [walletCard, NET_VALUE_CARD, NET_APY_CARD]
+  const cards = useStatCards()
 
   return (
     <div>
