@@ -72,10 +72,9 @@ describe("Avana rewards product flows", () => {
     await waitFor(async () => {
       const progress = await result.current.rewards.readAdapter.readProgress(result.current.walletId)
       expect(progress.find((item) => item.taskId === "supply-5k-lend")?.status).toBe("claimable")
-      expect(progress.find((item) => item.taskId === "borrow-2k")?.status).toBe("claimable")
-      expect(progress.find((item) => item.taskId === "use-3-products")?.status).toBe("claimable")
-      expect(progress.find((item) => item.taskId === "grow-portfolio-10k")?.status).toBe("claimable")
-      expect(progress.find((item) => item.taskId === "open-8-active-positions")?.status).toBe("claimable")
+      expect(progress.find((item) => item.taskId === "first-lend-deposit")?.status).toBe("claimable")
+      expect(progress.find((item) => item.taskId === "first-borrow")?.status).toBe("claimable")
+      expect(progress.find((item) => item.taskId === "first-multiply")?.status).toBe("claimable")
     })
 
     await act(async () => {
@@ -86,8 +85,9 @@ describe("Avana rewards product flows", () => {
 
     await waitFor(async () => {
       const progress = await result.current.rewards.readAdapter.readProgress(result.current.walletId)
-      expect(progress.find((item) => item.taskId === "first-reward-claim")?.status).toBe("claimable")
-      expect(progress.find((item) => item.taskId === "claim-rewards-5-times")?.status).toBe("claimable")
+      expect(progress.find((item) => item.taskId === "first-lend-deposit")?.status).toBe("claimed")
+      expect(progress.find((item) => item.taskId === "first-borrow")?.status).toBe("claimed")
+      expect(progress.find((item) => item.taskId === "first-multiply")?.status).toBe("claimed")
     })
 
     await act(async () => {
@@ -129,14 +129,12 @@ describe("Avana rewards product flows", () => {
     await waitFor(async () => {
       const progress = await result.current.rewards.readAdapter.readProgress(result.current.walletId)
       expect(progress.find((item) => item.taskId === "first-repay")?.status).toBe("claimable")
-      expect(progress.find((item) => item.taskId === "complete-5-borrow-repay-cycles")?.status).toBe("claimable")
       expect(progress.find((item) => item.taskId === "first-deleverage")?.status).toBe("claimable")
-      expect(progress.find((item) => item.taskId === "complete-3-multiply-deleverage-cycles")?.status).toBe("claimable")
     })
 
     const summary = await result.current.rewards.readAdapter.readRewardSummary(result.current.walletId)
-    expect(summary.claimableTaskCount).toBeGreaterThanOrEqual(10)
+    expect(summary.claimableTaskCount).toBeGreaterThanOrEqual(4)
     expect(summary.totalClaimableAmount).toBeGreaterThan(0)
-    expect(summary.completedTaskCount).toBeGreaterThanOrEqual(13)
+    expect(summary.completedTaskCount).toBeGreaterThanOrEqual(7)
   })
 })

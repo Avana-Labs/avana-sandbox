@@ -42,20 +42,16 @@ function formatAva(amount: number): string {
 
 function AvanaCoin() {
   return (
-    <div
-      className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand ring-1 ring-brand/20"
+    <Image
+      src="/asset-icons/ava.png"
+      alt=""
+      width={32}
+      height={32}
+      sizes="32px"
+      className="h-8 w-8 shrink-0 object-contain"
+      priority
       aria-hidden
-    >
-      <Image
-        src="/avana-icon.png"
-        alt=""
-        width={38}
-        height={38}
-        className="h-[38px] w-[38px] scale-[1.68] object-contain brightness-0 invert"
-        style={{ width: 38, height: 38 }}
-        priority
-      />
-    </div>
+    />
   )
 }
 
