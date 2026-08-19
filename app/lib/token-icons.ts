@@ -1,4 +1,4 @@
-import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
+import { getLocalAssetIcon, LOCAL_ASSET_ICON_FALLBACK } from "@/app/lib/local-asset-icons"
 
 export type TokenIconMeta = {
   symbol: string
@@ -232,12 +232,19 @@ const TOKEN_MAP: Record<string, TokenIconMeta> = {
 }
 
 export function getTokenIconMeta(symbol: string): TokenIconMeta {
-  return (
-    TOKEN_MAP[symbol] ??
-    TOKEN_MAP[symbol.toUpperCase()] ?? {
-      symbol,
-      bgClass: "bg-muted",
-      textClass: "text-foreground",
-    }
-  )
+  const mapped = TOKEN_MAP[symbol] ?? TOKEN_MAP[symbol.toUpperCase()]
+  if (mapped) return mapped
+
+  // Symbol absent from the curated map (e.g. "CRVUSD", whose only TOKEN_MAP keys are
+  // "crvUSD"/"CRV"): fall back to the complete, case-insensitive local-asset alias
+  // map so it still resolves its real icon instead of dropping to a text glyph.
+  // getLocalAssetIcon returns the neutral placeholder for a truly unknown symbol —
+  // treat that as "no icon" so the colored-letter fallback still renders.
+  const localIcon = getLocalAssetIcon(symbol)
+  return {
+    symbol,
+    iconUrl: localIcon === LOCAL_ASSET_ICON_FALLBACK ? undefined : localIcon,
+    bgClass: "bg-muted",
+    textClass: "text-foreground",
+  }
 }
