@@ -621,6 +621,16 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
             <PortfolioStatCards />
           </div>
 
+          <aside className="min-w-0 pt-8 lg:col-start-2 lg:row-start-2">
+            <PortfolioRewardsCards
+              claimHref={claimHref}
+              earnedAmount={snapshot.summary.totalEarnedAmount}
+              claimableAmount={snapshot.summary.totalClaimableAmount}
+              activeTab={activeDashboardTab}
+              showQuickActions
+            />
+          </aside>
+
           <div className="min-w-0 pt-8 lg:col-start-1 lg:row-start-2">
             <section>
               <UnderlineTabStrip
@@ -656,16 +666,6 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
               </div>
             </section>
           </div>
-
-          <aside className="min-w-0 pt-8 lg:col-start-2 lg:row-start-2">
-            <PortfolioRewardsCards
-              claimHref={claimHref}
-              earnedAmount={snapshot.summary.totalEarnedAmount}
-              claimableAmount={snapshot.summary.totalClaimableAmount}
-              activeTab={activeDashboardTab}
-              showQuickActions
-            />
-          </aside>
         </div>
       </div>
 
