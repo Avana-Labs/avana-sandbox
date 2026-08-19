@@ -27,15 +27,14 @@ function ScratchArt() {
       className="relative h-24 w-24 overflow-hidden rounded-radius-md bg-muted ring-1 ring-inset ring-border/60"
       aria-hidden
     >
-      {/* Everything inside the frame gets a soft frost so the scratch texture
-         reads as "hidden" — the outer ring stays crisp. */}
-      <div className="absolute inset-0 blur-[2px]">
-        {/* Base silver-ish gradient — pure grayscale via theme foreground tints. */}
-        <div className="absolute inset-0 bg-gradient-to-br from-foreground/5 via-transparent to-foreground/15" />
+      {/* Everything inside the frame gets a soft frost — the outer ring stays crisp. */}
+      <div className="absolute inset-0 blur-[1.5px]">
+        {/* Metallic silver base — a diagonal grayscale gradient. */}
+        <div className="absolute inset-0 bg-gradient-to-br from-foreground/[0.08] via-foreground/[0.03] to-foreground/20" />
 
-        {/* Diagonal "AVANA" watermark — the scratch pattern. */}
+        {/* Dense diagonal "AVANA" watermark — the visible scratch pattern. */}
         <svg
-          className="absolute inset-0 h-full w-full text-foreground/25"
+          className="absolute inset-0 h-full w-full text-foreground/45"
           viewBox="0 0 96 96"
           preserveAspectRatio="xMidYMid slice"
         >
@@ -44,18 +43,18 @@ function ScratchArt() {
               id={patternId}
               x="0"
               y="0"
-              width="56"
-              height="20"
+              width="44"
+              height="16"
               patternUnits="userSpaceOnUse"
               patternTransform="rotate(-28)"
             >
               <text
                 x="0"
-                y="14"
-                fontSize="11"
+                y="12"
+                fontSize="10"
                 fontFamily="ui-sans-serif, system-ui, -apple-system, sans-serif"
                 fontWeight="800"
-                letterSpacing="1.5"
+                letterSpacing="1.2"
                 fill="currentColor"
               >
                 AVANA
@@ -65,11 +64,12 @@ function ScratchArt() {
           <rect width="96" height="96" fill={`url(#${patternId})`} />
         </svg>
 
-        {/* A whisper of scratch stripes for surface texture. */}
+        {/* Scratch stripes — the "brushed" texture of a scratch card surface. */}
         <div
-          className="absolute inset-0 opacity-40 mix-blend-overlay"
+          className="absolute inset-0 opacity-60"
           style={{
-            backgroundImage: "repeating-linear-gradient(35deg, rgba(255,255,255,0.15) 0 1px, transparent 1px 4px)",
+            backgroundImage:
+              "repeating-linear-gradient(35deg, rgba(0,0,0,0.06) 0 1px, transparent 1px 3px), repeating-linear-gradient(-55deg, rgba(255,255,255,0.08) 0 1px, transparent 1px 5px)",
           }}
         />
       </div>
@@ -86,8 +86,12 @@ function MerklMysteryCard({ amount }: { amount: number }) {
         <ScratchArt />
       </div>
 
-      <Card className="flex flex-1 flex-col items-center justify-center rounded-radius-md border border-border/60 bg-card p-4 text-center shadow-none">
-        <div className="flex items-center justify-center gap-1.5">
+      <Card className="flex flex-1 flex-col items-center rounded-radius-md border border-border/60 bg-card p-3 text-center shadow-none">
+        {/* Blurred title/desc placeholder — reads as "hidden text" without literal question marks. */}
+        <div className="h-4 w-24 rounded-full bg-foreground/10 blur-[1px]" aria-hidden />
+        <div className="mt-2 h-3 w-32 rounded-full bg-foreground/[0.08] blur-[1px]" aria-hidden />
+
+        <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <AvaCoin size={22} />
           <span className="font-data text-[22px] font-bold leading-none tracking-tight text-foreground">
             {formatAvaAmount(amount)}
