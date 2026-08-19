@@ -6,16 +6,10 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import {
-  BORROW_SUPPLY_META,
-  LIQUIDATION_LTV,
-  aprToneClass,
-  formatHealthFactor,
-  healthFactorToneClass,
-  homeVisualToBorrowVisual,
-} from "@/app/lib/data/borrow-domain"
+import { LIQUIDATION_LTV, aprToneClass, formatHealthFactor, healthFactorToneClass } from "@/app/lib/data/borrow-domain"
 import type { DebtRowContext } from "@/app/lib/data/borrow-position-types"
-import { HfNumber, TokenPairCell } from "@/app/borrow/components/atoms"
+import { HfNumber } from "@/app/borrow/components/atoms"
+import { TokenIcon } from "@/app/components/token-icon"
 import {
   MarketMobileCard,
   MarketMobileCardHeader,
@@ -106,7 +100,7 @@ export function DebtsPanel({
               <thead>
                 <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
                   <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                    {t("Pool")}
+                    {t("Debt")}
                   </th>
                   <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Borrowed")}
@@ -125,11 +119,6 @@ export function DebtsPanel({
               </thead>
               <tbody>
                 {rows.map((row) => {
-                  const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [
-                    ReturnType<typeof homeVisualToBorrowVisual>,
-                    ReturnType<typeof homeVisualToBorrowVisual>,
-                  ]
-                  const meta = BORROW_SUPPLY_META[row.pool.id]
                   const hfTone = healthFactorToneClass(row.healthFactor)
                   const detailHref = `/borrow/markets/${row.pool.id}`
                   const debtSymbol = row.debtAssetSymbol
@@ -140,12 +129,19 @@ export function DebtsPanel({
                       onClick={() => router.push(detailHref)}
                     >
                       <td className={`py-3 pl-5 ${TABLE_ROW_HOVER_LEFT}`}>
-                        <TokenPairCell
-                          visuals={visuals}
-                          name={row.pool.name}
-                          subtitle={meta?.venue ?? row.pool.venue}
-                          size="md"
-                        />
+                        {/* Debt is a single borrowed token, not the collateral LP pool — show the
+                            borrowed asset, with the collateral market as context. */}
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <TokenIcon symbol={debtSymbol} size="table" />
+                          <div className="min-w-0">
+                            <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                              {debtSymbol}
+                            </div>
+                            <div className="mt-0.5 truncate text-[13px] text-muted-foreground">
+                              {t("against {pool}").replace("{pool}", row.pool.name)}
+                            </div>
+                          </div>
+                        </div>
                       </td>
                       <td className={`py-3 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
                         <div className="font-data text-[13px] tabular-nums text-foreground">
@@ -211,15 +207,23 @@ export function DebtsPanel({
 
       <ul className="space-y-5 md:hidden">
         {rows.map((row, index) => {
-          const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [
-            ReturnType<typeof homeVisualToBorrowVisual>,
-            ReturnType<typeof homeVisualToBorrowVisual>,
-          ]
           const rowKey = row.id ?? `${row.pool.id}-${index}`
           return (
             <MarketMobileCard key={rowKey} clickable onClick={() => router.push(`/borrow/markets/${row.pool.id}`)}>
               <MarketMobileCardHeader
-                identity={<TokenPairCell visuals={visuals} name={row.pool.name} size="md" />}
+                identity={
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <TokenIcon symbol={row.debtAssetSymbol} size="table" />
+                    <div className="min-w-0">
+                      <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground">
+                        {row.debtAssetSymbol}
+                      </div>
+                      <div className="truncate text-[13px] text-muted-foreground">
+                        {t("against {pool}").replace("{pool}", row.pool.name)}
+                      </div>
+                    </div>
+                  </div>
+                }
                 metric={
                   <MarketMobileMetric
                     value={m(compact(row.borrowedUsd))}
