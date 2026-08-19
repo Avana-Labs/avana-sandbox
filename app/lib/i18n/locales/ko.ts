@@ -1441,6 +1441,7 @@ const dict: TranslationDictionary = {
     "“안전”은 해당 자산만의 하락으로는 청산되지 않음을 의미합니다 — 다른 담보가 부채를 충당합니다.",
   "How it works": "작동 방식",
   "Learn Avana": "Avana 알아보기",
+  "Dashboard Positions": "대시보드 포지션",
   Locked: "잠김",
   "Merkl Rewards": "Merkl 리워드",
   "Next rewards": "다음 리워드",

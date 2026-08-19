@@ -1474,6 +1474,7 @@ const dict: TranslationDictionary = {
     "“Güvenli”, yalnızca o varlığın düşüşünün sizi tasfiye edemeyeceği anlamına gelir — diğer teminatınız borcu karşılar.",
   "How it works": "Nasıl çalışır",
   "Learn Avana": "Avana'yı öğren",
+  "Dashboard Positions": "Panel pozisyonları",
   Locked: "Kilitli",
   "Merkl Rewards": "Merkl Ödülleri",
   "Next rewards": "Sonraki ödüller",

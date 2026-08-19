@@ -633,6 +633,9 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
 
           <div className="min-w-0 pt-8 lg:col-start-1 lg:row-start-2">
             <section>
+              <h2 className="mb-4 text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground lg:hidden">
+                {t("Dashboard Positions")}
+              </h2>
               <UnderlineTabStrip
                 items={DASHBOARD_TABS.map((tab) => ({ id: tab.id, label: t(tab.label) }))}
                 value={activeDashboardTab}

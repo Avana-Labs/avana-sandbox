@@ -1522,6 +1522,7 @@ const dict: TranslationDictionary = {
     "« Sûr » signifie qu'une baisse de ce seul actif ne peut pas vous liquider — vos autres garanties couvrent la dette.",
   "How it works": "Comment ça marche",
   "Learn Avana": "Découvrir Avana",
+  "Dashboard Positions": "Positions du tableau de bord",
   Locked: "Verrouillé",
   "Merkl Rewards": "Récompenses Merkl",
   "Next rewards": "Récompenses suivantes",
