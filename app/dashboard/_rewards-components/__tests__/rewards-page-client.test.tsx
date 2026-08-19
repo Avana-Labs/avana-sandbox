@@ -349,8 +349,8 @@ describe("DashboardPageClient", () => {
     resetRewardsState([rewardEvent("borrow-first", "borrow_opened", "borrow", { amountUsd: 100, marketId: "pool-a" })])
     createReferralCode.mockResolvedValue({
       wallet: "demo-wallet",
-      referralCode: "AVA-DEMO",
-      referralLink: "https://avana.cc/rewards?ref=AVA-DEMO",
+      referralCode: "AvanaDEMO",
+      referralLink: "https://avana.cc/rewards?ref=AvanaDEMO",
       activeReferralCount: 0,
       fundedReferralCount: 0,
       referralVolumeUsd: 0,
