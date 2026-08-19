@@ -1,5 +1,4 @@
 import process from "node:process"
-import { URL } from "node:url"
 import bundleAnalyzer from "@next/bundle-analyzer"
 
 const isDev = process.env.NODE_ENV === "development"
@@ -8,87 +7,9 @@ const isDev = process.env.NODE_ENV === "development"
 // first-load JS impact of optimizePackageImports / demand-loading changes is measurable.
 const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === "1" })
 
-/**
- * Convex's reactive client connects over a WebSocket (https→wss, http→ws) and also
- * falls back to HTTP `/api/query`. The CSP `connect-src` MUST allow that backend
- * origin in BOTH transports or every client-side `useQuery`/`useMutation` (dashboard,
- * authed sessions, the shared liquidity ledger) is silently blocked and renders empty.
- * Derive the exact origins from the public Convex env so dev (http/ws on 127.0.0.1)
- * and prod (https/wss on *.convex.cloud) both work.
- */
-function convexConnectOrigins() {
-  const origins = new Set()
-  for (const raw of [process.env.NEXT_PUBLIC_CONVEX_URL, process.env.NEXT_PUBLIC_CONVEX_SITE_URL]) {
-    if (!raw) continue
-    try {
-      const u = new URL(raw)
-      const wsProto = u.protocol === "https:" ? "wss:" : "ws:"
-      origins.add(`${u.protocol}//${u.host}`)
-      origins.add(`${wsProto}//${u.host}`)
-    } catch {
-      // ignore malformed env
-    }
-  }
-  return [...origins]
-}
-
-// Explicit third-party origins the client actually connects to, instead of a
-// blanket https:/wss: which would let a compromised bundle exfiltrate anywhere.
-// Keep this in sync with the wallet stack:
-//   - eth.merkle.io: the mainnet RPC wagmi's http() transport talks to.
-//   - *.walletconnect.{com,org} + relay wss: WalletConnect relay / verify / echo /
-//     pulse / explorer endpoints.
-//   - api.web3modal.org + *.reown.com: ConnectKit/Reown wallet explorer API.
-//   - *.coinbase.com (+ wss): Coinbase Smart Wallet keys/RPC. The legacy Coinbase
-//     Wallet SDK analytics beacon (cca-lite.coinbase.com/metrics) is no longer
-//     initialized on our pages — coinbaseWalletPreference is "smartWalletOnly".
-// Vercel Analytics/Speed Insights beacon posts to same-origin /_vercel (covers 'self').
-const thirdPartyConnectOrigins = [
-  "https://eth.merkle.io",
-  "https://*.walletconnect.com",
-  "https://*.walletconnect.org",
-  "wss://relay.walletconnect.com",
-  "wss://relay.walletconnect.org",
-  "https://api.web3modal.org",
-  "https://*.reown.com",
-  "https://*.coinbase.com",
-  "wss://*.coinbase.com",
-]
-
-const connectSrc = [
-  "'self'",
-  ...convexConnectOrigins(),
-  ...thirdPartyConnectOrigins,
-  // Dev only: local Convex (http/ws on 127.0.0.1), the Next dev/HMR websocket, and
-  // blob: workers. Production relies solely on the explicit origins above.
-  ...(isDev ? ["ws:", "http:", "blob:"] : []),
-].join(" ")
-
-const contentSecurityPolicy = [
-  "default-src 'self'",
-  isDev ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'" : "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https:",
-  "font-src 'self' data:",
-  `connect-src ${connectSrc}`,
-  "media-src 'self'",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  // WalletConnect frames verify.walletconnect.{com,org} during connect — allow those.
-  // We deliberately do NOT allow app.family.co: that third-party frame loads a Cloudflare
-  // bot-challenge script costing ~3s of main-thread time on EVERY page (Lighthouse
-  // bootup-time), and it is not needed for injected/MetaMask/Coinbase/WalletConnect
-  // wallets. Blocking it is both faster and one fewer third-party frame.
-  "frame-src 'self' https://verify.walletconnect.com https://verify.walletconnect.org",
-  "frame-ancestors 'none'",
-].join("; ")
-
+// NOTE: Content-Security-Policy is set per-request in middleware.ts so it can carry a nonce and
+// drop `script-src 'unsafe-inline'` in production. The remaining static security headers stay here.
 const securityHeaders = [
-  {
-    key: "Content-Security-Policy",
-    value: contentSecurityPolicy,
-  },
   {
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",

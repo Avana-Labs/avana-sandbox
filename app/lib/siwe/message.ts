@@ -56,3 +56,11 @@ export function extractSiweUri(message: string): string | null {
   const match = message.match(/^URI: (.+)$/m)
   return match ? match[1]!.trim() : null
 }
+
+/** Extract the `Chain ID:` field (a positive integer) from a SIWE message. */
+export function extractSiweChainId(message: string): number | null {
+  const match = message.match(/^Chain ID: (\d+)$/m)
+  if (!match) return null
+  const chainId = Number(match[1])
+  return Number.isInteger(chainId) && chainId > 0 ? chainId : null
+}

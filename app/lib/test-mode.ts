@@ -20,9 +20,18 @@
  * A local production-equivalent audit artifact is isolated in its own output directory
  * and rejected in CI/Vercel. It exists solely for Lighthouse to measure product routes
  * without onboarding; deployment builds cannot opt into it.
+ *
+ * SECURITY: this must NEVER be reachable in a real production runtime. The audit vars are
+ * NEXT_PUBLIC_ (baked into the client bundle), so without the NODE_ENV guard a bundle built
+ * with them and deployed to a host that doesn't set VERCEL/CI (self-hosted Node, Docker) could
+ * flip `isProductionBuild()` to false and auto-open the dev gate. The audit build/serve run under
+ * NODE_ENV="production", so requiring NODE_ENV !== "production" here does NOT affect the local
+ * audit — its routes render the static LighthouseAuditSurface via `isLighthouseAuditMode()`,
+ * which is independent of the open-gate session.
  */
 function isLocalLighthouseAuditBuild(): boolean {
   return (
+    process.env.NODE_ENV !== "production" &&
     process.env.NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE === "1" &&
     process.env.NEXT_PUBLIC_LIGHTHOUSE_AUDIT_ARTIFACT === "1" &&
     !process.env.VERCEL &&

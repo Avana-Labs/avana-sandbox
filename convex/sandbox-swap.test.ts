@@ -97,4 +97,66 @@ describe("recordSwap — durable swap persistence (#15)", () => {
       asUser.mutation(api.sandbox.transactions.recordSwap, swapIntent("s1", { status: "success", outputAmount: 0 })),
     ).rejects.toThrow(/INVALID_SWAP/)
   })
+
+  async function seedPrice(t: ReturnType<typeof convexTest>, symbol: string, priceUsd: number) {
+    await t.run(async (ctx) => {
+      await ctx.db.insert("tokenPrices", {
+        symbol,
+        llamaId: `test:${symbol}`,
+        priceUsd,
+        source: "baseline",
+        updatedAt: 0,
+      })
+    })
+  }
+
+  test("mint guard: rejects an output amount impossible at the oracle rate", async () => {
+    const t = convexTest(schema, modules)
+    await seedPrice(t, "eth", 2000)
+    await seedPrice(t, "wbtc", 65000)
+    const asUser = t.withIdentity({ subject: WALLET })
+    // Forge 1000 WBTC (~$65M) out of a 0.5 ETH input for a claimed $967.
+    await expect(
+      asUser.mutation(
+        api.sandbox.transactions.recordSwap,
+        swapIntent("mint1", { outputAssetId: "wbtc", outputSymbol: "WBTC", outputAmount: 1000, amountUsd: 967 }),
+      ),
+    ).rejects.toThrow(/INVALID_SWAP/)
+  })
+
+  test("mint guard: rejects a claimed USD value far above the input's oracle value", async () => {
+    const t = convexTest(schema, modules)
+    await seedPrice(t, "usdc", 1)
+    await seedPrice(t, "eth", 2000)
+    const asUser = t.withIdentity({ subject: WALLET })
+    // Claim $65M moved from a single USDC input.
+    await expect(
+      asUser.mutation(
+        api.sandbox.transactions.recordSwap,
+        swapIntent("mint2", {
+          inputAssetId: "usdc",
+          inputSymbol: "USDC",
+          inputAmount: 1,
+          outputAssetId: "eth",
+          outputSymbol: "ETH",
+          outputAmount: 1,
+          amountUsd: 65_000_000,
+        }),
+      ),
+    ).rejects.toThrow(/INVALID_SWAP/)
+  })
+
+  test("mint guard: allows a swap consistent with the oracle rate", async () => {
+    const t = convexTest(schema, modules)
+    await seedPrice(t, "eth", 2000)
+    await seedPrice(t, "usdc", 1)
+    const asUser = t.withIdentity({ subject: WALLET })
+    // 0.5 ETH (~$1000) -> ~967 USDC for a claimed $967: within tolerance, must record.
+    const res = await asUser.mutation(
+      api.sandbox.transactions.recordSwap,
+      swapIntent("ok1", { amountUsd: 967, outputAmount: 967 }),
+    )
+    expect(res.idempotent).toBe(false)
+    expect(res.receipt.status).toBe("success")
+  })
 })

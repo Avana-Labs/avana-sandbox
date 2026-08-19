@@ -2,7 +2,7 @@ import "server-only"
 import crypto from "node:crypto"
 
 /**
- * Minimal ES256 JWT mint + JWK publication for the SIWE → JWT bridge, using Node's
+ * Minimal RS256 JWT mint + JWK publication for the SIWE → JWT bridge, using Node's
  * built-in crypto (no external dep). The private JWK is a DEV-only throwaway key in
  * `.env.local` (SIWE_JWT_PRIVATE_JWK); production supplies its own via the same var.
  *
