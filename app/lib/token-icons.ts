@@ -231,6 +231,17 @@ const TOKEN_MAP: Record<string, TokenIconMeta> = {
   },
 }
 
+/**
+ * All curated TOKEN_MAP entries — for the registry guardrail test. Unlike the
+ * getTokenIconMeta fallback path (which maps a missing icon to `undefined` so the letter
+ * glyph renders), a TOKEN_MAP entry hard-codes `iconUrl: getLocalAssetIcon(sym)` at load,
+ * so a symbol missing from LOCAL_ASSET_ICON_SLUGS silently pins to the gray placeholder
+ * forever. The guardrail asserts no entry falls through that way.
+ */
+export function allTokenIconMetas(): readonly TokenIconMeta[] {
+  return Object.values(TOKEN_MAP)
+}
+
 export function getTokenIconMeta(symbol: string): TokenIconMeta {
   const mapped = TOKEN_MAP[symbol] ?? TOKEN_MAP[symbol.toUpperCase()]
   if (mapped) return mapped
