@@ -202,23 +202,6 @@ vi.mock("@/app/dashboard/use-dashboard-portfolio-summary", () => ({
   useDashboardPortfolioSummary: () => ({ netValueUsd: 0, netApyPct: 0 }),
 }))
 
-vi.mock("@/app/dashboard/use-dashboard-portfolio-feed", () => ({
-  useDashboardPortfolioFeed: () => ({
-    headlineValue: "$0",
-    headlineDelta: "$0 (0.00%)",
-    deltaTone: "positive",
-    rangeData: {
-      "1D": [{ time: 0, value: 0, label: "Now" }],
-      "1W": [{ time: 0, value: 0, label: "Now" }],
-      "1M": [{ time: 0, value: 0, label: "Now" }],
-      "3M": [{ time: 0, value: 0, label: "Now" }],
-      "1Y": [{ time: 0, value: 0, label: "Now" }],
-      All: [{ time: 0, value: 0, label: "Now" }],
-    },
-    valueFormat: "usdCompact",
-  }),
-}))
-
 // The hero's metric toggle reads getPortfolio via Convex. This bare-render test
 // doesn't wrap a ConvexProvider, so stub the hook with static per-metric feeds.
 vi.mock("@/app/dashboard/use-dashboard-history-feeds", async (importOriginal) => {
