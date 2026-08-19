@@ -303,6 +303,18 @@ export function buildPortfolioLendData(
   }
 }
 
+/**
+ * Canonical Lend Net APY: SUPPLIED-weighted mean of each investment's apyPct (percent).
+ * Shared by the Lend dashboard tab and the Lend detail wallet snapshot so a $1 position
+ * can't sway the headline like a $1M one — and so both agree with the server portfolio
+ * blend (computePortfolioNetApyPct weights lend legs by suppliedUsd). Returns a percent.
+ */
+export function lendNetApyPct(investments: ReadonlyArray<{ suppliedUsd: number; apyPct: number }>): number {
+  const totalSuppliedUsd = investments.reduce((sum, item) => sum + item.suppliedUsd, 0)
+  if (totalSuppliedUsd <= 0) return 0
+  return investments.reduce((sum, item) => sum + item.apyPct * item.suppliedUsd, 0) / totalSuppliedUsd
+}
+
 export function buildLendWalletSnapshot(
   walletId: string,
   state: LendSystemState,
@@ -315,10 +327,9 @@ export function buildLendWalletSnapshot(
   const rewardsEarnedUsd =
     portfolio.rewardsSummary?.claimableUsd ??
     portfolio.investments.reduce((sum, item) => sum + (item.earnedUsd - (item.interestEarned ?? 0) * item.priceUsd), 0)
-  const averageApy =
-    portfolio.investments.length === 0
-      ? 0
-      : portfolio.investments.reduce((sum, item) => sum + item.apyPct, 0) / portfolio.investments.length / 100
+  // Supplied-weighted (canonical), not the old flat per-investment average — matches the
+  // Lend dashboard tab and the server blend. `currentApy` is a fraction, so /100.
+  const averageApy = lendNetApyPct(portfolio.investments) / 100
 
   return {
     walletId,
