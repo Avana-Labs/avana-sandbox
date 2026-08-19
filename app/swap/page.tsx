@@ -1,4 +1,6 @@
 import type { Metadata } from "next"
+import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
+import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 import { SwapPageClient } from "./swap-page-client"
 
 export const metadata: Metadata = {
@@ -20,6 +22,14 @@ function safeReturnHref(value: string | undefined) {
 }
 
 export default async function SwapPage({ searchParams }: SwapPageProps) {
+  // In the Lighthouse audit build the client session provider is not mounted
+  // server-side (AvanaSessionProviders is ssr:false), so rendering SwapPageClient —
+  // which calls useSwapSessionContext — throws during SSR. Every other product page
+  // renders a static audit surface in this mode; do the same here.
+  if (isLighthouseAuditMode()) {
+    return <LighthouseAuditSurface title="Swap">Swap assets on Avana.</LighthouseAuditSurface>
+  }
+
   const query = await searchParams
   return (
     <main className="min-h-[calc(100dvh-4rem)]">

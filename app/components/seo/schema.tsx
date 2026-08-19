@@ -1,3 +1,5 @@
+import { headers } from "next/headers"
+
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
 
 /**
@@ -10,8 +12,17 @@ function escapeJsonLd(json: string): string {
   return json.replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026")
 }
 
-export function SchemaMarkup({ data }: { data: JsonValue | JsonValue[] }) {
-  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(JSON.stringify(data)) }} />
+export async function SchemaMarkup({ data }: { data: JsonValue | JsonValue[] }) {
+  // Carry the per-request CSP nonce so this inline JSON-LD script runs under the nonce policy
+  // (production drops script-src 'unsafe-inline').
+  const nonce = (await headers()).get("x-nonce") ?? undefined
+  return (
+    <script
+      nonce={nonce}
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: escapeJsonLd(JSON.stringify(data)) }}
+    />
+  )
 }
 
 export function buildWebPageSchema(input: { name: string; description: string; url: string }) {
