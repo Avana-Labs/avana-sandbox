@@ -70,6 +70,7 @@ const REWARDS_IMAGE_BY_TASK_ID: Record<string, string> = {
   "use-curve-position": "/asset-rewards/14.png",
   "use-uniswap-v4-position": "/asset-rewards/9.png",
   "share-referral-link": "/asset-rewards/12.png",
+  "invite-first-wallet": "/asset-rewards/4.png",
 }
 
 export function imageForTask(taskId: string): string | undefined {
