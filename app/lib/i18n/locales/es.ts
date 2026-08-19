@@ -1584,6 +1584,11 @@ const dict: TranslationDictionary = {
     "“Seguro” significa que una caída solo de ese activo no puede liquidarte — tus otras garantías cubren la deuda.",
   "How it works": "Cómo funciona",
   "Learn Avana": "Conoce Avana",
+  Locked: "Bloqueado",
+  "Merkl Rewards": "Recompensas de Merkl",
+  "Next rewards": "Siguientes recompensas",
+  "Open on Launch Date": "Se abre en la fecha de lanzamiento",
+  "Previous rewards": "Recompensas anteriores",
 }
 
 export default dict

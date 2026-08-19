@@ -1508,6 +1508,11 @@ const dict: TranslationDictionary = {
     "「安全」とは、その資産だけの下落では清算されないことを意味します — 他の担保が負債をカバーします。",
   "How it works": "仕組み",
   "Learn Avana": "Avana を学ぶ",
+  Locked: "ロック中",
+  "Merkl Rewards": "Merkl リワード",
+  "Next rewards": "次のリワード",
+  "Open on Launch Date": "ローンチ日に開放",
+  "Previous rewards": "前のリワード",
 }
 
 export default dict

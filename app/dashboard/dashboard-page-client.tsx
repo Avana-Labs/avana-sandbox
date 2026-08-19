@@ -54,6 +54,7 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { UnderlineTabStrip } from "@/app/components/tab-primitives"
 import { RewardsPromoContent, RewardsQuestSection } from "@/app/dashboard/_rewards-components/quests-tab"
+import { MerklRewardsSection } from "@/app/dashboard/_rewards-components/merkl-rewards-section"
 import Link from "next/link"
 
 type DashboardPromoTabId = Extract<RewardsPromoTabId, "getting-started" | "lend" | "borrow" | "multiply" | "referrals">
@@ -257,6 +258,7 @@ function DashboardRewardsTab({
         if (quests.length === 0) return null
         return <RewardsQuestSection key={id} title={title} quests={quests} onTaskAction={onTaskAction} />
       })}
+      <MerklRewardsSection />
     </div>
   )
 }
