@@ -275,12 +275,16 @@ describe("product-siloed borrow detail tables", () => {
 
   test("getQuickStats prefers siloed daily stats without markets row", async () => {
     const t = convexTest(schema, modules)
+    // getQuickStats reads a "1W" window (Date.now() - 7d), so the seed days must be
+    // derived relative to now — hardcoded dates silently expire out of the window.
+    // The later day carries the 45% tip the assertions below expect.
+    const isoDaysAgo = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10)
     await t.mutation(internal.borrow.dailyStats.upsertDailyStats, {
       rows: [
         {
           slug: "uni-v2:usdc",
           kind: "asset",
-          day: "2026-08-10",
+          day: isoDaysAgo(3),
           suppliedUsd: 100,
           borrowedUsd: 40,
           utilizationPct: 40,
@@ -293,7 +297,7 @@ describe("product-siloed borrow detail tables", () => {
         {
           slug: "uni-v2:usdc",
           kind: "asset",
-          day: "2026-08-11",
+          day: isoDaysAgo(2),
           suppliedUsd: 100,
           borrowedUsd: 45,
           utilizationPct: 45,
