@@ -1,34 +1,13 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import type { ReactNode } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { CircleDollarSign, Info } from "@/app/components/icons"
 import { Button } from "@/components/ui/button"
-import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
-import { formatChartValue, type ChartFeed } from "@/app/components/charts"
-import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import type { PortfolioHistoryMetricId } from "@/app/dashboard/use-dashboard-history-feeds"
 import { DashboardQuickActions, type DashboardQuickActionsTab } from "@/app/dashboard/dashboard-quick-actions"
-
-const METRIC_ORDER: PortfolioHistoryMetricId[] = ["netValue", "supplied", "borrowed", "earned", "multiplyExposure"]
-
-function metricLabel(id: PortfolioHistoryMetricId, t: (key: string) => string): string {
-  switch (id) {
-    case "netValue":
-      return t("Net Value")
-    case "supplied":
-      return t("Supplied")
-    case "borrowed":
-      return t("Borrowed")
-    case "earned":
-      return t("Earned")
-    case "multiplyExposure":
-      return t("Multiply Exposure")
-  }
-}
 
 /**
  * Reward balances are denominated in AVA (the card shows the AVA coin icon), not
@@ -109,10 +88,12 @@ export function PortfolioRewardsCards({
   const { t } = useTranslation()
   const { showDollarAmounts } = useAmountDisplayPreferences()
   return (
+    // No section-level space-y: on desktop only the fee cards render (the rail is
+    // lg:hidden), so the rail's own mb-3 owns the mobile gap and desktop stays flush.
     <section className="min-w-0">
       {/* Mobile only — the desktop rail lives in the "Your Dashboard" header. */}
       {showQuickActions ? (
-        <div className="mb-3 lg:hidden">
+        <div className="mb-6 lg:hidden">
           <DashboardQuickActions activeTab={activeTab} />
         </div>
       ) : null}
@@ -140,103 +121,5 @@ export function PortfolioRewardsCards({
         />
       </div>
     </section>
-  )
-}
-
-export function RewardsBalanceHero({
-  claimHref,
-  assetsUsd,
-  debtUsd,
-  earnedAmount = 0,
-  claimableAmount = 0,
-  activeTab,
-  feed,
-  metricFeeds,
-}: {
-  claimHref?: string
-  /** Gross assets marked to market (wallet + all position assets + borrowed cash held). */
-  assetsUsd?: number
-  /** Outstanding liabilities (borrow + Multiply debt). */
-  debtUsd?: number
-  /** Total AVA earned across completed quests. */
-  earnedAmount?: number
-  /** AVA currently claimable. */
-  claimableAmount?: number
-  activeTab?: DashboardQuickActionsTab
-  /** Convex-backed live portfolio chart feed (net-value, rebased). Fallback when metricFeeds is absent. */
-  feed: ChartFeed
-  /**
-   * Per-metric rebased feeds. When provided, the hero shows a metric toggle
-   * (Net Value / Supplied / Borrowed / Earned / Multiply Exposure) + range
-   * selector, and the ONE hero chart swaps series — instead of a second chart
-   * section below. Each feed is already anchored to its live client value, so
-   * the charted number agrees with the headline.
-   */
-  metricFeeds?: Record<PortfolioHistoryMetricId, ChartFeed>
-}) {
-  const { showDollarAmounts } = useAmountDisplayPreferences()
-  const { t } = useTranslation()
-  const [activeMetric, setActiveMetric] = useState<PortfolioHistoryMetricId>("netValue")
-
-  const hasMetricToggle = metricFeeds != null
-  const activeFeed = hasMetricToggle ? metricFeeds[activeMetric] : feed
-  const showNetValueChrome = !hasMetricToggle || activeMetric === "netValue"
-
-  // (i) explainer next to the headline — what the number means and why borrowing doesn't move it.
-  const explainer = t(
-    "Net Portfolio Value = Assets − Debt. Assets: wallet balances, lending supplied, borrow collateral, any borrowed funds you still hold, your Multiply position value, and Umbrella staked + rewards. Debt: borrow loans and Multiply borrowing. Borrowing doesn't change this number — the cash you receive is an asset that offsets the new debt.",
-  )
-  const info = showNetValueChrome ? <ActionMetricHelp text={explainer} topic="Portfolio Value" /> : undefined
-
-  // "$X Assets · $Y Debt" breakdown under the headline — only meaningful for Net Value.
-  const breakdown =
-    showNetValueChrome && assetsUsd != null && debtUsd != null ? (
-      <span>
-        <span className="tabular-nums text-foreground">{formatChartValue("usd", assetsUsd)}</span> {t("Assets")}
-        {" · "}
-        <span className="tabular-nums text-foreground">{formatChartValue("usd", debtUsd)}</span> {t("Debt")}
-      </span>
-    ) : undefined
-
-  const metricTabs = hasMetricToggle ? METRIC_ORDER.map((id) => metricLabel(id, t)) : undefined
-  const activeTabLabel = metricLabel(activeMetric, t)
-
-  return (
-    <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
-      {/* Same chart as lend detail, quieter balance — no card chrome. */}
-      <section className="relative min-w-0 overflow-hidden pt-4" data-testid="portfolio-hero-chart">
-        <MarketHeroChart
-          feed={activeFeed}
-          defaultRange={hasMetricToggle ? "1M" : "1D"}
-          gradientId="rewardsBalanceFill"
-          height={310}
-          showMeta={false}
-          showRangeSelector={hasMetricToggle}
-          hideValue={!showDollarAmounts}
-          balanceVariant="quiet"
-          balanceClassName="absolute left-2.5 top-0 z-10 -translate-y-0.5"
-          balanceSuffix={info}
-          balanceSubtitle={breakdown}
-          metricTabs={metricTabs}
-          activeMetricTab={hasMetricToggle ? activeTabLabel : undefined}
-          onMetricTabChange={
-            hasMetricToggle
-              ? (tab) => {
-                  const next = METRIC_ORDER.find((id) => metricLabel(id, t) === tab)
-                  if (next) setActiveMetric(next)
-                }
-              : undefined
-          }
-        />
-      </section>
-
-      <PortfolioRewardsCards
-        claimHref={claimHref}
-        earnedAmount={earnedAmount}
-        claimableAmount={claimableAmount}
-        activeTab={activeTab}
-        showQuickActions
-      />
-    </div>
   )
 }

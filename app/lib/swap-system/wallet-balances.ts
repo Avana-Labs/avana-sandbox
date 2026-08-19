@@ -99,10 +99,19 @@ export function buildDashboardWalletBalanceRows({
   walletId,
   balances = DEMO_SWAP_BALANCES,
   context = { originProduct: "wallet", chainId: SWAP_CHAIN_ID },
+  priceFor,
 }: {
   walletId: string
   balances?: UserAssetBalance[]
   context?: SwapContext
+  /**
+   * Live reactive token price lookup (symbol → USD), e.g. `useCanonicalPriceFor()`.
+   * When provided, NON-LP rows are valued at `amount × priceFor(symbol)` so the wallet
+   * reflects the current oracle instead of the frozen `valueUsd` stored at tx time. LP
+   * rows keep their stored value (the canonical LP basis shown on the detail pages);
+   * an unpriced symbol falls back to the stored value / static catalog price.
+   */
+  priceFor?: (symbol: string) => number | undefined
 }): DashboardWalletBalanceRow[] {
   const merged = new Map<string, UserAssetBalance>()
   for (const balance of getUserSwapBalances(walletId, balances)) {
@@ -126,7 +135,12 @@ export function buildDashboardWalletBalanceRows({
     .map((balance) => {
       const asset = getSwapAsset(balance.assetId)
       const eligibility = getSwapEligibility(balance, context)
-      const valueUsd = balance.valueUsd ?? balance.amount * (asset?.priceUsd ?? 0)
+      const storedValueUsd = balance.valueUsd ?? balance.amount * (asset?.priceUsd ?? 0)
+      // Reprice NON-LP tokens off the live oracle when available so the wallet is reactive
+      // and never pinned to a frozen stored value. LP rows keep the canonical stored basis.
+      const isLpToken = asset?.isLpToken ?? false
+      const livePrice = !isLpToken ? priceFor?.(asset?.symbol ?? balance.assetId) : undefined
+      const valueUsd = livePrice != null && Number.isFinite(livePrice) ? balance.amount * livePrice : storedValueUsd
       return {
         id: balance.id,
         assetId: balance.assetId,

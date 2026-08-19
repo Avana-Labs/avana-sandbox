@@ -19,7 +19,7 @@
  */
 
 import { v, type Infer } from "convex/values"
-import type { MutationCtx } from "../_generated/server"
+import type { MutationCtx, QueryCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
 import { upsertWalletBalanceRows } from "../wallet/balances"
 import { requireSandboxWallet } from "./auth"
@@ -1940,7 +1940,7 @@ export const getPortfolio = query({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
-    const [snapshotRows, current, positions] = await Promise.all([
+    const [snapshotRows, current, positions, walletCollateral] = await Promise.all([
       ctx.db
         .query("portfolioSnapshots")
         .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
@@ -1954,6 +1954,10 @@ export const getPortfolio = query({
         .query("positions")
         .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
         .collect(),
+      ctx.db
+        .query("walletCollateralPositions")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect(),
     ])
     const snapshots = snapshotRows.reverse()
     const latest = current ?? snapshots.at(-1) ?? null
@@ -1962,14 +1966,85 @@ export const getPortfolio = query({
     // past the nominal _id mismatch (runtime-identical to the prior push; keeps `tsc --noEmit`
     // green, which CI gates on).
     if (current && snapshots.at(-1)?.at !== current.at) snapshots.push(current as unknown as (typeof snapshots)[number])
+
+    const netApyPct = await computePortfolioNetApyPct(ctx, positions, walletCollateral)
+
     return {
       snapshots,
       latest,
+      netApyPct,
       openPositions: positions.filter((p) => p.status === "open").length,
       positionCount: positions.length,
     }
   },
 })
+
+/**
+ * Blended portfolio Net APY, value-weighted across the wallet's productive legs
+ * using the rates already stored on each position (lend `supplyApyPct`, multiply
+ * `netApyPct`, umbrella `supplyApyPct`) plus the collateral pair APR from `pools`
+ * for borrow legs. Home-seed borrow collateral that has no live `positions` row
+ * yet is folded in on the same basis appendPortfolioSnapshot uses for value, so
+ * the APY reconciles with the Net Value shown beside it. Computed read-time, so
+ * it always reflects current rates without a stored/backfilled field.
+ */
+async function computePortfolioNetApyPct(
+  ctx: QueryCtx,
+  positions: Array<Doc<"positions">>,
+  walletCollateral: Array<Doc<"walletCollateralPositions">>,
+): Promise<number> {
+  const open = positions.filter((position) => position.status === "open")
+  const liveBorrowSlugs = new Set(
+    open.filter((position) => position.product === "borrow").map((position) => position.marketSlug),
+  )
+
+  // Fetch pair APR for every borrow slug we need (live positions + non-shadowed seed collateral).
+  const borrowSlugs = [
+    ...new Set([
+      ...open.filter((position) => position.product === "borrow").map((position) => position.marketSlug),
+      ...walletCollateral.filter((row) => !liveBorrowSlugs.has(row.marketId)).map((row) => row.marketId),
+    ]),
+  ].filter(Boolean)
+  const borrowPools = await Promise.all(
+    borrowSlugs.map((slug) =>
+      ctx.db
+        .query("pools")
+        .withIndex("by_slug", (q) => q.eq("slug", slug))
+        .unique(),
+    ),
+  )
+  const pairAprBySlug = new Map(
+    borrowPools
+      .filter((pool): pool is NonNullable<typeof pool> => pool !== null)
+      .map((pool) => [pool.slug, pool.pairAprPct] as const),
+  )
+
+  const legs: Array<{ weight: number; rate: number }> = []
+  for (const position of open) {
+    if (position.product === "lend") {
+      const base = usd6Number(position.suppliedUsd6)
+      if (base > 0) legs.push({ weight: base, rate: position.supplyApyPct ?? 0 })
+    } else if (position.product === "multiply") {
+      const base = position.collateralValueUsd ?? 0
+      if (base > 0) legs.push({ weight: base, rate: position.netApyPct ?? 0 })
+    } else if (position.product === "borrow") {
+      const base = usd6Number(position.collateralValueUsd6)
+      if (base > 0) legs.push({ weight: base, rate: pairAprBySlug.get(position.marketSlug) ?? 0 })
+    } else if (position.product === "umbrella") {
+      const base = usd6Number(position.suppliedUsd6)
+      if (base > 0) legs.push({ weight: base, rate: position.supplyApyPct ?? 0 })
+    }
+  }
+  // Home-seed borrow collateral not yet represented by a live position.
+  for (const row of walletCollateral) {
+    if (liveBorrowSlugs.has(row.marketId)) continue
+    if (row.collateralUsd > 0) legs.push({ weight: row.collateralUsd, rate: pairAprBySlug.get(row.marketId) ?? 0 })
+  }
+
+  const totalWeight = legs.reduce((sum, leg) => sum + leg.weight, 0)
+  if (totalWeight <= 0) return 0
+  return legs.reduce((sum, leg) => sum + leg.weight * leg.rate, 0) / totalWeight
+}
 
 /**
  * Open-gate helper: write the first portfolioCurrent/snapshot when home seeds + liquid
