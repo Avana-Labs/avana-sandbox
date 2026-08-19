@@ -1475,6 +1475,7 @@ const dict: TranslationDictionary = {
   "How it works": "Как это работает",
   "Learn Avana": "Знакомство с Avana",
   "Dashboard Positions": "Позиции дашборда",
+  "against {pool}": "против {pool}",
   Locked: "Заблокировано",
   "Merkl Rewards": "Награды Merkl",
   "Next rewards": "Следующие награды",
