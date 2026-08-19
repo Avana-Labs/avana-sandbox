@@ -14,29 +14,17 @@
 import { useMemo, useState } from "react"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
-import { DesktopTableSurface } from "@/app/components/market-table-primitives"
-import { TokenIcon } from "@/app/components/token-icon"
-import { formatUsdExact, formatCompactUsd } from "@/app/lib/borrow-sim"
+import { formatUsdExact } from "@/app/lib/borrow-sim"
 import { formatHealthFactor } from "@/app/lib/data/borrow-domain"
 import { healthFactorBand } from "@/app/lib/health/health-factor-bands"
 import { MOCK_BORROW_OUTLOOK, type BorrowCollateralOutlook } from "./mock-data"
-import { OutlookSection, OutlookCard, OutlookDisclaimer } from "./outlook-shell"
-import { projectedEarnings } from "./forecast-core"
+import { OutlookSection, OutlookCard } from "./outlook-shell"
 
 const MASK = "••••"
 
 /** Sum of collateral value × liquidation threshold (the numerator of HF). */
 function liquidationValue(collateral: BorrowCollateralOutlook[]): number {
   return collateral.reduce((sum, c) => sum + c.collateralValueUsd * c.liqThreshold, 0)
-}
-
-/** Per-asset liquidation price, holding every other collateral at its current value. */
-function collateralLiqPrice(collateral: BorrowCollateralOutlook[], target: BorrowCollateralOutlook, debtUsd: number) {
-  const others = liquidationValue(collateral) - target.collateralValueUsd * target.liqThreshold
-  const needed = debtUsd - others
-  if (needed <= 0) return null // this asset alone can't liquidate you
-  const liqPrice = needed / (target.quantity * target.liqThreshold)
-  return { liqPrice, dropBuffer: Math.max(0, (target.currentPriceUsd - liqPrice) / target.currentPriceUsd) }
 }
 
 function pctText(fraction: number) {
@@ -55,16 +43,6 @@ export function BorrowOutlook() {
   )
   const liqValue = useMemo(() => liquidationValue(data.collateral), [data.collateral])
   const currentHf = data.totalDebtUsd > 0 ? liqValue / data.totalDebtUsd : Infinity
-
-  // Projected borrowing cost at the current variable rate (continuous compounding).
-  const projectedCost = useMemo(
-    () => ({
-      m1: projectedEarnings(data.totalDebtUsd, data.borrowApyPct, 30),
-      m3: projectedEarnings(data.totalDebtUsd, data.borrowApyPct, 91),
-      y1: projectedEarnings(data.totalDebtUsd, data.borrowApyPct, 365),
-    }),
-    [data.totalDebtUsd, data.borrowApyPct],
-  )
 
   // ── What-if simulator ──────────────────────────────────────────────────────
   const [priceMove, setPriceMove] = useState(0) // % applied to all collateral
@@ -88,118 +66,6 @@ export function BorrowOutlook() {
       title={t("Borrow Outlook")}
       info="How safe your position is over time, and what it would take to reach liquidation."
     >
-      {/* Projected borrowing cost */}
-      <OutlookCard title={t("Projected interest cost")} subtitle={t("At today's borrow rate.")}>
-        <dl className="grid grid-cols-3 gap-3">
-          {[
-            { label: t("30 days"), value: projectedCost.m1 },
-            { label: t("90 days"), value: projectedCost.m3 },
-            { label: t("1 year"), value: projectedCost.y1 },
-          ].map((row) => (
-            <div key={row.label} className="rounded-radius-sm border border-border bg-background px-3 py-2.5">
-              <dt className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground">{row.label}</dt>
-              <dd className="mt-1 font-data text-[17px] font-medium tabular-nums text-danger">
-                −{m(formatUsdExact(row.value))}
-              </dd>
-            </div>
-          ))}
-        </dl>
-        <OutlookDisclaimer>{t("Estimate. Variable rate — actual cost will differ.")}</OutlookDisclaimer>
-      </OutlookCard>
-
-      {/* Per-collateral liquidation table */}
-      <OutlookCard
-        title={t("Liquidation prices")}
-        subtitle={t("The price each collateral would hit to reach liquidation, holding your other collateral steady.")}
-      >
-        <div className="hidden overflow-x-auto md:block">
-          <DesktopTableSurface className="!rounded-none">
-            <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
-              <colgroup>
-                <col className="w-[24%]" />
-                <col className="w-[19%]" />
-                <col className="w-[19%]" />
-                <col className="w-[19%]" />
-                <col className="w-[19%]" />
-              </colgroup>
-              <thead>
-                <tr className="text-left">
-                  {[t("Collateral"), t("Price"), t("Liq. price"), t("Drop buffer"), t("Supply APY")].map((h, i) => (
-                    <th
-                      key={h}
-                      className={`bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58 ${i === 0 ? "" : "text-right"}`}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border dark:divide-white/6">
-                {data.collateral.map((c) => {
-                  const liq = collateralLiqPrice(data.collateral, c, data.totalDebtUsd)
-                  return (
-                    <tr key={c.symbol} className="text-[14px]">
-                      <td className="py-3 pl-4">
-                        <div className="flex items-center gap-2.5">
-                          <TokenIcon symbol={c.symbol} size="table" />
-                          <div className="flex flex-col">
-                            <span className="font-medium text-foreground dark:text-white">{c.symbol}</span>
-                            <span className="text-[12px] text-muted-foreground">
-                              {c.quantity} · {m(formatCompactUsd(c.collateralValueUsd))}
-                            </span>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3 pr-4 text-right font-data tabular-nums text-foreground">
-                        {formatUsdExact(c.currentPriceUsd)}
-                      </td>
-                      <td className="py-3 pr-4 text-right font-data tabular-nums text-foreground">
-                        {liq ? formatUsdExact(liq.liqPrice) : "—"}
-                      </td>
-                      <td className="py-3 pr-4 text-right font-data tabular-nums text-success">
-                        {liq ? pctText(liq.dropBuffer) : t("safe")}
-                      </td>
-                      <td className="py-3 pr-4 text-right font-data tabular-nums text-muted-foreground">
-                        {c.supplyApyPct.toFixed(2)}%
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </DesktopTableSurface>
-        </div>
-
-        <div className="space-y-2 md:hidden">
-          {data.collateral.map((c) => {
-            const liq = collateralLiqPrice(data.collateral, c, data.totalDebtUsd)
-            return (
-              <div key={c.symbol} className="rounded-radius-sm border border-border bg-background px-3 py-2.5">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <TokenIcon symbol={c.symbol} size="table" />
-                    <span className="text-[14px] font-medium text-foreground">{c.symbol}</span>
-                  </div>
-                  <span className="font-data text-[13px] tabular-nums text-muted-foreground">
-                    {formatUsdExact(c.currentPriceUsd)}
-                  </span>
-                </div>
-                <div className="mt-1.5 flex items-center justify-between text-[12px]">
-                  <span className="text-muted-foreground">
-                    {t("Liq.")} {liq ? formatUsdExact(liq.liqPrice) : "—"}
-                  </span>
-                  <span className="text-success">{liq ? `${pctText(liq.dropBuffer)} ${t("buffer")}` : t("safe")}</span>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-
-        <p className="mt-3 text-[11.5px] text-muted-foreground/80">
-          {t("“Safe” means a fall in that asset alone can't liquidate you — your other collateral covers the debt.")}
-        </p>
-      </OutlookCard>
-
       <div>
         {/* What-if simulator */}
         <OutlookCard
