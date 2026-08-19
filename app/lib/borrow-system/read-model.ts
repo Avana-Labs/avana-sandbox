@@ -154,13 +154,17 @@ export function buildWalletReadSnapshot(
   }
 }
 
-export function buildBorrowPageData(state: BorrowSystemState, walletId: string): BorrowPageData {
-  // NOTE: the borrow markets/landing page shows market-reference figures (pool TVL,
-  // example collateral) and re-emits the session seed, so it is intentionally NOT
-  // accrued here — accruing would drift those reference numbers and bake an advanced
-  // `now` into the serialized seed. The between-actions wallet HF that must stay live
-  // is accrued in the portfolio/wallet-snapshot read paths (buildPortfolioBorrowData /
-  // buildWalletReadSnapshot) instead.
+export function buildBorrowPageData(
+  state: BorrowSystemState,
+  walletId: string,
+  now: number = Date.now(),
+): BorrowPageData {
+  // Market-reference figures (pool TVL, example collateral) and the serialized seed stay
+  // on the RAW state — accruing would drift those reference numbers and bake an advanced
+  // `now` into the seed. But the WALLET's own position views (snapshot HF/net value, debt
+  // and collateral rows) are accrued to `now` so the detail page shows the same live
+  // interest/HF as the dashboard tab (which also accrues on read) — no tab-vs-detail drift.
+  const accrued = accrueBorrowSystemState(state, now)
   const poolCatalog = selectBorrowMarketSummaries(state, walletId)
   const markets = Object.values(state.markets)
   const assets = Object.values(state.assets)
@@ -189,9 +193,9 @@ export function buildBorrowPageData(state: BorrowSystemState, walletId: string):
     borrowableAssets: selectBorrowableAssets(state, walletId),
     pendingRows: BORROW_PENDING_ROWS,
     dexes: BORROW_DEXES,
-    collateralPools: selectBorrowCollateralPools(state, walletId),
-    initialDebts: selectInitialBorrowDebts(state, walletId),
-    borrowSnapshot: selectWalletBorrowSnapshot(state, walletId),
+    collateralPools: selectBorrowCollateralPools(accrued, walletId),
+    initialDebts: selectInitialBorrowDebts(accrued, walletId),
+    borrowSnapshot: selectWalletBorrowSnapshot(accrued, walletId),
   }
 }
 
