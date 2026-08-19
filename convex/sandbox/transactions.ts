@@ -661,15 +661,10 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
   const multiplyDebt = open
     .filter((position) => position.product === "multiply")
     .reduce((sum, position) => sum + (position.debtValueUsd ?? 0), 0)
-  // Umbrella staked principal + accrued rewards are owned assets, so they belong in the
-  // portfolio value — the same basis the dashboard headline uses. Without them, stored history
-  // sits well below the live number and the hero chart shows a false jump. (Phase 2.5)
-  const umbrellaStaked = open
-    .filter((position) => position.product === "umbrella")
-    .reduce((sum, position) => sum + usd6Number(position.suppliedUsd6), 0)
-  const umbrellaRewards = open
-    .filter((position) => position.product === "umbrella")
-    .reduce((sum, position) => sum + usd6Number(position.earnedUsd6), 0)
+  // Umbrella is intentionally NOT part of portfolio value here — it lives on its own page and
+  // is excluded from the dashboard headline, the Net APY blend, and the onboarding snapshot
+  // (convex/sandbox/onboarding.ts). Folding it in only here made stored history diverge from
+  // the live headline by the staked amount, tripping the hero chart's basis-tolerance gate.
 
   // ATB from per-pool collateral factors — never a hardcoded *0.7.
   const borrowSlugs = [
@@ -711,16 +706,8 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
   const snapshot = {
     wallet,
     at: now,
-    totalValueUsd:
-      liquid +
-      totalBorrowCollateral -
-      totalBorrowDebt +
-      lendSupplied +
-      multiplyCollateral -
-      multiplyDebt +
-      umbrellaStaked +
-      umbrellaRewards,
-    totalSuppliedUsd: totalBorrowCollateral + lendSupplied + multiplyCollateral + umbrellaStaked,
+    totalValueUsd: liquid + totalBorrowCollateral - totalBorrowDebt + lendSupplied + multiplyCollateral - multiplyDebt,
+    totalSuppliedUsd: totalBorrowCollateral + lendSupplied + multiplyCollateral,
     totalBorrowedUsd: totalBorrowDebt + multiplyDebt,
     availableToBorrowUsd: Math.max(0, borrowCapacityUsd - totalBorrowDebt),
     totalMultiplyExposureUsd: multiplyCollateral,
