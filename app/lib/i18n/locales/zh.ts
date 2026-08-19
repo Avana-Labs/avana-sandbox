@@ -1068,6 +1068,8 @@ const dict: TranslationDictionary = {
   "reCLAMM BPT": "reCLAMM BPT",
   "Stable LP tokens": "Stable LP 代币",
   "Change language": "更改语言",
+  "Ask AI": "询问 AI",
+  "Search markets…": "搜索市场…",
   "Search Avana": "搜索 Avana",
   "Search pools, borrow, lend, and more": "搜索资金池、借款、存款等",
   "Search collateral pools, assets to borrow, and assets to lend.": "搜索抵押资金池、可借资产和可存资产。",

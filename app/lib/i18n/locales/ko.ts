@@ -985,6 +985,8 @@ const dict: TranslationDictionary = {
   "reCLAMM BPT": "reCLAMM BPT",
   "Stable LP tokens": "Stable LP 토큰",
   "Change language": "언어 변경",
+  "Ask AI": "AI에게 질문",
+  "Search markets…": "마켓 검색…",
   "Search Avana": "Avana 검색",
   "Search pools, borrow, lend, and more": "풀, 대출, 예치 등을 검색",
   "Search pools, borrow assets, lend assets": "풀과 자산 검색",

@@ -1002,6 +1002,8 @@ const dict: TranslationDictionary = {
   "reCLAMM BPT": "BPT reCLAMM",
   "Stable LP tokens": "Token LP Stable",
   "Change language": "Ubah bahasa",
+  "Ask AI": "Tanya AI",
+  "Search markets…": "Cari pasar…",
   "Search Avana": "Cari di Avana",
   "Search pools, borrow, lend, and more": "Cari pool, pinjam, pinjamkan, dan lainnya",
   "Search pools, borrow assets, lend assets": "Cari pool dan aset",

@@ -1357,6 +1357,8 @@ const dict: TranslationDictionary = {
   "Rewards Earned": "अर्जित रिवॉर्ड्स",
   Sandbox: "सैंडबॉक्स",
   "Scenario price": "परिदृश्य मूल्य",
+  "Ask AI": "AI से पूछें",
+  "Search markets…": "बाज़ार खोजें…",
   "Search Avana": "Avana खोजें",
   "Search collateral pools, assets to borrow, and assets to lend.":
     "कोलैटरल पूल, उधार लेने के एसेट और उधार देने के एसेट खोजें।",
