@@ -1402,6 +1402,8 @@ const dict: TranslationDictionary = {
   "Review swap": "Swap prüfen",
   "Rewards Earned": "Verdiente Belohnungen",
   "Scenario price": "Szenario-Preis",
+  "Ask AI": "KI fragen",
+  "Search markets…": "Märkte durchsuchen…",
   "Search Avana": "Avana durchsuchen",
   "Search collateral pools, assets to borrow, and assets to lend.":
     "Suche nach Sicherheiten-Pools, Kredit-Assets und Verleih-Assets.",

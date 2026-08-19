@@ -1362,6 +1362,8 @@ const dict: TranslationDictionary = {
   "Rewards Earned": "Kazanılan Ödüller",
   Sandbox: "Sandbox",
   "Scenario price": "Senaryo fiyatı",
+  "Ask AI": "Yapay zekâya sor",
+  "Search markets…": "Piyasalarda ara…",
   "Search Avana": "Avana'da ara",
   "Search collateral pools, assets to borrow, and assets to lend.":
     "Teminat havuzları, ödünç alınacak ve ödünç verilecek varlıkları arayın.",

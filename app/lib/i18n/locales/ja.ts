@@ -999,6 +999,8 @@ const dict: TranslationDictionary = {
   "reCLAMM BPT": "reCLAMM BPT",
   "Stable LP tokens": "Stable LPトークン",
   "Change language": "言語を変更",
+  "Ask AI": "AIに質問",
+  "Search markets…": "マーケットを検索…",
   "Search Avana": "Avana を検索",
   "Search pools, borrow, lend, and more": "プール、借入、貸出などを検索",
   "Search pools, borrow assets, lend assets": "プールと資産を検索",

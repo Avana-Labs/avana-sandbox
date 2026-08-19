@@ -1008,6 +1008,8 @@ const dict: TranslationDictionary = {
   "reCLAMM BPT": "BPT reCLAMM",
   "Stable LP tokens": "Tokens de LP Stable",
   "Change language": "Alterar idioma",
+  "Ask AI": "Perguntar à IA",
+  "Search markets…": "Pesquisar mercados…",
   "Search Avana": "Pesquisar na Avana",
   "Search pools, borrow, lend, and more": "Pesquisar pools, empréstimos e mais",
   "Search pools, borrow assets, lend assets": "Pesquisar pools e ativos",

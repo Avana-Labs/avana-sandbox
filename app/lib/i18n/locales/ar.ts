@@ -1340,6 +1340,8 @@ const dict: TranslationDictionary = {
   "Rewards Earned": "المكافآت المكتسبة",
   Sandbox: "البيئة التجريبية",
   "Scenario price": "سعر السيناريو",
+  "Ask AI": "اسأل الذكاء الاصطناعي",
+  "Search markets…": "بحث في الأسواق…",
   "Search Avana": "البحث في Avana",
   "Search collateral pools, assets to borrow, and assets to lend.":
     "ابحث في مجمّعات الضمان وأصول الاقتراض وأصول الإقراض.",

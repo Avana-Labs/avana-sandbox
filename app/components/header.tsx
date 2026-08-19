@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { AskAssistantTrigger } from "./ask-assistant-trigger"
 import { BrandIcon, BrandLogo } from "./brand-logo"
 import { LazyMobileMenu } from "./lazy-mobile-menu"
 import {
@@ -26,8 +27,11 @@ export function Header() {
   const renderMobileBrand = () => <BrandIcon />
   const renderMobileActions = () => (
     <>
-      <span className="-me-1 flex items-center">
+      <span className="flex items-center">
         {mounted ? <LazySearchCommandIconOnly tone="brand" /> : <SearchCommandIconPlaceholder tone="brand" />}
+      </span>
+      <span className="-me-1 flex items-center">
+        <AskAssistantTrigger iconOnly tone="brand" />
       </span>
       <span className="flex items-center">
         <WalletControl size="mobile" />
@@ -155,7 +159,7 @@ export function Header() {
         <div className="grid h-[68px] w-full grid-cols-[minmax(0,1fr)_minmax(280px,410px)_minmax(0,1fr)] items-center gap-4 px-6 2xl:px-8">
           <div className="flex min-w-0 items-center gap-5">
             <Link href="/" aria-label={t("Home")} title={t("Home")} className="flex shrink-0 items-center">
-              <BrandLogo className="h-[44px]" />
+              <BrandLogo className="h-[36px]" />
             </Link>
 
             <nav
@@ -167,7 +171,7 @@ export function Header() {
           </div>
 
           <div className="flex min-w-0 justify-center px-2">
-            <div className="w-full max-w-[360px]">{mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}</div>
+            <div className="w-full max-w-[380px]">{mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}</div>
           </div>
 
           <div className="flex min-w-0 items-center justify-end gap-2.5">
@@ -190,7 +194,7 @@ export function Header() {
         <div className="grid h-[68px] w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 lg:px-5">
           <div className="flex min-w-0 items-center gap-3">
             <Link href="/" aria-label={t("Home")} title={t("Home")} className="flex shrink-0 items-center">
-              <BrandLogo className="h-[44px]" />
+              <BrandLogo className="h-[36px]" />
             </Link>
 
             <nav
@@ -207,6 +211,9 @@ export function Header() {
             <div className="flex shrink-0 items-center gap-1.5">
               <span className="flex items-center">
                 {mounted ? <LazySearchCommandIconOnly /> : <SearchCommandIconPlaceholder />}
+              </span>
+              <span className="flex items-center">
+                <AskAssistantTrigger iconOnly />
               </span>
               <DesktopPreferenceControls />
               <div className="flex shrink-0">
