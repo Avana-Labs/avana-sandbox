@@ -621,7 +621,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
             <PortfolioStatCards activeTab={activeDashboardTab} />
           </div>
 
-          <aside className="min-w-0 pt-8 lg:col-start-2 lg:row-start-2">
+          <aside className="min-w-0 lg:col-start-2 lg:row-start-2 lg:pt-8">
             <PortfolioRewardsCards
               claimHref={claimHref}
               earnedAmount={snapshot.summary.totalEarnedAmount}
