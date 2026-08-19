@@ -651,7 +651,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
                 )}
               </div>
 
-              <div className="mt-10 pb-24 lg:pb-0">
+              <div className="mt-10 border-t border-border pt-10 pb-24 md:mt-12 md:pt-12 lg:pb-0">
                 <LearnSection />
               </div>
             </section>
