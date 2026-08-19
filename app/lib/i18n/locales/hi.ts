@@ -1468,6 +1468,11 @@ const dict: TranslationDictionary = {
     "“सुरक्षित” का अर्थ है कि केवल उस एसेट की गिरावट आपको लिक्विडेट नहीं कर सकती — आपके अन्य कोलैटरल कर्ज़ को कवर करते हैं।",
   "How it works": "यह कैसे काम करता है",
   "Learn Avana": "Avana को जानें",
+  Locked: "लॉक्ड",
+  "Merkl Rewards": "Merkl पुरस्कार",
+  "Next rewards": "अगले पुरस्कार",
+  "Open on Launch Date": "लॉन्च तिथि पर खुलेगा",
+  "Previous rewards": "पिछले पुरस्कार",
 }
 
 export default dict

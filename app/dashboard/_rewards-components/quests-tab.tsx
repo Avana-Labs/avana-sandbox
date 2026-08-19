@@ -18,6 +18,7 @@ import {
   Trophy,
   Wallet,
 } from "@/app/components/icons"
+import { CarouselArrowButtons, useOverflowCarousel } from "@/app/components/carousel-arrow-buttons"
 import { type RewardsPromoTabId, type RewardsQuestIconId, type RewardsQuest } from "@/app/lib/data/rewards/catalog"
 import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { UnderlineTabStrip } from "@/app/components/tab-primitives"
@@ -233,21 +234,49 @@ export function RewardsQuestSection({
   onTaskAction: (taskId: string) => Promise<unknown>
 }) {
   const { t } = useTranslation()
+  const { scrollerRef, canPrev, canNext, scrollByCard } = useOverflowCarousel()
 
   return (
     <div className="space-y-4">
-      {title ? (
-        <div>
-          <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{title}</h2>
-          <p className="mt-1 text-[13px] text-muted-foreground">
-            {t("{count} rewards").replace("{count}", String(quests.length))}
-          </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        {title ? (
+          <div>
+            <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{title}</h2>
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              {t("{count} rewards").replace("{count}", String(quests.length))}
+            </p>
+          </div>
+        ) : (
+          <span />
+        )}
+        {canPrev || canNext ? (
+          <CarouselArrowButtons
+            canPrev={canPrev}
+            canNext={canNext}
+            onPrev={() => scrollByCard(-1)}
+            onNext={() => scrollByCard(1)}
+            prevLabel={t("Previous rewards")}
+            nextLabel={t("Next rewards")}
+          />
+        ) : null}
+      </div>
+      <div className="overflow-hidden">
+        <div
+          ref={scrollerRef}
+          className="overflow-x-auto pb-1 [scrollbar-width:none] snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
+        >
+          <ul className="flex w-full gap-3">
+            {quests.map((quest) => (
+              <li
+                key={quest.id}
+                data-carousel-card
+                className="w-[min(220px,72%)] shrink-0 snap-start sm:w-[calc((100%-0.75rem)/2)] xl:w-[calc((100%-1.5rem)/3)]"
+              >
+                <AvanaQuestCard quest={quest} onTaskAction={onTaskAction} />
+              </li>
+            ))}
+          </ul>
         </div>
-      ) : null}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {quests.map((quest) => (
-          <AvanaQuestCard key={quest.id} quest={quest} onTaskAction={onTaskAction} />
-        ))}
       </div>
     </div>
   )

@@ -1529,6 +1529,11 @@ const dict: TranslationDictionary = {
     "„Sicher“ bedeutet, dass ein Rückgang allein dieses Assets dich nicht liquidieren kann — deine anderen Sicherheiten decken die Schuld.",
   "How it works": "So funktioniert's",
   "Learn Avana": "Avana kennenlernen",
+  Locked: "Gesperrt",
+  "Merkl Rewards": "Merkl-Prämien",
+  "Next rewards": "Nächste Prämien",
+  "Open on Launch Date": "Freischaltung zum Launch-Datum",
+  "Previous rewards": "Vorherige Prämien",
 }
 
 export default dict

@@ -1471,6 +1471,11 @@ const dict: TranslationDictionary = {
     "“Veilig” betekent dat een daling van alleen dat asset je niet kan liquideren — je andere onderpand dekt de schuld.",
   "How it works": "Hoe het werkt",
   "Learn Avana": "Leer Avana kennen",
+  Locked: "Vergrendeld",
+  "Merkl Rewards": "Merkl-beloningen",
+  "Next rewards": "Volgende beloningen",
+  "Open on Launch Date": "Opent op de lanceringsdatum",
+  "Previous rewards": "Vorige beloningen",
 }
 
 export default dict

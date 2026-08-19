@@ -1447,6 +1447,11 @@ const dict: TranslationDictionary = {
     "”آمن“ يعني أن هبوط ذلك الأصل وحده لا يمكن أن يصفّيك — تغطّي ضماناتك الأخرى الدين.",
   "How it works": "كيف يعمل",
   "Learn Avana": "تعرّف على Avana",
+  Locked: "مقفل",
+  "Merkl Rewards": "مكافآت Merkl",
+  "Next rewards": "المكافآت التالية",
+  "Open on Launch Date": "تُفتح في تاريخ الإطلاق",
+  "Previous rewards": "المكافآت السابقة",
 }
 
 export default dict

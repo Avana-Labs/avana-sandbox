@@ -1474,6 +1474,11 @@ const dict: TranslationDictionary = {
     "«Безопасно» означает, что падение только этого актива не приведёт к ликвидации — остальной залог покрывает долг.",
   "How it works": "Как это работает",
   "Learn Avana": "Знакомство с Avana",
+  Locked: "Заблокировано",
+  "Merkl Rewards": "Награды Merkl",
+  "Next rewards": "Следующие награды",
+  "Open on Launch Date": "Откроется в день запуска",
+  "Previous rewards": "Предыдущие награды",
 }
 
 export default dict
