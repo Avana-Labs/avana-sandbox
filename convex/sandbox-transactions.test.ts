@@ -367,6 +367,45 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
     expect(stored.current).toHaveLength(1)
     expect(stored.history).toHaveLength(1)
   })
+
+  test("excludes umbrella staked principal + rewards from the portfolio snapshot value", async () => {
+    const t = convexTest(schema, modules)
+    const wallet = WALLET.toLowerCase()
+    // A wallet holding both a plain liquid balance ($1,000) and an umbrella position
+    // ($400 staked + $10 rewards). Umbrella lives on its own page and is excluded from
+    // the dashboard headline / Net APY / onboarding snapshot — the running snapshot writer
+    // must agree, or stored history drifts from the live number by the umbrella amount.
+    await t.run(async (ctx) => {
+      await ctx.db.insert("sandboxBalances", {
+        wallet,
+        assetSlug: "usdc",
+        symbol: "USDC",
+        amount: 1000,
+        valueUsd: 1000,
+        priceUsd: 1,
+        updatedAt: 1,
+      })
+      await ctx.db.insert("positions", {
+        wallet,
+        product: "umbrella",
+        marketSlug: "usdc",
+        assetId: "usdc",
+        status: "open",
+        suppliedUsd6: "400000000",
+        earnedUsd6: "10000000",
+        openedAt: 1,
+        lastUpdatedAt: 1,
+      })
+    })
+
+    const asUser = t.withIdentity({ subject: WALLET })
+    await asUser.mutation(api.sandbox.transactions.ensurePortfolioSnapshot, { wallet: WALLET })
+
+    const portfolio = await asUser.query(api.sandbox.transactions.getPortfolio, { wallet: WALLET })
+    // Only the $1,000 liquid balance counts — umbrella's $400 + $10 are excluded.
+    expect(portfolio.latest?.totalValueUsd).toBe(1000)
+    expect(portfolio.latest?.totalSuppliedUsd).toBe(0)
+  })
 })
 
 describe("liquidation recording", () => {

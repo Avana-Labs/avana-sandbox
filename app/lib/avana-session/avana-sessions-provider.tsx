@@ -16,6 +16,7 @@ import {
   type PersistUmbrellaAction,
 } from "@/app/lib/umbrella-system/use-umbrella-session"
 import type { SwapTransactionRecord } from "@/app/lib/swap-system/transaction-adapter"
+import type { SwapQuote, SwapQuoteRequest } from "@/app/lib/swap-system/quote-provider"
 import { useAvanaSession } from "./use-avana-session"
 
 type BorrowSession = ReturnType<typeof useBorrowSession>
@@ -193,6 +194,7 @@ export function AvanaSessionsProvider({
   persistLendTransaction,
   persistMultiplyTransaction,
   persistSwapTransaction,
+  serverGetSwapQuote,
   remoteSwapTransactions,
   remoteRewardsState,
   remoteRewardsRevision,
@@ -215,6 +217,7 @@ export function AvanaSessionsProvider({
   persistLendTransaction?: (result: LendSandboxActionResult) => Promise<LendTransactionResult>
   persistMultiplyTransaction?: (result: MultiplySandboxActionResult) => Promise<MultiplyTransactionResult>
   persistSwapTransaction?: (record: SwapTransactionRecord) => void | Promise<unknown>
+  serverGetSwapQuote?: (request: SwapQuoteRequest) => Promise<SwapQuote>
   remoteSwapTransactions?: DurableSwapTransaction[]
   remoteRewardsState?: string | null
   remoteRewardsRevision?: number | null
@@ -265,6 +268,7 @@ export function AvanaSessionsProvider({
     walletId: avana.walletId,
     persistState: persistLocalState,
     persistTransaction: persistSwapTransaction,
+    serverGetQuote: serverGetSwapQuote,
     remoteTransactions: remoteSwapTransactions,
   })
   const umbrella = useUmbrellaSession({

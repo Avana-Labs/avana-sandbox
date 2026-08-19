@@ -1357,6 +1357,8 @@ const dict: TranslationDictionary = {
   "Rewards Earned": "अर्जित रिवॉर्ड्स",
   Sandbox: "सैंडबॉक्स",
   "Scenario price": "परिदृश्य मूल्य",
+  "Ask AI": "AI से पूछें",
+  "Search markets…": "बाज़ार खोजें…",
   "Search Avana": "Avana खोजें",
   "Search collateral pools, assets to borrow, and assets to lend.":
     "कोलैटरल पूल, उधार लेने के एसेट और उधार देने के एसेट खोजें।",
@@ -1466,6 +1468,15 @@ const dict: TranslationDictionary = {
     "“सुरक्षित” का अर्थ है कि केवल उस एसेट की गिरावट आपको लिक्विडेट नहीं कर सकती — आपके अन्य कोलैटरल कर्ज़ को कवर करते हैं।",
   "How it works": "यह कैसे काम करता है",
   "Learn Avana": "Avana को जानें",
+  "Dashboard Positions": "डैशबोर्ड पोज़िशन",
+  "Available to use": "उपयोग के लिए उपलब्ध",
+  "Available to deposit": "जमा के लिए उपलब्ध",
+  "against {pool}": "{pool} के विरुद्ध",
+  Locked: "लॉक्ड",
+  "Merkl Rewards": "Merkl पुरस्कार",
+  "Next rewards": "अगले पुरस्कार",
+  "Open on Launch Date": "लॉन्च तिथि पर खुलेगा",
+  "Previous rewards": "पिछले पुरस्कार",
 }
 
 export default dict

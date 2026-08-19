@@ -999,6 +999,8 @@ const dict: TranslationDictionary = {
   "reCLAMM BPT": "reCLAMM BPT",
   "Stable LP tokens": "Stable LPトークン",
   "Change language": "言語を変更",
+  "Ask AI": "AIに質問",
+  "Search markets…": "マーケットを検索…",
   "Search Avana": "Avana を検索",
   "Search pools, borrow, lend, and more": "プール、借入、貸出などを検索",
   "Search pools, borrow assets, lend assets": "プールと資産を検索",
@@ -1506,6 +1508,15 @@ const dict: TranslationDictionary = {
     "「安全」とは、その資産だけの下落では清算されないことを意味します — 他の担保が負債をカバーします。",
   "How it works": "仕組み",
   "Learn Avana": "Avana を学ぶ",
+  "Dashboard Positions": "ダッシュボードのポジション",
+  "Available to use": "利用可能",
+  "Available to deposit": "預入可能",
+  "against {pool}": "{pool} に対して",
+  Locked: "ロック中",
+  "Merkl Rewards": "Merkl リワード",
+  "Next rewards": "次のリワード",
+  "Open on Launch Date": "ローンチ日に開放",
+  "Previous rewards": "前のリワード",
 }
 
 export default dict

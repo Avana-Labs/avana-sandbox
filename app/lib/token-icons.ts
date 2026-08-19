@@ -1,4 +1,4 @@
-import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
+import { getLocalAssetIcon, LOCAL_ASSET_ICON_FALLBACK } from "@/app/lib/local-asset-icons"
 
 export type TokenIconMeta = {
   symbol: string
@@ -8,6 +8,12 @@ export type TokenIconMeta = {
 }
 
 const TOKEN_MAP: Record<string, TokenIconMeta> = {
+  AVA: {
+    symbol: "AVA",
+    iconUrl: getLocalAssetIcon("AVA"),
+    bgClass: "bg-sky-100",
+    textClass: "text-sky-700",
+  },
   USDC: {
     symbol: "USDC",
     iconUrl: getLocalAssetIcon("USDC"),
@@ -225,13 +231,31 @@ const TOKEN_MAP: Record<string, TokenIconMeta> = {
   },
 }
 
+/**
+ * All curated TOKEN_MAP entries — for the registry guardrail test. Unlike the
+ * getTokenIconMeta fallback path (which maps a missing icon to `undefined` so the letter
+ * glyph renders), a TOKEN_MAP entry hard-codes `iconUrl: getLocalAssetIcon(sym)` at load,
+ * so a symbol missing from LOCAL_ASSET_ICON_SLUGS silently pins to the gray placeholder
+ * forever. The guardrail asserts no entry falls through that way.
+ */
+export function allTokenIconMetas(): readonly TokenIconMeta[] {
+  return Object.values(TOKEN_MAP)
+}
+
 export function getTokenIconMeta(symbol: string): TokenIconMeta {
-  return (
-    TOKEN_MAP[symbol] ??
-    TOKEN_MAP[symbol.toUpperCase()] ?? {
-      symbol,
-      bgClass: "bg-muted",
-      textClass: "text-foreground",
-    }
-  )
+  const mapped = TOKEN_MAP[symbol] ?? TOKEN_MAP[symbol.toUpperCase()]
+  if (mapped) return mapped
+
+  // Symbol absent from the curated map (e.g. "CRVUSD", whose only TOKEN_MAP keys are
+  // "crvUSD"/"CRV"): fall back to the complete, case-insensitive local-asset alias
+  // map so it still resolves its real icon instead of dropping to a text glyph.
+  // getLocalAssetIcon returns the neutral placeholder for a truly unknown symbol —
+  // treat that as "no icon" so the colored-letter fallback still renders.
+  const localIcon = getLocalAssetIcon(symbol)
+  return {
+    symbol,
+    iconUrl: localIcon === LOCAL_ASSET_ICON_FALLBACK ? undefined : localIcon,
+    bgClass: "bg-muted",
+    textClass: "text-foreground",
+  }
 }

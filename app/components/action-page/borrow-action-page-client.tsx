@@ -1280,13 +1280,12 @@ export function BorrowActionPageClient({
           onAmountChange={kind === "remove" ? setPercent : setAmount}
           inputLabel={kind === "remove" ? "Percent of position" : undefined}
           preview={previewUi}
-          assetSymbol={
-            kind === "supply"
-              ? (session.state.markets[marketId]?.display.name ?? assetSymbol)
-              : supplyPairSymbols
-                ? supplyPairSymbols[0]
-                : assetSymbol
-          }
+          // Pass the base COLLATERAL symbol (visuals[0]) for the ICON — not the pool display
+          // name ("WETH / USDC"), which made the left bubble render pair-initials ("WU") instead
+          // of the WETH icon on the Pledge/supply amount card. The pill TEXT keeps the pair
+          // label via assetLabel so only the icon changes. Mirrors `remove`.
+          assetSymbol={supplyPairSymbols ? supplyPairSymbols[0] : assetSymbol}
+          assetLabel={kind === "supply" ? assetSymbol : undefined}
           borrowSymbol={supplyPairSymbols?.[1]}
           assetOptions={
             kind === "borrow"

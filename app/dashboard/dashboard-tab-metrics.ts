@@ -1,6 +1,8 @@
 import { accrueBorrowSystemState, calculateCreditMetrics, usd6ToNumber } from "@/app/lib/credit-engine"
 import type { BorrowSystemState } from "@/app/lib/credit-engine"
 import type { MultiplySystemState } from "@/app/lib/multiply-engine"
+import { multiplyNetApyFraction } from "@/app/lib/multiply-system/read-model"
+import { lendNetApyPct } from "@/app/lib/lend-system/read-model"
 import type { DebtRowContext, SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import type { BorrowSnapshot } from "@/app/dashboard/borrow-hero-state"
 import type { PortfolioLendTabData, PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
@@ -132,15 +134,9 @@ export function buildMultiplyDashboardMetrics(
           }),
         )
 
-  const netApyPct =
-    positions.length === 0
-      ? 0
-      : weightedAverage(
-          positions.map((position) => ({
-            weight: position.collateralValueUsd,
-            value: position.netApy * 100,
-          })),
-        )
+  // Equity-weighted (canonical), via the shared helper the Multiply detail snapshot uses —
+  // not the old collateral-weighted blend. netApy is a fraction, so ×100 for a percent.
+  const netApyPct = multiplyNetApyFraction(positions) * 100
 
   let interestEarnedUsd = 0
   let interestOwedUsd = 0
@@ -173,10 +169,7 @@ export function buildMultiplyDashboardMetrics(
 export function buildLendDashboardMetrics(data: PortfolioLendTabData) {
   const investments = data.investments ?? []
   const totalSuppliedUsd = investments.reduce((sum, item) => sum + item.suppliedUsd, 0)
-  const netApyPct =
-    totalSuppliedUsd > 0
-      ? investments.reduce((sum, item) => sum + item.apyPct * item.suppliedUsd, 0) / totalSuppliedUsd
-      : 0
+  const netApyPct = lendNetApyPct(investments)
   // Split supply interest from protocol rewards on the tile. The read-model now
   // exposes each investment's interestUsd (unit interest × price) and rewardsEarnedUsd
   // separately, so the "Interest Earned" tile shows pure supply interest and the

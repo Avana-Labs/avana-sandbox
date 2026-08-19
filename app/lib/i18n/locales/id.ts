@@ -1002,6 +1002,8 @@ const dict: TranslationDictionary = {
   "reCLAMM BPT": "BPT reCLAMM",
   "Stable LP tokens": "Token LP Stable",
   "Change language": "Ubah bahasa",
+  "Ask AI": "Tanya AI",
+  "Search markets…": "Cari pasar…",
   "Search Avana": "Cari di Avana",
   "Search pools, borrow, lend, and more": "Cari pool, pinjam, pinjamkan, dan lainnya",
   "Search pools, borrow assets, lend assets": "Cari pool dan aset",
@@ -1467,6 +1469,15 @@ const dict: TranslationDictionary = {
     "“Aman” berarti penurunan aset itu saja tidak dapat melikuidasi Anda — agunan lain menutupi utang.",
   "How it works": "Cara kerjanya",
   "Learn Avana": "Pelajari Avana",
+  "Dashboard Positions": "Posisi Dasbor",
+  "Available to use": "Tersedia untuk digunakan",
+  "Available to deposit": "Tersedia untuk disetor",
+  "against {pool}": "terhadap {pool}",
+  Locked: "Terkunci",
+  "Merkl Rewards": "Hadiah Merkl",
+  "Next rewards": "Hadiah berikutnya",
+  "Open on Launch Date": "Terbuka pada tanggal peluncuran",
+  "Previous rewards": "Hadiah sebelumnya",
 }
 
 export default dict

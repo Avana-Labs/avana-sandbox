@@ -29,6 +29,7 @@ vi.mock("@/app/components/action-page/borrow-action-page-client", () => ({
 vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
   AvanaSessionsProvider: ({ children }: { children: ReactNode }) => <>{children}</>,
   useBorrowSessionContext: () => ({ availableCollateralPools: [{ id: "pool" }] }),
+  useRewardsSessionContext: () => ({ applyReferralCode: vi.fn(), hasHydratedStorage: false }),
 }))
 
 describe("HomePageWorkspaceRuntime", () => {

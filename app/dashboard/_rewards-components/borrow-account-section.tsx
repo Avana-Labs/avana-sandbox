@@ -83,7 +83,11 @@ export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref
     <section id="dashboard-borrow-account" className={`scroll-mt-24 ${detailSectionStackClass}`}>
       <DashboardCreditOverviewSection
         title={t("Borrow Balance")}
-        netValueUsd={borrowSnapshot.totalCollateralUsd - borrowSnapshot.totalBorrowedUsd}
+        // Single Net Value definition = the metric builder's (collateral − debt + returned-LP).
+        // The old ad-hoc `collateral − debt` here ignored LP returned to the wallet on a
+        // collateral withdrawal, so the header wrongly dropped when value just moved buckets —
+        // and it disagreed with the hero, which counts that returned LP via productBalances.
+        netValueUsd={borrowDashboardMetrics.overview.netValueUsd}
         totalBorrowedUsd={borrowSnapshot.totalBorrowedUsd}
         netApyPct={borrowDashboardMetrics.performance.netApyPct}
         totalCollateralUsd={borrowSnapshot.totalCollateralUsd}

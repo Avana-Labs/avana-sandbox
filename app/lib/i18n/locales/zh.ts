@@ -1068,6 +1068,8 @@ const dict: TranslationDictionary = {
   "reCLAMM BPT": "reCLAMM BPT",
   "Stable LP tokens": "Stable LP 代币",
   "Change language": "更改语言",
+  "Ask AI": "询问 AI",
+  "Search markets…": "搜索市场…",
   "Search Avana": "搜索 Avana",
   "Search pools, borrow, lend, and more": "搜索资金池、借款、存款等",
   "Search collateral pools, assets to borrow, and assets to lend.": "搜索抵押资金池、可借资产和可存资产。",
@@ -1503,6 +1505,15 @@ const dict: TranslationDictionary = {
     "“安全”表示仅该资产下跌不会导致清算 — 你的其他抵押品可覆盖债务。",
   "How it works": "工作原理",
   "Learn Avana": "了解 Avana",
+  "Dashboard Positions": "仪表盘持仓",
+  "Available to use": "可使用",
+  "Available to deposit": "可存入",
+  "against {pool}": "对 {pool}",
+  Locked: "已锁定",
+  "Merkl Rewards": "Merkl 奖励",
+  "Next rewards": "下一批奖励",
+  "Open on Launch Date": "在发布日开启",
+  "Previous rewards": "上一批奖励",
 }
 
 export default dict

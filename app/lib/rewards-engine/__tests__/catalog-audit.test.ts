@@ -14,12 +14,12 @@ function getTask(taskId: string) {
 }
 
 describe("rewards catalog audit", () => {
-  it("keeps the catalog split at 12 new-user, 15 challenge, and 8 referral tasks", () => {
+  it("keeps the catalog split at 9 new-user, 3 challenge, and 3 referral tasks", () => {
     const tasks = buildDefaultRewardsCatalog(now)
 
-    expect(tasks.filter((task) => task.category === "new_user")).toHaveLength(12)
-    expect(tasks.filter((task) => task.category === "challenge")).toHaveLength(15)
-    expect(tasks.filter((task) => task.category === "referral")).toHaveLength(8)
+    expect(tasks.filter((task) => task.category === "new_user")).toHaveLength(9)
+    expect(tasks.filter((task) => task.category === "challenge")).toHaveLength(3)
+    expect(tasks.filter((task) => task.category === "referral")).toHaveLength(3)
   })
 
   it("builds expirations relative to the evaluation time instead of a fixed calendar anchor", () => {
@@ -68,8 +68,8 @@ describe("rewards catalog audit", () => {
     expect(progress.status).toBe("claimable")
   })
 
-  it("requires five activated referrals for the five-active-crew milestone", () => {
-    const task = getTask("bring-5-active-users")
+  it("requires three activated referrals for the active-crew milestone", () => {
+    const task = getTask("bring-3-active-users")
     const events = buildSandboxCompletionEvents(task.id, wallet, now)
 
     const progress = evaluateTaskProgress({
@@ -81,17 +81,17 @@ describe("rewards catalog audit", () => {
       firstLoginAt: now,
     })
 
-    expect(task.title).toContain("5")
-    expect(progress.progress).toBe(5)
-    expect(progress.target).toBe(5)
+    expect(task.title).toContain("3")
+    expect(progress.progress).toBe(3)
+    expect(progress.target).toBe(3)
     expect(progress.status).toBe("claimable")
   })
 
   it("provides deterministic routes for tracked product quests with clickable CTAs", () => {
-    expect(getTaskDeepLink("use-3-products")).toBe("/lend")
-    expect(getTaskDeepLink("grow-portfolio-10k")).toBe("/lend")
-    expect(getTaskDeepLink("open-8-active-positions")).toBe("/lend")
-    expect(getTaskDeepLink("claim-rewards-5-times")).toBe("/dashboard")
+    expect(getTaskDeepLink("first-lend-deposit")).toBe("/lend")
+    expect(getTaskDeepLink("supply-5k-lend")).toBe("/lend")
+    expect(getTaskDeepLink("first-borrow")).toBe("/borrow")
+    expect(getTaskDeepLink("first-multiply")).toBe("/multiply")
   })
 
   it("completes every non-timer task through its sandbox audit fixture", () => {
