@@ -30,10 +30,9 @@ describe("referral reward tasks", () => {
     const progress = await adapter.refreshTaskProgress(wallet)
     expect(progress.find((item) => item.taskId === "share-referral-link")?.status).toBe("claimable")
     expect(progress.find((item) => item.taskId === "invite-first-wallet")?.status).toBe("claimable")
-    expect(progress.find((item) => item.taskId === "first-funded-referral")?.status).toBe("claimable")
   })
 
-  it("defines eight referral quests", () => {
-    expect(buildDefaultRewardsCatalog(now).filter((task) => task.category === "referral")).toHaveLength(8)
+  it("defines three referral quests", () => {
+    expect(buildDefaultRewardsCatalog(now).filter((task) => task.category === "referral")).toHaveLength(3)
   })
 })

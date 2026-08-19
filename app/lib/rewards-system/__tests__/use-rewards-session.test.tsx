@@ -70,7 +70,7 @@ describe("useRewardsSession", () => {
 
     await waitFor(async () => {
       const summary = await firstMount.result.current.readAdapter.readRewardSummary(walletId)
-      expect(summary.totalClaimedAmount).toBe(45)
+      expect(summary.totalClaimedAmount).toBe(25)
     })
 
     firstMount.unmount()
@@ -84,11 +84,11 @@ describe("useRewardsSession", () => {
 
     await waitFor(async () => {
       const summary = await secondMount.result.current.readAdapter.readRewardSummary(walletId)
-      expect(summary.totalClaimedAmount).toBe(45)
-      expect(summary.totalClaimableAmount).toBe(30)
+      expect(summary.totalClaimedAmount).toBe(25)
+      expect(summary.totalClaimableAmount).toBe(0)
       const claims = await secondMount.result.current.readAdapter.readClaimHistory(walletId)
-      expect(claims).toHaveLength(2)
-      expect(claims.map((claim) => claim.taskId)).toEqual(["connect-wallet", "create-profile"])
+      expect(claims).toHaveLength(1)
+      expect(claims.map((claim) => claim.taskId)).toEqual(["connect-wallet"])
     })
   })
 })

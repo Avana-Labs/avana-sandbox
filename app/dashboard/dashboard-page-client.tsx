@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
-  REWARDS_QUESTS_PER_TAB,
   emptyRewardsQuestsByTab,
+  imageForTask,
   resolveRewardsPromoTab,
   type RewardsPromoTabId,
   type RewardsQuest,
@@ -56,7 +56,7 @@ import { UnderlineTabStrip } from "@/app/components/tab-primitives"
 import { RewardsPromoContent, RewardsQuestSection } from "@/app/dashboard/_rewards-components/quests-tab"
 import Link from "next/link"
 
-type DashboardPromoTabId = Extract<RewardsPromoTabId, "lend" | "borrow" | "multiply" | "referrals">
+type DashboardPromoTabId = Extract<RewardsPromoTabId, "getting-started" | "lend" | "borrow" | "multiply" | "referrals">
 type DashboardAccountTabId = Extract<RewardsPromoTabId, "lend" | "borrow" | "multiply">
 type DashboardTabId = "wallet" | DashboardAccountTabId | "rewards" | "transactions"
 
@@ -70,10 +70,11 @@ const DASHBOARD_TABS: readonly { id: DashboardTabId; label: string }[] = [
 ]
 
 const CURATED_REWARD_TASK_IDS: Record<DashboardPromoTabId, readonly string[]> = {
-  lend: ["review-risk-basics", "favorite-market", "run-first-simulation", "first-lend-deposit", "supply-5k-lend"],
-  borrow: ["first-borrow", "borrow-2k", "use-curve-position", "first-repay"],
-  multiply: ["first-multiply", "4-week-activity-streak", "open-2x-multiply", "first-deleverage"],
-  referrals: ["share-referral-link", "invite-first-wallet", "first-funded-referral", "bring-3-active-users"],
+  "getting-started": ["connect-wallet", "review-risk-basics", "run-first-simulation"],
+  lend: ["first-lend-deposit", "favorite-market", "supply-5k-lend"],
+  borrow: ["first-borrow", "first-repay", "use-curve-position"],
+  multiply: ["first-multiply", "first-deleverage", "use-uniswap-v4-position"],
+  referrals: ["share-referral-link", "invite-first-wallet", "bring-3-active-users"],
 }
 
 function resolveDashboardTab(tab: string | null): DashboardTabId {
@@ -242,6 +243,7 @@ function DashboardRewardsTab({
   onTaskAction: (taskId: string) => Promise<unknown>
 }) {
   const sections: Array<{ id: DashboardPromoTabId; title: string }> = [
+    { id: "getting-started", title: "Getting Started" },
     { id: "lend", title: "Lend Rewards" },
     { id: "borrow", title: "Borrow Rewards" },
     { id: "multiply", title: "Multiply Rewards" },
@@ -282,6 +284,7 @@ function mapTaskToQuest(
             : task.actionLabel,
     category: titleCase(task.tag),
     iconId: tagToIconId(task.tag),
+    image: imageForTask(task.id),
     status: progress.status,
     progressLabel: buildProgressLabel(task, progress, firstLoginAt, now, t, exact),
   }
@@ -411,17 +414,9 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
       return accumulator
     }, emptyRewardsQuestsByTab<RewardCardViewModel>())
 
-    // "Getting started" is no longer its own tab — its quests now lead the Lend tab.
-    grouped.lend = [...grouped["getting-started"], ...grouped.lend]
-    grouped["getting-started"] = []
-
-    // Curate the core product tabs down to the strongest three cards; referrals
-    // keeps the broader cap because that tab is its own funnel.
+    // Each group holds exactly three curated quests; keep the intended order.
     for (const key of Object.keys(grouped) as RewardsPromoTabId[]) {
-      grouped[key] =
-        key === "lend" || key === "borrow" || key === "multiply"
-          ? curateDashboardQuests(key, grouped[key], 3)
-          : grouped[key].slice(0, REWARDS_QUESTS_PER_TAB)
+      grouped[key] = curateDashboardQuests(key, grouped[key], 3)
     }
     return grouped
   }, [tasks, snapshot, state.firstLoginAt, now, t, exact])

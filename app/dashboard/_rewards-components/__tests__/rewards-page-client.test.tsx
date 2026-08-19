@@ -402,7 +402,7 @@ describe("DashboardPageClient", () => {
   it("opens the favorite flow and records the selected market", async () => {
     renderRewardsPage()
 
-    await clickQuestAction("Pick market")
+    await clickQuestAction("Pin market")
     await waitFor(() => expect(screen.getAllByRole("button", { name: "GHO Lend market" }).length).toBeGreaterThan(0))
     await clickQuestAction("GHO Lend market")
 
@@ -425,18 +425,10 @@ describe("DashboardPageClient", () => {
     renderRewardsPage()
 
     await openProductTab("Rewards")
-    await clickQuestAction("Borrow more")
+    // "Repay on Borrow" is the first-repay deep-link quest (available in the seeded
+    // state, which only records a borrow-open) and routes to /borrow.
+    await clickQuestAction("Repay on Borrow")
     await waitFor(() => expect(push).toHaveBeenCalledWith("/borrow"))
-  })
-
-  it("records daily check-ins from challenge tasks", async () => {
-    renderRewardsPage()
-
-    await openProductTab("Rewards")
-    await waitFor(() => expect(screen.getAllByRole("button", { name: "Check in" }).length).toBeGreaterThan(0))
-    await clickQuestAction("Check in")
-
-    await waitFor(() => expect(recordDailyCheckin).toHaveBeenCalledTimes(1))
   })
 
   it("records sandbox tours and routes users to the tour surface", async () => {
@@ -486,19 +478,6 @@ describe("DashboardPageClient", () => {
     await clickQuestAction("Activate next friend")
 
     expect(runReferralSandboxStep).toHaveBeenCalledWith("activate")
-  })
-
-  it("runs the referral fund action through its dialog flow", async () => {
-    renderRewardsPage()
-
-    await openReferralTab()
-    await clickQuestAction("Mark funded")
-    await waitFor(() =>
-      expect(screen.getAllByRole("button", { name: "Mark next friend funded" }).length).toBeGreaterThan(0),
-    )
-    await clickQuestAction("Mark next friend funded")
-
-    expect(runReferralSandboxStep).toHaveBeenCalledWith("fund")
   })
 
   it("opens claimable referral quests in the dialog and claims from there", async () => {

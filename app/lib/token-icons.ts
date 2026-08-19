@@ -8,6 +8,12 @@ export type TokenIconMeta = {
 }
 
 const TOKEN_MAP: Record<string, TokenIconMeta> = {
+  AVA: {
+    symbol: "AVA",
+    iconUrl: getLocalAssetIcon("AVA"),
+    bgClass: "bg-sky-100",
+    textClass: "text-sky-700",
+  },
   USDC: {
     symbol: "USDC",
     iconUrl: getLocalAssetIcon("USDC"),
