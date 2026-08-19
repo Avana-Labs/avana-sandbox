@@ -1442,6 +1442,8 @@ const dict: TranslationDictionary = {
   "How it works": "작동 방식",
   "Learn Avana": "Avana 알아보기",
   "Dashboard Positions": "대시보드 포지션",
+  "Available to use": "사용 가능",
+  "Available to deposit": "예치 가능",
   "against {pool}": "{pool} 대상",
   Locked: "잠김",
   "Merkl Rewards": "Merkl 리워드",

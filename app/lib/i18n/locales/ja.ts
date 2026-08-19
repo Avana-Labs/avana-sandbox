@@ -1509,6 +1509,8 @@ const dict: TranslationDictionary = {
   "How it works": "仕組み",
   "Learn Avana": "Avana を学ぶ",
   "Dashboard Positions": "ダッシュボードのポジション",
+  "Available to use": "利用可能",
+  "Available to deposit": "預入可能",
   "against {pool}": "{pool} に対して",
   Locked: "ロック中",
   "Merkl Rewards": "Merkl リワード",
