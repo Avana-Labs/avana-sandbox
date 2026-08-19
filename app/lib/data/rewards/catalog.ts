@@ -66,6 +66,7 @@ const REWARDS_IMAGE_BY_TASK_ID: Record<string, string> = {
   "first-repay": "/asset-rewards/10.png",
   "first-multiply": "/asset-rewards/7.png",
   "first-deleverage": "/asset-rewards/15.png",
+  "favorite-market": "/asset-rewards/11.png",
 }
 
 export function imageForTask(taskId: string): string | undefined {
