@@ -23,11 +23,8 @@ function formatAvaAmount(amount: number) {
 function ScratchArt() {
   const patternId = useId()
   return (
-    <div
-      className="relative h-24 w-24 overflow-hidden rounded-radius-md bg-muted ring-1 ring-inset ring-border/60"
-      aria-hidden
-    >
-      {/* Everything inside the frame gets a soft frost — the outer ring stays crisp. */}
+    <div className="relative h-24 w-24 overflow-hidden rounded-full" aria-hidden>
+      {/* Soft-edged frost so the texture bleeds into the card, no hard outline. */}
       <div className="absolute inset-0 blur-[1.5px]">
         {/* Metallic silver base — a diagonal grayscale gradient. */}
         <div className="absolute inset-0 bg-gradient-to-br from-foreground/[0.08] via-foreground/[0.03] to-foreground/20" />
@@ -73,6 +70,13 @@ function ScratchArt() {
           }}
         />
       </div>
+      {/* Feathered edge — vignette in the card color so the disc melts into the surface. */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background: "radial-gradient(circle at center, transparent 45%, hsl(var(--card)) 95%)",
+        }}
+      />
     </div>
   )
 }
