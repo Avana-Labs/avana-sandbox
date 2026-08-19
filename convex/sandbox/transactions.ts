@@ -1980,13 +1980,11 @@ export const getPortfolio = query({
 })
 
 /**
- * Blended portfolio Net APY, value-weighted across the wallet's productive legs
- * using the rates already stored on each position (lend `supplyApyPct`, multiply
- * `netApyPct`, umbrella `supplyApyPct`) plus the collateral pair APR from `pools`
- * for borrow legs. Home-seed borrow collateral that has no live `positions` row
- * yet is folded in on the same basis appendPortfolioSnapshot uses for value, so
- * the APY reconciles with the Net Value shown beside it. Computed read-time, so
- * it always reflects current rates without a stored/backfilled field.
+ * Blended portfolio Net APY for the dashboard, value-weighted by NET equity across the
+ * wallet's productive legs — lend (`supplyApyPct`), multiply (`netApyPct`), and borrow
+ * (collateral pair APR from `pools`). Home-seed borrow collateral with no live `positions`
+ * row is folded in on the same basis. UMBRELLA IS EXCLUDED (own page, not a dashboard
+ * figure). Computed read-time, so it always reflects current rates without a stored field.
  */
 async function computePortfolioNetApyPct(
   ctx: QueryCtx,
@@ -2019,21 +2017,22 @@ async function computePortfolioNetApyPct(
       .map((pool) => [pool.slug, pool.pairAprPct] as const),
   )
 
+  // Value-weighted by NET equity (collateral − debt), matching how Net Value is built, so the
+  // two headlines tell the same story. UMBRELLA IS EXCLUDED — it is not part of the dashboard
+  // (it has its own page), so it must not contribute to the global Net APY.
   const legs: Array<{ weight: number; rate: number }> = []
   for (const position of open) {
     if (position.product === "lend") {
       const base = usd6Number(position.suppliedUsd6)
       if (base > 0) legs.push({ weight: base, rate: position.supplyApyPct ?? 0 })
     } else if (position.product === "multiply") {
-      const base = position.collateralValueUsd ?? 0
+      const base = (position.collateralValueUsd ?? 0) - (position.debtValueUsd ?? 0)
       if (base > 0) legs.push({ weight: base, rate: position.netApyPct ?? 0 })
     } else if (position.product === "borrow") {
-      const base = usd6Number(position.collateralValueUsd6)
+      const base = usd6Number(position.collateralValueUsd6) - usd6Number(position.debtValueUsd6)
       if (base > 0) legs.push({ weight: base, rate: pairAprBySlug.get(position.marketSlug) ?? 0 })
-    } else if (position.product === "umbrella") {
-      const base = usd6Number(position.suppliedUsd6)
-      if (base > 0) legs.push({ weight: base, rate: position.supplyApyPct ?? 0 })
     }
+    // product === "umbrella": intentionally skipped.
   }
   // Home-seed borrow collateral not yet represented by a live position.
   for (const row of walletCollateral) {
