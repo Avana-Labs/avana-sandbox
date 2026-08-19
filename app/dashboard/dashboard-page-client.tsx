@@ -618,7 +618,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
         {healthRisk ? <HealthRiskBanner healthFactor={healthRisk.hf} product={healthRisk.product} /> : null}
         <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-20">
           <div className="min-w-0 pb-8 lg:col-span-2">
-            <PortfolioStatCards />
+            <PortfolioStatCards activeTab={activeDashboardTab} />
           </div>
 
           <aside className="min-w-0 pt-8 lg:col-start-2 lg:row-start-2">

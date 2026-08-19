@@ -19,6 +19,7 @@ import { useAvanaIdentity } from "@/app/lib/avana-session/avana-sessions-provide
 import { buildDashboardWalletBalanceRows } from "@/app/lib/swap-system"
 import { useConvexProductWalletBalances } from "@/app/lib/swap-system/use-convex-wallet-balances"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { DashboardQuickActions, type DashboardQuickActionsTab } from "./dashboard-quick-actions"
 import { HIDDEN_WALLET_SOURCE_TYPES, sumWalletValueUsd } from "./dashboard-wallet-tab"
 
 const MASK = "••••"
@@ -232,7 +233,7 @@ function StatCardView({ card, graphPath }: { card: StatCard; graphPath: string }
   )
 }
 
-export function PortfolioStatCards() {
+export function PortfolioStatCards({ activeTab }: { activeTab?: DashboardQuickActionsTab }) {
   const { t } = useTranslation()
   const { showDollarAmounts, setShowDollarAmounts } = useAmountDisplayPreferences()
   const { scrollerRef, canPrev, canNext, scrollByCard } = useOverflowCarousel()
@@ -256,15 +257,21 @@ export function PortfolioStatCards() {
             {showDollarAmounts ? <Eye className="size-[22px]" /> : <EyeOff className="size-[22px]" />}
           </button>
         </div>
+        {/* Desktop-only quick actions — mobile shows them above the rewards summary instead. */}
+        <div className="hidden lg:block">
+          <DashboardQuickActions activeTab={activeTab} />
+        </div>
         {canPrev || canNext ? (
-          <CarouselArrowButtons
-            canPrev={canPrev}
-            canNext={canNext}
-            onPrev={() => scrollByCard(-1)}
-            onNext={() => scrollByCard(1)}
-            prevLabel={t("Previous")}
-            nextLabel={t("Next")}
-          />
+          <div className="lg:hidden">
+            <CarouselArrowButtons
+              canPrev={canPrev}
+              canNext={canNext}
+              onPrev={() => scrollByCard(-1)}
+              onNext={() => scrollByCard(1)}
+              prevLabel={t("Previous")}
+              nextLabel={t("Next")}
+            />
+          </div>
         ) : null}
       </div>
 
