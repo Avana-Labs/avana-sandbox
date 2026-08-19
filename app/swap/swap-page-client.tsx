@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
+import { SwapAssetIcon } from "@/app/swap/swap-asset-icon"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
@@ -478,7 +478,7 @@ function SwapAssetField({
           aria-label={`${label} asset`}
           className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-medium text-foreground hover:bg-surface-hover max-[360px]:self-end"
         >
-          <ActionTokenIcon symbol={asset.symbol} className="size-8" />
+          <SwapAssetIcon asset={asset} className="size-8" />
           <span>{asset.symbol}</span>
           <span aria-hidden className="text-muted-foreground">
             ▾
