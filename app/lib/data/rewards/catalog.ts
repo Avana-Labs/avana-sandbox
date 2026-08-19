@@ -59,6 +59,7 @@ const REWARDS_TAB_BY_TASK_ID: Record<string, RewardsPromoTabId> = {
 const REWARDS_IMAGE_BY_TASK_ID: Record<string, string> = {
   "connect-wallet": "/asset-rewards/2.png",
   "review-risk-basics": "/asset-rewards/1.png",
+  "run-first-simulation": "/asset-rewards/13.png",
 }
 
 export function imageForTask(taskId: string): string | undefined {
