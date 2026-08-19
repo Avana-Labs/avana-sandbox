@@ -109,10 +109,10 @@ export function PortfolioRewardsCards({
   const { t } = useTranslation()
   const { showDollarAmounts } = useAmountDisplayPreferences()
   return (
-    <section className="min-w-0 space-y-4">
+    <section className="min-w-0">
       {/* Mobile only — the desktop rail lives in the "Your Dashboard" header. */}
       {showQuickActions ? (
-        <div className="lg:hidden">
+        <div className="mb-3 lg:hidden">
           <DashboardQuickActions activeTab={activeTab} />
         </div>
       ) : null}
