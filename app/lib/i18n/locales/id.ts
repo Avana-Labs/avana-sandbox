@@ -1469,6 +1469,7 @@ const dict: TranslationDictionary = {
     "“Aman” berarti penurunan aset itu saja tidak dapat melikuidasi Anda — agunan lain menutupi utang.",
   "How it works": "Cara kerjanya",
   "Learn Avana": "Pelajari Avana",
+  "Dashboard Positions": "Posisi Dasbor",
   Locked: "Terkunci",
   "Merkl Rewards": "Hadiah Merkl",
   "Next rewards": "Hadiah berikutnya",

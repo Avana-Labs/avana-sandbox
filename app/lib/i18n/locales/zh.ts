@@ -1505,6 +1505,7 @@ const dict: TranslationDictionary = {
     "“安全”表示仅该资产下跌不会导致清算 — 你的其他抵押品可覆盖债务。",
   "How it works": "工作原理",
   "Learn Avana": "了解 Avana",
+  "Dashboard Positions": "仪表盘持仓",
   Locked: "已锁定",
   "Merkl Rewards": "Merkl 奖励",
   "Next rewards": "下一批奖励",
