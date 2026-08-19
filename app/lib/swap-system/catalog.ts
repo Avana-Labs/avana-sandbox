@@ -133,6 +133,7 @@ export const SWAP_ASSETS: SwapAsset[] = [
     priceUsd: 125,
     minimumSwapAmount: 0,
     maximumSwapAmount: 0,
+    lpUnderlyingSymbols: ["ETH", "USDC"],
   },
 ]
 
