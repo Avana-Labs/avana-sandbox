@@ -19,7 +19,9 @@ describe("Ask AI thread ownership", () => {
     const owner = t.withIdentity({ subject: "ask-guest:owner" })
     const thread = await owner.mutation(api.askAI.create, {})
 
-    await expect(owner.mutation(api.askAI.rename, { threadId: thread.threadId, title: "  ETH   risk\nreview  " })).resolves.toEqual({
+    await expect(
+      owner.mutation(api.askAI.rename, { threadId: thread.threadId, title: "  ETH   risk\nreview  " }),
+    ).resolves.toEqual({
       threadId: thread.threadId,
       title: "ETH risk review",
     })
