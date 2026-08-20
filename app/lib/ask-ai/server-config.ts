@@ -16,7 +16,8 @@ export function getAskAIServerConfig() {
     providers: {
       openAIConfigured: Boolean(process.env.OPENAI_API_KEY),
       coinGeckoConfigured: Boolean(process.env.COINGECKO_API_KEY),
-      uniswapGraphConfigured: Boolean(process.env.UNISWAP_GRAPH_API_KEY),
+      // Uniswap ingestion works with either the API key (URL built from it) or an explicit endpoint.
+      uniswapConfigured: Boolean(process.env.UNISWAP_API_KEY || process.env.ASK_AI_UNISWAP_GRAPH_URL),
     },
   }
 }
