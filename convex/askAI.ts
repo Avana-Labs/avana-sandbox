@@ -1,4 +1,4 @@
-import { createThread, listUIMessages, saveMessage } from "@convex-dev/agent"
+import { createThread, listUIMessages, saveMessage, syncStreams, vStreamArgs } from "@convex-dev/agent"
 import { RateLimiter } from "@convex-dev/rate-limiter"
 import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
@@ -103,18 +103,23 @@ export const listPage = query({
 })
 
 export const messages = query({
-  args: { threadId: v.string(), paginationOpts: paginationOptsValidator },
+  args: { threadId: v.string(), paginationOpts: paginationOptsValidator, streamArgs: vStreamArgs },
   handler: async (ctx, args) => {
     await requireOwnedThread(ctx, args.threadId)
-    const [result, richRows] = await Promise.all([
+    const [result, richRows, streams] = await Promise.all([
       listUIMessages(ctx, components.agent, args),
       ctx.db
         .query("askAIMessageParts")
         .withIndex("by_thread", (q) => q.eq("threadId", args.threadId))
         .collect(),
+      syncStreams(ctx, components.agent, args),
     ])
     const richByMessage = new Map(richRows.map((row) => [row.messageId, row.parts]))
-    return { ...result, page: result.page.map((message) => ({ ...message, richParts: richByMessage.get(message.id) })) }
+    return {
+      ...result,
+      page: result.page.map((message) => ({ ...message, richParts: richByMessage.get(message.id) })),
+      streams,
+    }
   },
 })
 
