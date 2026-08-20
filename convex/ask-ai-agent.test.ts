@@ -31,4 +31,17 @@ describe("Ask AI generated-turn lifecycle", () => {
       }),
     ).rejects.toThrow("Thread not found")
   })
+
+  test("message queries accept stream cursors before a stream exists", async () => {
+    const t = askAITest()
+    const owner = t.withIdentity({ subject: "ask-guest:stream-owner" })
+    const thread = await owner.mutation(api.askAI.create, {})
+
+    await expect(
+      owner.query(api.askAI.messages, {
+        threadId: thread.threadId,
+        paginationOpts: { cursor: null, numItems: 20 },
+      }),
+    ).resolves.toMatchObject({ page: [], isDone: true })
+  })
 })

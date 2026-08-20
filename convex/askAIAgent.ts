@@ -55,7 +55,7 @@ export const generateTurn = action({
   handler: async (ctx, args) => {
     const turn = await ctx.runMutation(api.askAI.beginTurn, args)
     try {
-      const result = await askAIAgent.generateText(
+      const result = await askAIAgent.streamText(
         ctx,
         { threadId: args.threadId, userId: turn.ownerSubject },
         {
@@ -63,13 +63,21 @@ export const generateTurn = action({
           instructions: `${ASK_AI_AGENT_INSTRUCTIONS}\n\nAuthoritative Avana context for this turn:\n${turn.grounding}`,
           maxOutputTokens: ASK_AI_CONFIG.maxOutputTokens,
         },
+        {
+          saveStreamDeltas: {
+            chunking: "word",
+            throttleMs: ASK_AI_CONFIG.streamThrottleMs,
+          },
+        },
       )
+      await result.consumeStream()
       const assistantMessage = result.savedMessages?.findLast((message) => message.message?.role === "assistant")
       if (!assistantMessage) throw new Error("Ask AI did not persist an assistant response")
+      const providerUsage = await result.usage
       const usage = {
-        inputTokens: result.usage.inputTokens ?? 0,
-        outputTokens: result.usage.outputTokens ?? 0,
-        totalTokens: result.usage.totalTokens ?? 0,
+        inputTokens: providerUsage.inputTokens ?? 0,
+        outputTokens: providerUsage.outputTokens ?? 0,
+        totalTokens: providerUsage.totalTokens ?? 0,
       }
       await ctx.runMutation(api.askAI.completeGeneratedTurn, {
         threadId: args.threadId,
@@ -84,7 +92,12 @@ export const generateTurn = action({
           usage,
         },
       })
-      return { text: result.text, promptMessageId: turn.messageId, assistantMessageId: assistantMessage._id, usage }
+      return {
+        text: await result.text,
+        promptMessageId: turn.messageId,
+        assistantMessageId: assistantMessage._id,
+        usage,
+      }
     } catch (error) {
       await ctx.runMutation(api.askAI.failTurn, {
         threadId: args.threadId,
