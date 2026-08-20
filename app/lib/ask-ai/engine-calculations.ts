@@ -55,6 +55,43 @@ export function calculateMultiplyStress(params: {
   }
 }
 
+export function calculateAskAICollateralStress(params: {
+  collateralValueUsd: number
+  debtValueUsd: number
+  liquidationThresholdPct: number
+  constituents: Array<{ symbol: string; weight: number }>
+  assetPriceChanges: Record<string, number>
+}) {
+  const normalizedChanges = new Map(
+    Object.entries(params.assetPriceChanges).map(([symbol, change]) => [symbol.toUpperCase(), change]),
+  )
+  const modeled = params.constituents.filter((constituent) => normalizedChanges.has(constituent.symbol.toUpperCase()))
+  if (modeled.length === 0) throw new Error("The scenario does not match this position's collateral assets")
+  const weightedChange = params.constituents.reduce(
+    (total, constituent) => total + constituent.weight * (normalizedChanges.get(constituent.symbol.toUpperCase()) ?? 0),
+    0,
+  )
+  const shockedCollateralValueUsd = Math.max(0, params.collateralValueUsd * (1 + weightedChange))
+  const currentLtv = params.collateralValueUsd > 0 ? params.debtValueUsd / params.collateralValueUsd : 0
+  const projectedLtv = shockedCollateralValueUsd > 0 ? params.debtValueUsd / shockedCollateralValueUsd : Number.POSITIVE_INFINITY
+  const currentHealthFactor =
+    params.debtValueUsd > 0
+      ? (params.collateralValueUsd * (params.liquidationThresholdPct / 100)) / params.debtValueUsd
+      : null
+  const projectedHealthFactor =
+    params.debtValueUsd > 0
+      ? (shockedCollateralValueUsd * (params.liquidationThresholdPct / 100)) / params.debtValueUsd
+      : null
+  return {
+    assetPriceChanges: Object.fromEntries(normalizedChanges),
+    weightedCollateralChange: weightedChange,
+    current: { collateralValueUsd: params.collateralValueUsd, debtValueUsd: params.debtValueUsd, ltv: currentLtv, healthFactor: currentHealthFactor },
+    projected: { collateralValueUsd: shockedCollateralValueUsd, debtValueUsd: params.debtValueUsd, ltv: projectedLtv, healthFactor: projectedHealthFactor },
+    liquidationThresholdPct: params.liquidationThresholdPct,
+    liquidatable: projectedHealthFactor !== null && projectedHealthFactor <= 1,
+  }
+}
+
 export function calculateAskAIBorrowSimulation(params: {
   collateralValueUsd: number
   debtValueUsd: number

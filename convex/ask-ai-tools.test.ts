@@ -79,4 +79,33 @@ describe("Ask AI authenticated portfolio tools", () => {
     })
     await expect(t.run(async (ctx) => ctx.db.get(positionId))).resolves.toMatchObject({ debtValueUsd: 3_500 })
   })
+
+  test("stress-tests the owned position with the requested shock", async () => {
+    const t = convexTest(schema, modules)
+    const positionId = await seedPosition(t, WALLET_A, "eth-usdc")
+    await t.run(async (ctx) =>
+      ctx.db.insert("multiplyTokenParameters", {
+        symbol: "ETH",
+        supplyApyPct: 3,
+        borrowAprPct: 5,
+        availableUsd: 1_000_000,
+        collateralFactorPct: 55,
+        liquidationThresholdPct: 65,
+        iconUrl: "/eth.svg",
+        updatedAt: 1,
+      }),
+    )
+
+    await expect(
+      t.withIdentity({ subject: WALLET_A }).query(api.askAITools.stressPosition, {
+        positionId,
+        assetPriceChanges: [{ symbol: "ETH", change: -0.2 }],
+      }),
+    ).resolves.toMatchObject({
+      simulation: {
+        weightedCollateralChange: -0.2,
+        projected: { collateralValueUsd: 8_000, debtValueUsd: 3_500 },
+      },
+    })
+  })
 })

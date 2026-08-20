@@ -4,6 +4,7 @@ import type { AskAIMarketSource } from "../app/lib/ask-ai/providers/contracts"
 import {
   calculateLendProjection,
   calculateAskAIBorrowSimulation,
+  calculateAskAICollateralStress,
   calculateMultiplyStress,
   decodeBorrowRiskSnapshot,
   deriveAskAIUmbrellaStatus,
@@ -250,6 +251,47 @@ export const simulateBorrow = query({
         debtValueUsd,
         additionalBorrowAmountUsd: additionalBorrowAmount,
         maxLtvPct: market.maxLtvPct,
+      }),
+      asOf: position.lastUpdatedAt,
+    }
+  },
+})
+
+export const stressPosition = query({
+  args: {
+    positionId: v.string(),
+    assetPriceChanges: v.array(v.object({ symbol: v.string(), change: v.number() })),
+  },
+  handler: async (ctx, { positionId, assetPriceChanges }) => {
+    if (assetPriceChanges.length < 1 || assetPriceChanges.length > 8) throw new Error("Provide 1 to 8 asset price changes")
+    for (const item of assetPriceChanges)
+      if (!Number.isFinite(item.change) || item.change < -0.95 || item.change > 1)
+        throw new Error("Asset price change must be between -0.95 and 1")
+    const wallet = await getAuthedWallet(ctx)
+    if (!wallet) return { walletRequired: true as const, message: ASK_AI_WALLET_REQUIRED }
+    const positions = await ctx.db.query("positions").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect()
+    const position = positions.find((row) => row._id === positionId && row.status === "open")
+    if (!position) throw new Error("Position not found")
+    const market = (await ctx.db.query("markets").collect()).find((row) => row.slug === position.marketSlug)
+    const parameter = position.assetId
+      ? await ctx.db
+          .query("multiplyTokenParameters")
+          .withIndex("by_symbol", (q) => q.eq("symbol", position.assetId!))
+          .unique()
+      : null
+    const constituents = market?.constituents ?? (position.assetId ? [{ symbol: position.assetId, weight: 1 }] : [])
+    const liquidationThresholdPct = parameter?.liquidationThresholdPct
+    if (constituents.length === 0 || liquidationThresholdPct === undefined)
+      throw new Error("Position risk parameters are unavailable")
+    return {
+      walletRequired: false as const,
+      positionId,
+      simulation: calculateAskAICollateralStress({
+        collateralValueUsd: position.collateralValueUsd ?? Number(position.collateralValueUsd6 ?? "0") / 1_000_000,
+        debtValueUsd: position.debtValueUsd ?? Number(position.debtValueUsd6 ?? "0") / 1_000_000,
+        liquidationThresholdPct,
+        constituents,
+        assetPriceChanges: Object.fromEntries(assetPriceChanges.map(({ symbol, change }) => [symbol.toUpperCase(), change])),
       }),
       asOf: position.lastUpdatedAt,
     }
