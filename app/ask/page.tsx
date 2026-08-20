@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { AskAIPageClient } from "./ask-ai-page-client"
+import { AskPageClient } from "./ask-page-client"
 
 export const metadata: Metadata = {
   title: "Ask AI",
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 }
 
 export default function AskAIPage() {
-  return <AskAIPageClient />
+  return <AskPageClient />
 }
