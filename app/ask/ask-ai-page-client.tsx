@@ -218,9 +218,9 @@ function persistedAssistantParts(messageId: string, text: string, rich?: Persist
 
 export function AskAIPageClient() {
   const [threadsOpen, setThreadsOpen] = useState(false)
-  const [activeThreadId, setActiveThreadId] = useState<string | null>(() =>
-    typeof window === "undefined" ? null : window.sessionStorage.getItem(ACTIVE_THREAD_STORAGE_KEY),
-  )
+  // Start null on both server and client (avoids a hydration mismatch); the stored thread is
+  // restored from sessionStorage in an effect after mount.
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
   const [pendingTurn, setPendingTurn] = useState<PendingTurn | null>(null)
   const messageAttachments = useRef<string[]>([])
   const {
@@ -268,6 +268,10 @@ export function AskAIPageClient() {
     sync()
     desktop.addEventListener("change", sync)
     return () => desktop.removeEventListener("change", sync)
+  }, [])
+  useEffect(() => {
+    const stored = window.sessionStorage.getItem(ACTIVE_THREAD_STORAGE_KEY)
+    if (stored) setActiveThreadId(stored)
   }, [])
   useEffect(() => {
     if (threadPageStatus === "LoadingFirstPage") return
@@ -366,6 +370,15 @@ export function AskAIPageClient() {
     const thread = await createThread({})
     setActiveThreadId(thread.threadId)
   }, [createThread])
+
+  // Guarantees a thread exists (creating one on demand), so voice input works from an empty
+  // "New Chat" the same way the composer and attachments do.
+  const ensureThread = useCallback(async () => {
+    if (resolvedActiveThreadId) return resolvedActiveThreadId
+    const created = await createThread({})
+    setActiveThreadId(created.threadId)
+    return created.threadId
+  }, [resolvedActiveThreadId, createThread])
 
   const sendPrompt = useCallback(
     async (prompt: string) => {
@@ -529,6 +542,7 @@ export function AskAIPageClient() {
           threadsOpen={threadsOpen}
           onToggleThreads={() => setThreadsOpen((open) => !open)}
           threadId={resolvedActiveThreadId}
+          onEnsureThread={ensureThread}
           usage={
             (
               messageResults.findLast(
