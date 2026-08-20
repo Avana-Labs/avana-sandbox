@@ -440,3 +440,11 @@ export const rename = mutation({
     return { threadId, title: nextTitle }
   },
 })
+
+export const unarchive = mutation({
+  args: { threadId: v.string() },
+  handler: async (ctx, { threadId }) => {
+    const { thread } = await requireOwnedThread(ctx, threadId)
+    await ctx.db.patch(thread._id, { status: "active", updatedAt: Date.now() })
+  },
+})

@@ -1,6 +1,6 @@
 "use client"
 
-import { Check, Pencil, X } from "lucide-react"
+import { Archive, ArchiveRestore, Check, Pencil, X } from "lucide-react"
 import { useState } from "react"
 import { QuotaBanner } from "@/components/elements/quota-banner"
 
@@ -17,6 +17,9 @@ export function AskAIThreadList({
   onNewThread,
   onSelectThread,
   onRenameThread,
+  archivedThreads,
+  onArchiveThread,
+  onUnarchiveThread,
   quota,
 }: {
   open: boolean
@@ -26,10 +29,14 @@ export function AskAIThreadList({
   onNewThread: () => Promise<void>
   onSelectThread: (threadId: string) => void
   onRenameThread: (threadId: string, title: string) => Promise<void>
+  archivedThreads: AskAIThreadSummary[]
+  onArchiveThread: (threadId: string) => Promise<void>
+  onUnarchiveThread: (threadId: string) => Promise<void>
   quota?: { used: number; limit: number; resetsAt: number }
 }) {
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [draftTitle, setDraftTitle] = useState("")
+  const [showArchived, setShowArchived] = useState(false)
   return (
     <>
       {open ? (
@@ -121,11 +128,48 @@ export function AskAIThreadList({
                     >
                       <Pencil className="size-3.5" />
                     </button>
+                    <button
+                      type="button"
+                      aria-label={`Archive ${thread.title}`}
+                      onClick={() => void onArchiveThread(thread.threadId)}
+                      className="mr-1 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 hover:text-foreground focus:opacity-100 group-hover:opacity-100"
+                    >
+                      <Archive className="size-3.5" />
+                    </button>
                   </div>
                 ),
               )}
             </div>
           )}
+          {archivedThreads.length > 0 ? (
+            <div className="mt-5 border-t border-border/50 pt-3">
+              <button
+                type="button"
+                aria-expanded={showArchived}
+                onClick={() => setShowArchived((current) => !current)}
+                className="px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                Archived ({archivedThreads.length})
+              </button>
+              {showArchived ? (
+                <div className="mt-1 flex flex-col gap-0.5">
+                  {archivedThreads.map((thread) => (
+                    <div key={thread.threadId} className="group flex h-8 items-center rounded-md hover:bg-muted">
+                      <span className="min-w-0 flex-1 truncate px-2.5 text-sm text-muted-foreground">{thread.title}</span>
+                      <button
+                        type="button"
+                        aria-label={`Restore ${thread.title}`}
+                        onClick={() => void onUnarchiveThread(thread.threadId)}
+                        className="mr-1 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
+                      >
+                        <ArchiveRestore className="size-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
         {quota ? (
           <QuotaBanner
