@@ -2,6 +2,7 @@
 
 import {
   AssistantRuntimeProvider,
+  type AttachmentAdapter,
   type AppendMessage,
   type ThreadAssistantMessagePart,
   type ThreadMessage,
@@ -9,7 +10,8 @@ import {
 } from "@assistant-ui/react"
 import { useUIMessages } from "@convex-dev/agent/react"
 import { useAction, useMutation, usePaginatedQuery, useQuery } from "convex/react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import type { Id } from "@/convex/_generated/dataModel"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { AskAIUsage } from "@/app/lib/ask-ai/chat-protocol"
 import { api } from "@/convex/_generated/api"
 import { AskAIThread } from "./components/ask-ai-thread"
@@ -68,6 +70,7 @@ export function AskAIPageClient() {
     typeof window === "undefined" ? null : window.sessionStorage.getItem(ACTIVE_THREAD_STORAGE_KEY),
   )
   const [pendingTurn, setPendingTurn] = useState<PendingTurn | null>(null)
+  const messageAttachments = useRef<string[]>([])
   const {
     results: threads,
     status: threadPageStatus,
@@ -85,6 +88,10 @@ export function AskAIPageClient() {
   const archiveThread = useMutation(api.askAI.archive)
   const unarchiveThread = useMutation(api.askAI.unarchive)
   const generateTurn = useAction(api.askAIAgent.generateTurn)
+  const generateUploadUrl = useMutation(api.askAIAttachments.generateUploadUrl)
+  const registerAttachment = useMutation(api.askAIAttachments.register)
+  const processAttachment = useAction(api.askAIAttachments.process)
+  const removeAttachment = useMutation(api.askAIAttachments.remove)
   const {
     results: messageResults,
     status: messagePageStatus,
@@ -112,6 +119,62 @@ export function AskAIPageClient() {
     if (activeThreadId) window.sessionStorage.setItem(ACTIVE_THREAD_STORAGE_KEY, activeThreadId)
     else window.sessionStorage.removeItem(ACTIVE_THREAD_STORAGE_KEY)
   }, [activeThreadId])
+
+  const attachmentAdapter = useMemo<AttachmentAdapter>(
+    () => ({
+      accept: ".pdf,.txt,.md,.csv,.json,.png,.jpg,.jpeg,.webp",
+      add: async ({ file }) => {
+        let threadId = resolvedActiveThreadId
+        if (!threadId) {
+          const thread = await createThread({})
+          threadId = thread.threadId
+          setActiveThreadId(threadId)
+        }
+        const uploadUrl = await generateUploadUrl({})
+        const upload = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": file.type || "application/octet-stream" },
+          body: file,
+        })
+        if (!upload.ok) throw new Error("Attachment upload failed")
+        const { storageId } = (await upload.json()) as { storageId: Id<"_storage"> }
+        const attachmentId = await registerAttachment({ threadId, storageId, name: file.name })
+        await processAttachment({ attachmentId })
+        return {
+          id: attachmentId,
+          type: file.type.startsWith("image/") ? "image" : "document",
+          name: file.name,
+          contentType: file.type,
+          file,
+          status: { type: "requires-action", reason: "composer-send" },
+        }
+      },
+      remove: async (attachment) => {
+        await removeAttachment({ attachmentId: attachment.id as Id<"askAIAttachments"> })
+      },
+      send: async (attachment) => ({
+        ...attachment,
+        status: { type: "complete" },
+        content: [
+          {
+            type: "file",
+            data: attachment.id,
+            mimeType: attachment.contentType || "application/octet-stream",
+            filename: attachment.name,
+            sourceType: "id",
+          },
+        ],
+      }),
+    }),
+    [
+      createThread,
+      generateUploadUrl,
+      processAttachment,
+      registerAttachment,
+      removeAttachment,
+      resolvedActiveThreadId,
+    ],
+  )
 
   const persistedMessages = useMemo<ThreadMessage[]>(
     () =>
@@ -159,7 +222,12 @@ export function AskAIPageClient() {
       const turnId = crypto.randomUUID()
       setPendingTurn({ id: turnId, prompt, startedAt: Date.now() })
       try {
-        await generateTurn({ threadId, prompt, retryPromptMessageId })
+        await generateTurn({
+          threadId,
+          prompt,
+          retryPromptMessageId,
+          attachmentIds: (messageAttachments.current ?? []) as Id<"askAIAttachments">[],
+        })
         setPendingTurn((current) => (current?.id === turnId ? null : current))
       } catch (error) {
         setPendingTurn((current) =>
@@ -182,7 +250,9 @@ export function AskAIPageClient() {
         .map((part) => part.text)
         .join("\n")
         .trim()
+      messageAttachments.current = message.attachments?.map((attachment) => attachment.id) ?? []
       await sendPrompt(prompt)
+      messageAttachments.current = []
     },
     [sendPrompt],
   )
@@ -227,6 +297,7 @@ export function AskAIPageClient() {
       setPendingTurn(null)
       await sendPrompt(prompt)
     },
+    adapters: { attachments: attachmentAdapter },
     suggestions: [
       { prompt: "How much can I borrow?" },
       { prompt: "Analyze my positions" },

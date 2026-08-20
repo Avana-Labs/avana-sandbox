@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  AttachmentPrimitive,
   AuiIf,
   ComposerPrimitive,
   type DataMessagePartProps,
@@ -12,7 +13,7 @@ import {
   useAuiState,
 } from "@assistant-ui/react"
 import { useMutation } from "convex/react"
-import { Check, Copy, Square, ThumbsDown, ThumbsUp } from "lucide-react"
+import { Check, Copy, Paperclip, Square, ThumbsDown, ThumbsUp, X } from "lucide-react"
 import { createContext, useContext, useRef, useState } from "react"
 import { CircleArrowUp, Code2, PieChart, Sparkles, SunMedium, TrendingUp } from "@/app/components/icons"
 import { ASK_AI_CONFIG } from "@/app/lib/ask-ai/config"
@@ -286,6 +287,22 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
     <ComposerPrimitive.Root className="relative flex w-full flex-col">
       <ElementComposer className="max-w-none">
         <ComposerBar className="cursor-text bg-card focus-within:border-border">
+          <ComposerPrimitive.Attachments>
+            {() => (
+              <AttachmentPrimitive.Root className="mx-2 mt-2 inline-flex max-w-full items-center gap-2 rounded-xl border border-border/70 bg-muted/40 px-3 py-1.5 text-xs">
+                <Paperclip className="size-3.5 shrink-0 text-muted-foreground" />
+                <span className="max-w-52 truncate">
+                  <AttachmentPrimitive.Name />
+                </span>
+                <AttachmentPrimitive.Remove
+                  aria-label="Remove attachment"
+                  className="inline-flex size-5 items-center justify-center rounded-full hover:bg-muted"
+                >
+                  <X className="size-3" />
+                </AttachmentPrimitive.Remove>
+              </AttachmentPrimitive.Root>
+            )}
+          </ComposerPrimitive.Attachments>
           <ComposerPrimitive.Input
             aria-label="Ask Avana a question"
             placeholder="Send a message... (@ to mention, / for commands)"
@@ -297,6 +314,12 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
           />
           <ComposerToolbar className="relative">
             <ComposerActions>
+              <ComposerPrimitive.AddAttachment
+                aria-label="Add attachment"
+                className="inline-flex size-7 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <Paperclip className="size-4" />
+              </ComposerPrimitive.AddAttachment>
               {usage ? (
                 <ComposerContext
                   usage={{
