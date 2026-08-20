@@ -13,7 +13,7 @@ import {
 } from "@assistant-ui/react"
 import { useMutation } from "convex/react"
 import { Check, Copy, Square, ThumbsDown, ThumbsUp } from "lucide-react"
-import { createContext, useContext, useState } from "react"
+import { createContext, useContext, useRef, useState } from "react"
 import { CircleArrowUp, Code2, PieChart, Sparkles, SunMedium, TrendingUp } from "@/app/components/icons"
 import { ASK_AI_CONFIG } from "@/app/lib/ask-ai/config"
 import { Chart } from "@/components/elements/chart"
@@ -227,6 +227,14 @@ const messageComponents = {
 function Composer({ usage }: { usage?: AskAIUsage }) {
   const aui = useAui()
   const [recording, setRecording] = useState(false)
+  const [voiceError, setVoiceError] = useState<string | null>(null)
+  const voiceRecognition = useRef<{ start: () => void; stop: () => void } | null>(null)
+  const voiceSupported =
+    typeof window !== "undefined" &&
+    Boolean(
+      (window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition ??
+        (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition,
+    )
 
   const toggleVoice = () => {
     type SpeechRecognitionLike = {
@@ -234,16 +242,36 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
       interimResults: boolean
       onresult: (event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void
       onend: () => void
+      onerror: (event: { error?: string }) => void
       start: () => void
+      stop: () => void
     }
-    const SpeechRecognition = (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognitionLike })
-      .webkitSpeechRecognition
+    if (recording) {
+      voiceRecognition.current?.stop()
+      return
+    }
+    const speechWindow = window as unknown as {
+      SpeechRecognition?: new () => SpeechRecognitionLike
+      webkitSpeechRecognition?: new () => SpeechRecognitionLike
+    }
+    const SpeechRecognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition
     if (!SpeechRecognition) return
     const recognition = new SpeechRecognition()
+    voiceRecognition.current = recognition
     recognition.continuous = false
     recognition.interimResults = false
-    recognition.onresult = (event) => aui.composer().setText(event.results[0]?.[0]?.transcript ?? "")
-    recognition.onend = () => setRecording(false)
+    recognition.onresult = (event) => {
+      const transcript = event.results[0]?.[0]?.transcript?.trim()
+      if (transcript) aui.composer().setText(transcript)
+    }
+    recognition.onerror = (event) => {
+      setVoiceError(event.error === "not-allowed" ? "Microphone access was denied." : "Voice input stopped unexpectedly.")
+    }
+    recognition.onend = () => {
+      voiceRecognition.current = null
+      setRecording(false)
+    }
+    setVoiceError(null)
     setRecording(true)
     recognition.start()
   }
@@ -272,7 +300,7 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
                   }}
                 />
               ) : null}
-              <ComposerVoiceButton active={recording} onClick={toggleVoice} />
+              {voiceSupported ? <ComposerVoiceButton active={recording} onClick={toggleVoice} /> : null}
               <AuiIf condition={(state) => state.thread.isRunning}>
                 <ComposerPrimitive.Cancel
                   aria-label="Stop generating"
@@ -291,6 +319,11 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
               </AuiIf>
             </ComposerActions>
           </ComposerToolbar>
+          {voiceError ? (
+            <p role="status" className="px-2.5 pb-1 text-xs text-muted-foreground">
+              {voiceError}
+            </p>
+          ) : null}
         </ComposerBar>
       </ElementComposer>
     </ComposerPrimitive.Root>
