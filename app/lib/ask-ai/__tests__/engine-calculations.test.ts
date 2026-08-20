@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  calculateAskAIBorrowSimulation,
   calculateLendProjection,
   calculateMultiplyStress,
   decodeBorrowRiskSnapshot,
@@ -7,6 +8,25 @@ import {
 } from "../engine-calculations"
 
 describe("Ask AI engine calculations", () => {
+  it("simulates an exact additional borrow with deterministic risk values", () => {
+    expect(
+      calculateAskAIBorrowSimulation({
+        collateralValueUsd: 10_000,
+        debtValueUsd: 3_500,
+        additionalBorrowAmountUsd: 1_000,
+        maxLtvPct: 55,
+        liquidationThresholdPct: 65,
+      }),
+    ).toMatchObject({
+      current: { ltv: 0.35, healthFactor: 1.8571428571428572 },
+      projected: { debtValueUsd: 4_500, ltv: 0.45, healthFactor: 1.4444444444444444 },
+      remainingBorrowCapacityUsd: 1_000,
+      overMaxBorrowLtv: false,
+      liquidatable: false,
+      riskLevel: "elevated",
+    })
+  })
+
   it("decodes Credit Engine fixed-point risk without changing units", () => {
     expect(
       decodeBorrowRiskSnapshot({
