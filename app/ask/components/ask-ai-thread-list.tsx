@@ -7,6 +7,7 @@ import { QuotaBanner } from "@/components/elements/quota-banner"
 type AskAIThreadSummary = {
   threadId: string
   title: string
+  updatedAt: number
 }
 
 export function AskAIThreadList({
@@ -20,6 +21,10 @@ export function AskAIThreadList({
   archivedThreads,
   onArchiveThread,
   onUnarchiveThread,
+  canLoadMore,
+  onLoadMore,
+  canLoadMoreArchived,
+  onLoadMoreArchived,
   quota,
 }: {
   open: boolean
@@ -32,6 +37,10 @@ export function AskAIThreadList({
   archivedThreads: AskAIThreadSummary[]
   onArchiveThread: (threadId: string) => Promise<void>
   onUnarchiveThread: (threadId: string) => Promise<void>
+  canLoadMore: boolean
+  onLoadMore: () => void
+  canLoadMoreArchived: boolean
+  onLoadMoreArchived: () => void
   quota?: { used: number; limit: number; resetsAt: number }
 }) {
   const [renamingId, setRenamingId] = useState<string | null>(null)
@@ -141,6 +150,11 @@ export function AskAIThreadList({
               )}
             </div>
           )}
+          {canLoadMore ? (
+            <button type="button" onClick={onLoadMore} className="mt-2 px-2.5 text-xs text-muted-foreground hover:text-foreground">
+              Load older threads
+            </button>
+          ) : null}
           {archivedThreads.length > 0 ? (
             <div className="mt-5 border-t border-border/50 pt-3">
               <button
@@ -166,6 +180,15 @@ export function AskAIThreadList({
                       </button>
                     </div>
                   ))}
+                  {canLoadMoreArchived ? (
+                    <button
+                      type="button"
+                      onClick={onLoadMoreArchived}
+                      className="px-2.5 py-1 text-left text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      Load older archived threads
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
             </div>

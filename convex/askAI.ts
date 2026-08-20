@@ -87,6 +87,21 @@ export const list = query({
   },
 })
 
+export const listPage = query({
+  args: {
+    status: v.union(v.literal("active"), v.literal("archived")),
+    paginationOpts: paginationOptsValidator,
+  },
+  handler: async (ctx, { status, paginationOpts }) => {
+    const ownerSubject = await requireOwnerSubject(ctx)
+    return await ctx.db
+      .query("askAIThreads")
+      .withIndex("by_owner_status_updated", (q) => q.eq("ownerSubject", ownerSubject).eq("status", status))
+      .order("desc")
+      .paginate(paginationOpts)
+  },
+})
+
 export const messages = query({
   args: { threadId: v.string(), paginationOpts: paginationOptsValidator },
   handler: async (ctx, args) => {
