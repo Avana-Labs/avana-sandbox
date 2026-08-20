@@ -10,7 +10,7 @@ const SOURCE_LABELS: Record<string, string> = {
   balancer: "Balancer",
 }
 
-const ACTIVE_SOURCES: AskAIMarketSource[] = ["coingecko", "defillama", "uniswap", "aave"]
+const ACTIVE_SOURCES: AskAIMarketSource[] = ["coingecko", "defillama", "aave"]
 
 function numericField(payload: Record<string, unknown>, keys: string[]): { label: string; value: number } | null {
   for (const key of keys) {

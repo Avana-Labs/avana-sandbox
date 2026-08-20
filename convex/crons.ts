@@ -35,9 +35,11 @@ crons.interval("rebuild liquidity snapshot", { minutes: 5 }, internal.liquidity.
 // Ask AI market ingestion — refresh the server-side cache (`askAIMarketSnapshots`) that Ask AI's
 // tools read. Ask AI never calls these providers per user request; it only reads this cache.
 // Each source runs on its own staggered schedule so one provider's failure/429 cannot delay the
-// others. Token prices stay on the canonical DefiLlama price cron above; these cover dex pools
-// (Uniswap) and lending markets (Aave, which uses Aave's public keyless v3 API).
-crons.cron("ask ai ingest uniswap pools", "3,18,33,48 * * * *", internal.askAIIngestion.ingest, { source: "uniswap" })
+// others. DefiLlama covers token prices + cross-protocol pool data (Uniswap/Curve/Balancer/…);
+// Aave covers lending markets via its public keyless v3 API.
+crons.cron("ask ai ingest defillama pools", "3,18,33,48 * * * *", internal.askAIIngestion.ingest, {
+  source: "defillama",
+})
 crons.cron("ask ai ingest aave markets", "9,24,39,54 * * * *", internal.askAIIngestion.ingest, { source: "aave" })
 // Purge processed/failed Ask AI attachments past their retention TTL (and their storage objects).
 crons.cron("ask ai purge expired attachments", "17 3 * * *", internal.askAIAttachments.purgeExpiredAttachments, {})
