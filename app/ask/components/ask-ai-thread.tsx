@@ -30,7 +30,6 @@ import {
   ComposerToolbar,
   ComposerVoiceButton,
 } from "@/components/elements/composer"
-import { MessageQueue } from "@/components/elements/message-queue"
 import { GenerationLoader } from "@/components/elements/loading-state"
 import { RetrievalChunks, type RetrievalChunk } from "@/components/elements/retrieval-chunks"
 import { Sources, type Source } from "@/components/elements/sources"
@@ -329,19 +328,6 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
   )
 }
 
-function ThreadQueueStatus() {
-  const running = useAuiState((state) => state.thread.isRunning)
-  const activePrompt = useAuiState((state) =>
-    [...state.thread.messages]
-      .reverse()
-      .find((message) => message.role === "user")
-      ?.content.filter((part) => part.type === "text")
-      .map((part) => part.text)
-      .join(" "),
-  )
-  return running && activePrompt ? <MessageQueue running={activePrompt} queued={[]} className="max-w-none" /> : null
-}
-
 export function AskAIThread({
   title,
   threadsOpen,
@@ -397,7 +383,6 @@ export function AskAIThread({
                   isEmpty ? "" : "sticky bottom-0 mt-auto rounded-t-3xl"
                 }`}
               >
-                <ThreadQueueStatus />
                 <Composer usage={usage} />
                 <ThreadPrimitive.Empty>
                   <div className="flex w-full flex-wrap items-center justify-center gap-2 px-4">
