@@ -37,6 +37,8 @@ type PersistedRichParts = {
   usage?: AskAIUsage
 }
 
+const ACTIVE_THREAD_STORAGE_KEY = "avana.ask-ai.active-thread"
+
 const assistantMetadata = () => ({
   unstable_state: null,
   unstable_annotations: [],
@@ -67,15 +69,21 @@ function persistedAssistantParts(messageId: string, text: string, rich?: Persist
 
 export function AskAIPageClient() {
   const [threadsOpen, setThreadsOpen] = useState(false)
-  const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(() =>
+    typeof window === "undefined" ? null : window.sessionStorage.getItem(ACTIVE_THREAD_STORAGE_KEY),
+  )
   const [streamTurn, setStreamTurn] = useState<StreamTurn | null>(null)
   const abortController = useRef<AbortController | null>(null)
-  const threads = useQuery(api.askAI.list, {}) ?? []
+  const threadsQuery = useQuery(api.askAI.list, {})
+  const threads = threadsQuery ?? []
+  const resolvedActiveThreadId = threads.some((thread) => thread.threadId === activeThreadId) ? activeThreadId : null
   const quota = useQuery(api.askAI.quota, {})
   const createThread = useMutation(api.askAI.create)
   const messagePage = useQuery(
     api.askAI.messages,
-    activeThreadId ? { threadId: activeThreadId, paginationOpts: { numItems: 50, cursor: null } } : "skip",
+    resolvedActiveThreadId
+      ? { threadId: resolvedActiveThreadId, paginationOpts: { numItems: 50, cursor: null } }
+      : "skip",
   )
 
   useEffect(() => {
@@ -87,8 +95,14 @@ export function AskAIPageClient() {
     return () => desktop.removeEventListener("change", sync)
   }, [])
   useEffect(() => {
-    if (!activeThreadId && threads[0]) setActiveThreadId(threads[0].threadId)
-  }, [activeThreadId, threads])
+    if (threadsQuery === undefined) return
+    if (resolvedActiveThreadId) return
+    setActiveThreadId(threads[0]?.threadId ?? null)
+  }, [resolvedActiveThreadId, threads, threadsQuery])
+  useEffect(() => {
+    if (activeThreadId) window.sessionStorage.setItem(ACTIVE_THREAD_STORAGE_KEY, activeThreadId)
+    else window.sessionStorage.removeItem(ACTIVE_THREAD_STORAGE_KEY)
+  }, [activeThreadId])
   useEffect(() => () => abortController.current?.abort(), [])
 
   const persistedMessages = useMemo<ThreadMessage[]>(
@@ -141,7 +155,7 @@ export function AskAIPageClient() {
   const sendPrompt = useCallback(
     async (prompt: string, retryPromptMessageId?: string) => {
       if (!prompt || (streamTurn && !streamTurn.done)) return
-      let threadId = activeThreadId
+      let threadId = resolvedActiveThreadId
       if (!threadId) {
         const created = await createThread({})
         threadId = created.threadId
@@ -233,7 +247,7 @@ export function AskAIPageClient() {
         if (abortController.current === controller) abortController.current = null
       }
     },
-    [activeThreadId, createThread, persistedMessages, streamTurn],
+    [createThread, persistedMessages, resolvedActiveThreadId, streamTurn],
   )
 
   const handleNewMessage = useCallback(
@@ -305,7 +319,7 @@ export function AskAIPageClient() {
       <main className="flex h-[calc(100dvh-64px)] min-h-[620px] w-full overflow-hidden lg:h-[calc(100dvh-68px)]">
         <AskAIThreadList
           open={threadsOpen}
-          activeThreadId={activeThreadId}
+          activeThreadId={resolvedActiveThreadId}
           threads={threads}
           onClose={() => setThreadsOpen(false)}
           onNewThread={handleNewThread}
@@ -317,10 +331,13 @@ export function AskAIPageClient() {
           quota={quota}
         />
         <AskAIThread
-          title={threads.find((thread) => thread.threadId === activeThreadId)?.title ?? "New Chat"}
+          title={
+            threads.find((thread) => thread.threadId === resolvedActiveThreadId)?.title ??
+            (threadsQuery === undefined ? "Loading…" : "New Chat")
+          }
           threadsOpen={threadsOpen}
           onToggleThreads={() => setThreadsOpen((open) => !open)}
-          threadId={activeThreadId}
+          threadId={resolvedActiveThreadId}
           usage={
             streamTurn?.usage ??
             (
