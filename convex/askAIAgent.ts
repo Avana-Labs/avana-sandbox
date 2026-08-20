@@ -5,6 +5,7 @@ import { v } from "convex/values"
 import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
 import { api, components } from "./_generated/api"
 import { action } from "./_generated/server"
+import { searchAvanaKnowledgeTool } from "./askAIRag"
 
 export const ASK_AI_AGENT_INSTRUCTIONS = `You are Avana Ask AI, Avana's conversational DeFi assistant.
 
@@ -16,6 +17,7 @@ Conversation
 
 Grounding
 - Treat Avana knowledge results as the authority for how Avana works.
+- Search Avana knowledge before making protocol-specific claims; do not rely on general model memory for Avana details.
 - Treat Convex tool results as the authority for wallet balances, positions, market data, rates, and timestamps.
 - Never invent a wallet balance, live price, yield, risk threshold, health factor, or protocol state.
 - Use web search for recent public events and general online knowledge when freshness matters. Never use web results as a substitute for Avana wallet or market-state tools.
@@ -43,6 +45,7 @@ export const askAIAgent = new Agent(components.agent, {
     // ToolSet constraint currently assumes one even though the Responses model
     // accepts this tool directly.
     web_search: openai.tools.webSearch({ searchContextSize: "low" }) as never,
+    search_avana_knowledge: searchAvanaKnowledgeTool,
   },
 })
 

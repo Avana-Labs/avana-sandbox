@@ -6,7 +6,6 @@ import { components } from "./_generated/api"
 import { internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
 import { ASK_AI_DOMAIN_REJECTION, ASK_AI_WALLET_REQUIRED } from "../app/lib/ask-ai/config"
 import { classifyAskAIDomain, isAskAIClarificationPrompt, isAskAIGreeting } from "../app/lib/ask-ai/domain-gate"
-import { answerFromAskAIKnowledge, rankAskAIKnowledge } from "../app/lib/ask-ai/knowledge"
 import { answerFromAskAIMarketSnapshots, sourcesForAskAIPrompt } from "../app/lib/ask-ai/market-context"
 import { readAskAIEngineSnapshot, readAskAIMarketSnapshots, readAskAIPortfolio } from "./askAITools"
 
@@ -221,9 +220,9 @@ export const beginTurn = mutation({
       await ctx.db.patch(thread._id, { title: titleFromPrompt(text), updatedAt: Date.now() })
     }
     let response = ASK_AI_DOMAIN_REJECTION
-    let toolName: "portfolio" | "knowledge" | "market_data" | null = null
-    let retrievalChunks: Array<{ id: string; source: string; locator: string; score: number; text: string }> = []
-    let sources: Array<{ domain: string; title: string; url?: string }> = []
+    let toolName: "portfolio" | "market_data" | null = null
+    const retrievalChunks: Array<{ id: string; source: string; locator: string; score: number; text: string }> = []
+    const sources: Array<{ domain: string; title: string; url?: string }> = []
     let visual: { type: "chart"; label: string; value: string; points: number[]; delta?: string } | undefined
     let financialResult:
       | {
@@ -314,27 +313,10 @@ export const beginTurn = mutation({
                 ? ("token_price" as const)
                 : undefined
         const shouldReadMarket = ["market", "pool", "comparison"].includes(domain.intent)
-        const [knowledge, marketSnapshots] = await Promise.all([
-          ctx.db.query("askAIKnowledge").collect(),
-          shouldReadMarket
-            ? readAskAIMarketSnapshots(ctx, { sources: sourcesForAskAIPrompt(text), kind: marketKind, limit: 5 })
-            : Promise.resolve([]),
-        ])
-        const knowledgeAnswer = answerFromAskAIKnowledge(rankAskAIKnowledge(knowledge, text))
+        const marketSnapshots = shouldReadMarket
+          ? await readAskAIMarketSnapshots(ctx, { sources: sourcesForAskAIPrompt(text), kind: marketKind, limit: 5 })
+          : []
         const marketAnswer = answerFromAskAIMarketSnapshots(marketSnapshots)
-        const rankedKnowledge = rankAskAIKnowledge(knowledge, text)
-        retrievalChunks = rankedKnowledge.map((chunk, index) => ({
-          id: chunk.key,
-          source: chunk.title,
-          locator: "Avana knowledge",
-          score: Math.max(0.72, 0.96 - index * 0.06),
-          text: chunk.content,
-        }))
-        sources = rankedKnowledge.map((chunk) => ({
-          domain: chunk.sourceUrl ? new URL(chunk.sourceUrl).hostname : "Avana knowledge",
-          title: chunk.title,
-          ...(chunk.sourceUrl ? { url: chunk.sourceUrl } : {}),
-        }))
         if (marketSnapshots.length > 0) {
           toolName = "market_data"
           const prices = marketSnapshots.flatMap((snapshot) => {
@@ -366,16 +348,14 @@ export const beginTurn = mutation({
               metrics,
             }
           }
-        } else if (retrievalChunks.length > 0) {
-          toolName = "knowledge"
         }
         response =
-          [marketAnswer, knowledgeAnswer].filter((section): section is string => Boolean(section)).join("\n\n") ||
+          marketAnswer ||
           (isAskAIGreeting(text)
             ? "Good to see you. I can help you understand Avana markets, LP collateral, lending, borrowing, Multiply positions, Umbrella, and portfolio risk. What would you like to look at?"
             : isAskAIClarificationPrompt(text)
               ? "What would you like me to clarify: your balance summary, a specific position, or liquidation risk?"
-              : "I don't have enough verified Avana context to answer that precisely. Tell me which market, pool, or position you mean and I'll take another look.")
+              : "Use the authoritative Avana knowledge search and relevant read-only tools to answer this request.")
       }
     }
     if (thread.title !== "New Chat") await ctx.db.patch(thread._id, { updatedAt: Date.now() })
@@ -391,11 +371,9 @@ export const beginTurn = mutation({
             query: text,
             request: domain.intent.replaceAll("_", " "),
             result:
-              toolName === "knowledge"
-                ? `${retrievalChunks.length} relevant knowledge chunk${retrievalChunks.length === 1 ? "" : "s"}`
-                : toolName === "market_data"
-                  ? "Cached market data and knowledge retrieved"
-                  : "Persisted wallet and engine data read",
+              toolName === "market_data"
+                ? "Cached market data retrieved"
+                : "Persisted wallet and engine data read",
           }
         : null,
       retrievalChunks,
