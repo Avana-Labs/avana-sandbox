@@ -359,7 +359,15 @@ export const failTurn = mutation({
   },
 })
 
-const FEEDBACK_CATEGORIES = ["Incorrect", "Outdated data", "Not helpful", "Missing context", "Unsafe", "Other"]
+const FEEDBACK_CATEGORIES = [
+  "Helpful",
+  "Incorrect",
+  "Outdated data",
+  "Not helpful",
+  "Missing context",
+  "Unsafe",
+  "Other",
+]
 
 export const submitFeedback = mutation({
   args: { threadId: v.string(), messageId: v.string(), categories: v.array(v.string()), note: v.optional(v.string()) },

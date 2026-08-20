@@ -12,7 +12,7 @@ import {
   useAuiState,
 } from "@assistant-ui/react"
 import { useMutation } from "convex/react"
-import { Square, ThumbsDown } from "lucide-react"
+import { Check, Copy, Square, ThumbsDown, ThumbsUp } from "lucide-react"
 import { createContext, useContext, useEffect, useState } from "react"
 import { CircleArrowUp, Code2, PieChart, Sparkles, SunMedium, TrendingUp } from "@/app/components/icons"
 import { ASK_AI_CONFIG } from "@/app/lib/ask-ai/config"
@@ -78,12 +78,20 @@ function AssistantMessage() {
   const { threadId } = useContext(AskAIMessageContext)
   const messageId = useAuiState((state) => state.message.id)
   const status = useAuiState((state) => state.message.status)
+  const responseText = useAuiState((state) =>
+    state.message.content
+      .filter((part) => part.type === "text")
+      .map((part) => part.text)
+      .join("\n"),
+  )
   const submitFeedback = useMutation(api.askAI.submitFeedback)
   const aui = useAui()
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   const [selected, setSelected] = useState<string[]>([])
   const [note, setNote] = useState("")
   const [sent, setSent] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [helpful, setHelpful] = useState(false)
   const persisted = !messageId.endsWith("-assistant")
   return (
     <MessagePrimitive.Root className="px-2 text-foreground">
@@ -113,14 +121,40 @@ function AssistantMessage() {
         {status?.type === "complete" && persisted ? (
           <div className="flex flex-col items-start gap-2">
             {!feedbackOpen && !sent ? (
-              <button
-                type="button"
-                aria-label="Report a problem with this answer"
-                onClick={() => setFeedbackOpen(true)}
-                className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <ThumbsDown className="size-3.5" />
-              </button>
+              <div className="flex items-center gap-1 text-muted-foreground">
+                <button
+                  type="button"
+                  aria-label="Copy answer"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(responseText)
+                    setCopied(true)
+                  }}
+                  className="inline-flex size-8 items-center justify-center rounded-md hover:bg-muted hover:text-foreground"
+                >
+                  {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+                </button>
+                <button
+                  type="button"
+                  aria-label="Mark answer as helpful"
+                  disabled={helpful || !threadId}
+                  onClick={async () => {
+                    if (!threadId) return
+                    await submitFeedback({ threadId, messageId, categories: ["Helpful"] })
+                    setHelpful(true)
+                  }}
+                  className="inline-flex size-8 items-center justify-center rounded-md hover:bg-muted hover:text-foreground disabled:opacity-50"
+                >
+                  <ThumbsUp className="size-4" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Report a problem with this answer"
+                  onClick={() => setFeedbackOpen(true)}
+                  className="inline-flex size-8 items-center justify-center rounded-md hover:bg-muted hover:text-foreground"
+                >
+                  <ThumbsDown className="size-4" />
+                </button>
+              </div>
             ) : null}
             {feedbackOpen || sent ? (
               <FeedbackDialog
