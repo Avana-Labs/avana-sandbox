@@ -1,0 +1,104 @@
+import { cleanup, render, screen } from "@testing-library/react"
+import { afterEach, describe, expect, it, vi } from "vitest"
+
+vi.mock("convex/react", () => ({
+  useAction: () => async () => ({ text: "Done" }),
+  useQuery: () => undefined,
+  usePaginatedQuery: () => ({ results: [], status: "Exhausted", loadMore: vi.fn() }),
+  useMutation: () => async () => ({ threadId: "thread-test", title: "New Chat" }),
+}))
+
+const messagesMock = vi.fn()
+vi.mock("@convex-dev/agent/react", () => ({
+  useUIMessages: () => messagesMock(),
+}))
+
+import { AskAIPageClient } from "../ask-ai-page-client"
+
+afterEach(() => {
+  cleanup()
+  messagesMock.mockReset()
+})
+
+describe("AskAIPageClient rich parts", () => {
+  it("renders a financial result card and retrieval chunks from persisted richParts", () => {
+    messagesMock.mockReturnValue({
+      status: "Exhausted",
+      loadMore: vi.fn(),
+      results: [
+        { id: "u1", role: "user", text: "How much can I borrow?", _creationTime: 1, status: "success" },
+        {
+          id: "a1",
+          role: "assistant",
+          text: "Here is your borrow capacity.",
+          _creationTime: 2,
+          status: "success",
+          richParts: {
+            retrievalChunks: [
+              { title: "Borrow docs", locator: "§2.1", text: "Collateral factors explained.", score: 0.91 },
+            ],
+            financialResults: [
+              {
+                kind: "borrow_capacity",
+                dataProvenance: "sandbox",
+                payload: {
+                  kind: "borrow_capacity",
+                  title: "Borrow capacity",
+                  freshness: "fresh",
+                  metrics: [{ label: "Available", value: "$1,200" }],
+                },
+              },
+            ],
+          },
+        },
+      ],
+    })
+
+    render(<AskAIPageClient />)
+
+    expect(screen.getByRole("region", { name: "Borrow capacity" })).toBeInTheDocument()
+    expect(screen.getByText("$1,200")).toBeInTheDocument()
+    expect(screen.getByText("Borrow docs")).toBeInTheDocument()
+    // StreamingText renders one <span> per word, so match a distinctive word.
+    expect(screen.getByText("capacity.")).toBeInTheDocument()
+  })
+
+  it("does not fabricate a card when the payload is not display-ready", () => {
+    messagesMock.mockReturnValue({
+      status: "Exhausted",
+      loadMore: vi.fn(),
+      results: [
+        {
+          id: "a1",
+          role: "assistant",
+          text: "Answer.",
+          _creationTime: 2,
+          status: "success",
+          richParts: { financialResults: [{ kind: "portfolio", payload: { raw: 123 } }] },
+        },
+      ],
+    })
+
+    render(<AskAIPageClient />)
+    expect(screen.queryByRole("region")).not.toBeInTheDocument()
+  })
+
+  it("shows a friendly error with no feedback or retry controls for a persisted failed turn", () => {
+    messagesMock.mockReturnValue({
+      status: "Exhausted",
+      loadMore: vi.fn(),
+      results: [
+        { id: "u1", role: "user", text: "Break it", _creationTime: 1, status: "success" },
+        { id: "a1", role: "assistant", text: "", _creationTime: 2, status: "failed" },
+      ],
+    })
+
+    render(<AskAIPageClient />)
+
+    expect(screen.getByRole("alert")).toBeInTheDocument()
+    expect(screen.getByText(/something went wrong/i)).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Copy answer" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Mark answer as helpful" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument()
+  })
+})

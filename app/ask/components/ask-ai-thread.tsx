@@ -14,7 +14,8 @@ import {
 } from "@assistant-ui/react"
 import { useAction, useMutation } from "convex/react"
 import { Check, Copy, Paperclip, Square, ThumbsDown, ThumbsUp, X } from "lucide-react"
-import { createContext, useContext, useRef, useState } from "react"
+import { createContext, useContext, useEffect, useRef, useState } from "react"
+import type { ComponentType } from "react"
 import { CircleArrowUp, Code2, PieChart, Sparkles, SunMedium, TrendingUp } from "@/app/components/icons"
 import { ASK_AI_CONFIG } from "@/app/lib/ask-ai/config"
 import { Chart } from "@/components/elements/chart"
@@ -42,13 +43,62 @@ import { AskAIFinancialResultCard, type AskAIFinancialResult } from "./ask-ai-fi
 const AskAIMessageContext = createContext<{ threadId: string | null }>({ threadId: null })
 const FEEDBACK_REASONS = ["Incorrect", "Outdated data", "Not helpful", "Missing context", "Unsafe", "Other"]
 
-const SUGGESTIONS = [
+export type AskAISuggestion = {
+  icon: ComponentType<{ className?: string }>
+  label: string
+  prompt: string
+}
+
+// Single source of truth for the starter prompts. The thread renders these as
+// labeled pills; the page-client derives the runtime `suggestions` adapter list
+// from the same array so the two never drift.
+export const ASK_AI_SUGGESTIONS: readonly AskAISuggestion[] = [
   { icon: SunMedium, label: "Markets", prompt: "Find ETH/USDC markets" },
   { icon: Code2, label: "Positions", prompt: "Analyze my positions" },
   { icon: TrendingUp, label: "Borrow", prompt: "How much can I borrow?" },
   { icon: PieChart, label: "Risk", prompt: "What is my health factor?" },
   { icon: Sparkles, label: "Stress test", prompt: "What if ETH falls 20%?" },
 ]
+
+// User-facing error copy, keyed by the ConvexError `code` thrown server-side.
+// Never surface raw error text (it can leak function paths / request ids).
+export const ASK_AI_ERROR_COPY: Record<string, string> = {
+  ASK_AI_GENERATION_FAILED: "Avana couldn't finish this answer. Please try again.",
+  ASK_AI_ATTACHMENT_FAILED: "We couldn't read that attachment. Remove it and try again.",
+  ASK_AI_RATE_LIMITED: "You're sending messages too quickly. Wait a moment, then try again.",
+  ASK_AI_UNAVAILABLE: "Ask AI is temporarily unavailable. Please try again shortly.",
+}
+export const FALLBACK_ASK_AI_ERROR = "Something went wrong generating this answer. Please try again."
+
+export type FriendlyAskAIError = { code?: string; message: string }
+
+// Normalizes an unknown thrown value into a user-safe { code, message }. Reads
+// the ConvexError payload (`error.data`) when present; otherwise falls back to
+// generic copy. Never returns raw `String(error)`.
+export function toFriendlyAskAIError(error: unknown): FriendlyAskAIError {
+  const data = (error as { data?: unknown } | null | undefined)?.data
+  if (data && typeof data === "object") {
+    const record = data as { code?: unknown; message?: unknown }
+    const code = typeof record.code === "string" ? record.code : undefined
+    const message =
+      typeof record.message === "string" && record.message.trim()
+        ? record.message
+        : ((code ? ASK_AI_ERROR_COPY[code] : undefined) ?? FALLBACK_ASK_AI_ERROR)
+    return code ? { code, message } : { message }
+  }
+  return { message: FALLBACK_ASK_AI_ERROR }
+}
+
+// Resolves the detail line for the error card from a message `status.error`
+// value (our FriendlyAskAIError, or nothing for a persisted failed turn).
+export function resolveAskAIErrorDetail(rawError: unknown): string {
+  if (rawError && typeof rawError === "object") {
+    const err = rawError as { code?: unknown; message?: unknown }
+    if (typeof err.message === "string" && err.message.trim()) return err.message
+    if (typeof err.code === "string" && ASK_AI_ERROR_COPY[err.code]) return ASK_AI_ERROR_COPY[err.code]
+  }
+  return FALLBACK_ASK_AI_ERROR
+}
 
 function UserMessage() {
   return (
@@ -78,7 +128,11 @@ function AssistantMessage() {
   const [sent, setSent] = useState(false)
   const [copied, setCopied] = useState(false)
   const [helpful, setHelpful] = useState(false)
+  const copyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => void (copyResetRef.current && clearTimeout(copyResetRef.current)), [])
   const persisted = !messageId.endsWith("-assistant")
+  const hasContent = responseText.trim().length > 0
+  const errorValue = status && "error" in status ? (status as { error?: unknown }).error : undefined
   return (
     <MessagePrimitive.Root className="px-2 text-foreground">
       <div className="flex flex-col gap-3">
@@ -100,12 +154,14 @@ function AssistantMessage() {
         <MessagePrimitive.Error>
           <ErrorState
             title="The response stopped"
-            detail={status && "error" in status && status.error ? String(status.error) : "Try this turn again."}
+            detail={resolveAskAIErrorDetail(errorValue)}
             retrying={false}
-            onRetry={() => aui.message().reload()}
+            // A live (transient) failed turn can be retried; a persisted failed
+            // turn from a prior session has no replayable handle, so hide Retry.
+            onRetry={persisted ? undefined : () => aui.message().reload()}
           />
         </MessagePrimitive.Error>
-        {status?.type === "complete" && persisted ? (
+        {status?.type === "complete" && persisted && hasContent ? (
           <div className="flex flex-col items-start gap-2">
             {!feedbackOpen && !sent ? (
               <div className="flex items-center gap-1 text-muted-foreground">
@@ -115,6 +171,8 @@ function AssistantMessage() {
                   onClick={async () => {
                     await navigator.clipboard.writeText(responseText)
                     setCopied(true)
+                    if (copyResetRef.current) clearTimeout(copyResetRef.current)
+                    copyResetRef.current = setTimeout(() => setCopied(false), 2000)
                   }}
                   className="inline-flex size-8 items-center justify-center rounded-md hover:bg-muted hover:text-foreground"
                 >
@@ -457,11 +515,11 @@ export function AskAIThread({
                 <Composer usage={usage} />
                 <ThreadPrimitive.Empty>
                   <div className="flex w-full flex-wrap items-center justify-center gap-2 px-4">
-                    {SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (
+                    {ASK_AI_SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (
                       <ThreadPrimitive.Suggestion
                         key={label}
                         prompt={prompt}
-                        send={false}
+                        send
                         className="flex h-auto items-center gap-1.5 whitespace-nowrap rounded-full border border-border/60 px-3.5 py-1.5 text-sm font-normal text-foreground transition-colors hover:bg-muted"
                       >
                         <Icon className="size-4" aria-hidden />
