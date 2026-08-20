@@ -1,7 +1,36 @@
 import { v } from "convex/values"
 import { mutation, query } from "./_generated/server"
+import { rankAskAIKnowledge } from "../app/lib/ask-ai/knowledge"
 
 const INITIAL_KNOWLEDGE = [
+  {
+    key: "avana-borrow-credit-engine",
+    title: "Avana Borrow and Credit Engine",
+    content:
+      "Avana Borrow uses the Credit Engine to evaluate collateral value, debt, available borrowing capacity, loan-to-value, liquidation thresholds, and health factor. Ask AI reads the latest persisted engine snapshot and never invents missing risk parameters.",
+    tags: ["avana", "borrow", "credit engine", "ltv", "health factor", "liquidation"],
+  },
+  {
+    key: "avana-lend-engine",
+    title: "Avana Lend Engine",
+    content:
+      "Avana Lend supplies assets to lending markets. Its engine combines base APY and rewards APY and can project simple interest over a selected number of days; projections are estimates, not guaranteed returns.",
+    tags: ["avana", "lend", "supply", "apy", "interest"],
+  },
+  {
+    key: "avana-multiply-engine",
+    title: "Avana Multiply Engine",
+    content:
+      "Avana Multiply models leveraged collateral and debt. Its risk calculations include multiplier, loan-to-value, liquidation threshold, and health factor; stress tests require persisted position risk parameters.",
+    tags: ["avana", "multiply", "leverage", "ltv", "health factor", "stress test"],
+  },
+  {
+    key: "avana-umbrella",
+    title: "Avana Umbrella",
+    content:
+      "Avana Umbrella positions can be active, cooling down, withdrawable, or slashed. Ask AI derives lifecycle status from persisted cooldown, withdrawal, and slash data rather than treating protocol totals as a wallet balance.",
+    tags: ["avana", "umbrella", "stake", "unstake", "cooldown", "slash"],
+  },
   {
     key: "avana-lp-collateral",
     title: "LP collateral on Avana",
@@ -43,18 +72,7 @@ export const seedInitial = mutation({
 export const search = query({
   args: { query: v.string(), limit: v.optional(v.number()) },
   handler: async (ctx, { query: rawQuery, limit }) => {
-    const terms = rawQuery
-      .toLowerCase()
-      .split(/[^a-z0-9]+/)
-      .filter((term) => term.length > 2)
     const rows = await ctx.db.query("askAIKnowledge").collect()
-    return rows
-      .map((row) => {
-        const haystack = `${row.title} ${row.content} ${row.tags.join(" ")}`.toLowerCase()
-        return { ...row, score: terms.reduce((score, term) => score + (haystack.includes(term) ? 1 : 0), 0) }
-      })
-      .filter((row) => row.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, Math.min(Math.max(limit ?? 6, 1), 10))
+    return rankAskAIKnowledge(rows, rawQuery, limit ?? 6)
   },
 })
