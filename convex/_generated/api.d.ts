@@ -14,6 +14,7 @@ import type * as askAIAgent from "../askAIAgent.js";
 import type * as askAIAgentTools from "../askAIAgentTools.js";
 import type * as askAIAttachments from "../askAIAttachments.js";
 import type * as askAIIngestion from "../askAIIngestion.js";
+import type * as askAIMediaRateLimiter from "../askAIMediaRateLimiter.js";
 import type * as askAIRag from "../askAIRag.js";
 import type * as askAITelemetry from "../askAITelemetry.js";
 import type * as askAITools from "../askAITools.js";
@@ -96,6 +97,7 @@ declare const fullApi: ApiFromModules<{
   askAIAgentTools: typeof askAIAgentTools;
   askAIAttachments: typeof askAIAttachments;
   askAIIngestion: typeof askAIIngestion;
+  askAIMediaRateLimiter: typeof askAIMediaRateLimiter;
   askAIRag: typeof askAIRag;
   askAITelemetry: typeof askAITelemetry;
   askAITools: typeof askAITools;
