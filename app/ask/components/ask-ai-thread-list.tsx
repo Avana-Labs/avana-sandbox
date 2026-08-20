@@ -2,7 +2,26 @@
 
 import { ThreadListPrimitive } from "@assistant-ui/react"
 
-export function AskAIThreadList({ open, onClose }: { open: boolean; onClose: () => void }) {
+type AskAIThreadSummary = {
+  threadId: string
+  title: string
+}
+
+export function AskAIThreadList({
+  open,
+  activeThreadId,
+  threads,
+  onClose,
+  onNewThread,
+  onSelectThread,
+}: {
+  open: boolean
+  activeThreadId: string | null
+  threads: AskAIThreadSummary[]
+  onClose: () => void
+  onNewThread: () => Promise<void>
+  onSelectThread: (threadId: string) => void
+}) {
   return (
     <>
       {open ? (
@@ -22,6 +41,7 @@ export function AskAIThreadList({ open, onClose }: { open: boolean; onClose: () 
         <ThreadListPrimitive.New asChild>
           <button
             type="button"
+            onClick={() => void onNewThread()}
             className="flex h-8 items-center gap-2 rounded-md bg-muted px-2.5 text-left text-sm font-normal transition-colors hover:bg-muted/80"
           >
             <span
@@ -36,7 +56,27 @@ export function AskAIThreadList({ open, onClose }: { open: boolean; onClose: () 
 
         <div className="mt-6 flex-1">
           <p className="px-2.5 text-xs font-medium text-muted-foreground">Today</p>
-          <p className="mt-1 px-2.5 text-sm text-muted-foreground">No threads yet</p>
+          {threads.length === 0 ? (
+            <p className="mt-1 px-2.5 text-sm text-muted-foreground">No threads yet</p>
+          ) : (
+            <div className="mt-1 flex flex-col gap-0.5">
+              {threads.map((thread) => (
+                <button
+                  key={thread.threadId}
+                  type="button"
+                  onClick={() => {
+                    onSelectThread(thread.threadId)
+                    onClose()
+                  }}
+                  className={`h-8 truncate rounded-md px-2.5 text-left text-sm transition-colors hover:bg-muted ${
+                    activeThreadId === thread.threadId ? "bg-muted" : ""
+                  }`}
+                >
+                  {thread.title}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </aside>
     </>

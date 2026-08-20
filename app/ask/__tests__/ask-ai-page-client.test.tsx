@@ -1,7 +1,12 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { AskAIPageClient } from "../ask-ai-page-client"
+
+vi.mock("convex/react", () => ({
+  useQuery: () => [],
+  useMutation: () => async () => ({ threadId: "thread-test", title: "New Chat" }),
+}))
 
 afterEach(cleanup)
 
@@ -22,6 +27,14 @@ describe("AskAIPageClient", () => {
     await user.click(screen.getByRole("button", { name: "Open sidebar" }))
     expect(screen.getByRole("button", { name: "Hide sidebar" })).toBeInTheDocument()
     await user.click(screen.getByRole("button", { name: "Hide sidebar" }))
+    expect(screen.getByRole("button", { name: "Open sidebar" })).toBeInTheDocument()
+  })
+
+  it("creates a new persisted thread from the Base control", async () => {
+    const user = userEvent.setup()
+    render(<AskAIPageClient />)
+
+    await user.click(screen.getByRole("button", { name: "New Thread" }))
     expect(screen.getByRole("button", { name: "Open sidebar" })).toBeInTheDocument()
   })
 })

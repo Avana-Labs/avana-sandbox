@@ -1918,4 +1918,16 @@ export default defineSchema({
   })
     .index("by_wallet", ["wallet"])
     .index("by_wallet_claim", ["wallet", "claimId"]),
+
+  /** Owner mapping and lifecycle metadata for Convex Agent Ask AI threads. */
+  askAIThreads: defineTable({
+    threadId: v.string(),
+    ownerSubject: v.string(),
+    title: v.string(),
+    status: v.union(v.literal("active"), v.literal("archived")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_thread", ["threadId"])
+    .index("by_owner_status_updated", ["ownerSubject", "status", "updatedAt"]),
 })
