@@ -1,4 +1,5 @@
 import { createThread, listUIMessages, saveMessage } from "@convex-dev/agent"
+import { RateLimiter } from "@convex-dev/rate-limiter"
 import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
 import { components } from "./_generated/api"
@@ -7,6 +8,12 @@ import { ASK_AI_DOMAIN_REJECTION } from "../app/lib/ask-ai/config"
 import { classifyAskAIDomain } from "../app/lib/ask-ai/domain-gate"
 
 type AskAICtx = QueryCtx | MutationCtx
+
+const askAIRateLimiter = new RateLimiter(components.rateLimiter, {
+  perSubjectDaily: { kind: "fixed window", rate: 20, period: 24 * 60 * 60 * 1_000 },
+  perSubjectBurst: { kind: "token bucket", rate: 1, period: 5_000, capacity: 1 },
+  globalDaily: { kind: "fixed window", rate: 20_000, period: 24 * 60 * 60 * 1_000 },
+})
 
 async function requireOwnerSubject(ctx: AskAICtx): Promise<string> {
   const identity = await ctx.auth.getUserIdentity()
@@ -72,6 +79,9 @@ export const addUserMessage = mutation({
   handler: async (ctx, { threadId, prompt }) => {
     const { ownerSubject, thread } = await requireOwnedThread(ctx, threadId)
     if (thread.status !== "active") throw new Error("Thread is archived")
+    await askAIRateLimiter.limit(ctx, "perSubjectDaily", { key: ownerSubject, throws: true })
+    await askAIRateLimiter.limit(ctx, "perSubjectBurst", { key: ownerSubject, throws: true })
+    await askAIRateLimiter.limit(ctx, "globalDaily", { throws: true })
     const text = prompt.trim()
     if (!text || text.length > 2_000) throw new Error("Message must contain 1 to 2000 characters")
     const domain = classifyAskAIDomain(text)
