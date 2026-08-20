@@ -8,13 +8,13 @@ afterEach(() => {
 })
 
 describe("Ask AI server configuration", () => {
-  it("defaults to deterministic mock mode", () => {
+  it("does not silently default to deterministic mock mode", () => {
     delete process.env.ASK_AI_USE_MOCKS
     delete process.env.ASK_AI_MODEL
 
     expect(getAskAIServerConfig()).toMatchObject({
       model: "gpt-5.6-luna",
-      useMocks: true,
+      useMocks: false,
       providers: {
         openAIConfigured: false,
       },

@@ -19,7 +19,7 @@ function readPositiveInteger(value: string | undefined, fallback: number) {
 export function getAskAIServerConfig() {
   return {
     model: process.env.ASK_AI_MODEL?.trim() || ASK_AI_CONFIG.defaultModel,
-    useMocks: readBoolean(process.env.ASK_AI_USE_MOCKS, true),
+    useMocks: readBoolean(process.env.ASK_AI_USE_MOCKS, false),
     maxOutputTokens: readPositiveInteger(process.env.ASK_AI_MAX_OUTPUT_TOKENS, ASK_AI_CONFIG.maxOutputTokens),
     providers: {
       openAIConfigured: Boolean(process.env.OPENAI_API_KEY),

@@ -53,6 +53,12 @@ const POSITION_PATTERNS = [
   /\b(can i borrow|borrow another|borrow more|borrowing capacity|close am i to liquidation)\b/i,
 ]
 
+const RISK_PATTERNS = [
+  /\b(?:will|would|could|can|am|are)\s+(?:i|we)\s+(?:get\s+)?liquidat(?:ed|ion)?\b/i,
+  /\b(?:my|our)\s+(?:liquidation|health factor|risk|ltv|buffer)\b/i,
+  /\b(?:liquidation|health factor)\s+(?:risk|status|chance|probability)\b/i,
+]
+
 const STRESS_PATTERNS = [/\bwhat (?:happens|if)\b/i, /\b(stress|shock|drops?|falls?|depeg|price change)\b/i]
 
 const POOL_PATTERNS = [
@@ -70,7 +76,12 @@ const EDUCATION_PATTERNS = [
   /\b(avana|lp collateral|health factor|ltv|liquidation threshold|oracle|aave hub)\b/i,
 ]
 
-const GREETING_PATTERN = /^(?:(?:good\s+)?(?:morning|afternoon|evening)|(?:hi|hello|hey|yo)(?:\s+there)?)[!.?\s]*$/i
+const GREETING_PATTERN =
+  /^(?:(?:good\s+)?(?:morning|afternoon|evening)|(?:hi|hello|hey|yo|sup)(?:\s+there)?|what(?:'s| is)\s+up)[!.?\s]*$/i
+
+export function isAskAIClarificationPrompt(message: string) {
+  return /^(?:\?|huh\??|what\??|why\??|how so\??)$/i.test(message.trim())
+}
 
 export function isAskAIGreeting(message: string) {
   return GREETING_PATTERN.test(message.trim())
@@ -97,6 +108,10 @@ export function classifyAskAIDomain(message: string): DomainResult {
 
   if (isAskAIGreeting(normalized)) {
     return { allowed: true, category: "avana", intent: "education", confidence: 0.99 }
+  }
+
+  if (matchesAny(normalized, RISK_PATTERNS)) {
+    return { allowed: true, category: "position_risk", intent: "risk", confidence: 0.99 }
   }
 
   if (matchesAny(normalized, POSITION_PATTERNS)) {
