@@ -32,4 +32,12 @@ crons.daily("roll up daily market stats", { hourUTC: 23, minuteUTC: 55 }, intern
 crons.interval("compact liquidity deltas", { minutes: 5 }, internal.liquidity.compactDeltas, {})
 crons.interval("rebuild liquidity snapshot", { minutes: 5 }, internal.liquidity.rebuildDeltaSnapshot, {})
 
+// Ask AI market ingestion — refresh the server-side cache (`askAIMarketSnapshots`) that Ask AI's
+// tools read. Ask AI never calls these providers per user request; it only reads this cache.
+// Each source runs on its own staggered schedule so one provider's failure/429 cannot delay the
+// others. Token prices stay on the canonical DefiLlama price cron above; these cover dex pools
+// (Uniswap) and lending markets (Aave, which uses Aave's public keyless v3 API).
+crons.cron("ask ai ingest uniswap pools", "3,18,33,48 * * * *", internal.askAIIngestion.ingest, { source: "uniswap" })
+crons.cron("ask ai ingest aave markets", "9,24,39,54 * * * *", internal.askAIIngestion.ingest, { source: "aave" })
+
 export default crons
