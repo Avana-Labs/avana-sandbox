@@ -27,7 +27,6 @@ type StreamTurn = {
 }
 
 type PersistedRichParts = {
-  domain?: { category: string; intent: string }
   tool?: { name: string; query: string; request: string; result: string }
   retrievalChunks?: unknown[]
   sources?: unknown[]
@@ -49,7 +48,6 @@ const messageText = (message: ThreadMessage) =>
 
 function persistedAssistantParts(messageId: string, text: string, rich?: PersistedRichParts) {
   const parts: ThreadAssistantMessagePart[] = []
-  if (rich?.domain) parts.push({ type: "data", name: "ask-ai-process", data: rich.domain })
   if (rich?.tool) {
     parts.push({
       type: "tool-call",
@@ -197,22 +195,19 @@ export function AskAIPageClient() {
               if (event.type === "meta")
                 return {
                   ...current,
-                  parts: [
-                    ...current.parts,
-                    {
-                      type: "data",
-                      name: "ask-ai-process",
-                      data: { category: event.domain.category, intent: event.domain.intent },
-                    },
-                    {
-                      type: "tool-call",
-                      toolCallId: `${turnId}-tool`,
-                      toolName: event.tool.name,
-                      args: { query: event.tool.query, request: event.tool.request },
-                      argsText: JSON.stringify({ query: event.tool.query, request: event.tool.request }),
-                      result: event.tool.result,
-                    },
-                  ],
+                  parts: event.tool
+                    ? [
+                        ...current.parts,
+                        {
+                          type: "tool-call",
+                          toolCallId: `${turnId}-tool`,
+                          toolName: event.tool.name,
+                          args: { query: event.tool.query, request: event.tool.request },
+                          argsText: JSON.stringify({ query: event.tool.query, request: event.tool.request }),
+                          result: event.tool.result,
+                        },
+                      ]
+                    : current.parts,
                 }
               if (event.type === "retrieval")
                 return {

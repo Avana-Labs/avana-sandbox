@@ -119,16 +119,47 @@ export const quota = query({
 })
 
 export const beginTurn = mutation({
-  args: { threadId: v.string(), prompt: v.string() },
-  handler: async (ctx, { threadId, prompt }) => {
+  args: {
+    threadId: v.string(),
+    prompt: v.string(),
+    routing: v.optional(
+      v.object({
+        allowed: v.boolean(),
+        category: v.union(
+          v.literal("avana"),
+          v.literal("lp_collateral"),
+          v.literal("defi_lending"),
+          v.literal("crypto_market"),
+          v.literal("dex_pool"),
+          v.literal("aave"),
+          v.literal("position_risk"),
+          v.literal("protocol_education"),
+          v.literal("unsupported"),
+        ),
+        intent: v.union(
+          v.literal("position"),
+          v.literal("market"),
+          v.literal("pool"),
+          v.literal("borrow_simulation"),
+          v.literal("stress_test"),
+          v.literal("comparison"),
+          v.literal("education"),
+          v.literal("risk"),
+          v.literal("unsupported"),
+        ),
+        confidence: v.number(),
+      }),
+    ),
+  },
+  handler: async (ctx, { threadId, prompt, routing }) => {
     const { ownerSubject, thread } = await requireOwnedThread(ctx, threadId)
     if (thread.status !== "active") throw new Error("Thread is archived")
+    const text = prompt.trim()
+    if (!text || text.length > 2_000) throw new Error("Message must contain 1 to 2000 characters")
+    const domain = routing ?? classifyAskAIDomain(text)
     await askAIRateLimiter.limit(ctx, "perSubjectDaily", { key: ownerSubject, throws: true })
     await askAIRateLimiter.limit(ctx, "perSubjectBurst", { key: ownerSubject, throws: true })
     await askAIRateLimiter.limit(ctx, "globalDaily", { throws: true })
-    const text = prompt.trim()
-    if (!text || text.length > 2_000) throw new Error("Message must contain 1 to 2000 characters")
-    const domain = classifyAskAIDomain(text)
     const saved = await saveMessage(ctx, components.agent, {
       threadId,
       userId: ownerSubject,
@@ -138,7 +169,7 @@ export const beginTurn = mutation({
       await ctx.db.patch(thread._id, { title: titleFromPrompt(text), updatedAt: Date.now() })
     }
     let response = ASK_AI_DOMAIN_REJECTION
-    let toolName: "domain_guard" | "portfolio" | "knowledge" | "market_data" = "domain_guard"
+    let toolName: "portfolio" | "knowledge" | "market_data" | null = null
     let retrievalChunks: Array<{ id: string; source: string; locator: string; score: number; text: string }> = []
     let sources: Array<{ domain: string; title: string; url?: string }> = []
     let visual: { type: "chart"; label: string; value: string; points: number[]; delta?: string } | undefined
@@ -221,7 +252,7 @@ export const beginTurn = mutation({
           [marketAnswer, knowledgeAnswer].filter((section): section is string => Boolean(section)).join("\n\n") ||
           (isAskAIGreeting(text)
             ? "Good to see you. I can help you understand Avana markets, LP collateral, lending, borrowing, Multiply positions, Umbrella, and portfolio risk. What would you like to look at?"
-            : `I don't have verified live data for that ${domain.category.replaceAll("_", " ")} question yet. I can still explain how it works in Avana, or you can ask about a supported market, LP position, lending position, or risk scenario.`)
+            : "I don't have enough verified Avana context to answer that precisely. Tell me which market, pool, or position you mean and I'll take another look.")
       }
     }
     if (thread.title !== "New Chat") await ctx.db.patch(thread._id, { updatedAt: Date.now() })
@@ -230,21 +261,19 @@ export const beginTurn = mutation({
       domain,
       fallbackResponse: response,
       grounding: response,
-      tool: {
-        name: toolName,
-        query: text,
-        request: domain.intent.replaceAll("_", " "),
-        result:
-          toolName === "knowledge"
-            ? `${retrievalChunks.length} relevant knowledge chunk${retrievalChunks.length === 1 ? "" : "s"}`
-            : toolName === "market_data"
-              ? "Cached market data and knowledge retrieved"
-              : toolName === "portfolio"
-                ? "Persisted wallet and engine data read"
-                : domain.allowed
-                  ? "Request accepted"
-                  : "Request outside supported scope",
-      },
+      tool: toolName
+        ? {
+            name: toolName,
+            query: text,
+            request: domain.intent.replaceAll("_", " "),
+            result:
+              toolName === "knowledge"
+                ? `${retrievalChunks.length} relevant knowledge chunk${retrievalChunks.length === 1 ? "" : "s"}`
+                : toolName === "market_data"
+                  ? "Cached market data and knowledge retrieved"
+                  : "Persisted wallet and engine data read",
+          }
+        : null,
       retrievalChunks,
       sources,
       visual,

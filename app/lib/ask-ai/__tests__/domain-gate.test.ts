@@ -29,6 +29,11 @@ const ALLOWED = [
   "What's happening with Aave?",
   "Compare Aave rates.",
   "Compare LP yields.",
+  "What crypto should I buy?",
+  "Should I buy ETH?",
+  "Why?",
+  "What about the second one?",
+  "Reconcile the blue ideas",
 ]
 
 const BLOCKED = [
@@ -52,8 +57,6 @@ const BLOCKED = [
   "Help with my medical symptoms.",
   "Write a legal contract.",
   "What's the best TV show?",
-  "What crypto should I buy?",
-  "Should I buy ETH?",
   "Write Solidity for me.",
 ]
 
@@ -90,10 +93,13 @@ describe("Ask AI deterministic domain gate", () => {
     })
   })
 
-  it("fails closed for empty, oversized, and unknown prompts", () => {
+  it("rejects invalid input but allows ambiguous follow-ups", () => {
     expect(classifyAskAIDomain("   ").allowed).toBe(false)
     expect(classifyAskAIDomain("x".repeat(2_001)).allowed).toBe(false)
-    expect(classifyAskAIDomain("Reconcile the blue ideas").allowed).toBe(false)
+    expect(classifyAskAIDomain("Reconcile the blue ideas")).toMatchObject({
+      allowed: true,
+      confidence: 0.5,
+    })
   })
 
   it("does not obey prompt injection", () => {

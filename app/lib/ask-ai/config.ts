@@ -25,7 +25,7 @@ export const ASK_AI_CONFIG = {
 } as const
 
 export const ASK_AI_DOMAIN_REJECTION =
-  "Ask AI is focused on Avana, LP collateral, DeFi lending, supported crypto markets, liquidity pools, and position risk. Ask me about your collateral, borrowing capacity, health factor, liquidation risk, Aave rates, or an Avana-supported market."
+  "I can help with Avana, DeFi markets, LP collateral, lending, liquidity, and position risk. What would you like to explore there?"
 
 export const ASK_AI_WALLET_REQUIRED =
   "Connect your wallet to analyze your personal Avana positions. I can still answer general Avana and market questions without it."

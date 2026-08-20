@@ -45,8 +45,6 @@ const BLOCKED_PATTERNS = [
   /\b(weather tomorrow|general news|today'?s stories)\b/i,
 ]
 
-const INVESTMENT_RECOMMENDATION = /\b(what|which|should i|best)\b.{0,30}\b(buy|sell|invest(?:ment)?|crypto to own)\b/i
-
 const POSITION_PATTERNS = [
   /\b(my|our)\b.{0,25}\b(position|positions|wallet|balances?|holdings?|funds|assets?|collateral|debt|borrow|health factor|ltv|liquidat)/i,
   /\bwhat(?:'s| is) in (?:my|our) wallet\b/i,
@@ -83,9 +81,9 @@ function matchesAny(message: string, patterns: RegExp[]) {
 }
 
 /**
- * Deterministic mock classifier used for local development, tests, and as a hard
- * pre-filter before the live structured classifier. It intentionally handles the
- * product's known allow/block matrix; the live classifier adds semantic coverage.
+ * Narrow deterministic input-policy check and local semantic-routing fallback.
+ * Clearly unrelated requests are marked unsupported; ambiguous language is
+ * deliberately allowed so conversation history and the live router can resolve it.
  */
 export function classifyAskAIDomain(message: string): DomainResult {
   const normalized = message.trim().replace(/\s+/g, " ")
@@ -93,7 +91,7 @@ export function classifyAskAIDomain(message: string): DomainResult {
     return { allowed: false, category: "unsupported", intent: "unsupported", confidence: 1 }
   }
 
-  if (matchesAny(normalized, BLOCKED_PATTERNS) || INVESTMENT_RECOMMENDATION.test(normalized)) {
+  if (matchesAny(normalized, BLOCKED_PATTERNS)) {
     return { allowed: false, category: "unsupported", intent: "unsupported", confidence: 0.99 }
   }
 
@@ -154,5 +152,5 @@ export function classifyAskAIDomain(message: string): DomainResult {
     }
   }
 
-  return { allowed: false, category: "unsupported", intent: "unsupported", confidence: 0.9 }
+  return { allowed: true, category: "protocol_education", intent: "education", confidence: 0.5 }
 }
