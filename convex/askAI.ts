@@ -1,4 +1,12 @@
-import { createThread, listUIMessages, saveMessage, syncStreams, vStreamArgs } from "@convex-dev/agent"
+import {
+  abortStream,
+  createThread,
+  listStreams,
+  listUIMessages,
+  saveMessage,
+  syncStreams,
+  vStreamArgs,
+} from "@convex-dev/agent"
 import { RateLimiter } from "@convex-dev/rate-limiter"
 import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
@@ -516,6 +524,26 @@ export const retryFailedTurn = mutation({
   },
 })
 
+export const cancelRunningTurn = mutation({
+  args: { threadId: v.string() },
+  handler: async (ctx, { threadId }) => {
+    const { ownerSubject } = await requireOwnedThread(ctx, threadId)
+    const running = await ctx.db
+      .query("askAITurns")
+      .withIndex("by_thread_status_created", (q) => q.eq("threadId", threadId).eq("status", "running"))
+      .first()
+    if (!running || running.ownerSubject !== ownerSubject) return false
+    const streams = await listStreams(ctx, components.agent, { threadId, includeStatuses: ["streaming"] })
+    await Promise.all(
+      streams.map((stream) =>
+        abortStream(ctx, components.agent, { streamId: stream.streamId, reason: "Cancelled by user" }),
+      ),
+    )
+    await ctx.db.patch(running._id, { status: "cancelled", updatedAt: Date.now() })
+    return true
+  },
+})
+
 export const completeGeneratedTurn = mutation({
   args: {
     threadId: v.string(),
@@ -603,6 +631,7 @@ export const failTurn = mutation({
       .withIndex("by_prompt_message", (q) => q.eq("promptMessageId", promptMessageId))
       .unique()
     if (!turn || turn.ownerSubject !== ownerSubject || turn.threadId !== threadId) return
+    if (turn.status === "cancelled") return
     await ctx.db.patch(turn._id, { status: "failed", updatedAt: Date.now() })
   },
 })

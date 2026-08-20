@@ -92,6 +92,7 @@ export function AskAIPageClient() {
   const enqueueTurn = useMutation(api.askAI.enqueueTurn)
   const cancelQueuedTurn = useMutation(api.askAI.cancelQueuedTurn)
   const retryFailedTurn = useMutation(api.askAI.retryFailedTurn)
+  const cancelRunningTurn = useMutation(api.askAI.cancelRunningTurn)
   const generateUploadUrl = useMutation(api.askAIAttachments.generateUploadUrl)
   const registerAttachment = useMutation(api.askAIAttachments.register)
   const processAttachment = useAction(api.askAIAttachments.process)
@@ -320,6 +321,11 @@ export function AskAIPageClient() {
     onReload: async () => {
       if (!pendingTurn?.error) return
       await retryFailedTurn({ turnId: pendingTurn.id as Id<"askAITurns"> })
+      setPendingTurn(null)
+    },
+    onCancel: async () => {
+      if (!resolvedActiveThreadId) return
+      await cancelRunningTurn({ threadId: resolvedActiveThreadId })
       setPendingTurn(null)
     },
     queue: queueAdapter,

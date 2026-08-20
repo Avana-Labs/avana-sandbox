@@ -69,6 +69,17 @@ describe("Ask AI generated-turn lifecycle", () => {
     ).resolves.toMatchObject({ page: [], isDone: true })
   })
 
+  test("cancels a running turn without converting it to a retryable failure", async () => {
+    const t = askAITest()
+    const owner = t.withIdentity({ subject: "ask-guest:cancel-owner" })
+    const thread = await owner.mutation(api.askAI.create, {})
+    const turn = await owner.mutation(api.askAI.beginTurn, { threadId: thread.threadId, prompt: "Analyze risk" })
+
+    await expect(owner.mutation(api.askAI.cancelRunningTurn, { threadId: thread.threadId })).resolves.toBe(true)
+    await owner.mutation(api.askAI.failTurn, { threadId: thread.threadId, promptMessageId: turn.messageId })
+    await expect(owner.query(api.askAI.turnQueue, { threadId: thread.threadId })).resolves.toEqual([])
+  })
+
   test("reports provider token usage from durable records", async () => {
     const t = askAITest()
     const ownerSubject = "ask-guest:usage-owner"
