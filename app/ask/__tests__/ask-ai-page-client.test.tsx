@@ -30,11 +30,12 @@ describe("AskAIPageClient", () => {
     expect(screen.getByRole("button", { name: "Open sidebar" })).toBeInTheDocument()
   })
 
-  it("creates a new persisted thread from the Base control", async () => {
+  it("creates a new persisted thread without changing sidebar state", async () => {
     const user = userEvent.setup()
     render(<AskAIPageClient />)
 
+    await user.click(screen.getByRole("button", { name: "Open sidebar" }))
     await user.click(screen.getByRole("button", { name: "New Thread" }))
-    expect(screen.getByRole("button", { name: "Open sidebar" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Hide sidebar" })).toBeInTheDocument()
   })
 })

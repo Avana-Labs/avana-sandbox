@@ -148,8 +148,6 @@ export function AskAIPageClient() {
     setStreamTurn(null)
     const thread = await createThread({})
     setActiveThreadId(thread.threadId)
-    if (typeof window.matchMedia !== "function" || window.matchMedia("(max-width: 1023px)").matches)
-      setThreadsOpen(false)
   }, [createThread])
 
   const sendPrompt = useCallback(
