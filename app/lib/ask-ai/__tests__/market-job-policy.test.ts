@@ -10,11 +10,14 @@ describe("Ask AI market job policy", () => {
     expect(askAI).not.toMatch(/fetch\s*\(/)
   })
 
-  test("keeps provider and RAG ingestion operator-triggered", () => {
+  test("schedules market ingestion internally while keeping RAG ingestion operator-triggered", () => {
     const crons = readFileSync(resolve("convex/crons.ts"), "utf8")
     const ingestion = readFileSync(resolve("convex/askAIIngestion.ts"), "utf8")
+    // Ingestion stays an internalAction (not publicly callable) but now runs on a schedule so the
+    // Ask AI market cache refreshes without any per-request provider fetch.
     expect(ingestion).toContain("export const ingest = internalAction")
-    expect(crons).not.toContain("askAIIngestion")
+    expect(crons).toContain("internal.askAIIngestion.ingest")
+    // RAG corpus ingestion stays operator-triggered (explicit data-export approval) — no cron.
     expect(crons).not.toContain("askAIRag")
   })
 })
