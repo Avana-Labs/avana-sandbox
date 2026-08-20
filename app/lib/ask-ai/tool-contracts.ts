@@ -14,7 +14,12 @@ export const askAIToolNames = [
 export type AskAIToolName = (typeof askAIToolNames)[number]
 
 const positionId = z.string().trim().min(1).max(160)
-const assetSymbol = z.string().trim().min(1).max(24).transform((value) => value.toUpperCase())
+const assetSymbol = z
+  .string()
+  .trim()
+  .min(1)
+  .max(24)
+  .transform((value) => value.toUpperCase())
 
 export const askAIToolArgumentSchemas = {
   read_portfolio: z.object({}).strict(),
@@ -30,13 +35,17 @@ export const askAIToolArgumentSchemas = {
   run_collateral_stress: z
     .object({
       positionId,
-      assetPriceChanges: z.record(assetSymbol, z.number().finite().min(-0.95).max(1)).refine(
-        (changes) => Object.keys(changes).length > 0 && Object.keys(changes).length <= 8,
-        "Provide 1 to 8 asset price changes",
-      ),
+      assetPriceChanges: z
+        .record(assetSymbol, z.number().finite().min(-0.95).max(1))
+        .refine(
+          (changes) => Object.keys(changes).length > 0 && Object.keys(changes).length <= 8,
+          "Provide 1 to 8 asset price changes",
+        ),
     })
     .strict(),
-  search_markets: z.object({ query: z.string().trim().min(1).max(200), limit: z.number().int().min(1).max(20).optional() }).strict(),
+  search_markets: z
+    .object({ query: z.string().trim().min(1).max(200), limit: z.number().int().min(1).max(20).optional() })
+    .strict(),
   search_pool_metrics: z.object({ marketId: z.string().trim().min(1).max(160) }).strict(),
   search_avana_knowledge: z.object({ query: z.string().trim().min(1).max(500) }).strict(),
 } satisfies Record<AskAIToolName, z.ZodTypeAny>
