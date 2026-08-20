@@ -17,9 +17,9 @@ The model is deliberately fixed by code to `gpt-5.6-luna`; users do not see or s
 
 ## Market ingestion
 
-The conversation path reads only normalized Convex records. Provider access happens in isolated Convex cron actions and never blocks a chat turn.
+The conversation path reads Avana Markets and `tokenPrices` directly. Provider access happens in isolated Convex actions and never blocks a chat turn.
 
-DefiLlama prices are already ingested by the canonical `prices.refreshPrices` job. Ask AI copies those existing `tokenPrices`, `markets`, and `lendMarkets` records into its normalized cache rather than contacting DefiLlama from a conversation.
+Only records fetched by the Ask AI provider adapters enter `askAIMarketSnapshots`; catalog tables are never copied into that cache.
 
 CoinGecko, Uniswap, Curve, Balancer, and Aave data must first be added to the app's canonical Convex ingestion layer. Ask AI must not operate a second provider-ingestion schedule. Answers receive only canonical records inside their configured freshness window; missing or stale records are not passed to Luna as live facts.
 
@@ -29,10 +29,10 @@ Deploy the Convex schema and functions before enabling the new frontend:
 
 ```sh
 npx convex deploy
-npx convex run askAIRag:ingestCorpus '{}'
+npx convex run askAIRag:ingestCorpusIfVersionChanged '{"corpusVersion":"9f4edd6ce81ac9b16f721170a1d7eec4f3727c1600fcf0f571a798ac3397d8c4"}'
 ```
 
-The corpus contains the Avana whitepaper, developer documentation, and FAQ. Ingestion uses document content hashes, bounded chunks, and `text-embedding-3-small`; unchanged scheduled runs do not re-embed the corpus.
+The corpus contains 488 prepared chunks from the Avana whitepaper, developer documentation, and FAQ. Run ingestion manually after deployment only when the corpus version changes. Content hashes prevent unchanged documents from being re-embedded; there is no scheduled RAG ingestion.
 
 After deployment, run the live and browser acceptance gates:
 

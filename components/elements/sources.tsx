@@ -8,6 +8,9 @@ import { collapsePanel, fieldInteractive, mono, paper } from "@/lib/surfaces"
 export interface Source {
   domain: string
   title: string
+  locator?: string
+  version?: string
+  url?: string
 }
 
 export interface SourcesProps {
@@ -38,8 +41,11 @@ export function Sources({ sources, open, onOpenChange, className }: SourcesProps
       <CollapsibleContent className={cn(collapsePanel, "outline-none")}>
         <div className="grid grid-cols-2 gap-2 pt-2.5">
           {sources.map((source) => (
-            <div
-              key={source.domain}
+            <a
+              key={`${source.domain}:${source.title}:${source.locator ?? ""}`}
+              href={source.url}
+              target={source.url ? "_blank" : undefined}
+              rel={source.url ? "noreferrer" : undefined}
               className={cn(paper, "flex flex-col gap-1.5 rounded-2xl p-3 transition-transform hover:-translate-y-px")}
             >
               <div className="flex items-center gap-1.5">
@@ -51,7 +57,11 @@ export function Sources({ sources, open, onOpenChange, className }: SourcesProps
               <span className="text-foreground/90 line-clamp-2 text-[13px] leading-snug font-medium">
                 {source.title}
               </span>
-            </div>
+              {source.locator ? <span className="text-foreground/50 text-xs">{source.locator}</span> : null}
+              {source.version ? (
+                <span className={cn(mono, "text-foreground/35 text-[10px]")}>{source.version}</span>
+              ) : null}
+            </a>
           ))}
         </div>
       </CollapsibleContent>
