@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   calculateAskAIBorrowSimulation,
+  calculateAskAICollateralStress,
   calculateLendProjection,
   calculateMultiplyStress,
   decodeBorrowRiskSnapshot,
@@ -24,6 +25,25 @@ describe("Ask AI engine calculations", () => {
       overMaxBorrowLtv: false,
       liquidatable: false,
       riskLevel: "elevated",
+    })
+  })
+
+  it("applies requested asset shocks to weighted LP collateral", () => {
+    expect(
+      calculateAskAICollateralStress({
+        collateralValueUsd: 10_000,
+        debtValueUsd: 4_000,
+        liquidationThresholdPct: 65,
+        constituents: [
+          { symbol: "ETH", weight: 0.5 },
+          { symbol: "USDC", weight: 0.5 },
+        ],
+        assetPriceChanges: { ETH: -0.2 },
+      }),
+    ).toMatchObject({
+      weightedCollateralChange: -0.1,
+      projected: { collateralValueUsd: 9_000, ltv: 4_000 / 9_000, healthFactor: 1.4625 },
+      liquidatable: false,
     })
   })
 
