@@ -21,6 +21,26 @@ import { internal } from "./_generated/api"
 const crons = cronJobs()
 
 crons.interval("refresh token prices", { minutes: 10 }, internal.prices.refreshPrices, {})
+// Ask AI never contacts providers from a conversation. These jobs refresh its
+// normalized Convex cache independently, with failures isolated per provider.
+crons.interval("sync Ask AI canonical markets", { minutes: 10 }, internal.askAIIngestion.ingest, {
+  source: "defillama",
+})
+crons.interval("refresh Ask AI CoinGecko markets", { minutes: 10 }, internal.askAIIngestion.ingest, {
+  source: "coingecko",
+})
+crons.interval("refresh Ask AI Uniswap markets", { minutes: 15 }, internal.askAIIngestion.ingest, {
+  source: "uniswap",
+})
+crons.interval("refresh Ask AI Curve markets", { minutes: 15 }, internal.askAIIngestion.ingest, {
+  source: "curve",
+})
+crons.interval("refresh Ask AI Balancer markets", { minutes: 30 }, internal.askAIIngestion.ingest, {
+  source: "balancer",
+})
+crons.interval("refresh Ask AI Aave markets", { minutes: 10 }, internal.askAIIngestion.ingest, {
+  source: "aave",
+})
 // FX moves slowly (daily provider updates); hourly keeps the validated fiat layer fresh cheaply.
 crons.interval("refresh fx rates", { hours: 1 }, internal.fx.refreshFxRates, {})
 // Flush each market's running liquidity delta into a persistent daily snapshot near
