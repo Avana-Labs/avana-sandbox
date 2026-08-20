@@ -1,7 +1,7 @@
 import { Agent } from "@convex-dev/agent"
 import { createOpenAI } from "@ai-sdk/openai"
 import { stepCountIs } from "ai"
-import { v } from "convex/values"
+import { ConvexError, v } from "convex/values"
 import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
 import { ASK_AI_AGENT_INSTRUCTIONS } from "../app/lib/ask-ai/agent-instructions"
 import { api, components, internal } from "./_generated/api"
@@ -48,6 +48,64 @@ type PreparedTurn = {
   messageId: string
 }
 
+// Financial tool -> persisted richParts kind (docs/ask-ai-lane-contracts.md §1).
+const FINANCIAL_TOOL_KINDS = {
+  read_portfolio: "portfolio",
+  read_borrow_capacity: "borrow_capacity",
+  read_position_risk: "position_risk",
+  simulate_borrow: "simulate_borrow",
+  stress_position: "stress_position",
+} as const
+
+type FinancialToolName = keyof typeof FINANCIAL_TOOL_KINDS
+type DataProvenance = "sandbox" | "connected_wallet" | "onchain"
+
+// Matches the persisted `sources` validator in askAI.completeGeneratedTurn.
+type AskAISource = {
+  domain: string
+  title: string
+  locator: string
+  url?: string
+  kind?: string
+  version?: string
+}
+
+const ASK_AI_ERROR_CODES = ["ASK_AI_GENERATION_FAILED", "ASK_AI_RATE_LIMITED", "ASK_AI_UNAVAILABLE"] as const
+type AskAIErrorCode = (typeof ASK_AI_ERROR_CODES)[number]
+
+// Only ConvexErrors carrying our { code, message } contract are user-safe to
+// re-throw verbatim; everything else is classified and sanitized below so no
+// function name, request id, or stack leaks to the client.
+function isCodedAskAIError(error: unknown): error is ConvexError<{ code: AskAIErrorCode; message: string }> {
+  return (
+    error instanceof ConvexError &&
+    typeof error.data === "object" &&
+    error.data !== null &&
+    "code" in error.data &&
+    (ASK_AI_ERROR_CODES as readonly string[]).includes((error.data as { code: unknown }).code as string) &&
+    "message" in error.data
+  )
+}
+
+function toClientAskAIError(error: unknown): ConvexError<{ code: AskAIErrorCode; message: string }> {
+  if (isCodedAskAIError(error)) return error
+  const raw = (error instanceof Error ? error.message : String(error)).toLowerCase()
+  if (/rate.?limit|too many|429|quota/.test(raw))
+    return new ConvexError({
+      code: "ASK_AI_RATE_LIMITED",
+      message: "Ask AI is handling a lot of requests right now. Please wait a moment and try again.",
+    })
+  if (/unavailable|overloaded|timeout|timed out|network|econn|fetch failed|50[234]/.test(raw))
+    return new ConvexError({
+      code: "ASK_AI_UNAVAILABLE",
+      message: "Ask AI is temporarily unavailable. Please try again shortly.",
+    })
+  return new ConvexError({
+    code: "ASK_AI_GENERATION_FAILED",
+    message: "Ask AI could not complete this response. Please try again.",
+  })
+}
+
 type GeneratedTurn = {
   text: string
   promptMessageId: string
@@ -64,7 +122,14 @@ export const generateTurn = action({
   },
   handler: async (ctx, args): Promise<GeneratedTurn> => {
     const startedAt = Date.now()
-    const turn = (await ctx.runMutation(api.askAI.beginTurn, args)) as PreparedTurn
+    // beginTurn runs before the try block, so its throws (rate limit, daily
+    // token limit, validation) would otherwise escape raw. Sanitize them too.
+    let turn: PreparedTurn
+    try {
+      turn = (await ctx.runMutation(api.askAI.beginTurn, args)) as PreparedTurn
+    } catch (error) {
+      throw toClientAskAIError(error)
+    }
     try {
       const result = await askAIAgent.streamText(
         ctx,
@@ -97,12 +162,51 @@ export const generateTurn = action({
           toolResult.toolName === "search_avana_knowledge" &&
           typeof toolResult.output === "object" &&
           toolResult.output !== null
-            ? [toolResult.output as { sources?: unknown[] }]
+            ? [toolResult.output as { sources?: unknown[]; entries?: unknown[] }]
             : [],
         ),
       )
-      const sources = ragResults.flatMap((ragResult) => ragResult.sources ?? [])
-      await ctx.runMutation(api.askAI.completeGeneratedTurn, {
+      const sources = ragResults.flatMap((ragResult) => (ragResult.sources ?? []) as AskAISource[])
+      // One entry per financial tool call the model actually made. `payload` is
+      // the tool's structured result verbatim; `dataProvenance` is read
+      // defensively because Lane D adds it to the tool output separately.
+      const financialResults = steps.flatMap((step) =>
+        step.toolResults.flatMap((toolResult) => {
+          const kind = FINANCIAL_TOOL_KINDS[toolResult.toolName as FinancialToolName]
+          if (!kind) return []
+          const output = toolResult.output
+          const provenance =
+            output && typeof output === "object" && "dataProvenance" in output
+              ? (output as { dataProvenance?: unknown }).dataProvenance
+              : undefined
+          const dataProvenance: DataProvenance | undefined =
+            provenance === "sandbox" || provenance === "connected_wallet" || provenance === "onchain"
+              ? provenance
+              : undefined
+          return [{ kind, ...(dataProvenance ? { dataProvenance } : {}), payload: output }]
+        }),
+      )
+      // Retrieval passages for the RetrievalChunks card. The RAG tool output
+      // exposes per-passage `sources` (title + locator); read `entries`/`text`/
+      // `score` defensively so richer output populates them without inventing.
+      const retrievalChunks = ragResults.flatMap((ragResult) => {
+        const rows = Array.isArray(ragResult.entries)
+          ? ragResult.entries
+          : Array.isArray(ragResult.sources)
+            ? ragResult.sources
+            : []
+        return rows.flatMap((row) => {
+          if (!row || typeof row !== "object") return []
+          const entry = row as { title?: unknown; locator?: unknown; text?: unknown; score?: unknown }
+          const title = typeof entry.title === "string" && entry.title.length > 0 ? entry.title : "Avana documentation"
+          const locator = typeof entry.locator === "string" ? entry.locator : ""
+          const text = typeof entry.text === "string" && entry.text.length > 0 ? entry.text : locator
+          if (!text) return []
+          const score = typeof entry.score === "number" ? entry.score : undefined
+          return [{ title, locator, text, ...(score !== undefined ? { score } : {}) }]
+        })
+      })
+      await ctx.runMutation(internal.askAI.completeGeneratedTurn, {
         threadId: args.threadId,
         promptMessageId: turn.messageId,
         assistantMessageId: assistantMessage._id,
@@ -110,6 +214,8 @@ export const generateTurn = action({
         richParts: {
           sources,
           usage,
+          ...(financialResults.length > 0 ? { financialResults } : {}),
+          ...(retrievalChunks.length > 0 ? { retrievalChunks } : {}),
         },
       })
       await ctx.runMutation(internal.askAITelemetry.record, {
@@ -130,10 +236,11 @@ export const generateTurn = action({
         usage,
       }
     } catch (error) {
-      await ctx.runMutation(api.askAI.failTurn, {
+      await ctx.runMutation(internal.askAI.failTurn, {
         threadId: args.threadId,
         promptMessageId: turn.messageId,
       })
+      // Keep the raw error in telemetry (detailed text, never client-visible)...
       await ctx.runMutation(internal.askAITelemetry.record, {
         ownerSubject: turn.ownerSubject,
         threadId: args.threadId,
@@ -145,7 +252,8 @@ export const generateTurn = action({
         tools: [],
         error: error instanceof Error ? error.message.slice(0, 500) : "Unknown Ask AI failure",
       })
-      throw error
+      // ...but only surface a sanitized, typed ConvexError to the client.
+      throw toClientAskAIError(error)
     }
   },
 })

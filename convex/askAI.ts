@@ -1,17 +1,18 @@
 import {
   abortStream,
   createThread,
+  listMessages,
   listStreams,
   listUIMessages,
   saveMessage,
   syncStreams,
   vStreamArgs,
 } from "@convex-dev/agent"
-import { RateLimiter } from "@convex-dev/rate-limiter"
+import { RateLimiter, isRateLimitError } from "@convex-dev/rate-limiter"
 import { paginationOptsValidator } from "convex/server"
-import { v } from "convex/values"
+import { ConvexError, v, type GenericId } from "convex/values"
 import { components } from "./_generated/api"
-import { internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
+import { internalMutation, internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
 import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
 import { classifyAskAIDomain } from "../app/lib/ask-ai/domain-gate"
 
@@ -22,6 +23,31 @@ const askAIRateLimiter = new RateLimiter(components.rateLimiter, {
   perSubjectBurst: { kind: "token bucket", rate: 1, period: 5_000, capacity: 1 },
   globalDaily: { kind: "fixed window", rate: 20_000, period: 24 * 60 * 60 * 1_000 },
 })
+
+// User-facing throws use ConvexError so the friendly message survives Convex's
+// production error redaction and Lane C can render error.data.message with a
+// code -> copy fallback map. See docs/ask-ai-lane-contracts.md §2.
+type AskAIErrorCode = "ASK_AI_GENERATION_FAILED" | "ASK_AI_RATE_LIMITED" | "ASK_AI_UNAVAILABLE"
+
+function askAIError(code: AskAIErrorCode, message: string): ConvexError<{ code: AskAIErrorCode; message: string }> {
+  return new ConvexError({ code, message })
+}
+
+// The rate limiter throws its own ConvexError ({ kind: "RateLimited", ... }).
+// Re-map it to the shared Ask AI error shape so the client sees a friendly,
+// redaction-safe message instead of the raw limiter payload.
+async function enforceAskAIRateLimit<T>(run: () => Promise<T>): Promise<T> {
+  try {
+    return await run()
+  } catch (error) {
+    if (isRateLimitError(error))
+      throw askAIError(
+        "ASK_AI_RATE_LIMITED",
+        "Ask AI is handling a lot of requests right now. Please wait a moment and try again.",
+      )
+    throw error
+  }
+}
 
 function titleFromPrompt(prompt: string) {
   const compact = prompt
@@ -187,7 +213,8 @@ export const beginTurn = mutation({
     const { ownerSubject, thread } = await requireOwnedThread(ctx, threadId)
     if (thread.status !== "active") throw new Error("Thread is archived")
     const text = prompt.trim()
-    if (!text || text.length > 2_000) throw new Error("Message must contain 1 to 2000 characters")
+    if (!text || text.length > 2_000)
+      throw askAIError("ASK_AI_GENERATION_FAILED", "Message must contain 1 to 2000 characters")
     const domain = routing ?? classifyAskAIDomain(text)
     const previousTurn = retryPromptMessageId
       ? await ctx.db
@@ -212,10 +239,14 @@ export const beginTurn = mutation({
         .withIndex("by_owner_created", (q) => q.eq("ownerSubject", ownerSubject).gte("createdAt", dayStart))
         .collect()
       if (usageRows.reduce((sum, row) => sum + row.totalTokens, 0) >= ASK_AI_CONFIG.limits.dailyTokenBudget)
-        throw new Error("Ask AI daily token limit reached. Need help? Contact Avana Support.")
-      await askAIRateLimiter.limit(ctx, "perSubjectDaily", { key: ownerSubject, throws: true })
-      await askAIRateLimiter.limit(ctx, "perSubjectBurst", { key: ownerSubject, throws: true })
-      await askAIRateLimiter.limit(ctx, "globalDaily", { throws: true })
+        throw askAIError("ASK_AI_RATE_LIMITED", "Ask AI daily token limit reached. Need help? Contact Avana Support.")
+      await enforceAskAIRateLimit(() =>
+        askAIRateLimiter.limit(ctx, "perSubjectDaily", { key: ownerSubject, throws: true }),
+      )
+      await enforceAskAIRateLimit(() =>
+        askAIRateLimiter.limit(ctx, "perSubjectBurst", { key: ownerSubject, throws: true }),
+      )
+      await enforceAskAIRateLimit(() => askAIRateLimiter.limit(ctx, "globalDaily", { throws: true }))
     }
     const attachments = previousTurn
       ? []
@@ -276,20 +307,25 @@ export const enqueueTurn = mutation({
     if (thread.status !== "active") throw new Error("Thread is archived")
     const text = prompt.trim()
     if (!text || text.length > ASK_AI_CONFIG.maxInputCharacters)
-      throw new Error(`Message must contain 1 to ${ASK_AI_CONFIG.maxInputCharacters} characters`)
+      throw askAIError(
+        "ASK_AI_GENERATION_FAILED",
+        `Message must contain 1 to ${ASK_AI_CONFIG.maxInputCharacters} characters`,
+      )
     const queued = await ctx.db
       .query("askAITurns")
       .withIndex("by_thread_status_created", (q) => q.eq("threadId", threadId).eq("status", "queued"))
       .collect()
-    if (queued.length >= 10) throw new Error("Ask AI queue is full")
+    if (queued.length >= 10) throw askAIError("ASK_AI_RATE_LIMITED", "Ask AI queue is full")
     const dayStart = Date.now() - 24 * 60 * 60 * 1_000
     const usageRows = await ctx.db
       .query("askAIUsage")
       .withIndex("by_owner_created", (q) => q.eq("ownerSubject", ownerSubject).gte("createdAt", dayStart))
       .collect()
     if (usageRows.reduce((sum, row) => sum + row.totalTokens, 0) >= ASK_AI_CONFIG.limits.dailyTokenBudget)
-      throw new Error("Ask AI daily token limit reached. Need help? Contact Avana Support.")
-    await askAIRateLimiter.limit(ctx, "perSubjectDaily", { key: ownerSubject, throws: true })
+      throw askAIError("ASK_AI_RATE_LIMITED", "Ask AI daily token limit reached. Need help? Contact Avana Support.")
+    await enforceAskAIRateLimit(() =>
+      askAIRateLimiter.limit(ctx, "perSubjectDaily", { key: ownerSubject, throws: true }),
+    )
     const attachments = await Promise.all(
       (attachmentIds ?? []).slice(0, 5).map((attachmentId) => ctx.db.get(attachmentId)),
     )
@@ -381,13 +417,60 @@ export const cancelRunningTurn = mutation({
   },
 })
 
-export const completeGeneratedTurn = mutation({
+export const completeGeneratedTurn = internalMutation({
   args: {
     threadId: v.string(),
     promptMessageId: v.string(),
     assistantMessageId: v.string(),
     usage: v.object({ inputTokens: v.number(), outputTokens: v.number(), totalTokens: v.number() }),
-    richParts: v.optional(v.any()),
+    // Explicit shape (was v.any()) per docs/ask-ai-lane-contracts.md §1 so the
+    // rich parts the UI renders are validated at the trust boundary.
+    richParts: v.optional(
+      v.object({
+        sources: v.optional(
+          v.array(
+            v.object({
+              domain: v.string(),
+              title: v.string(),
+              locator: v.string(),
+              url: v.optional(v.string()),
+              kind: v.optional(v.string()),
+              version: v.optional(v.string()),
+            }),
+          ),
+        ),
+        usage: v.optional(v.object({ inputTokens: v.number(), outputTokens: v.number(), totalTokens: v.number() })),
+        financialResults: v.optional(
+          v.array(
+            v.object({
+              kind: v.union(
+                v.literal("portfolio"),
+                v.literal("borrow_capacity"),
+                v.literal("position_risk"),
+                v.literal("simulate_borrow"),
+                v.literal("stress_position"),
+              ),
+              // Supplied by Lane D on the tool result; optional until it ships.
+              dataProvenance: v.optional(
+                v.union(v.literal("sandbox"), v.literal("connected_wallet"), v.literal("onchain")),
+              ),
+              // The tool's structured result verbatim; genuinely arbitrary shape.
+              payload: v.any(),
+            }),
+          ),
+        ),
+        retrievalChunks: v.optional(
+          v.array(
+            v.object({
+              title: v.string(),
+              locator: v.string(),
+              text: v.string(),
+              score: v.optional(v.number()),
+            }),
+          ),
+        ),
+      }),
+    ),
   },
   handler: async (ctx, { threadId, promptMessageId, assistantMessageId, usage, richParts }) => {
     const { ownerSubject, thread } = await requireOwnedThread(ctx, threadId)
@@ -428,7 +511,8 @@ export const completeGeneratedTurn = mutation({
   },
 })
 
-export const completeTurn = mutation({
+// No client caller (grep of app/ finds none); server-only, so lock it down.
+export const completeTurn = internalMutation({
   args: { threadId: v.string(), promptMessageId: v.string(), message: v.string(), richParts: v.optional(v.any()) },
   handler: async (ctx, { threadId, promptMessageId, message, richParts }) => {
     const { ownerSubject, thread } = await requireOwnedThread(ctx, threadId)
@@ -459,7 +543,28 @@ export const completeTurn = mutation({
   },
 })
 
-export const failTurn = mutation({
+// On a failed turn, saveStreamDeltas can leave a partial or empty assistant
+// message persisted that the list query would otherwise return as a normal,
+// complete answer — so Lane C would show Copy / feedback controls beside an
+// error card. Remove any assistant message for this thread that never settled
+// (status !== "success") or has no visible text. Robust when none exists.
+// See docs/ask-ai-lane-contracts.md §3.
+async function discardStrayAssistantMessage(ctx: MutationCtx, threadId: string) {
+  const { page } = await listMessages(ctx, components.agent, {
+    threadId,
+    excludeToolMessages: true,
+    paginationOpts: { cursor: null, numItems: 20 },
+  })
+  const stale: GenericId<"messages">[] = []
+  for (const message of page) {
+    if (message.message?.role !== "assistant") continue
+    const settled = message.status === "success" && (message.text ?? "").trim().length > 0
+    if (!settled) stale.push(message._id as GenericId<"messages">)
+  }
+  if (stale.length > 0) await ctx.runMutation(components.agent.messages.deleteByIds, { messageIds: stale })
+}
+
+export const failTurn = internalMutation({
   args: { threadId: v.string(), promptMessageId: v.string() },
   handler: async (ctx, { threadId, promptMessageId }) => {
     const { ownerSubject } = await requireOwnedThread(ctx, threadId)
@@ -470,6 +575,7 @@ export const failTurn = mutation({
     if (!turn || turn.ownerSubject !== ownerSubject || turn.threadId !== threadId) return
     if (turn.status === "cancelled") return
     await ctx.db.patch(turn._id, { status: "failed", updatedAt: Date.now() })
+    await discardStrayAssistantMessage(ctx, threadId)
   },
 })
 

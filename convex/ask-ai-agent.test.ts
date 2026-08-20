@@ -2,7 +2,7 @@
 import { register as registerAgent } from "@convex-dev/agent/test"
 import { register as registerRateLimiter } from "@convex-dev/rate-limiter/test"
 import { describe, expect, test } from "vitest"
-import { api } from "./_generated/api"
+import { api, internal } from "./_generated/api"
 import { convexTest } from "convex-test"
 import schema from "./schema"
 
@@ -47,7 +47,7 @@ describe("Ask AI generated-turn lifecycle", () => {
     const turn = await owner.mutation(api.askAI.beginTurn, { threadId: thread.threadId, prompt: "Hello" })
 
     await expect(
-      other.mutation(api.askAI.completeGeneratedTurn, {
+      other.mutation(internal.askAI.completeGeneratedTurn, {
         threadId: thread.threadId,
         promptMessageId: turn.messageId,
         assistantMessageId: "message:fake",
@@ -91,8 +91,62 @@ describe("Ask AI generated-turn lifecycle", () => {
     const turn = await owner.mutation(api.askAI.beginTurn, { threadId: thread.threadId, prompt: "Analyze risk" })
 
     await expect(owner.mutation(api.askAI.cancelRunningTurn, { threadId: thread.threadId })).resolves.toBe(true)
-    await owner.mutation(api.askAI.failTurn, { threadId: thread.threadId, promptMessageId: turn.messageId })
+    await owner.mutation(internal.askAI.failTurn, { threadId: thread.threadId, promptMessageId: turn.messageId })
     await expect(owner.query(api.askAI.turnQueue, { threadId: thread.threadId })).resolves.toEqual([])
+  })
+
+  test("rejects an empty prompt with a typed, user-safe ConvexError", async () => {
+    const t = askAITest()
+    const owner = t.withIdentity({ subject: "ask-guest:validation" })
+    const thread = await owner.mutation(api.askAI.create, {})
+
+    await expect(
+      owner.mutation(api.askAI.beginTurn, { threadId: thread.threadId, prompt: "   " }),
+    ).rejects.toMatchObject({
+      data: { code: "ASK_AI_GENERATION_FAILED", message: "Message must contain 1 to 2000 characters" },
+    })
+  })
+
+  test("maps a tripped rate limiter to a typed ASK_AI_RATE_LIMITED error", async () => {
+    const t = askAITest()
+    const owner = t.withIdentity({ subject: "ask-guest:burst" })
+    const thread = await owner.mutation(api.askAI.create, {})
+    await owner.mutation(api.askAI.beginTurn, { threadId: thread.threadId, prompt: "First question" })
+
+    await expect(
+      owner.mutation(api.askAI.beginTurn, { threadId: thread.threadId, prompt: "Second question" }),
+    ).rejects.toMatchObject({ data: { code: "ASK_AI_RATE_LIMITED" } })
+  })
+
+  test("persists financial results and retrieval chunks as validated rich parts", async () => {
+    const t = askAITest()
+    const owner = t.withIdentity({ subject: "ask-guest:rich" })
+    const thread = await owner.mutation(api.askAI.create, {})
+    const turn = await owner.mutation(api.askAI.beginTurn, { threadId: thread.threadId, prompt: "What is my risk?" })
+
+    await owner.mutation(internal.askAI.completeGeneratedTurn, {
+      threadId: thread.threadId,
+      promptMessageId: turn.messageId,
+      assistantMessageId: "message:rich",
+      usage: { inputTokens: 5, outputTokens: 7, totalTokens: 12 },
+      richParts: {
+        sources: [{ domain: "avana", title: "Docs", locator: "L1" }],
+        usage: { inputTokens: 5, outputTokens: 7, totalTokens: 12 },
+        financialResults: [{ kind: "portfolio", dataProvenance: "sandbox", payload: { netValueUsd: 100 } }],
+        retrievalChunks: [{ title: "Docs", locator: "L1", text: "How Avana values LP collateral", score: 0.91 }],
+      },
+    })
+
+    const parts = await t.run((ctx) =>
+      ctx.db
+        .query("askAIMessageParts")
+        .withIndex("by_message", (q) => q.eq("messageId", "message:rich"))
+        .unique(),
+    )
+    expect(parts?.parts).toMatchObject({
+      financialResults: [{ kind: "portfolio", dataProvenance: "sandbox", payload: { netValueUsd: 100 } }],
+      retrievalChunks: [{ title: "Docs", locator: "L1", text: "How Avana values LP collateral", score: 0.91 }],
+    })
   })
 
   test("reports provider token usage from durable records", async () => {
