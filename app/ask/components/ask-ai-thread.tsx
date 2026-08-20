@@ -13,7 +13,7 @@ import {
 } from "@assistant-ui/react"
 import { useMutation } from "convex/react"
 import { Check, Copy, Square, ThumbsDown, ThumbsUp } from "lucide-react"
-import { createContext, useContext, useEffect, useState } from "react"
+import { createContext, useContext, useState } from "react"
 import { CircleArrowUp, Code2, PieChart, Sparkles, SunMedium, TrendingUp } from "@/app/components/icons"
 import { ASK_AI_CONFIG } from "@/app/lib/ask-ai/config"
 import { Chart } from "@/components/elements/chart"
@@ -27,7 +27,6 @@ import {
   ComposerToolbar,
 } from "@/components/elements/composer"
 import { GenerationLoader } from "@/components/elements/loading-state"
-import { Onboarding } from "@/components/elements/onboarding"
 import { RetrievalChunks, type RetrievalChunk } from "@/components/elements/retrieval-chunks"
 import { Sources, type Source } from "@/components/elements/sources"
 import { StreamingText } from "@/components/elements/streaming-text"
@@ -44,24 +43,6 @@ const SUGGESTIONS = [
   { icon: TrendingUp, label: "Borrow", prompt: "How much can I borrow?" },
   { icon: PieChart, label: "Risk", prompt: "What is my health factor?" },
   { icon: Sparkles, label: "Stress test", prompt: "What if ETH falls 20%?" },
-]
-
-const ONBOARDING_STEPS = [
-  {
-    title: "Ask about Avana",
-    body: "Learn how Avana markets, LP collateral, lending, and borrowing work.",
-    example: "Explain LP collateral",
-  },
-  {
-    title: "Read your positions",
-    body: "Connect a wallet when you want analysis grounded in your persisted positions.",
-    example: "Analyze my positions",
-  },
-  {
-    title: "Test risk",
-    body: "Run read-only borrowing and collateral stress scenarios before you act.",
-    example: "What if ETH falls 20%?",
-  },
 ]
 
 function UserMessage() {
@@ -300,17 +281,6 @@ export function AskAIThread({
   usage?: AskAIUsage
 }) {
   const isEmpty = useAuiState((state) => state.thread.messages.length === 0)
-  const [onboardingIndex, setOnboardingIndex] = useState<number | null>(null)
-
-  useEffect(() => {
-    if (!window.localStorage.getItem("avana.ask-ai.onboarded")) setOnboardingIndex(0)
-  }, [])
-
-  const finishOnboarding = () => {
-    window.localStorage.setItem("avana.ask-ai.onboarded", "true")
-    setOnboardingIndex(null)
-  }
-
   return (
     <AskAIMessageContext.Provider value={{ threadId }}>
       <section className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
@@ -340,18 +310,6 @@ export function AskAIThread({
               <ThreadPrimitive.Empty>
                 <div className="mb-6 flex flex-col items-center px-4 text-center">
                   <h1 className="text-2xl font-medium tracking-tight">How can I help you today?</h1>
-                  {onboardingIndex !== null ? (
-                    <Onboarding
-                      steps={ONBOARDING_STEPS}
-                      index={onboardingIndex}
-                      onNext={() => {
-                        if (onboardingIndex >= ONBOARDING_STEPS.length - 1) finishOnboarding()
-                        else setOnboardingIndex((index) => (index ?? 0) + 1)
-                      }}
-                      onSkip={finishOnboarding}
-                      className="mt-6 text-left"
-                    />
-                  ) : null}
                 </div>
               </ThreadPrimitive.Empty>
 
