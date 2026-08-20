@@ -28,6 +28,7 @@ describe("Ask AI generated-turn lifecycle", () => {
         threadId: thread.threadId,
         promptMessageId: turn.messageId,
         assistantMessageId: "message:fake",
+        usage: { inputTokens: 10, outputTokens: 5, totalTokens: 15 },
       }),
     ).rejects.toThrow("Thread not found")
   })
@@ -43,5 +44,29 @@ describe("Ask AI generated-turn lifecycle", () => {
         paginationOpts: { cursor: null, numItems: 20 },
       }),
     ).resolves.toMatchObject({ page: [], isDone: true })
+  })
+
+  test("reports provider token usage from durable records", async () => {
+    const t = askAITest()
+    const ownerSubject = "ask-guest:usage-owner"
+    await t.run(async (ctx) => {
+      await ctx.db.insert("askAIUsage", {
+        ownerSubject,
+        threadId: "thread-usage",
+        messageId: "message-usage",
+        model: "gpt-5.6-luna",
+        provider: "openai",
+        inputTokens: 120,
+        outputTokens: 30,
+        totalTokens: 150,
+        createdAt: Date.now(),
+      })
+    })
+
+    await expect(t.withIdentity({ subject: ownerSubject }).query(api.askAI.quota, {})).resolves.toMatchObject({
+      tokensUsed: 150,
+      tokenLimit: 30_000,
+      tokensRemaining: 29_850,
+    })
   })
 })

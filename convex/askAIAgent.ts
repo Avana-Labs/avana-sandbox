@@ -104,6 +104,7 @@ export const generateTurn = action({
         threadId: args.threadId,
         promptMessageId: turn.messageId,
         assistantMessageId: assistantMessage._id,
+        usage,
         richParts: {
           tool: turn.tool,
           retrievalChunks: turn.retrievalChunks,
