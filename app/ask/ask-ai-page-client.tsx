@@ -6,12 +6,21 @@ import {
   type ThreadMessage,
   useExternalStoreRuntime,
 } from "@assistant-ui/react"
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { AskAIThread } from "./components/ask-ai-thread"
 import { AskAIThreadList } from "./components/ask-ai-thread-list"
 
 export function AskAIPageClient() {
-  const [threadsOpen, setThreadsOpen] = useState(true)
+  const [threadsOpen, setThreadsOpen] = useState(false)
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return
+    const desktop = window.matchMedia("(min-width: 1024px)")
+    const syncToViewport = () => setThreadsOpen(desktop.matches)
+    syncToViewport()
+    desktop.addEventListener("change", syncToViewport)
+    return () => desktop.removeEventListener("change", syncToViewport)
+  }, [])
   const handleNewMessage = useCallback(async (_message: AppendMessage) => {
     // Commit 3 connects this boundary to Convex Agent. Keeping the assistant-ui
     // runtime in place now means the presentation does not need to be replaced.
