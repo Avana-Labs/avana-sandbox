@@ -55,9 +55,8 @@ export interface ComposerModel {
 }
 
 export interface ComposerUsage {
-  system: number
-  tools: number
-  messages: number
+  input: number
+  output: number
   total: number
 }
 
@@ -403,14 +402,13 @@ export function ComposerContext({
   className,
   ...props
 }: Omit<ComponentProps<"div">, "children"> & { usage: ComposerUsage }) {
-  const used = usage.system + usage.tools + usage.messages
+  const used = usage.input + usage.output
   const fraction = usage.total === 0 ? 0 : used / usage.total
   const warn = fraction > 0.85
   const circumference = 2 * Math.PI * 6
   const segments = [
-    { label: "System", value: usage.system, className: "bg-foreground/25" },
-    { label: "Tools", value: usage.tools, className: "bg-foreground/45" },
-    { label: "Messages", value: usage.messages, className: "bg-foreground/80" },
+    { label: "Input", value: usage.input, className: "bg-foreground/45" },
+    { label: "Output", value: usage.output, className: "bg-foreground/80" },
   ]
 
   return (
@@ -445,7 +443,7 @@ export function ComposerContext({
             <div key={segment.label} className="text-foreground/55 flex items-center gap-2.5 text-[13px]">
               <span aria-hidden className={cn("size-1.5 rounded-full", segment.className)} />
               <span className="flex-1">{segment.label}</span>
-              <span className={cn(mono, "text-foreground/40 tabular-nums")}>{segment.value}k</span>
+              <span className={cn(mono, "text-foreground/40 tabular-nums")}>{segment.value.toLocaleString()}</span>
             </div>
           ))}
         </div>
@@ -453,7 +451,7 @@ export function ComposerContext({
         <div className="text-foreground/55 flex items-center justify-between text-[13px]">
           <span>Total</span>
           <span className={cn(mono, "text-foreground/40 tabular-nums")}>
-            {used}k / {usage.total}k
+            {used.toLocaleString()} / {usage.total.toLocaleString()}
           </span>
         </div>
       </div>

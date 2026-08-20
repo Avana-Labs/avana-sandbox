@@ -81,7 +81,7 @@ export function AskAIThreadList({
             limit={quota.limit}
             unit="messages"
             resetsIn={new Date(quota.resetsAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
-            upgradeLabel="Get more"
+            upgradeLabel="Need Help?"
             onUpgrade={() => {
               window.location.href = "/support-center"
             }}

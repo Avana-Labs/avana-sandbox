@@ -7,6 +7,13 @@ export type AskAIChatRequest = {
   threadId: string
   messages: AskAIChatMessage[]
   prompt: string
+  retryPromptMessageId?: string
+}
+
+export type AskAIUsage = {
+  inputTokens: number
+  outputTokens: number
+  totalTokens: number
 }
 
 export type AskAIChatEvent =
@@ -23,5 +30,6 @@ export type AskAIChatEvent =
   | { type: "sources"; sources: Array<{ domain: string; title: string; url?: string }> }
   | { type: "visual"; visual: { type: "chart"; label: string; value: string; points: number[]; delta?: string } }
   | { type: "text-delta"; delta: string }
+  | { type: "usage"; usage: AskAIUsage }
   | { type: "done" }
   | { type: "error"; message: string }

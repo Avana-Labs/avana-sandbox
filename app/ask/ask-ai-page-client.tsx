@@ -10,6 +10,7 @@ import {
 import { useMutation, useQuery } from "convex/react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { AskAIChatEvent } from "@/app/lib/ask-ai/chat-protocol"
+import type { AskAIUsage } from "@/app/lib/ask-ai/chat-protocol"
 import { getAskAIGuestToken } from "@/app/lib/ask-ai/guest-auth-store"
 import { getSiweToken } from "@/app/lib/siwe/auth-store"
 import { api } from "@/convex/_generated/api"
@@ -24,6 +25,8 @@ type StreamTurn = {
   parts: ThreadAssistantMessagePart[]
   done: boolean
   error?: string
+  promptMessageId?: string
+  usage?: AskAIUsage
 }
 
 type PersistedRichParts = {
@@ -31,6 +34,7 @@ type PersistedRichParts = {
   retrievalChunks?: unknown[]
   sources?: unknown[]
   visual?: unknown
+  usage?: AskAIUsage
 }
 
 const assistantMetadata = () => ({
@@ -144,14 +148,9 @@ export function AskAIPageClient() {
       setThreadsOpen(false)
   }, [createThread])
 
-  const handleNewMessage = useCallback(
-    async (message: AppendMessage) => {
-      const prompt = message.content
-        .filter((part) => part.type === "text")
-        .map((part) => part.text)
-        .join("\n")
-        .trim()
-      if (!prompt || streamTurn) return
+  const sendPrompt = useCallback(
+    async (prompt: string, retryPromptMessageId?: string) => {
+      if (!prompt || (streamTurn && !streamTurn.done)) return
       let threadId = activeThreadId
       if (!threadId) {
         const created = await createThread({})
@@ -172,6 +171,7 @@ export function AskAIPageClient() {
           body: JSON.stringify({
             threadId,
             prompt,
+            retryPromptMessageId,
             messages: persistedMessages.map((item) => ({ role: item.role, text: messageText(item) })),
           }),
           signal: controller.signal,
@@ -195,6 +195,7 @@ export function AskAIPageClient() {
               if (event.type === "meta")
                 return {
                   ...current,
+                  promptMessageId: event.promptMessageId,
                   parts: event.tool
                     ? [
                         ...current.parts,
@@ -221,6 +222,7 @@ export function AskAIPageClient() {
                 return { ...current, parts: [...current.parts, { type: "data", name: "sources", data: event.sources }] }
               if (event.type === "visual")
                 return { ...current, parts: [...current.parts, { type: "data", name: "chart", data: event.visual }] }
+              if (event.type === "usage") return { ...current, usage: event.usage }
               if (event.type === "text-delta") {
                 const text = current.text + event.delta
                 return {
@@ -255,6 +257,18 @@ export function AskAIPageClient() {
       }
     },
     [activeThreadId, createThread, persistedMessages, streamTurn],
+  )
+
+  const handleNewMessage = useCallback(
+    async (message: AppendMessage) => {
+      const prompt = message.content
+        .filter((part) => part.type === "text")
+        .map((part) => part.text)
+        .join("\n")
+        .trim()
+      await sendPrompt(prompt)
+    },
+    [sendPrompt],
   )
 
   const messages = useMemo<readonly ThreadMessage[]>(() => {
@@ -295,6 +309,10 @@ export function AskAIPageClient() {
     isRunning: Boolean(streamTurn && !streamTurn.done),
     onNew: handleNewMessage,
     onCancel: async () => abortController.current?.abort(),
+    onReload: async () => {
+      if (!streamTurn?.error) return
+      await sendPrompt(streamTurn.prompt, streamTurn.promptMessageId)
+    },
     suggestions: [
       { prompt: "How much can I borrow?" },
       { prompt: "Analyze my positions" },
@@ -325,6 +343,16 @@ export function AskAIPageClient() {
           title={threads.find((thread) => thread.threadId === activeThreadId)?.title ?? "New Chat"}
           threadsOpen={threadsOpen}
           onToggleThreads={() => setThreadsOpen((open) => !open)}
+          threadId={activeThreadId}
+          usage={
+            streamTurn?.usage ??
+            (
+              (messagePage?.page ?? []).findLast(
+                (message) =>
+                  message.role === "assistant" && Boolean((message.richParts as PersistedRichParts | undefined)?.usage),
+              )?.richParts as PersistedRichParts | undefined
+            )?.usage
+          }
         />
       </main>
     </AssistantRuntimeProvider>

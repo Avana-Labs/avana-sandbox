@@ -3,7 +3,7 @@ import { RateLimiter } from "@convex-dev/rate-limiter"
 import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
 import { components } from "./_generated/api"
-import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
+import { internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
 import { ASK_AI_DOMAIN_REJECTION, ASK_AI_WALLET_REQUIRED } from "../app/lib/ask-ai/config"
 import { classifyAskAIDomain, isAskAIGreeting } from "../app/lib/ask-ai/domain-gate"
 import { answerFromAskAIKnowledge, rankAskAIKnowledge } from "../app/lib/ask-ai/knowledge"
@@ -122,6 +122,7 @@ export const beginTurn = mutation({
   args: {
     threadId: v.string(),
     prompt: v.string(),
+    retryPromptMessageId: v.optional(v.string()),
     routing: v.optional(
       v.object({
         allowed: v.boolean(),
@@ -151,20 +152,51 @@ export const beginTurn = mutation({
       }),
     ),
   },
-  handler: async (ctx, { threadId, prompt, routing }) => {
+  handler: async (ctx, { threadId, prompt, retryPromptMessageId, routing }) => {
     const { ownerSubject, thread } = await requireOwnedThread(ctx, threadId)
     if (thread.status !== "active") throw new Error("Thread is archived")
     const text = prompt.trim()
     if (!text || text.length > 2_000) throw new Error("Message must contain 1 to 2000 characters")
     const domain = routing ?? classifyAskAIDomain(text)
-    await askAIRateLimiter.limit(ctx, "perSubjectDaily", { key: ownerSubject, throws: true })
-    await askAIRateLimiter.limit(ctx, "perSubjectBurst", { key: ownerSubject, throws: true })
-    await askAIRateLimiter.limit(ctx, "globalDaily", { throws: true })
-    const saved = await saveMessage(ctx, components.agent, {
-      threadId,
-      userId: ownerSubject,
-      prompt: text,
-    })
+    const previousTurn = retryPromptMessageId
+      ? await ctx.db
+          .query("askAITurns")
+          .withIndex("by_prompt_message", (q) => q.eq("promptMessageId", retryPromptMessageId))
+          .unique()
+      : null
+    if (
+      retryPromptMessageId &&
+      (!previousTurn ||
+        previousTurn.ownerSubject !== ownerSubject ||
+        previousTurn.threadId !== threadId ||
+        previousTurn.prompt !== text ||
+        previousTurn.status === "complete")
+    )
+      throw new Error("This turn cannot be retried")
+    if (!previousTurn) {
+      await askAIRateLimiter.limit(ctx, "perSubjectDaily", { key: ownerSubject, throws: true })
+      await askAIRateLimiter.limit(ctx, "perSubjectBurst", { key: ownerSubject, throws: true })
+      await askAIRateLimiter.limit(ctx, "globalDaily", { throws: true })
+    }
+    const saved = previousTurn
+      ? { messageId: previousTurn.promptMessageId }
+      : await saveMessage(ctx, components.agent, {
+          threadId,
+          userId: ownerSubject,
+          prompt: text,
+        })
+    const now = Date.now()
+    if (previousTurn) await ctx.db.patch(previousTurn._id, { status: "running", updatedAt: now })
+    else
+      await ctx.db.insert("askAITurns", {
+        threadId,
+        ownerSubject,
+        promptMessageId: saved.messageId,
+        prompt: text,
+        status: "running",
+        createdAt: now,
+        updatedAt: now,
+      })
     if (thread.title === "New Chat") {
       await ctx.db.patch(thread._id, { title: titleFromPrompt(text), updatedAt: Date.now() })
     }
@@ -301,8 +333,77 @@ export const completeTurn = mutation({
         createdAt: Date.now(),
       })
     }
+    const turn = await ctx.db
+      .query("askAITurns")
+      .withIndex("by_prompt_message", (q) => q.eq("promptMessageId", promptMessageId))
+      .unique()
+    if (turn && turn.ownerSubject === ownerSubject && turn.threadId === threadId)
+      await ctx.db.patch(turn._id, { status: "complete", updatedAt: Date.now() })
     await ctx.db.patch(thread._id, { updatedAt: Date.now() })
     return saved
+  },
+})
+
+export const failTurn = mutation({
+  args: { threadId: v.string(), promptMessageId: v.string() },
+  handler: async (ctx, { threadId, promptMessageId }) => {
+    const { ownerSubject } = await requireOwnedThread(ctx, threadId)
+    const turn = await ctx.db
+      .query("askAITurns")
+      .withIndex("by_prompt_message", (q) => q.eq("promptMessageId", promptMessageId))
+      .unique()
+    if (!turn || turn.ownerSubject !== ownerSubject || turn.threadId !== threadId) return
+    await ctx.db.patch(turn._id, { status: "failed", updatedAt: Date.now() })
+  },
+})
+
+const FEEDBACK_CATEGORIES = ["Incorrect", "Outdated data", "Not helpful", "Missing context", "Unsafe", "Other"]
+
+export const submitFeedback = mutation({
+  args: { threadId: v.string(), messageId: v.string(), categories: v.array(v.string()), note: v.optional(v.string()) },
+  handler: async (ctx, { threadId, messageId, categories, note }) => {
+    const { ownerSubject } = await requireOwnedThread(ctx, threadId)
+    const messageParts = await ctx.db
+      .query("askAIMessageParts")
+      .withIndex("by_message", (q) => q.eq("messageId", messageId))
+      .unique()
+    if (!messageParts || messageParts.threadId !== threadId) throw new Error("Assistant message not found")
+    const cleanCategories = [...new Set(categories)].filter((category) => FEEDBACK_CATEGORIES.includes(category))
+    const cleanNote = note?.trim().slice(0, 1_000) || undefined
+    if (cleanCategories.length === 0 && !cleanNote) throw new Error("Choose a reason or add a note")
+    const existing = await ctx.db
+      .query("askAIFeedback")
+      .withIndex("by_owner_message", (q) => q.eq("ownerSubject", ownerSubject).eq("messageId", messageId))
+      .unique()
+    const now = Date.now()
+    if (existing) {
+      await ctx.db.patch(existing._id, { categories: cleanCategories, note: cleanNote, updatedAt: now })
+      return existing._id
+    }
+    return await ctx.db.insert("askAIFeedback", {
+      ownerSubject,
+      threadId,
+      messageId,
+      categories: cleanCategories,
+      note: cleanNote,
+      createdAt: now,
+      updatedAt: now,
+    })
+  },
+})
+
+export const feedbackReport = internalQuery({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, { limit }) => {
+    const rows = await ctx.db
+      .query("askAIFeedback")
+      .withIndex("by_created_at")
+      .order("desc")
+      .take(Math.min(limit ?? 100, 500))
+    const categories = Object.fromEntries(FEEDBACK_CATEGORIES.map((category) => [category, 0]))
+    for (const row of rows)
+      for (const category of row.categories) categories[category] = (categories[category] ?? 0) + 1
+    return { total: rows.length, categories, rows }
   },
 })
 
