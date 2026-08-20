@@ -7,16 +7,39 @@ import schema from "./schema"
 const modules = import.meta.glob("./**/*.*s")
 
 describe("Ask AI market ingestion", () => {
-  test("is internal and can sync the canonical Convex cache without provider calls", async () => {
+  test("ingestion is internal", async () => {
     // @ts-expect-error ingestion must never be publicly callable
     void api.askAIIngestion.ingest
     expect(internal.askAIIngestion.ingest).toBeDefined()
+  })
 
+  test("one-time cleanup removes copied catalog rows and preserves provider records", async () => {
     const t = convexTest(schema, modules)
-    await expect(t.action(internal.askAIIngestion.ingest, { source: "defillama" })).resolves.toEqual({
-      canonicalSynced: true,
-      providers: [],
+    const now = Date.now()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("askAIMarketSnapshots", {
+        source: "defillama",
+        kind: "token_price",
+        key: "eth",
+        payload: { symbol: "ETH", usd: 4_000, confidence: 1, status: "fresh" },
+        fetchedAt: now,
+      })
+      await ctx.db.insert("askAIMarketSnapshots", {
+        source: "defillama",
+        kind: "token_price",
+        key: "coingecko:ethereum",
+        payload: { price: 4_000, decimals: 18, symbol: "ETH" },
+        fetchedAt: now,
+      })
     })
+
+    await expect(t.mutation(internal.askAIIngestion.cleanupCopiedCatalogRecords, {})).resolves.toEqual({
+      scanned: 2,
+      deleted: 1,
+    })
+    await expect(t.query(api.askAITools.marketSnapshots, { limit: 10 })).resolves.toMatchObject([
+      { key: "coingecko:ethereum" },
+    ])
   })
 
   test("upserts normalized records and exposes a bounded source-aware read", async () => {

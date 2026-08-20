@@ -14,6 +14,4 @@ export interface AskAIMarketProvider {
   fetch(): Promise<AskAIMarketRecord[]>
 }
 
-export type AskAIProviderMode = "fixture" | "live"
-
 export type AskAIFetch = typeof fetch

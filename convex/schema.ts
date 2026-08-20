@@ -2024,7 +2024,7 @@ export default defineSchema({
     .index("by_status_created", ["status", "createdAt"])
     .index("by_owner_created", ["ownerSubject", "createdAt"]),
 
-  /** Normalized cache populated by disabled-by-default external market adapters. */
+  /** Normalized cache populated only by external market-provider ingestion. */
   askAIMarketSnapshots: defineTable({
     source: v.union(
       v.literal("coingecko"),
