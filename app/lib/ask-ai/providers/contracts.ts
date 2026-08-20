@@ -1,4 +1,4 @@
-export type AskAIMarketSource = "coingecko" | "defillama" | "uniswap" | "curve" | "balancer" | "aave"
+export type AskAIMarketSource = "coingecko" | "defillama" | "uniswap" | "aave"
 
 export type AskAIMarketRecord = {
   source: AskAIMarketSource

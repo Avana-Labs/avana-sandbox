@@ -38,10 +38,10 @@ describe("Ask AI market ingestion", () => {
           fetchedAt: now,
         },
         {
-          source: "curve",
+          source: "uniswap",
           kind: "dex_pool",
           key: "0xpool",
-          payload: { totalLiquidity: 1_000_000 },
+          payload: { totalValueLockedUSD: 1_000_000 },
           fetchedAt: now - 10,
         },
       ],
