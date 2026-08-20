@@ -38,4 +38,23 @@ describe("Ask AI thread ownership", () => {
       "Thread not found",
     )
   })
+
+  test("archives and restores only owned threads", async () => {
+    const t = askAITest()
+    const owner = t.withIdentity({ subject: "ask-guest:owner" })
+    const other = t.withIdentity({ subject: "ask-guest:other" })
+    const thread = await owner.mutation(api.askAI.create, {})
+
+    await expect(other.mutation(api.askAI.archive, { threadId: thread.threadId })).rejects.toThrow("Thread not found")
+    await owner.mutation(api.askAI.archive, { threadId: thread.threadId })
+    await expect(owner.query(api.askAI.list, {})).resolves.toEqual([])
+    await expect(owner.query(api.askAI.list, { includeArchived: true })).resolves.toEqual([
+      expect.objectContaining({ threadId: thread.threadId, status: "archived" }),
+    ])
+    await expect(other.mutation(api.askAI.unarchive, { threadId: thread.threadId })).rejects.toThrow("Thread not found")
+    await owner.mutation(api.askAI.unarchive, { threadId: thread.threadId })
+    await expect(owner.query(api.askAI.list, {})).resolves.toEqual([
+      expect.objectContaining({ threadId: thread.threadId, status: "active" }),
+    ])
+  })
 })

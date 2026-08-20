@@ -76,10 +76,14 @@ export function AskAIPageClient() {
   const abortController = useRef<AbortController | null>(null)
   const threadsQuery = useQuery(api.askAI.list, {})
   const threads = threadsQuery ?? []
+  const allThreadsQuery = useQuery(api.askAI.list, { includeArchived: true })
+  const archivedThreads = (allThreadsQuery ?? []).filter((thread) => thread.status === "archived")
   const resolvedActiveThreadId = threads.some((thread) => thread.threadId === activeThreadId) ? activeThreadId : null
   const quota = useQuery(api.askAI.quota, {})
   const createThread = useMutation(api.askAI.create)
   const renameThread = useMutation(api.askAI.rename)
+  const archiveThread = useMutation(api.askAI.archive)
+  const unarchiveThread = useMutation(api.askAI.unarchive)
   const messagePage = useQuery(
     api.askAI.messages,
     resolvedActiveThreadId
@@ -329,6 +333,18 @@ export function AskAIPageClient() {
           }}
           onRenameThread={async (threadId, title) => {
             await renameThread({ threadId, title })
+          }}
+          archivedThreads={archivedThreads}
+          onArchiveThread={async (threadId) => {
+            await archiveThread({ threadId })
+            if (threadId === resolvedActiveThreadId) {
+              setStreamTurn(null)
+              setActiveThreadId(threads.find((thread) => thread.threadId !== threadId)?.threadId ?? null)
+            }
+          }}
+          onUnarchiveThread={async (threadId) => {
+            await unarchiveThread({ threadId })
+            setActiveThreadId(threadId)
           }}
           quota={quota}
         />
