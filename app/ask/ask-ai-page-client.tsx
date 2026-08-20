@@ -7,26 +7,19 @@ import {
   type ThreadMessage,
   useExternalStoreRuntime,
 } from "@assistant-ui/react"
-import { useMutation, usePaginatedQuery, useQuery } from "convex/react"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import type { AskAIChatEvent } from "@/app/lib/ask-ai/chat-protocol"
+import { useUIMessages } from "@convex-dev/agent/react"
+import { useAction, useMutation, usePaginatedQuery, useQuery } from "convex/react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import type { AskAIUsage } from "@/app/lib/ask-ai/chat-protocol"
-import { getAskAIGuestToken } from "@/app/lib/ask-ai/guest-auth-store"
-import { getSiweToken } from "@/app/lib/siwe/auth-store"
 import { api } from "@/convex/_generated/api"
 import { AskAIThread } from "./components/ask-ai-thread"
 import { AskAIThreadList } from "./components/ask-ai-thread-list"
 
-type StreamTurn = {
+type PendingTurn = {
   id: string
   prompt: string
   startedAt: number
-  text: string
-  parts: ThreadAssistantMessagePart[]
-  done: boolean
   error?: string
-  promptMessageId?: string
-  usage?: AskAIUsage
 }
 
 type PersistedRichParts = {
@@ -74,8 +67,7 @@ export function AskAIPageClient() {
   const [activeThreadId, setActiveThreadId] = useState<string | null>(() =>
     typeof window === "undefined" ? null : window.sessionStorage.getItem(ACTIVE_THREAD_STORAGE_KEY),
   )
-  const [streamTurn, setStreamTurn] = useState<StreamTurn | null>(null)
-  const abortController = useRef<AbortController | null>(null)
+  const [pendingTurn, setPendingTurn] = useState<PendingTurn | null>(null)
   const {
     results: threads,
     status: threadPageStatus,
@@ -92,14 +84,15 @@ export function AskAIPageClient() {
   const renameThread = useMutation(api.askAI.rename)
   const archiveThread = useMutation(api.askAI.archive)
   const unarchiveThread = useMutation(api.askAI.unarchive)
+  const generateTurn = useAction(api.askAIAgent.generateTurn)
   const {
     results: messageResults,
     status: messagePageStatus,
     loadMore: loadMoreMessages,
-  } = usePaginatedQuery(
+  } = useUIMessages(
     api.askAI.messages,
     resolvedActiveThreadId ? { threadId: resolvedActiveThreadId } : "skip",
-    { initialNumItems: 50 },
+    { initialNumItems: 50, stream: true },
   )
 
   useEffect(() => {
@@ -119,7 +112,6 @@ export function AskAIPageClient() {
     if (activeThreadId) window.sessionStorage.setItem(ACTIVE_THREAD_STORAGE_KEY, activeThreadId)
     else window.sessionStorage.removeItem(ACTIVE_THREAD_STORAGE_KEY)
   }, [activeThreadId])
-  useEffect(() => () => abortController.current?.abort(), [])
 
   const persistedMessages = useMemo<ThreadMessage[]>(
     () =>
@@ -149,124 +141,38 @@ export function AskAIPageClient() {
     [messageResults],
   )
 
-  useEffect(() => {
-    if (!streamTurn?.done || !streamTurn.text) return
-    if (
-      persistedMessages.some(
-        (message) => message.role === "assistant" && messageText(message).trim() === streamTurn.text.trim(),
-      )
-    )
-      setStreamTurn(null)
-  }, [persistedMessages, streamTurn])
-
   const handleNewThread = useCallback(async () => {
-    abortController.current?.abort()
-    setStreamTurn(null)
+    setPendingTurn(null)
     const thread = await createThread({})
     setActiveThreadId(thread.threadId)
   }, [createThread])
 
   const sendPrompt = useCallback(
     async (prompt: string, retryPromptMessageId?: string) => {
-      if (!prompt || (streamTurn && !streamTurn.done)) return
+      if (!prompt || pendingTurn) return
       let threadId = resolvedActiveThreadId
       if (!threadId) {
         const created = await createThread({})
         threadId = created.threadId
         setActiveThreadId(threadId)
       }
-      const token = getSiweToken()?.jwt ?? getAskAIGuestToken()?.jwt
-      if (!token) throw new Error("Ask AI session is still starting")
-
-      const controller = new AbortController()
-      abortController.current = controller
       const turnId = crypto.randomUUID()
-      setStreamTurn({ id: turnId, prompt, startedAt: Date.now(), text: "", parts: [], done: false })
+      setPendingTurn({ id: turnId, prompt, startedAt: Date.now() })
       try {
-        const response = await fetch("/api/ask-ai/chat", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            threadId,
-            prompt,
-            retryPromptMessageId,
-            messages: persistedMessages.map((item) => ({ role: item.role, text: messageText(item) })),
-          }),
-          signal: controller.signal,
-        })
-        if (!response.ok || !response.body) {
-          const payload = (await response.json().catch(() => null)) as { error?: string } | null
-          throw new Error(payload?.error ?? `Ask AI request failed (${response.status})`)
-        }
-        const reader = response.body.pipeThrough(new TextDecoderStream()).getReader()
-        let buffer = ""
-        while (true) {
-          const { value, done } = await reader.read()
-          buffer += value ?? ""
-          const lines = buffer.split("\n")
-          buffer = lines.pop() ?? ""
-          for (const line of lines) {
-            if (!line.trim()) continue
-            const event = JSON.parse(line) as AskAIChatEvent
-            setStreamTurn((current) => {
-              if (!current || current.id !== turnId) return current
-              if (event.type === "meta")
-                return {
-                  ...current,
-                  promptMessageId: event.promptMessageId,
-                }
-              if (event.type === "retrieval")
-                return {
-                  ...current,
-                  parts: [
-                    ...current.parts,
-                    { type: "data", name: "retrieval", data: { query: current.prompt, chunks: event.chunks } },
-                  ],
-                }
-              if (event.type === "sources")
-                return { ...current, parts: [...current.parts, { type: "data", name: "sources", data: event.sources }] }
-              if (event.type === "visual")
-                return { ...current, parts: [...current.parts, { type: "data", name: "chart", data: event.visual }] }
-              if (event.type === "financial-result")
-                return {
-                  ...current,
-                  parts: [...current.parts, { type: "data", name: "financial-result", data: event.result }],
-                }
-              if (event.type === "usage") return { ...current, usage: event.usage }
-              if (event.type === "text-delta") {
-                const text = current.text + event.delta
-                return {
-                  ...current,
-                  text,
-                  parts: [...current.parts.filter((part) => part.type !== "text"), { type: "text", text }],
-                }
-              }
-              if (event.type === "done") return { ...current, done: true }
-              if (event.type === "error") return { ...current, done: true, error: event.message }
-              return current
-            })
-          }
-          if (done) break
-        }
+        await generateTurn({ threadId, prompt, retryPromptMessageId })
+        setPendingTurn((current) => (current?.id === turnId ? null : current))
       } catch (error) {
-        setStreamTurn((current) =>
+        setPendingTurn((current) =>
           current?.id === turnId
             ? {
                 ...current,
-                done: true,
-                error: controller.signal.aborted
-                  ? "Response stopped"
-                  : error instanceof Error
-                    ? error.message
-                    : "Ask AI failed",
+                error: error instanceof Error ? error.message : "Ask AI failed",
               }
             : current,
         )
-      } finally {
-        if (abortController.current === controller) abortController.current = null
       }
     },
-    [createThread, persistedMessages, resolvedActiveThreadId, streamTurn],
+    [createThread, generateTurn, pendingTurn, resolvedActiveThreadId],
   )
 
   const handleNewMessage = useCallback(
@@ -282,46 +188,44 @@ export function AskAIPageClient() {
   )
 
   const messages = useMemo<readonly ThreadMessage[]>(() => {
-    if (!streamTurn) return persistedMessages
+    if (!pendingTurn) return persistedMessages
     const persistedPrompt = persistedMessages.some(
       (message) =>
         message.role === "user" &&
-        (message.createdAt?.getTime() ?? 0) >= streamTurn.startedAt - 2_000 &&
-        messageText(message) === streamTurn.prompt,
+        (message.createdAt?.getTime() ?? 0) >= pendingTurn.startedAt - 2_000 &&
+        messageText(message) === pendingTurn.prompt,
     )
     const transient: ThreadMessage[] = []
     if (!persistedPrompt)
       transient.push({
-        id: `${streamTurn.id}-user`,
+        id: `${pendingTurn.id}-user`,
         role: "user",
-        content: [{ type: "text", text: streamTurn.prompt }],
+        content: [{ type: "text", text: pendingTurn.prompt }],
         attachments: [],
-        createdAt: new Date(streamTurn.startedAt),
+        createdAt: new Date(pendingTurn.startedAt),
         metadata: { custom: {} },
       })
-    transient.push({
-      id: `${streamTurn.id}-assistant`,
-      role: "assistant",
-      content: streamTurn.parts,
-      status: streamTurn.error
-        ? { type: "incomplete", reason: "error", error: streamTurn.error }
-        : streamTurn.done
-          ? { type: "complete", reason: "stop" }
-          : { type: "running" },
-      createdAt: new Date(streamTurn.startedAt + 1),
-      metadata: assistantMetadata(),
-    })
+    if (pendingTurn.error)
+      transient.push({
+        id: `${pendingTurn.id}-assistant`,
+        role: "assistant",
+        content: [],
+        status: { type: "incomplete", reason: "error", error: pendingTurn.error },
+        createdAt: new Date(pendingTurn.startedAt + 1),
+        metadata: assistantMetadata(),
+      })
     return [...persistedMessages, ...transient]
-  }, [persistedMessages, streamTurn])
+  }, [pendingTurn, persistedMessages])
 
   const runtime = useExternalStoreRuntime({
     messages,
-    isRunning: Boolean(streamTurn && !streamTurn.done),
+    isRunning: Boolean(pendingTurn && !pendingTurn.error),
     onNew: handleNewMessage,
-    onCancel: async () => abortController.current?.abort(),
     onReload: async () => {
-      if (!streamTurn?.error) return
-      await sendPrompt(streamTurn.prompt, streamTurn.promptMessageId)
+      if (!pendingTurn?.error) return
+      const prompt = pendingTurn.prompt
+      setPendingTurn(null)
+      await sendPrompt(prompt)
     },
     suggestions: [
       { prompt: "How much can I borrow?" },
@@ -343,8 +247,7 @@ export function AskAIPageClient() {
           onClose={() => setThreadsOpen(false)}
           onNewThread={handleNewThread}
           onSelectThread={(threadId) => {
-            abortController.current?.abort()
-            setStreamTurn(null)
+            setPendingTurn(null)
             setActiveThreadId(threadId)
           }}
           onRenameThread={async (threadId, title) => {
@@ -354,7 +257,7 @@ export function AskAIPageClient() {
           onArchiveThread={async (threadId) => {
             await archiveThread({ threadId })
             if (threadId === resolvedActiveThreadId) {
-              setStreamTurn(null)
+              setPendingTurn(null)
               setActiveThreadId(threads.find((thread) => thread.threadId !== threadId)?.threadId ?? null)
             }
           }}
@@ -377,7 +280,6 @@ export function AskAIPageClient() {
           onToggleThreads={() => setThreadsOpen((open) => !open)}
           threadId={resolvedActiveThreadId}
           usage={
-            streamTurn?.usage ??
             (
               messageResults.findLast(
                 (message) =>

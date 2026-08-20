@@ -4,9 +4,14 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { AskAIPageClient } from "../ask-ai-page-client"
 
 vi.mock("convex/react", () => ({
+  useAction: () => async () => ({ text: "Done" }),
   useQuery: () => undefined,
   usePaginatedQuery: () => ({ results: [], status: "Exhausted", loadMore: vi.fn() }),
   useMutation: () => async () => ({ threadId: "thread-test", title: "New Chat" }),
+}))
+
+vi.mock("@convex-dev/agent/react", () => ({
+  useUIMessages: () => ({ results: [], status: "Exhausted", loadMore: vi.fn() }),
 }))
 
 afterEach(cleanup)

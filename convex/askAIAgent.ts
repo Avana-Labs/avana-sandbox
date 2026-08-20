@@ -46,14 +46,32 @@ export const askAIAgent = new Agent(components.agent, {
   },
 })
 
+type PreparedTurn = {
+  ownerSubject: string
+  messageId: string
+  grounding: string
+  tool: unknown
+  retrievalChunks: unknown[]
+  sources: unknown[]
+  visual?: unknown
+  financialResult?: unknown
+}
+
+type GeneratedTurn = {
+  text: string
+  promptMessageId: string
+  assistantMessageId: string
+  usage: { inputTokens: number; outputTokens: number; totalTokens: number }
+}
+
 export const generateTurn = action({
   args: {
     threadId: v.string(),
     prompt: v.string(),
     retryPromptMessageId: v.optional(v.string()),
   },
-  handler: async (ctx, args) => {
-    const turn = await ctx.runMutation(api.askAI.beginTurn, args)
+  handler: async (ctx, args): Promise<GeneratedTurn> => {
+    const turn = (await ctx.runMutation(api.askAI.beginTurn, args)) as PreparedTurn
     try {
       const result = await askAIAgent.streamText(
         ctx,
