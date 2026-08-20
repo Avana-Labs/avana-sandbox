@@ -15,23 +15,58 @@ import type { Id } from "@/convex/_generated/dataModel"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { AskAIUsage } from "@/app/lib/ask-ai/chat-protocol"
 import { api } from "@/convex/_generated/api"
-import { AskAIThread } from "./components/ask-ai-thread"
+import {
+  ASK_AI_SUGGESTIONS,
+  AskAIThread,
+  type FriendlyAskAIError,
+  toFriendlyAskAIError,
+} from "./components/ask-ai-thread"
 import { AskAIThreadList } from "./components/ask-ai-thread-list"
+import type { AskAIFinancialResult } from "./components/ask-ai-financial-result-card"
 
 type PendingTurn = {
   id: string
   prompt: string
   startedAt: number
-  error?: string
+  error?: FriendlyAskAIError
 }
 
+// Mirrors docs/ask-ai-lane-contracts.md §1. Lane B persists these; Lane C only
+// reads them and never fabricates fields that are absent.
 type PersistedRichParts = {
   tool?: { name: string; query: string; request: string; result: string }
-  retrievalChunks?: unknown[]
+  retrievalChunks?: Array<{ title: string; locator: string; text: string; score?: number }>
   sources?: unknown[]
   visual?: unknown
-  financialResult?: unknown
+  financialResults?: Array<{ kind?: string; dataProvenance?: string; payload: unknown }>
   usage?: AskAIUsage
+}
+
+// A financial tool result renders only when its verbatim payload already matches
+// the card's display shape. Anything else is skipped — never fabricated.
+function toFinancialResultCard(payload: unknown): AskAIFinancialResult | null {
+  if (!payload || typeof payload !== "object") return null
+  const record = payload as { kind?: unknown; title?: unknown; freshness?: unknown; asOf?: unknown; metrics?: unknown }
+  if (typeof record.title !== "string" || !Array.isArray(record.metrics)) return null
+  const metrics = record.metrics.filter(
+    (metric): metric is AskAIFinancialResult["metrics"][number] =>
+      Boolean(metric) &&
+      typeof metric === "object" &&
+      typeof (metric as { label?: unknown }).label === "string" &&
+      typeof (metric as { value?: unknown }).value === "string",
+  )
+  if (metrics.length === 0) return null
+  const freshness =
+    record.freshness === "fresh" || record.freshness === "stale" || record.freshness === "unavailable"
+      ? record.freshness
+      : undefined
+  return {
+    kind: (record.kind as AskAIFinancialResult["kind"]) ?? "portfolio",
+    title: record.title,
+    asOf: typeof record.asOf === "number" ? record.asOf : undefined,
+    freshness,
+    metrics,
+  }
 }
 
 const ACTIVE_THREAD_STORAGE_KEY = "avana.ask-ai.active-thread"
@@ -55,12 +90,24 @@ function persistedAssistantParts(messageId: string, text: string, rich?: Persist
     parts.push({
       type: "data",
       name: "retrieval",
-      data: { query: rich.tool?.query ?? "Avana", chunks: rich.retrievalChunks },
+      data: {
+        query: rich.tool?.query ?? "Avana",
+        chunks: rich.retrievalChunks.map((chunk, index) => ({
+          id: `${messageId}-chunk-${index}`,
+          source: chunk.title,
+          locator: chunk.locator,
+          score: typeof chunk.score === "number" ? chunk.score : 0,
+          text: chunk.text,
+        })),
+      },
     })
   }
   if (rich?.sources?.length) parts.push({ type: "data", name: "sources", data: rich.sources })
   if (rich?.visual) parts.push({ type: "data", name: "chart", data: rich.visual })
-  if (rich?.financialResult) parts.push({ type: "data", name: "financial-result", data: rich.financialResult })
+  for (const entry of rich?.financialResults ?? []) {
+    const card = toFinancialResultCard(entry.payload)
+    if (card) parts.push({ type: "data", name: "financial-result", data: card })
+  }
   parts.push({ type: "text", text })
   return parts
 }
@@ -196,7 +243,12 @@ export function AskAIPageClient() {
                 message.richParts as PersistedRichParts | undefined,
               ),
               role: "assistant",
-              status: message.status === "streaming" ? { type: "running" } : { type: "complete", reason: "stop" },
+              status:
+                message.status === "streaming" || message.status === "pending"
+                  ? { type: "running" }
+                  : message.status === "failed"
+                    ? { type: "incomplete", reason: "error" }
+                    : { type: "complete", reason: "stop" },
               metadata: assistantMetadata(),
             },
           ]
@@ -242,9 +294,7 @@ export function AskAIPageClient() {
       .then(() => setPendingTurn((current) => (current?.id === turnId ? null : current)))
       .catch((error) =>
         setPendingTurn((current) =>
-          current?.id === turnId
-            ? { ...current, error: error instanceof Error ? error.message : "Ask AI failed" }
-            : current,
+          current?.id === turnId ? { ...current, error: toFriendlyAskAIError(error) } : current,
         ),
       )
   }, [generateTurn, pendingTurn, resolvedActiveThreadId, turnQueue])
@@ -330,19 +380,12 @@ export function AskAIPageClient() {
     },
     queue: queueAdapter,
     adapters: { attachments: attachmentAdapter },
-    suggestions: [
-      { prompt: "How much can I borrow?" },
-      { prompt: "Analyze my positions" },
-      { prompt: "What is my health factor?" },
-      { prompt: "What if ETH falls 20%?" },
-      { prompt: "Explain LP collateral" },
-      { prompt: "Find ETH/USDC markets" },
-    ],
+    suggestions: ASK_AI_SUGGESTIONS.map((suggestion) => ({ prompt: suggestion.prompt })),
   })
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
-      <main className="flex h-[calc(100dvh-64px)] min-h-[620px] w-full overflow-hidden lg:h-[calc(100dvh-68px)]">
+      <main className="flex h-[calc(100dvh-64px)] w-full overflow-hidden lg:h-[calc(100dvh-68px)] [@media(min-height:684px)]:min-h-[620px]">
         <AskAIThreadList
           open={threadsOpen}
           activeThreadId={resolvedActiveThreadId}

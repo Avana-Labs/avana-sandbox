@@ -9,7 +9,8 @@ export interface ErrorStateProps extends Omit<ComponentProps<"div">, "children" 
   title: string
   detail: string
   retrying: boolean
-  onRetry: () => void
+  /** Omit to hide the Retry control (e.g. a prior-session failed turn that cannot be replayed). */
+  onRetry?: () => void
 }
 
 export function ErrorState({ title, detail, retrying, onRetry, className, ...props }: ErrorStateProps) {
@@ -49,14 +50,16 @@ export function ErrorState({ title, detail, retrying, onRetry, className, ...pro
         <p className="font-medium text-red-600 dark:text-red-400">{title}</p>
         <p className="mt-0.5 text-[13px] leading-snug text-red-600/60 dark:text-red-400/60">{detail}</p>
       </div>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="ms-auto flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-500/10 dark:text-red-400"
-      >
-        <RefreshCwIcon className="size-3" />
-        Retry
-      </button>
+      {onRetry ? (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="ms-auto flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-500/10 dark:text-red-400"
+        >
+          <RefreshCwIcon className="size-3" />
+          Retry
+        </button>
+      ) : null}
     </div>
   )
 }
