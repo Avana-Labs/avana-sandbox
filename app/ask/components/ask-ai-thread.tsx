@@ -6,6 +6,7 @@ import {
   ComposerPrimitive,
   type DataMessagePartProps,
   MessagePrimitive,
+  type TextMessagePartProps,
   ThreadPrimitive,
   type ToolCallMessagePartProps,
   useAui,
@@ -39,7 +40,9 @@ import type { Id } from "@/convex/_generated/dataModel"
 import type { AskAIUsage } from "@/app/lib/ask-ai/chat-protocol"
 import { AskAIFinancialResultCard, type AskAIFinancialResult } from "./ask-ai-financial-result-card"
 
-const AskAIMessageContext = createContext<{ threadId: string | null }>({ threadId: null })
+const AskAIMessageContext = createContext<{ threadId: string | null; ensureThread?: () => Promise<string> }>({
+  threadId: null,
+})
 const FEEDBACK_REASONS = ["Incorrect", "Outdated data", "Not helpful", "Missing context", "Unsafe", "Other"]
 
 export type AskAISuggestion = {
@@ -137,7 +140,7 @@ function AssistantMessage() {
       <div className="flex flex-col gap-3">
         <MessagePrimitive.Parts
           components={{
-            Text: MarkdownText,
+            Text: AssistantText,
             Empty: AssistantLoading,
             tools: { Fallback: ToolCallPart },
             data: {
@@ -231,6 +234,13 @@ function AssistantLoading() {
   return <GenerationLoader label="Preparing Avana context" tick={tick} className="items-start py-3" />
 }
 
+// Before the first token arrives (RAG search / tool calls), the assistant text part exists but is
+// empty — show a thinking indicator instead of a blank bubble; render Markdown once text streams.
+function AssistantText({ text, status }: TextMessagePartProps) {
+  if (status.type === "running" && !text.trim()) return <AssistantLoading />
+  return <MarkdownText />
+}
+
 function ToolCallPart({ args, result, status, toolName }: ToolCallMessagePartProps) {
   const [open, setOpen] = useState(false)
   const input = args as { query?: string; request?: string }
@@ -281,7 +291,7 @@ const messageComponents = {
 
 function Composer({ usage }: { usage?: AskAIUsage }) {
   const aui = useAui()
-  const { threadId } = useContext(AskAIMessageContext)
+  const { threadId, ensureThread } = useContext(AskAIMessageContext)
   const [recording, setRecording] = useState(false)
   const [voiceError, setVoiceError] = useState<string | null>(null)
   const mediaRecorder = useRef<MediaRecorder | null>(null)
@@ -300,7 +310,7 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
       mediaRecorder.current?.stop()
       return
     }
-    if (!voiceSupported || !threadId) return
+    if (!voiceSupported) return
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       const recorder = new MediaRecorder(stream)
@@ -322,7 +332,13 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
           const upload = await fetch(uploadUrl, { method: "POST", headers: { "Content-Type": mimeType }, body: blob })
           if (!upload.ok) throw new Error("Voice upload failed")
           const { storageId } = (await upload.json()) as { storageId: Id<"_storage"> }
-          const attachmentId = await registerAttachment({ threadId, storageId, name: "voice-recording.webm" })
+          const recordingThreadId = threadId ?? (await ensureThread?.()) ?? null
+          if (!recordingThreadId) throw new Error("Could not start a conversation for the recording")
+          const attachmentId = await registerAttachment({
+            threadId: recordingThreadId,
+            storageId,
+            name: "voice-recording.webm",
+          })
           const transcript = await transcribeRecording({ attachmentId })
           aui.composer().setText(transcript.text)
         } catch (error) {
@@ -423,6 +439,7 @@ export function AskAIThread({
   threadsOpen,
   onToggleThreads,
   threadId,
+  onEnsureThread,
   usage,
   canLoadMoreMessages,
   onLoadMoreMessages,
@@ -434,6 +451,7 @@ export function AskAIThread({
   threadsOpen: boolean
   onToggleThreads: () => void
   threadId: string | null
+  onEnsureThread?: () => Promise<string>
   usage?: AskAIUsage
   canLoadMoreMessages: boolean
   onLoadMoreMessages: () => void
@@ -443,7 +461,7 @@ export function AskAIThread({
 }) {
   const isEmpty = useAuiState((state) => state.thread.messages.length === 0)
   return (
-    <AskAIMessageContext.Provider value={{ threadId }}>
+    <AskAIMessageContext.Provider value={{ threadId, ensureThread: onEnsureThread }}>
       <section className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
         <div className="flex h-16 shrink-0 items-center gap-3 px-5 sm:px-8">
           <button

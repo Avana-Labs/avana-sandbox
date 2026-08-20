@@ -59,8 +59,8 @@ describe("AskAIPageClient rich parts", () => {
     expect(screen.getByRole("region", { name: "Borrow capacity" })).toBeInTheDocument()
     expect(screen.getByText("$1,200")).toBeInTheDocument()
     expect(screen.getByText("Borrow docs")).toBeInTheDocument()
-    // StreamingText renders one <span> per word, so match a distinctive word.
-    expect(screen.getByText("capacity.")).toBeInTheDocument()
+    // MarkdownText renders the answer as one node, so match the sentence.
+    expect(screen.getByText(/Here is your borrow capacity/)).toBeInTheDocument()
   })
 
   it("reshapes a verbatim portfolio tool payload into a card", () => {
