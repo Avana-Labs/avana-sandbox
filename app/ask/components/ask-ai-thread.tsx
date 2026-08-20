@@ -20,9 +20,6 @@ import { Chart } from "@/components/elements/chart"
 import { ErrorState } from "@/components/elements/error-state"
 import { FeedbackDialog } from "@/components/elements/feedback-dialog"
 import {
-  ComposerAttachButton,
-  ComposerAttachmentChip,
-  ComposerAttachments,
   Composer as ElementComposer,
   ComposerActions,
   ComposerBar,
@@ -229,9 +226,7 @@ const messageComponents = {
 
 function Composer({ usage }: { usage?: AskAIUsage }) {
   const aui = useAui()
-  const [attachments, setAttachments] = useState<File[]>([])
   const [recording, setRecording] = useState(false)
-  const fileInput = useState(() => ({ current: null as HTMLInputElement | null }))[0]
 
   const toggleVoice = () => {
     type SpeechRecognitionLike = {
@@ -257,31 +252,6 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
     <ComposerPrimitive.Root className="relative flex w-full flex-col">
       <ElementComposer className="max-w-none">
         <ComposerBar className="cursor-text bg-card focus-within:border-border">
-          <input
-            ref={(element) => {
-              fileInput.current = element
-            }}
-            type="file"
-            multiple
-            className="sr-only"
-            onChange={(event) => setAttachments(Array.from(event.target.files ?? []))}
-          />
-          {attachments.length > 0 ? (
-            <ComposerAttachments>
-              {attachments.map((file) => (
-                <ComposerAttachmentChip
-                  key={`${file.name}-${file.lastModified}`}
-                  attachment={{
-                    name: file.name,
-                    meta: `${Math.ceil(file.size / 1024)} KB`,
-                    kind: "text",
-                    state: "done",
-                  }}
-                  onRemove={(name) => setAttachments((current) => current.filter((file) => file.name !== name))}
-                />
-              ))}
-            </ComposerAttachments>
-          ) : null}
           <ComposerPrimitive.Input
             aria-label="Ask Avana a question"
             placeholder="Send a message... (@ to mention, / for commands)"
@@ -292,7 +262,6 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
             className="max-h-48 min-h-10 w-full resize-none bg-transparent px-2.5 py-1 text-base leading-6 outline-none placeholder:text-muted-foreground/60"
           />
           <ComposerToolbar className="relative">
-            <ComposerAttachButton onClick={() => fileInput.current?.click()} />
             <ComposerActions>
               {usage ? (
                 <ComposerContext
