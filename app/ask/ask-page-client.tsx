@@ -8,6 +8,7 @@ import { X } from "@/app/components/icons"
 import { triggerPageLoading } from "@/app/lib/page-loading"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { resolveAskAICloseHref } from "@/app/lib/ask-ai/navigation"
+import { useHydrated } from "@/app/lib/siwe/use-siwe-auth"
 import { AskAIPageClient } from "./ask-ai-page-client"
 import { AskAIConvexBoundary } from "./ask-ai-convex-boundary"
 
@@ -18,6 +19,10 @@ export function AskPageClient() {
   const { t } = useTranslation()
   // Blank → "Ask AI"; once a thread has a subject, show it here (summarized by CSS truncation).
   const [headerTitle, setHeaderTitle] = useState<string | null>(null)
+  // The assistant-ui thread runtime is client-only; rendering it during SSR causes a hydration
+  // mismatch. Gate it on the hydration flag so the server and first client render agree (no thread),
+  // then mount it after hydration.
+  const hydrated = useHydrated()
 
   const handleClose = () => {
     triggerPageLoading()
@@ -49,7 +54,7 @@ export function AskPageClient() {
       </header>
 
       <AskAIConvexBoundary>
-        <AskAIPageClient onActiveTitleChange={setHeaderTitle} />
+        {hydrated ? <AskAIPageClient onActiveTitleChange={setHeaderTitle} /> : <main className="flex-1" aria-hidden />}
       </AskAIConvexBoundary>
     </div>
   )

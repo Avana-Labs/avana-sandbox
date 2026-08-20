@@ -27,7 +27,6 @@ import {
   ComposerContext,
   ComposerToolbar,
 } from "@/components/elements/composer"
-import { StreamingText } from "@/components/elements/streaming-text"
 import { ThinkingIndicator } from "@/components/elements/thinking-indicator"
 import { MessageQueue } from "@/components/elements/message-queue"
 import { RetrievalChunks, type RetrievalChunk } from "@/components/elements/retrieval-chunks"
@@ -238,20 +237,11 @@ function ThinkingIndicatorLive({ label = "Thinking…" }: { label?: string }) {
   return <ThinkingIndicator label={label} elapsed={`${seconds}s`} className="py-3" />
 }
 
-// Answer lifecycle: thinking indicator (no text yet) -> soft streaming text (tokens arriving) ->
-// final Markdown (complete). Uses the assistant-ui thinking-indicator + streaming-text elements.
+// Empty + running -> thinking indicator. Otherwise render Markdown, which reveals smoothly as
+// tokens arrive (assistant-ui smooth text) — one renderer for streaming and final, so there is no
+// plain-text -> markdown swap and no resize jump.
 function AssistantText({ text, status }: TextMessagePartProps) {
-  const running = status.type === "running"
-  if (running && !text.trim()) return <ThinkingIndicatorLive />
-  if (running)
-    return (
-      <StreamingText
-        segments={[{ text }]}
-        count={text.split(/\s+/).filter(Boolean).length}
-        streaming
-        className="min-h-0 max-w-none whitespace-pre-wrap text-[15px]"
-      />
-    )
+  if (status.type === "running" && !text.trim()) return <ThinkingIndicatorLive />
   return <MarkdownText />
 }
 
@@ -310,7 +300,7 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
         <ComposerBar className="cursor-text bg-card focus-within:border-border">
           <ComposerPrimitive.Input
             aria-label="Ask Avana a question"
-            placeholder="Send a message... (@ to mention, / for commands)"
+            placeholder="Ask Avana about markets, your positions, or how it works…"
             maxLength={ASK_AI_CONFIG.maxInputCharacters}
             rows={1}
             autoFocus
@@ -328,20 +318,22 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
                   }}
                 />
               ) : null}
+            </ComposerActions>
+            <ComposerActions>
               <AuiIf condition={(state) => state.thread.isRunning}>
                 <ComposerPrimitive.Cancel
                   aria-label="Stop generating"
-                  className="inline-flex size-7 items-center justify-center rounded-full bg-foreground text-background"
+                  className="inline-flex size-9 items-center justify-center rounded-full bg-foreground text-background transition hover:bg-foreground/90"
                 >
-                  <Square className="size-3 fill-current" />
+                  <Square className="size-3.5 fill-current" />
                 </ComposerPrimitive.Cancel>
               </AuiIf>
               <AuiIf condition={(state) => !state.thread.isRunning}>
                 <ComposerPrimitive.Send
                   aria-label="Send message"
-                  className="inline-flex size-7 items-center justify-center rounded-full bg-foreground text-background disabled:opacity-40"
+                  className="inline-flex size-9 items-center justify-center rounded-full bg-foreground text-background transition hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-30"
                 >
-                  <CircleArrowUp className="size-4" />
+                  <CircleArrowUp className="size-5" />
                 </ComposerPrimitive.Send>
               </AuiIf>
             </ComposerActions>

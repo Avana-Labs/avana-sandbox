@@ -1,33 +1,9 @@
 "use client"
 
 import { type ComponentProps, useMemo } from "react"
-import {
-  ArrowUpIcon,
-  CheckIcon,
-  ChevronDownIcon,
-  FileArchiveIcon,
-  FileImageIcon,
-  FileTextIcon,
-  Loader2Icon,
-  MicIcon,
-  PlusIcon,
-  SquareIcon,
-  XIcon,
-  type LucideIcon,
-} from "lucide-react"
+import { ArrowUpIcon, CheckIcon, ChevronDownIcon, SquareIcon, type LucideIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
-import {
-  field,
-  floating,
-  ghostButton,
-  iconSwap,
-  iconSwapIn,
-  iconSwapOut,
-  inkButton,
-  mono,
-  paper,
-  ShimmerLabel,
-} from "@/lib/surfaces"
+import { field, floating, ghostButton, iconSwap, iconSwapIn, iconSwapOut, inkButton, mono, paper } from "@/lib/surfaces"
 import { clamp, pct } from "@/lib/range"
 
 export interface ComposerAttachment {
@@ -58,18 +34,6 @@ export interface ComposerUsage {
   input: number
   output: number
   total: number
-}
-
-const ATTACHMENT_ICONS: Record<NonNullable<ComposerAttachment["kind"]>, LucideIcon> = {
-  image: FileImageIcon,
-  text: FileTextIcon,
-  archive: FileArchiveIcon,
-}
-
-const BARS = Array.from({ length: 14 }, (_, i) => i)
-
-function barHeight(bar: number, tick: number): number {
-  return 5 + Math.abs(Math.sin(bar * 1.35 + tick * 0.55)) * 13
 }
 
 /** Commands whose name starts with the slash query, or none when not typing one. */
@@ -201,72 +165,6 @@ export function ComposerPersonItem({
   )
 }
 
-export function ComposerAttachments({ className, ...props }: ComponentProps<"div">) {
-  return <div data-slot="composer-attachments" className={cn("flex flex-wrap gap-2", className)} {...props} />
-}
-
-export function ComposerAttachmentChip({
-  attachment,
-  onRemove,
-  className,
-  ...props
-}: Omit<ComponentProps<"div">, "children"> & {
-  attachment: ComposerAttachment
-  onRemove?: (name: string) => void
-}) {
-  const Icon = ATTACHMENT_ICONS[attachment.kind ?? "text"]
-  return (
-    <div
-      data-slot="composer-attachment"
-      data-state={attachment.state}
-      className={cn(
-        field,
-        "relative flex items-center gap-2.5 overflow-hidden rounded-[14px] py-1.5 ps-1.5 pe-2.5",
-        className,
-      )}
-      {...props}
-    >
-      <span className="bg-background text-foreground/45 flex size-8 shrink-0 items-center justify-center rounded-[10px] dark:bg-white/10">
-        <Icon className="size-4" />
-      </span>
-      <span className="flex flex-col">
-        <span className="max-w-36 truncate text-xs font-medium">{attachment.name}</span>
-        <span
-          className={cn(
-            "text-[11px]",
-            attachment.state === "error" ? "text-red-600/80 dark:text-red-400/80" : "text-foreground/40",
-          )}
-        >
-          {attachment.meta}
-        </span>
-      </span>
-      <span className="ms-1 flex w-5 items-center justify-end">
-        {attachment.state === "uploading" ? (
-          <Loader2Icon className="text-foreground/35 size-3.5 animate-spin motion-reduce:animate-none" />
-        ) : attachment.state === "done" && onRemove ? (
-          <button
-            type="button"
-            aria-label={`Remove ${attachment.name}`}
-            onClick={() => onRemove(attachment.name)}
-            className={cn(ghostButton, "size-5 [&_svg]:size-3")}
-          >
-            <XIcon />
-          </button>
-        ) : attachment.state === "done" ? (
-          <CheckIcon className="size-3.5 text-emerald-500" />
-        ) : null}
-      </span>
-      {attachment.state === "uploading" && (
-        <span
-          aria-hidden
-          className="absolute inset-x-0 bottom-0 h-0.5 bg-blue-500/70 transition-[width] duration-300 dark:bg-blue-400/70"
-          style={{ width: `${pct(attachment.progress ?? 0, 100)}%` }}
-        />
-      )}
-    </div>
-  )
-}
-
 export function ComposerInput({
   onSubmit,
   onKeyDown,
@@ -291,65 +189,12 @@ export function ComposerInput({
   )
 }
 
-export function ComposerVoice({
-  recording,
-  seconds,
-  className,
-  ...props
-}: Omit<ComponentProps<"div">, "children"> & {
-  recording: boolean
-  seconds: number
-}) {
-  return (
-    <div
-      data-slot="composer-voice"
-      data-recording={recording || undefined}
-      className={cn("flex min-h-11 items-center gap-3 ps-3", className)}
-      {...props}
-    >
-      {recording && <span aria-hidden className="size-1.5 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400" />}
-      <div className="flex h-6 items-center gap-[3px]" aria-hidden>
-        {BARS.map((bar) => (
-          <span
-            key={bar}
-            className={cn(
-              "w-0.5 rounded-full transition-[height,background-color] duration-150 motion-reduce:transition-none",
-              recording ? "bg-foreground/50" : "bg-foreground/25",
-            )}
-            style={{ height: recording ? barHeight(bar, seconds * 10) : 3 }}
-          />
-        ))}
-      </div>
-      {recording ? (
-        <span className={cn(mono, "text-foreground/40 tabular-nums")}>0:{String(seconds).padStart(2, "0")}</span>
-      ) : (
-        <ShimmerLabel className="text-foreground/55 relative text-[13px]">Transcribing</ShimmerLabel>
-      )}
-    </div>
-  )
-}
-
 export function ComposerToolbar({ className, ...props }: ComponentProps<"div">) {
   return <div data-slot="composer-toolbar" className={cn("flex items-center justify-between", className)} {...props} />
 }
 
 export function ComposerActions({ className, ...props }: ComponentProps<"div">) {
   return <div data-slot="composer-actions" className={cn("flex items-center gap-1.5", className)} {...props} />
-}
-
-export function ComposerAttachButton({ className, ...props }: Omit<ComponentProps<"button">, "children">) {
-  return (
-    <button
-      type="button"
-      aria-label="Add attachment"
-      data-slot="composer-attach"
-      disabled={!props.onClick}
-      className={cn(ghostButton, "size-8 disabled:pointer-events-none disabled:opacity-30", className)}
-      {...props}
-    >
-      <PlusIcon className="size-4" />
-    </button>
-  )
 }
 
 export function ComposerModelTrigger({
@@ -476,27 +321,6 @@ export function ComposerContext({
         </svg>
       </button>
     </div>
-  )
-}
-
-export function ComposerVoiceButton({
-  active,
-  className,
-  ...props
-}: Omit<ComponentProps<"button">, "children"> & { active: boolean }) {
-  return (
-    <button
-      type="button"
-      aria-label={active ? "Stop recording" : "Start voice input"}
-      data-slot="composer-voice-button"
-      className={cn(
-        active ? cn(inkButton, "flex size-8 items-center justify-center rounded-full") : cn(ghostButton, "size-8"),
-        className,
-      )}
-      {...props}
-    >
-      {active ? <SquareIcon className="size-3 fill-current" /> : <MicIcon className="size-4" />}
-    </button>
   )
 }
 
