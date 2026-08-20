@@ -20,12 +20,18 @@ import { Chart } from "@/components/elements/chart"
 import { ErrorState } from "@/components/elements/error-state"
 import { FeedbackDialog } from "@/components/elements/feedback-dialog"
 import {
+  ComposerAttachButton,
+  ComposerAttachmentChip,
+  ComposerAttachments,
   Composer as ElementComposer,
   ComposerActions,
   ComposerBar,
   ComposerContext,
   ComposerToolbar,
+  ComposerVoiceButton,
 } from "@/components/elements/composer"
+import { MobileComposer } from "@/components/elements/mobile-composer"
+import { MessageQueue } from "@/components/elements/message-queue"
 import { GenerationLoader } from "@/components/elements/loading-state"
 import { RetrievalChunks, type RetrievalChunk } from "@/components/elements/retrieval-chunks"
 import { Sources, type Source } from "@/components/elements/sources"
@@ -224,10 +230,60 @@ const messageComponents = {
 } satisfies Parameters<typeof ThreadPrimitive.Messages>[0]["components"]
 
 function Composer({ usage }: { usage?: AskAIUsage }) {
+  const aui = useAui()
+  const [attachments, setAttachments] = useState<File[]>([])
+  const [recording, setRecording] = useState(false)
+  const fileInput = useState(() => ({ current: null as HTMLInputElement | null }))[0]
+
+  const toggleVoice = () => {
+    type SpeechRecognitionLike = {
+      continuous: boolean
+      interimResults: boolean
+      onresult: (event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void
+      onend: () => void
+      start: () => void
+    }
+    const SpeechRecognition = (window as unknown as { webkitSpeechRecognition?: new () => SpeechRecognitionLike })
+      .webkitSpeechRecognition
+    if (!SpeechRecognition) return
+    const recognition = new SpeechRecognition()
+    recognition.continuous = false
+    recognition.interimResults = false
+    recognition.onresult = (event) => aui.composer().setText(event.results[0]?.[0]?.transcript ?? "")
+    recognition.onend = () => setRecording(false)
+    setRecording(true)
+    recognition.start()
+  }
+
   return (
     <ComposerPrimitive.Root className="relative flex w-full flex-col">
       <ElementComposer className="max-w-none">
         <ComposerBar className="cursor-text bg-card focus-within:border-border">
+          <input
+            ref={(element) => {
+              fileInput.current = element
+            }}
+            type="file"
+            multiple
+            className="sr-only"
+            onChange={(event) => setAttachments(Array.from(event.target.files ?? []))}
+          />
+          {attachments.length > 0 ? (
+            <ComposerAttachments>
+              {attachments.map((file) => (
+                <ComposerAttachmentChip
+                  key={`${file.name}-${file.lastModified}`}
+                  attachment={{
+                    name: file.name,
+                    meta: `${Math.ceil(file.size / 1024)} KB`,
+                    kind: "text",
+                    state: "done",
+                  }}
+                  onRemove={(name) => setAttachments((current) => current.filter((file) => file.name !== name))}
+                />
+              ))}
+            </ComposerAttachments>
+          ) : null}
           <ComposerPrimitive.Input
             aria-label="Ask Avana a question"
             placeholder="Send a message... (@ to mention, / for commands)"
@@ -238,11 +294,12 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
             className="max-h-48 min-h-10 w-full resize-none bg-transparent px-2.5 py-1 text-base leading-6 outline-none placeholder:text-muted-foreground/60"
           />
           <ComposerToolbar className="relative">
-            <span />
+            <ComposerAttachButton onClick={() => fileInput.current?.click()} />
             <ComposerActions>
               {usage ? (
                 <ComposerContext usage={{ input: usage.inputTokens, output: usage.outputTokens, total: 128_000 }} />
               ) : null}
+              <ComposerVoiceButton active={recording} onClick={toggleVoice} />
               <AuiIf condition={(state) => state.thread.isRunning}>
                 <ComposerPrimitive.Cancel
                   aria-label="Stop generating"
@@ -264,6 +321,46 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
         </ComposerBar>
       </ElementComposer>
     </ComposerPrimitive.Root>
+  )
+}
+
+function MobileThreadComposer() {
+  const aui = useAui()
+  const value = useAuiState((state) => state.composer.text)
+  const running = useAuiState((state) => state.thread.isRunning)
+  const activePrompt = useAuiState((state) =>
+    [...state.thread.messages]
+      .reverse()
+      .find((message) => message.role === "user")
+      ?.content.filter((part) => part.type === "text")
+      .map((part) => part.text)
+      .join(" "),
+  )
+  return (
+    <div className="flex w-full flex-col items-center gap-2 md:hidden">
+      {running && activePrompt ? <MessageQueue running={activePrompt} queued={[]} /> : null}
+      <MobileComposer
+        value={value}
+        keyboardOpen={false}
+        running={running}
+        actions={["Market data", "Portfolio", "Position risk"]}
+        onAction={(action) =>
+          aui
+            .composer()
+            .setText(
+              action === "Market data"
+                ? "Find ETH/USDC markets"
+                : action === "Portfolio"
+                  ? "Analyze my positions"
+                  : "What is my health factor?",
+            )
+        }
+        onValueChange={(text) => aui.composer().setText(text)}
+        onSend={() => aui.composer().send()}
+        onStop={() => aui.thread().cancelRun()}
+        className="max-w-none"
+      />
+    </div>
   )
 }
 
@@ -322,7 +419,10 @@ export function AskAIThread({
                   isEmpty ? "" : "sticky bottom-0 mt-auto rounded-t-3xl"
                 }`}
               >
-                <Composer usage={usage} />
+                <div className="hidden md:block">
+                  <Composer usage={usage} />
+                </div>
+                <MobileThreadComposer />
                 <ThreadPrimitive.Empty>
                   <div className="flex w-full flex-wrap items-center justify-center gap-2 px-4">
                     {SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (
