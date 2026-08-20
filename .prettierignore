@@ -15,3 +15,9 @@ convex/_generated/
 dist/
 .reports/
 coverage/
+
+# Ask AI knowledge corpus — the .md sources and the generated file are owned by
+# scripts/render-ask-ai-corpus.mjs (verified by `npm run ask-ai:corpus:check`).
+# Reformatting them would break that check or change the corpus version hash.
+convex/knowledge/
+convex/askAICorpus.generated.ts

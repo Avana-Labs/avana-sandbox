@@ -32,9 +32,7 @@ export const report = internalQuery({
       total: rows.length,
       failures: rows.length - complete.length,
       failureRate: rows.length ? (rows.length - complete.length) / rows.length : 0,
-      averageDurationMs: complete.length
-        ? complete.reduce((sum, row) => sum + row.durationMs, 0) / complete.length
-        : 0,
+      averageDurationMs: complete.length ? complete.reduce((sum, row) => sum + row.durationMs, 0) / complete.length : 0,
       totalTokens: rows.reduce((sum, row) => sum + (row.totalTokens ?? 0), 0),
       rows,
     }

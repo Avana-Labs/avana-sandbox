@@ -73,7 +73,8 @@ export function calculateAskAICollateralStress(params: {
   )
   const shockedCollateralValueUsd = Math.max(0, params.collateralValueUsd * (1 + weightedChange))
   const currentLtv = params.collateralValueUsd > 0 ? params.debtValueUsd / params.collateralValueUsd : 0
-  const projectedLtv = shockedCollateralValueUsd > 0 ? params.debtValueUsd / shockedCollateralValueUsd : Number.POSITIVE_INFINITY
+  const projectedLtv =
+    shockedCollateralValueUsd > 0 ? params.debtValueUsd / shockedCollateralValueUsd : Number.POSITIVE_INFINITY
   const currentHealthFactor =
     params.debtValueUsd > 0
       ? (params.collateralValueUsd * (params.liquidationThresholdPct / 100)) / params.debtValueUsd
@@ -85,8 +86,18 @@ export function calculateAskAICollateralStress(params: {
   return {
     assetPriceChanges: Object.fromEntries(normalizedChanges),
     weightedCollateralChange: weightedChange,
-    current: { collateralValueUsd: params.collateralValueUsd, debtValueUsd: params.debtValueUsd, ltv: currentLtv, healthFactor: currentHealthFactor },
-    projected: { collateralValueUsd: shockedCollateralValueUsd, debtValueUsd: params.debtValueUsd, ltv: projectedLtv, healthFactor: projectedHealthFactor },
+    current: {
+      collateralValueUsd: params.collateralValueUsd,
+      debtValueUsd: params.debtValueUsd,
+      ltv: currentLtv,
+      healthFactor: currentHealthFactor,
+    },
+    projected: {
+      collateralValueUsd: shockedCollateralValueUsd,
+      debtValueUsd: params.debtValueUsd,
+      ltv: projectedLtv,
+      healthFactor: projectedHealthFactor,
+    },
     liquidationThresholdPct: params.liquidationThresholdPct,
     liquidatable: projectedHealthFactor !== null && projectedHealthFactor <= 1,
   }
