@@ -2,6 +2,7 @@ import { makeFunctionReference } from "convex/server"
 import { v } from "convex/values"
 import { createAskAIProviders } from "../app/lib/ask-ai/providers/registry"
 import type { AskAIMarketRecord } from "../app/lib/ask-ai/providers/contracts"
+import { internal } from "./_generated/api"
 import { internalAction, internalMutation } from "./_generated/server"
 
 const upsertRecords = makeFunctionReference<"mutation", { records: AskAIMarketRecord[] }, { upserted: number }>(
@@ -20,14 +21,128 @@ const sourceValidator = v.union(
 export const ingest = internalAction({
   args: { source: v.optional(sourceValidator) },
   handler: async (ctx, { source }) => {
-    if (process.env.ASK_AI_ENABLE_LIVE_MARKET_INGESTION !== "true") {
-      return { enabled: false, fetched: 0, upserted: 0 }
+    if (!source || source === "defillama") {
+      await ctx.runMutation(internal.askAIIngestion.syncCanonicalMarketCache, {})
     }
-    const providers = createAskAIProviders("live").filter((provider) => !source || provider.source === source)
-    const records = (await Promise.all(providers.map((provider) => provider.fetch()))).flat()
-    const result = await ctx.runMutation(upsertRecords, { records })
-    return { enabled: true, fetched: records.length, upserted: result.upserted }
+    const providers = createAskAIProviders("live").filter(
+      (provider) => provider.source !== "defillama" && (!source || provider.source === source),
+    )
+    const results = []
+    for (const provider of providers) {
+      const startedAt = Date.now()
+      try {
+        const records = await provider.fetch()
+        const written = await ctx.runMutation(upsertRecords, { records })
+        await ctx.runMutation(internal.askAIIngestion.recordProviderRun, {
+          source: provider.source,
+          status: "success",
+          records: written.upserted,
+          startedAt,
+          completedAt: Date.now(),
+        })
+        results.push({ source: provider.source, status: "success" as const, records: written.upserted })
+      } catch (error) {
+        const message = error instanceof Error ? error.message.slice(0, 500) : "Unknown provider failure"
+        await ctx.runMutation(internal.askAIIngestion.recordProviderRun, {
+          source: provider.source,
+          status: "failed",
+          records: 0,
+          error: message,
+          startedAt,
+          completedAt: Date.now(),
+        })
+        results.push({ source: provider.source, status: "failed" as const, records: 0, error: message })
+      }
+    }
+    return { canonicalSynced: !source || source === "defillama", providers: results }
   },
+})
+
+export const syncCanonicalMarketCache = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const [prices, markets, lendMarkets] = await Promise.all([
+      ctx.db.query("tokenPrices").collect(),
+      ctx.db.query("markets").collect(),
+      ctx.db.query("lendMarkets").collect(),
+    ])
+    const records: AskAIMarketRecord[] = prices.map((row) => ({
+      source: "defillama",
+      kind: "token_price",
+      key: row.symbol.toLowerCase(),
+      payload: {
+        symbol: row.symbol,
+        usd: row.priceUsd,
+        confidence: row.confidence,
+        status: row.status,
+      },
+      sourceUpdatedAt: row.sourceUpdatedAt,
+      fetchedAt: row.fetchedAt ?? row.updatedAt,
+    }))
+    for (const market of markets.filter((row) => row.scope === "pool")) {
+      const venue = market.venueLabel?.toLowerCase() ?? ""
+      const source = venue.includes("uniswap")
+        ? "uniswap"
+        : venue.includes("curve")
+          ? "curve"
+          : venue.includes("balancer")
+            ? "balancer"
+            : null
+      if (!source) continue
+      records.push({
+        source,
+        kind: "dex_pool",
+        key: market.slug,
+        payload: {
+          name: market.name,
+          symbol: market.symbol,
+          venue: market.venueLabel,
+          priceUsd: market.priceUsd,
+          maxLtvPct: market.maxLtvPct,
+          constituents: market.constituents,
+        },
+        fetchedAt: market.createdAt,
+      })
+    }
+    for (const market of lendMarkets) {
+      records.push({
+        source: "aave",
+        kind: "lending_market",
+        key: market.slug,
+        payload: {
+          name: market.name,
+          symbol: market.symbol,
+          priceUsd: market.priceUsd,
+          maxLtvPct: market.maxLtvPct,
+          rewardsApyPct: market.rewardsApyPct,
+        },
+        fetchedAt: market.createdAt,
+      })
+    }
+    for (const record of records) {
+      const existing = await ctx.db
+        .query("askAIMarketSnapshots")
+        .withIndex("by_source_kind_key", (q) =>
+          q.eq("source", record.source).eq("kind", record.kind).eq("key", record.key),
+        )
+        .unique()
+      if (existing) await ctx.db.patch(existing._id, record)
+      else await ctx.db.insert("askAIMarketSnapshots", record)
+    }
+    return { upserted: records.length }
+  },
+})
+
+export const recordProviderRun = internalMutation({
+  args: {
+    source: sourceValidator,
+    status: v.union(v.literal("success"), v.literal("failed")),
+    records: v.number(),
+    error: v.optional(v.string()),
+    startedAt: v.number(),
+    completedAt: v.number(),
+  },
+  handler: async (ctx, args) => ctx.db.insert("askAIMarketProviderRuns", args),
 })
 
 export const upsertRecordsMutation = internalMutation({

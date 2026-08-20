@@ -7,16 +7,15 @@ import schema from "./schema"
 const modules = import.meta.glob("./**/*.*s")
 
 describe("Ask AI market ingestion", () => {
-  test("is internal and fail-closed before provider configuration", async () => {
+  test("is internal and can sync the canonical Convex cache without provider calls", async () => {
     // @ts-expect-error ingestion must never be publicly callable
     void api.askAIIngestion.ingest
     expect(internal.askAIIngestion.ingest).toBeDefined()
 
     const t = convexTest(schema, modules)
-    await expect(t.action(internal.askAIIngestion.ingest, {})).resolves.toEqual({
-      enabled: false,
-      fetched: 0,
-      upserted: 0,
+    await expect(t.action(internal.askAIIngestion.ingest, { source: "defillama" })).resolves.toEqual({
+      canonicalSynced: true,
+      providers: [],
     })
   })
 

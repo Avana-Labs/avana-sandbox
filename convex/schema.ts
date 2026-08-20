@@ -1985,4 +1985,22 @@ export default defineSchema({
     .index("by_source_kind_key", ["source", "kind", "key"])
     .index("by_kind_key", ["kind", "key"])
     .index("by_fetched_at", ["fetchedAt"]),
+
+  askAIMarketProviderRuns: defineTable({
+    source: v.union(
+      v.literal("coingecko"),
+      v.literal("defillama"),
+      v.literal("uniswap"),
+      v.literal("curve"),
+      v.literal("balancer"),
+      v.literal("aave"),
+    ),
+    status: v.union(v.literal("success"), v.literal("failed")),
+    records: v.number(),
+    error: v.optional(v.string()),
+    startedAt: v.number(),
+    completedAt: v.number(),
+  })
+    .index("by_source_completed", ["source", "completedAt"])
+    .index("by_status_completed", ["status", "completedAt"]),
 })
