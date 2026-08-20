@@ -13,6 +13,7 @@ import type * as askAI from "../askAI.js";
 import type * as askAIAgent from "../askAIAgent.js";
 import type * as askAIIngestion from "../askAIIngestion.js";
 import type * as askAIRag from "../askAIRag.js";
+import type * as askAITelemetry from "../askAITelemetry.js";
 import type * as askAITools from "../askAITools.js";
 import type * as borrow_assets from "../borrow/assets.js";
 import type * as borrow_cashflow from "../borrow/cashflow.js";
@@ -91,6 +92,7 @@ declare const fullApi: ApiFromModules<{
   askAIAgent: typeof askAIAgent;
   askAIIngestion: typeof askAIIngestion;
   askAIRag: typeof askAIRag;
+  askAITelemetry: typeof askAITelemetry;
   askAITools: typeof askAITools;
   "borrow/assets": typeof borrow_assets;
   "borrow/cashflow": typeof borrow_cashflow;

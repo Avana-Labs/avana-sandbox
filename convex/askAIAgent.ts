@@ -3,7 +3,7 @@ import { createOpenAI } from "@ai-sdk/openai"
 import { stepCountIs } from "ai"
 import { v } from "convex/values"
 import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
-import { api, components } from "./_generated/api"
+import { api, components, internal } from "./_generated/api"
 import { action } from "./_generated/server"
 import { searchAvanaKnowledgeTool } from "./askAIRag"
 
@@ -74,6 +74,7 @@ export const generateTurn = action({
     retryPromptMessageId: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<GeneratedTurn> => {
+    const startedAt = Date.now()
     const turn = (await ctx.runMutation(api.askAI.beginTurn, args)) as PreparedTurn
     try {
       const result = await askAIAgent.streamText(
@@ -100,6 +101,8 @@ export const generateTurn = action({
         outputTokens: providerUsage.outputTokens ?? 0,
         totalTokens: providerUsage.totalTokens ?? 0,
       }
+      const steps = await result.steps
+      const tools = [...new Set(steps.flatMap((step) => step.toolCalls.map((call) => call.toolName)))]
       await ctx.runMutation(api.askAI.completeGeneratedTurn, {
         threadId: args.threadId,
         promptMessageId: turn.messageId,
@@ -114,6 +117,17 @@ export const generateTurn = action({
           usage,
         },
       })
+      await ctx.runMutation(internal.askAITelemetry.record, {
+        ownerSubject: turn.ownerSubject,
+        threadId: args.threadId,
+        promptMessageId: turn.messageId,
+        status: "complete",
+        model: process.env.ASK_AI_MODEL?.trim() || ASK_AI_CONFIG.defaultModel,
+        provider: "openai",
+        durationMs: Date.now() - startedAt,
+        ...usage,
+        tools,
+      })
       return {
         text: await result.text,
         promptMessageId: turn.messageId,
@@ -124,6 +138,17 @@ export const generateTurn = action({
       await ctx.runMutation(api.askAI.failTurn, {
         threadId: args.threadId,
         promptMessageId: turn.messageId,
+      })
+      await ctx.runMutation(internal.askAITelemetry.record, {
+        ownerSubject: turn.ownerSubject,
+        threadId: args.threadId,
+        promptMessageId: turn.messageId,
+        status: "failed",
+        model: process.env.ASK_AI_MODEL?.trim() || ASK_AI_CONFIG.defaultModel,
+        provider: "openai",
+        durationMs: Date.now() - startedAt,
+        tools: [],
+        error: error instanceof Error ? error.message.slice(0, 500) : "Unknown Ask AI failure",
       })
       throw error
     }

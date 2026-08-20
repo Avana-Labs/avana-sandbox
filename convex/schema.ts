@@ -1980,6 +1980,25 @@ export default defineSchema({
     .index("by_owner_created", ["ownerSubject", "createdAt"])
     .index("by_message", ["messageId"]),
 
+  askAITelemetry: defineTable({
+    ownerSubject: v.string(),
+    threadId: v.string(),
+    promptMessageId: v.string(),
+    status: v.union(v.literal("complete"), v.literal("failed")),
+    model: v.string(),
+    provider: v.string(),
+    durationMs: v.number(),
+    inputTokens: v.optional(v.number()),
+    outputTokens: v.optional(v.number()),
+    totalTokens: v.optional(v.number()),
+    tools: v.array(v.string()),
+    error: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_created", ["createdAt"])
+    .index("by_status_created", ["status", "createdAt"])
+    .index("by_owner_created", ["ownerSubject", "createdAt"]),
+
   /** Normalized cache populated by disabled-by-default external market adapters. */
   askAIMarketSnapshots: defineTable({
     source: v.union(
