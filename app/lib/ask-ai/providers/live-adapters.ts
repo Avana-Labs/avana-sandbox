@@ -7,10 +7,9 @@ function finiteNumber(value: unknown): number | undefined {
   return Number.isFinite(parsed) ? parsed : undefined
 }
 
-function timestamp(value: unknown): number | undefined {
-  if (typeof value !== "string" && typeof value !== "number") return undefined
-  const parsed = typeof value === "number" ? value : Date.parse(value)
-  return Number.isFinite(parsed) ? parsed : undefined
+function readInt(value: unknown, fallback: number): number {
+  const parsed = finiteNumber(value)
+  return parsed === undefined ? fallback : Math.trunc(parsed)
 }
 
 // Aave PercentValue/apy fields are decimal fractions (0.03 = 3%); surface them as percentages.
@@ -66,6 +65,11 @@ export class DefiLlamaProvider extends LiveProvider {
   readonly source = "defillama" as const
 
   async fetch(): Promise<AskAIMarketRecord[]> {
+    const [prices, pools] = await Promise.all([this.fetchPrices(), this.fetchPools()])
+    return [...prices, ...pools]
+  }
+
+  private async fetchPrices(): Promise<AskAIMarketRecord[]> {
     const coins = this.options.env.ASK_AI_DEFILLAMA_COINS ?? "coingecko:bitcoin,coingecko:ethereum,coingecko:usd-coin"
     const baseUrl = this.options.env.ASK_AI_DEFILLAMA_URL ?? "https://coins.llama.fi/prices/current"
     const data = await requestJson(this.options.fetcher, `${baseUrl}/${coins}`)
@@ -79,6 +83,45 @@ export class DefiLlamaProvider extends LiveProvider {
       const at = finiteNumber(row.timestamp)
       return [this.record("token_price", key, { ...row, price }, at === undefined ? undefined : at * 1000)]
     })
+  }
+
+  // DefiLlama's yields API aggregates pools across every major protocol (Uniswap, Curve, Balancer,
+  // PancakeSwap, Aave, ...), so one request answers "best pools" questions. The endpoint returns
+  // thousands of pools; we keep the top N by TVL (ASK_AI_DEFILLAMA_POOLS_LIMIT, default 250) to
+  // bound the cache — a deliberate cap, not full coverage.
+  private async fetchPools(): Promise<AskAIMarketRecord[]> {
+    const url = this.options.env.ASK_AI_DEFILLAMA_POOLS_URL ?? "https://yields.llama.fi/pools"
+    const limit = Math.min(Math.max(readInt(this.options.env.ASK_AI_DEFILLAMA_POOLS_LIMIT, 250), 1), 1_000)
+    const payload = await requestJson(this.options.fetcher, url)
+    const rows = payload && typeof payload === "object" ? (payload as Record<string, unknown>).data : undefined
+    if (!Array.isArray(rows)) return []
+    return rows
+      .flatMap((raw) => {
+        if (!raw || typeof raw !== "object" || Array.isArray(raw)) return []
+        const row = raw as Record<string, unknown>
+        const id = typeof row.pool === "string" ? row.pool : undefined
+        const tvlUsd = finiteNumber(row.tvlUsd)
+        if (!id || tvlUsd === undefined) return []
+        return [{ id, tvlUsd, row }]
+      })
+      .sort((a, b) => b.tvlUsd - a.tvlUsd)
+      .slice(0, limit)
+      .map(({ id, tvlUsd, row }) =>
+        this.record("dex_pool", `defillama:${id}`, {
+          pool: id,
+          project: row.project,
+          chain: row.chain,
+          symbol: row.symbol,
+          tvlUsd,
+          // Formatter-friendly alias so cached-market rendering shows TVL.
+          totalValueLockedUSD: tvlUsd,
+          apy: finiteNumber(row.apy),
+          apyBase: finiteNumber(row.apyBase),
+          apyReward: finiteNumber(row.apyReward),
+          stablecoin: row.stablecoin === true,
+          ilRisk: typeof row.ilRisk === "string" ? row.ilRisk : undefined,
+        }),
+      )
   }
 }
 
@@ -94,43 +137,6 @@ abstract class GraphProvider extends LiveProvider {
     if (Array.isArray(payload.errors) && payload.errors.length > 0)
       throw new Error(`${this.source} GraphQL request failed`)
     return payload.data && typeof payload.data === "object" ? (payload.data as Record<string, unknown>) : {}
-  }
-
-  protected rows(data: Record<string, unknown>, field: string, kind: AskAIMarketRecord["kind"]): AskAIMarketRecord[] {
-    const rows = data[field]
-    if (!Array.isArray(rows)) return []
-    return rows.flatMap((raw) => {
-      if (!raw || typeof raw !== "object" || Array.isArray(raw)) return []
-      const row = raw as Record<string, unknown>
-      const key = typeof row.id === "string" ? row.id : undefined
-      return key ? [this.record(kind, key, row, timestamp(row.updatedAt))] : []
-    })
-  }
-}
-
-// Default Uniswap v3 Ethereum-mainnet subgraph on The Graph's decentralized network.
-// Verify/override with ASK_AI_UNISWAP_SUBGRAPH_ID if the published id changes.
-const UNISWAP_V3_MAINNET_SUBGRAPH_ID = "5zvR82QoaXYFyDEKLZ9t6v9adgnptxYpKpSbxtgVENFV"
-
-export class UniswapGraphProvider extends GraphProvider {
-  readonly source = "uniswap" as const
-  async fetch() {
-    const data = await this.query(
-      this.endpoint(),
-      `{ pools(first: 100, orderBy: totalValueLockedUSD, orderDirection: desc) { id feeTier liquidity totalValueLockedUSD volumeUSD token0 { id symbol } token1 { id symbol } } }`,
-    )
-    return this.rows(data, "pools", "dex_pool")
-  }
-
-  // Prefer an explicit full gateway URL; otherwise build one from the API key + subgraph id
-  // so operators only need to store UNISWAP_API_KEY.
-  private endpoint(): string {
-    const explicit = this.options.env.ASK_AI_UNISWAP_GRAPH_URL
-    if (explicit) return explicit
-    const apiKey = this.options.env.UNISWAP_API_KEY
-    if (!apiKey) throw new Error("UNISWAP_API_KEY or ASK_AI_UNISWAP_GRAPH_URL is required for Uniswap ingestion")
-    const subgraphId = this.options.env.ASK_AI_UNISWAP_SUBGRAPH_ID ?? UNISWAP_V3_MAINNET_SUBGRAPH_ID
-    return `https://gateway.thegraph.com/api/${apiKey}/subgraphs/id/${subgraphId}`
   }
 }
 
@@ -186,8 +192,9 @@ export function createLiveAskAIProviders(env: NodeJS.ProcessEnv, fetcher: AskAIF
   return [
     // CoinGecko disabled for now — DefiLlama covers token prices. Re-enable by uncommenting.
     // new CoinGeckoProvider(options),
+    // DefiLlama supplies both token prices and cross-protocol pool data (its yields API covers
+    // Uniswap/Curve/Balancer/PancakeSwap/…), which is why there is no standalone Uniswap provider.
     new DefiLlamaProvider(options),
-    new UniswapGraphProvider(options),
     new AaveProvider(options),
   ]
 }

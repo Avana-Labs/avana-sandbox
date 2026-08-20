@@ -6,7 +6,6 @@ describe("Ask AI provider registry", () => {
   it("production configuration can only register live adapters", () => {
     expect(createAskAIProviders({}, vi.fn() as unknown as typeof fetch).map((provider) => provider.source)).toEqual([
       "defillama",
-      "uniswap",
       "aave",
     ])
   })
@@ -38,21 +37,42 @@ describe("Ask AI provider registry", () => {
     )
   })
 
-  it("fails closed when Uniswap has neither an API key nor an explicit endpoint", async () => {
-    const providers = createAskAIProviders({}, vi.fn() as unknown as typeof fetch)
-    await expect(providers.find((provider) => provider.source === "uniswap")?.fetch()).rejects.toThrow(
-      "UNISWAP_API_KEY or ASK_AI_UNISWAP_GRAPH_URL is required",
+  it("normalizes DefiLlama pools (top TVL, capped) into dex_pool records", async () => {
+    const fetcher = vi.fn(async (url: string) =>
+      url.includes("yields.llama.fi")
+        ? new Response(
+            JSON.stringify({
+              data: [
+                { pool: "small", project: "curve", chain: "Ethereum", symbol: "USDC-DAI", tvlUsd: 1_000, apy: 2 },
+                {
+                  pool: "big",
+                  project: "uniswap-v3",
+                  chain: "Ethereum",
+                  symbol: "WETH-USDC",
+                  tvlUsd: 9_000_000,
+                  apy: 12,
+                },
+              ],
+            }),
+            { status: 200 },
+          )
+        : new Response(JSON.stringify({ coins: {} }), { status: 200 }),
     )
-  })
-
-  it("builds the Uniswap gateway URL from UNISWAP_API_KEY", async () => {
-    const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ data: { pools: [] } }), { status: 200 }))
-    const providers = createAskAIProviders({ UNISWAP_API_KEY: "gw-key" }, fetcher as unknown as typeof fetch)
-    await providers.find((provider) => provider.source === "uniswap")?.fetch()
-    expect(fetcher).toHaveBeenCalledWith(
-      expect.stringMatching(/^https:\/\/gateway\.thegraph\.com\/api\/gw-key\/subgraphs\/id\//),
-      expect.objectContaining({ method: "POST" }),
-    )
+    const providers = createAskAIProviders({ ASK_AI_DEFILLAMA_POOLS_LIMIT: "1" }, fetcher as unknown as typeof fetch)
+    const records = (await providers.find((provider) => provider.source === "defillama")?.fetch()) ?? []
+    const pools = records.filter((record) => record.kind === "dex_pool")
+    expect(pools).toHaveLength(1)
+    expect(pools[0]).toMatchObject({
+      source: "defillama",
+      kind: "dex_pool",
+      key: "defillama:big",
+      payload: expect.objectContaining({
+        project: "uniswap-v3",
+        tvlUsd: 9_000_000,
+        totalValueLockedUSD: 9_000_000,
+        apy: 12,
+      }),
+    })
   })
 
   it("reads Aave reserves from the public v3 API without a key", async () => {
