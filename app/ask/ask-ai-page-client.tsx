@@ -52,16 +52,6 @@ const messageText = (message: ThreadMessage) =>
 
 function persistedAssistantParts(messageId: string, text: string, rich?: PersistedRichParts) {
   const parts: ThreadAssistantMessagePart[] = []
-  if (rich?.tool) {
-    parts.push({
-      type: "tool-call",
-      toolCallId: `${messageId}-tool`,
-      toolName: rich.tool.name,
-      args: { query: rich.tool.query, request: rich.tool.request },
-      argsText: JSON.stringify({ query: rich.tool.query, request: rich.tool.request }),
-      result: rich.tool.result,
-    })
-  }
   if (rich?.retrievalChunks?.length) {
     parts.push({
       type: "data",
@@ -196,19 +186,6 @@ export function AskAIPageClient() {
                 return {
                   ...current,
                   promptMessageId: event.promptMessageId,
-                  parts: event.tool
-                    ? [
-                        ...current.parts,
-                        {
-                          type: "tool-call",
-                          toolCallId: `${turnId}-tool`,
-                          toolName: event.tool.name,
-                          args: { query: event.tool.query, request: event.tool.request },
-                          argsText: JSON.stringify({ query: event.tool.query, request: event.tool.request }),
-                          result: event.tool.result,
-                        },
-                      ]
-                    : current.parts,
                 }
               if (event.type === "retrieval")
                 return {
