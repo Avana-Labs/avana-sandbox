@@ -1941,6 +1941,23 @@ export default defineSchema({
     .index("by_thread", ["threadId"])
     .index("by_message", ["messageId"]),
 
+  askAIAttachments: defineTable({
+    ownerSubject: v.string(),
+    threadId: v.string(),
+    storageId: v.id("_storage"),
+    name: v.string(),
+    mediaType: v.string(),
+    size: v.number(),
+    status: v.union(v.literal("uploaded"), v.literal("processed"), v.literal("failed")),
+    extractedText: v.optional(v.string()),
+    error: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_owner", ["ownerSubject"])
+    .index("by_thread", ["threadId"])
+    .index("by_storage", ["storageId"]),
+
   askAITurns: defineTable({
     threadId: v.string(),
     ownerSubject: v.string(),
