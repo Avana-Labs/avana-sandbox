@@ -25,6 +25,26 @@ export function deriveUmbrellaPositionStatus(position: UmbrellaPosition): Umbrel
   return "active"
 }
 
+/** Derive the same lifecycle status directly from the persisted Convex position shape. */
+export function derivePersistedUmbrellaPositionStatus(position: {
+  status: "open" | "closed"
+  suppliedUsd6?: string
+  cooldownAmountUsd6?: string
+  cooldownEndsAt?: number
+  withdrawalWindowEndsAt?: number
+  slashedAmountUsd6?: string
+  now: number
+}): UmbrellaPositionStatus {
+  const suppliedUsd6 = BigInt(position.suppliedUsd6 ?? "0")
+  const cooldownUsd6 = BigInt(position.cooldownAmountUsd6 ?? "0")
+  const slashedUsd6 = BigInt(position.slashedAmountUsd6 ?? "0")
+  if (suppliedUsd6 <= 0n || position.status === "closed") return slashedUsd6 > 0n ? "slashed" : "closed"
+  if (cooldownUsd6 <= 0n) return "active"
+  if (position.withdrawalWindowEndsAt && position.now > position.withdrawalWindowEndsAt) return "cooldownExpired"
+  if (position.cooldownEndsAt && position.now >= position.cooldownEndsAt) return "readyToUnstake"
+  return cooldownUsd6 >= suppliedUsd6 ? "coolingDown" : "partiallyCooling"
+}
+
 /**
  * Map the session transaction log into the shape the dashboard "recent activity"
  * feed expects. Mirrors the lend/borrow/multiply mappers: normalise timestamps

@@ -6,7 +6,19 @@ export type AskAIKnowledgeChunk = {
   sourceUrl?: string
 }
 
-const STOP_WORDS = new Set(["about", "does", "from", "have", "this", "what", "when", "where", "which", "with"])
+const STOP_WORDS = new Set([
+  "about",
+  "does",
+  "explain",
+  "from",
+  "have",
+  "this",
+  "what",
+  "when",
+  "where",
+  "which",
+  "with",
+])
 
 export function rankAskAIKnowledge<T extends AskAIKnowledgeChunk>(rows: T[], query: string, limit = 4): T[] {
   const terms = [
@@ -29,7 +41,7 @@ export function rankAskAIKnowledge<T extends AskAIKnowledgeChunk>(rows: T[], que
       )
       return { row, score }
     })
-    .filter(({ score }) => score > 0)
+    .filter(({ score }) => score >= 3)
     .sort((left, right) => right.score - left.score || left.row.key.localeCompare(right.row.key))
     .slice(0, Math.min(Math.max(limit, 1), 8))
     .map(({ row }) => row)

@@ -7,7 +7,8 @@ import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/s
 import { ASK_AI_DOMAIN_REJECTION, ASK_AI_WALLET_REQUIRED } from "../app/lib/ask-ai/config"
 import { classifyAskAIDomain } from "../app/lib/ask-ai/domain-gate"
 import { answerFromAskAIKnowledge, rankAskAIKnowledge } from "../app/lib/ask-ai/knowledge"
-import { readAskAIEngineSnapshot, readAskAIPortfolio } from "./askAITools"
+import { answerFromAskAIMarketSnapshots, sourcesForAskAIPrompt } from "../app/lib/ask-ai/market-context"
+import { readAskAIEngineSnapshot, readAskAIMarketSnapshots, readAskAIPortfolio } from "./askAITools"
 
 type AskAICtx = QueryCtx | MutationCtx
 
@@ -123,9 +124,25 @@ export const addUserMessage = mutation({
           response = `I found your current Avana balances: Lend ${usd(portfolio.totals.lendUsd)}, Borrow ${usd(portfolio.totals.borrowUsd)}, Multiply ${usd(portfolio.totals.multiplyUsd)}, Umbrella ${usd(portfolio.totals.umbrellaUsd)}, and liquid funds ${usd(portfolio.totals.liquidUsd)}. Engine detail includes ${engines.lend.length} Lend, ${engines.multiply.length} Multiply, and ${engines.umbrella.length} Umbrella position${engines.umbrella.length === 1 ? "" : "s"}. I did not submit a transaction.`
         }
       } else {
-        const knowledge = rankAskAIKnowledge(await ctx.db.query("askAIKnowledge").collect(), text)
+        const marketKind =
+          domain.intent === "pool"
+            ? ("dex_pool" as const)
+            : domain.category === "aave"
+              ? ("lending_market" as const)
+              : domain.intent === "market"
+                ? ("token_price" as const)
+                : undefined
+        const shouldReadMarket = ["market", "pool", "comparison"].includes(domain.intent)
+        const [knowledge, marketSnapshots] = await Promise.all([
+          ctx.db.query("askAIKnowledge").collect(),
+          shouldReadMarket
+            ? readAskAIMarketSnapshots(ctx, { sources: sourcesForAskAIPrompt(text), kind: marketKind, limit: 5 })
+            : Promise.resolve([]),
+        ])
+        const knowledgeAnswer = answerFromAskAIKnowledge(rankAskAIKnowledge(knowledge, text))
+        const marketAnswer = answerFromAskAIMarketSnapshots(marketSnapshots)
         response =
-          answerFromAskAIKnowledge(knowledge) ??
+          [marketAnswer, knowledgeAnswer].filter((section): section is string => Boolean(section)).join("\n\n") ||
           `I do not have a grounded answer for this ${domain.category.replaceAll("_", " ")} question in the current Avana knowledge corpus. Live market ingestion is disabled until its provider endpoints are configured.`
       }
     }

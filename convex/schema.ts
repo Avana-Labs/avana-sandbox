@@ -1948,7 +1948,8 @@ export default defineSchema({
     fetchedAt: v.number(),
   })
     .index("by_source_kind_key", ["source", "kind", "key"])
-    .index("by_kind_key", ["kind", "key"]),
+    .index("by_kind_key", ["kind", "key"])
+    .index("by_fetched_at", ["fetchedAt"]),
 
   /** Small first-party knowledge corpus; the full content ingestion arrives later. */
   askAIKnowledge: defineTable({
