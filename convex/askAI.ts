@@ -4,9 +4,9 @@ import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
 import { components } from "./_generated/api"
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
-import { ASK_AI_DOMAIN_REJECTION } from "../app/lib/ask-ai/config"
+import { ASK_AI_DOMAIN_REJECTION, ASK_AI_WALLET_REQUIRED } from "../app/lib/ask-ai/config"
 import { classifyAskAIDomain } from "../app/lib/ask-ai/domain-gate"
-import { readAskAIPortfolio } from "./askAITools"
+import { readAskAIEngineSnapshot, readAskAIPortfolio } from "./askAITools"
 
 type AskAICtx = QueryCtx | MutationCtx
 
@@ -98,10 +98,29 @@ export const addUserMessage = mutation({
     let response = ASK_AI_DOMAIN_REJECTION
     if (domain.allowed) {
       if (["position", "risk", "borrow_simulation", "stress_test"].includes(domain.intent)) {
-        const portfolio = await readAskAIPortfolio(ctx)
-        response = portfolio.walletRequired
-          ? portfolio.message
-          : `I found your current Avana balances: Lend ${usd(portfolio.totals.lendUsd)}, Borrow ${usd(portfolio.totals.borrowUsd)}, Multiply ${usd(portfolio.totals.multiplyUsd)}, Umbrella ${usd(portfolio.totals.umbrellaUsd)}, and liquid funds ${usd(portfolio.totals.liquidUsd)}. I only read persisted wallet data; I did not submit a transaction.`
+        const [portfolio, engines] = await Promise.all([
+          readAskAIPortfolio(ctx),
+          readAskAIEngineSnapshot(ctx, { multiplyShockPct: -20, lendProjectionDays: 30 }),
+        ])
+        if (portfolio.walletRequired || engines.walletRequired) {
+          response = ASK_AI_WALLET_REQUIRED
+        } else if (domain.intent === "borrow_simulation") {
+          response = engines.borrow
+            ? `Your Credit Engine snapshot shows ${usd(engines.borrow.availableBorrowCapacityUsd)} available to borrow, ${usd(engines.borrow.totalBorrowedUsd)} currently borrowed, and health factor ${engines.borrow.healthFactor?.toFixed(2) ?? "not applicable"}. This is read-only; no borrow was submitted.`
+            : "Your wallet has no Credit Engine risk snapshot yet, so borrowing capacity is unavailable."
+        } else if (domain.intent === "stress_test") {
+          const stressedHealth = engines.multiply
+            .map((position) => position.stress?.healthFactor)
+            .filter((value): value is number => typeof value === "number")
+          response = stressedHealth.length
+            ? `With the requested default 20% collateral-price shock, the Multiply Engine's lowest projected health factor is ${Math.min(...stressedHealth).toFixed(2)} across ${stressedHealth.length} modeled position${stressedHealth.length === 1 ? "" : "s"}. Borrow stress remains unavailable unless the prompt supplies a supported collateral shock mapped to a Credit Engine position.`
+            : "No Multiply position had complete risk parameters for the 20% stress calculation. I did not invent missing liquidation thresholds."
+        } else if (domain.intent === "risk") {
+          const cooling = engines.umbrella.filter((position) => position.status !== "active").length
+          response = `Current engine risk: Credit Engine health factor ${engines.borrow?.healthFactor?.toFixed(2) ?? "unavailable"}; ${engines.multiply.length} Multiply position${engines.multiply.length === 1 ? "" : "s"}; and ${cooling} Umbrella position${cooling === 1 ? "" : "s"} outside active status. Data is persisted and read-only.`
+        } else {
+          response = `I found your current Avana balances: Lend ${usd(portfolio.totals.lendUsd)}, Borrow ${usd(portfolio.totals.borrowUsd)}, Multiply ${usd(portfolio.totals.multiplyUsd)}, Umbrella ${usd(portfolio.totals.umbrellaUsd)}, and liquid funds ${usd(portfolio.totals.liquidUsd)}. Engine detail includes ${engines.lend.length} Lend, ${engines.multiply.length} Multiply, and ${engines.umbrella.length} Umbrella position${engines.umbrella.length === 1 ? "" : "s"}. I did not submit a transaction.`
+        }
       } else {
         response = `I can help with this ${domain.category.replaceAll("_", " ")} question. The mock provider is active, so I will use Avana's persisted data and seeded knowledge without making an external market-data call.`
       }
