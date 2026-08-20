@@ -6,6 +6,15 @@ import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
 import { api, components, internal } from "./_generated/api"
 import { action } from "./_generated/server"
 import { searchAvanaKnowledgeTool } from "./askAIRag"
+import {
+  readBorrowCapacityTool,
+  readPoolMetricsTool,
+  readPortfolioTool,
+  readPositionRiskTool,
+  searchMarketsTool,
+  simulateBorrowTool,
+  stressPositionTool,
+} from "./askAIAgentTools"
 
 export const ASK_AI_AGENT_INSTRUCTIONS = `You are Avana Ask AI, Avana's conversational DeFi assistant.
 
@@ -35,7 +44,7 @@ Actions
 
 const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
-export const askAIAgent = new Agent(components.agent, {
+export const askAIAgent: Agent = new Agent(components.agent, {
   name: ASK_AI_CONFIG.agentName,
   languageModel: openai(process.env.ASK_AI_MODEL?.trim() || ASK_AI_CONFIG.defaultModel),
   instructions: ASK_AI_AGENT_INSTRUCTIONS,
@@ -46,6 +55,13 @@ export const askAIAgent = new Agent(components.agent, {
     // accepts this tool directly.
     web_search: openai.tools.webSearch({ searchContextSize: "low" }) as never,
     search_avana_knowledge: searchAvanaKnowledgeTool,
+    read_portfolio: readPortfolioTool,
+    read_borrow_capacity: readBorrowCapacityTool,
+    read_position_risk: readPositionRiskTool,
+    simulate_borrow: simulateBorrowTool,
+    stress_position: stressPositionTool,
+    search_markets: searchMarketsTool,
+    read_pool_metrics: readPoolMetricsTool,
   },
 })
 
