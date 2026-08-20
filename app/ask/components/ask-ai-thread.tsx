@@ -6,7 +6,6 @@ import {
   ComposerPrimitive,
   type DataMessagePartProps,
   MessagePrimitive,
-  type TextMessagePartProps,
   ThreadPrimitive,
   type ToolCallMessagePartProps,
   useAui,
@@ -33,7 +32,7 @@ import { GenerationLoader } from "@/components/elements/loading-state"
 import { MessageQueue } from "@/components/elements/message-queue"
 import { RetrievalChunks, type RetrievalChunk } from "@/components/elements/retrieval-chunks"
 import { Sources, type Source } from "@/components/elements/sources"
-import { StreamingText } from "@/components/elements/streaming-text"
+import { MarkdownText } from "@/components/assistant-ui/markdown-text"
 import { ToolCall } from "@/components/elements/tool-call"
 import { api } from "@/convex/_generated/api"
 import type { Id } from "@/convex/_generated/dataModel"
@@ -138,7 +137,7 @@ function AssistantMessage() {
       <div className="flex flex-col gap-3">
         <MessagePrimitive.Parts
           components={{
-            Text: StreamingTextPart,
+            Text: MarkdownText,
             Empty: AssistantLoading,
             tools: { Fallback: ToolCallPart },
             data: {
@@ -224,17 +223,6 @@ function AssistantMessage() {
         ) : null}
       </div>
     </MessagePrimitive.Root>
-  )
-}
-
-function StreamingTextPart({ text, status }: TextMessagePartProps) {
-  return (
-    <StreamingText
-      segments={[{ text }]}
-      count={text.split(/\s+/).filter(Boolean).length}
-      streaming={status.type === "running"}
-      className="min-h-0 max-w-none whitespace-pre-wrap text-[15px]"
-    />
   )
 }
 
