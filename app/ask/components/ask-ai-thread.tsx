@@ -34,6 +34,7 @@ import { StreamingText } from "@/components/elements/streaming-text"
 import { ToolCall } from "@/components/elements/tool-call"
 import { api } from "@/convex/_generated/api"
 import type { AskAIUsage } from "@/app/lib/ask-ai/chat-protocol"
+import { AskAIFinancialResultCard, type AskAIFinancialResult } from "./ask-ai-financial-result-card"
 
 const AskAIMessageContext = createContext<{ threadId: string | null }>({ threadId: null })
 const FEEDBACK_REASONS = ["Incorrect", "Outdated data", "Not helpful", "Missing context", "Unsafe", "Other"]
@@ -88,6 +89,7 @@ function AssistantMessage() {
                 retrieval: RetrievalPart,
                 sources: SourcesPart,
                 chart: ChartPart,
+                "financial-result": FinancialResultPart,
               },
             },
           }}
@@ -217,6 +219,10 @@ function SourcesPart({ data }: DataMessagePartProps<Source[]>) {
 
 function ChartPart({ data }: DataMessagePartProps<{ label: string; value: string; points: number[]; delta?: string }>) {
   return <Chart {...data} visibleCount={data.points.length} className="max-w-none" />
+}
+
+function FinancialResultPart({ data }: DataMessagePartProps<AskAIFinancialResult>) {
+  return <AskAIFinancialResultCard result={data} />
 }
 
 const messageComponents = {

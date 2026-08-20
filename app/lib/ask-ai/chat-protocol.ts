@@ -16,6 +16,8 @@ export type AskAIUsage = {
   totalTokens: number
 }
 
+export type AskAIFinancialResult = import("@/app/ask/components/ask-ai-financial-result-card").AskAIFinancialResult
+
 export type AskAIChatEvent =
   | {
       type: "meta"
@@ -29,6 +31,7 @@ export type AskAIChatEvent =
     }
   | { type: "sources"; sources: Array<{ domain: string; title: string; url?: string }> }
   | { type: "visual"; visual: { type: "chart"; label: string; value: string; points: number[]; delta?: string } }
+  | { type: "financial-result"; result: AskAIFinancialResult }
   | { type: "text-delta"; delta: string }
   | { type: "usage"; usage: AskAIUsage }
   | { type: "done" }
