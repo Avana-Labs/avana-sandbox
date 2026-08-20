@@ -46,6 +46,7 @@
     "test:watch": "vitest",
     "test:unit": "vitest run tests/unit",
     "test:ask-ai:evals": "vitest run app/lib/ask-ai/__tests__/production-evals.test.ts",
+    "test:ask-ai:live": "RUN_ASK_AI_LIVE_EVALS=1 vitest run app/lib/ask-ai/__tests__/live-model-evals.test.ts",
     "ask-ai:corpus:check": "node scripts/render-ask-ai-corpus.mjs --check",
     "test:e2e": "playwright test",
     "test:e2e:audit": "playwright test tests/e2e/app-audit.spec.ts",
