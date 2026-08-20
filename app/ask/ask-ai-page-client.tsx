@@ -7,7 +7,7 @@ import {
   useExternalStoreRuntime,
 } from "@assistant-ui/react"
 import { useMutation, useQuery } from "convex/react"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { api } from "@/convex/_generated/api"
 import { AskAIThread } from "./components/ask-ai-thread"
 import { AskAIThreadList } from "./components/ask-ai-thread-list"
@@ -17,6 +17,11 @@ export function AskAIPageClient() {
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
   const threads = useQuery(api.askAI.list, {}) ?? []
   const createThread = useMutation(api.askAI.create)
+  const addUserMessage = useMutation(api.askAI.addUserMessage)
+  const messagePage = useQuery(
+    api.askAI.messages,
+    activeThreadId ? { threadId: activeThreadId, paginationOpts: { numItems: 50, cursor: null } } : "skip",
+  )
 
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return
@@ -27,6 +32,10 @@ export function AskAIPageClient() {
     return () => desktop.removeEventListener("change", syncToViewport)
   }, [])
 
+  useEffect(() => {
+    if (!activeThreadId && threads[0]) setActiveThreadId(threads[0].threadId)
+  }, [activeThreadId, threads])
+
   const handleNewThread = useCallback(async () => {
     const thread = await createThread({})
     setActiveThreadId(thread.threadId)
@@ -34,11 +43,57 @@ export function AskAIPageClient() {
       setThreadsOpen(false)
     }
   }, [createThread])
-  const handleNewMessage = useCallback(async (_message: AppendMessage) => {
-    // Commit 3 connects this boundary to Convex Agent. Keeping the assistant-ui
-    // runtime in place now means the presentation does not need to be replaced.
-  }, [])
-  const messages: readonly ThreadMessage[] = []
+  const handleNewMessage = useCallback(
+    async (message: AppendMessage) => {
+      const prompt = message.content
+        .filter((part) => part.type === "text")
+        .map((part) => part.text)
+        .join("\n")
+        .trim()
+      if (!prompt) return
+
+      let threadId = activeThreadId
+      if (!threadId) {
+        const created = await createThread({})
+        threadId = created.threadId
+        setActiveThreadId(threadId)
+      }
+      await addUserMessage({ threadId, prompt })
+    },
+    [activeThreadId, addUserMessage, createThread],
+  )
+
+  const messages = useMemo<readonly ThreadMessage[]>(
+    () =>
+      (messagePage?.page ?? []).flatMap((message): ThreadMessage[] => {
+        const common = {
+          id: message.id,
+          content: [{ type: "text" as const, text: message.text }],
+          createdAt: new Date(message._creationTime),
+        }
+        if (message.role === "user") {
+          return [{ ...common, role: "user", attachments: [], metadata: { custom: {} } }]
+        }
+        if (message.role === "assistant") {
+          return [
+            {
+              ...common,
+              role: "assistant",
+              status: message.status === "streaming" ? { type: "running" } : { type: "complete", reason: "stop" },
+              metadata: {
+                unstable_state: null,
+                unstable_annotations: [],
+                unstable_data: [],
+                steps: [],
+                custom: {},
+              },
+            },
+          ]
+        }
+        return []
+      }),
+    [messagePage?.page],
+  )
   const runtime = useExternalStoreRuntime({
     messages,
     onNew: handleNewMessage,
