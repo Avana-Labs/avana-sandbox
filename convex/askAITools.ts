@@ -1,9 +1,11 @@
 import { v } from "convex/values"
 import { ASK_AI_WALLET_REQUIRED } from "../app/lib/ask-ai/config"
-import { query, type QueryCtx } from "./_generated/server"
+import { query, type MutationCtx, type QueryCtx } from "./_generated/server"
 import { getAuthedWallet } from "./sandbox/auth"
 
-export async function readAskAIPortfolio(ctx: QueryCtx) {
+type PortfolioReadCtx = Pick<QueryCtx | MutationCtx, "auth" | "db">
+
+export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
   const wallet = await getAuthedWallet(ctx)
   if (!wallet) return { walletRequired: true as const, message: ASK_AI_WALLET_REQUIRED }
 

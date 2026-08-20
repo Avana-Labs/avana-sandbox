@@ -12,7 +12,7 @@
 
 import type { MutationCtx, QueryCtx } from "../_generated/server"
 
-type AnyCtx = QueryCtx | MutationCtx
+type AnyCtx = Pick<QueryCtx | MutationCtx, "auth">
 
 export async function getAuthedWallet(ctx: AnyCtx): Promise<string | null> {
   const identity = await ctx.auth.getUserIdentity()
