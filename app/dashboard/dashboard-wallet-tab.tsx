@@ -10,6 +10,7 @@ import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from 
 import { buildDashboardWalletBalanceRows, type DashboardWalletBalanceRow } from "@/app/lib/swap-system"
 import type { UserAssetBalance } from "@/app/lib/swap-system"
 import { useConvexProductWalletBalances } from "@/app/lib/swap-system/use-convex-wallet-balances"
+import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { BorrowAssetVisual } from "@/app/lib/data/borrow-domain"
@@ -152,33 +153,27 @@ function PnlCell({
   )
 }
 
-// Debt is a liability, not a holding, and claimable pool fees are not a wallet token (they show
-// as "Unclaimed fees" on the pool rows instead) — so keep both out of the wallet holdings view.
-const HIDDEN_WALLET_SOURCE_TYPES: ReadonlySet<UserAssetBalance["sourceType"]> = new Set([
-  "borrow_debt",
-  "multiply_debt",
-  "borrow_claimable",
-])
-
 /**
- * "Wallet Value" is what's actually in the wallet. Pledged collateral has LEFT the
- * wallet (it's locked in a borrow position and already shown on the Borrow tab), so
- * counting it here overstated wallet value and double-counted against Borrow. The
- * pledged row still renders in the pools list for visibility — it just isn't summed.
+ * "Wallet Value" = the value of the wallet's UNALLOCATED funds only. Callers pass rows
+ * already filtered to sourceType "wallet" (product-committed buckets live on their own
+ * tabs), so this is a plain sum of the free/liquid holdings.
  */
 export function sumWalletValueUsd(rows: ReadonlyArray<{ valueUsd: number; sourceLabel: string }>): number {
-  return rows.reduce((total, row) => total + (row.sourceLabel === "Pledged collateral" ? 0 : row.valueUsd), 0)
+  return rows.reduce((total, row) => total + row.valueUsd, 0)
 }
 
 export function DashboardWalletTab({ walletId, balances }: { walletId: string; balances?: UserAssetBalance[] }) {
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const { exact } = useCurrency()
   const { t } = useTranslation()
-  // Dashboard wallet is the aggregate view of all product-scoped onboarding buckets.
+  // The Wallet tab shows ONLY unallocated/free funds (sourceType "wallet"). Everything committed
+  // to a product — lend available/deposited, multiply available/active, borrow collateral/pledged —
+  // is shown on that product's own tab, so it's never double-represented here.
   const convexBalances = useConvexProductWalletBalances(balances === undefined ? walletId : null)
   const effectiveBalances = balances ?? convexBalances ?? undefined
-  const rows = buildDashboardWalletBalanceRows({ walletId, balances: effectiveBalances }).filter(
-    (row) => !HIDDEN_WALLET_SOURCE_TYPES.has(row.sourceType),
+  const priceFor = useCanonicalPriceFor()
+  const rows = buildDashboardWalletBalanceRows({ walletId, balances: effectiveBalances, priceFor }).filter(
+    (row) => row.sourceType === "wallet",
   )
   const tokens = rows.filter((row) => !row.isLpToken)
   const lps = rows.filter((row) => row.isLpToken)

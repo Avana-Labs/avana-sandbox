@@ -16,8 +16,13 @@ export function AskPageClient() {
 
   const handleClose = () => {
     triggerPageLoading()
-    if (typeof window !== "undefined" && window.history.length > 1) router.back()
-    else router.push("/")
+    // Prefer returning to wherever the user launched from; fall back to home on a
+    // cold/direct load where there is no in-app history to pop.
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back()
+    } else {
+      router.push("/")
+    }
   }
 
   return (

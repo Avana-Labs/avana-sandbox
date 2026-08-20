@@ -97,7 +97,6 @@ describe("rewards engine evaluation", () => {
       now: now + 101,
     })
     expect(progressAfterClaim.find((item) => item.taskId === "first-borrow")?.status).toBe("claimed")
-    expect(progressAfterClaim.find((item) => item.taskId === "first-reward-claim")?.status).toBe("claimable")
 
     const summary = calculateRewardSummary({
       tasks,

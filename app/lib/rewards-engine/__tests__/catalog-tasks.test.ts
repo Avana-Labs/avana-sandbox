@@ -4,6 +4,7 @@ import {
   buildDefaultRewardsCatalog,
   evaluateTaskProgress,
   type RewardsEngineState,
+  type RewardTask,
 } from "@/app/lib/rewards-engine"
 import { SandboxRewardsActionAdapter, buildDefaultRewardsSessionState } from "@/app/lib/rewards-system"
 
@@ -28,7 +29,7 @@ describe("full rewards catalog", () => {
   const tasks = buildDefaultRewardsCatalog(now)
 
   it("covers every catalog task with an action kind", () => {
-    expect(tasks).toHaveLength(35)
+    expect(tasks).toHaveLength(15)
     expect(tasks.every((task) => task.actionKind)).toBe(true)
   })
 
@@ -49,9 +50,11 @@ describe("full rewards catalog", () => {
     await adapter.recordSimulation(wallet, "borrow")
     await adapter.recordSandboxTour(wallet, "use-curve-position")
     await adapter.recordSandboxTour(wallet, "use-uniswap-v4-position")
-    await adapter.recordSandboxTour(wallet, "activate-5-markets")
-    await adapter.recordSandboxTour(wallet, "activate-5-markets")
-    await adapter.recordSandboxTour(wallet, "activate-5-markets")
+    // Generic extra tours: the adapter records a fresh market-tour id for any taskId
+    // that isn't the curve/uniswap quest, exercising that branch without a catalog quest.
+    await adapter.recordSandboxTour(wallet, "extra-market-tour")
+    await adapter.recordSandboxTour(wallet, "extra-market-tour")
+    await adapter.recordSandboxTour(wallet, "extra-market-tour")
     await adapter.recordDailyCheckin(wallet)
     await adapter.recordReferralLinkCopied(wallet)
     await adapter.runReferralSandboxStep(wallet, "invite")
@@ -67,13 +70,30 @@ describe("full rewards catalog", () => {
   })
 
   it("unlocks wait timers after the sandbox cool-down", () => {
-    const state = {
+    // The curated catalog no longer ships a wait_since_login quest, but the engine
+    // still supports that requirement type — cover it with an inline fixture.
+    const task: RewardTask = {
+      id: "synthetic-cool-down-timer",
+      category: "challenge",
+      tag: "activity",
+      title: "Synthetic cool-down timer",
+      description: "inline wait_since_login fixture",
+      rewardAmount: 50,
+      rewardSymbol: "AVA",
+      actionLabel: "Waiting",
+      actionKind: "wait_timer",
+      requirement: { type: "wait_since_login", waitMs: 3 * 60_000 },
+      repeatable: false,
+    }
+
+    const progress = evaluateTaskProgress({
+      task,
+      wallet,
       events: [],
       claims: [],
+      now: now + 3 * 60_000,
       firstLoginAt: now,
-    } as RewardsEngineState & { firstLoginAt: number }
-
-    const progress = evaluateTask("maintain-safe-account", state, now, now + 3 * 60_000)
+    })
     expect(progress.status).toBe("claimable")
   })
 

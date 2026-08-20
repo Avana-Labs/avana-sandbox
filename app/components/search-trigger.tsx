@@ -8,6 +8,11 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 // real SearchCommand and the pre-hydration placeholder (search-command is a
 // `ssr: false` dynamic import) render this, so the swap from placeholder to the
 // hydrated component is visually seamless — no color/text flash on load.
+//
+// The full (non-iconOnly) shape is a pill that nests the "Ask AI" chip on its
+// right edge, YouTube-style. It is therefore a <div> with two sibling buttons —
+// the search area (opens the command dialog) and the Ask AI chip — since a
+// <button> can't legally contain another <button>.
 export function SearchTrigger({
   iconOnly = false,
   // "nav" matches Dashboard / Umbrella muted chrome; "brand" is the phone-only cyan.

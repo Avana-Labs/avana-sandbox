@@ -1005,6 +1005,8 @@ const dict: TranslationDictionary = {
   "reCLAMM BPT": "reCLAMM BPT",
   "Stable LP tokens": "Stable LP-tokens",
   "Change language": "Taal wijzigen",
+  "Ask AI": "Vraag de AI",
+  "Search markets…": "Markten zoeken…",
   "Search Avana": "Avana doorzoeken",
   "Search pools, borrow, lend, and more": "Zoek pools, lenen, uitlenen en meer",
   "Search pools, borrow assets, lend assets": "Zoek pools en activa",
@@ -1469,6 +1471,15 @@ const dict: TranslationDictionary = {
     "“Veilig” betekent dat een daling van alleen dat asset je niet kan liquideren — je andere onderpand dekt de schuld.",
   "How it works": "Hoe het werkt",
   "Learn Avana": "Leer Avana kennen",
+  "Dashboard Positions": "Dashboardposities",
+  "Available to use": "Beschikbaar voor gebruik",
+  "Available to deposit": "Beschikbaar om te storten",
+  "against {pool}": "tegen {pool}",
+  Locked: "Vergrendeld",
+  "Merkl Rewards": "Merkl-beloningen",
+  "Next rewards": "Volgende beloningen",
+  "Open on Launch Date": "Opent op de lanceringsdatum",
+  "Previous rewards": "Vorige beloningen",
 }
 
 export default dict

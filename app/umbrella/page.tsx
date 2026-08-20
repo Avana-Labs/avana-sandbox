@@ -1,7 +1,7 @@
 "use client"
 
 import { useSearchParams } from "next/navigation"
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { ActionIcon } from "@/app/components/action-icon"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import { detailSectionStackClass, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
@@ -23,7 +23,7 @@ function isUmbrellaMarketId(value: string | null): value is UmbrellaMarketId {
   return value != null && (VALID_MARKETS as readonly string[]).includes(value)
 }
 
-export default function UmbrellaPage() {
+function UmbrellaPageInner() {
   const { t } = useTranslation()
   const searchParams = useSearchParams()
   const umbrella = useUmbrellaSessionContext()
@@ -114,5 +114,16 @@ export default function UmbrellaPage() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function UmbrellaPage() {
+  // useSearchParams() requires a Suspense boundary so the page can be statically
+  // prerendered (Next.js CSR bailout); without it the production/static-export
+  // build fails to prerender /umbrella.
+  return (
+    <Suspense fallback={null}>
+      <UmbrellaPageInner />
+    </Suspense>
   )
 }

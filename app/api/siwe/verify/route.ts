@@ -1,8 +1,15 @@
 import { cookies } from "next/headers"
 import type { Address, Hex } from "viem"
-import { extractSiweAddress, extractSiweDomain, extractSiweNonce, extractSiweUri } from "@/app/lib/siwe/message"
+import {
+  extractSiweAddress,
+  extractSiweChainId,
+  extractSiweDomain,
+  extractSiweNonce,
+  extractSiweUri,
+} from "@/app/lib/siwe/message"
 import { mintSandboxJwt, resolveIssuer } from "@/app/lib/siwe/jwt"
 import { verifySiweSignature } from "@/app/lib/siwe/signature"
+import { TARGET_CHAIN_ID } from "@/app/lib/web3/target-chain"
 import { assertSameOrigin, clientKey, rateLimitShared } from "../../_lib/request-guards"
 
 export const dynamic = "force-dynamic"
@@ -52,6 +59,12 @@ export async function POST(req: Request) {
     } catch {
       return Response.json({ error: "malformed SIWE URI" }, { status: 400 })
     }
+  }
+
+  // Bind to the app's target network (mainnet-only wagmi config). Defense-in-depth: a message
+  // signed for a different chain is not accepted here.
+  if (extractSiweChainId(message) !== TARGET_CHAIN_ID) {
+    return Response.json({ error: "SIWE chain does not match this app" }, { status: 401 })
   }
 
   const jar = await cookies()

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { Search } from "@/app/components/icons"
-import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
+import { SwapAssetIcon } from "@/app/swap/swap-asset-icon"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import type { SwapAsset, UserAssetBalance } from "@/app/lib/swap-system"
 import { useCurrency } from "@/app/lib/currency/use-currency"
@@ -89,7 +89,7 @@ export function SwapAssetPickerDialog({
                 }}
                 className="group flex w-full items-center gap-3 rounded-radius-md px-3 py-2 text-left transition-colors hover:bg-hover aria-selected:bg-surface-inset"
               >
-                <ActionTokenIcon symbol={asset.symbol} className="size-8" />
+                <SwapAssetIcon asset={asset} className="size-8" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[14px] font-medium text-foreground">{asset.name}</span>
                   <span className="block truncate text-[12px] leading-5 text-muted-foreground">{asset.symbol}</span>

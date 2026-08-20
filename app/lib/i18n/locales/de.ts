@@ -1402,6 +1402,8 @@ const dict: TranslationDictionary = {
   "Review swap": "Swap prüfen",
   "Rewards Earned": "Verdiente Belohnungen",
   "Scenario price": "Szenario-Preis",
+  "Ask AI": "KI fragen",
+  "Search markets…": "Märkte durchsuchen…",
   "Search Avana": "Avana durchsuchen",
   "Search collateral pools, assets to borrow, and assets to lend.":
     "Suche nach Sicherheiten-Pools, Kredit-Assets und Verleih-Assets.",
@@ -1527,6 +1529,15 @@ const dict: TranslationDictionary = {
     "„Sicher“ bedeutet, dass ein Rückgang allein dieses Assets dich nicht liquidieren kann — deine anderen Sicherheiten decken die Schuld.",
   "How it works": "So funktioniert's",
   "Learn Avana": "Avana kennenlernen",
+  "Dashboard Positions": "Dashboard-Positionen",
+  "Available to use": "Verfügbar zur Nutzung",
+  "Available to deposit": "Verfügbar zum Einzahlen",
+  "against {pool}": "gegen {pool}",
+  Locked: "Gesperrt",
+  "Merkl Rewards": "Merkl-Prämien",
+  "Next rewards": "Nächste Prämien",
+  "Open on Launch Date": "Freischaltung zum Launch-Datum",
+  "Previous rewards": "Vorherige Prämien",
 }
 
 export default dict

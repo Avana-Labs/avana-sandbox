@@ -38,6 +38,20 @@ describe("liquidity bounded fold (compaction) matches the naive sum", () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
 
+    // Seed liquid USDC so the cash-out legs (repay + lend deposits) are affordable — this test
+    // exercises the liquidity fold, not balance affordability.
+    await t.run(async (ctx) => {
+      await ctx.db.insert("sandboxBalances", {
+        wallet: WALLET.toLowerCase(),
+        assetSlug: "usdc",
+        symbol: "USDC",
+        amount: 5000,
+        valueUsd: 5000,
+        priceUsd: 1,
+        updatedAt: 1,
+      })
+    })
+
     // Market A: a borrow ($1000) then a partial repay ($400) on the borrowable asset.
     await asUser.mutation(api.sandbox.transactions.recordTransaction, {
       wallet: WALLET,

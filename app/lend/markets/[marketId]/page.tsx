@@ -18,12 +18,25 @@ type PageProps = {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { marketId } = await params
+  // Audit build has no live backend: resolve metadata statically so the description lands in the
+  // initial <head> for Lighthouse instead of streaming in late.
+  if (isLighthouseAuditMode())
+    return buildSeoMetadata({
+      title: "Lend market · Avana",
+      description: "Explore lend market details, supply APY, and available liquidity on Avana.",
+      path: `/lend/markets/${marketId}`,
+      keywords: ["supply yield", "DeFi lend market"],
+    })
   const detail = preferLive(
     await getLendMarketDetailFromConvex(marketId),
     getLendMarketDetail(marketId),
     `lend market metadata:${marketId}`,
   )
-  if (!detail) return { title: "Lend market · Avana" }
+  if (!detail)
+    return {
+      title: "Lend market · Avana",
+      description: "Explore lend market details, supply APY, and available liquidity on Avana.",
+    }
   return buildSeoMetadata({
     title: `${detail.hero.name} · Avana Lend`,
     description: detail.about.description,

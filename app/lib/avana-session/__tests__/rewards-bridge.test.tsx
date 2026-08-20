@@ -119,7 +119,7 @@ describe("Avana rewards bridge", () => {
       const summary = await firstMount.result.current.rewards.readAdapter.readRewardSummary(
         firstMount.result.current.walletId,
       )
-      expect(summary.totalClaimedAmount).toBe(45)
+      expect(summary.totalClaimedAmount).toBe(25)
     })
 
     firstMount.unmount()
@@ -130,7 +130,7 @@ describe("Avana rewards bridge", () => {
       const summary = await secondMount.result.current.rewards.readAdapter.readRewardSummary(
         secondMount.result.current.walletId,
       )
-      expect(summary.totalClaimedAmount).toBe(45)
+      expect(summary.totalClaimedAmount).toBe(25)
     })
   })
 })

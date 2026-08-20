@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 import { buildDefaultRewardsCatalog, calculateRewardSummary, evaluateTaskProgress } from "@/app/lib/rewards-engine"
-import type { RewardActivityEvent, RewardTask } from "@/app/lib/rewards-engine"
+import type { RewardActivityEvent, RewardTask, RewardTaskRequirement } from "@/app/lib/rewards-engine"
 import { buildSandboxCompletionEvents } from "@/app/lib/rewards-engine/task-completion"
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -31,19 +31,36 @@ function event(
 
 type TaskSpec = {
   taskId: string
+  // Requirement types the curated catalog no longer uses (wait_since_login, streak,
+  // holding_period, profile_completed) are still supported by the engine. Cover them
+  // with an inline synthetic task fixture instead of a catalog lookup.
+  task?: RewardTask
   partialEvents?: RewardActivityEvent[]
   completeEvents?: RewardActivityEvent[]
   beforeStatus?: "available" | "in_progress"
 }
 
+function syntheticTask(id: string, requirement: RewardTaskRequirement): RewardTask {
+  return {
+    id,
+    category: "challenge",
+    tag: "activity",
+    title: `Synthetic ${id}`,
+    description: `inline ${requirement.type} coverage fixture`,
+    rewardAmount: 50,
+    rewardSymbol: "AVA",
+    actionLabel: "Go",
+    actionKind: "product_action",
+    requirement,
+    repeatable: false,
+  }
+}
+
 const taskSpecs: TaskSpec[] = [
+  // —— Live catalog tasks (one per kept catalog quest) ——
   {
     taskId: "connect-wallet",
     completeEvents: [event("connect-wallet", "wallet_connected", "profile")],
-  },
-  {
-    taskId: "create-profile",
-    completeEvents: [event("create-profile", "profile_completed", "profile")],
   },
   {
     taskId: "review-risk-basics",
@@ -80,49 +97,11 @@ const taskSpecs: TaskSpec[] = [
     ],
   },
   {
-    taskId: "first-reward-claim",
-    completeEvents: [event("reward-first", "reward_claimed", "rewards", { amountUsd: 25 })],
-  },
-  {
-    taskId: "maintain-safe-account",
-    beforeStatus: "in_progress",
-  },
-  {
     taskId: "supply-5k-lend",
     partialEvents: [event("lend-200", "lend_deposited", "lend", { amountUsd: 200, marketId: "gho" })],
     completeEvents: [
       event("lend-200", "lend_deposited", "lend", { amountUsd: 200, marketId: "gho" }),
       event("lend-300", "lend_deposited", "lend", { amountUsd: 300, marketId: "gho", timestamp: now + 1 }),
-    ],
-    beforeStatus: "in_progress",
-  },
-  {
-    taskId: "borrow-2k",
-    partialEvents: [event("borrow-100", "borrow_opened", "borrow", { amountUsd: 100, marketId: "pool-a" })],
-    completeEvents: [
-      event("borrow-100", "borrow_opened", "borrow", { amountUsd: 100, marketId: "pool-a" }),
-      event("borrow-100b", "borrow_opened", "borrow", { amountUsd: 100, marketId: "pool-b", timestamp: now + 1 }),
-    ],
-    beforeStatus: "in_progress",
-  },
-  {
-    taskId: "open-2x-multiply",
-    completeEvents: [event("multiply-any", "multiply_opened", "multiply", { amountUsd: 300, marketId: "eth-usdt" })],
-  },
-  {
-    taskId: "use-3-products",
-    partialEvents: [
-      event("use-lend", "lend_deposited", "lend", { amountUsd: 100, marketId: "gho" }),
-      event("use-borrow", "borrow_opened", "borrow", { amountUsd: 100, marketId: "pool-a", timestamp: now + 1 }),
-    ],
-    completeEvents: [
-      event("use-lend", "lend_deposited", "lend", { amountUsd: 100, marketId: "gho" }),
-      event("use-borrow", "borrow_opened", "borrow", { amountUsd: 100, marketId: "pool-a", timestamp: now + 1 }),
-      event("use-multiply", "multiply_opened", "multiply", {
-        amountUsd: 100,
-        marketId: "eth-usdt",
-        timestamp: now + 2,
-      }),
     ],
     beforeStatus: "in_progress",
   },
@@ -137,117 +116,12 @@ const taskSpecs: TaskSpec[] = [
     ],
   },
   {
-    taskId: "maintain-hf-above-2",
-    beforeStatus: "in_progress",
-  },
-  {
-    taskId: "keep-multiply-safe",
-    beforeStatus: "in_progress",
-  },
-  {
-    taskId: "complete-5-borrow-repay-cycles",
-    partialEvents: [
-      event("repay-1", "borrow_repaid", "borrow", { amountUsd: 50, marketId: "pool-a" }),
-      event("repay-2", "borrow_repaid", "borrow", { amountUsd: 50, marketId: "pool-b", timestamp: now + 1 }),
-    ],
-    completeEvents: [
-      event("repay-1", "borrow_repaid", "borrow", { amountUsd: 50, marketId: "pool-a" }),
-      event("repay-2", "borrow_repaid", "borrow", { amountUsd: 50, marketId: "pool-b", timestamp: now + 1 }),
-      event("repay-3", "borrow_repaid", "borrow", { amountUsd: 50, marketId: "pool-c", timestamp: now + 2 }),
-    ],
-    beforeStatus: "in_progress",
-  },
-  {
-    taskId: "complete-3-multiply-deleverage-cycles",
-    partialEvents: [event("deleverage-1", "multiply_deleveraged", "multiply", { amountUsd: 50, marketId: "eth-usdt" })],
-    completeEvents: [
-      event("deleverage-1", "multiply_deleveraged", "multiply", { amountUsd: 50, marketId: "eth-usdt" }),
-      event("deleverage-2", "multiply_deleveraged", "multiply", {
-        amountUsd: 50,
-        marketId: "btc-usdc",
-        timestamp: now + 1,
-      }),
-    ],
-    beforeStatus: "in_progress",
-  },
-  {
-    taskId: "activate-5-markets",
-    partialEvents: [
-      event("tour-1", "sandbox_tour_completed", "borrow", { marketId: "market-tour-1" }),
-      event("tour-2", "sandbox_tour_completed", "borrow", { marketId: "market-tour-2", timestamp: now + 1 }),
-    ],
-    completeEvents: [
-      event("tour-1", "sandbox_tour_completed", "borrow", { marketId: "market-tour-1" }),
-      event("tour-2", "sandbox_tour_completed", "borrow", { marketId: "market-tour-2", timestamp: now + 1 }),
-      event("tour-3", "sandbox_tour_completed", "borrow", { marketId: "market-tour-3", timestamp: now + 2 }),
-    ],
-    beforeStatus: "in_progress",
-  },
-  {
-    taskId: "claim-rewards-5-times",
-    partialEvents: [
-      event("claim-1", "reward_claimed", "rewards", { amountUsd: 10 }),
-      event("claim-2", "reward_claimed", "rewards", { amountUsd: 15, timestamp: now + 1 }),
-    ],
-    completeEvents: [
-      event("claim-1", "reward_claimed", "rewards", { amountUsd: 10 }),
-      event("claim-2", "reward_claimed", "rewards", { amountUsd: 15, timestamp: now + 1 }),
-      event("claim-3", "reward_claimed", "rewards", { amountUsd: 20, timestamp: now + 2 }),
-    ],
-    beforeStatus: "in_progress",
-  },
-  {
-    taskId: "4-week-activity-streak",
-    partialEvents: [
-      event("checkin-1", "daily_checkin", "profile", { timestamp: now }),
-      event("checkin-2", "daily_checkin", "profile", { timestamp: now + DAY_MS }),
-    ],
-    completeEvents: [
-      event("checkin-1", "daily_checkin", "profile", { timestamp: now }),
-      event("checkin-2", "daily_checkin", "profile", { timestamp: now + DAY_MS }),
-      event("checkin-3", "daily_checkin", "profile", { timestamp: now + 2 * DAY_MS }),
-    ],
-    beforeStatus: "in_progress",
-  },
-  {
-    taskId: "grow-portfolio-10k",
-    partialEvents: [
-      event("grow-400", "lend_deposited", "lend", { amountUsd: 400, marketId: "gho" }),
-      event("grow-300", "borrow_opened", "borrow", { amountUsd: 300, marketId: "pool-a", timestamp: now + 1 }),
-    ],
-    completeEvents: [
-      event("grow-400", "lend_deposited", "lend", { amountUsd: 400, marketId: "gho" }),
-      event("grow-300", "borrow_opened", "borrow", { amountUsd: 300, marketId: "pool-a", timestamp: now + 1 }),
-      event("grow-300b", "multiply_opened", "multiply", { amountUsd: 300, marketId: "eth-usdt", timestamp: now + 2 }),
-    ],
-    beforeStatus: "in_progress",
-  },
-  {
-    taskId: "open-8-active-positions",
-    partialEvents: [
-      event("position-1", "lend_deposited", "lend", { amountUsd: 100, marketId: "gho" }),
-      event("position-2", "borrow_opened", "borrow", { amountUsd: 100, marketId: "pool-a", timestamp: now + 1 }),
-    ],
-    completeEvents: [
-      event("position-1", "lend_deposited", "lend", { amountUsd: 100, marketId: "gho" }),
-      event("position-2", "borrow_opened", "borrow", { amountUsd: 100, marketId: "pool-a", timestamp: now + 1 }),
-      event("position-3", "multiply_opened", "multiply", { amountUsd: 100, marketId: "eth-usdt", timestamp: now + 2 }),
-    ],
-    beforeStatus: "in_progress",
-  },
-  {
     taskId: "share-referral-link",
     completeEvents: [event("ref-link", "referral_link_created", "referral")],
   },
   {
     taskId: "invite-first-wallet",
     completeEvents: [event("ref-connect", "referral_connected", "referral", { referredWallet: "friend-1" })],
-  },
-  {
-    taskId: "first-funded-referral",
-    completeEvents: [
-      event("ref-funded", "referral_funded", "referral", { referredWallet: "friend-1", amountUsd: 250 }),
-    ],
   },
   {
     taskId: "bring-3-active-users",
@@ -262,61 +136,56 @@ const taskSpecs: TaskSpec[] = [
     ],
     beforeStatus: "in_progress",
   },
+
+  // —— Synthetic fixtures for requirement types the catalog no longer uses ——
+  // The engine still supports these; keep engine-level coverage even though no
+  // curated quest exercises them anymore.
   {
-    taskId: "bring-5-active-users",
-    partialEvents: Array.from({ length: 4 }, (_, index) =>
-      event(`ref-five-${index}`, "referral_activated", "referral", {
-        referredWallet: `friend-five-${index}`,
-        timestamp: now + index,
-      }),
-    ),
-    completeEvents: Array.from({ length: 5 }, (_, index) =>
-      event(`ref-five-${index}`, "referral_activated", "referral", {
-        referredWallet: `friend-five-${index}`,
-        timestamp: now + index,
-      }),
-    ),
-    beforeStatus: "in_progress",
+    taskId: "synthetic-wait-since-login",
+    task: syntheticTask("synthetic-wait-since-login", { type: "wait_since_login", waitMs: 3 * DAY_MS }),
   },
   {
-    taskId: "referral-cohort-25k",
+    taskId: "synthetic-streak",
+    task: syntheticTask("synthetic-streak", {
+      type: "streak",
+      eventTypes: ["daily_checkin"],
+      targetCount: 3,
+      interval: "day",
+    }),
     partialEvents: [
-      event("ref-cohort-250", "referral_funded", "referral", { referredWallet: "friend-1", amountUsd: 250 }),
+      event("streak-1", "daily_checkin", "profile", { timestamp: now }),
+      event("streak-2", "daily_checkin", "profile", { timestamp: now + DAY_MS }),
     ],
     completeEvents: [
-      event("ref-cohort-250", "referral_funded", "referral", { referredWallet: "friend-1", amountUsd: 250 }),
-      event("ref-cohort-250b", "referral_funded", "referral", {
-        referredWallet: "friend-2",
-        amountUsd: 250,
-        timestamp: now + 1,
-      }),
+      event("streak-1", "daily_checkin", "profile", { timestamp: now }),
+      event("streak-2", "daily_checkin", "profile", { timestamp: now + DAY_MS }),
+      event("streak-3", "daily_checkin", "profile", { timestamp: now + 2 * DAY_MS }),
     ],
     beforeStatus: "in_progress",
   },
   {
-    taskId: "referral-streak",
-    partialEvents: [event("ref-streak-1", "referral_activated", "referral", { referredWallet: "friend-1" })],
+    taskId: "synthetic-holding-period",
+    task: syntheticTask("synthetic-holding-period", {
+      type: "holding_period",
+      eventTypes: ["lend_deposited"],
+      targetCount: 1,
+      durationDays: 7,
+      minAmountUsd: 100,
+    }),
+    partialEvents: [
+      event("hold-1", "lend_deposited", "lend", { amountUsd: 100, marketId: "gho", timestamp: now }),
+      event("hold-2", "lend_deposited", "lend", { amountUsd: 100, marketId: "gho", timestamp: now + 3 * DAY_MS }),
+    ],
     completeEvents: [
-      event("ref-streak-1", "referral_activated", "referral", { referredWallet: "friend-1" }),
-      event("ref-streak-2", "referral_activated", "referral", { referredWallet: "friend-2", timestamp: now + 1 }),
+      event("hold-1", "lend_deposited", "lend", { amountUsd: 100, marketId: "gho", timestamp: now }),
+      event("hold-2", "lend_deposited", "lend", { amountUsd: 100, marketId: "gho", timestamp: now + 7 * DAY_MS }),
     ],
     beforeStatus: "in_progress",
   },
   {
-    taskId: "avana-ambassador",
-    partialEvents: Array.from({ length: 4 }, (_, index) =>
-      event(`ref-amb-${index}`, "referral_activated", "referral", {
-        referredWallet: `ambassador-${index}`,
-        timestamp: now + index,
-      }),
-    ),
-    completeEvents: Array.from({ length: 5 }, (_, index) =>
-      event(`ref-amb-${index}`, "referral_activated", "referral", {
-        referredWallet: `ambassador-${index}`,
-        timestamp: now + index,
-      }),
-    ),
-    beforeStatus: "in_progress",
+    taskId: "synthetic-profile-completed",
+    task: syntheticTask("synthetic-profile-completed", { type: "profile_completed", targetCount: 1 }),
+    completeEvents: [event("profile-complete", "profile_completed", "profile")],
   },
 ]
 
@@ -332,14 +201,14 @@ function evaluate(task: RewardTask, events: RewardActivityEvent[], evaluationNow
 }
 
 describe("rewards task requirements", () => {
-  it("keeps a requirement test for every live rewards task", () => {
-    expect(taskSpecs).toHaveLength(35)
-    expect(new Set(taskSpecs.map((spec) => spec.taskId)).size).toBe(35)
+  it("covers every live rewards task and every engine requirement type", () => {
+    expect(taskSpecs).toHaveLength(19)
+    expect(new Set(taskSpecs.map((spec) => spec.taskId)).size).toBe(19)
   })
 
   for (const spec of taskSpecs) {
     it(`tracks ${spec.taskId} exactly at its described threshold`, () => {
-      const task = getTask(spec.taskId)
+      const task = spec.task ?? getTask(spec.taskId)
 
       if (task.requirement.type === "wait_since_login") {
         const beforeUnlock = evaluate(task, [], now + task.requirement.waitMs - 1)
@@ -412,15 +281,26 @@ describe("rewards task requirements", () => {
       firstLoginAt: now,
     })
 
+    // connect-wallet is claimed; a legacy create-profile claim still counts toward the
+    // wallet's claimed total even though that quest was retired from the catalog.
     expect(summary.totalClaimedAmount).toBe(45)
-    expect(summary.totalClaimableAmount).toBe(340)
-    expect(summary.totalEarnedAmount).toBe(385)
-    expect(summary.completedTaskCount).toBe(7)
-    expect(summary.claimableTaskCount).toBe(5)
+    // Claimable now: first-lend-deposit (40) + supply-5k-lend (100) + first-borrow (50).
+    expect(summary.totalClaimableAmount).toBe(190)
+    // Earned = claimable (190) + connect-wallet's claimed 25.
+    expect(summary.totalEarnedAmount).toBe(215)
+    expect(summary.completedTaskCount).toBe(4)
+    expect(summary.claimableTaskCount).toBe(3)
   })
 
   it("does not count repeated activity in the same market as multiple open-position milestones", () => {
-    const task = getTask("open-8-active-positions")
+    // No catalog quest uses distinctMarketIds after the curation; keep engine coverage
+    // of the distinct-market de-duplication with an inline event_count fixture.
+    const task = syntheticTask("synthetic-open-positions", {
+      type: "event_count",
+      eventTypes: ["lend_deposited", "borrow_opened", "multiply_opened"],
+      targetCount: 3,
+      distinctMarketIds: true,
+    })
     const repeatedMarketEvents = [
       event("lend-repeat-1", "lend_deposited", "lend", { amountUsd: 100, marketId: "gho" }),
       event("lend-repeat-2", "lend_deposited", "lend", { amountUsd: 100, marketId: "gho", timestamp: now + 1 }),

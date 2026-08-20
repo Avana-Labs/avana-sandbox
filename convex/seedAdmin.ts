@@ -6,9 +6,17 @@ const MAX_SEED_ROWS = 2_000
 const MAX_SEED_PAYLOAD_BYTES = 1_000_000
 const MAX_CLEAR_WALLET_EVENTS = 10_000
 
+/** Constant-time string compare (no early exit) to avoid a timing side-channel on the secret. */
+function safeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  let diff = 0
+  for (let i = 0; i < a.length; i += 1) diff |= a.charCodeAt(i) ^ b.charCodeAt(i)
+  return diff === 0
+}
+
 function requireSeedSecret(seedSecret: string) {
   const expected = process.env.CONVEX_SEED_SECRET
-  if (!expected || seedSecret !== expected) {
+  if (!expected || !safeEqual(seedSecret, expected)) {
     throw new Error("Unauthorized seed write")
   }
 }

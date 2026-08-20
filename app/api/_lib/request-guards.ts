@@ -103,7 +103,10 @@ export async function rateLimitShared(key: string, limit: number, windowMs: numb
   const client = sharedStoreClient()
   if (!client) return rateLimit(key, limit, windowMs)
   try {
-    const result = await client.mutation(api.rateLimits.consume, { key, limit, windowMs })
+    // Pass the shared secret when configured so the (public) mutation can require it.
+    // Undefined when unset — the mutation only enforces it when its own env has it too.
+    const secret = process.env.CONVEX_RATE_LIMIT_SECRET
+    const result = await client.mutation(api.rateLimits.consume, { key, limit, windowMs, secret })
     return result.allowed
   } catch {
     // Convex temporarily unreachable — degrade to the local bucket rather than

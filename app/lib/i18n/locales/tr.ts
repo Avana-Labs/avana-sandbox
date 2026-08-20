@@ -1362,6 +1362,8 @@ const dict: TranslationDictionary = {
   "Rewards Earned": "Kazanılan Ödüller",
   Sandbox: "Sandbox",
   "Scenario price": "Senaryo fiyatı",
+  "Ask AI": "Yapay zekâya sor",
+  "Search markets…": "Piyasalarda ara…",
   "Search Avana": "Avana'da ara",
   "Search collateral pools, assets to borrow, and assets to lend.":
     "Teminat havuzları, ödünç alınacak ve ödünç verilecek varlıkları arayın.",
@@ -1472,6 +1474,15 @@ const dict: TranslationDictionary = {
     "“Güvenli”, yalnızca o varlığın düşüşünün sizi tasfiye edemeyeceği anlamına gelir — diğer teminatınız borcu karşılar.",
   "How it works": "Nasıl çalışır",
   "Learn Avana": "Avana'yı öğren",
+  "Dashboard Positions": "Panel pozisyonları",
+  "Available to use": "Kullanıma hazır",
+  "Available to deposit": "Yatırmaya hazır",
+  "against {pool}": "{pool} karşılığında",
+  Locked: "Kilitli",
+  "Merkl Rewards": "Merkl Ödülleri",
+  "Next rewards": "Sonraki ödüller",
+  "Open on Launch Date": "Lansman tarihinde açılır",
+  "Previous rewards": "Önceki ödüller",
 }
 
 export default dict

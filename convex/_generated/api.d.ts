@@ -59,6 +59,8 @@ import type * as sandbox_onboarding from "../sandbox/onboarding.js";
 import type * as sandbox_rewards from "../sandbox/rewards.js";
 import type * as sandbox_rewards_catalog from "../sandbox/rewards_catalog.js";
 import type * as sandbox_starterAllocation from "../sandbox/starterAllocation.js";
+import type * as sandbox_swap from "../sandbox/swap.js";
+import type * as sandbox_swapQuoteEngine from "../sandbox/swapQuoteEngine.js";
 import type * as sandbox_transactions from "../sandbox/transactions.js";
 import type * as sandbox_umbrella from "../sandbox/umbrella.js";
 import type * as seed from "../seed.js";
@@ -131,6 +133,8 @@ declare const fullApi: ApiFromModules<{
   "sandbox/rewards": typeof sandbox_rewards;
   "sandbox/rewards_catalog": typeof sandbox_rewards_catalog;
   "sandbox/starterAllocation": typeof sandbox_starterAllocation;
+  "sandbox/swap": typeof sandbox_swap;
+  "sandbox/swapQuoteEngine": typeof sandbox_swapQuoteEngine;
   "sandbox/transactions": typeof sandbox_transactions;
   "sandbox/umbrella": typeof sandbox_umbrella;
   seed: typeof seed;
