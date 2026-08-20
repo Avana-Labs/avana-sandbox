@@ -223,7 +223,11 @@ export const simulateBorrow = query({
     borrowAsset: v.string(),
   },
   handler: async (ctx, { positionId, additionalBorrowAmount, borrowAsset }) => {
-    if (!Number.isFinite(additionalBorrowAmount) || additionalBorrowAmount <= 0 || additionalBorrowAmount > 1_000_000_000)
+    if (
+      !Number.isFinite(additionalBorrowAmount) ||
+      additionalBorrowAmount <= 0 ||
+      additionalBorrowAmount > 1_000_000_000
+    )
       throw new Error("Additional borrow amount is invalid")
     const wallet = await getAuthedWallet(ctx)
     if (!wallet) return { walletRequired: true as const, message: ASK_AI_WALLET_REQUIRED }
@@ -238,8 +242,7 @@ export const simulateBorrow = query({
       .withIndex("by_slug", (q) => q.eq("slug", position.marketSlug))
       .unique()
     if (!market?.maxLtvPct) throw new Error("Position risk parameters are unavailable")
-    const collateralValueUsd =
-      position.collateralValueUsd ?? Number(position.collateralValueUsd6 ?? "0") / 1_000_000
+    const collateralValueUsd = position.collateralValueUsd ?? Number(position.collateralValueUsd6 ?? "0") / 1_000_000
     const debtValueUsd = position.debtValueUsd ?? Number(position.debtValueUsd6 ?? "0") / 1_000_000
     return {
       walletRequired: false as const,
@@ -263,13 +266,17 @@ export const stressPosition = query({
     assetPriceChanges: v.array(v.object({ symbol: v.string(), change: v.number() })),
   },
   handler: async (ctx, { positionId, assetPriceChanges }) => {
-    if (assetPriceChanges.length < 1 || assetPriceChanges.length > 8) throw new Error("Provide 1 to 8 asset price changes")
+    if (assetPriceChanges.length < 1 || assetPriceChanges.length > 8)
+      throw new Error("Provide 1 to 8 asset price changes")
     for (const item of assetPriceChanges)
       if (!Number.isFinite(item.change) || item.change < -0.95 || item.change > 1)
         throw new Error("Asset price change must be between -0.95 and 1")
     const wallet = await getAuthedWallet(ctx)
     if (!wallet) return { walletRequired: true as const, message: ASK_AI_WALLET_REQUIRED }
-    const positions = await ctx.db.query("positions").withIndex("by_wallet", (q) => q.eq("wallet", wallet)).collect()
+    const positions = await ctx.db
+      .query("positions")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect()
     const position = positions.find((row) => row._id === positionId && row.status === "open")
     if (!position) throw new Error("Position not found")
     const market = (await ctx.db.query("markets").collect()).find((row) => row.slug === position.marketSlug)
@@ -291,7 +298,9 @@ export const stressPosition = query({
         debtValueUsd: position.debtValueUsd ?? Number(position.debtValueUsd6 ?? "0") / 1_000_000,
         liquidationThresholdPct,
         constituents,
-        assetPriceChanges: Object.fromEntries(assetPriceChanges.map(({ symbol, change }) => [symbol.toUpperCase(), change])),
+        assetPriceChanges: Object.fromEntries(
+          assetPriceChanges.map(({ symbol, change }) => [symbol.toUpperCase(), change]),
+        ),
       }),
       asOf: position.lastUpdatedAt,
     }
@@ -382,11 +391,7 @@ export const marketSnapshots = query({
   handler: readAskAIMarketSnapshots,
 })
 
-export function marketFreshness(
-  kind: "token_price" | "dex_pool" | "lending_market",
-  at: number,
-  now = Date.now(),
-) {
+export function marketFreshness(kind: "token_price" | "dex_pool" | "lending_market", at: number, now = Date.now()) {
   const threshold =
     kind === "dex_pool"
       ? ASK_AI_CONFIG.freshness.poolMetricsStaleAfterMs
@@ -402,9 +407,10 @@ export const searchMarkets = query({
     const queryText = rawQuery.trim().toLowerCase()
     if (!queryText || queryText.length > 200) throw new Error("Market query must contain 1 to 200 characters")
     const boundedLimit = Math.min(Math.max(limit ?? 10, 1), 20)
-    const [markets, snapshots] = await Promise.all([
+    const [markets, snapshots, tokenPrices] = await Promise.all([
       ctx.db.query("markets").collect(),
       ctx.db.query("askAIMarketSnapshots").withIndex("by_fetched_at").order("desc").take(100),
+      ctx.db.query("tokenPrices").collect(),
     ])
     const terms = queryText.split(/[\s/,-]+/).filter(Boolean)
     const matchingMarkets = markets
@@ -413,6 +419,23 @@ export const searchMarkets = query({
         return terms.every((term) => haystack.includes(term))
       })
       .slice(0, boundedLimit)
+    const matchingCanonicalPrices = tokenPrices
+      .filter((price) => terms.some((term) => price.symbol.toLowerCase().includes(term)))
+      .filter((price) => price.status !== "invalid")
+      .slice(0, boundedLimit)
+      .map((price) => ({
+        source: "defillama" as const,
+        kind: "token_price" as const,
+        key: price.symbol,
+        data: {
+          symbol: price.symbol,
+          usd: price.priceUsd,
+          confidence: price.confidence,
+          status: price.status,
+        },
+        asOf: price.sourceUpdatedAt ?? price.updatedAt,
+        freshness: price.status === "fresh" ? ("fresh" as const) : ("stale" as const),
+      }))
     const matchingSnapshots = snapshots
       .filter((snapshot) => {
         const haystack = `${snapshot.key} ${snapshot.source}`.toLowerCase()
@@ -428,7 +451,10 @@ export const searchMarkets = query({
         asOf: snapshot.sourceUpdatedAt ?? snapshot.fetchedAt,
         freshness: marketFreshness(snapshot.kind, snapshot.sourceUpdatedAt ?? snapshot.fetchedAt),
       }))
-    return { markets: matchingMarkets, providerData: matchingSnapshots }
+    return {
+      markets: matchingMarkets,
+      providerData: [...matchingCanonicalPrices, ...matchingSnapshots].slice(0, boundedLimit),
+    }
   },
 })
 
