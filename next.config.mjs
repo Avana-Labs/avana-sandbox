@@ -7,7 +7,7 @@ const isDev = process.env.NODE_ENV === "development"
 // first-load JS impact of optimizePackageImports / demand-loading changes is measurable.
 const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === "1" })
 
-// NOTE: Content-Security-Policy is set per-request in middleware.ts so it can carry a nonce and
+// NOTE: Content-Security-Policy is set per-request in proxy.ts so it can carry a nonce and
 // drop `script-src 'unsafe-inline'` in production. The remaining static security headers stay here.
 const securityHeaders = [
   {
