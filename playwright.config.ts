@@ -1,5 +1,8 @@
 import { defineConfig, devices } from "@playwright/test"
 
+const testPort = process.env.PLAYWRIGHT_PORT ?? "3000"
+const testBaseUrl = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${testPort}`
+
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
@@ -9,13 +12,13 @@ export default defineConfig({
   reporter: [["list"], ["html", { open: "never" }]],
   snapshotPathTemplate: "{testDir}/{testFileDir}/{testFileName}-snapshots/{arg}{ext}",
   use: {
-    baseURL: "http://127.0.0.1:3000",
+    baseURL: testBaseUrl,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
   webServer: {
-    command: "NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1 npm run dev -- --port 3000",
-    url: "http://127.0.0.1:3000",
+    command: `NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1 npm run dev -- --port ${testPort}`,
+    url: testBaseUrl,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },
