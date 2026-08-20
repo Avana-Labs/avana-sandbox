@@ -376,6 +376,7 @@ export const beginTurn = mutation({
     if (thread.title !== "New Chat") await ctx.db.patch(thread._id, { updatedAt: Date.now() })
     return {
       ...saved,
+      ownerSubject,
       domain,
       fallbackResponse: response,
       grounding: response,
@@ -397,6 +398,38 @@ export const beginTurn = mutation({
       visual,
       financialResult,
     }
+  },
+})
+
+export const completeGeneratedTurn = mutation({
+  args: {
+    threadId: v.string(),
+    promptMessageId: v.string(),
+    assistantMessageId: v.string(),
+    richParts: v.optional(v.any()),
+  },
+  handler: async (ctx, { threadId, promptMessageId, assistantMessageId, richParts }) => {
+    const { ownerSubject, thread } = await requireOwnedThread(ctx, threadId)
+    const turn = await ctx.db
+      .query("askAITurns")
+      .withIndex("by_prompt_message", (q) => q.eq("promptMessageId", promptMessageId))
+      .unique()
+    if (!turn || turn.ownerSubject !== ownerSubject || turn.threadId !== threadId)
+      throw new Error("Ask AI turn not found")
+    const existingParts = await ctx.db
+      .query("askAIMessageParts")
+      .withIndex("by_message", (q) => q.eq("messageId", assistantMessageId))
+      .unique()
+    if (richParts && !existingParts)
+      await ctx.db.insert("askAIMessageParts", {
+        threadId,
+        messageId: assistantMessageId,
+        parts: richParts,
+        createdAt: Date.now(),
+      })
+    const now = Date.now()
+    await ctx.db.patch(turn._id, { status: "complete", updatedAt: now })
+    await ctx.db.patch(thread._id, { updatedAt: now })
   },
 })
 
