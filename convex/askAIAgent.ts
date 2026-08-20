@@ -27,6 +27,8 @@ Conversation
 Grounding
 - Treat Avana knowledge results as the authority for how Avana works.
 - Search Avana knowledge before making protocol-specific claims; do not rely on general model memory for Avana details.
+- If Avana knowledge returns unavailable or no sources, give its temporary knowledge-unavailable message and make no protocol-specific claim.
+- Every protocol-specific answer must call Avana knowledge and cite at least one returned Avana source.
 - Treat Convex tool results as the authority for wallet balances, positions, market data, rates, and timestamps.
 - Never invent a wallet balance, live price, yield, risk threshold, health factor, or protocol state.
 - Use web search for recent public events and general online knowledge when freshness matters. Never use web results as a substitute for Avana wallet or market-state tools.
@@ -68,12 +70,6 @@ export const askAIAgent: Agent = new Agent(components.agent, {
 type PreparedTurn = {
   ownerSubject: string
   messageId: string
-  grounding: string
-  tool: unknown
-  retrievalChunks: unknown[]
-  sources: unknown[]
-  visual?: unknown
-  financialResult?: unknown
 }
 
 type GeneratedTurn = {
@@ -99,7 +95,7 @@ export const generateTurn = action({
         { threadId: args.threadId, userId: turn.ownerSubject },
         {
           promptMessageId: turn.messageId,
-          instructions: `${ASK_AI_AGENT_INSTRUCTIONS}\n\nAuthoritative Avana context for this turn:\n${turn.grounding}`,
+          instructions: ASK_AI_AGENT_INSTRUCTIONS,
           maxOutputTokens: ASK_AI_CONFIG.maxOutputTokens,
         },
         {
@@ -120,17 +116,23 @@ export const generateTurn = action({
       }
       const steps = await result.steps
       const tools = [...new Set(steps.flatMap((step) => step.toolCalls.map((call) => call.toolName)))]
+      const ragResults = steps.flatMap((step) =>
+        step.toolResults.flatMap((toolResult) =>
+          toolResult.toolName === "search_avana_knowledge" &&
+          typeof toolResult.output === "object" &&
+          toolResult.output !== null
+            ? [toolResult.output as { sources?: unknown[] }]
+            : [],
+        ),
+      )
+      const sources = ragResults.flatMap((ragResult) => ragResult.sources ?? [])
       await ctx.runMutation(api.askAI.completeGeneratedTurn, {
         threadId: args.threadId,
         promptMessageId: turn.messageId,
         assistantMessageId: assistantMessage._id,
         usage,
         richParts: {
-          tool: turn.tool,
-          retrievalChunks: turn.retrievalChunks,
-          sources: turn.sources,
-          visual: turn.visual,
-          financialResult: turn.financialResult,
+          sources,
           usage,
         },
       })

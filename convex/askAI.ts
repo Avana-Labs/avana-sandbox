@@ -12,10 +12,8 @@ import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
 import { components } from "./_generated/api"
 import { internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
-import { ASK_AI_CONFIG, ASK_AI_DOMAIN_REJECTION, ASK_AI_WALLET_REQUIRED } from "../app/lib/ask-ai/config"
-import { classifyAskAIDomain, isAskAIClarificationPrompt, isAskAIGreeting } from "../app/lib/ask-ai/domain-gate"
-import { answerFromAskAIMarketSnapshots, sourcesForAskAIPrompt } from "../app/lib/ask-ai/market-context"
-import { readAskAIEngineSnapshot, readAskAIMarketSnapshots, readAskAIPortfolio } from "./askAITools"
+import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
+import { classifyAskAIDomain } from "../app/lib/ask-ai/domain-gate"
 
 type AskAICtx = QueryCtx | MutationCtx
 
@@ -24,10 +22,6 @@ const askAIRateLimiter = new RateLimiter(components.rateLimiter, {
   perSubjectBurst: { kind: "token bucket", rate: 1, period: 5_000, capacity: 1 },
   globalDaily: { kind: "fixed window", rate: 20_000, period: 24 * 60 * 60 * 1_000 },
 })
-
-function usd(value: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 }).format(value)
-}
 
 function titleFromPrompt(prompt: string) {
   const compact = prompt
@@ -262,168 +256,11 @@ export const beginTurn = mutation({
     if (thread.title === "New Chat") {
       await ctx.db.patch(thread._id, { title: titleFromPrompt(text), updatedAt: Date.now() })
     }
-    let response = ASK_AI_DOMAIN_REJECTION
-    let toolName: "portfolio" | "market_data" | null = null
-    const retrievalChunks: Array<{ id: string; source: string; locator: string; score: number; text: string }> = []
-    const sources: Array<{ domain: string; title: string; url?: string }> = []
-    let visual: { type: "chart"; label: string; value: string; points: number[]; delta?: string } | undefined
-    let financialResult:
-      | {
-          kind: "portfolio" | "borrow_capacity" | "position_risk" | "market" | "pool"
-          title: string
-          asOf?: number
-          freshness?: "fresh" | "stale" | "unavailable"
-          metrics: Array<{ label: string; value: string; after?: string }>
-        }
-      | undefined
-    if (domain.allowed) {
-      if (["position", "risk", "borrow_simulation", "stress_test"].includes(domain.intent)) {
-        toolName = "portfolio"
-        const [portfolio, engines] = await Promise.all([
-          readAskAIPortfolio(ctx),
-          readAskAIEngineSnapshot(ctx, { multiplyShockPct: -20, lendProjectionDays: 30 }),
-        ])
-        if (portfolio.walletRequired || engines.walletRequired) {
-          response = ASK_AI_WALLET_REQUIRED
-        } else if (domain.intent === "borrow_simulation") {
-          if (engines.borrow)
-            financialResult = {
-              kind: "borrow_capacity",
-              title: "Borrow capacity",
-              asOf: engines.borrow.at,
-              metrics: [
-                { label: "Available to borrow", value: usd(engines.borrow.availableBorrowCapacityUsd) },
-                { label: "Currently borrowed", value: usd(engines.borrow.totalBorrowedUsd) },
-                { label: "Health factor", value: engines.borrow.healthFactor?.toFixed(2) ?? "Not applicable" },
-              ],
-            }
-          response = engines.borrow
-            ? `Your Credit Engine snapshot shows ${usd(engines.borrow.availableBorrowCapacityUsd)} available to borrow, ${usd(engines.borrow.totalBorrowedUsd)} currently borrowed, and health factor ${engines.borrow.healthFactor?.toFixed(2) ?? "not applicable"}. This is read-only; no borrow was submitted.`
-            : "Your wallet has no Credit Engine risk snapshot yet, so borrowing capacity is unavailable."
-        } else if (domain.intent === "stress_test") {
-          const stressedHealth = engines.multiply
-            .map((position) => position.stress?.healthFactor)
-            .filter((value): value is number => typeof value === "number")
-          response = stressedHealth.length
-            ? `With the requested default 20% collateral-price shock, the Multiply Engine's lowest projected health factor is ${Math.min(...stressedHealth).toFixed(2)} across ${stressedHealth.length} modeled position${stressedHealth.length === 1 ? "" : "s"}. Borrow stress remains unavailable unless the prompt supplies a supported collateral shock mapped to a Credit Engine position.`
-            : "No Multiply position had complete risk parameters for the 20% stress calculation. I did not invent missing liquidation thresholds."
-          if (stressedHealth.length)
-            financialResult = {
-              kind: "position_risk",
-              title: "Collateral stress test",
-              asOf: engines.asOf,
-              metrics: [
-                { label: "Collateral shock", value: "−20%" },
-                { label: "Lowest projected health factor", value: Math.min(...stressedHealth).toFixed(2) },
-                { label: "Positions modeled", value: String(stressedHealth.length) },
-              ],
-            }
-        } else if (domain.intent === "risk") {
-          const cooling = engines.umbrella.filter((position) => position.status !== "active").length
-          response = `Current engine risk: Credit Engine health factor ${engines.borrow?.healthFactor?.toFixed(2) ?? "unavailable"}; ${engines.multiply.length} Multiply position${engines.multiply.length === 1 ? "" : "s"}; and ${cooling} Umbrella position${cooling === 1 ? "" : "s"} outside active status. Data is persisted and read-only.`
-          financialResult = {
-            kind: "position_risk",
-            title: "Position risk",
-            asOf: engines.asOf,
-            metrics: [
-              {
-                label: "Credit Engine health factor",
-                value: engines.borrow?.healthFactor?.toFixed(2) ?? "Unavailable",
-              },
-              { label: "Multiply positions", value: String(engines.multiply.length) },
-              { label: "Umbrella positions requiring attention", value: String(cooling) },
-            ],
-          }
-        } else {
-          response = `I found your current Avana balances: Lend ${usd(portfolio.totals.lendUsd)}, Borrow ${usd(portfolio.totals.borrowUsd)}, Multiply ${usd(portfolio.totals.multiplyUsd)}, Umbrella ${usd(portfolio.totals.umbrellaUsd)}, and liquid funds ${usd(portfolio.totals.liquidUsd)}. Engine detail includes ${engines.lend.length} Lend, ${engines.multiply.length} Multiply, and ${engines.umbrella.length} Umbrella position${engines.umbrella.length === 1 ? "" : "s"}. I did not submit a transaction.`
-          financialResult = {
-            kind: "portfolio",
-            title: "Avana portfolio",
-            asOf: portfolio.asOf,
-            metrics: [
-              { label: "Lend", value: usd(portfolio.totals.lendUsd) },
-              { label: "Borrow", value: usd(portfolio.totals.borrowUsd) },
-              { label: "Multiply", value: usd(portfolio.totals.multiplyUsd) },
-              { label: "Umbrella", value: usd(portfolio.totals.umbrellaUsd) },
-              { label: "Liquid funds", value: usd(portfolio.totals.liquidUsd) },
-            ],
-          }
-        }
-      } else {
-        const marketKind =
-          domain.intent === "pool"
-            ? ("dex_pool" as const)
-            : domain.category === "aave"
-              ? ("lending_market" as const)
-              : domain.intent === "market"
-                ? ("token_price" as const)
-                : undefined
-        const shouldReadMarket = ["market", "pool", "comparison"].includes(domain.intent)
-        const marketSnapshots = shouldReadMarket
-          ? await readAskAIMarketSnapshots(ctx, { sources: sourcesForAskAIPrompt(text), kind: marketKind, limit: 5 })
-          : []
-        const marketAnswer = answerFromAskAIMarketSnapshots(marketSnapshots)
-        if (marketSnapshots.length > 0) {
-          toolName = "market_data"
-          const prices = marketSnapshots.flatMap((snapshot) => {
-            const value = snapshot.payload.usd ?? snapshot.payload.price ?? snapshot.payload.totalLiquidity
-            const number = typeof value === "number" ? value : typeof value === "string" ? Number(value) : Number.NaN
-            return Number.isFinite(number) ? [number] : []
-          })
-          if (prices.length > 0) {
-            visual = {
-              type: "chart",
-              label: marketSnapshots[0]?.key ?? "Market data",
-              value: usd(prices.at(-1) ?? 0),
-              points: prices,
-            }
-          }
-          const latest = marketSnapshots[0]
-          if (latest) {
-            const at = latest.sourceUpdatedAt ?? latest.fetchedAt
-            const staleAfter = latest.kind === "dex_pool" ? 30 * 60 * 1_000 : 20 * 60 * 1_000
-            const metrics = Object.entries(latest.payload)
-              .filter(([, value]) => typeof value === "number" || typeof value === "string")
-              .slice(0, 6)
-              .map(([label, value]) => ({ label: label.replace(/([A-Z])/g, " $1").trim(), value: String(value) }))
-            financialResult = {
-              kind: latest.kind === "dex_pool" ? "pool" : "market",
-              title: latest.key,
-              asOf: at,
-              freshness: Date.now() - at <= staleAfter ? "fresh" : "stale",
-              metrics,
-            }
-          }
-        }
-        response =
-          marketAnswer ||
-          (isAskAIGreeting(text)
-            ? "Good to see you. I can help you understand Avana markets, LP collateral, lending, borrowing, Multiply positions, Umbrella, and portfolio risk. What would you like to look at?"
-            : isAskAIClarificationPrompt(text)
-              ? "What would you like me to clarify: your balance summary, a specific position, or liquidation risk?"
-              : "Use the authoritative Avana knowledge search and relevant read-only tools to answer this request.")
-      }
-    }
     if (thread.title !== "New Chat") await ctx.db.patch(thread._id, { updatedAt: Date.now() })
     return {
       ...saved,
       ownerSubject,
       domain,
-      fallbackResponse: response,
-      grounding: response,
-      tool: toolName
-        ? {
-            name: toolName,
-            query: text,
-            request: domain.intent.replaceAll("_", " "),
-            result:
-              toolName === "market_data" ? "Cached market data retrieved" : "Persisted wallet and engine data read",
-          }
-        : null,
-      retrievalChunks,
-      sources,
-      visual,
-      financialResult,
     }
   },
 })

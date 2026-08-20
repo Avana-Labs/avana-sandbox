@@ -56,6 +56,21 @@ describe("Ask AI generated-turn lifecycle", () => {
     ).rejects.toThrow("Thread not found")
   })
 
+  test("beginTurn persists input but fabricates no assistant response", async () => {
+    const t = askAITest()
+    const owner = t.withIdentity({ subject: "ask-guest:no-canned-answer" })
+    const thread = await owner.mutation(api.askAI.create, {})
+    const turn = await owner.mutation(api.askAI.beginTurn, {
+      threadId: thread.threadId,
+      prompt: "What is my liquidation risk?",
+    })
+
+    expect(turn).not.toHaveProperty("fallbackResponse")
+    expect(turn).not.toHaveProperty("grounding")
+    expect(turn).not.toHaveProperty("financialResult")
+    expect(turn).toMatchObject({ ownerSubject: "ask-guest:no-canned-answer" })
+  })
+
   test("message queries accept stream cursors before a stream exists", async () => {
     const t = askAITest()
     const owner = t.withIdentity({ subject: "ask-guest:stream-owner" })
