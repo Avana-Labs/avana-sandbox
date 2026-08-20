@@ -4,7 +4,7 @@ import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
 import { components } from "./_generated/api"
 import { internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
-import { ASK_AI_DOMAIN_REJECTION, ASK_AI_WALLET_REQUIRED } from "../app/lib/ask-ai/config"
+import { ASK_AI_CONFIG, ASK_AI_DOMAIN_REJECTION, ASK_AI_WALLET_REQUIRED } from "../app/lib/ask-ai/config"
 import { classifyAskAIDomain, isAskAIClarificationPrompt, isAskAIGreeting } from "../app/lib/ask-ai/domain-gate"
 import { answerFromAskAIMarketSnapshots, sourcesForAskAIPrompt } from "../app/lib/ask-ai/market-context"
 import { readAskAIEngineSnapshot, readAskAIMarketSnapshots, readAskAIPortfolio } from "./askAITools"
@@ -129,10 +129,19 @@ export const quota = query({
     const current = await askAIRateLimiter.getValue(ctx, "perSubjectDaily", { key: ownerSubject })
     const limit = 20
     const remaining = Math.max(0, Math.min(limit, Math.floor(current.value)))
+    const dayStart = Date.now() - 24 * 60 * 60 * 1_000
+    const usageRows = await ctx.db
+      .query("askAIUsage")
+      .withIndex("by_owner_created", (q) => q.eq("ownerSubject", ownerSubject).gte("createdAt", dayStart))
+      .collect()
+    const tokensUsed = usageRows.reduce((sum, row) => sum + row.totalTokens, 0)
     return {
       used: limit - remaining,
       limit,
       resetsAt: current.ts + 24 * 60 * 60 * 1_000,
+      tokensUsed,
+      tokenLimit: ASK_AI_CONFIG.limits.dailyTokenBudget,
+      tokensRemaining: Math.max(0, ASK_AI_CONFIG.limits.dailyTokenBudget - tokensUsed),
     }
   },
 })
@@ -193,6 +202,13 @@ export const beginTurn = mutation({
     )
       throw new Error("This turn cannot be retried")
     if (!previousTurn) {
+      const dayStart = Date.now() - 24 * 60 * 60 * 1_000
+      const usageRows = await ctx.db
+        .query("askAIUsage")
+        .withIndex("by_owner_created", (q) => q.eq("ownerSubject", ownerSubject).gte("createdAt", dayStart))
+        .collect()
+      if (usageRows.reduce((sum, row) => sum + row.totalTokens, 0) >= ASK_AI_CONFIG.limits.dailyTokenBudget)
+        throw new Error("Ask AI daily token limit reached. Need help? Contact Avana Support.")
       await askAIRateLimiter.limit(ctx, "perSubjectDaily", { key: ownerSubject, throws: true })
       await askAIRateLimiter.limit(ctx, "perSubjectBurst", { key: ownerSubject, throws: true })
       await askAIRateLimiter.limit(ctx, "globalDaily", { throws: true })
@@ -389,9 +405,10 @@ export const completeGeneratedTurn = mutation({
     threadId: v.string(),
     promptMessageId: v.string(),
     assistantMessageId: v.string(),
+    usage: v.object({ inputTokens: v.number(), outputTokens: v.number(), totalTokens: v.number() }),
     richParts: v.optional(v.any()),
   },
-  handler: async (ctx, { threadId, promptMessageId, assistantMessageId, richParts }) => {
+  handler: async (ctx, { threadId, promptMessageId, assistantMessageId, usage, richParts }) => {
     const { ownerSubject, thread } = await requireOwnedThread(ctx, threadId)
     const turn = await ctx.db
       .query("askAITurns")
@@ -408,6 +425,20 @@ export const completeGeneratedTurn = mutation({
         threadId,
         messageId: assistantMessageId,
         parts: richParts,
+        createdAt: Date.now(),
+      })
+    const existingUsage = await ctx.db
+      .query("askAIUsage")
+      .withIndex("by_message", (q) => q.eq("messageId", assistantMessageId))
+      .unique()
+    if (!existingUsage)
+      await ctx.db.insert("askAIUsage", {
+        ownerSubject,
+        threadId,
+        messageId: assistantMessageId,
+        model: ASK_AI_CONFIG.defaultModel,
+        provider: "openai",
+        ...usage,
         createdAt: Date.now(),
       })
     const now = Date.now()

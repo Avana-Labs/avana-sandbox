@@ -1966,6 +1966,20 @@ export default defineSchema({
     .index("by_thread", ["threadId"])
     .index("by_created_at", ["createdAt"]),
 
+  askAIUsage: defineTable({
+    ownerSubject: v.string(),
+    threadId: v.string(),
+    messageId: v.string(),
+    model: v.string(),
+    provider: v.string(),
+    inputTokens: v.number(),
+    outputTokens: v.number(),
+    totalTokens: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_owner_created", ["ownerSubject", "createdAt"])
+    .index("by_message", ["messageId"]),
+
   /** Normalized cache populated by disabled-by-default external market adapters. */
   askAIMarketSnapshots: defineTable({
     source: v.union(
