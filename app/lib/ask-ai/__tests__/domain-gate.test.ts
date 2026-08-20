@@ -4,6 +4,7 @@ import { classifyAskAIDomain } from "../domain-gate"
 const ALLOWED = [
   "Morning",
   "Hello!",
+  "sup",
   "How much can I borrow?",
   "What's my health factor?",
   "Show my positions.",
@@ -90,6 +91,14 @@ describe("Ask AI deterministic domain gate", () => {
       allowed: true,
       category: "avana",
       intent: "position",
+    })
+  })
+
+  it("routes direct liquidation questions to portfolio risk", () => {
+    expect(classifyAskAIDomain("will i get liquidated?")).toMatchObject({
+      allowed: true,
+      category: "position_risk",
+      intent: "risk",
     })
   })
 

@@ -5,7 +5,7 @@ import { v } from "convex/values"
 import { components } from "./_generated/api"
 import { internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
 import { ASK_AI_DOMAIN_REJECTION, ASK_AI_WALLET_REQUIRED } from "../app/lib/ask-ai/config"
-import { classifyAskAIDomain, isAskAIGreeting } from "../app/lib/ask-ai/domain-gate"
+import { classifyAskAIDomain, isAskAIClarificationPrompt, isAskAIGreeting } from "../app/lib/ask-ai/domain-gate"
 import { answerFromAskAIKnowledge, rankAskAIKnowledge } from "../app/lib/ask-ai/knowledge"
 import { answerFromAskAIMarketSnapshots, sourcesForAskAIPrompt } from "../app/lib/ask-ai/market-context"
 import { readAskAIEngineSnapshot, readAskAIMarketSnapshots, readAskAIPortfolio } from "./askAITools"
@@ -284,7 +284,9 @@ export const beginTurn = mutation({
           [marketAnswer, knowledgeAnswer].filter((section): section is string => Boolean(section)).join("\n\n") ||
           (isAskAIGreeting(text)
             ? "Good to see you. I can help you understand Avana markets, LP collateral, lending, borrowing, Multiply positions, Umbrella, and portfolio risk. What would you like to look at?"
-            : "I don't have enough verified Avana context to answer that precisely. Tell me which market, pool, or position you mean and I'll take another look.")
+            : isAskAIClarificationPrompt(text)
+              ? "What would you like me to clarify: your balance summary, a specific position, or liquidation risk?"
+              : "I don't have enough verified Avana context to answer that precisely. Tell me which market, pool, or position you mean and I'll take another look.")
       }
     }
     if (thread.title !== "New Chat") await ctx.db.patch(thread._id, { updatedAt: Date.now() })

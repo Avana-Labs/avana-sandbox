@@ -110,6 +110,13 @@ export async function POST(request: Request) {
 
   const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL
   if (!convexUrl) return Response.json({ error: "Ask AI persistence is unavailable" }, { status: 503 })
+  const apiKey = process.env.OPENAI_API_KEY
+  const useMocks = process.env.ASK_AI_USE_MOCKS === "true"
+  if (!apiKey && !useMocks)
+    return Response.json(
+      { error: "Ask AI model is not configured. Add OPENAI_API_KEY to this runtime." },
+      { status: 503 },
+    )
 
   const convex = new ConvexHttpClient(convexUrl)
   convex.setAuth(authorization.slice("Bearer ".length))
@@ -120,7 +127,6 @@ export async function POST(request: Request) {
       const send = (event: AskAIChatEvent) => controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`))
       let promptMessageId: string | undefined
       try {
-        const apiKey = process.env.OPENAI_API_KEY
         const routing = await routeRequest(body, apiKey)
         const turn = await convex.mutation(api.askAI.beginTurn, {
           threadId: body.threadId,
@@ -136,7 +142,7 @@ export async function POST(request: Request) {
 
         let fullText = ""
         let usage: { inputTokens: number; outputTokens: number; totalTokens: number } | undefined
-        const useLiveModel = Boolean(apiKey) && process.env.ASK_AI_USE_MOCKS !== "true"
+        const useLiveModel = Boolean(apiKey) && !useMocks
         if (useLiveModel) {
           const openai = createOpenAI({ apiKey })
           const result = streamText({
