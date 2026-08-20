@@ -8,6 +8,7 @@ import type { RewardActivityEvent } from "@/app/lib/rewards-engine"
 import type { RewardsSessionState } from "./contracts"
 import { clearRewardsSessionState, readRewardsSessionState, writeRewardsSessionState } from "./storage"
 import { REWARDS_SESSION_SYNC_EVENT } from "./session-sync"
+import { withRewardsPersistenceLock } from "./persistence-lock"
 
 /**
  * Freshness rank for a rewards state. Claims and activity events are append-only
@@ -80,10 +81,12 @@ export function useRewardsSession({
       writeRewardsSessionState(walletId, state)
       if (serialized === lastRemoteStateRef.current || !persistRemoteState) return
       lastRemoteStateRef.current = serialized
-      void persistRemoteState({
-        stateJson: serialized,
-        expectedRevision: rewardsRevisionRef.current,
-      })
+      void withRewardsPersistenceLock(walletId, () =>
+        persistRemoteState({
+          stateJson: serialized,
+          expectedRevision: rewardsRevisionRef.current,
+        }),
+      )
         .then((result) => {
           const revision = (result as { revision?: number } | null)?.revision
           if (revision != null) rewardsRevisionRef.current = revision
