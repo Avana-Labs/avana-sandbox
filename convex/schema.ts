@@ -1931,6 +1931,16 @@ export default defineSchema({
     .index("by_thread", ["threadId"])
     .index("by_owner_status_updated", ["ownerSubject", "status", "updatedAt"]),
 
+  /** Rich assistant-ui parts persisted alongside the Agent message text. */
+  askAIMessageParts: defineTable({
+    threadId: v.string(),
+    messageId: v.string(),
+    parts: v.any(),
+    createdAt: v.number(),
+  })
+    .index("by_thread", ["threadId"])
+    .index("by_message", ["messageId"]),
+
   /** Normalized cache populated by disabled-by-default external market adapters. */
   askAIMarketSnapshots: defineTable({
     source: v.union(

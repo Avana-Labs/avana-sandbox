@@ -1,5 +1,7 @@
 "use client"
 
+import { QuotaBanner } from "@/components/elements/quota-banner"
+
 type AskAIThreadSummary = {
   threadId: string
   title: string
@@ -12,6 +14,7 @@ export function AskAIThreadList({
   onClose,
   onNewThread,
   onSelectThread,
+  quota,
 }: {
   open: boolean
   activeThreadId: string | null
@@ -19,6 +22,7 @@ export function AskAIThreadList({
   onClose: () => void
   onNewThread: () => Promise<void>
   onSelectThread: (threadId: string) => void
+  quota?: { used: number; limit: number; resetsAt: number }
 }) {
   return (
     <>
@@ -71,6 +75,19 @@ export function AskAIThreadList({
             </div>
           )}
         </div>
+        {quota ? (
+          <QuotaBanner
+            used={quota.used}
+            limit={quota.limit}
+            unit="messages"
+            resetsIn={new Date(quota.resetsAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+            upgradeLabel="Get more"
+            onUpgrade={() => {
+              window.location.href = "/support-center"
+            }}
+            className="max-w-none"
+          />
+        ) : null}
       </aside>
     </>
   )

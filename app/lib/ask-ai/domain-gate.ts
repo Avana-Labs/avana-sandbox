@@ -71,6 +71,12 @@ const EDUCATION_PATTERNS = [
   /\b(avana|lp collateral|health factor|ltv|liquidation threshold|oracle|aave hub)\b/i,
 ]
 
+const GREETING_PATTERN = /^(?:(?:good\s+)?(?:morning|afternoon|evening)|(?:hi|hello|hey|yo)(?:\s+there)?)[!.?\s]*$/i
+
+export function isAskAIGreeting(message: string) {
+  return GREETING_PATTERN.test(message.trim())
+}
+
 function matchesAny(message: string, patterns: RegExp[]) {
   return patterns.some((pattern) => pattern.test(message))
 }
@@ -88,6 +94,10 @@ export function classifyAskAIDomain(message: string): DomainResult {
 
   if (matchesAny(normalized, BLOCKED_PATTERNS) || INVESTMENT_RECOMMENDATION.test(normalized)) {
     return { allowed: false, category: "unsupported", intent: "unsupported", confidence: 0.99 }
+  }
+
+  if (isAskAIGreeting(normalized)) {
+    return { allowed: true, category: "avana", intent: "education", confidence: 0.99 }
   }
 
   if (matchesAny(normalized, POSITION_PATTERNS)) {

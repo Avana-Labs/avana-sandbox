@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest"
 import { classifyAskAIDomain } from "../domain-gate"
 
 const ALLOWED = [
+  "Morning",
+  "Hello!",
   "How much can I borrow?",
   "What's my health factor?",
   "Show my positions.",
