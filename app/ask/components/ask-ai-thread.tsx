@@ -24,7 +24,6 @@ import {
 } from "@/components/elements/composer"
 import { GenerationLoader } from "@/components/elements/loading-state"
 import { Onboarding } from "@/components/elements/onboarding"
-import { ReasoningPanel } from "@/components/elements/reasoning-panel"
 import { RetrievalChunks, type RetrievalChunk } from "@/components/elements/retrieval-chunks"
 import { Sources, type Source } from "@/components/elements/sources"
 import { StreamingText } from "@/components/elements/streaming-text"
@@ -77,7 +76,6 @@ function AssistantMessage() {
             tools: { Fallback: ToolCallPart },
             data: {
               by_name: {
-                "ask-ai-process": ProcessPart,
                 retrieval: RetrievalPart,
                 sources: SourcesPart,
                 chart: ChartPart,
@@ -104,27 +102,6 @@ function StreamingTextPart({ text, status }: TextMessagePartProps) {
 function AssistantLoading() {
   const tick = useAuiState((state) => state.thread.messages.length)
   return <GenerationLoader label="Preparing Avana context" tick={tick} className="items-start py-3" />
-}
-
-function ProcessPart({ data, status }: DataMessagePartProps<{ category: string; intent: string }>) {
-  const [open, setOpen] = useState(false)
-  return (
-    <ReasoningPanel
-      steps={[
-        { title: "Understand request", body: `Classified as ${data.intent.replaceAll("_", " ")}.` },
-        {
-          title: "Ground response",
-          body: `Checking ${data.category.replaceAll("_", " ")} context and available Avana data.`,
-        },
-      ]}
-      visibleSteps={2}
-      streaming={status.type === "running"}
-      open={open}
-      onOpenChange={setOpen}
-      restingLabel="Response process"
-      className="max-w-none"
-    />
-  )
 }
 
 function ToolCallPart({ args, result, status, toolName }: ToolCallMessagePartProps) {

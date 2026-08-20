@@ -14,7 +14,7 @@ export type AskAIChatEvent =
       type: "meta"
       promptMessageId: string
       domain: { allowed: boolean; category: string; intent: string }
-      tool: { name: string; query: string; request: string; result: string }
+      tool: { name: string; query: string; request: string; result: string } | null
     }
   | {
       type: "retrieval"
