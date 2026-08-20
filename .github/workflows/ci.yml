@@ -96,6 +96,60 @@ jobs:
       - name: Unit tests (shard ${{ matrix.shard }})
         run: npx vitest run --shard=${{ matrix.shard }}
 
+  # Live-model evaluation of the Ask AI agent (app/lib/ask-ai/__tests__/live-model-evals.test.ts).
+  # These specs call a real OpenAI model, so they are gated behind BOTH an env
+  # flag (RUN_ASK_AI_LIVE_EVALS=1) and the presence of an API key — without the
+  # key the test file self-skips (describe.skip), so the step is a no-op rather
+  # than a failure.
+  #
+  # SECRET REQUIRED: add a repository secret named `OPENAI_API_KEY` for this job
+  # to actually run. Until it is added, `env.OPENAI_API_KEY` is empty, the guard
+  # below skips the eval step, and the job passes trivially. This job is kept
+  # separate and NON-required on purpose (real network + cost + non-determinism);
+  # it must never block a PR.
+  ask-ai-live-evals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # `secrets` cannot be referenced in an `if:` directly, so surface the key as a
+    # job-level env var and gate the eval step on it.
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Cache node_modules
+        id: node-modules-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node22-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.node-modules-cache.outputs.cache-hit != 'true'
+        run: npm ci
+
+      - name: Ensure rolldown Linux binding
+        run: |
+          node -e "require.resolve('@rolldown/binding-linux-x64-gnu')" \
+            || npm install --no-save @rolldown/binding-linux-x64-gnu@$(node -p "require('./package.json').optionalDependencies['@rolldown/binding-linux-x64-gnu'] || require('./package-lock.json').packages['node_modules/@rolldown/binding-linux-x64-gnu'].version")
+
+      # Only runs the single live-eval spec, and only when the secret is present.
+      # When OPENAI_API_KEY is unset this step is skipped entirely, so a missing
+      # secret can never break CI.
+      - name: Ask AI live model evals
+        if: ${{ env.OPENAI_API_KEY != '' }}
+        env:
+          RUN_ASK_AI_LIVE_EVALS: "1"
+        run: npx vitest run app/lib/ask-ai/__tests__/live-model-evals.test.ts
+
   e2e-smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -180,7 +234,9 @@ jobs:
 # security + lint + typecheck, plus the full unit/integration suite (vitest,
 # sharded) — run on every PR into main and on push to main. `e2e-smoke` is a
 # scoped Playwright smoke (see the step comment) kept as a separate, non-required
-# job for now; promote it to a required check once it has proven stable. The
+# job for now; promote it to a required check once it has proven stable.
+# `ask-ai-live-evals` is likewise a separate, non-required job — it calls a real
+# model and only runs when the `OPENAI_API_KEY` repo secret is set. The
 # timing/pixel-sensitive e2e suites (route-performance, app-audit) and
 # onboarding.spec.ts remain local-only: they need a running Convex backend and/or
 # a signed-in wallet, which CI does not provision. Run them against `npm run dev`
