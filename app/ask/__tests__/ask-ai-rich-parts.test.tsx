@@ -63,6 +63,41 @@ describe("AskAIPageClient rich parts", () => {
     expect(screen.getByText("capacity.")).toBeInTheDocument()
   })
 
+  it("reshapes a verbatim portfolio tool payload into a card", () => {
+    messagesMock.mockReturnValue({
+      status: "Exhausted",
+      loadMore: vi.fn(),
+      results: [
+        {
+          id: "a1",
+          role: "assistant",
+          text: "Here is your portfolio.",
+          _creationTime: 2,
+          status: "success",
+          richParts: {
+            financialResults: [
+              {
+                kind: "portfolio",
+                dataProvenance: "sandbox",
+                payload: {
+                  walletRequired: false,
+                  dataProvenance: "sandbox",
+                  totals: { lendUsd: 1000, borrowUsd: 250, multiplyUsd: 0, liquidUsd: 42.5, umbrellaUsd: 0 },
+                  asOf: 0,
+                },
+              },
+            ],
+          },
+        },
+      ],
+    })
+
+    render(<AskAIPageClient />)
+    expect(screen.getByRole("region", { name: "Your Avana portfolio" })).toBeInTheDocument()
+    expect(screen.getByText("$1,000.00")).toBeInTheDocument()
+    expect(screen.getByText("$42.50")).toBeInTheDocument()
+  })
+
   it("does not fabricate a card when the payload is not display-ready", () => {
     messagesMock.mockReturnValue({
       status: "Exhausted",

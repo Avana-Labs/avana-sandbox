@@ -42,6 +42,32 @@ type PersistedRichParts = {
   usage?: AskAIUsage
 }
 
+type AskAIMetric = AskAIFinancialResult["metrics"][number]
+
+const asObject = (value: unknown): Record<string, unknown> =>
+  value && typeof value === "object" ? (value as Record<string, unknown>) : {}
+
+const usd = (value: unknown): string | null =>
+  typeof value === "number" && Number.isFinite(value)
+    ? `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : null
+
+const pct = (ratio: unknown): string | null =>
+  typeof ratio === "number" && Number.isFinite(ratio)
+    ? `${(ratio * 100).toLocaleString("en-US", { maximumFractionDigits: 1 })}%`
+    : null
+
+// Health factor: null means no debt (effectively infinite); undefined/NaN → omit the metric.
+const healthFactor = (value: unknown): string | null =>
+  value === null
+    ? "∞"
+    : typeof value === "number" && Number.isFinite(value)
+      ? value.toLocaleString("en-US", { maximumFractionDigits: 2 })
+      : null
+
+const metricOf = (label: string, value: string | null, after?: string | null): AskAIMetric | null =>
+  value == null ? null : after != null ? { label, value, after } : { label, value }
+
 // A financial tool result renders only when its verbatim payload already matches
 // the card's display shape. Anything else is skipped — never fabricated.
 function toFinancialResultCard(payload: unknown): AskAIFinancialResult | null {
@@ -49,7 +75,7 @@ function toFinancialResultCard(payload: unknown): AskAIFinancialResult | null {
   const record = payload as { kind?: unknown; title?: unknown; freshness?: unknown; asOf?: unknown; metrics?: unknown }
   if (typeof record.title !== "string" || !Array.isArray(record.metrics)) return null
   const metrics = record.metrics.filter(
-    (metric): metric is AskAIFinancialResult["metrics"][number] =>
+    (metric): metric is AskAIMetric =>
       Boolean(metric) &&
       typeof metric === "object" &&
       typeof (metric as { label?: unknown }).label === "string" &&
@@ -66,6 +92,84 @@ function toFinancialResultCard(payload: unknown): AskAIFinancialResult | null {
     asOf: typeof record.asOf === "number" ? record.asOf : undefined,
     freshness,
     metrics,
+  }
+}
+
+// Reshape a verbatim financial tool result (docs/ask-ai-lane-contracts.md §1) into the display
+// card, per tool kind. Returns null (card hidden) when the figures are absent — never invents them.
+function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFinancialResult | null {
+  const shaped = toFinancialResultCard(payload)
+  if (shaped) return shaped
+  const p = asObject(payload)
+  if (p.walletRequired === true) return null
+  const asOf = typeof p.asOf === "number" && p.asOf > 0 ? p.asOf : undefined
+  const compact = (
+    cardKind: AskAIFinancialResult["kind"],
+    title: string,
+    metrics: Array<AskAIMetric | null>,
+  ): AskAIFinancialResult | null => {
+    const clean = metrics.filter((metric): metric is AskAIMetric => metric !== null)
+    return clean.length ? { kind: cardKind, title, asOf, metrics: clean } : null
+  }
+  switch (kind) {
+    case "portfolio": {
+      const t = asObject(p.totals)
+      return compact("portfolio", "Your Avana portfolio", [
+        metricOf("Lend", usd(t.lendUsd)),
+        metricOf("Borrow", usd(t.borrowUsd)),
+        metricOf("Multiply", usd(t.multiplyUsd)),
+        metricOf("Liquid", usd(t.liquidUsd)),
+        metricOf("Umbrella", usd(t.umbrellaUsd)),
+      ])
+    }
+    case "borrow_capacity": {
+      const c = asObject(p.capacity)
+      return compact("borrow_capacity", "Borrow capacity", [
+        metricOf("Collateral", usd(c.collateralValueUsd)),
+        metricOf("Borrow capacity", usd(c.borrowCapacityUsd)),
+        metricOf("Available", usd(c.availableBorrowCapacityUsd)),
+        metricOf("Borrowed", usd(c.totalBorrowedUsd)),
+        metricOf("Current LTV", pct(c.currentLtv)),
+        metricOf("Health factor", healthFactor(c.healthFactor)),
+      ])
+    }
+    case "position_risk": {
+      const b = asObject(asObject(p.engine).borrow)
+      return compact("position_risk", "Position risk", [
+        metricOf("Collateral", usd(b.collateralValueUsd)),
+        metricOf("Borrowed", usd(b.totalBorrowedUsd)),
+        metricOf("Available", usd(b.availableBorrowCapacityUsd)),
+        metricOf("Current LTV", pct(b.currentLtv)),
+        metricOf("Health factor", healthFactor(b.healthFactor)),
+      ])
+    }
+    case "simulate_borrow": {
+      const s = asObject(p.simulation)
+      const cur = asObject(s.current)
+      const proj = asObject(s.projected)
+      return compact("position_risk", "Borrow simulation", [
+        metricOf("Additional borrow", usd(p.additionalBorrowAmount)),
+        metricOf("LTV", pct(cur.ltv), pct(proj.ltv)),
+        metricOf("Health factor", healthFactor(cur.healthFactor), healthFactor(proj.healthFactor)),
+        metricOf("Remaining capacity", usd(s.remainingBorrowCapacityUsd)),
+        metricOf("Risk level", typeof s.riskLevel === "string" ? s.riskLevel : null),
+      ])
+    }
+    case "stress_position": {
+      const s = asObject(p.simulation)
+      const cur = asObject(s.current)
+      const proj = asObject(s.projected)
+      const liquidatable = s.liquidatable
+      return compact("position_risk", "Stress test", [
+        metricOf("Scenario change", pct(s.weightedCollateralChange)),
+        metricOf("Collateral", usd(cur.collateralValueUsd), usd(proj.collateralValueUsd)),
+        metricOf("LTV", pct(cur.ltv), pct(proj.ltv)),
+        metricOf("Health factor", healthFactor(cur.healthFactor), healthFactor(proj.healthFactor)),
+        metricOf("Liquidatable", liquidatable === true ? "Yes" : liquidatable === false ? "No" : null),
+      ])
+    }
+    default:
+      return null
   }
 }
 
@@ -105,7 +209,7 @@ function persistedAssistantParts(messageId: string, text: string, rich?: Persist
   if (rich?.sources?.length) parts.push({ type: "data", name: "sources", data: rich.sources })
   if (rich?.visual) parts.push({ type: "data", name: "chart", data: rich.visual })
   for (const entry of rich?.financialResults ?? []) {
-    const card = toFinancialResultCard(entry.payload)
+    const card = buildFinancialCard(entry.kind, entry.payload)
     if (card) parts.push({ type: "data", name: "financial-result", data: card })
   }
   parts.push({ type: "text", text })
