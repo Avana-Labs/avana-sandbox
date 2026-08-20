@@ -23,7 +23,7 @@ describe("AskAIPageClient", () => {
     expect(screen.getByRole("heading", { name: "How can I help you today?", level: 1 })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Positions" })).toBeInTheDocument()
     expect(screen.queryByText(/GPT-5.6 Luna/i)).not.toBeInTheDocument()
-    expect(screen.queryByRole("button", { name: /attach/i })).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Add attachment" })).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: /voice input/i })).not.toBeInTheDocument()
     expect(screen.getByRole("textbox", { name: "Ask Avana a question" })).toHaveAttribute("maxlength", "2000")
   })
