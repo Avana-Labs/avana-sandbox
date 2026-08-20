@@ -21,12 +21,6 @@ import { internal } from "./_generated/api"
 const crons = cronJobs()
 
 crons.interval("refresh token prices", { minutes: 10 }, internal.prices.refreshPrices, {})
-// Ask AI reads the same canonical Convex price and market tables as the app.
-// The existing provider jobs own external ingestion; this job only normalizes
-// their persisted results for AI tools, so it cannot compete with price writes.
-crons.interval("sync Ask AI canonical markets", { minutes: 10 }, internal.askAIIngestion.ingest, {
-  source: "defillama",
-})
 // Content hashes make unchanged runs no-ops, so this repairs missing/outdated
 // embeddings without repeatedly paying to embed the same corpus.
 crons.weekly(

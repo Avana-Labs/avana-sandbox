@@ -30,7 +30,9 @@ async function seedPosition(t: ReturnType<typeof convexTest>, wallet: string, ma
 describe("Ask AI authenticated portfolio tools", () => {
   test("returns a wallet-required result for a guest", async () => {
     const t = convexTest(schema, modules)
-    await expect(t.withIdentity({ subject: "ask-guest:test" }).query(api.askAITools.borrowCapacity, {})).resolves.toMatchObject({
+    await expect(
+      t.withIdentity({ subject: "ask-guest:test" }).query(api.askAITools.borrowCapacity, {}),
+    ).resolves.toMatchObject({
       walletRequired: true,
     })
   })
@@ -140,10 +142,30 @@ describe("Ask AI normalized market tools", () => {
         sourceUpdatedAt: now,
         fetchedAt: now,
       })
+      await ctx.db.insert("tokenPrices", {
+        symbol: "weth",
+        llamaId: "coingecko:ethereum",
+        priceUsd: 4_321,
+        confidence: 0.99,
+        sourceUpdatedAt: now,
+        fetchedAt: now,
+        snapshotAt: now,
+        status: "fresh",
+        source: "defillama",
+        updatedAt: now,
+      })
     })
 
-    await expect(t.query(api.askAITools.searchMarkets, { query: "ETH USDC" })).resolves.toMatchObject({
+    await expect(t.query(api.askAITools.searchMarkets, { query: "ETH" })).resolves.toMatchObject({
       markets: [expect.objectContaining({ slug: "eth-usdc" })],
+      providerData: expect.arrayContaining([
+        expect.objectContaining({
+          source: "defillama",
+          kind: "token_price",
+          key: "weth",
+          data: expect.objectContaining({ usd: 4_321 }),
+        }),
+      ]),
     })
     await expect(t.query(api.askAITools.poolMetrics, { marketId: "eth-usdc" })).resolves.toMatchObject({
       market: expect.objectContaining({ name: "ETH / USDC" }),
