@@ -13,35 +13,6 @@ describe("Ask AI market ingestion", () => {
     expect(internal.askAIIngestion.ingest).toBeDefined()
   })
 
-  test("one-time cleanup removes copied catalog rows and preserves provider records", async () => {
-    const t = convexTest(schema, modules)
-    const now = Date.now()
-    await t.run(async (ctx) => {
-      await ctx.db.insert("askAIMarketSnapshots", {
-        source: "defillama",
-        kind: "token_price",
-        key: "eth",
-        payload: { symbol: "ETH", usd: 4_000, confidence: 1, status: "fresh" },
-        fetchedAt: now,
-      })
-      await ctx.db.insert("askAIMarketSnapshots", {
-        source: "defillama",
-        kind: "token_price",
-        key: "coingecko:ethereum",
-        payload: { price: 4_000, decimals: 18, symbol: "ETH" },
-        fetchedAt: now,
-      })
-    })
-
-    await expect(t.mutation(internal.askAIIngestion.cleanupCopiedCatalogRecords, {})).resolves.toEqual({
-      scanned: 2,
-      deleted: 1,
-    })
-    await expect(t.query(api.askAITools.marketSnapshots, { limit: 10 })).resolves.toMatchObject([
-      { key: "coingecko:ethereum" },
-    ])
-  })
-
   test("upserts normalized records and exposes a bounded source-aware read", async () => {
     const t = convexTest(schema, modules)
     const now = Date.now()

@@ -92,20 +92,3 @@ export const upsertRecordsMutation = internalMutation({
     return { upserted: records.length }
   },
 })
-
-/** Remove only records created by the retired canonical-catalog copier. Delete after the production cleanup run. */
-export const cleanupCopiedCatalogRecords = internalMutation({
-  args: {},
-  handler: async (ctx) => {
-    const rows = await ctx.db.query("askAIMarketSnapshots").collect()
-    const copied = rows.filter((row) => {
-      const payload = row.payload as Record<string, unknown>
-      if (row.kind === "token_price" && row.source === "defillama")
-        return "confidence" in payload && "status" in payload && !("decimals" in payload)
-      if (row.kind === "dex_pool") return "maxLtvPct" in payload && "constituents" in payload
-      return row.kind === "lending_market" && "maxLtvPct" in payload && "rewardsApyPct" in payload
-    })
-    for (const row of copied) await ctx.db.delete(row._id)
-    return { scanned: rows.length, deleted: copied.length }
-  },
-})
