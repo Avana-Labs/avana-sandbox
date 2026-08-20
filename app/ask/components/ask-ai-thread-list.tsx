@@ -62,16 +62,29 @@ export function AskAIThreadList({
           open ? "translate-x-0 p-3 lg:w-[260px]" : "-translate-x-full p-3 lg:w-0 lg:translate-x-0 lg:p-0"
         }`}
       >
-        <button
-          type="button"
-          onClick={() => void onNewThread()}
-          className="flex h-8 items-center gap-2 rounded-md bg-muted px-2.5 text-left text-sm font-normal transition-colors hover:bg-muted/80"
-        >
-          <span aria-hidden className="inline-flex size-4 items-center justify-center text-xl font-light leading-none">
-            +
-          </span>
-          New Thread
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void onNewThread()}
+            className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md bg-muted px-2.5 text-left text-sm font-normal transition-colors hover:bg-muted/80"
+          >
+            <span
+              aria-hidden
+              className="inline-flex size-4 items-center justify-center text-xl font-light leading-none"
+            >
+              +
+            </span>
+            New Thread
+          </button>
+          <button
+            type="button"
+            aria-label="Close sidebar"
+            onClick={onClose}
+            className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
 
         <div className="mt-6 flex-1">
           <p className="px-2.5 text-xs font-medium text-muted-foreground">Today</p>
@@ -97,7 +110,11 @@ export function AskAIThreadList({
                       onChange={(event) => setDraftTitle(event.target.value)}
                       className="h-8 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-sm outline-none focus:ring-2 focus:ring-ring"
                     />
-                    <button type="submit" aria-label="Save thread name" className="inline-flex size-7 items-center justify-center">
+                    <button
+                      type="submit"
+                      aria-label="Save thread name"
+                      className="inline-flex size-7 items-center justify-center"
+                    >
                       <Check className="size-3.5" />
                     </button>
                     <button
@@ -151,7 +168,11 @@ export function AskAIThreadList({
             </div>
           )}
           {canLoadMore ? (
-            <button type="button" onClick={onLoadMore} className="mt-2 px-2.5 text-xs text-muted-foreground hover:text-foreground">
+            <button
+              type="button"
+              onClick={onLoadMore}
+              className="mt-2 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+            >
               Load older threads
             </button>
           ) : null}
@@ -169,7 +190,9 @@ export function AskAIThreadList({
                 <div className="mt-1 flex flex-col gap-0.5">
                   {archivedThreads.map((thread) => (
                     <div key={thread.threadId} className="group flex h-8 items-center rounded-md hover:bg-muted">
-                      <span className="min-w-0 flex-1 truncate px-2.5 text-sm text-muted-foreground">{thread.title}</span>
+                      <span className="min-w-0 flex-1 truncate px-2.5 text-sm text-muted-foreground">
+                        {thread.title}
+                      </span>
                       <button
                         type="button"
                         aria-label={`Restore ${thread.title}`}
