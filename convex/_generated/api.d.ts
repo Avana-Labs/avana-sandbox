@@ -10,6 +10,7 @@
 
 import type * as allocation from "../allocation.js";
 import type * as askAI from "../askAI.js";
+import type * as askAIAgent from "../askAIAgent.js";
 import type * as askAIIngestion from "../askAIIngestion.js";
 import type * as askAIKnowledge from "../askAIKnowledge.js";
 import type * as askAITools from "../askAITools.js";
@@ -87,6 +88,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   allocation: typeof allocation;
   askAI: typeof askAI;
+  askAIAgent: typeof askAIAgent;
   askAIIngestion: typeof askAIIngestion;
   askAIKnowledge: typeof askAIKnowledge;
   askAITools: typeof askAITools;
