@@ -48,7 +48,8 @@ const BLOCKED_PATTERNS = [
 const INVESTMENT_RECOMMENDATION = /\b(what|which|should i|best)\b.{0,30}\b(buy|sell|invest(?:ment)?|crypto to own)\b/i
 
 const POSITION_PATTERNS = [
-  /\b(my|our)\b.{0,25}\b(position|positions|collateral|debt|borrow|health factor|ltv|liquidat)/i,
+  /\b(my|our)\b.{0,25}\b(position|positions|wallet|balances?|holdings?|funds|assets?|collateral|debt|borrow|health factor|ltv|liquidat)/i,
+  /\bwhat(?:'s| is) in (?:my|our) wallet\b/i,
   /\b(show|analy[sz]e|compare)\b.{0,20}\b(my|our)\b/i,
   /\bhow much can i borrow\b/i,
   /\b(can i borrow|borrow another|borrow more|borrowing capacity|close am i to liquidation)\b/i,

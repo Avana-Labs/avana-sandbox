@@ -7,6 +7,7 @@ const ALLOWED = [
   "How much can I borrow?",
   "What's my health factor?",
   "Show my positions.",
+  "What's in my wallet balance?",
   "How close am I to liquidation?",
   "What if ETH drops 20% for my position?",
   "What's ETH trading at?",
@@ -78,6 +79,14 @@ describe("Ask AI deterministic domain gate", () => {
     expect(classifyAskAIDomain("What if ETH falls 20% for my position?")).toMatchObject({
       allowed: true,
       intent: "stress_test",
+    })
+  })
+
+  it("routes wallet balance language to the portfolio tool", () => {
+    expect(classifyAskAIDomain("what's in my wallet balance?")).toMatchObject({
+      allowed: true,
+      category: "avana",
+      intent: "position",
     })
   })
 
