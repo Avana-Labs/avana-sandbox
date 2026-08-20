@@ -10,10 +10,11 @@ describe("Ask AI market job policy", () => {
     expect(askAI).not.toMatch(/fetch\s*\(/)
   })
 
-  test("schedules every normalized market source through Convex", () => {
+  test("keeps provider and RAG ingestion operator-triggered", () => {
     const crons = readFileSync(resolve("convex/crons.ts"), "utf8")
-    for (const source of ["defillama", "coingecko", "uniswap", "curve", "balancer", "aave"]) {
-      expect(crons).toContain(`source: "${source}"`)
-    }
+    const ingestion = readFileSync(resolve("convex/askAIIngestion.ts"), "utf8")
+    expect(ingestion).toContain("export const ingest = internalAction")
+    expect(crons).not.toContain("askAIIngestion")
+    expect(crons).not.toContain("askAIRag")
   })
 })
