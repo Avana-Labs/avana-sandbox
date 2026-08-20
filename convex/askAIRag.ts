@@ -1,6 +1,9 @@
 import { RAG } from "@convex-dev/rag"
+import { createTool } from "@convex-dev/agent"
 import { createOpenAI } from "@ai-sdk/openai"
 import { v } from "convex/values"
+import { z } from "zod"
+import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
 import { AVANA_KNOWLEDGE_CHUNKS, AVANA_KNOWLEDGE_VERSION } from "./askAICorpus.generated"
 import { components } from "./_generated/api"
 import { internalAction } from "./_generated/server"
@@ -51,5 +54,32 @@ export const ingestCorpus = internalAction({
       results.push({ sourceId: id, status: result.status, created: result.created, tokens: result.usage.tokens })
     }
     return { version: AVANA_KNOWLEDGE_VERSION, sources: results }
+  },
+})
+
+export const searchAvanaKnowledgeTool = createTool({
+  description:
+    "Search the authoritative Avana whitepaper, developer documentation, and FAQ. Use before answering how Avana works, protocol architecture, LP collateral, valuation, borrowing, liquidation, governance, safety, or legal questions.",
+  inputSchema: z.object({ query: z.string().min(2).max(500) }),
+  execute: async (ctx, { query }) => {
+    const result = await avanaRag.search(ctx, {
+      namespace: AVANA_RAG_NAMESPACE,
+      query,
+      limit: ASK_AI_CONFIG.ragResultLimit,
+      searchType: "hybrid",
+      vectorWeight: 0.7,
+      textWeight: 0.3,
+      vectorScoreThreshold: 0.35,
+    })
+    return {
+      text: result.text,
+      sources: result.entries.map((entry) => ({
+        title: entry.metadata?.sourceTitle ?? entry.title ?? "Avana documentation",
+        url: entry.metadata?.sourceUrl,
+        kind: entry.metadata?.sourceKind,
+        version: entry.metadata?.version,
+      })),
+      retrievalTokens: result.usage.tokens,
+    }
   },
 })

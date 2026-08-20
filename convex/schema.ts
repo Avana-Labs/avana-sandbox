@@ -1985,14 +1985,4 @@ export default defineSchema({
     .index("by_source_kind_key", ["source", "kind", "key"])
     .index("by_kind_key", ["kind", "key"])
     .index("by_fetched_at", ["fetchedAt"]),
-
-  /** Small first-party knowledge corpus; the full content ingestion arrives later. */
-  askAIKnowledge: defineTable({
-    key: v.string(),
-    title: v.string(),
-    content: v.string(),
-    tags: v.array(v.string()),
-    sourceUrl: v.optional(v.string()),
-    updatedAt: v.number(),
-  }).index("by_key", ["key"]),
 })
