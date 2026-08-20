@@ -109,3 +109,37 @@ describe("Ask AI authenticated portfolio tools", () => {
     })
   })
 })
+
+describe("Ask AI normalized market tools", () => {
+  test("searches canonical markets and labels provider freshness", async () => {
+    const t = convexTest(schema, modules)
+    const now = Date.now()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("markets", {
+        scope: "pool",
+        slug: "eth-usdc",
+        chainId: 1,
+        name: "ETH / USDC",
+        symbol: "ETH/USDC",
+        venueLabel: "Uniswap v3",
+        createdAt: 1,
+      })
+      await ctx.db.insert("askAIMarketSnapshots", {
+        source: "uniswap",
+        kind: "dex_pool",
+        key: "eth-usdc",
+        payload: { liquidityUsd: 4_000_000, volume24h: 500_000 },
+        sourceUpdatedAt: now,
+        fetchedAt: now,
+      })
+    })
+
+    await expect(t.query(api.askAITools.searchMarkets, { query: "ETH USDC" })).resolves.toMatchObject({
+      markets: [expect.objectContaining({ slug: "eth-usdc" })],
+    })
+    await expect(t.query(api.askAITools.poolMetrics, { marketId: "eth-usdc" })).resolves.toMatchObject({
+      market: expect.objectContaining({ name: "ETH / USDC" }),
+      providerData: [expect.objectContaining({ source: "uniswap", freshness: "fresh" })],
+    })
+  })
+})
