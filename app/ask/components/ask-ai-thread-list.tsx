@@ -1,5 +1,7 @@
 "use client"
 
+import { Check, Pencil, X } from "lucide-react"
+import { useState } from "react"
 import { QuotaBanner } from "@/components/elements/quota-banner"
 
 type AskAIThreadSummary = {
@@ -14,6 +16,7 @@ export function AskAIThreadList({
   onClose,
   onNewThread,
   onSelectThread,
+  onRenameThread,
   quota,
 }: {
   open: boolean
@@ -22,8 +25,11 @@ export function AskAIThreadList({
   onClose: () => void
   onNewThread: () => Promise<void>
   onSelectThread: (threadId: string) => void
+  onRenameThread: (threadId: string, title: string) => Promise<void>
   quota?: { used: number; limit: number; resetsAt: number }
 }) {
+  const [renamingId, setRenamingId] = useState<string | null>(null)
+  const [draftTitle, setDraftTitle] = useState("")
   return (
     <>
       {open ? (
@@ -57,21 +63,67 @@ export function AskAIThreadList({
             <p className="mt-1 px-2.5 text-sm text-muted-foreground">No threads yet</p>
           ) : (
             <div className="mt-1 flex flex-col gap-0.5">
-              {threads.map((thread) => (
-                <button
-                  key={thread.threadId}
-                  type="button"
-                  onClick={() => {
-                    onSelectThread(thread.threadId)
-                    onClose()
-                  }}
-                  className={`h-8 truncate rounded-md px-2.5 text-left text-sm transition-colors hover:bg-muted ${
-                    activeThreadId === thread.threadId ? "bg-muted" : ""
-                  }`}
-                >
-                  {thread.title}
-                </button>
-              ))}
+              {threads.map((thread) =>
+                renamingId === thread.threadId ? (
+                  <form
+                    key={thread.threadId}
+                    className="flex h-8 items-center gap-1"
+                    onSubmit={(event) => {
+                      event.preventDefault()
+                      void onRenameThread(thread.threadId, draftTitle).then(() => setRenamingId(null))
+                    }}
+                  >
+                    <input
+                      autoFocus
+                      aria-label={`Rename ${thread.title}`}
+                      value={draftTitle}
+                      maxLength={80}
+                      onChange={(event) => setDraftTitle(event.target.value)}
+                      className="h-8 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                    />
+                    <button type="submit" aria-label="Save thread name" className="inline-flex size-7 items-center justify-center">
+                      <Check className="size-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label="Cancel thread rename"
+                      onClick={() => setRenamingId(null)}
+                      className="inline-flex size-7 items-center justify-center"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </form>
+                ) : (
+                  <div
+                    key={thread.threadId}
+                    className={`group flex h-8 items-center rounded-md hover:bg-muted ${
+                      activeThreadId === thread.threadId ? "bg-muted" : ""
+                    }`}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSelectThread(thread.threadId)
+                        onClose()
+                      }}
+                      className="h-8 min-w-0 flex-1 truncate px-2.5 text-left text-sm"
+                    >
+                      {thread.title}
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Rename ${thread.title}`}
+                      onClick={() => {
+                        setDraftTitle(thread.title)
+                        setRenamingId(thread.threadId)
+                      }}
+                      className="mr-1 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 hover:text-foreground focus:opacity-100 group-hover:opacity-100"
+                    >
+                      <Pencil className="size-3.5" />
+                    </button>
+                  </div>
+                ),
+              )}
             </div>
           )}
         </div>

@@ -79,6 +79,7 @@ export function AskAIPageClient() {
   const resolvedActiveThreadId = threads.some((thread) => thread.threadId === activeThreadId) ? activeThreadId : null
   const quota = useQuery(api.askAI.quota, {})
   const createThread = useMutation(api.askAI.create)
+  const renameThread = useMutation(api.askAI.rename)
   const messagePage = useQuery(
     api.askAI.messages,
     resolvedActiveThreadId
@@ -325,6 +326,9 @@ export function AskAIPageClient() {
             abortController.current?.abort()
             setStreamTurn(null)
             setActiveThreadId(threadId)
+          }}
+          onRenameThread={async (threadId, title) => {
+            await renameThread({ threadId, title })
           }}
           quota={quota}
         />

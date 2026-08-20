@@ -424,3 +424,19 @@ export const archive = mutation({
     await ctx.db.patch(thread._id, { status: "archived", updatedAt: Date.now() })
   },
 })
+
+function cleanThreadTitle(value: string) {
+  const title = value.replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").trim()
+  if (!title || title.length > 80) throw new Error("Thread title must contain 1 to 80 characters")
+  return title
+}
+
+export const rename = mutation({
+  args: { threadId: v.string(), title: v.string() },
+  handler: async (ctx, { threadId, title }) => {
+    const { thread } = await requireOwnedThread(ctx, threadId)
+    const nextTitle = cleanThreadTitle(title)
+    await ctx.db.patch(thread._id, { title: nextTitle, updatedAt: Date.now() })
+    return { threadId, title: nextTitle }
+  },
+})
