@@ -5,6 +5,8 @@ const push = vi.fn()
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
+  usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(),
 }))
 
 vi.mock("@/app/lib/i18n/use-translation", () => ({
