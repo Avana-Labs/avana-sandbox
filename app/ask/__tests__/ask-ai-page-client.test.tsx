@@ -47,32 +47,10 @@ describe("AskAIPageClient", () => {
     expect(screen.getByRole("button", { name: "Hide sidebar" })).toBeInTheDocument()
   })
 
-  it("reports microphone permission failures without submitting", async () => {
-    class DeniedSpeechRecognition {
-      continuous = false
-      interimResults = false
-      onresult = () => undefined
-      onend = () => undefined
-      onerror = (_event: { error?: string }) => undefined
-      start() {
-        this.onerror({ error: "not-allowed" })
-        this.onend()
-      }
-      stop() {
-        this.onend()
-      }
-    }
-    Object.defineProperty(window, "webkitSpeechRecognition", {
-      configurable: true,
-      value: DeniedSpeechRecognition,
-    })
-    const user = userEvent.setup()
+  it("does not expose voice when the browser cannot record audio", () => {
     render(<AskAIPageClient />)
 
-    await user.click(screen.getByRole("button", { name: "Start voice input" }))
-    expect(screen.getByRole("status")).toHaveTextContent("Microphone access was denied.")
+    expect(screen.queryByRole("button", { name: "Start voice input" })).not.toBeInTheDocument()
     expect(screen.getByRole("textbox", { name: "Ask Avana a question" })).toHaveValue("")
-
-    Reflect.deleteProperty(window, "webkitSpeechRecognition")
   })
 })
