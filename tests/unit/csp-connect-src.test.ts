@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 async function resolveConnectSrc() {
-  // The CSP is built in lib/content-security-policy.mjs (used by middleware.ts). connect-src reads
+  // The CSP is built in lib/content-security-policy.mjs (used by proxy.ts). connect-src reads
   // the Convex env at build time, so reset the module registry and re-import after stubbing env.
   vi.resetModules()
   const mod = await import("../../lib/content-security-policy.mjs")
