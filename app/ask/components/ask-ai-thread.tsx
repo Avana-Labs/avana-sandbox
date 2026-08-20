@@ -8,13 +8,17 @@ import {
   type TextMessagePartProps,
   ThreadPrimitive,
   type ToolCallMessagePartProps,
+  useAui,
   useAuiState,
 } from "@assistant-ui/react"
-import { Square } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useMutation } from "convex/react"
+import { Square, ThumbsDown } from "lucide-react"
+import { createContext, useContext, useEffect, useState } from "react"
 import { CircleArrowUp, Code2, PieChart, Sparkles, SunMedium, TrendingUp } from "@/app/components/icons"
 import { ASK_AI_CONFIG } from "@/app/lib/ask-ai/config"
 import { Chart } from "@/components/elements/chart"
+import { ErrorState } from "@/components/elements/error-state"
+import { FeedbackDialog } from "@/components/elements/feedback-dialog"
 import {
   Composer as ElementComposer,
   ComposerActions,
@@ -28,6 +32,11 @@ import { RetrievalChunks, type RetrievalChunk } from "@/components/elements/retr
 import { Sources, type Source } from "@/components/elements/sources"
 import { StreamingText } from "@/components/elements/streaming-text"
 import { ToolCall } from "@/components/elements/tool-call"
+import { api } from "@/convex/_generated/api"
+import type { AskAIUsage } from "@/app/lib/ask-ai/chat-protocol"
+
+const AskAIMessageContext = createContext<{ threadId: string | null }>({ threadId: null })
+const FEEDBACK_REASONS = ["Incorrect", "Outdated data", "Not helpful", "Missing context", "Unsafe", "Other"]
 
 const SUGGESTIONS = [
   { icon: SunMedium, label: "Markets", prompt: "Find ETH/USDC markets" },
@@ -57,8 +66,8 @@ const ONBOARDING_STEPS = [
 
 function UserMessage() {
   return (
-    <MessagePrimitive.Root className="grid grid-cols-[minmax(72px,1fr)_auto] px-2">
-      <div className="col-start-2 max-w-[85%] rounded-xl bg-muted px-4 py-2 leading-relaxed text-foreground">
+    <MessagePrimitive.Root className="relative mx-auto flex w-full max-w-[var(--thread-max-width)] flex-col px-2 py-2">
+      <div className="ml-auto max-w-[min(80%,32rem)] break-words rounded-3xl bg-muted px-5 py-2.5 leading-relaxed text-foreground">
         <MessagePrimitive.Content />
       </div>
     </MessagePrimitive.Root>
@@ -66,6 +75,16 @@ function UserMessage() {
 }
 
 function AssistantMessage() {
+  const { threadId } = useContext(AskAIMessageContext)
+  const messageId = useAuiState((state) => state.message.id)
+  const status = useAuiState((state) => state.message.status)
+  const submitFeedback = useMutation(api.askAI.submitFeedback)
+  const aui = useAui()
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
+  const [selected, setSelected] = useState<string[]>([])
+  const [note, setNote] = useState("")
+  const [sent, setSent] = useState(false)
+  const persisted = !messageId.endsWith("-assistant")
   return (
     <MessagePrimitive.Root className="px-2 text-foreground">
       <div className="flex flex-col gap-3">
@@ -83,6 +102,47 @@ function AssistantMessage() {
             },
           }}
         />
+        <MessagePrimitive.Error>
+          <ErrorState
+            title="The response stopped"
+            detail={status && "error" in status && status.error ? String(status.error) : "Try this turn again."}
+            retrying={false}
+            onRetry={() => aui.message().reload()}
+          />
+        </MessagePrimitive.Error>
+        {status?.type === "complete" && persisted ? (
+          <div className="flex flex-col items-start gap-2">
+            {!feedbackOpen && !sent ? (
+              <button
+                type="button"
+                aria-label="Report a problem with this answer"
+                onClick={() => setFeedbackOpen(true)}
+                className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <ThumbsDown className="size-3.5" />
+              </button>
+            ) : null}
+            {feedbackOpen || sent ? (
+              <FeedbackDialog
+                reasons={FEEDBACK_REASONS}
+                selected={selected}
+                note={note}
+                sent={sent}
+                onToggleReason={(reason) =>
+                  setSelected((current) =>
+                    current.includes(reason) ? current.filter((item) => item !== reason) : [...current, reason],
+                  )
+                }
+                onNoteChange={setNote}
+                onSubmit={async () => {
+                  if (!threadId) return
+                  await submitFeedback({ threadId, messageId, categories: selected, note })
+                  setSent(true)
+                }}
+              />
+            ) : null}
+          </div>
+        ) : null}
       </div>
     </MessagePrimitive.Root>
   )
@@ -148,16 +208,7 @@ const messageComponents = {
   AssistantMessage,
 } satisfies Parameters<typeof ThreadPrimitive.Messages>[0]["components"]
 
-function Composer() {
-  const characterCount = useAuiState((state) =>
-    state.thread.messages.reduce(
-      (total, message) =>
-        total +
-        message.content.reduce((messageTotal, part) => messageTotal + (part.type === "text" ? part.text.length : 0), 0),
-      0,
-    ),
-  )
-  const estimatedMessageTokens = Math.ceil(characterCount / 4 / 1_000)
+function Composer({ usage }: { usage?: AskAIUsage }) {
   return (
     <ComposerPrimitive.Root className="relative flex w-full flex-col">
       <ElementComposer className="max-w-none">
@@ -174,7 +225,9 @@ function Composer() {
           <ComposerToolbar className="relative">
             <span />
             <ComposerActions>
-              <ComposerContext usage={{ system: 2, tools: 4, messages: estimatedMessageTokens, total: 128 }} />
+              {usage ? (
+                <ComposerContext usage={{ input: usage.inputTokens, output: usage.outputTokens, total: 128_000 }} />
+              ) : null}
               <AuiIf condition={(state) => state.thread.isRunning}>
                 <ComposerPrimitive.Cancel
                   aria-label="Stop generating"
@@ -203,10 +256,14 @@ export function AskAIThread({
   title,
   threadsOpen,
   onToggleThreads,
+  threadId,
+  usage,
 }: {
   title: string
   threadsOpen: boolean
   onToggleThreads: () => void
+  threadId: string | null
+  usage?: AskAIUsage
 }) {
   const isEmpty = useAuiState((state) => state.thread.messages.length === 0)
   const [onboardingIndex, setOnboardingIndex] = useState<number | null>(null)
@@ -221,77 +278,79 @@ export function AskAIThread({
   }
 
   return (
-    <section className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
-      <div className="flex h-16 shrink-0 items-center gap-3 px-5 sm:px-8">
-        <button
-          type="button"
-          aria-label={threadsOpen ? "Hide sidebar" : "Open sidebar"}
-          title={threadsOpen ? "Hide sidebar" : "Open sidebar"}
-          onClick={onToggleThreads}
-          className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          <span aria-hidden className="relative block h-4 w-[18px] rounded-[3px] border border-current">
-            <span className="absolute bottom-0 left-[5px] top-0 border-l border-current" />
-          </span>
-        </button>
-        <div className="min-w-0 truncate text-lg font-medium">{title}</div>
-      </div>
-
-      <ThreadPrimitive.Root className="flex min-h-0 flex-1 flex-col [--thread-max-width:44rem]">
-        <ThreadPrimitive.Viewport
-          turnAnchor="top"
-          className="relative flex flex-1 flex-col overflow-x-auto overflow-y-scroll scroll-smooth"
-        >
-          <div
-            className={`mx-auto flex w-full max-w-[44rem] flex-1 flex-col px-4 pt-4 ${isEmpty ? "justify-center" : ""}`}
+    <AskAIMessageContext.Provider value={{ threadId }}>
+      <section className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
+        <div className="flex h-16 shrink-0 items-center gap-3 px-5 sm:px-8">
+          <button
+            type="button"
+            aria-label={threadsOpen ? "Hide sidebar" : "Open sidebar"}
+            title={threadsOpen ? "Hide sidebar" : "Open sidebar"}
+            onClick={onToggleThreads}
+            className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            <ThreadPrimitive.Empty>
-              <div className="mb-6 flex flex-col items-center px-4 text-center">
-                <h1 className="text-2xl font-medium tracking-tight">How can I help you today?</h1>
-                {onboardingIndex !== null ? (
-                  <Onboarding
-                    steps={ONBOARDING_STEPS}
-                    index={onboardingIndex}
-                    onNext={() => {
-                      if (onboardingIndex >= ONBOARDING_STEPS.length - 1) finishOnboarding()
-                      else setOnboardingIndex((index) => (index ?? 0) + 1)
-                    }}
-                    onSkip={finishOnboarding}
-                    className="mt-6 text-left"
-                  />
-                ) : null}
-              </div>
-            </ThreadPrimitive.Empty>
+            <span aria-hidden className="relative block h-4 w-[18px] rounded-[3px] border border-current">
+              <span className="absolute bottom-0 left-[5px] top-0 border-l border-current" />
+            </span>
+          </button>
+          <div className="min-w-0 truncate text-lg font-medium">{title}</div>
+        </div>
 
-            <div className="mb-14 flex flex-col gap-y-6 empty:hidden">
-              <ThreadPrimitive.Messages components={messageComponents} />
-            </div>
-
-            <ThreadPrimitive.ViewportFooter
-              className={`flex flex-col gap-4 overflow-visible bg-background pb-4 md:pb-6 ${
-                isEmpty ? "" : "sticky bottom-0 mt-auto rounded-t-3xl"
-              }`}
+        <ThreadPrimitive.Root className="flex min-h-0 flex-1 flex-col [--thread-max-width:44rem]">
+          <ThreadPrimitive.Viewport
+            turnAnchor="top"
+            className="relative flex flex-1 flex-col overflow-x-auto overflow-y-scroll scroll-smooth"
+          >
+            <div
+              className={`mx-auto flex w-full max-w-[44rem] flex-1 flex-col px-4 pt-4 ${isEmpty ? "justify-center" : ""}`}
             >
-              <Composer />
               <ThreadPrimitive.Empty>
-                <div className="flex w-full flex-wrap items-center justify-center gap-2 px-4">
-                  {SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (
-                    <ThreadPrimitive.Suggestion
-                      key={label}
-                      prompt={prompt}
-                      send={false}
-                      className="flex h-auto items-center gap-1.5 whitespace-nowrap rounded-full border border-border/60 px-3.5 py-1.5 text-sm font-normal text-foreground transition-colors hover:bg-muted"
-                    >
-                      <Icon className="size-4" aria-hidden />
-                      {label}
-                    </ThreadPrimitive.Suggestion>
-                  ))}
+                <div className="mb-6 flex flex-col items-center px-4 text-center">
+                  <h1 className="text-2xl font-medium tracking-tight">How can I help you today?</h1>
+                  {onboardingIndex !== null ? (
+                    <Onboarding
+                      steps={ONBOARDING_STEPS}
+                      index={onboardingIndex}
+                      onNext={() => {
+                        if (onboardingIndex >= ONBOARDING_STEPS.length - 1) finishOnboarding()
+                        else setOnboardingIndex((index) => (index ?? 0) + 1)
+                      }}
+                      onSkip={finishOnboarding}
+                      className="mt-6 text-left"
+                    />
+                  ) : null}
                 </div>
               </ThreadPrimitive.Empty>
-            </ThreadPrimitive.ViewportFooter>
-          </div>
-        </ThreadPrimitive.Viewport>
-      </ThreadPrimitive.Root>
-    </section>
+
+              <div className="mb-14 flex flex-col gap-y-6 empty:hidden">
+                <ThreadPrimitive.Messages components={messageComponents} />
+              </div>
+
+              <ThreadPrimitive.ViewportFooter
+                className={`flex flex-col gap-4 overflow-visible bg-background pb-4 md:pb-6 ${
+                  isEmpty ? "" : "sticky bottom-0 mt-auto rounded-t-3xl"
+                }`}
+              >
+                <Composer usage={usage} />
+                <ThreadPrimitive.Empty>
+                  <div className="flex w-full flex-wrap items-center justify-center gap-2 px-4">
+                    {SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (
+                      <ThreadPrimitive.Suggestion
+                        key={label}
+                        prompt={prompt}
+                        send={false}
+                        className="flex h-auto items-center gap-1.5 whitespace-nowrap rounded-full border border-border/60 px-3.5 py-1.5 text-sm font-normal text-foreground transition-colors hover:bg-muted"
+                      >
+                        <Icon className="size-4" aria-hidden />
+                        {label}
+                      </ThreadPrimitive.Suggestion>
+                    ))}
+                  </div>
+                </ThreadPrimitive.Empty>
+              </ThreadPrimitive.ViewportFooter>
+            </div>
+          </ThreadPrimitive.Viewport>
+        </ThreadPrimitive.Root>
+      </section>
+    </AskAIMessageContext.Provider>
   )
 }

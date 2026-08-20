@@ -81,6 +81,7 @@ function validRequest(value: unknown): value is AskAIChatRequest {
     typeof request.prompt === "string" &&
     request.prompt.trim().length > 0 &&
     request.prompt.length <= ASK_AI_CONFIG.maxInputCharacters &&
+    (request.retryPromptMessageId === undefined || typeof request.retryPromptMessageId === "string") &&
     Array.isArray(request.messages) &&
     request.messages.length <= ASK_AI_CONFIG.recentMessageLimit
   )
@@ -117,20 +118,24 @@ export async function POST(request: Request) {
   const responseStream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const send = (event: AskAIChatEvent) => controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`))
+      let promptMessageId: string | undefined
       try {
         const apiKey = process.env.OPENAI_API_KEY
         const routing = await routeRequest(body, apiKey)
         const turn = await convex.mutation(api.askAI.beginTurn, {
           threadId: body.threadId,
           prompt: body.prompt,
+          retryPromptMessageId: body.retryPromptMessageId,
           routing,
         })
+        promptMessageId = turn.messageId
         send({ type: "meta", promptMessageId: turn.messageId, domain: turn.domain, tool: turn.tool })
         if (turn.retrievalChunks.length > 0) send({ type: "retrieval", chunks: turn.retrievalChunks })
         if (turn.sources.length > 0) send({ type: "sources", sources: turn.sources })
         if (turn.visual) send({ type: "visual", visual: turn.visual })
 
         let fullText = ""
+        let usage: { inputTokens: number; outputTokens: number; totalTokens: number } | undefined
         const useLiveModel = Boolean(apiKey) && process.env.ASK_AI_USE_MOCKS !== "true"
         if (useLiveModel) {
           const openai = createOpenAI({ apiKey })
@@ -144,6 +149,13 @@ export async function POST(request: Request) {
             fullText += delta
             send({ type: "text-delta", delta })
           }
+          const providerUsage = await result.usage
+          usage = {
+            inputTokens: providerUsage.inputTokens ?? 0,
+            outputTokens: providerUsage.outputTokens ?? 0,
+            totalTokens: providerUsage.totalTokens ?? 0,
+          }
+          send({ type: "usage", usage })
         } else {
           for (const delta of fallbackChunks(turn.fallbackResponse)) {
             fullText += delta
@@ -161,10 +173,13 @@ export async function POST(request: Request) {
             retrievalChunks: turn.retrievalChunks,
             sources: turn.sources,
             visual: turn.visual,
+            usage,
           },
         })
         send({ type: "done" })
       } catch (error) {
+        if (promptMessageId)
+          await convex.mutation(api.askAI.failTurn, { threadId: body.threadId, promptMessageId }).catch(() => undefined)
         send({ type: "error", message: error instanceof Error ? error.message : "Ask AI failed" })
       } finally {
         controller.close()

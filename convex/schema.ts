@@ -1941,6 +1941,31 @@ export default defineSchema({
     .index("by_thread", ["threadId"])
     .index("by_message", ["messageId"]),
 
+  askAITurns: defineTable({
+    threadId: v.string(),
+    ownerSubject: v.string(),
+    promptMessageId: v.string(),
+    prompt: v.string(),
+    status: v.union(v.literal("running"), v.literal("failed"), v.literal("complete")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_prompt_message", ["promptMessageId"])
+    .index("by_owner_updated", ["ownerSubject", "updatedAt"]),
+
+  askAIFeedback: defineTable({
+    ownerSubject: v.string(),
+    threadId: v.string(),
+    messageId: v.string(),
+    categories: v.array(v.string()),
+    note: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_owner_message", ["ownerSubject", "messageId"])
+    .index("by_thread", ["threadId"])
+    .index("by_created_at", ["createdAt"]),
+
   /** Normalized cache populated by disabled-by-default external market adapters. */
   askAIMarketSnapshots: defineTable({
     source: v.union(
