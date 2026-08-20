@@ -1945,6 +1945,7 @@ export default defineSchema({
     ownerSubject: v.string(),
     threadId: v.string(),
     storageId: v.id("_storage"),
+    agentFileId: v.optional(v.string()),
     name: v.string(),
     mediaType: v.string(),
     size: v.number(),
