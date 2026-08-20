@@ -5,6 +5,7 @@
 export const ASK_AI_CONFIG = {
   agentName: "avana-ask-ai",
   defaultModel: "gpt-5.6-luna",
+  contextWindowTokens: 1_050_000,
   maxInputCharacters: 2_000,
   maxOutputTokens: 900,
   maxToolSteps: 5,

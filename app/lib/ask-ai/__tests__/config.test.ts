@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest"
 import { getAskAIServerConfig } from "../server-config"
+import { ASK_AI_CONFIG } from "../config"
 
 const originalEnv = { ...process.env }
 
@@ -8,6 +9,10 @@ afterEach(() => {
 })
 
 describe("Ask AI server configuration", () => {
+  it("uses the configured GPT-5.6 Luna context window", () => {
+    expect(ASK_AI_CONFIG.contextWindowTokens).toBe(1_050_000)
+  })
+
   it("does not silently default to deterministic mock mode", () => {
     delete process.env.ASK_AI_USE_MOCKS
     delete process.env.ASK_AI_MODEL
