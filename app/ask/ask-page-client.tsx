@@ -1,28 +1,24 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { BrandIcon, BrandLogo } from "@/app/components/brand-logo"
 import { X } from "@/app/components/icons"
 import { triggerPageLoading } from "@/app/lib/page-loading"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { resolveAskAICloseHref } from "@/app/lib/ask-ai/navigation"
 import { AskAIPageClient } from "./ask-ai-page-client"
 import { AskAIConvexBoundary } from "./ask-ai-convex-boundary"
 
 /** The original focused `/ask` chrome, now containing the assistant-ui runtime. */
 export function AskPageClient() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { t } = useTranslation()
 
   const handleClose = () => {
     triggerPageLoading()
-    // Prefer returning to wherever the user launched from; fall back to home on a
-    // cold/direct load where there is no in-app history to pop.
-    if (typeof window !== "undefined" && window.history.length > 1) {
-      router.back()
-    } else {
-      router.push("/")
-    }
+    router.push(resolveAskAICloseHref(searchParams.get("return")))
   }
 
   return (
