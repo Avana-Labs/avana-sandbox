@@ -1,5 +1,5 @@
 import { v } from "convex/values"
-import { ASK_AI_WALLET_REQUIRED } from "../app/lib/ask-ai/config"
+import { ASK_AI_CONFIG, ASK_AI_WALLET_REQUIRED } from "../app/lib/ask-ai/config"
 import type { AskAIMarketSource } from "../app/lib/ask-ai/providers/contracts"
 import {
   calculateLendProjection,
@@ -379,4 +379,75 @@ export const marketSnapshots = query({
     limit: v.optional(v.number()),
   },
   handler: readAskAIMarketSnapshots,
+})
+
+function marketFreshness(kind: "token_price" | "dex_pool" | "lending_market", at: number) {
+  const threshold =
+    kind === "dex_pool"
+      ? ASK_AI_CONFIG.freshness.poolMetricsStaleAfterMs
+      : kind === "lending_market"
+        ? ASK_AI_CONFIG.freshness.aaveMarketStaleAfterMs
+        : ASK_AI_CONFIG.freshness.tokenPriceStaleAfterMs
+  return Date.now() - at <= threshold ? ("fresh" as const) : ("stale" as const)
+}
+
+export const searchMarkets = query({
+  args: { query: v.string(), limit: v.optional(v.number()) },
+  handler: async (ctx, { query: rawQuery, limit }) => {
+    const queryText = rawQuery.trim().toLowerCase()
+    if (!queryText || queryText.length > 200) throw new Error("Market query must contain 1 to 200 characters")
+    const boundedLimit = Math.min(Math.max(limit ?? 10, 1), 20)
+    const [markets, snapshots] = await Promise.all([
+      ctx.db.query("markets").collect(),
+      ctx.db.query("askAIMarketSnapshots").withIndex("by_fetched_at").order("desc").take(100),
+    ])
+    const terms = queryText.split(/[\s/,-]+/).filter(Boolean)
+    const matchingMarkets = markets
+      .filter((market) => {
+        const haystack = `${market.slug} ${market.name} ${market.symbol} ${market.venueLabel ?? ""}`.toLowerCase()
+        return terms.every((term) => haystack.includes(term))
+      })
+      .slice(0, boundedLimit)
+    const matchingSnapshots = snapshots
+      .filter((snapshot) => {
+        const haystack = `${snapshot.key} ${snapshot.source}`.toLowerCase()
+        return terms.some((term) => haystack.includes(term))
+      })
+      .slice(0, boundedLimit)
+      .map((snapshot) => ({
+        source: snapshot.source,
+        kind: snapshot.kind,
+        key: snapshot.key,
+        data: snapshot.payload,
+        asOf: snapshot.sourceUpdatedAt ?? snapshot.fetchedAt,
+        freshness: marketFreshness(snapshot.kind, snapshot.sourceUpdatedAt ?? snapshot.fetchedAt),
+      }))
+    return { markets: matchingMarkets, providerData: matchingSnapshots }
+  },
+})
+
+export const poolMetrics = query({
+  args: { marketId: v.string() },
+  handler: async (ctx, { marketId }) => {
+    const normalizedId = marketId.trim().toLowerCase()
+    if (!normalizedId || normalizedId.length > 160) throw new Error("Market ID is invalid")
+    const [markets, snapshots] = await Promise.all([
+      ctx.db.query("markets").collect(),
+      ctx.db.query("askAIMarketSnapshots").withIndex("by_fetched_at").order("desc").take(100),
+    ])
+    const market = markets.find(
+      (row) => row.slug.toLowerCase() === normalizedId || row.symbol.toLowerCase() === normalizedId,
+    )
+    const aliases = new Set([normalizedId, market?.slug.toLowerCase(), market?.symbol.toLowerCase()].filter(Boolean))
+    const providerData = snapshots
+      .filter((snapshot) => snapshot.kind === "dex_pool" && aliases.has(snapshot.key.toLowerCase()))
+      .map((snapshot) => ({
+        source: snapshot.source,
+        data: snapshot.payload,
+        asOf: snapshot.sourceUpdatedAt ?? snapshot.fetchedAt,
+        freshness: marketFreshness("dex_pool", snapshot.sourceUpdatedAt ?? snapshot.fetchedAt),
+      }))
+    if (!market && providerData.length === 0) throw new Error("Market not found")
+    return { market: market ?? null, providerData }
+  },
 })
