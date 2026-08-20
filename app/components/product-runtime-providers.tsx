@@ -25,6 +25,7 @@ const PRODUCT_RUNTIME_ROUTES = [
   "/sandbox",
   "/onboarding",
   "/umbrella",
+  "/ask",
 ]
 
 function needsProductRuntime(pathname: string) {
