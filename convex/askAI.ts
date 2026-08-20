@@ -199,7 +199,8 @@ export const beginTurn = mutation({
         previousTurn.ownerSubject !== ownerSubject ||
         previousTurn.threadId !== threadId ||
         previousTurn.prompt !== text ||
-        previousTurn.status === "complete")
+        previousTurn.status === "complete" ||
+        previousTurn.status === "cancelled")
     )
       throw new Error("This turn cannot be retried")
     if (!previousTurn) {
@@ -317,7 +318,10 @@ export const beginTurn = mutation({
             title: "Position risk",
             asOf: engines.asOf,
             metrics: [
-              { label: "Credit Engine health factor", value: engines.borrow?.healthFactor?.toFixed(2) ?? "Unavailable" },
+              {
+                label: "Credit Engine health factor",
+                value: engines.borrow?.healthFactor?.toFixed(2) ?? "Unavailable",
+              },
               { label: "Multiply positions", value: String(engines.multiply.length) },
               { label: "Umbrella positions requiring attention", value: String(cooling) },
             ],
@@ -405,9 +409,7 @@ export const beginTurn = mutation({
             query: text,
             request: domain.intent.replaceAll("_", " "),
             result:
-              toolName === "market_data"
-                ? "Cached market data retrieved"
-                : "Persisted wallet and engine data read",
+              toolName === "market_data" ? "Cached market data retrieved" : "Persisted wallet and engine data read",
           }
         : null,
       retrievalChunks,
@@ -415,6 +417,102 @@ export const beginTurn = mutation({
       visual,
       financialResult,
     }
+  },
+})
+
+export const enqueueTurn = mutation({
+  args: {
+    threadId: v.string(),
+    prompt: v.string(),
+    attachmentIds: v.optional(v.array(v.id("askAIAttachments"))),
+  },
+  handler: async (ctx, { threadId, prompt, attachmentIds }) => {
+    const { ownerSubject, thread } = await requireOwnedThread(ctx, threadId)
+    if (thread.status !== "active") throw new Error("Thread is archived")
+    const text = prompt.trim()
+    if (!text || text.length > ASK_AI_CONFIG.maxInputCharacters)
+      throw new Error(`Message must contain 1 to ${ASK_AI_CONFIG.maxInputCharacters} characters`)
+    const queued = await ctx.db
+      .query("askAITurns")
+      .withIndex("by_thread_status_created", (q) => q.eq("threadId", threadId).eq("status", "queued"))
+      .collect()
+    if (queued.length >= 10) throw new Error("Ask AI queue is full")
+    const dayStart = Date.now() - 24 * 60 * 60 * 1_000
+    const usageRows = await ctx.db
+      .query("askAIUsage")
+      .withIndex("by_owner_created", (q) => q.eq("ownerSubject", ownerSubject).gte("createdAt", dayStart))
+      .collect()
+    if (usageRows.reduce((sum, row) => sum + row.totalTokens, 0) >= ASK_AI_CONFIG.limits.dailyTokenBudget)
+      throw new Error("Ask AI daily token limit reached. Need help? Contact Avana Support.")
+    await askAIRateLimiter.limit(ctx, "perSubjectDaily", { key: ownerSubject, throws: true })
+    const attachments = await Promise.all(
+      (attachmentIds ?? []).slice(0, 5).map((attachmentId) => ctx.db.get(attachmentId)),
+    )
+    if (
+      attachments.some(
+        (attachment) =>
+          !attachment ||
+          attachment.ownerSubject !== ownerSubject ||
+          attachment.threadId !== threadId ||
+          attachment.status !== "processed" ||
+          !attachment.agentFileId,
+      )
+    )
+      throw new Error("An attachment is unavailable or still processing")
+    const saved = await saveMessage(ctx, components.agent, {
+      threadId,
+      userId: ownerSubject,
+      prompt: text,
+      metadata: {
+        fileIds: attachments.flatMap((attachment) => (attachment?.agentFileId ? [attachment.agentFileId] : [])),
+      },
+    })
+    const now = Date.now()
+    const turnId = await ctx.db.insert("askAITurns", {
+      threadId,
+      ownerSubject,
+      promptMessageId: saved.messageId,
+      prompt: text,
+      status: "queued",
+      createdAt: now,
+      updatedAt: now,
+    })
+    if (thread.title === "New Chat") await ctx.db.patch(thread._id, { title: titleFromPrompt(text), updatedAt: now })
+    return { turnId, promptMessageId: saved.messageId }
+  },
+})
+
+export const turnQueue = query({
+  args: { threadId: v.string() },
+  handler: async (ctx, { threadId }) => {
+    await requireOwnedThread(ctx, threadId)
+    const rows = await ctx.db.query("askAITurns").withIndex("by_owner_updated").order("asc").collect()
+    return rows
+      .filter((row) => row.threadId === threadId && ["queued", "running", "failed"].includes(row.status))
+      .map((row) => ({ id: row._id, promptMessageId: row.promptMessageId, prompt: row.prompt, status: row.status }))
+  },
+})
+
+export const cancelQueuedTurn = mutation({
+  args: { turnId: v.id("askAITurns") },
+  handler: async (ctx, { turnId }) => {
+    const turn = await ctx.db.get(turnId)
+    if (!turn) return
+    const ownerSubject = await requireOwnerSubject(ctx)
+    if (turn.ownerSubject !== ownerSubject) throw new Error("Ask AI turn not found")
+    if (turn.status !== "queued") throw new Error("Only queued turns can be cancelled")
+    await ctx.db.patch(turnId, { status: "cancelled", updatedAt: Date.now() })
+  },
+})
+
+export const retryFailedTurn = mutation({
+  args: { turnId: v.id("askAITurns") },
+  handler: async (ctx, { turnId }) => {
+    const turn = await ctx.db.get(turnId)
+    if (!turn) throw new Error("Ask AI turn not found")
+    const ownerSubject = await requireOwnerSubject(ctx)
+    if (turn.ownerSubject !== ownerSubject || turn.status !== "failed") throw new Error("Ask AI turn cannot be retried")
+    await ctx.db.patch(turnId, { status: "queued", updatedAt: Date.now() })
   },
 })
 
@@ -571,8 +669,14 @@ export const feedbackReport = internalQuery({
     const enrichedRows = await Promise.all(
       rows.map(async (row) => {
         const [thread, usage] = await Promise.all([
-          ctx.db.query("askAIThreads").withIndex("by_thread", (q) => q.eq("threadId", row.threadId)).unique(),
-          ctx.db.query("askAIUsage").withIndex("by_message", (q) => q.eq("messageId", row.messageId)).unique(),
+          ctx.db
+            .query("askAIThreads")
+            .withIndex("by_thread", (q) => q.eq("threadId", row.threadId))
+            .unique(),
+          ctx.db
+            .query("askAIUsage")
+            .withIndex("by_message", (q) => q.eq("messageId", row.messageId))
+            .unique(),
         ])
         return {
           ...row,
@@ -596,7 +700,10 @@ export const archive = mutation({
 })
 
 function cleanThreadTitle(value: string) {
-  const title = value.replace(/[\r\n]+/g, " ").replace(/\s+/g, " ").trim()
+  const title = value
+    .replace(/[\r\n]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
   if (!title || title.length > 80) throw new Error("Thread title must contain 1 to 80 characters")
   return title
 }

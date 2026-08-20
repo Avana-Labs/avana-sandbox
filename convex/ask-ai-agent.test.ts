@@ -16,6 +16,29 @@ function askAITest() {
 }
 
 describe("Ask AI generated-turn lifecycle", () => {
+  test("persists queued turns and allows the owner to cancel before execution", async () => {
+    const t = askAITest()
+    const owner = t.withIdentity({ subject: "ask-guest:queue-owner" })
+    const thread = await owner.mutation(api.askAI.create, {})
+    const first = await owner.mutation(api.askAI.enqueueTurn, { threadId: thread.threadId, prompt: "First question" })
+    await owner.mutation(api.askAI.enqueueTurn, { threadId: thread.threadId, prompt: "Second question" })
+
+    await expect(owner.query(api.askAI.turnQueue, { threadId: thread.threadId })).resolves.toMatchObject([
+      { prompt: "First question", status: "queued" },
+      { prompt: "Second question", status: "queued" },
+    ])
+    const row = await t.run(async (ctx) =>
+      ctx.db
+        .query("askAITurns")
+        .withIndex("by_prompt_message", (q) => q.eq("promptMessageId", first.promptMessageId))
+        .unique(),
+    )
+    await owner.mutation(api.askAI.cancelQueuedTurn, { turnId: row!._id })
+    await expect(owner.query(api.askAI.turnQueue, { threadId: thread.threadId })).resolves.toMatchObject([
+      { prompt: "Second question", status: "queued" },
+    ])
+  })
+
   test("only the thread owner can settle an Agent response", async () => {
     const t = askAITest()
     const owner = t.withIdentity({ subject: "ask-guest:owner" })
