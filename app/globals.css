@@ -2,6 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes assistant-shimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+
+.shimmer {
+  color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    hsl(var(--muted-foreground)) 35%,
+    hsl(var(--foreground)) 50%,
+    hsl(var(--muted-foreground)) 65%
+  );
+  background-position: 150% 0;
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: assistant-shimmer 2s linear infinite;
+}
+
 @layer base {
   html {
     scrollbar-gutter: stable;

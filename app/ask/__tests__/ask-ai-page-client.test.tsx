@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { AskAIPageClient } from "../ask-ai-page-client"
 
 vi.mock("convex/react", () => ({
-  useQuery: () => [],
+  useQuery: () => undefined,
   useMutation: () => async () => ({ threadId: "thread-test", title: "New Chat" }),
 }))
 
@@ -16,7 +16,7 @@ describe("AskAIPageClient", () => {
 
     expect(screen.getByRole("heading", { name: "How can I help you today?", level: 1 })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Positions" })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Current model GPT-5.6 Luna" })).toBeInTheDocument()
+    expect(screen.queryByText(/GPT-5.6 Luna/i)).not.toBeInTheDocument()
     expect(screen.getByRole("textbox", { name: "Ask Avana a question" })).toHaveAttribute("maxlength", "2000")
   })
 
