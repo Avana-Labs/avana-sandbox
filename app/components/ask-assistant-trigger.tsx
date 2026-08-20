@@ -1,9 +1,10 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Sparkles } from "@/app/components/icons"
 import { triggerPageLoading } from "@/app/lib/page-loading"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { askAIHref } from "@/app/lib/ask-ai/navigation"
 
 // The "Ask AI" entry point. Two shapes:
 //   • text chip (default) — a filled inner pill that nests on the RIGHT of the
@@ -22,6 +23,8 @@ export function AskAssistantTrigger({
   onClick?: () => void
 }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { t } = useTranslation()
 
   const handleClick = () => {
@@ -30,7 +33,8 @@ export function AskAssistantTrigger({
       return
     }
     triggerPageLoading()
-    router.push("/ask")
+    const query = searchParams.toString()
+    router.push(askAIHref(`${pathname}${query ? `?${query}` : ""}`))
   }
 
   return (
