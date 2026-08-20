@@ -1,13 +1,16 @@
 import type { AskAIMarketRecord, AskAIMarketSource } from "./providers/contracts"
 
-const SOURCE_LABELS: Record<AskAIMarketSource, string> = {
+const SOURCE_LABELS: Record<string, string> = {
   coingecko: "CoinGecko",
   defillama: "DefiLlama",
   uniswap: "Uniswap",
+  aave: "Aave",
+  // Legacy sources retained only so historical snapshots still render; no longer ingested.
   curve: "Curve",
   balancer: "Balancer",
-  aave: "Aave",
 }
+
+const ACTIVE_SOURCES: AskAIMarketSource[] = ["coingecko", "defillama", "uniswap", "aave"]
 
 function numericField(payload: Record<string, unknown>, keys: string[]): { label: string; value: number } | null {
   for (const key of keys) {
@@ -30,7 +33,7 @@ function formatMetric(metric: { label: string; value: number } | null): string {
 
 export function sourcesForAskAIPrompt(prompt: string): AskAIMarketSource[] | undefined {
   const normalized = prompt.toLowerCase()
-  const sources = (Object.keys(SOURCE_LABELS) as AskAIMarketSource[]).filter(
+  const sources = ACTIVE_SOURCES.filter(
     (source) => normalized.includes(source) || normalized.includes(SOURCE_LABELS[source].toLowerCase()),
   )
   return sources.length > 0 ? sources : undefined
@@ -50,7 +53,7 @@ export function answerFromAskAIMarketSnapshots(records: AskAIMarketRecord[]): st
       "utilizationRate",
       "volumeUSD",
     ])
-    return `- ${SOURCE_LABELS[record.source]} · ${record.key}: ${formatMetric(metric)} (fetched ${new Date(record.fetchedAt).toISOString()})`
+    return `- ${SOURCE_LABELS[record.source] ?? record.source} · ${record.key}: ${formatMetric(metric)} (fetched ${new Date(record.fetchedAt).toISOString()})`
   })
   return `Current cached market data:\n${lines.join("\n")}`
 }

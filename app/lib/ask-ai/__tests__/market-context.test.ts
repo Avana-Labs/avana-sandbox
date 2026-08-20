@@ -3,11 +3,9 @@ import { answerFromAskAIMarketSnapshots, sourcesForAskAIPrompt } from "../market
 
 describe("Ask AI external market context", () => {
   it("routes named provider prompts to the matching cache source", () => {
-    expect(sourcesForAskAIPrompt("Compare Curve, Balancer, and Uniswap liquidity")).toEqual([
-      "uniswap",
-      "curve",
-      "balancer",
-    ])
+    expect(sourcesForAskAIPrompt("Compare Uniswap and Aave liquidity")).toEqual(["uniswap", "aave"])
+    // Retired providers are no longer ingested, so they never route to a live cache source.
+    expect(sourcesForAskAIPrompt("Compare Curve and Balancer liquidity")).toBeUndefined()
     expect(sourcesForAskAIPrompt("What is the ETH price?")).toBeUndefined()
   })
 

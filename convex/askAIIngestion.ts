@@ -9,14 +9,7 @@ const upsertRecords = makeFunctionReference<"mutation", { records: AskAIMarketRe
   "askAIIngestion:upsertRecordsMutation",
 )
 
-const sourceValidator = v.union(
-  v.literal("coingecko"),
-  v.literal("defillama"),
-  v.literal("uniswap"),
-  v.literal("curve"),
-  v.literal("balancer"),
-  v.literal("aave"),
-)
+const sourceValidator = v.union(v.literal("coingecko"), v.literal("defillama"), v.literal("uniswap"), v.literal("aave"))
 
 export const ingest = internalAction({
   args: { source: v.optional(sourceValidator) },
