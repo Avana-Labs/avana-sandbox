@@ -296,7 +296,13 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
             <ComposerAttachButton onClick={() => fileInput.current?.click()} />
             <ComposerActions>
               {usage ? (
-                <ComposerContext usage={{ input: usage.inputTokens, output: usage.outputTokens, total: 128_000 }} />
+                <ComposerContext
+                  usage={{
+                    input: usage.inputTokens,
+                    output: usage.outputTokens,
+                    total: ASK_AI_CONFIG.contextWindowTokens,
+                  }}
+                />
               ) : null}
               <ComposerVoiceButton active={recording} onClick={toggleVoice} />
               <AuiIf condition={(state) => state.thread.isRunning}>
