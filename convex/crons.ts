@@ -21,25 +21,11 @@ import { internal } from "./_generated/api"
 const crons = cronJobs()
 
 crons.interval("refresh token prices", { minutes: 10 }, internal.prices.refreshPrices, {})
-// Ask AI never contacts providers from a conversation. These jobs refresh its
-// normalized Convex cache independently, with failures isolated per provider.
+// Ask AI reads the same canonical Convex price and market tables as the app.
+// The existing provider jobs own external ingestion; this job only normalizes
+// their persisted results for AI tools, so it cannot compete with price writes.
 crons.interval("sync Ask AI canonical markets", { minutes: 10 }, internal.askAIIngestion.ingest, {
   source: "defillama",
-})
-crons.interval("refresh Ask AI CoinGecko markets", { minutes: 10 }, internal.askAIIngestion.ingest, {
-  source: "coingecko",
-})
-crons.interval("refresh Ask AI Uniswap markets", { minutes: 15 }, internal.askAIIngestion.ingest, {
-  source: "uniswap",
-})
-crons.interval("refresh Ask AI Curve markets", { minutes: 15 }, internal.askAIIngestion.ingest, {
-  source: "curve",
-})
-crons.interval("refresh Ask AI Balancer markets", { minutes: 30 }, internal.askAIIngestion.ingest, {
-  source: "balancer",
-})
-crons.interval("refresh Ask AI Aave markets", { minutes: 10 }, internal.askAIIngestion.ingest, {
-  source: "aave",
 })
 // Content hashes make unchanged runs no-ops, so this repairs missing/outdated
 // embeddings without repeatedly paying to embed the same corpus.
