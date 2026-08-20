@@ -1,6 +1,7 @@
 import { calculateSimpleInterestAccrued, calculateTotalApy } from "@/app/lib/lend-engine"
 import { calculateMultiplyHealthFactor, calculateMultiplyLtv } from "@/app/lib/multiply-engine"
 import { derivePersistedUmbrellaPositionStatus } from "@/app/lib/umbrella-system/portfolio-mapper"
+import { liquidationThresholdPctFromMaxLtvPct } from "@/app/lib/borrow-system/liquidation-threshold"
 
 const USD6 = 1_000_000
 const WAD = 1_000_000_000_000_000_000
@@ -51,6 +52,50 @@ export function calculateMultiplyStress(params: {
     shockedCollateralValueUsd,
     ltv: calculateMultiplyLtv(params.debtValueUsd, shockedCollateralValueUsd),
     healthFactor: calculateMultiplyHealthFactor(shockedCollateralValueUsd, params.debtValueUsd, liquidationThreshold),
+  }
+}
+
+export function calculateAskAIBorrowSimulation(params: {
+  collateralValueUsd: number
+  debtValueUsd: number
+  additionalBorrowAmountUsd: number
+  maxLtvPct: number
+  liquidationThresholdPct?: number
+}) {
+  const liquidationThresholdPct =
+    params.liquidationThresholdPct ?? liquidationThresholdPctFromMaxLtvPct(params.maxLtvPct)
+  const projectedDebtValueUsd = params.debtValueUsd + params.additionalBorrowAmountUsd
+  const ratio = (debt: number) => (params.collateralValueUsd > 0 ? debt / params.collateralValueUsd : 0)
+  const health = (debt: number) =>
+    debt > 0 ? (params.collateralValueUsd * (liquidationThresholdPct / 100)) / debt : null
+  const maxDebtUsd = params.collateralValueUsd * (params.maxLtvPct / 100)
+  const projectedHealthFactor = health(projectedDebtValueUsd)
+  return {
+    current: {
+      collateralValueUsd: params.collateralValueUsd,
+      debtValueUsd: params.debtValueUsd,
+      ltv: ratio(params.debtValueUsd),
+      healthFactor: health(params.debtValueUsd),
+    },
+    projected: {
+      collateralValueUsd: params.collateralValueUsd,
+      debtValueUsd: projectedDebtValueUsd,
+      ltv: ratio(projectedDebtValueUsd),
+      healthFactor: projectedHealthFactor,
+    },
+    maxLtvPct: params.maxLtvPct,
+    liquidationThresholdPct,
+    remainingBorrowCapacityUsd: Math.max(0, maxDebtUsd - projectedDebtValueUsd),
+    overMaxBorrowLtv: projectedDebtValueUsd > maxDebtUsd,
+    liquidatable: projectedHealthFactor !== null && projectedHealthFactor <= 1,
+    riskLevel:
+      projectedHealthFactor === null
+        ? ("low" as const)
+        : projectedHealthFactor <= 1
+          ? ("critical" as const)
+          : projectedHealthFactor < 1.5
+            ? ("elevated" as const)
+            : ("low" as const),
   }
 }
 

@@ -46,4 +46,37 @@ describe("Ask AI authenticated portfolio tools", () => {
     })
     await expect(asA.query(api.askAITools.positionRisk, { positionId: otherId })).rejects.toThrow("Position not found")
   })
+
+  test("simulates the requested borrow amount without mutating the position", async () => {
+    const t = convexTest(schema, modules)
+    const positionId = await seedPosition(t, WALLET_A, "eth-usdc")
+    await t.run(async (ctx) =>
+      ctx.db.insert("borrowMarkets", {
+        slug: "eth-usdc",
+        kind: "pool",
+        chainId: 1,
+        name: "ETH / USDC",
+        symbol: "ETH/USDC",
+        maxLtvPct: 55,
+        createdAt: 1,
+      }),
+    )
+    const asA = t.withIdentity({ subject: WALLET_A })
+
+    await expect(
+      asA.query(api.askAITools.simulateBorrow, {
+        positionId,
+        additionalBorrowAmount: 1_000,
+        borrowAsset: "USDC",
+      }),
+    ).resolves.toMatchObject({
+      additionalBorrowAmount: 1_000,
+      simulation: {
+        current: { debtValueUsd: 3_500, ltv: 0.35 },
+        projected: { debtValueUsd: 4_500, ltv: 0.45 },
+        remainingBorrowCapacityUsd: 1_000,
+      },
+    })
+    await expect(t.run(async (ctx) => ctx.db.get(positionId))).resolves.toMatchObject({ debtValueUsd: 3_500 })
+  })
 })

@@ -3,6 +3,7 @@ import { ASK_AI_WALLET_REQUIRED } from "../app/lib/ask-ai/config"
 import type { AskAIMarketSource } from "../app/lib/ask-ai/providers/contracts"
 import {
   calculateLendProjection,
+  calculateAskAIBorrowSimulation,
   calculateMultiplyStress,
   decodeBorrowRiskSnapshot,
   deriveAskAIUmbrellaStatus,
@@ -212,6 +213,47 @@ export async function readAskAIPositionRisk(ctx: PortfolioReadCtx, positionId?: 
 export const positionRisk = query({
   args: { positionId: v.optional(v.string()) },
   handler: async (ctx, { positionId }) => readAskAIPositionRisk(ctx, positionId),
+})
+
+export const simulateBorrow = query({
+  args: {
+    positionId: v.string(),
+    additionalBorrowAmount: v.number(),
+    borrowAsset: v.string(),
+  },
+  handler: async (ctx, { positionId, additionalBorrowAmount, borrowAsset }) => {
+    if (!Number.isFinite(additionalBorrowAmount) || additionalBorrowAmount <= 0 || additionalBorrowAmount > 1_000_000_000)
+      throw new Error("Additional borrow amount is invalid")
+    const wallet = await getAuthedWallet(ctx)
+    if (!wallet) return { walletRequired: true as const, message: ASK_AI_WALLET_REQUIRED }
+    const positions = await ctx.db
+      .query("positions")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect()
+    const position = positions.find((row) => row._id === positionId && row.status === "open")
+    if (!position) throw new Error("Position not found")
+    const market = await ctx.db
+      .query("borrowMarkets")
+      .withIndex("by_slug", (q) => q.eq("slug", position.marketSlug))
+      .unique()
+    if (!market?.maxLtvPct) throw new Error("Position risk parameters are unavailable")
+    const collateralValueUsd =
+      position.collateralValueUsd ?? Number(position.collateralValueUsd6 ?? "0") / 1_000_000
+    const debtValueUsd = position.debtValueUsd ?? Number(position.debtValueUsd6 ?? "0") / 1_000_000
+    return {
+      walletRequired: false as const,
+      positionId,
+      borrowAsset: borrowAsset.trim().toUpperCase(),
+      additionalBorrowAmount,
+      simulation: calculateAskAIBorrowSimulation({
+        collateralValueUsd,
+        debtValueUsd,
+        additionalBorrowAmountUsd: additionalBorrowAmount,
+        maxLtvPct: market.maxLtvPct,
+      }),
+      asOf: position.lastUpdatedAt,
+    }
+  },
 })
 
 export const markets = query({
