@@ -15,13 +15,13 @@ describe("AskAIPageClient", () => {
     expect(screen.getByRole("textbox", { name: "Ask Avana a question" })).toHaveAttribute("maxlength", "2000")
   })
 
-  it("opens and closes mobile thread history", async () => {
+  it("hides and opens the thread sidebar", async () => {
     const user = userEvent.setup()
     render(<AskAIPageClient />)
 
-    await user.click(screen.getByRole("button", { name: "Open thread history" }))
-    expect(screen.getByRole("button", { name: "Close thread history" })).toBeInTheDocument()
-    await user.click(screen.getByRole("button", { name: "Close thread history" }))
-    expect(screen.queryByRole("button", { name: "Close thread history" })).not.toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Hide sidebar" }))
+    expect(screen.getByRole("button", { name: "Open sidebar" })).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Open sidebar" }))
+    expect(screen.getByRole("button", { name: "Hide sidebar" })).toBeInTheDocument()
   })
 })

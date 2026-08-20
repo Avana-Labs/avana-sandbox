@@ -11,7 +11,7 @@ import { AskAIThread } from "./components/ask-ai-thread"
 import { AskAIThreadList } from "./components/ask-ai-thread-list"
 
 export function AskAIPageClient() {
-  const [mobileThreadsOpen, setMobileThreadsOpen] = useState(false)
+  const [threadsOpen, setThreadsOpen] = useState(true)
   const handleNewMessage = useCallback(async (_message: AppendMessage) => {
     // Commit 3 connects this boundary to Convex Agent. Keeping the assistant-ui
     // runtime in place now means the presentation does not need to be replaced.
@@ -33,8 +33,8 @@ export function AskAIPageClient() {
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <main className="flex h-[calc(100dvh-64px)] min-h-[620px] w-full overflow-hidden lg:h-[calc(100dvh-68px)]">
-        <AskAIThreadList open={mobileThreadsOpen} onClose={() => setMobileThreadsOpen(false)} />
-        <AskAIThread onOpenThreads={() => setMobileThreadsOpen(true)} />
+        <AskAIThreadList open={threadsOpen} onClose={() => setThreadsOpen(false)} />
+        <AskAIThread threadsOpen={threadsOpen} onToggleThreads={() => setThreadsOpen((open) => !open)} />
       </main>
     </AssistantRuntimeProvider>
   )
