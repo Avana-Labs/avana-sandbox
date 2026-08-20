@@ -6,6 +6,7 @@ import { components } from "./_generated/api"
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
 import { ASK_AI_DOMAIN_REJECTION, ASK_AI_WALLET_REQUIRED } from "../app/lib/ask-ai/config"
 import { classifyAskAIDomain } from "../app/lib/ask-ai/domain-gate"
+import { answerFromAskAIKnowledge, rankAskAIKnowledge } from "../app/lib/ask-ai/knowledge"
 import { readAskAIEngineSnapshot, readAskAIPortfolio } from "./askAITools"
 
 type AskAICtx = QueryCtx | MutationCtx
@@ -122,7 +123,10 @@ export const addUserMessage = mutation({
           response = `I found your current Avana balances: Lend ${usd(portfolio.totals.lendUsd)}, Borrow ${usd(portfolio.totals.borrowUsd)}, Multiply ${usd(portfolio.totals.multiplyUsd)}, Umbrella ${usd(portfolio.totals.umbrellaUsd)}, and liquid funds ${usd(portfolio.totals.liquidUsd)}. Engine detail includes ${engines.lend.length} Lend, ${engines.multiply.length} Multiply, and ${engines.umbrella.length} Umbrella position${engines.umbrella.length === 1 ? "" : "s"}. I did not submit a transaction.`
         }
       } else {
-        response = `I can help with this ${domain.category.replaceAll("_", " ")} question. The mock provider is active, so I will use Avana's persisted data and seeded knowledge without making an external market-data call.`
+        const knowledge = rankAskAIKnowledge(await ctx.db.query("askAIKnowledge").collect(), text)
+        response =
+          answerFromAskAIKnowledge(knowledge) ??
+          `I do not have a grounded answer for this ${domain.category.replaceAll("_", " ")} question in the current Avana knowledge corpus. Live market ingestion is disabled until its provider endpoints are configured.`
       }
     }
     await saveMessage(ctx, components.agent, {
