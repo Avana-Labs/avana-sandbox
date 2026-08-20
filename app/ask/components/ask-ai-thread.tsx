@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  AttachmentPrimitive,
   AuiIf,
   ComposerPrimitive,
   type DataMessagePartProps,
@@ -12,8 +11,8 @@ import {
   useAui,
   useAuiState,
 } from "@assistant-ui/react"
-import { useAction, useMutation } from "convex/react"
-import { Check, Copy, Paperclip, Square, ThumbsDown, ThumbsUp, X } from "lucide-react"
+import { useMutation } from "convex/react"
+import { Check, Copy, Square, ThumbsDown, ThumbsUp } from "lucide-react"
 import { createContext, useContext, useEffect, useRef, useState } from "react"
 import type { ComponentType } from "react"
 import { CircleArrowUp, Code2, PieChart, Sparkles, SunMedium, TrendingUp } from "@/app/components/icons"
@@ -27,16 +26,15 @@ import {
   ComposerBar,
   ComposerContext,
   ComposerToolbar,
-  ComposerVoiceButton,
 } from "@/components/elements/composer"
-import { GenerationLoader } from "@/components/elements/loading-state"
+import { StreamingText } from "@/components/elements/streaming-text"
+import { ThinkingIndicator } from "@/components/elements/thinking-indicator"
 import { MessageQueue } from "@/components/elements/message-queue"
 import { RetrievalChunks, type RetrievalChunk } from "@/components/elements/retrieval-chunks"
 import { Sources, type Source } from "@/components/elements/sources"
 import { MarkdownText } from "@/components/assistant-ui/markdown-text"
 import { ToolCall } from "@/components/elements/tool-call"
 import { api } from "@/convex/_generated/api"
-import type { Id } from "@/convex/_generated/dataModel"
 import type { AskAIUsage } from "@/app/lib/ask-ai/chat-protocol"
 import { AskAIFinancialResultCard, type AskAIFinancialResult } from "./ask-ai-financial-result-card"
 
@@ -141,7 +139,7 @@ function AssistantMessage() {
         <MessagePrimitive.Parts
           components={{
             Text: AssistantText,
-            Empty: AssistantLoading,
+            Empty: () => <ThinkingIndicatorLive />,
             tools: { Fallback: ToolCallPart },
             data: {
               by_name: {
@@ -229,15 +227,31 @@ function AssistantMessage() {
   )
 }
 
-function AssistantLoading() {
-  const tick = useAuiState((state) => state.thread.messages.length)
-  return <GenerationLoader label="Preparing Avana context" tick={tick} className="items-start py-3" />
+// Live "thinking" status line (assistant-ui element) with elapsed time, shown before the first token.
+function ThinkingIndicatorLive({ label = "Thinking…" }: { label?: string }) {
+  const [start] = useState(() => Date.now())
+  const [seconds, setSeconds] = useState(0)
+  useEffect(() => {
+    const timer = setInterval(() => setSeconds(Math.max(0, Math.round((Date.now() - start) / 1000))), 1000)
+    return () => clearInterval(timer)
+  }, [start])
+  return <ThinkingIndicator label={label} elapsed={`${seconds}s`} className="py-3" />
 }
 
-// Before the first token arrives (RAG search / tool calls), the assistant text part exists but is
-// empty — show a thinking indicator instead of a blank bubble; render Markdown once text streams.
+// Answer lifecycle: thinking indicator (no text yet) -> soft streaming text (tokens arriving) ->
+// final Markdown (complete). Uses the assistant-ui thinking-indicator + streaming-text elements.
 function AssistantText({ text, status }: TextMessagePartProps) {
-  if (status.type === "running" && !text.trim()) return <AssistantLoading />
+  const running = status.type === "running"
+  if (running && !text.trim()) return <ThinkingIndicatorLive />
+  if (running)
+    return (
+      <StreamingText
+        segments={[{ text }]}
+        count={text.split(/\s+/).filter(Boolean).length}
+        streaming
+        className="min-h-0 max-w-none whitespace-pre-wrap text-[15px]"
+      />
+    )
   return <MarkdownText />
 }
 
@@ -290,94 +304,10 @@ const messageComponents = {
 } satisfies Parameters<typeof ThreadPrimitive.Messages>[0]["components"]
 
 function Composer({ usage }: { usage?: AskAIUsage }) {
-  const aui = useAui()
-  const { threadId, ensureThread } = useContext(AskAIMessageContext)
-  const [recording, setRecording] = useState(false)
-  const [voiceError, setVoiceError] = useState<string | null>(null)
-  const mediaRecorder = useRef<MediaRecorder | null>(null)
-  const mediaStream = useRef<MediaStream | null>(null)
-  const audioChunks = useRef<Blob[]>([])
-  const generateUploadUrl = useMutation(api.askAIAttachments.generateUploadUrl)
-  const registerAttachment = useMutation(api.askAIAttachments.register)
-  const transcribeRecording = useAction(api.askAIVoice.transcribeRecording)
-  const voiceSupported =
-    typeof window !== "undefined" &&
-    typeof MediaRecorder !== "undefined" &&
-    Boolean(navigator.mediaDevices?.getUserMedia)
-
-  const toggleVoice = async () => {
-    if (recording) {
-      mediaRecorder.current?.stop()
-      return
-    }
-    if (!voiceSupported) return
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const recorder = new MediaRecorder(stream)
-      mediaStream.current = stream
-      mediaRecorder.current = recorder
-      audioChunks.current = []
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) audioChunks.current.push(event.data)
-      }
-      recorder.onstop = async () => {
-        setRecording(false)
-        mediaStream.current?.getTracks().forEach((track) => track.stop())
-        mediaStream.current = null
-        mediaRecorder.current = null
-        try {
-          const mimeType = recorder.mimeType || "audio/webm"
-          const blob = new Blob(audioChunks.current, { type: mimeType })
-          const uploadUrl = await generateUploadUrl({})
-          const upload = await fetch(uploadUrl, { method: "POST", headers: { "Content-Type": mimeType }, body: blob })
-          if (!upload.ok) throw new Error("Voice upload failed")
-          const { storageId } = (await upload.json()) as { storageId: Id<"_storage"> }
-          const recordingThreadId = threadId ?? (await ensureThread?.()) ?? null
-          if (!recordingThreadId) throw new Error("Could not start a conversation for the recording")
-          const attachmentId = await registerAttachment({
-            threadId: recordingThreadId,
-            storageId,
-            name: "voice-recording.webm",
-          })
-          const transcript = await transcribeRecording({ attachmentId })
-          aui.composer().setText(transcript.text)
-        } catch (error) {
-          setVoiceError(error instanceof Error ? error.message : "Voice transcription failed.")
-        }
-      }
-      setVoiceError(null)
-      setRecording(true)
-      recorder.start()
-    } catch (error) {
-      setRecording(false)
-      setVoiceError(
-        error instanceof DOMException && error.name === "NotAllowedError"
-          ? "Microphone access was denied."
-          : "Voice input could not start.",
-      )
-    }
-  }
-
   return (
     <ComposerPrimitive.Root className="relative flex w-full flex-col">
       <ElementComposer className="max-w-none">
         <ComposerBar className="cursor-text bg-card focus-within:border-border">
-          <ComposerPrimitive.Attachments>
-            {() => (
-              <AttachmentPrimitive.Root className="mx-2 mt-2 inline-flex max-w-full items-center gap-2 rounded-xl border border-border/70 bg-muted/40 px-3 py-1.5 text-xs">
-                <Paperclip className="size-3.5 shrink-0 text-muted-foreground" />
-                <span className="max-w-52 truncate">
-                  <AttachmentPrimitive.Name />
-                </span>
-                <AttachmentPrimitive.Remove
-                  aria-label="Remove attachment"
-                  className="inline-flex size-5 items-center justify-center rounded-full hover:bg-muted"
-                >
-                  <X className="size-3" />
-                </AttachmentPrimitive.Remove>
-              </AttachmentPrimitive.Root>
-            )}
-          </ComposerPrimitive.Attachments>
           <ComposerPrimitive.Input
             aria-label="Ask Avana a question"
             placeholder="Send a message... (@ to mention, / for commands)"
@@ -389,12 +319,6 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
           />
           <ComposerToolbar className="relative">
             <ComposerActions>
-              <ComposerPrimitive.AddAttachment
-                aria-label="Add attachment"
-                className="inline-flex size-7 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <Paperclip className="size-4" />
-              </ComposerPrimitive.AddAttachment>
               {usage ? (
                 <ComposerContext
                   usage={{
@@ -404,7 +328,6 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
                   }}
                 />
               ) : null}
-              {voiceSupported ? <ComposerVoiceButton active={recording} onClick={toggleVoice} /> : null}
               <AuiIf condition={(state) => state.thread.isRunning}>
                 <ComposerPrimitive.Cancel
                   aria-label="Stop generating"
@@ -423,11 +346,6 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
               </AuiIf>
             </ComposerActions>
           </ComposerToolbar>
-          {voiceError ? (
-            <p role="status" className="px-2.5 pb-1 text-xs text-muted-foreground">
-              {voiceError}
-            </p>
-          ) : null}
         </ComposerBar>
       </ElementComposer>
     </ComposerPrimitive.Root>
@@ -435,7 +353,6 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
 }
 
 export function AskAIThread({
-  title,
   threadsOpen,
   onToggleThreads,
   threadId,
@@ -447,7 +364,6 @@ export function AskAIThread({
   runningPrompt,
   onCancelQueued,
 }: {
-  title: string
   threadsOpen: boolean
   onToggleThreads: () => void
   threadId: string | null
@@ -475,7 +391,6 @@ export function AskAIThread({
               <span className="absolute bottom-0 left-[5px] top-0 border-l border-current" />
             </span>
           </button>
-          <div className="min-w-0 truncate text-lg font-medium">{title}</div>
         </div>
 
         <ThreadPrimitive.Root className="flex min-h-0 flex-1 flex-col [--thread-max-width:44rem]">

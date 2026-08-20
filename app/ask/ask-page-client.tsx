@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { BrandIcon, BrandLogo } from "@/app/components/brand-logo"
 import { X } from "@/app/components/icons"
@@ -15,6 +16,8 @@ export function AskPageClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { t } = useTranslation()
+  // Blank → "Ask AI"; once a thread has a subject, show it here (summarized by CSS truncation).
+  const [headerTitle, setHeaderTitle] = useState<string | null>(null)
 
   const handleClose = () => {
     triggerPageLoading()
@@ -32,7 +35,7 @@ export function AskPageClient() {
         </Link>
 
         <div className="pointer-events-none absolute left-1/2 w-[min(520px,calc(100%-128px))] -translate-x-1/2 text-center sm:w-[min(560px,calc(100%-192px))]">
-          <div className="truncate text-[13px] font-medium leading-none text-foreground sm:text-sm">{t("Ask AI")}</div>
+          <div className="truncate text-lg font-medium leading-none text-foreground">{headerTitle ?? t("Ask AI")}</div>
         </div>
 
         <button
@@ -46,7 +49,7 @@ export function AskPageClient() {
       </header>
 
       <AskAIConvexBoundary>
-        <AskAIPageClient />
+        <AskAIPageClient onActiveTitleChange={setHeaderTitle} />
       </AskAIConvexBoundary>
     </div>
   )

@@ -216,7 +216,11 @@ function persistedAssistantParts(messageId: string, text: string, rich?: Persist
   return parts
 }
 
-export function AskAIPageClient() {
+export function AskAIPageClient({
+  onActiveTitleChange,
+}: {
+  onActiveTitleChange?: (title: string | null) => void
+} = {}) {
   const [threadsOpen, setThreadsOpen] = useState(false)
   // Start null on both server and client (avoids a hydration mismatch); the stored thread is
   // restored from sessionStorage in an effect after mount.
@@ -234,6 +238,11 @@ export function AskAIPageClient() {
     loadMore: loadMoreArchivedThreads,
   } = usePaginatedQuery(api.askAI.listPage, { status: "archived" }, { initialNumItems: 20 })
   const resolvedActiveThreadId = threads.some((thread) => thread.threadId === activeThreadId) ? activeThreadId : null
+  // Surface the active thread's subject to the app-shell header ("Ask AI" when blank/new).
+  const activeThreadTitle = threads.find((thread) => thread.threadId === resolvedActiveThreadId)?.title ?? null
+  useEffect(() => {
+    onActiveTitleChange?.(activeThreadTitle && activeThreadTitle !== "New Chat" ? activeThreadTitle : null)
+  }, [activeThreadTitle, onActiveTitleChange])
   const quota = useQuery(api.askAI.quota, {})
   const createThread = useMutation(api.askAI.create)
   const renameThread = useMutation(api.askAI.rename)
@@ -535,10 +544,6 @@ export function AskAIPageClient() {
           onLoadMoreArchived={() => loadMoreArchivedThreads(20)}
         />
         <AskAIThread
-          title={
-            threads.find((thread) => thread.threadId === resolvedActiveThreadId)?.title ??
-            (threadPageStatus === "LoadingFirstPage" ? "Loading…" : "New Chat")
-          }
           threadsOpen={threadsOpen}
           onToggleThreads={() => setThreadsOpen((open) => !open)}
           threadId={resolvedActiveThreadId}
