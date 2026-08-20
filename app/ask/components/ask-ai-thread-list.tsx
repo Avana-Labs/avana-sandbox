@@ -1,7 +1,5 @@
 "use client"
 
-import { ThreadListPrimitive } from "@assistant-ui/react"
-
 type AskAIThreadSummary = {
   threadId: string
   title: string
@@ -38,21 +36,16 @@ export function AskAIThreadList({
           open ? "translate-x-0 p-3 lg:w-[260px]" : "-translate-x-full p-3 lg:w-0 lg:translate-x-0 lg:p-0"
         }`}
       >
-        <ThreadListPrimitive.New asChild>
-          <button
-            type="button"
-            onClick={() => void onNewThread()}
-            className="flex h-8 items-center gap-2 rounded-md bg-muted px-2.5 text-left text-sm font-normal transition-colors hover:bg-muted/80"
-          >
-            <span
-              aria-hidden
-              className="inline-flex size-4 items-center justify-center text-xl font-light leading-none"
-            >
-              +
-            </span>
-            New Thread
-          </button>
-        </ThreadListPrimitive.New>
+        <button
+          type="button"
+          onClick={() => void onNewThread()}
+          className="flex h-8 items-center gap-2 rounded-md bg-muted px-2.5 text-left text-sm font-normal transition-colors hover:bg-muted/80"
+        >
+          <span aria-hidden className="inline-flex size-4 items-center justify-center text-xl font-light leading-none">
+            +
+          </span>
+          New Thread
+        </button>
 
         <div className="mt-6 flex-1">
           <p className="px-2.5 text-xs font-medium text-muted-foreground">Today</p>
