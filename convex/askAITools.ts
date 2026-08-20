@@ -14,6 +14,27 @@ import { getAuthedWallet } from "./sandbox/auth"
 
 type PortfolioReadCtx = Pick<QueryCtx | MutationCtx, "auth" | "db">
 
+/**
+ * Provenance of the financial figures every Ask AI portfolio/risk tool returns.
+ * Lane B passes this straight through into `richParts.financialResults[].dataProvenance`.
+ *
+ * This is a sandbox-first app. All portfolio, borrow, risk, and position data read
+ * by these tools is written by the synthetic sandbox onboarding/transaction flow
+ * (see convex/sandbox/onboarding.ts: "Balances/prices here are SYNTHETIC sandbox
+ * values, not a source of truth"). No table (positions, walletLendBalances,
+ * riskSnapshots, sandboxProfiles, ...) carries a per-record signal that would
+ * distinguish a synthetic sandbox balance from a real connected-wallet balance or
+ * an on-chain read, and there is no on-chain/connected-wallet read path feeding
+ * these tables today. The authed wallet is derived from the SIWE/Privy identity but
+ * only scopes access — it does not imply the data is real holdings. So the only
+ * honest value we can return is "sandbox".
+ *
+ * TODO: when a real connected-wallet or on-chain data path lands, thread the true
+ * source through here — e.g. a per-record origin flag stamped by the writer — and
+ * return "connected_wallet" / "onchain" per record instead of this constant.
+ */
+const ASK_AI_DATA_PROVENANCE: "sandbox" | "connected_wallet" | "onchain" = "sandbox"
+
 export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
   const wallet = await getAuthedWallet(ctx)
   if (!wallet) return { walletRequired: true as const, message: ASK_AI_WALLET_REQUIRED }
@@ -49,6 +70,7 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
 
   return {
     walletRequired: false as const,
+    dataProvenance: ASK_AI_DATA_PROVENANCE,
     wallet,
     totals: {
       lendUsd: sumUsd(lend),
@@ -105,6 +127,7 @@ export async function readAskAIEngineSnapshot(
 
   return {
     walletRequired: false as const,
+    dataProvenance: ASK_AI_DATA_PROVENANCE,
     wallet,
     borrow: borrowRisk
       ? {
@@ -188,6 +211,7 @@ export async function readAskAIBorrowCapacity(ctx: PortfolioReadCtx) {
     .first()
   return {
     walletRequired: false as const,
+    dataProvenance: ASK_AI_DATA_PROVENANCE,
     wallet,
     capacity: snapshot ? decodeBorrowRiskSnapshot(snapshot) : null,
     spokes: snapshot?.spokes ?? [],
@@ -208,7 +232,14 @@ export async function readAskAIPositionRisk(ctx: PortfolioReadCtx, positionId?: 
   if (positionId && !selected) throw new Error("Position not found")
   const relevant = selected ? [selected] : positions.filter((position) => position.status === "open")
   const engine = await readAskAIEngineSnapshot(ctx, { multiplyShockPct: -20 })
-  return { walletRequired: false as const, wallet, positions: relevant, engine, asOf: engine.asOf }
+  return {
+    walletRequired: false as const,
+    dataProvenance: ASK_AI_DATA_PROVENANCE,
+    wallet,
+    positions: relevant,
+    engine,
+    asOf: engine.asOf,
+  }
 }
 
 export const positionRisk = query({
@@ -246,6 +277,7 @@ export const simulateBorrow = query({
     const debtValueUsd = position.debtValueUsd ?? Number(position.debtValueUsd6 ?? "0") / 1_000_000
     return {
       walletRequired: false as const,
+      dataProvenance: ASK_AI_DATA_PROVENANCE,
       positionId,
       borrowAsset: borrowAsset.trim().toUpperCase(),
       additionalBorrowAmount,
@@ -292,6 +324,7 @@ export const stressPosition = query({
       throw new Error("Position risk parameters are unavailable")
     return {
       walletRequired: false as const,
+      dataProvenance: ASK_AI_DATA_PROVENANCE,
       positionId,
       simulation: calculateAskAICollateralStress({
         collateralValueUsd: position.collateralValueUsd ?? Number(position.collateralValueUsd6 ?? "0") / 1_000_000,
