@@ -30,7 +30,6 @@ import {
   ComposerToolbar,
   ComposerVoiceButton,
 } from "@/components/elements/composer"
-import { MobileComposer } from "@/components/elements/mobile-composer"
 import { MessageQueue } from "@/components/elements/message-queue"
 import { GenerationLoader } from "@/components/elements/loading-state"
 import { RetrievalChunks, type RetrievalChunk } from "@/components/elements/retrieval-chunks"
@@ -324,9 +323,7 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
   )
 }
 
-function MobileThreadComposer() {
-  const aui = useAui()
-  const value = useAuiState((state) => state.composer.text)
+function ThreadQueueStatus() {
   const running = useAuiState((state) => state.thread.isRunning)
   const activePrompt = useAuiState((state) =>
     [...state.thread.messages]
@@ -336,32 +333,7 @@ function MobileThreadComposer() {
       .map((part) => part.text)
       .join(" "),
   )
-  return (
-    <div className="flex w-full flex-col items-center gap-2 md:hidden">
-      {running && activePrompt ? <MessageQueue running={activePrompt} queued={[]} /> : null}
-      <MobileComposer
-        value={value}
-        keyboardOpen={false}
-        running={running}
-        actions={["Market data", "Portfolio", "Position risk"]}
-        onAction={(action) =>
-          aui
-            .composer()
-            .setText(
-              action === "Market data"
-                ? "Find ETH/USDC markets"
-                : action === "Portfolio"
-                  ? "Analyze my positions"
-                  : "What is my health factor?",
-            )
-        }
-        onValueChange={(text) => aui.composer().setText(text)}
-        onSend={() => aui.composer().send()}
-        onStop={() => aui.thread().cancelRun()}
-        className="max-w-none"
-      />
-    </div>
-  )
+  return running && activePrompt ? <MessageQueue running={activePrompt} queued={[]} className="max-w-none" /> : null
 }
 
 export function AskAIThread({
@@ -419,10 +391,8 @@ export function AskAIThread({
                   isEmpty ? "" : "sticky bottom-0 mt-auto rounded-t-3xl"
                 }`}
               >
-                <div className="hidden md:block">
-                  <Composer usage={usage} />
-                </div>
-                <MobileThreadComposer />
+                <ThreadQueueStatus />
+                <Composer usage={usage} />
                 <ThreadPrimitive.Empty>
                   <div className="flex w-full flex-wrap items-center justify-center gap-2 px-4">
                     {SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (
