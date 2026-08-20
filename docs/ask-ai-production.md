@@ -19,18 +19,9 @@ The model is deliberately fixed by code to `gpt-5.6-luna`; users do not see or s
 
 The conversation path reads only normalized Convex records. Provider access happens in isolated Convex cron actions and never blocks a chat turn.
 
-Enable the provider jobs and configure the GraphQL gateways supplied by the selected data plan:
-
-```sh
-npx convex env set ASK_AI_ENABLE_LIVE_MARKET_INGESTION true
-npx convex env set ASK_AI_UNISWAP_GRAPH_URL
-npx convex env set ASK_AI_BALANCER_GRAPH_URL
-npx convex env set ASK_AI_AAVE_GRAPH_URL
-```
-
 DefiLlama prices are already ingested by the canonical `prices.refreshPrices` job. Ask AI copies those existing `tokenPrices`, `markets`, and `lendMarkets` records into its normalized cache rather than contacting DefiLlama from a conversation.
 
-CoinGecko, Uniswap, Curve, Balancer, and Aave jobs are failure-isolated. Answers receive only records inside their configured freshness window; missing or stale records are not passed to Luna as live facts.
+CoinGecko, Uniswap, Curve, Balancer, and Aave data must first be added to the app's canonical Convex ingestion layer. Ask AI must not operate a second provider-ingestion schedule. Answers receive only canonical records inside their configured freshness window; missing or stale records are not passed to Luna as live facts.
 
 ## First deployment
 
