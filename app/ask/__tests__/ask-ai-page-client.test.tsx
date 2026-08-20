@@ -19,9 +19,9 @@ describe("AskAIPageClient", () => {
     const user = userEvent.setup()
     render(<AskAIPageClient />)
 
-    await user.click(screen.getByRole("button", { name: "Hide sidebar" }))
-    expect(screen.getByRole("button", { name: "Open sidebar" })).toBeInTheDocument()
     await user.click(screen.getByRole("button", { name: "Open sidebar" }))
     expect(screen.getByRole("button", { name: "Hide sidebar" })).toBeInTheDocument()
+    await user.click(screen.getByRole("button", { name: "Hide sidebar" }))
+    expect(screen.getByRole("button", { name: "Open sidebar" })).toBeInTheDocument()
   })
 })

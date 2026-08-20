@@ -1,6 +1,6 @@
 "use client"
 
-import { DashboardSquareAdd } from "@/app/components/icons"
+import { ThreadListPrimitive } from "@assistant-ui/react"
 
 export function AskAIThreadList({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
@@ -9,23 +9,30 @@ export function AskAIThreadList({ open, onClose }: { open: boolean; onClose: () 
         <button
           type="button"
           aria-label="Close thread history"
-          className="fixed inset-0 z-40 bg-black/20 lg:hidden"
+          className="fixed inset-x-0 bottom-0 top-16 z-40 bg-black/20 lg:hidden"
           onClick={onClose}
         />
       ) : null}
       <aside
         aria-label="Ask AI thread history"
-        className={`fixed inset-y-0 left-0 z-50 flex w-[min(86vw,300px)] flex-col overflow-hidden bg-muted/20 text-foreground transition-[width,padding,transform] lg:static lg:z-auto lg:shrink-0 lg:translate-x-0 ${
+        className={`fixed bottom-0 left-0 top-16 z-50 flex w-[min(86vw,300px)] flex-col overflow-hidden border-r border-border/40 bg-background text-foreground transition-transform lg:static lg:z-auto lg:shrink-0 lg:border-r-0 lg:bg-muted/20 lg:transition-[width,padding] ${
           open ? "translate-x-0 p-3 lg:w-[260px]" : "-translate-x-full p-3 lg:w-0 lg:translate-x-0 lg:p-0"
         }`}
       >
-        <button
-          type="button"
-          className="flex h-8 items-center gap-2 rounded-md bg-muted px-2.5 text-left text-sm font-normal transition-colors hover:bg-muted/80"
-        >
-          <DashboardSquareAdd className="h-[18px] w-[18px]" />
-          New Thread
-        </button>
+        <ThreadListPrimitive.New asChild>
+          <button
+            type="button"
+            className="flex h-8 items-center gap-2 rounded-md bg-muted px-2.5 text-left text-sm font-normal transition-colors hover:bg-muted/80"
+          >
+            <span
+              aria-hidden
+              className="inline-flex size-4 items-center justify-center text-xl font-light leading-none"
+            >
+              +
+            </span>
+            New Thread
+          </button>
+        </ThreadListPrimitive.New>
 
         <div className="mt-6 flex-1">
           <p className="px-2.5 text-xs font-medium text-muted-foreground">Today</p>
