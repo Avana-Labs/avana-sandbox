@@ -13,6 +13,10 @@ const ALLOWED_MEDIA_TYPES = new Set([
   "image/png",
   "image/jpeg",
   "image/webp",
+  "audio/webm",
+  "audio/mp4",
+  "audio/mpeg",
+  "audio/wav",
 ])
 
 async function requireSubject(ctx: { auth: { getUserIdentity: () => Promise<{ subject: string } | null> } }) {
@@ -117,6 +121,17 @@ export const markProcessed = internalMutation({
       status: error ? "failed" : "processed",
       updatedAt: Date.now(),
     })
+  },
+})
+
+export const deleteProcessedUpload = internalMutation({
+  args: { attachmentId: v.id("askAIAttachments") },
+  handler: async (ctx, { attachmentId }) => {
+    const ownerSubject = await requireSubject(ctx)
+    const attachment = await ctx.db.get(attachmentId)
+    if (!attachment || attachment.ownerSubject !== ownerSubject) throw new Error("Attachment not found")
+    await ctx.storage.delete(attachment.storageId)
+    await ctx.db.delete(attachmentId)
   },
 })
 

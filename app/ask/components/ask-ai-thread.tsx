@@ -12,7 +12,7 @@ import {
   useAui,
   useAuiState,
 } from "@assistant-ui/react"
-import { useMutation } from "convex/react"
+import { useAction, useMutation } from "convex/react"
 import { Check, Copy, Paperclip, Square, ThumbsDown, ThumbsUp, X } from "lucide-react"
 import { createContext, useContext, useRef, useState } from "react"
 import { CircleArrowUp, Code2, PieChart, Sparkles, SunMedium, TrendingUp } from "@/app/components/icons"
@@ -34,6 +34,7 @@ import { Sources, type Source } from "@/components/elements/sources"
 import { StreamingText } from "@/components/elements/streaming-text"
 import { ToolCall } from "@/components/elements/tool-call"
 import { api } from "@/convex/_generated/api"
+import type { Id } from "@/convex/_generated/dataModel"
 import type { AskAIUsage } from "@/app/lib/ask-ai/chat-protocol"
 import { AskAIFinancialResultCard, type AskAIFinancialResult } from "./ask-ai-financial-result-card"
 
@@ -233,54 +234,59 @@ const messageComponents = {
 
 function Composer({ usage }: { usage?: AskAIUsage }) {
   const aui = useAui()
+  const { threadId } = useContext(AskAIMessageContext)
   const [recording, setRecording] = useState(false)
   const [voiceError, setVoiceError] = useState<string | null>(null)
-  const voiceRecognition = useRef<{ start: () => void; stop: () => void } | null>(null)
+  const mediaRecorder = useRef<MediaRecorder | null>(null)
+  const mediaStream = useRef<MediaStream | null>(null)
+  const audioChunks = useRef<Blob[]>([])
+  const generateUploadUrl = useMutation(api.askAIAttachments.generateUploadUrl)
+  const registerAttachment = useMutation(api.askAIAttachments.register)
+  const transcribeRecording = useAction(api.askAIVoice.transcribeRecording)
   const voiceSupported =
-    typeof window !== "undefined" &&
-    Boolean(
-      (window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition ??
-        (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition,
-    )
+    typeof window !== "undefined" && typeof MediaRecorder !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia)
 
-  const toggleVoice = () => {
-    type SpeechRecognitionLike = {
-      continuous: boolean
-      interimResults: boolean
-      onresult: (event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void
-      onend: () => void
-      onerror: (event: { error?: string }) => void
-      start: () => void
-      stop: () => void
-    }
+  const toggleVoice = async () => {
     if (recording) {
-      voiceRecognition.current?.stop()
+      mediaRecorder.current?.stop()
       return
     }
-    const speechWindow = window as unknown as {
-      SpeechRecognition?: new () => SpeechRecognitionLike
-      webkitSpeechRecognition?: new () => SpeechRecognitionLike
-    }
-    const SpeechRecognition = speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition
-    if (!SpeechRecognition) return
-    const recognition = new SpeechRecognition()
-    voiceRecognition.current = recognition
-    recognition.continuous = false
-    recognition.interimResults = false
-    recognition.onresult = (event) => {
-      const transcript = event.results[0]?.[0]?.transcript?.trim()
-      if (transcript) aui.composer().setText(transcript)
-    }
-    recognition.onerror = (event) => {
-      setVoiceError(event.error === "not-allowed" ? "Microphone access was denied." : "Voice input stopped unexpectedly.")
-    }
-    recognition.onend = () => {
-      voiceRecognition.current = null
+    if (!voiceSupported || !threadId) return
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const recorder = new MediaRecorder(stream)
+      mediaStream.current = stream
+      mediaRecorder.current = recorder
+      audioChunks.current = []
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunks.current.push(event.data)
+      }
+      recorder.onstop = async () => {
+        setRecording(false)
+        mediaStream.current?.getTracks().forEach((track) => track.stop())
+        mediaStream.current = null
+        mediaRecorder.current = null
+        try {
+          const mimeType = recorder.mimeType || "audio/webm"
+          const blob = new Blob(audioChunks.current, { type: mimeType })
+          const uploadUrl = await generateUploadUrl({})
+          const upload = await fetch(uploadUrl, { method: "POST", headers: { "Content-Type": mimeType }, body: blob })
+          if (!upload.ok) throw new Error("Voice upload failed")
+          const { storageId } = (await upload.json()) as { storageId: Id<"_storage"> }
+          const attachmentId = await registerAttachment({ threadId, storageId, name: "voice-recording.webm" })
+          const transcript = await transcribeRecording({ attachmentId })
+          aui.composer().setText(transcript.text)
+        } catch (error) {
+          setVoiceError(error instanceof Error ? error.message : "Voice transcription failed.")
+        }
+      }
+      setVoiceError(null)
+      setRecording(true)
+      recorder.start()
+    } catch (error) {
       setRecording(false)
+      setVoiceError(error instanceof DOMException && error.name === "NotAllowedError" ? "Microphone access was denied." : "Voice input could not start.")
     }
-    setVoiceError(null)
-    setRecording(true)
-    recognition.start()
   }
 
   return (
