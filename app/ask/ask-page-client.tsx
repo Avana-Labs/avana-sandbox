@@ -7,6 +7,7 @@ import { X } from "@/app/components/icons"
 import { triggerPageLoading } from "@/app/lib/page-loading"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { AskAIPageClient } from "./ask-ai-page-client"
+import { AskAIConvexBoundary } from "./ask-ai-convex-boundary"
 
 /** The original focused `/ask` chrome, now containing the assistant-ui runtime. */
 export function AskPageClient() {
@@ -43,7 +44,9 @@ export function AskPageClient() {
         </button>
       </header>
 
-      <AskAIPageClient />
+      <AskAIConvexBoundary>
+        <AskAIPageClient />
+      </AskAIConvexBoundary>
     </div>
   )
 }

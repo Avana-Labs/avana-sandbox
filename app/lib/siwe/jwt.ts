@@ -59,8 +59,8 @@ export function resolveIssuer(requestOrigin: string): string {
   return (configured || requestOrigin).replace(/\/+$/, "")
 }
 
-/** Mint an ES256 JWT carrying the controlling wallet in `sub` (and a `wallet` claim). */
-export function mintSandboxJwt(wallet: string, issuer: string): string {
+/** Mint an RS256 JWT carrying the supplied identity claims. */
+function mintJwt(payloadClaims: Record<string, unknown>, issuer: string): string {
   const jwk = privateJwk()
   const key = crypto.createPrivateKey({ key: jwk as crypto.JsonWebKeyInput["key"], format: "jwk" })
   const now = Math.floor(Date.now() / 1000)
@@ -68,14 +68,28 @@ export function mintSandboxJwt(wallet: string, issuer: string): string {
   const payload = {
     iss: issuer,
     aud: AUDIENCE,
-    sub: wallet.toLowerCase(),
-    wallet: wallet.toLowerCase(),
     iat: now,
     nbf: now,
     exp: now + TTL_SECONDS,
+    ...payloadClaims,
   }
   const signingInput = `${b64url(JSON.stringify(header))}.${b64url(JSON.stringify(payload))}`
   // RS256: RSASSA-PKCS1-v1_5 over SHA-256.
   const signature = crypto.sign("sha256", Buffer.from(signingInput), key)
   return `${signingInput}.${b64url(signature)}`
+}
+
+/** Mint a wallet identity after SIWE verification. */
+export function mintSandboxJwt(wallet: string, issuer: string): string {
+  const normalized = wallet.toLowerCase()
+  return mintJwt({ sub: normalized, wallet: normalized, scope: "wallet" }, issuer)
+}
+
+/**
+ * Mint a limited Ask AI guest identity. It intentionally has no wallet claim,
+ * so wallet-scoped Convex tools cannot treat it as an authenticated account.
+ */
+export function mintAskGuestJwt(guestId: string, issuer: string): string {
+  if (!/^[0-9a-f-]{36}$/i.test(guestId)) throw new Error("Invalid Ask AI guest id")
+  return mintJwt({ sub: `ask-guest:${guestId.toLowerCase()}`, scope: "ask-ai" }, issuer)
 }

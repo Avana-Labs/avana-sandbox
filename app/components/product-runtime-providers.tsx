@@ -42,6 +42,13 @@ export function ProductRuntimeProviders({
   const pathname = usePathname()
   const { isSignedIn } = useSiweAuth()
 
+  // `/ask` owns a dedicated Convex auth boundary that supports either SIWE or a
+  // limited guest identity. Mounting the full product runtime here would create a
+  // nested Convex provider and hydrate every product session unnecessarily.
+  if (pathname === "/ask" || pathname.startsWith("/ask/")) {
+    return <TokenPricesProvider initialPrices={initialTokenPrices}>{children}</TokenPricesProvider>
+  }
+
   if (!isSignedIn && !needsProductRuntime(pathname)) {
     // Still provide the server-seeded prices so any price consumer rendered outside the
     // product runtime resolves live values instead of the fixture.
