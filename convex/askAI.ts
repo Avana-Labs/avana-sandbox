@@ -543,9 +543,29 @@ export const feedbackReport = internalQuery({
       .order("desc")
       .take(Math.min(limit ?? 100, 500))
     const categories = Object.fromEntries(FEEDBACK_CATEGORIES.map((category) => [category, 0]))
+    const daily: Record<string, number> = {}
     for (const row of rows)
       for (const category of row.categories) categories[category] = (categories[category] ?? 0) + 1
-    return { total: rows.length, categories, rows }
+    for (const row of rows) {
+      const day = new Date(row.createdAt).toISOString().slice(0, 10)
+      daily[day] = (daily[day] ?? 0) + 1
+    }
+    const enrichedRows = await Promise.all(
+      rows.map(async (row) => {
+        const [thread, usage] = await Promise.all([
+          ctx.db.query("askAIThreads").withIndex("by_thread", (q) => q.eq("threadId", row.threadId)).unique(),
+          ctx.db.query("askAIUsage").withIndex("by_message", (q) => q.eq("messageId", row.messageId)).unique(),
+        ])
+        return {
+          ...row,
+          threadTitle: thread?.title ?? "Deleted thread",
+          model: usage?.model,
+          provider: usage?.provider,
+          totalTokens: usage?.totalTokens,
+        }
+      }),
+    )
+    return { total: rows.length, categories, daily, rows: enrichedRows }
   },
 })
 
