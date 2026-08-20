@@ -10,6 +10,7 @@
 
 import type * as allocation from "../allocation.js";
 import type * as askAI from "../askAI.js";
+import type * as askAIKnowledge from "../askAIKnowledge.js";
 import type * as borrow_assets from "../borrow/assets.js";
 import type * as borrow_cashflow from "../borrow/cashflow.js";
 import type * as borrow_content from "../borrow/content.js";
@@ -84,6 +85,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   allocation: typeof allocation;
   askAI: typeof askAI;
+  askAIKnowledge: typeof askAIKnowledge;
   "borrow/assets": typeof borrow_assets;
   "borrow/cashflow": typeof borrow_cashflow;
   "borrow/content": typeof borrow_content;

@@ -1930,4 +1930,33 @@ export default defineSchema({
   })
     .index("by_thread", ["threadId"])
     .index("by_owner_status_updated", ["ownerSubject", "status", "updatedAt"]),
+
+  /** Normalized cache populated by disabled-by-default external market adapters. */
+  askAIMarketSnapshots: defineTable({
+    source: v.union(
+      v.literal("coingecko"),
+      v.literal("defillama"),
+      v.literal("uniswap"),
+      v.literal("curve"),
+      v.literal("balancer"),
+      v.literal("aave"),
+    ),
+    kind: v.union(v.literal("token_price"), v.literal("dex_pool"), v.literal("lending_market")),
+    key: v.string(),
+    payload: v.any(),
+    sourceUpdatedAt: v.optional(v.number()),
+    fetchedAt: v.number(),
+  })
+    .index("by_source_kind_key", ["source", "kind", "key"])
+    .index("by_kind_key", ["kind", "key"]),
+
+  /** Small first-party knowledge corpus; the full content ingestion arrives later. */
+  askAIKnowledge: defineTable({
+    key: v.string(),
+    title: v.string(),
+    content: v.string(),
+    tags: v.array(v.string()),
+    sourceUrl: v.optional(v.string()),
+    updatedAt: v.number(),
+  }).index("by_key", ["key"]),
 })
