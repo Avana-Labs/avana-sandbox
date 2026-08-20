@@ -32,7 +32,7 @@ export function AskAIPageClient() {
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
-      <main className="mx-auto flex h-[calc(100dvh-64px)] min-h-[620px] w-full max-w-[1600px] overflow-hidden px-3 py-3 sm:px-5 lg:h-[calc(100dvh-68px)] lg:gap-5 lg:px-8 lg:py-5">
+      <main className="flex h-[calc(100dvh-64px)] min-h-[620px] w-full overflow-hidden lg:h-[calc(100dvh-68px)]">
         <AskAIThreadList open={mobileThreadsOpen} onClose={() => setMobileThreadsOpen(false)} />
         <AskAIThread onOpenThreads={() => setMobileThreadsOpen(true)} />
       </main>

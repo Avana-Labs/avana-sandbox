@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { AskAssistantTrigger } from "./ask-assistant-trigger"
 import { BrandIcon, BrandLogo } from "./brand-logo"
 import { LazyMobileMenu } from "./lazy-mobile-menu"
 import {
@@ -26,8 +27,11 @@ export function Header() {
   const renderMobileBrand = () => <BrandIcon />
   const renderMobileActions = () => (
     <>
-      <span className="-me-1 flex items-center">
+      <span className="flex items-center">
         {mounted ? <LazySearchCommandIconOnly tone="brand" /> : <SearchCommandIconPlaceholder tone="brand" />}
+      </span>
+      <span className="-me-1 flex items-center">
+        <AskAssistantTrigger iconOnly tone="brand" />
       </span>
       <span className="flex items-center">
         <WalletControl size="mobile" />
@@ -207,6 +211,9 @@ export function Header() {
             <div className="flex shrink-0 items-center gap-1.5">
               <span className="flex items-center">
                 {mounted ? <LazySearchCommandIconOnly /> : <SearchCommandIconPlaceholder />}
+              </span>
+              <span className="flex items-center">
+                <AskAssistantTrigger iconOnly />
               </span>
               <DesktopPreferenceControls />
               <div className="flex shrink-0">

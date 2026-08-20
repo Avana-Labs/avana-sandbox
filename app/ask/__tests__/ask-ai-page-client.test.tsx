@@ -9,8 +9,9 @@ describe("AskAIPageClient", () => {
   it("renders the public empty state and scoped suggestions", () => {
     render(<AskAIPageClient />)
 
-    expect(screen.getByRole("heading", { name: "Ask Avana", level: 2 })).toBeInTheDocument()
-    expect(screen.getByText("Explain LP collateral")).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "How can I help you today?", level: 1 })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Positions" })).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Current model GPT-5.6 Luna" })).toBeInTheDocument()
     expect(screen.getByRole("textbox", { name: "Ask Avana a question" })).toHaveAttribute("maxlength", "2000")
   })
 

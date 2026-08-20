@@ -11,7 +11,7 @@ export function ConditionalSiteHeader() {
 
 export function ConditionalSiteChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  const isActionRoute = pathname.startsWith("/actions/") || pathname === "/swap"
+  const isActionRoute = pathname.startsWith("/actions/") || pathname === "/swap" || pathname === "/ask"
 
   return (
     <div className={isActionRoute ? "min-h-[100dvh] bg-background" : "flex min-h-screen flex-col"}>
