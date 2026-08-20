@@ -53,7 +53,7 @@ const SUGGESTIONS = [
 function UserMessage() {
   return (
     <MessagePrimitive.Root className="relative mx-auto flex w-full max-w-[var(--thread-max-width)] flex-col px-2 py-2">
-      <div className="ml-auto max-w-[min(80%,32rem)] break-words rounded-3xl bg-muted px-5 py-2.5 leading-relaxed text-foreground">
+      <div className="ml-auto max-w-[min(80%,32rem)] break-words rounded-3xl bg-muted px-5 py-2.5 leading-relaxed text-foreground [&_p]:mb-0">
         <MessagePrimitive.Content />
       </div>
     </MessagePrimitive.Root>
