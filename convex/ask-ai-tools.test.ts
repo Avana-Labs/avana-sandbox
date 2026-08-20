@@ -45,6 +45,7 @@ describe("Ask AI authenticated portfolio tools", () => {
 
     await expect(asA.query(api.askAITools.positionRisk, { positionId: ownId })).resolves.toMatchObject({
       wallet: WALLET_A,
+      dataProvenance: "sandbox",
       positions: [expect.objectContaining({ marketSlug: "eth-usdc" })],
     })
     await expect(asA.query(api.askAITools.positionRisk, { positionId: otherId })).rejects.toThrow("Position not found")
@@ -73,6 +74,7 @@ describe("Ask AI authenticated portfolio tools", () => {
         borrowAsset: "USDC",
       }),
     ).resolves.toMatchObject({
+      dataProvenance: "sandbox",
       additionalBorrowAmount: 1_000,
       simulation: {
         current: { debtValueUsd: 3_500, ltv: 0.35 },
@@ -105,10 +107,30 @@ describe("Ask AI authenticated portfolio tools", () => {
         assetPriceChanges: [{ symbol: "ETH", change: -0.2 }],
       }),
     ).resolves.toMatchObject({
+      dataProvenance: "sandbox",
       simulation: {
         weightedCollateralChange: -0.2,
         projected: { collateralValueUsd: 8_000, debtValueUsd: 3_500 },
       },
+    })
+  })
+
+  test("stamps sandbox provenance on portfolio and borrow-capacity reads", async () => {
+    const t = convexTest(schema, modules)
+    await seedPosition(t, WALLET_A, "eth-usdc")
+    const asA = t.withIdentity({ subject: WALLET_A })
+
+    await expect(asA.query(api.askAITools.portfolio, {})).resolves.toMatchObject({
+      walletRequired: false,
+      dataProvenance: "sandbox",
+    })
+    await expect(asA.query(api.askAITools.borrowCapacity, {})).resolves.toMatchObject({
+      walletRequired: false,
+      dataProvenance: "sandbox",
+    })
+    await expect(asA.query(api.askAITools.engineSnapshot, {})).resolves.toMatchObject({
+      walletRequired: false,
+      dataProvenance: "sandbox",
     })
   })
 })
