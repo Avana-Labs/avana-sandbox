@@ -15,7 +15,10 @@ export const ASK_AI_CONFIG = {
   limits: {
     messagesPerDay: 20,
     minimumMessageIntervalMs: 5_000,
-    dailyTokenBudget: 30_000,
+    // Cost backstop, sized so `messagesPerDay` is the limit users actually hit: a RAG + tool turn
+    // can spend several thousand tokens, so 20 msgs/day needs generous headroom (30k blocked
+    // usage after ~3 questions and surfaced as a confusing "limit reached" error).
+    dailyTokenBudget: 500_000,
     globalMessagesPerDay: 20_000,
   },
   freshness: {
