@@ -32,19 +32,6 @@ export type DomainResult = {
   confidence: number
 }
 
-const BLOCKED_PATTERNS = [
-  /\b(nba|nfl|world cup|soccer score|sports score|baseball|basketball)\b/i,
-  /\b(president|election|vote for|politic(?:s|al))\b/i,
-  /\b(movie|celebrity|taylor swift|tv show|video game|call of duty)\b/i,
-  /\b(flight|vacation|trip to|travel plan|hotel)\b/i,
-  /\b(chicken recipe|recipe|cook(?:ing)?)\b/i,
-  /\b(medical symptoms?|medicine should|diagnos(?:e|is))\b/i,
-  /\b(divorce|legal contract|legal filing)\b/i,
-  /\b(python scraper|react todo|write (?:me )?(?:a )?solidity|build (?:me )?(?:a )?(?:website|app))\b/i,
-  /\b(capital of|world war|tell me a joke|write (?:me )?(?:a )?poem)\b/i,
-  /\b(weather tomorrow|general news|today'?s stories)\b/i,
-]
-
 const POSITION_PATTERNS = [
   /\b(my|our)\b.{0,25}\b(position|positions|wallet|balances?|holdings?|funds|assets?|collateral|debt|borrow|health factor|ltv|liquidat)/i,
   /\bwhat(?:'s| is) in (?:my|our) wallet\b/i,
@@ -92,18 +79,13 @@ function matchesAny(message: string, patterns: RegExp[]) {
 }
 
 /**
- * Narrow deterministic input-policy check and local semantic-routing fallback.
- * Clearly unrelated requests are marked unsupported; ambiguous language is
- * deliberately allowed so conversation history and the live router can resolve it.
+ * Advisory local semantic routing. Conversation scope is decided by Luna with
+ * history; deterministic validation here is limited to empty/oversized input.
  */
 export function classifyAskAIDomain(message: string): DomainResult {
   const normalized = message.trim().replace(/\s+/g, " ")
   if (!normalized || normalized.length > 2_000) {
     return { allowed: false, category: "unsupported", intent: "unsupported", confidence: 1 }
-  }
-
-  if (matchesAny(normalized, BLOCKED_PATTERNS)) {
-    return { allowed: false, category: "unsupported", intent: "unsupported", confidence: 0.99 }
   }
 
   if (isAskAIGreeting(normalized)) {
