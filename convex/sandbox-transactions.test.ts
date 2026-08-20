@@ -184,6 +184,114 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
     expect(lend?.status).toBe("open")
   })
 
+  test("rejects a deposit that exceeds the wallet's liquid balance (affordability)", async () => {
+    const t = convexTest(schema, modules)
+    const w = WALLET.toLowerCase()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("positions", {
+        wallet: w,
+        product: "lend",
+        marketSlug: "usdc",
+        status: "open",
+        suppliedUsd6: "0",
+        earnedUsd6: "0",
+        openedAt: 1,
+        lastUpdatedAt: 1,
+        revision: 0,
+      })
+      await ctx.db.insert("walletLendBalances", {
+        wallet: w,
+        marketId: "usdc",
+        assetId: "usdc",
+        symbol: "USDC",
+        amount: 0,
+        valueUsd: 0,
+        state: "deposited",
+        updatedAt: 1,
+      })
+      // Only $5 of liquid USDC on hand.
+      await ctx.db.insert("sandboxBalances", {
+        wallet: w,
+        assetSlug: "usdc",
+        symbol: "USDC",
+        amount: 5,
+        valueUsd: 5,
+        priceUsd: 1,
+        updatedAt: 1,
+      })
+    })
+    const asUser = t.withIdentity({ subject: WALLET })
+    await expect(
+      asUser.mutation(api.sandbox.transactions.recordTransaction, {
+        wallet: WALLET,
+        intentId: "afford-over",
+        product: "lend" as const,
+        kind: "deposit",
+        marketSlug: "usdc",
+        assetId: "usdc",
+        requestedAmountUsd6: "10000000",
+        executedAmountUsd6: "10000000",
+        amountUsd: 10,
+        simulated: true,
+        expectedRevision: 0,
+        position: { status: "open" as const, marketSlug: "usdc", suppliedUsd6: "10000000", earnedUsd6: "0" },
+      }),
+    ).rejects.toThrow(/INSUFFICIENT_BALANCE/)
+  })
+
+  test("allows a deposit within the wallet's liquid balance", async () => {
+    const t = convexTest(schema, modules)
+    const w = WALLET.toLowerCase()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("positions", {
+        wallet: w,
+        product: "lend",
+        marketSlug: "usdc",
+        status: "open",
+        suppliedUsd6: "0",
+        earnedUsd6: "0",
+        openedAt: 1,
+        lastUpdatedAt: 1,
+        revision: 0,
+      })
+      await ctx.db.insert("walletLendBalances", {
+        wallet: w,
+        marketId: "usdc",
+        assetId: "usdc",
+        symbol: "USDC",
+        amount: 0,
+        valueUsd: 0,
+        state: "deposited",
+        updatedAt: 1,
+      })
+      await ctx.db.insert("sandboxBalances", {
+        wallet: w,
+        assetSlug: "usdc",
+        symbol: "USDC",
+        amount: 100,
+        valueUsd: 100,
+        priceUsd: 1,
+        updatedAt: 1,
+      })
+    })
+    const asUser = t.withIdentity({ subject: WALLET })
+    const res = await asUser.mutation(api.sandbox.transactions.recordTransaction, {
+      wallet: WALLET,
+      intentId: "afford-ok",
+      product: "lend" as const,
+      kind: "deposit",
+      marketSlug: "usdc",
+      assetId: "usdc",
+      requestedAmountUsd6: "10000000",
+      executedAmountUsd6: "10000000",
+      amountUsd: 10,
+      simulated: true,
+      expectedRevision: 0,
+      position: { status: "open" as const, marketSlug: "usdc", suppliedUsd6: "10000000", earnedUsd6: "0" },
+    })
+    expect(res.receipt.status).toBe("success")
+  })
+
   test("idempotent on intentId — a replay returns the existing row and does not double-apply", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
@@ -258,6 +366,45 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
     }))
     expect(stored.current).toHaveLength(1)
     expect(stored.history).toHaveLength(1)
+  })
+
+  test("excludes umbrella staked principal + rewards from the portfolio snapshot value", async () => {
+    const t = convexTest(schema, modules)
+    const wallet = WALLET.toLowerCase()
+    // A wallet holding both a plain liquid balance ($1,000) and an umbrella position
+    // ($400 staked + $10 rewards). Umbrella lives on its own page and is excluded from
+    // the dashboard headline / Net APY / onboarding snapshot — the running snapshot writer
+    // must agree, or stored history drifts from the live number by the umbrella amount.
+    await t.run(async (ctx) => {
+      await ctx.db.insert("sandboxBalances", {
+        wallet,
+        assetSlug: "usdc",
+        symbol: "USDC",
+        amount: 1000,
+        valueUsd: 1000,
+        priceUsd: 1,
+        updatedAt: 1,
+      })
+      await ctx.db.insert("positions", {
+        wallet,
+        product: "umbrella",
+        marketSlug: "usdc",
+        assetId: "usdc",
+        status: "open",
+        suppliedUsd6: "400000000",
+        earnedUsd6: "10000000",
+        openedAt: 1,
+        lastUpdatedAt: 1,
+      })
+    })
+
+    const asUser = t.withIdentity({ subject: WALLET })
+    await asUser.mutation(api.sandbox.transactions.ensurePortfolioSnapshot, { wallet: WALLET })
+
+    const portfolio = await asUser.query(api.sandbox.transactions.getPortfolio, { wallet: WALLET })
+    // Only the $1,000 liquid balance counts — umbrella's $400 + $10 are excluded.
+    expect(portfolio.latest?.totalValueUsd).toBe(1000)
+    expect(portfolio.latest?.totalSuppliedUsd).toBe(0)
   })
 })
 

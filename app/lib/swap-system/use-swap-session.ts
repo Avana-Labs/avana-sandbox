@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { DEMO_SWAP_BALANCES } from "./wallet-balances"
-import { MockSwapProvider, type SwapQuoteRequest } from "./quote-provider"
+import { MockSwapProvider, type SwapQuote, type SwapQuoteRequest } from "./quote-provider"
 import {
   SandboxSwapTransactionAdapter,
   type SwapExecutionOptions,
@@ -44,6 +44,7 @@ export function useSwapSession({
   walletId,
   persistState = true,
   persistTransaction,
+  serverGetQuote,
   remoteTransactions,
 }: {
   walletId: string
@@ -54,6 +55,13 @@ export function useSwapSession({
    * local session already reflects the swap and durability is best-effort. (#15)
    */
   persistTransaction?: (record: SwapTransactionRecord) => void | Promise<unknown>
+  /**
+   * Server-authoritative quote source (Convex mode). When provided, quotes come from the Convex
+   * `sandbox.swap.getQuote` engine — the SAME engine recordSwap executes with — so the preview
+   * matches what the swap will do and nothing is computed by a separate client formula. In demo
+   * mode this is undefined and the local MockSwapProvider (same engine, static prices) is used.
+   */
+  serverGetQuote?: (request: SwapQuoteRequest) => Promise<SwapQuote>
   /**
    * Durable swaps read back from Convex (Convex mode). Exposed as `durableTransactions` so the
    * dashboard can merge them with the in-session history and show persisted swaps after a
@@ -131,8 +139,13 @@ export function useSwapSession({
   )
 
   const getQuote = useCallback(
-    (request: Omit<SwapQuoteRequest, "walletId">) => adapter.provider.getQuote({ ...request, walletId }),
-    [adapter, walletId],
+    (request: Omit<SwapQuoteRequest, "walletId">) => {
+      const full = { ...request, walletId }
+      // Server engine (Convex) is authoritative when available; the local provider is the
+      // demo-mode fallback (same engine math, static catalog prices).
+      return serverGetQuote ? serverGetQuote(full) : adapter.provider.getQuote(full)
+    },
+    [adapter, serverGetQuote, walletId],
   )
   const requiresApproval = useCallback(
     (assetId: string, amount: number) => adapter.requiresApproval(walletId, assetId, amount),

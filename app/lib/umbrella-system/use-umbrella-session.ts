@@ -65,7 +65,12 @@ export type UmbrellaPosition = {
   withdrawalWindowEndsAt?: number
   /** True when at least one tranche is past its withdrawal window with cooling USD still on it. */
   withdrawalWindowExpired: boolean
-  /** Cumulative USD principal removed by simulated slashes on this position. 0 when never slashed. */
+  /**
+   * Cumulative USD principal removed by slashes on this position; 0 when never slashed.
+   * Slashing is Convex-driven and persisted — applied by the `simulateSlash` mutation
+   * (convex/sandbox/umbrella.ts) writing `slashedAmountUsd6`, then hydrated here via
+   * stateFromConvex. "simulate" = sandbox has no chain, NOT a client-synthetic figure.
+   */
   slashedValueUsd: number
   /**
    * Per-tranche breakdown — sorted by endsAt ascending. `cooldownAmount` /
@@ -114,7 +119,8 @@ export type ConvexUmbrellaSessionState = {
     withdrawalWindowEndsAt?: number
     /** Server-computed: withdrawalWindowEndsAt < now && cooldownUsd > 0. */
     withdrawalWindowExpired: boolean
-    /** Cumulative USD principal removed by simulated slashes on this position. */
+    /** Cumulative USD principal removed by slashes; persisted in Convex as slashedAmountUsd6
+     *  by the simulateSlash mutation (Convex-driven, not client-synthetic). */
     slashedAmountUsd?: number
     status: "open" | "closed"
     lastUpdatedAt: number

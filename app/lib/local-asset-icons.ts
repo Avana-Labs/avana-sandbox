@@ -1,4 +1,5 @@
 const LOCAL_ASSET_ICON_SLUGS: Record<string, string> = {
+  AVA: "ava",
   USDC: "usdc",
   USDT: "usdt",
   DAI: "dai",

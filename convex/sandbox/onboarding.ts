@@ -871,6 +871,18 @@ export const savePreferences = mutation({
       if (trimmed) incoming.name = trimmed
       else delete incoming.name
     }
+    // Locale/currency are short codes; clamp them so a client can't merge an unbounded
+    // free string into the stored profile.
+    if (typeof incoming.language === "string") {
+      const code = incoming.language.trim().slice(0, 12)
+      if (code) incoming.language = code
+      else delete incoming.language
+    }
+    if (typeof incoming.currency === "string") {
+      const code = incoming.currency.trim().slice(0, 12)
+      if (code) incoming.currency = code
+      else delete incoming.currency
+    }
     if (incoming.dexSources) {
       incoming.dexSources = incoming.dexSources
         .map((source) => source.trim().slice(0, 40))

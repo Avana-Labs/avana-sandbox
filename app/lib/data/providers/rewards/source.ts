@@ -8,6 +8,7 @@ import { api } from "@/convex/_generated/api"
 import {
   REWARDS_PROMO_TABS,
   emptyRewardsQuestsByTab,
+  imageForTask,
   resolveRewardsPromoTab,
   type RewardsQuestIconId,
 } from "@/app/lib/data/rewards/catalog"
@@ -84,6 +85,7 @@ export const liveRewardsPageSource: RewardsPageSource = {
         cta: taskProgress?.status === "claimed" ? "Claimed" : task.actionLabel,
         category: task.tag,
         iconId: iconForTag(task.tag),
+        image: imageForTask(task.id),
       })
       return result
     }, emptyRewardsQuestsByTab())

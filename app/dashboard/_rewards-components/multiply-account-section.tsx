@@ -14,7 +14,7 @@ import { useAmountDisplayPreferences } from "@/app/components/display-preference
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { MultiplyOutlook } from "@/app/dashboard/_outlook/multiply-outlook"
-import { AccountModuleBoundary } from "./account-sections-shared"
+import { AccountModuleBoundary, ProductAvailableCard } from "./account-sections-shared"
 
 const MultiplyCollateralTable = lazy(async () => ({
   default: (await import("@/app/dashboard/multiply-collateral-table")).MultiplyCollateralTable,
@@ -79,6 +79,11 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
   return (
     <section id="dashboard-multiply-account" className={`scroll-mt-24 ${detailSectionStackClass}`}>
       <DashboardOverviewSection title={t("Multiply Balance")} metrics={multiplyDashboardMetrics.overview} />
+      <ProductAvailableCard
+        walletId={walletId ?? ""}
+        sourceTypes={["multiply_available"]}
+        title={t("Available to use")}
+      />
       <div className="space-y-4">
         <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
           {t("Multiply Health")}

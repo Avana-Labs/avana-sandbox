@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import { useEffect, useState } from "react"
 import {
   ArrowRight,
@@ -17,6 +18,7 @@ import {
   Trophy,
   Wallet,
 } from "@/app/components/icons"
+import { CarouselArrowButtons, useOverflowCarousel } from "@/app/components/carousel-arrow-buttons"
 import { type RewardsPromoTabId, type RewardsQuestIconId, type RewardsQuest } from "@/app/lib/data/rewards/catalog"
 import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { UnderlineTabStrip } from "@/app/components/tab-primitives"
@@ -42,81 +44,104 @@ const QUEST_ICON_MAP: Record<RewardsQuestIconId, typeof Wallet> = {
   wallet: Wallet,
 }
 
+export function AvaCoin({ size = 20 }: { size?: number }) {
+  return (
+    <Image
+      src="/asset-icons/ava.png"
+      alt=""
+      width={size}
+      height={size}
+      sizes={`${size}px`}
+      className="shrink-0 object-contain"
+      style={{ width: size, height: size }}
+      aria-hidden
+    />
+  )
+}
+
 function AvanaQuestCard({
   quest,
-  accent = "default",
   onTaskAction,
 }: {
   quest: RewardsQuest & { status?: string; progressLabel?: string }
-  accent?: "default" | "challenge"
   onTaskAction: (taskId: string) => Promise<unknown>
 }) {
   const { t } = useTranslation()
   const Icon = QUEST_ICON_MAP[quest.iconId]
   const isClaimable = quest.status === "claimable"
-  const isDisabled = quest.status === "claimed" || quest.status === "expired" || quest.cta === t("Waiting")
+  const isClaimed = quest.status === "claimed"
+  const isDisabled = isClaimed || quest.status === "expired" || quest.cta === t("Waiting")
   const canAct =
     isClaimable || ((quest.status === "available" || quest.status === "in_progress") && quest.cta !== t("Waiting"))
+  const rewardValue = quest.reward.replace(/[^\d.,]/g, "")
+  const metaLine = "progressLabel" in quest && quest.progressLabel ? quest.progressLabel : quest.description
 
   return (
-    <Card className="flex h-full flex-col overflow-hidden rounded-radius-md border-0 bg-card shadow-none">
-      <div className="flex h-full flex-col p-3.5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-radius-md bg-brand/10">
-            <Icon className="h-4 w-4 text-brand" strokeWidth={1.9} />
+    <div className="flex h-full flex-col">
+      {/* Prize illustration sits on its own above the card — no panel, no overlap. */}
+      <div className="flex justify-center pb-1">
+        {quest.image ? (
+          <Image
+            src={quest.image}
+            alt=""
+            width={192}
+            height={192}
+            sizes="96px"
+            loading="lazy"
+            className={`h-24 w-24 object-contain drop-shadow-md transition duration-300 ${isClaimed ? "opacity-40 grayscale" : ""}`}
+          />
+        ) : (
+          <div className="flex h-24 w-24 items-center justify-center">
+            <Icon className="h-14 w-14 text-brand" strokeWidth={1.3} />
           </div>
-          <span className="rounded-full border border-border bg-surface-inset px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-foreground/70">
-            {t(quest.category)}
+        )}
+      </div>
+
+      <Card className="flex flex-1 flex-col items-center rounded-radius-md border border-border/60 bg-card p-3 text-center shadow-none">
+        <h3
+          className={`line-clamp-2 text-[13px] font-semibold leading-4 tracking-[-0.02em] text-foreground ${isClaimed ? "opacity-55" : ""}`}
+        >
+          {t(quest.title)}
+        </h3>
+        <p className={`mt-1 line-clamp-1 text-[11px] leading-4 text-muted-foreground ${isClaimed ? "opacity-55" : ""}`}>
+          {t(metaLine)}
+        </p>
+
+        {/* The prize — coin + amount, the hero of the card. */}
+        <div className={`mt-2.5 flex items-center justify-center gap-1.5 ${isClaimed ? "opacity-55" : ""}`}>
+          <AvaCoin size={22} />
+          <span className="font-data text-[22px] font-bold leading-none tracking-tight text-foreground">
+            {rewardValue}
           </span>
         </div>
 
-        <div className="mt-3 min-h-0 space-y-2 sm:mt-3.5">
-          <h3 className="line-clamp-3 text-[14px] leading-5 tracking-[-0.03em] text-foreground md:text-[15px]">
-            {t(quest.title)}
-          </h3>
-          <p
-            className={`line-clamp-2 text-[12px] font-normal leading-5 ${accent === "challenge" ? "text-foreground/75" : "text-muted-foreground"}`}
-          >
-            {t(quest.description)}
-          </p>
-          {"progressLabel" in quest && quest.progressLabel ? (
-            <div className="text-[11px] text-muted-foreground">{t(quest.progressLabel)}</div>
-          ) : null}
-          <div className="pt-1 font-data text-[14px] tracking-tight text-foreground md:text-[15px]">{quest.reward}</div>
-        </div>
+        <button
+          type="button"
+          onClick={() => {
+            if (canAct) {
+              void onTaskAction(quest.id)
+            }
+          }}
+          disabled={isDisabled}
+          className={`mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-radius-sm px-3 text-[13px] font-bold transition-colors [&_svg]:size-4 ${
+            isClaimable
+              ? "bg-brand text-white shadow-sm hover:bg-brand/90"
+              : isDisabled
+                ? "bg-muted/60 text-muted-foreground"
+                : "border border-brand/25 bg-brand/5 text-foreground hover:bg-brand/10"
+          }`}
+        >
+          {t(quest.cta)}
+          {!isDisabled ? <ArrowRight /> : null}
+        </button>
 
-        <div className="mt-auto pt-3.5">
-          {quest.expiration ? (
-            <div className="mb-3.5 flex items-center justify-between gap-3 border-t border-dashed border-border pt-3">
-              <span className="text-[10px] font-normal text-muted-foreground">{t("Expiration")}</span>
-              <span className="font-data text-[10px] font-normal tracking-tight text-foreground">
-                {quest.expiration}
-              </span>
-            </div>
-          ) : null}
-
-          <button
-            type="button"
-            onClick={() => {
-              if (canAct) {
-                void onTaskAction(quest.id)
-              }
-            }}
-            disabled={isDisabled}
-            className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-radius-sm px-3.5 text-[13px] font-bold transition-colors [&_svg]:size-4 ${
-              isClaimable
-                ? "bg-brand text-white hover:bg-brand/90"
-                : isDisabled
-                  ? "bg-muted/60 text-muted-foreground"
-                  : "border border-brand/20 bg-brand/5 text-foreground hover:bg-brand/10"
-            }`}
-          >
-            {t(quest.cta)}
-            {!isDisabled ? <ArrowRight /> : null}
-          </button>
-        </div>
-      </div>
-    </Card>
+        {quest.expiration ? (
+          <div className="mt-2 text-[10px] text-muted-foreground">
+            {t("Expiration")} · {quest.expiration}
+          </div>
+        ) : null}
+      </Card>
+    </div>
   )
 }
 
@@ -209,21 +234,49 @@ export function RewardsQuestSection({
   onTaskAction: (taskId: string) => Promise<unknown>
 }) {
   const { t } = useTranslation()
+  const { scrollerRef, canPrev, canNext, scrollByCard } = useOverflowCarousel()
 
   return (
     <div className="space-y-4">
-      {title ? (
-        <div>
-          <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{title}</h2>
-          <p className="mt-1 text-[13px] text-muted-foreground">
-            {t("{count} rewards").replace("{count}", String(quests.length))}
-          </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        {title ? (
+          <div>
+            <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{title}</h2>
+            <p className="mt-1 text-[13px] text-muted-foreground">
+              {t("{count} rewards").replace("{count}", String(quests.length))}
+            </p>
+          </div>
+        ) : (
+          <span />
+        )}
+        {canPrev || canNext ? (
+          <CarouselArrowButtons
+            canPrev={canPrev}
+            canNext={canNext}
+            onPrev={() => scrollByCard(-1)}
+            onNext={() => scrollByCard(1)}
+            prevLabel={t("Previous rewards")}
+            nextLabel={t("Next rewards")}
+          />
+        ) : null}
+      </div>
+      <div className="overflow-hidden">
+        <div
+          ref={scrollerRef}
+          className="overflow-x-auto pb-1 [scrollbar-width:none] snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
+        >
+          <ul className="flex w-full gap-3">
+            {quests.map((quest) => (
+              <li
+                key={quest.id}
+                data-carousel-card
+                className="w-[min(220px,72%)] shrink-0 snap-start sm:w-[calc((100%-0.75rem)/2)] xl:w-[calc((100%-1.5rem)/3)]"
+              >
+                <AvanaQuestCard quest={quest} onTaskAction={onTaskAction} />
+              </li>
+            ))}
+          </ul>
         </div>
-      ) : null}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {quests.map((quest) => (
-          <AvanaQuestCard key={quest.id} quest={quest} onTaskAction={onTaskAction} />
-        ))}
       </div>
     </div>
   )

@@ -193,6 +193,39 @@ function isTypingTarget(target: EventTarget | null) {
   return target.isContentEditable || tagName === "INPUT" || tagName === "TEXTAREA" || tagName === "SELECT"
 }
 
+// Every breakpoint renders its own <SearchCommand /> (desktop pill, compact icon,
+// phone icon) and all of them stay mounted at once — only CSS hides the inactive
+// ones. A per-instance "/" listener therefore opened one dialog PER mounted
+// instance, stacking 2–3 portaled overlays that each needed a separate click to
+// dismiss. Share ONE global "/" handler across instances so a single dialog opens.
+const slashShortcutOpeners = new Set<() => void>()
+let slashShortcutListening = false
+
+function handleSlashShortcut(event: KeyboardEvent) {
+  if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey || isTypingTarget(event.target)) {
+    return
+  }
+  const open = slashShortcutOpeners.values().next().value
+  if (!open) return
+  event.preventDefault()
+  open()
+}
+
+function registerSlashShortcut(open: () => void) {
+  slashShortcutOpeners.add(open)
+  if (!slashShortcutListening && typeof window !== "undefined") {
+    window.addEventListener("keydown", handleSlashShortcut)
+    slashShortcutListening = true
+  }
+  return () => {
+    slashShortcutOpeners.delete(open)
+    if (slashShortcutOpeners.size === 0 && slashShortcutListening && typeof window !== "undefined") {
+      window.removeEventListener("keydown", handleSlashShortcut)
+      slashShortcutListening = false
+    }
+  }
+}
+
 export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: boolean; tone?: "nav" | "brand" } = {}) {
   const router = useRouter()
   const { t } = useTranslation()
@@ -235,18 +268,10 @@ export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: b
   }, [compact])
 
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "/" || event.metaKey || event.ctrlKey || event.altKey || isTypingTarget(event.target)) {
-        return
-      }
-
-      event.preventDefault()
+    return registerSlashShortcut(() => {
       void loadResults()
       setOpen(true)
-    }
-
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
+    })
   }, [loadResults])
 
   useEffect(() => {

@@ -58,14 +58,19 @@ describe("open gate test mode", () => {
     expect(audit.shouldUseOpenGateSession()).toBe(true)
   })
 
-  it("opens only in the isolated local production Lighthouse artifact", async () => {
+  it("never opens the gate in a production build, even with the Lighthouse audit vars set", async () => {
+    // SECURITY: the audit vars are NEXT_PUBLIC_ (bakeable into a shippable client bundle), so a
+    // production runtime must never auto-open the dev gate / auto-mint the test JWT. The local
+    // audit still works because its routes render the static LighthouseAuditSurface via
+    // isLighthouseAuditMode(), which is independent of the open-gate session.
     vi.stubEnv("NODE_ENV", "production")
     vi.stubEnv("NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE", "1")
     vi.stubEnv("NEXT_PUBLIC_LIGHTHOUSE_AUDIT_ARTIFACT", "1")
     vi.stubEnv("VERCEL", "")
     vi.stubEnv("CI", "")
     const audit = await import("@/app/lib/test-mode")
-    expect(audit.shouldUseOpenGateSession()).toBe(true)
+    expect(audit.shouldUseOpenGateSession()).toBe(false)
+    expect(audit.isLighthouseAuditMode()).toBe(true)
   })
 
   it("keeps the mock data source override independent of the open gate", async () => {

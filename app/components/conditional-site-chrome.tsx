@@ -11,6 +11,7 @@ export function ConditionalSiteHeader() {
 
 export function ConditionalSiteChrome({ children }: { children: ReactNode }) {
   const pathname = usePathname()
+  // Focused, full-screen routes render their own chrome and suppress the site header.
   const isActionRoute = pathname.startsWith("/actions/") || pathname === "/swap" || pathname === "/ask"
 
   return (

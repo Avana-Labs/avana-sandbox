@@ -7,7 +7,7 @@
  *
  * This is the SINGLE LP-collateral model for the app. It intentionally does NOT use the
  * constant-product "fair value" 2·√(P0·P1), nor any reserves / LP-total-supply derivation —
- * those were removed (see docs/token-pricing-architecture-audit.md). Weights are the
+ * those were intentionally removed. Weights are the
  * configured pool weights (equal-weight or explicitly weighted), supporting 2, 3, 4+ tokens.
  *
  * If ANY constituent has no valid price, the LP price is `unavailable` — we never emit a

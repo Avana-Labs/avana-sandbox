@@ -5,9 +5,15 @@ import { Sparkles } from "@/app/components/icons"
 import { triggerPageLoading } from "@/app/lib/page-loading"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
-/** The established Ask AI entry point: nested search chip on wide desktop and sparkle icon elsewhere. */
+// The "Ask AI" entry point. Two shapes:
+//   • text chip (default) — a filled inner pill that nests on the RIGHT of the
+//     header search bar, YouTube-style. SearchTrigger renders it inside the pill.
+//   • iconOnly — a bare sparkle button used standalone in the phone / small-desktop
+//     headers, beside the search icon.
 export function AskAssistantTrigger({
   iconOnly = false,
+  // "nav" matches the muted desktop chrome; "brand" is the phone-only cyan that
+  // mirrors the adjacent search icon. Only applies to the iconOnly shape.
   tone = "nav",
   onClick,
 }: {

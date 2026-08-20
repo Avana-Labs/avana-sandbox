@@ -1,0 +1,54 @@
+name: Gitleaks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Weekly full-history sweep (Mondays 07:00 UTC)
+    - cron: "0 7 * * 1"
+
+concurrency:
+  group: gitleaks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # Gitleaks CLI is MIT-licensed and free for organizations.
+  # (The gitleaks-action wrapper requires a paid license for orgs; we run the
+  # CLI directly to avoid that.)
+  GITLEAKS_VERSION: "8.30.1"
+
+jobs:
+  scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install Gitleaks CLI
+        run: |
+          set -euo pipefail
+          curl -sSfL \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" \
+            -o /tmp/gitleaks.tar.gz
+          tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+          sudo install -m 0755 /tmp/gitleaks /usr/local/bin/gitleaks
+          gitleaks version
+
+      - name: Scan full history
+        run: |
+          gitleaks git . \
+            --config .gitleaks.toml \
+            --redact=100 \
+            --log-opts="--all" \
+            --report-format=sarif \
+            --report-path=gitleaks.sarif \
+            --exit-code=1

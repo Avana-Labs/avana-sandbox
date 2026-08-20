@@ -1,12 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 async function resolveConnectSrc() {
-  // next.config.mjs computes connect-src at import time, so reset the module
-  // registry and re-import after stubbing env for each scenario.
+  // The CSP is built in lib/content-security-policy.mjs (used by middleware.ts). connect-src reads
+  // the Convex env at build time, so reset the module registry and re-import after stubbing env.
   vi.resetModules()
-  const mod = await import("../../next.config.mjs")
-  const headers = await mod.default.headers()
-  const csp = headers[0].headers.find((h: { key: string }) => h.key === "Content-Security-Policy").value as string
+  const mod = await import("../../lib/content-security-policy.mjs")
+  const csp = mod.buildContentSecurityPolicy({ nonce: "test-nonce", isDev: false })
   const directive = csp.split("; ").find((d) => d.startsWith("connect-src")) as string
   return directive.slice("connect-src ".length).split(" ")
 }

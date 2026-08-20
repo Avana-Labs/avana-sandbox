@@ -74,14 +74,16 @@ describe("SwapAssetPickerDialog token icons", () => {
   })
 
   it("falls back to a colored symbol badge when a token has no logo", () => {
-    renderPicker([asset("link", "LINK", "ChainLink Token")])
+    // A genuinely unmapped symbol — absent from both TOKEN_MAP and the local-asset
+    // alias map (LINK/CRVUSD/etc. now resolve real logos via the alias fallback).
+    renderPicker([asset("zzz", "ZZZ", "Zzz Token")])
 
-    const option = screen.getByRole("option", { name: "ChainLink Token (LINK)" })
+    const option = screen.getByRole("option", { name: "Zzz Token (ZZZ)" })
     // No logo image for an unmapped symbol...
     expect(option.querySelector("img")).toBeNull()
     // ...and a symbol badge is shown instead of a blank circle.
     const badge = option.firstElementChild as HTMLElement
-    expect(badge.textContent).toBe("LIN")
+    expect(badge.textContent).toBe("ZZZ")
     expect(badge.className).toContain("rounded-full")
   })
 })

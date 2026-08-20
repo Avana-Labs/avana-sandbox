@@ -1008,6 +1008,8 @@ const dict: TranslationDictionary = {
   "reCLAMM BPT": "BPT reCLAMM",
   "Stable LP tokens": "Tokens de LP Stable",
   "Change language": "Alterar idioma",
+  "Ask AI": "Perguntar à IA",
+  "Search markets…": "Pesquisar mercados…",
   "Search Avana": "Pesquisar na Avana",
   "Search pools, borrow, lend, and more": "Pesquisar pools, empréstimos e mais",
   "Search pools, borrow assets, lend assets": "Pesquisar pools e ativos",
@@ -1520,6 +1522,15 @@ const dict: TranslationDictionary = {
     "“Seguro” significa que uma queda apenas desse ativo não pode liquidá-lo — as suas outras garantias cobrem a dívida.",
   "How it works": "Como funciona",
   "Learn Avana": "Conheça a Avana",
+  "Dashboard Positions": "Posições do painel",
+  "Available to use": "Disponível para uso",
+  "Available to deposit": "Disponível para depositar",
+  "against {pool}": "contra {pool}",
+  Locked: "Bloqueado",
+  "Merkl Rewards": "Recompensas Merkl",
+  "Next rewards": "Próximas recompensas",
+  "Open on Launch Date": "Abre na data de lançamento",
+  "Previous rewards": "Recompensas anteriores",
 }
 
 export default dict

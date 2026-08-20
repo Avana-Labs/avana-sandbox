@@ -62,11 +62,12 @@ describe("DashboardWalletTab", () => {
     expect(screen.getAllByText("123 USDC").length).toBeGreaterThan(0)
   })
 
-  it("labels available and pledged LP balances by product source", { timeout: 20_000 }, () => {
+  it("excludes product-committed buckets — those live on their own tabs", { timeout: 20_000 }, () => {
     renderWalletTab(
       <DashboardWalletTab
         walletId="wallet-live"
         balances={[
+          { id: "free-usdc", walletId: "wallet-live", assetId: "usdc", amount: 300, sourceType: "wallet" },
           {
             id: "available-lp",
             walletId: "wallet-live",
@@ -87,8 +88,9 @@ describe("DashboardWalletTab", () => {
       />,
     )
 
-    expect(screen.getAllByText("Borrow collateral").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("Pledged collateral").length).toBeGreaterThan(0)
-    expect(screen.queryByText("Wallet LP")).toBeNull()
+    // Only the free wallet USDC shows; borrow collateral/pledged belong to the Borrow tab.
+    expect(screen.getAllByText("USD Coin").length).toBeGreaterThan(0)
+    expect(screen.queryByText("Borrow collateral")).toBeNull()
+    expect(screen.queryByText("Pledged collateral")).toBeNull()
   })
 })

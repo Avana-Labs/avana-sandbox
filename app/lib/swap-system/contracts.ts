@@ -43,6 +43,8 @@ export type SwapAsset = {
   priceUsd: number
   minimumSwapAmount: number
   maximumSwapAmount: number
+  /** LP tokens only: the two underlying token symbols, used to render a pair icon. */
+  lpUnderlyingSymbols?: readonly [string, string]
 }
 
 export type SwapPair = {

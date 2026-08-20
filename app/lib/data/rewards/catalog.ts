@@ -23,6 +23,8 @@ export type RewardsQuest = {
   cta: string
   category: string
   iconId: RewardsQuestIconId
+  /** Per-task illustration under public/asset-rewards; when absent the card falls back to iconId. */
+  image?: string
   expiration?: string
 }
 
@@ -44,15 +46,36 @@ export const REWARDS_QUESTS_PER_TAB = 6
  */
 const REWARDS_TAB_BY_TASK_ID: Record<string, RewardsPromoTabId> = {
   "supply-5k-lend": "lend",
-  "borrow-2k": "borrow",
-  "complete-5-borrow-repay-cycles": "borrow",
-  "maintain-hf-above-2": "borrow",
   "use-curve-position": "borrow",
-  "use-uniswap-v4-position": "borrow",
-  "complete-3-multiply-deleverage-cycles": "multiply",
-  "4-week-activity-streak": "multiply",
-  "referral-cohort-25k": "referrals",
-  "referral-streak": "referrals",
+  "use-uniswap-v4-position": "multiply",
+}
+
+/**
+ * Per-task illustration (files live in public/asset-rewards). Populated one quest
+ * at a time as each card is verified end-to-end; an unmapped id falls back to its
+ * tag icon in the card. Rendered via next/image, so the 1254² source is downscaled
+ * and served as lazy WebP/AVIF — kilobytes on the wire, not the raw PNG.
+ */
+const REWARDS_IMAGE_BY_TASK_ID: Record<string, string> = {
+  "connect-wallet": "/asset-rewards/2.png",
+  "review-risk-basics": "/asset-rewards/1.png",
+  "run-first-simulation": "/asset-rewards/13.png",
+  "first-lend-deposit": "/asset-rewards/3.png",
+  "supply-5k-lend": "/asset-rewards/5.png",
+  "first-borrow": "/asset-rewards/6.png",
+  "first-repay": "/asset-rewards/10.png",
+  "first-multiply": "/asset-rewards/7.png",
+  "first-deleverage": "/asset-rewards/15.png",
+  "favorite-market": "/asset-rewards/11.png",
+  "use-curve-position": "/asset-rewards/14.png",
+  "use-uniswap-v4-position": "/asset-rewards/9.png",
+  "share-referral-link": "/asset-rewards/12.png",
+  "invite-first-wallet": "/asset-rewards/4.png",
+  "bring-3-active-users": "/asset-rewards/8.png",
+}
+
+export function imageForTask(taskId: string): string | undefined {
+  return REWARDS_IMAGE_BY_TASK_ID[taskId]
 }
 
 export function resolveRewardsPromoTab(task: { id: string; tag: string }): RewardsPromoTabId {

@@ -1340,6 +1340,8 @@ const dict: TranslationDictionary = {
   "Rewards Earned": "المكافآت المكتسبة",
   Sandbox: "البيئة التجريبية",
   "Scenario price": "سعر السيناريو",
+  "Ask AI": "اسأل الذكاء الاصطناعي",
+  "Search markets…": "بحث في الأسواق…",
   "Search Avana": "البحث في Avana",
   "Search collateral pools, assets to borrow, and assets to lend.":
     "ابحث في مجمّعات الضمان وأصول الاقتراض وأصول الإقراض.",
@@ -1445,6 +1447,15 @@ const dict: TranslationDictionary = {
     "”آمن“ يعني أن هبوط ذلك الأصل وحده لا يمكن أن يصفّيك — تغطّي ضماناتك الأخرى الدين.",
   "How it works": "كيف يعمل",
   "Learn Avana": "تعرّف على Avana",
+  "Dashboard Positions": "مراكز لوحة التحكم",
+  "Available to use": "متاح للاستخدام",
+  "Available to deposit": "متاح للإيداع",
+  "against {pool}": "مقابل {pool}",
+  Locked: "مقفل",
+  "Merkl Rewards": "مكافآت Merkl",
+  "Next rewards": "المكافآت التالية",
+  "Open on Launch Date": "تُفتح في تاريخ الإطلاق",
+  "Previous rewards": "المكافآت السابقة",
 }
 
 export default dict
