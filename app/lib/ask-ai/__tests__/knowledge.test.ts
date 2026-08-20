@@ -15,6 +15,12 @@ const chunks: AskAIKnowledgeChunk[] = [
     content: "Multiply models leveraged collateral and debt.",
     tags: ["multiply", "leverage", "health factor"],
   },
+  {
+    key: "incidental",
+    title: "Risk controls",
+    content: "A generic risk control can mention Multiply once without being a relevant Multiply result.",
+    tags: ["risk"],
+  },
 ]
 
 describe("Ask AI knowledge retrieval", () => {

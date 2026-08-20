@@ -1,5 +1,6 @@
 import { calculateSimpleInterestAccrued, calculateTotalApy } from "@/app/lib/lend-engine"
 import { calculateMultiplyHealthFactor, calculateMultiplyLtv } from "@/app/lib/multiply-engine"
+import { derivePersistedUmbrellaPositionStatus } from "@/app/lib/umbrella-system/portfolio-mapper"
 
 const USD6 = 1_000_000
 const WAD = 1_000_000_000_000_000_000
@@ -62,12 +63,5 @@ export function deriveAskAIUmbrellaStatus(position: {
   slashedAmountUsd6?: string
   now: number
 }) {
-  const suppliedUsd = Number(position.suppliedUsd6 ?? "0") / USD6
-  const cooldownUsd = Number(position.cooldownAmountUsd6 ?? "0") / USD6
-  const slashedUsd = Number(position.slashedAmountUsd6 ?? "0") / USD6
-  if (suppliedUsd <= 0 || position.status === "closed") return slashedUsd > 0 ? "slashed" : "closed"
-  if (cooldownUsd <= 0) return "active"
-  if (position.withdrawalWindowEndsAt && position.now > position.withdrawalWindowEndsAt) return "cooldownExpired"
-  if (position.cooldownEndsAt && position.now >= position.cooldownEndsAt) return "readyToUnstake"
-  return cooldownUsd >= suppliedUsd ? "coolingDown" : "partiallyCooling"
+  return derivePersistedUmbrellaPositionStatus(position)
 }

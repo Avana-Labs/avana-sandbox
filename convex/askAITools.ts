@@ -1,5 +1,6 @@
 import { v } from "convex/values"
 import { ASK_AI_WALLET_REQUIRED } from "../app/lib/ask-ai/config"
+import type { AskAIMarketSource } from "../app/lib/ask-ai/providers/contracts"
 import {
   calculateLendProjection,
   calculateMultiplyStress,
@@ -200,4 +201,60 @@ export const markets = query({
       priceUsd: market.priceUsd,
     }))
   },
+})
+
+export async function readAskAIMarketSnapshots(
+  ctx: Pick<QueryCtx | MutationCtx, "db">,
+  {
+    sources,
+    kind,
+    limit,
+  }: {
+    sources?: AskAIMarketSource[]
+    kind?: "token_price" | "dex_pool" | "lending_market"
+    limit?: number
+  },
+) {
+  const boundedLimit = Math.min(Math.max(limit ?? 10, 1), 50)
+  const rows = sources
+    ? (
+        await Promise.all(
+          sources.map((source) =>
+            kind
+              ? ctx.db
+                  .query("askAIMarketSnapshots")
+                  .withIndex("by_source_kind_key", (q) => q.eq("source", source).eq("kind", kind))
+                  .take(boundedLimit)
+              : ctx.db
+                  .query("askAIMarketSnapshots")
+                  .withIndex("by_source_kind_key", (q) => q.eq("source", source))
+                  .take(boundedLimit),
+          ),
+        )
+      ).flat()
+    : await ctx.db.query("askAIMarketSnapshots").withIndex("by_fetched_at").order("desc").take(boundedLimit)
+  return rows
+    .filter((row) => !kind || row.kind === kind)
+    .sort((left, right) => right.fetchedAt - left.fetchedAt)
+    .slice(0, boundedLimit)
+}
+
+export const marketSnapshots = query({
+  args: {
+    sources: v.optional(
+      v.array(
+        v.union(
+          v.literal("coingecko"),
+          v.literal("defillama"),
+          v.literal("uniswap"),
+          v.literal("curve"),
+          v.literal("balancer"),
+          v.literal("aave"),
+        ),
+      ),
+    ),
+    kind: v.optional(v.union(v.literal("token_price"), v.literal("dex_pool"), v.literal("lending_market"))),
+    limit: v.optional(v.number()),
+  },
+  handler: readAskAIMarketSnapshots,
 })
