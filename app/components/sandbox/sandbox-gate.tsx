@@ -1,6 +1,7 @@
 "use client"
 
 import { Component, lazy, Suspense, type ReactNode } from "react"
+import { usePathname } from "next/navigation"
 import { Header } from "@/app/components/header"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useHydrated, useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
@@ -78,9 +79,14 @@ function GateUnavailable({ variant = "error" }: { variant?: "error" | "offline" 
 
 /** Every wallet stays inside the gate until Convex confirms completed onboarding. */
 export function SandboxGate({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
   const hydrated = useHydrated()
   const { authedWallet, isSignedIn } = useSiweAuth()
   const { active: walletActive } = useWalletGate()
+  // Ask AI deliberately remains public during the MVP: general Avana knowledge and
+  // market questions do not require a wallet. Personal tools still authorize through
+  // Convex and return the wallet-required response when no SIWE identity is present.
+  if (pathname === "/ask" || pathname.startsWith("/ask/")) return <>{children}</>
   if (IS_DEV_SHORTCUT_MODE) return <>{children}</>
   if (!hasConvexClient) return <GateUnavailable variant="offline" />
   // The SIWE session is read from a client-only store that reads as signed-out on the
