@@ -11,6 +11,7 @@
 import type * as allocation from "../allocation.js";
 import type * as askAI from "../askAI.js";
 import type * as askAIAgent from "../askAIAgent.js";
+import type * as askAIAttachments from "../askAIAttachments.js";
 import type * as askAIIngestion from "../askAIIngestion.js";
 import type * as askAIRag from "../askAIRag.js";
 import type * as askAITelemetry from "../askAITelemetry.js";
@@ -90,6 +91,7 @@ declare const fullApi: ApiFromModules<{
   allocation: typeof allocation;
   askAI: typeof askAI;
   askAIAgent: typeof askAIAgent;
+  askAIAttachments: typeof askAIAttachments;
   askAIIngestion: typeof askAIIngestion;
   askAIRag: typeof askAIRag;
   askAITelemetry: typeof askAITelemetry;
