@@ -3,6 +3,8 @@ import { paginationOptsValidator } from "convex/server"
 import { v } from "convex/values"
 import { components } from "./_generated/api"
 import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
+import { ASK_AI_DOMAIN_REJECTION } from "../app/lib/ask-ai/config"
+import { classifyAskAIDomain } from "../app/lib/ask-ai/domain-gate"
 
 type AskAICtx = QueryCtx | MutationCtx
 
@@ -72,13 +74,22 @@ export const addUserMessage = mutation({
     if (thread.status !== "active") throw new Error("Thread is archived")
     const text = prompt.trim()
     if (!text || text.length > 2_000) throw new Error("Message must contain 1 to 2000 characters")
+    const domain = classifyAskAIDomain(text)
     const saved = await saveMessage(ctx, components.agent, {
       threadId,
       userId: ownerSubject,
       prompt: text,
     })
+    if (!domain.allowed) {
+      await saveMessage(ctx, components.agent, {
+        threadId,
+        userId: ownerSubject,
+        promptMessageId: saved.messageId,
+        message: { role: "assistant", content: ASK_AI_DOMAIN_REJECTION },
+      })
+    }
     await ctx.db.patch(thread._id, { updatedAt: Date.now() })
-    return saved
+    return { ...saved, domain }
   },
 })
 
