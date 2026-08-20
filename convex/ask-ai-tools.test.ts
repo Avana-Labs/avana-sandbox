@@ -2,6 +2,7 @@
 import { convexTest } from "convex-test"
 import { describe, expect, test } from "vitest"
 import { api } from "./_generated/api"
+import { marketFreshness } from "./askAITools"
 import schema from "./schema"
 
 const modules = import.meta.glob("./**/*.*s")
@@ -111,6 +112,13 @@ describe("Ask AI authenticated portfolio tools", () => {
 })
 
 describe("Ask AI normalized market tools", () => {
+  test("rejects provider values after their data-kind freshness window", () => {
+    const now = 2_000_000
+    expect(marketFreshness("token_price", now - 19 * 60_000, now)).toBe("fresh")
+    expect(marketFreshness("token_price", now - 21 * 60_000, now)).toBe("stale")
+    expect(marketFreshness("dex_pool", now - 31 * 60_000, now)).toBe("stale")
+  })
+
   test("searches canonical markets and labels provider freshness", async () => {
     const t = convexTest(schema, modules)
     const now = Date.now()

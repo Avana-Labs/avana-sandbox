@@ -357,6 +357,7 @@ export async function readAskAIMarketSnapshots(
     : await ctx.db.query("askAIMarketSnapshots").withIndex("by_fetched_at").order("desc").take(boundedLimit)
   return rows
     .filter((row) => !kind || row.kind === kind)
+    .filter((row) => marketFreshness(row.kind, row.sourceUpdatedAt ?? row.fetchedAt, Date.now()) === "fresh")
     .sort((left, right) => right.fetchedAt - left.fetchedAt)
     .slice(0, boundedLimit)
 }
@@ -381,14 +382,18 @@ export const marketSnapshots = query({
   handler: readAskAIMarketSnapshots,
 })
 
-function marketFreshness(kind: "token_price" | "dex_pool" | "lending_market", at: number) {
+export function marketFreshness(
+  kind: "token_price" | "dex_pool" | "lending_market",
+  at: number,
+  now = Date.now(),
+) {
   const threshold =
     kind === "dex_pool"
       ? ASK_AI_CONFIG.freshness.poolMetricsStaleAfterMs
       : kind === "lending_market"
         ? ASK_AI_CONFIG.freshness.aaveMarketStaleAfterMs
         : ASK_AI_CONFIG.freshness.tokenPriceStaleAfterMs
-  return Date.now() - at <= threshold ? ("fresh" as const) : ("stale" as const)
+  return now - at <= threshold ? ("fresh" as const) : ("stale" as const)
 }
 
 export const searchMarkets = query({
@@ -413,6 +418,7 @@ export const searchMarkets = query({
         const haystack = `${snapshot.key} ${snapshot.source}`.toLowerCase()
         return terms.some((term) => haystack.includes(term))
       })
+      .filter((snapshot) => marketFreshness(snapshot.kind, snapshot.sourceUpdatedAt ?? snapshot.fetchedAt) === "fresh")
       .slice(0, boundedLimit)
       .map((snapshot) => ({
         source: snapshot.source,
@@ -441,6 +447,7 @@ export const poolMetrics = query({
     const aliases = new Set([normalizedId, market?.slug.toLowerCase(), market?.symbol.toLowerCase()].filter(Boolean))
     const providerData = snapshots
       .filter((snapshot) => snapshot.kind === "dex_pool" && aliases.has(snapshot.key.toLowerCase()))
+      .filter((snapshot) => marketFreshness("dex_pool", snapshot.sourceUpdatedAt ?? snapshot.fetchedAt) === "fresh")
       .map((snapshot) => ({
         source: snapshot.source,
         data: snapshot.payload,

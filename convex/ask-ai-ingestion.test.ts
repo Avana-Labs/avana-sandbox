@@ -21,6 +21,7 @@ describe("Ask AI market ingestion", () => {
 
   test("upserts normalized records and exposes a bounded source-aware read", async () => {
     const t = convexTest(schema, modules)
+    const now = Date.now()
     await t.mutation(internal.askAIIngestion.upsertRecordsMutation, {
       records: [
         {
@@ -28,7 +29,7 @@ describe("Ask AI market ingestion", () => {
           kind: "token_price",
           key: "ethereum",
           payload: { usd: 4_000 },
-          fetchedAt: 100,
+          fetchedAt: now - 100,
         },
       ],
     })
@@ -39,15 +40,15 @@ describe("Ask AI market ingestion", () => {
           kind: "token_price",
           key: "ethereum",
           payload: { usd: 4_321.5 },
-          sourceUpdatedAt: 150,
-          fetchedAt: 200,
+          sourceUpdatedAt: now - 50,
+          fetchedAt: now,
         },
         {
           source: "curve",
           kind: "dex_pool",
           key: "0xpool",
           payload: { totalLiquidity: 1_000_000 },
-          fetchedAt: 190,
+          fetchedAt: now - 10,
         },
       ],
     })
@@ -63,8 +64,8 @@ describe("Ask AI market ingestion", () => {
         source: "coingecko",
         key: "ethereum",
         payload: { usd: 4_321.5 },
-        sourceUpdatedAt: 150,
-        fetchedAt: 200,
+        sourceUpdatedAt: now - 50,
+        fetchedAt: now,
       }),
     ])
   })
