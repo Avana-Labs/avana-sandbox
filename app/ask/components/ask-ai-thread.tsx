@@ -336,12 +336,16 @@ export function AskAIThread({
   onToggleThreads,
   threadId,
   usage,
+  canLoadMoreMessages,
+  onLoadMoreMessages,
 }: {
   title: string
   threadsOpen: boolean
   onToggleThreads: () => void
   threadId: string | null
   usage?: AskAIUsage
+  canLoadMoreMessages: boolean
+  onLoadMoreMessages: () => void
 }) {
   const isEmpty = useAuiState((state) => state.thread.messages.length === 0)
   return (
@@ -377,6 +381,15 @@ export function AskAIThread({
               </ThreadPrimitive.Empty>
 
               <div className="mb-14 flex flex-col gap-y-6 empty:hidden">
+                {canLoadMoreMessages ? (
+                  <button
+                    type="button"
+                    onClick={onLoadMoreMessages}
+                    className="mx-auto rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                  >
+                    Load earlier messages
+                  </button>
+                ) : null}
                 <ThreadPrimitive.Messages components={messageComponents} />
               </div>
 

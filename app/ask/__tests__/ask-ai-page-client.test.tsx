@@ -5,6 +5,7 @@ import { AskAIPageClient } from "../ask-ai-page-client"
 
 vi.mock("convex/react", () => ({
   useQuery: () => undefined,
+  usePaginatedQuery: () => ({ results: [], status: "Exhausted", loadMore: vi.fn() }),
   useMutation: () => async () => ({ threadId: "thread-test", title: "New Chat" }),
 }))
 

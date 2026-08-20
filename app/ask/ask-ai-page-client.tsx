@@ -7,7 +7,7 @@ import {
   type ThreadMessage,
   useExternalStoreRuntime,
 } from "@assistant-ui/react"
-import { useMutation, useQuery } from "convex/react"
+import { useMutation, usePaginatedQuery, useQuery } from "convex/react"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { AskAIChatEvent } from "@/app/lib/ask-ai/chat-protocol"
 import type { AskAIUsage } from "@/app/lib/ask-ai/chat-protocol"
@@ -74,21 +74,30 @@ export function AskAIPageClient() {
   )
   const [streamTurn, setStreamTurn] = useState<StreamTurn | null>(null)
   const abortController = useRef<AbortController | null>(null)
-  const threadsQuery = useQuery(api.askAI.list, {})
-  const threads = threadsQuery ?? []
-  const allThreadsQuery = useQuery(api.askAI.list, { includeArchived: true })
-  const archivedThreads = (allThreadsQuery ?? []).filter((thread) => thread.status === "archived")
+  const {
+    results: threads,
+    status: threadPageStatus,
+    loadMore: loadMoreThreads,
+  } = usePaginatedQuery(api.askAI.listPage, { status: "active" }, { initialNumItems: 30 })
+  const {
+    results: archivedThreads,
+    status: archivedPageStatus,
+    loadMore: loadMoreArchivedThreads,
+  } = usePaginatedQuery(api.askAI.listPage, { status: "archived" }, { initialNumItems: 20 })
   const resolvedActiveThreadId = threads.some((thread) => thread.threadId === activeThreadId) ? activeThreadId : null
   const quota = useQuery(api.askAI.quota, {})
   const createThread = useMutation(api.askAI.create)
   const renameThread = useMutation(api.askAI.rename)
   const archiveThread = useMutation(api.askAI.archive)
   const unarchiveThread = useMutation(api.askAI.unarchive)
-  const messagePage = useQuery(
+  const {
+    results: messageResults,
+    status: messagePageStatus,
+    loadMore: loadMoreMessages,
+  } = usePaginatedQuery(
     api.askAI.messages,
-    resolvedActiveThreadId
-      ? { threadId: resolvedActiveThreadId, paginationOpts: { numItems: 50, cursor: null } }
-      : "skip",
+    resolvedActiveThreadId ? { threadId: resolvedActiveThreadId } : "skip",
+    { initialNumItems: 50 },
   )
 
   useEffect(() => {
@@ -100,10 +109,10 @@ export function AskAIPageClient() {
     return () => desktop.removeEventListener("change", sync)
   }, [])
   useEffect(() => {
-    if (threadsQuery === undefined) return
+    if (threadPageStatus === "LoadingFirstPage") return
     if (resolvedActiveThreadId) return
     setActiveThreadId(threads[0]?.threadId ?? null)
-  }, [resolvedActiveThreadId, threads, threadsQuery])
+  }, [resolvedActiveThreadId, threadPageStatus, threads])
   useEffect(() => {
     if (activeThreadId) window.sessionStorage.setItem(ACTIVE_THREAD_STORAGE_KEY, activeThreadId)
     else window.sessionStorage.removeItem(ACTIVE_THREAD_STORAGE_KEY)
@@ -112,7 +121,7 @@ export function AskAIPageClient() {
 
   const persistedMessages = useMemo<ThreadMessage[]>(
     () =>
-      (messagePage?.page ?? []).flatMap((message): ThreadMessage[] => {
+      messageResults.flatMap((message): ThreadMessage[] => {
         const common = {
           id: message.id,
           content: [{ type: "text" as const, text: message.text }],
@@ -135,7 +144,7 @@ export function AskAIPageClient() {
           ]
         return []
       }),
-    [messagePage?.page],
+    [messageResults],
   )
 
   useEffect(() => {
@@ -347,11 +356,15 @@ export function AskAIPageClient() {
             setActiveThreadId(threadId)
           }}
           quota={quota}
+          canLoadMore={threadPageStatus === "CanLoadMore"}
+          onLoadMore={() => loadMoreThreads(30)}
+          canLoadMoreArchived={archivedPageStatus === "CanLoadMore"}
+          onLoadMoreArchived={() => loadMoreArchivedThreads(20)}
         />
         <AskAIThread
           title={
             threads.find((thread) => thread.threadId === resolvedActiveThreadId)?.title ??
-            (threadsQuery === undefined ? "Loading…" : "New Chat")
+            (threadPageStatus === "LoadingFirstPage" ? "Loading…" : "New Chat")
           }
           threadsOpen={threadsOpen}
           onToggleThreads={() => setThreadsOpen((open) => !open)}
@@ -359,12 +372,14 @@ export function AskAIPageClient() {
           usage={
             streamTurn?.usage ??
             (
-              (messagePage?.page ?? []).findLast(
+              messageResults.findLast(
                 (message) =>
                   message.role === "assistant" && Boolean((message.richParts as PersistedRichParts | undefined)?.usage),
               )?.richParts as PersistedRichParts | undefined
             )?.usage
           }
+          canLoadMoreMessages={messagePageStatus === "CanLoadMore"}
+          onLoadMoreMessages={() => loadMoreMessages(50)}
         />
       </main>
     </AssistantRuntimeProvider>
