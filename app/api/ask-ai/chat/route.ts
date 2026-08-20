@@ -139,6 +139,7 @@ export async function POST(request: Request) {
         if (turn.retrievalChunks.length > 0) send({ type: "retrieval", chunks: turn.retrievalChunks })
         if (turn.sources.length > 0) send({ type: "sources", sources: turn.sources })
         if (turn.visual) send({ type: "visual", visual: turn.visual })
+        if (turn.financialResult) send({ type: "financial-result", result: turn.financialResult })
 
         let fullText = ""
         let usage: { inputTokens: number; outputTokens: number; totalTokens: number } | undefined
@@ -179,6 +180,7 @@ export async function POST(request: Request) {
             retrievalChunks: turn.retrievalChunks,
             sources: turn.sources,
             visual: turn.visual,
+            financialResult: turn.financialResult,
             usage,
           },
         })

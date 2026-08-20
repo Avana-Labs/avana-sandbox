@@ -34,6 +34,7 @@ type PersistedRichParts = {
   retrievalChunks?: unknown[]
   sources?: unknown[]
   visual?: unknown
+  financialResult?: unknown
   usage?: AskAIUsage
 }
 
@@ -63,6 +64,7 @@ function persistedAssistantParts(messageId: string, text: string, rich?: Persist
   }
   if (rich?.sources?.length) parts.push({ type: "data", name: "sources", data: rich.sources })
   if (rich?.visual) parts.push({ type: "data", name: "chart", data: rich.visual })
+  if (rich?.financialResult) parts.push({ type: "data", name: "financial-result", data: rich.financialResult })
   parts.push({ type: "text", text })
   return parts
 }
@@ -225,6 +227,11 @@ export function AskAIPageClient() {
                 return { ...current, parts: [...current.parts, { type: "data", name: "sources", data: event.sources }] }
               if (event.type === "visual")
                 return { ...current, parts: [...current.parts, { type: "data", name: "chart", data: event.visual }] }
+              if (event.type === "financial-result")
+                return {
+                  ...current,
+                  parts: [...current.parts, { type: "data", name: "financial-result", data: event.result }],
+                }
               if (event.type === "usage") return { ...current, usage: event.usage }
               if (event.type === "text-delta") {
                 const text = current.text + event.delta

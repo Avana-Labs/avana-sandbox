@@ -220,6 +220,15 @@ export const beginTurn = mutation({
     let retrievalChunks: Array<{ id: string; source: string; locator: string; score: number; text: string }> = []
     let sources: Array<{ domain: string; title: string; url?: string }> = []
     let visual: { type: "chart"; label: string; value: string; points: number[]; delta?: string } | undefined
+    let financialResult:
+      | {
+          kind: "portfolio" | "borrow_capacity" | "position_risk" | "market" | "pool"
+          title: string
+          asOf?: number
+          freshness?: "fresh" | "stale" | "unavailable"
+          metrics: Array<{ label: string; value: string; after?: string }>
+        }
+      | undefined
     if (domain.allowed) {
       if (["position", "risk", "borrow_simulation", "stress_test"].includes(domain.intent)) {
         toolName = "portfolio"
@@ -230,6 +239,17 @@ export const beginTurn = mutation({
         if (portfolio.walletRequired || engines.walletRequired) {
           response = ASK_AI_WALLET_REQUIRED
         } else if (domain.intent === "borrow_simulation") {
+          if (engines.borrow)
+            financialResult = {
+              kind: "borrow_capacity",
+              title: "Borrow capacity",
+              asOf: engines.borrow.at,
+              metrics: [
+                { label: "Available to borrow", value: usd(engines.borrow.availableBorrowCapacityUsd) },
+                { label: "Currently borrowed", value: usd(engines.borrow.totalBorrowedUsd) },
+                { label: "Health factor", value: engines.borrow.healthFactor?.toFixed(2) ?? "Not applicable" },
+              ],
+            }
           response = engines.borrow
             ? `Your Credit Engine snapshot shows ${usd(engines.borrow.availableBorrowCapacityUsd)} available to borrow, ${usd(engines.borrow.totalBorrowedUsd)} currently borrowed, and health factor ${engines.borrow.healthFactor?.toFixed(2) ?? "not applicable"}. This is read-only; no borrow was submitted.`
             : "Your wallet has no Credit Engine risk snapshot yet, so borrowing capacity is unavailable."
@@ -240,11 +260,44 @@ export const beginTurn = mutation({
           response = stressedHealth.length
             ? `With the requested default 20% collateral-price shock, the Multiply Engine's lowest projected health factor is ${Math.min(...stressedHealth).toFixed(2)} across ${stressedHealth.length} modeled position${stressedHealth.length === 1 ? "" : "s"}. Borrow stress remains unavailable unless the prompt supplies a supported collateral shock mapped to a Credit Engine position.`
             : "No Multiply position had complete risk parameters for the 20% stress calculation. I did not invent missing liquidation thresholds."
+          if (stressedHealth.length)
+            financialResult = {
+              kind: "position_risk",
+              title: "Collateral stress test",
+              asOf: engines.asOf,
+              metrics: [
+                { label: "Collateral shock", value: "−20%" },
+                { label: "Lowest projected health factor", value: Math.min(...stressedHealth).toFixed(2) },
+                { label: "Positions modeled", value: String(stressedHealth.length) },
+              ],
+            }
         } else if (domain.intent === "risk") {
           const cooling = engines.umbrella.filter((position) => position.status !== "active").length
           response = `Current engine risk: Credit Engine health factor ${engines.borrow?.healthFactor?.toFixed(2) ?? "unavailable"}; ${engines.multiply.length} Multiply position${engines.multiply.length === 1 ? "" : "s"}; and ${cooling} Umbrella position${cooling === 1 ? "" : "s"} outside active status. Data is persisted and read-only.`
+          financialResult = {
+            kind: "position_risk",
+            title: "Position risk",
+            asOf: engines.asOf,
+            metrics: [
+              { label: "Credit Engine health factor", value: engines.borrow?.healthFactor?.toFixed(2) ?? "Unavailable" },
+              { label: "Multiply positions", value: String(engines.multiply.length) },
+              { label: "Umbrella positions requiring attention", value: String(cooling) },
+            ],
+          }
         } else {
           response = `I found your current Avana balances: Lend ${usd(portfolio.totals.lendUsd)}, Borrow ${usd(portfolio.totals.borrowUsd)}, Multiply ${usd(portfolio.totals.multiplyUsd)}, Umbrella ${usd(portfolio.totals.umbrellaUsd)}, and liquid funds ${usd(portfolio.totals.liquidUsd)}. Engine detail includes ${engines.lend.length} Lend, ${engines.multiply.length} Multiply, and ${engines.umbrella.length} Umbrella position${engines.umbrella.length === 1 ? "" : "s"}. I did not submit a transaction.`
+          financialResult = {
+            kind: "portfolio",
+            title: "Avana portfolio",
+            asOf: portfolio.asOf,
+            metrics: [
+              { label: "Lend", value: usd(portfolio.totals.lendUsd) },
+              { label: "Borrow", value: usd(portfolio.totals.borrowUsd) },
+              { label: "Multiply", value: usd(portfolio.totals.multiplyUsd) },
+              { label: "Umbrella", value: usd(portfolio.totals.umbrellaUsd) },
+              { label: "Liquid funds", value: usd(portfolio.totals.liquidUsd) },
+            ],
+          }
         }
       } else {
         const marketKind =
@@ -292,6 +345,22 @@ export const beginTurn = mutation({
               points: prices,
             }
           }
+          const latest = marketSnapshots[0]
+          if (latest) {
+            const at = latest.sourceUpdatedAt ?? latest.fetchedAt
+            const staleAfter = latest.kind === "dex_pool" ? 30 * 60 * 1_000 : 20 * 60 * 1_000
+            const metrics = Object.entries(latest.payload)
+              .filter(([, value]) => typeof value === "number" || typeof value === "string")
+              .slice(0, 6)
+              .map(([label, value]) => ({ label: label.replace(/([A-Z])/g, " $1").trim(), value: String(value) }))
+            financialResult = {
+              kind: latest.kind === "dex_pool" ? "pool" : "market",
+              title: latest.key,
+              asOf: at,
+              freshness: Date.now() - at <= staleAfter ? "fresh" : "stale",
+              metrics,
+            }
+          }
         } else if (retrievalChunks.length > 0) {
           toolName = "knowledge"
         }
@@ -326,6 +395,7 @@ export const beginTurn = mutation({
       retrievalChunks,
       sources,
       visual,
+      financialResult,
     }
   },
 })
