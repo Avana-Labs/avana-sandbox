@@ -1,5 +1,7 @@
+import { storeFile } from "@convex-dev/agent"
 import { v } from "convex/values"
-import { mutation, query } from "./_generated/server"
+import { components, internal } from "./_generated/api"
+import { action, internalMutation, internalQuery, mutation, query } from "./_generated/server"
 
 const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024
 const ALLOWED_MEDIA_TYPES = new Set([
@@ -84,5 +86,65 @@ export const remove = mutation({
     if (!attachment || attachment.ownerSubject !== ownerSubject) throw new Error("Attachment not found")
     await ctx.storage.delete(attachment.storageId)
     await ctx.db.delete(attachmentId)
+  },
+})
+
+export const getForProcessing = internalQuery({
+  args: { attachmentId: v.id("askAIAttachments") },
+  handler: async (ctx, { attachmentId }) => {
+    const ownerSubject = await requireSubject(ctx)
+    const attachment = await ctx.db.get(attachmentId)
+    if (!attachment || attachment.ownerSubject !== ownerSubject) throw new Error("Attachment not found")
+    return attachment
+  },
+})
+
+export const markProcessed = internalMutation({
+  args: {
+    attachmentId: v.id("askAIAttachments"),
+    agentFileId: v.optional(v.string()),
+    extractedText: v.optional(v.string()),
+    error: v.optional(v.string()),
+  },
+  handler: async (ctx, { attachmentId, agentFileId, extractedText, error }) => {
+    const ownerSubject = await requireSubject(ctx)
+    const attachment = await ctx.db.get(attachmentId)
+    if (!attachment || attachment.ownerSubject !== ownerSubject) throw new Error("Attachment not found")
+    await ctx.db.patch(attachmentId, {
+      agentFileId,
+      extractedText,
+      error,
+      status: error ? "failed" : "processed",
+      updatedAt: Date.now(),
+    })
+  },
+})
+
+export const process = action({
+  args: { attachmentId: v.id("askAIAttachments") },
+  handler: async (ctx, { attachmentId }): Promise<{ status: "processed"; agentFileId: string }> => {
+    const attachment = await ctx.runQuery(internal.askAIAttachments.getForProcessing, { attachmentId })
+    try {
+      const url = await ctx.storage.getUrl(attachment.storageId)
+      if (!url) throw new Error("Uploaded file not found")
+      const response = await fetch(url)
+      if (!response.ok) throw new Error("Uploaded file could not be read")
+      const blob = await response.blob()
+      const stored = await storeFile(ctx, components.agent, blob, { filename: attachment.name })
+      const extractedText =
+        attachment.mediaType.startsWith("text/") || attachment.mediaType === "application/json"
+          ? (await blob.text()).slice(0, 100_000)
+          : undefined
+      await ctx.runMutation(internal.askAIAttachments.markProcessed, {
+        attachmentId,
+        agentFileId: stored.file.fileId,
+        extractedText,
+      })
+      return { status: "processed", agentFileId: stored.file.fileId }
+    } catch (error) {
+      const message = error instanceof Error ? error.message.slice(0, 500) : "Attachment processing failed"
+      await ctx.runMutation(internal.askAIAttachments.markProcessed, { attachmentId, error: message })
+      throw error
+    }
   },
 })
