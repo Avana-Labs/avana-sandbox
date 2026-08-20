@@ -4,6 +4,7 @@ import {
   AssistantRuntimeProvider,
   type AttachmentAdapter,
   type AppendMessage,
+  type ExternalThreadQueueAdapter,
   type ThreadAssistantMessagePart,
   type ThreadMessage,
   useExternalStoreRuntime,
@@ -88,6 +89,9 @@ export function AskAIPageClient() {
   const archiveThread = useMutation(api.askAI.archive)
   const unarchiveThread = useMutation(api.askAI.unarchive)
   const generateTurn = useAction(api.askAIAgent.generateTurn)
+  const enqueueTurn = useMutation(api.askAI.enqueueTurn)
+  const cancelQueuedTurn = useMutation(api.askAI.cancelQueuedTurn)
+  const retryFailedTurn = useMutation(api.askAI.retryFailedTurn)
   const generateUploadUrl = useMutation(api.askAIAttachments.generateUploadUrl)
   const registerAttachment = useMutation(api.askAIAttachments.register)
   const processAttachment = useAction(api.askAIAttachments.process)
@@ -96,10 +100,13 @@ export function AskAIPageClient() {
     results: messageResults,
     status: messagePageStatus,
     loadMore: loadMoreMessages,
-  } = useUIMessages(
-    api.askAI.messages,
+  } = useUIMessages(api.askAI.messages, resolvedActiveThreadId ? { threadId: resolvedActiveThreadId } : "skip", {
+    initialNumItems: 50,
+    stream: true,
+  })
+  const turnQueue = useQuery(
+    api.askAI.turnQueue,
     resolvedActiveThreadId ? { threadId: resolvedActiveThreadId } : "skip",
-    { initialNumItems: 50, stream: true },
   )
 
   useEffect(() => {
@@ -166,14 +173,7 @@ export function AskAIPageClient() {
         ],
       }),
     }),
-    [
-      createThread,
-      generateUploadUrl,
-      processAttachment,
-      registerAttachment,
-      removeAttachment,
-      resolvedActiveThreadId,
-    ],
+    [createThread, generateUploadUrl, processAttachment, registerAttachment, removeAttachment, resolvedActiveThreadId],
   )
 
   const persistedMessages = useMemo<ThreadMessage[]>(
@@ -211,37 +211,42 @@ export function AskAIPageClient() {
   }, [createThread])
 
   const sendPrompt = useCallback(
-    async (prompt: string, retryPromptMessageId?: string) => {
-      if (!prompt || pendingTurn) return
+    async (prompt: string) => {
+      if (!prompt) return
       let threadId = resolvedActiveThreadId
       if (!threadId) {
         const created = await createThread({})
         threadId = created.threadId
         setActiveThreadId(threadId)
       }
-      const turnId = crypto.randomUUID()
-      setPendingTurn({ id: turnId, prompt, startedAt: Date.now() })
-      try {
-        await generateTurn({
-          threadId,
-          prompt,
-          retryPromptMessageId,
-          attachmentIds: (messageAttachments.current ?? []) as Id<"askAIAttachments">[],
-        })
-        setPendingTurn((current) => (current?.id === turnId ? null : current))
-      } catch (error) {
+      await enqueueTurn({
+        threadId,
+        prompt,
+        attachmentIds: (messageAttachments.current ?? []) as Id<"askAIAttachments">[],
+      })
+    },
+    [createThread, enqueueTurn, resolvedActiveThreadId],
+  )
+
+  useEffect(() => {
+    const next = turnQueue?.find((turn) => turn.status === "queued")
+    if (!next || pendingTurn || !resolvedActiveThreadId) return
+    const turnId = String(next.id)
+    setPendingTurn({ id: turnId, prompt: next.prompt, startedAt: Date.now() })
+    void generateTurn({
+      threadId: resolvedActiveThreadId,
+      prompt: next.prompt,
+      retryPromptMessageId: next.promptMessageId,
+    })
+      .then(() => setPendingTurn((current) => (current?.id === turnId ? null : current)))
+      .catch((error) =>
         setPendingTurn((current) =>
           current?.id === turnId
-            ? {
-                ...current,
-                error: error instanceof Error ? error.message : "Ask AI failed",
-              }
+            ? { ...current, error: error instanceof Error ? error.message : "Ask AI failed" }
             : current,
-        )
-      }
-    },
-    [createThread, generateTurn, pendingTurn, resolvedActiveThreadId],
-  )
+        ),
+      )
+  }, [generateTurn, pendingTurn, resolvedActiveThreadId, turnQueue])
 
   const handleNewMessage = useCallback(
     async (message: AppendMessage) => {
@@ -255,6 +260,27 @@ export function AskAIPageClient() {
       messageAttachments.current = []
     },
     [sendPrompt],
+  )
+
+  const queueAdapter = useMemo<ExternalThreadQueueAdapter>(
+    () => ({
+      items: (turnQueue ?? [])
+        .filter((turn) => turn.status === "queued")
+        .map((turn) => ({
+          id: String(turn.id),
+          prompt: turn.prompt,
+          parts: [{ type: "text" as const, text: turn.prompt }],
+        })),
+      steerItems: [],
+      enqueue: (message) => void handleNewMessage(message),
+      steer: (message) => void handleNewMessage(message),
+      move: () => undefined,
+      edit: (turnId, message) => {
+        void cancelQueuedTurn({ turnId: turnId as Id<"askAITurns"> }).then(() => handleNewMessage(message))
+      },
+      remove: (turnId) => void cancelQueuedTurn({ turnId: turnId as Id<"askAITurns"> }),
+    }),
+    [cancelQueuedTurn, handleNewMessage, turnQueue],
   )
 
   const messages = useMemo<readonly ThreadMessage[]>(() => {
@@ -293,10 +319,10 @@ export function AskAIPageClient() {
     onNew: handleNewMessage,
     onReload: async () => {
       if (!pendingTurn?.error) return
-      const prompt = pendingTurn.prompt
+      await retryFailedTurn({ turnId: pendingTurn.id as Id<"askAITurns"> })
       setPendingTurn(null)
-      await sendPrompt(prompt)
     },
+    queue: queueAdapter,
     adapters: { attachments: attachmentAdapter },
     suggestions: [
       { prompt: "How much can I borrow?" },
@@ -360,6 +386,11 @@ export function AskAIPageClient() {
           }
           canLoadMoreMessages={messagePageStatus === "CanLoadMore"}
           onLoadMoreMessages={() => loadMoreMessages(50)}
+          queue={(turnQueue ?? []).filter((turn) => turn.status === "queued")}
+          runningPrompt={pendingTurn?.error ? undefined : pendingTurn?.prompt}
+          onCancelQueued={async (turnId) => {
+            await cancelQueuedTurn({ turnId: turnId as Id<"askAITurns"> })
+          }}
         />
       </main>
     </AssistantRuntimeProvider>

@@ -29,6 +29,7 @@ import {
   ComposerVoiceButton,
 } from "@/components/elements/composer"
 import { GenerationLoader } from "@/components/elements/loading-state"
+import { MessageQueue } from "@/components/elements/message-queue"
 import { RetrievalChunks, type RetrievalChunk } from "@/components/elements/retrieval-chunks"
 import { Sources, type Source } from "@/components/elements/sources"
 import { StreamingText } from "@/components/elements/streaming-text"
@@ -244,7 +245,9 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
   const registerAttachment = useMutation(api.askAIAttachments.register)
   const transcribeRecording = useAction(api.askAIVoice.transcribeRecording)
   const voiceSupported =
-    typeof window !== "undefined" && typeof MediaRecorder !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia)
+    typeof window !== "undefined" &&
+    typeof MediaRecorder !== "undefined" &&
+    Boolean(navigator.mediaDevices?.getUserMedia)
 
   const toggleVoice = async () => {
     if (recording) {
@@ -285,7 +288,11 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
       recorder.start()
     } catch (error) {
       setRecording(false)
-      setVoiceError(error instanceof DOMException && error.name === "NotAllowedError" ? "Microphone access was denied." : "Voice input could not start.")
+      setVoiceError(
+        error instanceof DOMException && error.name === "NotAllowedError"
+          ? "Microphone access was denied."
+          : "Voice input could not start.",
+      )
     }
   }
 
@@ -373,6 +380,9 @@ export function AskAIThread({
   usage,
   canLoadMoreMessages,
   onLoadMoreMessages,
+  queue,
+  runningPrompt,
+  onCancelQueued,
 }: {
   title: string
   threadsOpen: boolean
@@ -381,6 +391,9 @@ export function AskAIThread({
   usage?: AskAIUsage
   canLoadMoreMessages: boolean
   onLoadMoreMessages: () => void
+  queue: readonly { id: string; prompt: string }[]
+  runningPrompt?: string
+  onCancelQueued: (turnId: string) => void | Promise<void>
 }) {
   const isEmpty = useAuiState((state) => state.thread.messages.length === 0)
   return (
@@ -433,6 +446,14 @@ export function AskAIThread({
                   isEmpty ? "" : "sticky bottom-0 mt-auto rounded-t-3xl"
                 }`}
               >
+                {runningPrompt && queue.length ? (
+                  <MessageQueue
+                    running={runningPrompt}
+                    queued={queue.map((turn) => ({ id: turn.id, text: turn.prompt }))}
+                    onCancel={(turnId) => void onCancelQueued(turnId)}
+                    className="mx-auto max-w-full"
+                  />
+                ) : null}
                 <Composer usage={usage} />
                 <ThreadPrimitive.Empty>
                   <div className="flex w-full flex-wrap items-center justify-center gap-2 px-4">

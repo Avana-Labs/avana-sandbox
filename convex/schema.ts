@@ -1964,11 +1964,18 @@ export default defineSchema({
     ownerSubject: v.string(),
     promptMessageId: v.string(),
     prompt: v.string(),
-    status: v.union(v.literal("running"), v.literal("failed"), v.literal("complete")),
+    status: v.union(
+      v.literal("queued"),
+      v.literal("running"),
+      v.literal("failed"),
+      v.literal("cancelled"),
+      v.literal("complete"),
+    ),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_prompt_message", ["promptMessageId"])
+    .index("by_thread_status_created", ["threadId", "status", "createdAt"])
     .index("by_owner_updated", ["ownerSubject", "updatedAt"]),
 
   askAIFeedback: defineTable({
