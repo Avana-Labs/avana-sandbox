@@ -5,6 +5,7 @@ import { describe, expect, test } from "vitest"
 import { api, internal } from "./_generated/api"
 import { convexTest } from "convex-test"
 import schema from "./schema"
+import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
 
 const modules = import.meta.glob("./**/*.*s")
 
@@ -168,8 +169,8 @@ describe("Ask AI generated-turn lifecycle", () => {
 
     await expect(t.withIdentity({ subject: ownerSubject }).query(api.askAI.quota, {})).resolves.toMatchObject({
       tokensUsed: 150,
-      tokenLimit: 30_000,
-      tokensRemaining: 29_850,
+      tokenLimit: ASK_AI_CONFIG.limits.dailyTokenBudget,
+      tokensRemaining: ASK_AI_CONFIG.limits.dailyTokenBudget - 150,
     })
   })
 })
