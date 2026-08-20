@@ -176,6 +176,44 @@ export const engineSnapshot = query({
   handler: readAskAIEngineSnapshot,
 })
 
+export async function readAskAIBorrowCapacity(ctx: PortfolioReadCtx) {
+  const wallet = await getAuthedWallet(ctx)
+  if (!wallet) return { walletRequired: true as const, message: ASK_AI_WALLET_REQUIRED }
+  const snapshot = await ctx.db
+    .query("riskSnapshots")
+    .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+    .order("desc")
+    .first()
+  return {
+    walletRequired: false as const,
+    wallet,
+    capacity: snapshot ? decodeBorrowRiskSnapshot(snapshot) : null,
+    spokes: snapshot?.spokes ?? [],
+    asOf: snapshot?.at ?? 0,
+  }
+}
+
+export const borrowCapacity = query({ args: {}, handler: readAskAIBorrowCapacity })
+
+export async function readAskAIPositionRisk(ctx: PortfolioReadCtx, positionId?: string) {
+  const wallet = await getAuthedWallet(ctx)
+  if (!wallet) return { walletRequired: true as const, message: ASK_AI_WALLET_REQUIRED }
+  const positions = await ctx.db
+    .query("positions")
+    .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+    .collect()
+  const selected = positionId ? positions.find((position) => position._id === positionId) : undefined
+  if (positionId && !selected) throw new Error("Position not found")
+  const relevant = selected ? [selected] : positions.filter((position) => position.status === "open")
+  const engine = await readAskAIEngineSnapshot(ctx, { multiplyShockPct: -20 })
+  return { walletRequired: false as const, wallet, positions: relevant, engine, asOf: engine.asOf }
+}
+
+export const positionRisk = query({
+  args: { positionId: v.optional(v.string()) },
+  handler: async (ctx, { positionId }) => readAskAIPositionRisk(ctx, positionId),
+})
+
 export const markets = query({
   args: {
     scope: v.optional(v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply"))),
