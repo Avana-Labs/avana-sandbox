@@ -102,7 +102,11 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_scope_slug", ["scope", "slug"])
-    .index("by_scope_chain", ["scope", "chainId"]),
+    .index("by_scope_chain", ["scope", "chainId"])
+    // Scope-independent slug/symbol point reads for Ask AI tools (a market slug is
+    // globally unique in practice); avoids full-table scans in stress/pool lookups.
+    .index("by_slug", ["slug"])
+    .index("by_symbol", ["symbol"]),
 
   /**
    * Product-siloed borrow market identity (pool + asset). Prefer this for display

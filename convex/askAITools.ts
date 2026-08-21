@@ -311,7 +311,10 @@ export const stressPosition = query({
       .collect()
     const position = positions.find((row) => row._id === positionId && row.status === "open")
     if (!position) throw new Error("Position not found")
-    const market = (await ctx.db.query("markets").collect()).find((row) => row.slug === position.marketSlug)
+    const market = await ctx.db
+      .query("markets")
+      .withIndex("by_slug", (q) => q.eq("slug", position.marketSlug))
+      .first()
     const parameter = position.assetId
       ? await ctx.db
           .query("multiplyTokenParameters")
@@ -581,13 +584,22 @@ export const poolMetrics = query({
   handler: async (ctx, { marketId }) => {
     const normalizedId = marketId.trim().toLowerCase()
     if (!normalizedId || normalizedId.length > 160) throw new Error("Market ID is invalid")
-    const [markets, snapshots] = await Promise.all([
-      ctx.db.query("markets").collect(),
-      ctx.db.query("askAIMarketSnapshots").withIndex("by_fetched_at").order("desc").take(100),
-    ])
-    const market = markets.find(
-      (row) => row.slug.toLowerCase() === normalizedId || row.symbol.toLowerCase() === normalizedId,
-    )
+    const snapshots = await ctx.db
+      .query("askAIMarketSnapshots")
+      .withIndex("by_fetched_at")
+      .order("desc")
+      .take(100)
+    // Slug is a lowercase URL-safe id, so the common lookup is a point read.
+    // Fall back to a symbol point read (symbols are typically upper-case).
+    const market =
+      (await ctx.db
+        .query("markets")
+        .withIndex("by_slug", (q) => q.eq("slug", normalizedId))
+        .first()) ??
+      (await ctx.db
+        .query("markets")
+        .withIndex("by_symbol", (q) => q.eq("symbol", normalizedId.toUpperCase()))
+        .first())
     const aliases = new Set([normalizedId, market?.slug.toLowerCase(), market?.symbol.toLowerCase()].filter(Boolean))
     const providerData = snapshots
       .filter((snapshot) => snapshot.kind === "dex_pool" && aliases.has(snapshot.key.toLowerCase()))
