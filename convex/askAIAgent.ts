@@ -163,6 +163,10 @@ export const generateTurn = action({
     const reasoningEffort = route.modelTier === "reasoning" ? "medium" : route.tools.length === 0 ? "minimal" : "low"
     const maxOutputTokens =
       route.tools.length === 0 ? 400 : route.modelTier === "reasoning" ? ASK_AI_CONFIG.maxOutputTokens : 700
+    // reasoningEffort is only valid for reasoning-family models. If a deployment's
+    // model rejects the param, set ASK_AI_DISABLE_REASONING_EFFORT to turn it off
+    // without a code change (kill switch — no redeploy needed).
+    const providerOptions = process.env.ASK_AI_DISABLE_REASONING_EFFORT ? undefined : { openai: { reasoningEffort } }
     try {
       const result = await turnAgent.streamText(
         ctx,
@@ -176,7 +180,7 @@ export const generateTurn = action({
           toolChoice: route.toolChoice,
           // Minimal/low reasoning for simple turns cuts the dominant hidden cost on
           // reasoning models; ignored harmlessly by models that don't support it.
-          providerOptions: { openai: { reasoningEffort } },
+          ...(providerOptions ? { providerOptions } : {}),
         },
         {
           saveStreamDeltas: {
