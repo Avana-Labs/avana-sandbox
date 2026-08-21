@@ -41,7 +41,5 @@ crons.cron("ask ai ingest defillama pools", "3,18,33,48 * * * *", internal.askAI
   source: "defillama",
 })
 crons.cron("ask ai ingest aave markets", "9,24,39,54 * * * *", internal.askAIIngestion.ingest, { source: "aave" })
-// Purge processed/failed Ask AI attachments past their retention TTL (and their storage objects).
-crons.cron("ask ai purge expired attachments", "17 3 * * *", internal.askAIAttachments.purgeExpiredAttachments, {})
 
 export default crons
