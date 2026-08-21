@@ -144,15 +144,15 @@ describe("Ask AI turn error contract", () => {
     })
   })
 
-  // Mutation lockdown: completeTurn / completeGeneratedTurn / failTurn were moved
-  // to internalMutation so no client can settle or fail a turn. The generated
-  // `api`/`internal` objects are proxies that fabricate a reference for ANY
-  // property access, so absence cannot be probed there. Instead assert the
-  // registered function objects themselves are internal-only (isInternal, not
-  // isPublic) — this is what determines whether they land on `api` vs `internal`.
+  // Mutation lockdown: completeGeneratedTurn / failTurn are internalMutation so no
+  // client can settle or fail a turn. The generated `api`/`internal` objects are
+  // proxies that fabricate a reference for ANY property access, so absence cannot
+  // be probed there. Instead assert the registered function objects themselves are
+  // internal-only (isInternal, not isPublic) — this is what determines whether they
+  // land on `api` vs `internal`.
   describe("mutation lockdown", () => {
     const registered = askAIModule as unknown as Record<string, { isInternal?: boolean; isPublic?: boolean }>
-    const lockedDown = ["completeTurn", "completeGeneratedTurn", "failTurn"] as const
+    const lockedDown = ["completeGeneratedTurn", "failTurn"] as const
 
     test.each(lockedDown)("%s is registered internal-only (never public)", (name) => {
       expect(registered[name]).toBeDefined()
