@@ -158,6 +158,11 @@ export const generateTurn = action({
     // simple price question can't be coerced into loading every tool.
     const route = routeAskAITurn(args.prompt)
     const { agent: turnAgent, model: turnModel } = ASK_AI_AGENTS[route.modelTier]
+    // Cost levers scaled to the turn: reserve the model's reasoning + output budget
+    // for the hard (reasoning-tier) turns, and keep greetings/simple lookups cheap.
+    const reasoningEffort = route.modelTier === "reasoning" ? "medium" : route.tools.length === 0 ? "minimal" : "low"
+    const maxOutputTokens =
+      route.tools.length === 0 ? 400 : route.modelTier === "reasoning" ? ASK_AI_CONFIG.maxOutputTokens : 700
     try {
       const result = await turnAgent.streamText(
         ctx,
@@ -165,16 +170,23 @@ export const generateTurn = action({
         {
           promptMessageId: turn.messageId,
           instructions: ASK_AI_AGENT_INSTRUCTIONS,
-          maxOutputTokens: ASK_AI_CONFIG.maxOutputTokens,
+          maxOutputTokens,
           stopWhen: stepCountIs(route.maxSteps),
           activeTools: route.tools as unknown as (keyof typeof ASK_AI_TOOLS)[],
           toolChoice: route.toolChoice,
+          // Minimal/low reasoning for simple turns cuts the dominant hidden cost on
+          // reasoning models; ignored harmlessly by models that don't support it.
+          providerOptions: { openai: { reasoningEffort } },
         },
         {
           saveStreamDeltas: {
             chunking: "word",
             throttleMs: ASK_AI_CONFIG.streamThrottleMs,
           },
+          // Re-send only a small, bounded slice of history (default was 100!) and
+          // drop the bulky tool-result messages — the settled answers already carry
+          // what a follow-up needs. This is the biggest multi-turn cost cut.
+          contextOptions: { recentMessages: ASK_AI_CONFIG.recentMessageLimit, excludeToolMessages: true },
         },
       )
       await result.consumeStream()
