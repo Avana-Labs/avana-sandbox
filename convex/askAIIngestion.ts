@@ -11,6 +11,11 @@ const upsertRecords = makeFunctionReference<"mutation", { records: AskAIMarketRe
 
 const sourceValidator = v.union(v.literal("coingecko"), v.literal("defillama"), v.literal("aave"))
 
+// Keep each upsert transaction bounded so a large provider batch (DefiLlama can
+// return hundreds of pools) does not push one mutation toward Convex's per-txn
+// limits or hold a long OCC window.
+const UPSERT_CHUNK_SIZE = 100
+
 export const ingest = internalAction({
   args: { source: v.optional(sourceValidator) },
   handler: async (ctx, { source }) => {
@@ -20,7 +25,13 @@ export const ingest = internalAction({
       const startedAt = Date.now()
       try {
         const records = await provider.fetch()
-        const written = await ctx.runMutation(upsertRecords, { records })
+        let upserted = 0
+        for (let i = 0; i < records.length; i += UPSERT_CHUNK_SIZE) {
+          const batch = records.slice(i, i + UPSERT_CHUNK_SIZE)
+          const result = await ctx.runMutation(upsertRecords, { records: batch })
+          upserted += result.upserted
+        }
+        const written = { upserted }
         await ctx.runMutation(internal.askAIIngestion.recordProviderRun, {
           source: provider.source,
           status: "success",
