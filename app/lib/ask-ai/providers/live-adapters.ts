@@ -70,7 +70,25 @@ export class DefiLlamaProvider extends LiveProvider {
   }
 
   private async fetchPrices(): Promise<AskAIMarketRecord[]> {
-    const coins = this.options.env.ASK_AI_DEFILLAMA_COINS ?? "coingecko:bitcoin,coingecko:ethereum,coingecko:usd-coin"
+    // Cover the tokens users actually ask about so `search_markets` is
+    // authoritative and the model never falls back to web search for a price.
+    // Override the full list with ASK_AI_DEFILLAMA_COINS.
+    const coins =
+      this.options.env.ASK_AI_DEFILLAMA_COINS ??
+      [
+        "coingecko:bitcoin",
+        "coingecko:ethereum",
+        "coingecko:usd-coin",
+        "coingecko:tether",
+        "coingecko:dai",
+        "coingecko:wrapped-bitcoin",
+        "coingecko:staked-ether",
+        "coingecko:aave",
+        "coingecko:uniswap",
+        "coingecko:chainlink",
+        "coingecko:gho",
+        "coingecko:curve-dao-token",
+      ].join(",")
     const baseUrl = this.options.env.ASK_AI_DEFILLAMA_URL ?? "https://coins.llama.fi/prices/current"
     const data = await requestJson(this.options.fetcher, `${baseUrl}/${coins}`)
     const coinRows = data && typeof data === "object" ? (data as Record<string, unknown>).coins : undefined
