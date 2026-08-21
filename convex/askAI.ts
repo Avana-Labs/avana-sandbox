@@ -106,8 +106,12 @@ export const list = query({
   handler: async (ctx, { includeArchived }) => {
     const ownerSubject = await requireOwnerSubject(ctx)
     if (includeArchived) {
-      const rows = await ctx.db.query("askAIThreads").collect()
-      return rows.filter((row) => row.ownerSubject === ownerSubject).sort((a, b) => b.updatedAt - a.updatedAt)
+      // Owner-prefix scan across both statuses, not a full-table collect.
+      const rows = await ctx.db
+        .query("askAIThreads")
+        .withIndex("by_owner_status_updated", (q) => q.eq("ownerSubject", ownerSubject))
+        .collect()
+      return rows.sort((a, b) => b.updatedAt - a.updatedAt)
     }
     return await ctx.db
       .query("askAIThreads")
@@ -353,9 +357,16 @@ export const turnQueue = query({
   args: { threadId: v.string() },
   handler: async (ctx, { threadId }) => {
     await requireOwnedThread(ctx, threadId)
-    const rows = await ctx.db.query("askAITurns").withIndex("by_owner_updated").order("asc").collect()
+    // Scope to this thread's turns via the threadId prefix index. The previous
+    // by_owner_updated scan collected every turn of every user on a live
+    // subscription, so any user's turn write invalidated every open queue.
+    const rows = await ctx.db
+      .query("askAITurns")
+      .withIndex("by_thread_status_created", (q) => q.eq("threadId", threadId))
+      .collect()
     return rows
-      .filter((row) => row.threadId === threadId && ["queued", "running", "failed"].includes(row.status))
+      .filter((row) => ["queued", "running", "failed"].includes(row.status))
+      .sort((a, b) => a.createdAt - b.createdAt)
       .map((row) => ({ id: row._id, promptMessageId: row.promptMessageId, prompt: row.prompt, status: row.status }))
   },
 })

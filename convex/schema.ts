@@ -1975,8 +1975,7 @@ export default defineSchema({
     updatedAt: v.number(),
   })
     .index("by_prompt_message", ["promptMessageId"])
-    .index("by_thread_status_created", ["threadId", "status", "createdAt"])
-    .index("by_owner_updated", ["ownerSubject", "updatedAt"]),
+    .index("by_thread_status_created", ["threadId", "status", "createdAt"]),
 
   askAIFeedback: defineTable({
     ownerSubject: v.string(),
