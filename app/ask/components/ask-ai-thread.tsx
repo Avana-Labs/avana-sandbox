@@ -12,7 +12,7 @@ import {
   useAuiState,
 } from "@assistant-ui/react"
 import { useMutation } from "convex/react"
-import { ArrowUp, Check, Copy, Square, ThumbsDown, ThumbsUp } from "lucide-react"
+import { ArrowUp, Check, ChevronDown, Copy, Square, ThumbsDown, ThumbsUp } from "lucide-react"
 import { createContext, useContext, useEffect, useRef, useState } from "react"
 import type { ComponentType } from "react"
 import { Code2, PieChart, Sparkles, SunMedium, TrendingUp } from "@/app/components/icons"
@@ -389,7 +389,7 @@ export function AskAIThread({
         <ThreadPrimitive.Root className="flex min-h-0 flex-1 flex-col [--thread-max-width:44rem]">
           <ThreadPrimitive.Viewport
             turnAnchor="top"
-            className="relative flex flex-1 flex-col overflow-x-auto overflow-y-scroll scroll-smooth"
+            className="relative flex flex-1 flex-col overflow-x-auto overflow-y-auto scroll-smooth"
           >
             <div
               className={`mx-auto flex w-full max-w-[44rem] flex-1 flex-col px-4 pt-4 ${
@@ -426,6 +426,16 @@ export function AskAIThread({
                   isEmpty ? "" : "sticky bottom-0 mt-auto rounded-t-3xl"
                 }`}
               >
+                {/* Jump-to-latest pill; the primitive auto-hides when already at the bottom. */}
+                <ThreadPrimitive.ScrollToBottom asChild>
+                  <button
+                    type="button"
+                    aria-label="Scroll to latest"
+                    className="absolute -top-12 left-1/2 z-10 inline-flex size-9 -translate-x-1/2 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-md transition hover:text-foreground disabled:pointer-events-none disabled:opacity-0"
+                  >
+                    <ChevronDown className="size-4" />
+                  </button>
+                </ThreadPrimitive.ScrollToBottom>
                 {runningPrompt && queue.length ? (
                   <MessageQueue
                     running={runningPrompt}
