@@ -2,6 +2,8 @@
 
 import { Archive, ArchiveRestore, Check, Pencil, X } from "lucide-react"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { triggerPageLoading } from "@/app/lib/page-loading"
 import { QuotaBanner } from "@/components/elements/quota-banner"
 
 type AskAIThreadSummary = {
@@ -46,6 +48,7 @@ export function AskAIThreadList({
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [draftTitle, setDraftTitle] = useState("")
   const [showArchived, setShowArchived] = useState(false)
+  const router = useRouter()
   return (
     <>
       {open ? (
@@ -227,7 +230,8 @@ export function AskAIThreadList({
             resetsIn={new Date(quota.resetsAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
             upgradeLabel="Need Help?"
             onUpgrade={() => {
-              window.location.href = "/support-center"
+              triggerPageLoading()
+              router.push("/support-center")
             }}
             className="max-w-none"
           />
