@@ -495,6 +495,7 @@ export function AskAIPageClient({
           threadsOpen={threadsOpen}
           onToggleThreads={() => setThreadsOpen((open) => !open)}
           threadId={resolvedActiveThreadId}
+          messagesRemaining={quota ? Math.max(0, quota.limit - quota.used) : null}
           loading={
             threadPageStatus === "LoadingFirstPage" ||
             (Boolean(resolvedActiveThreadId) && messagePageStatus === "LoadingFirstPage")

@@ -12,6 +12,8 @@ import {
   useAuiState,
 } from "@assistant-ui/react"
 import { useMutation } from "convex/react"
+import { useRouter } from "next/navigation"
+import { triggerPageLoading } from "@/app/lib/page-loading"
 import { ArrowUp, Check, ChevronDown, Copy, Square, ThumbsDown, ThumbsUp } from "lucide-react"
 import { createContext, useContext, useEffect, useRef, useState } from "react"
 import type { ComponentType } from "react"
@@ -329,6 +331,38 @@ const messageComponents = {
   AssistantMessage,
 } satisfies Parameters<typeof ThreadPrimitive.Messages>[0]["components"]
 
+// Warm, in-voice quota nudge above the composer: a gentle heads-up as chats run
+// low, and — once they're used up — an offer to hand off to the Avana team.
+function QuotaNudge({ remaining }: { remaining: number }) {
+  const router = useRouter()
+  if (remaining > 4) return null
+  if (remaining > 0) {
+    return (
+      <div className="mx-auto w-full max-w-[var(--thread-max-width)] rounded-2xl border border-border/60 bg-muted/40 px-4 py-2.5 text-center text-sm text-foreground">
+        Oh oh — only {remaining} chat{remaining === 1 ? "" : "s"} left for today! 💛 Let&apos;s make &apos;em count.
+      </div>
+    )
+  }
+  return (
+    <div className="mx-auto flex w-full max-w-[var(--thread-max-width)] flex-col items-center gap-2.5 rounded-2xl border border-border/60 bg-muted/40 px-4 py-3 text-center text-sm text-foreground">
+      <span>
+        Aw, that&apos;s all our chats for today! 💛 Want me to connect you with the Avana team so someone can keep
+        helping?
+      </span>
+      <button
+        type="button"
+        onClick={() => {
+          triggerPageLoading()
+          router.push("/support-center")
+        }}
+        className="inline-flex items-center rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition hover:opacity-90"
+      >
+        Talk to the team
+      </button>
+    </div>
+  )
+}
+
 function Composer({ usage }: { usage?: AskAIUsage }) {
   return (
     <ComposerPrimitive.Root className="relative flex w-full flex-col">
@@ -389,6 +423,7 @@ export function AskAIThread({
   onToggleThreads,
   threadId,
   usage,
+  messagesRemaining = null,
   canLoadMoreMessages,
   onLoadMoreMessages,
   queue,
@@ -400,6 +435,7 @@ export function AskAIThread({
   onToggleThreads: () => void
   threadId: string | null
   usage?: AskAIUsage
+  messagesRemaining?: number | null
   canLoadMoreMessages: boolean
   onLoadMoreMessages: () => void
   queue: readonly { id: string; prompt: string }[]
@@ -491,6 +527,7 @@ export function AskAIThread({
                     className="mx-auto max-w-full"
                   />
                 ) : null}
+                {messagesRemaining !== null ? <QuotaNudge remaining={messagesRemaining} /> : null}
                 <Composer usage={usage} />
                 <ThreadPrimitive.Empty>
                   <div className="flex w-full flex-wrap items-center justify-center gap-2 px-4">
