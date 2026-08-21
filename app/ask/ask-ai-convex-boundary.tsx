@@ -11,6 +11,7 @@ import {
   useAskAIGuestToken,
   type AskAIGuestToken,
 } from "@/app/lib/ask-ai/guest-auth-store"
+import { AskAILoadingBody } from "./components/ask-ai-skeleton"
 
 const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL
 const askAIConvexClient = convexUrl && /^https?:\/\//.test(convexUrl) ? new ConvexReactClient(convexUrl) : null
@@ -51,7 +52,7 @@ export function AskAIConvexBoundary({ children }: { children: ReactNode }) {
   }, [])
 
   if (!askAIConvexClient) return <>{children}</>
-  if (loading) return null
+  if (loading) return <AskAILoadingBody />
   if (error) {
     return (
       <div role="alert" className="flex min-h-[50vh] items-center justify-center px-6 text-sm text-muted-foreground">

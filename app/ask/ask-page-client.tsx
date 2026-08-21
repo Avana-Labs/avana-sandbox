@@ -10,6 +10,7 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { resolveAskAICloseHref } from "@/app/lib/ask-ai/navigation"
 import { useHydrated } from "@/app/lib/siwe/use-siwe-auth"
 import { AskAIPageClient } from "./ask-ai-page-client"
+import { AskAILoadingBody } from "./components/ask-ai-skeleton"
 import { AskAIConvexBoundary } from "./ask-ai-convex-boundary"
 
 /** The original focused `/ask` chrome, now containing the assistant-ui runtime. */
@@ -54,7 +55,7 @@ export function AskPageClient() {
       </header>
 
       <AskAIConvexBoundary>
-        {hydrated ? <AskAIPageClient onActiveTitleChange={setHeaderTitle} /> : <main className="flex-1" aria-hidden />}
+        {hydrated ? <AskAIPageClient onActiveTitleChange={setHeaderTitle} /> : <AskAILoadingBody />}
       </AskAIConvexBoundary>
     </div>
   )
