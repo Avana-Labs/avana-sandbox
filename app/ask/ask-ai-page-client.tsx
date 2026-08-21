@@ -22,6 +22,7 @@ import {
 } from "./components/ask-ai-thread"
 import { AskAIThreadList } from "./components/ask-ai-thread-list"
 import type { AskAIFinancialResult } from "./components/ask-ai-financial-result-card"
+import { AskAIMessagePartsSubscriber, type AskAIMessagePartsRow } from "./message-parts-subscriber"
 
 type PendingTurn = {
   id: string
@@ -265,15 +266,15 @@ export function AskAIPageClient({
     api.askAI.turnQueue,
     resolvedActiveThreadId ? { threadId: resolvedActiveThreadId } : "skip",
   )
-  // Rich assistant parts (cards/sources) live in a separate, non-streamed query
-  // so they are not re-fetched on every streamed token. Merged into the messages
-  // below by messageId.
-  const messageParts = useQuery(
-    api.askAI.messageParts,
-    resolvedActiveThreadId ? { threadId: resolvedActiveThreadId } : "skip",
-  )
+  // Rich assistant parts (cards/sources) come from a separate, non-streamed query
+  // (so they aren't re-fetched per streamed token) via a fail-soft subscriber that
+  // can't blank the chat if that query errors. Merged into the messages by id.
+  // The subscriber remounts per thread (keyed), so stale parts from a previous
+  // thread simply go unmatched (message ids are globally unique) until the new
+  // thread's parts load — no separate reset effect (which would race the child).
+  const [messageParts, setMessageParts] = useState<AskAIMessagePartsRow[]>([])
   const richPartsByMessage = useMemo(
-    () => new Map((messageParts ?? []).map((row) => [row.messageId, row.parts as PersistedRichParts | undefined])),
+    () => new Map(messageParts.map((row) => [row.messageId, row.parts as PersistedRichParts | undefined])),
     [messageParts],
   )
 
@@ -457,6 +458,7 @@ export function AskAIPageClient({
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
+      <AskAIMessagePartsSubscriber threadId={resolvedActiveThreadId} onData={setMessageParts} />
       <main className="flex h-[calc(100dvh-64px)] w-full overflow-hidden lg:h-[calc(100dvh-68px)] [@media(min-height:684px)]:min-h-[620px]">
         <AskAIThreadList
           open={threadsOpen}
