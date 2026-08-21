@@ -343,33 +343,6 @@ export const stressPosition = query({
   },
 })
 
-export const markets = query({
-  args: {
-    scope: v.optional(v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply"))),
-    limit: v.optional(v.number()),
-  },
-  handler: async (ctx, { scope, limit }) => {
-    const boundedLimit = Math.min(Math.max(limit ?? 20, 1), 50)
-    const rows = scope
-      ? await ctx.db
-          .query("markets")
-          .withIndex("by_scope_chain", (q) => q.eq("scope", scope))
-          .take(boundedLimit)
-      : await ctx.db.query("markets").take(boundedLimit)
-    return rows.map((market) => ({
-      slug: market.slug,
-      scope: market.scope,
-      name: market.name,
-      symbol: market.symbol,
-      chainId: market.chainId,
-      venueLabel: market.venueLabel,
-      feeTier: market.feeTier,
-      maxLtvPct: market.maxLtvPct,
-      priceUsd: market.priceUsd,
-    }))
-  },
-})
-
 export async function readAskAIMarketSnapshots(
   ctx: Pick<QueryCtx | MutationCtx, "db">,
   {
