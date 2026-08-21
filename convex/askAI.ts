@@ -480,6 +480,10 @@ export const completeGeneratedTurn = internalMutation({
       .unique()
     if (!turn || turn.ownerSubject !== ownerSubject || turn.threadId !== threadId)
       throw new Error("Ask AI turn not found")
+    // The user cancelled while the stream was finishing. cancelRunningTurn already
+    // set the terminal status and aborted the stream; do not resurrect it as a
+    // completed answer. Mirrors the guard in failTurn.
+    if (turn.status === "cancelled") return
     const existingParts = await ctx.db
       .query("askAIMessageParts")
       .withIndex("by_message", (q) => q.eq("messageId", assistantMessageId))
