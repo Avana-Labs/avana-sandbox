@@ -8,7 +8,13 @@ const partsMock = vi.fn<() => Array<{ messageId: string; parts: unknown }>>(() =
 vi.mock("convex/react", () => ({
   useAction: () => async () => ({ text: "Done" }),
   useQuery: () => partsMock(),
-  usePaginatedQuery: () => ({ results: [], status: "Exhausted", loadMore: vi.fn() }),
+  // An active thread so the rich-parts subscriber mounts (its query is gated on a
+  // resolved thread, matching production).
+  usePaginatedQuery: () => ({
+    results: [{ threadId: "thread-test", title: "T", status: "active", updatedAt: 1 }],
+    status: "Exhausted",
+    loadMore: vi.fn(),
+  }),
   useMutation: () => async () => ({ threadId: "thread-test", title: "New Chat" }),
 }))
 
