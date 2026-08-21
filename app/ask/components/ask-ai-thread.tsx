@@ -315,6 +315,10 @@ const messageComponents = {
 } satisfies Parameters<typeof ThreadPrimitive.Messages>[0]["components"]
 
 function Composer({ usage }: { usage?: AskAIUsage }) {
+  const max = ASK_AI_CONFIG.maxInputCharacters
+  const [length, setLength] = useState(0)
+  // Warn only as the user approaches the cap, so the counter isn't always on.
+  const showCounter = length >= max * 0.9
   return (
     <ComposerPrimitive.Root className="relative flex w-full flex-col">
       <ElementComposer className="max-w-none">
@@ -322,14 +326,23 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
           <ComposerPrimitive.Input
             aria-label="Ask Avana a question"
             placeholder="Ask Avana about markets, your positions, or how it works…"
-            maxLength={ASK_AI_CONFIG.maxInputCharacters}
+            maxLength={max}
             rows={1}
             autoFocus
             enterKeyHint="send"
+            onChange={(event) => setLength(event.target.value.length)}
             className="max-h-48 min-h-10 w-full resize-none bg-transparent px-2.5 py-1 text-base leading-6 outline-none placeholder:text-muted-foreground/60"
           />
           <ComposerToolbar className="relative">
             <ComposerActions>
+              {showCounter ? (
+                <span
+                  aria-live="polite"
+                  className={`px-1 text-xs tabular-nums ${length >= max ? "text-destructive" : "text-muted-foreground"}`}
+                >
+                  {length}/{max}
+                </span>
+              ) : null}
               {usage ? (
                 <ComposerContext
                   usage={{
