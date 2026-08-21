@@ -557,11 +557,7 @@ export const poolMetrics = query({
   handler: async (ctx, { marketId }) => {
     const normalizedId = marketId.trim().toLowerCase()
     if (!normalizedId || normalizedId.length > 160) throw new Error("Market ID is invalid")
-    const snapshots = await ctx.db
-      .query("askAIMarketSnapshots")
-      .withIndex("by_fetched_at")
-      .order("desc")
-      .take(100)
+    const snapshots = await ctx.db.query("askAIMarketSnapshots").withIndex("by_fetched_at").order("desc").take(100)
     // Slug is a lowercase URL-safe id, so the common lookup is a point read.
     // Fall back to a symbol point read (symbols are typically upper-case).
     const market =
