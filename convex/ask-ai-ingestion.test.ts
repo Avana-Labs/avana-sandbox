@@ -63,4 +63,31 @@ describe("Ask AI market ingestion", () => {
       }),
     ])
   })
+
+  test("purges legacy provider snapshots and leaves live sources intact", async () => {
+    const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      const now = Date.now()
+      for (const source of ["curve", "balancer", "uniswap"] as const)
+        await ctx.db.insert("askAIMarketSnapshots", {
+          source,
+          kind: "dex_pool",
+          key: `${source}:legacy`,
+          payload: {},
+          fetchedAt: now,
+        })
+      await ctx.db.insert("askAIMarketSnapshots", {
+        source: "defillama",
+        kind: "dex_pool",
+        key: "defillama:live",
+        payload: {},
+        fetchedAt: now,
+      })
+    })
+
+    await expect(t.action(internal.askAIIngestion.purgeLegacyMarketSnapshots, {})).resolves.toEqual({ deleted: 3 })
+
+    const remaining = await t.run((ctx) => ctx.db.query("askAIMarketSnapshots").collect())
+    expect(remaining.map((row) => row.source)).toEqual(["defillama"])
+  })
 })
