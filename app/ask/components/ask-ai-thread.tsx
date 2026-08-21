@@ -100,12 +100,30 @@ export function resolveAskAIErrorDetail(rawError: unknown): string {
   return FALLBACK_ASK_AI_ERROR
 }
 
+// Muted timestamp revealed on message hover, mirroring Claude/ChatGPT. Reads the
+// message createdAt from aui state; renders nothing if it is missing/invalid.
+function MessageTimestamp({ align = "left" }: { align?: "left" | "right" }) {
+  const createdAt = useAuiState((state) => (state.message as { createdAt?: unknown }).createdAt)
+  if (!(createdAt instanceof Date) || Number.isNaN(createdAt.getTime())) return null
+  return (
+    <time
+      dateTime={createdAt.toISOString()}
+      className={`px-1 text-xs text-muted-foreground opacity-0 transition-opacity group-hover/msg:opacity-100 ${
+        align === "right" ? "self-end" : "self-start"
+      }`}
+    >
+      {createdAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+    </time>
+  )
+}
+
 function UserMessage() {
   return (
-    <MessagePrimitive.Root className="relative mx-auto flex w-full max-w-[var(--thread-max-width)] flex-col px-2 py-2">
+    <MessagePrimitive.Root className="group/msg relative mx-auto flex w-full max-w-[var(--thread-max-width)] flex-col px-2 py-2">
       <div className="ml-auto max-w-[min(80%,32rem)] break-words rounded-3xl bg-muted px-5 py-2.5 leading-relaxed text-foreground [&_p]:mb-0">
         <MessagePrimitive.Content />
       </div>
+      <MessageTimestamp align="right" />
     </MessagePrimitive.Root>
   )
 }
@@ -134,8 +152,9 @@ function AssistantMessage() {
   const hasContent = responseText.trim().length > 0
   const errorValue = status && "error" in status ? (status as { error?: unknown }).error : undefined
   return (
-    <MessagePrimitive.Root className="px-2 text-foreground">
-      <div className="flex flex-col gap-3">
+    <MessagePrimitive.Root className="group/msg px-2 text-foreground">
+      {/* Announce streamed/settled answers to assistive tech as they arrive. */}
+      <div className="flex flex-col gap-3" aria-live="polite" aria-atomic="false">
         <MessagePrimitive.Parts
           components={{
             Text: AssistantText,
@@ -222,6 +241,7 @@ function AssistantMessage() {
             ) : null}
           </div>
         ) : null}
+        {status?.type === "complete" && persisted && hasContent ? <MessageTimestamp /> : null}
       </div>
     </MessagePrimitive.Root>
   )
