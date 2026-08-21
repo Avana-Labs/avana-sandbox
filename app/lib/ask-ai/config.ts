@@ -28,9 +28,6 @@ export const ASK_AI_CONFIG = {
   },
 } as const
 
-export const ASK_AI_DOMAIN_REJECTION =
-  "I can help with Avana, DeFi markets, LP collateral, lending, liquidity, and position risk. What would you like to explore there?"
-
 export const ASK_AI_WALLET_REQUIRED =
   "Connect your wallet to analyze your personal Avana positions. I can still answer general Avana and market questions without it."
 
