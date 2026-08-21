@@ -444,9 +444,11 @@ export function AskAIThread({
                 <>
                   <ThreadPrimitive.Empty>
                     <div className="mb-6 flex flex-col items-center gap-1.5 px-4 text-center">
-                      <h1 className="text-2xl font-medium tracking-tight">Hey, I&apos;m Avana ✨</h1>
+                      <h1 className="text-2xl font-medium tracking-tight">
+                        Hey, I&apos;m Avana — what&apos;s uuuup? ✨
+                      </h1>
                       <p className="text-sm text-muted-foreground">
-                        Your DeFi bestie — ask me about your positions, the markets, or how any of it works.
+                        Your DeFi bestie 💛 Ask me anything — your positions, the markets, or how it all works.
                       </p>
                     </div>
                   </ThreadPrimitive.Empty>
