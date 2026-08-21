@@ -3,7 +3,7 @@ import { v } from "convex/values"
 import { createAskAIProviders } from "../app/lib/ask-ai/providers/registry"
 import type { AskAIMarketRecord } from "../app/lib/ask-ai/providers/contracts"
 import { internal } from "./_generated/api"
-import { internalAction, internalMutation } from "./_generated/server"
+import { internalAction, internalMutation, internalQuery } from "./_generated/server"
 
 const upsertRecords = makeFunctionReference<"mutation", { records: AskAIMarketRecord[] }, { upserted: number }>(
   "askAIIngestion:upsertRecordsMutation",
@@ -94,6 +94,35 @@ export const purgeLegacyMarketSnapshots = internalAction({
       if (deleted === 0) break
     }
     return { deleted: total }
+  },
+})
+
+// Per-source ingestion health from the run log: last status, record count, age,
+// and error. Cheap (one indexed point read per source). Use for a monitor/alert
+// so a wedged provider (stale or failing) surfaces before answers go empty.
+export const providerHealth = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const sources = ["coingecko", "defillama", "aave"] as const
+    const now = Date.now()
+    const providers = await Promise.all(
+      sources.map(async (source) => {
+        const latest = await ctx.db
+          .query("askAIMarketProviderRuns")
+          .withIndex("by_source_completed", (q) => q.eq("source", source))
+          .order("desc")
+          .first()
+        return {
+          source,
+          lastStatus: latest?.status ?? null,
+          lastRecords: latest?.records ?? 0,
+          lastCompletedAt: latest?.completedAt ?? null,
+          ageMs: latest ? now - latest.completedAt : null,
+          lastError: latest?.error ?? null,
+        }
+      }),
+    )
+    return { providers }
   },
 })
 
