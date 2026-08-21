@@ -14,7 +14,6 @@ import { ConvexError, v, type GenericId } from "convex/values"
 import { components } from "./_generated/api"
 import { internalMutation, internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
 import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
-import { classifyAskAIDomain } from "../app/lib/ask-ai/domain-gate"
 
 type AskAICtx = QueryCtx | MutationCtx
 
@@ -197,42 +196,13 @@ export const beginTurn = mutation({
     prompt: v.string(),
     retryPromptMessageId: v.optional(v.string()),
     attachmentIds: v.optional(v.array(v.id("askAIAttachments"))),
-    routing: v.optional(
-      v.object({
-        allowed: v.boolean(),
-        category: v.union(
-          v.literal("avana"),
-          v.literal("lp_collateral"),
-          v.literal("defi_lending"),
-          v.literal("crypto_market"),
-          v.literal("dex_pool"),
-          v.literal("aave"),
-          v.literal("position_risk"),
-          v.literal("protocol_education"),
-          v.literal("unsupported"),
-        ),
-        intent: v.union(
-          v.literal("position"),
-          v.literal("market"),
-          v.literal("pool"),
-          v.literal("borrow_simulation"),
-          v.literal("stress_test"),
-          v.literal("comparison"),
-          v.literal("education"),
-          v.literal("risk"),
-          v.literal("unsupported"),
-        ),
-        confidence: v.number(),
-      }),
-    ),
   },
-  handler: async (ctx, { threadId, prompt, retryPromptMessageId, attachmentIds, routing }) => {
+  handler: async (ctx, { threadId, prompt, retryPromptMessageId, attachmentIds }) => {
     const { ownerSubject, thread } = await requireOwnedThread(ctx, threadId)
     if (thread.status !== "active") throw new Error("Thread is archived")
     const text = prompt.trim()
     if (!text || text.length > 2_000)
       throw askAIError("ASK_AI_GENERATION_FAILED", "Message must contain 1 to 2000 characters")
-    const domain = routing ?? classifyAskAIDomain(text)
     const previousTurn = retryPromptMessageId
       ? await ctx.db
           .query("askAITurns")
@@ -308,7 +278,6 @@ export const beginTurn = mutation({
     return {
       ...saved,
       ownerSubject,
-      domain,
     }
   },
 })
