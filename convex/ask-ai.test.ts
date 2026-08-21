@@ -2,7 +2,7 @@
 import { convexTest } from "convex-test"
 import { register as registerAgent } from "@convex-dev/agent/test"
 import { describe, expect, test } from "vitest"
-import { api } from "./_generated/api"
+import { api, internal } from "./_generated/api"
 import schema from "./schema"
 
 const modules = import.meta.glob("./**/*.*s")
@@ -58,5 +58,55 @@ describe("Ask AI thread ownership", () => {
     await expect(owner.query(api.askAI.list, {})).resolves.toEqual([
       expect.objectContaining({ threadId: thread.threadId, status: "active" }),
     ])
+  })
+})
+
+describe("Ask AI turn lifecycle", () => {
+  test("a cancelled turn is not resurrected by a late completeGeneratedTurn", async () => {
+    const t = askAITest()
+    const owner = t.withIdentity({ subject: "ask-guest:owner" })
+    const thread = await owner.mutation(api.askAI.create, {})
+
+    // A turn that the user already cancelled (cancelRunningTurn set this state
+    // and aborted the stream). Inserted directly to avoid the rate-limiter
+    // component, which the convex-test harness does not register.
+    const promptMessageId = "cancelled-prompt-message"
+    await t.run(async (ctx) => {
+      const now = Date.now()
+      await ctx.db.insert("askAITurns", {
+        threadId: thread.threadId,
+        ownerSubject: "ask-guest:owner",
+        promptMessageId,
+        prompt: "What is Avana?",
+        status: "cancelled",
+        createdAt: now,
+        updatedAt: now,
+      })
+    })
+
+    // The in-flight action's stream finished just after the cancel landed and
+    // still calls completeGeneratedTurn. It must be a no-op, not a completion.
+    await owner.mutation(internal.askAI.completeGeneratedTurn, {
+      threadId: thread.threadId,
+      promptMessageId,
+      assistantMessageId: "late-assistant-message",
+      usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
+      richParts: { sources: [], usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 } },
+    })
+
+    const { turn, parts } = await t.run(async (ctx) => {
+      const turnRow = await ctx.db
+        .query("askAITurns")
+        .withIndex("by_prompt_message", (q) => q.eq("promptMessageId", promptMessageId))
+        .unique()
+      const partRows = await ctx.db
+        .query("askAIMessageParts")
+        .withIndex("by_thread", (q) => q.eq("threadId", thread.threadId))
+        .collect()
+      return { turn: turnRow, parts: partRows }
+    })
+
+    expect(turn?.status).toBe("cancelled")
+    expect(parts).toHaveLength(0)
   })
 })
