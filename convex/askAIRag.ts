@@ -6,7 +6,7 @@ import { z } from "zod"
 import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
 import { AVANA_KNOWLEDGE_CHUNKS, AVANA_KNOWLEDGE_VERSION } from "./askAICorpus.generated"
 import { components } from "./_generated/api"
-import { internalAction } from "./_generated/server"
+import { internalAction, internalQuery } from "./_generated/server"
 
 export const AVANA_RAG_NAMESPACE = "avana-knowledge"
 
@@ -105,6 +105,31 @@ export const ingestCorpusIfVersionChanged = internalAction({
       results.push({ sourceId: id, status: result.status, created: result.created, tokens: result.usage.tokens })
     }
     return { version: AVANA_KNOWLEDGE_VERSION, sources: results }
+  },
+})
+
+/**
+ * Cost-free deploy/health check: verifies the Avana knowledge corpus is ingested
+ * and current. `ok: false` means the model will lose all protocol grounding
+ * (search_avana_knowledge returns "unavailable") — run
+ * internal.askAIRag.ingestCorpusIfVersionChanged. Wire into a deploy smoke check
+ * or a monitor so a missing/ stale ingest is caught before users hit it.
+ */
+export const corpusHealth = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const namespace = await avanaRag.getNamespace(ctx, { namespace: AVANA_RAG_NAMESPACE })
+    if (!namespace)
+      return { ok: false, version: AVANA_KNOWLEDGE_VERSION, entries: 0, atVersion: 0, reason: "namespace missing" }
+    const page = await avanaRag.list(ctx, { namespaceId: namespace.namespaceId, status: "ready", limit: 100 })
+    const atVersion = page.page.filter((entry) => entry.metadata?.version === AVANA_KNOWLEDGE_VERSION).length
+    return {
+      ok: atVersion > 0,
+      version: AVANA_KNOWLEDGE_VERSION,
+      entries: page.page.length,
+      atVersion,
+      reason: atVersion > 0 ? "ok" : "no ready entries at current version",
+    }
   },
 })
 
