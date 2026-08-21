@@ -109,4 +109,50 @@ describe("Ask AI turn lifecycle", () => {
     expect(turn?.status).toBe("cancelled")
     expect(parts).toHaveLength(0)
   })
+
+  test("turnQueue returns only this thread's non-terminal turns", async () => {
+    const t = askAITest()
+    const owner = t.withIdentity({ subject: "ask-guest:owner" })
+    const threadA = await owner.mutation(api.askAI.create, {})
+    const threadB = await owner.mutation(api.askAI.create, {})
+    await t.run(async (ctx) => {
+      const now = Date.now()
+      const insert = (threadId: string, status: "queued" | "running" | "complete" | "cancelled", key: string) =>
+        ctx.db.insert("askAITurns", {
+          threadId,
+          ownerSubject: "ask-guest:owner",
+          promptMessageId: key,
+          prompt: key,
+          status,
+          createdAt: now,
+          updatedAt: now,
+        })
+      await insert(threadA.threadId, "queued", "a-queued")
+      await insert(threadA.threadId, "complete", "a-complete")
+      await insert(threadB.threadId, "running", "b-running")
+    })
+
+    const queue = await owner.query(api.askAI.turnQueue, { threadId: threadA.threadId })
+    expect(queue.map((row) => row.promptMessageId)).toEqual(["a-queued"])
+  })
+
+  test("messageParts returns persisted rich parts for an owned thread", async () => {
+    const t = askAITest()
+    const owner = t.withIdentity({ subject: "ask-guest:owner" })
+    const other = t.withIdentity({ subject: "ask-guest:other" })
+    const thread = await owner.mutation(api.askAI.create, {})
+    await t.run(async (ctx) => {
+      await ctx.db.insert("askAIMessageParts", {
+        threadId: thread.threadId,
+        messageId: "m1",
+        parts: { sources: [], usage: { inputTokens: 1, outputTokens: 2, totalTokens: 3 } },
+        createdAt: Date.now(),
+      })
+    })
+
+    await expect(owner.query(api.askAI.messageParts, { threadId: thread.threadId })).resolves.toEqual([
+      { messageId: "m1", parts: { sources: [], usage: { inputTokens: 1, outputTokens: 2, totalTokens: 3 } } },
+    ])
+    await expect(other.query(api.askAI.messageParts, { threadId: thread.threadId })).rejects.toThrow("Thread not found")
+  })
 })
