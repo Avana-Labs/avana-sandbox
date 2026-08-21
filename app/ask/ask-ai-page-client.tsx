@@ -221,9 +221,11 @@ export function AskAIPageClient({
   onActiveTitleChange?: (title: string | null) => void
 } = {}) {
   const [threadsOpen, setThreadsOpen] = useState(false)
-  // Start null on both server and client (avoids a hydration mismatch); the stored thread is
-  // restored from sessionStorage in an effect after mount.
-  const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
+  // This component is mounted client-only (gated on useHydrated in ask-page-client), so reading
+  // sessionStorage in the initializer is safe and restores the active thread on the first paint.
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(() =>
+    typeof window === "undefined" ? null : window.sessionStorage.getItem(ACTIVE_THREAD_STORAGE_KEY),
+  )
   const [pendingTurn, setPendingTurn] = useState<PendingTurn | null>(null)
   const {
     results: threads,
@@ -271,10 +273,6 @@ export function AskAIPageClient({
     sync()
     desktop.addEventListener("change", sync)
     return () => desktop.removeEventListener("change", sync)
-  }, [])
-  useEffect(() => {
-    const stored = window.sessionStorage.getItem(ACTIVE_THREAD_STORAGE_KEY)
-    if (stored) setActiveThreadId(stored)
   }, [])
   useEffect(() => {
     if (threadPageStatus === "LoadingFirstPage") return
@@ -486,6 +484,10 @@ export function AskAIPageClient({
           onToggleThreads={() => setThreadsOpen((open) => !open)}
           threadId={resolvedActiveThreadId}
           onEnsureThread={ensureThread}
+          loading={
+            threadPageStatus === "LoadingFirstPage" ||
+            (Boolean(resolvedActiveThreadId) && messagePageStatus === "LoadingFirstPage")
+          }
           usage={
             (
               messageResults.findLast(

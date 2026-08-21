@@ -12,10 +12,10 @@ import {
   useAuiState,
 } from "@assistant-ui/react"
 import { useMutation } from "convex/react"
-import { Check, Copy, Square, ThumbsDown, ThumbsUp } from "lucide-react"
+import { ArrowUp, Check, Copy, Square, ThumbsDown, ThumbsUp } from "lucide-react"
 import { createContext, useContext, useEffect, useRef, useState } from "react"
 import type { ComponentType } from "react"
-import { CircleArrowUp, Code2, PieChart, Sparkles, SunMedium, TrendingUp } from "@/app/components/icons"
+import { Code2, PieChart, Sparkles, SunMedium, TrendingUp } from "@/app/components/icons"
 import { ASK_AI_CONFIG } from "@/app/lib/ask-ai/config"
 import { Chart } from "@/components/elements/chart"
 import { ErrorState } from "@/components/elements/error-state"
@@ -28,6 +28,7 @@ import {
   ComposerToolbar,
 } from "@/components/elements/composer"
 import { ThinkingIndicator } from "@/components/elements/thinking-indicator"
+import { AskAIThreadSkeleton } from "./ask-ai-skeleton"
 import { MessageQueue } from "@/components/elements/message-queue"
 import { RetrievalChunks, type RetrievalChunk } from "@/components/elements/retrieval-chunks"
 import { Sources, type Source } from "@/components/elements/sources"
@@ -331,9 +332,9 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
               <AuiIf condition={(state) => !state.thread.isRunning}>
                 <ComposerPrimitive.Send
                   aria-label="Send message"
-                  className="inline-flex size-9 items-center justify-center rounded-full bg-foreground text-background transition hover:bg-foreground/90 disabled:cursor-not-allowed disabled:opacity-30"
+                  className="inline-flex size-9 items-center justify-center rounded-full bg-foreground text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-foreground/15 disabled:text-foreground/40"
                 >
-                  <CircleArrowUp className="size-5" />
+                  <ArrowUp className="size-[18px]" />
                 </ComposerPrimitive.Send>
               </AuiIf>
             </ComposerActions>
@@ -355,6 +356,7 @@ export function AskAIThread({
   queue,
   runningPrompt,
   onCancelQueued,
+  loading = false,
 }: {
   threadsOpen: boolean
   onToggleThreads: () => void
@@ -366,6 +368,7 @@ export function AskAIThread({
   queue: readonly { id: string; prompt: string }[]
   runningPrompt?: string
   onCancelQueued: (turnId: string) => void | Promise<void>
+  loading?: boolean
 }) {
   const isEmpty = useAuiState((state) => state.thread.messages.length === 0)
   return (
@@ -391,26 +394,34 @@ export function AskAIThread({
             className="relative flex flex-1 flex-col overflow-x-auto overflow-y-scroll scroll-smooth"
           >
             <div
-              className={`mx-auto flex w-full max-w-[44rem] flex-1 flex-col px-4 pt-4 ${isEmpty ? "justify-center" : ""}`}
+              className={`mx-auto flex w-full max-w-[44rem] flex-1 flex-col px-4 pt-4 ${
+                isEmpty && !loading ? "justify-center" : ""
+              }`}
             >
-              <ThreadPrimitive.Empty>
-                <div className="mb-6 flex flex-col items-center px-4 text-center">
-                  <h1 className="text-2xl font-medium tracking-tight">How can I help you today?</h1>
-                </div>
-              </ThreadPrimitive.Empty>
+              {loading ? (
+                <AskAIThreadSkeleton />
+              ) : (
+                <>
+                  <ThreadPrimitive.Empty>
+                    <div className="mb-6 flex flex-col items-center px-4 text-center">
+                      <h1 className="text-2xl font-medium tracking-tight">How can I help you today?</h1>
+                    </div>
+                  </ThreadPrimitive.Empty>
 
-              <div className="mb-14 flex flex-col gap-y-6 empty:hidden">
-                {canLoadMoreMessages ? (
-                  <button
-                    type="button"
-                    onClick={onLoadMoreMessages}
-                    className="mx-auto rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-                  >
-                    Load earlier messages
-                  </button>
-                ) : null}
-                <ThreadPrimitive.Messages components={messageComponents} />
-              </div>
+                  <div className="mb-14 flex flex-col gap-y-6 empty:hidden">
+                    {canLoadMoreMessages ? (
+                      <button
+                        type="button"
+                        onClick={onLoadMoreMessages}
+                        className="mx-auto rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                      >
+                        Load earlier messages
+                      </button>
+                    ) : null}
+                    <ThreadPrimitive.Messages components={messageComponents} />
+                  </div>
+                </>
+              )}
 
               <ThreadPrimitive.ViewportFooter
                 className={`flex flex-col gap-4 overflow-visible bg-background pb-4 md:pb-6 ${

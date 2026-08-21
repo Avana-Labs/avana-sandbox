@@ -137,7 +137,9 @@ export function AskAIThreadList({
                       type="button"
                       onClick={() => {
                         onSelectThread(thread.threadId)
-                        onClose()
+                        // Only collapse the sidebar on mobile, where it's an overlay; on desktop it
+                        // is a static column and should stay open when switching threads.
+                        if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) onClose()
                       }}
                       className="h-8 min-w-0 flex-1 truncate px-2.5 text-left text-sm"
                     >
