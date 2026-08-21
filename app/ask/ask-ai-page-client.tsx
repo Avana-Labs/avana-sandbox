@@ -330,6 +330,18 @@ export function AskAIPageClient({
     setActiveThreadId(thread.threadId)
   }, [createThread])
 
+  // Cmd/Ctrl+K starts a new chat, matching the Claude/ChatGPT shortcut.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault()
+        void handleNewThread()
+      }
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [handleNewThread])
+
   const sendPrompt = useCallback(
     async (prompt: string) => {
       if (!prompt) return
