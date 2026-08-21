@@ -20,7 +20,7 @@ describe("AskAIPageClient", () => {
   it("renders the public empty state and scoped suggestions", () => {
     render(<AskAIPageClient />)
 
-    expect(screen.getByRole("heading", { name: "How can I help you today?", level: 1 })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Hey, I'm Avana ✨", level: 1 })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Positions" })).toBeInTheDocument()
     expect(screen.queryByText(/GPT-5.6 Luna/i)).not.toBeInTheDocument()
     // Attachment and voice inputs were removed from the composer.
