@@ -57,6 +57,46 @@ export const ingest = internalAction({
   },
 })
 
+// Legacy provider sources no longer written by ingestion (the live set is
+// coingecko/defillama/aave). Prod still holds thousands of stale `curve` rows
+// from an earlier provider set; the schema union is kept wide until they are
+// purged. Run `internal.askAIIngestion.purgeLegacyMarketSnapshots` once, then a
+// follow-up can narrow the schema/query validators to the live three.
+const LEGACY_MARKET_SOURCES = ["uniswap", "curve", "balancer"] as const
+
+export const deleteLegacyMarketSnapshotBatch = internalMutation({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, { limit }) => {
+    const budget = Math.min(Math.max(limit ?? 500, 1), 1_000)
+    let deleted = 0
+    for (const source of LEGACY_MARKET_SOURCES) {
+      if (deleted >= budget) break
+      const rows = await ctx.db
+        .query("askAIMarketSnapshots")
+        .withIndex("by_source_kind_key", (q) => q.eq("source", source))
+        .take(budget - deleted)
+      for (const row of rows) {
+        await ctx.db.delete(row._id)
+        deleted += 1
+      }
+    }
+    return { deleted }
+  },
+})
+
+export const purgeLegacyMarketSnapshots = internalAction({
+  args: {},
+  handler: async (ctx) => {
+    let total = 0
+    for (;;) {
+      const { deleted } = await ctx.runMutation(internal.askAIIngestion.deleteLegacyMarketSnapshotBatch, {})
+      total += deleted
+      if (deleted === 0) break
+    }
+    return { deleted: total }
+  },
+})
+
 export const recordProviderRun = internalMutation({
   args: {
     source: sourceValidator,

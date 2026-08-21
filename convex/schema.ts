@@ -2032,6 +2032,9 @@ export default defineSchema({
 
   /** Normalized cache populated only by external market-provider ingestion. */
   askAIMarketSnapshots: defineTable({
+    // Live sources are coingecko/defillama/aave. uniswap/curve/balancer are legacy
+    // literals kept wide only so stale prod rows validate; narrow to the live three
+    // after running internal.askAIIngestion.purgeLegacyMarketSnapshots.
     source: v.union(
       v.literal("coingecko"),
       v.literal("defillama"),
