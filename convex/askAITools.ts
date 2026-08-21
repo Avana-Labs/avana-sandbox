@@ -498,57 +498,78 @@ export const searchMarkets = query({
       ctx.db.query("tokenPrices").collect(),
     ])
     const terms = queryText.split(/[\s/,-]+/).filter(Boolean)
+    // Drop filler words so a natural question ("best ETH pools on Uniswap")
+    // matches on "eth"/"uniswap", not on "on"/"best". Fall back to raw terms if
+    // the query was entirely stopwords.
+    const meaningfulTerms = terms.filter((term) => term.length >= 3 && !ASK_AI_SEARCH_STOPWORDS.has(term))
+    const searchTerms = meaningfulTerms.length > 0 ? meaningfulTerms : terms
+    // Nudge the ranking toward what the question is about, so a "pools" question
+    // surfaces pools and a "price" question surfaces token prices even when both
+    // match the same asset term.
+    const wantsPools = /\b(pool|pools|liquidity|tvl|yield|yields|apr|apy|lp)\b/.test(queryText)
+    const wantsPrice = /\b(price|prices|worth|cost|value|quote)\b/.test(queryText)
+    const kindBoost = (kind: "token_price" | "dex_pool" | "lending_market") =>
+      (wantsPools && (kind === "dex_pool" || kind === "lending_market") ? 1 : 0) +
+      (wantsPrice && kind === "token_price" ? 1 : 0)
+
     const matchingMarkets = markets
       .filter((market) => {
         const haystack = `${market.slug} ${market.name} ${market.symbol} ${market.venueLabel ?? ""}`.toLowerCase()
         return terms.every((term) => haystack.includes(term))
       })
       .slice(0, boundedLimit)
-    const matchingCanonicalPrices = tokenPrices
-      .filter((price) => terms.some((term) => price.symbol.toLowerCase().includes(term)))
+
+    // Score canonical prices and cached snapshots on the SAME scale, then rank the
+    // combined list — otherwise token prices (added first) crowd out deep pools.
+    const scoredPrices = tokenPrices
       .filter((price) => price.status !== "invalid")
-      .slice(0, boundedLimit)
-      .map((price) => ({
-        source: "defillama" as const,
-        kind: "token_price" as const,
-        key: price.symbol,
-        data: {
-          symbol: price.symbol,
-          usd: price.priceUsd,
-          confidence: price.confidence,
-          status: price.status,
-        },
-        asOf: price.sourceUpdatedAt ?? price.updatedAt,
-        freshness: price.status === "fresh" ? ("fresh" as const) : ("stale" as const),
-      }))
-    // Drop filler words so a natural question ("best ETH pools on Uniswap")
-    // matches on "eth"/"uniswap", not on "on"/"best". Fall back to raw terms if
-    // the query was entirely stopwords.
-    const meaningfulTerms = terms.filter((term) => term.length >= 3 && !ASK_AI_SEARCH_STOPWORDS.has(term))
-    const snapshotTerms = meaningfulTerms.length > 0 ? meaningfulTerms : terms
-    const matchingSnapshots = snapshots
+      .map((price) => {
+        const haystack = price.symbol.toLowerCase()
+        const matched = searchTerms.filter((term) => haystack.includes(term)).length
+        return {
+          matched,
+          boost: kindBoost("token_price"),
+          size: 0,
+          row: {
+            source: "defillama" as const,
+            kind: "token_price" as const,
+            key: price.symbol,
+            data: { symbol: price.symbol, usd: price.priceUsd, confidence: price.confidence, status: price.status },
+            asOf: price.sourceUpdatedAt ?? price.updatedAt,
+            freshness: price.status === "fresh" ? ("fresh" as const) : ("stale" as const),
+          },
+        }
+      })
+      .filter((entry) => entry.matched > 0)
+
+    const scoredSnapshots = snapshots
       .filter((snapshot) => marketFreshness(snapshot.kind, snapshot.sourceUpdatedAt ?? snapshot.fetchedAt) === "fresh")
       .map((snapshot) => {
         const haystack = askAISnapshotHaystack(snapshot)
-        const matched = snapshotTerms.filter((term) => haystack.includes(term)).length
-        return { snapshot, matched, size: askAISnapshotSize(snapshot.payload) }
+        const matched = searchTerms.filter((term) => haystack.includes(term)).length
+        return {
+          matched,
+          boost: kindBoost(snapshot.kind),
+          size: askAISnapshotSize(snapshot.payload),
+          row: {
+            source: snapshot.source,
+            kind: snapshot.kind,
+            key: snapshot.key,
+            data: snapshot.payload,
+            asOf: snapshot.sourceUpdatedAt ?? snapshot.fetchedAt,
+            freshness: marketFreshness(snapshot.kind, snapshot.sourceUpdatedAt ?? snapshot.fetchedAt),
+          },
+        }
       })
       .filter((entry) => entry.matched > 0)
-      // Most query terms matched first (relevance), then deepest market (TVL/size).
-      .sort((a, b) => b.matched - a.matched || b.size - a.size)
+
+    const providerData = [...scoredPrices, ...scoredSnapshots]
+      // Most query terms matched, then the kind the question asked for, then depth.
+      .sort((a, b) => b.matched - a.matched || b.boost - a.boost || b.size - a.size)
       .slice(0, boundedLimit)
-      .map(({ snapshot }) => ({
-        source: snapshot.source,
-        kind: snapshot.kind,
-        key: snapshot.key,
-        data: snapshot.payload,
-        asOf: snapshot.sourceUpdatedAt ?? snapshot.fetchedAt,
-        freshness: marketFreshness(snapshot.kind, snapshot.sourceUpdatedAt ?? snapshot.fetchedAt),
-      }))
-    return {
-      markets: matchingMarkets,
-      providerData: [...matchingCanonicalPrices, ...matchingSnapshots].slice(0, boundedLimit),
-    }
+      .map((entry) => entry.row)
+
+    return { markets: matchingMarkets, providerData }
   },
 })
 
