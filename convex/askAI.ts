@@ -482,38 +482,6 @@ export const completeGeneratedTurn = internalMutation({
   },
 })
 
-// No client caller (grep of app/ finds none); server-only, so lock it down.
-export const completeTurn = internalMutation({
-  args: { threadId: v.string(), promptMessageId: v.string(), message: v.string(), richParts: v.optional(v.any()) },
-  handler: async (ctx, { threadId, promptMessageId, message, richParts }) => {
-    const { ownerSubject, thread } = await requireOwnedThread(ctx, threadId)
-    const text = message.trim()
-    if (!text || text.length > 20_000) throw new Error("Assistant message must contain 1 to 20000 characters")
-    const saved = await saveMessage(ctx, components.agent, {
-      threadId,
-      userId: ownerSubject,
-      promptMessageId,
-      message: { role: "assistant", content: text },
-    })
-    if (richParts) {
-      await ctx.db.insert("askAIMessageParts", {
-        threadId,
-        messageId: saved.messageId,
-        parts: richParts,
-        createdAt: Date.now(),
-      })
-    }
-    const turn = await ctx.db
-      .query("askAITurns")
-      .withIndex("by_prompt_message", (q) => q.eq("promptMessageId", promptMessageId))
-      .unique()
-    if (turn && turn.ownerSubject === ownerSubject && turn.threadId === threadId)
-      await ctx.db.patch(turn._id, { status: "complete", updatedAt: Date.now() })
-    await ctx.db.patch(thread._id, { updatedAt: Date.now() })
-    return saved
-  },
-})
-
 // On a failed turn, saveStreamDeltas can leave a partial or empty assistant
 // message persisted that the list query would otherwise return as a normal,
 // complete answer — so Lane C would show Copy / feedback controls beside an
