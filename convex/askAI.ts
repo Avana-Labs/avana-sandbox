@@ -140,20 +140,34 @@ export const messages = query({
   args: { threadId: v.string(), paginationOpts: paginationOptsValidator, streamArgs: vStreamArgs },
   handler: async (ctx, args) => {
     await requireOwnedThread(ctx, args.threadId)
-    const [result, richRows, streams] = await Promise.all([
+    // Hot path: this query re-runs on every stream delta (throttled). Keep it to
+    // just the streamed message text — rich parts (cards, sources) are fetched by
+    // the separate `messageParts` query below so they are NOT re-collected per
+    // token. Rich parts are written once at turn completion and never change while
+    // streaming.
+    const [result, streams] = await Promise.all([
       listUIMessages(ctx, components.agent, args),
-      ctx.db
-        .query("askAIMessageParts")
-        .withIndex("by_thread", (q) => q.eq("threadId", args.threadId))
-        .collect(),
       syncStreams(ctx, components.agent, args),
     ])
-    const richByMessage = new Map(richRows.map((row) => [row.messageId, row.parts]))
-    return {
-      ...result,
-      page: result.page.map((message) => ({ ...message, richParts: richByMessage.get(message.id) })),
-      streams,
-    }
+    return { ...result, streams }
+  },
+})
+
+/**
+ * Cold companion to `messages`: the persisted rich assistant parts (financial
+ * result cards, retrieval chunks, sources) keyed by messageId. Not subscribed to
+ * streams, so it only re-runs when a turn completes and inserts parts — never on
+ * every streamed token.
+ */
+export const messageParts = query({
+  args: { threadId: v.string() },
+  handler: async (ctx, { threadId }) => {
+    await requireOwnedThread(ctx, threadId)
+    const rows = await ctx.db
+      .query("askAIMessageParts")
+      .withIndex("by_thread", (q) => q.eq("threadId", threadId))
+      .collect()
+    return rows.map((row) => ({ messageId: row.messageId, parts: row.parts }))
   },
 })
 

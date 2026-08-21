@@ -265,6 +265,17 @@ export function AskAIPageClient({
     api.askAI.turnQueue,
     resolvedActiveThreadId ? { threadId: resolvedActiveThreadId } : "skip",
   )
+  // Rich assistant parts (cards/sources) live in a separate, non-streamed query
+  // so they are not re-fetched on every streamed token. Merged into the messages
+  // below by messageId.
+  const messageParts = useQuery(
+    api.askAI.messageParts,
+    resolvedActiveThreadId ? { threadId: resolvedActiveThreadId } : "skip",
+  )
+  const richPartsByMessage = useMemo(
+    () => new Map((messageParts ?? []).map((row) => [row.messageId, row.parts as PersistedRichParts | undefined])),
+    [messageParts],
+  )
 
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return
@@ -297,11 +308,7 @@ export function AskAIPageClient({
           return [
             {
               ...common,
-              content: persistedAssistantParts(
-                message.id,
-                message.text,
-                message.richParts as PersistedRichParts | undefined,
-              ),
+              content: persistedAssistantParts(message.id, message.text, richPartsByMessage.get(message.id)),
               role: "assistant",
               status:
                 message.status === "streaming" || message.status === "pending"
@@ -314,7 +321,7 @@ export function AskAIPageClient({
           ]
         return []
       }),
-    [messageResults],
+    [messageResults, richPartsByMessage],
   )
 
   const handleNewThread = useCallback(async () => {
@@ -489,11 +496,10 @@ export function AskAIPageClient({
             (Boolean(resolvedActiveThreadId) && messagePageStatus === "LoadingFirstPage")
           }
           usage={
-            (
+            richPartsByMessage.get(
               messageResults.findLast(
-                (message) =>
-                  message.role === "assistant" && Boolean((message.richParts as PersistedRichParts | undefined)?.usage),
-              )?.richParts as PersistedRichParts | undefined
+                (message) => message.role === "assistant" && Boolean(richPartsByMessage.get(message.id)?.usage),
+              )?.id ?? "",
             )?.usage
           }
           canLoadMoreMessages={messagePageStatus === "CanLoadMore"}

@@ -1,9 +1,13 @@
 import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+// Rich parts now come from the separate `messageParts` query, not embedded in
+// the streamed messages. partsMock feeds that query (and harmlessly also the
+// quota query, which these tests don't assert on).
+const partsMock = vi.fn<() => Array<{ messageId: string; parts: unknown }>>(() => [])
 vi.mock("convex/react", () => ({
   useAction: () => async () => ({ text: "Done" }),
-  useQuery: () => undefined,
+  useQuery: () => partsMock(),
   usePaginatedQuery: () => ({ results: [], status: "Exhausted", loadMore: vi.fn() }),
   useMutation: () => async () => ({ threadId: "thread-test", title: "New Chat" }),
 }))
@@ -18,6 +22,8 @@ import { AskAIPageClient } from "../ask-ai-page-client"
 afterEach(() => {
   cleanup()
   messagesMock.mockReset()
+  partsMock.mockReset()
+  partsMock.mockReturnValue([])
 })
 
 describe("AskAIPageClient rich parts", () => {
@@ -33,26 +39,31 @@ describe("AskAIPageClient rich parts", () => {
           text: "Here is your borrow capacity.",
           _creationTime: 2,
           status: "success",
-          richParts: {
-            retrievalChunks: [
-              { title: "Borrow docs", locator: "§2.1", text: "Collateral factors explained.", score: 0.91 },
-            ],
-            financialResults: [
-              {
-                kind: "borrow_capacity",
-                dataProvenance: "sandbox",
-                payload: {
-                  kind: "borrow_capacity",
-                  title: "Borrow capacity",
-                  freshness: "fresh",
-                  metrics: [{ label: "Available", value: "$1,200" }],
-                },
-              },
-            ],
-          },
         },
       ],
     })
+    partsMock.mockReturnValue([
+      {
+        messageId: "a1",
+        parts: {
+          retrievalChunks: [
+            { title: "Borrow docs", locator: "§2.1", text: "Collateral factors explained.", score: 0.91 },
+          ],
+          financialResults: [
+            {
+              kind: "borrow_capacity",
+              dataProvenance: "sandbox",
+              payload: {
+                kind: "borrow_capacity",
+                title: "Borrow capacity",
+                freshness: "fresh",
+                metrics: [{ label: "Available", value: "$1,200" }],
+              },
+            },
+          ],
+        },
+      },
+    ])
 
     render(<AskAIPageClient />)
 
@@ -74,23 +85,28 @@ describe("AskAIPageClient rich parts", () => {
           text: "Here is your portfolio.",
           _creationTime: 2,
           status: "success",
-          richParts: {
-            financialResults: [
-              {
-                kind: "portfolio",
-                dataProvenance: "sandbox",
-                payload: {
-                  walletRequired: false,
-                  dataProvenance: "sandbox",
-                  totals: { lendUsd: 1000, borrowUsd: 250, multiplyUsd: 0, liquidUsd: 42.5, umbrellaUsd: 0 },
-                  asOf: 0,
-                },
-              },
-            ],
-          },
         },
       ],
     })
+    partsMock.mockReturnValue([
+      {
+        messageId: "a1",
+        parts: {
+          financialResults: [
+            {
+              kind: "portfolio",
+              dataProvenance: "sandbox",
+              payload: {
+                walletRequired: false,
+                dataProvenance: "sandbox",
+                totals: { lendUsd: 1000, borrowUsd: 250, multiplyUsd: 0, liquidUsd: 42.5, umbrellaUsd: 0 },
+                asOf: 0,
+              },
+            },
+          ],
+        },
+      },
+    ])
 
     render(<AskAIPageClient />)
     expect(screen.getByRole("region", { name: "Your Avana portfolio" })).toBeInTheDocument()
@@ -109,10 +125,12 @@ describe("AskAIPageClient rich parts", () => {
           text: "Answer.",
           _creationTime: 2,
           status: "success",
-          richParts: { financialResults: [{ kind: "portfolio", payload: { raw: 123 } }] },
         },
       ],
     })
+    partsMock.mockReturnValue([
+      { messageId: "a1", parts: { financialResults: [{ kind: "portfolio", payload: { raw: 123 } }] } },
+    ])
 
     render(<AskAIPageClient />)
     expect(screen.queryByRole("region")).not.toBeInTheDocument()
