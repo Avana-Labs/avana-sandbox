@@ -341,6 +341,10 @@ function Composer({ usage }: { usage?: AskAIUsage }) {
             rows={1}
             autoFocus
             enterKeyHint="send"
+            // assistant-ui refocuses the composer on scroll-to-bottom and moves the
+            // caret to the end. During typing the viewport auto-scrolls, so this
+            // yanked the caret back to the end on every mid-sentence edit. Disable it.
+            unstable_focusOnScrollToBottom={false}
             className="max-h-48 min-h-10 w-full resize-none bg-transparent px-2.5 py-1 text-base leading-6 outline-none placeholder:text-muted-foreground/60"
           />
           <ComposerToolbar className="relative">
