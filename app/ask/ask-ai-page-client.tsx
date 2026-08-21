@@ -330,15 +330,6 @@ export function AskAIPageClient({
     setActiveThreadId(thread.threadId)
   }, [createThread])
 
-  // Guarantees a thread exists (creating one on demand), so voice input works from an empty
-  // "New Chat" the same way the composer and attachments do.
-  const ensureThread = useCallback(async () => {
-    if (resolvedActiveThreadId) return resolvedActiveThreadId
-    const created = await createThread({})
-    setActiveThreadId(created.threadId)
-    return created.threadId
-  }, [resolvedActiveThreadId, createThread])
-
   const sendPrompt = useCallback(
     async (prompt: string) => {
       if (!prompt) return
@@ -490,7 +481,6 @@ export function AskAIPageClient({
           threadsOpen={threadsOpen}
           onToggleThreads={() => setThreadsOpen((open) => !open)}
           threadId={resolvedActiveThreadId}
-          onEnsureThread={ensureThread}
           loading={
             threadPageStatus === "LoadingFirstPage" ||
             (Boolean(resolvedActiveThreadId) && messagePageStatus === "LoadingFirstPage")
