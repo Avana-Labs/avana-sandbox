@@ -221,23 +221,22 @@ export function routeAskAITurn(message: string): AskAITurnRoute {
 
   switch (intent) {
     case "position":
-      return plan(["read_portfolio", "read_borrow_capacity"], 2, "fast")
+      // A balance/holdings question needs only the portfolio read.
+      return plan(["read_portfolio"], 2, "fast")
     case "risk":
-      return plan(["read_position_risk", "read_borrow_capacity"], 3, "reasoning")
+      return plan(["read_position_risk"], 3, "reasoning")
     case "borrow_simulation":
-      return plan(["read_borrow_capacity", "simulate_borrow", "read_position_risk"], 4, "reasoning")
+      return plan(["read_borrow_capacity", "simulate_borrow"], 3, "reasoning")
     case "stress_test":
       return plan(["read_position_risk", "stress_position"], 4, "reasoning")
     case "pool":
+      // read_pool_metrics is for one specific named pool; search_markets covers listings.
       return plan(["search_markets", "read_pool_metrics"], 2, "fast")
     case "market":
-      return plan(
-        wantsRecency ? ["search_markets", "read_pool_metrics", "web_search"] : ["search_markets", "read_pool_metrics"],
-        2,
-        "fast",
-      )
+      // A price/rate question needs only the market search.
+      return plan(wantsRecency ? ["search_markets", "web_search"] : ["search_markets"], 2, "fast")
     case "comparison":
-      return plan(["search_markets", "read_pool_metrics", "read_position_risk"], 3, "reasoning")
+      return plan(["search_markets"], 2, "fast")
     case "education":
       return plan(wantsRecency ? ["search_avana_knowledge", "web_search"] : ["search_avana_knowledge"], 2, "fast")
     case "unsupported":

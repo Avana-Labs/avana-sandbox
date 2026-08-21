@@ -427,7 +427,10 @@ export function AskAIThread({
 
         <ThreadPrimitive.Root className="flex min-h-0 flex-1 flex-col [--thread-max-width:44rem]">
           <ThreadPrimitive.Viewport
-            turnAnchor="top"
+            // Classic bottom-anchored chat: the answer stays pinned to the bottom and
+            // streams smoothly. "top" anchoring disables autoScroll, which made the
+            // answer render at the top and then snap down.
+            turnAnchor="bottom"
             className="relative flex flex-1 flex-col overflow-x-auto overflow-y-auto scroll-smooth"
           >
             <div
