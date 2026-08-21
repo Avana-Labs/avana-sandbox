@@ -38,6 +38,12 @@ const POSITION_PATTERNS = [
   /\b(show|analy[sz]e|compare)\b.{0,20}\b(my|our)\b/i,
   /\bhow much can i borrow\b/i,
   /\b(can i borrow|borrow another|borrow more|borrowing capacity|close am i to liquidation)\b/i,
+  // First-person holdings without a literal "my" ("do I have a USDC balance?",
+  // "how much ETH do I have", "I hold any GHO"). Kept in first-person + a
+  // possession verb so it does not swallow general market questions.
+  /\bdo (?:i|we) (?:have|own|hold|got)\b/i,
+  /\b(?:how much|what|any).{0,40}\bdo (?:i|we) (?:have|own|hold)\b/i,
+  /\b(?:i|we) (?:have|own|hold|holding|deposited|borrowed|staked)\b/i,
 ]
 
 const RISK_PATTERNS = [
@@ -150,4 +156,94 @@ export function classifyAskAIDomain(message: string): DomainResult {
   }
 
   return { allowed: true, category: "protocol_education", intent: "education", confidence: 0.5 }
+}
+
+/**
+ * The eight tools registered on the Ask AI agent. A turn is routed to the
+ * smallest subset that can answer it, so a price question never loads the
+ * portfolio/risk tools and a personal question never loads web search.
+ */
+export type AskAIToolName =
+  | "web_search"
+  | "search_avana_knowledge"
+  | "read_portfolio"
+  | "read_borrow_capacity"
+  | "read_position_risk"
+  | "simulate_borrow"
+  | "stress_position"
+  | "search_markets"
+  | "read_pool_metrics"
+
+export type AskAIModelTier = "fast" | "reasoning"
+
+export type AskAITurnRoute = {
+  category: AskAIDomainCategory
+  intent: AskAIIntent
+  confidence: number
+  /** The only tools the model may call this turn (AI SDK `activeTools`). */
+  tools: AskAIToolName[]
+  /** "none" when no tools are needed, so the model answers in a single step. */
+  toolChoice: "auto" | "none"
+  /** Upper bound on tool/generation steps (AI SDK `stopWhen`). */
+  maxSteps: number
+  /** Cheap model for simple lookups; the reasoning model for risk analysis. */
+  modelTier: AskAIModelTier
+}
+
+// Only turn on web search when the user is clearly asking about recent public
+// events. Prices, pools, balances, and risk are answered from Convex data — web
+// search is never a substitute for a Convex tool (see agent-instructions.ts).
+const RECENCY_PATTERN =
+  /\b(news|latest|today|yesterday|recent|recently|breaking|announced?|announcement|happening|this week|right now|so far this)\b/i
+
+/**
+ * Deterministic, zero-cost turn router. Topic scope (politely redirecting
+ * clearly-unrelated asks) is owned by the agent instructions, NOT here — this
+ * function only decides how much machinery a turn is allowed to spend.
+ */
+export function routeAskAITurn(message: string): AskAITurnRoute {
+  const { category, intent, confidence } = classifyAskAIDomain(message)
+  const normalized = message.trim()
+  const wantsRecency = RECENCY_PATTERN.test(normalized)
+
+  const plan = (tools: AskAIToolName[], maxSteps: number, modelTier: AskAIModelTier): AskAITurnRoute => ({
+    category,
+    intent,
+    confidence,
+    tools,
+    toolChoice: tools.length > 0 ? "auto" : "none",
+    maxSteps,
+    modelTier,
+  })
+
+  // Greetings and bare clarifications need no tools at all — answer in one step.
+  if (isAskAIGreeting(normalized) || isAskAIClarificationPrompt(normalized)) return plan([], 1, "fast")
+
+  switch (intent) {
+    case "position":
+      return plan(["read_portfolio", "read_borrow_capacity"], 2, "fast")
+    case "risk":
+      return plan(["read_position_risk", "read_borrow_capacity"], 3, "reasoning")
+    case "borrow_simulation":
+      return plan(["read_borrow_capacity", "simulate_borrow", "read_position_risk"], 4, "reasoning")
+    case "stress_test":
+      return plan(["read_position_risk", "stress_position"], 4, "reasoning")
+    case "pool":
+      return plan(["search_markets", "read_pool_metrics"], 2, "fast")
+    case "market":
+      return plan(
+        wantsRecency ? ["search_markets", "read_pool_metrics", "web_search"] : ["search_markets", "read_pool_metrics"],
+        2,
+        "fast",
+      )
+    case "comparison":
+      return plan(["search_markets", "read_pool_metrics", "read_position_risk"], 3, "reasoning")
+    case "education":
+      return plan(wantsRecency ? ["search_avana_knowledge", "web_search"] : ["search_avana_knowledge"], 2, "fast")
+    case "unsupported":
+    default:
+      // Let the model answer briefly from its own knowledge (or redirect per the
+      // instructions); only grant web search when the ask is clearly time-sensitive.
+      return plan(wantsRecency ? ["web_search"] : [], wantsRecency ? 2 : 1, "fast")
+  }
 }
