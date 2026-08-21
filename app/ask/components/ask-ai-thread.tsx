@@ -266,13 +266,28 @@ function AssistantText({ text, status }: TextMessagePartProps) {
   return <MarkdownText />
 }
 
+// Human-readable status per tool, so the live indicator reads like an assistant
+// ("Searching Avana knowledge…") rather than a raw function name.
+const ASK_AI_TOOL_LABELS: Record<string, { active: string; done: string }> = {
+  search_avana_knowledge: { active: "Searching Avana knowledge", done: "Searched Avana knowledge" },
+  search_markets: { active: "Checking market data", done: "Checked market data" },
+  read_pool_metrics: { active: "Reading pool metrics", done: "Read pool metrics" },
+  read_portfolio: { active: "Reading your portfolio", done: "Read your portfolio" },
+  read_borrow_capacity: { active: "Checking borrow capacity", done: "Checked borrow capacity" },
+  read_position_risk: { active: "Analyzing position risk", done: "Analyzed position risk" },
+  simulate_borrow: { active: "Simulating a borrow", done: "Simulated a borrow" },
+  stress_position: { active: "Stress-testing your position", done: "Stress-tested your position" },
+  web_search: { active: "Searching the web", done: "Searched the web" },
+}
+
 function ToolCallPart({ args, result, status, toolName }: ToolCallMessagePartProps) {
   const [open, setOpen] = useState(false)
   const input = args as { query?: string; request?: string }
+  const labels = ASK_AI_TOOL_LABELS[toolName]
   return (
     <ToolCall
-      label={toolName.replaceAll("_", " ")}
-      activeLabel={`Running ${toolName.replaceAll("_", " ")}`}
+      label={labels?.done ?? toolName.replaceAll("_", " ")}
+      activeLabel={labels?.active ?? `Running ${toolName.replaceAll("_", " ")}`}
       query={input.query ?? "Avana"}
       request={input.request ?? "context lookup"}
       result={typeof result === "string" ? result : "Running"}
