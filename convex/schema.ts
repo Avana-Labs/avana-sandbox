@@ -1945,6 +1945,9 @@ export default defineSchema({
     .index("by_thread", ["threadId"])
     .index("by_message", ["messageId"]),
 
+  // DEPRECATED: the voice/attachment feature and all its Convex functions were
+  // removed. This table definition is retained only so existing prod rows stay
+  // valid; dropping it is a separate destructive migration (delete rows first).
   askAIAttachments: defineTable({
     ownerSubject: v.string(),
     threadId: v.string(),

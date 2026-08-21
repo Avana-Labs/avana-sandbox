@@ -213,9 +213,8 @@ export const beginTurn = mutation({
     threadId: v.string(),
     prompt: v.string(),
     retryPromptMessageId: v.optional(v.string()),
-    attachmentIds: v.optional(v.array(v.id("askAIAttachments"))),
   },
-  handler: async (ctx, { threadId, prompt, retryPromptMessageId, attachmentIds }) => {
+  handler: async (ctx, { threadId, prompt, retryPromptMessageId }) => {
     const { ownerSubject, thread } = await requireOwnedThread(ctx, threadId)
     if (thread.status !== "active") throw new Error("Thread is archived")
     const text = prompt.trim()
@@ -253,30 +252,9 @@ export const beginTurn = mutation({
       )
       await enforceAskAIRateLimit(() => askAIRateLimiter.limit(ctx, "globalDaily", { throws: true }))
     }
-    const attachments = previousTurn
-      ? []
-      : await Promise.all((attachmentIds ?? []).slice(0, 5).map((attachmentId) => ctx.db.get(attachmentId)))
-    if (
-      attachments.some(
-        (attachment) =>
-          !attachment ||
-          attachment.ownerSubject !== ownerSubject ||
-          attachment.threadId !== threadId ||
-          attachment.status !== "processed" ||
-          !attachment.agentFileId,
-      )
-    )
-      throw new Error("An attachment is unavailable or still processing")
     const saved = previousTurn
       ? { messageId: previousTurn.promptMessageId }
-      : await saveMessage(ctx, components.agent, {
-          threadId,
-          userId: ownerSubject,
-          prompt: text,
-          metadata: {
-            fileIds: attachments.flatMap((attachment) => (attachment?.agentFileId ? [attachment.agentFileId] : [])),
-          },
-        })
+      : await saveMessage(ctx, components.agent, { threadId, userId: ownerSubject, prompt: text })
     const now = Date.now()
     if (previousTurn) await ctx.db.patch(previousTurn._id, { status: "running", updatedAt: now })
     else
@@ -304,9 +282,8 @@ export const enqueueTurn = mutation({
   args: {
     threadId: v.string(),
     prompt: v.string(),
-    attachmentIds: v.optional(v.array(v.id("askAIAttachments"))),
   },
-  handler: async (ctx, { threadId, prompt, attachmentIds }) => {
+  handler: async (ctx, { threadId, prompt }) => {
     const { ownerSubject, thread } = await requireOwnedThread(ctx, threadId)
     if (thread.status !== "active") throw new Error("Thread is archived")
     const text = prompt.trim()
@@ -330,28 +307,7 @@ export const enqueueTurn = mutation({
     await enforceAskAIRateLimit(() =>
       askAIRateLimiter.limit(ctx, "perSubjectDaily", { key: ownerSubject, throws: true }),
     )
-    const attachments = await Promise.all(
-      (attachmentIds ?? []).slice(0, 5).map((attachmentId) => ctx.db.get(attachmentId)),
-    )
-    if (
-      attachments.some(
-        (attachment) =>
-          !attachment ||
-          attachment.ownerSubject !== ownerSubject ||
-          attachment.threadId !== threadId ||
-          attachment.status !== "processed" ||
-          !attachment.agentFileId,
-      )
-    )
-      throw new Error("An attachment is unavailable or still processing")
-    const saved = await saveMessage(ctx, components.agent, {
-      threadId,
-      userId: ownerSubject,
-      prompt: text,
-      metadata: {
-        fileIds: attachments.flatMap((attachment) => (attachment?.agentFileId ? [attachment.agentFileId] : [])),
-      },
-    })
+    const saved = await saveMessage(ctx, components.agent, { threadId, userId: ownerSubject, prompt: text })
     const now = Date.now()
     const turnId = await ctx.db.insert("askAITurns", {
       threadId,

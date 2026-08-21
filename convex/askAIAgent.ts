@@ -142,7 +142,6 @@ export const generateTurn = action({
     threadId: v.string(),
     prompt: v.string(),
     retryPromptMessageId: v.optional(v.string()),
-    attachmentIds: v.optional(v.array(v.id("askAIAttachments"))),
   },
   handler: async (ctx, args): Promise<GeneratedTurn> => {
     const startedAt = Date.now()
