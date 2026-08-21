@@ -8,10 +8,10 @@ describe("Ask AI Agent configuration", () => {
   })
 
   test("allows relevant current events and requires authoritative financial tools", () => {
-    expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("regulation, and current events")
-    expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("Use web search for recent public events")
+    expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("public events that may affect them")
+    expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("web search only for genuinely recent public events")
     expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("deterministic tools")
-    expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("Search Avana knowledge")
+    expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("search_avana_knowledge")
     expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("Redirect only clearly unrelated requests")
   })
 

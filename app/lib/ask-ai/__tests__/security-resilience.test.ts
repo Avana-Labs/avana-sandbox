@@ -18,9 +18,9 @@ describe("Ask AI security and resilience policy", () => {
   })
 
   it("requires authoritative sources for user and live financial claims", () => {
-    expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("Never invent a wallet balance")
+    expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("Never invent a balance")
     expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("Convex tool results as the authority")
-    expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("Never use web results as a substitute")
-    expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("Never expose internal classifier names")
+    expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("Never call web search when a Convex tool covers the data")
+    expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("Never expose tool names")
   })
 })
