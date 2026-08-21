@@ -30,12 +30,3 @@ export const ASK_AI_CONFIG = {
 
 export const ASK_AI_WALLET_REQUIRED =
   "Connect your wallet to analyze your personal Avana positions. I can still answer general Avana and market questions without it."
-
-export type AskAIDataStatus = "fresh" | "stale" | "unavailable"
-
-export type AskAIDataFreshness = {
-  source: string
-  sourceUpdatedAt: number | null
-  lastSuccessfulRefresh: number | null
-  status: AskAIDataStatus
-}

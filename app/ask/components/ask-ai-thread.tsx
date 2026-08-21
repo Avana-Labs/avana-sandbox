@@ -38,7 +38,7 @@ import { api } from "@/convex/_generated/api"
 import type { AskAIUsage } from "@/app/lib/ask-ai/chat-protocol"
 import { AskAIFinancialResultCard, type AskAIFinancialResult } from "./ask-ai-financial-result-card"
 
-const AskAIMessageContext = createContext<{ threadId: string | null; ensureThread?: () => Promise<string> }>({
+const AskAIMessageContext = createContext<{ threadId: string | null }>({
   threadId: null,
 })
 const FEEDBACK_REASONS = ["Incorrect", "Outdated data", "Not helpful", "Missing context", "Unsafe", "Other"]
@@ -349,7 +349,6 @@ export function AskAIThread({
   threadsOpen,
   onToggleThreads,
   threadId,
-  onEnsureThread,
   usage,
   canLoadMoreMessages,
   onLoadMoreMessages,
@@ -361,7 +360,6 @@ export function AskAIThread({
   threadsOpen: boolean
   onToggleThreads: () => void
   threadId: string | null
-  onEnsureThread?: () => Promise<string>
   usage?: AskAIUsage
   canLoadMoreMessages: boolean
   onLoadMoreMessages: () => void
@@ -372,7 +370,7 @@ export function AskAIThread({
 }) {
   const isEmpty = useAuiState((state) => state.thread.messages.length === 0)
   return (
-    <AskAIMessageContext.Provider value={{ threadId, ensureThread: onEnsureThread }}>
+    <AskAIMessageContext.Provider value={{ threadId }}>
       <section className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
         <div className="flex h-16 shrink-0 items-center gap-3 px-5 sm:px-8">
           <button
