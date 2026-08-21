@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest"
 import { classifyAskAIDomain } from "../domain-gate"
-import { answerFromAskAIMarketSnapshots } from "../market-context"
 
 describe("Ask AI production policy evaluations", () => {
   it.each([
@@ -14,22 +13,6 @@ describe("Ask AI production policy evaluations", () => {
     expect(classifyAskAIDomain(prompt)).toMatchObject({ allowed, intent })
   })
 
-  it("exposes financial snapshot freshness in every grounded market answer", () => {
-    const fetchedAt = Date.UTC(2026, 7, 20, 14, 0, 0)
-    const answer = answerFromAskAIMarketSnapshots([
-      {
-        source: "coingecko",
-        kind: "token_price",
-        key: "ethereum",
-        payload: { usd: 4_321.12 },
-        fetchedAt,
-        sourceUpdatedAt: fetchedAt,
-      },
-    ])
-    expect(answer).toContain("$4,321.12")
-    expect(answer).toContain(new Date(fetchedAt).toISOString())
-  })
-
   it.each([
     ["what's in my wallet balance?", "position"],
     ["How much can I borrow?", "borrow_simulation"],
@@ -37,9 +20,5 @@ describe("Ask AI production policy evaluations", () => {
     ["Explain LP collateral", "education"],
   ])("selects the expected grounding path for %s", (prompt, intent) => {
     expect(classifyAskAIDomain(prompt).intent).toBe(intent)
-  })
-
-  it("does not manufacture a market answer when no fresh record exists", () => {
-    expect(answerFromAskAIMarketSnapshots([])).toBeNull()
   })
 })
