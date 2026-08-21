@@ -4,6 +4,7 @@ import { stepCountIs } from "ai"
 import { ConvexError, v } from "convex/values"
 import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
 import { ASK_AI_AGENT_INSTRUCTIONS } from "../app/lib/ask-ai/agent-instructions"
+import { routeAskAITurn, type AskAIModelTier } from "../app/lib/ask-ai/domain-gate"
 import { api, components, internal } from "./_generated/api"
 import { action } from "./_generated/server"
 import { searchAvanaKnowledgeTool } from "./askAIRag"
@@ -22,26 +23,49 @@ export { ASK_AI_AGENT_INSTRUCTIONS }
 
 const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
-export const askAIAgent: Agent = new Agent(components.agent, {
-  name: ASK_AI_CONFIG.agentName,
-  languageModel: openai(process.env.ASK_AI_MODEL?.trim() || ASK_AI_CONFIG.defaultModel),
-  instructions: ASK_AI_AGENT_INSTRUCTIONS,
-  stopWhen: stepCountIs(ASK_AI_CONFIG.maxToolSteps),
-  tools: {
-    // Provider-executed tools do not have a local execute handler; the Agent's
-    // ToolSet constraint currently assumes one even though the Responses model
-    // accepts this tool directly.
-    web_search: openai.tools.webSearch({ searchContextSize: "low" }) as never,
-    search_avana_knowledge: searchAvanaKnowledgeTool,
-    read_portfolio: readPortfolioTool,
-    read_borrow_capacity: readBorrowCapacityTool,
-    read_position_risk: readPositionRiskTool,
-    simulate_borrow: simulateBorrowTool,
-    stress_position: stressPositionTool,
-    search_markets: searchMarketsTool,
-    read_pool_metrics: readPoolMetricsTool,
-  },
-})
+// Model tiers. The fast tier serves greetings, prices, pools, and education;
+// the reasoning tier is reserved for risk/borrow/stress analysis. FAST_MODEL
+// falls back to the reasoning model until ASK_AI_FAST_MODEL is configured, so
+// tiering ships safely — the per-turn tool gating and step limits already
+// deliver most of the cost win regardless of which model runs.
+const REASONING_MODEL = process.env.ASK_AI_MODEL?.trim() || ASK_AI_CONFIG.defaultModel
+const FAST_MODEL = process.env.ASK_AI_FAST_MODEL?.trim() || REASONING_MODEL
+
+const ASK_AI_TOOLS = {
+  // Provider-executed tools do not have a local execute handler; the Agent's
+  // ToolSet constraint currently assumes one even though the Responses model
+  // accepts this tool directly.
+  web_search: openai.tools.webSearch({ searchContextSize: "low" }) as never,
+  search_avana_knowledge: searchAvanaKnowledgeTool,
+  read_portfolio: readPortfolioTool,
+  read_borrow_capacity: readBorrowCapacityTool,
+  read_position_risk: readPositionRiskTool,
+  simulate_borrow: simulateBorrowTool,
+  stress_position: stressPositionTool,
+  search_markets: searchMarketsTool,
+  read_pool_metrics: readPoolMetricsTool,
+} as const
+
+function createAskAIAgent(model: string): Agent {
+  return new Agent(components.agent, {
+    name: ASK_AI_CONFIG.agentName,
+    languageModel: openai(model),
+    instructions: ASK_AI_AGENT_INSTRUCTIONS,
+    // Per-turn `stopWhen` (see generateTurn) overrides this ceiling downward;
+    // it stays here as the safety cap for any other caller.
+    stopWhen: stepCountIs(ASK_AI_CONFIG.maxToolSteps),
+    tools: ASK_AI_TOOLS,
+  })
+}
+
+// Default export (reasoning tier) preserved for existing importers/tests.
+export const askAIAgent: Agent = createAskAIAgent(REASONING_MODEL)
+const askAIFastAgent: Agent = FAST_MODEL === REASONING_MODEL ? askAIAgent : createAskAIAgent(FAST_MODEL)
+
+const ASK_AI_AGENTS: Record<AskAIModelTier, { agent: Agent; model: string }> = {
+  reasoning: { agent: askAIAgent, model: REASONING_MODEL },
+  fast: { agent: askAIFastAgent, model: FAST_MODEL },
+}
 
 type PreparedTurn = {
   ownerSubject: string
@@ -130,14 +154,22 @@ export const generateTurn = action({
     } catch (error) {
       throw toClientAskAIError(error)
     }
+    // Route the turn to the smallest capable tool subset + model tier + step
+    // budget. Classified server-side from the prompt (never a client arg) so a
+    // simple price question can't be coerced into loading every tool.
+    const route = routeAskAITurn(args.prompt)
+    const { agent: turnAgent, model: turnModel } = ASK_AI_AGENTS[route.modelTier]
     try {
-      const result = await askAIAgent.streamText(
+      const result = await turnAgent.streamText(
         ctx,
         { threadId: args.threadId, userId: turn.ownerSubject },
         {
           promptMessageId: turn.messageId,
           instructions: ASK_AI_AGENT_INSTRUCTIONS,
           maxOutputTokens: ASK_AI_CONFIG.maxOutputTokens,
+          stopWhen: stepCountIs(route.maxSteps),
+          activeTools: route.tools as unknown as (keyof typeof ASK_AI_TOOLS)[],
+          toolChoice: route.toolChoice,
         },
         {
           saveStreamDeltas: {
@@ -223,7 +255,7 @@ export const generateTurn = action({
         threadId: args.threadId,
         promptMessageId: turn.messageId,
         status: "complete",
-        model: process.env.ASK_AI_MODEL?.trim() || ASK_AI_CONFIG.defaultModel,
+        model: turnModel,
         provider: "openai",
         durationMs: Date.now() - startedAt,
         ...usage,
@@ -246,7 +278,7 @@ export const generateTurn = action({
         threadId: args.threadId,
         promptMessageId: turn.messageId,
         status: "failed",
-        model: process.env.ASK_AI_MODEL?.trim() || ASK_AI_CONFIG.defaultModel,
+        model: turnModel,
         provider: "openai",
         durationMs: Date.now() - startedAt,
         tools: [],
