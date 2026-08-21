@@ -434,6 +434,82 @@ export function marketFreshness(kind: "token_price" | "dex_pool" | "lending_mark
   return now - at <= threshold ? ("fresh" as const) : ("stale" as const)
 }
 
+// Filler words that would otherwise match everything (e.g. "on" is a substring
+// of many payloads) and drown out the meaningful terms in a natural question.
+const ASK_AI_SEARCH_STOPWORDS = new Set([
+  "the",
+  "is",
+  "are",
+  "was",
+  "on",
+  "in",
+  "of",
+  "to",
+  "for",
+  "and",
+  "or",
+  "a",
+  "an",
+  "what",
+  "whats",
+  "which",
+  "best",
+  "top",
+  "highest",
+  "biggest",
+  "largest",
+  "good",
+  "great",
+  "show",
+  "me",
+  "my",
+  "our",
+  "i",
+  "do",
+  "does",
+  "how",
+  "now",
+  "current",
+  "currently",
+  "price",
+  "prices",
+  "rate",
+  "rates",
+  "market",
+  "markets",
+  "pool",
+  "pools",
+])
+
+// The provider payloads store the human-searchable names (project, symbol,
+// chain) — the snapshot `key` is often an opaque hash (e.g. "defillama:0x…"),
+// so matching on key+source alone never finds a Uniswap/ETH pool by name.
+function askAISnapshotHaystack(snapshot: { source: string; kind: string; key: string; payload: unknown }): string {
+  const payload = (snapshot.payload ?? {}) as Record<string, unknown>
+  const fields = [
+    snapshot.source,
+    snapshot.kind,
+    snapshot.key,
+    payload.symbol,
+    payload.project,
+    payload.chain,
+    payload.market,
+    payload.name,
+    payload.id,
+  ]
+  return fields
+    .filter((value) => typeof value === "string")
+    .join(" ")
+    .toLowerCase()
+}
+
+// Rank magnitude so "best/top/largest" surfaces the deepest markets first.
+function askAISnapshotSize(payload: unknown): number {
+  const row = (payload ?? {}) as Record<string, unknown>
+  const candidate = row.tvlUsd ?? row.totalValueLockedUSD ?? row.sizeUsd ?? row.availableLiquidity
+  return typeof candidate === "number" && Number.isFinite(candidate) ? candidate : 0
+}
+
 export const searchMarkets = query({
   args: { query: v.string(), limit: v.optional(v.number()) },
   handler: async (ctx, { query: rawQuery, limit }) => {
@@ -469,14 +545,23 @@ export const searchMarkets = query({
         asOf: price.sourceUpdatedAt ?? price.updatedAt,
         freshness: price.status === "fresh" ? ("fresh" as const) : ("stale" as const),
       }))
+    // Drop filler words so a natural question ("best ETH pools on Uniswap")
+    // matches on "eth"/"uniswap", not on "on"/"best". Fall back to raw terms if
+    // the query was entirely stopwords.
+    const meaningfulTerms = terms.filter((term) => term.length >= 3 && !ASK_AI_SEARCH_STOPWORDS.has(term))
+    const snapshotTerms = meaningfulTerms.length > 0 ? meaningfulTerms : terms
     const matchingSnapshots = snapshots
-      .filter((snapshot) => {
-        const haystack = `${snapshot.key} ${snapshot.source}`.toLowerCase()
-        return terms.some((term) => haystack.includes(term))
-      })
       .filter((snapshot) => marketFreshness(snapshot.kind, snapshot.sourceUpdatedAt ?? snapshot.fetchedAt) === "fresh")
+      .map((snapshot) => {
+        const haystack = askAISnapshotHaystack(snapshot)
+        const matched = snapshotTerms.filter((term) => haystack.includes(term)).length
+        return { snapshot, matched, size: askAISnapshotSize(snapshot.payload) }
+      })
+      .filter((entry) => entry.matched > 0)
+      // Most query terms matched first (relevance), then deepest market (TVL/size).
+      .sort((a, b) => b.matched - a.matched || b.size - a.size)
       .slice(0, boundedLimit)
-      .map((snapshot) => ({
+      .map(({ snapshot }) => ({
         source: snapshot.source,
         kind: snapshot.kind,
         key: snapshot.key,
