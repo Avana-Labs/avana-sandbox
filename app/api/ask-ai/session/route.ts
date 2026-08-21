@@ -1,5 +1,7 @@
 import crypto from "node:crypto"
+import { ConvexHttpClient } from "convex/browser"
 import { mintAskGuestJwt, resolveIssuer } from "@/app/lib/siwe/jwt"
+import { api } from "@/convex/_generated/api"
 
 export const runtime = "nodejs"
 
@@ -11,13 +13,10 @@ const GUEST_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3
  * `avana_ask_guest` cookie yields an unlimited supply of fresh `ask-guest:<uuid>`
  * subjects, each with its own Ask AI quota — a trivial abuse vector.
  *
- * NOTE (serverless caveat): this is a best-effort, in-memory limiter scoped to a
- * single server instance. On serverless / multi-instance deployments the counter
- * is not shared across instances, so the effective ceiling is roughly
- * `MINT_THROTTLE_MAX * <live instances>`. It still meaningfully caps a single
- * client hammering one instance. A fully correct limit would need a shared store
- * (e.g. a Convex-backed counter); that is deliberately out of scope for this
- * route, which mints pre-auth and must stay dependency-light.
+ * This in-memory limiter is the per-instance FALLBACK. The primary limit is the
+ * shared Convex-backed counter in `isGuestMintAllowed` (rate limiter keyed by IP),
+ * which holds across serverless instances and cold starts. If Convex is briefly
+ * unreachable, we degrade to this best-effort per-instance cap rather than fail open.
  */
 export const MINT_THROTTLE_MAX = 30
 export const MINT_THROTTLE_WINDOW_MS = 60 * 60 * 1_000
@@ -59,9 +58,29 @@ export function resetGuestMintThrottle() {
   mintHits.clear()
 }
 
+/**
+ * Shared, cross-instance mint check backed by a Convex rate limiter, with the
+ * in-memory limiter above as a resilient fallback if Convex is unreachable. This
+ * closes the multi-instance / cold-start bypass: clearing the guest cookie can no
+ * longer mint unlimited fresh quotas by hitting different serverless instances.
+ */
+export async function isGuestMintAllowed(ip: string): Promise<boolean> {
+  const url = process.env.NEXT_PUBLIC_CONVEX_URL
+  if (url) {
+    try {
+      const client = new ConvexHttpClient(url)
+      const { ok } = await client.mutation(api.askAI.recordGuestMint, { ip })
+      return ok
+    } catch {
+      // Convex unreachable — fall back to the per-instance in-memory limiter.
+    }
+  }
+  return allowGuestMint(ip)
+}
+
 export async function POST(request: Request) {
   const existingGuestId = readAskGuestId(request.headers.get("cookie"))
-  if (!existingGuestId && !allowGuestMint(readClientIp(request))) {
+  if (!existingGuestId && !(await isGuestMintAllowed(readClientIp(request)))) {
     return Response.json(
       { error: "Too many new Ask AI sessions from this network. Try again later." },
       {

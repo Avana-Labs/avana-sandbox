@@ -22,6 +22,10 @@ const askAIRateLimiter = new RateLimiter(components.rateLimiter, {
   perSubjectDaily: { kind: "fixed window", rate: 20, period: 24 * 60 * 60 * 1_000 },
   perSubjectBurst: { kind: "token bucket", rate: 1, period: 5_000, capacity: 1 },
   globalDaily: { kind: "fixed window", rate: 20_000, period: 24 * 60 * 60 * 1_000 },
+  // Shared, cross-instance cap on minting NEW guest identities per client IP.
+  // Backs the /api/ask-ai/session route so clearing the guest cookie can't yield
+  // an unlimited supply of fresh quotas across serverless instances.
+  guestMintPerIp: { kind: "fixed window", rate: 30, period: 60 * 60 * 1_000 },
 })
 
 // User-facing throws use ConvexError so the friendly message survives Convex's
@@ -171,6 +175,19 @@ export const quota = query({
       tokenLimit: ASK_AI_CONFIG.limits.dailyTokenBudget,
       tokensRemaining: Math.max(0, ASK_AI_CONFIG.limits.dailyTokenBudget - tokensUsed),
     }
+  },
+})
+
+// Shared, cross-instance guest-mint throttle used by /api/ask-ai/session. The
+// route is pre-auth, so no identity is required. `ip` is derived server-side by
+// the route; passing a forged ip only spends that key's own budget and cannot
+// mint a JWT (minting stays in the route), so a public mutation is safe here.
+export const recordGuestMint = mutation({
+  args: { ip: v.string() },
+  handler: async (ctx, { ip }) => {
+    const key = (ip || "unknown").slice(0, 100)
+    const result = await askAIRateLimiter.limit(ctx, "guestMintPerIp", { key })
+    return { ok: result.ok, retryAfterMs: Math.max(0, Math.ceil(result.retryAfter ?? 0)) }
   },
 })
 
