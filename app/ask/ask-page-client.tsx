@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { BrandIcon, BrandLogo } from "@/app/components/brand-logo"
 import { X } from "@/app/components/icons"
@@ -25,10 +25,29 @@ export function AskPageClient() {
   // then mount it after hydration.
   const hydrated = useHydrated()
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     triggerPageLoading()
     router.push(resolveAskAICloseHref(searchParams.get("return")))
-  }
+  }, [router, searchParams])
+
+  // Keyboard shortcuts: Esc closes /ask, "/" focuses the composer — but only when
+  // the user is not already typing in a field, so a draft is never lost.
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      const typing =
+        !!target && (target.tagName === "TEXTAREA" || target.tagName === "INPUT" || target.isContentEditable)
+      if (event.key === "Escape" && !typing) {
+        event.preventDefault()
+        handleClose()
+      } else if (event.key === "/" && !typing) {
+        event.preventDefault()
+        document.querySelector<HTMLTextAreaElement>('textarea[aria-label="Ask Avana a question"]')?.focus()
+      }
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [handleClose])
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
