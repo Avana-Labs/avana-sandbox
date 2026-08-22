@@ -97,6 +97,18 @@ function compactMarketContext(payload: unknown) {
   return { markets: Array.isArray(record.markets) ? record.markets.slice(0, 5) : [], providerData }
 }
 
+function exactPricePayload(payload: unknown, prompt: string) {
+  if (!/\b(price|prices|worth|cost|value|quote)\b/i.test(prompt) || !payload || typeof payload !== "object")
+    return payload
+  const record = payload as { providerData?: unknown }
+  const exactPrice = Array.isArray(record.providerData)
+    ? record.providerData.find(
+        (entry) => entry && typeof entry === "object" && (entry as { kind?: unknown }).kind === "token_price",
+      )
+    : undefined
+  return exactPrice ? { markets: [], providerData: [exactPrice] } : payload
+}
+
 function compactPortfolioContext(payload: unknown) {
   if (!payload || typeof payload !== "object") return payload
   const record = payload as Record<string, unknown>
@@ -232,7 +244,8 @@ export const generateTurn = internalAction({
     })
     try {
       if (route.intent === "market" || route.intent === "pool" || route.intent === "comparison") {
-        const payload = await ctx.runQuery(api.askAITools.searchMarkets, { query: turn.prompt, limit: 5 })
+        const searched = await ctx.runQuery(api.askAITools.searchMarkets, { query: turn.prompt, limit: 5 })
+        const payload = route.intent === "market" ? exactPricePayload(searched, turn.prompt) : searched
         prefetched = {
           toolName: "search_markets",
           financialKind: route.intent === "pool" ? "pool" : "market",

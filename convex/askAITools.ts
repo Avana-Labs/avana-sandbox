@@ -292,47 +292,47 @@ const simulateBorrowArgs = {
 
 async function readAskAISimulateBorrow(
   ctx: PortfolioReadCtx,
-  { positionId, additionalBorrowAmount, borrowAsset }: {
+  {
+    positionId,
+    additionalBorrowAmount,
+    borrowAsset,
+  }: {
     positionId: string
     additionalBorrowAmount: number
     borrowAsset: string
   },
 ) {
-    if (
-      !Number.isFinite(additionalBorrowAmount) ||
-      additionalBorrowAmount <= 0 ||
-      additionalBorrowAmount > 1_000_000_000
-    )
-      throw new Error("Additional borrow amount is invalid")
-    const wallet = await getAuthedWallet(ctx)
-    if (!wallet) return { walletRequired: true as const, message: ASK_AI_WALLET_REQUIRED }
-    const positions = await ctx.db
-      .query("positions")
-      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-      .collect()
-    const position = positions.find((row) => row._id === positionId && row.status === "open")
-    if (!position) throw new Error("Position not found")
-    const market = await ctx.db
-      .query("borrowMarkets")
-      .withIndex("by_slug", (q) => q.eq("slug", position.marketSlug))
-      .unique()
-    if (!market?.maxLtvPct) throw new Error("Position risk parameters are unavailable")
-    const collateralValueUsd = position.collateralValueUsd ?? Number(position.collateralValueUsd6 ?? "0") / 1_000_000
-    const debtValueUsd = position.debtValueUsd ?? Number(position.debtValueUsd6 ?? "0") / 1_000_000
-    return {
-      walletRequired: false as const,
-      dataProvenance: ASK_AI_DATA_PROVENANCE,
-      positionId,
-      borrowAsset: borrowAsset.trim().toUpperCase(),
-      additionalBorrowAmount,
-      simulation: calculateAskAIBorrowSimulation({
-        collateralValueUsd,
-        debtValueUsd,
-        additionalBorrowAmountUsd: additionalBorrowAmount,
-        maxLtvPct: market.maxLtvPct,
-      }),
-      asOf: position.lastUpdatedAt,
-    }
+  if (!Number.isFinite(additionalBorrowAmount) || additionalBorrowAmount <= 0 || additionalBorrowAmount > 1_000_000_000)
+    throw new Error("Additional borrow amount is invalid")
+  const wallet = await getAuthedWallet(ctx)
+  if (!wallet) return { walletRequired: true as const, message: ASK_AI_WALLET_REQUIRED }
+  const positions = await ctx.db
+    .query("positions")
+    .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+    .collect()
+  const position = positions.find((row) => row._id === positionId && row.status === "open")
+  if (!position) throw new Error("Position not found")
+  const market = await ctx.db
+    .query("borrowMarkets")
+    .withIndex("by_slug", (q) => q.eq("slug", position.marketSlug))
+    .unique()
+  if (!market?.maxLtvPct) throw new Error("Position risk parameters are unavailable")
+  const collateralValueUsd = position.collateralValueUsd ?? Number(position.collateralValueUsd6 ?? "0") / 1_000_000
+  const debtValueUsd = position.debtValueUsd ?? Number(position.debtValueUsd6 ?? "0") / 1_000_000
+  return {
+    walletRequired: false as const,
+    dataProvenance: ASK_AI_DATA_PROVENANCE,
+    positionId,
+    borrowAsset: borrowAsset.trim().toUpperCase(),
+    additionalBorrowAmount,
+    simulation: calculateAskAIBorrowSimulation({
+      collateralValueUsd,
+      debtValueUsd,
+      additionalBorrowAmountUsd: additionalBorrowAmount,
+      maxLtvPct: market.maxLtvPct,
+    }),
+    asOf: position.lastUpdatedAt,
+  }
 }
 
 export const simulateBorrow = query({
@@ -353,50 +353,53 @@ const stressPositionArgs = {
 
 async function readAskAIStressPosition(
   ctx: PortfolioReadCtx,
-  { positionId, assetPriceChanges }: { positionId: string; assetPriceChanges: Array<{ symbol: string; change: number }> },
+  {
+    positionId,
+    assetPriceChanges,
+  }: { positionId: string; assetPriceChanges: Array<{ symbol: string; change: number }> },
 ) {
-    if (assetPriceChanges.length < 1 || assetPriceChanges.length > 8)
-      throw new Error("Provide 1 to 8 asset price changes")
-    for (const item of assetPriceChanges)
-      if (!Number.isFinite(item.change) || item.change < -0.95 || item.change > 1)
-        throw new Error("Asset price change must be between -0.95 and 1")
-    const wallet = await getAuthedWallet(ctx)
-    if (!wallet) return { walletRequired: true as const, message: ASK_AI_WALLET_REQUIRED }
-    const positions = await ctx.db
-      .query("positions")
-      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-      .collect()
-    const position = positions.find((row) => row._id === positionId && row.status === "open")
-    if (!position) throw new Error("Position not found")
-    const market = await ctx.db
-      .query("markets")
-      .withIndex("by_slug", (q) => q.eq("slug", position.marketSlug))
-      .first()
-    const parameter = position.assetId
-      ? await ctx.db
-          .query("multiplyTokenParameters")
-          .withIndex("by_symbol", (q) => q.eq("symbol", position.assetId!))
-          .unique()
-      : null
-    const constituents = market?.constituents ?? (position.assetId ? [{ symbol: position.assetId, weight: 1 }] : [])
-    const liquidationThresholdPct = parameter?.liquidationThresholdPct
-    if (constituents.length === 0 || liquidationThresholdPct === undefined)
-      throw new Error("Position risk parameters are unavailable")
-    return {
-      walletRequired: false as const,
-      dataProvenance: ASK_AI_DATA_PROVENANCE,
-      positionId,
-      simulation: calculateAskAICollateralStress({
-        collateralValueUsd: position.collateralValueUsd ?? Number(position.collateralValueUsd6 ?? "0") / 1_000_000,
-        debtValueUsd: position.debtValueUsd ?? Number(position.debtValueUsd6 ?? "0") / 1_000_000,
-        liquidationThresholdPct,
-        constituents,
-        assetPriceChanges: Object.fromEntries(
-          assetPriceChanges.map(({ symbol, change }) => [symbol.toUpperCase(), change]),
-        ),
-      }),
-      asOf: position.lastUpdatedAt,
-    }
+  if (assetPriceChanges.length < 1 || assetPriceChanges.length > 8)
+    throw new Error("Provide 1 to 8 asset price changes")
+  for (const item of assetPriceChanges)
+    if (!Number.isFinite(item.change) || item.change < -0.95 || item.change > 1)
+      throw new Error("Asset price change must be between -0.95 and 1")
+  const wallet = await getAuthedWallet(ctx)
+  if (!wallet) return { walletRequired: true as const, message: ASK_AI_WALLET_REQUIRED }
+  const positions = await ctx.db
+    .query("positions")
+    .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+    .collect()
+  const position = positions.find((row) => row._id === positionId && row.status === "open")
+  if (!position) throw new Error("Position not found")
+  const market = await ctx.db
+    .query("markets")
+    .withIndex("by_slug", (q) => q.eq("slug", position.marketSlug))
+    .first()
+  const parameter = position.assetId
+    ? await ctx.db
+        .query("multiplyTokenParameters")
+        .withIndex("by_symbol", (q) => q.eq("symbol", position.assetId!))
+        .unique()
+    : null
+  const constituents = market?.constituents ?? (position.assetId ? [{ symbol: position.assetId, weight: 1 }] : [])
+  const liquidationThresholdPct = parameter?.liquidationThresholdPct
+  if (constituents.length === 0 || liquidationThresholdPct === undefined)
+    throw new Error("Position risk parameters are unavailable")
+  return {
+    walletRequired: false as const,
+    dataProvenance: ASK_AI_DATA_PROVENANCE,
+    positionId,
+    simulation: calculateAskAICollateralStress({
+      collateralValueUsd: position.collateralValueUsd ?? Number(position.collateralValueUsd6 ?? "0") / 1_000_000,
+      debtValueUsd: position.debtValueUsd ?? Number(position.debtValueUsd6 ?? "0") / 1_000_000,
+      liquidationThresholdPct,
+      constituents,
+      assetPriceChanges: Object.fromEntries(
+        assetPriceChanges.map(({ symbol, change }) => [symbol.toUpperCase(), change]),
+      ),
+    }),
+    asOf: position.lastUpdatedAt,
+  }
 }
 
 export const stressPosition = query({
@@ -654,6 +657,7 @@ export const searchMarkets = query({
         const matched = searchTerms.filter((term) => haystack.includes(term)).length
         return {
           matched,
+          exact: searchTerms.includes(haystack) ? 1 : 0,
           boost: kindBoost("token_price"),
           size: 0,
           row: {
@@ -679,15 +683,18 @@ export const searchMarkets = query({
       .map((snapshot) => {
         const haystack = askAISnapshotHaystack(snapshot)
         const matched = searchTerms.filter((term) => haystack.includes(term)).length
+        const data = compactMarketData(snapshot.kind, snapshot.payload)
+        const symbol = typeof data.symbol === "string" ? data.symbol.toLowerCase() : ""
         return {
           matched,
+          exact: symbol.length > 0 && searchTerms.includes(symbol) ? 1 : 0,
           boost: kindBoost(snapshot.kind),
           size: askAISnapshotSize(snapshot.payload),
           row: {
             source: snapshot.source,
             kind: snapshot.kind,
             key: snapshot.key,
-            data: compactMarketData(snapshot.kind, snapshot.payload),
+            data,
             asOf: snapshot.sourceUpdatedAt ?? snapshot.fetchedAt,
             freshness: marketFreshness(snapshot.kind, snapshot.sourceUpdatedAt ?? snapshot.fetchedAt),
           },
@@ -697,7 +704,7 @@ export const searchMarkets = query({
 
     const providerData = [...scoredPrices, ...scoredSnapshots]
       // Most query terms matched, then the kind the question asked for, then depth.
-      .sort((a, b) => b.matched - a.matched || b.boost - a.boost || b.size - a.size)
+      .sort((a, b) => b.matched - a.matched || b.boost - a.boost || b.exact - a.exact || b.size - a.size)
       .slice(0, boundedLimit)
       .map((entry) => entry.row)
 
