@@ -298,6 +298,7 @@ export function AskAIPageClient({
   // include it. Keep that explicit selection stable during the subscription
   // gap instead of falling back to the previous first thread.
   const pendingActiveThreadRef = useRef<string | null>(null)
+  const creatingThreadRef = useRef<Promise<{ threadId: string }> | null>(null)
   // The runtime can retain an older onNew callback for one render. Keep the
   // selected thread in a ref as well, so submitting immediately after New Thread
   // cannot enqueue into the previously selected conversation.
@@ -407,10 +408,16 @@ export function AskAIPageClient({
 
   const handleNewThread = useCallback(async () => {
     setPendingTurn(null)
-    const thread = await createThread({})
-    pendingActiveThreadRef.current = thread.threadId
-    activeThreadIdRef.current = thread.threadId
-    setActiveThreadId(thread.threadId)
+    const creating = createThread({})
+    creatingThreadRef.current = creating
+    try {
+      const thread = await creating
+      pendingActiveThreadRef.current = thread.threadId
+      activeThreadIdRef.current = thread.threadId
+      setActiveThreadId(thread.threadId)
+    } finally {
+      if (creatingThreadRef.current === creating) creatingThreadRef.current = null
+    }
   }, [createThread])
 
   // Cmd/Ctrl+K starts a new chat, matching the standard new-chat shortcut.
@@ -432,7 +439,8 @@ export function AskAIPageClient({
       const startedAt = Date.now()
       setPendingTurn({ id: clientRequestId, clientRequestId, prompt, startedAt })
       try {
-        let threadId = activeThreadIdRef.current
+        const creatingThread = creatingThreadRef.current
+        let threadId = creatingThread ? (await creatingThread).threadId : activeThreadIdRef.current
         if (!threadId) {
           const created = await createThread({})
           threadId = created.threadId
