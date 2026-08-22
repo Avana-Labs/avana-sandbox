@@ -26,11 +26,9 @@ const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 // Model tiers. The fast tier serves greetings, prices, pools, and education;
 // the reasoning tier is reserved for risk/borrow/stress analysis. FAST_MODEL
-// falls back to the reasoning model until ASK_AI_FAST_MODEL is configured, so
-// tiering ships safely — the per-turn tool gating and step limits already
-// deliver most of the cost win regardless of which model runs.
+// defaults explicitly to Luna when ASK_AI_FAST_MODEL is not configured.
 const REASONING_MODEL = process.env.ASK_AI_MODEL?.trim() || ASK_AI_CONFIG.defaultModel
-const FAST_MODEL = process.env.ASK_AI_FAST_MODEL?.trim() || REASONING_MODEL
+const FAST_MODEL = process.env.ASK_AI_FAST_MODEL?.trim() || ASK_AI_CONFIG.fastModel
 
 const ASK_AI_TOOLS = {
   // Provider-executed tools do not have a local execute handler; the Agent's
@@ -277,6 +275,8 @@ export const generateTurn = internalAction({
         durationMs: Date.now() - startedAt,
         ...usage,
         tools,
+        routeIntent: route.intent,
+        toolBudget: route.tools.length,
       })
       return {
         text: await result.text,
@@ -298,6 +298,8 @@ export const generateTurn = internalAction({
         provider: "openai",
         durationMs: Date.now() - startedAt,
         tools: [],
+        routeIntent: route.intent,
+        toolBudget: route.tools.length,
         error: error instanceof Error ? error.message.slice(0, 500) : "Unknown Ask AI failure",
       })
       // ...but only surface a sanitized, typed ConvexError to the client.
