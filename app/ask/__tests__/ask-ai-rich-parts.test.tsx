@@ -105,7 +105,8 @@ describe("AskAIPageClient rich parts", () => {
               payload: {
                 walletRequired: false,
                 dataProvenance: "sandbox",
-                totals: { lendUsd: 1000, borrowUsd: 250, multiplyUsd: 0, liquidUsd: 42.5, umbrellaUsd: 0 },
+                totals: { lendUsd: 1000, borrowUsd: 250, multiplyUsd: 0, liquidUsd: 42.5, umbrellaUsd: 500 },
+                umbrella: [{ marketSlug: "gho", suppliedUsd6: "500000000" }],
                 asOf: 0,
               },
             },
@@ -118,6 +119,48 @@ describe("AskAIPageClient rich parts", () => {
     expect(screen.getByRole("region", { name: "Your Avana portfolio" })).toBeInTheDocument()
     expect(screen.getByText("$1,000.00")).toBeInTheDocument()
     expect(screen.getByText("$42.50")).toBeInTheDocument()
+    expect(screen.getByRole("columnheader", { name: "Product" })).toBeInTheDocument()
+    expect(screen.getByText("gho")).toBeInTheDocument()
+  })
+
+  it("renders cached market results as a table and real price history as a chart", () => {
+    messagesMock.mockReturnValue({
+      status: "Exhausted",
+      loadMore: vi.fn(),
+      results: [
+        { id: "u1", role: "user", text: "ETH price", _creationTime: 1, status: "success" },
+        { id: "a1", role: "assistant", text: "ETH is $4,321.", _creationTime: 2, status: "success" },
+      ],
+    })
+    partsMock.mockReturnValue([
+      {
+        messageId: "a1",
+        parts: {
+          financialResults: [
+            {
+              kind: "market",
+              payload: {
+                providerData: [
+                  {
+                    source: "defillama",
+                    kind: "token_price",
+                    key: "weth",
+                    data: { symbol: "weth", priceUsd: 4321 },
+                    freshness: "fresh",
+                  },
+                ],
+              },
+            },
+          ],
+          visual: { label: "WETH price", value: "$4,321", delta: "+2.10%", points: [4200, 4250, 4321] },
+        },
+      },
+    ])
+
+    render(<AskAIPageClient />)
+    expect(screen.getByRole("columnheader", { name: "Market" })).toBeInTheDocument()
+    expect(screen.getByText("defillama")).toBeInTheDocument()
+    expect(screen.getByRole("img", { name: "WETH price: $4,321" })).toBeInTheDocument()
   })
 
   it("does not fabricate a card when the payload is not display-ready", () => {

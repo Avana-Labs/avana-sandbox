@@ -1,3 +1,6 @@
+import Link from "next/link"
+import { BrandIcon, BrandLogo } from "@/app/components/brand-logo"
+import { X } from "@/app/components/icons"
 import { AskAILoadingBody } from "./components/ask-ai-skeleton"
 
 // Mirror the real /ask chrome (sticky header + full-height body) so the route-level
@@ -6,8 +9,20 @@ export default function AskAILoading() {
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
       <header className="sticky top-0 z-40 flex h-16 items-center border-b border-border bg-background px-4 sm:px-6 lg:h-[68px] lg:px-5 xl:px-6 2xl:px-8">
-        <span className="h-6 w-24 animate-pulse rounded bg-foreground/10" />
-        <span className="ml-auto size-11 animate-pulse rounded-full bg-foreground/10" />
+        <Link href="/" aria-label="Home" className="inline-flex min-w-0 items-center">
+          <span className="xl:hidden">
+            <BrandIcon />
+          </span>
+          <BrandLogo className="hidden h-[44px] xl:block" />
+        </Link>
+        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-lg font-medium">Ask AI</div>
+        <Link
+          href="/"
+          aria-label="Close"
+          className="ml-auto inline-flex size-11 items-center justify-center rounded-full border border-brand/25 bg-brand text-white shadow-elev-1"
+        >
+          <X className="size-5" />
+        </Link>
       </header>
       <AskAILoadingBody />
     </div>

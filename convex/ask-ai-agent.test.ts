@@ -79,6 +79,25 @@ describe("Ask AI generated-turn lifecycle", () => {
     expect(rows).toHaveLength(1)
   })
 
+  test("claims only the first queued turn while another turn is running", async () => {
+    const t = askAITest()
+    const owner = t.withIdentity({ subject: "ask-guest:serial-queue" })
+    const thread = await owner.mutation(api.askAI.create, {})
+    const first = await owner.mutation(api.askAI.enqueueTurn, {
+      threadId: thread.threadId,
+      prompt: "First",
+      clientRequestId: "serial-first",
+    })
+    const second = await owner.mutation(api.askAI.enqueueTurn, {
+      threadId: thread.threadId,
+      prompt: "Second",
+      clientRequestId: "serial-second",
+    })
+
+    await expect(t.mutation(internal.askAI.claimQueuedTurn, { turnId: first.turnId })).resolves.toBeTruthy()
+    await expect(t.mutation(internal.askAI.claimQueuedTurn, { turnId: second.turnId })).resolves.toBeNull()
+  })
+
   test("beginTurn persists input but fabricates no assistant response", async () => {
     const t = askAITest()
     const owner = t.withIdentity({ subject: "ask-guest:no-canned-answer" })

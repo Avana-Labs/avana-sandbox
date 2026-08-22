@@ -20,18 +20,18 @@ export function AskAIThreadSkeleton() {
   )
 }
 
-// Full-height body used before the thread mounts (hydration gate + guest-session boot). Matches the
-// real `<main>` layout — including the desktop sidebar column — so every loading phase shows the same
-// header + sidebar chrome and only the message area shimmers. No jump when the live thread replaces it.
+// Full-height body used before the thread mounts. Header and sidebar use their
+// stable loaded shapes. Only the message viewport skeletonizes.
 export function AskAILoadingBody() {
   return (
     <main className="flex h-[calc(100dvh-64px)] w-full overflow-hidden lg:h-[calc(100dvh-68px)]">
-      <aside aria-hidden className="hidden shrink-0 flex-col gap-2 bg-muted/20 p-3 lg:flex lg:w-[260px]">
-        <span className="h-9 w-full animate-pulse rounded-lg bg-foreground/10" />
-        <span className="mb-1 mt-3 h-3 w-14 animate-pulse rounded bg-foreground/10" />
-        {Array.from({ length: 5 }).map((_, index) => (
-          <span key={index} className="h-8 w-full animate-pulse rounded-md bg-foreground/[0.06]" />
-        ))}
+      <aside aria-hidden className="hidden w-[260px] shrink-0 flex-col bg-muted/20 p-3 lg:flex">
+        <div className="flex h-8 items-center gap-2 rounded-md bg-muted px-2.5 text-sm">
+          <span className="text-xl font-light leading-none">+</span>
+          New Thread
+        </div>
+        <p className="mt-6 px-2.5 text-xs font-medium text-muted-foreground">Today</p>
+        <p className="mt-1 px-2.5 text-sm text-muted-foreground">Loading conversations</p>
       </aside>
       <section className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
         <div className="h-16 shrink-0" />
