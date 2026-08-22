@@ -130,42 +130,11 @@ export function useDashboardPortfolioSummary(walletId: string | undefined): Dash
     return blendEquityWeightedNetApyPct(legs)
   }, [borrowSession.state, hasMounted, lendSession.state, multiplySession.state, walletId])
 
-  // Prefer session-derived product equity sum when it exceeds the Convex productBalances
-  // rollup — covers the gap where positions exist in session but balances have not yet
-  // reflected them (or vice versa: never drop below the Convex aggregate).
-  const sessionProductEquityUsd = useMemo(() => {
-    if (!hasMounted || !walletId) return null
-    let equity = 0
-    try {
-      const lendTab = buildPortfolioLendData(walletId, lendSession.state)
-      equity += Math.max(0, buildLendDashboardMetrics(lendTab).totalSuppliedUsd)
-    } catch {
-      /* empty */
-    }
-    try {
-      if (borrowSession.state.accounts[walletId]) {
-        equity += buildBorrowBalanceMetrics(borrowSession.state, walletId).netValueUsd
-      }
-    } catch {
-      /* empty */
-    }
-    try {
-      const multiplyTab = buildPortfolioMultiplyData(walletId, multiplySession.state)
-      equity += buildMultiplyBalanceMetrics(multiplySession.state, walletId, multiplyTab).netValueUsd
-    } catch {
-      /* empty */
-    }
-    return equity
-  }, [borrowSession.state, hasMounted, lendSession.state, multiplySession.state, walletId])
-
-  const netValueUsd =
-    sessionProductEquityUsd != null
-      ? Math.max(productNetValueUsd, walletBalanceUsd + sessionProductEquityUsd)
-      : productNetValueUsd
-
   return {
     walletBalanceUsd,
-    netValueUsd,
+    // Canonical Net Value remains the live-priced productBalances aggregate so we do not
+    // double-count wallet cash that the borrow credit-engine net already includes.
+    netValueUsd: productNetValueUsd,
     netApyPct: resolveDashboardNetApyPct(clientNetApyPct, portfolio?.netApyPct),
   }
 }
