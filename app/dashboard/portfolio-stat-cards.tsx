@@ -16,12 +16,8 @@ import { HIGHLIGHT_CARD_CLASS } from "@/app/components/highlight-carousel"
 import { LEND_FEATURED_ASSETS } from "@/app/lib/data/catalog/lend/featured-assets"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useAvanaIdentity } from "@/app/lib/avana-session/avana-sessions-provider"
-import { buildDashboardWalletBalanceRows } from "@/app/lib/swap-system"
-import { useConvexProductWalletBalances } from "@/app/lib/swap-system/use-convex-wallet-balances"
-import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { DashboardQuickActions, type DashboardQuickActionsTab } from "./dashboard-quick-actions"
-import { sumWalletValueUsd } from "./dashboard-wallet-tab"
 import { useDashboardPortfolioSummary } from "./use-dashboard-portfolio-summary"
 
 const MASK = "••••"
@@ -87,24 +83,15 @@ function formatValue(value: number, format: ValueFormat): string {
  */
 function useStatCards(): StatCard[] {
   const { walletId } = useAvanaIdentity()
-  const convexBalances = useConvexProductWalletBalances(walletId)
-  const { netValueUsd, netApyPct } = useDashboardPortfolioSummary(walletId)
-  const priceFor = useCanonicalPriceFor()
-
-  const walletRows = buildDashboardWalletBalanceRows({
-    walletId,
-    balances: convexBalances ?? undefined,
-    priceFor,
-  }).filter((row) => row.sourceType === "wallet")
-  const walletTotal = sumWalletValueUsd(walletRows)
+  const { netValueUsd, netApyPct, walletBalanceUsd } = useDashboardPortfolioSummary(walletId)
 
   return [
     {
       key: "wallet-balance",
       label: "Wallet Balance",
-      value: formatValue(walletTotal, "usd"),
+      value: formatValue(walletBalanceUsd, "usd"),
       format: "usd",
-      base: walletTotal > 0 ? walletTotal : 1,
+      base: walletBalanceUsd > 0 ? walletBalanceUsd : 1,
       amplitude: 0.03,
       maskable: true,
       isPositive: true,
