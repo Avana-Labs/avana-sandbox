@@ -275,4 +275,43 @@ describe("Ask AI normalized market tools", () => {
       data: { priceUsd: 77_856.08 },
     })
   })
+
+  test("reads only the indexed requested token and its bounded history", async () => {
+    const t = convexTest(schema, modules)
+    const now = Date.now()
+    await t.run(async (ctx) => {
+      for (const [symbol, priceUsd] of [
+        ["uni", 7.25],
+        ["eth", 2_500],
+      ] as const) {
+        await ctx.db.insert("tokenPrices", {
+          symbol,
+          llamaId: `coingecko:${symbol}`,
+          priceUsd,
+          sourceUpdatedAt: now,
+          fetchedAt: now,
+          snapshotAt: now,
+          status: "fresh",
+          source: "defillama",
+          updatedAt: now,
+        })
+        await ctx.db.insert("tokenPricesHistory", {
+          symbol,
+          day: "2026-08-21",
+          priceUsd,
+          updatedAt: now,
+        })
+      }
+    })
+
+    const result = await t.query(api.askAITools.searchMarkets, { query: "What's the Uniswap token price?" })
+    expect(result.markets).toEqual([])
+    expect(result.providerData).toEqual([
+      expect.objectContaining({
+        key: "uni",
+        kind: "token_price",
+        history: [{ day: "2026-08-21", priceUsd: 7.25 }],
+      }),
+    ])
+  })
 })
