@@ -159,7 +159,7 @@ function AssistantMessage() {
         <MessagePrimitive.Parts
           components={{
             Text: AssistantText,
-            Empty: () => <ThinkingIndicatorLive />,
+            Empty: status?.type === "running" ? () => <ThinkingIndicatorLive /> : () => null,
             tools: { Fallback: ToolCallPart },
             data: {
               by_name: {
