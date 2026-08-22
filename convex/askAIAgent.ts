@@ -76,8 +76,9 @@ type PreparedTurn = {
 }
 
 type PrefetchedTurnData = {
-  toolName: "search_markets" | "read_portfolio" | "search_avana_knowledge"
-  financialKind?: "market" | "pool" | "portfolio"
+  toolName:
+    "search_markets" | "read_portfolio" | "read_borrow_capacity" | "read_position_risk" | "search_avana_knowledge"
+  financialKind?: "market" | "pool" | "portfolio" | "borrow_capacity" | "position_risk"
   payload: unknown
   modelContext: unknown
   dataProvenance?: DataProvenance
@@ -266,6 +267,34 @@ export const generateTurn = internalAction({
           payload,
           modelContext: compactPortfolioContext(payload),
           dataProvenance: provenance,
+        }
+      } else if (route.intent === "risk") {
+        const payload = await ctx.runQuery(internal.askAITools.positionRiskForTurn, { turnId: turn.turnId })
+        prefetched = {
+          toolName: "read_position_risk",
+          financialKind: "position_risk",
+          payload,
+          modelContext: payload,
+          dataProvenance:
+            payload.dataProvenance === "sandbox" ||
+            payload.dataProvenance === "connected_wallet" ||
+            payload.dataProvenance === "onchain"
+              ? payload.dataProvenance
+              : undefined,
+        }
+      } else if (route.tools.length === 1 && route.tools[0] === "read_borrow_capacity") {
+        const payload = await ctx.runQuery(internal.askAITools.borrowCapacityForTurn, { turnId: turn.turnId })
+        prefetched = {
+          toolName: "read_borrow_capacity",
+          financialKind: "borrow_capacity",
+          payload,
+          modelContext: payload,
+          dataProvenance:
+            payload.dataProvenance === "sandbox" ||
+            payload.dataProvenance === "connected_wallet" ||
+            payload.dataProvenance === "onchain"
+              ? payload.dataProvenance
+              : undefined,
         }
       } else if (route.tools.includes("search_avana_knowledge")) {
         const payload = await runAvanaKnowledgeSearch(() =>
