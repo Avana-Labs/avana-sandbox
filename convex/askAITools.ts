@@ -524,6 +524,11 @@ const ASK_AI_SEARCH_STOPWORDS = new Set([
   "pools",
 ])
 
+const ASK_AI_SEARCH_TERM_ALIASES = new Map([
+  ["bitcoin", "btc"],
+  ["ethereum", "eth"],
+])
+
 // The provider payloads store the human-searchable names (project, symbol,
 // chain) — the snapshot `key` is often an opaque hash (e.g. "defillama:0x…"),
 // so matching on key+source alone never finds a Uniswap/ETH pool by name.
@@ -612,12 +617,14 @@ export const searchMarkets = query({
       historyBySymbol.set(point.symbol, points)
     }
     for (const points of historyBySymbol.values()) points.sort((a, b) => a.day.localeCompare(b.day))
-    const terms = queryText.split(/[\s/,-]+/).filter(Boolean)
+    const terms = queryText.split(/[^\p{L}\p{N}]+/u).filter(Boolean)
     // Drop filler words so a natural question ("best ETH pools on Uniswap")
     // matches on "eth"/"uniswap", not on "on"/"best". Fall back to raw terms if
     // the query was entirely stopwords.
     const meaningfulTerms = terms.filter((term) => term.length >= 3 && !ASK_AI_SEARCH_STOPWORDS.has(term))
-    const searchTerms = meaningfulTerms.length > 0 ? meaningfulTerms : terms
+    const searchTerms = (meaningfulTerms.length > 0 ? meaningfulTerms : terms).map(
+      (term) => ASK_AI_SEARCH_TERM_ALIASES.get(term) ?? term,
+    )
     // Nudge the ranking toward what the question is about, so a "pools" question
     // surfaces pools and a "price" question surfaces token prices even when both
     // match the same asset term.
