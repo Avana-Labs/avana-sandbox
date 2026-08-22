@@ -68,9 +68,12 @@ const MARKET_LOOKUP_PATTERN = /\b(price|prices|worth|quote|borrow rate|supply ra
 const TOKEN_PRICE_LOOKUP_PATTERN = /\b(price|prices|worth|quote|cost)\b/i
 
 const EDUCATION_PATTERNS = [
-  /\b(explain|what is|what does|how does|why does|methodology|work)\b/i,
+  /\b(explain|what is|what does|how does|how might|how would|how could|why does|methodology|work)\b/i,
   /\b(avana|lp collateral|health factor|ltv|liquidation threshold|oracle|aave hub)\b/i,
 ]
+
+const PROTOCOL_TOPIC_PATTERN =
+  /\b(avana|aave|amm|apy|apr|borrow|collateral|crypto|defi|dex|health factor|impermanent loss|lend|liquidat|lp|ltv|market|oracle|pool|position|staking|stablecoin|token|uniswap|yield)\b/i
 
 const GREETING_PATTERN =
   /^(?:(?:good\s+)?(?:morning|afternoon|evening)|(?:hi|hello|hey|yo|sup)(?:\s+(?:there|avana))?|what(?:'s| is)\s+up)[!.?\s]*$/i
@@ -171,7 +174,7 @@ export function classifyAskAIDomain(message: string): DomainResult {
     }
   }
 
-  if (matchesAny(normalized, EDUCATION_PATTERNS)) {
+  if (matchesAny(normalized, EDUCATION_PATTERNS) && PROTOCOL_TOPIC_PATTERN.test(normalized)) {
     return {
       allowed: true,
       category: /\bavana\b/i.test(normalized) ? "avana" : "protocol_education",
@@ -180,7 +183,7 @@ export function classifyAskAIDomain(message: string): DomainResult {
     }
   }
 
-  return { allowed: true, category: "protocol_education", intent: "education", confidence: 0.5 }
+  return { allowed: true, category: "unsupported", intent: "unsupported", confidence: 0.5 }
 }
 
 /**
@@ -224,7 +227,7 @@ export function toolChoiceForAskAIStep(route: AskAITurnRoute, stepNumber: number
 // events. Prices, pools, balances, and risk are answered from Convex data — web
 // search is never a substitute for a Convex tool (see agent-instructions.ts).
 const NEWS_EVENT_PATTERN =
-  /\b(news|headline|headlines|announcement|announced|breaking|event|events|what happened|happening this week)\b/i
+  /\b(news|headline|headlines|announc(?:e|ed|ement|ing)|breaking|event|events|what happened|happening this week)\b/i
 
 /**
  * Deterministic, zero-cost turn router. Topic scope (politely redirecting

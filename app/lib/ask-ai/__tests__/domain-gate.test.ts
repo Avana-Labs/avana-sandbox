@@ -184,6 +184,15 @@ describe("routeAskAITurn (per-turn tool + cost routing)", () => {
     expect(routeAskAITurn("Hey Avana!").tools).toEqual([])
   })
 
+  it("answers ordinary unrelated questions without attaching Avana retrieval", () => {
+    expect(routeAskAITurn("Tell me a joke")).toMatchObject({
+      intent: "unsupported",
+      tools: [],
+      maxSteps: 1,
+    })
+    expect(routeAskAITurn("What's the weather tomorrow?").tools).toEqual([])
+  })
+
   it("reserves the reasoning tier and more steps for risk/stress analysis", () => {
     const stress = routeAskAITurn("What happens to my position if ETH drops 30%?")
     expect(stress.modelTier).toBe("reasoning")
