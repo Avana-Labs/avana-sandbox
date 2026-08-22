@@ -390,7 +390,10 @@ export function AskAIPageClient({
   const queueAdapter = useMemo<ExternalThreadQueueAdapter>(
     () => ({
       items: (turnQueue ?? [])
-        .filter((turn) => turn.status === "queued")
+        // Exclude the turn currently being generated: while beginTurn flips it
+        // queued -> running, it is optimistically running (pendingTurn) yet still
+        // reads "queued" from the server for a beat, which showed it twice.
+        .filter((turn) => turn.status === "queued" && String(turn.id) !== pendingTurn?.id)
         .map((turn) => ({
           id: String(turn.id),
           prompt: turn.prompt,
@@ -405,7 +408,7 @@ export function AskAIPageClient({
       },
       remove: (turnId) => void cancelQueuedTurn({ turnId: turnId as Id<"askAITurns"> }),
     }),
-    [cancelQueuedTurn, handleNewMessage, turnQueue],
+    [cancelQueuedTurn, handleNewMessage, turnQueue, pendingTurn?.id],
   )
 
   const messages = useMemo<readonly ThreadMessage[]>(() => {
@@ -509,7 +512,7 @@ export function AskAIPageClient({
           }
           canLoadMoreMessages={messagePageStatus === "CanLoadMore"}
           onLoadMoreMessages={() => loadMoreMessages(50)}
-          queue={(turnQueue ?? []).filter((turn) => turn.status === "queued")}
+          queue={(turnQueue ?? []).filter((turn) => turn.status === "queued" && String(turn.id) !== pendingTurn?.id)}
           runningPrompt={pendingTurn?.error ? undefined : pendingTurn?.prompt}
           onCancelQueued={async (turnId) => {
             await cancelQueuedTurn({ turnId: turnId as Id<"askAITurns"> })
