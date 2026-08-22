@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 
 const enqueue = vi.fn()
@@ -30,14 +31,13 @@ afterEach(() => {
 })
 
 describe("Ask AI optimistic turn", () => {
-  it("edits the middle of a controlled draft without jumping to the end", () => {
+  it("edits the middle of a controlled draft without jumping to the end", async () => {
+    const user = userEvent.setup()
     render(<AskAIPageClient />)
     const composer = screen.getByLabelText("Ask Avana a question") as HTMLTextAreaElement
-    fireEvent.change(composer, { target: { value: "ABCDE", selectionStart: 5, selectionEnd: 5 } })
-    fireEvent.keyDown(composer, { key: "Home" })
-    fireEvent.keyDown(composer, { key: "ArrowRight" })
-    fireEvent.keyDown(composer, { key: "ArrowRight" })
-    fireEvent.keyDown(composer, { key: "Delete" })
+    await user.type(composer, "ABCDE")
+    composer.setSelectionRange(2, 2)
+    await user.keyboard("{Delete}")
     expect(composer).toHaveValue("ABDE")
   })
 
