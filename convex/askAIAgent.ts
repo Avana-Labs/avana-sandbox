@@ -8,7 +8,7 @@ import { createAskAIOutputTransform } from "../app/lib/ask-ai/output-policy"
 import { routeAskAITurn, toolChoiceForAskAIStep, type AskAIModelTier } from "../app/lib/ask-ai/domain-gate"
 import { api, components, internal } from "./_generated/api"
 import { internalAction } from "./_generated/server"
-import { searchAvanaKnowledgeTool } from "./askAIRag"
+import { AVANA_RAG_NAMESPACE, avanaRag, runAvanaKnowledgeSearch, searchAvanaKnowledgeTool } from "./askAIRag"
 import {
   readBorrowCapacityTool,
   readPoolMetricsTool,
@@ -76,11 +76,12 @@ type PreparedTurn = {
 }
 
 type PrefetchedTurnData = {
-  toolName: "search_markets" | "read_portfolio"
-  financialKind: "market" | "pool" | "portfolio"
+  toolName: "search_markets" | "read_portfolio" | "search_avana_knowledge"
+  financialKind?: "market" | "pool" | "portfolio"
   payload: unknown
   modelContext: unknown
   dataProvenance?: DataProvenance
+  sources?: AskAISource[]
 }
 
 function compactMarketContext(payload: unknown) {
@@ -253,6 +254,27 @@ export const generateTurn = internalAction({
           modelContext: compactPortfolioContext(payload),
           dataProvenance: provenance,
         }
+      } else if (route.intent === "education") {
+        const payload = await runAvanaKnowledgeSearch(() =>
+          avanaRag.search(ctx, {
+            namespace: AVANA_RAG_NAMESPACE,
+            query: turn.prompt,
+            limit: ASK_AI_CONFIG.ragResultLimit,
+            searchType: "hybrid",
+            vectorWeight: 0.7,
+            textWeight: 0.3,
+            vectorScoreThreshold: 0.35,
+          }),
+        )
+        prefetched = {
+          toolName: "search_avana_knowledge",
+          payload,
+          modelContext:
+            payload.status === "available"
+              ? { status: payload.status, text: payload.text.slice(0, 6_000), sources: payload.sources }
+              : payload,
+          sources: payload.sources,
+        }
       }
       const result = await turnAgent.streamText<typeof turnTools>(
         ctx,
@@ -310,12 +332,15 @@ export const generateTurn = internalAction({
             : [],
         ),
       )
-      const sources = ragResults.flatMap((ragResult) => (ragResult.sources ?? []) as AskAISource[])
+      const sources = [
+        ...(prefetched?.sources ?? []),
+        ...ragResults.flatMap((ragResult) => (ragResult.sources ?? []) as AskAISource[]),
+      ]
       // One entry per financial tool call the model actually made. `payload` is
       // the tool's structured result verbatim; `dataProvenance` is read
       // defensively because Lane D adds it to the tool output separately.
       const financialResults = [
-        ...(prefetched
+        ...(prefetched?.financialKind
           ? [
               {
                 kind: prefetched.financialKind,
