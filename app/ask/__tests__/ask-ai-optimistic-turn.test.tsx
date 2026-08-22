@@ -30,6 +30,17 @@ afterEach(() => {
 })
 
 describe("Ask AI optimistic turn", () => {
+  it("edits the middle of a controlled draft without jumping to the end", () => {
+    render(<AskAIPageClient />)
+    const composer = screen.getByLabelText("Ask Avana a question") as HTMLTextAreaElement
+    fireEvent.change(composer, { target: { value: "ABCDE", selectionStart: 5, selectionEnd: 5 } })
+    fireEvent.keyDown(composer, { key: "Home" })
+    fireEvent.keyDown(composer, { key: "ArrowRight" })
+    fireEvent.keyDown(composer, { key: "ArrowRight" })
+    fireEvent.keyDown(composer, { key: "Delete" })
+    expect(composer).toHaveValue("ABDE")
+  })
+
   it("shows one user bubble before enqueueTurn resolves", async () => {
     let resolveEnqueue!: (value: { turnId: string; promptMessageId: string }) => void
     enqueue.mockImplementation(

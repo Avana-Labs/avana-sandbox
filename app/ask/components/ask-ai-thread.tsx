@@ -14,7 +14,7 @@ import {
 import { useMutation } from "convex/react"
 import Link from "next/link"
 import { ArrowUp, Check, ChevronDown, Copy, Square, ThumbsDown, ThumbsUp } from "lucide-react"
-import { createContext, useContext, useEffect, useRef, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
 import type { ComponentType } from "react"
 import { Code2, PieChart, Sparkles, SunMedium, TrendingUp } from "@/app/components/icons"
 import { ASK_AI_CONFIG } from "@/app/lib/ask-ai/config"
@@ -358,11 +358,12 @@ export function QuotaNudge({ remaining }: { remaining: number }) {
 }
 
 function Composer({ usage, disabled = false }: { usage?: AskAIUsage; disabled?: boolean }) {
+  const aui = useAui()
   const inputRef = useRef<HTMLTextAreaElement>(null)
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function" || !window.matchMedia("(min-width: 1024px)").matches) return
-    const frame = requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }))
-    return () => cancelAnimationFrame(frame)
+  const selectionRef = useRef({ start: 0, end: 0 })
+  const restoreSelection = useCallback((start: number, end = start) => {
+    selectionRef.current = { start, end }
+    requestAnimationFrame(() => inputRef.current?.setSelectionRange(start, end))
   }, [])
   return (
     <ComposerPrimitive.Root className="relative flex w-full flex-col" aria-disabled={disabled}>
@@ -384,6 +385,46 @@ function Composer({ usage, disabled = false }: { usage?: AskAIUsage; disabled?: 
             unstable_focusOnScrollToBottom={false}
             unstable_focusOnRunStart={false}
             unstable_focusOnThreadSwitched={false}
+            onSelect={(event) => {
+              selectionRef.current = {
+                start: event.currentTarget.selectionStart,
+                end: event.currentTarget.selectionEnd,
+              }
+            }}
+            onChange={(event) => {
+              restoreSelection(event.currentTarget.selectionStart, event.currentTarget.selectionEnd)
+            }}
+            onKeyDown={(event) => {
+              if (event.altKey || event.ctrlKey || event.metaKey) return
+              const input = event.currentTarget
+              const selected = selectionRef.current
+              if (event.key === "ArrowLeft" && selected.start === selected.end) {
+                event.preventDefault()
+                restoreSelection(Math.max(0, selected.start - 1))
+              } else if (event.key === "ArrowRight" && selected.start === selected.end) {
+                event.preventDefault()
+                restoreSelection(Math.min(input.value.length, selected.end + 1))
+              } else if (event.key === "Home") {
+                event.preventDefault()
+                restoreSelection(0)
+              } else if (event.key === "End") {
+                event.preventDefault()
+                restoreSelection(input.value.length)
+              } else if (
+                event.key === "Delete" &&
+                selected.start === selected.end &&
+                selected.start < input.value.length
+              ) {
+                event.preventDefault()
+                aui.composer.setText(input.value.slice(0, selected.start) + input.value.slice(selected.start + 1))
+                restoreSelection(selected.start)
+              } else if (event.key === "Backspace" && selected.start === selected.end && selected.start > 0) {
+                event.preventDefault()
+                const next = selected.start - 1
+                aui.composer.setText(input.value.slice(0, next) + input.value.slice(selected.end))
+                restoreSelection(next)
+              }
+            }}
             className="max-h-48 min-h-10 w-full resize-none bg-transparent px-2.5 py-1 text-base leading-6 outline-none placeholder:text-muted-foreground/60"
           />
           <ComposerToolbar className="relative">
