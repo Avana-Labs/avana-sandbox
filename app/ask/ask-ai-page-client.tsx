@@ -70,6 +70,29 @@ const healthFactor = (value: unknown): string | null =>
 const metricOf = (label: string, value: string | null, after?: string | null): AskAIMetric | null =>
   value == null ? null : after != null ? { label, value, after } : { label, value }
 
+const dateTime = (value: unknown): string | null =>
+  typeof value === "number" && Number.isFinite(value)
+    ? new Date(value).toLocaleString([], {
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : null
+
+function umbrellaStatus(row: Record<string, unknown>) {
+  const status = typeof row.lifecycleStatus === "string" ? row.lifecycleStatus : "active"
+  const cooldownEnd = dateTime(row.cooldownEndsAt)
+  const windowEnd = dateTime(row.withdrawalWindowEndsAt)
+  if (status === "coolingDown" || status === "partiallyCooling")
+    return cooldownEnd ? `Cooling until ${cooldownEnd}` : "Cooling"
+  if (status === "readyToUnstake") return windowEnd ? `Ready until ${windowEnd}` : "Ready to unstake"
+  if (status === "cooldownExpired") return "Withdrawal window expired"
+  if (status === "slashed") return "Slashed"
+  if (status === "closed") return "Closed"
+  return "Active"
+}
+
 // A financial tool result renders only when its verbatim payload already matches
 // the card's display shape. Anything else is skipped — never fabricated.
 function toFinancialResultCard(payload: unknown): AskAIFinancialResult | null {
@@ -123,13 +146,18 @@ function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFi
   switch (kind) {
     case "portfolio": {
       const t = asObject(p.totals)
-      const productRows = [
-        ["Lend", usd(t.lendUsd)],
-        ["Borrow", usd(t.borrowUsd)],
-        ["Multiply", usd(t.multiplyUsd)],
-        ["Liquid", usd(t.liquidUsd)],
-      ].flatMap(([product, value], index) =>
-        value ? [{ id: `product-${index}`, cells: [product ?? "", "All positions", value] }] : [],
+      const umbrellaFocused = p.focus === "umbrella"
+      const productRows = (
+        umbrellaFocused
+          ? []
+          : [
+              ["Lend", usd(t.lendUsd)],
+              ["Borrow", usd(t.borrowUsd)],
+              ["Multiply", usd(t.multiplyUsd)],
+              ["Liquid", usd(t.liquidUsd)],
+            ]
+      ).flatMap(([product, value], index) =>
+        value ? [{ id: `product-${index}`, cells: [product ?? "", "All positions", value, "", ""] }] : [],
       )
       const umbrellaRows = Array.isArray(p.umbrella)
         ? p.umbrella.flatMap((position, index) => {
@@ -138,20 +166,46 @@ function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFi
               typeof row.suppliedUsd6 === "string" ? Number(row.suppliedUsd6) / 1_000_000 : row.suppliedUsd,
             )
             if (!value) return []
+            const cooldown = usd(
+              typeof row.cooldownAmountUsd6 === "string" ? Number(row.cooldownAmountUsd6) / 1_000_000 : row.cooldownUsd,
+            )
             return [
               {
                 id: `umbrella-${index}`,
-                cells: ["Umbrella", String(row.marketSlug ?? row.marketId ?? `Position ${index + 1}`), value],
+                cells: umbrellaFocused
+                  ? [
+                      String(row.marketSlug ?? row.marketId ?? `Position ${index + 1}`),
+                      value,
+                      cooldown ?? "$0.00",
+                      umbrellaStatus(row),
+                    ]
+                  : [
+                      "Umbrella",
+                      String(row.marketSlug ?? row.marketId ?? `Position ${index + 1}`),
+                      value,
+                      cooldown ?? "$0.00",
+                      umbrellaStatus(row),
+                    ],
               },
             ]
           })
         : []
       return table(
         "portfolio",
-        "Your Avana portfolio",
-        ["Product", "Position", "Value"],
+        umbrellaFocused ? "Your Umbrella positions" : "Your Avana portfolio",
+        umbrellaFocused
+          ? ["Position", "Value", "Cooldown", "Status"]
+          : ["Product", "Position", "Value", "Cooldown", "Status"],
         [...productRows, ...umbrellaRows],
-        [metricOf("Total Umbrella", usd(t.umbrellaUsd))].filter((metric): metric is AskAIMetric => metric !== null),
+        [
+          metricOf("Total Umbrella", usd(t.umbrellaUsd)),
+          ...(umbrellaFocused
+            ? [
+                metricOf("On cooldown", usd(asObject(p.umbrellaCooldownSummary).coolingUsd)),
+                metricOf("Ready to unstake", usd(asObject(p.umbrellaCooldownSummary).readyUsd)),
+              ]
+            : []),
+        ].filter((metric): metric is AskAIMetric => metric !== null),
       )
     }
     case "borrow_capacity": {
@@ -256,7 +310,7 @@ const assistantMetadata = () => ({
   custom: {},
 })
 function persistedAssistantParts(messageId: string, text: string, rich?: PersistedRichParts) {
-  const parts: ThreadAssistantMessagePart[] = []
+  const parts: ThreadAssistantMessagePart[] = [{ type: "text", text }]
   if (rich?.retrievalChunks?.length) {
     parts.push({
       type: "data",
@@ -276,10 +330,14 @@ function persistedAssistantParts(messageId: string, text: string, rich?: Persist
   if (rich?.sources?.length) parts.push({ type: "data", name: "sources", data: rich.sources })
   if (rich?.visual) parts.push({ type: "data", name: "chart", data: rich.visual })
   for (const entry of rich?.financialResults ?? []) {
+    const payload = asObject(entry.payload)
+    const providerData = Array.isArray(payload.providerData) ? payload.providerData : []
+    const isSingleTokenPrice =
+      entry.kind === "market" && providerData.length === 1 && asObject(providerData[0]).kind === "token_price"
+    if (rich?.visual && isSingleTokenPrice) continue
     const card = buildFinancialCard(entry.kind, entry.payload)
     if (card) parts.push({ type: "data", name: "financial-result", data: card })
   }
-  parts.push({ type: "text", text })
   return parts
 }
 
@@ -489,11 +547,20 @@ export function AskAIPageClient({
       })
       return
     }
-    setPendingTurn((pending) =>
-      pending?.promptMessageId && persistedMessages.some((message) => message.id === pending.promptMessageId)
-        ? null
-        : pending,
-    )
+    setPendingTurn((pending) => {
+      if (!pending?.promptMessageId) return pending
+      const promptIndex = persistedMessages.findIndex((message) => message.id === pending.promptMessageId)
+      if (promptIndex < 0) return pending
+      const hasTerminalAssistant = persistedMessages
+        .slice(promptIndex + 1)
+        .some(
+          (message) =>
+            message.role === "assistant" &&
+            "status" in message &&
+            (message.status?.type === "complete" || message.status?.type === "incomplete"),
+        )
+      return hasTerminalAssistant ? null : pending
+    })
   }, [persistedMessages, turnQueue])
 
   const handleNewMessage = useCallback(

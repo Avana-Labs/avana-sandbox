@@ -78,6 +78,13 @@ describe("AskAIPageClient rich parts", () => {
     expect(screen.getByText("Borrow docs")).toBeInTheDocument()
     // MarkdownText renders the answer as one node, so match the sentence.
     expect(screen.getByText(/Here is your borrow capacity/)).toBeInTheDocument()
+
+    const timestamps = Array.from(document.querySelectorAll("time"))
+    expect(timestamps).toHaveLength(2)
+    for (const timestamp of timestamps) {
+      expect(timestamp).toHaveClass("px-2", "py-1.5")
+      expect(timestamp).not.toHaveClass("pr-2", "mt-1.5")
+    }
   })
 
   it("reshapes a verbatim portfolio tool payload into a card", () => {
@@ -106,7 +113,16 @@ describe("AskAIPageClient rich parts", () => {
                 walletRequired: false,
                 dataProvenance: "sandbox",
                 totals: { lendUsd: 1000, borrowUsd: 250, multiplyUsd: 0, liquidUsd: 42.5, umbrellaUsd: 500 },
-                umbrella: [{ marketSlug: "gho", suppliedUsd6: "500000000" }],
+                umbrella: [
+                  {
+                    marketSlug: "gho",
+                    suppliedUsd6: "500000000",
+                    cooldownAmountUsd6: "250000000",
+                    cooldownEndsAt: Date.now() + 86_400_000,
+                    withdrawalWindowEndsAt: Date.now() + 3 * 86_400_000,
+                    lifecycleStatus: "partiallyCooling",
+                  },
+                ],
                 asOf: 0,
               },
             },
@@ -120,10 +136,13 @@ describe("AskAIPageClient rich parts", () => {
     expect(screen.getByText("$1,000.00")).toBeInTheDocument()
     expect(screen.getByText("$42.50")).toBeInTheDocument()
     expect(screen.getByRole("columnheader", { name: "Product" })).toBeInTheDocument()
+    expect(screen.getByRole("columnheader", { name: "Cooldown" })).toBeInTheDocument()
     expect(screen.getByText("gho")).toBeInTheDocument()
+    expect(screen.getAllByText("$250.00").length).toBeGreaterThan(0)
+    expect(screen.getByText(/Cooling until/)).toBeInTheDocument()
   })
 
-  it("renders cached market results as a table and real price history as a chart", () => {
+  it("renders a compact price chart without a redundant one-row market table", () => {
     messagesMock.mockReturnValue({
       status: "Exhausted",
       loadMore: vi.fn(),
@@ -152,15 +171,62 @@ describe("AskAIPageClient rich parts", () => {
               },
             },
           ],
-          visual: { label: "WETH price", value: "$4,321", delta: "+2.10%", points: [4200, 4250, 4321] },
+          visual: { label: "WETH price", value: "$4,321.123456", delta: "+2.10%", points: [4200, 4250, 4321] },
         },
       },
     ])
 
     render(<AskAIPageClient />)
-    expect(screen.getByRole("columnheader", { name: "Market" })).toBeInTheDocument()
-    expect(screen.getByText("defillama")).toBeInTheDocument()
-    expect(screen.getByRole("img", { name: "WETH price: $4,321" })).toBeInTheDocument()
+    expect(screen.queryByRole("columnheader", { name: "Market" })).not.toBeInTheDocument()
+    expect(screen.queryByText("defillama")).not.toBeInTheDocument()
+    const chart = screen.getByRole("img", { name: "WETH price: $4,321.12" })
+    expect(chart).toBeInTheDocument()
+    expect(chart.querySelector("path")).not.toBeInTheDocument()
+    expect(screen.getByText("ETH is $4,321.")).toBeInTheDocument()
+  })
+
+  it("shows only Umbrella data for an Umbrella-focused portfolio result", () => {
+    messagesMock.mockReturnValue({
+      status: "Exhausted",
+      loadMore: vi.fn(),
+      results: [
+        { id: "u1", role: "user", text: "Do I have any Umbrella on cooldown?", _creationTime: 1, status: "success" },
+        { id: "a1", role: "assistant", text: "Your GHO is cooling down.", _creationTime: 2, status: "success" },
+      ],
+    })
+    partsMock.mockReturnValue([
+      {
+        messageId: "a1",
+        parts: {
+          financialResults: [
+            {
+              kind: "portfolio",
+              payload: {
+                focus: "umbrella",
+                totals: { umbrellaUsd: 5_000 },
+                umbrellaCooldownSummary: { coolingUsd: 2_500, readyUsd: 0 },
+                umbrella: [
+                  {
+                    marketSlug: "gho",
+                    suppliedUsd6: "5000000000",
+                    cooldownAmountUsd6: "2500000000",
+                    cooldownEndsAt: Date.now() + 86_400_000,
+                    withdrawalWindowEndsAt: Date.now() + 3 * 86_400_000,
+                    lifecycleStatus: "partiallyCooling",
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    ])
+
+    render(<AskAIPageClient />)
+    expect(screen.getByRole("region", { name: "Your Umbrella positions" })).toBeInTheDocument()
+    expect(screen.getAllByText("$2,500.00").length).toBeGreaterThan(0)
+    expect(screen.queryByRole("columnheader", { name: "Product" })).not.toBeInTheDocument()
+    expect(screen.queryByText("Liquid")).not.toBeInTheDocument()
   })
 
   it("does not fabricate a card when the payload is not display-ready", () => {
@@ -203,5 +269,20 @@ describe("AskAIPageClient rich parts", () => {
     expect(screen.queryByRole("button", { name: "Copy answer" })).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Mark answer as helpful" })).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument()
+  })
+
+  it("keeps thinking visible while a streaming assistant message has no renderable answer", () => {
+    messagesMock.mockReturnValue({
+      status: "Exhausted",
+      loadMore: vi.fn(),
+      results: [
+        { id: "u1", role: "user", text: "How much can I borrow?", _creationTime: 1, status: "success" },
+        { id: "a1", role: "assistant", text: "", _creationTime: 2, status: "streaming" },
+      ],
+    })
+
+    render(<AskAIPageClient />)
+
+    expect(screen.getByText("Thinking…")).toBeInTheDocument()
   })
 })

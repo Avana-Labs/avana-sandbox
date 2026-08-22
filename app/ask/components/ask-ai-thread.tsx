@@ -140,7 +140,7 @@ function DirectAssistantPart({ part }: { part: ThreadMessage["content"][number] 
   if (part.name === "financial-result") return <AskAIFinancialResultCard result={part.data as AskAIFinancialResult} />
   if (part.name === "chart") {
     const data = part.data as { label: string; value: string; points: number[]; delta?: string }
-    return <Chart {...data} visibleCount={data.points.length} className="max-w-none" />
+    return <Chart {...data} visibleCount={data.points.length} variant="line" className="max-w-md" />
   }
   if (part.name === "sources")
     return (
@@ -159,6 +159,12 @@ function DirectAssistantPart({ part }: { part: ThreadMessage["content"][number] 
     )
   }
   return null
+}
+
+function isRenderableAssistantPart(part: ThreadMessage["content"][number]) {
+  if (part.type === "text") return part.text.trim().length > 0
+  if (part.type !== "data") return false
+  return ["financial-result", "chart", "sources", "retrieval"].includes(part.name)
 }
 
 function DirectAssistantMessage({
@@ -189,13 +195,14 @@ function DirectAssistantMessage({
   const failed = status?.type === "incomplete"
   const errorValue = failed && status && "error" in status ? status.error : undefined
   const persisted = !message.id.endsWith("-assistant")
+  const renderableContent = message.content.filter(isRenderableAssistantPart)
   return (
     <div className="group/msg px-2 text-foreground">
       <div className="flex flex-col gap-3" aria-live="polite" aria-atomic="false">
-        {running && message.content.length === 0 ? (
+        {running && renderableContent.length === 0 ? (
           <ThinkingIndicatorLive />
         ) : (
-          message.content.map((part, index) => <DirectAssistantPart key={`${message.id}-${index}`} part={part} />)
+          renderableContent.map((part, index) => <DirectAssistantPart key={`${message.id}-${index}`} part={part} />)
         )}
         {failed ? (
           <ErrorState

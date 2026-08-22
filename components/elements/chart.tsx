@@ -11,6 +11,18 @@ const W = 300
 const H = 88
 const PAD = 6
 
+function formatChartValue(value: string) {
+  const match = /^\$([\d,]+(?:\.\d+)?)$/.exec(value.trim())
+  if (!match) return value
+  const amount = Number(match[1].replaceAll(",", ""))
+  if (!Number.isFinite(amount)) return value
+  const maximumFractionDigits = amount >= 1 ? 2 : amount >= 0.01 ? 4 : 6
+  return `$${amount.toLocaleString("en-US", {
+    minimumFractionDigits: amount >= 1 ? 2 : 0,
+    maximumFractionDigits,
+  })}`
+}
+
 const scale = (points: readonly number[]) => {
   const max = Math.max(...points, 1)
   const min = Math.min(...points, 0)
@@ -49,6 +61,7 @@ export function Chart({
   const lastIndex = shown.length - 1
   const falling = delta !== undefined && /^\s*[-−–]/.test(delta)
   const rising = delta !== undefined && !falling
+  const displayValue = formatChartValue(value)
 
   return (
     <div
@@ -72,12 +85,12 @@ export function Chart({
         )}
       </div>
 
-      <span className="text-2xl font-medium tracking-tight tabular-nums">{value}</span>
+      <span className="text-2xl font-medium tracking-tight tabular-nums">{displayValue}</span>
 
       <svg
         viewBox={`0 0 ${W} ${H}`}
         role="img"
-        aria-label={`${label}: ${value}`}
+        aria-label={`${label}: ${displayValue}`}
         className="h-[88px] w-full overflow-visible"
         preserveAspectRatio="none"
       >
@@ -112,9 +125,7 @@ export function Chart({
           })
         ) : (
           <>
-            {variant === "area" && shown.length > 1 && (
-              <path d={area} className="fill-blue-500/12 dark:fill-blue-400/15" />
-            )}
+            {variant === "area" && shown.length > 1 && <path d={area} fill="rgb(59 130 246 / 0.1)" />}
             <polyline
               points={line}
               fill="none"

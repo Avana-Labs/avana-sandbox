@@ -59,7 +59,7 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
   const wallet = await getAuthedWallet(ctx)
   if (!wallet) return { walletRequired: true as const, message: ASK_AI_WALLET_REQUIRED }
 
-  const [lend, borrow, multiply, liquid, umbrella] = await Promise.all([
+  const [lend, borrow, multiply, liquid, umbrella, umbrellaTranches] = await Promise.all([
     ctx.db
       .query("walletLendBalances")
       .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
@@ -80,9 +80,44 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
       .query("positions")
       .withIndex("by_wallet_product", (q) => q.eq("wallet", wallet).eq("product", "umbrella"))
       .collect(),
+    ctx.db
+      .query("umbrellaCooldownTranches")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
   ])
 
   const sumUsd = (rows: readonly { valueUsd: number }[]) => rows.reduce((sum, row) => sum + row.valueUsd, 0)
+  const now = Date.now()
+  const umbrellaPositions = umbrella.map((position) => ({
+    ...position,
+    suppliedUsd: Number(position.suppliedUsd6 ?? "0") / 1_000_000,
+    cooldownUsd: Number(position.cooldownAmountUsd6 ?? "0") / 1_000_000,
+    lifecycleStatus: deriveAskAIUmbrellaStatus({ ...position, now }),
+    remainingCooldownMs: Math.max(0, (position.cooldownEndsAt ?? 0) - now),
+    remainingWithdrawalWindowMs: Math.max(0, (position.withdrawalWindowEndsAt ?? 0) - now),
+  }))
+  const umbrellaCooldowns = umbrellaTranches.flatMap((tranche) => {
+    const amountUsd = Number(tranche.amountUsd6) / 1_000_000
+    if (tranche.status === "consumed" || amountUsd <= 0) return []
+    const status = now < tranche.endsAt ? "cooling" : now <= tranche.windowEndsAt ? "ready" : "expired"
+    return [
+      {
+        positionId: tranche.positionId,
+        marketId: tranche.marketId,
+        amountUsd,
+        status,
+        startedAt: tranche.startedAt,
+        endsAt: tranche.endsAt,
+        windowEndsAt: tranche.windowEndsAt,
+        remainingCooldownMs: status === "cooling" ? tranche.endsAt - now : 0,
+        remainingWithdrawalWindowMs: status === "ready" ? tranche.windowEndsAt - now : 0,
+        canWithdraw: status === "ready",
+      },
+    ]
+  })
+  const cooling = umbrellaCooldowns.filter((tranche) => tranche.status === "cooling")
+  const ready = umbrellaCooldowns.filter((tranche) => tranche.status === "ready")
+  const expired = umbrellaCooldowns.filter((tranche) => tranche.status === "expired")
   const umbrellaSuppliedUsd = umbrella.reduce(
     (sum, position) => sum + Number(position.suppliedUsd6 ?? "0") / 1_000_000,
     0,
@@ -103,7 +138,18 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
     borrow,
     multiply,
     liquid,
-    umbrella,
+    umbrella: umbrellaPositions,
+    umbrellaCooldowns,
+    umbrellaCooldownSummary: {
+      coolingCount: cooling.length,
+      coolingUsd: cooling.reduce((sum, tranche) => sum + tranche.amountUsd, 0),
+      readyCount: ready.length,
+      readyUsd: ready.reduce((sum, tranche) => sum + tranche.amountUsd, 0),
+      expiredCount: expired.length,
+      expiredUsd: expired.reduce((sum, tranche) => sum + tranche.amountUsd, 0),
+      nextCooldownEndsAt: cooling.length > 0 ? Math.min(...cooling.map((tranche) => tranche.endsAt)) : null,
+      nextWithdrawalWindowEndsAt: ready.length > 0 ? Math.min(...ready.map((tranche) => tranche.windowEndsAt)) : null,
+    },
     asOf: Math.max(
       0,
       ...lend.map((row) => row.updatedAt),
@@ -111,6 +157,7 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
       ...multiply.map((row) => row.updatedAt),
       ...liquid.map((row) => row.updatedAt),
       ...umbrella.map((row) => row.lastUpdatedAt),
+      ...umbrellaTranches.map((row) => row.updatedAt),
     ),
   }
 }
@@ -229,18 +276,34 @@ export const engineSnapshot = query({
 export async function readAskAIBorrowCapacity(ctx: PortfolioReadCtx) {
   const wallet = await getAuthedWallet(ctx)
   if (!wallet) return { walletRequired: true as const, message: ASK_AI_WALLET_REQUIRED }
-  const snapshot = await ctx.db
-    .query("riskSnapshots")
-    .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
-    .order("desc")
-    .first()
+  const [snapshot, portfolio] = await Promise.all([
+    ctx.db
+      .query("riskSnapshots")
+      .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+      .order("desc")
+      .first(),
+    ctx.db
+      .query("portfolioCurrent")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .unique(),
+  ])
+  const capacity = snapshot
+    ? { ...decodeBorrowRiskSnapshot(snapshot), source: "credit_engine_snapshot" as const }
+    : portfolio
+      ? {
+          borrowCapacityUsd: portfolio.availableToBorrowUsd + portfolio.totalBorrowedUsd,
+          availableBorrowCapacityUsd: portfolio.availableToBorrowUsd,
+          totalBorrowedUsd: portfolio.totalBorrowedUsd,
+          source: "portfolio_current" as const,
+        }
+      : null
   return {
     walletRequired: false as const,
     dataProvenance: ASK_AI_DATA_PROVENANCE,
     wallet,
-    capacity: snapshot ? decodeBorrowRiskSnapshot(snapshot) : null,
+    capacity,
     spokes: snapshot?.spokes ?? [],
-    asOf: snapshot?.at ?? 0,
+    asOf: snapshot?.at ?? portfolio?.at ?? 0,
   }
 }
 

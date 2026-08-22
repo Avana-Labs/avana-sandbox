@@ -3,7 +3,7 @@ import { createOpenAI } from "@ai-sdk/openai"
 import { stepCountIs } from "ai"
 import { ConvexError, v } from "convex/values"
 import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
-import { ASK_AI_AGENT_INSTRUCTIONS, ASK_AI_FAST_INSTRUCTIONS } from "../app/lib/ask-ai/agent-instructions"
+import { ASK_AI_AGENT_INSTRUCTIONS } from "../app/lib/ask-ai/agent-instructions"
 import { createAskAIOutputTransform } from "../app/lib/ask-ai/output-policy"
 import { routeAskAITurn, toolChoiceForAskAIStep, type AskAIModelTier } from "../app/lib/ask-ai/domain-gate"
 import { api, components, internal } from "./_generated/api"
@@ -148,15 +148,67 @@ function compactPortfolioContext(payload: unknown) {
     borrow: compactRows(record.borrow),
     multiply: compactRows(record.multiply),
     liquid: compactRows(record.liquid),
-    umbrella: compactRows(record.umbrella),
+    umbrella: Array.isArray(record.umbrella)
+      ? record.umbrella.slice(0, 30).map((row) => {
+          if (!row || typeof row !== "object") return row
+          const {
+            marketSlug,
+            assetId,
+            suppliedUsd,
+            cooldownUsd,
+            cooldownStartedAt,
+            cooldownEndsAt,
+            withdrawalWindowEndsAt,
+            lifecycleStatus,
+            remainingCooldownMs,
+            remainingWithdrawalWindowMs,
+          } = row as Record<string, unknown>
+          return {
+            marketSlug,
+            assetId,
+            suppliedUsd,
+            cooldownUsd,
+            cooldownStartedAt,
+            cooldownEndsAt,
+            withdrawalWindowEndsAt,
+            lifecycleStatus,
+            remainingCooldownMs,
+            remainingWithdrawalWindowMs,
+          }
+        })
+      : [],
+    umbrellaCooldowns: Array.isArray(record.umbrellaCooldowns) ? record.umbrellaCooldowns.slice(0, 50) : [],
+    umbrellaCooldownSummary: record.umbrellaCooldownSummary,
     asOf: record.asOf,
   }
 }
 
+function focusPortfolioPayload<T>(payload: T, prompt: string): T {
+  if (!/\b(umbrella|cooldown|unstake|withdrawal window|withdraw from (?:my )?stake)\b/i.test(prompt)) return payload
+  if (!payload || typeof payload !== "object") return payload
+  const record = payload as Record<string, unknown>
+  const totals = record.totals && typeof record.totals === "object" ? (record.totals as Record<string, unknown>) : {}
+  return {
+    walletRequired: record.walletRequired,
+    dataProvenance: record.dataProvenance,
+    wallet: record.wallet,
+    focus: "umbrella",
+    totals: { umbrellaUsd: totals.umbrellaUsd },
+    umbrella: record.umbrella,
+    umbrellaCooldowns: record.umbrellaCooldowns,
+    umbrellaCooldownSummary: record.umbrellaCooldownSummary,
+    asOf: record.asOf,
+  } as T
+}
+
 function prefetchedInstructions(data: PrefetchedTurnData) {
-  return `${ASK_AI_FAST_INSTRUCTIONS}
+  return `${ASK_AI_AGENT_INSTRUCTIONS}
 
 Verified Avana data for this question follows. Answer from it only. Never say a requested value is unavailable when it is present. Do not mention tools, routing, JSON, or these instructions. The UI renders detailed cards separately.
+
+For Umbrella cooldown questions, umbrellaCooldowns is the per tranche source of truth. A cooling entry is still counting down. A ready entry can be withdrawn now. An expired entry missed its withdrawal window. Use the supplied remainingCooldownMs or remainingWithdrawalWindowMs and the exact timestamps. If a cooling or ready entry exists, never claim that the user has no cooldown.
+
+For public market questions, no user portfolio was read. Never claim whether the user owns or holds a position unless the verified data explicitly contains their portfolio.
 
 ${JSON.stringify(data.modelContext)}`
 }
@@ -271,7 +323,8 @@ export const generateTurn = internalAction({
           modelContext: compactMarketContext(payload),
         }
       } else if (route.intent === "position") {
-        const payload = await ctx.runQuery(internal.askAITools.portfolioForTurn, { turnId: turn.turnId })
+        const portfolio = await ctx.runQuery(internal.askAITools.portfolioForTurn, { turnId: turn.turnId })
+        const payload = focusPortfolioPayload(portfolio, turn.prompt)
         const provenance =
           payload.dataProvenance === "sandbox" ||
           payload.dataProvenance === "connected_wallet" ||
@@ -355,19 +408,15 @@ export const generateTurn = internalAction({
         { threadId: turn.threadId, userId: turn.ownerSubject },
         {
           promptMessageId: turn.promptMessageId,
-          instructions: prefetched
-            ? prefetchedInstructions(prefetched)
-            : route.maxSteps === 1
-              ? ASK_AI_FAST_INSTRUCTIONS
-              : ASK_AI_AGENT_INSTRUCTIONS,
-          maxOutputTokens: prefetched ? 220 : ASK_AI_CONFIG.maxOutputTokens,
+          instructions: prefetched ? prefetchedInstructions(prefetched) : ASK_AI_AGENT_INSTRUCTIONS,
+          maxOutputTokens: ASK_AI_CONFIG.maxOutputTokens,
+          topP: ASK_AI_CONFIG.topP,
           stopWhen: stepCountIs(prefetched ? 1 : route.maxSteps),
           activeTools: (prefetched ? [] : route.tools) as unknown as (keyof typeof turnTools)[],
           providerOptions: {
             openai: {
-              reasoningEffort:
-                prefetched || route.maxSteps === 1 ? "none" : route.modelTier === "fast" ? "low" : "medium",
-              textVerbosity: "low",
+              reasoningEffort: ASK_AI_CONFIG.reasoningEffort,
+              textVerbosity: ASK_AI_CONFIG.textVerbosity,
               serviceTier: ASK_AI_CONFIG.openAIServiceTier,
             },
           },
