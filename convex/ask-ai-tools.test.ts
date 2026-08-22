@@ -314,4 +314,35 @@ describe("Ask AI normalized market tools", () => {
       }),
     ])
   })
+
+  test("returns DEX pool metrics instead of lending rows for a pool lookup", async () => {
+    const t = convexTest(schema, modules)
+    const now = Date.now()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("askAIMarketSnapshots", {
+        source: "defillama",
+        kind: "dex_pool",
+        key: "defillama:usdc-pool",
+        payload: { project: "uniswap-v3", symbol: "USDC-WETH", tvlUsd: 42_000_000, apy: 6.2 },
+        sourceUpdatedAt: now,
+        fetchedAt: now,
+      })
+      await ctx.db.insert("askAIMarketSnapshots", {
+        source: "aave",
+        kind: "lending_market",
+        key: "aave:usdc",
+        payload: { market: "AaveV3Ethereum", symbol: "USDC", sizeUsd: 2_000_000_000 },
+        sourceUpdatedAt: now,
+        fetchedAt: now,
+      })
+    })
+
+    const result = await t.query(api.askAITools.searchMarkets, { query: "What are the best USDC pools?" })
+    expect(result.providerData).toEqual([
+      expect.objectContaining({
+        kind: "dex_pool",
+        data: expect.objectContaining({ symbol: "USDC-WETH", tvlUsd: 42_000_000, apyPct: 6.2 }),
+      }),
+    ])
+  })
 })
