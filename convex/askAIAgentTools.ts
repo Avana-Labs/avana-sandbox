@@ -62,7 +62,7 @@ export const readPoolMetricsTool: Tool = createTool({
   execute: (ctx, input): Promise<unknown> => ctx.runQuery(api.askAITools.poolMetrics, input),
 })
 
-export function createAskAITurnTools(turnId: Id<"askAITurns">) {
+export function createAskAITurnTools(turnId: Id<"askAITurns">, prompt: string) {
   return {
     read_portfolio: createTool({
       description:
@@ -103,7 +103,15 @@ export function createAskAITurnTools(turnId: Id<"askAITurns">) {
       execute: (ctx, input): Promise<unknown> =>
         ctx.runQuery(internal.askAITools.stressPositionForTurn, { turnId, ...input }),
     }),
-    search_markets: searchMarketsTool,
+    search_markets: createTool({
+      description:
+        "Search Avana's canonical Convex market catalog for the user's current price, pool, rate, liquidity, or market question.",
+      // The server already owns the exact user prompt. Do not let the model
+      // weaken "AAVE token price" into "Aave markets" and change retrieval.
+      inputSchema: z.object({ limit: z.number().int().min(1).max(20).optional() }),
+      execute: (ctx, input): Promise<unknown> =>
+        ctx.runQuery(api.askAITools.searchMarkets, { query: prompt, limit: input.limit }),
+    }),
     read_pool_metrics: readPoolMetricsTool,
   }
 }

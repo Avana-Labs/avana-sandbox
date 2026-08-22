@@ -194,4 +194,38 @@ describe("Ask AI normalized market tools", () => {
       providerData: [expect.objectContaining({ source: "uniswap", freshness: "fresh" })],
     })
   })
+
+  test("ranks the exact cached token quote first for a natural price question", async () => {
+    const t = convexTest(schema, modules)
+    const now = Date.now()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("tokenPrices", {
+        symbol: "aave",
+        llamaId: "coingecko:aave",
+        priceUsd: 123.98,
+        confidence: 0.99,
+        sourceUpdatedAt: now,
+        fetchedAt: now,
+        snapshotAt: now,
+        status: "fresh",
+        source: "defillama",
+        updatedAt: now,
+      })
+      await ctx.db.insert("askAIMarketSnapshots", {
+        source: "aave",
+        kind: "lending_market",
+        key: "aave-v3-usdc",
+        payload: { market: "AaveV3Ethereum", symbol: "USDC", sizeUsd: 2_000_000_000 },
+        sourceUpdatedAt: now,
+        fetchedAt: now,
+      })
+    })
+
+    const result = await t.query(api.askAITools.searchMarkets, { query: "What's Aave token price now?" })
+    expect(result.providerData[0]).toMatchObject({
+      kind: "token_price",
+      key: "aave",
+      data: { priceUsd: 123.98 },
+    })
+  })
 })
