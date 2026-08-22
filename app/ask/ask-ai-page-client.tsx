@@ -298,6 +298,10 @@ export function AskAIPageClient({
   // include it. Keep that explicit selection stable during the subscription
   // gap instead of falling back to the previous first thread.
   const pendingActiveThreadRef = useRef<string | null>(null)
+  // The runtime can retain an older onNew callback for one render. Keep the
+  // selected thread in a ref as well, so submitting immediately after New Thread
+  // cannot enqueue into the previously selected conversation.
+  const activeThreadIdRef = useRef<string | null>(activeThreadId)
   const [pendingTurn, setPendingTurn] = useState<PendingTurn | null>(null)
   const {
     results: threads,
@@ -363,7 +367,9 @@ export function AskAIPageClient({
       return
     }
     if (activeThreadId && pendingActiveThreadRef.current === activeThreadId) return
-    setActiveThreadId(threads[0]?.threadId ?? null)
+    const fallbackThreadId = threads[0]?.threadId ?? null
+    activeThreadIdRef.current = fallbackThreadId
+    setActiveThreadId(fallbackThreadId)
   }, [activeThreadId, resolvedActiveThreadId, threadPageStatus, threads])
   useEffect(() => {
     if (activeThreadId) window.sessionStorage.setItem(ACTIVE_THREAD_STORAGE_KEY, activeThreadId)
@@ -403,6 +409,7 @@ export function AskAIPageClient({
     setPendingTurn(null)
     const thread = await createThread({})
     pendingActiveThreadRef.current = thread.threadId
+    activeThreadIdRef.current = thread.threadId
     setActiveThreadId(thread.threadId)
   }, [createThread])
 
@@ -425,11 +432,12 @@ export function AskAIPageClient({
       const startedAt = Date.now()
       setPendingTurn({ id: clientRequestId, clientRequestId, prompt, startedAt })
       try {
-        let threadId = resolvedActiveThreadId
+        let threadId = activeThreadIdRef.current
         if (!threadId) {
           const created = await createThread({})
           threadId = created.threadId
           pendingActiveThreadRef.current = threadId
+          activeThreadIdRef.current = threadId
           setActiveThreadId(threadId)
         }
         const queued = await enqueueTurn({ threadId, prompt, clientRequestId })
@@ -444,7 +452,7 @@ export function AskAIPageClient({
         )
       }
     },
-    [createThread, enqueueTurn, resolvedActiveThreadId],
+    [createThread, enqueueTurn],
   )
 
   // Execution is claimed and scheduled by Convex. The browser only reflects the
@@ -567,6 +575,7 @@ export function AskAIPageClient({
           onNewThread={handleNewThread}
           onSelectThread={(threadId) => {
             setPendingTurn(null)
+            activeThreadIdRef.current = threadId
             setActiveThreadId(threadId)
           }}
           onRenameThread={async (threadId, title) => {
@@ -577,11 +586,14 @@ export function AskAIPageClient({
             await archiveThread({ threadId })
             if (threadId === resolvedActiveThreadId) {
               setPendingTurn(null)
-              setActiveThreadId(threads.find((thread) => thread.threadId !== threadId)?.threadId ?? null)
+              const fallbackThreadId = threads.find((thread) => thread.threadId !== threadId)?.threadId ?? null
+              activeThreadIdRef.current = fallbackThreadId
+              setActiveThreadId(fallbackThreadId)
             }
           }}
           onUnarchiveThread={async (threadId) => {
             await unarchiveThread({ threadId })
+            activeThreadIdRef.current = threadId
             setActiveThreadId(threadId)
           }}
           quota={quota}
