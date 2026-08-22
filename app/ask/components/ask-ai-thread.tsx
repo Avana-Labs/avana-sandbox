@@ -26,6 +26,7 @@ import { Sources, type Source } from "@/components/elements/sources"
 import { MarkdownTextContent } from "@/components/assistant-ui/markdown-text"
 import { api } from "@/convex/_generated/api"
 import type { AskAIUsage } from "@/app/lib/ask-ai/chat-protocol"
+import { formatAskAIMessageTimestamp } from "@/app/lib/ask-ai/message-timestamp"
 import { AskAIFinancialResultCard, type AskAIFinancialResult } from "./ask-ai-financial-result-card"
 
 const FEEDBACK_REASONS = ["Incorrect", "Outdated data", "Not helpful", "Missing context", "Unsafe", "Other"]
@@ -113,7 +114,7 @@ function DirectMessageTimestamp({
         align === "right" ? "self-end" : align === "left" ? "self-start" : "self-center"
       }`}
     >
-      {createdAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+      {formatAskAIMessageTimestamp(createdAt)}
     </time>
   )
 }
