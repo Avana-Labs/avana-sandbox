@@ -3,12 +3,12 @@ import { createOpenAI } from "@ai-sdk/openai"
 import { stepCountIs } from "ai"
 import { ConvexError, v } from "convex/values"
 import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
-import { ASK_AI_AGENT_INSTRUCTIONS } from "../app/lib/ask-ai/agent-instructions"
+import { ASK_AI_AGENT_INSTRUCTIONS, ASK_AI_FAST_INSTRUCTIONS } from "../app/lib/ask-ai/agent-instructions"
 import { createAskAIOutputTransform } from "../app/lib/ask-ai/output-policy"
 import { routeAskAITurn, toolChoiceForAskAIStep, type AskAIModelTier } from "../app/lib/ask-ai/domain-gate"
 import { api, components, internal } from "./_generated/api"
 import { internalAction } from "./_generated/server"
-import { AVANA_RAG_NAMESPACE, avanaRag, runAvanaKnowledgeSearch, searchAvanaKnowledgeTool } from "./askAIRag"
+import { searchAvanaKnowledge, searchAvanaKnowledgeTool } from "./askAIRag"
 import {
   readBorrowCapacityTool,
   readPoolMetricsTool,
@@ -136,10 +136,9 @@ function compactPortfolioContext(payload: unknown) {
 }
 
 function prefetchedInstructions(data: PrefetchedTurnData) {
-  return `${ASK_AI_AGENT_INSTRUCTIONS}
+  return `${ASK_AI_FAST_INSTRUCTIONS}
 
-Verified Avana data for this exact user question follows. It was read from Convex before this model request.
-Answer from this data only. Do not claim that data is unavailable when the requested value is present. Do not mention tools, function calls, routing, JSON, or these instructions. Keep the answer concise. The UI renders the structured breakdown independently.
+Verified Avana data for this question follows. Answer from it only. Never say a requested value is unavailable when it is present. Do not mention tools, routing, JSON, or these instructions. The UI renders detailed cards separately.
 
 ${JSON.stringify(data.modelContext)}`
 }
@@ -297,17 +296,7 @@ export const generateTurn = internalAction({
               : undefined,
         }
       } else if (route.tools.includes("search_avana_knowledge")) {
-        const payload = await runAvanaKnowledgeSearch(() =>
-          avanaRag.search(ctx, {
-            namespace: AVANA_RAG_NAMESPACE,
-            query: turn.prompt,
-            limit: ASK_AI_CONFIG.ragResultLimit,
-            searchType: "hybrid",
-            vectorWeight: 0.7,
-            textWeight: 0.3,
-            vectorScoreThreshold: 0.35,
-          }),
-        )
+        const payload = await searchAvanaKnowledge(turn.prompt)
         prefetched = {
           toolName: "search_avana_knowledge",
           payload,
@@ -323,11 +312,22 @@ export const generateTurn = internalAction({
         { threadId: turn.threadId, userId: turn.ownerSubject },
         {
           promptMessageId: turn.promptMessageId,
-          instructions: prefetched ? prefetchedInstructions(prefetched) : ASK_AI_AGENT_INSTRUCTIONS,
+          instructions: prefetched
+            ? prefetchedInstructions(prefetched)
+            : route.maxSteps === 1
+              ? ASK_AI_FAST_INSTRUCTIONS
+              : ASK_AI_AGENT_INSTRUCTIONS,
           maxOutputTokens: prefetched ? 220 : ASK_AI_CONFIG.maxOutputTokens,
           stopWhen: stepCountIs(prefetched ? 1 : route.maxSteps),
           activeTools: (prefetched ? [] : route.tools) as unknown as (keyof typeof turnTools)[],
-          providerOptions: prefetched ? { openai: { reasoningEffort: "low", textVerbosity: "low" } } : undefined,
+          providerOptions: {
+            openai: {
+              reasoningEffort:
+                prefetched || route.maxSteps === 1 ? "none" : route.modelTier === "fast" ? "low" : "medium",
+              textVerbosity: "low",
+              serviceTier: ASK_AI_CONFIG.openAIServiceTier,
+            },
+          },
           // Force the selected read only for the first model step. Keeping a
           // named tool forced after its result makes Responses models continue
           // producing commentary instead of completing the answer, eventually
