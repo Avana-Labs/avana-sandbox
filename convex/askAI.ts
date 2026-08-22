@@ -32,6 +32,7 @@ const askAIRateLimiter = new RateLimiter(components.rateLimiter, {
 // production error redaction and Lane C can render error.data.message with a
 // code -> copy fallback map. See docs/ask-ai-lane-contracts.md §2.
 type AskAIErrorCode = "ASK_AI_GENERATION_FAILED" | "ASK_AI_RATE_LIMITED" | "ASK_AI_UNAVAILABLE"
+const ASK_AI_RUNNING_TIMEOUT_MS = 90_000
 
 function askAIError(code: AskAIErrorCode, message: string): ConvexError<{ code: AskAIErrorCode; message: string }> {
   return new ConvexError({ code, message })
@@ -365,6 +366,7 @@ export const claimQueuedTurn = internalMutation({
       return null
     }
     await ctx.db.patch(turnId, { status: "running", updatedAt: Date.now() })
+    await ctx.scheduler.runAfter(ASK_AI_RUNNING_TIMEOUT_MS, internal.askAI.timeoutRunningTurn, { turnId })
     return {
       turnId: turn._id,
       threadId: turn.threadId,
@@ -373,6 +375,18 @@ export const claimQueuedTurn = internalMutation({
       prompt: turn.prompt,
       wallet: turn.wallet,
     }
+  },
+})
+
+export const timeoutRunningTurn = internalMutation({
+  args: { turnId: v.id("askAITurns") },
+  handler: async (ctx, { turnId }) => {
+    const turn = await ctx.db.get(turnId)
+    if (!turn || turn.status !== "running" || Date.now() - turn.updatedAt < ASK_AI_RUNNING_TIMEOUT_MS) return false
+    await ctx.db.patch(turnId, { status: "failed", updatedAt: Date.now() })
+    await discardStrayAssistantMessage(ctx, turn.threadId)
+    await scheduleNextQueuedTurn(ctx, turn.threadId)
+    return true
   },
 })
 
@@ -530,7 +544,7 @@ export const completeGeneratedTurn = internalMutation({
     // The user cancelled while the stream was finishing. cancelRunningTurn already
     // set the terminal status and aborted the stream; do not resurrect it as a
     // completed answer. Mirrors the guard in failTurn.
-    if (turn.status === "cancelled") return
+    if (turn.status !== "running") return
     const existingParts = await ctx.db
       .query("askAIMessageParts")
       .withIndex("by_message", (q) => q.eq("messageId", assistantMessageId))
@@ -589,7 +603,7 @@ export const failTurn = internalMutation({
   handler: async (ctx, { turnId }) => {
     const turn = await ctx.db.get(turnId)
     if (!turn) return
-    if (turn.status === "cancelled") return
+    if (turn.status !== "running") return
     await ctx.db.patch(turn._id, { status: "failed", updatedAt: Date.now() })
     await discardStrayAssistantMessage(ctx, turn.threadId)
     await scheduleNextQueuedTurn(ctx, turn.threadId)
