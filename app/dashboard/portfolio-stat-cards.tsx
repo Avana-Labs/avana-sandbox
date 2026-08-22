@@ -75,10 +75,10 @@ function formatValue(value: number, format: ValueFormat): string {
 }
 
 /**
- * The three "Your Dashboard" cards, all sourced from Convex + the live oracle:
- *  - Wallet Balance — only unallocated wallet funds (sourceType "wallet"), same scope as the Wallet tab.
- *  - Net Value — client aggregate: wallet-liquid + Lend + Borrow + Multiply net (umbrella excluded).
- *  - Net APY — net-equity-weighted blend of the same products (umbrella excluded).
+ * The three "Your Dashboard" cards from useDashboardPortfolioSummary:
+ *  - Wallet Balance — unallocated wallet funds only (sourceType "wallet").
+ *  - Net Value — live-priced productBalances aggregate (wallet + lend + borrow + multiply; umbrella excluded).
+ *  - Net APY — equity-weighted blend of live Lend / Borrow / Multiply session Net APYs.
  * No fabricated deltas: a card shows a delta only when a real basis exists (none yet).
  */
 function useStatCards(): StatCard[] {
