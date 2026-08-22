@@ -55,7 +55,7 @@ const RISK_PATTERNS = [
 const STRESS_PATTERNS = [/\bwhat (?:happens|if)\b/i, /\b(stress|shock|drops?|falls?|depeg|price change)\b/i]
 
 const POOL_PATTERNS = [
-  /\b(pool|liquidity|volume|fee tier|tick|in range|out of range|weighting|weights|lp yields?)\b/i,
+  /\b(pools?|liquidity|volume|fee tier|tick|in range|out of range|weighting|weights|lp yields?)\b/i,
   /\b(uniswap|curve|balancer|aerodrome|sushiswap|pancakeswap)\b/i,
 ]
 
