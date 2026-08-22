@@ -88,6 +88,24 @@ type PrefetchedTurnData = {
 function compactMarketContext(payload: unknown) {
   if (!payload || typeof payload !== "object") return payload
   const record = payload as { markets?: unknown; providerData?: unknown }
+  const markets = Array.isArray(record.markets)
+    ? record.markets.slice(0, 5).map((entry) => {
+        if (!entry || typeof entry !== "object") return entry
+        const { slug, name, symbol, venueLabel, supplyApyPct, borrowAprPct, tvlUsd, utilizationPct, maxLtvPct } =
+          entry as Record<string, unknown>
+        return {
+          slug,
+          name,
+          symbol,
+          venueLabel,
+          supplyApyPct,
+          borrowAprPct,
+          tvlUsd,
+          utilizationPct,
+          maxLtvPct,
+        }
+      })
+    : []
   const providerData = Array.isArray(record.providerData)
     ? record.providerData.slice(0, 5).map((entry) => {
         if (!entry || typeof entry !== "object") return entry
@@ -95,7 +113,7 @@ function compactMarketContext(payload: unknown) {
         return compact
       })
     : []
-  return { markets: Array.isArray(record.markets) ? record.markets.slice(0, 5) : [], providerData }
+  return { markets, providerData }
 }
 
 function exactPricePayload(payload: unknown, prompt: string) {

@@ -670,7 +670,7 @@ export const searchMarkets = query({
     const wantsPools = /\b(pool|pools|liquidity|tvl|yield|yields|apr|apy|lp)\b/.test(queryText)
     const wantsPrice = /\b(price|prices|worth|cost|value|quote)\b/.test(queryText)
     const kindBoost = (kind: "token_price" | "dex_pool" | "lending_market") =>
-      (wantsPools && (kind === "dex_pool" || kind === "lending_market") ? 1 : 0) +
+      (wantsPools && kind === "dex_pool" ? 2 : wantsPools && kind === "lending_market" ? 1 : 0) +
       (wantsPrice && kind === "token_price" ? 1 : 0)
 
     // Exact price questions are the highest-volume Ask AI read. Resolve only the
@@ -708,9 +708,7 @@ export const searchMarkets = query({
     const historyBySymbol = new Map(
       historyRows.map(({ symbol, rows }) => [
         symbol,
-        rows
-          .map((point) => ({ day: point.day, priceUsd: point.priceUsd }))
-          .sort((a, b) => a.day.localeCompare(b.day)),
+        rows.map((point) => ({ day: point.day, priceUsd: point.priceUsd })).sort((a, b) => a.day.localeCompare(b.day)),
       ]),
     )
 
@@ -757,7 +755,12 @@ export const searchMarkets = query({
         .query("marketSnapshotsCache")
         .withIndex("by_singleton", (q) => q.eq("singleton", "markets"))
         .first(),
-      ctx.db.query("askAIMarketSnapshots").withIndex("by_fetched_at").order("desc").take(100),
+      wantsPools
+        ? ctx.db
+            .query("askAIMarketSnapshots")
+            .withIndex("by_source_kind_key", (q) => q.eq("source", "defillama").eq("kind", "dex_pool"))
+            .take(250)
+        : ctx.db.query("askAIMarketSnapshots").withIndex("by_fetched_at").order("desc").take(100),
     ])
     // Tests and a brand-new deployment can briefly precede the scheduled cache
     // build. Keep a bounded cold fallback, while production reads one singleton.
