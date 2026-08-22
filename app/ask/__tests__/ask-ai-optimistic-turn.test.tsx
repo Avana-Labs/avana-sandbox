@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 
@@ -54,7 +54,7 @@ describe("Ask AI optimistic turn", () => {
     fireEvent.change(composer, { target: { value: "What is Bitcoin price now?" } })
     fireEvent.click(screen.getByRole("button", { name: "Send message" }))
 
-    expect(await screen.findByText("What is Bitcoin price now?")).toBeInTheDocument()
+    expect(screen.getByText("What is Bitcoin price now?")).toBeInTheDocument()
     expect(screen.getAllByText("What is Bitcoin price now?")).toHaveLength(1)
     expect(enqueue).toHaveBeenCalledTimes(1)
     await act(async () => resolveEnqueue({ turnId: "turn-test", promptMessageId: "message-test" }))
@@ -77,8 +77,8 @@ describe("Ask AI optimistic turn", () => {
     fireEvent.change(composer, { target: { value: "Explain Avana liquidation" } })
     fireEvent.click(screen.getByRole("button", { name: "Send message" }))
 
-    expect(await screen.findByText("Explain Avana liquidation")).toBeInTheDocument()
-    expect(enqueue).toHaveBeenCalledTimes(2)
+    expect(screen.getByText("Explain Avana liquidation")).toBeInTheDocument()
+    await waitFor(() => expect(enqueue).toHaveBeenCalledTimes(2))
     await act(async () => resolveEnqueue({ turnId: "turn-new", promptMessageId: "message-new" }))
   })
 })
