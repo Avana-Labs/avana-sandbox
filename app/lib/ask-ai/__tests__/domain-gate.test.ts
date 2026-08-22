@@ -155,6 +155,7 @@ describe("routeAskAITurn (per-turn tool + cost routing)", () => {
     expect(route.tools).toEqual([])
     expect(route.toolChoice).toBe("none")
     expect(route.maxSteps).toBe(1)
+    expect(routeAskAITurn("Hey Avana!").tools).toEqual([])
   })
 
   it("reserves the reasoning tier and more steps for risk/stress analysis", () => {

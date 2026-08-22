@@ -16,6 +16,10 @@ describe("Ask AI output policy", () => {
     expect(enforceAskAIOutputPolicy(ending)).toBe("")
   })
 
+  it("drops a conversational follow-up question after a greeting", () => {
+    expect(enforceAskAIOutputPolicy("What can I help you with today?")).toBe("")
+  })
+
   it("keeps a direct answer that contains an ordinary question mark", () => {
     expect(enforceAskAIOutputPolicy("Why is it lower? Utilization fell.")).toBe("Why is it lower? Utilization fell.")
   })
