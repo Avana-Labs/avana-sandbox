@@ -250,6 +250,22 @@ describe("Ask AI normalized market tools", () => {
         source: "defillama",
         updatedAt: now,
       })
+      for (const [symbol, priceUsd] of [
+        ["wbtc", 77_810],
+        ["cbbtc", 77_805],
+      ] as const)
+        await ctx.db.insert("tokenPrices", {
+          symbol,
+          llamaId: `coingecko:${symbol}`,
+          priceUsd,
+          confidence: 0.99,
+          sourceUpdatedAt: now,
+          fetchedAt: now,
+          snapshotAt: now,
+          status: "fresh",
+          source: "defillama",
+          updatedAt: now,
+        })
     })
 
     const result = await t.query(api.askAITools.searchMarkets, { query: "What is Bitcoin's price now?" })
