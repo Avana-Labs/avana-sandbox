@@ -224,7 +224,7 @@ export function routeAskAITurn(message: string): AskAITurnRoute {
       // A balance/holdings question needs only the portfolio read.
       return plan(["read_portfolio"], 2, "fast")
     case "risk":
-      return plan(["read_position_risk"], 3, "reasoning")
+      return plan(["read_position_risk"], 2, "reasoning")
     case "borrow_simulation":
       return plan(["read_borrow_capacity", "simulate_borrow"], 3, "reasoning")
     case "stress_test":
