@@ -33,7 +33,7 @@ export function AskAIThreadList({
   activeThreadId: string | null
   threads: AskAIThreadSummary[]
   onClose: () => void
-  onNewThread: () => Promise<void>
+  onNewThread: () => void | Promise<void>
   onSelectThread: (threadId: string) => void
   onRenameThread: (threadId: string, title: string) => Promise<void>
   archivedThreads: AskAIThreadSummary[]

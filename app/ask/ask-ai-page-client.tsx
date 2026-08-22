@@ -298,7 +298,7 @@ export function AskAIPageClient({
   // include it. Keep that explicit selection stable during the subscription
   // gap instead of falling back to the previous first thread.
   const pendingActiveThreadRef = useRef<string | null>(null)
-  const creatingThreadRef = useRef<Promise<{ threadId: string }> | null>(null)
+  const [draftThread, setDraftThread] = useState(false)
   // The runtime can retain an older onNew callback for one render. Keep the
   // selected thread in a ref as well, so submitting immediately after New Thread
   // cannot enqueue into the previously selected conversation.
@@ -367,11 +367,12 @@ export function AskAIPageClient({
       if (pendingActiveThreadRef.current === resolvedActiveThreadId) pendingActiveThreadRef.current = null
       return
     }
+    if (draftThread && !activeThreadId) return
     if (activeThreadId && pendingActiveThreadRef.current === activeThreadId) return
     const fallbackThreadId = threads[0]?.threadId ?? null
     activeThreadIdRef.current = fallbackThreadId
     setActiveThreadId(fallbackThreadId)
-  }, [activeThreadId, resolvedActiveThreadId, threadPageStatus, threads])
+  }, [activeThreadId, draftThread, resolvedActiveThreadId, threadPageStatus, threads])
   useEffect(() => {
     if (activeThreadId) window.sessionStorage.setItem(ACTIVE_THREAD_STORAGE_KEY, activeThreadId)
     else window.sessionStorage.removeItem(ACTIVE_THREAD_STORAGE_KEY)
@@ -406,19 +407,13 @@ export function AskAIPageClient({
     [messageResults, richPartsByMessage],
   )
 
-  const handleNewThread = useCallback(async () => {
+  const handleNewThread = useCallback(() => {
     setPendingTurn(null)
-    const creating = createThread({})
-    creatingThreadRef.current = creating
-    try {
-      const thread = await creating
-      pendingActiveThreadRef.current = thread.threadId
-      activeThreadIdRef.current = thread.threadId
-      setActiveThreadId(thread.threadId)
-    } finally {
-      if (creatingThreadRef.current === creating) creatingThreadRef.current = null
-    }
-  }, [createThread])
+    pendingActiveThreadRef.current = null
+    activeThreadIdRef.current = null
+    setActiveThreadId(null)
+    setDraftThread(true)
+  }, [])
 
   // Cmd/Ctrl+K starts a new chat, matching the Claude/ChatGPT shortcut.
   useEffect(() => {
@@ -439,14 +434,14 @@ export function AskAIPageClient({
       const startedAt = Date.now()
       setPendingTurn({ id: clientRequestId, clientRequestId, prompt, startedAt })
       try {
-        const creatingThread = creatingThreadRef.current
-        let threadId = creatingThread ? (await creatingThread).threadId : activeThreadIdRef.current
+        let threadId = activeThreadIdRef.current
         if (!threadId) {
           const created = await createThread({})
           threadId = created.threadId
           pendingActiveThreadRef.current = threadId
           activeThreadIdRef.current = threadId
           setActiveThreadId(threadId)
+          setDraftThread(false)
         }
         const queued = await enqueueTurn({ threadId, prompt, clientRequestId })
         setPendingTurn((current) =>
@@ -608,6 +603,7 @@ export function AskAIPageClient({
           onNewThread={handleNewThread}
           onSelectThread={(threadId) => {
             setPendingTurn(null)
+            setDraftThread(false)
             activeThreadIdRef.current = threadId
             setActiveThreadId(threadId)
           }}
@@ -626,6 +622,7 @@ export function AskAIPageClient({
           }}
           onUnarchiveThread={async (threadId) => {
             await unarchiveThread({ threadId })
+            setDraftThread(false)
             activeThreadIdRef.current = threadId
             setActiveThreadId(threadId)
           }}
