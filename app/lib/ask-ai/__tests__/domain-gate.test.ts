@@ -115,6 +115,7 @@ describe("Ask AI deterministic domain gate", () => {
 describe("routeAskAITurn (per-turn tool + cost routing)", () => {
   it("routes a market/pool question to market tools only — no personal or web tools", () => {
     const route = routeAskAITurn("What is the best ETH pools on Uniswap")
+    expect(route.intent).toBe("pool")
     expect(route.tools).toEqual(["search_markets"])
     expect(route.toolChoice).toEqual({ type: "tool", toolName: "search_markets" })
     expect(route.tools).not.toContain("web_search")
@@ -123,6 +124,12 @@ describe("routeAskAITurn (per-turn tool + cost routing)", () => {
     expect(route.toolChoice).toEqual({ type: "tool", toolName: "search_markets" })
     expect(route.modelTier).toBe("fast")
     expect(route.maxSteps).toBeLessThanOrEqual(2)
+  })
+
+  it("classifies plural pool lookups before the token market pattern", () => {
+    const route = routeAskAITurn("What are the best USDC pools right now?")
+    expect(route.intent).toBe("pool")
+    expect(route.tools).toEqual(["search_markets"])
   })
 
   it("routes a token-price question to search_markets, never web search", () => {
