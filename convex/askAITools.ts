@@ -730,10 +730,19 @@ export const searchMarkets = query({
     // Nudge the ranking toward what the question is about, so a "pools" question
     // surfaces pools and a "price" question surfaces token prices even when both
     // match the same asset term.
-    const wantsPools = /\b(pool|pools|liquidity|tvl|yield|yields|apr|apy|lp)\b/.test(queryText)
+    const wantsPools = /\b(pool|pools|liquidity|tvl|lp)\b/.test(queryText)
+    const wantsYield = /\b(yield|yields|apr|apy|rate|rates|lend|lending|supply|borrow)\b/.test(queryText)
     const wantsPrice = /\b(price|prices|worth|cost|value|quote)\b/.test(queryText)
+    const wantsAaveProtocol =
+      /\b(?:on|from|at)\s+aave\b/.test(queryText) ||
+      /\baave(?:\s+v3)?\s+(?:lend|lending|market|markets|pool|pools|apy|apr|rate|rates)\b/.test(queryText)
+    const minimumYieldMatch = queryText.match(
+      /\b(?:at least|above|over|more than|minimum(?: of)?)\s+(\d+(?:\.\d+)?)\s*%/,
+    )
+    const minimumYieldPct = minimumYieldMatch ? Number(minimumYieldMatch[1]) : null
     const kindBoost = (kind: "token_price" | "dex_pool" | "lending_market") =>
       (wantsPools && kind === "dex_pool" ? 2 : wantsPools && kind === "lending_market" ? 1 : 0) +
+      (wantsYield && kind === "lending_market" ? 2 : wantsYield && kind === "dex_pool" ? 1 : 0) +
       (wantsPrice && kind === "token_price" ? 1 : 0)
 
     // Exact price questions are the highest-volume Ask AI read. Resolve only the
@@ -818,17 +827,17 @@ export const searchMarkets = query({
         .query("marketSnapshotsCache")
         .withIndex("by_singleton", (q) => q.eq("singleton", "markets"))
         .first(),
-      wantsPools
+      wantsPools && !wantsYield
         ? ctx.db
             .query("askAIMarketSnapshots")
             .withIndex("by_source_kind_key", (q) => q.eq("source", "defillama").eq("kind", "dex_pool"))
             .take(250)
-        : ctx.db.query("askAIMarketSnapshots").withIndex("by_fetched_at").order("desc").take(100),
+        : ctx.db.query("askAIMarketSnapshots").withIndex("by_fetched_at").order("desc").take(250),
     ])
     // Tests and a brand-new deployment can briefly precede the scheduled cache
     // build. Keep a bounded cold fallback, while production reads one singleton.
     const markets = marketCache?.rows ?? (await ctx.db.query("markets").take(200))
-    const matchingMarkets = markets
+    const matchingMarkets = (wantsAaveProtocol ? [] : markets)
       .filter((market) => {
         const haystack = `${market.slug} ${market.name} ${market.symbol} ${market.venueLabel ?? ""}`.toLowerCase()
         return searchTerms.some((term) => haystack.includes(term))
@@ -857,13 +866,32 @@ export const searchMarkets = query({
             asOf: snapshot.sourceUpdatedAt ?? snapshot.fetchedAt,
             freshness: marketFreshness(snapshot.kind, snapshot.sourceUpdatedAt ?? snapshot.fetchedAt),
           },
+          yieldPct:
+            typeof data.supplyApyPct === "number"
+              ? data.supplyApyPct
+              : typeof data.apyPct === "number"
+                ? data.apyPct
+                : Number.NEGATIVE_INFINITY,
         }
       })
-      .filter((entry) => entry.matched > 0)
+      .filter(
+        (entry) =>
+          entry.matched > 0 &&
+          (!wantsAaveProtocol || entry.row.source === "aave") &&
+          (!wantsYield || entry.row.kind === "lending_market" || entry.row.kind === "dex_pool"),
+      )
 
     const providerData = [...scoredPrices, ...scoredSnapshots]
       // Most query terms matched, then the kind the question asked for, then depth.
-      .sort((a, b) => b.matched - a.matched || b.boost - a.boost || b.exact - a.exact || b.size - a.size)
+      .sort((a, b) => {
+        if (minimumYieldPct !== null && "yieldPct" in a && "yieldPct" in b) {
+          const aMeets = a.yieldPct >= minimumYieldPct
+          const bMeets = b.yieldPct >= minimumYieldPct
+          if (aMeets !== bMeets) return aMeets ? -1 : 1
+          if (a.yieldPct !== b.yieldPct) return b.yieldPct - a.yieldPct
+        }
+        return b.matched - a.matched || b.boost - a.boost || b.exact - a.exact || b.size - a.size
+      })
       .slice(0, boundedLimit)
       .map((entry) => entry.row)
 
