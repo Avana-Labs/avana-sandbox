@@ -182,13 +182,14 @@ function compactPortfolioContext(payload: unknown) {
   }
 }
 
-function focusPortfolioPayload<T>(payload: T, prompt: string): T {
+export function focusPortfolioPayload<T>(payload: T, prompt: string): T {
   if (!/\b(umbrella|cooldown|unstake|withdrawal window|withdraw from (?:my )?stake)\b/i.test(prompt)) return payload
   if (!payload || typeof payload !== "object") return payload
   const record = payload as Record<string, unknown>
   const totals = record.totals && typeof record.totals === "object" ? (record.totals as Record<string, unknown>) : {}
   return {
     walletRequired: record.walletRequired,
+    message: record.message,
     dataProvenance: record.dataProvenance,
     wallet: record.wallet,
     focus: "umbrella",
