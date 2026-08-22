@@ -11,7 +11,7 @@ import {
 import { useUIMessages } from "@convex-dev/agent/react"
 import { useAction, useMutation, usePaginatedQuery, useQuery } from "convex/react"
 import type { Id } from "@/convex/_generated/dataModel"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { AskAIUsage } from "@/app/lib/ask-ai/chat-protocol"
 import { api } from "@/convex/_generated/api"
 import {
@@ -357,10 +357,16 @@ export function AskAIPageClient({
     [createThread, enqueueTurn, resolvedActiveThreadId],
   )
 
+  // Synchronous guard so generateTurn fires at most once per turn. `pendingTurn`
+  // (React state) isn't committed synchronously, so when turnQueue updates twice
+  // in quick succession the effect could re-fire before the state guard applied,
+  // running the same turn twice (two model calls streamed into one message).
+  const generatingTurnRef = useRef<string | null>(null)
   useEffect(() => {
     const next = turnQueue?.find((turn) => turn.status === "queued")
-    if (!next || pendingTurn || !resolvedActiveThreadId) return
+    if (!next || pendingTurn || generatingTurnRef.current || !resolvedActiveThreadId) return
     const turnId = String(next.id)
+    generatingTurnRef.current = turnId
     setPendingTurn({ id: turnId, prompt: next.prompt, startedAt: Date.now() })
     void generateTurn({
       threadId: resolvedActiveThreadId,
@@ -373,6 +379,9 @@ export function AskAIPageClient({
           current?.id === turnId ? { ...current, error: toFriendlyAskAIError(error) } : current,
         ),
       )
+      .finally(() => {
+        if (generatingTurnRef.current === turnId) generatingTurnRef.current = null
+      })
   }, [generateTurn, pendingTurn, resolvedActiveThreadId, turnQueue])
 
   const handleNewMessage = useCallback(
