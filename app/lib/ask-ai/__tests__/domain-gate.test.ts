@@ -150,6 +150,21 @@ describe("routeAskAITurn (per-turn tool + cost routing)", () => {
     })
   })
 
+  it("routes Avana liquidation and Uniswap position explanations to protocol knowledge", () => {
+    expect(routeAskAITurn("How does Avana value a Uniswap v3 LP position?")).toMatchObject({
+      intent: "education",
+      tools: ["search_avana_knowledge"],
+    })
+    expect(routeAskAITurn("Explain how Avana liquidates an LP position")).toMatchObject({
+      intent: "education",
+      tools: ["search_avana_knowledge"],
+    })
+    expect(routeAskAITurn("What are the best Uniswap pool APYs?")).toMatchObject({
+      intent: "pool",
+      tools: ["search_markets"],
+    })
+  })
+
   it("routes a personal balance question to portfolio tools only — no market or web tools", () => {
     const route = routeAskAITurn("Do I have a USDC balance?")
     expect(route.tools).toContain("read_portfolio")
