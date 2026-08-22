@@ -215,7 +215,12 @@ describe("Ask AI normalized market tools", () => {
         source: "aave",
         kind: "lending_market",
         key: "aave-v3-usdc",
-        payload: { market: "AaveV3Ethereum", symbol: "USDC", sizeUsd: 2_000_000_000 },
+        payload: {
+          market: "AaveV3Ethereum",
+          name: "Aave token lending market",
+          symbol: "USDC",
+          sizeUsd: 2_000_000_000,
+        },
         sourceUpdatedAt: now,
         fetchedAt: now,
       })
