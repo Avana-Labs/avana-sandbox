@@ -199,6 +199,7 @@ describe("AskAIPageClient rich parts", () => {
 
     expect(screen.getByRole("alert")).toBeInTheDocument()
     expect(screen.getByText(/something went wrong/i)).toBeInTheDocument()
+    expect(screen.queryByText(/thinking/i)).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Copy answer" })).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Mark answer as helpful" })).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument()
