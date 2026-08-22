@@ -140,9 +140,10 @@
     --progress-track: 0 0% 91.8%;
 
     --scrollbar-track: 0 0% 92.2%;
-    --scrollbar-thumb: 191 99% 41%;
-    --scrollbar-thumb-hover: 191 100% 33%;
-    --scrollbar-thumb-active: 191 100% 28%;
+    /* Soft brand wash — matches disabled CTA (bg-brand-soft), not full brand */
+    --scrollbar-thumb: 191 100% 95%;
+    --scrollbar-thumb-hover: 191 80% 88%;
+    --scrollbar-thumb-active: 191 70% 80%;
   }
 
   .dark {
@@ -218,9 +219,10 @@
     --progress-track: 0 0% 11%;
 
     --scrollbar-track: 220 7% 8.4%;
-    --scrollbar-thumb: 191 99% 41%;
-    --scrollbar-thumb-hover: 191 100% 48%;
-    --scrollbar-thumb-active: 191 100% 54%;
+    /* Soft brand wash — matches disabled CTA (bg-brand-soft), not full brand */
+    --scrollbar-thumb: 191 55% 18%;
+    --scrollbar-thumb-hover: 191 50% 24%;
+    --scrollbar-thumb-active: 191 45% 30%;
   }
 }
 
