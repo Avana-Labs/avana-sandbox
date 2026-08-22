@@ -553,17 +553,65 @@ function askAISnapshotSize(payload: unknown): number {
   return typeof candidate === "number" && Number.isFinite(candidate) ? candidate : 0
 }
 
+function finiteMarketNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined
+}
+
+function compactMarketData(kind: "token_price" | "dex_pool" | "lending_market", payload: unknown) {
+  const row = (payload ?? {}) as Record<string, unknown>
+  const fields: Record<string, unknown> =
+    kind === "token_price"
+      ? {
+          symbol: row.symbol,
+          priceUsd: finiteMarketNumber(row.price) ?? finiteMarketNumber(row.priceUsd) ?? finiteMarketNumber(row.usd),
+          confidence: finiteMarketNumber(row.confidence),
+          status: row.status,
+        }
+      : kind === "dex_pool"
+        ? {
+            pool: row.pool ?? row.id,
+            project: row.project,
+            chain: row.chain,
+            symbol: row.symbol,
+            tvlUsd:
+              finiteMarketNumber(row.tvlUsd) ??
+              finiteMarketNumber(row.totalValueLockedUSD) ??
+              finiteMarketNumber(row.liquidityUsd),
+            volume24hUsd: finiteMarketNumber(row.volume24hUsd) ?? finiteMarketNumber(row.volume24h),
+            apyPct: finiteMarketNumber(row.apy),
+          }
+        : {
+            market: row.market,
+            symbol: row.symbol,
+            name: row.name,
+            sizeUsd: finiteMarketNumber(row.sizeUsd),
+            supplyApyPct: finiteMarketNumber(row.supplyApyPct),
+            borrowApyPct: finiteMarketNumber(row.variableBorrowRate),
+            utilizationPct: finiteMarketNumber(row.utilizationRate),
+            availableLiquidityUsd: finiteMarketNumber(row.availableLiquidity),
+          }
+  return Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined))
+}
+
 export const searchMarkets = query({
   args: { query: v.string(), limit: v.optional(v.number()) },
   handler: async (ctx, { query: rawQuery, limit }) => {
     const queryText = rawQuery.trim().toLowerCase()
     if (!queryText || queryText.length > 200) throw new Error("Market query must contain 1 to 200 characters")
     const boundedLimit = Math.min(Math.max(limit ?? 10, 1), 20)
-    const [markets, snapshots, tokenPrices] = await Promise.all([
+    const [markets, snapshots, tokenPrices, tokenPriceHistory] = await Promise.all([
       ctx.db.query("markets").collect(),
       ctx.db.query("askAIMarketSnapshots").withIndex("by_fetched_at").order("desc").take(100),
       ctx.db.query("tokenPrices").collect(),
+      ctx.db.query("tokenPricesHistory").collect(),
     ])
+    const historyBySymbol = new Map<string, Array<{ day: string; priceUsd: number }>>()
+    for (const point of tokenPriceHistory) {
+      const points = historyBySymbol.get(point.symbol) ?? []
+      points.push({ day: point.day, priceUsd: point.priceUsd })
+      historyBySymbol.set(point.symbol, points)
+    }
+    for (const points of historyBySymbol.values()) points.sort((a, b) => a.day.localeCompare(b.day))
     const terms = queryText.split(/[\s/,-]+/).filter(Boolean)
     // Drop filler words so a natural question ("best ETH pools on Uniswap")
     // matches on "eth"/"uniswap", not on "on"/"best". Fall back to raw terms if
@@ -601,7 +649,13 @@ export const searchMarkets = query({
             source: "defillama" as const,
             kind: "token_price" as const,
             key: price.symbol,
-            data: { symbol: price.symbol, usd: price.priceUsd, confidence: price.confidence, status: price.status },
+            data: compactMarketData("token_price", {
+              symbol: price.symbol,
+              priceUsd: price.priceUsd,
+              confidence: price.confidence,
+              status: price.status,
+            }),
+            history: historyBySymbol.get(price.symbol) ?? [],
             asOf: price.sourceUpdatedAt ?? price.updatedAt,
             freshness: price.status === "fresh" ? ("fresh" as const) : ("stale" as const),
           },
@@ -622,7 +676,7 @@ export const searchMarkets = query({
             source: snapshot.source,
             kind: snapshot.kind,
             key: snapshot.key,
-            data: snapshot.payload,
+            data: compactMarketData(snapshot.kind, snapshot.payload),
             asOf: snapshot.sourceUpdatedAt ?? snapshot.fetchedAt,
             freshness: marketFreshness(snapshot.kind, snapshot.sourceUpdatedAt ?? snapshot.fetchedAt),
           },

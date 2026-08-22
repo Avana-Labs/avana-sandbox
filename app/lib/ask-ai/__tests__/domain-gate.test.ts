@@ -115,9 +115,12 @@ describe("Ask AI deterministic domain gate", () => {
 describe("routeAskAITurn (per-turn tool + cost routing)", () => {
   it("routes a market/pool question to market tools only — no personal or web tools", () => {
     const route = routeAskAITurn("What is the best ETH pools on Uniswap")
-    expect(route.tools).toEqual(["search_markets", "read_pool_metrics"])
+    expect(route.tools).toEqual(["search_markets"])
+    expect(route.toolChoice).toEqual({ type: "tool", toolName: "search_markets" })
     expect(route.tools).not.toContain("web_search")
     expect(route.tools).not.toContain("read_portfolio")
+    expect(route.tools).toEqual(["search_markets"])
+    expect(route.toolChoice).toEqual({ type: "tool", toolName: "search_markets" })
     expect(route.modelTier).toBe("fast")
     expect(route.maxSteps).toBeLessThanOrEqual(2)
   })
@@ -134,6 +137,8 @@ describe("routeAskAITurn (per-turn tool + cost routing)", () => {
     expect(route.tools).toContain("read_portfolio")
     expect(route.tools).not.toContain("web_search")
     expect(route.tools).not.toContain("search_markets")
+    expect(route.tools).toEqual(["read_portfolio"])
+    expect(route.toolChoice).toEqual({ type: "tool", toolName: "read_portfolio" })
   })
 
   it("greets with no tools in a single step", () => {
@@ -152,5 +157,7 @@ describe("routeAskAITurn (per-turn tool + cost routing)", () => {
   it("only grants web search when the ask is explicitly time-sensitive", () => {
     expect(routeAskAITurn("What is the latest news on Ethereum?").tools).toContain("web_search")
     expect(routeAskAITurn("What is the price of Ethereum?").tools).not.toContain("web_search")
+    expect(routeAskAITurn("What is the Aave token price right now?").tools).toEqual(["search_markets"])
+    expect(routeAskAITurn("What is happening with the ETH price right now?").tools).toEqual(["search_markets"])
   })
 })

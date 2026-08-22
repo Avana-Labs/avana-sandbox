@@ -64,6 +64,8 @@ const MARKET_PATTERNS = [
   /\b(price|worth|trading at|borrow rate|apr|apy|utilization|market)\b/i,
 ]
 
+const MARKET_LOOKUP_PATTERN = /\b(price|prices|worth|quote|borrow rate|supply rate|apr|apy|utilization|market rate)\b/i
+
 const EDUCATION_PATTERNS = [
   /\b(explain|what is|what does|how does|why does|methodology|work)\b/i,
   /\b(avana|lp collateral|health factor|ltv|liquidation threshold|oracle|aave hub)\b/i,
@@ -122,6 +124,12 @@ export function classifyAskAIDomain(message: string): DomainResult {
       intent: /\bcompare\b/i.test(normalized) ? "comparison" : "pool",
       confidence: 0.96,
     }
+  }
+
+  // Lookup language wins over the generic "what is" education pattern. This
+  // keeps "What is the Aave token price right now?" on cached Convex data.
+  if (matchesAny(normalized, MARKET_PATTERNS) && MARKET_LOOKUP_PATTERN.test(normalized)) {
+    return { allowed: true, category: "crypto_market", intent: "market", confidence: 0.98 }
   }
 
   if (/\baave\b/i.test(normalized)) {
@@ -183,7 +191,7 @@ export type AskAITurnRoute = {
   /** The only tools the model may call this turn (AI SDK `activeTools`). */
   tools: AskAIToolName[]
   /** "none" when no tools are needed, so the model answers in a single step. */
-  toolChoice: "auto" | "none"
+  toolChoice: "auto" | "none" | { type: "tool"; toolName: AskAIToolName }
   /** Upper bound on tool/generation steps (AI SDK `stopWhen`). */
   maxSteps: number
   /** Cheap model for simple lookups; the reasoning model for risk analysis. */
@@ -193,8 +201,8 @@ export type AskAITurnRoute = {
 // Only turn on web search when the user is clearly asking about recent public
 // events. Prices, pools, balances, and risk are answered from Convex data — web
 // search is never a substitute for a Convex tool (see agent-instructions.ts).
-const RECENCY_PATTERN =
-  /\b(news|latest|today|yesterday|recent|recently|breaking|announced?|announcement|happening|this week|right now|so far this)\b/i
+const NEWS_EVENT_PATTERN =
+  /\b(news|headline|headlines|announcement|announced|breaking|event|events|what happened|happening this week)\b/i
 
 /**
  * Deterministic, zero-cost turn router. Topic scope (politely redirecting
@@ -204,20 +212,21 @@ const RECENCY_PATTERN =
 export function routeAskAITurn(message: string): AskAITurnRoute {
   const { category, intent, confidence } = classifyAskAIDomain(message)
   const normalized = message.trim()
-  const wantsRecency = RECENCY_PATTERN.test(normalized)
+  const wantsNewsOrEvents = NEWS_EVENT_PATTERN.test(normalized)
 
   const plan = (tools: AskAIToolName[], maxSteps: number, modelTier: AskAIModelTier): AskAITurnRoute => ({
     category,
     intent,
     confidence,
     tools,
-    toolChoice: tools.length > 0 ? "auto" : "none",
+    toolChoice: tools.length === 1 ? { type: "tool", toolName: tools[0] } : tools.length > 1 ? "auto" : "none",
     maxSteps,
     modelTier,
   })
 
   // Greetings and bare clarifications need no tools at all — answer in one step.
   if (isAskAIGreeting(normalized) || isAskAIClarificationPrompt(normalized)) return plan([], 1, "fast")
+  if (wantsNewsOrEvents) return plan(["web_search"], 2, "fast")
 
   switch (intent) {
     case "position":
@@ -230,19 +239,18 @@ export function routeAskAITurn(message: string): AskAITurnRoute {
     case "stress_test":
       return plan(["read_position_risk", "stress_position"], 4, "reasoning")
     case "pool":
-      // read_pool_metrics is for one specific named pool; search_markets covers listings.
-      return plan(["search_markets", "read_pool_metrics"], 2, "fast")
+      return plan(["search_markets"], 2, "fast")
     case "market":
       // A price/rate question needs only the market search.
-      return plan(wantsRecency ? ["search_markets", "web_search"] : ["search_markets"], 2, "fast")
+      return plan(["search_markets"], 2, "fast")
     case "comparison":
       return plan(["search_markets"], 2, "fast")
     case "education":
-      return plan(wantsRecency ? ["search_avana_knowledge", "web_search"] : ["search_avana_knowledge"], 2, "fast")
+      return plan(["search_avana_knowledge"], 2, "fast")
     case "unsupported":
     default:
       // Let the model answer briefly from its own knowledge (or redirect per the
       // instructions); only grant web search when the ask is clearly time-sensitive.
-      return plan(wantsRecency ? ["web_search"] : [], wantsRecency ? 2 : 1, "fast")
+      return plan([], 1, "fast")
   }
 }

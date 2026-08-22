@@ -185,7 +185,7 @@ describe("Ask AI normalized market tools", () => {
           source: "defillama",
           kind: "token_price",
           key: "weth",
-          data: expect.objectContaining({ usd: 4_321 }),
+          data: expect.objectContaining({ priceUsd: 4_321 }),
         }),
       ]),
     })

@@ -2026,6 +2026,8 @@ export default defineSchema({
     outputTokens: v.optional(v.number()),
     totalTokens: v.optional(v.number()),
     tools: v.array(v.string()),
+    routeIntent: v.optional(v.string()),
+    toolBudget: v.optional(v.number()),
     error: v.optional(v.string()),
     createdAt: v.number(),
   })
