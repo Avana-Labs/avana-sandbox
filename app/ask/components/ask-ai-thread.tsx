@@ -98,13 +98,19 @@ function ThinkingIndicatorLive({ label = "Thinking…" }: { label?: string }) {
   return <ThinkingIndicator label={label} elapsed={`${seconds}s`} className="py-3" />
 }
 
-function DirectMessageTimestamp({ createdAt, align = "left" }: { createdAt?: Date; align?: "left" | "right" }) {
+function DirectMessageTimestamp({
+  createdAt,
+  align = "left",
+}: {
+  createdAt?: Date
+  align?: "left" | "right" | "inline"
+}) {
   if (!(createdAt instanceof Date) || Number.isNaN(createdAt.getTime())) return null
   return (
     <time
       dateTime={createdAt.toISOString()}
-      className={`px-1 text-xs text-muted-foreground opacity-0 transition-opacity group-hover/msg:opacity-100 ${
-        align === "right" ? "self-end" : "self-start"
+      className={`px-2 py-1.5 text-xs leading-none text-muted-foreground ${
+        align === "right" ? "self-end" : align === "left" ? "self-start" : "self-center"
       }`}
     >
       {createdAt.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
@@ -200,44 +206,47 @@ function DirectAssistantMessage({
         ) : null}
         {complete && persisted && responseText.trim() ? (
           <div className="flex flex-col items-start gap-2">
-            {!feedbackOpen && !sent ? (
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <button
-                  type="button"
-                  aria-label="Copy answer"
-                  onClick={async () => {
-                    await navigator.clipboard.writeText(responseText)
-                    setCopied(true)
-                    if (copyResetRef.current) clearTimeout(copyResetRef.current)
-                    copyResetRef.current = setTimeout(() => setCopied(false), 2000)
-                  }}
-                  className="inline-flex size-8 items-center justify-center rounded-md hover:bg-muted hover:text-foreground"
-                >
-                  {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-                </button>
-                <button
-                  type="button"
-                  aria-label="Mark answer as helpful"
-                  disabled={helpful || !threadId}
-                  onClick={async () => {
-                    if (!threadId) return
-                    await submitFeedback({ threadId, messageId: message.id, categories: ["Helpful"] })
-                    setHelpful(true)
-                  }}
-                  className="inline-flex size-8 items-center justify-center rounded-md hover:bg-muted hover:text-foreground disabled:opacity-50"
-                >
-                  <ThumbsUp className="size-4" />
-                </button>
-                <button
-                  type="button"
-                  aria-label="Report a problem with this answer"
-                  onClick={() => setFeedbackOpen(true)}
-                  className="inline-flex size-8 items-center justify-center rounded-md hover:bg-muted hover:text-foreground"
-                >
-                  <ThumbsDown className="size-4" />
-                </button>
-              </div>
-            ) : null}
+            <div className="flex items-center gap-2 text-muted-foreground">
+              {!feedbackOpen && !sent ? (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Copy answer"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(responseText)
+                      setCopied(true)
+                      if (copyResetRef.current) clearTimeout(copyResetRef.current)
+                      copyResetRef.current = setTimeout(() => setCopied(false), 2000)
+                    }}
+                    className="inline-flex size-8 items-center justify-center rounded-md hover:bg-muted hover:text-foreground"
+                  >
+                    {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Mark answer as helpful"
+                    disabled={helpful || !threadId}
+                    onClick={async () => {
+                      if (!threadId) return
+                      await submitFeedback({ threadId, messageId: message.id, categories: ["Helpful"] })
+                      setHelpful(true)
+                    }}
+                    className="inline-flex size-8 items-center justify-center rounded-md hover:bg-muted hover:text-foreground disabled:opacity-50"
+                  >
+                    <ThumbsUp className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Report a problem with this answer"
+                    onClick={() => setFeedbackOpen(true)}
+                    className="inline-flex size-8 items-center justify-center rounded-md hover:bg-muted hover:text-foreground"
+                  >
+                    <ThumbsDown className="size-4" />
+                  </button>
+                </>
+              ) : null}
+              <DirectMessageTimestamp createdAt={message.createdAt} align="inline" />
+            </div>
             {feedbackOpen || sent ? (
               <FeedbackDialog
                 reasons={FEEDBACK_REASONS}
@@ -259,7 +268,6 @@ function DirectAssistantMessage({
             ) : null}
           </div>
         ) : null}
-        {complete && persisted && responseText.trim() ? <DirectMessageTimestamp createdAt={message.createdAt} /> : null}
       </div>
     </div>
   )
