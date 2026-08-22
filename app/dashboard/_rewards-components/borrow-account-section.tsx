@@ -19,7 +19,6 @@ import { useAmountDisplayPreferences } from "@/app/components/display-preference
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { HealthFactorHistoryCard } from "@/app/dashboard/health-factor-history-card"
-import { BorrowOutlook } from "@/app/dashboard/_outlook/borrow-outlook"
 import { AccountModuleBoundary } from "./account-sections-shared"
 
 const DashboardBorrowTab = lazy(async () => ({
@@ -119,8 +118,6 @@ export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref
         </div>
         <HealthFactorHistoryCard walletId={walletId ?? undefined} />
       </div>
-
-      <BorrowOutlook />
     </section>
   )
 }
