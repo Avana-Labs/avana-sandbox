@@ -44,9 +44,15 @@ export function ProductRuntimeProviders({
 
   // `/ask` owns a dedicated Convex auth boundary that supports either SIWE or a
   // limited guest identity. Mounting the full product runtime here would create a
-  // nested Convex provider and hydrate every product session unnecessarily.
+  // nested Convex provider and hydrate every product session unnecessarily. Its
+  // root price context must also stay on the SSR seed because this component is
+  // above AskAIConvexBoundary and cannot open a Convex subscription safely.
   if (pathname === "/ask" || pathname.startsWith("/ask/")) {
-    return <TokenPricesProvider initialPrices={initialTokenPrices}>{children}</TokenPricesProvider>
+    return (
+      <TokenPricesProvider initialPrices={initialTokenPrices} realtime={false}>
+        {children}
+      </TokenPricesProvider>
+    )
   }
 
   if (!isSignedIn && !needsProductRuntime(pathname)) {
