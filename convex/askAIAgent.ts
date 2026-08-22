@@ -313,6 +313,31 @@ export const generateTurn = internalAction({
               ? payload.dataProvenance
               : undefined,
         }
+      } else if (route.intent === "borrow_simulation") {
+        const payload = await ctx.runQuery(internal.askAITools.borrowCapacityForTurn, { turnId: turn.turnId })
+        // A guest cannot run a position simulation. Resolve that before the
+        // model so it returns one helpful answer instead of a read tool call,
+        // another model step, a simulation call, and a final model step.
+        if (payload.walletRequired) {
+          prefetched = {
+            toolName: "read_borrow_capacity",
+            financialKind: "borrow_capacity",
+            payload,
+            modelContext: payload,
+          }
+        }
+      } else if (route.intent === "stress_test") {
+        const payload = await ctx.runQuery(internal.askAITools.positionRiskForTurn, { turnId: turn.turnId })
+        // As above, fail fast for a guest before exposing the multi-step stress
+        // tool path. Authenticated users still reach the deterministic engine.
+        if (payload.walletRequired) {
+          prefetched = {
+            toolName: "read_position_risk",
+            financialKind: "position_risk",
+            payload,
+            modelContext: payload,
+          }
+        }
       } else if (route.tools.includes("search_avana_knowledge")) {
         const payload = await searchAvanaKnowledge(turn.prompt)
         prefetched = {
