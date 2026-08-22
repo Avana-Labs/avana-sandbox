@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { runAvanaKnowledgeSearch } from "./askAIRag"
+import { runAvanaKnowledgeSearch, searchAvanaCorpus } from "./askAIRag"
 
 describe("Ask AI RAG availability", () => {
   test("fails closed when retrieval returns no Avana sources", async () => {
@@ -49,5 +49,15 @@ describe("Ask AI RAG availability", () => {
         },
       ],
     })
+  })
+
+  test("retrieves liquidation and Uniswap answers locally from the authoritative corpus", () => {
+    const liquidation = searchAvanaCorpus("What happens during liquidation?", 3)
+    expect(liquidation.usage.tokens).toBe(0)
+    expect(liquidation.entries[0]?.text).toMatch(/Liquidation/i)
+
+    const uniswap = searchAvanaCorpus("How does Avana value a Uniswap v3 LP position?", 3)
+    expect(uniswap.entries.length).toBeGreaterThan(0)
+    expect(uniswap.text).toMatch(/Uniswap v3/i)
   })
 })

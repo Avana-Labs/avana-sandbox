@@ -28,6 +28,72 @@ type AvanaSearchResult = {
   usage: { tokens: number }
 }
 
+const AVANA_SEARCH_STOPWORDS = new Set([
+  "a",
+  "an",
+  "and",
+  "are",
+  "does",
+  "for",
+  "how",
+  "in",
+  "is",
+  "it",
+  "of",
+  "on",
+  "the",
+  "to",
+  "what",
+  "when",
+  "why",
+  "with",
+])
+
+function corpusTerms(value: string) {
+  return value
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((term) => term.length >= 2 && !AVANA_SEARCH_STOPWORDS.has(term))
+}
+
+/** Fast local retrieval over the generated authoritative Avana corpus. */
+export function searchAvanaCorpus(query: string, limit: number = ASK_AI_CONFIG.ragResultLimit): AvanaSearchResult {
+  const terms = [...new Set(corpusTerms(query))]
+  const boundedLimit = Math.min(Math.max(limit, 1), 8)
+  const normalizedQuery = query.trim().toLowerCase()
+  const ranked = AVANA_KNOWLEDGE_CHUNKS.map((chunk, index) => {
+    const title = `${chunk.sourceTitle} ${chunk.locator}`.toLowerCase()
+    const text = chunk.text.toLowerCase()
+    const matchedTerms = terms.filter((term) => title.includes(term) || text.includes(term))
+    const titleMatches = matchedTerms.filter((term) => title.includes(term)).length
+    const phraseBoost = normalizedQuery.length >= 8 && text.includes(normalizedQuery) ? 8 : 0
+    return { chunk, index, score: matchedTerms.length * 3 + titleMatches * 2 + phraseBoost }
+  })
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .slice(0, boundedLimit)
+
+  const entries = ranked.map(({ chunk }) => ({
+    text: `${chunk.locator}\n\n${chunk.text}`,
+    title: chunk.sourceTitle,
+    metadata: {
+      sourceTitle: chunk.sourceTitle,
+      sourceUrl: chunk.sourceUrl,
+      sourceKind: chunk.sourceKind,
+      version: AVANA_KNOWLEDGE_VERSION,
+    },
+  }))
+  return {
+    text: entries.map((entry) => entry.text).join("\n\n---\n\n"),
+    entries,
+    usage: { tokens: 0 },
+  }
+}
+
+export function searchAvanaKnowledge(query: string, limit: number = ASK_AI_CONFIG.ragResultLimit) {
+  return runAvanaKnowledgeSearch(async () => searchAvanaCorpus(query, limit))
+}
+
 export async function runAvanaKnowledgeSearch(search: () => Promise<AvanaSearchResult>) {
   try {
     const result = await search()
@@ -137,16 +203,5 @@ export const searchAvanaKnowledgeTool = createTool({
   description:
     "Search the authoritative Avana whitepaper, developer documentation, and FAQ. Use before answering how Avana works, protocol architecture, LP collateral, valuation, borrowing, liquidation, governance, safety, or legal questions.",
   inputSchema: z.object({ query: z.string().min(2).max(500) }),
-  execute: (ctx, { query }) =>
-    runAvanaKnowledgeSearch(() =>
-      avanaRag.search(ctx, {
-        namespace: AVANA_RAG_NAMESPACE,
-        query,
-        limit: ASK_AI_CONFIG.ragResultLimit,
-        searchType: "hybrid",
-        vectorWeight: 0.7,
-        textWeight: 0.3,
-        vectorScoreThreshold: 0.35,
-      }),
-    ),
+  execute: (_ctx, { query }) => searchAvanaKnowledge(query),
 })

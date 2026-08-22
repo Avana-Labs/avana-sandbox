@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest"
 import { ASK_AI_AGENT_INSTRUCTIONS } from "../../../../convex/askAIAgent"
+import { ASK_AI_FAST_INSTRUCTIONS } from "../agent-instructions"
 import { ASK_AI_CONFIG } from "../config"
 
 describe("Ask AI Agent configuration", () => {
@@ -18,5 +19,12 @@ describe("Ask AI Agent configuration", () => {
   test("keeps the agent read-only and does not promise forecasts", () => {
     expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("You are read-only")
     expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("uncertain scenarios")
+  })
+
+  test("uses the low latency profile for high-volume reads", () => {
+    expect(ASK_AI_CONFIG.openAIServiceTier).toBe("fast")
+    expect(ASK_AI_CONFIG.recentMessageLimit).toBeLessThanOrEqual(8)
+    expect(ASK_AI_CONFIG.streamThrottleMs).toBeLessThanOrEqual(100)
+    expect(ASK_AI_FAST_INSTRUCTIONS.length).toBeLessThan(700)
   })
 })
