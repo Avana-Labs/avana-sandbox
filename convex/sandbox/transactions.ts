@@ -2037,7 +2037,12 @@ async function computePortfolioNetApyPct(
       if (base > 0) legs.push({ weight: base, rate: position.supplyApyPct ?? 0 })
     } else if (position.product === "multiply") {
       const base = (position.collateralValueUsd ?? 0) - (position.debtValueUsd ?? 0)
-      if (base > 0) legs.push({ weight: base, rate: position.netApyPct ?? 0 })
+      if (base > 0) {
+        // Persistence stores multiply netApy as a fraction on `netApyPct`; lend stores percent.
+        const raw = position.netApyPct ?? 0
+        const rate = Math.abs(raw) <= 1 ? raw * 100 : raw
+        legs.push({ weight: base, rate })
+      }
     } else if (position.product === "borrow") {
       const base = usd6Number(position.collateralValueUsd6) - usd6Number(position.debtValueUsd6)
       const rate = pairAprBySlug.get(position.marketSlug)
