@@ -65,6 +65,7 @@ const MARKET_PATTERNS = [
 ]
 
 const MARKET_LOOKUP_PATTERN = /\b(price|prices|worth|quote|borrow rate|supply rate|apr|apy|utilization|market rate)\b/i
+const TOKEN_PRICE_LOOKUP_PATTERN = /\b(price|prices|worth|quote|cost)\b/i
 
 const EDUCATION_PATTERNS = [
   /\b(explain|what is|what does|how does|why does|methodology|work)\b/i,
@@ -119,8 +120,22 @@ export function classifyAskAIDomain(message: string): DomainResult {
 
   // An explicit token quote wins over a protocol name that also denotes a DEX.
   // Without this, "Uniswap token price" is misrouted as a pool lookup.
-  if (matchesAny(normalized, MARKET_PATTERNS) && MARKET_LOOKUP_PATTERN.test(normalized)) {
+  if (matchesAny(normalized, MARKET_PATTERNS) && TOKEN_PRICE_LOOKUP_PATTERN.test(normalized)) {
     return { allowed: true, category: "crypto_market", intent: "market", confidence: 0.98 }
+  }
+
+  // Explanations about Avana's treatment of LPs, DEX positions, valuation, and
+  // liquidation come from the protocol corpus, not from a live pool snapshot.
+  if (
+    matchesAny(normalized, EDUCATION_PATTERNS) &&
+    /\b(avana|collateral|liquidat|oracle|valuation|value|health factor|ltv|position|positions)\b/i.test(normalized)
+  ) {
+    return {
+      allowed: true,
+      category: /\bavana\b/i.test(normalized) ? "avana" : "protocol_education",
+      intent: "education",
+      confidence: 0.97,
+    }
   }
 
   if (matchesAny(normalized, POOL_PATTERNS)) {
