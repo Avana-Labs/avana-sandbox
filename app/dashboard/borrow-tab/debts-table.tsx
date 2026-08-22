@@ -23,6 +23,7 @@ import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-t
 import { liqUtilizationBarClass, liqUtilizationPercentTextClass } from "@/app/lib/borrow-system/liq-utilization-tone"
 import { cn } from "@/lib/utils"
 
+import { formatSectionCount } from "@/app/lib/ui/section-count"
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
 type DebtsTableProps = {
@@ -57,18 +58,6 @@ export function DebtsPanel({
   const router = useRouter()
   const { compact, exact } = useCurrency()
   const m = (value: string) => (showBalance ? value : MASK)
-  if (rows.length === 0) {
-    return (
-      <div className="rounded-radius-md border border-dashed border-border bg-surface-raised/50 px-6 py-10 text-center text-[13px] text-muted-foreground">
-        <div className="text-[20px] font-medium leading-snug tracking-tight text-brand">
-          {t("Nothing borrowed yet")}
-        </div>
-        <div className="mt-1 text-[15px] leading-snug">
-          {t("To borrow you need to supply any LPs to be used as collateral")}
-        </div>
-      </div>
-    )
-  }
   return (
     <section className="mb-2">
       {showSummary ? (
@@ -83,197 +72,206 @@ export function DebtsPanel({
       {showHeading ? (
         <div className="mb-3">
           <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">{t("My Debts")}</h3>
+          <p className="mt-1 text-[13px] text-muted-foreground">{formatSectionCount(rows.length, "loan", "loans")}</p>
         </div>
       ) : null}
-      <div className="hidden md:block">
-        <DesktopTableSurface className="!rounded-none">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
-              <colgroup>
-                <col className="w-[26%]" />
-                <col className="w-[15%]" />
-                <col className="w-[14%]" />
-                <col className="w-[13%]" />
-                <col className="w-[13%]" />
-                <col className="w-[19%]" />
-              </colgroup>
-              <thead>
-                <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                  <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                    {t("Debt")}
-                  </th>
-                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                    {t("Borrowed")}
-                  </th>
-                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                    {t("Interest / day")}
-                  </th>
-                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                    {t("Health")}
-                  </th>
-                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                    {t("Liq.")}
-                  </th>
-                  <th className="bg-table-header px-4 pb-2 pt-2.5 pr-5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => {
-                  const hfTone = healthFactorToneClass(row.healthFactor)
-                  const detailHref = `/borrow/markets/${row.pool.id}`
-                  const debtSymbol = row.debtAssetSymbol
-                  return (
-                    <tr
-                      key={row.id ?? row.pool.id}
-                      className="group cursor-pointer transition-colors"
-                      onClick={() => router.push(detailHref)}
-                    >
-                      <td className={`py-3 pl-5 ${TABLE_ROW_HOVER_LEFT}`}>
-                        {/* Debt is a single borrowed token, not the collateral LP pool — show the
+      {rows.length === 0 ? (
+        <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-[13px] text-muted-foreground">
+          {t("No active loans. Borrow against your collateral to get started.")}
+        </div>
+      ) : (
+        <>
+          <div className="hidden md:block">
+            <DesktopTableSurface className="!rounded-none">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
+                  <colgroup>
+                    <col className="w-[26%]" />
+                    <col className="w-[15%]" />
+                    <col className="w-[14%]" />
+                    <col className="w-[13%]" />
+                    <col className="w-[13%]" />
+                    <col className="w-[19%]" />
+                  </colgroup>
+                  <thead>
+                    <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
+                      <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                        {t("Debt")}
+                      </th>
+                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                        {t("Borrowed")}
+                      </th>
+                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                        {t("Interest / day")}
+                      </th>
+                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                        {t("Health")}
+                      </th>
+                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                        {t("Liq.")}
+                      </th>
+                      <th className="bg-table-header px-4 pb-2 pt-2.5 pr-5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((row) => {
+                      const hfTone = healthFactorToneClass(row.healthFactor)
+                      const detailHref = `/borrow/markets/${row.pool.id}`
+                      const debtSymbol = row.debtAssetSymbol
+                      return (
+                        <tr
+                          key={row.id ?? row.pool.id}
+                          className="group cursor-pointer transition-colors"
+                          onClick={() => router.push(detailHref)}
+                        >
+                          <td className={`py-3 pl-5 ${TABLE_ROW_HOVER_LEFT}`}>
+                            {/* Debt is a single borrowed token, not the collateral LP pool — show the
                             borrowed asset, with the collateral market as context. */}
-                        <div className="flex min-w-0 items-center gap-2.5">
-                          <TokenIcon symbol={debtSymbol} size="table" />
-                          <div className="min-w-0">
-                            <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
-                              {debtSymbol}
+                            <div className="flex min-w-0 items-center gap-2.5">
+                              <TokenIcon symbol={debtSymbol} size="table" />
+                              <div className="min-w-0">
+                                <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                                  {debtSymbol}
+                                </div>
+                                <div className="mt-0.5 truncate text-[13px] text-muted-foreground">
+                                  {t("against {pool}").replace("{pool}", row.pool.name)}
+                                </div>
+                              </div>
                             </div>
-                            <div className="mt-0.5 truncate text-[13px] text-muted-foreground">
-                              {t("against {pool}").replace("{pool}", row.pool.name)}
+                          </td>
+                          <td className={`py-3 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
+                            <div className="font-data text-[13px] tabular-nums text-foreground">
+                              {m(compact(row.borrowedUsd))}
                             </div>
+                            <div className="text-[11px] text-muted-foreground">
+                              {showBalance ? `${row.borrowedUsd.toFixed(0)} ${debtSymbol}` : MASK}
+                            </div>
+                          </td>
+                          <td className={`py-3 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
+                            <div className="font-data text-[13px] tabular-nums text-rose-500">
+                              {showBalance ? `+${exact(row.dailyInterestUsd)}` : MASK}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground">{t("per day")}</div>
+                          </td>
+                          <td className={`py-3 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
+                            <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
+                          </td>
+                          <td className={`py-3 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
+                            <div className="font-data text-[13px] tabular-nums text-foreground">
+                              {m(exact(row.liquidationThresholdUsd))}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground">{t("liquidation value")}</div>
+                          </td>
+                          <td className={`py-3 pl-4 pr-5 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
+                            <HoverActionGroup align="start" className="gap-2">
+                              <Button
+                                type="button"
+                                size="table"
+                                variant="table-primary"
+                                className="w-auto"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  onRepay(row)
+                                }}
+                              >
+                                <ActionIcon label="Repay" />
+                                {t("Repay")}
+                              </Button>
+                              <Button
+                                type="button"
+                                size="table"
+                                variant="table-secondary"
+                                className="w-auto"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  onManage(row)
+                                }}
+                              >
+                                <ActionIcon label="Borrow" />
+                                {t("Borrow")}
+                              </Button>
+                            </HoverActionGroup>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </DesktopTableSurface>
+          </div>
+
+          <ul className="space-y-5 md:hidden">
+            {rows.map((row, index) => {
+              const rowKey = row.id ?? `${row.pool.id}-${index}`
+              return (
+                <MarketMobileCard key={rowKey} clickable onClick={() => router.push(`/borrow/markets/${row.pool.id}`)}>
+                  <MarketMobileCardHeader
+                    identity={
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <TokenIcon symbol={row.debtAssetSymbol} size="table" />
+                        <div className="min-w-0">
+                          <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground">
+                            {row.debtAssetSymbol}
+                          </div>
+                          <div className="truncate text-[13px] text-muted-foreground">
+                            {t("against {pool}").replace("{pool}", row.pool.name)}
                           </div>
                         </div>
-                      </td>
-                      <td className={`py-3 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
-                        <div className="font-data text-[13px] tabular-nums text-foreground">
-                          {m(compact(row.borrowedUsd))}
-                        </div>
-                        <div className="text-[11px] text-muted-foreground">
-                          {showBalance ? `${row.borrowedUsd.toFixed(0)} ${debtSymbol}` : MASK}
-                        </div>
-                      </td>
-                      <td className={`py-3 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
-                        <div className="font-data text-[13px] tabular-nums text-rose-500">
-                          {showBalance ? `+${exact(row.dailyInterestUsd)}` : MASK}
-                        </div>
-                        <div className="text-[11px] text-muted-foreground">{t("per day")}</div>
-                      </td>
-                      <td className={`py-3 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
-                        <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
-                      </td>
-                      <td className={`py-3 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
-                        <div className="font-data text-[13px] tabular-nums text-foreground">
-                          {m(exact(row.liquidationThresholdUsd))}
-                        </div>
-                        <div className="text-[11px] text-muted-foreground">{t("liquidation value")}</div>
-                      </td>
-                      <td className={`py-3 pl-4 pr-5 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
-                        <HoverActionGroup align="start" className="gap-2">
-                          <Button
-                            type="button"
-                            size="table"
-                            variant="table-primary"
-                            className="w-auto"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              onRepay(row)
-                            }}
-                          >
-                            <ActionIcon label="Repay" />
-                            {t("Repay")}
-                          </Button>
-                          <Button
-                            type="button"
-                            size="table"
-                            variant="table-secondary"
-                            className="w-auto"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              onManage(row)
-                            }}
-                          >
-                            <ActionIcon label="Borrow" />
-                            {t("Borrow")}
-                          </Button>
-                        </HoverActionGroup>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </DesktopTableSurface>
-      </div>
-
-      <ul className="space-y-5 md:hidden">
-        {rows.map((row, index) => {
-          const rowKey = row.id ?? `${row.pool.id}-${index}`
-          return (
-            <MarketMobileCard key={rowKey} clickable onClick={() => router.push(`/borrow/markets/${row.pool.id}`)}>
-              <MarketMobileCardHeader
-                identity={
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <TokenIcon symbol={row.debtAssetSymbol} size="table" />
-                    <div className="min-w-0">
-                      <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground">
-                        {row.debtAssetSymbol}
                       </div>
-                      <div className="truncate text-[13px] text-muted-foreground">
-                        {t("against {pool}").replace("{pool}", row.pool.name)}
-                      </div>
-                    </div>
-                  </div>
-                }
-                metric={
-                  <MarketMobileMetric
-                    value={m(compact(row.borrowedUsd))}
-                    label={t("Borrowed")}
-                    valueClassName="text-rose-500"
+                    }
+                    metric={
+                      <MarketMobileMetric
+                        value={m(compact(row.borrowedUsd))}
+                        label={t("Borrowed")}
+                        valueClassName="text-rose-500"
+                      />
+                    }
                   />
-                }
-              />
-              <MarketMobileStatList className="mt-3">
-                <MarketMobileStatRow
-                  label={t("Health")}
-                  value={m(formatHealthFactor(row.healthFactor))}
-                  valueClassName={healthFactorToneClass(row.healthFactor)}
-                />
-                <MarketMobileStatRow
-                  label={t("Borrow APR")}
-                  value={`${row.borrowApr.toFixed(2)}%`}
-                  valueClassName={aprToneClass(row.borrowApr)}
-                />
-                <MarketMobileStatRow
-                  label={t("Daily Interest")}
-                  value={showBalance ? `+${exact(row.dailyInterestUsd)}/${t("day")}` : MASK}
-                  valueClassName="text-rose-500"
-                />
-              </MarketMobileStatList>
-              <div className="mt-4 flex gap-2">
-                <MarketMobileSecondaryAction
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onRepay(row)
-                  }}
-                >
-                  <ActionIcon label="Repay" />
-                  {t("Repay")}
-                </MarketMobileSecondaryAction>
-                <MarketMobilePrimaryAction
-                  className="mt-0 flex-1"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onManage(row)
-                  }}
-                >
-                  <ActionIcon label="Borrow" />
-                  {t("Borrow")}
-                </MarketMobilePrimaryAction>
-              </div>
-            </MarketMobileCard>
-          )
-        })}
-      </ul>
+                  <MarketMobileStatList className="mt-3">
+                    <MarketMobileStatRow
+                      label={t("Health")}
+                      value={m(formatHealthFactor(row.healthFactor))}
+                      valueClassName={healthFactorToneClass(row.healthFactor)}
+                    />
+                    <MarketMobileStatRow
+                      label={t("Borrow APR")}
+                      value={`${row.borrowApr.toFixed(2)}%`}
+                      valueClassName={aprToneClass(row.borrowApr)}
+                    />
+                    <MarketMobileStatRow
+                      label={t("Daily Interest")}
+                      value={showBalance ? `+${exact(row.dailyInterestUsd)}/${t("day")}` : MASK}
+                      valueClassName="text-rose-500"
+                    />
+                  </MarketMobileStatList>
+                  <div className="mt-4 flex gap-2">
+                    <MarketMobileSecondaryAction
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        onRepay(row)
+                      }}
+                    >
+                      <ActionIcon label="Repay" />
+                      {t("Repay")}
+                    </MarketMobileSecondaryAction>
+                    <MarketMobilePrimaryAction
+                      className="mt-0 flex-1"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        onManage(row)
+                      }}
+                    >
+                      <ActionIcon label="Borrow" />
+                      {t("Borrow")}
+                    </MarketMobilePrimaryAction>
+                  </div>
+                </MarketMobileCard>
+              )
+            })}
+          </ul>
+        </>
+      )}
     </section>
   )
 }

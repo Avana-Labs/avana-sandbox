@@ -39,6 +39,30 @@ describe("DebtsPanel", () => {
     cleanup()
   })
 
+  it("shows a lend-style empty state with heading and count", () => {
+    const { container } = render(
+      <DebtsPanel
+        rows={[]}
+        totals={{
+          totalBorrowed: 0,
+          totalCollateral: 0,
+          averageHf: null,
+          accruedInterest: 0,
+          dailyInterest: 0,
+        }}
+        onRepay={vi.fn()}
+        onManage={vi.fn()}
+        showSummary={false}
+      />,
+    )
+
+    expect(container.textContent).toMatch(/My Debts/)
+    expect(container.textContent).toMatch(/0 loans/)
+    expect(container.textContent).toMatch(/No active loans\. Borrow against your collateral to get started\./)
+    expect(container.textContent).not.toMatch(/Nothing borrowed yet/)
+    expect(container.textContent).not.toMatch(/To borrow you need to supply any LPs/)
+  })
+
   it("renders the position's actual debt asset symbol, not a hardcoded USDC", () => {
     const { container } = render(
       <DebtsPanel

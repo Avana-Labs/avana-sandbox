@@ -33,6 +33,7 @@ import {
 } from "@/app/components/market-card-primitives"
 import { HealthFactorPositionBar } from "@/app/components/action-page/action-health-factor-bar"
 import { formatApy } from "@/app/lib/format"
+import { formatSectionCount } from "@/app/lib/ui/section-count"
 import { cn } from "@/lib/utils"
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 
@@ -62,18 +63,6 @@ export function SuppliesPanel({
   const router = useRouter()
   const { compact } = useCurrency()
   const m = (value: string) => (showBalance ? value : MASK)
-  if (rows.length === 0) {
-    return (
-      <div className="rounded-radius-md border border-dashed border-border bg-surface-raised/50 px-6 py-10 text-center text-[13px] text-muted-foreground">
-        <div className="text-[20px] font-medium leading-snug tracking-tight text-brand">
-          {t("Nothing supplied yet")}
-        </div>
-        <div className="mt-1 text-[15px] leading-snug">
-          {t("To borrow you need to supply any LPs to be used as collateral")}
-        </div>
-      </div>
-    )
-  }
   return (
     <section className="mb-2">
       {showSummary ? (
@@ -84,173 +73,186 @@ export function SuppliesPanel({
           <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
             {t("My Collaterals")}
           </h3>
+          <p className="mt-1 text-[13px] text-muted-foreground">{formatSectionCount(rows.length, "asset", "assets")}</p>
         </div>
       ) : null}
-      <div className="hidden md:block">
-        <DesktopTableSurface className="!rounded-none">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
-              <colgroup>
-                <col className="w-[28%]" />
-                <col className="w-[16%]" />
-                <col className="w-[16%]" />
-                <col className="w-[16%]" />
-                <col className="w-[24%]" />
-              </colgroup>
-              <thead>
-                <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                  <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                    {t("Pool")}
-                  </th>
-                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                    {t("Collateral")}
-                  </th>
-                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                    {t("Borrow Power")}
-                  </th>
-                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                    {t("Health")}
-                  </th>
-                  <th className="bg-table-header px-5 pb-2 pt-2.5 pr-6 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row) => {
-                  const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [
-                    ReturnType<typeof homeVisualToBorrowVisual>,
-                    ReturnType<typeof homeVisualToBorrowVisual>,
-                  ]
-                  const meta = BORROW_SUPPLY_META[row.pool.id]
-                  const hfTone = healthFactorToneClass(row.healthFactor)
-                  const detailHref = `/borrow/markets/${row.pool.id}`
-                  return (
-                    <tr
-                      key={row.pool.id}
-                      className="group cursor-pointer transition-colors"
-                      onClick={() => router.push(detailHref)}
-                    >
-                      <td className={`py-3 pl-5 ${TABLE_ROW_HOVER_LEFT}`}>
-                        <TokenPairCell
-                          visuals={visuals}
-                          name={row.pool.name}
-                          subtitle={meta?.venue ?? row.pool.venue}
-                          size="md"
-                        />
-                      </td>
-                      <td
-                        className={`py-3 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}
-                      >
-                        {m(compact(row.pool.collateralUsd))}
-                      </td>
-                      <td
-                        className={`py-3 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}
-                      >
-                        {m(compact(row.remainingBorrowPowerUsd))}
-                      </td>
-                      <td className={`py-3 text-right ${TABLE_ROW_HOVER_BG}`}>
-                        <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
-                      </td>
-                      <td className={`py-3 pl-4 pr-6 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
-                        <HoverActionGroup align="start" className="gap-2">
-                          <Button
-                            type="button"
-                            size="table"
-                            variant="table-primary"
-                            className="w-auto"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              // Route through the parent callback so the close button returns to
-                              // wherever the panel was launched from (e.g. the dashboard), not the
-                              // market detail page. Fall back to the detail page if unwired.
-                              if (onAddCollateral) onAddCollateral(row)
-                              else
-                                router.push(
-                                  actionPagePath("borrow", "supply", { market: row.pool.id, return: detailHref }),
-                                )
-                            }}
-                          >
-                            <ActionIcon label="Pledge" />
-                            {t("Pledge")}
-                          </Button>
-                          <Button
-                            type="button"
-                            size="table"
-                            variant="table-secondary"
-                            className="w-auto"
-                            onClick={(event) => {
-                              event.stopPropagation()
-                              onBorrowMore(row)
-                            }}
-                          >
-                            <ActionIcon label="Borrow" />
-                            {t("Borrow")}
-                          </Button>
-                        </HoverActionGroup>
-                      </td>
+      {rows.length === 0 ? (
+        <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-[13px] text-muted-foreground">
+          {t("No collateral deposited yet. Supply an asset to start backing loans.")}
+        </div>
+      ) : (
+        <>
+          <div className="hidden md:block">
+            <DesktopTableSurface className="!rounded-none">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
+                  <colgroup>
+                    <col className="w-[28%]" />
+                    <col className="w-[16%]" />
+                    <col className="w-[16%]" />
+                    <col className="w-[16%]" />
+                    <col className="w-[24%]" />
+                  </colgroup>
+                  <thead>
+                    <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
+                      <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                        {t("Pool")}
+                      </th>
+                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                        {t("Collateral")}
+                      </th>
+                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                        {t("Borrow Power")}
+                      </th>
+                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                        {t("Health")}
+                      </th>
+                      <th className="bg-table-header px-5 pb-2 pt-2.5 pr-6 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
                     </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        </DesktopTableSurface>
-      </div>
-
-      <ul className="space-y-5 md:hidden">
-        {rows.map((row) => {
-          const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [
-            ReturnType<typeof homeVisualToBorrowVisual>,
-            ReturnType<typeof homeVisualToBorrowVisual>,
-          ]
-          const hf = row.healthFactor
-          // Single-source the label through formatHealthFactor so the mobile card
-          // caps/formats health identically to the desktop table and the hero card.
-          const hfLabel = formatHealthFactor(hf)
-          const hfTone = healthFactorBarTone(hf)
-          return (
-            <MarketMobileCard key={row.pool.id} clickable onClick={() => router.push(`/borrow/markets/${row.pool.id}`)}>
-              <MarketMobileCardHeader
-                identity={<TokenPairCell visuals={visuals} name={row.pool.name} size="md" />}
-                metric={<MarketMobileMetric value={m(compact(row.pool.collateralUsd))} label={t("Collateral")} />}
-              />
-              <MarketMobileStatList className="mt-3">
-                <MarketMobileStatRow label={t("Health")} value={m(hfLabel)} valueClassName={hfTone.text} />
-                <MarketMobileStatRow label={t("Borrowed")} value={m(compact(row.borrowedUsd))} />
-                <MarketMobileStatRow label={t("Borrow Power")} value={m(compact(row.remainingBorrowPowerUsd))} />
-                <MarketMobileStatRow label={t("LP APR")} value={formatApy(row.pairApr)} />
-              </MarketMobileStatList>
-              <div className="mt-4 flex gap-2">
-                <MarketMobileSecondaryAction
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    if (onAddCollateral) onAddCollateral(row)
-                    else
-                      router.push(
-                        actionPagePath("borrow", "supply", {
-                          market: row.pool.id,
-                          return: `/borrow/markets/${row.pool.id}`,
-                        }),
+                  </thead>
+                  <tbody>
+                    {rows.map((row) => {
+                      const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [
+                        ReturnType<typeof homeVisualToBorrowVisual>,
+                        ReturnType<typeof homeVisualToBorrowVisual>,
+                      ]
+                      const meta = BORROW_SUPPLY_META[row.pool.id]
+                      const hfTone = healthFactorToneClass(row.healthFactor)
+                      const detailHref = `/borrow/markets/${row.pool.id}`
+                      return (
+                        <tr
+                          key={row.pool.id}
+                          className="group cursor-pointer transition-colors"
+                          onClick={() => router.push(detailHref)}
+                        >
+                          <td className={`py-3 pl-5 ${TABLE_ROW_HOVER_LEFT}`}>
+                            <TokenPairCell
+                              visuals={visuals}
+                              name={row.pool.name}
+                              subtitle={meta?.venue ?? row.pool.venue}
+                              size="md"
+                            />
+                          </td>
+                          <td
+                            className={`py-3 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}
+                          >
+                            {m(compact(row.pool.collateralUsd))}
+                          </td>
+                          <td
+                            className={`py-3 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}
+                          >
+                            {m(compact(row.remainingBorrowPowerUsd))}
+                          </td>
+                          <td className={`py-3 text-right ${TABLE_ROW_HOVER_BG}`}>
+                            <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
+                          </td>
+                          <td className={`py-3 pl-4 pr-6 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
+                            <HoverActionGroup align="start" className="gap-2">
+                              <Button
+                                type="button"
+                                size="table"
+                                variant="table-primary"
+                                className="w-auto"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  // Route through the parent callback so the close button returns to
+                                  // wherever the panel was launched from (e.g. the dashboard), not the
+                                  // market detail page. Fall back to the detail page if unwired.
+                                  if (onAddCollateral) onAddCollateral(row)
+                                  else
+                                    router.push(
+                                      actionPagePath("borrow", "supply", { market: row.pool.id, return: detailHref }),
+                                    )
+                                }}
+                              >
+                                <ActionIcon label="Pledge" />
+                                {t("Pledge")}
+                              </Button>
+                              <Button
+                                type="button"
+                                size="table"
+                                variant="table-secondary"
+                                className="w-auto"
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  onBorrowMore(row)
+                                }}
+                              >
+                                <ActionIcon label="Borrow" />
+                                {t("Borrow")}
+                              </Button>
+                            </HoverActionGroup>
+                          </td>
+                        </tr>
                       )
-                  }}
-                >
-                  <ActionIcon label="Pledge" />
-                  {t("Pledge")}
-                </MarketMobileSecondaryAction>
-                <MarketMobilePrimaryAction
-                  className="mt-0 flex-1"
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onBorrowMore(row)
-                  }}
-                >
-                  <ActionIcon label="Borrow" />
-                  {t("Borrow")}
-                </MarketMobilePrimaryAction>
+                    })}
+                  </tbody>
+                </table>
               </div>
-            </MarketMobileCard>
-          )
-        })}
-      </ul>
+            </DesktopTableSurface>
+          </div>
+
+          <ul className="space-y-5 md:hidden">
+            {rows.map((row) => {
+              const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [
+                ReturnType<typeof homeVisualToBorrowVisual>,
+                ReturnType<typeof homeVisualToBorrowVisual>,
+              ]
+              const hf = row.healthFactor
+              // Single-source the label through formatHealthFactor so the mobile card
+              // caps/formats health identically to the desktop table and the hero card.
+              const hfLabel = formatHealthFactor(hf)
+              const hfTone = healthFactorBarTone(hf)
+              return (
+                <MarketMobileCard
+                  key={row.pool.id}
+                  clickable
+                  onClick={() => router.push(`/borrow/markets/${row.pool.id}`)}
+                >
+                  <MarketMobileCardHeader
+                    identity={<TokenPairCell visuals={visuals} name={row.pool.name} size="md" />}
+                    metric={<MarketMobileMetric value={m(compact(row.pool.collateralUsd))} label={t("Collateral")} />}
+                  />
+                  <MarketMobileStatList className="mt-3">
+                    <MarketMobileStatRow label={t("Health")} value={m(hfLabel)} valueClassName={hfTone.text} />
+                    <MarketMobileStatRow label={t("Borrowed")} value={m(compact(row.borrowedUsd))} />
+                    <MarketMobileStatRow label={t("Borrow Power")} value={m(compact(row.remainingBorrowPowerUsd))} />
+                    <MarketMobileStatRow label={t("LP APR")} value={formatApy(row.pairApr)} />
+                  </MarketMobileStatList>
+                  <div className="mt-4 flex gap-2">
+                    <MarketMobileSecondaryAction
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        if (onAddCollateral) onAddCollateral(row)
+                        else
+                          router.push(
+                            actionPagePath("borrow", "supply", {
+                              market: row.pool.id,
+                              return: `/borrow/markets/${row.pool.id}`,
+                            }),
+                          )
+                      }}
+                    >
+                      <ActionIcon label="Pledge" />
+                      {t("Pledge")}
+                    </MarketMobileSecondaryAction>
+                    <MarketMobilePrimaryAction
+                      className="mt-0 flex-1"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        onBorrowMore(row)
+                      }}
+                    >
+                      <ActionIcon label="Borrow" />
+                      {t("Borrow")}
+                    </MarketMobilePrimaryAction>
+                  </div>
+                </MarketMobileCard>
+              )
+            })}
+          </ul>
+        </>
+      )}
     </section>
   )
 }
