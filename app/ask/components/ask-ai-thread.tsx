@@ -133,6 +133,7 @@ function AssistantMessage() {
   const { threadId } = useContext(AskAIMessageContext)
   const messageId = useAuiState((state) => state.message.id)
   const status = useAuiState((state) => state.message.status)
+  const contentLength = useAuiState((state) => state.message.content.length)
   const responseText = useAuiState((state) =>
     state.message.content
       .filter((part) => part.type === "text")
@@ -156,21 +157,11 @@ function AssistantMessage() {
     <MessagePrimitive.Root className="group/msg px-2 text-foreground">
       {/* Announce streamed/settled answers to assistive tech as they arrive. */}
       <div className="flex flex-col gap-3" aria-live="polite" aria-atomic="false">
-        <MessagePrimitive.Parts
-          components={{
-            Text: AssistantText,
-            Empty: AssistantEmptyPart,
-            tools: { Fallback: ToolCallPart },
-            data: {
-              by_name: {
-                retrieval: RetrievalPart,
-                sources: SourcesPart,
-                chart: ChartPart,
-                "financial-result": FinancialResultPart,
-              },
-            },
-          }}
-        />
+        {status?.type === "running" && contentLength === 0 ? (
+          <ThinkingIndicatorLive />
+        ) : (
+          <MessagePrimitive.Parts components={assistantPartComponents} />
+        )}
         <MessagePrimitive.Error>
           <ErrorState
             title="The response stopped"
@@ -259,12 +250,7 @@ function ThinkingIndicatorLive({ label = "Thinking…" }: { label?: string }) {
   return <ThinkingIndicator label={label} elapsed={`${seconds}s`} className="py-3" />
 }
 
-function AssistantEmptyPart() {
-  const status = useAuiState((state) => state.message.status)
-  return status?.type === "running" ? <ThinkingIndicatorLive /> : null
-}
-
-// Empty + running -> thinking indicator. Otherwise render Markdown, which reveals smoothly as
+// An empty streamed text part shows the thinking indicator. Otherwise render Markdown, which reveals smoothly as
 // tokens arrive (assistant-ui smooth text) — one renderer for streaming and final, so there is no
 // plain-text -> markdown swap and no resize jump.
 function AssistantText({ text, status }: TextMessagePartProps) {
@@ -334,6 +320,22 @@ const messageComponents = {
   UserMessage,
   AssistantMessage,
 } satisfies Parameters<typeof ThreadPrimitive.Messages>[0]["components"]
+
+// assistant-ui registers part renderers through callback refs. Recreating this
+// object during a running to complete transition detaches and reattaches those
+// refs inside the store, which can recurse into React's maximum update depth.
+const assistantPartComponents = {
+  Text: AssistantText,
+  tools: { Fallback: ToolCallPart },
+  data: {
+    by_name: {
+      retrieval: RetrievalPart,
+      sources: SourcesPart,
+      chart: ChartPart,
+      "financial-result": FinancialResultPart,
+    },
+  },
+}
 
 // Warm, in-voice quota nudge above the composer: a gentle heads-up as chats run
 // low, and — once they're used up — an offer to hand off to the Avana team.
