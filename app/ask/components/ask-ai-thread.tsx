@@ -473,7 +473,7 @@ export function AskAIThread({
               isEmpty && !loading ? "justify-center" : ""
             }`}
           >
-            {loading ? (
+            {loading && isEmpty ? (
               <AskAIThreadSkeleton />
             ) : (
               <>
