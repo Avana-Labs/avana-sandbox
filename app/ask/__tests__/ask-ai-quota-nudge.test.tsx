@@ -12,11 +12,11 @@ describe("Ask AI quota nudge", () => {
 
   it.each([4, 1])("shows a warm remaining count at %s", (remaining) => {
     render(<QuotaNudge remaining={remaining} />)
-    expect(screen.getByText(new RegExp(`only ${remaining} chat`, "i"))).toBeInTheDocument()
+    expect(screen.getByText(new RegExp(`you have ${remaining} chat`, "i"))).toBeInTheDocument()
   })
 
   it("links to Support Center at zero", () => {
     render(<QuotaNudge remaining={0} />)
-    expect(screen.getByRole("link", { name: "Talk to the team" })).toHaveAttribute("href", "/support-center")
+    expect(screen.getByRole("link", { name: "Open Support Center" })).toHaveAttribute("href", "/support-center")
   })
 })
