@@ -1,20 +1,10 @@
 "use client"
 
-import {
-  AuiIf,
-  ComposerPrimitive,
-  type DataMessagePartProps,
-  MessagePrimitive,
-  type TextMessagePartProps,
-  ThreadPrimitive,
-  type ToolCallMessagePartProps,
-  useAui,
-  useAuiState,
-} from "@assistant-ui/react"
+import { AuiIf, ComposerPrimitive, type ThreadMessage, ThreadPrimitive, useAui } from "@assistant-ui/react"
 import { useMutation } from "convex/react"
 import Link from "next/link"
 import { ArrowUp, Check, ChevronDown, Copy, Square, ThumbsDown, ThumbsUp } from "lucide-react"
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import type { ComponentType } from "react"
 import { Code2, PieChart, Sparkles, SunMedium, TrendingUp } from "@/app/components/icons"
 import { ASK_AI_CONFIG } from "@/app/lib/ask-ai/config"
@@ -33,15 +23,11 @@ import { AskAIThreadSkeleton } from "./ask-ai-skeleton"
 import { MessageQueue } from "@/components/elements/message-queue"
 import { RetrievalChunks, type RetrievalChunk } from "@/components/elements/retrieval-chunks"
 import { Sources, type Source } from "@/components/elements/sources"
-import { MarkdownText } from "@/components/assistant-ui/markdown-text"
-import { ToolCall } from "@/components/elements/tool-call"
+import { MarkdownTextContent } from "@/components/assistant-ui/markdown-text"
 import { api } from "@/convex/_generated/api"
 import type { AskAIUsage } from "@/app/lib/ask-ai/chat-protocol"
 import { AskAIFinancialResultCard, type AskAIFinancialResult } from "./ask-ai-financial-result-card"
 
-const AskAIMessageContext = createContext<{ threadId: string | null }>({
-  threadId: null,
-})
 const FEEDBACK_REASONS = ["Incorrect", "Outdated data", "Not helpful", "Missing context", "Unsafe", "Other"]
 
 export type AskAISuggestion = {
@@ -101,10 +87,18 @@ export function resolveAskAIErrorDetail(rawError: unknown): string {
   return FALLBACK_ASK_AI_ERROR
 }
 
-// Muted timestamp revealed on message hover, mirroring Claude/ChatGPT. Reads the
-// message createdAt from aui state; renders nothing if it is missing/invalid.
-function MessageTimestamp({ align = "left" }: { align?: "left" | "right" }) {
-  const createdAt = useAuiState((state) => (state.message as { createdAt?: unknown }).createdAt)
+// Live "thinking" status line (assistant-ui element) with elapsed time, shown before the first token.
+function ThinkingIndicatorLive({ label = "Thinking…" }: { label?: string }) {
+  const [start] = useState(() => Date.now())
+  const [seconds, setSeconds] = useState(0)
+  useEffect(() => {
+    const timer = setInterval(() => setSeconds(Math.max(0, Math.round((Date.now() - start) / 1000))), 1000)
+    return () => clearInterval(timer)
+  }, [start])
+  return <ThinkingIndicator label={label} elapsed={`${seconds}s`} className="py-3" />
+}
+
+function DirectMessageTimestamp({ createdAt, align = "left" }: { createdAt?: Date; align?: "left" | "right" }) {
   if (!(createdAt instanceof Date) || Number.isNaN(createdAt.getTime())) return null
   return (
     <time
@@ -118,30 +112,58 @@ function MessageTimestamp({ align = "left" }: { align?: "left" | "right" }) {
   )
 }
 
-function UserMessage() {
+function DirectUserMessage({ message }: { message: ThreadMessage }) {
+  const text = message.content
+    .filter((part) => part.type === "text")
+    .map((part) => part.text)
+    .join("\n")
   return (
-    <MessagePrimitive.Root className="group/msg relative mx-auto flex w-full max-w-[var(--thread-max-width)] flex-col px-2 py-2">
+    <div className="group/msg relative mx-auto flex w-full max-w-[var(--thread-max-width)] flex-col px-2 py-2">
       <div className="ml-auto max-w-[min(80%,32rem)] break-words rounded-3xl bg-muted px-5 py-2.5 leading-relaxed text-foreground [&_p]:mb-0">
-        <MessagePrimitive.Content />
+        {text}
       </div>
-      <MessageTimestamp align="right" />
-    </MessagePrimitive.Root>
+      <DirectMessageTimestamp createdAt={message.createdAt} align="right" />
+    </div>
   )
 }
 
-function AssistantMessage() {
-  const { threadId } = useContext(AskAIMessageContext)
-  const messageId = useAuiState((state) => state.message.id)
-  const status = useAuiState((state) => state.message.status)
-  const contentLength = useAuiState((state) => state.message.content.length)
-  const responseText = useAuiState((state) =>
-    state.message.content
-      .filter((part) => part.type === "text")
-      .map((part) => part.text)
-      .join("\n"),
-  )
+function DirectAssistantPart({ part }: { part: ThreadMessage["content"][number] }) {
+  if (part.type === "text") return <MarkdownTextContent text={part.text} />
+  if (part.type !== "data") return null
+  if (part.name === "financial-result") return <AskAIFinancialResultCard result={part.data as AskAIFinancialResult} />
+  if (part.name === "chart") {
+    const data = part.data as { label: string; value: string; points: number[]; delta?: string }
+    return <Chart {...data} visibleCount={data.points.length} className="max-w-none" />
+  }
+  if (part.name === "sources")
+    return (
+      <Sources sources={part.data as Source[]} open={false} onOpenChange={() => undefined} className="max-w-none" />
+    )
+  if (part.name === "retrieval") {
+    const data = part.data as { query: string; chunks: RetrievalChunk[] }
+    return (
+      <RetrievalChunks
+        query={data.query}
+        chunks={data.chunks}
+        visibleCount={data.chunks.length}
+        searching={false}
+        className="max-w-none"
+      />
+    )
+  }
+  return null
+}
+
+function DirectAssistantMessage({
+  message,
+  threadId,
+  onRetry,
+}: {
+  message: ThreadMessage
+  threadId: string | null
+  onRetry: () => void | Promise<void>
+}) {
   const submitFeedback = useMutation(api.askAI.submitFeedback)
-  const aui = useAui()
   const [feedbackOpen, setFeedbackOpen] = useState(false)
   const [selected, setSelected] = useState<string[]>([])
   const [note, setNote] = useState("")
@@ -150,29 +172,33 @@ function AssistantMessage() {
   const [helpful, setHelpful] = useState(false)
   const copyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => () => void (copyResetRef.current && clearTimeout(copyResetRef.current)), [])
-  const persisted = !messageId.endsWith("-assistant")
-  const hasContent = responseText.trim().length > 0
-  const errorValue = status && "error" in status ? (status as { error?: unknown }).error : undefined
+  const responseText = message.content
+    .filter((part) => part.type === "text")
+    .map((part) => part.text)
+    .join("\n")
+  const status = "status" in message ? message.status : undefined
+  const complete = status?.type === "complete"
+  const running = status?.type === "running"
+  const failed = status?.type === "incomplete"
+  const errorValue = failed && status && "error" in status ? status.error : undefined
+  const persisted = !message.id.endsWith("-assistant")
   return (
-    <MessagePrimitive.Root className="group/msg px-2 text-foreground">
-      {/* Announce streamed/settled answers to assistive tech as they arrive. */}
+    <div className="group/msg px-2 text-foreground">
       <div className="flex flex-col gap-3" aria-live="polite" aria-atomic="false">
-        {status?.type === "running" && contentLength === 0 ? (
+        {running && message.content.length === 0 ? (
           <ThinkingIndicatorLive />
         ) : (
-          <MessagePrimitive.Parts components={assistantPartComponents} />
+          message.content.map((part, index) => <DirectAssistantPart key={`${message.id}-${index}`} part={part} />)
         )}
-        <MessagePrimitive.Error>
+        {failed ? (
           <ErrorState
             title="The response stopped"
             detail={resolveAskAIErrorDetail(errorValue)}
             retrying={false}
-            // A live (transient) failed turn can be retried; a persisted failed
-            // turn from a prior session has no replayable handle, so hide Retry.
-            onRetry={persisted ? undefined : () => aui.message().reload()}
+            onRetry={persisted ? undefined : () => void onRetry()}
           />
-        </MessagePrimitive.Error>
-        {status?.type === "complete" && persisted && hasContent ? (
+        ) : null}
+        {complete && persisted && responseText.trim() ? (
           <div className="flex flex-col items-start gap-2">
             {!feedbackOpen && !sent ? (
               <div className="flex items-center gap-1 text-muted-foreground">
@@ -195,7 +221,7 @@ function AssistantMessage() {
                   disabled={helpful || !threadId}
                   onClick={async () => {
                     if (!threadId) return
-                    await submitFeedback({ threadId, messageId, categories: ["Helpful"] })
+                    await submitFeedback({ threadId, messageId: message.id, categories: ["Helpful"] })
                     setHelpful(true)
                   }}
                   className="inline-flex size-8 items-center justify-center rounded-md hover:bg-muted hover:text-foreground disabled:opacity-50"
@@ -226,115 +252,17 @@ function AssistantMessage() {
                 onNoteChange={setNote}
                 onSubmit={async () => {
                   if (!threadId) return
-                  await submitFeedback({ threadId, messageId, categories: selected, note })
+                  await submitFeedback({ threadId, messageId: message.id, categories: selected, note })
                   setSent(true)
                 }}
               />
             ) : null}
           </div>
         ) : null}
-        {status?.type === "complete" && persisted && hasContent ? <MessageTimestamp /> : null}
+        {complete && persisted && responseText.trim() ? <DirectMessageTimestamp createdAt={message.createdAt} /> : null}
       </div>
-    </MessagePrimitive.Root>
+    </div>
   )
-}
-
-// Live "thinking" status line (assistant-ui element) with elapsed time, shown before the first token.
-function ThinkingIndicatorLive({ label = "Thinking…" }: { label?: string }) {
-  const [start] = useState(() => Date.now())
-  const [seconds, setSeconds] = useState(0)
-  useEffect(() => {
-    const timer = setInterval(() => setSeconds(Math.max(0, Math.round((Date.now() - start) / 1000))), 1000)
-    return () => clearInterval(timer)
-  }, [start])
-  return <ThinkingIndicator label={label} elapsed={`${seconds}s`} className="py-3" />
-}
-
-// An empty streamed text part shows the thinking indicator. Otherwise render Markdown, which reveals smoothly as
-// tokens arrive (assistant-ui smooth text) — one renderer for streaming and final, so there is no
-// plain-text -> markdown swap and no resize jump.
-function AssistantText({ text, status }: TextMessagePartProps) {
-  if (status.type === "running" && !text.trim()) return <ThinkingIndicatorLive />
-  return <MarkdownText />
-}
-
-// Human-readable status per tool, so the live indicator reads like an assistant
-// ("Searching Avana knowledge…") rather than a raw function name.
-const ASK_AI_TOOL_LABELS: Record<string, { active: string; done: string }> = {
-  search_avana_knowledge: { active: "Searching Avana knowledge", done: "Searched Avana knowledge" },
-  search_markets: { active: "Checking market data", done: "Checked market data" },
-  read_pool_metrics: { active: "Reading pool metrics", done: "Read pool metrics" },
-  read_portfolio: { active: "Reading your portfolio", done: "Read your portfolio" },
-  read_borrow_capacity: { active: "Checking borrow capacity", done: "Checked borrow capacity" },
-  read_position_risk: { active: "Analyzing position risk", done: "Analyzed position risk" },
-  simulate_borrow: { active: "Simulating a borrow", done: "Simulated a borrow" },
-  stress_position: { active: "Stress-testing your position", done: "Stress-tested your position" },
-  web_search: { active: "Searching the web", done: "Searched the web" },
-}
-
-function ToolCallPart({ args, result, status, toolName }: ToolCallMessagePartProps) {
-  const [open, setOpen] = useState(false)
-  const input = args as { query?: string; request?: string }
-  const labels = ASK_AI_TOOL_LABELS[toolName]
-  return (
-    <ToolCall
-      label={labels?.done ?? toolName.replaceAll("_", " ")}
-      activeLabel={labels?.active ?? `Running ${toolName.replaceAll("_", " ")}`}
-      query={input.query ?? "Avana"}
-      request={input.request ?? "context lookup"}
-      result={typeof result === "string" ? result : "Running"}
-      running={status.type === "running" && result === undefined}
-      open={open}
-      onOpenChange={setOpen}
-      className="max-w-none"
-    />
-  )
-}
-
-function RetrievalPart({ data, status }: DataMessagePartProps<{ query: string; chunks: RetrievalChunk[] }>) {
-  return (
-    <RetrievalChunks
-      query={data.query}
-      chunks={data.chunks}
-      visibleCount={data.chunks.length}
-      searching={status.type === "running" && data.chunks.length === 0}
-      className="max-w-none"
-    />
-  )
-}
-
-function SourcesPart({ data }: DataMessagePartProps<Source[]>) {
-  const [open, setOpen] = useState(false)
-  return <Sources sources={data} open={open} onOpenChange={setOpen} className="max-w-none" />
-}
-
-function ChartPart({ data }: DataMessagePartProps<{ label: string; value: string; points: number[]; delta?: string }>) {
-  return <Chart {...data} visibleCount={data.points.length} className="max-w-none" />
-}
-
-function FinancialResultPart({ data }: DataMessagePartProps<AskAIFinancialResult>) {
-  return <AskAIFinancialResultCard result={data} />
-}
-
-const messageComponents = {
-  UserMessage,
-  AssistantMessage,
-} satisfies Parameters<typeof ThreadPrimitive.Messages>[0]["components"]
-
-// assistant-ui registers part renderers through callback refs. Recreating this
-// object during a running to complete transition detaches and reattaches those
-// refs inside the store, which can recurse into React's maximum update depth.
-const assistantPartComponents = {
-  Text: AssistantText,
-  tools: { Fallback: ToolCallPart },
-  data: {
-    by_name: {
-      retrieval: RetrievalPart,
-      sources: SourcesPart,
-      chart: ChartPart,
-      "financial-result": FinancialResultPart,
-    },
-  },
 }
 
 // Warm, in-voice quota nudge above the composer: a gentle heads-up as chats run
@@ -481,6 +409,8 @@ export function AskAIThread({
   onLoadMoreMessages,
   queue,
   runningPrompt,
+  messages,
+  onRetry,
   onCancelQueued,
   loading = false,
 }: {
@@ -493,115 +423,155 @@ export function AskAIThread({
   onLoadMoreMessages: () => void
   queue: readonly { id: string; prompt: string }[]
   runningPrompt?: string
+  messages: readonly ThreadMessage[]
+  onRetry: () => void | Promise<void>
   onCancelQueued: (turnId: string) => void | Promise<void>
   loading?: boolean
 }) {
-  const isEmpty = useAuiState((state) => state.thread.messages.length === 0)
-  return (
-    <AskAIMessageContext.Provider value={{ threadId }}>
-      <section className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
-        <div className="flex h-16 shrink-0 items-center gap-3 px-5 sm:px-8">
-          <button
-            type="button"
-            aria-label={threadsOpen ? "Hide sidebar" : "Open sidebar"}
-            title={threadsOpen ? "Hide sidebar" : "Open sidebar"}
-            onClick={onToggleThreads}
-            className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <span aria-hidden className="relative block h-4 w-[18px] rounded-[3px] border border-current">
-              <span className="absolute bottom-0 left-[5px] top-0 border-l border-current" />
-            </span>
-          </button>
-        </div>
+  const isEmpty = messages.length === 0
+  const scrollSignature = (() => {
+    const last = messages.at(-1)
+    const content = last?.content
+      .map((part) => (part.type === "text" ? `${part.type}:${part.text.length}` : part.type))
+      .join(",")
+    const status = last && "status" in last ? last.status?.type : ""
+    return `${messages.length}:${last?.id ?? ""}:${status ?? ""}:${content ?? ""}`
+  })()
+  const viewportRef = useRef<HTMLDivElement>(null)
+  const stickToBottomRef = useRef(true)
+  const [showScrollToLatest, setShowScrollToLatest] = useState(false)
 
-        <ThreadPrimitive.Root className="flex min-h-0 flex-1 flex-col [--thread-max-width:44rem]">
-          <ThreadPrimitive.Viewport
-            // Classic bottom-anchored chat: the answer stays pinned to the bottom and
-            // streams smoothly. "top" anchoring disables autoScroll, which made the
-            // answer render at the top and then snap down.
-            turnAnchor="bottom"
-            className="relative flex flex-1 flex-col overflow-x-auto overflow-y-auto"
+  const scrollToLatest = useCallback((smooth = false) => {
+    const viewport = viewportRef.current
+    if (!viewport) return
+    if (smooth && typeof viewport.scrollTo === "function")
+      viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" })
+    else viewport.scrollTop = viewport.scrollHeight
+    stickToBottomRef.current = true
+    setShowScrollToLatest(false)
+  }, [])
+
+  useLayoutEffect(() => {
+    if (!stickToBottomRef.current) return
+    const frame = requestAnimationFrame(() => scrollToLatest(false))
+    return () => cancelAnimationFrame(frame)
+  }, [scrollSignature, runningPrompt, queue.length, scrollToLatest])
+
+  return (
+    <section className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
+      <div className="flex h-16 shrink-0 items-center gap-3 px-5 sm:px-8">
+        <button
+          type="button"
+          aria-label={threadsOpen ? "Hide sidebar" : "Open sidebar"}
+          title={threadsOpen ? "Hide sidebar" : "Open sidebar"}
+          onClick={onToggleThreads}
+          className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <span aria-hidden className="relative block h-4 w-[18px] rounded-[3px] border border-current">
+            <span className="absolute bottom-0 left-[5px] top-0 border-l border-current" />
+          </span>
+        </button>
+      </div>
+
+      <ThreadPrimitive.Root className="flex min-h-0 flex-1 flex-col [--thread-max-width:44rem]">
+        <div
+          ref={viewportRef}
+          onScroll={(event) => {
+            const viewport = event.currentTarget
+            const atBottom = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight < 80
+            stickToBottomRef.current = atBottom
+            setShowScrollToLatest(!atBottom)
+          }}
+          className="relative flex flex-1 flex-col overflow-x-auto overflow-y-auto"
+        >
+          <div
+            className={`mx-auto flex w-full max-w-[44rem] flex-1 flex-col px-4 pt-4 ${
+              isEmpty && !loading ? "justify-center" : ""
+            }`}
           >
+            {loading ? (
+              <AskAIThreadSkeleton />
+            ) : (
+              <>
+                {isEmpty ? (
+                  <div className="mb-6 flex flex-col items-center gap-1.5 px-4 text-center">
+                    <h1 className="text-2xl font-medium tracking-tight">Hey, I&apos;m Avana! What&apos;s uuuup? ✨</h1>
+                    <p className="text-sm text-muted-foreground">
+                      Ask me anything, your positions, or the markets. No question&apos;s too basic, promise! 💛
+                    </p>
+                  </div>
+                ) : null}
+
+                <div className="mb-14 flex flex-col gap-y-6 empty:hidden">
+                  {canLoadMoreMessages ? (
+                    <button
+                      type="button"
+                      onClick={onLoadMoreMessages}
+                      className="mx-auto rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+                    >
+                      Load earlier messages
+                    </button>
+                  ) : null}
+                  {messages.map((message) =>
+                    message.role === "user" ? (
+                      <DirectUserMessage key={message.id} message={message} />
+                    ) : message.role === "assistant" ? (
+                      <DirectAssistantMessage
+                        key={message.id}
+                        message={message}
+                        threadId={threadId}
+                        onRetry={onRetry}
+                      />
+                    ) : null,
+                  )}
+                </div>
+              </>
+            )}
+
             <div
-              className={`mx-auto flex w-full max-w-[44rem] flex-1 flex-col px-4 pt-4 ${
-                isEmpty && !loading ? "justify-center" : ""
+              className={`flex flex-col gap-4 overflow-visible bg-background pb-4 md:pb-6 ${
+                isEmpty ? "" : "sticky bottom-0 mt-auto rounded-t-3xl"
               }`}
             >
-              {loading ? (
-                <AskAIThreadSkeleton />
-              ) : (
-                <>
-                  <ThreadPrimitive.Empty>
-                    <div className="mb-6 flex flex-col items-center gap-1.5 px-4 text-center">
-                      <h1 className="text-2xl font-medium tracking-tight">
-                        Hey, I&apos;m Avana! What&apos;s uuuup? ✨
-                      </h1>
-                      <p className="text-sm text-muted-foreground">
-                        Ask me anything, your positions, or the markets. No question&apos;s too basic, promise! 💛
-                      </p>
-                    </div>
-                  </ThreadPrimitive.Empty>
-
-                  <div className="mb-14 flex flex-col gap-y-6 empty:hidden">
-                    {canLoadMoreMessages ? (
-                      <button
-                        type="button"
-                        onClick={onLoadMoreMessages}
-                        className="mx-auto rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
-                      >
-                        Load earlier messages
-                      </button>
-                    ) : null}
-                    <ThreadPrimitive.Messages components={messageComponents} />
-                  </div>
-                </>
-              )}
-
-              <ThreadPrimitive.ViewportFooter
-                className={`flex flex-col gap-4 overflow-visible bg-background pb-4 md:pb-6 ${
-                  isEmpty ? "" : "sticky bottom-0 mt-auto rounded-t-3xl"
-                }`}
-              >
-                {/* Jump-to-latest pill; the primitive auto-hides when already at the bottom. */}
-                <ThreadPrimitive.ScrollToBottom asChild>
-                  <button
-                    type="button"
-                    aria-label="Scroll to latest"
-                    className="absolute -top-12 left-1/2 z-10 inline-flex size-9 -translate-x-1/2 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-md transition hover:text-foreground disabled:pointer-events-none disabled:opacity-0"
-                  >
-                    <ChevronDown className="size-4" />
-                  </button>
-                </ThreadPrimitive.ScrollToBottom>
-                {runningPrompt && queue.length ? (
-                  <MessageQueue
-                    running={runningPrompt}
-                    queued={queue.map((turn) => ({ id: turn.id, text: turn.prompt }))}
-                    onCancel={(turnId) => void onCancelQueued(turnId)}
-                    className="mx-auto max-w-full"
-                  />
-                ) : null}
-                {messagesRemaining !== null ? <QuotaNudge remaining={messagesRemaining} /> : null}
-                <Composer usage={usage} disabled={messagesRemaining === 0} />
-                <ThreadPrimitive.Empty>
-                  <div className="flex w-full flex-wrap items-center justify-center gap-2 px-4">
-                    {ASK_AI_SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (
-                      <ThreadPrimitive.Suggestion
-                        key={label}
-                        prompt={prompt}
-                        send
-                        className="flex h-auto items-center gap-1.5 whitespace-nowrap rounded-full border border-border/60 px-3.5 py-1.5 text-sm font-normal text-foreground transition-colors hover:bg-muted"
-                      >
-                        <Icon className="size-4" aria-hidden />
-                        {label}
-                      </ThreadPrimitive.Suggestion>
-                    ))}
-                  </div>
-                </ThreadPrimitive.Empty>
-              </ThreadPrimitive.ViewportFooter>
+              {showScrollToLatest ? (
+                <button
+                  type="button"
+                  aria-label="Scroll to latest"
+                  onClick={() => scrollToLatest(true)}
+                  className="absolute -top-12 left-1/2 z-10 inline-flex size-9 -translate-x-1/2 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow-md transition hover:text-foreground"
+                >
+                  <ChevronDown className="size-4" />
+                </button>
+              ) : null}
+              {runningPrompt && queue.length ? (
+                <MessageQueue
+                  running={runningPrompt}
+                  queued={queue.map((turn) => ({ id: turn.id, text: turn.prompt }))}
+                  onCancel={(turnId) => void onCancelQueued(turnId)}
+                  className="mx-auto max-w-full"
+                />
+              ) : null}
+              {messagesRemaining !== null ? <QuotaNudge remaining={messagesRemaining} /> : null}
+              <Composer usage={usage} disabled={messagesRemaining === 0} />
+              {isEmpty ? (
+                <div className="flex w-full flex-wrap items-center justify-center gap-2 px-4">
+                  {ASK_AI_SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (
+                    <ThreadPrimitive.Suggestion
+                      key={label}
+                      prompt={prompt}
+                      send
+                      className="flex h-auto items-center gap-1.5 whitespace-nowrap rounded-full border border-border/60 px-3.5 py-1.5 text-sm font-normal text-foreground transition-colors hover:bg-muted"
+                    >
+                      <Icon className="size-4" aria-hidden />
+                      {label}
+                    </ThreadPrimitive.Suggestion>
+                  ))}
+                </div>
+              ) : null}
             </div>
-          </ThreadPrimitive.Viewport>
-        </ThreadPrimitive.Root>
-      </section>
-    </AskAIMessageContext.Provider>
+          </div>
+        </div>
+      </ThreadPrimitive.Root>
+    </section>
   )
 }

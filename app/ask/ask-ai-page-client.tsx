@@ -541,12 +541,26 @@ export function AskAIPageClient({
         createdAt: new Date(pendingTurn.startedAt),
         metadata: { custom: {} },
       })
-    if (pendingTurn.error)
+    const promptIndex = pendingTurn.promptMessageId
+      ? persistedMessages.findIndex((message) => message.id === pendingTurn.promptMessageId)
+      : -1
+    const hasPersistedAssistant =
+      promptIndex >= 0 && persistedMessages.slice(promptIndex + 1).some((message) => message.role === "assistant")
+    if (pendingTurn.error && !hasPersistedAssistant)
       transient.push({
         id: `${pendingTurn.id}-assistant`,
         role: "assistant",
         content: [],
         status: { type: "incomplete", reason: "error", error: pendingTurn.error },
+        createdAt: new Date(pendingTurn.startedAt + 1),
+        metadata: assistantMetadata(),
+      })
+    else if (!hasPersistedAssistant)
+      transient.push({
+        id: `${pendingTurn.id}-assistant`,
+        role: "assistant",
+        content: [],
+        status: { type: "running" },
         createdAt: new Date(pendingTurn.startedAt + 1),
         metadata: assistantMetadata(),
       })
@@ -630,6 +644,12 @@ export function AskAIPageClient({
           onLoadMoreMessages={() => loadMoreMessages(50)}
           queue={(turnQueue ?? []).filter((turn) => turn.status === "queued" && String(turn.id) !== pendingTurn?.id)}
           runningPrompt={pendingTurn?.error ? undefined : pendingTurn?.prompt}
+          messages={messages}
+          onRetry={async () => {
+            if (!pendingTurn?.error) return
+            await retryFailedTurn({ turnId: pendingTurn.id as Id<"askAITurns"> })
+            setPendingTurn(null)
+          }}
           onCancelQueued={async (turnId) => {
             await cancelQueuedTurn({ turnId: turnId as Id<"askAITurns"> })
           }}

@@ -9,6 +9,7 @@ import {
   useIsMarkdownCodeBlock,
 } from "@assistant-ui/react-markdown"
 import remarkGfm from "remark-gfm"
+import ReactMarkdown from "react-markdown"
 import { type FC, memo, useState } from "react"
 import { CheckIcon, CopyIcon } from "lucide-react"
 
@@ -20,6 +21,16 @@ const MarkdownTextImpl = () => {
 }
 
 export const MarkdownText = memo(MarkdownTextImpl)
+
+export const MarkdownTextContent = memo(function MarkdownTextContent({ text }: { text: string }) {
+  return (
+    <div className="aui-md">
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={defaultComponents}>
+        {text}
+      </ReactMarkdown>
+    </div>
+  )
+})
 
 const CodeHeader: FC<CodeHeaderProps> = ({ language, code }) => {
   const { isCopied, copyToClipboard } = useCopyToClipboard()
