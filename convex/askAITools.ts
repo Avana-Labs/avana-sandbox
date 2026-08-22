@@ -522,6 +522,10 @@ const ASK_AI_SEARCH_STOPWORDS = new Set([
   "markets",
   "pool",
   "pools",
+  "token",
+  "tokens",
+  "asset",
+  "assets",
 ])
 
 const ASK_AI_SEARCH_TERM_ALIASES = new Map([

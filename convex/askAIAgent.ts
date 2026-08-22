@@ -260,9 +260,10 @@ export const generateTurn = internalAction({
         {
           promptMessageId: turn.promptMessageId,
           instructions: prefetched ? prefetchedInstructions(prefetched) : ASK_AI_AGENT_INSTRUCTIONS,
-          maxOutputTokens: ASK_AI_CONFIG.maxOutputTokens,
+          maxOutputTokens: prefetched ? 220 : ASK_AI_CONFIG.maxOutputTokens,
           stopWhen: stepCountIs(prefetched ? 1 : route.maxSteps),
           activeTools: (prefetched ? [] : route.tools) as unknown as (keyof typeof turnTools)[],
+          providerOptions: prefetched ? { openai: { reasoningEffort: "minimal", textVerbosity: "low" } } : undefined,
           // Force the selected read only for the first model step. Keeping a
           // named tool forced after its result makes Responses models continue
           // producing commentary instead of completing the answer, eventually
