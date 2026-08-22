@@ -430,4 +430,43 @@ describe("Ask AI normalized market tools", () => {
       }),
     ])
   })
+
+  test("uses only Aave lending rows and ranks an APY threshold from the same result set", async () => {
+    const t = convexTest(schema, modules)
+    const now = Date.now()
+    await t.run(async (ctx) => {
+      for (const [source, key, payload] of [
+        [
+          "aave",
+          "aave:usdc",
+          { market: "AaveV3Ethereum", name: "USD Coin", symbol: "USDC", supplyApyPct: 3.35, sizeUsd: 2e9 },
+        ],
+        ["aave", "aave:gho", { market: "AaveV3Ethereum", name: "GHO", symbol: "GHO", supplyApyPct: 4.2, sizeUsd: 1e8 }],
+        ["defillama", "sky:susds", { project: "sky-lending", symbol: "sUSDS", apy: 8.4, tvlUsd: 4e9 }],
+      ] as const)
+        await ctx.db.insert("askAIMarketSnapshots", {
+          source,
+          kind: source === "aave" ? "lending_market" : "dex_pool",
+          key,
+          payload,
+          sourceUpdatedAt: now,
+          fetchedAt: now,
+        })
+    })
+
+    const result = await t.query(api.askAITools.searchMarkets, {
+      query: "Any Aave lending markets offering at least 4% APY?",
+    })
+
+    expect(result.markets).toEqual([])
+    expect(result.providerData).toEqual([
+      expect.objectContaining({
+        source: "aave",
+        kind: "lending_market",
+        key: "aave:gho",
+        data: expect.objectContaining({ symbol: "GHO", supplyApyPct: 4.2 }),
+      }),
+      expect.objectContaining({ source: "aave", key: "aave:usdc" }),
+    ])
+  })
 })
