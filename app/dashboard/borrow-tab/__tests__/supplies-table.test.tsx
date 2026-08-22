@@ -42,6 +42,23 @@ describe("SuppliesPanel column scope", () => {
     cleanup()
   })
 
+  it("shows a lend-style empty state with heading and count", () => {
+    const { container } = render(
+      <SuppliesPanel
+        rows={[]}
+        totals={{ collateral: 0, borrowed: 0, available: 0, fees: 0, averageHf: null }}
+        onBorrowMore={vi.fn()}
+        showSummary={false}
+      />,
+    )
+
+    expect(container.textContent).toMatch(/My Collaterals/)
+    expect(container.textContent).toMatch(/0 assets/)
+    expect(container.textContent).toMatch(/No collateral deposited yet\. Supply an asset to start backing loans\./)
+    expect(container.textContent).not.toMatch(/Nothing supplied yet/)
+    expect(container.textContent).not.toMatch(/To borrow you need to supply any LPs/)
+  })
+
   it("renders the spoke-scoped columns and labels the mobile health figure as scope-level", () => {
     const { container } = render(
       <SuppliesPanel
