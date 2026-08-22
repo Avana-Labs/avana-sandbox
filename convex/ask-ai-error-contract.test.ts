@@ -93,6 +93,7 @@ describe("Ask AI turn error contract", () => {
         owner.mutation(api.askAI.enqueueTurn, {
           threadId: thread.threadId,
           prompt: "y".repeat(ASK_AI_CONFIG.maxInputCharacters + 1),
+          clientRequestId: "too-long",
         }),
       ).rejects.toMatchObject({
         data: { code: "ASK_AI_GENERATION_FAILED", message: expect.stringContaining("2000 characters") },
@@ -107,7 +108,11 @@ describe("Ask AI turn error contract", () => {
       const thread = await owner.mutation(api.askAI.create, {})
 
       await expect(
-        owner.mutation(api.askAI.enqueueTurn, { threadId: thread.threadId, prompt: "Any question" }),
+        owner.mutation(api.askAI.enqueueTurn, {
+          threadId: thread.threadId,
+          prompt: "Any question",
+          clientRequestId: "token-limit",
+        }),
       ).rejects.toMatchObject({
         data: { code: "ASK_AI_RATE_LIMITED", message: expect.stringContaining("daily token limit") },
       })
@@ -121,12 +126,20 @@ describe("Ask AI turn error contract", () => {
       // never the thing that trips — the 21st enqueue must fail on the limiter.
       for (let i = 0; i < 20; i += 1) {
         const thread = await owner.mutation(api.askAI.create, {})
-        await owner.mutation(api.askAI.enqueueTurn, { threadId: thread.threadId, prompt: `Q${i}` })
+        await owner.mutation(api.askAI.enqueueTurn, {
+          threadId: thread.threadId,
+          prompt: `Q${i}`,
+          clientRequestId: `rate-${i}`,
+        })
       }
       const overflowThread = await owner.mutation(api.askAI.create, {})
 
       await expect(
-        owner.mutation(api.askAI.enqueueTurn, { threadId: overflowThread.threadId, prompt: "One too many" }),
+        owner.mutation(api.askAI.enqueueTurn, {
+          threadId: overflowThread.threadId,
+          prompt: "One too many",
+          clientRequestId: "rate-overflow",
+        }),
       ).rejects.toMatchObject({ data: { code: "ASK_AI_RATE_LIMITED", message: expect.any(String) } })
     })
 
@@ -136,10 +149,18 @@ describe("Ask AI turn error contract", () => {
       const thread = await owner.mutation(api.askAI.create, {})
       // The queue caps at 10 queued turns per thread; the 11th is rejected.
       for (let i = 0; i < 10; i += 1)
-        await owner.mutation(api.askAI.enqueueTurn, { threadId: thread.threadId, prompt: `Q${i}` })
+        await owner.mutation(api.askAI.enqueueTurn, {
+          threadId: thread.threadId,
+          prompt: `Q${i}`,
+          clientRequestId: `queue-${i}`,
+        })
 
       await expect(
-        owner.mutation(api.askAI.enqueueTurn, { threadId: thread.threadId, prompt: "Eleventh" }),
+        owner.mutation(api.askAI.enqueueTurn, {
+          threadId: thread.threadId,
+          prompt: "Eleventh",
+          clientRequestId: "queue-eleventh",
+        }),
       ).rejects.toMatchObject({ data: { code: "ASK_AI_RATE_LIMITED", message: expect.stringContaining("queue") } })
     })
   })

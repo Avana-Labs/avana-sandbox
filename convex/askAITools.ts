@@ -9,10 +9,30 @@ import {
   decodeBorrowRiskSnapshot,
   deriveAskAIUmbrellaStatus,
 } from "../app/lib/ask-ai/engine-calculations"
-import { query, type MutationCtx, type QueryCtx } from "./_generated/server"
+import { internalQuery, query, type MutationCtx, type QueryCtx } from "./_generated/server"
 import { getAuthedWallet } from "./sandbox/auth"
+import type { Id } from "./_generated/dataModel"
 
 type PortfolioReadCtx = Pick<QueryCtx | MutationCtx, "auth" | "db">
+
+function withTurnWallet(ctx: Pick<QueryCtx, "db">, wallet?: string): PortfolioReadCtx {
+  return {
+    db: ctx.db,
+    auth: {
+      getUserIdentity: async () =>
+        ({
+          subject: wallet ?? "ask-guest:scheduled",
+          ...(wallet ? { wallet } : {}),
+        }) as Awaited<ReturnType<QueryCtx["auth"]["getUserIdentity"]>>,
+    },
+  }
+}
+
+async function readRunningTurnWallet(ctx: Pick<QueryCtx, "db">, turnId: Id<"askAITurns">) {
+  const turn = await ctx.db.get(turnId)
+  if (!turn || turn.status !== "running") throw new Error("Ask AI turn is not running")
+  return turn.wallet
+}
 
 /**
  * Provenance of the financial figures every Ask AI portfolio/risk tool returns.
@@ -98,6 +118,11 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
 export const portfolio = query({
   args: {},
   handler: readAskAIPortfolio,
+})
+
+export const portfolioForTurn = internalQuery({
+  args: { turnId: v.id("askAITurns") },
+  handler: async (ctx, { turnId }) => readAskAIPortfolio(withTurnWallet(ctx, await readRunningTurnWallet(ctx, turnId))),
 })
 
 export async function readAskAIEngineSnapshot(
@@ -221,6 +246,12 @@ export async function readAskAIBorrowCapacity(ctx: PortfolioReadCtx) {
 
 export const borrowCapacity = query({ args: {}, handler: readAskAIBorrowCapacity })
 
+export const borrowCapacityForTurn = internalQuery({
+  args: { turnId: v.id("askAITurns") },
+  handler: async (ctx, { turnId }) =>
+    readAskAIBorrowCapacity(withTurnWallet(ctx, await readRunningTurnWallet(ctx, turnId))),
+})
+
 export async function readAskAIPositionRisk(ctx: PortfolioReadCtx, positionId?: string) {
   const wallet = await getAuthedWallet(ctx)
   if (!wallet) return { walletRequired: true as const, message: ASK_AI_WALLET_REQUIRED }
@@ -247,13 +278,26 @@ export const positionRisk = query({
   handler: async (ctx, { positionId }) => readAskAIPositionRisk(ctx, positionId),
 })
 
-export const simulateBorrow = query({
-  args: {
-    positionId: v.string(),
-    additionalBorrowAmount: v.number(),
-    borrowAsset: v.string(),
+export const positionRiskForTurn = internalQuery({
+  args: { turnId: v.id("askAITurns"), positionId: v.optional(v.string()) },
+  handler: async (ctx, { turnId, positionId }) =>
+    readAskAIPositionRisk(withTurnWallet(ctx, await readRunningTurnWallet(ctx, turnId)), positionId),
+})
+
+const simulateBorrowArgs = {
+  positionId: v.string(),
+  additionalBorrowAmount: v.number(),
+  borrowAsset: v.string(),
+}
+
+async function readAskAISimulateBorrow(
+  ctx: PortfolioReadCtx,
+  { positionId, additionalBorrowAmount, borrowAsset }: {
+    positionId: string
+    additionalBorrowAmount: number
+    borrowAsset: string
   },
-  handler: async (ctx, { positionId, additionalBorrowAmount, borrowAsset }) => {
+) {
     if (
       !Number.isFinite(additionalBorrowAmount) ||
       additionalBorrowAmount <= 0 ||
@@ -289,15 +333,28 @@ export const simulateBorrow = query({
       }),
       asOf: position.lastUpdatedAt,
     }
-  },
+}
+
+export const simulateBorrow = query({
+  args: simulateBorrowArgs,
+  handler: readAskAISimulateBorrow,
 })
 
-export const stressPosition = query({
-  args: {
-    positionId: v.string(),
-    assetPriceChanges: v.array(v.object({ symbol: v.string(), change: v.number() })),
-  },
-  handler: async (ctx, { positionId, assetPriceChanges }) => {
+export const simulateBorrowForTurn = internalQuery({
+  args: { turnId: v.id("askAITurns"), ...simulateBorrowArgs },
+  handler: async (ctx, { turnId, ...args }) =>
+    readAskAISimulateBorrow(withTurnWallet(ctx, await readRunningTurnWallet(ctx, turnId)), args),
+})
+
+const stressPositionArgs = {
+  positionId: v.string(),
+  assetPriceChanges: v.array(v.object({ symbol: v.string(), change: v.number() })),
+}
+
+async function readAskAIStressPosition(
+  ctx: PortfolioReadCtx,
+  { positionId, assetPriceChanges }: { positionId: string; assetPriceChanges: Array<{ symbol: string; change: number }> },
+) {
     if (assetPriceChanges.length < 1 || assetPriceChanges.length > 8)
       throw new Error("Provide 1 to 8 asset price changes")
     for (const item of assetPriceChanges)
@@ -340,7 +397,17 @@ export const stressPosition = query({
       }),
       asOf: position.lastUpdatedAt,
     }
-  },
+}
+
+export const stressPosition = query({
+  args: stressPositionArgs,
+  handler: readAskAIStressPosition,
+})
+
+export const stressPositionForTurn = internalQuery({
+  args: { turnId: v.id("askAITurns"), ...stressPositionArgs },
+  handler: async (ctx, { turnId, ...args }) =>
+    readAskAIStressPosition(withTurnWallet(ctx, await readRunningTurnWallet(ctx, turnId)), args),
 })
 
 export async function readAskAIMarketSnapshots(

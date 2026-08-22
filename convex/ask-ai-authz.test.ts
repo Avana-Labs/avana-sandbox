@@ -50,7 +50,11 @@ describe("Ask AI cross-user message-read isolation", () => {
     const userA = t.withIdentity({ subject: "ask-guest:queue-a" })
     const userB = t.withIdentity({ subject: "ask-guest:queue-b" })
     const thread = await userA.mutation(api.askAI.create, {})
-    await userA.mutation(api.askAI.enqueueTurn, { threadId: thread.threadId, prompt: "A's queued question" })
+    await userA.mutation(api.askAI.enqueueTurn, {
+      threadId: thread.threadId,
+      prompt: "A's queued question",
+      clientRequestId: "authz-queue-a",
+    })
 
     await expect(userA.query(api.askAI.turnQueue, { threadId: thread.threadId })).resolves.toMatchObject([
       { prompt: "A's queued question", status: "queued" },

@@ -1969,6 +1969,8 @@ export default defineSchema({
   askAITurns: defineTable({
     threadId: v.string(),
     ownerSubject: v.string(),
+    clientRequestId: v.optional(v.string()),
+    wallet: v.optional(v.string()),
     promptMessageId: v.string(),
     prompt: v.string(),
     status: v.union(
@@ -1981,6 +1983,7 @@ export default defineSchema({
     createdAt: v.number(),
     updatedAt: v.number(),
   })
+    .index("by_owner_request", ["ownerSubject", "clientRequestId"])
     .index("by_prompt_message", ["promptMessageId"])
     .index("by_thread_status_created", ["threadId", "status", "createdAt"]),
 

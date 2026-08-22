@@ -9,9 +9,9 @@ import {
   useExternalStoreRuntime,
 } from "@assistant-ui/react"
 import { useUIMessages } from "@convex-dev/agent/react"
-import { useAction, useMutation, usePaginatedQuery, useQuery } from "convex/react"
+import { useMutation, usePaginatedQuery, useQuery } from "convex/react"
 import type { Id } from "@/convex/_generated/dataModel"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import type { AskAIUsage } from "@/app/lib/ask-ai/chat-protocol"
 import { api } from "@/convex/_generated/api"
 import {
@@ -26,6 +26,8 @@ import { AskAIMessagePartsSubscriber, type AskAIMessagePartsRow } from "./messag
 
 type PendingTurn = {
   id: string
+  clientRequestId: string
+  promptMessageId?: string
   prompt: string
   startedAt: number
   error?: FriendlyAskAIError
@@ -182,12 +184,6 @@ const assistantMetadata = () => ({
   steps: [],
   custom: {},
 })
-const messageText = (message: ThreadMessage) =>
-  message.content
-    .filter((part) => part.type === "text")
-    .map((part) => part.text)
-    .join("\n")
-
 function persistedAssistantParts(messageId: string, text: string, rich?: PersistedRichParts) {
   const parts: ThreadAssistantMessagePart[] = []
   if (rich?.retrievalChunks?.length) {
@@ -249,7 +245,6 @@ export function AskAIPageClient({
   const renameThread = useMutation(api.askAI.rename)
   const archiveThread = useMutation(api.askAI.archive)
   const unarchiveThread = useMutation(api.askAI.unarchive)
-  const generateTurn = useAction(api.askAIAgent.generateTurn)
   const enqueueTurn = useMutation(api.askAI.enqueueTurn)
   const cancelQueuedTurn = useMutation(api.askAI.cancelQueuedTurn)
   const retryFailedTurn = useMutation(api.askAI.retryFailedTurn)
@@ -346,43 +341,57 @@ export function AskAIPageClient({
   const sendPrompt = useCallback(
     async (prompt: string) => {
       if (!prompt) return
-      let threadId = resolvedActiveThreadId
-      if (!threadId) {
-        const created = await createThread({})
-        threadId = created.threadId
-        setActiveThreadId(threadId)
+      const clientRequestId = crypto.randomUUID()
+      const startedAt = Date.now()
+      setPendingTurn({ id: clientRequestId, clientRequestId, prompt, startedAt })
+      try {
+        let threadId = resolvedActiveThreadId
+        if (!threadId) {
+          const created = await createThread({})
+          threadId = created.threadId
+          setActiveThreadId(threadId)
+        }
+        const queued = await enqueueTurn({ threadId, prompt, clientRequestId })
+        setPendingTurn((current) =>
+          current?.clientRequestId === clientRequestId
+            ? { ...current, id: String(queued.turnId), promptMessageId: queued.promptMessageId }
+            : current,
+        )
+      } catch (error) {
+        setPendingTurn((current) =>
+          current?.clientRequestId === clientRequestId ? { ...current, error: toFriendlyAskAIError(error) } : current,
+        )
       }
-      await enqueueTurn({ threadId, prompt })
     },
     [createThread, enqueueTurn, resolvedActiveThreadId],
   )
 
-  // Synchronous guard so generateTurn fires at most once per turn. `pendingTurn`
-  // (React state) isn't committed synchronously, so when turnQueue updates twice
-  // in quick succession the effect could re-fire before the state guard applied,
-  // running the same turn twice (two model calls streamed into one message).
-  const generatingTurnRef = useRef<string | null>(null)
+  // Execution is claimed and scheduled by Convex. The browser only reflects the
+  // durable state, so tabs, remounts, and duplicate subscriptions cannot run a turn.
   useEffect(() => {
-    const next = turnQueue?.find((turn) => turn.status === "queued")
-    if (!next || pendingTurn || generatingTurnRef.current || !resolvedActiveThreadId) return
-    const turnId = String(next.id)
-    generatingTurnRef.current = turnId
-    setPendingTurn({ id: turnId, prompt: next.prompt, startedAt: Date.now() })
-    void generateTurn({
-      threadId: resolvedActiveThreadId,
-      prompt: next.prompt,
-      retryPromptMessageId: next.promptMessageId,
-    })
-      .then(() => setPendingTurn((current) => (current?.id === turnId ? null : current)))
-      .catch((error) =>
-        setPendingTurn((current) =>
-          current?.id === turnId ? { ...current, error: toFriendlyAskAIError(error) } : current,
-        ),
-      )
-      .finally(() => {
-        if (generatingTurnRef.current === turnId) generatingTurnRef.current = null
-      })
-  }, [generateTurn, pendingTurn, resolvedActiveThreadId, turnQueue])
+    const current =
+      turnQueue?.find((turn) => turn.status === "running") ??
+      turnQueue?.find((turn) => turn.status === "queued") ??
+      turnQueue?.find((turn) => turn.status === "failed")
+    if (current) {
+      setPendingTurn((pending) => ({
+        id: String(current.id),
+        clientRequestId: current.clientRequestId ?? pending?.clientRequestId ?? String(current.id),
+        promptMessageId: current.promptMessageId,
+        prompt: current.prompt,
+        startedAt: pending?.id === String(current.id) ? pending.startedAt : Date.now(),
+        ...(current.status === "failed"
+          ? { error: toFriendlyAskAIError(new Error("Ask AI could not complete this response")) }
+          : {}),
+      }))
+      return
+    }
+    setPendingTurn((pending) =>
+      pending?.promptMessageId && persistedMessages.some((message) => message.id === pending.promptMessageId)
+        ? null
+        : pending,
+    )
+  }, [persistedMessages, turnQueue])
 
   const handleNewMessage = useCallback(
     async (message: AppendMessage) => {
@@ -424,9 +433,7 @@ export function AskAIPageClient({
     if (!pendingTurn) return persistedMessages
     const persistedPrompt = persistedMessages.some(
       (message) =>
-        message.role === "user" &&
-        (message.createdAt?.getTime() ?? 0) >= pendingTurn.startedAt - 2_000 &&
-        messageText(message) === pendingTurn.prompt,
+        message.role === "user" && message.id === pendingTurn.promptMessageId,
     )
     const transient: ThreadMessage[] = []
     if (!persistedPrompt)
