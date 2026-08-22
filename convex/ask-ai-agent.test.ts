@@ -66,6 +66,30 @@ describe("Ask AI generated-turn lifecycle", () => {
     expect(claims.filter((claim) => claim === null)).toHaveLength(1)
   })
 
+  test("fails a stale running turn and ignores a late completion", async () => {
+    const t = askAITest()
+    const owner = t.withIdentity({ subject: "ask-guest:timeout-owner" })
+    const thread = await owner.mutation(api.askAI.create, {})
+    const turn = await owner.mutation(api.askAI.enqueueTurn, {
+      threadId: thread.threadId,
+      prompt: "What is AAVE worth?",
+      clientRequestId: "timeout-turn",
+    })
+    await t.mutation(internal.askAI.claimQueuedTurn, { turnId: turn.turnId })
+    await t.run((ctx) => ctx.db.patch(turn.turnId, { updatedAt: Date.now() - 90_001 }))
+
+    await expect(t.mutation(internal.askAI.timeoutRunningTurn, { turnId: turn.turnId })).resolves.toBe(true)
+    await t.mutation(internal.askAI.completeGeneratedTurn, {
+      turnId: turn.turnId,
+      assistantMessageId: "message:late-timeout",
+      model: "gpt-5.6-luna",
+      usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+    })
+
+    const stored = await t.run((ctx) => ctx.db.get(turn.turnId))
+    expect(stored?.status).toBe("failed")
+  })
+
   test("deduplicates repeated submits by client request ID", async () => {
     const t = askAITest()
     const owner = t.withIdentity({ subject: "ask-guest:idempotent" })
