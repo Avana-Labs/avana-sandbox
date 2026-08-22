@@ -72,7 +72,7 @@ const EDUCATION_PATTERNS = [
 ]
 
 const GREETING_PATTERN =
-  /^(?:(?:good\s+)?(?:morning|afternoon|evening)|(?:hi|hello|hey|yo|sup)(?:\s+there)?|what(?:'s| is)\s+up)[!.?\s]*$/i
+  /^(?:(?:good\s+)?(?:morning|afternoon|evening)|(?:hi|hello|hey|yo|sup)(?:\s+(?:there|avana))?|what(?:'s| is)\s+up)[!.?\s]*$/i
 
 export function isAskAIClarificationPrompt(message: string) {
   return /^(?:\?|huh\??|what\??|why\??|how so\??)$/i.test(message.trim())
