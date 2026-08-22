@@ -59,4 +59,26 @@ describe("Ask AI optimistic turn", () => {
     expect(enqueue).toHaveBeenCalledTimes(1)
     await act(async () => resolveEnqueue({ turnId: "turn-test", promptMessageId: "message-test" }))
   })
+
+  it("submits immediately from a new draft thread without creating an empty server thread first", async () => {
+    let resolveEnqueue!: (value: { turnId: string; promptMessageId: string }) => void
+    enqueue
+      .mockImplementationOnce(async () => ({ threadId: "thread-new", title: "New Chat" }))
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve) => {
+            resolveEnqueue = resolve
+          }),
+      )
+    render(<AskAIPageClient />)
+
+    fireEvent.click(screen.getByRole("button", { name: "New Thread" }))
+    const composer = screen.getByLabelText("Ask Avana a question")
+    fireEvent.change(composer, { target: { value: "Explain Avana liquidation" } })
+    fireEvent.click(screen.getByRole("button", { name: "Send message" }))
+
+    expect(await screen.findByText("Explain Avana liquidation")).toBeInTheDocument()
+    expect(enqueue).toHaveBeenCalledTimes(2)
+    await act(async () => resolveEnqueue({ turnId: "turn-new", promptMessageId: "message-new" }))
+  })
 })

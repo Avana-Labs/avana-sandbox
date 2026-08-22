@@ -39,13 +39,14 @@ describe("AskAIPageClient", () => {
     expect(screen.getByRole("button", { name: "Open sidebar" })).toBeInTheDocument()
   })
 
-  it("creates a new persisted thread without changing sidebar state", async () => {
+  it("opens a local draft thread without changing sidebar state", async () => {
     const user = userEvent.setup()
     render(<AskAIPageClient />)
 
     await user.click(screen.getByRole("button", { name: "Open sidebar" }))
     await user.click(screen.getByRole("button", { name: "New Thread" }))
     expect(screen.getByRole("button", { name: "Hide sidebar" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Hey, I'm Avana! What's uuuup? ✨" })).toBeInTheDocument()
   })
 
   it("does not expose voice when the browser cannot record audio", () => {
