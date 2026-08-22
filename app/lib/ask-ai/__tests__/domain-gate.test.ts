@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { classifyAskAIDomain, routeAskAITurn } from "../domain-gate"
+import { classifyAskAIDomain, routeAskAITurn, toolChoiceForAskAIStep } from "../domain-gate"
 
 const ALLOWED = [
   "Morning",
@@ -139,6 +139,8 @@ describe("routeAskAITurn (per-turn tool + cost routing)", () => {
     expect(route.tools).not.toContain("search_markets")
     expect(route.tools).toEqual(["read_portfolio"])
     expect(route.toolChoice).toEqual({ type: "tool", toolName: "read_portfolio" })
+    expect(toolChoiceForAskAIStep(route, 0)).toEqual({ type: "tool", toolName: "read_portfolio" })
+    expect(toolChoiceForAskAIStep(route, 1)).toBe("auto")
   })
 
   it("greets with no tools in a single step", () => {

@@ -5,7 +5,7 @@ import { ConvexError, v } from "convex/values"
 import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
 import { ASK_AI_AGENT_INSTRUCTIONS } from "../app/lib/ask-ai/agent-instructions"
 import { createAskAIOutputTransform } from "../app/lib/ask-ai/output-policy"
-import { routeAskAITurn, type AskAIModelTier } from "../app/lib/ask-ai/domain-gate"
+import { routeAskAITurn, toolChoiceForAskAIStep, type AskAIModelTier } from "../app/lib/ask-ai/domain-gate"
 import { components, internal } from "./_generated/api"
 import { internalAction } from "./_generated/server"
 import { searchAvanaKnowledgeTool } from "./askAIRag"
@@ -174,7 +174,7 @@ export const generateTurn = internalAction({
       tools: turnTools,
     })
     try {
-      const result = await turnAgent.streamText(
+      const result = await turnAgent.streamText<typeof turnTools>(
         ctx,
         { threadId: turn.threadId, userId: turn.ownerSubject },
         {
@@ -183,7 +183,14 @@ export const generateTurn = internalAction({
           maxOutputTokens: ASK_AI_CONFIG.maxOutputTokens,
           stopWhen: stepCountIs(route.maxSteps),
           activeTools: route.tools as unknown as (keyof typeof turnTools)[],
-          toolChoice: route.toolChoice,
+          // Force the selected read only for the first model step. Keeping a
+          // named tool forced after its result makes Responses models continue
+          // producing commentary instead of completing the answer, eventually
+          // stopping at the output limit. Later steps must be free to answer.
+          toolChoice: route.tools.length > 0 ? "auto" : "none",
+          prepareStep: ({ stepNumber }) => ({
+            toolChoice: toolChoiceForAskAIStep(route, stepNumber),
+          }),
           experimental_transform: createAskAIOutputTransform(),
         },
         {

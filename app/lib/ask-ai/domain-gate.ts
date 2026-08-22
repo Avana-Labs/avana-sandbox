@@ -198,6 +198,11 @@ export type AskAITurnRoute = {
   modelTier: AskAIModelTier
 }
 
+export function toolChoiceForAskAIStep(route: AskAITurnRoute, stepNumber: number): AskAITurnRoute["toolChoice"] {
+  if (stepNumber === 0) return route.toolChoice
+  return route.tools.length > 0 ? "auto" : "none"
+}
+
 // Only turn on web search when the user is clearly asking about recent public
 // events. Prices, pools, balances, and risk are answered from Convex data — web
 // search is never a substitute for a Convex tool (see agent-instructions.ts).
