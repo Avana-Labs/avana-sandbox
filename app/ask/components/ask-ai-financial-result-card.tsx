@@ -8,6 +8,8 @@ export type AskAIFinancialResult = {
   asOf?: number
   freshness?: "fresh" | "stale" | "unavailable"
   metrics: Array<{ label: string; value: string; after?: string }>
+  columns?: string[]
+  rows?: Array<{ id: string; cells: string[] }>
 }
 
 export function AskAIFinancialResultCard({ result }: { result: AskAIFinancialResult }) {
@@ -44,6 +46,32 @@ export function AskAIFinancialResultCard({ result }: { result: AskAIFinancialRes
           </div>
         ))}
       </dl>
+      {result.columns?.length && result.rows?.length ? (
+        <div className="mt-3 overflow-x-auto rounded-xl border border-border/50">
+          <table className="w-full min-w-[32rem] border-collapse text-left text-sm">
+            <thead className="bg-muted/40 text-xs text-muted-foreground">
+              <tr>
+                {result.columns.map((column) => (
+                  <th key={column} scope="col" className="px-3 py-2 font-medium">
+                    {column}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {result.rows.map((row) => (
+                <tr key={row.id} className="border-t border-border/50">
+                  {row.cells.map((cell, index) => (
+                    <td key={`${row.id}-${index}`} className="px-3 py-2 tabular-nums text-foreground">
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
       {result.asOf ? (
         <p className="mt-3 text-xs text-muted-foreground">As of {new Date(result.asOf).toLocaleString()}</p>
       ) : null}

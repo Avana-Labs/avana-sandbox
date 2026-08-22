@@ -39,4 +39,21 @@ describe("Ask AI financial result card", () => {
     )
     expect(screen.getByText("stale")).toBeInTheDocument()
   })
+
+  it("renders structured rows as a semantic table", () => {
+    render(
+      <AskAIFinancialResultCard
+        result={{
+          kind: "pool",
+          title: "Pool metrics",
+          metrics: [],
+          columns: ["Pool", "TVL", "APY"],
+          rows: [{ id: "eth-usdc", cells: ["ETH/USDC", "$4,000,000", "4.20%"] }],
+        }}
+      />,
+    )
+    expect(screen.getByRole("table")).toBeInTheDocument()
+    expect(screen.getByRole("columnheader", { name: "TVL" })).toBeInTheDocument()
+    expect(screen.getByText("ETH/USDC")).toBeInTheDocument()
+  })
 })

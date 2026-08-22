@@ -346,6 +346,16 @@ export const claimQueuedTurn = internalMutation({
   handler: async (ctx, { turnId }) => {
     const turn = await ctx.db.get(turnId)
     if (!turn || turn.status !== "queued") return null
+    const running = await ctx.db
+      .query("askAITurns")
+      .withIndex("by_thread_status_created", (q) => q.eq("threadId", turn.threadId).eq("status", "running"))
+      .first()
+    if (running) return null
+    const firstQueued = await ctx.db
+      .query("askAITurns")
+      .withIndex("by_thread_status_created", (q) => q.eq("threadId", turn.threadId).eq("status", "queued"))
+      .first()
+    if (!firstQueued || firstQueued._id !== turnId) return null
     const thread = await ctx.db
       .query("askAIThreads")
       .withIndex("by_thread", (q) => q.eq("threadId", turn.threadId))
@@ -365,6 +375,14 @@ export const claimQueuedTurn = internalMutation({
     }
   },
 })
+
+async function scheduleNextQueuedTurn(ctx: MutationCtx, threadId: string) {
+  const next = await ctx.db
+    .query("askAITurns")
+    .withIndex("by_thread_status_created", (q) => q.eq("threadId", threadId).eq("status", "queued"))
+    .first()
+  if (next) await ctx.scheduler.runAfter(0, internal.askAIAgent.generateTurn, { turnId: next._id })
+}
 
 export const turnQueue = query({
   args: { threadId: v.string() },
@@ -399,6 +417,7 @@ export const cancelQueuedTurn = mutation({
     if (turn.ownerSubject !== ownerSubject) throw new Error("Ask AI turn not found")
     if (turn.status !== "queued") throw new Error("Only queued turns can be cancelled")
     await ctx.db.patch(turnId, { status: "cancelled", updatedAt: Date.now() })
+    await scheduleNextQueuedTurn(ctx, turn.threadId)
   },
 })
 
@@ -430,6 +449,7 @@ export const cancelRunningTurn = mutation({
       ),
     )
     await ctx.db.patch(running._id, { status: "cancelled", updatedAt: Date.now() })
+    await scheduleNextQueuedTurn(ctx, threadId)
     return true
   },
 })
@@ -462,6 +482,8 @@ export const completeGeneratedTurn = internalMutation({
             v.object({
               kind: v.union(
                 v.literal("portfolio"),
+                v.literal("market"),
+                v.literal("pool"),
                 v.literal("borrow_capacity"),
                 v.literal("position_risk"),
                 v.literal("simulate_borrow"),
@@ -485,6 +507,14 @@ export const completeGeneratedTurn = internalMutation({
               score: v.optional(v.number()),
             }),
           ),
+        ),
+        visual: v.optional(
+          v.object({
+            label: v.string(),
+            value: v.string(),
+            delta: v.optional(v.string()),
+            points: v.array(v.number()),
+          }),
         ),
       }),
     ),
@@ -529,6 +559,7 @@ export const completeGeneratedTurn = internalMutation({
     const now = Date.now()
     await ctx.db.patch(turn._id, { status: "complete", updatedAt: now })
     await ctx.db.patch(thread._id, { updatedAt: now })
+    await scheduleNextQueuedTurn(ctx, turn.threadId)
   },
 })
 
@@ -561,6 +592,7 @@ export const failTurn = internalMutation({
     if (turn.status === "cancelled") return
     await ctx.db.patch(turn._id, { status: "failed", updatedAt: Date.now() })
     await discardStrayAssistantMessage(ctx, turn.threadId)
+    await scheduleNextQueuedTurn(ctx, turn.threadId)
   },
 })
 

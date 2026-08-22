@@ -39,7 +39,7 @@ type PersistedRichParts = {
   tool?: { name: string; query: string; request: string; result: string }
   retrievalChunks?: Array<{ title: string; locator: string; text: string; score?: number }>
   sources?: unknown[]
-  visual?: unknown
+  visual?: { label: string; value: string; points: number[]; delta?: string }
   financialResults?: Array<{ kind?: string; dataProvenance?: string; payload: unknown }>
   usage?: AskAIUsage
 }
@@ -113,16 +113,46 @@ function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFi
     const clean = metrics.filter((metric): metric is AskAIMetric => metric !== null)
     return clean.length ? { kind: cardKind, title, asOf, metrics: clean } : null
   }
+  const table = (
+    cardKind: AskAIFinancialResult["kind"],
+    title: string,
+    columns: string[],
+    rows: Array<{ id: string; cells: string[] }>,
+    metrics: AskAIMetric[] = [],
+  ): AskAIFinancialResult | null => (rows.length ? { kind: cardKind, title, asOf, metrics, columns, rows } : null)
   switch (kind) {
     case "portfolio": {
       const t = asObject(p.totals)
-      return compact("portfolio", "Your Avana portfolio", [
-        metricOf("Lend", usd(t.lendUsd)),
-        metricOf("Borrow", usd(t.borrowUsd)),
-        metricOf("Multiply", usd(t.multiplyUsd)),
-        metricOf("Liquid", usd(t.liquidUsd)),
-        metricOf("Umbrella", usd(t.umbrellaUsd)),
-      ])
+      const productRows = [
+        ["Lend", usd(t.lendUsd)],
+        ["Borrow", usd(t.borrowUsd)],
+        ["Multiply", usd(t.multiplyUsd)],
+        ["Liquid", usd(t.liquidUsd)],
+      ].flatMap(([product, value], index) =>
+        value ? [{ id: `product-${index}`, cells: [product ?? "", "All positions", value] }] : [],
+      )
+      const umbrellaRows = Array.isArray(p.umbrella)
+        ? p.umbrella.flatMap((position, index) => {
+            const row = asObject(position)
+            const value = usd(
+              typeof row.suppliedUsd6 === "string" ? Number(row.suppliedUsd6) / 1_000_000 : row.suppliedUsd,
+            )
+            if (!value) return []
+            return [
+              {
+                id: `umbrella-${index}`,
+                cells: ["Umbrella", String(row.marketSlug ?? row.marketId ?? `Position ${index + 1}`), value],
+              },
+            ]
+          })
+        : []
+      return table(
+        "portfolio",
+        "Your Avana portfolio",
+        ["Product", "Position", "Value"],
+        [...productRows, ...umbrellaRows],
+        [metricOf("Total Umbrella", usd(t.umbrellaUsd))].filter((metric): metric is AskAIMetric => metric !== null),
+      )
     }
     case "borrow_capacity": {
       const c = asObject(p.capacity)
@@ -169,6 +199,47 @@ function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFi
         metricOf("Health factor", healthFactor(cur.healthFactor), healthFactor(proj.healthFactor)),
         metricOf("Liquidatable", liquidatable === true ? "Yes" : liquidatable === false ? "No" : null),
       ])
+    }
+    case "market": {
+      const providerData = Array.isArray(p.providerData) ? p.providerData : []
+      const rows = providerData.flatMap((entry, index) => {
+        const result = asObject(entry)
+        const data = asObject(result.data)
+        const label = String(data.symbol ?? data.pool ?? data.name ?? result.key ?? "Market")
+        const rate =
+          usd(data.priceUsd) ??
+          (typeof data.apyPct === "number"
+            ? `${data.apyPct.toLocaleString("en-US", { maximumFractionDigits: 2 })}% APY`
+            : null) ??
+          (typeof data.supplyApyPct === "number"
+            ? `${data.supplyApyPct.toLocaleString("en-US", { maximumFractionDigits: 2 })}% supply`
+            : "Unavailable")
+        const size = usd(data.tvlUsd) ?? usd(data.sizeUsd) ?? usd(data.availableLiquidityUsd) ?? "Unavailable"
+        return [
+          {
+            id: `market-${index}-${String(result.key ?? label)}`,
+            cells: [label, rate, size, String(result.source ?? "Convex")],
+          },
+        ]
+      })
+      return table("market", "Market results", ["Market", "Price or rate", "TVL or size", "Source"], rows)
+    }
+    case "pool": {
+      const providerData = Array.isArray(p.providerData) ? p.providerData : []
+      const rows = providerData.map((entry, index) => {
+        const result = asObject(entry)
+        const data = asObject(result.data)
+        return {
+          id: `pool-${index}`,
+          cells: [
+            String(data.symbol ?? data.pool ?? asObject(p.market).symbol ?? "Pool"),
+            usd(data.tvlUsd) ?? usd(data.liquidityUsd) ?? "Unavailable",
+            typeof data.apyPct === "number" ? `${data.apyPct.toFixed(2)}%` : "Unavailable",
+            String(result.source ?? "Convex"),
+          ],
+        }
+      })
+      return table("pool", "Pool metrics", ["Pool", "TVL", "APY", "Source"], rows)
     }
     default:
       return null
@@ -432,8 +503,7 @@ export function AskAIPageClient({
   const messages = useMemo<readonly ThreadMessage[]>(() => {
     if (!pendingTurn) return persistedMessages
     const persistedPrompt = persistedMessages.some(
-      (message) =>
-        message.role === "user" && message.id === pendingTurn.promptMessageId,
+      (message) => message.role === "user" && message.id === pendingTurn.promptMessageId,
     )
     const transient: ThreadMessage[] = []
     if (!persistedPrompt)

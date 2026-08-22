@@ -5,9 +5,12 @@ test.describe("Ask AI acceptance", () => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto("/ask")
     await expect(page.getByRole("main")).toBeVisible()
-    await expect(page.getByRole("heading", { name: "How can I help you today?" })).toBeVisible()
+    await expect(page.getByRole("heading", { name: "Hey, I'm Avana! What's uuuup? ✨" })).toBeVisible()
+    await expect(
+      page.getByText("Ask me anything, your positions, or the markets. No question's too basic, promise! 💛"),
+    ).toBeVisible()
     await expect(page.getByLabel("Ask Avana a question")).toBeVisible()
-    await expect(page.getByRole("button", { name: "Add attachment" })).toBeVisible()
+    await expect(page.getByRole("button", { name: "Add attachment" })).toHaveCount(0)
 
     const toggle = page.getByRole("button", { name: /sidebar/i }).first()
     await expect(toggle).toHaveAccessibleName(/Hide sidebar|Open sidebar/)
@@ -15,6 +18,16 @@ test.describe("Ask AI acceptance", () => {
     await expect(toggle).toHaveAccessibleName(/Hide sidebar|Open sidebar/)
     await toggle.click()
     await expect(page.getByRole("button", { name: /New Thread/i })).toBeVisible()
+  })
+
+  test("preserves the caret while editing the middle of a draft", async ({ page }) => {
+    await page.goto("/ask")
+    const composer = page.getByLabel("Ask Avana a question")
+    await composer.fill("ABCDE")
+    await composer.evaluate((element: HTMLTextAreaElement) => element.setSelectionRange(2, 2))
+    await composer.press("Delete")
+    await expect(composer).toHaveValue("ABDE")
+    await expect.poll(() => composer.evaluate((element: HTMLTextAreaElement) => element.selectionStart)).toBe(2)
   })
 
   test("renders user turns as compact right-aligned bubbles", async ({ page }) => {

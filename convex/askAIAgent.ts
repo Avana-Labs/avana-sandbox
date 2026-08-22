@@ -4,6 +4,7 @@ import { stepCountIs } from "ai"
 import { ConvexError, v } from "convex/values"
 import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
 import { ASK_AI_AGENT_INSTRUCTIONS } from "../app/lib/ask-ai/agent-instructions"
+import { createAskAIOutputTransform } from "../app/lib/ask-ai/output-policy"
 import { routeAskAITurn, type AskAIModelTier } from "../app/lib/ask-ai/domain-gate"
 import { components, internal } from "./_generated/api"
 import { internalAction } from "./_generated/server"
@@ -76,6 +77,8 @@ type PreparedTurn = {
 
 // Financial tool -> persisted richParts kind (docs/ask-ai-lane-contracts.md §1).
 const FINANCIAL_TOOL_KINDS = {
+  search_markets: "market",
+  read_pool_metrics: "pool",
   read_portfolio: "portfolio",
   read_borrow_capacity: "borrow_capacity",
   read_position_risk: "position_risk",
@@ -181,6 +184,7 @@ export const generateTurn = internalAction({
           stopWhen: stepCountIs(route.maxSteps),
           activeTools: route.tools as unknown as (keyof typeof turnTools)[],
           toolChoice: route.toolChoice,
+          experimental_transform: createAskAIOutputTransform(),
         },
         {
           contextOptions: {
@@ -253,6 +257,33 @@ export const generateTurn = internalAction({
           return [{ title, locator, text, ...(score !== undefined ? { score } : {}) }]
         })
       })
+      const visual = financialResults.flatMap(({ kind, payload }) => {
+        if (kind !== "market" || !payload || typeof payload !== "object") return []
+        const rows = (payload as { providerData?: unknown }).providerData
+        if (!Array.isArray(rows)) return []
+        const price = rows.find((row) => {
+          if (!row || typeof row !== "object") return false
+          const history = (row as { history?: unknown }).history
+          return (row as { kind?: unknown }).kind === "token_price" && Array.isArray(history) && history.length > 1
+        }) as { key?: unknown; data?: unknown; history?: Array<{ priceUsd?: unknown }> } | undefined
+        if (!price) return []
+        const data = price.data && typeof price.data === "object" ? (price.data as Record<string, unknown>) : {}
+        const points = (price.history ?? []).flatMap((point) =>
+          typeof point.priceUsd === "number" && Number.isFinite(point.priceUsd) ? [point.priceUsd] : [],
+        )
+        const current = typeof data.priceUsd === "number" ? data.priceUsd : points.at(-1)
+        if (points.length < 2 || current === undefined) return []
+        const first = points[0]
+        const delta = first > 0 ? ((current - first) / first) * 100 : 0
+        return [
+          {
+            label: `${typeof data.symbol === "string" ? data.symbol.toUpperCase() : String(price.key ?? "Token")} price`,
+            value: `$${current.toLocaleString("en-US", { maximumFractionDigits: 6 })}`,
+            delta: `${delta >= 0 ? "+" : ""}${delta.toFixed(2)}%`,
+            points,
+          },
+        ]
+      })[0]
       await ctx.runMutation(internal.askAI.completeGeneratedTurn, {
         turnId: turn.turnId,
         assistantMessageId: assistantMessage._id,
@@ -263,6 +294,7 @@ export const generateTurn = internalAction({
           usage,
           ...(financialResults.length > 0 ? { financialResults } : {}),
           ...(retrievalChunks.length > 0 ? { retrievalChunks } : {}),
+          ...(visual ? { visual } : {}),
         },
       })
       await ctx.runMutation(internal.askAITelemetry.record, {

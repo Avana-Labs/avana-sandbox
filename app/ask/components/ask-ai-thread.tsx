@@ -12,8 +12,7 @@ import {
   useAuiState,
 } from "@assistant-ui/react"
 import { useMutation } from "convex/react"
-import { useRouter } from "next/navigation"
-import { triggerPageLoading } from "@/app/lib/page-loading"
+import Link from "next/link"
 import { ArrowUp, Check, ChevronDown, Copy, Square, ThumbsDown, ThumbsUp } from "lucide-react"
 import { createContext, useContext, useEffect, useRef, useState } from "react"
 import type { ComponentType } from "react"
@@ -333,8 +332,7 @@ const messageComponents = {
 
 // Warm, in-voice quota nudge above the composer: a gentle heads-up as chats run
 // low, and — once they're used up — an offer to hand off to the Avana team.
-function QuotaNudge({ remaining }: { remaining: number }) {
-  const router = useRouter()
+export function QuotaNudge({ remaining }: { remaining: number }) {
   if (remaining > 4) return null
   if (remaining > 0) {
     return (
@@ -349,36 +347,43 @@ function QuotaNudge({ remaining }: { remaining: number }) {
         Aw, that&apos;s all our chats for today! 💛 Want me to connect you with the Avana team so someone can keep
         helping?
       </span>
-      <button
-        type="button"
-        onClick={() => {
-          triggerPageLoading()
-          router.push("/support-center")
-        }}
+      <Link
+        href="/support-center"
         className="inline-flex items-center rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition hover:opacity-90"
       >
         Talk to the team
-      </button>
+      </Link>
     </div>
   )
 }
 
-function Composer({ usage }: { usage?: AskAIUsage }) {
+function Composer({ usage, disabled = false }: { usage?: AskAIUsage; disabled?: boolean }) {
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function" || !window.matchMedia("(min-width: 1024px)").matches) return
+    const frame = requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }))
+    return () => cancelAnimationFrame(frame)
+  }, [])
   return (
-    <ComposerPrimitive.Root className="relative flex w-full flex-col">
+    <ComposerPrimitive.Root className="relative flex w-full flex-col" aria-disabled={disabled}>
       <ElementComposer className="max-w-none">
         <ComposerBar className="cursor-text bg-card focus-within:border-border">
           <ComposerPrimitive.Input
+            ref={inputRef}
             aria-label="Ask Avana a question"
-            placeholder="Ask Avana about markets, your positions, or how it works…"
+            placeholder={
+              disabled ? "Your chats reset tomorrow" : "Ask Avana about markets, your positions, or how it works…"
+            }
             maxLength={ASK_AI_CONFIG.maxInputCharacters}
             rows={1}
-            autoFocus
+            disabled={disabled}
             enterKeyHint="send"
             // assistant-ui refocuses the composer on scroll-to-bottom and moves the
             // caret to the end. During typing the viewport auto-scrolls, so this
             // yanked the caret back to the end on every mid-sentence edit. Disable it.
             unstable_focusOnScrollToBottom={false}
+            unstable_focusOnRunStart={false}
+            unstable_focusOnThreadSwitched={false}
             className="max-h-48 min-h-10 w-full resize-none bg-transparent px-2.5 py-1 text-base leading-6 outline-none placeholder:text-muted-foreground/60"
           />
           <ComposerToolbar className="relative">
@@ -467,7 +472,7 @@ export function AskAIThread({
             // streams smoothly. "top" anchoring disables autoScroll, which made the
             // answer render at the top and then snap down.
             turnAnchor="bottom"
-            className="relative flex flex-1 flex-col overflow-x-auto overflow-y-auto scroll-smooth"
+            className="relative flex flex-1 flex-col overflow-x-auto overflow-y-auto"
           >
             <div
               className={`mx-auto flex w-full max-w-[44rem] flex-1 flex-col px-4 pt-4 ${
@@ -528,7 +533,7 @@ export function AskAIThread({
                   />
                 ) : null}
                 {messagesRemaining !== null ? <QuotaNudge remaining={messagesRemaining} /> : null}
-                <Composer usage={usage} />
+                <Composer usage={usage} disabled={messagesRemaining === 0} />
                 <ThreadPrimitive.Empty>
                   <div className="flex w-full flex-wrap items-center justify-center gap-2 px-4">
                     {ASK_AI_SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (
