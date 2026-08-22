@@ -272,21 +272,18 @@ export function QuotaNudge({ remaining }: { remaining: number }) {
   if (remaining > 0) {
     return (
       <div className="mx-auto w-full max-w-[var(--thread-max-width)] rounded-2xl border border-border/60 bg-muted/40 px-4 py-2.5 text-center text-sm text-foreground">
-        Oh oh — only {remaining} chat{remaining === 1 ? "" : "s"} left for today! 💛 Let&apos;s make &apos;em count.
+        {`Just a heads up, you have ${remaining} ${remaining === 1 ? "chat" : "chats"} left today. Let’s make them count.`}
       </div>
     )
   }
   return (
     <div className="mx-auto flex w-full max-w-[var(--thread-max-width)] flex-col items-center gap-2.5 rounded-2xl border border-border/60 bg-muted/40 px-4 py-3 text-center text-sm text-foreground">
-      <span>
-        Aw, that&apos;s all our chats for today! 💛 Want me to connect you with the Avana team so someone can keep
-        helping?
-      </span>
+      <span>That&apos;s all your chats for today. The Avana team can keep helping in the Support Center.</span>
       <Link
         href="/support-center"
         className="inline-flex items-center rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition hover:opacity-90"
       >
-        Talk to the team
+        Open Support Center
       </Link>
     </div>
   )
