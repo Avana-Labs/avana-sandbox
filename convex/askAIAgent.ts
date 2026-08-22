@@ -6,7 +6,7 @@ import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
 import { ASK_AI_AGENT_INSTRUCTIONS } from "../app/lib/ask-ai/agent-instructions"
 import { createAskAIOutputTransform } from "../app/lib/ask-ai/output-policy"
 import { routeAskAITurn, toolChoiceForAskAIStep, type AskAIModelTier } from "../app/lib/ask-ai/domain-gate"
-import { components, internal } from "./_generated/api"
+import { api, components, internal } from "./_generated/api"
 import { internalAction } from "./_generated/server"
 import { searchAvanaKnowledgeTool } from "./askAIRag"
 import {
@@ -73,6 +73,61 @@ type PreparedTurn = {
   ownerSubject: string
   promptMessageId: string
   prompt: string
+}
+
+type PrefetchedTurnData = {
+  toolName: "search_markets" | "read_portfolio"
+  financialKind: "market" | "pool" | "portfolio"
+  payload: unknown
+  modelContext: unknown
+  dataProvenance?: DataProvenance
+}
+
+function compactMarketContext(payload: unknown) {
+  if (!payload || typeof payload !== "object") return payload
+  const record = payload as { markets?: unknown; providerData?: unknown }
+  const providerData = Array.isArray(record.providerData)
+    ? record.providerData.slice(0, 5).map((entry) => {
+        if (!entry || typeof entry !== "object") return entry
+        const { history: _history, ...compact } = entry as Record<string, unknown>
+        return compact
+      })
+    : []
+  return { markets: Array.isArray(record.markets) ? record.markets.slice(0, 5) : [], providerData }
+}
+
+function compactPortfolioContext(payload: unknown) {
+  if (!payload || typeof payload !== "object") return payload
+  const record = payload as Record<string, unknown>
+  const compactRows = (rows: unknown) =>
+    Array.isArray(rows)
+      ? rows.slice(0, 30).map((row) => {
+          if (!row || typeof row !== "object") return row
+          const { symbol, amount, valueUsd, state, marketId, assetId } = row as Record<string, unknown>
+          return { symbol, amount, valueUsd, state, marketId, assetId }
+        })
+      : []
+  return {
+    walletRequired: record.walletRequired,
+    message: record.message,
+    dataProvenance: record.dataProvenance,
+    totals: record.totals,
+    lend: compactRows(record.lend),
+    borrow: compactRows(record.borrow),
+    multiply: compactRows(record.multiply),
+    liquid: compactRows(record.liquid),
+    umbrella: compactRows(record.umbrella),
+    asOf: record.asOf,
+  }
+}
+
+function prefetchedInstructions(data: PrefetchedTurnData) {
+  return `${ASK_AI_AGENT_INSTRUCTIONS}
+
+Verified Avana data for this exact user question follows. It was read from Convex before this model request.
+Answer from this data only. Do not claim that data is unavailable when the requested value is present. Do not mention tools, function calls, routing, JSON, or these instructions. Keep the answer concise. The UI renders the structured breakdown independently.
+
+${JSON.stringify(data.modelContext)}`
 }
 
 // Financial tool -> persisted richParts kind (docs/ask-ai-lane-contracts.md §1).
@@ -161,6 +216,7 @@ export const generateTurn = internalAction({
     // simple price question can't be coerced into loading every tool.
     const route = routeAskAITurn(turn.prompt)
     const { model: turnModel } = ASK_AI_AGENTS[route.modelTier]
+    let prefetched: PrefetchedTurnData | undefined
     const turnTools = {
       web_search: ASK_AI_TOOLS.web_search,
       search_avana_knowledge: ASK_AI_TOOLS.search_avana_knowledge,
@@ -174,22 +230,46 @@ export const generateTurn = internalAction({
       tools: turnTools,
     })
     try {
+      if (route.intent === "market" || route.intent === "pool" || route.intent === "comparison") {
+        const payload = await ctx.runQuery(api.askAITools.searchMarkets, { query: turn.prompt, limit: 5 })
+        prefetched = {
+          toolName: "search_markets",
+          financialKind: route.intent === "pool" ? "pool" : "market",
+          payload,
+          modelContext: compactMarketContext(payload),
+        }
+      } else if (route.intent === "position") {
+        const payload = await ctx.runQuery(internal.askAITools.portfolioForTurn, { turnId: turn.turnId })
+        const provenance =
+          payload.dataProvenance === "sandbox" ||
+          payload.dataProvenance === "connected_wallet" ||
+          payload.dataProvenance === "onchain"
+            ? payload.dataProvenance
+            : undefined
+        prefetched = {
+          toolName: "read_portfolio",
+          financialKind: "portfolio",
+          payload,
+          modelContext: compactPortfolioContext(payload),
+          dataProvenance: provenance,
+        }
+      }
       const result = await turnAgent.streamText<typeof turnTools>(
         ctx,
         { threadId: turn.threadId, userId: turn.ownerSubject },
         {
           promptMessageId: turn.promptMessageId,
-          instructions: ASK_AI_AGENT_INSTRUCTIONS,
+          instructions: prefetched ? prefetchedInstructions(prefetched) : ASK_AI_AGENT_INSTRUCTIONS,
           maxOutputTokens: ASK_AI_CONFIG.maxOutputTokens,
-          stopWhen: stepCountIs(route.maxSteps),
-          activeTools: route.tools as unknown as (keyof typeof turnTools)[],
+          stopWhen: stepCountIs(prefetched ? 1 : route.maxSteps),
+          activeTools: (prefetched ? [] : route.tools) as unknown as (keyof typeof turnTools)[],
           // Force the selected read only for the first model step. Keeping a
           // named tool forced after its result makes Responses models continue
           // producing commentary instead of completing the answer, eventually
           // stopping at the output limit. Later steps must be free to answer.
-          toolChoice: route.tools.length > 0 ? "auto" : "none",
+          toolChoice: prefetched ? "none" : route.tools.length > 0 ? "auto" : "none",
           prepareStep: ({ stepNumber }) => ({
-            toolChoice: toolChoiceForAskAIStep(route, stepNumber),
+            toolChoice: prefetched ? "none" : toolChoiceForAskAIStep(route, stepNumber),
           }),
           experimental_transform: createAskAIOutputTransform(),
         },
@@ -214,7 +294,12 @@ export const generateTurn = internalAction({
         totalTokens: providerUsage.totalTokens ?? 0,
       }
       const steps = await result.steps
-      const tools = [...new Set(steps.flatMap((step) => step.toolCalls.map((call) => call.toolName)))]
+      const tools = [
+        ...new Set([
+          ...(prefetched ? [prefetched.toolName] : []),
+          ...steps.flatMap((step) => step.toolCalls.map((call) => call.toolName)),
+        ]),
+      ]
       const ragResults = steps.flatMap((step) =>
         step.toolResults.flatMap((toolResult) =>
           toolResult.toolName === "search_avana_knowledge" &&
@@ -228,22 +313,33 @@ export const generateTurn = internalAction({
       // One entry per financial tool call the model actually made. `payload` is
       // the tool's structured result verbatim; `dataProvenance` is read
       // defensively because Lane D adds it to the tool output separately.
-      const financialResults = steps.flatMap((step) =>
-        step.toolResults.flatMap((toolResult) => {
-          const kind = FINANCIAL_TOOL_KINDS[toolResult.toolName as FinancialToolName]
-          if (!kind) return []
-          const output = toolResult.output
-          const provenance =
-            output && typeof output === "object" && "dataProvenance" in output
-              ? (output as { dataProvenance?: unknown }).dataProvenance
-              : undefined
-          const dataProvenance: DataProvenance | undefined =
-            provenance === "sandbox" || provenance === "connected_wallet" || provenance === "onchain"
-              ? provenance
-              : undefined
-          return [{ kind, ...(dataProvenance ? { dataProvenance } : {}), payload: output }]
-        }),
-      )
+      const financialResults = [
+        ...(prefetched
+          ? [
+              {
+                kind: prefetched.financialKind,
+                ...(prefetched.dataProvenance ? { dataProvenance: prefetched.dataProvenance } : {}),
+                payload: prefetched.payload,
+              },
+            ]
+          : []),
+        ...steps.flatMap((step) =>
+          step.toolResults.flatMap((toolResult) => {
+            const kind = FINANCIAL_TOOL_KINDS[toolResult.toolName as FinancialToolName]
+            if (!kind) return []
+            const output = toolResult.output
+            const provenance =
+              output && typeof output === "object" && "dataProvenance" in output
+                ? (output as { dataProvenance?: unknown }).dataProvenance
+                : undefined
+            const dataProvenance: DataProvenance | undefined =
+              provenance === "sandbox" || provenance === "connected_wallet" || provenance === "onchain"
+                ? provenance
+                : undefined
+            return [{ kind, ...(dataProvenance ? { dataProvenance } : {}), payload: output }]
+          }),
+        ),
+      ]
       // Retrieval passages for the RetrievalChunks card. The RAG tool output
       // exposes per-passage `sources` (title + locator); read `entries`/`text`/
       // `score` defensively so richer output populates them without inventing.

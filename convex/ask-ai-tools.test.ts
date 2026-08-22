@@ -228,4 +228,30 @@ describe("Ask AI normalized market tools", () => {
       data: { priceUsd: 123.98 },
     })
   })
+
+  test("maps natural asset names to canonical cached price symbols", async () => {
+    const t = convexTest(schema, modules)
+    const now = Date.now()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("tokenPrices", {
+        symbol: "btc",
+        llamaId: "coingecko:bitcoin",
+        priceUsd: 77_856.08,
+        confidence: 0.99,
+        sourceUpdatedAt: now,
+        fetchedAt: now,
+        snapshotAt: now,
+        status: "fresh",
+        source: "defillama",
+        updatedAt: now,
+      })
+    })
+
+    const result = await t.query(api.askAITools.searchMarkets, { query: "What is Bitcoin's price now?" })
+    expect(result.providerData[0]).toMatchObject({
+      kind: "token_price",
+      key: "btc",
+      data: { priceUsd: 77_856.08 },
+    })
+  })
 })
