@@ -1,6 +1,5 @@
 import { describe, expect, test } from "vitest"
 import { ASK_AI_AGENT_INSTRUCTIONS } from "../../../../convex/askAIAgent"
-import { ASK_AI_FAST_INSTRUCTIONS } from "../agent-instructions"
 import { ASK_AI_CONFIG } from "../config"
 
 describe("Ask AI Agent configuration", () => {
@@ -21,10 +20,15 @@ describe("Ask AI Agent configuration", () => {
     expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("uncertain scenarios")
   })
 
-  test("uses the low latency profile for high-volume reads", () => {
+  test("uses one full Avana persona with the quality transport profile", () => {
     expect(ASK_AI_CONFIG.openAIServiceTier).toBe("fast")
+    expect(ASK_AI_CONFIG.maxOutputTokens).toBe(900)
+    expect(ASK_AI_CONFIG.topP).toBe(0.98)
+    expect(ASK_AI_CONFIG.reasoningEffort).toBe("medium")
+    expect(ASK_AI_CONFIG.textVerbosity).toBe("medium")
     expect(ASK_AI_CONFIG.recentMessageLimit).toBeLessThanOrEqual(8)
     expect(ASK_AI_CONFIG.streamThrottleMs).toBeLessThanOrEqual(100)
-    expect(ASK_AI_FAST_INSTRUCTIONS.length).toBeLessThan(700)
+    expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("Talk like a real person who genuinely cares")
+    expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("turn it into a fun next step")
   })
 })

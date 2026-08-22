@@ -33,7 +33,7 @@ export type DomainResult = {
 }
 
 const POSITION_PATTERNS = [
-  /\b(my|our)\b.{0,25}\b(position|positions|wallet|balances?|holdings?|funds|assets?|collateral|debt|borrow|health factor|ltv|liquidat)/i,
+  /\b(my|our)\b.{0,40}\b(position|positions|wallet|balances?|holdings?|funds|assets?|collateral|debt|borrow|health factor|ltv|liquidat|umbrella|stake|staked|cooldown|withdraw|unstake)/i,
   /\bwhat(?:'s| is) in (?:my|our) wallet\b/i,
   /\b(show|analy[sz]e|compare)\b.{0,20}\b(my|our)\b/i,
   /\bhow much can i borrow\b/i,
@@ -44,6 +44,7 @@ const POSITION_PATTERNS = [
   /\bdo (?:i|we) (?:have|own|hold|got)\b/i,
   /\b(?:how much|what|any).{0,40}\bdo (?:i|we) (?:have|own|hold)\b/i,
   /\b(?:i|we) (?:have|own|hold|holding|deposited|borrowed|staked)\b/i,
+  /\b(?:cooldown|withdrawal window|ready to (?:withdraw|unstake)|can (?:i|we) (?:withdraw|unstake))\b/i,
 ]
 
 const RISK_PATTERNS = [
@@ -64,7 +65,6 @@ const MARKET_PATTERNS = [
   /\b(price|worth|trading at|borrow rate|apr|apy|utilization|market)\b/i,
 ]
 
-const MARKET_LOOKUP_PATTERN = /\b(price|prices|worth|quote|borrow rate|supply rate|apr|apy|utilization|market rate)\b/i
 const TOKEN_PRICE_LOOKUP_PATTERN = /\b(price|prices|worth|quote|cost)\b/i
 
 const EDUCATION_PATTERNS = [

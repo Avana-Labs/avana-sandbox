@@ -176,6 +176,21 @@ describe("routeAskAITurn (per-turn tool + cost routing)", () => {
     expect(toolChoiceForAskAIStep(route, 1)).toBe("auto")
   })
 
+  it.each([
+    "How long is my cooldown until I withdraw?",
+    "Do I have any Umbrella on cooldown?",
+    "When can I unstake my GHO?",
+    "Is my Umbrella withdrawal window open?",
+  ])("routes the personal Umbrella question through one portfolio read: %s", (prompt) => {
+    expect(routeAskAITurn(prompt)).toMatchObject({
+      intent: "position",
+      tools: ["read_portfolio"],
+      toolChoice: { type: "tool", toolName: "read_portfolio" },
+      maxSteps: 2,
+      modelTier: "fast",
+    })
+  })
+
   it("greets with no tools in a single step", () => {
     const route = routeAskAITurn("hey there")
     expect(route.tools).toEqual([])

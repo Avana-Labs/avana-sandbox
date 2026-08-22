@@ -133,6 +133,91 @@ describe("Ask AI authenticated portfolio tools", () => {
       dataProvenance: "sandbox",
     })
   })
+
+  test("returns authoritative per-tranche Umbrella cooldown timing", async () => {
+    const t = convexTest(schema, modules)
+    const now = Date.now()
+    await t.run(async (ctx) => {
+      const positionId = await ctx.db.insert("positions", {
+        wallet: WALLET_A,
+        product: "umbrella",
+        marketSlug: "gho",
+        assetId: "GHO",
+        status: "open",
+        suppliedUsd6: "5000000000",
+        cooldownAmountUsd6: "2500000000",
+        cooldownStartedAt: now - 86_400_000,
+        cooldownEndsAt: now + 6 * 86_400_000,
+        withdrawalWindowEndsAt: now + 8 * 86_400_000,
+        openedAt: now - 10 * 86_400_000,
+        lastUpdatedAt: now,
+      })
+      await ctx.db.insert("umbrellaCooldownTranches", {
+        positionId,
+        wallet: WALLET_A,
+        marketId: "gho",
+        amountUsd6: "2500000000",
+        startedAt: now - 86_400_000,
+        endsAt: now + 6 * 86_400_000,
+        windowEndsAt: now + 8 * 86_400_000,
+        status: "cooling",
+        createdAt: now,
+        updatedAt: now,
+      })
+    })
+
+    const result = await t.withIdentity({ subject: WALLET_A }).query(api.askAITools.portfolio, {})
+    if (result.walletRequired) throw new Error("Expected an authenticated portfolio result")
+    expect(result.umbrellaCooldownSummary).toMatchObject({
+      coolingCount: 1,
+      coolingUsd: 2_500,
+      readyCount: 0,
+    })
+    expect(result.umbrellaCooldowns).toEqual([
+      expect.objectContaining({
+        marketId: "gho",
+        amountUsd: 2_500,
+        status: "cooling",
+        canWithdraw: false,
+      }),
+    ])
+    expect(result.umbrellaCooldowns[0]?.remainingCooldownMs).toBeGreaterThan(5 * 86_400_000)
+    expect(result.umbrella[0]).toMatchObject({
+      marketSlug: "gho",
+      cooldownUsd: 2_500,
+      lifecycleStatus: "partiallyCooling",
+    })
+  })
+
+  test("falls back to the current portfolio borrow capacity when no risk snapshot exists", async () => {
+    const t = convexTest(schema, modules)
+    const now = Date.now()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("portfolioCurrent", {
+        wallet: WALLET_A,
+        at: now,
+        totalValueUsd: 50_000,
+        totalSuppliedUsd: 20_000,
+        totalBorrowedUsd: 3_000,
+        availableToBorrowUsd: 7_500,
+        totalMultiplyExposureUsd: 0,
+        totalEarnedUsd: 0,
+      })
+    })
+
+    await expect(t.withIdentity({ subject: WALLET_A }).query(api.askAITools.borrowCapacity, {})).resolves.toMatchObject(
+      {
+        walletRequired: false,
+        capacity: {
+          borrowCapacityUsd: 10_500,
+          availableBorrowCapacityUsd: 7_500,
+          totalBorrowedUsd: 3_000,
+          source: "portfolio_current",
+        },
+        asOf: now,
+      },
+    )
+  })
 })
 
 describe("Ask AI normalized market tools", () => {

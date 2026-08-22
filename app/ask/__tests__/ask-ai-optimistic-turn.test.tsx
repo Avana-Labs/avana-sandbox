@@ -4,6 +4,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 
 const enqueue = vi.fn()
 const emptyQuery: never[] = []
+const messagesMock = vi.fn(() => ({ results: emptyQuery, status: "Exhausted", loadMore: vi.fn() }))
 
 vi.mock("convex/react", () => ({
   useQuery: () => emptyQuery,
@@ -16,7 +17,7 @@ vi.mock("convex/react", () => ({
 }))
 
 vi.mock("@convex-dev/agent/react", () => ({
-  useUIMessages: () => ({ results: [], status: "Exhausted", loadMore: vi.fn() }),
+  useUIMessages: () => messagesMock(),
 }))
 
 import { AskAIPageClient } from "../ask-ai-page-client"
@@ -28,6 +29,8 @@ beforeAll(() => {
 afterEach(() => {
   cleanup()
   enqueue.mockClear()
+  messagesMock.mockReset()
+  messagesMock.mockReturnValue({ results: emptyQuery, status: "Exhausted", loadMore: vi.fn() })
 })
 
 describe("Ask AI optimistic turn", () => {
@@ -80,5 +83,30 @@ describe("Ask AI optimistic turn", () => {
     expect(screen.getByText("Explain Avana liquidation")).toBeInTheDocument()
     await waitFor(() => expect(enqueue).toHaveBeenCalledTimes(2))
     await act(async () => resolveEnqueue({ turnId: "turn-new", promptMessageId: "message-new" }))
+  })
+
+  it("keeps thinking visible between turn completion state and the assistant subscription", async () => {
+    messagesMock.mockReturnValue({
+      status: "Exhausted",
+      loadMore: vi.fn(),
+      results: [
+        {
+          id: "message-test",
+          role: "user",
+          text: "How much can I borrow?",
+          _creationTime: 1,
+          status: "success",
+        },
+      ],
+    })
+    enqueue.mockResolvedValue({ turnId: "turn-test", promptMessageId: "message-test" })
+    render(<AskAIPageClient />)
+
+    const composer = screen.getByLabelText("Ask Avana a question")
+    fireEvent.change(composer, { target: { value: "How much can I borrow?" } })
+    fireEvent.click(screen.getByRole("button", { name: "Send message" }))
+
+    await waitFor(() => expect(enqueue).toHaveBeenCalledTimes(1))
+    expect(screen.getByText("Thinking…")).toBeInTheDocument()
   })
 })
