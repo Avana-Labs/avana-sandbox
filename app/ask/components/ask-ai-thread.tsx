@@ -1,6 +1,6 @@
 "use client"
 
-import { AuiIf, ComposerPrimitive, type ThreadMessage, ThreadPrimitive, useAui } from "@assistant-ui/react"
+import { type ThreadMessage, ThreadPrimitive } from "@assistant-ui/react"
 import { useMutation } from "convex/react"
 import Link from "next/link"
 import { ArrowUp, Check, ChevronDown, Copy, Square, ThumbsDown, ThumbsUp } from "lucide-react"
@@ -289,20 +289,46 @@ export function QuotaNudge({ remaining }: { remaining: number }) {
   )
 }
 
-function Composer({ usage, disabled = false }: { usage?: AskAIUsage; disabled?: boolean }) {
-  const aui = useAui()
-  const inputRef = useRef<HTMLTextAreaElement>(null)
-  const selectionRef = useRef({ start: 0, end: 0 })
-  const restoreSelection = useCallback((start: number, end = start) => {
-    selectionRef.current = { start, end }
-    requestAnimationFrame(() => inputRef.current?.setSelectionRange(start, end))
-  }, [])
+function Composer({
+  usage,
+  disabled = false,
+  running,
+  onSend,
+  onCancel,
+}: {
+  usage?: AskAIUsage
+  disabled?: boolean
+  running: boolean
+  onSend: (prompt: string) => void | Promise<void>
+  onCancel: () => void | Promise<void>
+}) {
+  const [text, setText] = useState("")
+  const submit = () => {
+    const prompt = text.trim()
+    if (!prompt || disabled || running) return
+    setText("")
+    void onSend(prompt)
+  }
   return (
-    <ComposerPrimitive.Root className="relative flex w-full flex-col" aria-disabled={disabled}>
+    <form
+      className="relative flex w-full flex-col"
+      aria-disabled={disabled}
+      onSubmit={(event) => {
+        event.preventDefault()
+        submit()
+      }}
+    >
       <ElementComposer className="max-w-none">
         <ComposerBar className="cursor-text bg-card focus-within:border-border">
-          <ComposerPrimitive.Input
-            ref={inputRef}
+          <textarea
+            value={text}
+            onChange={(event) => setText(event.currentTarget.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault()
+                submit()
+              }
+            }}
             aria-label="Ask Avana a question"
             placeholder={
               disabled ? "Your chats reset tomorrow" : "Ask Avana about markets, your positions, or how it works…"
@@ -311,52 +337,6 @@ function Composer({ usage, disabled = false }: { usage?: AskAIUsage; disabled?: 
             rows={1}
             disabled={disabled}
             enterKeyHint="send"
-            // assistant-ui refocuses the composer on scroll-to-bottom and moves the
-            // caret to the end. During typing the viewport auto-scrolls, so this
-            // yanked the caret back to the end on every mid-sentence edit. Disable it.
-            unstable_focusOnScrollToBottom={false}
-            unstable_focusOnRunStart={false}
-            unstable_focusOnThreadSwitched={false}
-            onSelect={(event) => {
-              selectionRef.current = {
-                start: event.currentTarget.selectionStart,
-                end: event.currentTarget.selectionEnd,
-              }
-            }}
-            onChange={(event) => {
-              restoreSelection(event.currentTarget.selectionStart, event.currentTarget.selectionEnd)
-            }}
-            onKeyDown={(event) => {
-              if (event.altKey || event.ctrlKey || event.metaKey) return
-              const input = event.currentTarget
-              const selected = selectionRef.current
-              if (event.key === "ArrowLeft" && selected.start === selected.end) {
-                event.preventDefault()
-                restoreSelection(Math.max(0, selected.start - 1))
-              } else if (event.key === "ArrowRight" && selected.start === selected.end) {
-                event.preventDefault()
-                restoreSelection(Math.min(input.value.length, selected.end + 1))
-              } else if (event.key === "Home") {
-                event.preventDefault()
-                restoreSelection(0)
-              } else if (event.key === "End") {
-                event.preventDefault()
-                restoreSelection(input.value.length)
-              } else if (
-                event.key === "Delete" &&
-                selected.start === selected.end &&
-                selected.start < input.value.length
-              ) {
-                event.preventDefault()
-                aui.composer.setText(input.value.slice(0, selected.start) + input.value.slice(selected.start + 1))
-                restoreSelection(selected.start)
-              } else if (event.key === "Backspace" && selected.start === selected.end && selected.start > 0) {
-                event.preventDefault()
-                const next = selected.start - 1
-                aui.composer.setText(input.value.slice(0, next) + input.value.slice(selected.end))
-                restoreSelection(next)
-              }
-            }}
             className="max-h-48 min-h-10 w-full resize-none bg-transparent px-2.5 py-1 text-base leading-6 outline-none placeholder:text-muted-foreground/60"
           />
           <ComposerToolbar className="relative">
@@ -372,27 +352,30 @@ function Composer({ usage, disabled = false }: { usage?: AskAIUsage; disabled?: 
               ) : null}
             </ComposerActions>
             <ComposerActions>
-              <AuiIf condition={(state) => state.thread.isRunning}>
-                <ComposerPrimitive.Cancel
+              {running ? (
+                <button
+                  type="button"
                   aria-label="Stop generating"
+                  onClick={() => void onCancel()}
                   className="inline-flex size-9 items-center justify-center rounded-full bg-foreground text-background transition hover:bg-foreground/90"
                 >
                   <Square className="size-3.5 fill-current" />
-                </ComposerPrimitive.Cancel>
-              </AuiIf>
-              <AuiIf condition={(state) => !state.thread.isRunning}>
-                <ComposerPrimitive.Send
+                </button>
+              ) : (
+                <button
+                  type="submit"
                   aria-label="Send message"
+                  disabled={disabled || !text.trim()}
                   className="inline-flex size-9 items-center justify-center rounded-full bg-foreground text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-foreground/15 disabled:text-foreground/40"
                 >
                   <ArrowUp className="size-[18px]" />
-                </ComposerPrimitive.Send>
-              </AuiIf>
+                </button>
+              )}
             </ComposerActions>
           </ComposerToolbar>
         </ComposerBar>
       </ElementComposer>
-    </ComposerPrimitive.Root>
+    </form>
   )
 }
 
@@ -408,6 +391,8 @@ export function AskAIThread({
   runningPrompt,
   messages,
   onRetry,
+  onSend,
+  onCancelRunning,
   onCancelQueued,
   loading = false,
 }: {
@@ -422,6 +407,8 @@ export function AskAIThread({
   runningPrompt?: string
   messages: readonly ThreadMessage[]
   onRetry: () => void | Promise<void>
+  onSend: (prompt: string) => void | Promise<void>
+  onCancelRunning: () => void | Promise<void>
   onCancelQueued: (turnId: string) => void | Promise<void>
   loading?: boolean
 }) {
@@ -549,7 +536,13 @@ export function AskAIThread({
                 />
               ) : null}
               {messagesRemaining !== null ? <QuotaNudge remaining={messagesRemaining} /> : null}
-              <Composer usage={usage} disabled={messagesRemaining === 0} />
+              <Composer
+                usage={usage}
+                disabled={messagesRemaining === 0}
+                running={Boolean(runningPrompt)}
+                onSend={onSend}
+                onCancel={onCancelRunning}
+              />
               {isEmpty ? (
                 <div className="flex w-full flex-wrap items-center justify-center gap-2 px-4">
                   {ASK_AI_SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (

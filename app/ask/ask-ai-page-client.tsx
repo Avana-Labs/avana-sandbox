@@ -650,6 +650,12 @@ export function AskAIPageClient({
             await retryFailedTurn({ turnId: pendingTurn.id as Id<"askAITurns"> })
             setPendingTurn(null)
           }}
+          onSend={sendPrompt}
+          onCancelRunning={async () => {
+            if (!resolvedActiveThreadId) return
+            await cancelRunningTurn({ threadId: resolvedActiveThreadId })
+            setPendingTurn(null)
+          }}
           onCancelQueued={async (turnId) => {
             await cancelQueuedTurn({ turnId: turnId as Id<"askAITurns"> })
           }}
