@@ -471,16 +471,27 @@ export function AskAIPageClient({
       turnQueue?.find((turn) => turn.status === "queued") ??
       turnQueue?.find((turn) => turn.status === "failed")
     if (current) {
-      setPendingTurn((pending) => ({
-        id: String(current.id),
-        clientRequestId: current.clientRequestId ?? pending?.clientRequestId ?? String(current.id),
-        promptMessageId: current.promptMessageId,
-        prompt: current.prompt,
-        startedAt: pending?.id === String(current.id) ? pending.startedAt : Date.now(),
-        ...(current.status === "failed"
-          ? { error: toFriendlyAskAIError(new Error("Ask AI could not complete this response")) }
-          : {}),
-      }))
+      setPendingTurn((pending) => {
+        const id = String(current.id)
+        const clientRequestId = current.clientRequestId ?? pending?.clientRequestId ?? id
+        const failed = current.status === "failed"
+        if (
+          pending?.id === id &&
+          pending.clientRequestId === clientRequestId &&
+          pending.promptMessageId === current.promptMessageId &&
+          pending.prompt === current.prompt &&
+          Boolean(pending.error) === failed
+        )
+          return pending
+        return {
+          id,
+          clientRequestId,
+          promptMessageId: current.promptMessageId,
+          prompt: current.prompt,
+          startedAt: pending?.id === id ? pending.startedAt : Date.now(),
+          ...(failed ? { error: toFriendlyAskAIError(new Error("Ask AI could not complete this response")) } : {}),
+        }
+      })
       return
     }
     setPendingTurn((pending) =>
