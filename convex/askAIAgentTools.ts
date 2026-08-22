@@ -1,7 +1,8 @@
 import { createTool } from "@convex-dev/agent"
 import type { Tool } from "ai"
 import { z } from "zod"
-import { api } from "./_generated/api"
+import type { Id } from "./_generated/dataModel"
+import { api, internal } from "./_generated/api"
 
 export const readPortfolioTool: Tool = createTool({
   description:
@@ -60,3 +61,49 @@ export const readPoolMetricsTool: Tool = createTool({
   inputSchema: z.object({ marketId: z.string().min(1).max(160) }),
   execute: (ctx, input): Promise<unknown> => ctx.runQuery(api.askAITools.poolMetrics, input),
 })
+
+export function createAskAITurnTools(turnId: Id<"askAITurns">) {
+  return {
+    read_portfolio: createTool({
+      description:
+        "Read the signed-in user's authoritative Avana balances and positions. Use for wallet, balance, holdings, or portfolio questions.",
+      inputSchema: z.object({}),
+      execute: (ctx): Promise<unknown> => ctx.runQuery(internal.askAITools.portfolioForTurn, { turnId }),
+    }),
+    read_borrow_capacity: createTool({
+      description: "Read the user's authoritative Credit Engine borrowing capacity, debt, health factor, and liquidation buffer.",
+      inputSchema: z.object({}),
+      execute: (ctx): Promise<unknown> => ctx.runQuery(internal.askAITools.borrowCapacityForTurn, { turnId }),
+    }),
+    read_position_risk: createTool({
+      description: "Read the user's open positions and deterministic Avana engine risk state.",
+      inputSchema: z.object({ positionId: z.string().optional() }),
+      execute: (ctx, input): Promise<unknown> =>
+        ctx.runQuery(internal.askAITools.positionRiskForTurn, { turnId, ...input }),
+    }),
+    simulate_borrow: createTool({
+      description: "Run Avana's deterministic read-only borrow simulation for an open position.",
+      inputSchema: z.object({
+        positionId: z.string().min(1),
+        additionalBorrowAmount: z.number().positive().max(1_000_000_000),
+        borrowAsset: z.string().min(1).max(32),
+      }),
+      execute: (ctx, input): Promise<unknown> =>
+        ctx.runQuery(internal.askAITools.simulateBorrowForTurn, { turnId, ...input }),
+    }),
+    stress_position: createTool({
+      description: "Run Avana's deterministic read-only collateral stress engine.",
+      inputSchema: z.object({
+        positionId: z.string().min(1),
+        assetPriceChanges: z
+          .array(z.object({ symbol: z.string().min(1).max(32), change: z.number().min(-0.95).max(1) }))
+          .min(1)
+          .max(8),
+      }),
+      execute: (ctx, input): Promise<unknown> =>
+        ctx.runQuery(internal.askAITools.stressPositionForTurn, { turnId, ...input }),
+    }),
+    search_markets: searchMarketsTool,
+    read_pool_metrics: readPoolMetricsTool,
+  }
+}

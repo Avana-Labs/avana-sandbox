@@ -11,9 +11,10 @@ import {
 import { RateLimiter, isRateLimitError } from "@convex-dev/rate-limiter"
 import { paginationOptsValidator } from "convex/server"
 import { ConvexError, v, type GenericId } from "convex/values"
-import { components } from "./_generated/api"
+import { components, internal } from "./_generated/api"
 import { internalMutation, internalQuery, mutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
 import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
+import { getAuthedWallet } from "./sandbox/auth"
 
 type AskAICtx = QueryCtx | MutationCtx
 
@@ -282,11 +283,24 @@ export const enqueueTurn = mutation({
   args: {
     threadId: v.string(),
     prompt: v.string(),
+    clientRequestId: v.string(),
   },
-  handler: async (ctx, { threadId, prompt }) => {
+  handler: async (ctx, { threadId, prompt, clientRequestId }) => {
     const { ownerSubject, thread } = await requireOwnedThread(ctx, threadId)
     if (thread.status !== "active") throw new Error("Thread is archived")
     const text = prompt.trim()
+    const requestId = clientRequestId.trim()
+    if (!requestId || requestId.length > 100)
+      throw askAIError("ASK_AI_GENERATION_FAILED", "Message request ID is invalid")
+    const existing = await ctx.db
+      .query("askAITurns")
+      .withIndex("by_owner_request", (q) => q.eq("ownerSubject", ownerSubject).eq("clientRequestId", requestId))
+      .unique()
+    if (existing) {
+      if (existing.threadId !== threadId || existing.prompt !== text)
+        throw askAIError("ASK_AI_GENERATION_FAILED", "Message request ID was already used")
+      return { turnId: existing._id, promptMessageId: existing.promptMessageId, duplicate: true }
+    }
     if (!text || text.length > ASK_AI_CONFIG.maxInputCharacters)
       throw askAIError(
         "ASK_AI_GENERATION_FAILED",
@@ -309,9 +323,12 @@ export const enqueueTurn = mutation({
     )
     const saved = await saveMessage(ctx, components.agent, { threadId, userId: ownerSubject, prompt: text })
     const now = Date.now()
+    const wallet = await getAuthedWallet(ctx)
     const turnId = await ctx.db.insert("askAITurns", {
       threadId,
       ownerSubject,
+      clientRequestId: requestId,
+      ...(wallet ? { wallet } : {}),
       promptMessageId: saved.messageId,
       prompt: text,
       status: "queued",
@@ -319,7 +336,33 @@ export const enqueueTurn = mutation({
       updatedAt: now,
     })
     if (thread.title === "New Chat") await ctx.db.patch(thread._id, { title: titleFromPrompt(text), updatedAt: now })
-    return { turnId, promptMessageId: saved.messageId }
+    await ctx.scheduler.runAfter(0, internal.askAIAgent.generateTurn, { turnId })
+    return { turnId, promptMessageId: saved.messageId, duplicate: false }
+  },
+})
+
+export const claimQueuedTurn = internalMutation({
+  args: { turnId: v.id("askAITurns") },
+  handler: async (ctx, { turnId }) => {
+    const turn = await ctx.db.get(turnId)
+    if (!turn || turn.status !== "queued") return null
+    const thread = await ctx.db
+      .query("askAIThreads")
+      .withIndex("by_thread", (q) => q.eq("threadId", turn.threadId))
+      .unique()
+    if (!thread || thread.ownerSubject !== turn.ownerSubject || thread.status !== "active") {
+      await ctx.db.patch(turnId, { status: "cancelled", updatedAt: Date.now() })
+      return null
+    }
+    await ctx.db.patch(turnId, { status: "running", updatedAt: Date.now() })
+    return {
+      turnId: turn._id,
+      threadId: turn.threadId,
+      ownerSubject: turn.ownerSubject,
+      promptMessageId: turn.promptMessageId,
+      prompt: turn.prompt,
+      wallet: turn.wallet,
+    }
   },
 })
 
@@ -337,7 +380,13 @@ export const turnQueue = query({
     return rows
       .filter((row) => ["queued", "running", "failed"].includes(row.status))
       .sort((a, b) => a.createdAt - b.createdAt)
-      .map((row) => ({ id: row._id, promptMessageId: row.promptMessageId, prompt: row.prompt, status: row.status }))
+      .map((row) => ({
+        id: row._id,
+        clientRequestId: row.clientRequestId,
+        promptMessageId: row.promptMessageId,
+        prompt: row.prompt,
+        status: row.status,
+      }))
   },
 })
 
@@ -361,6 +410,7 @@ export const retryFailedTurn = mutation({
     const ownerSubject = await requireOwnerSubject(ctx)
     if (turn.ownerSubject !== ownerSubject || turn.status !== "failed") throw new Error("Ask AI turn cannot be retried")
     await ctx.db.patch(turnId, { status: "queued", updatedAt: Date.now() })
+    await ctx.scheduler.runAfter(0, internal.askAIAgent.generateTurn, { turnId })
   },
 })
 
@@ -386,9 +436,9 @@ export const cancelRunningTurn = mutation({
 
 export const completeGeneratedTurn = internalMutation({
   args: {
-    threadId: v.string(),
-    promptMessageId: v.string(),
+    turnId: v.id("askAITurns"),
     assistantMessageId: v.string(),
+    model: v.string(),
     usage: v.object({ inputTokens: v.number(), outputTokens: v.number(), totalTokens: v.number() }),
     // Explicit shape (was v.any()) per docs/ask-ai-lane-contracts.md §1 so the
     // rich parts the UI renders are validated at the trust boundary.
@@ -439,14 +489,14 @@ export const completeGeneratedTurn = internalMutation({
       }),
     ),
   },
-  handler: async (ctx, { threadId, promptMessageId, assistantMessageId, usage, richParts }) => {
-    const { ownerSubject, thread } = await requireOwnedThread(ctx, threadId)
-    const turn = await ctx.db
-      .query("askAITurns")
-      .withIndex("by_prompt_message", (q) => q.eq("promptMessageId", promptMessageId))
+  handler: async (ctx, { turnId, assistantMessageId, model, usage, richParts }) => {
+    const turn = await ctx.db.get(turnId)
+    if (!turn) throw new Error("Ask AI turn not found")
+    const thread = await ctx.db
+      .query("askAIThreads")
+      .withIndex("by_thread", (q) => q.eq("threadId", turn.threadId))
       .unique()
-    if (!turn || turn.ownerSubject !== ownerSubject || turn.threadId !== threadId)
-      throw new Error("Ask AI turn not found")
+    if (!thread || thread.ownerSubject !== turn.ownerSubject) throw new Error("Ask AI turn not found")
     // The user cancelled while the stream was finishing. cancelRunningTurn already
     // set the terminal status and aborted the stream; do not resurrect it as a
     // completed answer. Mirrors the guard in failTurn.
@@ -457,7 +507,7 @@ export const completeGeneratedTurn = internalMutation({
       .unique()
     if (richParts && !existingParts)
       await ctx.db.insert("askAIMessageParts", {
-        threadId,
+        threadId: turn.threadId,
         messageId: assistantMessageId,
         parts: richParts,
         createdAt: Date.now(),
@@ -468,10 +518,10 @@ export const completeGeneratedTurn = internalMutation({
       .unique()
     if (!existingUsage)
       await ctx.db.insert("askAIUsage", {
-        ownerSubject,
-        threadId,
+        ownerSubject: turn.ownerSubject,
+        threadId: turn.threadId,
         messageId: assistantMessageId,
-        model: ASK_AI_CONFIG.defaultModel,
+        model,
         provider: "openai",
         ...usage,
         createdAt: Date.now(),
@@ -504,17 +554,13 @@ async function discardStrayAssistantMessage(ctx: MutationCtx, threadId: string) 
 }
 
 export const failTurn = internalMutation({
-  args: { threadId: v.string(), promptMessageId: v.string() },
-  handler: async (ctx, { threadId, promptMessageId }) => {
-    const { ownerSubject } = await requireOwnedThread(ctx, threadId)
-    const turn = await ctx.db
-      .query("askAITurns")
-      .withIndex("by_prompt_message", (q) => q.eq("promptMessageId", promptMessageId))
-      .unique()
-    if (!turn || turn.ownerSubject !== ownerSubject || turn.threadId !== threadId) return
+  args: { turnId: v.id("askAITurns") },
+  handler: async (ctx, { turnId }) => {
+    const turn = await ctx.db.get(turnId)
+    if (!turn) return
     if (turn.status === "cancelled") return
     await ctx.db.patch(turn._id, { status: "failed", updatedAt: Date.now() })
-    await discardStrayAssistantMessage(ctx, threadId)
+    await discardStrayAssistantMessage(ctx, turn.threadId)
   },
 })
 

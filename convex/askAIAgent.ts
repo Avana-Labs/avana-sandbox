@@ -5,8 +5,8 @@ import { ConvexError, v } from "convex/values"
 import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
 import { ASK_AI_AGENT_INSTRUCTIONS } from "../app/lib/ask-ai/agent-instructions"
 import { routeAskAITurn, type AskAIModelTier } from "../app/lib/ask-ai/domain-gate"
-import { api, components, internal } from "./_generated/api"
-import { action } from "./_generated/server"
+import { components, internal } from "./_generated/api"
+import { internalAction } from "./_generated/server"
 import { searchAvanaKnowledgeTool } from "./askAIRag"
 import {
   readBorrowCapacityTool,
@@ -16,6 +16,7 @@ import {
   searchMarketsTool,
   simulateBorrowTool,
   stressPositionTool,
+  createAskAITurnTools,
 } from "./askAIAgentTools"
 
 // Re-exported for existing importers (tests); the source of truth now lives in agent-instructions.ts.
@@ -68,8 +69,11 @@ const ASK_AI_AGENTS: Record<AskAIModelTier, { agent: Agent; model: string }> = {
 }
 
 type PreparedTurn = {
+  turnId: import("./_generated/dataModel").Id<"askAITurns">
+  threadId: string
   ownerSubject: string
-  messageId: string
+  promptMessageId: string
+  prompt: string
 }
 
 // Financial tool -> persisted richParts kind (docs/ask-ai-lane-contracts.md §1).
@@ -137,40 +141,54 @@ type GeneratedTurn = {
   usage: { inputTokens: number; outputTokens: number; totalTokens: number }
 }
 
-export const generateTurn = action({
+export const generateTurn = internalAction({
   args: {
-    threadId: v.string(),
-    prompt: v.string(),
-    retryPromptMessageId: v.optional(v.string()),
+    turnId: v.id("askAITurns"),
   },
-  handler: async (ctx, args): Promise<GeneratedTurn> => {
+  handler: async (ctx, { turnId }): Promise<GeneratedTurn | null> => {
     const startedAt = Date.now()
-    // beginTurn runs before the try block, so its throws (rate limit, daily
-    // token limit, validation) would otherwise escape raw. Sanitize them too.
     let turn: PreparedTurn
     try {
-      turn = (await ctx.runMutation(api.askAI.beginTurn, args)) as PreparedTurn
+      const claimed = await ctx.runMutation(internal.askAI.claimQueuedTurn, { turnId })
+      if (!claimed) return null
+      turn = claimed as PreparedTurn
     } catch (error) {
       throw toClientAskAIError(error)
     }
     // Route the turn to the smallest capable tool subset + model tier + step
     // budget. Classified server-side from the prompt (never a client arg) so a
     // simple price question can't be coerced into loading every tool.
-    const route = routeAskAITurn(args.prompt)
-    const { agent: turnAgent, model: turnModel } = ASK_AI_AGENTS[route.modelTier]
+    const route = routeAskAITurn(turn.prompt)
+    const { model: turnModel } = ASK_AI_AGENTS[route.modelTier]
+    const turnTools = {
+      web_search: ASK_AI_TOOLS.web_search,
+      search_avana_knowledge: ASK_AI_TOOLS.search_avana_knowledge,
+      ...createAskAITurnTools(turn.turnId),
+    }
+    const turnAgent = new Agent(components.agent, {
+      name: ASK_AI_CONFIG.agentName,
+      languageModel: openai(turnModel),
+      instructions: ASK_AI_AGENT_INSTRUCTIONS,
+      stopWhen: stepCountIs(ASK_AI_CONFIG.maxToolSteps),
+      tools: turnTools,
+    })
     try {
       const result = await turnAgent.streamText(
         ctx,
-        { threadId: args.threadId, userId: turn.ownerSubject },
+        { threadId: turn.threadId, userId: turn.ownerSubject },
         {
-          promptMessageId: turn.messageId,
+          promptMessageId: turn.promptMessageId,
           instructions: ASK_AI_AGENT_INSTRUCTIONS,
           maxOutputTokens: ASK_AI_CONFIG.maxOutputTokens,
           stopWhen: stepCountIs(route.maxSteps),
-          activeTools: route.tools as unknown as (keyof typeof ASK_AI_TOOLS)[],
+          activeTools: route.tools as unknown as (keyof typeof turnTools)[],
           toolChoice: route.toolChoice,
         },
         {
+          contextOptions: {
+            recentMessages: ASK_AI_CONFIG.recentMessageLimit,
+            excludeToolMessages: true,
+          },
           saveStreamDeltas: {
             chunking: "word",
             throttleMs: ASK_AI_CONFIG.streamThrottleMs,
@@ -238,9 +256,9 @@ export const generateTurn = action({
         })
       })
       await ctx.runMutation(internal.askAI.completeGeneratedTurn, {
-        threadId: args.threadId,
-        promptMessageId: turn.messageId,
+        turnId: turn.turnId,
         assistantMessageId: assistantMessage._id,
+        model: turnModel,
         usage,
         richParts: {
           sources,
@@ -251,8 +269,8 @@ export const generateTurn = action({
       })
       await ctx.runMutation(internal.askAITelemetry.record, {
         ownerSubject: turn.ownerSubject,
-        threadId: args.threadId,
-        promptMessageId: turn.messageId,
+        threadId: turn.threadId,
+        promptMessageId: turn.promptMessageId,
         status: "complete",
         model: turnModel,
         provider: "openai",
@@ -262,20 +280,19 @@ export const generateTurn = action({
       })
       return {
         text: await result.text,
-        promptMessageId: turn.messageId,
+        promptMessageId: turn.promptMessageId,
         assistantMessageId: assistantMessage._id,
         usage,
       }
     } catch (error) {
       await ctx.runMutation(internal.askAI.failTurn, {
-        threadId: args.threadId,
-        promptMessageId: turn.messageId,
+        turnId: turn.turnId,
       })
       // Keep the raw error in telemetry (detailed text, never client-visible)...
       await ctx.runMutation(internal.askAITelemetry.record, {
         ownerSubject: turn.ownerSubject,
-        threadId: args.threadId,
-        promptMessageId: turn.messageId,
+        threadId: turn.threadId,
+        promptMessageId: turn.promptMessageId,
         status: "failed",
         model: turnModel,
         provider: "openai",

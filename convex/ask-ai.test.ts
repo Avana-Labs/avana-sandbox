@@ -71,9 +71,9 @@ describe("Ask AI turn lifecycle", () => {
     // and aborted the stream). Inserted directly to avoid the rate-limiter
     // component, which the convex-test harness does not register.
     const promptMessageId = "cancelled-prompt-message"
-    await t.run(async (ctx) => {
+    const turnId = await t.run(async (ctx) => {
       const now = Date.now()
-      await ctx.db.insert("askAITurns", {
+      return await ctx.db.insert("askAITurns", {
         threadId: thread.threadId,
         ownerSubject: "ask-guest:owner",
         promptMessageId,
@@ -86,10 +86,10 @@ describe("Ask AI turn lifecycle", () => {
 
     // The in-flight action's stream finished just after the cancel landed and
     // still calls completeGeneratedTurn. It must be a no-op, not a completion.
-    await owner.mutation(internal.askAI.completeGeneratedTurn, {
-      threadId: thread.threadId,
-      promptMessageId,
+    await t.mutation(internal.askAI.completeGeneratedTurn, {
+      turnId,
       assistantMessageId: "late-assistant-message",
+      model: "gpt-5.6-luna",
       usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 },
       richParts: { sources: [], usage: { inputTokens: 10, outputTokens: 20, totalTokens: 30 } },
     })
