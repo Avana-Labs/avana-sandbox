@@ -267,7 +267,7 @@ export const generateTurn = internalAction({
           modelContext: compactPortfolioContext(payload),
           dataProvenance: provenance,
         }
-      } else if (route.intent === "education") {
+      } else if (route.tools.includes("search_avana_knowledge")) {
         const payload = await runAvanaKnowledgeSearch(() =>
           avanaRag.search(ctx, {
             namespace: AVANA_RAG_NAMESPACE,
