@@ -1,17 +1,39 @@
 "use client"
 
+import { useMemo } from "react"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { getSwapAsset } from "@/app/lib/swap-system/catalog"
 import type { UserAssetBalance } from "@/app/lib/swap-system"
+import { buildDashboardWalletBalanceRows } from "@/app/lib/swap-system"
 import { useConvexProductWalletBalances } from "@/app/lib/swap-system/use-convex-wallet-balances"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
+import {
+  useBorrowSessionContext,
+  useLendSessionContext,
+  useMultiplySessionContext,
+} from "@/app/lib/avana-session/avana-sessions-provider"
+import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
+import { buildPortfolioMultiplyData } from "@/app/lib/multiply-system/read-model"
+import { buildPortfolioLendData } from "@/app/lib/lend-system/read-model"
+import {
+  buildBorrowBalanceMetrics,
+  buildLendDashboardMetrics,
+  buildMultiplyBalanceMetrics,
+} from "@/app/dashboard/dashboard-tab-metrics"
+import { sumWalletValueUsd } from "@/app/dashboard/dashboard-wallet-tab"
+import {
+  blendEquityWeightedNetApyPct,
+  resolveDashboardNetApyPct,
+} from "@/app/dashboard/portfolio-headline-metrics"
 
 export type DashboardPortfolioSummary = {
   /** Net Portfolio Value (Assets − Debt), aggregated across products. Umbrella excluded. */
   netValueUsd: number
   /** Value-weighted blended Net APY. Umbrella excluded. */
   netApyPct: number
+  /** Unallocated wallet funds only (same scope as the Wallet tab). */
+  walletBalanceUsd: number
 }
 
 /**
@@ -48,19 +70,102 @@ export function aggregateNetValueUsd(
 }
 
 /**
- * The two Convex-sourced "Your Dashboard" figures — Net Value and Net APY.
- * Net Value is the client aggregate above (canonical productBalances, live-priced,
- * umbrella-excluded). Net APY still reads the server read-time blend for now; it moves
- * to a client net-equity-weighted aggregate in a follow-up. Kept as its own hook so it
- * mirrors the other dashboard data hooks and is mockable in component tests.
+ * Your Dashboard headlines: Wallet Balance (liquid), Net Value (all products),
+ * and Net APY (equity-weighted blend of Lend / Borrow / Multiply session metrics).
  */
 export function useDashboardPortfolioSummary(walletId: string | undefined): DashboardPortfolioSummary {
+  const hasMounted = useHasMounted()
   const balances = useConvexProductWalletBalances(walletId)
   const priceFor = useCanonicalPriceFor()
   const portfolio = useQuery(api.sandbox.transactions.getPortfolio, walletId ? { wallet: walletId } : "skip")
+  const borrowSession = useBorrowSessionContext()
+  const lendSession = useLendSessionContext()
+  const multiplySession = useMultiplySessionContext()
+
+  const walletRows = buildDashboardWalletBalanceRows({
+    walletId: walletId ?? "",
+    balances: balances ?? undefined,
+    priceFor,
+  }).filter((row) => row.sourceType === "wallet")
+  const walletBalanceUsd = sumWalletValueUsd(walletRows)
+
+  const productNetValueUsd = aggregateNetValueUsd(balances ?? [], priceFor)
+
+  const clientNetApyPct = useMemo(() => {
+    if (!hasMounted || !walletId) return null
+
+    const legs: Array<{ equityUsd: number; netApyPct: number }> = []
+
+    try {
+      const lendTab = buildPortfolioLendData(walletId, lendSession.state)
+      const lendMetrics = buildLendDashboardMetrics(lendTab)
+      if (lendMetrics.totalSuppliedUsd > 0) {
+        legs.push({ equityUsd: lendMetrics.totalSuppliedUsd, netApyPct: lendMetrics.netApyPct })
+      }
+    } catch {
+      // Session may not be hydrated yet.
+    }
+
+    try {
+      if (borrowSession.state.accounts[walletId]) {
+        const borrow = buildBorrowBalanceMetrics(borrowSession.state, walletId)
+        if (borrow.netValueUsd > 0) {
+          legs.push({ equityUsd: borrow.netValueUsd, netApyPct: borrow.netApyPct })
+        }
+      }
+    } catch {
+      // ignore
+    }
+
+    try {
+      const multiplyTab = buildPortfolioMultiplyData(walletId, multiplySession.state)
+      const multiply = buildMultiplyBalanceMetrics(multiplySession.state, walletId, multiplyTab)
+      if (multiply.netValueUsd > 0) {
+        legs.push({ equityUsd: multiply.netValueUsd, netApyPct: multiply.netApyPct })
+      }
+    } catch {
+      // ignore
+    }
+
+    return blendEquityWeightedNetApyPct(legs)
+  }, [borrowSession.state, hasMounted, lendSession.state, multiplySession.state, walletId])
+
+  // Prefer session-derived product equity sum when it exceeds the Convex productBalances
+  // rollup — covers the gap where positions exist in session but balances have not yet
+  // reflected them (or vice versa: never drop below the Convex aggregate).
+  const sessionProductEquityUsd = useMemo(() => {
+    if (!hasMounted || !walletId) return null
+    let equity = 0
+    try {
+      const lendTab = buildPortfolioLendData(walletId, lendSession.state)
+      equity += Math.max(0, buildLendDashboardMetrics(lendTab).totalSuppliedUsd)
+    } catch {
+      /* empty */
+    }
+    try {
+      if (borrowSession.state.accounts[walletId]) {
+        equity += buildBorrowBalanceMetrics(borrowSession.state, walletId).netValueUsd
+      }
+    } catch {
+      /* empty */
+    }
+    try {
+      const multiplyTab = buildPortfolioMultiplyData(walletId, multiplySession.state)
+      equity += buildMultiplyBalanceMetrics(multiplySession.state, walletId, multiplyTab).netValueUsd
+    } catch {
+      /* empty */
+    }
+    return equity
+  }, [borrowSession.state, hasMounted, lendSession.state, multiplySession.state, walletId])
+
+  const netValueUsd =
+    sessionProductEquityUsd != null
+      ? Math.max(productNetValueUsd, walletBalanceUsd + sessionProductEquityUsd)
+      : productNetValueUsd
 
   return {
-    netValueUsd: aggregateNetValueUsd(balances ?? [], priceFor),
-    netApyPct: portfolio?.netApyPct ?? 0,
+    walletBalanceUsd,
+    netValueUsd,
+    netApyPct: resolveDashboardNetApyPct(clientNetApyPct, portfolio?.netApyPct),
   }
 }
