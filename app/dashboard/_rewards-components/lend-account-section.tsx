@@ -18,7 +18,6 @@ import { useDashboardLendLive } from "@/app/dashboard/use-dashboard-lend-live"
 import { buildLendDashboardMetrics } from "@/app/dashboard/dashboard-tab-metrics"
 import { DashboardLendPerformanceSection } from "@/app/dashboard/dashboard-metric-section"
 import { DashboardInvestments } from "@/app/dashboard/dashboard-investments"
-import { LendOutlook } from "@/app/dashboard/_outlook/lend-outlook"
 import type {
   PortfolioLendTabData,
   PortfolioStrategyBucket,
@@ -273,7 +272,6 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
         countLabel={t("{count} assets").replace("{count}", String(lendTabData.investments.length))}
         returnHref={returnHref}
       />
-      <LendOutlook />
       <LendOpportunitySection
         buckets={lendTabData.strategyBuckets}
         investments={lendTabData.investments}
