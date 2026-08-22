@@ -164,6 +164,12 @@ describe("routeAskAITurn (per-turn tool + cost routing)", () => {
     expect(stress.tools).toContain("stress_position")
   })
 
+  it("uses one capacity read for a generic borrowing limit question", () => {
+    const route = routeAskAITurn("How much can I borrow?")
+    expect(route.tools).toEqual(["read_borrow_capacity"])
+    expect(route.maxSteps).toBe(2)
+  })
+
   it("only grants web search when the ask is explicitly time-sensitive", () => {
     expect(routeAskAITurn("What is the latest news on Ethereum?").tools).toContain("web_search")
     expect(routeAskAITurn("What is the price of Ethereum?").tools).not.toContain("web_search")

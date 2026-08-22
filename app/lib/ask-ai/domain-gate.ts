@@ -240,6 +240,8 @@ export function routeAskAITurn(message: string): AskAITurnRoute {
     case "risk":
       return plan(["read_position_risk"], 2, "reasoning")
     case "borrow_simulation":
+      if (/\b(how much can i borrow|borrowing capacity)\b/i.test(normalized))
+        return plan(["read_borrow_capacity"], 2, "reasoning")
       return plan(["read_borrow_capacity", "simulate_borrow"], 3, "reasoning")
     case "stress_test":
       return plan(["read_position_risk", "stress_position"], 4, "reasoning")
