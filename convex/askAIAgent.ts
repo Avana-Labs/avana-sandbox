@@ -4,7 +4,6 @@ import { stepCountIs } from "ai"
 import { ConvexError, v } from "convex/values"
 import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
 import { ASK_AI_AGENT_INSTRUCTIONS } from "../app/lib/ask-ai/agent-instructions"
-import { createAskAIOutputTransform } from "../app/lib/ask-ai/output-policy"
 import { routeAskAITurn, toolChoiceForAskAIStep, type AskAIModelTier } from "../app/lib/ask-ai/domain-gate"
 import { api, components, internal } from "./_generated/api"
 import { internalAction } from "./_generated/server"
@@ -428,7 +427,6 @@ export const generateTurn = internalAction({
           prepareStep: ({ stepNumber }) => ({
             toolChoice: prefetched ? "none" : toolChoiceForAskAIStep(route, stepNumber),
           }),
-          experimental_transform: createAskAIOutputTransform(),
         },
         {
           contextOptions: {
