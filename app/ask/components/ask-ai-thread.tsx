@@ -159,7 +159,7 @@ function AssistantMessage() {
         <MessagePrimitive.Parts
           components={{
             Text: AssistantText,
-            Empty: status?.type === "running" ? () => <ThinkingIndicatorLive /> : () => null,
+            Empty: AssistantEmptyPart,
             tools: { Fallback: ToolCallPart },
             data: {
               by_name: {
@@ -257,6 +257,11 @@ function ThinkingIndicatorLive({ label = "Thinking…" }: { label?: string }) {
     return () => clearInterval(timer)
   }, [start])
   return <ThinkingIndicator label={label} elapsed={`${seconds}s`} className="py-3" />
+}
+
+function AssistantEmptyPart() {
+  const status = useAuiState((state) => state.message.status)
+  return status?.type === "running" ? <ThinkingIndicatorLive /> : null
 }
 
 // Empty + running -> thinking indicator. Otherwise render Markdown, which reveals smoothly as
