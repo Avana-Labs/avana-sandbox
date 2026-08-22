@@ -164,7 +164,7 @@ export const generateTurn = internalAction({
     const turnTools = {
       web_search: ASK_AI_TOOLS.web_search,
       search_avana_knowledge: ASK_AI_TOOLS.search_avana_knowledge,
-      ...createAskAITurnTools(turn.turnId),
+      ...createAskAITurnTools(turn.turnId, turn.prompt),
     }
     const turnAgent = new Agent(components.agent, {
       name: ASK_AI_CONFIG.agentName,
