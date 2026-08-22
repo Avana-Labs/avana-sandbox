@@ -11,7 +11,7 @@ import {
 import { useUIMessages } from "@convex-dev/agent/react"
 import { useMutation, usePaginatedQuery, useQuery } from "convex/react"
 import type { Id } from "@/convex/_generated/dataModel"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { AskAIUsage } from "@/app/lib/ask-ai/chat-protocol"
 import { api } from "@/convex/_generated/api"
 import {
@@ -294,6 +294,10 @@ export function AskAIPageClient({
   const [activeThreadId, setActiveThreadId] = useState<string | null>(() =>
     typeof window === "undefined" ? null : window.sessionStorage.getItem(ACTIVE_THREAD_STORAGE_KEY),
   )
+  // A newly created thread is returned before the paginated thread query can
+  // include it. Keep that explicit selection stable during the subscription
+  // gap instead of falling back to the previous first thread.
+  const pendingActiveThreadRef = useRef<string | null>(null)
   const [pendingTurn, setPendingTurn] = useState<PendingTurn | null>(null)
   const {
     results: threads,
@@ -354,9 +358,13 @@ export function AskAIPageClient({
   }, [])
   useEffect(() => {
     if (threadPageStatus === "LoadingFirstPage") return
-    if (resolvedActiveThreadId) return
+    if (resolvedActiveThreadId) {
+      if (pendingActiveThreadRef.current === resolvedActiveThreadId) pendingActiveThreadRef.current = null
+      return
+    }
+    if (activeThreadId && pendingActiveThreadRef.current === activeThreadId) return
     setActiveThreadId(threads[0]?.threadId ?? null)
-  }, [resolvedActiveThreadId, threadPageStatus, threads])
+  }, [activeThreadId, resolvedActiveThreadId, threadPageStatus, threads])
   useEffect(() => {
     if (activeThreadId) window.sessionStorage.setItem(ACTIVE_THREAD_STORAGE_KEY, activeThreadId)
     else window.sessionStorage.removeItem(ACTIVE_THREAD_STORAGE_KEY)
@@ -394,6 +402,7 @@ export function AskAIPageClient({
   const handleNewThread = useCallback(async () => {
     setPendingTurn(null)
     const thread = await createThread({})
+    pendingActiveThreadRef.current = thread.threadId
     setActiveThreadId(thread.threadId)
   }, [createThread])
 
@@ -420,6 +429,7 @@ export function AskAIPageClient({
         if (!threadId) {
           const created = await createThread({})
           threadId = created.threadId
+          pendingActiveThreadRef.current = threadId
           setActiveThreadId(threadId)
         }
         const queued = await enqueueTurn({ threadId, prompt, clientRequestId })
