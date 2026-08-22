@@ -60,7 +60,7 @@ const POOL_PATTERNS = [
 ]
 
 const MARKET_PATTERNS = [
-  /\b(eth|ethereum|weth|usdc|usdt|dai|wbtc|bitcoin|gho|aave|token|asset)\b/i,
+  /\b(eth|ethereum|weth|usdc|usdt|dai|wbtc|bitcoin|gho|aave|uni|uniswap|link|chainlink|crv|curve|token|asset)\b/i,
   /\b(price|worth|trading at|borrow rate|apr|apy|utilization|market)\b/i,
 ]
 
@@ -117,6 +117,12 @@ export function classifyAskAIDomain(message: string): DomainResult {
     return { allowed: true, category: "avana", intent: "position", confidence: 0.97 }
   }
 
+  // An explicit token quote wins over a protocol name that also denotes a DEX.
+  // Without this, "Uniswap token price" is misrouted as a pool lookup.
+  if (matchesAny(normalized, MARKET_PATTERNS) && MARKET_LOOKUP_PATTERN.test(normalized)) {
+    return { allowed: true, category: "crypto_market", intent: "market", confidence: 0.98 }
+  }
+
   if (matchesAny(normalized, POOL_PATTERNS)) {
     return {
       allowed: true,
@@ -128,10 +134,6 @@ export function classifyAskAIDomain(message: string): DomainResult {
 
   // Lookup language wins over the generic "what is" education pattern. This
   // keeps "What is the Aave token price right now?" on cached Convex data.
-  if (matchesAny(normalized, MARKET_PATTERNS) && MARKET_LOOKUP_PATTERN.test(normalized)) {
-    return { allowed: true, category: "crypto_market", intent: "market", confidence: 0.98 }
-  }
-
   if (/\baave\b/i.test(normalized)) {
     return {
       allowed: true,

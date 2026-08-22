@@ -534,6 +534,51 @@ const ASK_AI_SEARCH_STOPWORDS = new Set([
 const ASK_AI_SEARCH_TERM_ALIASES = new Map([
   ["bitcoin", "btc"],
   ["ethereum", "eth"],
+  ["chainlink", "link"],
+  ["uniswap", "uni"],
+  ["arbitrum", "arb"],
+  ["optimism", "op"],
+  ["aerodrome", "aero"],
+  ["curve", "crv"],
+  ["tether", "usdt"],
+])
+
+const ASK_AI_PRICE_SYMBOLS = new Set([
+  "aave",
+  "aero",
+  "arb",
+  "bal",
+  "btc",
+  "cbbtc",
+  "cbeth",
+  "crv",
+  "crvusd",
+  "dai",
+  "eth",
+  "eurc",
+  "frxusd",
+  "gho",
+  "gno",
+  "ldo",
+  "link",
+  "op",
+  "reth",
+  "rlusd",
+  "steth",
+  "uni",
+  "usdc",
+  "usde",
+  "usdg",
+  "usdt",
+  "wbtc",
+  "weeth",
+  "weth",
+  "wsteth",
+])
+
+const ASK_AI_PRICE_TERM_SYMBOLS = new Map<string, string[]>([
+  ["btc", ["btc", "wbtc", "cbbtc"]],
+  ["eth", ["eth", "weth", "steth", "wsteth", "reth", "weeth", "cbeth"]],
 ])
 
 // The provider payloads store the human-searchable names (project, symbol,
@@ -611,19 +656,6 @@ export const searchMarkets = query({
     const queryText = rawQuery.trim().toLowerCase()
     if (!queryText || queryText.length > 200) throw new Error("Market query must contain 1 to 200 characters")
     const boundedLimit = Math.min(Math.max(limit ?? 10, 1), 20)
-    const [markets, snapshots, tokenPrices, tokenPriceHistory] = await Promise.all([
-      ctx.db.query("markets").collect(),
-      ctx.db.query("askAIMarketSnapshots").withIndex("by_fetched_at").order("desc").take(100),
-      ctx.db.query("tokenPrices").collect(),
-      ctx.db.query("tokenPricesHistory").collect(),
-    ])
-    const historyBySymbol = new Map<string, Array<{ day: string; priceUsd: number }>>()
-    for (const point of tokenPriceHistory) {
-      const points = historyBySymbol.get(point.symbol) ?? []
-      points.push({ day: point.day, priceUsd: point.priceUsd })
-      historyBySymbol.set(point.symbol, points)
-    }
-    for (const points of historyBySymbol.values()) points.sort((a, b) => a.day.localeCompare(b.day))
     const terms = queryText.split(/[^\p{L}\p{N}]+/u).filter(Boolean)
     // Drop filler words so a natural question ("best ETH pools on Uniswap")
     // matches on "eth"/"uniswap", not on "on"/"best". Fall back to raw terms if
@@ -641,15 +673,47 @@ export const searchMarkets = query({
       (wantsPools && (kind === "dex_pool" || kind === "lending_market") ? 1 : 0) +
       (wantsPrice && kind === "token_price" ? 1 : 0)
 
-    const matchingMarkets = markets
-      .filter((market) => {
-        const haystack = `${market.slug} ${market.name} ${market.symbol} ${market.venueLabel ?? ""}`.toLowerCase()
-        return terms.every((term) => haystack.includes(term))
-      })
-      .slice(0, boundedLimit)
+    // Exact price questions are the highest-volume Ask AI read. Resolve only the
+    // symbols named in the prompt through indexes instead of collecting every
+    // price and every historical point on every request. This keeps one lookup
+    // O(symbols requested) even when the cache grows and many users ask at once.
+    const requestedSymbols = [
+      ...new Set(
+        searchTerms
+          .filter((term) => ASK_AI_PRICE_SYMBOLS.has(term))
+          .flatMap((term) => ASK_AI_PRICE_TERM_SYMBOLS.get(term) ?? [term])
+          .slice(0, boundedLimit),
+      ),
+    ]
+    const tokenPrices = (
+      await Promise.all(
+        requestedSymbols.map((symbol) =>
+          ctx.db
+            .query("tokenPrices")
+            .withIndex("by_symbol", (q) => q.eq("symbol", symbol))
+            .unique(),
+        ),
+      )
+    ).filter((price): price is NonNullable<typeof price> => Boolean(price))
+    const historyRows = await Promise.all(
+      tokenPrices.map(async (price) => ({
+        symbol: price.symbol,
+        rows: await ctx.db
+          .query("tokenPricesHistory")
+          .withIndex("by_symbol_day", (q) => q.eq("symbol", price.symbol))
+          .order("desc")
+          .take(90),
+      })),
+    )
+    const historyBySymbol = new Map(
+      historyRows.map(({ symbol, rows }) => [
+        symbol,
+        rows
+          .map((point) => ({ day: point.day, priceUsd: point.priceUsd }))
+          .sort((a, b) => a.day.localeCompare(b.day)),
+      ]),
+    )
 
-    // Score canonical prices and cached snapshots on the SAME scale, then rank the
-    // combined list — otherwise token prices (added first) crowd out deep pools.
     const scoredPrices = tokenPrices
       .filter((price) => price.status !== "invalid")
       .map((price) => {
@@ -678,6 +742,35 @@ export const searchMarkets = query({
       })
       .filter((entry) => entry.matched > 0)
 
+    if (wantsPrice && scoredPrices.length > 0) {
+      return {
+        markets: [],
+        providerData: scoredPrices
+          .sort((a, b) => b.matched - a.matched || b.exact - a.exact)
+          .slice(0, boundedLimit)
+          .map((entry) => entry.row),
+      }
+    }
+
+    const [marketCache, snapshots] = await Promise.all([
+      ctx.db
+        .query("marketSnapshotsCache")
+        .withIndex("by_singleton", (q) => q.eq("singleton", "markets"))
+        .first(),
+      ctx.db.query("askAIMarketSnapshots").withIndex("by_fetched_at").order("desc").take(100),
+    ])
+    // Tests and a brand-new deployment can briefly precede the scheduled cache
+    // build. Keep a bounded cold fallback, while production reads one singleton.
+    const markets = marketCache?.rows ?? (await ctx.db.query("markets").take(200))
+    const matchingMarkets = markets
+      .filter((market) => {
+        const haystack = `${market.slug} ${market.name} ${market.symbol} ${market.venueLabel ?? ""}`.toLowerCase()
+        return searchTerms.some((term) => haystack.includes(term))
+      })
+      .slice(0, boundedLimit)
+
+    // Score canonical prices and cached snapshots on the SAME scale, then rank the
+    // combined list — otherwise token prices (added first) crowd out deep pools.
     const scoredSnapshots = snapshots
       .filter((snapshot) => marketFreshness(snapshot.kind, snapshot.sourceUpdatedAt ?? snapshot.fetchedAt) === "fresh")
       .map((snapshot) => {

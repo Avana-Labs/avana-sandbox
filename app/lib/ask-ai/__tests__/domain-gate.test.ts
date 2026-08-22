@@ -139,6 +139,17 @@ describe("routeAskAITurn (per-turn tool + cost routing)", () => {
     expect(route.tools).not.toContain("read_portfolio")
   })
 
+  it("routes DEX governance token prices as prices rather than pool searches", () => {
+    expect(routeAskAITurn("What's the Uniswap token price?")).toMatchObject({
+      intent: "market",
+      tools: ["search_markets"],
+    })
+    expect(routeAskAITurn("What is Chainlink worth now?")).toMatchObject({
+      intent: "market",
+      tools: ["search_markets"],
+    })
+  })
+
   it("routes a personal balance question to portfolio tools only — no market or web tools", () => {
     const route = routeAskAITurn("Do I have a USDC balance?")
     expect(route.tools).toContain("read_portfolio")
