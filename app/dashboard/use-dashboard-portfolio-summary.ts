@@ -22,10 +22,7 @@ import {
   buildMultiplyBalanceMetrics,
 } from "@/app/dashboard/dashboard-tab-metrics"
 import { sumWalletValueUsd } from "@/app/dashboard/dashboard-wallet-tab"
-import {
-  blendEquityWeightedNetApyPct,
-  resolveDashboardNetApyPct,
-} from "@/app/dashboard/portfolio-headline-metrics"
+import { blendEquityWeightedNetApyPct, resolveDashboardNetApyPct } from "@/app/dashboard/portfolio-headline-metrics"
 
 export type DashboardPortfolioSummary = {
   /** Net Portfolio Value (Assets − Debt), aggregated across products. Umbrella excluded. */

@@ -23,9 +23,7 @@ export function BrandLogo({ mobileOnly = false, className }: BrandLogoProps) {
         height={86}
         loading="eager"
         fetchPriority="high"
-        className={
-          mobileOnly ? "h-[56px] w-auto scale-[1.08] origin-left" : "h-[36px] w-auto origin-left"
-        }
+        className={mobileOnly ? "h-[56px] w-auto scale-[1.08] origin-left" : "h-[36px] w-auto origin-left"}
       />
     </span>
   )

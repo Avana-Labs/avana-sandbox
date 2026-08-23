@@ -3,7 +3,7 @@
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { formatUsdExact } from "@/app/lib/borrow-sim"
-import { formatHealthFactor } from "@/app/lib/home-sim"
+import { formatHealthFactor } from "@/app/lib/data/borrow-domain"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type {
   BorrowBalanceMetrics,
@@ -152,9 +152,7 @@ export function DashboardCreditOverviewSection({
     {
       label: t("Available to Borrow"),
       value: m(formatUsdExact(metrics.availableToBorrowUsd)),
-      description: t(
-        "Additional amount you can borrow against your pledged collateral within Avana credit limits",
-      ),
+      description: t("Additional amount you can borrow against your pledged collateral within Avana credit limits"),
     },
     {
       label: t("Health Factor"),

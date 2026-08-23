@@ -71,7 +71,8 @@ export function createAskAITurnTools(turnId: Id<"askAITurns">, prompt: string) {
       execute: (ctx): Promise<unknown> => ctx.runQuery(internal.askAITools.portfolioForTurn, { turnId }),
     }),
     read_borrow_capacity: createTool({
-      description: "Read the user's authoritative Credit Engine borrowing capacity, debt, health factor, and liquidation buffer.",
+      description:
+        "Read the user's authoritative Credit Engine borrowing capacity, debt, health factor, and liquidation buffer.",
       inputSchema: z.object({}),
       execute: (ctx): Promise<unknown> => ctx.runQuery(internal.askAITools.borrowCapacityForTurn, { turnId }),
     }),

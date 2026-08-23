@@ -241,8 +241,7 @@ export function buildMultiplyBalanceMetrics(
 
   const netApyPct = multiplyNetApyFraction(positions) * 100
   const leverageX = netValueUsd > 0 ? positionValueUsd / netValueUsd : positions.length > 0 ? 1 : 0
-  const healthFactor =
-    totalBorrowedUsd > 0 ? tabData.creditLines.liquidationThresholdUsd / totalBorrowedUsd : null
+  const healthFactor = totalBorrowedUsd > 0 ? tabData.creditLines.liquidationThresholdUsd / totalBorrowedUsd : null
 
   return {
     netValueUsd,
@@ -309,10 +308,7 @@ export function projectLendPortfolioEarningsUsd(
   investments: ReadonlyArray<{ suppliedUsd: number; apyPct: number }>,
   days: number,
 ): number {
-  return investments.reduce(
-    (sum, item) => sum + projectLendSimpleEarningsUsd(item.suppliedUsd, item.apyPct, days),
-    0,
-  )
+  return investments.reduce((sum, item) => sum + projectLendSimpleEarningsUsd(item.suppliedUsd, item.apyPct, days), 0)
 }
 
 /**
