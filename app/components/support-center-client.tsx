@@ -332,7 +332,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
   }, [])
 
   return (
-    <main className="min-h-[calc(100vh-68px)] bg-background text-foreground">
+    <main className="min-h-[calc(100vh-56px)] bg-background text-foreground">
       <div className="mx-auto w-full max-w-[960px] px-4 pb-16 pt-8 sm:px-6 sm:pt-12 lg:px-8">
         <header className="border-b border-border pb-6 sm:pb-8">
           <h1 className="max-w-[12ch] text-[32px] font-medium leading-[1.04] tracking-[-0.04em] sm:text-[48px]">

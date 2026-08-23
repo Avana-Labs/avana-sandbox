@@ -3,6 +3,8 @@
 import type { TranslationDictionary } from "../types"
 
 const dict: TranslationDictionary = {
+  "Stake more": "और स्टेक",
+  "Enter an amount": "राशि दर्ज करें",
   Home: "होम",
   Express: "एक्सप्रेस",
   Borrow: "उधार लें",
@@ -521,6 +523,7 @@ const dict: TranslationDictionary = {
   "Back to borrow": "बॉरो पर वापस जाएं",
   "Back to lend": "लेंड पर वापस जाएं",
   "Back to multiply": "मल्टिप्लाई पर वापस जाएं",
+  "Back to Umbrella": "सुरक्षा पर वापस जाएँ",
   "Back to rewards": "रिवॉर्ड्स पर वापस जाएं",
   Loading: "लोड हो रहा है",
   "Loading…": "लोड हो रहा है…",
@@ -1128,7 +1131,7 @@ const dict: TranslationDictionary = {
   "Active stake": "सक्रिय स्टेक",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "वह राशि जिसे Avana पहले कवर करती है, इससे पहले कि उपयोगकर्ता-स्टेक्ड कवरेज उजागर हो। स्टेकर तभी नुकसान उठाते हैं जब वास्तविक घाटा इस ऑफ़सेट से अधिक हो जाए।",
-  "Close umbrella actions": "Umbrella क्रियाएँ बंद करें",
+  "Close umbrella actions": "सुरक्षा क्रियाएँ बंद करें",
   Cooldown: "कूलडाउन",
   Cooling: "कूलिंग में",
   Coverage: "कवरेज",
@@ -1140,18 +1143,18 @@ const dict: TranslationDictionary = {
   "Desired amount of user-staked coverage for this asset.": "इस एसेट के लिए उपयोगकर्ता-स्टेक्ड कवरेज की वांछित राशि।",
   "Dynamic rewards": "डायनामिक रिवॉर्ड्स",
   "Each Umbrella stake token covers deficits for its matching borrowed asset on the same network.":
-    "प्रत्येक Umbrella स्टेक टोकन उसी नेटवर्क पर संबंधित उधार लिए गए एसेट के घाटे को कवर करता है।",
+    "प्रत्येक सुरक्षा स्टेक टोकन उसी नेटवर्क पर संबंधित उधार एसेट के घाटे को कवर करता है।",
   "Emissions adjust against target liquidity, and each staked asset can earn multiple reward tokens.":
     "एमिशन लक्ष्य लिक्विडिटी के अनुसार समायोजित होते हैं, और प्रत्येक स्टेक्ड एसेट कई रिवॉर्ड टोकन कमा सकता है।",
   "Estimated annual staking yield paid to stakers of this asset.":
     "इस एसेट के स्टेकर्स को दी जाने वाली अनुमानित वार्षिक स्टेकिंग यील्ड।",
   "In cooldown": "कूलडाउन में",
   "Isolated slashing": "पृथक स्लैशिंग",
-  "Learn Umbrella": "Umbrella के बारे में जानें",
+  "Learn Umbrella": "सुरक्षा के बारे में जानें",
   "Market Level Risk": "मार्केट-स्तरीय जोखिम",
   "Module assets": "मॉड्यूल एसेट्स",
   More: "और",
-  "More umbrella actions": "और Umbrella क्रियाएँ",
+  "More umbrella actions": "और सुरक्षा क्रियाएँ",
   "Next cooldown": "अगला कूलडाउन",
   "Next market risk": "अगला मार्केट जोखिम",
   "Once cooldown finishes, users can unstake during the withdrawal window before cooldown has to be restarted.":
@@ -1162,9 +1165,9 @@ const dict: TranslationDictionary = {
   "Removes in": "में हटाया जाएगा",
   "Restart cooldown": "कूलडाउन दोबारा शुरू करें",
   Stake: "स्टेक",
-  "Stake in umbrella": "Umbrella में स्टेक करें",
+  "Stake in umbrella": "सुरक्षा में स्टेक करें",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
-    "Umbrella सुरक्षा मॉड्यूल में स्टेक करें, रिवॉर्ड क्लेम करें, कूलडाउन शुरू करें, या अनस्टेक करें।",
+    "सुरक्षा मॉड्यूल में स्टेक करें, रिवॉर्ड क्लेम करें, कूलडाउन शुरू करें, या अनस्टेक करें।",
   "Stake, claim, cooldown, unstake": "स्टेक, क्लेम, कूलडाउन, अनस्टेक",
   "Start cooldown before withdrawing. During cooldown, the position keeps earning incentives and remains slashable.":
     "विदड्रॉ करने से पहले कूलडाउन शुरू करें। कूलडाउन के दौरान पोज़िशन प्रोत्साहन कमाना जारी रखती है और स्लैश की जा सकती है।",
@@ -1172,21 +1175,21 @@ const dict: TranslationDictionary = {
   "Total coverage": "कुल कवरेज",
   "Total user-staked capital available to absorb losses for this asset.":
     "इस एसेट के नुकसान अवशोषित करने के लिए उपलब्ध कुल उपयोगकर्ता-स्टेक्ड पूंजी।",
-  Umbrella: "Umbrella",
-  "Umbrella Cooldown": "Umbrella कूलडाउन",
-  "Umbrella actions": "Umbrella क्रियाएँ",
-  "Umbrella activity": "Umbrella गतिविधि",
-  "Umbrella positions": "Umbrella पोज़िशन",
+  Umbrella: "सुरक्षा",
+  "Umbrella Cooldown": "सुरक्षा कूलडाउन",
+  "Umbrella actions": "सुरक्षा क्रियाएँ",
+  "Umbrella activity": "सुरक्षा गतिविधि",
+  "Umbrella positions": "सुरक्षा पोज़िशन",
   "Umbrella positions are split by asset and network, so each stake token has its own risk and reward profile.":
-    "Umbrella पोज़िशन एसेट और नेटवर्क के अनुसार अलग-अलग होती हैं, इसलिए प्रत्येक स्टेक टोकन का अपना जोखिम और रिवॉर्ड प्रोफ़ाइल होता है।",
+    "सुरक्षा पोज़िशन एसेट और नेटवर्क के अनुसार अलग-अलग होती हैं, इसलिए प्रत्येक स्टेक टोकन का अपना जोखिम और रिवॉर्ड प्रोफ़ाइल होता है।",
   Unstake: "अनस्टेक",
   "Unstake window": "अनस्टेक विंडो",
   "Weighted APY": "भारित APY",
   "Withdrawal ready": "विदड्रॉ के लिए तैयार",
   "Withdrawal window": "विदड्रॉअल विंडो",
-  "You have no Umbrella positions yet.": "आपके पास अभी तक कोई Umbrella पोज़िशन नहीं है।",
-  "Your Umbrella": "आपका Umbrella",
-  "Your Umbrella stake": "आपका Umbrella स्टेक",
+  "You have no Umbrella positions yet.": "आपके पास अभी तक कोई सुरक्षा पोज़िशन नहीं है।",
+  "Your Umbrella": "आपकी सुरक्षा",
+  "Your Umbrella stake": "आपका सुरक्षा स्टेक",
   "After cooldown completes, there is a short window to unstake. If it expires, cooldown must be started again.":
     "कूलडाउन पूरा होने के बाद अनस्टेक करने के लिए एक छोटी विंडो होती है। यदि यह समाप्त हो जाए, तो कूलडाउन दोबारा शुरू करना होगा।",
   "base {base} + reward {reward}": "आधार {base} + रिवॉर्ड {reward}",
@@ -1259,7 +1262,7 @@ const dict: TranslationDictionary = {
   "Dashboard tabs": "डैशबोर्ड टैब",
   Date: "तारीख",
   Dismiss: "खारिज करें",
-  "Explore Umbrella": "Umbrella एक्सप्लोर करें",
+  "Explore Umbrella": "सुरक्षा एक्सप्लोर करें",
   Explorer: "एक्सप्लोरर",
   "Express actions": "एक्सप्रेस क्रियाएँ",
   Fees: "शुल्क",
@@ -1306,7 +1309,7 @@ const dict: TranslationDictionary = {
   "My Debts": "मेरे ऋण",
   Net: "नेट",
   "Net Portfolio Value = Assets − Debt. Assets: wallet balances, lending supplied, borrow collateral, any borrowed funds you still hold, your Multiply position value, and Umbrella staked + rewards. Debt: borrow loans and Multiply borrowing. Borrowing doesn't change this number — the cash you receive is an asset that offsets the new debt.":
-    "नेट पोर्टफोलियो मूल्य = एसेट − ऋण। एसेट: वॉलेट बैलेंस, लेंडिंग में सप्लाई, उधार कोलैटरल, कोई भी उधार लिया गया फंड जो अब भी आपके पास है, आपकी मल्टिप्लाई पोज़िशन का मूल्य, और Umbrella में स्टेक किया गया + रिवॉर्ड्स। ऋण: उधार लोन और मल्टिप्लाई उधार। उधार लेना इस संख्या को नहीं बदलता — आपको जो नकद मिलता है वह एक एसेट है जो नए ऋण की भरपाई करता है।",
+    "नेट पोर्टफोलियो मूल्य = एसेट − ऋण। एसेट: वॉलेट बैलेंस, लेंडिंग में सप्लाई, उधार कोलैटरल, कोई भी उधार लिया गया फंड जो अब भी आपके पास है, आपकी मल्टिप्लाई पोज़िशन का मूल्य, और सुरक्षा में स्टेक किया गया + रिवॉर्ड्स। ऋण: उधार लोन और मल्टिप्लाई उधार। उधार लेना इस संख्या को नहीं बदलता — आपको जो नकद मिलता है वह एक एसेट है जो नए ऋण की भरपाई करता है।",
   Network: "नेटवर्क",
   No: "नहीं",
   "No active loans. Borrow against your collateral to get started.":
@@ -1319,7 +1322,7 @@ const dict: TranslationDictionary = {
     "अभी तक कोई लिक्विडिटी पूल नहीं। ट्रेडिंग शुल्क कमाना शुरू करने के लिए लिक्विडिटी प्रदान करें।",
   "No results found": "कोई परिणाम नहीं मिला",
   "No supplied position to withdraw": "निकालने के लिए कोई सप्लाई की गई पोज़िशन नहीं",
-  "No Umbrella positions yet.": "अभी तक कोई Umbrella पोज़िशन नहीं।",
+  "No Umbrella positions yet.": "अभी तक कोई सुरक्षा पोज़िशन नहीं।",
   "No wallet balances found.": "कोई वॉलेट बैलेंस नहीं मिला।",
   NONE: "कोई नहीं",
   now: "अभी",

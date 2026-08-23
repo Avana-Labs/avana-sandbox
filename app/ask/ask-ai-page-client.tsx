@@ -661,7 +661,7 @@ export function AskAIPageClient({
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <AskAIMessagePartsSubscriber threadId={resolvedActiveThreadId} onData={setMessageParts} />
-      <main className="flex h-[calc(100dvh-64px)] w-full overflow-hidden lg:h-[calc(100dvh-68px)] [@media(min-height:684px)]:min-h-[620px]">
+      <main className="flex h-[calc(100dvh-56px)] w-full overflow-hidden lg:h-[calc(100dvh-56px)] [@media(min-height:684px)]:min-h-[620px]">
         <AskAIThreadList
           open={threadsOpen}
           activeThreadId={resolvedActiveThreadId}

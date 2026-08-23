@@ -2,25 +2,13 @@ import { describe, expect, it } from "vitest"
 import { translate } from "@/app/lib/i18n/translations"
 
 /**
- * Terminology guard for the "Multiply" PRODUCT NAME.
+ * Terminology + UI-fit guards for product/chrome labels.
  *
- * "Multiply" is a product/nav label, not the finance common-noun "leverage".
- * Several locales historically rendered the nav label as their word for
- * leverage (DE "Hebel", RU "Плечо", JA "レバレッジ", ZH "杠杆", KO "레버리지"),
- * which reads as a different product. This suite pins the specific known-bad
- * values as forbidden for the product label so the regression cannot return.
- *
- * Scope is deliberately narrow: it asserts the exact leverage words are ABSENT
- * for the product-label key rather than prescribing a full glossary. Keys whose
- * English source is the common noun "Leverage" are intentionally NOT covered —
- * those still translate to the leverage word by design.
+ * Action tabs (Stake / Claim / Cooldown / Unstake) must stay short — long
+ * dictionary literals (FR "Refroidissement", "Réclamation") blow up the sidebar.
+ * Rain-gear / admin-panel literals remain forbidden.
  */
 
-// The canonical Multiply product/nav label key (t("Multiply") at the nav +
-// dashboard + market-detail callsites).
-const MULTIPLY_LABEL_KEY = "Multiply"
-
-// The leverage common-noun each locale must NOT use for the product label.
 const FORBIDDEN_LEVERAGE_WORD: Record<string, string> = {
   DE: "Hebel",
   RU: "Плечо",
@@ -29,31 +17,133 @@ const FORBIDDEN_LEVERAGE_WORD: Record<string, string> = {
   KO: "레버리지",
 }
 
-describe("terminology: Multiply is a product name, not 'leverage'", () => {
-  it.each(Object.entries(FORBIDDEN_LEVERAGE_WORD))(
-    "%s renders the Multiply label as the product name, not the leverage word",
-    (lang, leverageWord) => {
-      const value = translate(lang as never, MULTIPLY_LABEL_KEY)
-      expect(value).not.toBe(leverageWord)
-    },
-  )
+const FORBIDDEN_RAIN_GEAR: Record<string, string[]> = {
+  FR: ["Parapluie"],
+  ES: ["Paraguas"],
+  PT: ["Guarda-chuva"],
+  DE: ["Schirm", "Regenschirm"],
+  NL: ["Paraplu"],
+  RU: ["Зонт"],
+  ID: ["Payung"],
+  TR: ["Şemsiye"],
+  AR: ["المظلة"],
+  ZH: ["雨伞", "保护伞"],
+}
 
-  it("localizes the Multiply product label in CJK locales (not the English fallback)", () => {
-    // The three CJK locales carry a real localized product form, so the label
-    // must not fall through to the English source string.
-    for (const lang of ["JA", "ZH", "KO"] as const) {
-      expect(translate(lang, MULTIPLY_LABEL_KEY)).not.toBe(MULTIPLY_LABEL_KEY)
+const FORBIDDEN_LONG_TAB_LABELS: Record<string, Partial<Record<"Claim" | "Cooldown" | "Unstake", string[]>>> = {
+  FR: {
+    Claim: ["Réclamation"],
+    Cooldown: ["Refroidissement"],
+    Unstake: ["Débloquer"],
+  },
+  ES: {
+    Claim: ["Reclamo"],
+    Cooldown: ["Enfriamiento"],
+  },
+  PT: {
+    Cooldown: ["Resfriamento"],
+  },
+  DE: {
+    Claim: ["Beanspruchen"],
+    Cooldown: ["Abkühlung"],
+  },
+  NL: {
+    Cooldown: ["Afkoelperiode"],
+  },
+  AR: {
+    Cooldown: ["فترة التبريد"],
+    Unstake: ["إلغاء التجميد"],
+  },
+  TR: {
+    Cooldown: ["Bekleme süresi"],
+    Unstake: ["Kilidi aç"],
+  },
+  ZH: {
+    Unstake: ["解除质押"],
+  },
+}
+
+describe("terminology: Multiply is not the leverage common noun", () => {
+  it.each(Object.entries(FORBIDDEN_LEVERAGE_WORD))("%s", (lang, word) => {
+    expect(translate(lang as never, "Multiply")).not.toBe(word)
+  })
+})
+
+describe("terminology: Umbrella is not rain gear", () => {
+  it.each(Object.entries(FORBIDDEN_RAIN_GEAR))("%s", (lang, forbidden) => {
+    const value = translate(lang as never, "Umbrella")
+    for (const word of forbidden) expect(value).not.toBe(word)
+  })
+})
+
+describe("terminology: Umbrella uses Protection (or JA loanword), not English stub", () => {
+  const expected: Record<string, string> = {
+    FR: "Protection",
+    ES: "Protección",
+    PT: "Proteção",
+    DE: "Schutz",
+    NL: "Protectie",
+    RU: "Защита",
+    ID: "Proteksi",
+    TR: "Koruma",
+    AR: "حماية",
+    ZH: "保护",
+    JA: "アンブレラ",
+    KO: "보호",
+    HI: "सुरक्षा",
+  }
+
+  it.each(Object.entries(expected))("%s", (lang, label) => {
+    expect(translate(lang as never, "Umbrella")).toBe(label)
+    expect(translate(lang as never, "Umbrella")).not.toBe("Umbrella")
+  })
+})
+
+describe("terminology: Dashboard is not admin-panel English/bureaucracy", () => {
+  it("FR is not Tableau de bord", () => {
+    expect(translate("FR", "Dashboard")).not.toBe("Tableau de bord")
+    expect(translate("FR", "Dashboard")).not.toBe("Dashboard")
+  })
+  it("ZH is not 仪表盘", () => {
+    expect(translate("ZH", "Dashboard")).not.toBe("仪表盘")
+    expect(translate("ZH", "Dashboard")).not.toBe("Dashboard")
+  })
+})
+
+describe("terminology: Wallet ≠ Portfolio", () => {
+  it("FR and AR", () => {
+    for (const lang of ["FR", "AR"] as const) {
+      expect(translate(lang, "Wallet")).not.toBe(translate(lang, "Portfolio"))
+    }
+  })
+})
+
+describe("UI fit: umbrella action tabs stay short", () => {
+  const langs = ["FR", "ES", "PT", "DE", "NL", "RU", "ID", "TR", "AR", "ZH", "JA", "KO", "HI"] as const
+  const tabKeys = ["Stake", "Claim", "Cooldown", "Unstake"] as const
+
+  it.each(langs)("%s tab labels are short enough for the sidebar", (lang) => {
+    for (const key of tabKeys) {
+      const value = translate(lang, key)
+      // CJK glyphs are wide; allow a slightly higher code-unit budget there.
+      const max = lang === "JA" || lang === "KO" || lang === "ZH" || lang === "HI" || lang === "AR" ? 12 : 10
+      expect(value.length, `${lang} ${key}="${value}"`).toBeLessThanOrEqual(max)
+      expect(value.length).toBeGreaterThan(0)
     }
   })
 
-  it("resolves a couple of core action terms in representative locales", () => {
-    // Sanity that core glossary terms localize where a non-loanword form exists.
-    // (Swap is kept as an English loanword in FR/DE/ES by design, so it is only
-    // asserted where it genuinely localizes.)
-    expect(translate("JA", "Swap")).not.toBe("Swap")
-    expect(translate("ZH", "Swap")).not.toBe("Swap")
-    expect(translate("FR", "Deposit")).not.toBe("Deposit")
-    expect(translate("DE", "Deposit")).not.toBe("Deposit")
-    expect(translate("ES", "Deposit")).not.toBe("Deposit")
+  it.each(Object.entries(FORBIDDEN_LONG_TAB_LABELS))("%s rejects known layout-breaking literals", (lang, byKey) => {
+    for (const [key, forbidden] of Object.entries(byKey)) {
+      const value = translate(lang as never, key)
+      for (const word of forbidden ?? []) expect(value).not.toBe(word)
+    }
+  })
+})
+
+describe("CTA copy exists for stake flow", () => {
+  const langs = ["FR", "ES", "PT", "DE", "JA", "ZH"] as const
+  it.each(langs)("%s localizes Stake more + Enter an amount", (lang) => {
+    expect(translate(lang, "Stake more")).not.toBe("Stake more")
+    expect(translate(lang, "Enter an amount")).not.toBe("Enter an amount")
   })
 })

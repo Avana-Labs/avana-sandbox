@@ -8,12 +8,10 @@ import { AskAILoadingBody } from "./components/ask-ai-skeleton"
 export default function AskAILoading() {
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-40 flex h-16 items-center border-b border-border bg-background px-4 sm:px-6 lg:h-[68px] lg:px-5 xl:px-6 2xl:px-8">
+      <header className="sticky top-0 z-40 flex h-14 items-center border-b border-border bg-background px-4 sm:px-6 lg:h-14 lg:px-5 xl:px-6 2xl:px-8">
         <Link href="/" aria-label="Home" className="inline-flex min-w-0 items-center">
-          <span className="xl:hidden">
-            <BrandIcon />
-          </span>
-          <BrandLogo className="hidden h-[44px] xl:block" />
+          <BrandIcon className="xl:hidden" />
+          <BrandLogo className="hidden xl:inline-flex" />
         </Link>
         <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-lg font-medium">Ask AI</div>
         <Link

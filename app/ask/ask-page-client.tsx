@@ -5,7 +5,6 @@ import { useCallback, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { BrandIcon, BrandLogo } from "@/app/components/brand-logo"
 import { X } from "@/app/components/icons"
-import { triggerPageLoading } from "@/app/lib/page-loading"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { resolveAskAICloseHref } from "@/app/lib/ask-ai/navigation"
 import { useHydrated } from "@/app/lib/siwe/use-siwe-auth"
@@ -26,8 +25,35 @@ export function AskPageClient() {
   const hydrated = useHydrated()
 
   const handleClose = useCallback(() => {
-    triggerPageLoading()
-    router.push(resolveAskAICloseHref(searchParams.get("return")))
+    const returnHref = resolveAskAICloseHref(searchParams.get("return"))
+    // Soft dismiss: prefer history back when Ask was pushed on top of the return
+    // page so Next can restore the prior tree instead of cold-remounting it.
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      const returnPath = returnHref.split("?")[0] ?? returnHref
+      const openedFromReturn = sessionStorage.getItem("avana:ask-ai-opened-from") === returnHref
+      if (openedFromReturn) {
+        sessionStorage.removeItem("avana:ask-ai-opened-from")
+        router.back()
+        return
+      }
+      // Fallback when the marker is missing but the referrer path still matches.
+      if (document.referrer) {
+        try {
+          const ref = new URL(document.referrer)
+          if (ref.origin === window.location.origin && ref.pathname === returnPath) {
+            router.back()
+            return
+          }
+        } catch {
+          // ignore invalid referrer
+        }
+      }
+    }
+    router.push(returnHref)
+  }, [router, searchParams])
+
+  useEffect(() => {
+    router.prefetch(resolveAskAICloseHref(searchParams.get("return")))
   }, [router, searchParams])
 
   // Keyboard shortcuts: Esc closes /ask, "/" focuses the composer — but only when
@@ -51,12 +77,10 @@ export function AskPageClient() {
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-40 flex h-16 items-center border-b border-border bg-background px-4 text-foreground sm:px-6 lg:h-[68px] lg:px-5 xl:px-6 2xl:px-8">
+      <header className="sticky top-0 z-40 flex h-14 items-center border-b border-border bg-background px-4 text-foreground sm:px-6 lg:h-14 lg:px-5 xl:px-6 2xl:px-8">
         <Link href="/" aria-label={t("Home")} title={t("Home")} className="inline-flex min-w-0 items-center">
-          <span className="xl:hidden">
-            <BrandIcon />
-          </span>
-          <BrandLogo className="hidden h-[44px] xl:block" />
+          <BrandIcon className="xl:hidden" />
+          <BrandLogo className="hidden xl:inline-flex" />
         </Link>
 
         <div className="pointer-events-none absolute left-1/2 w-[min(520px,calc(100%-128px))] -translate-x-1/2 text-center sm:w-[min(560px,calc(100%-192px))]">

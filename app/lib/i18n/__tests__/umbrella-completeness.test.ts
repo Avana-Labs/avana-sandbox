@@ -17,6 +17,7 @@ export const UMBRELLA_TRANSLATION_KEYS: readonly string[] = [
   "Active stake",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.",
   "Asset",
+  "Back to Umbrella",
   "Claim",
   "Close",
   "Close umbrella actions",

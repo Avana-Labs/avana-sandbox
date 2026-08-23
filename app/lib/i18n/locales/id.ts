@@ -3,13 +3,16 @@
 import type { TranslationDictionary } from "../types"
 
 const dict: TranslationDictionary = {
+  "Enter an amount": "Masukkan jumlah",
+  "Stake more": "Stake lagi",
+  Markets: "Pasar",
   Home: "Beranda",
-  Express: "Ekspres",
+  Express: "Kilat",
   Borrow: "Pinjam",
   Lend: "Pinjamkan",
-  Multiply: "Multiply",
+  Multiply: "Kalikan",
   Dashboard: "Dasbor",
-  Rewards: "Hadiah",
+  Rewards: "Reward",
   "Support center": "Pusat bantuan",
   Language: "Bahasa",
   Currency: "Mata uang",
@@ -515,6 +518,7 @@ const dict: TranslationDictionary = {
   "Back to borrow": "Kembali ke Pinjam",
   "Back to lend": "Kembali ke Pinjamkan",
   "Back to multiply": "Kembali ke Multiply",
+  "Back to Umbrella": "Kembali ke Proteksi",
   "Back to rewards": "Kembali ke Hadiah",
   Loading: "Memuat",
   "Loading…": "Memuat…",
@@ -1090,7 +1094,7 @@ const dict: TranslationDictionary = {
   successful: "berhasil",
   processed: "diproses",
   Repay: "Pelunasan",
-  Supply: "Setor jaminan",
+  Supply: "Suplai",
   Remove: "Hapus",
   Claim: "Klaim",
   Deposit: "Setoran",
@@ -1134,8 +1138,8 @@ const dict: TranslationDictionary = {
   "Active stake": "Stake aktif",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "Jumlah yang ditutup Avana terlebih dahulu sebelum cakupan yang di-stake pengguna terekspos. Staker hanya menanggung kerugian setelah defisit riil melebihi offset ini.",
-  "Close umbrella actions": "Tutup tindakan Umbrella",
-  Cooldown: "Masa tunggu",
+  "Close umbrella actions": "Tutup tindakan Proteksi",
+  Cooldown: "Cooldown",
   Cooling: "Sedang cooldown",
   Coverage: "Cakupan",
   "Coverage currently in cooldown across all stakers of this asset. Cooldown positions still absorb losses until they finish the 20-day wait and are unstaked.":
@@ -1147,18 +1151,18 @@ const dict: TranslationDictionary = {
     "Jumlah cakupan yang di-stake pengguna yang diinginkan untuk aset ini.",
   "Dynamic rewards": "Reward dinamis",
   "Each Umbrella stake token covers deficits for its matching borrowed asset on the same network.":
-    "Setiap token stake Umbrella menutupi defisit aset pinjaman yang sesuai pada jaringan yang sama.",
+    "Setiap token stake Proteksi menutupi defisit aset pinjaman yang sesuai pada jaringan yang sama.",
   "Emissions adjust against target liquidity, and each staked asset can earn multiple reward tokens.":
     "Emisi menyesuaikan terhadap likuiditas target, dan setiap aset yang di-stake dapat memperoleh beberapa token reward.",
   "Estimated annual staking yield paid to stakers of this asset.":
     "Estimasi imbal hasil staking tahunan yang dibayarkan kepada staker aset ini.",
   "In cooldown": "Sedang cooldown",
   "Isolated slashing": "Slashing terisolasi",
-  "Learn Umbrella": "Pelajari Umbrella",
+  "Learn Umbrella": "Pelajari Proteksi",
   "Market Level Risk": "Risiko level pasar",
   "Module assets": "Aset modul",
   More: "Lainnya",
-  "More umbrella actions": "Tindakan Umbrella lainnya",
+  "More umbrella actions": "Tindakan Proteksi lainnya",
   "Next cooldown": "Cooldown berikutnya",
   "Next market risk": "Risiko pasar berikutnya",
   "Once cooldown finishes, users can unstake during the withdrawal window before cooldown has to be restarted.":
@@ -1169,9 +1173,9 @@ const dict: TranslationDictionary = {
   "Removes in": "Dihapus dalam",
   "Restart cooldown": "Mulai ulang cooldown",
   Stake: "Stake",
-  "Stake in umbrella": "Stake di Umbrella",
+  "Stake in umbrella": "Stake di Proteksi",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
-    "Stake, klaim reward, mulai cooldown, atau unstake dari modul keamanan Umbrella.",
+    "Stake, klaim reward, mulai cooldown, atau unstake dari modul keamanan Proteksi.",
   "Stake, claim, cooldown, unstake": "Stake, klaim, cooldown, unstake",
   "Start cooldown before withdrawing. During cooldown, the position keeps earning incentives and remains slashable.":
     "Mulai cooldown sebelum menarik. Selama cooldown, posisi tetap memperoleh insentif dan masih dapat di-slashing.",
@@ -1179,21 +1183,21 @@ const dict: TranslationDictionary = {
   "Total coverage": "Total cakupan",
   "Total user-staked capital available to absorb losses for this asset.":
     "Total modal yang di-stake pengguna yang tersedia untuk menyerap kerugian aset ini.",
-  Umbrella: "Umbrella",
-  "Umbrella Cooldown": "Cooldown Umbrella",
-  "Umbrella actions": "Tindakan Umbrella",
-  "Umbrella activity": "Aktivitas Umbrella",
-  "Umbrella positions": "Posisi Umbrella",
+  Umbrella: "Proteksi",
+  "Umbrella Cooldown": "Cooldown Proteksi",
+  "Umbrella actions": "Tindakan Proteksi",
+  "Umbrella activity": "Aktivitas Proteksi",
+  "Umbrella positions": "Posisi Proteksi",
   "Umbrella positions are split by asset and network, so each stake token has its own risk and reward profile.":
-    "Posisi Umbrella dipisahkan per aset dan jaringan, sehingga setiap token stake memiliki profil risiko dan reward-nya sendiri.",
-  Unstake: "Batalkan stake",
+    "Posisi Proteksi dipisahkan per aset dan jaringan, sehingga setiap token stake memiliki profil risiko dan reward-nya sendiri.",
+  Unstake: "Unstake",
   "Unstake window": "Jendela unstake",
   "Weighted APY": "APY tertimbang",
   "Withdrawal ready": "Siap ditarik",
   "Withdrawal window": "Jendela penarikan",
-  "You have no Umbrella positions yet.": "Anda belum memiliki posisi Umbrella.",
-  "Your Umbrella": "Umbrella Anda",
-  "Your Umbrella stake": "Stake Umbrella Anda",
+  "You have no Umbrella positions yet.": "Anda belum memiliki posisi Proteksi.",
+  "Your Umbrella": "Proteksi Anda",
+  "Your Umbrella stake": "Stake Proteksi Anda",
   "After cooldown completes, there is a short window to unstake. If it expires, cooldown must be started again.":
     "Setelah cooldown selesai, ada jendela singkat untuk unstake. Jika kedaluwarsa, cooldown harus dimulai ulang.",
   "base {base} + reward {reward}": "dasar {base} + reward {reward}",
@@ -1231,7 +1235,7 @@ const dict: TranslationDictionary = {
   "A position is near liquidation (health factor {hf}).": "Sebuah posisi mendekati likuidasi (faktor kesehatan {hf}).",
   "Accrued interest": "Bunga terakru",
   Active: "Aktif",
-  "Active / Cooling": "Aktif / Mendingin",
+  "Active / Cooling": "Aktif / Cooldown",
   "All Transactions": "Semua Transaksi",
   ALLOCATION: "ALOKASI",
   "Amounts show cash flow: + received into your wallet, − paid out.":
@@ -1263,7 +1267,7 @@ const dict: TranslationDictionary = {
   "Dashboard tabs": "Tab dasbor",
   Date: "Tanggal",
   Dismiss: "Tutup",
-  "Explore Umbrella": "Jelajahi Umbrella",
+  "Explore Umbrella": "Jelajahi Proteksi",
   Explorer: "Explorer",
   "Express actions": "Aksi ekspres",
   Fees: "Biaya",
@@ -1310,7 +1314,7 @@ const dict: TranslationDictionary = {
   "My Debts": "Utang Saya",
   Net: "Bersih",
   "Net Portfolio Value = Assets − Debt. Assets: wallet balances, lending supplied, borrow collateral, any borrowed funds you still hold, your Multiply position value, and Umbrella staked + rewards. Debt: borrow loans and Multiply borrowing. Borrowing doesn't change this number — the cash you receive is an asset that offsets the new debt.":
-    "Nilai Portofolio Bersih = Aset − Utang. Aset: saldo dompet, pasokan simpanan, jaminan pinjaman, dana pinjaman yang masih Anda pegang, nilai posisi Multiply Anda, serta Umbrella yang di-stake + imbalan. Utang: pinjaman borrow dan pinjaman Multiply. Meminjam tidak mengubah angka ini — uang yang Anda terima adalah aset yang mengimbangi utang baru.",
+    "Nilai Portofolio Bersih = Aset − Utang. Aset: saldo dompet, pasokan simpanan, jaminan pinjaman, dana pinjaman yang masih Anda pegang, nilai posisi Multiply Anda, serta Proteksi yang di-stake + imbalan. Utang: pinjaman borrow dan pinjaman Multiply. Meminjam tidak mengubah angka ini — uang yang Anda terima adalah aset yang mengimbangi utang baru.",
   Network: "Jaringan",
   No: "Tidak",
   "No active loans. Borrow against your collateral to get started.":
@@ -1322,7 +1326,7 @@ const dict: TranslationDictionary = {
   "No liquidity pools yet. Provide liquidity to start earning trading fees.":
     "Belum ada kumpulan likuiditas. Sediakan likuiditas untuk mulai memperoleh biaya trading.",
   "No supplied position to withdraw": "Tidak ada posisi pasokan untuk ditarik",
-  "No Umbrella positions yet.": "Belum ada posisi Umbrella.",
+  "No Umbrella positions yet.": "Belum ada posisi Proteksi.",
   "No wallet balances found.": "Tidak ada saldo dompet ditemukan.",
   NONE: "TIDAK ADA",
   now: "sekarang",
@@ -1383,7 +1387,7 @@ const dict: TranslationDictionary = {
   "Supply interest accrued across your lending positions (excludes protocol rewards)":
     "Bunga pasokan yang terkumpul di seluruh posisi simpanan Anda (tidak termasuk imbalan protokol)",
   "Supported Collateral": "Jaminan yang Didukung",
-  Swap: "Swap",
+  Swap: "Tukar",
   "Swap again": "Swap lagi",
   "Swap successful.": "Swap berhasil.",
   "The quote changed. Review the updated amount before continuing.":

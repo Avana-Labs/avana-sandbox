@@ -26,6 +26,8 @@ function useAskAIAuth() {
 
 export function AskAIConvexBoundary({ children }: { children: ReactNode }) {
   const guest = useAskAIGuestToken()
+  const siwe = useLiveSiweToken()
+  const hasValidSiwe = Boolean(siwe && !isJwtExpired(siwe.jwt))
   const [loading, setLoading] = useState(() => Boolean(askAIConvexClient && !getSiweToken() && !guest))
   const [error, setError] = useState<string | null>(null)
 
@@ -51,6 +53,10 @@ export function AskAIConvexBoundary({ children }: { children: ReactNode }) {
     return () => controller.abort()
   }, [])
 
+  // Signed-in Ask keeps AvanaSessionProviders (and its Convex client) mounted above
+  // this boundary. Nesting another ConvexProviderWithAuth would remount queries and
+  // fight the parent auth — just use the existing tree.
+  if (hasValidSiwe) return <>{children}</>
   if (!askAIConvexClient) return <>{children}</>
   if (loading) return <AskAILoadingBody />
   if (error) {
