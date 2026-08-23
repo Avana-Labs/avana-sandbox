@@ -4,10 +4,7 @@ import { lazy, useMemo } from "react"
 import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { useAvanaIdentity, useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useDashboardMultiplyLive } from "@/app/dashboard/use-dashboard-multiply-live"
-import {
-  buildMultiplyBalanceMetrics,
-  type MultiplyBalanceMetrics,
-} from "@/app/dashboard/dashboard-tab-metrics"
+import { buildMultiplyBalanceMetrics, type MultiplyBalanceMetrics } from "@/app/dashboard/dashboard-tab-metrics"
 import { DashboardMultiplyBalanceSection } from "@/app/dashboard/dashboard-metric-section"
 import { SuppliesHealthFactorCard } from "@/app/dashboard/borrow-tab/supplies-table"
 import { CurrentLtvCard } from "@/app/dashboard/borrow-tab/debts-table"

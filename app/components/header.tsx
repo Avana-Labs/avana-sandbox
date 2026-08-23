@@ -171,7 +171,12 @@ export function Header() {
       <div className="hidden h-full min-w-0 flex-1 min-[1440px]:block">
         <div className="grid h-full w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 sm:px-6 lg:px-5 xl:px-6 2xl:px-8">
           <div className="flex shrink-0 items-center gap-4 2xl:gap-5">
-            <Link href="/" aria-label={t("Home")} title={t("Home")} className="inline-flex min-w-0 shrink-0 items-center">
+            <Link
+              href="/"
+              aria-label={t("Home")}
+              title={t("Home")}
+              className="inline-flex min-w-0 shrink-0 items-center"
+            >
               <HeaderBrand />
             </Link>
 
@@ -181,7 +186,9 @@ export function Header() {
           </div>
 
           <div className="flex min-w-0 justify-center px-1">
-            <div className="w-full min-w-0 max-w-[380px]">{mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}</div>
+            <div className="w-full min-w-0 max-w-[380px]">
+              {mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}
+            </div>
           </div>
 
           <div className="flex shrink-0 items-center justify-end gap-2">
@@ -201,7 +208,12 @@ export function Header() {
       <div className="hidden h-full min-w-0 flex-1 lg:block min-[1440px]:hidden">
         <div className="grid h-full w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 sm:px-6 lg:px-5 xl:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            <Link href="/" aria-label={t("Home")} title={t("Home")} className="inline-flex min-w-0 shrink-0 items-center">
+            <Link
+              href="/"
+              aria-label={t("Home")}
+              title={t("Home")}
+              className="inline-flex min-w-0 shrink-0 items-center"
+            >
               <HeaderBrand />
             </Link>
 

@@ -54,9 +54,7 @@ describe("buildBorrowBalanceMetrics — wallet aggregate formulas", () => {
     const debt = usd6ToNumber(metrics.totalBorrowedUsd6)
     expect(balance.availableToBorrowUsd).toBeCloseTo(Math.max(0, creditLimit - debt), 6)
     // Must be strictly less than or equal to liquidation buffer path when CF < LT.
-    expect(balance.availableToBorrowUsd).toBeLessThanOrEqual(
-      usd6ToNumber(metrics.liquidationValueUsd6) - debt + 1e-6,
-    )
+    expect(balance.availableToBorrowUsd).toBeLessThanOrEqual(usd6ToNumber(metrics.liquidationValueUsd6) - debt + 1e-6)
   })
 })
 

@@ -42,15 +42,13 @@ export const report = internalQuery({
       duplicatePromptMessageIds: [...generationsByPrompt.entries()]
         .filter(([, count]) => count > 1)
         .map(([promptMessageId]) => promptMessageId),
-      toolBudgetViolations: rows.filter(
-        (row) => row.toolBudget !== undefined && row.tools.length > row.toolBudget,
-      ).length,
+      toolBudgetViolations: rows.filter((row) => row.toolBudget !== undefined && row.tools.length > row.toolBudget)
+        .length,
       cachedPriceWebSearchViolations: rows.filter(
         (row) => row.routeIntent === "market" && row.tools.includes("web_search"),
       ).length,
-      priceLookupTokenViolations: rows.filter(
-        (row) => row.routeIntent === "market" && (row.totalTokens ?? 0) > 2_000,
-      ).length,
+      priceLookupTokenViolations: rows.filter((row) => row.routeIntent === "market" && (row.totalTokens ?? 0) > 2_000)
+        .length,
       rows,
     }
   },

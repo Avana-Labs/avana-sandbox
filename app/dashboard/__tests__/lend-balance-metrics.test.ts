@@ -8,7 +8,9 @@ import {
 } from "@/app/dashboard/dashboard-tab-metrics"
 import type { PortfolioLendTabData, PortfolioSupplyPosition } from "@/app/lib/data/providers/portfolio"
 
-function investment(partial: Partial<PortfolioSupplyPosition> & Pick<PortfolioSupplyPosition, "id" | "symbol">): PortfolioSupplyPosition {
+function investment(
+  partial: Partial<PortfolioSupplyPosition> & Pick<PortfolioSupplyPosition, "id" | "symbol">,
+): PortfolioSupplyPosition {
   return {
     name: partial.symbol,
     balance: partial.suppliedUsd ?? 0,
@@ -111,7 +113,7 @@ describe("lend projection helpers", () => {
     // 1 day is 1/365 of annual — not (1.10)^(1/365)-1 which is slightly less.
     const simple1d = projectLendSimpleEarningsUsd(1_000, 10, 1)
     const compound1d = 1_000 * (Math.pow(1.1, 1 / 365) - 1)
-    expect(simple1d).toBeCloseTo(1_000 * 0.1 / 365, 8)
+    expect(simple1d).toBeCloseTo((1_000 * 0.1) / 365, 8)
     expect(simple1d).toBeGreaterThan(compound1d)
   })
 
@@ -128,9 +130,7 @@ describe("lend projection helpers", () => {
 
 describe("lendYieldGeneratedPct", () => {
   it("divides interest by principal, not by current supplied (which includes interest)", () => {
-    const pct = lendYieldGeneratedPct(2_840, [
-      { suppliedUsd: 42_840, principalUsd: 40_000, interestUsd: 2_840 },
-    ])
+    const pct = lendYieldGeneratedPct(2_840, [{ suppliedUsd: 42_840, principalUsd: 40_000, interestUsd: 2_840 }])
     expect(pct).toBeCloseTo(7.1, 6)
     // Wrong denominator would be 2840/42840 ≈ 6.63%
     expect(pct).not.toBeCloseTo((2_840 / 42_840) * 100, 2)

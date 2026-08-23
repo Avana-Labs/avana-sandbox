@@ -55,10 +55,7 @@ describe("buildMultiplyBalanceMetrics — wallet aggregate formulas", () => {
     expect(balance.healthFactor).not.toBeNull()
     expect(balance.healthFactor!).toBeCloseTo(tab.creditLines.liquidationThresholdUsd / 2_000, 6)
     expect(balance.healthFactor!).not.toBeCloseTo(1.2, 5)
-    expect(balance.liquidationBufferUsd).toBeCloseTo(
-      Math.max(0, tab.creditLines.liquidationThresholdUsd - 2_000),
-      6,
-    )
+    expect(balance.liquidationBufferUsd).toBeCloseTo(Math.max(0, tab.creditLines.liquidationThresholdUsd - 2_000), 6)
   })
 
   it("handles zero debt safely (null HF, 1× leverage when only equity)", () => {

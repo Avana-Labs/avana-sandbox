@@ -27,10 +27,7 @@ export const ABOUT_CONTRACT_ADDRESS_HELP: Record<string, string> = {
     "The price oracle router that feeds asset prices used for collateral valuation, borrowing power, and liquidations, similar to Aave’s price oracle.",
 }
 
-const LEGACY_CONTRACT_STAT_LABELS = new Set([
-  "Staking Contract Address",
-  "Governance Contract Address",
-])
+const LEGACY_CONTRACT_STAT_LABELS = new Set(["Staking Contract Address", "Governance Contract Address"])
 
 /** True for current or legacy contract-address rows (used to strip before Convex inject). */
 export function isAboutContractAddressStat(stat: { label: string }): boolean {
@@ -47,5 +44,8 @@ export function aboutContractAddressLabelForSalt(salt: string): string | undefin
 
 export function sortAboutContractAddressRows<T extends { salt: string }>(rows: readonly T[]): T[] {
   const order = new Map(ABOUT_CONTRACT_ADDRESS_SALTS.map((salt, index) => [salt, index]))
-  return [...rows].sort((a, b) => (order.get(a.salt as AboutContractAddressSalt) ?? 99) - (order.get(b.salt as AboutContractAddressSalt) ?? 99))
+  return [...rows].sort(
+    (a, b) =>
+      (order.get(a.salt as AboutContractAddressSalt) ?? 99) - (order.get(b.salt as AboutContractAddressSalt) ?? 99),
+  )
 }

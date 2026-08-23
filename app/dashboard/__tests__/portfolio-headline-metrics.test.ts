@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest"
-import {
-  blendEquityWeightedNetApyPct,
-  resolveDashboardNetApyPct,
-} from "@/app/dashboard/portfolio-headline-metrics"
+import { blendEquityWeightedNetApyPct, resolveDashboardNetApyPct } from "@/app/dashboard/portfolio-headline-metrics"
 
 describe("blendEquityWeightedNetApyPct", () => {
   it("equity-weights product Net APYs (not a flat average)", () => {

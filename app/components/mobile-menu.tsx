@@ -153,8 +153,8 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
 
   const mainLinks = [
     {
-      href: "/swap",
-      label: "Swap",
+      href: siteRoutes.home,
+      label: "Express",
     },
     {
       href: "/lend",
@@ -273,7 +273,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       <>
         <ol>
           {mainLinks.map((link, index) => {
-            const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)
+            const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`)
 
             return (
               <li
