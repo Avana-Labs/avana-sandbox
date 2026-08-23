@@ -257,28 +257,106 @@ export function buildMultiplyBalanceMetrics(
 }
 
 export function buildLendDashboardMetrics(data: PortfolioLendTabData) {
+  const balance = buildLendBalanceMetrics(data)
+  const investments = data.investments ?? []
+  const rewardsEarnedUsd = investments.reduce((sum, item) => sum + (item.rewardsEarnedUsd ?? 0), 0)
+  const claimableRewardsUsd = data.rewardsSummary?.claimableUsd ?? 0
+
+  return {
+    totalSuppliedUsd: balance.totalSuppliedUsd,
+    netApyPct: balance.netApyPct,
+    interestEarnedUsd: balance.interestEarnedUsd,
+    rewardsEarnedUsd,
+    claimableRewardsUsd,
+  }
+}
+
+/** Canonical wallet-level Lend Balance snapshot (8 growth-focused metrics). */
+export type LendBalanceMetrics = {
+  totalSuppliedUsd: number
+  netApyPct: number
+  interestEarnedUsd: number
+  /** Interest earned ÷ principal supplied, as a percent. */
+  yieldGeneratedPct: number
+  projectedEarnings1dUsd: number
+  projectedEarnings30dUsd: number
+  projectedEarnings90dUsd: number
+  projectedEarnings6mUsd: number
+}
+
+const LEND_PROJECTION_HORIZONS_DAYS = {
+  d1: 1,
+  d30: 30,
+  d90: 90,
+  /** Half-year using 182.5 days so 6M ≈ half of a 365-day year. */
+  m6: 182.5,
+} as const
+
+/**
+ * Simple forward earnings for one position — matches lend-engine / Ask AI accrual
+ * (linear in time), not compound (1+apy)^(t/365).
+ */
+export function projectLendSimpleEarningsUsd(suppliedUsd: number, apyPct: number, days: number): number {
+  if (!(suppliedUsd > 0) || !Number.isFinite(apyPct) || !(days > 0)) return 0
+  return suppliedUsd * (apyPct / 100) * (days / 365)
+}
+
+/**
+ * Portfolio projected earnings: Σ per-position simple projections.
+ * Equivalent to TotalSupplied × NetAPY × (days/365) when Net APY is supplied-weighted.
+ */
+export function projectLendPortfolioEarningsUsd(
+  investments: ReadonlyArray<{ suppliedUsd: number; apyPct: number }>,
+  days: number,
+): number {
+  return investments.reduce(
+    (sum, item) => sum + projectLendSimpleEarningsUsd(item.suppliedUsd, item.apyPct, days),
+    0,
+  )
+}
+
+/**
+ * Yield Generated = Interest Earned / Principal Supplied.
+ * Principal prefers engine principalUsd (deposits − withdrawn principal), not current
+ * Total Supplied (which already includes accrued interest).
+ */
+export function lendYieldGeneratedPct(
+  interestEarnedUsd: number,
+  investments: ReadonlyArray<{ suppliedUsd: number; principalUsd?: number; interestUsd?: number; earnedUsd?: number }>,
+): number {
+  const principalUsd = investments.reduce((sum, item) => {
+    if (item.principalUsd != null && Number.isFinite(item.principalUsd)) {
+      return sum + Math.max(0, item.principalUsd)
+    }
+    const interest = item.interestUsd ?? Math.max(0, (item.earnedUsd ?? 0) - 0)
+    return sum + Math.max(0, item.suppliedUsd - interest)
+  }, 0)
+  if (!(principalUsd > 0) || !Number.isFinite(interestEarnedUsd)) return 0
+  return (interestEarnedUsd / principalUsd) * 100
+}
+
+/**
+ * Single aggregation pass for the Lend Balance dashboard.
+ * Rewards remain available via buildLendDashboardMetrics for Claim UI — not on these cards.
+ */
+export function buildLendBalanceMetrics(data: PortfolioLendTabData): LendBalanceMetrics {
   const investments = data.investments ?? []
   const totalSuppliedUsd = investments.reduce((sum, item) => sum + item.suppliedUsd, 0)
   const netApyPct = lendNetApyPct(investments)
-  // Split supply interest from protocol rewards on the tile. The read-model now
-  // exposes each investment's interestUsd (unit interest × price) and rewardsEarnedUsd
-  // separately, so the "Interest Earned" tile shows pure supply interest and the
-  // "Rewards Earned" tile shows the reward component. When a position hasn't been
-  // migrated to the split shape yet, fall back to the legacy conflated earnedUsd so
-  // the tile still reconciles with the hero — that fallback disappears as positions
-  // pick up the new fields.
   const interestEarnedUsd = investments.reduce(
     (sum, item) => sum + (item.interestUsd ?? item.earnedUsd - (item.rewardsEarnedUsd ?? 0)),
     0,
   )
-  const rewardsEarnedUsd = investments.reduce((sum, item) => sum + (item.rewardsEarnedUsd ?? 0), 0)
-  const claimableRewardsUsd = data.rewardsSummary?.claimableUsd ?? 0
+  const yieldGeneratedPct = lendYieldGeneratedPct(interestEarnedUsd, investments)
 
   return {
     totalSuppliedUsd,
     netApyPct,
     interestEarnedUsd,
-    rewardsEarnedUsd,
-    claimableRewardsUsd,
+    yieldGeneratedPct,
+    projectedEarnings1dUsd: projectLendPortfolioEarningsUsd(investments, LEND_PROJECTION_HORIZONS_DAYS.d1),
+    projectedEarnings30dUsd: projectLendPortfolioEarningsUsd(investments, LEND_PROJECTION_HORIZONS_DAYS.d30),
+    projectedEarnings90dUsd: projectLendPortfolioEarningsUsd(investments, LEND_PROJECTION_HORIZONS_DAYS.d90),
+    projectedEarnings6mUsd: projectLendPortfolioEarningsUsd(investments, LEND_PROJECTION_HORIZONS_DAYS.m6),
   }
 }
