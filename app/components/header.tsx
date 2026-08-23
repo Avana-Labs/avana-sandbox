@@ -159,7 +159,7 @@ export function Header() {
         <div className="grid h-[68px] w-full grid-cols-[minmax(0,1fr)_minmax(280px,410px)_minmax(0,1fr)] items-center gap-4 px-6 2xl:px-8">
           <div className="flex min-w-0 items-center gap-5">
             <Link href="/" aria-label={t("Home")} title={t("Home")} className="flex shrink-0 items-center">
-              <BrandLogo className="h-[36px]" />
+              <BrandLogo className="h-[36px] md:h-[36px]" />
             </Link>
 
             <nav
@@ -194,7 +194,7 @@ export function Header() {
         <div className="grid h-[68px] w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 lg:px-5">
           <div className="flex min-w-0 items-center gap-3">
             <Link href="/" aria-label={t("Home")} title={t("Home")} className="flex shrink-0 items-center">
-              <BrandLogo className="h-[36px]" />
+              <BrandLogo className="h-[36px] md:h-[36px]" />
             </Link>
 
             <nav
