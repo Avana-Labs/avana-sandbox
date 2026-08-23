@@ -762,7 +762,8 @@ const dict: TranslationDictionary = {
   "+10.2%": "+10.2%",
   "Vault Contract Address": "Vault-Contract-Adresse",
   "Token Contract Address": "Token-Contract-Adresse",
-  "Staking Contract Address": "Staking-Contract-Adresse",
+  "Risk Manager Address": "Risk-Manager-Adresse",
+  "Oracle Router Address": "Oracle-Router-Adresse",
   "Deployed On": "Bereitgestellt am",
   "Concentrated-liquidity ETH/USDC exposure accepted as LP collateral for borrowing.":
     "Konzentrierte-Liquidität-ETH/USDC-Exposure wird als LP-Sicherheit für die Kreditaufnahme akzeptiert.",

@@ -749,7 +749,8 @@ const dict: TranslationDictionary = {
   "+10.2%": "+10.2%",
   "Vault Contract Address": "Alamat Kontrak Vault",
   "Token Contract Address": "Alamat Kontrak Token",
-  "Staking Contract Address": "Alamat Kontrak Staking",
+  "Risk Manager Address": "Alamat Risk Manager",
+  "Oracle Router Address": "Alamat Oracle Router",
   "Deployed On": "Diterapkan Pada",
   "Concentrated-liquidity ETH/USDC exposure accepted as LP collateral for borrowing.":
     "Eksposur ETH/USDC likuiditas terkonsentrasi diterima sebagai jaminan LP untuk meminjam.",

@@ -267,19 +267,6 @@ function contractAddressFor(market: LendMarket, salt: string) {
   return `0x${chunk}${chunk}${chunk}${chunk}${chunk}`.slice(0, 42)
 }
 
-function shortAddress(address: string) {
-  return `${address.slice(0, 6)}...${address.slice(-4)}`
-}
-
-function buildContractStat(label: string, market: LendMarket, salt: string): AboutCard["stats"][number] {
-  const address = contractAddressFor(market, salt)
-  return {
-    label,
-    value: shortAddress(address),
-    href: `https://etherscan.io/address/${address}`,
-  }
-}
-
 function buildGovernanceParameters(market: LendMarket, ref: Reference): AboutCard["governanceParameters"] {
   const isStable = market.riskTier === "low"
   const ltvPct = isStable ? 78 : 72
@@ -344,9 +331,7 @@ function buildAbout(market: LendMarket, ref: Reference): AboutCard {
         isStable ? "stablecoin" : "tier-" + market.riskTier
       } market. Suppliers should watch utilization, reserve factor, oracle quality, and withdrawal depth because those inputs affect both earned yield and how quickly capital can exit during stressed conditions.`,
     stats: [
-      buildContractStat("Vault Contract Address", market, "vault"),
-      buildContractStat("Token Contract Address", market, "token"),
-      buildContractStat("Staking Contract Address", market, "staking"),
+      // Contract addresses injected from lendContractAddresses at Convex overlay time.
     ],
     history: [
       {

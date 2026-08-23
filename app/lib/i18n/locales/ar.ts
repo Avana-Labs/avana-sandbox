@@ -744,7 +744,8 @@ const dict: TranslationDictionary = {
   "+10.2%": "+10.2%",
   "Vault Contract Address": "عنوان عقد الخزنة",
   "Token Contract Address": "عنوان عقد الرمز",
-  "Staking Contract Address": "عنوان عقد التخزين",
+  "Risk Manager Address": "عنوان مدير المخاطر",
+  "Oracle Router Address": "عنوان موجه الأوراكل",
   "Deployed On": "نُشر في",
   "Concentrated-liquidity ETH/USDC exposure accepted as LP collateral for borrowing.":
     "تعرّض السيولة المركّزة ETH/USDC مقبول كضمان لمزوّدي السيولة للاقتراض.",

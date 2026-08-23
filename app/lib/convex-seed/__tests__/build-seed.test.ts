@@ -86,7 +86,8 @@ describe("buildBorrowSeed", () => {
     expect(about?.stats.map((stat) => stat.label)).toEqual([
       "Vault Contract Address",
       "Token Contract Address",
-      "Staking Contract Address",
+      "Risk Manager Address",
+      "Oracle Router Address",
     ])
     expect(about?.stats.every((stat) => stat.href?.startsWith("https://etherscan.io/address/"))).toBe(true)
   })

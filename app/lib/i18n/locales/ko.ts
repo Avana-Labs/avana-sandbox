@@ -738,7 +738,8 @@ const dict: TranslationDictionary = {
   "+10.2%": "+10.2%",
   "Vault Contract Address": "볼트 컨트랙트 주소",
   "Token Contract Address": "토큰 컨트랙트 주소",
-  "Staking Contract Address": "스테이킹 컨트랙트 주소",
+  "Risk Manager Address": "리스크 매니저 주소",
+  "Oracle Router Address": "오라클 라우터 주소",
   "Deployed On": "배포 위치",
   "Concentrated-liquidity ETH/USDC exposure accepted as LP collateral for borrowing.":
     "집중 유동성 ETH/USDC 익스포저가 차입을 위한 LP 담보로 수락됩니다.",

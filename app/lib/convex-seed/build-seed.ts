@@ -53,6 +53,7 @@ import {
 import {
   POOL_CONTRACT_SEED_ROWS,
   ASSET_CONTRACT_SEED_ROWS,
+  LEND_CONTRACT_SEED_ROWS,
   MULTIPLY_CONTRACT_SEED_ROWS,
 } from "./inputs/contract-addresses-seed"
 import {
@@ -271,6 +272,7 @@ export type SeedData = {
   multiplyTokenParameters?: SeedMultiplyTokenParamRow[]
   poolContractAddresses?: SeedContractAddressRow[]
   assetContractAddresses?: SeedContractAddressRow[]
+  lendContractAddresses?: SeedContractAddressRow[]
   multiplyContractAddresses?: SeedContractAddressRow[]
   walletCollateralPositions?: SeedWalletCollateralPositionRow[]
   walletDebts?: SeedWalletDebtRow[]
@@ -1143,9 +1145,7 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
           market.riskTier === "low" ? "stablecoin" : "tier-" + market.riskTier
         } market. Suppliers should watch utilization, reserve factor, oracle quality, and withdrawal depth because those inputs affect both earned yield and how quickly capital can exit during stressed conditions.`,
       stats: [
-        contractStatForSeed("Vault Contract Address", market.marketId, "vault"),
-        contractStatForSeed("Token Contract Address", market.marketId, "token"),
-        contractStatForSeed("Staking Contract Address", market.marketId, "staking"),
+        // Contract addresses injected from lendContractAddresses at Convex overlay time.
       ],
       history: [
         {
@@ -1228,7 +1228,8 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
       stats: [
         contractStatForSeed("Vault Contract Address", market.id, "vault"),
         contractStatForSeed("Token Contract Address", market.id, "token"),
-        contractStatForSeed("Staking Contract Address", market.id, "staking"),
+        contractStatForSeed("Risk Manager Address", market.id, "riskManager"),
+        contractStatForSeed("Oracle Router Address", market.id, "oracleRouter"),
       ],
       history: [
         {
@@ -1305,6 +1306,7 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
     multiplyTokenParameters: MULTIPLY_TOKEN_PARAM_SEED_ROWS,
     poolContractAddresses: POOL_CONTRACT_SEED_ROWS,
     assetContractAddresses: ASSET_CONTRACT_SEED_ROWS,
+    lendContractAddresses: LEND_CONTRACT_SEED_ROWS,
     multiplyContractAddresses: MULTIPLY_CONTRACT_SEED_ROWS,
     walletCollateralPositions: TEST_WALLET_COLLATERAL_SEED_ROWS,
     walletDebts: TEST_WALLET_DEBTS_SEED_ROWS,

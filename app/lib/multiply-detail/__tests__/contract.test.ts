@@ -14,7 +14,7 @@ describe("multiply detail about contract", () => {
 
   it("mock builder yields empty About stats — contract rows injected by Convex overlay", () => {
     // Contract-address stats are no longer baked into the mock builder. The three
-    // vault/token/staking rows land in about.stats at Convex overlay time, via
+    // vault/token/riskManager/oracleRouter rows land in about.stats at Convex overlay time, via
     // getMultiplyMarketDetailFromConvex + api.contractAddresses.listMultiplyAddresses.
     // Verify the mock stays empty here so a regression that re-adds mock rows fails.
     const detail = getMultiplyMarketDetail("aave-gho")!
