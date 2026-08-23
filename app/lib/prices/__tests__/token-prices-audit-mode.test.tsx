@@ -45,4 +45,18 @@ describe("TokenPricesProvider audit mode", () => {
     expect(screen.getByText("dev market content")).toBeInTheDocument()
     expect(useQuery).not.toHaveBeenCalled()
   })
+
+  it("uses the server seed when a route owns its own nested Convex boundary", () => {
+    testMode.audit = false
+    testMode.openGate = false
+
+    render(
+      <TokenPricesProvider initialPrices={{ AAVE: 98.53 }} realtime={false}>
+        <span>nested provider route</span>
+      </TokenPricesProvider>,
+    )
+
+    expect(screen.getByText("nested provider route")).toBeInTheDocument()
+    expect(useQuery).not.toHaveBeenCalled()
+  })
 })

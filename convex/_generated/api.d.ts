@@ -9,6 +9,13 @@
  */
 
 import type * as allocation from "../allocation.js";
+import type * as askAI from "../askAI.js";
+import type * as askAIAgent from "../askAIAgent.js";
+import type * as askAIAgentTools from "../askAIAgentTools.js";
+import type * as askAIIngestion from "../askAIIngestion.js";
+import type * as askAIRag from "../askAIRag.js";
+import type * as askAITelemetry from "../askAITelemetry.js";
+import type * as askAITools from "../askAITools.js";
 import type * as borrow_assets from "../borrow/assets.js";
 import type * as borrow_cashflow from "../borrow/cashflow.js";
 import type * as borrow_content from "../borrow/content.js";
@@ -82,6 +89,13 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   allocation: typeof allocation;
+  askAI: typeof askAI;
+  askAIAgent: typeof askAIAgent;
+  askAIAgentTools: typeof askAIAgentTools;
+  askAIIngestion: typeof askAIIngestion;
+  askAIRag: typeof askAIRag;
+  askAITelemetry: typeof askAITelemetry;
+  askAITools: typeof askAITools;
   "borrow/assets": typeof borrow_assets;
   "borrow/cashflow": typeof borrow_cashflow;
   "borrow/content": typeof borrow_content;
@@ -174,4 +188,8 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  agent: import("@convex-dev/agent/_generated/component.js").ComponentApi<"agent">;
+  rag: import("@convex-dev/rag/_generated/component.js").ComponentApi<"rag">;
+  rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
+};

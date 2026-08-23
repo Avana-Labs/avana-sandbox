@@ -165,9 +165,14 @@ const ASSET_FIXTURES: Record<string, AssetFixture> = {
           href: "https://etherscan.io/address/0xDC03384F",
         },
         {
-          label: "Staking Contract Address",
+          label: "Risk Manager Address",
           value: "0xd57a...7B15",
           href: "https://etherscan.io/address/0xd57a7B15",
+        },
+        {
+          label: "Oracle Router Address",
+          value: "0xa1b2...C3D4",
+          href: "https://etherscan.io/address/0xa1b2C3D4",
         },
         { label: "Deployed On", value: "October 7, 2024" },
       ],

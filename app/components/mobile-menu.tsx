@@ -273,7 +273,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
       <>
         <ol>
           {mainLinks.map((link, index) => {
-            const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)
+            const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`)
 
             return (
               <li
@@ -559,7 +559,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
           aria-modal="true"
           aria-label={t("Mobile menu")}
         >
-          <div className="flex h-16 items-center justify-between px-4 sm:px-6">
+          <div className="flex h-14 items-center justify-between px-4 sm:px-6">
             <div className="flex items-center gap-3">
               <Link
                 href={siteRoutes.home}
@@ -591,7 +591,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
           <nav
             id="mobile-site-nav"
             aria-label={t("Mobile navigation")}
-            className={`h-[calc(100dvh-4rem)] overflow-y-auto px-4 pb-10 pt-10 transition-all duration-300 ease-out sm:px-6 ${
+            className={`h-[calc(100dvh-3.5rem)] overflow-y-auto px-4 pb-10 pt-10 transition-all duration-300 ease-out sm:px-6 ${
               isVisible ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
             } ${isSelectorSheetOpen ? "pointer-events-none opacity-35 blur-[1px]" : ""}`}
           >

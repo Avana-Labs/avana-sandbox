@@ -3,6 +3,7 @@ import { requestCache as cache } from "@/app/lib/detail-page/request-cache"
 import {
   fetchLendCashflowBreakdown,
   fetchLendContent,
+  fetchLendContractAddresses,
   fetchLendInterestRateModel,
   fetchLendMarket,
   fetchLendMarketSnapshot,
@@ -20,6 +21,12 @@ import { QUICK_STAT_ALIASES } from "@/app/lib/detail-page/live-quick-stats"
 import { injectSiloedMarketQuickStats, overlayHeroIdentity } from "@/app/lib/detail-page/siloed-market-overlay"
 import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
 import { shouldFailClosedInLive } from "@/app/lib/detail-page/live-fallback"
+import {
+  ABOUT_CONTRACT_ADDRESS_SALTS,
+  aboutContractAddressLabelForSalt,
+  isAboutContractAddressStat,
+  sortAboutContractAddressRows,
+} from "@/app/lib/detail-page/about-contract-addresses"
 import { resolveLendHeadlineRates } from "./headline-rates"
 import type { ProtocolParameterRow } from "@/app/lib/borrow-detail/protocol-parameters"
 import { buildLendMarketDetail, resolveLendMarket } from "./mock"
@@ -87,6 +94,35 @@ function applyRiskParametersToAbout(
   }
 }
 
+const LEND_CONTRACT_SALTS = new Set<string>(ABOUT_CONTRACT_ADDRESS_SALTS)
+
+/**
+ * Replace About contract-address rows with the canonical four from Convex
+ * `lendContractAddresses` — same inject path as borrow/multiply.
+ */
+function injectLendContractAddressStats(
+  detail: LendMarketDetail,
+  rows: ReadonlyArray<{ salt: string; label: string; href: string }>,
+): LendMarketDetail {
+  const contractRows = sortAboutContractAddressRows(rows.filter((row) => LEND_CONTRACT_SALTS.has(row.salt)))
+  if (contractRows.length === 0) return detail
+  const seen = new Set<string>()
+  const contractStats: Array<{ label: string; value: string; href: string }> = []
+  for (const row of contractRows) {
+    const label = aboutContractAddressLabelForSalt(row.salt) ?? row.label
+    if (seen.has(label)) continue
+    seen.add(label)
+    contractStats.push({ label, value: row.label, href: row.href })
+  }
+  return {
+    ...detail,
+    about: {
+      ...detail.about,
+      stats: [...detail.about.stats.filter((stat) => !isAboutContractAddressStat(stat)), ...contractStats],
+    },
+  }
+}
+
 async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMarketDetail | null> {
   const market = resolveLendMarket(id)
   if (!market) return null
@@ -111,17 +147,27 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
   )
 
   // Supply hero series preloaded by the page (preloadLendHero) — not fetched here.
-  const [cashflow, transactions, risk, quickStats, content, riskParameters, interestRateModel, siloedMarket] =
-    await Promise.all([
-      fetchLendCashflowBreakdown(slug),
-      fetchLendRecentTransactions(slug),
-      fetchLendRisk(slug),
-      fetchLendQuickStats(slug),
-      fetchLendContent(slug),
-      fetchLendRiskParameters(slug),
-      fetchLendInterestRateModel(slug),
-      fetchLendMarket(slug),
-    ])
+  const [
+    cashflow,
+    transactions,
+    risk,
+    quickStats,
+    content,
+    riskParameters,
+    interestRateModel,
+    siloedMarket,
+    contractAddresses,
+  ] = await Promise.all([
+    fetchLendCashflowBreakdown(slug),
+    fetchLendRecentTransactions(slug),
+    fetchLendRisk(slug),
+    fetchLendQuickStats(slug),
+    fetchLendContent(slug),
+    fetchLendRiskParameters(slug),
+    fetchLendInterestRateModel(slug),
+    fetchLendMarket(slug),
+    fetchLendContractAddresses(slug),
+  ])
 
   const headline = resolveLendHeadlineRates({
     snapshotBacked: Boolean(snapshot),
@@ -151,10 +197,13 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
   )
 
   return applyRiskParametersToAbout(
-    {
-      ...hydrated,
-      hero: overlayHeroIdentity(hydrated.hero, siloedMarket),
-    },
+    injectLendContractAddressStats(
+      {
+        ...hydrated,
+        hero: overlayHeroIdentity(hydrated.hero, siloedMarket),
+      },
+      contractAddresses,
+    ),
     riskParameters,
   )
 }

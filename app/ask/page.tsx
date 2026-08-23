@@ -1,7 +1,11 @@
+import type { Metadata } from "next"
 import { AskPageClient } from "./ask-page-client"
 
-// Standalone top-level `/ask` surface. Full-screen chrome (no site header) is
-// applied by ConditionalSiteChrome, which treats "/ask" as a focused route.
-export default function AskPage() {
+export const metadata: Metadata = {
+  title: "Ask AI",
+  description: "Ask Avana about LP collateral, borrowing capacity, supported markets, and position risk.",
+}
+
+export default function AskAIPage() {
   return <AskPageClient />
 }

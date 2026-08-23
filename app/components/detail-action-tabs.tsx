@@ -20,7 +20,14 @@ export function DetailActionTabs<T extends string>({ items, value, onChange, ari
   const { t } = useTranslation()
 
   return (
-    <div role="tablist" aria-label={t(ariaLabel)} className={cn("flex items-center gap-0", className)}>
+    <div
+      role="tablist"
+      aria-label={t(ariaLabel)}
+      className={cn(
+        "flex max-w-full items-center gap-0 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        className,
+      )}
+    >
       {items.map((item) => {
         const active = value === item.id
         return (
@@ -32,8 +39,8 @@ export function DetailActionTabs<T extends string>({ items, value, onChange, ari
             data-state={active ? "active" : "inactive"}
             onClick={() => onChange(item.id)}
             className={cn(
-              "rounded-full px-3.5 py-2 text-[15px] font-semibold leading-none text-foreground/65 transition-colors hover:text-foreground",
-              active && "bg-muted px-4 py-2.5 text-foreground",
+              "shrink-0 rounded-full px-2.5 py-2 text-[14px] font-semibold leading-none text-foreground/65 transition-colors hover:text-foreground sm:px-3.5 sm:text-[15px]",
+              active && "bg-muted px-3 py-2.5 text-foreground sm:px-4",
             )}
           >
             {t(item.label)}

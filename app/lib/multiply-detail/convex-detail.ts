@@ -28,6 +28,12 @@ import {
 } from "@/app/lib/detail-page/siloed-market-overlay"
 import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
 import { shouldFailClosedInLive } from "@/app/lib/detail-page/live-fallback"
+import {
+  ABOUT_CONTRACT_ADDRESS_SALTS,
+  aboutContractAddressLabelForSalt,
+  isAboutContractAddressStat,
+  sortAboutContractAddressRows,
+} from "@/app/lib/detail-page/about-contract-addresses"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { getMultiplyMarketDetail } from "./index"
 import type { MultiplyMarketDetail, MultiplyTxHistoryRow } from "./index"
@@ -109,34 +115,27 @@ function applyRiskParametersToAbout(
 }
 
 /**
- * Same three salts as the pool/asset overlays (vault/token/staking), keyed by `salt`
- * so the display label stays derived from the Convex row's classification, not
- * hardcoded here in the detail path.
+ * Same four salts as the pool/asset overlays (vault / token / riskManager / oracleRouter),
+ * keyed by `salt` so the display label stays derived from the Convex row's classification.
  */
-const MULTIPLY_CONTRACT_LABEL_BY_SALT: Record<string, string> = {
-  vault: "Vault Contract Address",
-  token: "Token Contract Address",
-  staking: "Staking Contract Address",
-}
-
-const MULTIPLY_CONTRACT_SALTS = new Set(["vault", "token", "staking"])
+const MULTIPLY_CONTRACT_SALTS = new Set<string>(ABOUT_CONTRACT_ADDRESS_SALTS)
 
 /**
- * Replace (not append) the About card's contract-address rows with the canonical three
+ * Replace (not append) the About card's contract-address rows with the canonical four
  * from Convex. Multiply seeded these into BOTH `content.stats` and the contract-address
- * table, so the old append produced exact duplicates (6 rows). Stripping existing
- * contract rows first makes it idempotent — always exactly three, stale-seed-proof.
+ * table, so the old append produced exact duplicates. Stripping existing contract rows
+ * first (including legacy Staking) makes it idempotent — always exactly four.
  */
 function injectMultiplyContractAddressStats(
   detail: MultiplyMarketDetail,
   rows: readonly ConvexContractAddressRow[],
 ): MultiplyMarketDetail {
-  const contractRows = rows.filter((row) => MULTIPLY_CONTRACT_SALTS.has(row.salt))
+  const contractRows = sortAboutContractAddressRows(rows.filter((row) => MULTIPLY_CONTRACT_SALTS.has(row.salt)))
   if (contractRows.length === 0) return detail
   const seen = new Set<string>()
   const contractStats: Array<{ label: string; value: string; href: string }> = []
   for (const row of contractRows) {
-    const label = MULTIPLY_CONTRACT_LABEL_BY_SALT[row.salt] ?? row.label
+    const label = aboutContractAddressLabelForSalt(row.salt) ?? row.label
     if (seen.has(label)) continue
     seen.add(label)
     contractStats.push({ label, value: row.label, href: row.href })
@@ -145,7 +144,7 @@ function injectMultiplyContractAddressStats(
     ...detail,
     about: {
       ...detail.about,
-      stats: [...detail.about.stats.filter((stat) => !/Contract Address$/.test(stat.label)), ...contractStats],
+      stats: [...detail.about.stats.filter((stat) => !isAboutContractAddressStat(stat)), ...contractStats],
     },
   }
 }

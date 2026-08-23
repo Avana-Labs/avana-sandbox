@@ -1,16 +1,16 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Sparkles } from "@/app/components/icons"
 import { triggerPageLoading } from "@/app/lib/page-loading"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { askAIHref } from "@/app/lib/ask-ai/navigation"
 
 // The "Ask AI" entry point. Two shapes:
 //   • text chip (default) — a filled inner pill that nests on the RIGHT of the
 //     header search bar, YouTube-style. SearchTrigger renders it inside the pill.
 //   • iconOnly — a bare sparkle button used standalone in the phone / small-desktop
 //     headers, beside the search icon.
-// The assistant experience itself is not wired up yet — this is the trigger only.
 export function AskAssistantTrigger({
   iconOnly = false,
   // "nav" matches the muted desktop chrome; "brand" is the phone-only cyan that
@@ -23,6 +23,8 @@ export function AskAssistantTrigger({
   onClick?: () => void
 }) {
   const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { t } = useTranslation()
 
   const handleClick = () => {
@@ -30,8 +32,15 @@ export function AskAssistantTrigger({
       onClick()
       return
     }
+    const query = searchParams.toString()
+    const returnHref = `${pathname}${query ? `?${query}` : ""}`
+    try {
+      sessionStorage.setItem("avana:ask-ai-opened-from", returnHref)
+    } catch {
+      // private mode / blocked storage — close still falls back to router.push
+    }
     triggerPageLoading()
-    router.push("/ask")
+    router.push(askAIHref(returnHref))
   }
 
   return (

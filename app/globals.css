@@ -2,6 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes assistant-shimmer {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -50% 0;
+  }
+}
+
+.shimmer {
+  color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    hsl(var(--muted-foreground)) 35%,
+    hsl(var(--foreground)) 50%,
+    hsl(var(--muted-foreground)) 65%
+  );
+  background-position: 150% 0;
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: assistant-shimmer 2s linear infinite;
+}
+
 @layer base {
   html {
     scrollbar-gutter: stable;
@@ -116,9 +140,10 @@
     --progress-track: 0 0% 91.8%;
 
     --scrollbar-track: 0 0% 92.2%;
-    --scrollbar-thumb: 191 99% 41%;
-    --scrollbar-thumb-hover: 191 100% 33%;
-    --scrollbar-thumb-active: 191 100% 28%;
+    /* Soft brand wash — matches disabled CTA (bg-brand-soft), not full brand */
+    --scrollbar-thumb: 191 100% 95%;
+    --scrollbar-thumb-hover: 191 80% 88%;
+    --scrollbar-thumb-active: 191 70% 80%;
   }
 
   .dark {
@@ -194,9 +219,10 @@
     --progress-track: 0 0% 11%;
 
     --scrollbar-track: 220 7% 8.4%;
-    --scrollbar-thumb: 191 99% 41%;
-    --scrollbar-thumb-hover: 191 100% 48%;
-    --scrollbar-thumb-active: 191 100% 54%;
+    /* Soft brand wash — matches disabled CTA (bg-brand-soft), not full brand */
+    --scrollbar-thumb: 191 55% 18%;
+    --scrollbar-thumb-hover: 191 50% 24%;
+    --scrollbar-thumb-active: 191 45% 30%;
   }
 }
 
@@ -231,6 +257,8 @@
 .home-reveal-tab {
   background-color: transparent !important;
   color: hsl(var(--muted-foreground)) !important;
+  /* Allow width to animate toward max-content as localized labels expand. */
+  interpolate-size: allow-keywords;
   transition:
     width 520ms cubic-bezier(0.22, 1, 0.36, 1),
     padding 520ms cubic-bezier(0.22, 1, 0.36, 1) !important;
@@ -270,7 +298,8 @@
 }
 
 .home-reveal-tab[data-state="active"] .home-reveal-tab-label {
-  max-width: 8.5rem;
+  /* Room for longer DeFi verbs across locales (Intercambiar, Échanger, スワップ…). */
+  max-width: 12rem;
   opacity: 1;
   transform: translateX(0) scaleX(1);
 }

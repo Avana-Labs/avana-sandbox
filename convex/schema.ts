@@ -102,7 +102,11 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_scope_slug", ["scope", "slug"])
-    .index("by_scope_chain", ["scope", "chainId"]),
+    .index("by_scope_chain", ["scope", "chainId"])
+    // Scope-independent slug/symbol point reads for Ask AI tools (a market slug is
+    // globally unique in practice); avoids full-table scans in stress/pool lookups.
+    .index("by_slug", ["slug"])
+    .index("by_symbol", ["symbol"]),
 
   /**
    * Product-siloed borrow market identity (pool + asset). Prefer this for display
@@ -1808,7 +1812,7 @@ export default defineSchema({
 
   // ---------------------------------------------------------------------------
   // Contract addresses — seeded synthetic 0x… strings today, Etherscan later.
-  // Split by scope (pool / asset / multiply) to keep indexes narrow.
+  // Split by scope (pool / asset / lend / multiply) to keep indexes narrow.
   // ---------------------------------------------------------------------------
 
   poolContractAddresses: defineTable({
@@ -1838,6 +1842,19 @@ export default defineSchema({
     .index("by_asset", ["assetSlug"]),
 
   multiplyContractAddresses: defineTable({
+    marketSlug: v.string(),
+    salt: v.string(),
+    address: v.string(),
+    label: v.string(),
+    href: v.string(),
+    chain: v.string(),
+    isSynthetic: v.boolean(),
+    updatedAt: v.number(),
+  })
+    .index("by_market_salt", ["marketSlug", "salt"])
+    .index("by_market", ["marketSlug"]),
+
+  lendContractAddresses: defineTable({
     marketSlug: v.string(),
     salt: v.string(),
     address: v.string(),
@@ -1918,4 +1935,157 @@ export default defineSchema({
   })
     .index("by_wallet", ["wallet"])
     .index("by_wallet_claim", ["wallet", "claimId"]),
+
+  /** Owner mapping and lifecycle metadata for Convex Agent Ask AI threads. */
+  askAIThreads: defineTable({
+    threadId: v.string(),
+    ownerSubject: v.string(),
+    title: v.string(),
+    status: v.union(v.literal("active"), v.literal("archived")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_thread", ["threadId"])
+    .index("by_owner_status_updated", ["ownerSubject", "status", "updatedAt"]),
+
+  /** Rich assistant-ui parts persisted alongside the Agent message text. */
+  askAIMessageParts: defineTable({
+    threadId: v.string(),
+    messageId: v.string(),
+    parts: v.any(),
+    createdAt: v.number(),
+  })
+    .index("by_thread", ["threadId"])
+    .index("by_message", ["messageId"]),
+
+  // DEPRECATED: the voice/attachment feature and all its Convex functions were
+  // removed. This table definition is retained only so existing prod rows stay
+  // valid; dropping it is a separate destructive migration (delete rows first).
+  askAIAttachments: defineTable({
+    ownerSubject: v.string(),
+    threadId: v.string(),
+    storageId: v.id("_storage"),
+    agentFileId: v.optional(v.string()),
+    name: v.string(),
+    mediaType: v.string(),
+    size: v.number(),
+    status: v.union(v.literal("uploaded"), v.literal("processed"), v.literal("failed")),
+    extractedText: v.optional(v.string()),
+    error: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_owner", ["ownerSubject"])
+    .index("by_thread", ["threadId"])
+    .index("by_storage", ["storageId"]),
+
+  askAITurns: defineTable({
+    threadId: v.string(),
+    ownerSubject: v.string(),
+    clientRequestId: v.optional(v.string()),
+    wallet: v.optional(v.string()),
+    promptMessageId: v.string(),
+    prompt: v.string(),
+    status: v.union(
+      v.literal("queued"),
+      v.literal("running"),
+      v.literal("failed"),
+      v.literal("cancelled"),
+      v.literal("complete"),
+    ),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_owner_request", ["ownerSubject", "clientRequestId"])
+    .index("by_prompt_message", ["promptMessageId"])
+    .index("by_thread_status_created", ["threadId", "status", "createdAt"]),
+
+  askAIFeedback: defineTable({
+    ownerSubject: v.string(),
+    threadId: v.string(),
+    messageId: v.string(),
+    categories: v.array(v.string()),
+    note: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_owner_message", ["ownerSubject", "messageId"])
+    .index("by_thread", ["threadId"])
+    .index("by_created_at", ["createdAt"]),
+
+  askAIUsage: defineTable({
+    ownerSubject: v.string(),
+    threadId: v.string(),
+    messageId: v.string(),
+    model: v.string(),
+    provider: v.string(),
+    inputTokens: v.number(),
+    outputTokens: v.number(),
+    totalTokens: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_owner_created", ["ownerSubject", "createdAt"])
+    .index("by_message", ["messageId"]),
+
+  askAITelemetry: defineTable({
+    ownerSubject: v.string(),
+    threadId: v.string(),
+    promptMessageId: v.string(),
+    status: v.union(v.literal("complete"), v.literal("failed")),
+    model: v.string(),
+    provider: v.string(),
+    durationMs: v.number(),
+    inputTokens: v.optional(v.number()),
+    outputTokens: v.optional(v.number()),
+    totalTokens: v.optional(v.number()),
+    tools: v.array(v.string()),
+    routeIntent: v.optional(v.string()),
+    toolBudget: v.optional(v.number()),
+    error: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_created", ["createdAt"])
+    .index("by_status_created", ["status", "createdAt"])
+    .index("by_owner_created", ["ownerSubject", "createdAt"]),
+
+  /** Normalized cache populated only by external market-provider ingestion. */
+  askAIMarketSnapshots: defineTable({
+    // Live sources are coingecko/defillama/aave. uniswap/curve/balancer are legacy
+    // literals kept wide only so stale prod rows validate; narrow to the live three
+    // after running internal.askAIIngestion.purgeLegacyMarketSnapshots.
+    source: v.union(
+      v.literal("coingecko"),
+      v.literal("defillama"),
+      v.literal("uniswap"),
+      v.literal("curve"),
+      v.literal("balancer"),
+      v.literal("aave"),
+    ),
+    kind: v.union(v.literal("token_price"), v.literal("dex_pool"), v.literal("lending_market")),
+    key: v.string(),
+    payload: v.any(),
+    sourceUpdatedAt: v.optional(v.number()),
+    fetchedAt: v.number(),
+  })
+    .index("by_source_kind_key", ["source", "kind", "key"])
+    .index("by_kind_key", ["kind", "key"])
+    .index("by_fetched_at", ["fetchedAt"]),
+
+  askAIMarketProviderRuns: defineTable({
+    source: v.union(
+      v.literal("coingecko"),
+      v.literal("defillama"),
+      v.literal("uniswap"),
+      v.literal("curve"),
+      v.literal("balancer"),
+      v.literal("aave"),
+    ),
+    status: v.union(v.literal("success"), v.literal("failed")),
+    records: v.number(),
+    error: v.optional(v.string()),
+    startedAt: v.number(),
+    completedAt: v.number(),
+  })
+    .index("by_source_completed", ["source", "completedAt"])
+    .index("by_status_completed", ["status", "completedAt"]),
 })

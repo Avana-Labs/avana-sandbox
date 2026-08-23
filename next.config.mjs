@@ -7,7 +7,7 @@ const isDev = process.env.NODE_ENV === "development"
 // first-load JS impact of optimizePackageImports / demand-loading changes is measurable.
 const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === "1" })
 
-// NOTE: Content-Security-Policy is set per-request in middleware.ts so it can carry a nonce and
+// NOTE: Content-Security-Policy is set per-request in proxy.ts so it can carry a nonce and
 // drop `script-src 'unsafe-inline'` in production. The remaining static security headers stay here.
 const securityHeaders = [
   {
@@ -59,9 +59,6 @@ const nextConfig = {
   },
   async redirects() {
     return [
-      // /express was a client-rendered page that only ever did redirect("/"). Serve the
-      // same redirect at the edge instead — no React render, one fewer route in the bundle.
-      { source: "/express", destination: "/", permanent: true },
       // The old Portfolio and Rewards pages were folded into the dashboard, which is now the
       // only account entry point. Redirect the retired routes (and any old bookmarks) there at
       // the edge rather than dead-ending on a 404. Guarded by the portfolio-routing e2e smoke.

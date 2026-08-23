@@ -1,8 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { ArrowUpRight, Info } from "@/app/components/icons"
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
+import { ArrowUpRight } from "@/app/components/icons"
 import type { AboutCard as AboutCardData } from "@/app/lib/borrow-detail"
+import { ABOUT_CONTRACT_ADDRESS_HELP } from "@/app/lib/detail-page/about-contract-addresses"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 type Props = { about: AboutCardData; title?: string; compact?: boolean; plain?: boolean }
@@ -99,32 +101,35 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
 
       {visibleStats.length > 0 ? (
         <dl className={plain ? "text-[13.5px]" : "px-4 pb-2 text-[13.5px]"}>
-          {visibleStats.map((s) => (
-            <div key={s.label} className="flex items-center justify-between gap-4 py-2.5">
-              <dt className="flex min-w-0 items-center gap-1.5 text-text-low">
-                <span className={s.href ? "min-w-0 truncate" : "truncate"}>{t(s.label)}</span>
-                <Info className="size-3.5 shrink-0 text-text-low/60" aria-hidden />
-              </dt>
-              <dd className="min-w-0 truncate text-right font-data font-medium tabular-nums text-text-extra-high">
-                {s.href ? (
-                  <a
-                    href={s.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="group flex items-center justify-end gap-2 text-text-extra-high transition-colors hover:text-text-high"
-                  >
-                    <span className="truncate font-data font-medium tabular-nums">{t(s.value)}</span>
-                    <ArrowUpRight
-                      className="size-4 shrink-0 text-text-low transition-colors group-hover:text-text-high"
-                      aria-hidden
-                    />
-                  </a>
-                ) : (
-                  t(s.value)
-                )}
-              </dd>
-            </div>
-          ))}
+          {visibleStats.map((s) => {
+            const help = ABOUT_CONTRACT_ADDRESS_HELP[s.label]
+            return (
+              <div key={s.label} className="flex items-center justify-between gap-4 py-2.5">
+                <dt className="flex min-w-0 items-center gap-1.5 text-text-low">
+                  <span className={s.href ? "min-w-0 truncate" : "truncate"}>{t(s.label)}</span>
+                  {help ? <ActionMetricHelp text={help} topic={s.label} /> : null}
+                </dt>
+                <dd className="min-w-0 truncate text-right font-data font-medium tabular-nums text-text-extra-high">
+                  {s.href ? (
+                    <a
+                      href={s.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="group flex items-center justify-end gap-2 text-text-extra-high transition-colors hover:text-text-high"
+                    >
+                      <span className="truncate font-data font-medium tabular-nums">{t(s.value)}</span>
+                      <ArrowUpRight
+                        className="size-4 shrink-0 text-text-low transition-colors group-hover:text-text-high"
+                        aria-hidden
+                      />
+                    </a>
+                  ) : (
+                    t(s.value)
+                  )}
+                </dd>
+              </div>
+            )
+          })}
         </dl>
       ) : null}
     </section>

@@ -15,10 +15,9 @@ import {
 } from "@/app/components/market-card-primitives"
 import { useAvanaIdentity, useLendSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useDashboardLendLive } from "@/app/dashboard/use-dashboard-lend-live"
-import { buildLendDashboardMetrics } from "@/app/dashboard/dashboard-tab-metrics"
+import { buildLendBalanceMetrics, buildLendDashboardMetrics } from "@/app/dashboard/dashboard-tab-metrics"
 import { DashboardLendPerformanceSection } from "@/app/dashboard/dashboard-metric-section"
 import { DashboardInvestments } from "@/app/dashboard/dashboard-investments"
-import { LendOutlook } from "@/app/dashboard/_outlook/lend-outlook"
 import type {
   PortfolioLendTabData,
   PortfolioStrategyBucket,
@@ -242,7 +241,9 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
   const lendSession = useLendSessionContext()
   const dashboardLend = useDashboardLendLive(walletId, lendSession)
   const lendTabData = dashboardLend ?? EMPTY_LEND_TAB
-  const metrics = buildLendDashboardMetrics(lendTabData)
+  const balanceMetrics = buildLendBalanceMetrics(lendTabData)
+  // Rewards/claimable stay on the assets Claim path — not on Lend Balance cards.
+  const claimMetrics = buildLendDashboardMetrics(lendTabData)
   const [isClaiming, setIsClaiming] = useState(false)
 
   const handleClaimRewards = async () => {
@@ -257,7 +258,7 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
 
   return (
     <section id="dashboard-lend-account" className={`scroll-mt-24 ${detailSectionStackClass}`}>
-      <DashboardLendPerformanceSection title={t("Lend Balance")} metrics={metrics} />
+      <DashboardLendPerformanceSection title={t("Lend Balance")} metrics={balanceMetrics} />
       <ProductAvailableCard
         walletId={walletId ?? ""}
         sourceTypes={["lend_available"]}
@@ -265,7 +266,12 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
       />
       <DashboardInvestments
         investments={lendTabData.investments}
-        rewardsSummary={lendTabData.rewardsSummary}
+        rewardsSummary={
+          lendTabData.rewardsSummary ?? {
+            claimableUsd: claimMetrics.claimableRewardsUsd,
+            totalEarnedUsd: claimMetrics.interestEarnedUsd + claimMetrics.rewardsEarnedUsd,
+          }
+        }
         onClaimRewards={handleClaimRewards}
         isClaimingRewards={isClaiming}
         showHeading
@@ -273,7 +279,6 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
         countLabel={t("{count} assets").replace("{count}", String(lendTabData.investments.length))}
         returnHref={returnHref}
       />
-      <LendOutlook />
       <LendOpportunitySection
         buckets={lendTabData.strategyBuckets}
         investments={lendTabData.investments}

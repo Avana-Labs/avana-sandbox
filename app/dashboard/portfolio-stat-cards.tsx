@@ -16,12 +16,8 @@ import { HIGHLIGHT_CARD_CLASS } from "@/app/components/highlight-carousel"
 import { LEND_FEATURED_ASSETS } from "@/app/lib/data/catalog/lend/featured-assets"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useAvanaIdentity } from "@/app/lib/avana-session/avana-sessions-provider"
-import { buildDashboardWalletBalanceRows } from "@/app/lib/swap-system"
-import { useConvexProductWalletBalances } from "@/app/lib/swap-system/use-convex-wallet-balances"
-import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { DashboardQuickActions, type DashboardQuickActionsTab } from "./dashboard-quick-actions"
-import { sumWalletValueUsd } from "./dashboard-wallet-tab"
 import { useDashboardPortfolioSummary } from "./use-dashboard-portfolio-summary"
 
 const MASK = "••••"
@@ -79,32 +75,23 @@ function formatValue(value: number, format: ValueFormat): string {
 }
 
 /**
- * The three "Your Dashboard" cards, all sourced from Convex + the live oracle:
- *  - Wallet Balance — only unallocated wallet funds (sourceType "wallet"), same scope as the Wallet tab.
- *  - Net Value — client aggregate: wallet-liquid + Lend + Borrow + Multiply net (umbrella excluded).
- *  - Net APY — net-equity-weighted blend of the same products (umbrella excluded).
+ * The three "Your Dashboard" cards from useDashboardPortfolioSummary:
+ *  - Wallet Balance — unallocated wallet funds only (sourceType "wallet").
+ *  - Net Value — live-priced productBalances aggregate (wallet + lend + borrow + multiply; umbrella excluded).
+ *  - Net APY — equity-weighted blend of live Lend / Borrow / Multiply session Net APYs.
  * No fabricated deltas: a card shows a delta only when a real basis exists (none yet).
  */
 function useStatCards(): StatCard[] {
   const { walletId } = useAvanaIdentity()
-  const convexBalances = useConvexProductWalletBalances(walletId)
-  const { netValueUsd, netApyPct } = useDashboardPortfolioSummary(walletId)
-  const priceFor = useCanonicalPriceFor()
-
-  const walletRows = buildDashboardWalletBalanceRows({
-    walletId,
-    balances: convexBalances ?? undefined,
-    priceFor,
-  }).filter((row) => row.sourceType === "wallet")
-  const walletTotal = sumWalletValueUsd(walletRows)
+  const { netValueUsd, netApyPct, walletBalanceUsd } = useDashboardPortfolioSummary(walletId)
 
   return [
     {
       key: "wallet-balance",
       label: "Wallet Balance",
-      value: formatValue(walletTotal, "usd"),
+      value: formatValue(walletBalanceUsd, "usd"),
       format: "usd",
-      base: walletTotal > 0 ? walletTotal : 1,
+      base: walletBalanceUsd > 0 ? walletBalanceUsd : 1,
       amplitude: 0.03,
       maskable: true,
       isPositive: true,

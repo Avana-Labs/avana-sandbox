@@ -25,6 +25,7 @@ const PRODUCT_RUNTIME_ROUTES = [
   "/sandbox",
   "/onboarding",
   "/umbrella",
+  "/ask",
 ]
 
 function needsProductRuntime(pathname: string) {
@@ -40,6 +41,17 @@ export function ProductRuntimeProviders({
 }) {
   const pathname = usePathname()
   const { isSignedIn } = useSiweAuth()
+
+  // Guest `/ask` owns a dedicated Convex auth boundary (SIWE or limited guest JWT).
+  // Signed-in users keep the normal product runtime mounted under Ask so closing it
+  // does not remount AvanaSessionProviders and flash a blank screen.
+  if ((pathname === "/ask" || pathname.startsWith("/ask/")) && !isSignedIn) {
+    return (
+      <TokenPricesProvider initialPrices={initialTokenPrices} realtime={false}>
+        {children}
+      </TokenPricesProvider>
+    )
+  }
 
   if (!isSignedIn && !needsProductRuntime(pathname)) {
     // Still provide the server-seeded prices so any price consumer rendered outside the

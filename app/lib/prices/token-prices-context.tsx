@@ -97,9 +97,11 @@ const EMPTY_PRICES: Record<string, number> = {}
 export function TokenPricesProvider({
   children,
   initialPrices,
+  realtime = true,
 }: {
   children: React.ReactNode
   initialPrices?: Record<string, number>
+  realtime?: boolean
 }) {
   // Base context = the server-seeded live oracle prices (fetched once during SSR, keys in
   // `priceKey` form). This is what makes CLIENT-rendered prices live even though the realtime
@@ -110,7 +112,7 @@ export function TokenPricesProvider({
   // Skip the realtime subscription when there's no Convex client (nothing to query) and on the
   // open-gate/Lighthouse test surfaces (deterministic static catalog). The seed still flows, so
   // prices stay live from SSR; the subscription, when present, only layers fresher values on top.
-  if (!hasConvexClient || shouldUseOpenGateSession() || isLighthouseAuditMode()) {
+  if (!realtime || !hasConvexClient || shouldUseOpenGateSession() || isLighthouseAuditMode()) {
     return <TokenPricesContext.Provider value={seed}>{children}</TokenPricesContext.Provider>
   }
   return (

@@ -18,7 +18,8 @@ function trackedFiles() {
 const files = trackedFiles()
 
 for (const file of files) {
-  if (/^\.env(?:\.|$)/.test(file) || /\/\.env(?:\.|$)/.test(file)) {
+  const isEnvironmentTemplate = /(?:^|\/)\.env\.example$/.test(file)
+  if (!isEnvironmentTemplate && (/^\.env(?:\.|$)/.test(file) || /\/\.env(?:\.|$)/.test(file))) {
     fail(`Tracked environment file is not allowed: ${file}`)
   }
 }

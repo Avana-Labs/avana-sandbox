@@ -12,11 +12,12 @@
 
 import type { MutationCtx, QueryCtx } from "../_generated/server"
 
-type AnyCtx = QueryCtx | MutationCtx
+type AnyCtx = Pick<QueryCtx | MutationCtx, "auth">
 
 export async function getAuthedWallet(ctx: AnyCtx): Promise<string | null> {
   const identity = await ctx.auth.getUserIdentity()
   if (!identity) return null
+  if (identity.subject.startsWith("ask-guest:")) return null
   const raw = (identity as unknown as { wallet?: string }).wallet ?? identity.subject
   return raw ? raw.toLowerCase() : null
 }

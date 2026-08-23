@@ -4,8 +4,8 @@ import { lazy, useMemo } from "react"
 import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { useAvanaIdentity, useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useDashboardMultiplyLive } from "@/app/dashboard/use-dashboard-multiply-live"
-import { buildMultiplyDashboardMetrics, type DashboardTabMetrics } from "@/app/dashboard/dashboard-tab-metrics"
-import { DashboardOverviewSection } from "@/app/dashboard/dashboard-metric-section"
+import { buildMultiplyBalanceMetrics, type MultiplyBalanceMetrics } from "@/app/dashboard/dashboard-tab-metrics"
+import { DashboardMultiplyBalanceSection } from "@/app/dashboard/dashboard-metric-section"
 import { SuppliesHealthFactorCard } from "@/app/dashboard/borrow-tab/supplies-table"
 import { CurrentLtvCard } from "@/app/dashboard/borrow-tab/debts-table"
 import type { BorrowSnapshot } from "@/app/dashboard/borrow-hero-state"
@@ -13,7 +13,6 @@ import type { PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfoli
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { MultiplyOutlook } from "@/app/dashboard/_outlook/multiply-outlook"
 import { AccountModuleBoundary, ProductAvailableCard } from "./account-sections-shared"
 
 const MultiplyCollateralTable = lazy(async () => ({
@@ -71,14 +70,14 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
     }
   }, [multiplyTabData.creditLines])
 
-  const multiplyDashboardMetrics = useMemo<DashboardTabMetrics>(
-    () => buildMultiplyDashboardMetrics(multiplySession.state, walletId ?? "", multiplyTabData),
+  const multiplyBalanceMetrics = useMemo<MultiplyBalanceMetrics>(
+    () => buildMultiplyBalanceMetrics(multiplySession.state, walletId ?? "", multiplyTabData),
     [multiplySession.state, multiplyTabData, walletId],
   )
 
   return (
     <section id="dashboard-multiply-account" className={`scroll-mt-24 ${detailSectionStackClass}`}>
-      <DashboardOverviewSection title={t("Multiply Balance")} metrics={multiplyDashboardMetrics.overview} />
+      <DashboardMultiplyBalanceSection title={t("Multiply Balance")} metrics={multiplyBalanceMetrics} />
       <ProductAvailableCard
         walletId={walletId ?? ""}
         sourceTypes={["multiply_available"]}
@@ -106,8 +105,6 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
       <AccountModuleBoundary>
         <MultiplyWhatIfPanel state={multiplySession.state} walletId={walletId ?? null} />
       </AccountModuleBoundary>
-
-      <MultiplyOutlook />
     </section>
   )
 }

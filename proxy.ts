@@ -7,7 +7,7 @@ import { buildContentSecurityPolicy } from "@/lib/content-security-policy.mjs"
  * scripts read the nonce from `x-nonce`. This replaces the blanket `script-src 'unsafe-inline'`
  * in production with a nonce + strict-dynamic policy.
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const isDev = process.env.NODE_ENV === "development"
   const nonce = btoa(crypto.randomUUID())
   const csp = buildContentSecurityPolicy({ nonce, isDev })

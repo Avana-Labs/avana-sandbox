@@ -11,8 +11,9 @@ const SITE_NAME = "Avana"
 
 export function BrandLogo({ mobileOnly = false, className }: BrandLogoProps) {
   return (
-    <span className="inline-flex items-center overflow-hidden">
-      {/* Plain img avoids next/image SSR markup drift in the site header. */}
+    // className must live on the wrapper — hiding only the <img> leaves an
+    // inline-flex strut that shifts vertical centering vs BrandIcon routes.
+    <span className={cn("inline-flex items-center overflow-hidden", className)}>
       <img
         src={HEADER_WORDMARK_PATH}
         srcSet={`${HEADER_WORDMARK_PATH} 220w, /avana-wordmark-440.png 440w`}
@@ -22,10 +23,7 @@ export function BrandLogo({ mobileOnly = false, className }: BrandLogoProps) {
         height={86}
         loading="eager"
         fetchPriority="high"
-        className={cn(
-          mobileOnly ? "h-[56px] w-auto scale-[1.08] origin-left" : "h-[44px] w-auto origin-left md:h-[44px]",
-          className,
-        )}
+        className={mobileOnly ? "h-[56px] w-auto scale-[1.08] origin-left" : "h-[36px] w-auto origin-left"}
       />
     </span>
   )
@@ -37,7 +35,7 @@ type BrandIconProps = {
 
 export function BrandIcon({ className }: BrandIconProps) {
   return (
-    <span className="inline-flex items-center overflow-hidden">
+    <span className={cn("inline-flex items-center overflow-hidden", className)}>
       {/* Plain img avoids next/image SSR markup drift in the mobile header. */}
       <img
         src="/avana-icon-64.png"
@@ -46,7 +44,7 @@ export function BrandIcon({ className }: BrandIconProps) {
         height={64}
         loading="eager"
         fetchPriority="high"
-        className={cn("h-8 w-8 object-cover", className)}
+        className="h-8 w-8 object-cover"
       />
     </span>
   )

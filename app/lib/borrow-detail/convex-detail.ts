@@ -47,6 +47,12 @@ import { buildMockLiquidationRiskStats } from "@/app/lib/detail-page/liquidation
 import { injectSiloedMarketQuickStats, overlayHeroIdentity } from "@/app/lib/detail-page/siloed-market-overlay"
 import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
 import { shouldFailClosedWithoutSnapshots } from "@/app/lib/borrow-detail/live-fallback"
+import {
+  ABOUT_CONTRACT_ADDRESS_SALTS,
+  aboutContractAddressLabelForSalt,
+  isAboutContractAddressStat,
+  sortAboutContractAddressRows,
+} from "@/app/lib/detail-page/about-contract-addresses"
 import type { AllocationRow, AssetDetail, PoolDetail, QuickStat } from "./types"
 
 /**
@@ -218,28 +224,15 @@ async function enrichAllocationWithCollateralFactors(
 }
 
 /**
- * Contract-address rows for the About card. Maps the Convex row's label/address/href
- * into AboutCard.stats — the display-friendly `Vault Contract Address` / `Token …` /
- * `Staking …` (+ `Governance …` on pools) labels come from the seed (`salt` → label
- * spelled out in contract-addresses-seed.ts) so the client stays a pass-through.
+ * Contract-address rows for the About card. Maps Convex salt → display label
+ * (vault / token / riskManager / oracleRouter). Labels live in
+ * `about-contract-addresses.ts` so seed, inject, and the (i) help stay aligned.
  */
-const CONTRACT_ADDRESS_LABEL_BY_SALT: Record<string, string> = {
-  vault: "Vault Contract Address",
-  token: "Token Contract Address",
-  staking: "Staking Contract Address",
-}
-
-/** Only these three addresses show on About (matches the pre-migration 3-row spec — no Governance). */
-const CONTRACT_ADDRESS_SALTS = new Set(["vault", "token", "staking"])
-
-/** True for any stat that is a contract-address row (used to strip stale/duplicate ones). */
-function isContractAddressStat(stat: { label: string }): boolean {
-  return /Contract Address$/.test(stat.label)
-}
+const CONTRACT_ADDRESS_SALTS = new Set<string>(ABOUT_CONTRACT_ADDRESS_SALTS)
 
 function contractRowToStat(row: ConvexContractAddressRow): { label: string; value: string; href: string } {
   return {
-    label: CONTRACT_ADDRESS_LABEL_BY_SALT[row.salt] ?? row.label,
+    label: aboutContractAddressLabelForSalt(row.salt) ?? row.label,
     value: row.label,
     href: row.href,
   }
@@ -247,17 +240,16 @@ function contractRowToStat(row: ConvexContractAddressRow): { label: string; valu
 
 /**
  * Replace (not append) the About card's contract-address rows with the canonical
- * Vault/Token/Staking set from Convex. Stripping any pre-existing contract rows first
- * makes this idempotent against stale/double-seeded `content.stats` (deployments seeded
- * before the mock stopped emitting these), so the card always shows exactly three —
- * never the 6–7 duplicates the old append produced. When Convex has no rows (offline),
- * leave the seeded stats untouched so the card still renders.
+ * Vault / Token / Risk Manager / Oracle Router set from Convex. Stripping any
+ * pre-existing contract rows first makes this idempotent against stale/double-seeded
+ * `content.stats` (including legacy Staking rows), so the card always shows exactly
+ * four. When Convex has no rows (offline), leave the seeded stats untouched.
  */
 function injectContractAddressStats<T extends { about: AssetDetail["about"] | PoolDetail["about"] }>(
   detail: T,
   rows: readonly ConvexContractAddressRow[],
 ): T {
-  const contractRows = rows.filter((row) => CONTRACT_ADDRESS_SALTS.has(row.salt))
+  const contractRows = sortAboutContractAddressRows(rows.filter((row) => CONTRACT_ADDRESS_SALTS.has(row.salt)))
   if (contractRows.length === 0) return detail
   const seen = new Set<string>()
   const contractStats: Array<{ label: string; value: string; href: string }> = []
@@ -270,7 +262,7 @@ function injectContractAddressStats<T extends { about: AssetDetail["about"] | Po
     ...detail,
     about: {
       ...detail.about,
-      stats: [...detail.about.stats.filter((stat) => !isContractAddressStat(stat)), ...contractStats],
+      stats: [...detail.about.stats.filter((stat) => !isAboutContractAddressStat(stat)), ...contractStats],
     },
   }
 }

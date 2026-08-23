@@ -7,9 +7,9 @@ import { useDashboardBorrowLive } from "@/app/dashboard/use-dashboard-borrow-liv
 import { buildPortfolioBorrowData } from "@/app/lib/borrow-system/read-model"
 import type { PortfolioBorrowTabData } from "@/app/lib/data/providers/portfolio"
 import {
-  buildBorrowDashboardMetrics,
+  buildBorrowBalanceMetrics,
   buildBorrowDashboardMetricsFromSnapshot,
-  type DashboardTabMetrics,
+  type BorrowBalanceMetrics,
 } from "@/app/dashboard/dashboard-tab-metrics"
 import { DashboardCreditOverviewSection } from "@/app/dashboard/dashboard-metric-section"
 import { SuppliesHealthFactorCard } from "@/app/dashboard/borrow-tab/supplies-table"
@@ -19,7 +19,6 @@ import { useAmountDisplayPreferences } from "@/app/components/display-preference
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { HealthFactorHistoryCard } from "@/app/dashboard/health-factor-history-card"
-import { BorrowOutlook } from "@/app/dashboard/_outlook/borrow-outlook"
 import { AccountModuleBoundary } from "./account-sections-shared"
 
 const DashboardBorrowTab = lazy(async () => ({
@@ -72,28 +71,26 @@ export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref
   const collateralPositions = liveBorrowTab?.collateralPositions ?? []
   const debtPositions = liveBorrowTab?.debtPositions ?? []
 
-  const borrowDashboardMetrics = useMemo<DashboardTabMetrics>(() => {
+  const borrowBalanceMetrics = useMemo<BorrowBalanceMetrics>(() => {
     if (hasMounted && walletId && borrowSession.state.accounts[walletId]) {
-      return buildBorrowDashboardMetrics(borrowSession.state, walletId)
+      return buildBorrowBalanceMetrics(borrowSession.state, walletId)
     }
-    return buildBorrowDashboardMetricsFromSnapshot(borrowSnapshot, collateralPositions, debtPositions)
+    const fallback = buildBorrowDashboardMetricsFromSnapshot(borrowSnapshot, collateralPositions, debtPositions)
+    return {
+      netValueUsd: fallback.overview.netValueUsd,
+      collateralValueUsd: borrowSnapshot.totalCollateralUsd,
+      totalBorrowedUsd: borrowSnapshot.totalBorrowedUsd,
+      availableToBorrowUsd: borrowSnapshot.approvedUsd,
+      healthFactor: borrowSnapshot.averageHealthFactor,
+      liquidationBufferUsd: Math.max(0, borrowSnapshot.liquidationThresholdUsd - borrowSnapshot.totalBorrowedUsd),
+      netApyPct: fallback.performance.netApyPct,
+      interestOwedUsd: fallback.performance.interestOwedUsd,
+    }
   }, [borrowSession.state, borrowSnapshot, collateralPositions, debtPositions, hasMounted, walletId])
 
   return (
     <section id="dashboard-borrow-account" className={`scroll-mt-24 ${detailSectionStackClass}`}>
-      <DashboardCreditOverviewSection
-        title={t("Borrow Balance")}
-        // Single Net Value definition = the metric builder's (collateral − debt + returned-LP).
-        // The old ad-hoc `collateral − debt` here ignored LP returned to the wallet on a
-        // collateral withdrawal, so the header wrongly dropped when value just moved buckets —
-        // and it disagreed with the hero, which counts that returned LP via productBalances.
-        netValueUsd={borrowDashboardMetrics.overview.netValueUsd}
-        totalBorrowedUsd={borrowSnapshot.totalBorrowedUsd}
-        netApyPct={borrowDashboardMetrics.performance.netApyPct}
-        totalCollateralUsd={borrowSnapshot.totalCollateralUsd}
-        interestOwedUsd={borrowDashboardMetrics.performance.interestOwedUsd}
-        liquidationBufferUsd={Math.max(0, borrowSnapshot.liquidationThresholdUsd - borrowSnapshot.totalBorrowedUsd)}
-      />
+      <DashboardCreditOverviewSection title={t("Borrow Balance")} metrics={borrowBalanceMetrics} />
 
       <AccountModuleBoundary>
         <DashboardBorrowTab
@@ -119,8 +116,6 @@ export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref
         </div>
         <HealthFactorHistoryCard walletId={walletId ?? undefined} />
       </div>
-
-      <BorrowOutlook />
     </section>
   )
 }
