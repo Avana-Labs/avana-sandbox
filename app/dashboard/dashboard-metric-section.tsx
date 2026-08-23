@@ -9,6 +9,7 @@ import type {
   BorrowBalanceMetrics,
   DashboardOverviewMetrics,
   DashboardPerformanceMetrics,
+  LendBalanceMetrics,
   MultiplyBalanceMetrics,
 } from "./dashboard-tab-metrics"
 
@@ -307,49 +308,74 @@ export type DashboardLendPerformanceMetrics = {
   claimableRewardsUsd: number
 }
 
+/**
+ * Wallet-level Lend Balance — eight growth metrics across every active Lend
+ * position. Rewards stay on the Claim path / assets table, not these cards.
+ */
 export function DashboardLendPerformanceSection({
   title,
   metrics,
   hideHeading = false,
 }: {
   title: string
-  metrics: DashboardLendPerformanceMetrics
+  metrics: LendBalanceMetrics
   hideHeading?: boolean
 }) {
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const { t } = useTranslation()
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
+  const projectionHint = t("Projected earnings at current rates")
+
+  const items: MetricItem[] = [
+    {
+      label: t("Total Supplied"),
+      value: m(formatUsdExact(metrics.totalSuppliedUsd)),
+      description: t("Total assets currently supplied and earning yield"),
+    },
+    {
+      label: t("Net APY"),
+      value: showDollarAmounts ? formatPct(metrics.netApyPct) : MASK,
+      description: t("Weighted average APY across all supplied positions"),
+    },
+    {
+      label: t("Interest Earned"),
+      value: m(formatUsdExact(metrics.interestEarnedUsd)),
+      description: t("Supply interest accrued across your lending positions (excludes protocol rewards)"),
+    },
+    {
+      label: t("Yield Generated"),
+      value: showDollarAmounts ? formatPct(metrics.yieldGeneratedPct) : MASK,
+      description: t("Interest earned as a percentage of principal you supplied"),
+    },
+    {
+      label: t("1 Day"),
+      value: showDollarAmounts ? `+${formatUsdExact(metrics.projectedEarnings1dUsd)}` : MASK,
+      description: projectionHint,
+    },
+    {
+      label: t("30 Days"),
+      value: showDollarAmounts ? `+${formatUsdExact(metrics.projectedEarnings30dUsd)}` : MASK,
+      description: projectionHint,
+    },
+    {
+      label: t("90 Days"),
+      value: showDollarAmounts ? `+${formatUsdExact(metrics.projectedEarnings90dUsd)}` : MASK,
+      description: projectionHint,
+    },
+    {
+      label: t("6 Months"),
+      value: showDollarAmounts ? `+${formatUsdExact(metrics.projectedEarnings6mUsd)}` : MASK,
+      description: projectionHint,
+    },
+  ]
+
   return (
     <section className="space-y-4 pb-3">
       {hideHeading ? null : (
         <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
       )}
-      <MetricGrid
-        labelOnTop
-        metrics={[
-          {
-            label: t("Total Supplied"),
-            value: m(formatUsdExact(metrics.totalSuppliedUsd)),
-            description: t("Total assets currently supplied and earning yield"),
-          },
-          {
-            label: t("Net APY"),
-            value: showDollarAmounts ? formatPct(metrics.netApyPct) : MASK,
-            description: t("Weighted average APY across all supplied positions"),
-          },
-          {
-            label: t("Interest Earned"),
-            value: m(formatUsdExact(metrics.interestEarnedUsd)),
-            description: t("Supply interest accrued across your lending positions (excludes protocol rewards)"),
-          },
-          {
-            label: t("Rewards Earned"),
-            value: m(formatUsdExact(metrics.rewardsEarnedUsd)),
-            description: t("Protocol rewards accrued across your lending positions"),
-          },
-        ]}
-      />
+      <MetricGrid labelOnTop metrics={items} />
     </section>
   )
 }

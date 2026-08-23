@@ -2,6 +2,7 @@ import { cleanup, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   DashboardCreditOverviewSection,
+  DashboardLendPerformanceSection,
   DashboardMultiplyBalanceSection,
 } from "@/app/dashboard/dashboard-metric-section"
 
@@ -80,5 +81,41 @@ describe("Multiply Balance metric cards", () => {
     }
     expect(screen.getByText("2.70×")).toBeTruthy()
     expect(screen.getByText("1.85")).toBeTruthy()
+  })
+})
+
+describe("Lend Balance metric cards", () => {
+  it("renders eight growth metrics and omits Rewards Earned", () => {
+    render(
+      <DashboardLendPerformanceSection
+        title="Lend Balance"
+        metrics={{
+          totalSuppliedUsd: 100_000,
+          netApyPct: 6.5,
+          interestEarnedUsd: 2_500,
+          yieldGeneratedPct: 2.56,
+          projectedEarnings1dUsd: 17.81,
+          projectedEarnings30dUsd: 534.25,
+          projectedEarnings90dUsd: 1_602.74,
+          projectedEarnings6mUsd: 3_250,
+        }}
+      />,
+    )
+
+    for (const label of [
+      "Total Supplied",
+      "Net APY",
+      "Interest Earned",
+      "Yield Generated",
+      "1 Day",
+      "30 Days",
+      "90 Days",
+      "6 Months",
+    ]) {
+      expect(screen.getByText(label)).toBeTruthy()
+    }
+    expect(screen.getByText("6.50%")).toBeTruthy()
+    expect(screen.getByText("2.56%")).toBeTruthy()
+    expect(screen.queryByText("Rewards Earned")).toBeNull()
   })
 })
