@@ -421,6 +421,15 @@ export const upsertMultiplyContractAddresses = action({
   },
 })
 
+export const upsertLendContractAddresses = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.contractAddresses.upsertLendAddresses, { rows })
+  },
+})
+
 /**
  * Per-wallet portfolio upserts take a wallet arg alongside rows[]. Rows use
  * the same size caps to keep any single seed batch small.

@@ -284,6 +284,11 @@ async function main() {
     api.seedAdmin.upsertMultiplyContractAddresses,
     remap("marketSlug", seed.multiplyContractAddresses ?? []),
   )
+  await pushSilo(
+    "lend contract addresses",
+    api.seedAdmin.upsertLendContractAddresses,
+    remap("marketSlug", seed.lendContractAddresses ?? []),
+  )
 
   // ---------------------------------------------------------------------------
   // Per-wallet portfolio for the seeded test wallet. Every row shares the same

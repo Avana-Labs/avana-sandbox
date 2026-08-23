@@ -352,8 +352,8 @@ function buildAbout(row: MultiplyMarketRow, marketId: string): AboutCard {
       riskTier: record?.risk.riskTier,
     }),
     // Contract-address stats now injected at overlay time by getMultiplyDetailFromConvex
-    // via api.contractAddresses.listMultiplyAddresses. The 3 seeded salts (vault/token/
-    // staking) become AboutCard.stats rows there.
+    // via api.contractAddresses.listMultiplyAddresses. The 4 seeded salts (vault/token/
+    // riskManager/oracleRouter) become AboutCard.stats rows there.
     stats: [],
     history: [
       {

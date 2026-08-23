@@ -1,6 +1,6 @@
 // SEED ONLY — imported by build-seed.ts. Not for UI code.
 //
-// Deterministic contract-address seed rows for pool, asset, and multiply
+// Deterministic contract-address seed rows for pool, asset, lend, and multiply
 // detail pages. The mock's `contractAddressFor(slug, salt)` (see
 // app/lib/borrow-detail/pool.mock.ts) FNV-1a hashes `${slug}:${salt}` and
 // formats the result as a 40-hex 0x-prefixed pseudo-address. That same
@@ -10,6 +10,8 @@
 
 import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
 import { listSpokeBorrowables } from "@/app/lib/borrow-system/registry"
+import { ABOUT_CONTRACT_ADDRESS_SALTS } from "@/app/lib/detail-page/about-contract-addresses"
+import { LEND_MARKET_CATALOG } from "@/app/lib/lend-system/catalog"
 import { MULTIPLY_MARKET_CATALOG } from "@/app/lib/multiply-system/catalog"
 import type { SeedContractAddressRow } from "../build-seed"
 
@@ -42,26 +44,30 @@ function buildRow(slug: string, salt: string, chain: string): SeedContractAddres
   }
 }
 
-const POOL_SALTS = ["vault", "token", "staking", "governance"] as const
-const ASSET_SALTS = ["vault", "token", "staking"] as const
-const MULTIPLY_SALTS = ["vault", "token", "staking"] as const
+/** Shared About salts: vault, token, riskManager, oracleRouter. */
+const DETAIL_SALTS = ABOUT_CONTRACT_ADDRESS_SALTS
 
 /** Pool detail-page contract rows — 4 salts × every entry in BORROW_POOL_CATALOG. */
 export const POOL_CONTRACT_SEED_ROWS: SeedContractAddressRow[] = BORROW_POOL_CATALOG.flatMap((pool) => {
   // BorrowPoolRow has no `chain` field today; the `?? "Ethereum"` guard keeps
   // the seed forward-compatible if one is added later without changing values.
   const chain = (pool as { chain?: string }).chain ?? "Ethereum"
-  return POOL_SALTS.map((salt) => buildRow(pool.id, salt, chain))
+  return DETAIL_SALTS.map((salt) => buildRow(pool.id, salt, chain))
 })
 
-/** Asset detail-page contract rows — 3 salts × every spoke-bound borrowable asset. */
+/** Asset detail-page contract rows — 4 salts × every spoke-bound borrowable asset. */
 export const ASSET_CONTRACT_SEED_ROWS: SeedContractAddressRow[] = listSpokeBorrowables().flatMap((asset) =>
-  ASSET_SALTS.map((salt) => buildRow(asset.id, salt, "Ethereum")),
+  DETAIL_SALTS.map((salt) => buildRow(asset.id, salt, "Ethereum")),
 )
 
-/** Multiply detail-page contract rows — 3 salts × every entry in MULTIPLY_MARKET_CATALOG. */
+/** Lend detail-page contract rows — 4 salts × every entry in LEND_MARKET_CATALOG. */
+export const LEND_CONTRACT_SEED_ROWS: SeedContractAddressRow[] = LEND_MARKET_CATALOG.flatMap((market) =>
+  DETAIL_SALTS.map((salt) => buildRow(market.marketId, salt, "Ethereum")),
+)
+
+/** Multiply detail-page contract rows — 4 salts × every entry in MULTIPLY_MARKET_CATALOG. */
 export const MULTIPLY_CONTRACT_SEED_ROWS: SeedContractAddressRow[] = MULTIPLY_MARKET_CATALOG.flatMap((market) =>
-  MULTIPLY_SALTS.map((salt) => buildRow(market.id, salt, "Ethereum")),
+  DETAIL_SALTS.map((salt) => buildRow(market.id, salt, "Ethereum")),
 )
 
 // isSynthetic: true marks every row here as a seeded FNV-1a hash of the mock,

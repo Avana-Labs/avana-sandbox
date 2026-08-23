@@ -154,6 +154,18 @@ export async function fetchLendContent(slug: string) {
   }
 }
 
+/** Lend-market contract-address rows for detail.about.stats. */
+export async function fetchLendContractAddresses(marketSlug: string) {
+  const client = convexClient()
+  if (!client) return []
+  try {
+    const rows = await client.query(api.contractAddresses.listLendAddresses, { marketSlug })
+    return rows ?? []
+  } catch {
+    return []
+  }
+}
+
 /** Lend product — Risk Parameters for About / Risk Parameters grid. */
 export async function fetchLendRiskParameters(slug: string) {
   const client = convexClient()

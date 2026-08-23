@@ -1,11 +1,12 @@
 /**
- * Contract-address lookups for pool / asset / multiply detail pages. Seeded
- * with the current FNV-hashed synthetic 0x… strings (`contractAddressFor`),
- * `isSynthetic: true` today; an Etherscan sync flips them to real addresses
- * later with `isSynthetic: false` and no UI change.
+ * Contract-address lookups for pool / asset / lend / multiply detail pages. Seeded
+ * with FNV-hashed synthetic 0x… strings (`contractAddressFor`) for the About
+ * salts vault / token / riskManager / oracleRouter (`isSynthetic: true` today);
+ * an Etherscan sync flips them to real addresses later with `isSynthetic: false`
+ * and no UI change.
  *
- * Split into three modules — one per scope — but co-located here so the seed
- * writer can populate all three from a single import path.
+ * Split by scope but co-located here so the seed writer can populate all tables
+ * from a single import path.
  */
 
 import { v } from "convex/values"
@@ -22,7 +23,7 @@ const baseFields = {
 
 const poolAddressRow = v.object({ poolSlug: v.string(), ...baseFields })
 const assetAddressRow = v.object({ assetSlug: v.string(), ...baseFields })
-const multiplyAddressRow = v.object({ marketSlug: v.string(), ...baseFields })
+const marketAddressRow = v.object({ marketSlug: v.string(), ...baseFields })
 
 const stripMeta = <T extends { _id: unknown; _creationTime: unknown; updatedAt: unknown }>(row: T) => {
   const { _id: _mid, _creationTime: _mct, updatedAt: _mua, ...rest } = row
@@ -107,7 +108,7 @@ export const listMultiplyAddresses = query({
 })
 
 export const upsertMultiplyAddresses = internalMutation({
-  args: { rows: v.array(multiplyAddressRow) },
+  args: { rows: v.array(marketAddressRow) },
   handler: async (ctx, { rows }) => {
     const now = Date.now()
     for (const row of rows) {
@@ -117,6 +118,37 @@ export const upsertMultiplyAddresses = internalMutation({
         .unique()
       if (existing) await ctx.db.patch(existing._id, { ...row, updatedAt: now })
       else await ctx.db.insert("multiplyContractAddresses", { ...row, updatedAt: now })
+    }
+    return { written: rows.length }
+  },
+})
+
+// -----------------------------------------------------------------------------
+// Lend market
+// -----------------------------------------------------------------------------
+
+export const listLendAddresses = query({
+  args: { marketSlug: v.string() },
+  handler: async (ctx, { marketSlug }) => {
+    const rows = await ctx.db
+      .query("lendContractAddresses")
+      .withIndex("by_market", (q) => q.eq("marketSlug", marketSlug))
+      .collect()
+    return rows.map(stripMeta)
+  },
+})
+
+export const upsertLendAddresses = internalMutation({
+  args: { rows: v.array(marketAddressRow) },
+  handler: async (ctx, { rows }) => {
+    const now = Date.now()
+    for (const row of rows) {
+      const existing = await ctx.db
+        .query("lendContractAddresses")
+        .withIndex("by_market_salt", (q) => q.eq("marketSlug", row.marketSlug).eq("salt", row.salt))
+        .unique()
+      if (existing) await ctx.db.patch(existing._id, { ...row, updatedAt: now })
+      else await ctx.db.insert("lendContractAddresses", { ...row, updatedAt: now })
     }
     return { written: rows.length }
   },

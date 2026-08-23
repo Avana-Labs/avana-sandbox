@@ -1812,7 +1812,7 @@ export default defineSchema({
 
   // ---------------------------------------------------------------------------
   // Contract addresses — seeded synthetic 0x… strings today, Etherscan later.
-  // Split by scope (pool / asset / multiply) to keep indexes narrow.
+  // Split by scope (pool / asset / lend / multiply) to keep indexes narrow.
   // ---------------------------------------------------------------------------
 
   poolContractAddresses: defineTable({
@@ -1842,6 +1842,19 @@ export default defineSchema({
     .index("by_asset", ["assetSlug"]),
 
   multiplyContractAddresses: defineTable({
+    marketSlug: v.string(),
+    salt: v.string(),
+    address: v.string(),
+    label: v.string(),
+    href: v.string(),
+    chain: v.string(),
+    isSynthetic: v.boolean(),
+    updatedAt: v.number(),
+  })
+    .index("by_market_salt", ["marketSlug", "salt"])
+    .index("by_market", ["marketSlug"]),
+
+  lendContractAddresses: defineTable({
     marketSlug: v.string(),
     salt: v.string(),
     address: v.string(),

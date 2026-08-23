@@ -836,7 +836,8 @@ const dict: TranslationDictionary = {
   "+10.2%": "+10.2%",
   "Vault Contract Address": "金库合约地址",
   "Token Contract Address": "代币合约地址",
-  "Staking Contract Address": "质押合约地址",
+  "Risk Manager Address": "风险管理合约地址",
+  "Oracle Router Address": "预言机路由合约地址",
   "Deployed On": "部署于",
   "Concentrated-liquidity ETH/USDC exposure accepted as LP collateral for borrowing.":
     "集中流动性 ETH/USDC 敞口可作为 LP 抵押品用于借款。",
