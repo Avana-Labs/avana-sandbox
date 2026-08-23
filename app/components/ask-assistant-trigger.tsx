@@ -32,9 +32,15 @@ export function AskAssistantTrigger({
       onClick()
       return
     }
-    triggerPageLoading()
     const query = searchParams.toString()
-    router.push(askAIHref(`${pathname}${query ? `?${query}` : ""}`))
+    const returnHref = `${pathname}${query ? `?${query}` : ""}`
+    try {
+      sessionStorage.setItem("avana:ask-ai-opened-from", returnHref)
+    } catch {
+      // private mode / blocked storage — close still falls back to router.push
+    }
+    triggerPageLoading()
+    router.push(askAIHref(returnHref))
   }
 
   return (

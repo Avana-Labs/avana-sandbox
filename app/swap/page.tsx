@@ -1,12 +1,15 @@
 import type { Metadata } from "next"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
+import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 import { SwapPageClient } from "./swap-page-client"
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildSeoMetadata({
   title: "Swap",
   description: "Swap assets on Avana.",
-}
+  path: "/swap",
+  keywords: ["swap crypto", "token swap", "exchange assets", "Avana swap"],
+})
 
 type SwapPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>

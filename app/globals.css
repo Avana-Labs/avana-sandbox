@@ -257,6 +257,8 @@
 .home-reveal-tab {
   background-color: transparent !important;
   color: hsl(var(--muted-foreground)) !important;
+  /* Allow width to animate toward max-content as localized labels expand. */
+  interpolate-size: allow-keywords;
   transition:
     width 520ms cubic-bezier(0.22, 1, 0.36, 1),
     padding 520ms cubic-bezier(0.22, 1, 0.36, 1) !important;
@@ -296,7 +298,8 @@
 }
 
 .home-reveal-tab[data-state="active"] .home-reveal-tab-label {
-  max-width: 8.5rem;
+  /* Room for longer DeFi verbs across locales (Intercambiar, Échanger, スワップ…). */
+  max-width: 12rem;
   opacity: 1;
   transform: translateX(0) scaleX(1);
 }

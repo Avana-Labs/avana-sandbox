@@ -42,12 +42,10 @@ export function ProductRuntimeProviders({
   const pathname = usePathname()
   const { isSignedIn } = useSiweAuth()
 
-  // `/ask` owns a dedicated Convex auth boundary that supports either SIWE or a
-  // limited guest identity. Mounting the full product runtime here would create a
-  // nested Convex provider and hydrate every product session unnecessarily. Its
-  // root price context must also stay on the SSR seed because this component is
-  // above AskAIConvexBoundary and cannot open a Convex subscription safely.
-  if (pathname === "/ask" || pathname.startsWith("/ask/")) {
+  // Guest `/ask` owns a dedicated Convex auth boundary (SIWE or limited guest JWT).
+  // Signed-in users keep the normal product runtime mounted under Ask so closing it
+  // does not remount AvanaSessionProviders and flash a blank screen.
+  if ((pathname === "/ask" || pathname.startsWith("/ask/")) && !isSignedIn) {
     return (
       <TokenPricesProvider initialPrices={initialTokenPrices} realtime={false}>
         {children}

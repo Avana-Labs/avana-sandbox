@@ -35,20 +35,18 @@ export function ActionFlowHeader({
 
   return (
     <header
-      className={`sticky top-0 z-40 flex h-16 items-center border-b border-border bg-background px-4 text-foreground sm:px-6 ${
-        mobileOnly ? "lg:hidden" : "lg:h-[68px] lg:px-5 xl:px-6 2xl:px-8"
+      className={`sticky top-0 z-40 flex h-14 items-center border-b border-border bg-background px-4 text-foreground sm:px-6 ${
+        mobileOnly ? "lg:hidden" : "lg:h-14 lg:px-5 xl:px-6 2xl:px-8"
       }`}
     >
       <Link href="/" aria-label={t("Home")} title={t("Home")} className="inline-flex min-w-0 items-center">
-        <span className="xl:hidden">
-          <BrandIcon />
-        </span>
-        <BrandLogo className="hidden h-[44px] xl:block" />
+        <BrandIcon className="xl:hidden" />
+        <BrandLogo className="hidden xl:inline-flex" />
       </Link>
 
       <div className="pointer-events-none absolute left-1/2 w-[min(520px,calc(100%-128px))] -translate-x-1/2 text-center sm:w-[min(560px,calc(100%-192px))]">
         <div className="truncate text-[13px] font-medium leading-none text-foreground sm:text-sm">{stepText}</div>
-        <div className="mx-auto mt-2 h-1 w-full max-w-[180px] overflow-hidden rounded-full bg-muted sm:max-w-[520px]">
+        <div className="mx-auto mt-1.5 h-1 w-full max-w-[180px] overflow-hidden rounded-full bg-muted sm:max-w-[520px]">
           <div
             className="h-full rounded-full bg-brand transition-[width] duration-500 ease-out"
             style={{ width: `${progress}%` }}

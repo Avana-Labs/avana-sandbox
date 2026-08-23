@@ -83,10 +83,11 @@ export function SandboxGate({ children }: { children: ReactNode }) {
   const hydrated = useHydrated()
   const { authedWallet, isSignedIn } = useSiweAuth()
   const { active: walletActive } = useWalletGate()
-  // Ask AI deliberately remains public during the MVP: general Avana knowledge and
-  // market questions do not require a wallet. Personal tools still authorize through
-  // Convex and return the wallet-required response when no SIWE identity is present.
-  if (pathname === "/ask" || pathname.startsWith("/ask/")) return <>{children}</>
+  // Ask AI is public for guests (knowledge / markets without a wallet). Signed-in
+  // users keep the normal AuthedGate mounted so closing Ask doesn't tear down the
+  // product shell and flash a blank screen while Convex/session rehydrate.
+  const isAskRoute = pathname === "/ask" || pathname.startsWith("/ask/")
+  if (isAskRoute && !isSignedIn) return <>{children}</>
   if (IS_DEV_SHORTCUT_MODE) return <>{children}</>
   if (!hasConvexClient) return <GateUnavailable variant="offline" />
   // The SIWE session is read from a client-only store that reads as signed-out on the
@@ -107,7 +108,7 @@ export function SandboxGate({ children }: { children: ReactNode }) {
   }
   return (
     <GateErrorBoundary key={authedWallet}>
-      <Suspense fallback={null}>
+      <Suspense fallback={<>{children}</>}>
         <AuthedGate wallet={authedWallet}>{children}</AuthedGate>
       </Suspense>
     </GateErrorBoundary>

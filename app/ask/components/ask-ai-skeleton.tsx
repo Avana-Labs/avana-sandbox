@@ -24,7 +24,7 @@ export function AskAIThreadSkeleton() {
 // stable loaded shapes. Only the message viewport skeletonizes.
 export function AskAILoadingBody() {
   return (
-    <main className="flex h-[calc(100dvh-64px)] w-full overflow-hidden lg:h-[calc(100dvh-68px)]">
+    <main className="flex h-[calc(100dvh-56px)] w-full overflow-hidden lg:h-[calc(100dvh-56px)]">
       <aside aria-hidden className="hidden w-[260px] shrink-0 flex-col bg-muted/20 p-3 lg:flex">
         <div className="flex h-8 items-center gap-2 rounded-md bg-muted px-2.5 text-sm">
           <span className="text-xl font-light leading-none">+</span>
@@ -34,7 +34,7 @@ export function AskAILoadingBody() {
         <p className="mt-1 px-2.5 text-sm text-muted-foreground">Loading conversations</p>
       </aside>
       <section className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
-        <div className="h-16 shrink-0" />
+        <div className="h-14 shrink-0" />
         <AskAIThreadSkeleton />
       </section>
     </main>

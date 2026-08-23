@@ -16,6 +16,16 @@ import {
 import { personalDesktopHeaderLinks } from "./site-nav"
 import { WalletControl } from "@/app/components/wallet-control"
 import { DesktopPreferenceControls } from "./desktop-preference-controls"
+import { cn } from "@/lib/utils"
+
+function HeaderBrand() {
+  return (
+    <>
+      <BrandIcon className="xl:hidden" />
+      <BrandLogo className="hidden xl:inline-flex" />
+    </>
+  )
+}
 
 export function Header() {
   const pathname = usePathname()
@@ -43,11 +53,13 @@ export function Header() {
     setMounted(true)
   }, [])
 
+  // Main chrome: divider only after the page scrolls past the header.
+  // Ask / action flow headers keep a permanent border-b on their own sticky bars.
   useEffect(() => {
     if (!mounted) return
 
     const header = headerRef.current
-    let threshold = header?.offsetHeight ?? 68
+    let threshold = header?.offsetHeight ?? 56
     let pendingOffset = 0
     let frame: number | null = null
 
@@ -70,14 +82,14 @@ export function Header() {
     }
 
     updateDivider()
-    let resizeObserver: ResizeObserver | null = null
-    if (header && typeof ResizeObserver !== "undefined") {
-      resizeObserver = new ResizeObserver(() => {
-        threshold = header.offsetHeight
-        updateDivider()
-      })
-      resizeObserver.observe(header)
-    }
+    const resizeObserver =
+      header && typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => {
+            threshold = header.offsetHeight
+            updateDivider()
+          })
+        : null
+    if (resizeObserver && header) resizeObserver.observe(header)
     window.addEventListener("scroll", updateDivider, { passive: true })
     document.addEventListener("scroll", updateDivider, { capture: true, passive: true })
 
@@ -91,7 +103,7 @@ export function Header() {
 
   const renderPrimaryLinks = (compact: boolean) =>
     desktopLinks.slice(0, 4).map((link) => {
-      const isActive = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href)
+      const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`)
       const Icon = link.icon
 
       return (
@@ -100,7 +112,7 @@ export function Header() {
           href={link.href}
           aria-label={t(link.label)}
           title={t(link.label)}
-          className={`inline-flex items-center rounded-full font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
+          className={`inline-flex shrink-0 items-center rounded-full font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
             compact ? "px-2.5 py-1.5" : "px-3 py-2"
           } ${isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
         >
@@ -109,7 +121,7 @@ export function Header() {
               <Icon className="h-[18px] w-[18px] shrink-0" strokeWidth={2} />
             </span>
           ) : null}
-          <span>{t(link.label)}</span>
+          <span className="whitespace-nowrap">{t(link.label)}</span>
         </Link>
       )
     })
@@ -125,8 +137,8 @@ export function Header() {
           href={link.href}
           aria-label={t(link.label)}
           title={t(link.label)}
-          className={`group inline-flex items-center rounded-full font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
-            compact ? "px-1.5 py-1.5" : "px-3 py-2"
+          className={`group inline-flex shrink-0 items-center rounded-full font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
+            compact ? "px-1.5 py-1.5" : "px-2.5 py-2"
           } ${
             isActive
               ? "text-brand dark:text-[#7DDCFF]"
@@ -135,14 +147,14 @@ export function Header() {
         >
           {Icon ? (
             <span
-              className={`inline-flex items-center justify-center text-current transition-transform duration-200 ease-out group-hover:-translate-y-[1px] ${
-                compact ? "h-9 w-9" : "me-2 h-6 w-6"
+              className={`inline-flex shrink-0 items-center justify-center text-current transition-transform duration-200 ease-out group-hover:-translate-y-[1px] ${
+                compact ? "h-9 w-9" : "me-1.5 h-6 w-6"
               }`}
             >
               <Icon className="h-5 w-5 shrink-0" strokeWidth={2} />
             </span>
           ) : null}
-          {compact ? null : <span>{t(link.label)}</span>}
+          {compact ? null : <span className="whitespace-nowrap">{t(link.label)}</span>}
         </Link>
       )
     })
@@ -150,34 +162,30 @@ export function Header() {
   return (
     <header
       ref={headerRef}
-      className={`sticky top-0 z-40 bg-background text-foreground transition-[box-shadow] duration-200 ${
-        mounted && showDivider ? "shadow-[inset_0_-1px_0_hsl(var(--border))]" : "shadow-none"
-      }`}
+      className={cn(
+        "sticky top-0 z-40 flex h-14 items-center bg-background text-foreground transition-[box-shadow] duration-200",
+        mounted && showDivider ? "shadow-[inset_0_-1px_0_hsl(var(--border))]" : "shadow-none",
+      )}
     >
-      {/* Full desktop: wide enough for wordmark, labels, and center search (14"+ / large monitors). */}
-      <div className="hidden min-[1440px]:block">
-        <div className="grid h-[68px] w-full grid-cols-[minmax(0,1fr)_minmax(280px,410px)_minmax(0,1fr)] items-center gap-4 px-6 2xl:px-8">
-          <div className="flex min-w-0 items-center gap-5">
-            <Link href="/" aria-label={t("Home")} title={t("Home")} className="flex shrink-0 items-center">
-              <BrandLogo className="h-[36px] md:h-[36px]" />
+      {/* Full desktop: sides hug content so long locales can't clip labels; search flexes. */}
+      <div className="hidden h-full min-w-0 flex-1 min-[1440px]:block">
+        <div className="grid h-full w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 sm:px-6 lg:px-5 xl:px-6 2xl:px-8">
+          <div className="flex shrink-0 items-center gap-4 2xl:gap-5">
+            <Link href="/" aria-label={t("Home")} title={t("Home")} className="inline-flex min-w-0 shrink-0 items-center">
+              <HeaderBrand />
             </Link>
 
-            <nav
-              aria-label={t("Primary")}
-              className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            >
+            <nav aria-label={t("Primary")} className="flex items-center gap-0.5 whitespace-nowrap">
               {renderPrimaryLinks(false)}
             </nav>
           </div>
 
-          <div className="flex min-w-0 justify-center px-2">
-            <div className="w-full max-w-[380px]">{mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}</div>
+          <div className="flex min-w-0 justify-center px-1">
+            <div className="w-full min-w-0 max-w-[380px]">{mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}</div>
           </div>
 
-          <div className="flex min-w-0 items-center justify-end gap-2.5">
-            <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {renderUtilityLinks(false)}
-            </div>
+          <div className="flex shrink-0 items-center justify-end gap-2">
+            <div className="flex items-center gap-0.5 whitespace-nowrap">{renderUtilityLinks(false)}</div>
 
             <div className="flex shrink-0 items-center gap-2">
               <DesktopPreferenceControls />
@@ -190,11 +198,11 @@ export function Header() {
       </div>
 
       {/* iPad / mid laptop (lg–1439px): compact desktop chrome, not the phone menu. */}
-      <div className="hidden lg:block min-[1440px]:hidden">
-        <div className="grid h-[68px] w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 lg:px-5">
+      <div className="hidden h-full min-w-0 flex-1 lg:block min-[1440px]:hidden">
+        <div className="grid h-full w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 sm:px-6 lg:px-5 xl:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            <Link href="/" aria-label={t("Home")} title={t("Home")} className="flex shrink-0 items-center">
-              <BrandLogo className="h-[36px] md:h-[36px]" />
+            <Link href="/" aria-label={t("Home")} title={t("Home")} className="inline-flex min-w-0 shrink-0 items-center">
+              <HeaderBrand />
             </Link>
 
             <nav
@@ -225,8 +233,8 @@ export function Header() {
       </div>
 
       {/* Phone / portrait tablet */}
-      <div className="lg:hidden">
-        <div className="relative flex h-16 w-full items-center justify-between bg-background px-4 text-foreground sm:px-6">
+      <div className="h-full min-w-0 flex-1 lg:hidden">
+        <div className="relative flex h-full w-full items-center justify-between bg-background px-4 text-foreground sm:px-6">
           <div className="flex items-center gap-3">
             <Link href="/" aria-label={t("Home")} title={t("Home")} className="inline-flex items-center">
               {renderMobileBrand()}
