@@ -14,7 +14,7 @@ import type { MutationCtx, QueryCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
 import { upsertWalletBalanceRows } from "../wallet/balances"
 import { replaceProductBalanceRows } from "../wallet/productBalances"
-import { readWalletSessionWithLegacyFallback, upsertWalletSessionWithLegacyMirror } from "../wallet/sessions"
+import { readWalletSession, upsertWalletSession } from "../wallet/sessions"
 import { requireSandboxWallet, getAuthSubject } from "./auth"
 import { assertCatalogCanSatisfyStarter, buildStarterAllocationPlan, STARTER_EQUITY_USD } from "./starterAllocation"
 import { seedUmbrellaWallet, UMBRELLA_ONBOARDING_TOKEN_PRICES } from "./umbrella"
@@ -737,7 +737,7 @@ export const claim = mutation({
     // Umbrella onboarding seed. Two idempotency gates so a repeat claim (or a
     // restore/reset that clears positions) does NOT double-write:
     //   1. No existing umbrella positions for this wallet, AND
-    //   2. No previous `umbrellaSeeded` flag on sandboxSessions.
+    //   2. No previous `umbrellaSeeded` flag on walletSessions.
     // Reuse `seedUmbrellaWallet` (single source of truth in convex/sandbox/umbrella.ts)
     // so onboarding produces IDENTICAL walletLiquidBalances / sandboxBalances /
     // sandboxActivity as if the user had done four `stake 0` actions for
@@ -750,7 +750,7 @@ export const claim = mutation({
       .query("positions")
       .withIndex("by_wallet_product", (q) => q.eq("wallet", wallet).eq("product", "umbrella"))
       .collect()
-    const existingSession = await readWalletSessionWithLegacyFallback(ctx, wallet)
+    const existingSession = await readWalletSession(ctx, wallet)
     const shouldSeedUmbrella = existingUmbrella.length === 0 && !existingSession?.umbrellaSeeded
     // Reference UMBRELLA_ONBOARDING_TOKEN_PRICES so a stale import gets flagged
     // if the constant is renamed. seedUmbrellaWallet reads UMBRELLA_MARKETS
@@ -816,7 +816,7 @@ export const claim = mutation({
     // Set umbrellaSeeded so a second onboarding claim (or a wallet reset that
     // wipes positions) doesn't re-run seedUmbrellaWallet against a wallet that
     // still has walletLiquidBalances/sandboxActivity from the first seed.
-    await upsertWalletSessionWithLegacyMirror(ctx, {
+    await upsertWalletSession(ctx, {
       wallet,
       authSubject: (await getAuthSubject(ctx)) ?? undefined,
       seedVersion: SEED_VERSION,

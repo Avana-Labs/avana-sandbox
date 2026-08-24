@@ -6,7 +6,7 @@
 //      and umbrella_stake activity rows.
 //   2. A repeat claim (or a fixture double-seed) does NOT duplicate any of the
 //      umbrella state — regression coverage for the `umbrellaSeeded` guard on
-//      sandboxSessions (convex/sandbox/onboarding.ts:740).
+//      walletSessions (convex/sandbox/onboarding.ts).
 //   3. `ensureTestWalletFixtures` is a no-op once the wallet has been seeded.
 import { convexTest, type TestConvex } from "convex-test"
 import { describe, expect, test } from "vitest"
@@ -76,10 +76,10 @@ describe("sandbox umbrella onboarding seed", () => {
     const umbrellaStakes = await collectSandboxActivity(t, WALLET, "umbrella_stake")
     expect(umbrellaStakes).toHaveLength(3)
 
-    // umbrellaSeeded flag flipped on sandboxSessions.
+    // umbrellaSeeded flag flipped on walletSessions.
     const session = await t.run(async (ctx) =>
       ctx.db
-        .query("sandboxSessions")
+        .query("walletSessions")
         .withIndex("by_wallet", (q) => q.eq("wallet", WALLET.toLowerCase()))
         .unique(),
     )

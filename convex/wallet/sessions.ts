@@ -12,34 +12,17 @@ type SessionWrite = {
   umbrellaSeeded?: boolean
 }
 
-export async function readWalletSessionWithLegacyFallback(ctx: SessionCtx, wallet: string) {
-  const current = await ctx.db
-    .query("walletSessions")
-    .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-    .unique()
-  if (current) return current
+export async function readWalletSession(ctx: SessionCtx, wallet: string) {
   return ctx.db
-    .query("sandboxSessions")
+    .query("walletSessions")
     .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
     .unique()
 }
 
-/** Temporary dual-write used only during the table-name migration window. */
-export async function upsertWalletSessionWithLegacyMirror(ctx: MutationCtx, session: SessionWrite) {
-  const [current, legacy] = await Promise.all([
-    ctx.db
-      .query("walletSessions")
-      .withIndex("by_wallet", (q) => q.eq("wallet", session.wallet))
-      .unique(),
-    ctx.db
-      .query("sandboxSessions")
-      .withIndex("by_wallet", (q) => q.eq("wallet", session.wallet))
-      .unique(),
-  ])
+export async function upsertWalletSession(ctx: MutationCtx, session: SessionWrite) {
+  const current = await readWalletSession(ctx, session.wallet)
   if (current) await ctx.db.patch(current._id, session)
   else await ctx.db.insert("walletSessions", session)
-  if (legacy) await ctx.db.patch(legacy._id, session)
-  else await ctx.db.insert("sandboxSessions", session)
 }
 
 /** Idempotent release migration. Application code never invokes this automatically. */

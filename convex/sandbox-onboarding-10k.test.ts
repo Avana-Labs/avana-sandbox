@@ -60,7 +60,7 @@ describe.skipIf(process.env.RUN_ONBOARDING_10K !== "1")("sandbox onboarding — 
     const persisted = await t.run(async (ctx) => {
       const [profiles, sessions, allocations, snapshots, economy, shards] = await Promise.all([
         ctx.db.query("sandboxProfiles").collect(),
-        ctx.db.query("sandboxSessions").collect(),
+        ctx.db.query("walletSessions").collect(),
         ctx.db.query("starterAllocations").collect(),
         ctx.db.query("portfolioSnapshots").collect(),
         ctx.db.query("sandboxEconomy").first(),
