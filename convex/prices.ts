@@ -252,7 +252,7 @@ export const getTokenPriceHistory = query({
  */
 export const refreshPoolLpPrices = internalMutation({
   args: {},
-  handler: async (ctx): Promise<{ updated: number; skipped: number }> => {
+  handler: async (ctx): Promise<{ updated: number; unchanged: number; skipped: number }> => {
     const priceRows = await ctx.db.query("tokenPrices").collect()
     const priceBySymbol = new Map<string, { priceUsd: number; status?: string }>()
     for (const row of priceRows) {
@@ -263,6 +263,7 @@ export const refreshPoolLpPrices = internalMutation({
       .withIndex("by_scope_slug", (q) => q.eq("scope", "pool"))
       .collect()
     let updated = 0
+    let unchanged = 0
     let skipped = 0
     for (const market of poolMarkets) {
       const constituents = market.constituents
@@ -285,10 +286,14 @@ export const refreshPoolLpPrices = internalMutation({
         skipped++
         continue
       }
+      if (market.priceUsd === priceUsd) {
+        unchanged++
+        continue
+      }
       await ctx.db.patch(market._id, { priceUsd })
       updated++
     }
-    return { updated, skipped }
+    return { updated, unchanged, skipped }
   },
 })
 
