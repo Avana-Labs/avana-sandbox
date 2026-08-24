@@ -995,7 +995,7 @@ export default defineSchema({
   sandboxProfiles: defineTable({
     /** Lowercased wallet address; must match the authenticated identity. */
     wallet: v.string(),
-    /** Identity subject from the auth issuer (Privy user id or SIWE-JWT subject). */
+    /** @deprecated Migration-only. New identity data belongs in walletProfiles. */
     authSubject: v.optional(v.string()),
     createdAt: v.number(),
     seedVersion: v.number(),
@@ -1020,6 +1020,7 @@ export default defineSchema({
     tweetUrl: v.optional(v.string()),
     tweetedAt: v.optional(v.number()),
     claimTxSynthetic: v.optional(v.string()),
+    /** @deprecated Migration-only. New preferences belong in walletProfiles. */
     preferences: v.optional(
       v.object({
         theme: v.optional(v.string()),

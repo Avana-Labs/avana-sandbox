@@ -212,6 +212,25 @@ async function profileForWallet(ctx: QueryCtx | MutationCtx, wallet: string) {
     .unique()
 }
 
+function onboardingProfileView(profile: Awaited<ReturnType<typeof profileForWallet>>) {
+  if (!profile) return null
+  return {
+    wallet: profile.wallet,
+    createdAt: profile.createdAt,
+    seedVersion: profile.seedVersion,
+    onboardingStep: profile.onboardingStep,
+    onboardedAt: profile.onboardedAt,
+    eligibilityTier: profile.eligibilityTier,
+    tierSeed: profile.tierSeed,
+    allocatedUsd: profile.allocatedUsd,
+    basketSnapshot: profile.basketSnapshot,
+    xHandle: profile.xHandle,
+    tweetUrl: profile.tweetUrl,
+    tweetedAt: profile.tweetedAt,
+    claimTxSynthetic: profile.claimTxSynthetic,
+  }
+}
+
 function liquidAssetIdForMultiplyDebt(marketSlug: string) {
   const parts = marketSlug.toLowerCase().split(/[-_:]/)
   return parts.find((part) => part === "usdc" || part === "usdt" || part === "dai" || part === "gho") ?? "usdc"
@@ -231,7 +250,7 @@ export const getState = query({
     const shardedUserCount = shards.reduce((sum, shard) => sum + shard.userCount, 0)
     return {
       onboardingStep: profile?.onboardingStep ?? "wallet",
-      profile,
+      profile: onboardingProfileView(profile),
       config: config
         ? {
             basket: config.basket,
@@ -273,7 +292,7 @@ export const getWalletOnboardingState = query({
     const [profile, config] = await Promise.all([profileForWallet(ctx, wallet), ctx.db.query("sandboxConfig").first()])
     return {
       onboardingStep: profile?.onboardingStep ?? "wallet",
-      profile,
+      profile: onboardingProfileView(profile),
       config: config
         ? {
             basket: config.basket,
@@ -322,7 +341,6 @@ export const beginAnalysis = mutation({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
-    const authSubject = (await getAuthSubject(ctx)) ?? undefined
     const existing = await profileForWallet(ctx, wallet)
     if (existing) {
       if (existing.onboardingStep === "done" || existing.onboardingStep === "waitlisted") return existing.onboardingStep
@@ -331,7 +349,6 @@ export const beginAnalysis = mutation({
     }
     await ctx.db.insert("sandboxProfiles", {
       wallet,
-      authSubject,
       createdAt: Date.now(),
       seedVersion: SEED_VERSION,
       onboardingStep: "analyzing",
@@ -346,7 +363,6 @@ export const startAnalysis = mutation({
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
     const economy = await getOrSeedEconomy(ctx)
-    const authSubject = (await getAuthSubject(ctx)) ?? undefined
     const { tier, seed } = deriveTier(wallet, economy.minMultiplier, economy.maxMultiplier)
 
     const existing = await profileForWallet(ctx, wallet)
@@ -358,7 +374,6 @@ export const startAnalysis = mutation({
 
     await ctx.db.insert("sandboxProfiles", {
       wallet,
-      authSubject,
       createdAt: Date.now(),
       seedVersion: SEED_VERSION,
       onboardingStep: "eligible",
@@ -805,7 +820,7 @@ export const claim = mutation({
     // still has walletLiquidBalances/sandboxActivity from the first seed.
     await ctx.db.insert("sandboxSessions", {
       wallet,
-      authSubject: profile.authSubject,
+      authSubject: (await getAuthSubject(ctx)) ?? undefined,
       seedVersion: SEED_VERSION,
       seededAt: now,
       lastSeenAt: now,
@@ -841,74 +856,5 @@ export const claim = mutation({
     })
 
     return { status: "done" as const, allocatedUsd, basketSnapshot, syntheticTxHash, allocation, receiptHashes }
-  },
-})
-
-/** Persist wallet-scoped display preferences for signed-in users. */
-export const savePreferences = mutation({
-  args: {
-    wallet: v.string(),
-    preferences: v.object({
-      theme: v.optional(v.union(v.literal("light"), v.literal("dark"), v.literal("system"))),
-      language: v.optional(v.string()),
-      currency: v.optional(v.string()),
-      showDollarAmounts: v.optional(v.boolean()),
-      name: v.optional(v.string()),
-      dexSources: v.optional(v.array(v.string())),
-    }),
-  },
-  handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
-    const authSubject = (await getAuthSubject(ctx)) ?? undefined
-    const existing = await profileForWallet(ctx, wallet)
-
-    // Sanitize the new user-supplied fields server-side so no client can overflow them:
-    // the display name is capped at 10 chars, and only defined fields are merged (a bare
-    // `undefined` would otherwise clobber a previously-saved value).
-    const incoming = { ...args.preferences }
-    if (typeof incoming.name === "string") {
-      const trimmed = incoming.name.trim().slice(0, 10)
-      if (trimmed) incoming.name = trimmed
-      else delete incoming.name
-    }
-    // Locale/currency are short codes; clamp them so a client can't merge an unbounded
-    // free string into the stored profile.
-    if (typeof incoming.language === "string") {
-      const code = incoming.language.trim().slice(0, 12)
-      if (code) incoming.language = code
-      else delete incoming.language
-    }
-    if (typeof incoming.currency === "string") {
-      const code = incoming.currency.trim().slice(0, 12)
-      if (code) incoming.currency = code
-      else delete incoming.currency
-    }
-    if (incoming.dexSources) {
-      incoming.dexSources = incoming.dexSources
-        .map((source) => source.trim().slice(0, 40))
-        .filter(Boolean)
-        .slice(0, 24)
-    }
-
-    if (existing) {
-      await ctx.db.patch(existing._id, {
-        authSubject: existing.authSubject ?? authSubject,
-        preferences: {
-          ...existing.preferences,
-          ...incoming,
-        },
-      })
-      return "updated" as const
-    }
-
-    await ctx.db.insert("sandboxProfiles", {
-      wallet,
-      authSubject,
-      createdAt: Date.now(),
-      seedVersion: SEED_VERSION,
-      onboardingStep: "wallet",
-      preferences: incoming,
-    })
-    return "created" as const
   },
 })
