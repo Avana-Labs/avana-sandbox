@@ -20,13 +20,36 @@ describe("AskAIPageClient", () => {
   it("renders the public empty state and scoped suggestions", () => {
     render(<AskAIPageClient />)
 
-    expect(screen.getByRole("heading", { name: "Hey, I'm Avana! What's uuuup? ✨", level: 1 })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Positions" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      /Good morning!|Good afternoon!|Good evening!|Welcome back!|Hey!/,
+    )
+    expect(screen.getByRole("button", { name: /Positions: Analyze my positions/i })).toBeInTheDocument()
     expect(screen.queryByText(/GPT-5.6 Luna/i)).not.toBeInTheDocument()
     // Attachment and voice inputs were removed from the composer.
     expect(screen.queryByRole("button", { name: "Add attachment" })).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: /voice input/i })).not.toBeInTheDocument()
     expect(screen.getByRole("textbox", { name: "Ask Avana a question" })).toHaveAttribute("maxlength", "2000")
+  })
+
+  it("previews the suggestion prompt in the composer on hover", async () => {
+    const user = userEvent.setup()
+    render(<AskAIPageClient />)
+
+    const composer = screen.getByRole("textbox", { name: "Ask Avana a question" })
+    expect(composer).toHaveValue("")
+
+    const borrow = screen.getByRole("button", { name: /Borrow: How much can I borrow/i })
+    const risk = screen.getByRole("button", { name: /Risk: What is my health factor/i })
+
+    await user.hover(borrow)
+    expect(composer).toHaveValue("How much can I borrow?")
+
+    // Crossing the gap to another chip should keep a preview (no placeholder flash).
+    await user.hover(risk)
+    expect(composer).toHaveValue("What is my health factor?")
+
+    await user.unhover(risk)
+    expect(composer).toHaveValue("")
   })
 
   it("hides and opens the thread sidebar", async () => {
@@ -46,7 +69,9 @@ describe("AskAIPageClient", () => {
     await user.click(screen.getByRole("button", { name: "Open sidebar" }))
     await user.click(screen.getByRole("button", { name: "New Thread" }))
     expect(screen.getByRole("button", { name: "Hide sidebar" })).toBeInTheDocument()
-    expect(screen.getByRole("heading", { name: "Hey, I'm Avana! What's uuuup? ✨" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      /Good morning!|Good afternoon!|Good evening!|Welcome back!|Hey!/,
+    )
   })
 
   it("does not expose voice when the browser cannot record audio", () => {

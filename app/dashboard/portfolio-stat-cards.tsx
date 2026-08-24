@@ -1,7 +1,7 @@
 "use client"
 
 /**
- * "Your Dashboard" summary section: a title with an eye (numbers) toggle over
+ * Dashboard summary section: a personalized greeting with an eye (numbers) toggle over
  * three stat cards — Wallet Balance (live from Convex), Net Value, and Net
  * APY. Cards live in a snap-scroll carousel: on desktop the row fits (arrows
  * hide themselves), on mobile the row overflows and arrows appear — same
@@ -9,6 +9,7 @@
  */
 
 import { useMemo, useState, type PointerEvent } from "react"
+import { useQuery } from "convex/react"
 import { cn } from "@/lib/utils"
 import { CarouselArrowButtons, useOverflowCarousel } from "@/app/components/carousel-arrow-buttons"
 import { Eye, EyeOff } from "@/app/components/icons"
@@ -16,7 +17,9 @@ import { HIGHLIGHT_CARD_CLASS } from "@/app/components/highlight-carousel"
 import { LEND_FEATURED_ASSETS } from "@/app/lib/data/catalog/lend/featured-assets"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useAvanaIdentity } from "@/app/lib/avana-session/avana-sessions-provider"
+import { formatAskAIGreeting } from "@/app/lib/ask-ai/greeting"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { api } from "@/convex/_generated/api"
 import { DashboardQuickActions, type DashboardQuickActionsTab } from "./dashboard-quick-actions"
 import { useDashboardPortfolioSummary } from "./use-dashboard-portfolio-summary"
 
@@ -235,21 +238,30 @@ export function PortfolioStatCards({ activeTab }: { activeTab?: DashboardQuickAc
   const { t } = useTranslation()
   const { showDollarAmounts, setShowDollarAmounts } = useAmountDisplayPreferences()
   const { scrollerRef, canPrev, canNext, scrollByCard } = useOverflowCarousel()
+  const { walletId } = useAvanaIdentity()
+  const walletProfile = useQuery(
+    api.sandbox.onboarding.getWalletOnboardingState,
+    walletId ? { wallet: walletId } : "skip",
+  ) as { profile?: { preferences?: { name?: string } } | null } | undefined
+  const displayName = walletProfile?.profile?.preferences?.name ?? null
+  // Freeze the clock on mount; recompute only when the display name arrives from Convex.
+  const [greetingNow] = useState(() => new Date())
+  const greeting = useMemo(() => formatAskAIGreeting(displayName, greetingNow), [displayName, greetingNow])
 
   const cards = useStatCards()
 
   return (
     <div>
       <div className="mb-5 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
-            {t("Your Dashboard")}
+        <div className="flex min-w-0 items-center gap-2.5">
+          <h2 className="truncate text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+            {greeting}
           </h2>
           <button
             type="button"
             onClick={() => setShowDollarAmounts(!showDollarAmounts)}
             aria-label={showDollarAmounts ? t("Hide Numbers") : t("Show Numbers")}
-            className="inline-flex size-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             {showDollarAmounts ? <Eye className="size-[22px]" /> : <EyeOff className="size-[22px]" />}
           </button>

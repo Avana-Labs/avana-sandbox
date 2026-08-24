@@ -14,6 +14,7 @@ import type { Id } from "@/convex/_generated/dataModel"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { AskAIUsage } from "@/app/lib/ask-ai/chat-protocol"
 import { api } from "@/convex/_generated/api"
+import { useLiveSiweToken } from "@/app/lib/siwe/use-siwe-auth"
 import {
   ASK_AI_SUGGESTIONS,
   AskAIThread,
@@ -379,6 +380,12 @@ export function AskAIPageClient({
     onActiveTitleChange?.(activeThreadTitle && activeThreadTitle !== "New Chat" ? activeThreadTitle : null)
   }, [activeThreadTitle, onActiveTitleChange])
   const quota = useQuery(api.askAI.quota, {})
+  const siwe = useLiveSiweToken()
+  const walletProfile = useQuery(
+    api.sandbox.onboarding.getWalletOnboardingState,
+    siwe?.wallet ? { wallet: siwe.wallet } : "skip",
+  ) as { profile?: { preferences?: { name?: string } } | null } | undefined
+  const displayName = walletProfile?.profile?.preferences?.name ?? null
   const createThread = useMutation(api.askAI.create)
   const renameThread = useMutation(api.askAI.rename)
   const archiveThread = useMutation(api.askAI.archive)
@@ -703,6 +710,7 @@ export function AskAIPageClient({
           threadsOpen={threadsOpen}
           onToggleThreads={() => setThreadsOpen((open) => !open)}
           threadId={resolvedActiveThreadId}
+          displayName={displayName}
           messagesRemaining={quota ? Math.max(0, quota.limit - quota.used) : null}
           loading={
             threadPageStatus === "LoadingFirstPage" ||
