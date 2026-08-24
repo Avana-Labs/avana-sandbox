@@ -1036,6 +1036,28 @@ export default defineSchema({
     .index("by_wallet", ["wallet"])
     .index("by_authSubject", ["authSubject"]),
 
+  /** Permanent wallet identity and display preferences, independent of Sandbox onboarding. */
+  walletProfiles: defineTable({
+    /** Lowercased wallet address derived from the authenticated identity. */
+    wallet: v.string(),
+    /** Identity subject from the auth issuer (Privy user id or SIWE-JWT subject). */
+    authSubject: v.optional(v.string()),
+    preferences: v.optional(
+      v.object({
+        theme: v.optional(v.string()),
+        language: v.optional(v.string()),
+        currency: v.optional(v.string()),
+        showDollarAmounts: v.optional(v.boolean()),
+        name: v.optional(v.string()),
+        dexSources: v.optional(v.array(v.string())),
+      }),
+    ),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_wallet", ["wallet"])
+    .index("by_authSubject", ["authSubject"]),
+
   /** Liquid play-money balances granted at onboarding but not yet deployed into a market. */
   sandboxBalances: defineTable({
     wallet: v.string(),
