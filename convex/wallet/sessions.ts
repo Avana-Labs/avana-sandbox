@@ -1,6 +1,4 @@
-import { v } from "convex/values"
 import type { MutationCtx, QueryCtx } from "../_generated/server"
-import { internalMutation } from "../_generated/server"
 
 type SessionCtx = QueryCtx | MutationCtx
 type SessionWrite = {
@@ -24,44 +22,3 @@ export async function upsertWalletSession(ctx: MutationCtx, session: SessionWrit
   if (current) await ctx.db.patch(current._id, session)
   else await ctx.db.insert("walletSessions", session)
 }
-
-/** Idempotent release migration. Application code never invokes this automatically. */
-export const migrateSandboxSessions = internalMutation({
-  args: {
-    cursor: v.optional(v.union(v.string(), v.null())),
-    batchSize: v.optional(v.number()),
-  },
-  handler: async (ctx, args) => {
-    const page = await ctx.db
-      .query("sandboxSessions")
-      .paginate({ cursor: args.cursor ?? null, numItems: Math.min(Math.max(args.batchSize ?? 200, 1), 500) })
-    let migrated = 0
-    let skippedExisting = 0
-    for (const source of page.page) {
-      const existing = await ctx.db
-        .query("walletSessions")
-        .withIndex("by_wallet", (q) => q.eq("wallet", source.wallet))
-        .unique()
-      if (existing) {
-        skippedExisting++
-        continue
-      }
-      await ctx.db.insert("walletSessions", {
-        wallet: source.wallet,
-        authSubject: source.authSubject,
-        seedVersion: source.seedVersion,
-        seededAt: source.seededAt,
-        lastSeenAt: source.lastSeenAt,
-        umbrellaSeeded: source.umbrellaSeeded,
-      })
-      migrated++
-    }
-    return {
-      scanned: page.page.length,
-      migrated,
-      skippedExisting,
-      isDone: page.isDone,
-      continueCursor: page.continueCursor,
-    }
-  },
-})

@@ -1494,29 +1494,7 @@ export default defineSchema({
     totalEarnedUsd: v.number(),
   }).index("by_wallet", ["wallet"]),
 
-  /**
-   * Optional per-wallet session metadata: which seed version provisioned this
-   * wallet's starter state, when, and last-seen. The hourly transaction rate limit
-   * is enforced by counting `transactions` in the trailing hour (no counter here),
-   * so this table is purely informational/bookkeeping.
-   */
-  sandboxSessions: defineTable({
-    wallet: v.string(),
-    authSubject: v.optional(v.string()),
-    seedVersion: v.number(),
-    seededAt: v.optional(v.number()),
-    lastSeenAt: v.number(),
-    /**
-     * Whether the wallet has been through the umbrella-onboarding seed. Set
-     * once by the onboarding claim so a second claim (or a restore/reset)
-     * does not re-seed umbrella positions/balances/activity. Independent of
-     * the `positions` idempotency gate because sandboxActivity + wallet
-     * balances would otherwise duplicate silently.
-     */
-    umbrellaSeeded: v.optional(v.boolean()),
-  }).index("by_wallet", ["wallet"]),
-
-  /** Wallet-scoped session metadata; permanent replacement for sandboxSessions. */
+  /** Wallet-scoped seed/session metadata and idempotency flags. */
   walletSessions: defineTable({
     wallet: v.string(),
     authSubject: v.optional(v.string()),
