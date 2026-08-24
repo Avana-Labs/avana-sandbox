@@ -111,7 +111,14 @@ describe("Ask AI market ingestion", () => {
       })
     })
 
-    await expect(t.action(internal.askAIIngestion.purgeLegacyMarketSnapshots, {})).resolves.toEqual({ deleted: 3 })
+    await expect(t.action(internal.askAIIngestion.purgeLegacyMarketSnapshots, {})).resolves.toMatchObject({
+      matched: 3,
+      deleted: 0,
+      dryRun: true,
+    })
+    await expect(
+      t.action(internal.askAIIngestion.purgeLegacyMarketSnapshots, { execute: true }),
+    ).resolves.toMatchObject({ deleted: 3, dryRun: false })
 
     const remaining = await t.run((ctx) => ctx.db.query("askAIMarketSnapshots").collect())
     expect(remaining.map((row) => row.source)).toEqual(["defillama"])

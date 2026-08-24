@@ -73,35 +73,44 @@ export const ingest = internalAction({
 const LEGACY_MARKET_SOURCES = ["uniswap", "curve", "balancer"] as const
 
 export const deleteLegacyMarketSnapshotBatch = internalMutation({
-  args: { limit: v.optional(v.number()) },
-  handler: async (ctx, { limit }) => {
+  args: { limit: v.optional(v.number()), execute: v.optional(v.boolean()) },
+  handler: async (ctx, { limit, execute }) => {
     const budget = Math.min(Math.max(limit ?? 500, 1), 1_000)
+    let matched = 0
     let deleted = 0
     for (const source of LEGACY_MARKET_SOURCES) {
-      if (deleted >= budget) break
+      if (matched >= budget) break
       const rows = await ctx.db
         .query("askAIMarketSnapshots")
         .withIndex("by_source_kind_key", (q) => q.eq("source", source))
-        .take(budget - deleted)
+        .take(budget - matched)
+      matched += rows.length
       for (const row of rows) {
-        await ctx.db.delete(row._id)
-        deleted += 1
+        if (execute === true) {
+          await ctx.db.delete(row._id)
+          deleted += 1
+        }
       }
     }
-    return { deleted }
+    return { matched, deleted, dryRun: execute !== true, hasMore: matched === budget }
   },
 })
 
 export const purgeLegacyMarketSnapshots = internalAction({
-  args: {},
-  handler: async (ctx) => {
+  args: { execute: v.optional(v.boolean()) },
+  handler: async (ctx, { execute }) => {
+    if (execute !== true) {
+      return ctx.runMutation(internal.askAIIngestion.deleteLegacyMarketSnapshotBatch, {})
+    }
     let total = 0
     for (;;) {
-      const { deleted } = await ctx.runMutation(internal.askAIIngestion.deleteLegacyMarketSnapshotBatch, {})
+      const { deleted } = await ctx.runMutation(internal.askAIIngestion.deleteLegacyMarketSnapshotBatch, {
+        execute: true,
+      })
       total += deleted
       if (deleted === 0) break
     }
-    return { deleted: total }
+    return { matched: total, deleted: total, dryRun: false, hasMore: false }
   },
 })
 
