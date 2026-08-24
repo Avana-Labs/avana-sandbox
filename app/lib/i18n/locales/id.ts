@@ -435,6 +435,7 @@ const dict: TranslationDictionary = {
   "My Borrows": "Pinjaman Saya",
   "My LP Collaterals": "Jaminan LP Saya",
   "No activity matches the current filters.": "Tidak ada aktivitas yang cocok dengan filter saat ini.",
+  "No recent activity.": "Tidak ada aktivitas terbaru.",
   "No assets match these filters.": "Tidak ada aset yang cocok dengan filter ini.",
   "No assets match your filter.": "Tidak ada aset yang cocok dengan filter Anda.",
   "No debt": "Tidak ada utang",

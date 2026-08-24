@@ -381,10 +381,8 @@ export function AskAIPageClient({
   }, [activeThreadTitle, onActiveTitleChange])
   const quota = useQuery(api.askAI.quota, {})
   const siwe = useLiveSiweToken()
-  const walletProfile = useQuery(
-    api.wallet.profiles.getMine,
-    siwe?.wallet ? {} : "skip",
-  ) as { preferences?: { name?: string } } | null | undefined
+  const walletProfile = useQuery(api.wallet.profiles.getMine, siwe?.wallet ? {} : "skip") as
+    { preferences?: { name?: string } } | null | undefined
   const displayName = walletProfile?.preferences?.name ?? null
   const createThread = useMutation(api.askAI.create)
   const renameThread = useMutation(api.askAI.rename)

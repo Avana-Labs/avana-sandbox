@@ -324,6 +324,7 @@ const dict: TranslationDictionary = {
   Loading: "Cargando",
   "Price chart": "Grafico de precios",
   "No activity matches the current filters.": "Ninguna actividad coincide con los filtros actuales.",
+  "No recent activity.": "No hay actividad reciente.",
   "Filter markets": "Filtrar mercados",
   ASSET: "ACTIVO",
   "SUPPLY APY": "APY DE SUMINISTRO",

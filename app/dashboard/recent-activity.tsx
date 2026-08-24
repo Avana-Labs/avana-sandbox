@@ -138,10 +138,7 @@ export function RecentActivity({
   const [limit, setLimit] = React.useState(ACTIVITY_PAGE_SIZE)
   const cachedConvexRef = React.useRef<PortfolioActivityRow[]>([])
 
-  const convexRaw = useQuery(
-    api.sandbox.transactions.getActivity,
-    walletId ? { wallet: walletId, limit } : "skip",
-  )
+  const convexRaw = useQuery(api.sandbox.transactions.getActivity, walletId ? { wallet: walletId, limit } : "skip")
 
   const convexRows = React.useMemo(() => {
     if (!convexRaw) return cachedConvexRef.current
@@ -152,8 +149,7 @@ export function RecentActivity({
 
   const isLoadingConvex = Boolean(walletId) && convexRaw === undefined && cachedConvexRef.current.length === 0
   const isLoadingMore = Boolean(walletId) && convexRaw === undefined && cachedConvexRef.current.length > 0
-  const hasMore =
-    Boolean(walletId) && limit < ACTIVITY_MAX && (convexRaw === undefined || convexRaw.length >= limit)
+  const hasMore = Boolean(walletId) && limit < ACTIVITY_MAX && (convexRaw === undefined || convexRaw.length >= limit)
 
   const sortedRows = React.useMemo(() => mergeActivityRows(seedRows, convexRows), [convexRows, seedRows])
 

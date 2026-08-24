@@ -433,6 +433,7 @@ const dict: TranslationDictionary = {
   "My Borrows": "Mijn leningen",
   "My LP Collaterals": "Mijn LP-onderpanden",
   "No activity matches the current filters.": "Geen activiteit komt overeen met de huidige filters.",
+  "No recent activity.": "Geen recente activiteit.",
   "No assets match these filters.": "Geen assets komen overeen met deze filters.",
   "No assets match your filter.": "Geen assets komen overeen met je filter.",
   "No debt": "Geen schuld",

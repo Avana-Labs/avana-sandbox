@@ -435,6 +435,7 @@ const dict: TranslationDictionary = {
   "My Borrows": "Мои займы",
   "My LP Collaterals": "Мои LP-обеспечения",
   "No activity matches the current filters.": "Нет активности по текущим фильтрам.",
+  "No recent activity.": "Нет недавней активности.",
   "No assets match these filters.": "Нет активов по этим фильтрам.",
   "No assets match your filter.": "Нет активов по вашему фильтру.",
   "No debt": "Нет долга",

@@ -146,9 +146,7 @@ describe("OnboardingFlow — personalize + liquidity-source steps", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Continue$/i }))
 
     await waitFor(() =>
-      expect(noop).toHaveBeenCalledWith(
-        expect.objectContaining({ preferences: { dexSources: ["uniswap"] } }),
-      ),
+      expect(noop).toHaveBeenCalledWith(expect.objectContaining({ preferences: { dexSources: ["uniswap"] } })),
     )
 
     // Then the original funding card.

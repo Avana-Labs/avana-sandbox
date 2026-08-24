@@ -118,7 +118,6 @@ async function main() {
     // daily stats (the subscribed hot query reads this single doc, not ~173 rows).
     await client.action(api.seedAdmin.rebuildMarketSnapshots, { seedSecret })
     console.log("[seed] rebuilt market snapshots cache")
-
   } else {
     console.log("[seed] --phase-c-only: skipping shared daily-stats/rebuild.")
     // Still push the MULTIPLY subset of daily stats to the unified marketDailyStats table

@@ -21,11 +21,7 @@
 import { v, type Infer } from "convex/values"
 import type { MutationCtx, QueryCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
-import {
-  liquidBalanceView,
-  readWalletLiquidBalance,
-  upsertLiquidWalletBalance,
-} from "../wallet/balances"
+import { liquidBalanceView, readWalletLiquidBalance, upsertLiquidWalletBalance } from "../wallet/balances"
 import { requireSandboxWallet } from "./auth"
 import { computeSwapQuoteMath } from "./swapQuoteEngine"
 import { tokenNotionalToUsd } from "./collateralUsd"

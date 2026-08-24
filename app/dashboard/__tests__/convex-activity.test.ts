@@ -6,7 +6,9 @@ import {
 } from "@/app/dashboard/convex-activity"
 import type { PortfolioActivityRow } from "@/app/lib/data/providers/portfolio"
 
-function makeConvex(overrides: Partial<ConvexActivityItem> & Pick<ConvexActivityItem, "id" | "hash">): ConvexActivityItem {
+function makeConvex(
+  overrides: Partial<ConvexActivityItem> & Pick<ConvexActivityItem, "id" | "hash">,
+): ConvexActivityItem {
   return {
     source: "transaction",
     product: "umbrella",

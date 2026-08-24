@@ -48,7 +48,10 @@ async function productRowExists(
           .unique(),
       )
     return Boolean(
-      await ctx.db.query("lendMarketContent").withIndex("by_slug", (q) => q.eq("slug", market.slug)).unique(),
+      await ctx.db
+        .query("lendMarketContent")
+        .withIndex("by_slug", (q) => q.eq("slug", market.slug))
+        .unique(),
     )
   }
   if (kind === "revenue")
@@ -66,7 +69,10 @@ async function productRowExists(
         .unique(),
     )
   return Boolean(
-    await ctx.db.query("multiplyMarketContent").withIndex("by_slug", (q) => q.eq("slug", market.slug)).unique(),
+    await ctx.db
+      .query("multiplyMarketContent")
+      .withIndex("by_slug", (q) => q.eq("slug", market.slug))
+      .unique(),
   )
 }
 

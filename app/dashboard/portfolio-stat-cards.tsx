@@ -239,10 +239,8 @@ export function PortfolioStatCards({ activeTab }: { activeTab?: DashboardQuickAc
   const { showDollarAmounts, setShowDollarAmounts } = useAmountDisplayPreferences()
   const { scrollerRef, canPrev, canNext, scrollByCard } = useOverflowCarousel()
   const { walletId } = useAvanaIdentity()
-  const walletProfile = useQuery(
-    api.wallet.profiles.getMine,
-    walletId ? {} : "skip",
-  ) as { preferences?: { name?: string } } | null | undefined
+  const walletProfile = useQuery(api.wallet.profiles.getMine, walletId ? {} : "skip") as
+    { preferences?: { name?: string } } | null | undefined
   const displayName = walletProfile?.preferences?.name ?? null
   // Freeze the clock on mount; recompute only when the display name arrives from Convex.
   const [greetingNow] = useState(() => new Date())

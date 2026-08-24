@@ -609,9 +609,7 @@ function LiquiditySourceStep({
 
 export function OnboardingFlow({ wallet, state }: { wallet: string | null; state: OnboardingGateState | null }) {
   const walletProfile = useQuery(api.wallet.profiles.getMine, wallet ? {} : "skip") as
-    | { preferences?: WalletPreferences }
-    | null
-    | undefined
+    { preferences?: WalletPreferences } | null | undefined
   const beginAnalysis = useMutation(api.sandbox.onboarding.beginAnalysis)
   const completeAnalysis = useMutation(api.sandbox.onboarding.startAnalysis)
   const startTweet = useMutation(api.sandbox.onboarding.startTweet)

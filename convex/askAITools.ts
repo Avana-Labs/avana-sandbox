@@ -515,11 +515,7 @@ export async function readAskAIMarketSnapshots(
 
 export const marketSnapshots = query({
   args: {
-    sources: v.optional(
-      v.array(
-        v.union(v.literal("coingecko"), v.literal("defillama"), v.literal("aave")),
-      ),
-    ),
+    sources: v.optional(v.array(v.union(v.literal("coingecko"), v.literal("defillama"), v.literal("aave")))),
     kind: v.optional(v.union(v.literal("token_price"), v.literal("dex_pool"), v.literal("lending_market"))),
     limit: v.optional(v.number()),
   },
