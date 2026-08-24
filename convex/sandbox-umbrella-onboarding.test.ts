@@ -41,22 +41,16 @@ async function collectSandboxActivity(t: T, wallet: string, kind: string) {
   })
 }
 
-async function collectUmbrellaSandboxBalanceRows(t: T, wallet: string) {
-  // Umbrella onboarding writes wallet balances through `upsertLiquidBalance`,
-  // which upserts into `sandboxBalances` (portfolio snapshot source of truth).
-  // NOTE: `upsertLiquidBalance` also writes `walletLiquidBalances`, but the
-  // onboarding claim's subsequent `replaceProductBalanceRows` for the liquid
-  // bucket wipes the wallet's `walletLiquidBalances` and reinserts only the
-  // STARTER-BASKET liquid rows — the umbrella rows are collateral damage.
-  // Reported to source owners; tests read `sandboxBalances` where the umbrella
-  // seed is durable.
+async function collectUmbrellaLiquidBalanceRows(t: T, wallet: string) {
+  // Umbrella onboarding writes the retained liquid wallet ledger after the
+  // starter allocation replacement, so its four market rows remain durable.
   const UMBRELLA_MARKETS = new Set(["gho", "usdc", "usdt", "weth"])
   return t.run(async (ctx) => {
     const rows = await ctx.db
-      .query("sandboxBalances")
+      .query("walletLiquidBalances")
       .withIndex("by_wallet", (q) => q.eq("wallet", wallet.toLowerCase()))
       .collect()
-    return rows.filter((row) => UMBRELLA_MARKETS.has(row.assetSlug)).length
+    return rows.filter((row) => UMBRELLA_MARKETS.has(row.assetId)).length
   })
 }
 
@@ -87,7 +81,7 @@ describe("sandbox umbrella onboarding seed", () => {
 
     // Wallet balances upserted for all four umbrella markets (available state
     // rows are created for every fixture balance regardless of stake amount).
-    expect(await collectUmbrellaSandboxBalanceRows(t, WALLET)).toBeGreaterThan(0)
+    expect(await collectUmbrellaLiquidBalanceRows(t, WALLET)).toBeGreaterThan(0)
 
     // Onboarding seed writes AT MOST ONE tranche per position. Only the GHO
     // fixture has cooldownUsd > 0; USDC / USDT / WETH have no cooldown. The
@@ -111,7 +105,7 @@ describe("sandbox umbrella onboarding seed", () => {
     await asUser.mutation(api.sandbox.onboarding.claim, { wallet: WALLET })
     const positionsAfterFirst = await countUmbrellaPositions(t, WALLET)
     const stakeActivityAfterFirst = (await collectSandboxActivity(t, WALLET, "umbrella_stake")).length
-    const umbrellaBalancesAfterFirst = await collectUmbrellaSandboxBalanceRows(t, WALLET)
+    const umbrellaBalancesAfterFirst = await collectUmbrellaLiquidBalanceRows(t, WALLET)
 
     // Second claim short-circuits at profile.onboardingStep === "done", so
     // the seed helper never runs — a belt-and-suspenders regression check for
@@ -121,7 +115,7 @@ describe("sandbox umbrella onboarding seed", () => {
 
     expect(await countUmbrellaPositions(t, WALLET)).toBe(positionsAfterFirst)
     expect((await collectSandboxActivity(t, WALLET, "umbrella_stake")).length).toBe(stakeActivityAfterFirst)
-    expect(await collectUmbrellaSandboxBalanceRows(t, WALLET)).toBe(umbrellaBalancesAfterFirst)
+    expect(await collectUmbrellaLiquidBalanceRows(t, WALLET)).toBe(umbrellaBalancesAfterFirst)
   })
 
   test("ensureTestWalletFixtures is a no-op once the canonical test wallet is already seeded", async () => {

@@ -197,7 +197,7 @@ describe("sandbox onboarding + economy caps", () => {
 
     const balances = await t.run((ctx) =>
       ctx.db
-        .query("sandboxBalances")
+        .query("walletLiquidBalances")
         .withIndex("by_wallet", (queryBuilder) => queryBuilder.eq("wallet", WALLET.toLowerCase()))
         .collect(),
     )
@@ -533,5 +533,4 @@ describe("sandbox onboarding + economy caps", () => {
       /WALLET_MISMATCH/,
     )
   })
-
 })

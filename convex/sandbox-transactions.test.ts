@@ -210,13 +210,13 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
         updatedAt: 1,
       })
       // Only $5 of liquid USDC on hand.
-      await ctx.db.insert("sandboxBalances", {
+      await ctx.db.insert("walletLiquidBalances", {
         wallet: w,
-        assetSlug: "usdc",
+        assetId: "usdc",
         symbol: "USDC",
         amount: 5,
         valueUsd: 5,
-        priceUsd: 1,
+        state: "available",
         updatedAt: 1,
       })
     })
@@ -264,13 +264,13 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
         state: "deposited",
         updatedAt: 1,
       })
-      await ctx.db.insert("sandboxBalances", {
+      await ctx.db.insert("walletLiquidBalances", {
         wallet: w,
-        assetSlug: "usdc",
+        assetId: "usdc",
         symbol: "USDC",
         amount: 100,
         valueUsd: 100,
-        priceUsd: 1,
+        state: "available",
         updatedAt: 1,
       })
     })
@@ -376,13 +376,13 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
     // the dashboard headline / Net APY / onboarding snapshot — the running snapshot writer
     // must agree, or stored history drifts from the live number by the umbrella amount.
     await t.run(async (ctx) => {
-      await ctx.db.insert("sandboxBalances", {
+      await ctx.db.insert("walletLiquidBalances", {
         wallet,
-        assetSlug: "usdc",
+        assetId: "usdc",
         symbol: "USDC",
         amount: 1000,
         valueUsd: 1000,
-        priceUsd: 1,
+        state: "available",
         updatedAt: 1,
       })
       await ctx.db.insert("positions", {

@@ -524,15 +524,6 @@ export const claim = mutation({
         valueUsd: leg.amountUsd,
         state: "available",
       })
-      await ctx.db.insert("sandboxBalances", {
-        wallet,
-        assetSlug: leg.marketSlug,
-        symbol: market.symbol,
-        amount,
-        valueUsd: leg.amountUsd,
-        priceUsd,
-        updatedAt: now,
-      })
       await upsertWalletBalanceRows(ctx, [
         {
           wallet,
@@ -739,7 +730,7 @@ export const claim = mutation({
     //   1. No existing umbrella positions for this wallet, AND
     //   2. No previous `umbrellaSeeded` flag on walletSessions.
     // Reuse `seedUmbrellaWallet` (single source of truth in convex/sandbox/umbrella.ts)
-    // so onboarding produces IDENTICAL walletLiquidBalances / sandboxBalances /
+    // so onboarding produces IDENTICAL walletLiquidBalances / walletBalances /
     // sandboxActivity as if the user had done four `stake 0` actions for
     // GHO/USDC/USDT/WETH. Previously this block wrote positions + a bespoke
     // sandbox-balance upsert but skipped walletLiquidBalances (breaking the

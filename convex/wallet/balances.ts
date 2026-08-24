@@ -9,7 +9,7 @@
  */
 
 import { v, type Infer } from "convex/values"
-import type { MutationCtx } from "../_generated/server"
+import type { MutationCtx, QueryCtx } from "../_generated/server"
 import { internalMutation, query } from "../_generated/server"
 import { requireSandboxWallet } from "../sandbox/auth"
 
@@ -91,6 +91,59 @@ export async function upsertWalletBalanceRows(ctx: MutationCtx, rows: Array<Infe
     }
   }
   return { written: rows.length }
+}
+
+export async function readWalletLiquidBalance(ctx: QueryCtx | MutationCtx, wallet: string, assetId: string) {
+  return ctx.db
+    .query("walletLiquidBalances")
+    .withIndex("by_wallet_asset", (q) => q.eq("wallet", wallet).eq("assetId", assetId))
+    .first()
+}
+
+export async function upsertLiquidWalletBalance(
+  ctx: MutationCtx,
+  row: { wallet: string; assetId: string; symbol: string; amount: number; valueUsd: number; updatedAt?: number },
+) {
+  const now = row.updatedAt ?? Date.now()
+  const existing = await readWalletLiquidBalance(ctx, row.wallet, row.assetId)
+  const liquid = {
+    wallet: row.wallet,
+    assetId: row.assetId,
+    symbol: row.symbol,
+    amount: Math.max(0, row.amount),
+    valueUsd: Math.max(0, row.valueUsd),
+    state: "available" as const,
+    updatedAt: now,
+  }
+  if (existing) await ctx.db.patch(existing._id, liquid)
+  else if (liquid.amount > 0 || liquid.valueUsd > 0) await ctx.db.insert("walletLiquidBalances", liquid)
+
+  await upsertWalletBalanceRows(ctx, [
+    {
+      wallet: row.wallet,
+      assetId: row.assetId,
+      amount: liquid.amount,
+      sourceType: "wallet",
+      assetKind: "wallet",
+      symbol: row.symbol,
+      valueUsd6: String(Math.round(liquid.valueUsd * 1_000_000)),
+    },
+  ])
+}
+
+export function liquidBalanceView(row: {
+  wallet: string
+  assetId: string
+  symbol: string
+  amount: number
+  valueUsd: number
+  updatedAt: number
+}) {
+  return {
+    ...row,
+    assetSlug: row.assetId,
+    priceUsd: row.amount > 0 ? row.valueUsd / row.amount : 0,
+  }
 }
 
 export const upsertBalances = internalMutation({
