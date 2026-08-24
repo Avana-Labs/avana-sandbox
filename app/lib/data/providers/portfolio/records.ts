@@ -1,4 +1,5 @@
-export type PortfolioActivityProduct = "borrow" | "pool" | "lend" | "multiply" | "rewards" | "swap" | "umbrella"
+export type PortfolioActivityProduct =
+  "borrow" | "pool" | "lend" | "multiply" | "onboarding" | "rewards" | "swap" | "umbrella"
 
 export type PortfolioActivityKind =
   | "swap"
@@ -159,6 +160,7 @@ export type PortfolioActivityRecord = {
   primaryLabel: string
   secondaryLabel: string
   txHash: string
+  marketId?: string
 }
 
 export type PortfolioStrategyPoolRecord = {

@@ -2027,7 +2027,17 @@ export default defineSchema({
 
   /** Normalized cache populated only by external market-provider ingestion. */
   askAIMarketSnapshots: defineTable({
-    source: v.union(v.literal("coingecko"), v.literal("defillama"), v.literal("aave")),
+    // Only coingecko/defillama/aave are writable by current ingestion. These legacy
+    // literals must remain until production cleanup is verified; narrowing first
+    // makes Convex reject the existing documents during schema validation.
+    source: v.union(
+      v.literal("coingecko"),
+      v.literal("defillama"),
+      v.literal("uniswap"),
+      v.literal("curve"),
+      v.literal("balancer"),
+      v.literal("aave"),
+    ),
     kind: v.union(v.literal("token_price"), v.literal("dex_pool"), v.literal("lending_market")),
     key: v.string(),
     payload: v.any(),
@@ -2040,7 +2050,15 @@ export default defineSchema({
     .index("by_fetched_at", ["fetchedAt"]),
 
   askAIMarketProviderRuns: defineTable({
-    source: v.union(v.literal("coingecko"), v.literal("defillama"), v.literal("aave")),
+    // Historical run rows use the same legacy source set as market snapshots.
+    source: v.union(
+      v.literal("coingecko"),
+      v.literal("defillama"),
+      v.literal("uniswap"),
+      v.literal("curve"),
+      v.literal("balancer"),
+      v.literal("aave"),
+    ),
     status: v.union(v.literal("success"), v.literal("failed")),
     records: v.number(),
     error: v.optional(v.string()),

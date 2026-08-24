@@ -6,6 +6,7 @@ const PRODUCTS = new Set<PortfolioActivityProduct>([
   "pool",
   "lend",
   "multiply",
+  "onboarding",
   "rewards",
   "swap",
   "umbrella",
@@ -32,7 +33,7 @@ const KINDS = new Set<PortfolioActivityKind>([
 ])
 
 export type ConvexActivityItem = {
-  source: "transaction" | "onboarding"
+  source: "transaction" | "sandboxActivity"
   id: string
   product: string
   kind: string
@@ -44,7 +45,6 @@ export type ConvexActivityItem = {
 }
 
 function mapProduct(product: string): PortfolioActivityProduct {
-  if (product === "onboarding") return "rewards"
   if (PRODUCTS.has(product as PortfolioActivityProduct)) return product as PortfolioActivityProduct
   return "borrow"
 }
@@ -54,7 +54,7 @@ function mapKind(kind: string): PortfolioActivityKind {
   if (kind === "multiply") return "open"
   if (kind === "deleverage") return "reduce"
   if (KINDS.has(kind as PortfolioActivityKind)) return kind as PortfolioActivityKind
-  return "supply"
+  return "rebalance"
 }
 
 function mapStatus(status: string): PortfolioActivityRow["status"] {
@@ -71,13 +71,28 @@ function titleCase(value: string) {
 /** Map Convex `getActivity` rows into dashboard activity rows. */
 export function mapConvexActivityItemsToRows(items: ConvexActivityItem[]): PortfolioActivityRow[] {
   return items.map((item) => {
-    const product = mapProduct(item.product)
-    const kind = mapKind(item.kind)
-    const primaryLabel = item.marketSlug
-      ? item.marketSlug
-      : product === "rewards"
-        ? "Avana rewards"
-        : titleCase(item.kind)
+    const legacyUmbrellaKind =
+      item.product === "onboarding" && item.kind.startsWith("umbrella_") ? item.kind.slice("umbrella_".length) : null
+    const isStarterAssetGrant = item.product === "onboarding" && item.kind === "starterAssetGrant"
+    const isOnboardingClaim = item.product === "onboarding" && item.kind === "onboardingClaim"
+    const product = legacyUmbrellaKind ? "umbrella" : mapProduct(item.product)
+    const kind = isStarterAssetGrant || isOnboardingClaim ? "claim" : mapKind(legacyUmbrellaKind ?? item.kind)
+    const primaryLabel = isOnboardingClaim
+      ? "Sandbox portfolio funded"
+      : isStarterAssetGrant
+        ? item.marketSlug
+          ? `${item.marketSlug.toUpperCase()} sandbox funds`
+          : "Sandbox asset grant"
+        : item.marketSlug
+          ? item.marketSlug
+          : product === "rewards"
+            ? "Avana rewards"
+            : titleCase(legacyUmbrellaKind ?? item.kind)
+    const secondaryLabel = isOnboardingClaim
+      ? "Onboarding grant"
+      : isStarterAssetGrant
+        ? "Sandbox funds received"
+        : titleCase(legacyUmbrellaKind ?? item.kind)
     return {
       id: item.id,
       at: new Date(item.at).toISOString(),
@@ -86,13 +101,19 @@ export function mapConvexActivityItemsToRows(items: ConvexActivityItem[]): Portf
       status: mapStatus(item.status),
       amountUsd: item.amountUsd,
       primaryLabel,
-      secondaryLabel: titleCase(item.kind),
+      secondaryLabel,
       txHash: item.hash,
+      marketId: item.marketSlug ?? undefined,
     }
   })
 }
 
-/** Merge seed (session) rows with Convex pages. Seed wins on id collisions. */
+function logicalActivityKey(row: PortfolioActivityRow) {
+  if (!row.txHash) return `id\u0000${row.id}`
+  return `${row.txHash}\u0000${row.product}\u0000${row.kind}\u0000${row.marketId ?? ""}`
+}
+
+/** Merge seed (session) rows with Convex pages. Seed wins on id and logical-action collisions. */
 export function mergeActivityRows(
   seedRows: PortfolioActivityRow[],
   convexRows: PortfolioActivityRow[],
@@ -100,5 +121,7 @@ export function mergeActivityRows(
   const byId = new Map<string, PortfolioActivityRow>()
   for (const row of convexRows) byId.set(row.id, row)
   for (const row of seedRows) byId.set(row.id, row)
-  return [...byId.values()].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
+  const byAction = new Map<string, PortfolioActivityRow>()
+  for (const row of byId.values()) byAction.set(logicalActivityKey(row), row)
+  return [...byAction.values()].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
 }

@@ -1602,7 +1602,7 @@ export const recordRiskSnapshot = mutation({
   },
 })
 
-/** Merged wallet activity feed: product transactions + onboarding activity, newest first. */
+/** Merged wallet activity feed: product transactions + sandbox activity, newest first. */
 export const getActivity = query({
   args: { wallet: v.string(), limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
@@ -1618,30 +1618,35 @@ export const getActivity = query({
       .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
       .order("desc")
       .take(limit)
-    const merged = [
-      ...txs.map((t) => ({
-        source: "transaction" as const,
-        id: t._id as string,
-        product: t.product as string,
-        kind: t.kind,
-        status: t.status as string,
-        amountUsd: t.amountUsd,
-        marketSlug: t.marketSlug ?? null,
-        hash: t.syntheticTxHash,
-        at: t.at,
-      })),
-      ...acts.map((a) => ({
-        source: "onboarding" as const,
+    const transactionItems = txs.map((t) => ({
+      source: "transaction" as const,
+      id: t._id as string,
+      product: t.product as string,
+      kind: t.kind,
+      status: t.status as string,
+      amountUsd: t.amountUsd,
+      marketSlug: t.marketSlug ?? null,
+      hash: t.syntheticTxHash,
+      at: t.at,
+    }))
+    const activityItems = acts.map((a) => {
+      const umbrellaKind = a.kind.startsWith("umbrella_") ? a.kind.slice("umbrella_".length) : null
+      return {
+        source: "sandboxActivity" as const,
         id: a._id as string,
-        product: "onboarding",
-        kind: a.kind,
+        product: umbrellaKind ? "umbrella" : "onboarding",
+        kind: umbrellaKind ?? a.kind,
         status: "success",
         amountUsd: a.amountUsd,
         marketSlug: a.marketSlug ?? null,
         hash: a.syntheticTxHash,
         at: a.at,
-      })),
-    ]
+      }
+    })
+    const identity = (item: { hash: string; product: string; kind: string; marketSlug: string | null }) =>
+      `${item.hash}\u0000${item.product}\u0000${item.kind}\u0000${item.marketSlug ?? ""}`
+    const transactionIdentities = new Set(transactionItems.map(identity))
+    const merged = [...transactionItems, ...activityItems.filter((item) => !transactionIdentities.has(identity(item)))]
     merged.sort((x, y) => y.at - x.at)
     return merged.slice(0, limit)
   },

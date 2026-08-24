@@ -50,8 +50,8 @@ export function derivePersistedUmbrellaPositionStatus(position: {
  * feed expects. Mirrors the lend/borrow/multiply mappers: normalise timestamps
  * to ISO, sign amounts by whether they add to or subtract from the position,
  * pick a status + kind from the union, and keep the tx hash intact so the
- * hash-dedup in dashboard-page-client can collapse duplicates coming through
- * multiple sources.
+ * composite hash/action/market dedup can collapse cross-store copies without
+ * hiding distinct actions that happen to share a receipt hash.
  */
 export function buildUmbrellaActivityRows(transactions: UmbrellaTransaction[]): PortfolioActivityRow[] {
   return transactions.map((tx) => {
@@ -87,6 +87,7 @@ export function buildUmbrellaActivityRows(transactions: UmbrellaTransaction[]): 
           ? "Umbrella rewards claim"
           : `${tx.amount.toLocaleString("en-US", { maximumFractionDigits: 4 })} ${tx.symbol}`,
       txHash: tx.hash,
+      marketId: tx.marketId,
     }
   })
 }

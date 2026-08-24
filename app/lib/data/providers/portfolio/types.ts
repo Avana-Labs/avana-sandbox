@@ -201,6 +201,8 @@ export type PortfolioActivityRow = {
   primaryLabel: string
   secondaryLabel: string
   txHash: string
+  /** Stable action-market identity used to deduplicate persisted/session copies. */
+  marketId?: string
 }
 
 export type PortfolioActivityData = {

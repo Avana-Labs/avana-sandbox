@@ -215,4 +215,27 @@ describe("RecentActivity amount sign convention (#F2)", () => {
     expect(view.queryByText("+$12")).not.toBeInTheDocument()
     expect(view.queryByText("-$12")).not.toBeInTheDocument()
   })
+
+  it("renders onboarding grants as received USD instead of spent AVA", () => {
+    const { container } = render(
+      <DisplayPreferencesProvider>
+        <RecentActivity
+          rows={[
+            makeRow({
+              id: "onboarding-claim",
+              txHash: "sim-onboarding",
+              product: "onboarding",
+              kind: "claim",
+              amountUsd: 1_000_000,
+              primaryLabel: "Sandbox portfolio funded",
+              secondaryLabel: "Onboarding grant",
+            }),
+          ]}
+        />
+      </DisplayPreferencesProvider>,
+    )
+    const view = within(container)
+    expect(view.getByText("+$1.0M")).toBeInTheDocument()
+    expect(view.queryByText(/AVA/)).not.toBeInTheDocument()
+  })
 })

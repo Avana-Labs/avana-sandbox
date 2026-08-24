@@ -65,6 +65,43 @@ export const ingest = internalAction({
   },
 })
 
+// Production still contains legacy provider snapshots. Keep cleanup deployable
+// while the schema accepts those rows; only narrow the schema after an operator
+// has run this action and independently verified that every legacy count is zero.
+const LEGACY_MARKET_SOURCES = ["uniswap", "curve", "balancer"] as const
+
+export const deleteLegacyMarketSnapshotBatch = internalMutation({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, { limit }) => {
+    const budget = Math.min(Math.max(Math.trunc(limit ?? 500), 1), 1_000)
+    let deleted = 0
+    for (const source of LEGACY_MARKET_SOURCES) {
+      if (deleted >= budget) break
+      const rows = await ctx.db
+        .query("askAIMarketSnapshots")
+        .withIndex("by_source_kind_key", (q) => q.eq("source", source))
+        .take(budget - deleted)
+      for (const row of rows) {
+        await ctx.db.delete(row._id)
+        deleted += 1
+      }
+    }
+    return { deleted }
+  },
+})
+
+export const purgeLegacyMarketSnapshots = internalAction({
+  args: {},
+  handler: async (ctx) => {
+    let deleted = 0
+    for (;;) {
+      const batch = await ctx.runMutation(internal.askAIIngestion.deleteLegacyMarketSnapshotBatch, {})
+      deleted += batch.deleted
+      if (batch.deleted === 0) return { deleted }
+    }
+  },
+})
+
 /** Operator-triggered, bounded cleanup for the legacy append-only provider run log. */
 export const deleteProviderRunBatch = internalMutation({
   args: { limit: v.optional(v.number()) },

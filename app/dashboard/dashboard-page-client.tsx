@@ -579,8 +579,8 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
     ),
   ]
   // One combined "recent activity" table: live session actions + the full dashboard
-  // activity (all products) + reward claims, deduped by row id (session/seed rows win).
-  // Do not dedupe by txHash — multiple logical actions (e.g. Umbrella stakes) can share a hash.
+  // activity (all products) + reward claims. RecentActivity deduplicates by id and by the
+  // composite hash/action/market identity, so distinct same-hash actions remain visible.
   const combinedActivityRows = [
     ...mapTransactionHistoryToActivityRows(avana.borrow.transactionHistory, avana.borrow.state.markets),
     ...avana.multiply.transactionHistory.map((item) => ({

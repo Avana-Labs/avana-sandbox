@@ -128,6 +128,32 @@ describe("Ask AI market ingestion", () => {
     await expect(t.run((ctx) => ctx.db.query("askAIMarketProviderRuns").collect())).resolves.toEqual([])
   })
 
+  test("retains legacy snapshot validators until the explicit purge completes", async () => {
+    const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      for (const source of ["curve", "uniswap", "balancer"] as const) {
+        await ctx.db.insert("askAIMarketSnapshots", {
+          source,
+          kind: "dex_pool",
+          key: `${source}:legacy`,
+          payload: {},
+          fetchedAt: 100,
+        })
+      }
+      await ctx.db.insert("askAIMarketSnapshots", {
+        source: "defillama",
+        kind: "dex_pool",
+        key: "defillama:active",
+        payload: {},
+        fetchedAt: 100,
+      })
+    })
+
+    await expect(t.action(internal.askAIIngestion.purgeLegacyMarketSnapshots, {})).resolves.toEqual({ deleted: 3 })
+    const remaining = await t.run((ctx) => ctx.db.query("askAIMarketSnapshots").collect())
+    expect(remaining.map((row) => row.source)).toEqual(["defillama"])
+  })
+
   test("deletes legacy provider runs only in an explicit bounded batch", async () => {
     const t = convexTest(schema, modules)
     await t.run(async (ctx) => {

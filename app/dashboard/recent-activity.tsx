@@ -44,6 +44,7 @@ const KIND_LABEL: Record<PortfolioActivityRow["kind"], string> = {
 /** Pull a token symbol from activity labels for the row icon (dummy-friendly). */
 export function inferActivityTokenSymbol(row: PortfolioActivityRow): string {
   if (row.product === "rewards") return "AVA"
+  if (row.product === "onboarding") return row.marketId?.toUpperCase() ?? "USDC"
 
   const secondary = row.secondaryLabel.replace(/\s+claimed$/i, "").trim()
   const secondaryTail = secondary.split(/\s+/).at(-1)

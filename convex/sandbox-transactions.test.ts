@@ -304,6 +304,57 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
     expect(activity).toHaveLength(1)
   })
 
+  test("deduplicates cross-store Umbrella copies by hash, action, and market", async () => {
+    const t = convexTest(schema, modules)
+    const now = Date.now()
+    const wallet = WALLET.toLowerCase()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("transactions", {
+        wallet,
+        intentId: "umbrella-stake-weth",
+        product: "umbrella",
+        kind: "stake",
+        status: "success",
+        marketSlug: "weth",
+        requestedAmountUsd6: "1000000000",
+        executedAmountUsd6: "1000000000",
+        amountUsd: 1000,
+        syntheticTxHash: "sim-shared",
+        simulated: true,
+        at: now,
+      })
+      for (const [kind, marketSlug] of [
+        ["umbrella_stake", "weth"],
+        ["umbrella_startCooldown", "weth"],
+        ["umbrella_stake", "usdc"],
+      ] as const) {
+        await ctx.db.insert("sandboxActivity", {
+          wallet,
+          kind,
+          amountUsd: 1000,
+          marketSlug,
+          syntheticTxHash: "sim-shared",
+          at: now,
+        })
+      }
+    })
+
+    const activity = await t
+      .withIdentity({ subject: WALLET })
+      .query(api.sandbox.transactions.getActivity, { wallet: WALLET })
+    expect(activity).toHaveLength(3)
+    expect(
+      activity.filter((row) => row.product === "umbrella" && row.kind === "stake" && row.marketSlug === "weth"),
+    ).toHaveLength(1)
+    expect(activity.map((row) => [row.kind, row.marketSlug])).toEqual(
+      expect.arrayContaining([
+        ["stake", "weth"],
+        ["startCooldown", "weth"],
+        ["stake", "usdc"],
+      ]),
+    )
+  })
+
   test("enforces the hourly per-wallet rate limit", async () => {
     const t = convexTest(schema, modules)
     const now = Date.now()
