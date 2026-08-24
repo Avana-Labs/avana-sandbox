@@ -242,7 +242,7 @@ describe("Ask AI normalized market tools", () => {
         createdAt: 1,
       })
       await ctx.db.insert("askAIMarketSnapshots", {
-        source: "uniswap",
+        source: "defillama",
         kind: "dex_pool",
         key: "eth-usdc",
         payload: { liquidityUsd: 4_000_000, volume24h: 500_000 },
@@ -276,7 +276,7 @@ describe("Ask AI normalized market tools", () => {
     })
     await expect(t.query(api.askAITools.poolMetrics, { marketId: "eth-usdc" })).resolves.toMatchObject({
       market: expect.objectContaining({ name: "ETH / USDC" }),
-      providerData: [expect.objectContaining({ source: "uniswap", freshness: "fresh" })],
+      providerData: [expect.objectContaining({ source: "defillama", freshness: "fresh" })],
     })
   })
 

@@ -90,40 +90,6 @@ describe("Ask AI market ingestion", () => {
     ])
   })
 
-  test("purges legacy provider snapshots and leaves live sources intact", async () => {
-    const t = convexTest(schema, modules)
-    await t.run(async (ctx) => {
-      const now = Date.now()
-      for (const source of ["curve", "balancer", "uniswap"] as const)
-        await ctx.db.insert("askAIMarketSnapshots", {
-          source,
-          kind: "dex_pool",
-          key: `${source}:legacy`,
-          payload: {},
-          fetchedAt: now,
-        })
-      await ctx.db.insert("askAIMarketSnapshots", {
-        source: "defillama",
-        kind: "dex_pool",
-        key: "defillama:live",
-        payload: {},
-        fetchedAt: now,
-      })
-    })
-
-    await expect(t.action(internal.askAIIngestion.purgeLegacyMarketSnapshots, {})).resolves.toMatchObject({
-      matched: 3,
-      deleted: 0,
-      dryRun: true,
-    })
-    await expect(
-      t.action(internal.askAIIngestion.purgeLegacyMarketSnapshots, { execute: true }),
-    ).resolves.toMatchObject({ deleted: 3, dryRun: false })
-
-    const remaining = await t.run((ctx) => ctx.db.query("askAIMarketSnapshots").collect())
-    expect(remaining.map((row) => row.source)).toEqual(["defillama"])
-  })
-
   test("keeps one bounded health-state document per active provider", async () => {
     const t = convexTest(schema, modules)
     await t.mutation(internal.askAIIngestion.recordProviderRun, {

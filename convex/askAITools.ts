@@ -517,14 +517,7 @@ export const marketSnapshots = query({
   args: {
     sources: v.optional(
       v.array(
-        v.union(
-          v.literal("coingecko"),
-          v.literal("defillama"),
-          v.literal("uniswap"),
-          v.literal("curve"),
-          v.literal("balancer"),
-          v.literal("aave"),
-        ),
+        v.union(v.literal("coingecko"), v.literal("defillama"), v.literal("aave")),
       ),
     ),
     kind: v.optional(v.union(v.literal("token_price"), v.literal("dex_pool"), v.literal("lending_market"))),

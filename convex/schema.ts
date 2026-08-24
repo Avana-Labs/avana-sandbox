@@ -1969,27 +1969,6 @@ export default defineSchema({
     .index("by_thread", ["threadId"])
     .index("by_message", ["messageId"]),
 
-  // DEPRECATED: the voice/attachment feature and all its Convex functions were
-  // removed. This table definition is retained only so existing prod rows stay
-  // valid; dropping it is a separate destructive migration (delete rows first).
-  askAIAttachments: defineTable({
-    ownerSubject: v.string(),
-    threadId: v.string(),
-    storageId: v.id("_storage"),
-    agentFileId: v.optional(v.string()),
-    name: v.string(),
-    mediaType: v.string(),
-    size: v.number(),
-    status: v.union(v.literal("uploaded"), v.literal("processed"), v.literal("failed")),
-    extractedText: v.optional(v.string()),
-    error: v.optional(v.string()),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_owner", ["ownerSubject"])
-    .index("by_thread", ["threadId"])
-    .index("by_storage", ["storageId"]),
-
   askAITurns: defineTable({
     threadId: v.string(),
     ownerSubject: v.string(),
@@ -2061,17 +2040,7 @@ export default defineSchema({
 
   /** Normalized cache populated only by external market-provider ingestion. */
   askAIMarketSnapshots: defineTable({
-    // Live sources are coingecko/defillama/aave. uniswap/curve/balancer are legacy
-    // literals kept wide only so stale prod rows validate; narrow to the live three
-    // after running internal.askAIIngestion.purgeLegacyMarketSnapshots.
-    source: v.union(
-      v.literal("coingecko"),
-      v.literal("defillama"),
-      v.literal("uniswap"),
-      v.literal("curve"),
-      v.literal("balancer"),
-      v.literal("aave"),
-    ),
+    source: v.union(v.literal("coingecko"), v.literal("defillama"), v.literal("aave")),
     kind: v.union(v.literal("token_price"), v.literal("dex_pool"), v.literal("lending_market")),
     key: v.string(),
     payload: v.any(),
@@ -2084,14 +2053,7 @@ export default defineSchema({
     .index("by_fetched_at", ["fetchedAt"]),
 
   askAIMarketProviderRuns: defineTable({
-    source: v.union(
-      v.literal("coingecko"),
-      v.literal("defillama"),
-      v.literal("uniswap"),
-      v.literal("curve"),
-      v.literal("balancer"),
-      v.literal("aave"),
-    ),
+    source: v.union(v.literal("coingecko"), v.literal("defillama"), v.literal("aave")),
     status: v.union(v.literal("success"), v.literal("failed")),
     records: v.number(),
     error: v.optional(v.string()),
