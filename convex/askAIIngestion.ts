@@ -5,7 +5,9 @@ import type { AskAIMarketRecord } from "../app/lib/ask-ai/providers/contracts"
 import { internal } from "./_generated/api"
 import { internalAction, internalMutation, internalQuery } from "./_generated/server"
 
-const upsertRecords = makeFunctionReference<"mutation", { records: AskAIMarketRecord[] }, { upserted: number }>(
+type UpsertResult = { inserted: number; updated: number; unchanged: number }
+
+const upsertRecords = makeFunctionReference<"mutation", { records: AskAIMarketRecord[] }, UpsertResult>(
   "askAIIngestion:upsertRecordsMutation",
 )
 
@@ -25,21 +27,22 @@ export const ingest = internalAction({
       const startedAt = Date.now()
       try {
         const records = await provider.fetch()
-        let upserted = 0
+        const written: UpsertResult = { inserted: 0, updated: 0, unchanged: 0 }
         for (let i = 0; i < records.length; i += UPSERT_CHUNK_SIZE) {
           const batch = records.slice(i, i + UPSERT_CHUNK_SIZE)
           const result = await ctx.runMutation(upsertRecords, { records: batch })
-          upserted += result.upserted
+          written.inserted += result.inserted
+          written.updated += result.updated
+          written.unchanged += result.unchanged
         }
-        const written = { upserted }
         await ctx.runMutation(internal.askAIIngestion.recordProviderRun, {
           source: provider.source,
           status: "success",
-          records: written.upserted,
+          records: records.length,
           startedAt,
           completedAt: Date.now(),
         })
-        results.push({ source: provider.source, status: "success" as const, records: written.upserted })
+        results.push({ source: provider.source, status: "success" as const, records: records.length, ...written })
       } catch (error) {
         const message = error instanceof Error ? error.message.slice(0, 500) : "Unknown provider failure"
         await ctx.runMutation(internal.askAIIngestion.recordProviderRun, {
@@ -138,6 +141,37 @@ export const recordProviderRun = internalMutation({
   handler: async (ctx, args) => ctx.db.insert("askAIMarketProviderRuns", args),
 })
 
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "undefined"
+  if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`
+
+  const record = value as Record<string, unknown>
+  return `{${Object.keys(record)
+    .filter((key) => record[key] !== undefined)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${stableStringify(record[key])}`)
+    .join(",")}}`
+}
+
+/** Deterministic non-cryptographic fingerprint used only to avoid no-op database patches. */
+function contentHash(record: AskAIMarketRecord): string {
+  const input = stableStringify({
+    source: record.source,
+    kind: record.kind,
+    key: record.key,
+    payload: record.payload,
+    sourceUpdatedAt: record.sourceUpdatedAt,
+  })
+  let left = 0x811c9dc5
+  let right = 0x9e3779b9
+  for (let index = 0; index < input.length; index += 1) {
+    const code = input.charCodeAt(index)
+    left = Math.imul(left ^ code, 0x01000193)
+    right = Math.imul(right ^ code, 0x85ebca6b)
+  }
+  return `${(left >>> 0).toString(16).padStart(8, "0")}${(right >>> 0).toString(16).padStart(8, "0")}`
+}
+
 export const upsertRecordsMutation = internalMutation({
   args: {
     records: v.array(
@@ -152,16 +186,25 @@ export const upsertRecordsMutation = internalMutation({
     ),
   },
   handler: async (ctx, { records }) => {
+    const result: UpsertResult = { inserted: 0, updated: 0, unchanged: 0 }
     for (const record of records) {
+      const hash = contentHash(record)
       const existing = await ctx.db
         .query("askAIMarketSnapshots")
         .withIndex("by_source_kind_key", (q) =>
           q.eq("source", record.source).eq("kind", record.kind).eq("key", record.key),
         )
         .unique()
-      if (existing) await ctx.db.patch(existing._id, record)
-      else await ctx.db.insert("askAIMarketSnapshots", record)
+      if (!existing) {
+        await ctx.db.insert("askAIMarketSnapshots", { ...record, contentHash: hash })
+        result.inserted += 1
+      } else if (existing.contentHash !== hash) {
+        await ctx.db.patch(existing._id, { ...record, contentHash: hash })
+        result.updated += 1
+      } else {
+        result.unchanged += 1
+      }
     }
-    return { upserted: records.length }
+    return result
   },
 })

@@ -16,36 +16,62 @@ describe("Ask AI market ingestion", () => {
   test("upserts normalized records and exposes a bounded source-aware read", async () => {
     const t = convexTest(schema, modules)
     const now = Date.now()
-    await t.mutation(internal.askAIIngestion.upsertRecordsMutation, {
-      records: [
-        {
-          source: "coingecko",
-          kind: "token_price",
-          key: "ethereum",
-          payload: { usd: 4_000 },
-          fetchedAt: now - 100,
-        },
-      ],
-    })
-    await t.mutation(internal.askAIIngestion.upsertRecordsMutation, {
-      records: [
-        {
-          source: "coingecko",
-          kind: "token_price",
-          key: "ethereum",
-          payload: { usd: 4_321.5 },
-          sourceUpdatedAt: now - 50,
-          fetchedAt: now,
-        },
-        {
-          source: "defillama",
-          kind: "dex_pool",
-          key: "defillama:0xpool",
-          payload: { totalValueLockedUSD: 1_000_000 },
-          fetchedAt: now - 10,
-        },
-      ],
-    })
+    await expect(
+      t.mutation(internal.askAIIngestion.upsertRecordsMutation, {
+        records: [
+          {
+            source: "coingecko",
+            kind: "token_price",
+            key: "ethereum",
+            payload: { usd: 4_000 },
+            fetchedAt: now - 100,
+          },
+        ],
+      }),
+    ).resolves.toEqual({ inserted: 1, updated: 0, unchanged: 0 })
+    await expect(
+      t.mutation(internal.askAIIngestion.upsertRecordsMutation, {
+        records: [
+          {
+            source: "coingecko",
+            kind: "token_price",
+            key: "ethereum",
+            payload: { usd: 4_321.5 },
+            sourceUpdatedAt: now - 50,
+            fetchedAt: now,
+          },
+          {
+            source: "defillama",
+            kind: "dex_pool",
+            key: "defillama:0xpool",
+            payload: { totalValueLockedUSD: 1_000_000 },
+            fetchedAt: now - 10,
+          },
+        ],
+      }),
+    ).resolves.toEqual({ inserted: 1, updated: 1, unchanged: 0 })
+
+    await expect(
+      t.mutation(internal.askAIIngestion.upsertRecordsMutation, {
+        records: [
+          {
+            source: "coingecko",
+            kind: "token_price",
+            key: "ethereum",
+            payload: { usd: 4_321.5 },
+            sourceUpdatedAt: now - 50,
+            fetchedAt: now + 1_000,
+          },
+          {
+            source: "defillama",
+            kind: "dex_pool",
+            key: "defillama:0xpool",
+            payload: { totalValueLockedUSD: 1_000_000 },
+            fetchedAt: now + 1_000,
+          },
+        ],
+      }),
+    ).resolves.toEqual({ inserted: 0, updated: 0, unchanged: 2 })
 
     await expect(
       t.query(api.askAITools.marketSnapshots, {

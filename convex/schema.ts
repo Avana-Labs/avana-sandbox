@@ -2066,6 +2066,7 @@ export default defineSchema({
     payload: v.any(),
     sourceUpdatedAt: v.optional(v.number()),
     fetchedAt: v.number(),
+    contentHash: v.optional(v.string()),
   })
     .index("by_source_kind_key", ["source", "kind", "key"])
     .index("by_kind_key", ["kind", "key"])
