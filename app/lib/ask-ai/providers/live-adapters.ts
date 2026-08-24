@@ -35,72 +35,11 @@ abstract class LiveProvider implements AskAIMarketProvider {
   }
 }
 
-export class CoinGeckoProvider extends LiveProvider {
-  readonly source = "coingecko" as const
-
-  async fetch(): Promise<AskAIMarketRecord[]> {
-    const ids = this.options.env.ASK_AI_COINGECKO_IDS ?? "bitcoin,ethereum,usd-coin"
-    const baseUrl = this.options.env.ASK_AI_COINGECKO_URL ?? "https://api.coingecko.com/api/v3/simple/price"
-    const url = new URL(baseUrl)
-    url.searchParams.set("ids", ids)
-    url.searchParams.set("vs_currencies", "usd")
-    url.searchParams.set("include_last_updated_at", "true")
-    const apiKey = this.options.env.COINGECKO_API_KEY
-    const data = await requestJson(this.options.fetcher, url.toString(), {
-      headers: apiKey ? { "x-cg-pro-api-key": apiKey } : undefined,
-    })
-    if (!data || typeof data !== "object" || Array.isArray(data)) return []
-    return Object.entries(data).flatMap(([id, raw]) => {
-      if (!raw || typeof raw !== "object" || Array.isArray(raw)) return []
-      const row = raw as Record<string, unknown>
-      const usd = finiteNumber(row.usd)
-      if (usd === undefined) return []
-      const updated = finiteNumber(row.last_updated_at)
-      return [this.record("token_price", id, { id, usd }, updated === undefined ? undefined : updated * 1000)]
-    })
-  }
-}
-
 export class DefiLlamaProvider extends LiveProvider {
   readonly source = "defillama" as const
 
   async fetch(): Promise<AskAIMarketRecord[]> {
-    const [prices, pools] = await Promise.all([this.fetchPrices(), this.fetchPools()])
-    return [...prices, ...pools]
-  }
-
-  private async fetchPrices(): Promise<AskAIMarketRecord[]> {
-    // Cover the tokens users actually ask about so `search_markets` is
-    // authoritative and the model never falls back to web search for a price.
-    // Override the full list with ASK_AI_DEFILLAMA_COINS.
-    const coins =
-      this.options.env.ASK_AI_DEFILLAMA_COINS ??
-      [
-        "coingecko:bitcoin",
-        "coingecko:ethereum",
-        "coingecko:usd-coin",
-        "coingecko:tether",
-        "coingecko:dai",
-        "coingecko:wrapped-bitcoin",
-        "coingecko:staked-ether",
-        "coingecko:aave",
-        "coingecko:uniswap",
-        "coingecko:chainlink",
-        "coingecko:gho",
-        "coingecko:curve-dao-token",
-      ].join(",")
-    const baseUrl = this.options.env.ASK_AI_DEFILLAMA_URL ?? "https://coins.llama.fi/prices/current"
-    const data = await requestJson(this.options.fetcher, `${baseUrl}/${coins}`)
-    const coinRows = data && typeof data === "object" ? (data as Record<string, unknown>).coins : undefined
-    if (!coinRows || typeof coinRows !== "object" || Array.isArray(coinRows)) return []
-    return Object.entries(coinRows).flatMap(([key, raw]) => {
-      if (!raw || typeof raw !== "object" || Array.isArray(raw)) return []
-      const row = raw as Record<string, unknown>
-      const price = finiteNumber(row.price)
-      if (price === undefined) return []
-      const at = finiteNumber(row.timestamp)
-      return [this.record("token_price", key, { ...row, price }, at === undefined ? undefined : at * 1000)]
-    })
+    return this.fetchPools()
   }
 
   // DefiLlama's yields API aggregates pools across every major protocol (Uniswap, Curve, Balancer,
@@ -208,10 +147,8 @@ export class AaveProvider extends GraphProvider {
 export function createLiveAskAIProviders(env: NodeJS.ProcessEnv, fetcher: AskAIFetch): AskAIMarketProvider[] {
   const options = { env, fetcher }
   return [
-    // CoinGecko disabled for now — DefiLlama covers token prices. Re-enable by uncommenting.
-    // new CoinGeckoProvider(options),
-    // DefiLlama supplies both token prices and cross-protocol pool data (its yields API covers
-    // Uniswap/Curve/Balancer/PancakeSwap/…), which is why there is no standalone Uniswap provider.
+    // Canonical token prices come from convex/prices.ts. This provider stores only cross-protocol
+    // pool data, so Ask AI does not fetch or persist a duplicate price cache.
     new DefiLlamaProvider(options),
     new AaveProvider(options),
   ]

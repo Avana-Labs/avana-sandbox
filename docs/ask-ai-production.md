@@ -8,20 +8,19 @@ Set these on the Convex deployment, not in `NEXT_PUBLIC_*` variables:
 
 ```sh
 npx convex env set OPENAI_API_KEY
-npx convex env set COINGECKO_API_KEY
 ```
 
-`OPENAI_API_KEY` powers GPT-5.6 Luna, `text-embedding-3-small`, and `gpt-4o-mini-transcribe`. `COINGECKO_API_KEY` is optional when the selected CoinGecko tier permits unauthenticated requests, but production should provide it.
+`OPENAI_API_KEY` powers GPT-5.6 Luna and `text-embedding-3-small`.
 
 The model is deliberately fixed by code to `gpt-5.6-luna`; users do not see or select a model. `ASK_AI_MODEL` is an operator-only emergency override and should normally remain unset.
 
 ## Market ingestion
 
-The conversation path reads Avana Markets and `tokenPrices` directly. Provider access happens in isolated Convex actions and never blocks a chat turn.
+The conversation path reads Avana Markets and canonical `tokenPrices` directly. Provider access happens in isolated Convex actions and never blocks a chat turn.
 
-Only records fetched by the Ask AI provider adapters enter `askAIMarketSnapshots`; catalog tables are never copied into that cache.
+Only DefiLlama pool/yield records and Aave lending-market records enter `askAIMarketSnapshots`; catalog tables and token prices are never copied into that cache.
 
-CoinGecko, Uniswap, Curve, Balancer, and Aave data must first be added to the app's canonical Convex ingestion layer. Ask AI must not operate a second provider-ingestion schedule. Answers receive only canonical records inside their configured freshness window; missing or stale records are not passed to Luna as live facts.
+DefiLlama pool data refreshes hourly and Aave data refreshes every 30 minutes. Answers receive only records inside their configured freshness window; missing or stale records are not passed to Luna as live facts.
 
 ## First deployment
 
