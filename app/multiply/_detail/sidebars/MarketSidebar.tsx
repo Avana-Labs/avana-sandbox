@@ -34,10 +34,6 @@ export function MarketSidebar({ detail, className, hideActions = false }: Props)
   )
 }
 
-export function MarketMultiplyActions({ detail, className }: Props) {
-  return <MarketActionRail detail={detail} className={className} />
-}
-
 function MarketActionRail({ detail, className, embedActions = false }: Props & { embedActions?: boolean }) {
   const { t } = useTranslation()
   const marketId = normalizeMarketId(detail.id)

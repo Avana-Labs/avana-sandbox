@@ -1,9 +1,9 @@
 "use client"
 
-import { memo, useState, type ButtonHTMLAttributes, type ReactNode } from "react"
+import { memo, useState, type ButtonHTMLAttributes } from "react"
 import Image from "next/image"
 import { EnhancedGraph } from "@/app/components/enhanced-graph"
-import type { BorrowAssetVisual, BorrowSpoke, DexChip } from "@/app/lib/data/borrow-domain"
+import type { BorrowAssetVisual, DexChip } from "@/app/lib/data/borrow-domain"
 import { TOKEN_ICON_TABLE_PX } from "@/app/lib/token-icon-sizes"
 import { cn } from "@/lib/utils"
 
@@ -133,56 +133,12 @@ export function TokenSingleCell({
   )
 }
 
-export function SpokeDot({
-  spoke,
-  label,
-  withLabel = true,
-  className,
-}: {
-  spoke: BorrowSpoke
-  label?: string
-  withLabel?: boolean
-  className?: string
-}) {
-  return (
-    <span className={cn("inline-flex items-center gap-1.5", className)}>
-      <span className={cn("size-1.5 shrink-0 rounded-full", spoke.dotClass)} aria-hidden />
-      {withLabel ? <span className="text-xs font-medium text-muted-foreground">{label ?? spoke.label}</span> : null}
-    </span>
-  )
-}
-
 export function DexPill({ dex }: { dex: DexChip }) {
   return (
     <span className="inline-flex items-center rounded-xs border border-border bg-surface-inset px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
       {dex.label}
       {dex.starred ? <span className="ml-0.5 text-amber-500">★</span> : null}
     </span>
-  )
-}
-
-export function DexChipRow({ dexes }: { dexes: DexChip[] }) {
-  return (
-    <div className="flex flex-wrap gap-1">
-      {dexes.map((dex) => (
-        <DexPill key={dex.id} dex={dex} />
-      ))}
-    </div>
-  )
-}
-
-export function BorrowableTokenRow({ visuals }: { visuals: BorrowAssetVisual[] }) {
-  return (
-    <div className="flex items-center">
-      {visuals.map((visual, index) => (
-        <TokenBubble
-          key={`${visual.symbol}-${index}`}
-          visual={visual}
-          size="xs"
-          className={index === 0 ? undefined : "-ml-1"}
-        />
-      ))}
-    </div>
   )
 }
 
@@ -205,22 +161,6 @@ export const TrendSpark = memo(function TrendSpark({
     </div>
   )
 })
-
-export function DeltaPill({ isPositive, value }: { isPositive: boolean; value: string }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-0.5 text-xs font-medium tabular-nums",
-        isPositive ? "text-success" : "text-rose-600",
-      )}
-    >
-      <span aria-hidden className="text-[10px]">
-        {isPositive ? "▲" : "▼"}
-      </span>
-      {value}
-    </span>
-  )
-}
 
 export function HfNumber({ value, tone, size = "md" }: { value: string; tone: string; size?: "sm" | "md" | "lg" }) {
   const textSize = size === "lg" ? "text-[20px]" : size === "sm" ? "text-[11px]" : "text-[13px]"
@@ -253,64 +193,11 @@ export function PillButton({
   )
 }
 
-export function DropdownChip({
-  children,
-  onClick,
-  active,
-  className,
-}: {
-  children: ReactNode
-  onClick?: () => void
-  active?: boolean
-  className?: string
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "inline-flex h-7 items-center gap-1 rounded-xs border px-2 text-[12px] font-medium transition-colors",
-        active
-          ? "border-transparent bg-accent-primary text-accent-primary-foreground hover:bg-accent-primary-hover"
-          : "border-border bg-surface-raised text-foreground hover:bg-surface-hover",
-        className,
-      )}
-    >
-      {children}
-    </button>
-  )
-}
-
 export function StatItem({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div className="min-w-0">
       <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
       <div className={cn("mt-1 font-data text-[15px] font-medium tabular-nums text-foreground", tone)}>{value}</div>
     </div>
-  )
-}
-
-export function StatsStrip({ items }: { items: Array<{ label: string; value: string; tone?: string }> }) {
-  return (
-    <div className="mb-6 grid grid-cols-2 gap-x-6 gap-y-3 rounded-radius-md border border-border bg-card px-4 py-3 shadow-elev-1 sm:flex sm:items-start sm:gap-8">
-      {items.map((item) => (
-        <StatItem key={item.label} label={item.label} value={item.value} tone={item.tone} />
-      ))}
-    </div>
-  )
-}
-
-export function SpokeTag({ spoke }: { spoke: BorrowSpoke }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-xs px-1.5 py-0.5 text-[11px] font-medium",
-        spoke.pillBgClass,
-        spoke.pillTextClass,
-      )}
-    >
-      <span className={cn("size-1.5 rounded-full", spoke.dotClass)} aria-hidden />
-      {spoke.label}
-    </span>
   )
 }

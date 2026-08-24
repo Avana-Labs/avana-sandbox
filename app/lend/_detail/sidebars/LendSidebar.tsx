@@ -28,10 +28,6 @@ export function LendSidebar({ detail, className }: Props) {
   )
 }
 
-export function LendMarketActions({ detail, className }: Props) {
-  return <LendActionRail detail={detail} className={className} />
-}
-
 function LendActionRail({ detail, className }: Props) {
   const marketId = detail.row.marketId
   const closeHref = `/lend/markets/${marketId}`
