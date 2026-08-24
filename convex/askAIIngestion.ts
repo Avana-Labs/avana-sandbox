@@ -104,6 +104,17 @@ export const purgeLegacyMarketSnapshots = internalAction({
   },
 })
 
+/** Operator-triggered, bounded cleanup for the legacy append-only provider run log. */
+export const deleteProviderRunBatch = internalMutation({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, { limit }) => {
+    const budget = Math.min(Math.max(Math.trunc(limit ?? 500), 1), 1_000)
+    const rows = await ctx.db.query("askAIMarketProviderRuns").order("asc").take(budget)
+    for (const row of rows) await ctx.db.delete(row._id)
+    return { deleted: rows.length, hasMore: rows.length === budget }
+  },
+})
+
 // Per-source ingestion health from one bounded state row per active provider.
 export const providerHealth = internalQuery({
   args: {},

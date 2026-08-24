@@ -154,4 +154,25 @@ describe("Ask AI market ingestion", () => {
     })
     await expect(t.run((ctx) => ctx.db.query("askAIMarketProviderRuns").collect())).resolves.toEqual([])
   })
+
+  test("deletes legacy provider runs only in an explicit bounded batch", async () => {
+    const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      for (let index = 0; index < 3; index += 1) {
+        await ctx.db.insert("askAIMarketProviderRuns", {
+          source: "defillama",
+          status: "success",
+          records: 250,
+          startedAt: index,
+          completedAt: index,
+        })
+      }
+    })
+
+    await expect(t.mutation(internal.askAIIngestion.deleteProviderRunBatch, { limit: 2 })).resolves.toEqual({
+      deleted: 2,
+      hasMore: true,
+    })
+    await expect(t.run((ctx) => ctx.db.query("askAIMarketProviderRuns").collect())).resolves.toHaveLength(1)
+  })
 })
