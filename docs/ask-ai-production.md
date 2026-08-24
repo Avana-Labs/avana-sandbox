@@ -43,6 +43,7 @@ RUN_ASK_AI_CONVEX_E2E=1 PLAYWRIGHT_PORT=3010 PLAYWRIGHT_BASE_URL=http://127.0.0.
 ## Operational checks
 
 - Confirm every market provider has a recent successful `askAIMarketProviderState` record.
+- Apply the reviewed development safeguards in [Convex usage guardrails](./convex-usage-guardrails.md); do not reuse development disable thresholds in production.
 - Confirm `askAITelemetry` captures successful and failed turns with latency, token usage, and tool selection.
 - Review `askAIFeedback` through `askAI:feedbackReport` using an internal/admin surface.
 - Alert on stale canonical prices, failed ingestion jobs, model failures, token-budget exhaustion, and elevated negative feedback.
