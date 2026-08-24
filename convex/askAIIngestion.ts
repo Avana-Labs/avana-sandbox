@@ -39,6 +39,7 @@ export const ingest = internalAction({
           source: provider.source,
           status: "success",
           records: records.length,
+          ...written,
           startedAt,
           completedAt: Date.now(),
         })
@@ -49,6 +50,9 @@ export const ingest = internalAction({
           source: provider.source,
           status: "failed",
           records: 0,
+          inserted: 0,
+          updated: 0,
+          unchanged: 0,
           error: message,
           startedAt,
           completedAt: Date.now(),
@@ -100,21 +104,18 @@ export const purgeLegacyMarketSnapshots = internalAction({
   },
 })
 
-// Per-source ingestion health from the run log: last status, record count, age,
-// and error. Cheap (one indexed point read per source). Use for a monitor/alert
-// so a wedged provider (stale or failing) surfaces before answers go empty.
+// Per-source ingestion health from one bounded state row per active provider.
 export const providerHealth = internalQuery({
   args: {},
   handler: async (ctx) => {
-    const sources = ["coingecko", "defillama", "aave"] as const
+    const sources = ["defillama", "aave"] as const
     const now = Date.now()
     const providers = await Promise.all(
       sources.map(async (source) => {
         const latest = await ctx.db
-          .query("askAIMarketProviderRuns")
-          .withIndex("by_source_completed", (q) => q.eq("source", source))
-          .order("desc")
-          .first()
+          .query("askAIMarketProviderState")
+          .withIndex("by_source", (q) => q.eq("source", source))
+          .unique()
         return {
           source,
           lastStatus: latest?.status ?? null,
@@ -122,6 +123,10 @@ export const providerHealth = internalQuery({
           lastCompletedAt: latest?.completedAt ?? null,
           ageMs: latest ? now - latest.completedAt : null,
           lastError: latest?.error ?? null,
+          inserted: latest?.inserted ?? 0,
+          updated: latest?.updated ?? 0,
+          unchanged: latest?.unchanged ?? 0,
+          lastChangedAt: latest?.lastChangedAt ?? null,
         }
       }),
     )
@@ -134,11 +139,32 @@ export const recordProviderRun = internalMutation({
     source: sourceValidator,
     status: v.union(v.literal("success"), v.literal("failed")),
     records: v.number(),
+    inserted: v.number(),
+    updated: v.number(),
+    unchanged: v.number(),
     error: v.optional(v.string()),
     startedAt: v.number(),
     completedAt: v.number(),
   },
-  handler: async (ctx, args) => ctx.db.insert("askAIMarketProviderRuns", args),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("askAIMarketProviderState")
+      .withIndex("by_source", (q) => q.eq("source", args.source))
+      .unique()
+    const changed = args.inserted + args.updated > 0
+    const state = {
+      ...args,
+      lastCheckedAt: args.completedAt,
+      lastChangedAt: changed ? args.completedAt : existing?.lastChangedAt,
+      lastSuccessAt: args.status === "success" ? args.completedAt : existing?.lastSuccessAt,
+      lastFailureAt: args.status === "failed" ? args.completedAt : existing?.lastFailureAt,
+    }
+    if (existing) {
+      await ctx.db.replace(existing._id, state)
+      return existing._id
+    }
+    return ctx.db.insert("askAIMarketProviderState", state)
+  },
 })
 
 function stableStringify(value: unknown): string {

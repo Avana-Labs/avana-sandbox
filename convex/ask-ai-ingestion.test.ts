@@ -116,4 +116,42 @@ describe("Ask AI market ingestion", () => {
     const remaining = await t.run((ctx) => ctx.db.query("askAIMarketSnapshots").collect())
     expect(remaining.map((row) => row.source)).toEqual(["defillama"])
   })
+
+  test("keeps one bounded health-state document per active provider", async () => {
+    const t = convexTest(schema, modules)
+    await t.mutation(internal.askAIIngestion.recordProviderRun, {
+      source: "defillama",
+      status: "success",
+      records: 250,
+      inserted: 250,
+      updated: 0,
+      unchanged: 0,
+      startedAt: 100,
+      completedAt: 200,
+    })
+    await t.mutation(internal.askAIIngestion.recordProviderRun, {
+      source: "defillama",
+      status: "success",
+      records: 250,
+      inserted: 0,
+      updated: 0,
+      unchanged: 250,
+      startedAt: 300,
+      completedAt: 400,
+    })
+
+    const states = await t.run((ctx) => ctx.db.query("askAIMarketProviderState").collect())
+    expect(states).toHaveLength(1)
+    expect(states[0]).toMatchObject({
+      source: "defillama",
+      records: 250,
+      inserted: 0,
+      updated: 0,
+      unchanged: 250,
+      lastCheckedAt: 400,
+      lastChangedAt: 200,
+      lastSuccessAt: 400,
+    })
+    await expect(t.run((ctx) => ctx.db.query("askAIMarketProviderRuns").collect())).resolves.toEqual([])
+  })
 })
