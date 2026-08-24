@@ -12,6 +12,7 @@ const upsertRecords = makeFunctionReference<"mutation", { records: AskAIMarketRe
 )
 
 const sourceValidator = v.union(v.literal("coingecko"), v.literal("defillama"), v.literal("aave"))
+const activeSourceValidator = v.union(v.literal("defillama"), v.literal("aave"))
 
 // Keep each upsert transaction bounded so a large provider batch (DefiLlama can
 // return hundreds of pools) does not push one mutation toward Convex's per-txn
@@ -19,7 +20,7 @@ const sourceValidator = v.union(v.literal("coingecko"), v.literal("defillama"), 
 const UPSERT_CHUNK_SIZE = 100
 
 export const ingest = internalAction({
-  args: { source: v.optional(sourceValidator) },
+  args: { source: v.optional(activeSourceValidator) },
   handler: async (ctx, { source }) => {
     const providers = createAskAIProviders().filter((provider) => !source || provider.source === source)
     const results = []
@@ -147,7 +148,7 @@ export const providerHealth = internalQuery({
 
 export const recordProviderRun = internalMutation({
   args: {
-    source: sourceValidator,
+    source: activeSourceValidator,
     status: v.union(v.literal("success"), v.literal("failed")),
     records: v.number(),
     inserted: v.number(),

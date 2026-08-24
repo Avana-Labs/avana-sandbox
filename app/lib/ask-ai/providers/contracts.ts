@@ -1,4 +1,5 @@
 export type AskAIMarketSource = "coingecko" | "defillama" | "aave"
+export type ActiveAskAIMarketSource = Exclude<AskAIMarketSource, "coingecko">
 
 export type AskAIMarketRecord = {
   source: AskAIMarketSource
@@ -10,7 +11,7 @@ export type AskAIMarketRecord = {
 }
 
 export interface AskAIMarketProvider {
-  readonly source: AskAIMarketSource
+  readonly source: ActiveAskAIMarketSource
   fetch(): Promise<AskAIMarketRecord[]>
 }
 

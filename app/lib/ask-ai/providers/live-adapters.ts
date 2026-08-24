@@ -1,4 +1,4 @@
-import type { AskAIFetch, AskAIMarketProvider, AskAIMarketRecord, AskAIMarketSource } from "./contracts"
+import type { ActiveAskAIMarketSource, AskAIFetch, AskAIMarketProvider, AskAIMarketRecord } from "./contracts"
 
 type ProviderOptions = { env: NodeJS.ProcessEnv; fetcher: AskAIFetch }
 
@@ -26,7 +26,7 @@ async function requestJson(fetcher: AskAIFetch, url: string, init?: RequestInit)
 }
 
 abstract class LiveProvider implements AskAIMarketProvider {
-  abstract readonly source: AskAIMarketSource
+  abstract readonly source: ActiveAskAIMarketSource
   constructor(protected readonly options: ProviderOptions) {}
   abstract fetch(): Promise<AskAIMarketRecord[]>
 
