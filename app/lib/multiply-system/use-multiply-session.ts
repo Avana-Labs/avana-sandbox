@@ -75,7 +75,7 @@ export type ConvexMultiplyWalletData = {
     valueUsd: number
     state: "available" | "collateral" | "debt" | "position"
   }>
-  // The wallet's real liquid token holdings (sandboxBalances). Already delivered by
+  // The wallet's real liquid token holdings (walletLiquidBalances). Already delivered by
   // the Convex session hydrator, used to derive a per-market "available" collateral
   // budget for markets that have no explicit multiplyBalances "available" row so a
   // market whose collateral the wallet actually holds is openable (not "Max 0").

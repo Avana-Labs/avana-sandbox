@@ -6,7 +6,7 @@
 // and the flow blocked with a misleading "Max 0". This derives the bucket from the
 // wallet's real liquid holdings of the collateral token whenever no explicit row exists.
 
-/** A wallet's liquid holding of a single token (sandboxBalances row shape, minimally typed). */
+/** A wallet's liquid holding of a single token (walletLiquidBalances view, minimally typed). */
 export type MultiplyLiquidHolding = {
   symbol: string
   valueUsd: number
