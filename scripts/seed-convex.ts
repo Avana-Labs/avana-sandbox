@@ -25,7 +25,7 @@ const dryRun = process.argv.includes("--dry-run")
 // market-level fields (e.g. the onboarding `priceUsd`) without re-pushing the 46k+ daily
 // rows. All other tables are unchanged by such updates.
 const marketsOnly = process.argv.includes("--markets-only")
-// Skip the pre-existing daily-stats / revenue / wallet-events steps and jump
+// Skip the pre-existing daily-stats / wallet-events steps and jump
 // straight to the Phase C additions. Useful when the legacy daily-stats
 // mutation is misbehaving (it stalls out on some prod deployments due to a
 // downstream index rebuild) and you just need the new tables populated.
@@ -46,7 +46,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 async function main() {
   const seed = buildBorrowSeed({ days })
   console.log(
-    `[seed] built ${seed.markets.length} markets · ${seed.dailyStats.length} daily stats · ${seed.revenue.length} revenue · ${seed.risk.length} risk · ${seed.allocation.length} allocation · ${seed.content.length} content (days=${days})`,
+    `[seed] built ${seed.markets.length} markets · ${seed.dailyStats.length} daily stats · ${seed.borrowRevenueDaily.length + seed.lendRevenueDaily.length + seed.multiplyRevenueDaily.length} product revenue · ${seed.borrowRiskAssessments.length + seed.lendRiskAssessments.length + seed.multiplyRiskAssessments.length} product risk (days=${days})`,
   )
   if (dryRun) {
     console.log("[seed] --dry-run: not writing. Sample market:", JSON.stringify(seed.markets[0]))
@@ -119,16 +119,8 @@ async function main() {
     await client.action(api.seedAdmin.rebuildMarketSnapshots, { seedSecret })
     console.log("[seed] rebuilt market snapshots cache")
 
-    // 3) Revenue
-    n = 0
-    for (const batch of chunk(withMarketId(seed.revenue), BATCH)) {
-      await client.action(api.seedAdmin.upsertRevenue, { seedSecret, rows: batch })
-      n += batch.length
-      await sleep(throttleMs)
-    }
-    console.log(`[seed] upserted ${n} revenue rows`)
   } else {
-    console.log("[seed] --phase-c-only: skipping legacy daily-stats/rebuild/revenue.")
+    console.log("[seed] --phase-c-only: skipping shared daily-stats/rebuild.")
     // Still push the MULTIPLY subset of daily stats to the unified marketDailyStats table
     // so the multiply detail queries (supplyBorrow, historicalUtilization) return data on
     // prod. Borrow/lend daily stats stay skipped — the legacy full push is the failing
@@ -157,14 +149,7 @@ async function main() {
   }
 
   if (!phaseCOnly) {
-    // 4) Risk
-    for (const batch of chunk(withMarketId(seed.risk), BATCH)) {
-      await client.action(api.seedAdmin.upsertRisk, { seedSecret, rows: batch })
-      await sleep(throttleMs)
-    }
-    console.log(`[seed] upserted ${seed.risk.length} risk assessments`)
-
-    // 5) Wallet events (engagement) — clear then insert so re-seeds stay idempotent.
+    // 4) Wallet events (engagement) — clear then insert so re-seeds stay idempotent.
     let cleared = 0
     for (;;) {
       const res = (await client.action(api.seedAdmin.clearWalletEvents, { seedSecret })) as { deleted: number }
@@ -180,7 +165,7 @@ async function main() {
     }
     console.log(`[seed] wallet events: cleared ${cleared}, inserted ${events}`)
 
-    // 6) Allocation (per-asset → pool split) — maps BOTH slugs to market ids.
+    // 5) Allocation (per-asset → pool split) — maps BOTH slugs to market ids.
     const allocationRows = seed.allocation
       .map(({ assetSlug, poolSlug, ...rest }) => {
         const assetId = idsBySlug[assetSlug]
@@ -196,16 +181,7 @@ async function main() {
     }
     console.log(`[seed] upserted ${alloc} allocation rows`)
 
-    // 7) Market content (about / stats / parameter-change history / FAQs)
-    let cont = 0
-    for (const batch of chunk(withMarketId(seed.content), BATCH)) {
-      await client.action(api.seedAdmin.upsertContent, { seedSecret, rows: batch })
-      cont += batch.length
-      await sleep(throttleMs)
-    }
-    console.log(`[seed] upserted ${cont} content rows`)
-
-    // 8) Product-siloed detail params (borrow / lend / multiply — separate tables)
+    // 6) Product-siloed detail params (borrow / lend / multiply — separate tables)
     await pushSilo("borrow market content", api.seedAdmin.upsertBorrowMarketContent, seed.borrowMarketContent)
     await pushSilo("lend market content", api.seedAdmin.upsertLendMarketContent, seed.lendMarketContent)
     await pushSilo("multiply market content", api.seedAdmin.upsertMultiplyMarketContent, seed.multiplyMarketContent)

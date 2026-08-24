@@ -14,7 +14,6 @@ import { internalMutation, internalQuery } from "./_generated/server"
 import type { Id } from "./_generated/dataModel"
 
 const marketScope = v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply"))
-const riskLevel = v.union(v.literal("low"), v.literal("moderate"), v.literal("elevated"), v.literal("high"))
 
 /**
  * Lightweight seed-verification: exact counts for the small per-market tables (markets,
@@ -29,13 +28,18 @@ export const getCounts = internalQuery({
   handler: async (ctx) => {
     // markets + risk are one row per market (~173), so exact counts are bounded reads.
     const markets = await ctx.db.query("markets").collect()
-    const risk = await ctx.db.query("riskAssessments").collect()
+    const [borrowRisk, lendRisk, multiplyRisk] = await Promise.all([
+      ctx.db.query("borrowRiskAssessments").collect(),
+      ctx.db.query("lendRiskAssessments").collect(),
+      ctx.db.query("multiplyRiskAssessments").collect(),
+    ])
+    const risk = [...borrowRisk, ...lendRisk, ...multiplyRisk]
     // The remaining tables are large (daily rows) or heavy per-row (content blobs), so
     // read only a single-row "seeded" signal instead of collecting the whole table.
     const oneAllocation = await ctx.db.query("assetPoolAllocationDaily").take(1)
-    const oneContent = await ctx.db.query("marketContent").take(1)
+    const oneContent = await ctx.db.query("borrowMarketContent").take(1)
     const oneStat = await ctx.db.query("marketDailyStats").take(1)
-    const oneRevenue = await ctx.db.query("marketRevenueDaily").take(1)
+    const oneRevenue = await ctx.db.query("borrowRevenueDaily").take(1)
     const oneRiskWithBreakdown = risk.find((r) => r.breakdown.length > 0)
     return {
       markets: markets.length,
@@ -141,69 +145,6 @@ export const upsertDailyStats = internalMutation({
   },
 })
 
-/** Upsert daily revenue by (marketId, day). */
-export const upsertRevenue = internalMutation({
-  args: {
-    rows: v.array(
-      v.object({
-        marketId: v.id("markets"),
-        day: v.string(),
-        interestFromBorrowersUsd: v.number(),
-        interestToSuppliersUsd: v.number(),
-        reserveTakeUsd: v.number(),
-        rewardsDistributedUsd: v.number(),
-        swapFeesUsd: v.number(),
-      }),
-    ),
-  },
-  handler: async (ctx, { rows }) => {
-    for (const row of rows) {
-      const existing = await ctx.db
-        .query("marketRevenueDaily")
-        .withIndex("by_market_day", (q) => q.eq("marketId", row.marketId).eq("day", row.day))
-        .unique()
-      if (existing) await ctx.db.patch(existing._id, row)
-      else await ctx.db.insert("marketRevenueDaily", row)
-    }
-    return { written: rows.length }
-  },
-})
-
-/** Upsert the latest risk assessment per market (one row per marketId). */
-export const upsertRisk = internalMutation({
-  args: {
-    rows: v.array(
-      v.object({
-        marketId: v.id("markets"),
-        assessedAt: v.number(),
-        premiumBps: v.number(),
-        level: riskLevel,
-        score: v.number(),
-        headline: v.string(),
-        summary: v.string(),
-        breakdown: v.array(
-          v.object({ id: v.string(), label: v.string(), bps: v.number(), level: riskLevel, description: v.string() }),
-        ),
-        metrics: v.array(
-          v.object({ id: v.string(), label: v.string(), value: v.string(), hint: v.optional(v.string()) }),
-        ),
-      }),
-    ),
-  },
-  handler: async (ctx, { rows }) => {
-    for (const row of rows) {
-      const existing = await ctx.db
-        .query("riskAssessments")
-        .withIndex("by_market_assessed_at", (q) => q.eq("marketId", row.marketId))
-        .order("desc")
-        .first()
-      if (existing) await ctx.db.patch(existing._id, row)
-      else await ctx.db.insert("riskAssessments", row)
-    }
-    return { written: rows.length }
-  },
-})
-
 /** Upsert latest-day allocation rows keyed by (assetId, poolId, day). */
 export const upsertAllocation = internalMutation({
   args: {
@@ -228,32 +169,6 @@ export const upsertAllocation = internalMutation({
       const existing = sameAssetDay.find((r) => r.poolId === row.poolId)
       if (existing) await ctx.db.patch(existing._id, row)
       else await ctx.db.insert("assetPoolAllocationDaily", row)
-    }
-    return { written: rows.length }
-  },
-})
-
-/** Upsert per-market editorial content (about/stats/history/faqs) by marketId. */
-export const upsertContent = internalMutation({
-  args: {
-    rows: v.array(
-      v.object({
-        marketId: v.id("markets"),
-        description: v.string(),
-        stats: v.array(v.object({ label: v.string(), value: v.string(), href: v.optional(v.string()) })),
-        history: v.array(v.object({ date: v.string(), title: v.string(), description: v.optional(v.string()) })),
-        faqs: v.array(v.object({ question: v.string(), answer: v.string() })),
-      }),
-    ),
-  },
-  handler: async (ctx, { rows }) => {
-    for (const row of rows) {
-      const existing = await ctx.db
-        .query("marketContent")
-        .withIndex("by_market", (q) => q.eq("marketId", row.marketId))
-        .unique()
-      if (existing) await ctx.db.patch(existing._id, row)
-      else await ctx.db.insert("marketContent", row)
     }
     return { written: rows.length }
   },

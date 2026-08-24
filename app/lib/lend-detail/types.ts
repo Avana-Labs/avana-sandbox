@@ -10,7 +10,7 @@
  *
  * Convex fan-out (see `convex/*.ts`):
  *   hero / heroFeed / quickStats / supplyBorrow ← markets + marketDailyStats
- *   cashflow                                    ← marketRevenueDaily (getBreakdownForLend)
+ *   cashflow                                    ← lendRevenueDaily (lend.cashflow.getBreakdownForLend)
  *   engagement                                  ← walletEvents (getForLend)
  *   risk                                        ← lendRiskAssessments (lend.riskAssessment.getRisk)
  *   about / faqs                                ← lendMarketContent (lend.content.getContent)

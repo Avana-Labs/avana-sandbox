@@ -17,7 +17,7 @@
  *   AssetDetail
  *     hero / heroMetric / quickStats    ← markets + marketDailyStats
  *     supplyBorrow / historicalUtilization ← marketDailyStats
- *     cashflowTrend / cashflow          ← marketRevenueDaily
+ *     cashflowTrend / cashflow          ← borrowRevenueDaily
  *     engagement                        ← walletEvents
  *     allocation                        ← assetPoolAllocationDaily (+markets join)
  *     transactions                      ← walletEvents (raw feed)
@@ -26,7 +26,7 @@
  *   PoolDetail
  *     hero / heroMetric / quickStats    ← markets + marketDailyStats
  *     keyMetrics / performance          ← marketDailyStats
- *     cashflow                          ← marketRevenueDaily
+ *     cashflow                          ← borrowRevenueDaily
  *     engagement                        ← walletEvents
  *     risk                              ← borrowRiskAssessments
  *
@@ -188,10 +188,10 @@ export type CashflowRow = {
 /**
  * Breakdown table + monthly bars shown under the main cashflow card.
  *
- * @convex-source `marketRevenueDaily` rolled up to a 12-month window. `rows`
+ * @convex-source `borrowRevenueDaily` rolled up to a 12-month window. `rows`
  *   are the TTM totals; `bars` are per-month series of the same columns.
- * @convex-query  `cashflow.getBreakdownForAsset({ slug })`
- * @convex-query  `cashflow.getBreakdownForPool({ slug })`
+ * @convex-query  `borrow.cashflow.getBreakdownForAsset({ slug })`
+ * @convex-query  `borrow.cashflow.getBreakdownForPool({ slug })`
  */
 export type CashflowCard = {
   bars: Series[]
@@ -204,9 +204,9 @@ export type CashflowCard = {
  * Monthly revenue bar chart shown on the asset detail page — the gross
  * interest this asset generates (paid by borrowers).
  *
- * @convex-source `marketRevenueDaily.interestFromBorrowersUsd`, grouped by
+ * @convex-source `borrowRevenueDaily.interestFromBorrowersUsd`, grouped by
  *   UTC calendar month and zero-filled to 12 buckets.
- * @convex-query  `cashflow.getRevenueForAsset({ slug })`
+ * @convex-query  `borrow.cashflow.getRevenueForAsset({ slug })`
  */
 export type CashflowTrend = {
   /** Pre-formatted 12-month aggregate total. */

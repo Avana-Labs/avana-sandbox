@@ -9,9 +9,9 @@
  *   - `markets`                     canonical identity (legacy shared; decoupling track splits by product).
  *   - `walletEvents`                source-of-truth user actions (drives engagement + transaction history).
  *   - `marketDailyStats`            daily market snapshot (drives supply/borrow, utilization, key metrics).
- *   - `marketRevenueDaily`          daily revenue (drives cash-flow card).
+ *   - `borrowRevenueDaily` / `lendRevenueDaily` / `multiplyRevenueDaily` product cash flow.
  *   - `assetPoolAllocationDaily`    daily per-pool allocation per asset (drives allocation breakdown).
- *   - `riskAssessments`             risk rating snapshots.
+ *   - `borrowRiskAssessments` / `lendRiskAssessments` / `multiplyRiskAssessments` product risk.
  *   - `borrow*` / `lend*` / `multiply*`  product-siloed detail params (IRM, risk grid, liquidation, borrowables).
  *
  * If you change field names here, update the matching JSDoc `@convex-source`
@@ -406,31 +406,6 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_singleton", ["singleton"]),
 
-  /**
-   * Legacy shared daily revenue per market (Cashflow card), keyed by `markets` id.
-   * Prefer product-siloed `borrowRevenueDaily` / `lendRevenueDaily` / `multiplyRevenueDaily`.
-   * Kept for dual-read during decoupling; seed still dual-writes for now.
-   *
-   * Source of truth for:
-   *   - `CashflowTrend.series` (asset page — "revenue generated")
-   *   - `CashflowCard.rows`    (both pages — breakdown table)
-   *   - `CashflowCard.bars`    (monthly fees + incentives)
-   */
-  marketRevenueDaily: defineTable({
-    marketId: v.id("markets"),
-    day: v.string(),
-    /** Gross interest paid by borrowers. */
-    interestFromBorrowersUsd: v.number(),
-    /** Net interest that accrued to suppliers (after reserve take). */
-    interestToSuppliersUsd: v.number(),
-    /** Protocol reserve take. */
-    reserveTakeUsd: v.number(),
-    /** External incentives emitted on top of native yield. */
-    rewardsDistributedUsd: v.number(),
-    /** Swap fees (pools only). */
-    swapFeesUsd: v.number(),
-  }).index("by_market_day", ["marketId", "day"]),
-
   /** Borrow product daily revenue (pool + asset), slug-keyed. */
   borrowRevenueDaily: defineTable({
     slug: v.string(),
@@ -482,39 +457,6 @@ export default defineSchema({
   })
     .index("by_asset_day", ["assetId", "day"])
     .index("by_pool_day", ["poolId", "day"]),
-
-  /**
-   * Legacy shared risk review snapshots (Risk Premium card), keyed by `markets` id.
-   * Prefer product-siloed `borrowRiskAssessments` / `lendRiskAssessments` / `multiplyRiskAssessments`.
-   * Kept for dual-read during decoupling; seed still dual-writes for now.
-   */
-  riskAssessments: defineTable({
-    marketId: v.id("markets"),
-    assessedAt: v.number(),
-    premiumBps: v.number(),
-    level: riskLevel,
-    /** 0..100 gauge score. */
-    score: v.number(),
-    headline: v.string(),
-    summary: v.string(),
-    breakdown: v.array(
-      v.object({
-        id: v.string(),
-        label: v.string(),
-        bps: v.number(),
-        level: riskLevel,
-        description: v.string(),
-      }),
-    ),
-    metrics: v.array(
-      v.object({
-        id: v.string(),
-        label: v.string(),
-        value: v.string(),
-        hint: v.optional(v.string()),
-      }),
-    ),
-  }).index("by_market_assessed_at", ["marketId", "assessedAt"]),
 
   /**
    * Shared, multi-user market liquidity ledger. Every borrow / repay / supply /
@@ -685,19 +627,6 @@ export default defineSchema({
     fetchedAt: v.optional(v.number()),
     updatedAt: v.number(),
   }).index("by_currency", ["currency"]),
-
-  /**
-   * Legacy shared editorial content (About / history / FAQs), keyed by `markets` id.
-   * Prefer product-siloed `borrowMarketContent` / `lendMarketContent` / `multiplyMarketContent`.
-   * Kept for dual-read during decoupling; seed still dual-writes for now.
-   */
-  marketContent: defineTable({
-    marketId: v.id("markets"),
-    description: v.string(),
-    stats: v.array(v.object({ label: v.string(), value: v.string(), href: v.optional(v.string()) })),
-    history: v.array(v.object({ date: v.string(), title: v.string(), description: v.optional(v.string()) })),
-    faqs: v.array(v.object({ question: v.string(), answer: v.string() })),
-  }).index("by_market", ["marketId"]),
 
   // ── Product-siloed detail params (Borrow / Lend / Multiply are separate products) ──
   // Keyed by product slug — do NOT share rows across products.

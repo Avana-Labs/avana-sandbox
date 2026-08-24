@@ -3,7 +3,7 @@
  * `RiskAssessment` shape on both detail pages.
  *
  * Both the mock fallback (`asset.mock.ts` / `pool.mock.ts`) AND the Convex seed
- * (`app/lib/convex-seed/build-seed.ts`) call these so the seeded `riskAssessments`
+ * (`app/lib/convex-seed/build-seed.ts`) call these so the seeded product risk assessments
  * rows are byte-for-byte identical to the procedural fallback. That makes the
  * de-mock swap invisible to QA: the page renders the same numbers whether risk
  * comes from Convex or the catalog.
