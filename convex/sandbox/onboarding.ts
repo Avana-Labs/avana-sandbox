@@ -14,6 +14,7 @@ import type { MutationCtx, QueryCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
 import { upsertWalletBalanceRows } from "../wallet/balances"
 import { replaceProductBalanceRows } from "../wallet/productBalances"
+import { readWalletSessionWithLegacyFallback, upsertWalletSessionWithLegacyMirror } from "../wallet/sessions"
 import { requireSandboxWallet, getAuthSubject } from "./auth"
 import { assertCatalogCanSatisfyStarter, buildStarterAllocationPlan, STARTER_EQUITY_USD } from "./starterAllocation"
 import { seedUmbrellaWallet, UMBRELLA_ONBOARDING_TOKEN_PRICES } from "./umbrella"
@@ -749,10 +750,7 @@ export const claim = mutation({
       .query("positions")
       .withIndex("by_wallet_product", (q) => q.eq("wallet", wallet).eq("product", "umbrella"))
       .collect()
-    const existingSession = await ctx.db
-      .query("sandboxSessions")
-      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-      .unique()
+    const existingSession = await readWalletSessionWithLegacyFallback(ctx, wallet)
     const shouldSeedUmbrella = existingUmbrella.length === 0 && !existingSession?.umbrellaSeeded
     // Reference UMBRELLA_ONBOARDING_TOKEN_PRICES so a stale import gets flagged
     // if the constant is renamed. seedUmbrellaWallet reads UMBRELLA_MARKETS
@@ -818,7 +816,7 @@ export const claim = mutation({
     // Set umbrellaSeeded so a second onboarding claim (or a wallet reset that
     // wipes positions) doesn't re-run seedUmbrellaWallet against a wallet that
     // still has walletLiquidBalances/sandboxActivity from the first seed.
-    await ctx.db.insert("sandboxSessions", {
+    await upsertWalletSessionWithLegacyMirror(ctx, {
       wallet,
       authSubject: (await getAuthSubject(ctx)) ?? undefined,
       seedVersion: SEED_VERSION,

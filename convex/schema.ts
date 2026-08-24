@@ -1516,6 +1516,16 @@ export default defineSchema({
     umbrellaSeeded: v.optional(v.boolean()),
   }).index("by_wallet", ["wallet"]),
 
+  /** Wallet-scoped session metadata; permanent replacement for sandboxSessions. */
+  walletSessions: defineTable({
+    wallet: v.string(),
+    authSubject: v.optional(v.string()),
+    seedVersion: v.number(),
+    seededAt: v.optional(v.number()),
+    lastSeenAt: v.number(),
+    umbrellaSeeded: v.optional(v.boolean()),
+  }).index("by_wallet", ["wallet"]),
+
   /**
    * Live per-market umbrella state that mutates outside the frozen catalog
    * (currentDeficitUsd / deficitOffsetUsd / totalSlashedUsd). The
