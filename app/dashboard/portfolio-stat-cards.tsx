@@ -240,10 +240,10 @@ export function PortfolioStatCards({ activeTab }: { activeTab?: DashboardQuickAc
   const { scrollerRef, canPrev, canNext, scrollByCard } = useOverflowCarousel()
   const { walletId } = useAvanaIdentity()
   const walletProfile = useQuery(
-    api.sandbox.onboarding.getWalletOnboardingState,
-    walletId ? { wallet: walletId } : "skip",
-  ) as { profile?: { preferences?: { name?: string } } | null } | undefined
-  const displayName = walletProfile?.profile?.preferences?.name ?? null
+    api.wallet.profiles.getMine,
+    walletId ? {} : "skip",
+  ) as { preferences?: { name?: string } } | null | undefined
+  const displayName = walletProfile?.preferences?.name ?? null
   // Freeze the clock on mount; recompute only when the display name arrives from Convex.
   const [greetingNow] = useState(() => new Date())
   const greeting = useMemo(() => formatAskAIGreeting(displayName, greetingNow), [displayName, greetingNow])

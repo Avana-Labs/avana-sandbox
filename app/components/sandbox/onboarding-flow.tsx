@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Check, ChevronDown, LoaderCircle, MoveUpRight } from "@/app/components/icons"
-import { useMutation } from "convex/react"
+import { useMutation, useQuery } from "convex/react"
 import { WalletControl } from "@/app/components/wallet-control"
 import { api } from "@/convex/_generated/api"
 import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
@@ -49,6 +49,14 @@ const DEX_SOURCES: Array<{ id: string; label: string }> = [
 
 type BasketSlot = { tokenId: string; weight: number }
 type BasketClaim = { tokenId: string; amount: number; priceUsdAtClaim: number }
+type WalletPreferences = {
+  theme?: string
+  language?: string
+  currency?: string
+  showDollarAmounts?: boolean
+  name?: string
+  dexSources?: string[]
+}
 
 export type OnboardingGateState = {
   onboardingStep:
@@ -59,14 +67,7 @@ export type OnboardingGateState = {
     basketSnapshot?: BasketClaim[]
     tweetUrl?: string
     claimTxSynthetic?: string
-    preferences?: {
-      theme?: string
-      language?: string
-      currency?: string
-      showDollarAmounts?: boolean
-      name?: string
-      dexSources?: string[]
-    }
+    preferences?: WalletPreferences
   } | null
   config: {
     basket: BasketSlot[]
@@ -421,16 +422,14 @@ function StepActions({
  * until filled) and capped at 10 chars.
  */
 function PersonalizeStep({
-  wallet,
   existing,
   onContinue,
 }: {
-  wallet: string
   existing: OnboardingGateState["profile"]
   onContinue: () => void
 }) {
   const { t } = useTranslation()
-  const savePreferences = useMutation(api.sandbox.onboarding.savePreferences)
+  const savePreferences = useMutation(api.wallet.profiles.savePreferences)
   const prefs = useOptionalLocaleDisplayPreferences()
   const themeCtx = useThemeOptional()
   const setTheme = themeCtx?.setTheme ?? (() => {})
@@ -448,7 +447,6 @@ function PersonalizeStep({
     setSaving(true)
     try {
       await savePreferences({
-        wallet,
         preferences: {
           name: trimmedName,
           language,
@@ -538,18 +536,16 @@ function PersonalizeStep({
  * advance to funding.
  */
 function LiquiditySourceStep({
-  wallet,
   existing,
   onBack,
   onContinue,
 }: {
-  wallet: string
   existing: OnboardingGateState["profile"]
   onBack: () => void
   onContinue: () => void
 }) {
   const { t } = useTranslation()
-  const savePreferences = useMutation(api.sandbox.onboarding.savePreferences)
+  const savePreferences = useMutation(api.wallet.profiles.savePreferences)
   const [selected, setSelected] = useState<Set<string>>(() => new Set(existing?.preferences?.dexSources ?? []))
   const [saving, setSaving] = useState(false)
 
@@ -564,7 +560,7 @@ function LiquiditySourceStep({
   const submit = async () => {
     setSaving(true)
     try {
-      await savePreferences({ wallet, preferences: { dexSources: [...selected] } })
+      await savePreferences({ preferences: { dexSources: [...selected] } })
     } catch {
       // Best-effort: never trap the user on this screen.
     } finally {
@@ -612,6 +608,10 @@ function LiquiditySourceStep({
 }
 
 export function OnboardingFlow({ wallet, state }: { wallet: string | null; state: OnboardingGateState | null }) {
+  const walletProfile = useQuery(api.wallet.profiles.getMine, wallet ? {} : "skip") as
+    | { preferences?: WalletPreferences }
+    | null
+    | undefined
   const beginAnalysis = useMutation(api.sandbox.onboarding.beginAnalysis)
   const completeAnalysis = useMutation(api.sandbox.onboarding.startAnalysis)
   const startTweet = useMutation(api.sandbox.onboarding.startTweet)
@@ -713,14 +713,14 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
   // Skip the personalize sub-steps for a wallet that has already saved them; otherwise show
   // them once when we first land on the "wallet" step. Init in an effect (not render) so a
   // late-resolving profile still initializes correctly.
-  const savedPrefs = state?.profile?.preferences
+  const savedPrefs = walletProfile?.preferences
   const prefsAlreadySet = Boolean(savedPrefs?.name || (savedPrefs?.dexSources && savedPrefs.dexSources.length > 0))
   useEffect(() => {
-    if (step === "wallet" && !prefStepInit.current) {
+    if (step === "wallet" && walletProfile !== undefined && !prefStepInit.current) {
       prefStepInit.current = true
       setPrefStep(prefsAlreadySet ? "fund" : "personalize")
     }
-  }, [step, prefsAlreadySet])
+  }, [step, prefsAlreadySet, walletProfile])
 
   const economy = state?.economy ?? {
     status: "open" as const,
@@ -818,11 +818,13 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
             </p>
           </>
         ) : step === "wallet" && prefStep === "personalize" ? (
-          <PersonalizeStep wallet={wallet!} existing={state.profile} onContinue={() => setPrefStep("dexSources")} />
+          <PersonalizeStep
+            existing={walletProfile ? { preferences: walletProfile.preferences } : null}
+            onContinue={() => setPrefStep("dexSources")}
+          />
         ) : step === "wallet" && prefStep === "dexSources" ? (
           <LiquiditySourceStep
-            wallet={wallet!}
-            existing={state.profile}
+            existing={walletProfile ? { preferences: walletProfile.preferences } : null}
             onBack={() => setPrefStep("personalize")}
             onContinue={() => setPrefStep("fund")}
           />

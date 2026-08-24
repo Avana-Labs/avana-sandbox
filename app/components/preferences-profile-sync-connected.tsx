@@ -54,17 +54,14 @@ export function PreferencesProfileSyncConnected({ wallet }: { wallet: string }) 
   const { theme, setTheme } = useTheme()
   const { language, setLanguage, currency, setCurrency, showDollarAmounts, setShowDollarAmounts } =
     useDisplayPreferences()
-  const state = useQuery(api.sandbox.onboarding.getWalletOnboardingState, { wallet }) as
-    { profile?: { preferences?: StoredPreferences } } | undefined
-  const savePreferences = useMutation(
-    (api as typeof api & { sandbox: { onboarding: { savePreferences: unknown } } }).sandbox.onboarding.savePreferences,
-  )
+  const profile = useQuery(api.wallet.profiles.getMine, {}) as { preferences?: StoredPreferences } | null | undefined
+  const savePreferences = useMutation(api.wallet.profiles.savePreferences)
   const initializedWalletRef = useRef<string | null>(null)
   const lastSavedKeyRef = useRef<string | null>(null)
 
   useEffect(() => {
-    if (!state || initializedWalletRef.current === wallet) return
-    const remote = normalizePreferences(state.profile?.preferences)
+    if (profile === undefined || initializedWalletRef.current === wallet) return
+    const remote = normalizePreferences(profile?.preferences)
     if (remote) {
       lastSavedKeyRef.current = serializePreferences(remote)
       if (remote.theme && remote.theme !== theme) setTheme(remote.theme)
@@ -76,7 +73,7 @@ export function PreferencesProfileSyncConnected({ wallet }: { wallet: string }) 
     } else {
       const localPreferences: StoredPreferences = { theme, language, currency, showDollarAmounts }
       lastSavedKeyRef.current = serializePreferences(localPreferences)
-      void savePreferences({ wallet, preferences: localPreferences }).catch((error: unknown) => {
+      void savePreferences({ preferences: localPreferences }).catch((error: unknown) => {
         lastSavedKeyRef.current = null
         if (process.env.NODE_ENV !== "production") {
           console.warn("[preferences-sync] failed to persist initial preferences to Convex:", error)
@@ -93,7 +90,7 @@ export function PreferencesProfileSyncConnected({ wallet }: { wallet: string }) 
     setShowDollarAmounts,
     setTheme,
     showDollarAmounts,
-    state,
+    profile,
     theme,
     wallet,
   ])
@@ -105,7 +102,7 @@ export function PreferencesProfileSyncConnected({ wallet }: { wallet: string }) 
     if (nextKey === lastSavedKeyRef.current) return
     const timeoutId = window.setTimeout(() => {
       lastSavedKeyRef.current = nextKey
-      void savePreferences({ wallet, preferences: nextPreferences }).catch((error: unknown) => {
+      void savePreferences({ preferences: nextPreferences }).catch((error: unknown) => {
         lastSavedKeyRef.current = null
         if (process.env.NODE_ENV !== "production") {
           console.warn("[preferences-sync] failed to persist display preferences to Convex:", error)
