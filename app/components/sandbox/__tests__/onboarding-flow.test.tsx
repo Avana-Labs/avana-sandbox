@@ -124,7 +124,9 @@ describe("OnboardingFlow — personalize + liquidity-source steps", () => {
     expect(screen.getByText(/Now let's make Avana yours/i)).toBeInTheDocument()
     const nameInput = screen.getByPlaceholderText(/Your name/i)
     expect(nameInput).toHaveAttribute("maxLength", "10")
+    expect(screen.getByRole("button", { name: /^Continue$/i })).toBeDisabled()
     fireEvent.change(nameInput, { target: { value: "ElizabethAlexandra" } })
+    expect(screen.getByRole("button", { name: /^Continue$/i })).toBeEnabled()
     fireEvent.click(screen.getByRole("button", { name: /^Continue$/i }))
 
     // The save is capped at 10 chars regardless of the raw input length.

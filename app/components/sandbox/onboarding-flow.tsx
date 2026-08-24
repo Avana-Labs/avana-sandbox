@@ -318,7 +318,7 @@ function BasketPanel({ busy, onClaim }: { busy: boolean; onClaim: () => void }) 
 
 const FIELD_LABEL = "block text-[13px] font-medium text-muted-foreground"
 const FIELD_CONTROL =
-  "mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 text-[15px] text-foreground outline-none transition-colors focus:border-brand"
+  "mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 text-[15px] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-brand"
 
 /**
  * A labelled dropdown field that mirrors the header's language/currency pickers
@@ -388,17 +388,19 @@ function StepActions({
   onContinue,
   onBack,
   saving = false,
+  disabled = false,
   continueLabel = "Continue",
 }: {
   onContinue: () => void
   onBack?: () => void
   saving?: boolean
+  disabled?: boolean
   continueLabel?: string
 }) {
   const { t } = useTranslation()
   return (
     <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-      <button className={PRIMARY} disabled={saving} onClick={onContinue} type="button">
+      <button className={PRIMARY} disabled={saving || disabled} onClick={onContinue} type="button">
         {saving ? <LoaderCircle className="me-2 size-4 animate-spin" /> : null}
         {t(continueLabel)}
       </button>
@@ -415,7 +417,8 @@ function StepActions({
  * Step 1 of the personalize flow — a short display name, preferred language + currency,
  * and light/dark theme. Language/currency/theme apply app-wide immediately via the shared
  * providers (so this screen itself localizes as you pick), and all four persist to Convex
- * so they follow the wallet on the next sign-in. Name is optional and capped at 10 chars.
+ * so they follow the wallet on the next sign-in. Name is required (Continue stays disabled
+ * until filled) and capped at 10 chars.
  */
 function PersonalizeStep({
   wallet,
@@ -433,23 +436,26 @@ function PersonalizeStep({
   const setTheme = themeCtx?.setTheme ?? (() => {})
   const [name, setName] = useState(existing?.preferences?.name ?? "")
   const [saving, setSaving] = useState(false)
+  const trimmedName = name.trim().slice(0, MAX_NAME_LENGTH)
+  const canContinue = trimmedName.length > 0
 
   const language = prefs?.language ?? "EN"
   const currency = prefs?.currency ?? "USD"
   const isDark = themeCtx?.resolvedTheme === "dark"
 
   const submit = async () => {
+    if (!canContinue) return
     setSaving(true)
     try {
-      const preferences: {
-        name?: string
-        language: string
-        currency: string
-        theme: "light" | "dark"
-      } = { language, currency, theme: isDark ? "dark" : "light" }
-      const trimmed = name.trim().slice(0, MAX_NAME_LENGTH)
-      if (trimmed) preferences.name = trimmed
-      await savePreferences({ wallet, preferences })
+      await savePreferences({
+        wallet,
+        preferences: {
+          name: trimmedName,
+          language,
+          currency,
+          theme: isDark ? "dark" : "light",
+        },
+      })
     } catch {
       // Best-effort: a save blip must never trap the user on this screen.
     } finally {
@@ -467,7 +473,7 @@ function PersonalizeStep({
         <div className="w-full max-w-[420px] space-y-4">
           <div>
             <label className={FIELD_LABEL} htmlFor="onboarding-name">
-              {t("What should we call you?")} <span className="text-muted-foreground/70">({t("optional")})</span>
+              {t("What should we call you?")}
             </label>
             <input
               id="onboarding-name"
@@ -477,6 +483,7 @@ function PersonalizeStep({
               onChange={(event) => setName(event.target.value)}
               placeholder={t("Your name")}
               autoComplete="off"
+              required
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -519,7 +526,7 @@ function PersonalizeStep({
           </div>
         </div>
       </div>
-      <StepActions onContinue={submit} saving={saving} />
+      <StepActions onContinue={submit} saving={saving} disabled={!canContinue} />
     </>
   )
 }
