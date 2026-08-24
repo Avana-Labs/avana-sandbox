@@ -59,7 +59,7 @@ import Link from "next/link"
 
 type DashboardPromoTabId = Extract<RewardsPromoTabId, "getting-started" | "lend" | "borrow" | "multiply" | "referrals">
 type DashboardAccountTabId = Extract<RewardsPromoTabId, "lend" | "borrow" | "multiply">
-type DashboardTabId = "wallet" | DashboardAccountTabId | "rewards" | "transactions"
+type DashboardTabId = "wallet" | DashboardAccountTabId | "rewards"
 
 const DASHBOARD_TABS: readonly { id: DashboardTabId; label: string }[] = [
   { id: "wallet", label: "Wallet" },
@@ -67,7 +67,6 @@ const DASHBOARD_TABS: readonly { id: DashboardTabId; label: string }[] = [
   { id: "borrow", label: "Borrow" },
   { id: "multiply", label: "Multiply" },
   { id: "rewards", label: "Rewards" },
-  { id: "transactions", label: "All Transactions" },
 ]
 
 const CURATED_REWARD_TASK_IDS: Record<DashboardPromoTabId, readonly string[]> = {
@@ -85,12 +84,13 @@ function resolveDashboardTab(tab: string | null): DashboardTabId {
     case "borrow":
     case "multiply":
     case "rewards":
-    case "transactions":
       return tab
     case "referrals":
       return "rewards"
+    // Former All Transactions tab / activity aliases → default wallet tab.
+    // Activity now lives in the sidebar feed.
+    case "transactions":
     case "activity":
-      return "transactions"
     default:
       return "wallet"
   }
@@ -579,7 +579,8 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
     ),
   ]
   // One combined "recent activity" table: live session actions + the full dashboard
-  // activity (all products) + reward claims, deduped by tx hash (session rows win).
+  // activity (all products) + reward claims, deduped by row id (session/seed rows win).
+  // Do not dedupe by txHash — multiple logical actions (e.g. Umbrella stakes) can share a hash.
   const combinedActivityRows = [
     ...mapTransactionHistoryToActivityRows(avana.borrow.transactionHistory, avana.borrow.state.markets),
     ...avana.multiply.transactionHistory.map((item) => ({
@@ -605,10 +606,10 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
     ...(dashboardData?.activity.rows ?? []),
     ...rewardActivityRows,
   ]
-  const seenTxHashes = new Set<string>()
+  const seenIds = new Set<string>()
   const allActivityRows = combinedActivityRows.filter((row) => {
-    if (seenTxHashes.has(row.txHash)) return false
-    seenTxHashes.add(row.txHash)
+    if (seenIds.has(row.id)) return false
+    seenIds.add(row.id)
     return true
   })
 
@@ -629,6 +630,16 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
               activeTab={activeDashboardTab}
               showQuickActions
             />
+            {/* Desktop sidebar — Activity stays beside rewards. */}
+            <section
+              id="dashboard-activity"
+              className="mt-10 hidden scroll-mt-24 border-t border-border pt-10 lg:block"
+            >
+              <h2 className="mb-5 text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+                {t("Activity")}
+              </h2>
+              <RecentActivity rows={allActivityRows} walletId={walletId} />
+            </section>
           </aside>
 
           <div className="min-w-0 lg:col-start-1 lg:row-start-2 lg:pt-8">
@@ -653,8 +664,6 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
                   <DashboardWalletTab walletId={walletId} />
                 ) : activeDashboardTab === "rewards" ? (
                   <DashboardRewardsTab questsByTab={questsByTab} onTaskAction={(taskId) => handleTaskAction(taskId)} />
-                ) : activeDashboardTab === "transactions" ? (
-                  <RecentActivity rows={allActivityRows} defaultShowAll showHeading={false} />
                 ) : (
                   <RewardsPromoContent
                     activePromoTab={activeDashboardTab}
@@ -665,6 +674,14 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
                   />
                 )}
               </div>
+
+              {/* Mobile — Activity sits above Learn Avana. */}
+              <section className="mt-10 border-t border-border pt-10 md:mt-12 md:pt-12 lg:hidden">
+                <h2 className="mb-5 text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground">
+                  {t("Activity")}
+                </h2>
+                <RecentActivity rows={allActivityRows} walletId={walletId} />
+              </section>
 
               <div className="mt-10 border-t border-border pt-10 pb-24 md:mt-12 md:pt-12 lg:pb-0">
                 <LearnSection />

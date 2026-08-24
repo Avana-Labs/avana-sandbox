@@ -18,7 +18,7 @@ function withReturn(href: string) {
   return `${href}${href.includes("?") ? "&" : "?"}return=${encodeURIComponent(RETURN_HREF)}`
 }
 
-export type DashboardQuickActionsTab = "wallet" | "lend" | "borrow" | "multiply" | "rewards" | "transactions"
+export type DashboardQuickActionsTab = "wallet" | "lend" | "borrow" | "multiply" | "rewards"
 
 /**
  * Compact icon quick-action rail used across the dashboard hero — a bare row
