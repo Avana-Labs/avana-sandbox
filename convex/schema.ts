@@ -658,10 +658,10 @@ export default defineSchema({
     .index("by_chain_contract", ["chainId", "contractAddress"]),
 
   /**
-   * Historical token prices, one row per (symbol, UTC day) — the last price seen that day. Kept
+   * Historical token prices, one row per (symbol, UTC day) — the daily closing snapshot. Kept
    * SEPARATE from the current `tokenPrices` table (§12): current UI reads `tokenPrices`, charts
    * read this history, so an old value can never be mistaken for the live price. Bounded growth
-   * (one row per token per day) via upsert on (symbol, day).
+   * (one row per token per day) via the daily prices snapshot job.
    */
   tokenPricesHistory: defineTable({
     symbol: v.string(),

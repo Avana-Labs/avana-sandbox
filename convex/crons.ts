@@ -21,6 +21,7 @@ import { internal } from "./_generated/api"
 const crons = cronJobs()
 
 crons.interval("refresh token prices", { minutes: 10 }, internal.prices.refreshPrices, {})
+crons.daily("snapshot daily token prices", { hourUTC: 23, minuteUTC: 58 }, internal.prices.snapshotDailyTokenPrices, {})
 // FX moves slowly (daily provider updates); hourly keeps the validated fiat layer fresh cheaply.
 crons.interval("refresh fx rates", { hours: 1 }, internal.fx.refreshFxRates, {})
 // Flush each market's running liquidity delta into a persistent daily snapshot near

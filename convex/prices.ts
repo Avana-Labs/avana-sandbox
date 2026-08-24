@@ -190,24 +190,40 @@ export const upsertPrices = internalMutation({
         .unique()
       if (existing) await ctx.db.patch(existing._id, row)
       else await ctx.db.insert("tokenPrices", row)
-
-      // Append to the SEPARATE history table (one row per symbol per UTC day) so charts have a
-      // price series without ever reading the current row. Upsert keeps growth bounded.
-      const day = new Date(row.updatedAt).toISOString().slice(0, 10)
-      const historyRow = await ctx.db
-        .query("tokenPricesHistory")
-        .withIndex("by_symbol_day", (q) => q.eq("symbol", row.symbol).eq("day", day))
-        .unique()
-      if (historyRow) await ctx.db.patch(historyRow._id, { priceUsd: row.priceUsd, updatedAt: row.updatedAt })
-      else
-        await ctx.db.insert("tokenPricesHistory", {
-          symbol: row.symbol,
-          day,
-          priceUsd: row.priceUsd,
-          updatedAt: row.updatedAt,
-        })
     }
     return { written: rows.length }
+  },
+})
+
+/** Copy the current oracle rows into one closing-price history point per UTC day. */
+export const snapshotDailyTokenPrices = internalMutation({
+  args: { day: v.optional(v.string()) },
+  handler: async (ctx, { day: requestedDay }) => {
+    const day = requestedDay ?? new Date().toISOString().slice(0, 10)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) throw new Error("Token price history day must use YYYY-MM-DD")
+    const prices = await ctx.db.query("tokenPrices").collect()
+    const result = { inserted: 0, updated: 0, unchanged: 0 }
+    for (const price of prices) {
+      const existing = await ctx.db
+        .query("tokenPricesHistory")
+        .withIndex("by_symbol_day", (q) => q.eq("symbol", price.symbol).eq("day", day))
+        .unique()
+      if (!existing) {
+        await ctx.db.insert("tokenPricesHistory", {
+          symbol: price.symbol,
+          day,
+          priceUsd: price.priceUsd,
+          updatedAt: price.updatedAt,
+        })
+        result.inserted += 1
+      } else if (existing.priceUsd !== price.priceUsd) {
+        await ctx.db.patch(existing._id, { priceUsd: price.priceUsd, updatedAt: price.updatedAt })
+        result.updated += 1
+      } else {
+        result.unchanged += 1
+      }
+    }
+    return result
   },
 })
 

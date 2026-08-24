@@ -19,10 +19,15 @@ const DAY1_B = Date.parse("2026-08-17T22:00:00Z")
 const DAY2 = Date.parse("2026-08-18T05:00:00Z")
 
 describe("token price history — current vs historical separation (C12)", () => {
-  test("keeps ONE history row per (symbol, UTC day), updated to the latest price", async () => {
+  test("writes one daily closing point instead of rewriting history on every current-price update", async () => {
     const t = convexTest(schema, modules)
     await t.mutation(internal.prices.upsertPrices, { rows: [row("eth", 1900, DAY1_A)] })
     await t.mutation(internal.prices.upsertPrices, { rows: [row("eth", 1950, DAY1_B)] })
+    await expect(t.mutation(internal.prices.snapshotDailyTokenPrices, { day: "2026-08-17" })).resolves.toEqual({
+      inserted: 1,
+      updated: 0,
+      unchanged: 0,
+    })
     const history = await t.query(api.prices.getTokenPriceHistory, { symbol: "eth" })
     expect(history).toEqual([{ day: "2026-08-17", priceUsd: 1950 }])
   })
@@ -30,12 +35,25 @@ describe("token price history — current vs historical separation (C12)", () =>
   test("a new UTC day appends a new history row (series grows over time)", async () => {
     const t = convexTest(schema, modules)
     await t.mutation(internal.prices.upsertPrices, { rows: [row("eth", 1900, DAY1_A)] })
+    await t.mutation(internal.prices.snapshotDailyTokenPrices, { day: "2026-08-17" })
     await t.mutation(internal.prices.upsertPrices, { rows: [row("eth", 2100, DAY2)] })
+    await t.mutation(internal.prices.snapshotDailyTokenPrices, { day: "2026-08-18" })
     const history = await t.query(api.prices.getTokenPriceHistory, { symbol: "eth" })
     expect(history).toEqual([
       { day: "2026-08-17", priceUsd: 1900 },
       { day: "2026-08-18", priceUsd: 2100 },
     ])
+  })
+
+  test("is idempotent when the closing price is unchanged", async () => {
+    const t = convexTest(schema, modules)
+    await t.mutation(internal.prices.upsertPrices, { rows: [row("eth", 1900, DAY1_A)] })
+    await t.mutation(internal.prices.snapshotDailyTokenPrices, { day: "2026-08-17" })
+    await expect(t.mutation(internal.prices.snapshotDailyTokenPrices, { day: "2026-08-17" })).resolves.toEqual({
+      inserted: 0,
+      updated: 0,
+      unchanged: 1,
+    })
   })
 
   test("the CURRENT price query reflects only the latest value, never the history rows", async () => {
