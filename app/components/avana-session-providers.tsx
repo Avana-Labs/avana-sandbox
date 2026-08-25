@@ -32,32 +32,37 @@ function OpenGateConvexProvider({ children }: { children: ReactNode }) {
   )
 }
 
+/** Instant Paint: always paint children; upgrade to Convex when JWT/chunk are ready. */
+function LocalSessionFallback({ walletId, children }: { walletId: string; children: ReactNode }) {
+  return <AvanaSessionsProvider walletId={walletId}>{children}</AvanaSessionsProvider>
+}
+
 function OpenGateSessionTree({ children }: { children: ReactNode }) {
   const { ready, error } = useOpenGateAuthBootstrap()
+  const walletId = TEST_MODE_WALLET_ADDRESS
 
   if (error) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-6 text-center">
         <p className="text-sm text-muted-foreground">Open-gate Convex auth failed</p>
         <p className="max-w-md text-xs text-muted-foreground">{error}</p>
-        <AvanaSessionsProvider walletId={TEST_MODE_WALLET_ADDRESS}>{children}</AvanaSessionsProvider>
+        <LocalSessionFallback walletId={walletId}>{children}</LocalSessionFallback>
       </div>
     )
   }
 
-  if (!ready) return null
-
-  // After the bootstrap JWT is in sessionStorage, use the same authenticated
-  // Convex wallet session path as SIWE — hydrators + recordTransaction/recordSwap.
-  if (hasConvexClient) {
-    return (
-      <Suspense fallback={null}>
-        <ConvexSessionProvider walletId={TEST_MODE_WALLET_ADDRESS}>{children}</ConvexSessionProvider>
-      </Suspense>
-    )
+  // Paint product chrome immediately with the local session while the JWT mints /
+  // Convex session chunk loads. Soft-upgrade to ConvexSessionProvider when ready —
+  // never return null (blank Instant Paint regression).
+  if (!ready || !hasConvexClient) {
+    return <LocalSessionFallback walletId={walletId}>{children}</LocalSessionFallback>
   }
 
-  return <AvanaSessionsProvider walletId={TEST_MODE_WALLET_ADDRESS}>{children}</AvanaSessionsProvider>
+  return (
+    <Suspense fallback={<LocalSessionFallback walletId={walletId}>{children}</LocalSessionFallback>}>
+      <ConvexSessionProvider walletId={walletId}>{children}</ConvexSessionProvider>
+    </Suspense>
+  )
 }
 
 export function AvanaSessionProviders({ walletId, children }: { walletId?: string; children: ReactNode }) {
@@ -77,7 +82,7 @@ export function AvanaSessionProviders({ walletId, children }: { walletId?: strin
   return (
     <MarketLiquidityProvider live={Boolean(hasConvexClient && isSignedIn && authedWallet)}>
       {hasConvexClient && isSignedIn && authedWallet ? (
-        <Suspense fallback={null}>
+        <Suspense fallback={<LocalSessionFallback walletId={authedWallet}>{children}</LocalSessionFallback>}>
           <ConvexSessionProvider walletId={authedWallet}>{children}</ConvexSessionProvider>
         </Suspense>
       ) : (

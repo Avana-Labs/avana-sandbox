@@ -53,7 +53,9 @@ vi.mock("@/app/lib/avana-session/convex-session-provider", () => ({
     mocks.convexAuthenticated ? (
       <div data-testid="convex-session">{children}</div>
     ) : (
-      <div aria-label="Authenticating wallet session" />
+      <div aria-label="Authenticating wallet session">
+        <div data-testid="local-session">{children}</div>
+      </div>
     ),
 }))
 
@@ -77,6 +79,8 @@ describe("AvanaSessionProviders", () => {
     )
 
     expect(await screen.findByLabelText("Authenticating wallet session")).toBeInTheDocument()
+    // Instant Paint: product chrome stays mounted on the local session while Convex auth settles.
+    expect(screen.getByText("App content")).toBeInTheDocument()
     expect(screen.queryByTestId("convex-session")).not.toBeInTheDocument()
   })
 
@@ -110,7 +114,7 @@ describe("AvanaSessionProviders", () => {
     expect(screen.queryByTestId("local-session")).not.toBeInTheDocument()
   })
 
-  it("open-gate holds the wallet session until the bootstrap JWT is ready", async () => {
+  it("open-gate paints product chrome on the local session until the bootstrap JWT is ready", async () => {
     mocks.openGate = true
     mocks.openGateReady = false
     mocks.siwe.isSignedIn = false
@@ -121,11 +125,9 @@ describe("AvanaSessionProviders", () => {
       </AvanaSessionProviders>,
     )
 
-    // Bootstrap not ready → nothing mounts. The top page-loading bar (rendered
-    // outside this component tree) carries the loading signal; no ad-hoc
-    // placeholder inside the session tree.
+    // Instant Paint: never blank — local session carries chrome while JWT mints.
+    expect(screen.getByTestId("local-session")).toBeInTheDocument()
+    expect(screen.getByText("App content")).toBeInTheDocument()
     expect(screen.queryByTestId("convex-session")).not.toBeInTheDocument()
-    expect(screen.queryByTestId("local-session")).not.toBeInTheDocument()
-    expect(screen.queryByText("App content")).not.toBeInTheDocument()
   })
 })

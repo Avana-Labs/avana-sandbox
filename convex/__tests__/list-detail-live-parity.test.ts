@@ -44,6 +44,9 @@ describe("list ↔ detail live tip+delta parity (Convex)", () => {
     expect(row?.availableUsd).toBe(23_000_000)
     expect(row?.borrowedUsd).toBe(7_000_000)
 
+    const bySlug = await t.query(api.markets.getMarketSnapshot, { scope: "pool", slug })
+    expect(bySlug).toEqual(row)
+
     const stats = await t.query(api.markets.getQuickStats, { scope: "pool", slug })
     expect(stats?.find((s) => s.id === "supplied")?.value).toBe("$30.00M")
     expect(stats?.find((s) => s.id === "borrowed")?.value).toBe("$7.00M")
@@ -84,6 +87,9 @@ describe("list ↔ detail live tip+delta parity (Convex)", () => {
     const row = list.find((r) => r.slug === slug)
     expect(row?.suppliedUsd).toBe(10_000_000)
     expect(row?.availableUsd).toBe(7_000_000)
+
+    const bySlug = await t.query(api.markets.getMarketSnapshot, { scope: "lend", slug })
+    expect(bySlug).toEqual(row)
 
     const stats = await t.query(api.markets.getQuickStats, { scope: "lend", slug })
     expect(stats?.find((s) => s.id === "supplied")?.value).toBe("$10.00M")

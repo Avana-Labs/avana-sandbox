@@ -37,13 +37,12 @@ const convexClient = requestCache((): ConvexHttpClient | null => {
   }
 })
 
-/** Latest-day reference snapshot for one multiply market (from `listMarketSnapshots`). */
+/** Latest-day reference snapshot for one multiply market (slug-scoped; C04). */
 export async function fetchMultiplyMarketSnapshot(slug: string): Promise<MultiplyMarketSnapshot | null> {
   const client = convexClient()
   if (!client) return null
   try {
-    const rows = await client.query(api.markets.listMultiplyMarketSnapshots, {})
-    const match = rows.find((row) => row.slug === slug)
+    const match = await client.query(api.markets.getMarketSnapshot, { scope: "multiply", slug })
     if (!match) return null
     return {
       slug: match.slug,

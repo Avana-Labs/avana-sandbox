@@ -81,7 +81,7 @@ export function MarketDetailClient({
               <Link href="/multiply" className="transition-colors hover:text-foreground">
                 {t("Multiply")}
               </Link>
-              <span aria-hidden className="font-medium text-muted-foreground">
+              <span aria-hidden className="font-normal text-muted-foreground">
                 ›
               </span>
               <span className="font-normal text-foreground">{detail.hero.name}</span>
@@ -105,7 +105,7 @@ export function MarketDetailClient({
                   afterAbout={
                     <>
                       <section aria-label={t("Key Statistics")} className="space-y-6">
-                        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+                        <h2 className="text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
                           Key Statistics
                         </h2>
                         <QuickStatsGrid detail={detail} quickStatsPreload={quickStatsPreload} product="multiply" />
@@ -147,14 +147,14 @@ export function MarketDetailClient({
       <MobileDetailActionBar className="grid grid-cols-2 gap-3">
         <Link
           href={actionPagePath("multiply", "multiply", { market: marketId, return: `/multiply/markets/${marketId}` })}
-          className={primaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
+          className={primaryCtaClass({ size: "compact", className: "gap-2.5 font-normal [&_svg]:size-5" })}
         >
           <ActionIcon label="Multiply" />
           {t("Multiply")}
         </Link>
         <Link
           href={actionPagePath("multiply", "deleverage", { market: marketId, return: `/multiply/markets/${marketId}` })}
-          className={secondaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
+          className={secondaryCtaClass({ size: "compact", className: "gap-2.5 font-normal [&_svg]:size-5" })}
         >
           <ActionIcon label="Deleverage" />
           {t("Deleverage")}
