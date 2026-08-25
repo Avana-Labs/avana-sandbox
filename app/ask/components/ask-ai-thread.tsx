@@ -298,7 +298,7 @@ export function QuotaNudge({ remaining }: { remaining: number }) {
       <span>That&apos;s all your chats for today. The Avana team can keep helping in the Support Center.</span>
       <Link
         href="/support-center"
-        className="inline-flex items-center rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition hover:opacity-90"
+        className="inline-flex items-center rounded-full bg-foreground px-4 py-1.5 text-sm font-normal text-background transition hover:opacity-90"
       >
         Open Support Center
       </Link>
@@ -519,7 +519,7 @@ export function AskAIThread({
               <>
                 {isEmpty ? (
                   <div className="mb-6 flex flex-col items-center px-4 text-center">
-                    <h1 className="text-2xl font-medium tracking-tight">{greeting}</h1>
+                    <h1 className="text-2xl font-normal tracking-tight">{greeting}</h1>
                   </div>
                 ) : null}
 

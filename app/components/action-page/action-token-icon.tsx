@@ -40,7 +40,7 @@ function ActionTokenIconBase({
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center rounded-full font-semibold",
+        "inline-flex items-center justify-center rounded-full font-normal",
         box,
         text,
         isPlaceholder ? "bg-muted text-muted-foreground" : icon.bgClass,

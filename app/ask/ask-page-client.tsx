@@ -84,7 +84,7 @@ export function AskPageClient() {
         </Link>
 
         <div className="pointer-events-none absolute left-1/2 w-[min(520px,calc(100%-128px))] -translate-x-1/2 text-center sm:w-[min(560px,calc(100%-192px))]">
-          <div className="truncate text-lg font-medium leading-none text-foreground">{headerTitle ?? t("Ask AI")}</div>
+          <div className="truncate text-lg font-normal leading-none text-foreground">{headerTitle ?? t("Ask AI")}</div>
         </div>
 
         <button

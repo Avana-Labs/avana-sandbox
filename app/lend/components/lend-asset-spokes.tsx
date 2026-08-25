@@ -137,7 +137,7 @@ function AssetRowView({
       onClick={() => router.push(detailHref)}
     >
       <td
-        className={`py-3 pl-6 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
+        className={`py-3 pl-6 pr-3 align-middle font-data text-[14px] font-normal tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
       >
         {index + 1}
       </td>
@@ -145,7 +145,7 @@ function AssetRowView({
         <div className="flex min-w-0 items-center gap-3">
           <AssetIcon row={row} eager={index < 2} />
           <div className="min-w-0">
-            <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
+            <div className="truncate text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
               {row.name}
             </div>
             <div className="mt-0.5 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground md:text-[13px]">
@@ -255,7 +255,7 @@ function AssetCardView({
           <div className="flex min-w-0 items-center gap-3">
             <AssetIcon row={row} eager={index < 2} />
             <div className="min-w-0">
-              <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+              <div className="truncate text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                 {row.name}
               </div>
               <div className="mt-0.5 text-[12px] tracking-[-0.03em] text-muted-foreground">
@@ -417,7 +417,7 @@ function AssetSection({
         <div>
           <h2
             className={cn(
-              "text-[22px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[24px]",
+              "text-[22px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[24px]",
               title === "Ethereum-Based" ? "md:text-[23px]" : "",
             )}
           >
@@ -466,10 +466,10 @@ function AssetSection({
                 </colgroup>
                 <thead>
                   <tr className="bg-table-header text-left text-muted-foreground">
-                    <th className="bg-table-header pb-2 pl-6 pr-3 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header pb-2 pl-6 pr-3 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       #
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("asset")}
@@ -484,7 +484,7 @@ function AssetSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("supplyApy")}
@@ -499,7 +499,7 @@ function AssetSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("totalDeposits")}
@@ -514,7 +514,7 @@ function AssetSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("utilization")}
@@ -529,7 +529,7 @@ function AssetSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pr-6 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pr-6 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("availableLiquidity")}
@@ -544,7 +544,7 @@ function AssetSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+                    <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
                   </tr>
                 </thead>
                 <tbody

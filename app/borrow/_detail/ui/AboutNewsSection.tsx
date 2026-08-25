@@ -49,7 +49,7 @@ export function AboutNewsSection({
         <>
           <section aria-label={t(newsTitle)} className="space-y-5">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="truncate text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+              <h2 className="truncate text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
                 {t(newsTitle)}
               </h2>
               {governanceUrl ? (
@@ -57,7 +57,7 @@ export function AboutNewsSection({
                   href={governanceUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="shrink-0 text-[13px] font-medium text-sky-500 transition-colors hover:text-sky-400"
+                  className="shrink-0 text-[13px] font-normal text-sky-500 transition-colors hover:text-sky-400"
                 >
                   {t("View all")}
                 </a>
@@ -78,12 +78,12 @@ export function AboutNewsSection({
                         </div>
                       </div>
                       {parameter.status ? (
-                        <span className="shrink-0 rounded-full bg-surface-inset px-2.5 py-1 text-[12px] font-medium leading-none text-muted-foreground">
+                        <span className="shrink-0 rounded-full bg-surface-inset px-2.5 py-1 text-[12px] font-normal leading-none text-muted-foreground">
                           {t(parameter.status)}
                         </span>
                       ) : null}
                     </div>
-                    <div className="mt-2 font-data text-[22px] font-semibold leading-none tracking-[-0.03em] text-foreground">
+                    <div className="mt-2 font-data text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground">
                       {t(parameter.value)}
                     </div>
                   </>
@@ -109,7 +109,7 @@ export function AboutNewsSection({
           </section>
 
           <section aria-label={t("Parameter changelog")} className="space-y-5">
-            <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+            <h2 className="text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
               {t("Parameter changelog")}
             </h2>
             <div className="overflow-x-auto">
@@ -123,19 +123,19 @@ export function AboutNewsSection({
                 </colgroup>
                 <thead>
                   <tr className="bg-table-header text-left text-muted-foreground">
-                    <th className="bg-table-header pb-2 pl-5 pr-4 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header pb-2 pl-5 pr-4 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       {t("Parameter")}
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       {t("Previous")}
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       {t("Current")}
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       {t("Date")}
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       {t("Source")}
                     </th>
                   </tr>
@@ -143,13 +143,13 @@ export function AboutNewsSection({
                 <tbody className="divide-y divide-border dark:divide-white/6">
                   {governanceParameters.changelog.map((entry) => (
                     <tr key={entry.id} className="transition-colors hover:bg-hover">
-                      <th scope="row" className="py-3 pl-5 pr-4 text-left text-[13px] font-medium text-foreground">
+                      <th scope="row" className="py-3 pl-5 pr-4 text-left text-[13px] font-normal text-foreground">
                         {t(entry.parameter)}
                       </th>
-                      <td className="px-4 py-3 font-data text-[13px] font-medium tabular-nums text-muted-foreground">
+                      <td className="px-4 py-3 font-data text-[13px] font-normal tabular-nums text-muted-foreground">
                         {t(entry.previous)}
                       </td>
-                      <td className="px-4 py-3 font-data text-[13px] font-medium tabular-nums text-foreground">
+                      <td className="px-4 py-3 font-data text-[13px] font-normal tabular-nums text-foreground">
                         {t(entry.current)}
                       </td>
                       <td className="px-4 py-3 text-[13px] text-muted-foreground">{t(entry.date)}</td>

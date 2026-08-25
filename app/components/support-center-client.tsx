@@ -335,7 +335,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
     <main className="min-h-[calc(100vh-56px)] bg-background text-foreground">
       <div className="mx-auto w-full max-w-[960px] px-4 pb-16 pt-8 sm:px-6 sm:pt-12 lg:px-8">
         <header className="border-b border-border pb-6 sm:pb-8">
-          <h1 className="max-w-[12ch] text-[32px] font-medium leading-[1.04] tracking-[-0.04em] sm:text-[48px]">
+          <h1 className="max-w-[12ch] text-[32px] font-normal leading-[1.04] tracking-[-0.04em] sm:text-[48px]">
             {t("How can we help?")}
           </h1>
         </header>
@@ -350,7 +350,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
               ].map(([label, isActive], index) => (
                 <li key={label as string} className="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center lg:gap-3">
                   <span
-                    className={`flex size-7 shrink-0 items-center justify-center rounded-full border text-[12px] font-medium ${
+                    className={`flex size-7 shrink-0 items-center justify-center rounded-full border text-[12px] font-normal ${
                       isActive
                         ? "border-brand bg-brand text-white"
                         : "border-border bg-background text-muted-foreground"
@@ -359,7 +359,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                     {index + 1}
                   </span>
                   <span
-                    className={`text-[11px] font-medium leading-tight sm:text-[12px] lg:text-[14px] ${
+                    className={`text-[11px] font-normal leading-tight sm:text-[12px] lg:text-[14px] ${
                       isActive ? "text-foreground" : "text-muted-foreground"
                     }`}
                   >
@@ -385,12 +385,12 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                       />
                     </svg>
                   </div>
-                  <h2 className="mt-4 text-[22px] font-medium tracking-[-0.03em] text-foreground sm:text-[24px]">
+                  <h2 className="mt-4 text-[22px] font-normal tracking-[-0.03em] text-foreground sm:text-[24px]">
                     {t("Request received")}
                   </h2>
                   <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
                     {t("Thanks — we’ve logged your message about")}{" "}
-                    <span className="font-medium text-foreground">
+                    <span className="font-normal text-foreground">
                       {selectedTopic?.label ? t(selectedTopic.label) : selectedTopic?.label}
                     </span>{" "}
                     {t("and the Avana team will follow up. You can submit another request any time.")}
@@ -398,7 +398,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                   <Button
                     type="button"
                     onClick={handleReset}
-                    className="mt-6 h-10 rounded-xs bg-brand px-5 text-[14px] font-medium text-white hover:bg-brand/90"
+                    className="mt-6 h-10 rounded-xs bg-brand px-5 text-[14px] font-normal text-white hover:bg-brand/90"
                   >
                     {t("Submit another request")}
                   </Button>
@@ -407,7 +407,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
             ) : stage !== 3 ? (
               <div className="max-w-[560px] space-y-6 sm:space-y-7">
                 <div>
-                  <h2 className="text-[22px] font-medium tracking-[-0.03em] text-foreground sm:text-[24px]">
+                  <h2 className="text-[22px] font-normal tracking-[-0.03em] text-foreground sm:text-[24px]">
                     {t("Tell us what happened")}
                   </h2>
                   <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
@@ -417,7 +417,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
 
                 <div className="space-y-5">
                   <div className="space-y-2">
-                    <label htmlFor="support-category" className="block text-[14px] font-medium text-foreground">
+                    <label htmlFor="support-category" className="block text-[14px] font-normal text-foreground">
                       {t("Category")}
                     </label>
                     <Select value={categoryValue} onValueChange={handleCategoryChange}>
@@ -443,7 +443,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
 
                   {categoryValue ? (
                     <div className="space-y-2">
-                      <label htmlFor="support-topic" className="block text-[14px] font-medium text-foreground">
+                      <label htmlFor="support-topic" className="block text-[14px] font-normal text-foreground">
                         {t("Topic")}
                       </label>
                       <Select value={topicValue} onValueChange={handleTopicChange}>
@@ -467,11 +467,11 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
 
                 {hasArticles ? (
                   <div className="border-y border-border py-5">
-                    <h3 className="text-[15px] font-semibold text-foreground">{t("Recommended articles")}</h3>
+                    <h3 className="text-[15px] font-normal text-foreground">{t("Recommended articles")}</h3>
                     <div className="mt-3 divide-y divide-border">
                       {selectedTopic?.articles.map((article) => (
                         <button key={article.title} type="button" className="block w-full py-3 text-left">
-                          <div className="text-[15px] font-medium text-brand">{t(article.title)}</div>
+                          <div className="text-[15px] font-normal text-brand">{t(article.title)}</div>
                           <p className="mt-1 max-w-[56ch] text-[13px] leading-5 text-muted-foreground">
                             {t(article.body)}
                           </p>
@@ -484,12 +484,12 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
             ) : (
               <div className="max-w-[560px] space-y-6 sm:space-y-7">
                 <div className="border-b border-border pb-5">
-                  <h2 className="text-[22px] font-medium tracking-[-0.03em] text-foreground sm:text-[24px]">
+                  <h2 className="text-[22px] font-normal tracking-[-0.03em] text-foreground sm:text-[24px]">
                     {t("Contact support")}
                   </h2>
                   <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
                     {t("Tell us more about")}{" "}
-                    <span className="font-medium text-foreground">
+                    <span className="font-normal text-foreground">
                       {selectedTopic?.label ? t(selectedTopic.label) : selectedTopic?.label}
                     </span>
                     .
@@ -498,13 +498,13 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
 
                 <dl className="grid gap-x-6 gap-y-3 text-[13px] sm:grid-cols-2">
                   <div>
-                    <dt className="font-medium text-muted-foreground">{t("Category")}</dt>
+                    <dt className="font-normal text-muted-foreground">{t("Category")}</dt>
                     <dd className="mt-1 text-foreground">
                       {selectedCategory?.label ? t(selectedCategory.label) : selectedCategory?.label}
                     </dd>
                   </div>
                   <div>
-                    <dt className="font-medium text-muted-foreground">{t("Topic")}</dt>
+                    <dt className="font-normal text-muted-foreground">{t("Topic")}</dt>
                     <dd className="mt-1 text-foreground">
                       {selectedTopic?.label ? t(selectedTopic.label) : selectedTopic?.label}
                     </dd>
@@ -512,7 +512,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                 </dl>
 
                 <div className="space-y-2">
-                  <label htmlFor="support-message" className="block text-[14px] font-medium text-foreground">
+                  <label htmlFor="support-message" className="block text-[14px] font-normal text-foreground">
                     {t("Describe the issue")}
                   </label>
                   <textarea
@@ -541,7 +541,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                     variant="ghost"
                     onClick={handleBack}
                     disabled={sendStatus === "sending"}
-                    className="h-10 px-0 text-[14px] font-medium text-brand hover:bg-transparent hover:text-brand/80 sm:h-9"
+                    className="h-10 px-0 text-[14px] font-normal text-brand hover:bg-transparent hover:text-brand/80 sm:h-9"
                   >
                     {t("Back")}
                   </Button>
@@ -550,7 +550,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                     type="button"
                     onClick={stage === 3 ? handleSend : handleContinue}
                     disabled={stage !== 3 ? !canContinue : !canSend}
-                    className="h-10 rounded-xs bg-brand px-5 text-[14px] font-medium text-white hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-surface-inset disabled:text-muted-foreground sm:h-9"
+                    className="h-10 rounded-xs bg-brand px-5 text-[14px] font-normal text-white hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-surface-inset disabled:text-muted-foreground sm:h-9"
                   >
                     {footerLabel}
                   </Button>

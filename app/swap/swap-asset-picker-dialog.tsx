@@ -65,9 +65,9 @@ export function SwapAssetPickerDialog({
           />
         </div>
 
-        <div className="flex items-center gap-2 border-b border-border px-5 py-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+        <div className="flex items-center gap-2 border-b border-border px-5 py-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
           <span>{t("Supported assets")}</span>
-          <span className="ml-auto rounded-full bg-surface-inset px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground/80">
+          <span className="ml-auto rounded-full bg-surface-inset px-1.5 py-0.5 text-[10px] font-normal tabular-nums text-muted-foreground/80">
             {filteredAssets.length}
           </span>
         </div>
@@ -91,11 +91,11 @@ export function SwapAssetPickerDialog({
               >
                 <SwapAssetIcon asset={asset} className="size-8" />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[14px] font-medium text-foreground">{asset.name}</span>
+                  <span className="block truncate text-[14px] font-normal text-foreground">{asset.name}</span>
                   <span className="block truncate text-[12px] leading-5 text-muted-foreground">{asset.symbol}</span>
                 </span>
                 <span className="text-right">
-                  <span className="block font-data text-[13px] font-medium text-foreground">
+                  <span className="block font-data text-[13px] font-normal text-foreground">
                     {amount.toLocaleString(undefined, { maximumFractionDigits: 6 })} {asset.symbol}
                   </span>
                   <span className="block font-data text-[12px] text-muted-foreground">

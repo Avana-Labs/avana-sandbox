@@ -82,7 +82,7 @@ export function CollateralPositionsPanel({
     <section>
       {showHeading ? (
         <div className="mb-4">
-          <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
+          <h3 className="text-[18px] font-normal tracking-tight text-foreground md:text-[20px]">
             {t("Collateral Positions")}
           </h3>
           <p className="mt-1 text-[13px] text-muted-foreground">{formatSectionCount(rows.length, "asset", "assets")}</p>
@@ -225,7 +225,7 @@ function AssetIdentity({ symbol, name }: { symbol: string; name: string }) {
     <div className="flex items-center gap-2.5">
       <TokenIcon symbol={symbol} size="table" />
       <div className="flex min-w-0 flex-col">
-        <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+        <span className="truncate text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
           {name}
         </span>
         <span className="text-[11px] text-muted-foreground">{symbol}</span>
@@ -275,7 +275,7 @@ function CollateralMobileCard({
           <div className="flex min-w-0 items-center gap-2.5">
             <TokenIcon symbol={row.symbol} size="table" />
             <div className="min-w-0">
-              <div className="text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+              <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                 {row.name}
               </div>
               <div className="text-[11px] text-muted-foreground">{row.symbol}</div>
@@ -326,7 +326,7 @@ function CollateralMobileCard({
         <Button
           type="button"
           variant="brand"
-          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
           onClick={(event) => {
             event.stopPropagation()
             onDeposit()
@@ -338,7 +338,7 @@ function CollateralMobileCard({
         <Button
           type="button"
           variant="brand-secondary"
-          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
           onClick={(event) => {
             event.stopPropagation()
             onWithdraw()

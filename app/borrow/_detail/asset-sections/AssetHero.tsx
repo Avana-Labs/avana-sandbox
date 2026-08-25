@@ -83,27 +83,27 @@ export function AssetHeroIdentity({
                   fetchPriority="high"
                 />
               ) : (
-                <span className="text-[13px] font-medium">{detail.hero.visual.shortLabel}</span>
+                <span className="text-[13px] font-normal">{detail.hero.visual.shortLabel}</span>
               )}
             </span>
           </div>
 
           <div className="min-w-0">
             <div className="flex min-w-0 translate-y-1 items-baseline gap-2.5 whitespace-nowrap">
-              <h1 className="min-w-0 truncate text-[25px] font-semibold leading-none tracking-[-0.02em] text-foreground">
+              <h1 className="min-w-0 truncate text-[25px] font-normal leading-none tracking-[-0.02em] text-foreground">
                 {detail.hero.name}
               </h1>
               {showSymbol ? (
-                <span className="shrink-0 text-[20px] font-medium leading-none tracking-[-0.01em] text-foreground/55">
+                <span className="shrink-0 text-[20px] font-normal leading-none tracking-[-0.01em] text-foreground/55">
                   {detail.hero.symbol}
                 </span>
               ) : null}
             </div>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-[15px] font-medium text-foreground/75">
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-[15px] font-normal text-foreground/75">
               <span className="leading-none text-foreground/75">{detail.hero.chain}</span>
               <span aria-hidden className="h-5 w-px bg-border" />
               {isPlaceholderContract ? (
-                <span className="inline-flex min-h-8 items-center text-[15px] font-medium leading-none text-foreground/75">
+                <span className="inline-flex min-h-8 items-center text-[15px] font-normal leading-none text-foreground/75">
                   {contractLabel}
                 </span>
               ) : (
@@ -112,7 +112,7 @@ export function AssetHeroIdentity({
                   onClick={async () => {
                     await navigator.clipboard.writeText(contractAddress)
                   }}
-                  className="inline-flex min-h-8 items-center gap-1.5 rounded-full text-[15px] font-medium leading-none text-foreground/75 transition-colors hover:text-foreground"
+                  className="inline-flex min-h-8 items-center gap-1.5 rounded-full text-[15px] font-normal leading-none text-foreground/75 transition-colors hover:text-foreground"
                   aria-label={`${t("Copy")} ${contractLabel}`}
                 >
                   <Copy className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />

@@ -43,13 +43,13 @@ export function HomeActionContextBar({
         >
           <div
             className={cn(
-              "min-w-0 flex-1 break-words text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] min-[361px]:truncate",
+              "min-w-0 flex-1 break-words text-[clamp(1.5rem,4vw,2rem)] font-normal leading-none tracking-[-0.04em] min-[361px]:truncate",
               pool ? "text-foreground" : "text-muted-foreground/60",
             )}
           >
             {valueLabel}
           </div>
-          <div className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium max-[360px]:self-end">
+          <div className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-normal max-[360px]:self-end">
             {pool ? (
               <ActionTokenPairIcon
                 collateralSymbol={collateralSymbol ?? "LP"}

@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation"
 import { Suspense, useState } from "react"
 import { ActionIcon } from "@/app/components/action-icon"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
+import { ProductRoutePending } from "@/app/components/loading-states"
 import { detailSectionStackClass, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -88,7 +89,7 @@ function UmbrellaPageInner() {
               type="button"
               onClick={() => openSheet(moreDefaultTab)}
               aria-label={t("More umbrella actions")}
-              className={secondaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
+              className={secondaryCtaClass({ size: "compact", className: "gap-2.5 font-normal [&_svg]:size-5" })}
             >
               <ActionIcon label={t("More")} />
               {t("More")}
@@ -97,7 +98,7 @@ function UmbrellaPageInner() {
               type="button"
               onClick={() => openSheet("stake")}
               aria-label={t("Stake in umbrella")}
-              className={primaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
+              className={primaryCtaClass({ size: "compact", className: "gap-2.5 font-normal [&_svg]:size-5" })}
             >
               <ActionIcon label={t("Stake")} />
               {t("Stake")}
@@ -122,7 +123,7 @@ export default function UmbrellaPage() {
   // prerendered (Next.js CSR bailout); without it the production/static-export
   // build fails to prerender /umbrella.
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ProductRoutePending />}>
       <UmbrellaPageInner />
     </Suspense>
   )

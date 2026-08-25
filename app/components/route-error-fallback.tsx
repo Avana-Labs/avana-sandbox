@@ -34,19 +34,19 @@ export function RouteErrorFallback({
 
   return (
     <main className="mx-auto flex min-h-[70vh] w-full max-w-2xl flex-col items-start justify-center px-5 py-16">
-      <h1 className="text-4xl font-medium tracking-[-0.04em]">{resolvedTitle}</h1>
+      <h1 className="text-4xl font-normal tracking-[-0.04em]">{resolvedTitle}</h1>
       <p className="mt-6 max-w-prose text-muted-foreground">{resolvedMessage}</p>
       <div className="mt-8 flex flex-wrap gap-3">
         <button
           type="button"
           onClick={onRetry}
-          className="inline-flex rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background transition hover:opacity-90"
+          className="inline-flex rounded-full bg-foreground px-6 py-3 text-sm font-normal text-background transition hover:opacity-90"
         >
           {t("Try again")}
         </button>
         <Link
           href={homeHref}
-          className="inline-flex rounded-full bg-muted px-6 py-3 text-sm font-semibold text-foreground transition hover:opacity-90"
+          className="inline-flex rounded-full bg-muted px-6 py-3 text-sm font-normal text-foreground transition hover:opacity-90"
         >
           {t(homeLabel)}
         </Link>

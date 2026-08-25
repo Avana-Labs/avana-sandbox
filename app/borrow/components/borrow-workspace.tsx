@@ -247,7 +247,7 @@ function NoMarketsState({ query, hasFilters, onClear }: { query: string; hasFilt
       role="status"
       className="flex flex-col items-center justify-center gap-3 rounded-radius-md border border-dashed border-border px-6 py-16 text-center"
     >
-      <p className="text-[15px] font-medium text-foreground">
+      <p className="text-[15px] font-normal text-foreground">
         {query ? t("No markets match “{query}”").replace("{query}", query) : t("No markets match your filters")}
       </p>
       <p className="max-w-sm text-[13px] leading-6 text-muted-foreground">
@@ -257,7 +257,7 @@ function NoMarketsState({ query, hasFilters, onClear }: { query: string; hasFilt
         <button
           type="button"
           onClick={onClear}
-          className="mt-1 rounded-full border border-border px-4 py-1.5 text-[13px] font-medium text-foreground transition-colors hover:bg-hover"
+          className="mt-1 rounded-full border border-border px-4 py-1.5 text-[13px] font-normal text-foreground transition-colors hover:bg-hover"
         >
           {t("Clear search")}
         </button>

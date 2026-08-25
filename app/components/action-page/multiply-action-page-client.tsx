@@ -792,8 +792,8 @@ export function MultiplyActionPageClient({
           disabled={isPending}
           className={
             deleverageCloseOnly
-              ? "mt-3 w-full rounded-radius-lg bg-brand px-4 py-3 text-[15px] font-semibold text-brand-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-              : "mt-3 w-full rounded-radius-lg border border-border/70 px-4 py-3 text-[15px] font-semibold text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+              ? "mt-3 w-full rounded-radius-lg bg-brand px-4 py-3 text-[15px] font-normal text-brand-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              : "mt-3 w-full rounded-radius-lg border border-border/70 px-4 py-3 text-[15px] font-normal text-muted-foreground transition-colors hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
           }
           data-testid="multiply-close-position"
         >

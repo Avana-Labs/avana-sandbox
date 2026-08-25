@@ -77,23 +77,23 @@ function CooldownCardView({ card }: { card: CooldownCard }) {
       <div className="flex min-w-0 items-center gap-2.5">
         <TokenIcon symbol={card.symbol} size="table" />
         <div className="min-w-0">
-          <div className="truncate text-[15px] font-semibold tracking-[-0.03em]">{card.asset}</div>
+          <div className="truncate text-[15px] font-normal tracking-[-0.03em]">{card.asset}</div>
           <div className="truncate text-[13px] text-muted-foreground">{card.coverage}</div>
         </div>
       </div>
 
-      <div className={cn("mt-3 text-[12px] font-semibold uppercase tracking-wide", statusTone)}>
+      <div className={cn("mt-3 text-[12px] font-normal uppercase tracking-wide", statusTone)}>
         {t(statusLabelKey(card.cooldownStatus))}
       </div>
 
       <div className="mt-2 grid grid-cols-2 gap-2">
         <div>
           <div className="text-[13px] text-muted-foreground">{t("Cooldown")}</div>
-          <div className="mt-1 text-[20px] font-semibold tracking-[-0.04em] tabular-nums">{cooldownLabel}</div>
+          <div className="mt-1 text-[20px] font-normal tracking-[-0.04em] tabular-nums">{cooldownLabel}</div>
         </div>
         <div>
           <div className="text-[13px] text-muted-foreground">{t("Removes in")}</div>
-          <div className={cn("mt-1 text-[20px] font-semibold tracking-[-0.04em] tabular-nums", removesTone)}>
+          <div className={cn("mt-1 text-[20px] font-normal tracking-[-0.04em] tabular-nums", removesTone)}>
             {removesLabel}
           </div>
         </div>
@@ -142,7 +142,7 @@ export function UmbrellaCooldown() {
   return (
     <section>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+        <h2 className="text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
           {t("Umbrella Cooldown")}
         </h2>
         {canPrev || canNext ? (

@@ -15,11 +15,11 @@ export default function NotFound() {
     <main className="flex min-h-[calc(100vh-5rem)] items-center bg-background px-6 py-16 text-foreground sm:px-8 sm:py-20">
       <section className="mx-auto w-full max-w-[760px]">
         <div className="py-14 text-center sm:py-18">
-          <p className="mt-5 text-[4.5rem] font-semibold leading-none tracking-[-0.06em] text-brand-readable sm:text-[5.75rem]">
+          <p className="mt-5 text-[4.5rem] font-normal leading-none tracking-[-0.06em] text-brand-readable sm:text-[5.75rem]">
             404
           </p>
 
-          <h1 className="mx-auto mt-6 max-w-[620px] text-[1.05rem] font-semibold leading-7 tracking-[-0.02em] text-foreground">
+          <h1 className="mx-auto mt-6 max-w-[620px] text-[1.05rem] font-normal leading-7 tracking-[-0.02em] text-foreground">
             This page isn&apos;t available.
           </h1>
 
@@ -30,27 +30,27 @@ export default function NotFound() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
               href="/"
-              className="inline-flex h-11 items-center justify-center rounded-full bg-[hsl(var(--brand))] px-5 text-sm font-medium text-white transition hover:bg-[hsl(var(--brand))]/90"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-[hsl(var(--brand))] px-5 text-sm font-normal text-white transition hover:bg-[hsl(var(--brand))]/90"
             >
               Home
             </Link>
 
             <nav aria-label="Helpful links" className="flex flex-wrap justify-center gap-x-5 gap-y-3">
-              <Link href="/borrow" className="text-sm font-medium text-foreground transition hover:text-brand-readable">
+              <Link href="/borrow" className="text-sm font-normal text-foreground transition hover:text-brand-readable">
                 Borrow
               </Link>
-              <Link href="/lend" className="text-sm font-medium text-foreground transition hover:text-brand-readable">
+              <Link href="/lend" className="text-sm font-normal text-foreground transition hover:text-brand-readable">
                 Lend
               </Link>
               <Link
                 href="/multiply"
-                className="text-sm font-medium text-foreground transition hover:text-brand-readable"
+                className="text-sm font-normal text-foreground transition hover:text-brand-readable"
               >
                 Multiply
               </Link>
               <Link
                 href="/dashboard"
-                className="text-sm font-medium text-foreground transition hover:text-brand-readable"
+                className="text-sm font-normal text-foreground transition hover:text-brand-readable"
               >
                 Dashboard
               </Link>

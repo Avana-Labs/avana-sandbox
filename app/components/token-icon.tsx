@@ -42,7 +42,7 @@ export function TokenIcon({
   return (
     <span
       className={cn(
-        "relative inline-flex shrink-0 items-center justify-center font-semibold",
+        "relative inline-flex shrink-0 items-center justify-center font-normal",
         box,
         // A real token icon renders as a bare transparent PNG — no circular plate, card
         // background, ring or clip. Only the letter fallback keeps the colored avatar circle.

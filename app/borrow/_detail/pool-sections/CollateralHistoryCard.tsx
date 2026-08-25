@@ -68,7 +68,7 @@ export function CollateralHistoryCard({ transactions, title = "Transactions" }: 
   return (
     <section className="min-w-0">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-foreground">{t(title)}</h2>
+        <h2 className="text-[24px] font-normal tracking-[-0.03em] text-foreground">{t(title)}</h2>
         <PillTabStrip
           items={FILTERS.map((filter) => ({ id: filter.id, label: t(filter.label) }))}
           value={activeFilter}
@@ -88,17 +88,17 @@ export function CollateralHistoryCard({ transactions, title = "Transactions" }: 
               <col />
             </colgroup>
             <thead>
-              <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                <th className="rounded-l-radius-lg bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <tr className="border-b border-border text-left text-[10.5px] font-normal uppercase tracking-[0.06em] text-muted-foreground">
+                <th className="rounded-l-radius-lg bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Time")}
                 </th>
-                <th className="bg-table-header px-3 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="bg-table-header px-3 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Type")}
                 </th>
-                <th className="bg-table-header px-3 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="bg-table-header px-3 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   USD
                 </th>
-                <th className="rounded-r-radius-lg bg-table-header px-5 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="rounded-r-radius-lg bg-table-header px-5 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Wallet")}
                 </th>
               </tr>
@@ -107,14 +107,14 @@ export function CollateralHistoryCard({ transactions, title = "Transactions" }: 
               {visibleTransactions.map((tx) => (
                 <tr key={tx.id} className="group transition-colors">
                   <td
-                    className={`px-5 py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground ${ROW_HOVER_LEFT}`}
+                    className={`px-5 py-3 align-middle font-data text-[14px] font-normal tabular-nums text-muted-foreground ${ROW_HOVER_LEFT}`}
                   >
                     {tx.timeLabel ?? formatRelativeTime(tx.at, locale)}
                   </td>
                   <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
                     <span
                       className={cn(
-                        "inline-block whitespace-nowrap text-[15px] font-medium tracking-[-0.03em]",
+                        "inline-block whitespace-nowrap text-[15px] font-normal tracking-[-0.03em]",
                         KIND_TONE[tx.kind],
                       )}
                     >
@@ -159,17 +159,17 @@ export function CollateralHistoryCard({ transactions, title = "Transactions" }: 
               <col />
             </colgroup>
             <thead>
-              <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                <th className="rounded-l-radius-lg bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+              <tr className="border-b border-border text-left text-[10.5px] font-normal uppercase tracking-[0.06em] text-muted-foreground">
+                <th className="rounded-l-radius-lg bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Time")}
                 </th>
-                <th className="bg-table-header px-3 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="bg-table-header px-3 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Type")}
                 </th>
-                <th className="bg-table-header px-3 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="bg-table-header px-3 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   USD
                 </th>
-                <th className="rounded-r-radius-lg bg-table-header px-5 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="rounded-r-radius-lg bg-table-header px-5 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Wallet")}
                 </th>
               </tr>
@@ -178,14 +178,14 @@ export function CollateralHistoryCard({ transactions, title = "Transactions" }: 
               {visibleTransactions.map((tx) => (
                 <tr key={tx.id} className="group transition-colors">
                   <td
-                    className={`px-5 py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground ${ROW_HOVER_LEFT}`}
+                    className={`px-5 py-3 align-middle font-data text-[14px] font-normal tabular-nums text-muted-foreground ${ROW_HOVER_LEFT}`}
                   >
                     {tx.timeLabel ?? formatRelativeTime(tx.at, locale)}
                   </td>
                   <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
                     <span
                       className={cn(
-                        "inline-block whitespace-nowrap text-[15px] font-medium tracking-[-0.03em]",
+                        "inline-block whitespace-nowrap text-[15px] font-normal tracking-[-0.03em]",
                         KIND_TONE[tx.kind],
                       )}
                     >

@@ -457,7 +457,8 @@
 
 /* Diatype font utilities implemented in plain CSS, not Tailwind config. */
 .font-sans,
-.font-compact {
+.font-compact,
+.font-mono {
   font-family: var(--font-diatype-sans), sans-serif;
 }
 
@@ -816,4 +817,23 @@ button,
 /* Premium depth: flat cards — tone steps only, no borders/shadows */
 .surface-elevated {
   box-shadow: none;
+}
+
+/* Relax tight display tracking on wide monitors while preserving compact layouts. */
+@media (min-width: 1280px) {
+  [class~="tracking-[-0.06em]"] {
+    letter-spacing: -0.03em;
+  }
+
+  [class~="tracking-[-0.04em]"] {
+    letter-spacing: -0.02em;
+  }
+
+  [class~="tracking-[-0.03em]"] {
+    letter-spacing: -0.015em;
+  }
+
+  [class~="tracking-[-0.02em]"] {
+    letter-spacing: -0.01em;
+  }
 }

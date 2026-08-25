@@ -230,7 +230,7 @@ export function RecentActivity({
                 >
                   <TokenIcon symbol={inferActivityTokenSymbol(row)} size="md" className="shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[14px] font-medium leading-5 tracking-[-0.02em] text-foreground">
+                    <div className="truncate text-[14px] font-normal leading-5 tracking-[-0.02em] text-foreground">
                       {row.primaryLabel}
                     </div>
                     <div className="mt-0.5 truncate text-[12.5px] leading-4 text-muted-foreground">
@@ -242,7 +242,7 @@ export function RecentActivity({
                   <div className="flex shrink-0 items-center gap-1.5">
                     <span
                       className={cn(
-                        "font-data text-[14px] font-medium tabular-nums tracking-[-0.02em]",
+                        "font-data text-[14px] font-normal tabular-nums tracking-[-0.02em]",
                         amountToneClass(row),
                       )}
                     >

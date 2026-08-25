@@ -47,7 +47,7 @@ export function TokenPickerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={PICKER_CONTENT_CLASS}>
         <DialogHeader className="border-b border-border px-5 pb-3 pt-4 text-left">
-          <DialogTitle className="text-[13px] font-medium">{t("Choose asset to borrow")}</DialogTitle>
+          <DialogTitle className="text-[13px] font-normal">{t("Choose asset to borrow")}</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto py-1.5">
@@ -67,7 +67,7 @@ export function TokenPickerDialog({
               >
                 <TokenBubble visual={token.visual} />
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-[13px] font-medium text-foreground">{token.name}</span>
+                  <span className="truncate text-[13px] font-normal text-foreground">{token.name}</span>
                   <div className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
                     <span>{token.symbol}</span>
                     {address ? <span className="truncate font-data">{address}</span> : null}

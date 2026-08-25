@@ -13,7 +13,7 @@ export default function AskAILoading() {
           <BrandIcon className="xl:hidden" />
           <BrandLogo className="hidden xl:inline-flex" />
         </Link>
-        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-lg font-medium">Ask AI</div>
+        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-lg font-normal">Ask AI</div>
         <Link
           href="/"
           aria-label="Close"

@@ -38,7 +38,7 @@ export function TokenBubble({ visual, className }: TokenBubbleProps) {
   return (
     <span
       className={cn(
-        "inline-flex size-10 shrink-0 items-center justify-center font-data text-[11px] font-medium",
+        "inline-flex size-10 shrink-0 items-center justify-center font-data text-[11px] font-normal",
         showIcon ? undefined : cn("overflow-hidden rounded-full", visual.bgClassName, visual.textClassName),
         className,
       )}

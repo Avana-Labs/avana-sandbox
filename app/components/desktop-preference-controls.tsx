@@ -65,7 +65,7 @@ export function DesktopPreferenceControls() {
       >
         {view === "root" ? (
           <>
-            <DropdownMenuLabel className="px-3 py-2.5 text-[16px] font-medium normal-case tracking-normal text-foreground dark:text-white">
+            <DropdownMenuLabel className="px-3 py-2.5 text-[16px] font-normal normal-case tracking-normal text-foreground dark:text-white">
               {t("Global preferences")}
             </DropdownMenuLabel>
             <PriceFreshnessNotice className="px-3 pb-1" />
@@ -76,7 +76,7 @@ export function DesktopPreferenceControls() {
                   <button
                     type="button"
                     onClick={() => setTheme("light")}
-                    className={`rounded-full px-2.5 py-1.5 text-[13px] font-medium ${
+                    className={`rounded-full px-2.5 py-1.5 text-[13px] font-normal ${
                       mounted && resolvedTheme === "light"
                         ? "bg-foreground text-background dark:bg-[#2a2a2a] dark:text-white"
                         : "text-muted-foreground dark:text-white/64"
@@ -87,7 +87,7 @@ export function DesktopPreferenceControls() {
                   <button
                     type="button"
                     onClick={() => setTheme("dark")}
-                    className={`rounded-full px-2.5 py-1.5 text-[13px] font-medium ${
+                    className={`rounded-full px-2.5 py-1.5 text-[13px] font-normal ${
                       mounted && resolvedTheme === "dark"
                         ? "bg-foreground text-background dark:bg-[#2a2a2a] dark:text-white"
                         : "text-muted-foreground dark:text-white/64"
@@ -106,7 +106,7 @@ export function DesktopPreferenceControls() {
               }}
             >
               <span className="text-muted-foreground dark:text-white/64">{t("Language")}</span>
-              <span className="flex items-center gap-2 font-medium text-foreground dark:text-white">
+              <span className="flex items-center gap-2 font-normal text-foreground dark:text-white">
                 {currentLanguage.label}
                 <ChevronRight className="h-4 w-4 text-muted-foreground dark:text-white/52" />
               </span>
@@ -119,7 +119,7 @@ export function DesktopPreferenceControls() {
               }}
             >
               <span className="text-muted-foreground dark:text-white/64">{t("Currency")}</span>
-              <span className="flex items-center gap-2 font-medium text-foreground dark:text-white">
+              <span className="flex items-center gap-2 font-normal text-foreground dark:text-white">
                 {currentCurrency.code}
                 <ChevronRight className="h-4 w-4 text-muted-foreground dark:text-white/52" />
               </span>
@@ -132,7 +132,7 @@ export function DesktopPreferenceControls() {
               }}
             >
               <span className="text-muted-foreground dark:text-white/64">{t("Network")}</span>
-              <span className="flex items-center gap-2 font-medium text-foreground dark:text-white">
+              <span className="flex items-center gap-2 font-normal text-foreground dark:text-white">
                 <span>{currentNetwork.label}</span>
                 <ChevronRight className="h-4 w-4 text-muted-foreground dark:text-white/52" />
               </span>
@@ -142,7 +142,7 @@ export function DesktopPreferenceControls() {
 
         {view === "language" ? (
           <>
-            <DropdownMenuLabel className="flex items-center gap-1 px-1 py-1.5 text-[14px] font-medium normal-case tracking-normal text-foreground dark:text-white">
+            <DropdownMenuLabel className="flex items-center gap-1 px-1 py-1.5 text-[14px] font-normal normal-case tracking-normal text-foreground dark:text-white">
               <button
                 type="button"
                 onClick={() => setView("root")}
@@ -173,7 +173,7 @@ export function DesktopPreferenceControls() {
 
         {view === "currency" ? (
           <>
-            <DropdownMenuLabel className="flex items-center gap-1 px-1 py-1.5 text-[14px] font-medium normal-case tracking-normal text-foreground dark:text-white">
+            <DropdownMenuLabel className="flex items-center gap-1 px-1 py-1.5 text-[14px] font-normal normal-case tracking-normal text-foreground dark:text-white">
               <button
                 type="button"
                 onClick={() => setView("root")}
@@ -207,7 +207,7 @@ export function DesktopPreferenceControls() {
 
         {view === "network" ? (
           <>
-            <DropdownMenuLabel className="flex items-center gap-1 px-1 py-1.5 text-[14px] font-medium normal-case tracking-normal text-foreground dark:text-white">
+            <DropdownMenuLabel className="flex items-center gap-1 px-1 py-1.5 text-[14px] font-normal normal-case tracking-normal text-foreground dark:text-white">
               <button
                 type="button"
                 onClick={() => setView("root")}

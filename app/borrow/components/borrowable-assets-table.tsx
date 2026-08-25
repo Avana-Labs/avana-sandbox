@@ -96,7 +96,7 @@ export function BorrowableAssetsPanel({
           <section key={group.id} className="space-y-2">
             {groupByCategory ? (
               <div className="mb-1">
-                <h3 className="text-[14px] font-medium tracking-tight">{group.label}</h3>
+                <h3 className="text-[14px] font-normal tracking-tight">{group.label}</h3>
               </div>
             ) : null}
             <ul className="space-y-2">
@@ -149,7 +149,7 @@ const BorrowableMobileCardRow = memo(function BorrowableMobileCardRow({
             <div className="flex items-center gap-2.5">
               <TokenBubble visual={asset.visual} size="table" eager={index < 2} />
               <div className="min-w-0">
-                <div className="text-[14px] font-medium text-foreground">{asset.symbol}</div>
+                <div className="text-[14px] font-normal text-foreground">{asset.symbol}</div>
                 <div className="text-[12px] text-muted-foreground">{asset.name}</div>
               </div>
             </div>
@@ -224,7 +224,7 @@ const LoanAssetsRow = memo(function LoanAssetsRow({
       style={{ animationDelay: `${index * 40}ms` }}
     >
       <td
-        className={`py-2.5 pl-6 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
+        className={`py-2.5 pl-6 pr-3 align-middle font-data text-[13px] font-normal tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
       >
         {index + 1}
       </td>
@@ -232,7 +232,7 @@ const LoanAssetsRow = memo(function LoanAssetsRow({
         <div className="flex min-w-0 items-center gap-4">
           <TokenBubble visual={asset.visual} size="table" ring={false} className="bg-transparent" eager={index < 2} />
           <div className="min-w-0">
-            <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
+            <div className="truncate text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
               {asset.name}
             </div>
             <div className="mt-1 truncate text-[13px] font-normal tracking-[-0.03em] tabular-nums text-muted-foreground dark:text-white/38 md:text-[13px]">
@@ -355,10 +355,10 @@ function LoanAssetsSection({
       <table className="w-full min-w-[980px] text-[12px]">
         <thead>
           <tr className="bg-table-header text-left text-muted-foreground">
-            <th className="pb-2 pt-2.5 pl-6 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 pl-6 pr-3 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               #
             </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("asset")}
@@ -373,7 +373,7 @@ function LoanAssetsSection({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("apy")}
@@ -386,7 +386,7 @@ function LoanAssetsSection({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("borrows")}
@@ -401,7 +401,7 @@ function LoanAssetsSection({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 pr-6 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("liquidity")}
@@ -416,7 +416,7 @@ function LoanAssetsSection({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 pr-5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+            <th className="pb-2 pt-2.5 px-4 pr-5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
           </tr>
         </thead>
 
@@ -459,7 +459,7 @@ const AssetsRow = memo(function AssetsRow({
   return (
     <tr className="group cursor-pointer transition-colors" onClick={() => router.push(borrowAssetDetailPath(asset.id))}>
       <td
-        className={`py-2.5 pl-5 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
+        className={`py-2.5 pl-5 pr-3 align-middle font-data text-[13px] font-normal tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
       >
         {index + 1}
       </td>
@@ -476,12 +476,12 @@ const AssetsRow = memo(function AssetsRow({
         />
       </td>
       <td className={`py-2.5 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
-        <span className={cn("font-data text-[13px] font-medium tabular-nums", aprToneClass(asset.borrowApr))}>
+        <span className={cn("font-data text-[13px] font-normal tabular-nums", aprToneClass(asset.borrowApr))}>
           {formatApy(asset.borrowApr)}
         </span>
       </td>
       <td className={`py-2.5 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
-        <span className={cn("font-data text-[13px] font-medium tabular-nums", utilizationToneClass(asset.utilization))}>
+        <span className={cn("font-data text-[13px] font-normal tabular-nums", utilizationToneClass(asset.utilization))}>
           {formatUtilizationPct(asset.utilization)}
         </span>
       </td>
@@ -561,7 +561,7 @@ function AssetsSection({
     <section className="mb-2">
       {!hideHeader ? (
         <div className="mb-3">
-          <h3 className="flex items-center gap-1.5 text-[14px] font-medium tracking-tight">
+          <h3 className="flex items-center gap-1.5 text-[14px] font-normal tracking-tight">
             <span className={cn("size-1.5 rounded-full", dotClass)} aria-hidden />
             {label}
           </h3>
@@ -573,28 +573,28 @@ function AssetsSection({
           <table className="w-full min-w-[980px] text-[13px]">
             <thead>
               <tr className="bg-table-header text-left text-muted-foreground">
-                <th className="pb-2 pt-2.5 pl-5 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="pb-2 pt-2.5 pl-5 pr-3 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   #
                 </th>
-                <th className="pb-2 pt-2.5 pl-5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="pb-2 pt-2.5 pl-5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Asset")}
                 </th>
-                <th className="pb-2 pt-2.5 pl-4 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="pb-2 pt-2.5 pl-4 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Borrow APR")}
                 </th>
-                <th className="pb-2 pt-2.5 pl-4 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="pb-2 pt-2.5 pl-4 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Utilization")}
                 </th>
-                <th className="pb-2 pt-2.5 pl-4 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="pb-2 pt-2.5 pl-4 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Available")}
                 </th>
-                <th className="pb-2 pt-2.5 pl-4 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="pb-2 pt-2.5 pl-4 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Wallet Balance")}
                 </th>
-                <th className="w-20 pb-2 pt-2.5 pl-4 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <th className="w-20 pb-2 pt-2.5 pl-4 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   7D
                 </th>
-                <th className="w-44 pb-2 pt-2.5 pl-4 pr-5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+                <th className="w-44 pb-2 pt-2.5 pl-4 pr-5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
               </tr>
             </thead>
             <tbody>

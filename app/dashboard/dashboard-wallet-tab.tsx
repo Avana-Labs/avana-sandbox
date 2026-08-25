@@ -72,7 +72,7 @@ function PoolIdentity({ row }: { row: DashboardWalletBalanceRow }) {
       <div className="flex min-w-0 items-center gap-3">
         <TokenIcon symbol={row.symbol} size="table" />
         <div className="flex min-w-0 flex-col">
-          <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground">{row.name}</div>
+          <div className="truncate text-[15px] font-normal tracking-[-0.03em] text-foreground">{row.name}</div>
           <div className="text-[11px] text-muted-foreground">{detail.protocol}</div>
         </div>
       </div>
@@ -87,7 +87,7 @@ function PoolSourceStatus({ row }: { row: DashboardWalletBalanceRow }) {
   return (
     <span
       className={[
-        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium",
+        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-normal",
         pledged ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
       ].join(" ")}
     >
@@ -110,7 +110,7 @@ function WalletMetric({ label, value }: { label: string; value: string }) {
   return (
     <article className="min-w-0 space-y-1.5">
       <div className="text-[13px] text-muted-foreground">{label}</div>
-      <div className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
+      <div className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-normal leading-none tracking-[-0.04em] text-foreground">
         {value}
       </div>
     </article>
@@ -183,7 +183,7 @@ export function DashboardWalletTab({ walletId, balances }: { walletId: string; b
   return (
     <section id="dashboard-wallet" className={detailSectionStackClass} aria-label={t("Wallet balances")}>
       <section className="space-y-4">
-        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">
+        <h2 className="text-[19px] font-normal tracking-[-0.03em] text-foreground md:text-[20px]">
           {t("Wallet Balance")}
         </h2>
         <div className="grid w-full grid-cols-1 gap-5 xl:gap-x-8">
@@ -214,7 +214,7 @@ function WalletBalanceSection({
   return (
     <section className="min-w-0">
       <div className="mb-4">
-        <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">{title}</h3>
+        <h3 className="text-[18px] font-normal tracking-tight text-foreground md:text-[20px]">{title}</h3>
         <p className="mt-1 text-[13px] text-muted-foreground">{sectionCount(rows.length, "token", "tokens")}</p>
       </div>
 
@@ -228,7 +228,7 @@ function WalletBalanceSection({
             <col className="w-[20%]" />
           </colgroup>
           <thead>
-            <tr className="text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <tr className="text-left text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <th className="bg-table-header px-5 pb-2 pt-2.5">{t("Asset")}</th>
               <th className="bg-table-header px-4 pb-2 pt-2.5 text-right">{t("Price")}</th>
               <th className="bg-table-header px-4 pb-2 pt-2.5 text-right">{t("Balance")}</th>
@@ -243,7 +243,7 @@ function WalletBalanceSection({
                   <div className="flex min-w-0 items-center gap-3">
                     <TokenIcon symbol={row.symbol} size="table" />
                     <div className="min-w-0">
-                      <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground">
+                      <div className="truncate text-[15px] font-normal tracking-[-0.03em] text-foreground">
                         {row.name}
                       </div>
                       <div className="mt-0.5 text-[13px] text-muted-foreground">
@@ -290,14 +290,14 @@ function WalletBalanceSection({
               <div className="flex min-w-0 items-center gap-3">
                 <TokenIcon symbol={row.symbol} size="md" />
                 <div className="min-w-0">
-                  <div className="truncate font-medium text-foreground">{row.name}</div>
+                  <div className="truncate font-normal text-foreground">{row.name}</div>
                   <div className="text-[13px] text-muted-foreground">
                     {row.symbol} · {row.sourceLabel}
                   </div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-data text-[15px] font-medium tabular-nums text-foreground">
+                <div className="font-data text-[15px] font-normal tabular-nums text-foreground">
                   {m(exact(row.valueUsd))}
                 </div>
                 <div className="font-data text-[12.5px] tabular-nums text-muted-foreground">
@@ -348,7 +348,7 @@ function PoolsBalanceSection({
   return (
     <section className="min-w-0">
       <div className="mb-4">
-        <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">{title}</h3>
+        <h3 className="text-[18px] font-normal tracking-tight text-foreground md:text-[20px]">{title}</h3>
         <p className="mt-1 text-[13px] text-muted-foreground">{sectionCount(rows.length, "pool", "pools")}</p>
       </div>
 
@@ -361,7 +361,7 @@ function PoolsBalanceSection({
             <col className="w-[30%]" />
           </colgroup>
           <thead>
-            <tr className="text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <tr className="text-left text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <th className="bg-table-header px-5 pb-2 pt-2.5">{t("Pool")}</th>
               <th className="bg-table-header px-4 pb-2 pt-2.5">{t("Status")}</th>
               <th className="bg-table-header px-4 pb-2 pt-2.5 text-right">{t("Balance")}</th>

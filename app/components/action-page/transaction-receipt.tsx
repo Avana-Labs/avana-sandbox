@@ -103,7 +103,7 @@ export function TransactionReceipt({ data, className }: { data: TransactionRecei
       >
         <div className="relative px-4 pb-2 pt-4">
           <div className="flex items-center justify-between">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-medium text-emerald-300">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-normal text-emerald-300">
               <CheckCircle2 className="size-3.5" />
               {t(data.statusLabel ?? "Confirmed")}
             </div>
@@ -122,7 +122,7 @@ export function TransactionReceipt({ data, className }: { data: TransactionRecei
 
           <div className="flex flex-col items-center py-6 text-center">
             <ActionTokenIcon symbol={data.symbol} className="size-14" />
-            <h2 className="mt-4 text-[1.25rem] font-medium tracking-[-0.03em]">{t(data.title)}</h2>
+            <h2 className="mt-4 text-[1.25rem] font-normal tracking-[-0.03em]">{t(data.title)}</h2>
             {data.description ? (
               <p className="mt-1.5 max-w-sm text-[14px] text-muted-foreground">{t(data.description)}</p>
             ) : null}

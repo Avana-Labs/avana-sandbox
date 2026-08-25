@@ -59,7 +59,7 @@ export function FeedbackDialog({
             <span className="bg-foreground/[0.05] text-foreground/45 flex size-7 shrink-0 items-center justify-center rounded-lg">
               <ThumbsDownIcon className="size-3.5" />
             </span>
-            <span className="text-[13.5px] font-medium">What went wrong?</span>
+            <span className="text-[13.5px] font-normal">What went wrong?</span>
             <span className={cn(mono, "text-foreground/30 ms-auto")}>optional</span>
           </div>
 
@@ -100,7 +100,7 @@ export function FeedbackDialog({
             onClick={onSubmit}
             className={cn(
               inkButton,
-              "flex h-8 items-center justify-center self-end rounded-full px-3.5 text-xs font-medium",
+              "flex h-8 items-center justify-center self-end rounded-full px-3.5 text-xs font-normal",
             )}
           >
             Send feedback

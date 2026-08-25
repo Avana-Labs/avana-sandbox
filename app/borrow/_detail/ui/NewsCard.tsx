@@ -41,7 +41,7 @@ export function NewsCard({ items, title = "Risk Parameters", plain = false, view
           plain ? "flex items-center justify-between gap-3" : "flex items-center justify-between gap-3 px-4 py-3"
         }
       >
-        <h2 className="truncate text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+        <h2 className="truncate text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
           {t(title)}
         </h2>
         {viewAllHref ? (
@@ -49,7 +49,7 @@ export function NewsCard({ items, title = "Risk Parameters", plain = false, view
             href={viewAllHref}
             target="_blank"
             rel="noreferrer"
-            className="shrink-0 text-[13px] font-medium text-sky-500 transition-colors hover:text-sky-400"
+            className="shrink-0 text-[13px] font-normal text-sky-500 transition-colors hover:text-sky-400"
           >
             {t("View all")}
           </Link>
@@ -61,7 +61,7 @@ export function NewsCard({ items, title = "Risk Parameters", plain = false, view
           const content = (
             <div className="group flex items-center gap-4 py-3.5">
               <div className="min-w-0 flex-1">
-                <div className="text-[15px] font-medium leading-snug text-text-extra-high text-pretty line-clamp-2 underline-offset-2 group-hover:underline group-focus-visible:underline">
+                <div className="text-[15px] font-normal leading-snug text-text-extra-high text-pretty line-clamp-2 underline-offset-2 group-hover:underline group-focus-visible:underline">
                   {t(item.title)}
                 </div>
                 <div className="mt-1 text-[13px] text-text-low">
@@ -81,7 +81,7 @@ export function NewsCard({ items, title = "Risk Parameters", plain = false, view
                     src={item.imageUrl}
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[10px] font-medium text-text-low">
+                  <div className="flex h-full w-full items-center justify-center text-[10px] font-normal text-text-low">
                     {item.imageLabel ?? item.source.slice(0, 2).toUpperCase()}
                   </div>
                 )}

@@ -27,12 +27,12 @@ export function RiskLevelPill({ level, className, prefix, withDot = true, size =
   const sizeCls = size === "md" ? "h-6 text-[11.5px] px-2" : "h-5 text-[10.5px] px-1.5"
   return (
     <span
-      className={cn("inline-flex items-center gap-1 rounded-xs font-medium", sizeCls, tone.bg, tone.text, className)}
+      className={cn("inline-flex items-center gap-1 rounded-xs font-normal", sizeCls, tone.bg, tone.text, className)}
       aria-label={`Risk level ${riskLevelLabel(level)}`}
       data-risk-level={level}
     >
       {withDot ? <span className={cn("size-1.5 rounded-full", tone.dot)} aria-hidden /> : null}
-      {prefix ? <span className="font-medium opacity-80">{prefix}</span> : null}
+      {prefix ? <span className="font-normal opacity-80">{prefix}</span> : null}
       <span>{riskLevelLabel(level)}</span>
     </span>
   )

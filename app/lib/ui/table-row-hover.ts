@@ -5,7 +5,7 @@
  * `text-right` for numeric columns.
  */
 export const TABLE_HEADER_CELL =
-  "bg-table-header pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58"
+  "bg-table-header pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58"
 
 /** Shared table row hover treatment for lend, borrow, multiply, and dashboard tables. */
 export const TABLE_ROW_HOVER_BG = "transition-colors group-hover:bg-hover"

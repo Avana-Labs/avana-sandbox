@@ -56,7 +56,7 @@ export function MultiplyCollateralTable({
       <section>
         {showHeading ? (
           <div className="mb-4">
-            <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
+            <h3 className="text-[18px] font-normal tracking-tight text-foreground md:text-[20px]">
               {t("Multiply Positions")}
             </h3>
           </div>
@@ -72,7 +72,7 @@ export function MultiplyCollateralTable({
     <section>
       {showHeading ? (
         <div className="mb-4">
-          <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
+          <h3 className="text-[18px] font-normal tracking-tight text-foreground md:text-[20px]">
             {t("Multiply Positions")}
           </h3>
           <p className="mt-1 text-[13px] text-muted-foreground">
@@ -95,26 +95,26 @@ export function MultiplyCollateralTable({
                 <col className="w-[22%]" />
               </colgroup>
               <thead>
-                <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                  <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <tr className="text-left text-[11.5px] font-normal text-muted-foreground">
+                  <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Market")}
                   </th>
-                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Exposure")}
                   </th>
-                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Multiplier")}
                   </th>
-                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Debt")}
                   </th>
-                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Health")}
                   </th>
-                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Liq. price")}
                   </th>
-                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Net APY")}
                   </th>
                   <SilentActionHeader className="!rounded-none pr-5" />
@@ -131,7 +131,7 @@ export function MultiplyCollateralTable({
                       <div className="flex items-center gap-2.5">
                         <TokenIcon symbol={row.collateralToken} size="table" />
                         <span className="min-w-0">
-                          <span className="block truncate text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                          <span className="block truncate text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                             {row.label}
                           </span>
                           <span className="mt-0.5 block truncate text-[13px] text-muted-foreground dark:text-white/38">
@@ -248,7 +248,7 @@ export function MultiplyCollateralTable({
                     <span className="text-[13px] text-muted-foreground dark:text-white/38">{index + 1}</span>
                     <TokenIcon symbol={row.collateralToken} size="table" />
                     <div className="min-w-0">
-                      <div className="text-[14px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                      <div className="text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                         {row.label}
                       </div>
                       <div className="truncate text-[13px] text-muted-foreground dark:text-white/38">
@@ -286,7 +286,7 @@ export function MultiplyCollateralTable({
                 <Button
                   type="button"
                   variant="brand-secondary"
-                  className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+                  className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
                   onClick={(event) => {
                     event.stopPropagation()
                     router.push(
@@ -303,7 +303,7 @@ export function MultiplyCollateralTable({
                 <Button
                   type="button"
                   variant="brand"
-                  className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+                  className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
                   onClick={(event) => {
                     event.stopPropagation()
                     router.push(
@@ -320,7 +320,7 @@ export function MultiplyCollateralTable({
                 <Button
                   type="button"
                   variant="brand-secondary"
-                  className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+                  className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
                   onClick={(event) => {
                     event.stopPropagation()
                     router.push(

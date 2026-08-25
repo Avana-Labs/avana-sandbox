@@ -39,7 +39,7 @@ export function RiskSection({ detail }: Props) {
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div className="min-w-0">
             <div className="flex items-baseline gap-2">
-              <span className="font-data text-[26px] font-medium tabular-nums text-foreground md:text-[30px]">
+              <span className="font-data text-[26px] font-normal tabular-nums text-foreground md:text-[30px]">
                 {formatBpsAsPct(risk.premiumBps)}
               </span>
               <span className="text-[12px] text-muted-foreground">({risk.premiumBps} bps)</span>

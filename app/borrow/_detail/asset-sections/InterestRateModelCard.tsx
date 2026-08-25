@@ -141,7 +141,7 @@ export function InterestRateModelCard({ utilizationPct, borrowAprPct, protocolPa
   return (
     <section className={cn("min-w-0", className)} aria-label={t("Interest rate model")}>
       <div className="flex items-center gap-1.5">
-        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+        <h2 className="text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
           {t("Interest rate model")}
         </h2>
         <ActionMetricHelp text={helpText} topic="Interest rate model" />
@@ -228,7 +228,7 @@ export function InterestRateModelCard({ utilizationPct, borrowAprPct, protocolPa
                 x={optimalX}
                 y={PLOT_TOP}
                 textAnchor="middle"
-                className="fill-muted-foreground text-[12px] font-medium"
+                className="fill-muted-foreground text-[12px] font-normal"
               >
                 {t("Optimal")}
               </text>
@@ -236,7 +236,7 @@ export function InterestRateModelCard({ utilizationPct, borrowAprPct, protocolPa
                 x={currentX}
                 y={PLOT_TOP + 16}
                 textAnchor="middle"
-                className="fill-muted-foreground text-[12px] font-medium"
+                className="fill-muted-foreground text-[12px] font-normal"
               >
                 {t("Current {value}%").replace("{value}", currentUtilization.toFixed(1))}
               </text>
@@ -252,7 +252,7 @@ export function InterestRateModelCard({ utilizationPct, borrowAprPct, protocolPa
               </span>
               {utilizationHelp ? <ActionMetricHelp text={utilizationHelp} topic="Utilization rate" /> : null}
             </div>
-            <div className="mt-2 font-data text-[28px] font-semibold leading-none tracking-[-0.03em] text-foreground md:text-[32px]">
+            <div className="mt-2 font-data text-[28px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[32px]">
               {formatPct(currentUtilization)}
             </div>
           </div>
@@ -267,7 +267,7 @@ export function InterestRateModelCard({ utilizationPct, borrowAprPct, protocolPa
                       <span className="text-[13px] font-normal leading-snug text-muted-foreground">{t(row.label)}</span>
                       {tooltip ? <ActionMetricHelp text={tooltip} topic={row.label} /> : null}
                     </div>
-                    <span className="shrink-0 font-data text-[14px] font-medium tabular-nums text-foreground">
+                    <span className="shrink-0 font-data text-[14px] font-normal tabular-nums text-foreground">
                       {row.value}
                     </span>
                   </li>

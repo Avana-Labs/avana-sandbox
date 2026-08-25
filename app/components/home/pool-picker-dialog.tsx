@@ -45,7 +45,7 @@ export function PoolPickerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={PICKER_CONTENT_CLASS}>
         <DialogHeader className="border-b border-border px-5 pb-3 pt-4 text-left">
-          <DialogTitle className="text-[13px] font-medium">{title}</DialogTitle>
+          <DialogTitle className="text-[13px] font-normal">{title}</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto py-1.5">
@@ -70,16 +70,16 @@ export function PoolPickerDialog({
               >
                 <PairVisual visuals={pool.visuals} />
                 <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-[13px] font-medium text-foreground">{pool.name}</span>
+                  <span className="truncate text-[13px] font-normal text-foreground">{pool.name}</span>
                   <span className="text-[11.5px] text-muted-foreground">
                     {pool.venue} · {t("Max LTV")} {pool.maxLtv}%
                   </span>
                 </div>
                 <div className="flex flex-col items-end">
-                  <span className="font-data text-[13px] font-medium">
+                  <span className="font-data text-[13px] font-normal">
                     {mode === "repay" ? (debtUsd > 0 ? compact(debtUsd) : t("No debt")) : compact(pool.collateralUsd)}
                   </span>
-                  <span className={cn("inline-flex items-center gap-1 text-[11px] font-medium", status.textClass)}>
+                  <span className={cn("inline-flex items-center gap-1 text-[11px] font-normal", status.textClass)}>
                     <span className={cn("inline-block size-1.5 rounded-full", status.dotClass)} />
                     {t("HF")} {Number.isFinite(hf) ? hf.toFixed(2) : "∞"}
                   </span>

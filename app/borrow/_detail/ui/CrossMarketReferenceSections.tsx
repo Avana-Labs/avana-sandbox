@@ -37,7 +37,7 @@ function headerButtonClass(active: boolean) {
 
 function headerCellClass(extra?: string) {
   return cn(
-    "bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58",
+    "bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58",
     extra,
   )
 }
@@ -100,7 +100,7 @@ export function AssetsYouCanBorrowSection({
   return (
     <section aria-label={t("Assets You Can Borrow")} className="space-y-5">
       <div className="flex items-center gap-1.5">
-        <h2 className="text-[22px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[24px]">
+        <h2 className="text-[22px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[24px]">
           {t("Assets You Can Borrow")}
         </h2>
         <ActionMetricHelp text={helpText} topic="Assets You Can Borrow" />
@@ -150,7 +150,7 @@ export function AssetsYouCanBorrowSection({
                   style={{ animationDelay: `${index * 40}ms` }}
                 >
                   <td
-                    className={`py-2.5 pl-6 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
+                    className={`py-2.5 pl-6 pr-3 align-middle font-data text-[14px] font-normal tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
                   >
                     {index + 1}
                   </td>
@@ -158,7 +158,7 @@ export function AssetsYouCanBorrowSection({
                     <div className="flex min-w-0 items-center gap-4">
                       <TokenBubble visual={asset.visual} size="table" ring={false} className="bg-transparent" />
                       <div className="min-w-0">
-                        <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                        <div className="truncate text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                           {asset.name}
                         </div>
                         <div className="mt-0.5 truncate text-[13px] font-normal tracking-[-0.03em] tabular-nums text-muted-foreground dark:text-white/38">

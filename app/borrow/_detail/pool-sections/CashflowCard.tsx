@@ -73,7 +73,7 @@ function CashflowCardView({ detail }: { detail: Props["detail"] }) {
             <col className="w-[20%]" />
           </colgroup>
           <thead>
-            <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+            <tr className="border-b border-border text-left text-[10.5px] font-normal uppercase tracking-[0.06em] text-muted-foreground">
               <th className="pb-2 pt-3">{t("Line")}</th>
               <th className="pb-2 pt-3 text-right">{t("1D")}</th>
               <th className="pb-2 pt-3 text-right">{t("30 Days")}</th>
@@ -91,7 +91,7 @@ function CashflowCardView({ detail }: { detail: Props["detail"] }) {
                 </th>
                 <td
                   className={cn(
-                    "py-2.5 text-right font-data font-medium tabular-nums",
+                    "py-2.5 text-right font-data font-normal tabular-nums",
                     row.highlighted ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
@@ -99,7 +99,7 @@ function CashflowCardView({ detail }: { detail: Props["detail"] }) {
                 </td>
                 <td
                   className={cn(
-                    "py-2.5 text-right font-data font-medium tabular-nums",
+                    "py-2.5 text-right font-data font-normal tabular-nums",
                     row.highlighted ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
@@ -107,7 +107,7 @@ function CashflowCardView({ detail }: { detail: Props["detail"] }) {
                 </td>
                 <td
                   className={cn(
-                    "py-2.5 text-right font-data font-medium tabular-nums",
+                    "py-2.5 text-right font-data font-normal tabular-nums",
                     row.highlighted ? "text-foreground" : "text-muted-foreground",
                   )}
                 >

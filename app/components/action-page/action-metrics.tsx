@@ -58,7 +58,7 @@ export function ActionInfoRow({
         <span>{t(label)}</span>
         {tip ? <ActionMetricHelp text={tip} topic={label} /> : null}
       </div>
-      <div className="font-medium tabular-nums text-foreground max-[360px]:w-full">
+      <div className="font-normal tabular-nums text-foreground max-[360px]:w-full">
         {typeof value === "string" || typeof value === "number" ? (
           <AnimatedTextValue text={String(value)} animateOnMount={false} />
         ) : (
@@ -114,7 +114,7 @@ function MetricValue({
 
   if (before && after) {
     return (
-      <div className={cn("inline-flex items-center gap-1.5 font-medium tabular-nums", toneClassName(resolvedTone))}>
+      <div className={cn("inline-flex items-center gap-1.5 font-normal tabular-nums", toneClassName(resolvedTone))}>
         <span className="text-muted-foreground">{before}</span>
         <span className="text-muted-foreground/70">→</span>
         <span className={cn("inline-flex items-center gap-1", toneClassName(resolvedTone))}>
@@ -128,7 +128,7 @@ function MetricValue({
   }
 
   return (
-    <div className={cn("inline-flex items-center gap-1 font-medium tabular-nums", toneClassName(resolvedTone))}>
+    <div className={cn("inline-flex items-center gap-1 font-normal tabular-nums", toneClassName(resolvedTone))}>
       {showHeart ? (
         <Heart className={cn("size-3.5", resolvedTone === "positive" && "fill-emerald-500")} aria-hidden />
       ) : null}

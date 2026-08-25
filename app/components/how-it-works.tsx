@@ -121,7 +121,7 @@ export function HowItWorks({ topic, className }: { topic: HowItWorksTopic; class
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
-          "inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[13px] font-medium text-foreground transition-colors hover:bg-hover",
+          "inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[13px] font-normal text-foreground transition-colors hover:bg-hover",
           className,
         )}
       >
@@ -132,7 +132,7 @@ export function HowItWorks({ topic, className }: { topic: HowItWorksTopic; class
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[min(620px,calc(100dvh-96px))] w-full max-w-[500px] gap-0 overflow-hidden rounded-radius-xl border-border bg-background p-0 shadow-[0_24px_80px_rgba(15,23,42,0.22)] sm:w-[calc(100vw-24px)] [&>button]:right-3.5 [&>button]:top-3.5 [&>button]:rounded-full">
           <div className="border-b border-border px-5 py-4 pr-12">
-            <DialogTitle className="text-[18px] font-semibold tracking-[-0.02em] text-foreground">
+            <DialogTitle className="text-[18px] font-normal tracking-[-0.02em] text-foreground">
               {content.title}
             </DialogTitle>
             <DialogDescription className="mt-1.5 text-[14px] leading-6 text-muted-foreground">
@@ -143,7 +143,7 @@ export function HowItWorks({ topic, className }: { topic: HowItWorksTopic; class
           <div className="max-h-[min(460px,calc(100dvh-220px))] space-y-4 overflow-y-auto px-5 py-4">
             {content.sections.map((section) => (
               <div key={section.heading}>
-                <div className="text-[14px] font-semibold text-foreground">{section.heading}</div>
+                <div className="text-[14px] font-normal text-foreground">{section.heading}</div>
                 <p className="mt-1 text-[14px] leading-6 text-muted-foreground">{section.body}</p>
               </div>
             ))}

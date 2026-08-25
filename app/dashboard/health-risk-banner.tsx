@@ -42,7 +42,7 @@ export function HealthRiskBanner({
           ⚠
         </span>
         <div className="min-w-0">
-          <p className="text-[13px] font-medium text-foreground">
+          <p className="text-[13px] font-normal text-foreground">
             {t("A position is near liquidation (health factor {hf}).").replace(
               "{hf}",
               formatHealthFactor(healthFactor),
@@ -56,7 +56,7 @@ export function HealthRiskBanner({
       <div className="flex items-center gap-2">
         <Link
           href={href}
-          className={`inline-flex h-8 items-center rounded-radius-sm border ${band.bar.border} px-3 text-[12px] font-semibold ${band.bar.text}`}
+          className={`inline-flex h-8 items-center rounded-radius-sm border ${band.bar.border} px-3 text-[12px] font-normal ${band.bar.text}`}
         >
           {actionLabel}
         </Link>

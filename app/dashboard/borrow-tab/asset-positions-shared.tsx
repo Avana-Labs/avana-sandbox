@@ -35,7 +35,7 @@ export function AssetSummaryStrip({ metrics }: { metrics: SummaryMetric[] }) {
             </span>
             <span
               className={cn(
-                "font-data text-[22px] font-medium leading-none tracking-normal tabular-nums text-foreground",
+                "font-data text-[22px] font-normal leading-none tracking-normal tabular-nums text-foreground",
                 metric.valueClassName,
               )}
             >
@@ -54,7 +54,7 @@ export function AssetSummaryStrip({ metrics }: { metrics: SummaryMetric[] }) {
             </span>
             <span
               className={cn(
-                "font-data text-[18px] font-medium tracking-normal tabular-nums text-foreground",
+                "font-data text-[18px] font-normal tracking-normal tabular-nums text-foreground",
                 metric.valueClassName,
               )}
             >

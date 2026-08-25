@@ -72,8 +72,8 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
         <h2
           className={
             compact
-              ? "truncate text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]"
-              : "truncate text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]"
+              ? "truncate text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]"
+              : "truncate text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]"
           }
         >
           {t(title)}
@@ -92,7 +92,7 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
           <button
             type="button"
             onClick={() => setExpanded((value) => !value)}
-            className="font-medium text-sky-500 transition-colors hover:text-sky-400 focus-visible:outline-none focus-visible:underline"
+            className="font-normal text-sky-500 transition-colors hover:text-sky-400 focus-visible:outline-none focus-visible:underline"
           >
             {expanded ? t("show less") : t("read more")}
           </button>
@@ -109,7 +109,7 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
                   <span className={s.href ? "min-w-0 truncate" : "truncate"}>{t(s.label)}</span>
                   {help ? <ActionMetricHelp text={help} topic={s.label} /> : null}
                 </dt>
-                <dd className="min-w-0 truncate text-right font-data font-medium tabular-nums text-text-extra-high">
+                <dd className="min-w-0 truncate text-right font-data font-normal tabular-nums text-text-extra-high">
                   {s.href ? (
                     <a
                       href={s.href}
@@ -117,7 +117,7 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
                       rel="noreferrer"
                       className="group flex items-center justify-end gap-2 text-text-extra-high transition-colors hover:text-text-high"
                     >
-                      <span className="truncate font-data font-medium tabular-nums">{t(s.value)}</span>
+                      <span className="truncate font-data font-normal tabular-nums">{t(s.value)}</span>
                       <ArrowUpRight
                         className="size-4 shrink-0 text-text-low transition-colors group-hover:text-text-high"
                         aria-hidden

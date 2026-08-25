@@ -38,7 +38,7 @@ export function TokenBubble({
   return (
     <span
       className={cn(
-        "relative inline-flex shrink-0 items-center justify-center font-medium",
+        "relative inline-flex shrink-0 items-center justify-center font-normal",
         box,
         // A real token icon renders as a bare transparent PNG — no circular plate, card
         // background, ring or clip. Only the initials fallback keeps the colored avatar circle.
@@ -99,7 +99,7 @@ export function TokenPairCell({
         <TokenBubble visual={visuals[1]} size={bubbleSize} className={offset} />
       </div>
       <div className="min-w-0">
-        <div className={cn("font-medium leading-tight text-foreground", nameCls)}>{name}</div>
+        <div className={cn("font-normal leading-tight text-foreground", nameCls)}>{name}</div>
         {subtitle ? <div className={cn("mt-0.5 truncate text-muted-foreground", subtitleCls)}>{subtitle}</div> : null}
       </div>
     </div>
@@ -126,7 +126,7 @@ export function TokenSingleCell({
     <div className="flex items-center gap-3">
       <TokenBubble visual={visual} size={bubbleSize} eager={eager} />
       <div className="min-w-0">
-        <div className={cn("font-medium leading-tight text-foreground", nameCls)}>{name}</div>
+        <div className={cn("font-normal leading-tight text-foreground", nameCls)}>{name}</div>
         {subtitle ? <div className={cn("mt-0.5 truncate text-muted-foreground", subtitleCls)}>{subtitle}</div> : null}
       </div>
     </div>
@@ -135,7 +135,7 @@ export function TokenSingleCell({
 
 export function DexPill({ dex }: { dex: DexChip }) {
   return (
-    <span className="inline-flex items-center rounded-xs border border-border bg-surface-inset px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+    <span className="inline-flex items-center rounded-xs border border-border bg-surface-inset px-1.5 py-0.5 text-[11px] font-normal text-muted-foreground">
       {dex.label}
       {dex.starred ? <span className="ml-0.5 text-amber-500">★</span> : null}
     </span>
@@ -164,7 +164,7 @@ export const TrendSpark = memo(function TrendSpark({
 
 export function HfNumber({ value, tone, size = "md" }: { value: string; tone: string; size?: "sm" | "md" | "lg" }) {
   const textSize = size === "lg" ? "text-[20px]" : size === "sm" ? "text-[11px]" : "text-[13px]"
-  return <span className={cn("font-data font-medium tabular-nums", textSize, tone)}>{value}</span>
+  return <span className={cn("font-data font-normal tabular-nums", textSize, tone)}>{value}</span>
 }
 
 export type PillVariant = "primary" | "ghost" | "danger" | "success"
@@ -177,7 +177,7 @@ export function PillButton({
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: PillVariant; size?: "sm" | "md" }) {
   const base =
-    "inline-flex items-center justify-center rounded-radius-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+    "inline-flex items-center justify-center rounded-radius-sm font-normal transition-colors disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
   const sizeCls = size === "md" ? "h-9 px-4 text-[13px]" : "h-7 px-2.5 text-[12px]"
   const variantCls = {
     primary:
@@ -196,8 +196,8 @@ export function PillButton({
 export function StatItem({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div className="min-w-0">
-      <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
-      <div className={cn("mt-1 font-data text-[15px] font-medium tabular-nums text-foreground", tone)}>{value}</div>
+      <div className="text-[10.5px] font-normal uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
+      <div className={cn("mt-1 font-data text-[15px] font-normal tabular-nums text-foreground", tone)}>{value}</div>
     </div>
   )
 }

@@ -85,7 +85,7 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
   return (
     <section>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+        <h2 className="text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
           {t("Umbrella positions")}
         </h2>
       </div>
@@ -137,7 +137,7 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                       <div className="flex items-center gap-2.5">
                         <TokenIcon symbol={row.symbol} size="table" />
                         <div className="flex min-w-0 flex-col">
-                          <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                          <span className="truncate text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
                             {row.asset}
                           </span>
                           <span className="mt-0.5 truncate text-[13px] text-muted-foreground">{row.coverage}</span>
@@ -229,7 +229,7 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
               <div className="flex items-center gap-3">
                 <TokenIcon symbol={row.symbol} size="table" />
                 <div>
-                  <div className="font-semibold text-foreground">{row.asset}</div>
+                  <div className="font-normal text-foreground">{row.asset}</div>
                   <div className="text-[13px] text-muted-foreground">
                     {row.coverage} · {row.coverageRatioLabel}
                   </div>
@@ -240,17 +240,17 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <div>
                   <div className="text-[13px] text-muted-foreground">{t("Active stake")}</div>
-                  <div className="font-medium">{row.activeStakeLabel}</div>
+                  <div className="font-normal">{row.activeStakeLabel}</div>
                 </div>
                 <div>
                   <div className="text-[13px] text-muted-foreground">{t("Cooling")}</div>
-                  <div className={cn("font-medium", row.coolingUsd > 0 ? "text-warning" : "text-muted-foreground")}>
+                  <div className={cn("font-normal", row.coolingUsd > 0 ? "text-warning" : "text-muted-foreground")}>
                     {row.coolingLabel}
                   </div>
                 </div>
                 <div>
                   <div className="text-[13px] text-muted-foreground">{t("APY")}</div>
-                  <div className="font-medium">{row.apyTotal}</div>
+                  <div className="font-normal">{row.apyTotal}</div>
                   <div className="text-[12px] text-muted-foreground">
                     {t("base {base} + reward {reward}")
                       .replace("{base}", row.apyBase)
@@ -259,7 +259,7 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                 </div>
                 <div className="col-span-2">
                   <div className="text-[13px] text-muted-foreground">{t("Rewards")}</div>
-                  <div className="font-medium text-success">
+                  <div className="font-normal text-success">
                     {t("{amount} pending").replace("{amount}", row.pendingRewardsLabel)}
                   </div>
                   <div className="text-[12px] text-muted-foreground">

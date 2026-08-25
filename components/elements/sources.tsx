@@ -49,12 +49,12 @@ export function Sources({ sources, open, onOpenChange, className }: SourcesProps
               className={cn(paper, "flex flex-col gap-1.5 rounded-2xl p-3 transition-transform hover:-translate-y-px")}
             >
               <div className="flex items-center gap-1.5">
-                <span className="bg-foreground/[0.06] text-foreground/45 flex size-4 shrink-0 items-center justify-center rounded text-[9px] font-medium">
+                <span className="bg-foreground/[0.06] text-foreground/45 flex size-4 shrink-0 items-center justify-center rounded text-[9px] font-normal">
                   {source.domain.charAt(0).toUpperCase()}
                 </span>
                 <span className={cn(mono, "text-foreground/40 truncate")}>{source.domain}</span>
               </div>
-              <span className="text-foreground/90 line-clamp-2 text-[13px] leading-snug font-medium">
+              <span className="text-foreground/90 line-clamp-2 text-[13px] leading-snug font-normal">
                 {source.title}
               </span>
               {source.locator ? <span className="text-foreground/50 text-xs">{source.locator}</span> : null}

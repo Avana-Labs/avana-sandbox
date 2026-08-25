@@ -104,7 +104,7 @@ function HoverTooltip({ asset, pointIndex, left }: { asset: FeaturedAsset; point
       className="pointer-events-none absolute top-[10px] z-30 w-[168px] -translate-x-1/2 rounded-radius-sm border border-border bg-card/95 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm dark:border-white/15 dark:bg-[#1b1b1c]/95"
       style={{ left }}
     >
-      <div className="flex items-center justify-between gap-2 text-[10px] font-medium text-muted-foreground">
+      <div className="flex items-center justify-between gap-2 text-[10px] font-normal text-muted-foreground">
         <span>{t("Today")}</span>
         <span>{TIME_LABELS[timeIndex]}</span>
       </div>
@@ -113,7 +113,7 @@ function HoverTooltip({ asset, pointIndex, left }: { asset: FeaturedAsset; point
           <span className="size-2 rounded-full bg-emerald-500 dark:bg-[#73dca9]" />
           {t("Borrow APY")}
         </span>
-        <span className="font-medium text-foreground">{value.toFixed(2)}%</span>
+        <span className="font-normal text-foreground">{value.toFixed(2)}%</span>
       </div>
     </div>
   )
@@ -184,12 +184,12 @@ function FeaturedCard({
         <div className="flex min-w-0 items-start gap-3">
           <AssetIcon asset={asset} />
           <div className="min-w-0">
-            <div className="truncate text-[15px] font-medium tracking-[-0.03em]">{asset.displayName}</div>
+            <div className="truncate text-[15px] font-normal tracking-[-0.03em]">{asset.displayName}</div>
             <div className="mt-1 text-[13px] text-muted-foreground dark:text-white/48">{asset.eyebrow}</div>
           </div>
         </div>
         <div className="shrink-0 text-right">
-          <div className="text-[15px] font-medium tracking-[-0.03em]">{apyPct.toFixed(2)}%</div>
+          <div className="text-[15px] font-normal tracking-[-0.03em]">{apyPct.toFixed(2)}%</div>
           <div className="mt-1 text-[13px] text-muted-foreground dark:text-white/48">APY</div>
         </div>
       </div>
@@ -275,7 +275,7 @@ export function HotMarkets({
     <section>
       <div className="w-full">
         <div className="mb-5 flex items-center justify-between gap-3">
-          <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">
+          <h2 className="mt-1 text-[22px] font-normal tracking-[-0.03em] text-foreground md:text-[24px]">
             {t("Featured")}
           </h2>
           <div className="flex items-center gap-2.5">

@@ -19,7 +19,7 @@ export function AskAIFinancialResultCard({ result }: { result: AskAIFinancialRes
       className="w-full overflow-hidden rounded-2xl border border-border/60 bg-card p-4 text-sm shadow-sm shadow-black/[0.02]"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="font-medium text-foreground">{result.title}</h3>
+        <h3 className="font-normal text-foreground">{result.title}</h3>
         {result.freshness ? (
           <span
             className={cn(
@@ -39,7 +39,7 @@ export function AskAIFinancialResultCard({ result }: { result: AskAIFinancialRes
         {result.metrics.map((metric) => (
           <div key={metric.label} className="min-w-0 border-t border-border/50 pt-2">
             <dt className="truncate text-xs text-muted-foreground">{metric.label}</dt>
-            <dd className="mt-1 flex flex-wrap items-baseline gap-2 font-medium tabular-nums text-foreground">
+            <dd className="mt-1 flex flex-wrap items-baseline gap-2 font-normal tabular-nums text-foreground">
               <span>{metric.value}</span>
               {metric.after ? <span className="text-muted-foreground">→ {metric.after}</span> : null}
             </dd>
@@ -52,7 +52,7 @@ export function AskAIFinancialResultCard({ result }: { result: AskAIFinancialRes
             <thead className="bg-muted/40 text-xs text-muted-foreground">
               <tr>
                 {result.columns.map((column) => (
-                  <th key={column} scope="col" className="px-3 py-2 font-medium">
+                  <th key={column} scope="col" className="px-3 py-2 font-normal">
                     {column}
                   </th>
                 ))}

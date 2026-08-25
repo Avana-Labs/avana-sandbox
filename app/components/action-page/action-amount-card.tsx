@@ -54,7 +54,7 @@ function useFitAmountFontSize(text: string) {
 }
 
 const AMOUNT_MIRROR_CLASS =
-  "pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap font-medium leading-none tracking-[-0.04em]"
+  "pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap font-normal leading-none tracking-[-0.04em]"
 
 export type ActionAssetOption = {
   id: string
@@ -252,7 +252,7 @@ export function ActionAmountCard({
             title={amount || "0"}
             style={{ fontSize: `${fit.fontPx}px` }}
             className={cn(
-              "truncate font-medium leading-none tracking-[-0.04em]",
+              "truncate font-normal leading-none tracking-[-0.04em]",
               amount && amount !== "0" ? "text-foreground" : "text-muted-foreground/60",
             )}
           >
@@ -286,7 +286,7 @@ export function ActionAmountCard({
             onChange={(event) => onAmountChange(sanitizeDecimalInput(event.target.value))}
             style={{ fontSize: `${fit.fontPx}px` }}
             className={cn(
-              "w-full border-0 bg-transparent p-0 font-medium leading-none tracking-[-0.04em] outline-none placeholder:text-muted-foreground/60",
+              "w-full border-0 bg-transparent p-0 font-normal leading-none tracking-[-0.04em] outline-none placeholder:text-muted-foreground/60",
               amount && amount !== "0" ? "text-foreground" : "text-muted-foreground/60",
             )}
             placeholder="0"
@@ -304,7 +304,7 @@ export function ActionAmountCard({
       {!hideAssetSelector ? (
         <div className="relative shrink-0 max-[360px]:self-end" ref={switchable ? menuRef : undefined}>
           {unitLabel ? (
-            <div className="inline-flex cursor-default items-center rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground">
+            <div className="inline-flex cursor-default items-center rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-normal text-foreground">
               <span>{unitLabel}</span>
             </div>
           ) : switchable || gated ? (
@@ -327,7 +327,7 @@ export function ActionAmountCard({
               aria-label={t("Change asset, current {asset}").replace("{asset}", assetLabel)}
               disabled={(readOnly && !allowAssetSwitchWhenReadOnly) || (gated && !gatedClickable)}
               className={cn(
-                "inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground hover:bg-surface-hover",
+                "inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-normal text-foreground hover:bg-surface-hover",
                 gated ? (gatedClickable ? "opacity-60" : "cursor-default opacity-60") : "cursor-pointer",
               )}
             >
@@ -342,7 +342,7 @@ export function ActionAmountCard({
               </span>
             </button>
           ) : (
-            <div className="inline-flex cursor-default items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground">
+            <div className="inline-flex cursor-default items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-normal text-foreground">
               {borrowSymbol ? (
                 <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
               ) : isAssetPlaceholder ? null : (
@@ -397,7 +397,7 @@ export function ActionAmountCard({
     <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
       <DialogContent className="max-w-lg gap-0 p-0 pt-2 sm:max-w-[420px]">
         <DialogHeader className="px-4 pb-2 pt-3 text-left space-y-0">
-          <DialogTitle className="text-[13px] font-medium">{t("Select asset")}</DialogTitle>
+          <DialogTitle className="text-[13px] font-normal">{t("Select asset")}</DialogTitle>
         </DialogHeader>
         <div
           role="listbox"
@@ -463,7 +463,7 @@ export function ActionAmountCard({
         data-testid="action-amount-card"
       >
         <div className="px-4 pb-4 pt-4">
-          <div className="text-[14px] font-medium text-muted-foreground">{t(label)}</div>
+          <div className="text-[14px] font-normal text-muted-foreground">{t(label)}</div>
           {amountRow}
           {usdRow}
           {gatedHintRow}

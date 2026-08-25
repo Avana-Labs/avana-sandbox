@@ -7,7 +7,7 @@ import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 const PRIMARY =
-  "inline-flex min-h-12 items-center justify-center rounded-full bg-brand px-7 text-[15px] font-semibold text-brand-foreground shadow-elev-1 transition-colors hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
+  "inline-flex min-h-12 items-center justify-center rounded-full bg-brand px-7 text-[15px] font-normal text-brand-foreground shadow-elev-1 transition-colors hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
 
 export function GuestOnboardingFlow() {
   const [hasStarted, setHasStarted] = useState(false)
@@ -30,7 +30,7 @@ export function GuestOnboardingFlow() {
       <div data-onboarding-phase={hasStarted ? "connect" : "intro"}>
         {!hasStarted ? (
           <>
-            <h1 className="max-w-[600px] text-balance text-[clamp(1.85rem,3.2vw,2.4rem)] font-medium leading-[1.14] tracking-[-0.03em]">
+            <h1 className="max-w-[600px] text-balance text-[clamp(1.85rem,3.2vw,2.4rem)] font-normal leading-[1.14] tracking-[-0.03em]">
               {t("Welcome to the Avana Sandbox")}
             </h1>
             <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">
@@ -40,7 +40,7 @@ export function GuestOnboardingFlow() {
             </p>
             <ul className="mt-7 space-y-2.5">
               {["Unlimited practice funds", "No transactions to sign", "No real assets involved"].map((perk) => (
-                <li className="flex items-center gap-2.5 text-[15px] font-medium" key={perk}>
+                <li className="flex items-center gap-2.5 text-[15px] font-normal" key={perk}>
                   <Check className="size-4 shrink-0 text-emerald-500" strokeWidth={2.75} />
                   {t(perk)}
                 </li>
@@ -52,7 +52,7 @@ export function GuestOnboardingFlow() {
           </>
         ) : (
           <>
-            <h1 className="max-w-[560px] text-balance text-[clamp(1.4rem,2.3vw,1.75rem)] font-medium leading-[1.16] tracking-[-0.03em]">
+            <h1 className="max-w-[560px] text-balance text-[clamp(1.4rem,2.3vw,1.75rem)] font-normal leading-[1.16] tracking-[-0.03em]">
               <span className="text-muted-foreground">{t("Connect an EVM wallet.")}</span>
               <br />
               <span className="text-foreground">{t("We'll set up your sandbox and scope it to your address.")}</span>

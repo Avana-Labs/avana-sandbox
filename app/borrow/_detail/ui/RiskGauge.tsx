@@ -86,7 +86,7 @@ export function RiskGauge({ score, level, label, size = 220, ticks = 44, classNa
           x={cx}
           y={cy - 18}
           textAnchor="middle"
-          className="fill-foreground font-data font-bold tabular-nums"
+          className="fill-foreground font-data font-normal tabular-nums"
           style={{ fontSize: 34, letterSpacing: "-0.02em" }}
         >
           {clamped}
@@ -121,7 +121,7 @@ export function RiskGauge({ score, level, label, size = 220, ticks = 44, classNa
           100
         </text>
       </svg>
-      {label ? <figcaption className={cn("-mt-1 text-xs font-medium", LEVEL_COLOR[level])}>{label}</figcaption> : null}
+      {label ? <figcaption className={cn("-mt-1 text-xs font-normal", LEVEL_COLOR[level])}>{label}</figcaption> : null}
     </figure>
   )
 }

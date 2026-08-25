@@ -73,7 +73,7 @@ export function AskAIThreadList({
           >
             <span
               aria-hidden
-              className="inline-flex size-4 items-center justify-center text-xl font-light leading-none"
+              className="inline-flex size-4 items-center justify-center text-xl font-normal leading-none"
             >
               +
             </span>
@@ -90,7 +90,7 @@ export function AskAIThreadList({
         </div>
 
         <div className="mt-6 flex-1">
-          <p className="px-2.5 text-xs font-medium text-muted-foreground">Today</p>
+          <p className="px-2.5 text-xs font-normal text-muted-foreground">Today</p>
           {threads.length === 0 ? (
             <p className="mt-1 px-2.5 text-sm text-muted-foreground">No threads yet</p>
           ) : (
@@ -187,7 +187,7 @@ export function AskAIThreadList({
                 type="button"
                 aria-expanded={showArchived}
                 onClick={() => setShowArchived((current) => !current)}
-                className="px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                className="px-2.5 text-xs font-normal text-muted-foreground hover:text-foreground"
               >
                 Archived ({archivedThreads.length})
               </button>

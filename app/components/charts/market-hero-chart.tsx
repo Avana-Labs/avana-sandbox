@@ -133,7 +133,7 @@ export function MarketHeroChart({
     <div className="relative space-y-2">
       {/* Metric name kept for screen readers / internal recognition; hidden visually. */}
       {label ? (
-        <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{label}</p>
+        <p className="text-[12px] font-normal uppercase tracking-[0.08em] text-muted-foreground">{label}</p>
       ) : null}
       <HeroBalanceDisplay
         value={value}
@@ -195,7 +195,7 @@ function ChartMetricSelector({
             type="button"
             onClick={() => onTabChange?.(tab)}
             className={[
-              "flex h-7 min-w-16 items-center justify-center rounded-full px-2.5 text-[12px] font-semibold transition-colors sm:text-[13px]",
+              "flex h-7 min-w-16 items-center justify-center rounded-full px-2.5 text-[12px] font-normal transition-colors sm:text-[13px]",
               active ? "bg-muted text-foreground" : "text-foreground/75 hover:text-foreground",
             ].join(" ")}
           >

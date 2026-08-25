@@ -85,7 +85,7 @@ export function Chart({
         )}
       </div>
 
-      <span className="text-2xl font-medium tracking-tight tabular-nums">{displayValue}</span>
+      <span className="text-2xl font-normal tracking-tight tabular-nums">{displayValue}</span>
 
       <svg
         viewBox={`0 0 ${W} ${H}`}

@@ -105,14 +105,14 @@ export function PortfolioRewardsCards({
           hidden={!showDollarAmounts}
           action={
             claimHref ? (
-              <Button asChild size="sm" className="shrink-0 gap-2 font-bold [&_svg]:size-4">
+              <Button asChild size="sm" className="shrink-0 gap-2 font-normal [&_svg]:size-4">
                 <Link href={claimHref}>
                   <CircleDollarSign className="size-4" />
                   {t("Claim Rewards")}
                 </Link>
               </Button>
             ) : (
-              <Button type="button" size="sm" disabled className="shrink-0 gap-2 font-bold [&_svg]:size-4">
+              <Button type="button" size="sm" disabled className="shrink-0 gap-2 font-normal [&_svg]:size-4">
                 <CircleDollarSign className="size-4" />
                 {t("Claim Rewards")}
               </Button>

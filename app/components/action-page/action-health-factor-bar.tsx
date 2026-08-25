@@ -116,7 +116,7 @@ export function ActionHealthFactorBar({
         </div>
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full bg-surface-inset px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide",
+            "inline-flex items-center gap-1.5 rounded-full bg-surface-inset px-2.5 py-0.5 text-[11px] font-normal uppercase tracking-wide",
             status.tone === "positive" && "text-success",
             status.tone === "warning" && "text-amber-600 dark:text-amber-400",
             status.tone === "danger" && "text-rose-600 dark:text-rose-400",
@@ -127,7 +127,7 @@ export function ActionHealthFactorBar({
       </div>
 
       <div
-        className="font-data text-[20px] font-semibold leading-none tracking-tight text-foreground"
+        className="font-data text-[20px] font-normal leading-none tracking-tight text-foreground"
         aria-live="polite"
         aria-atomic="true"
       >
@@ -136,7 +136,7 @@ export function ActionHealthFactorBar({
 
       <HealthFactorPositionBar value={value} className="mt-1" />
 
-      <div className="flex items-center justify-between text-[12px] font-medium text-muted-foreground">
+      <div className="flex items-center justify-between text-[12px] font-normal text-muted-foreground">
         {HF_ZONES.map((zone, index) => (
           <span
             key={zone.id}

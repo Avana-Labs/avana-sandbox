@@ -79,9 +79,9 @@ export type OnboardingGateState = {
 }
 
 const PRIMARY =
-  "inline-flex min-h-12 items-center justify-center rounded-full bg-brand px-7 text-[15px] font-semibold text-brand-foreground shadow-elev-1 transition-colors hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
+  "inline-flex min-h-12 items-center justify-center rounded-full bg-brand px-7 text-[15px] font-normal text-brand-foreground shadow-elev-1 transition-colors hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
 const SECONDARY =
-  "inline-flex min-h-12 items-center justify-center rounded-full bg-muted px-7 text-[15px] font-semibold text-foreground transition-colors hover:bg-muted/75 disabled:opacity-50"
+  "inline-flex min-h-12 items-center justify-center rounded-full bg-muted px-7 text-[15px] font-normal text-foreground transition-colors hover:bg-muted/75 disabled:opacity-50"
 
 const sleep = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms))
 const shortWallet = (wallet: string) => `${wallet.slice(0, 6)}…${wallet.slice(-4)}`
@@ -138,7 +138,7 @@ function StatusRow({ wallet, pct }: { wallet: string | null; pct: number }) {
     <div className="mb-9 sm:mb-11">
       {wallet ? (
         <div className="mb-2.5 text-right text-xs text-muted-foreground">
-          {t("Wallet")} <strong className="ms-1 font-medium text-foreground">{shortWallet(wallet)}</strong>
+          {t("Wallet")} <strong className="ms-1 font-normal text-foreground">{shortWallet(wallet)}</strong>
         </div>
       ) : null}
       <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
@@ -164,8 +164,8 @@ function Headline({
     <h1
       className={
         size === "hero"
-          ? "max-w-[600px] text-balance text-[clamp(1.85rem,3.2vw,2.4rem)] font-medium leading-[1.14] tracking-[-0.03em]"
-          : "max-w-[560px] text-balance text-[clamp(1.4rem,2.3vw,1.75rem)] font-medium leading-[1.16] tracking-[-0.03em]"
+          ? "max-w-[600px] text-balance text-[clamp(1.85rem,3.2vw,2.4rem)] font-normal leading-[1.14] tracking-[-0.03em]"
+          : "max-w-[560px] text-balance text-[clamp(1.4rem,2.3vw,1.75rem)] font-normal leading-[1.16] tracking-[-0.03em]"
       }
     >
       {muted ? (
@@ -304,7 +304,7 @@ function BasketPanel({ busy, onClaim }: { busy: boolean; onClaim: () => void }) 
       <ul className="divide-y divide-border border-y border-border">
         {buckets.map((bucket) => (
           <li className="flex items-center justify-between py-3" key={bucket.label}>
-            <span className="text-[15px] font-medium">{bucket.label}</span>
+            <span className="text-[15px] font-normal">{bucket.label}</span>
             <span className="text-sm text-muted-foreground">{bucket.detail}</span>
           </li>
         ))}
@@ -317,7 +317,7 @@ function BasketPanel({ busy, onClaim }: { busy: boolean; onClaim: () => void }) 
   )
 }
 
-const FIELD_LABEL = "block text-[13px] font-medium text-muted-foreground"
+const FIELD_LABEL = "block text-[13px] font-normal text-muted-foreground"
 const FIELD_CONTROL =
   "mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 text-[15px] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-brand"
 
@@ -505,7 +505,7 @@ function PersonalizeStep({
               <button
                 type="button"
                 onClick={() => setTheme("light")}
-                className={`rounded-full px-5 py-2 text-[14px] font-medium transition-colors ${
+                className={`rounded-full px-5 py-2 text-[14px] font-normal transition-colors ${
                   isDark ? "text-muted-foreground" : "bg-foreground text-background"
                 }`}
               >
@@ -514,7 +514,7 @@ function PersonalizeStep({
               <button
                 type="button"
                 onClick={() => setTheme("dark")}
-                className={`rounded-full px-5 py-2 text-[14px] font-medium transition-colors ${
+                className={`rounded-full px-5 py-2 text-[14px] font-normal transition-colors ${
                   isDark ? "bg-foreground text-background" : "text-muted-foreground"
                 }`}
               >
@@ -585,7 +585,7 @@ function LiquiditySourceStep({
                 type="button"
                 aria-pressed={active}
                 onClick={() => toggle(dex.id)}
-                className={`relative flex h-14 items-center justify-center rounded-2xl border px-3 text-[15px] font-medium transition-colors ${
+                className={`relative flex h-14 items-center justify-center rounded-2xl border px-3 text-[15px] font-normal transition-colors ${
                   active
                     ? "border-brand bg-brand/10 text-foreground"
                     : "border-border text-muted-foreground hover:border-foreground/30 hover:text-foreground"
@@ -766,7 +766,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
             </p>
             <ul className="mt-7 space-y-2.5">
               {["Unlimited practice funds", "No transactions to sign", "No real assets involved"].map((perk) => (
-                <li className="flex items-center gap-2.5 text-[15px] font-medium" key={perk}>
+                <li className="flex items-center gap-2.5 text-[15px] font-normal" key={perk}>
                   <Check className="size-4 shrink-0 text-emerald-500" strokeWidth={2.75} />
                   {t(perk)}
                 </li>
@@ -846,7 +846,7 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
           <>
             <Headline muted={t("Good news, you're in.")} active={t("Your practice portfolio is ready.")} />
             <p className="mt-6 text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">{claimedSeats.toLocaleString()}</span> {t("of")}{" "}
+              <span className="font-normal text-foreground">{claimedSeats.toLocaleString()}</span> {t("of")}{" "}
               {economy.userCap.toLocaleString()} {t("sandbox seats already claimed.")}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">

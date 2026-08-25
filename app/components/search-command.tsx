@@ -107,7 +107,7 @@ function TokenAvatar({ visual }: { visual: BorrowAssetVisual }) {
   return (
     <span
       className={cn(
-        "flex size-8 shrink-0 items-center justify-center text-[10px] font-medium",
+        "flex size-8 shrink-0 items-center justify-center text-[10px] font-normal",
         visual.iconUrl ? undefined : cn("overflow-hidden rounded-full", visual.bgClass, visual.textClass),
       )}
     >
@@ -146,7 +146,7 @@ function PoolAvatar({ visuals }: { visuals: [BorrowAssetVisual, BorrowAssetVisua
             className="size-full object-contain"
           />
         ) : (
-          <span className="text-[9px] font-medium">{visuals[0].shortLabel}</span>
+          <span className="text-[9px] font-normal">{visuals[0].shortLabel}</span>
         )}
       </span>
       <span
@@ -166,7 +166,7 @@ function PoolAvatar({ visuals }: { visuals: [BorrowAssetVisual, BorrowAssetVisua
             className="size-full object-contain"
           />
         ) : (
-          <span className="text-[9px] font-medium">{visuals[1].shortLabel}</span>
+          <span className="text-[9px] font-normal">{visuals[1].shortLabel}</span>
         )}
       </span>
     </span>
@@ -402,7 +402,7 @@ export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: b
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    "rounded-full px-2.5 py-1.5 text-[13px] font-medium transition-colors",
+                    "rounded-full px-2.5 py-1.5 text-[13px] font-normal transition-colors",
                     isActive ? "bg-surface-inset text-foreground" : "text-muted-foreground hover:text-foreground",
                   )}
                 >
@@ -415,7 +415,7 @@ export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: b
           <div id="search-command-results" role="listbox" className="max-h-[430px] overflow-y-auto px-2 py-2.5">
             {loadingResults && results == null ? (
               <div className="px-5 py-12 text-center">
-                <p className="text-[15px] font-medium text-foreground">{t("Loading results")}</p>
+                <p className="text-[15px] font-normal text-foreground">{t("Loading results")}</p>
                 <p className="mt-1 text-[13px] text-muted-foreground">
                   {t("Preparing pools, borrow assets, and lend assets.")}
                 </p>
@@ -423,7 +423,7 @@ export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: b
             ) : groupedResults.length > 0 ? (
               groupedResults.map(([tab, group]) => (
                 <section key={tab} className="pb-3.5">
-                  <div className="flex items-center gap-2 px-3 pb-1.5 pt-2 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                  <div className="flex items-center gap-2 px-3 pb-1.5 pt-2 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
                     <SectionIcon tab={tab} />
                     <span>
                       {t(
@@ -434,7 +434,7 @@ export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: b
                             : "Assets to lend",
                       )}
                     </span>
-                    <span className="ml-auto rounded-full bg-surface-inset px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-muted-foreground/80">
+                    <span className="ml-auto rounded-full bg-surface-inset px-1.5 py-0.5 text-[10px] font-normal tabular-nums text-muted-foreground/80">
                       {group.length}
                     </span>
                   </div>
@@ -460,10 +460,10 @@ export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: b
                           <ResultIcon result={result} />
                           <span className="min-w-0 flex-1">
                             <span className="flex items-center gap-2">
-                              <span className="truncate text-[14px] font-medium leading-5 text-foreground">
+                              <span className="truncate text-[14px] font-normal leading-5 text-foreground">
                                 {result.title}
                               </span>
-                              <span className="hidden shrink-0 rounded-full bg-surface-inset px-2 py-0.5 text-[10px] font-medium text-muted-foreground sm:inline-flex">
+                              <span className="hidden shrink-0 rounded-full bg-surface-inset px-2 py-0.5 text-[10px] font-normal text-muted-foreground sm:inline-flex">
                                 {t(result.eyebrow)}
                               </span>
                             </span>
@@ -471,7 +471,7 @@ export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: b
                               {result.subtitle}
                             </span>
                           </span>
-                          <span className="flex shrink-0 items-center gap-1.5 text-[12px] font-medium text-muted-foreground group-hover:text-foreground">
+                          <span className="flex shrink-0 items-center gap-1.5 text-[12px] font-normal text-muted-foreground group-hover:text-foreground">
                             {result.metric}
                             <ArrowUpRight className="h-3.5 w-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
                           </span>
@@ -483,7 +483,7 @@ export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: b
               ))
             ) : (
               <div className="px-5 py-12 text-center">
-                <p className="text-[15px] font-medium text-foreground">{t("No results found")}</p>
+                <p className="text-[15px] font-normal text-foreground">{t("No results found")}</p>
                 <p className="mt-1 text-[13px] text-muted-foreground">
                   {t("Try a token symbol, pool pair, or action like borrow.")}
                 </p>

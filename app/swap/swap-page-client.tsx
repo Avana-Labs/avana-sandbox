@@ -465,7 +465,7 @@ function SwapAssetField({
             readOnly={readOnly}
             onChange={(event) => onAmountChange?.(event.target.value.replace(/[^\d.]/g, ""))}
             inputMode="decimal"
-            className={`w-full min-w-0 border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] outline-none placeholder:text-muted-foreground/60 ${
+            className={`w-full min-w-0 border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-normal leading-none tracking-[-0.04em] outline-none placeholder:text-muted-foreground/60 ${
               amount && amount !== "0" ? "text-foreground" : "text-muted-foreground/60"
             }`}
             placeholder="0"
@@ -476,7 +476,7 @@ function SwapAssetField({
           type="button"
           onClick={onOpenAssetPicker}
           aria-label={`${label} asset`}
-          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-medium text-foreground hover:bg-surface-hover max-[360px]:self-end"
+          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-normal text-foreground hover:bg-surface-hover max-[360px]:self-end"
         >
           <SwapAssetIcon asset={asset} className="size-8" />
           <span>{asset.symbol}</span>

@@ -37,7 +37,7 @@ export function ActionRiskBanner({
         )}
       />
       <div>
-        <div className="text-[15px] font-semibold">{t(title)}</div>
+        <div className="text-[15px] font-normal">{t(title)}</div>
         <div className="mt-1 text-[13px] leading-relaxed opacity-90">{t(message)}</div>
       </div>
     </div>
@@ -65,7 +65,7 @@ export function ActionOutcomeBanner({
     >
       <AlertTriangle className={cn("mt-0.5 size-4 shrink-0", tone === "error" ? "text-danger" : "text-success")} />
       <div>
-        <div className="text-[15px] font-semibold">{t(title)}</div>
+        <div className="text-[15px] font-normal">{t(title)}</div>
         <div className="mt-1 text-[13px] text-muted-foreground">{t(message)}</div>
       </div>
     </div>

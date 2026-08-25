@@ -160,7 +160,7 @@ export function ProcessingNarration({ verb }: { verb: string }) {
             key={line}
             className={cn(
               "flex items-center gap-2.5 text-[14px] animate-in fade-in slide-in-from-bottom-1 duration-300 motion-reduce:animate-none",
-              isDone ? "text-muted-foreground" : "font-medium text-foreground",
+              isDone ? "text-muted-foreground" : "font-normal text-foreground",
             )}
           >
             {isDone ? (

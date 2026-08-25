@@ -161,13 +161,13 @@ function StatCardView({ card, graphPath }: { card: StatCard; graphPath: string }
       <div className="absolute inset-x-6 top-5 z-10">
         <div className="text-[13px] text-muted-foreground dark:text-white/48">{t(card.label)}</div>
         <div className="mt-2 flex items-center gap-2.5">
-          <span className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
+          <span className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-normal leading-none tracking-[-0.04em] text-foreground">
             {value}
           </span>
           {card.deltaPct !== undefined ? (
             <span
               className={cn(
-                "inline-flex items-center gap-0.5 text-[15px] font-medium tabular-nums",
+                "inline-flex items-center gap-0.5 text-[15px] font-normal tabular-nums",
                 card.deltaPct >= 0 ? "text-success" : "text-rose-600 dark:text-rose-400",
               )}
             >
@@ -185,7 +185,7 @@ function StatCardView({ card, graphPath }: { card: StatCard; graphPath: string }
           className="pointer-events-none absolute top-[10px] z-30 w-[168px] -translate-x-1/2 rounded-radius-sm border border-border bg-card/95 px-2.5 py-2 text-foreground shadow-md backdrop-blur-sm dark:border-white/15 dark:bg-[#1b1b1c]/95"
           style={{ left: hover.left }}
         >
-          <div className="flex items-center justify-between gap-2 text-[10px] font-medium text-muted-foreground">
+          <div className="flex items-center justify-between gap-2 text-[10px] font-normal text-muted-foreground">
             <span>{t("Today")}</span>
             <span>{TIME_LABELS[Math.round((hover.index / (values.length - 1)) * (TIME_LABELS.length - 1))]}</span>
           </div>
@@ -194,7 +194,7 @@ function StatCardView({ card, graphPath }: { card: StatCard; graphPath: string }
               <span className="size-2 rounded-full" style={{ backgroundColor: color }} />
               {t(card.label)}
             </span>
-            <span className="font-medium text-foreground">
+            <span className="font-normal text-foreground">
               {card.maskable && !showDollarAmounts ? MASK : formatValue(values[hover.index], card.format)}
             </span>
           </div>
@@ -252,7 +252,7 @@ export function PortfolioStatCards({ activeTab }: { activeTab?: DashboardQuickAc
     <div>
       <div className="mb-5 flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
-          <h2 className="truncate text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+          <h2 className="truncate text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
             {greeting}
           </h2>
           <button

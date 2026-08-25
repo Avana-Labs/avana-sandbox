@@ -35,7 +35,7 @@ function MetricGrid({ metrics, labelOnTop = false }: { metrics: MetricItem[]; la
     <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-x-8">
       {metrics.map((metric) => {
         const value = (
-          <div className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-normal tabular-nums text-foreground">
+          <div className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-normal leading-none tracking-normal tabular-nums text-foreground">
             {metric.value}
           </div>
         )
@@ -84,7 +84,7 @@ export function DashboardOverviewSection({
   return (
     <section className="space-y-4 pb-3">
       {hideHeading ? null : (
-        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+        <h2 className="text-[19px] font-normal tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
       )}
       <MetricGrid
         labelOnTop
@@ -181,7 +181,7 @@ export function DashboardCreditOverviewSection({
   return (
     <section className="space-y-4 pb-3">
       {hideHeading ? null : (
-        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+        <h2 className="text-[19px] font-normal tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
       )}
       <MetricGrid labelOnTop metrics={items} />
     </section>
@@ -254,7 +254,7 @@ export function DashboardMultiplyBalanceSection({
   return (
     <section className="space-y-4 pb-3">
       {hideHeading ? null : (
-        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+        <h2 className="text-[19px] font-normal tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
       )}
       <MetricGrid labelOnTop metrics={items} />
     </section>
@@ -274,7 +274,7 @@ export function DashboardPerformanceSection({
 
   return (
     <section className="space-y-4 pb-3">
-      <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+      <h2 className="text-[19px] font-normal tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
       <MetricGrid
         metrics={[
           {
@@ -371,7 +371,7 @@ export function DashboardLendPerformanceSection({
   return (
     <section className="space-y-4 pb-3">
       {hideHeading ? null : (
-        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+        <h2 className="text-[19px] font-normal tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
       )}
       <MetricGrid labelOnTop metrics={items} />
     </section>

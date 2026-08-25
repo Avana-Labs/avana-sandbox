@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises"
+import { join } from "node:path"
 import { ImageResponse } from "next/og"
 
 // Branded share card used for og:image + (via summary_large_image) the X/Twitter card.
@@ -11,8 +13,18 @@ export const contentType = "image/png"
 const BRAND = "#01AACF"
 const INK = "#0B0D12"
 const PAPER = "#EEF0F4"
+const DIATYPE = "Diatype"
 
-export default function OpengraphImage() {
+async function loadDiatypeFonts() {
+  const fontsDir = join(process.cwd(), "public/fonts/diatype/core")
+  // Satori prefers static faces over the variable file for reliable weight matching.
+  const regular = await readFile(join(fontsDir, "ABCDiatype-Regular-Trial.woff2"))
+  return [{ name: DIATYPE, data: regular, style: "normal" as const, weight: 400 as const }]
+}
+
+export default async function OpengraphImage() {
+  const fonts = await loadDiatypeFonts()
+
   return new ImageResponse(
     <div
       style={{
@@ -24,7 +36,7 @@ export default function OpengraphImage() {
         padding: "80px",
         background: PAPER,
         color: INK,
-        fontFamily: "sans-serif",
+        fontFamily: DIATYPE,
       }}
     >
       {/* brand mark */}
@@ -40,20 +52,20 @@ export default function OpengraphImage() {
             justifyContent: "center",
             color: "#fff",
             fontSize: 56,
-            fontWeight: 800,
+            fontWeight: 400,
           }}
         >
           A
         </div>
-        <div style={{ fontSize: 64, fontWeight: 800, letterSpacing: "-0.04em" }}>avana</div>
+        <div style={{ fontSize: 64, fontWeight: 400, letterSpacing: "-0.04em" }}>avana</div>
       </div>
 
       {/* headline */}
       <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-        <div style={{ fontSize: 68, fontWeight: 700, lineHeight: 1.08, letterSpacing: "-0.03em", maxWidth: 960 }}>
+        <div style={{ fontSize: 68, fontWeight: 400, lineHeight: 1.08, letterSpacing: "-0.03em", maxWidth: 960 }}>
           A new Aave v4 lending market built for AMM markets.
         </div>
-        <div style={{ fontSize: 34, color: "#566", fontWeight: 500, maxWidth: 920 }}>
+        <div style={{ fontSize: 34, color: "#566", fontWeight: 400, maxWidth: 920 }}>
           Borrow against AMM LP positions, lend, and loop — all risk-free in the sandbox.
         </div>
       </div>
@@ -70,16 +82,16 @@ export default function OpengraphImage() {
               borderRadius: 999,
               background: "#fff",
               fontSize: 30,
-              fontWeight: 600,
+              fontWeight: 400,
               color: INK,
             }}
           >
             {label}
           </div>
         ))}
-        <div style={{ marginLeft: "auto", fontSize: 30, fontWeight: 600, color: BRAND }}>app.avana.cc</div>
+        <div style={{ marginLeft: "auto", fontSize: 30, fontWeight: 400, color: BRAND }}>app.avana.cc</div>
       </div>
     </div>,
-    { ...size },
+    { ...size, fonts },
   )
 }
