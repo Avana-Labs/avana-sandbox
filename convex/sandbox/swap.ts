@@ -2,6 +2,7 @@ import { v } from "convex/values"
 import { query } from "../_generated/server"
 import type { QueryCtx } from "../_generated/server"
 import { requireSandboxWallet } from "./auth"
+import { readWalletLiquidBalance } from "../wallet/balances"
 import {
   SWAP_CHAIN_ID,
   SWAP_FEE_BPS,
@@ -22,11 +23,8 @@ async function legPriceUsd(ctx: QueryCtx, wallet: string, assetId: string, symbo
     .withIndex("by_symbol", (q) => q.eq("symbol", symbol.toLowerCase()))
     .first()
   if (oracle && oracle.priceUsd > 0 && oracle.status !== "invalid") return oracle.priceUsd
-  const held = await ctx.db
-    .query("sandboxBalances")
-    .withIndex("by_wallet_asset", (q) => q.eq("wallet", wallet).eq("assetSlug", assetId))
-    .unique()
-  if (held?.priceUsd && held.priceUsd > 0) return held.priceUsd
+  const held = await readWalletLiquidBalance(ctx, wallet, assetId)
+  if (held && held.amount > 0 && held.valueUsd > 0) return held.valueUsd / held.amount
   return null
 }
 

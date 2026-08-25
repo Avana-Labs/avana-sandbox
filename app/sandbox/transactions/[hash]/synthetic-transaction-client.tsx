@@ -5,6 +5,8 @@ import { useEffect, useState } from "react"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ExternalLink } from "@/app/components/icons"
+import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import { TransactionReceipt, type TransactionReceiptData } from "@/app/components/action-page/transaction-receipt"
 import { syntheticBlockFromHash, syntheticNetworkFeeUsdFromHash } from "@/app/lib/action-system/synthetic-receipt"
 import { SANDBOX_NETWORK_FEE_USD } from "@/app/lib/action-system/formatters"
@@ -194,37 +196,48 @@ export function SyntheticTransactionClient({ hash }: { hash: string }) {
     return () => clearTimeout(timer)
   }, [receipt])
 
+  const etherscanHref = `https://etherscan.io/tx/${encodeURIComponent(hash)}`
+
   return (
-    <main className="mx-auto min-h-[70vh] w-full max-w-3xl px-5 py-16">
-      <p className="text-sm text-muted-foreground">{t("Avana sandbox")}</p>
-      <h1 className="mt-3 text-4xl font-medium tracking-[-0.04em]">{t("Synthetic transaction receipt")}</h1>
+    <main className="mx-auto flex min-h-[70vh] w-full max-w-md flex-col px-5 py-12 md:py-16">
+      <header className="mb-6">
+        <h1 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+          {t("Transaction receipt")}
+        </h1>
+      </header>
+
       {swapTransaction ? (
-        <div className="mx-auto mt-8 max-w-md">
-          <TransactionReceipt data={swapTransactionToReceiptData(swapTransaction)} />
-        </div>
+        <TransactionReceipt data={swapTransactionToReceiptData(swapTransaction)} />
       ) : !isSignedIn ? (
-        <p className="mt-8 text-muted-foreground">{t("Sign in with the wallet that created this transaction.")}</p>
+        <p className="text-muted-foreground">{t("Sign in with the wallet that created this transaction.")}</p>
       ) : receipt === undefined ? (
         timedOut ? (
-          <p className="mt-8 text-muted-foreground">
+          <p className="text-muted-foreground">
             {t("This receipt is taking too long to load. It may not be available in this environment.")}
           </p>
         ) : (
-          <Skeleton className="skeleton-enter mt-8 h-32 rounded-3xl" />
+          <Skeleton className="skeleton-enter h-32 rounded-3xl" />
         )
       ) : receipt === null ? (
-        <p className="mt-8 text-muted-foreground">{t("This receipt does not exist for the authenticated wallet.")}</p>
+        <p className="text-muted-foreground">{t("This receipt does not exist for the authenticated wallet.")}</p>
       ) : (
-        <div className="mx-auto mt-8 max-w-md">
-          <TransactionReceipt data={toReceiptData(receipt)} />
-        </div>
+        <TransactionReceipt data={toReceiptData(receipt)} />
       )}
-      <Link
-        className="mt-8 inline-flex rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background"
-        href="/dashboard"
-      >
-        {t("Back to dashboard")}
-      </Link>
+
+      <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <Link href="/dashboard" className={primaryCtaClass({ size: "compact", className: "w-full sm:flex-1" })}>
+          {t("Back to dashboard")}
+        </Link>
+        <a
+          href={etherscanHref}
+          target="_blank"
+          rel="noreferrer"
+          className={secondaryCtaClass({ size: "compact", className: "w-full gap-2 sm:flex-1" })}
+        >
+          {t("See on Etherscan")}
+          <ExternalLink className="size-4" />
+        </a>
+      </div>
     </main>
   )
 }

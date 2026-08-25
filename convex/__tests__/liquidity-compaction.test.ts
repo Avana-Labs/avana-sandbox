@@ -41,13 +41,13 @@ describe("liquidity bounded fold (compaction) matches the naive sum", () => {
     // Seed liquid USDC so the cash-out legs (repay + lend deposits) are affordable — this test
     // exercises the liquidity fold, not balance affordability.
     await t.run(async (ctx) => {
-      await ctx.db.insert("sandboxBalances", {
+      await ctx.db.insert("walletLiquidBalances", {
         wallet: WALLET.toLowerCase(),
-        assetSlug: "usdc",
+        assetId: "usdc",
         symbol: "USDC",
         amount: 5000,
         valueUsd: 5000,
-        priceUsd: 1,
+        state: "available",
         updatedAt: 1,
       })
     })

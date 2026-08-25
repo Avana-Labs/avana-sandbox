@@ -75,6 +75,25 @@ describe("refreshPoolLpPrices — server LP price = Σ(weightᵢ × priceᵢ) (C
     expect(await readPoolPrice(t, "usdc-usdt")).toBeCloseTo(0.9995, 6)
   })
 
+  test("does not patch a pool whose calculated price is unchanged", async () => {
+    const t = convexTest(schema, modules)
+    await seedTokenPrices(t, { usdc: 1, usdt: 0.999 })
+    await seedPoolMarket(
+      t,
+      "usdc-usdt",
+      [
+        { symbol: "usdc", weight: 0.5 },
+        { symbol: "usdt", weight: 0.5 },
+      ],
+      0.9995,
+    )
+    await expect(t.mutation(internal.prices.refreshPoolLpPrices, {})).resolves.toEqual({
+      updated: 0,
+      unchanged: 1,
+      skipped: 0,
+    })
+  })
+
   test("SKIPS a pool with an unpriced leg — leaves its price unchanged (unavailable over wrong)", async () => {
     const t = convexTest(schema, modules)
     await seedTokenPrices(t, { weth: 1900 }) // no price for the exotic leg

@@ -5,10 +5,10 @@ test.describe("Ask AI acceptance", () => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto("/ask")
     await expect(page.getByRole("main")).toBeVisible()
-    await expect(page.getByRole("heading", { name: "Hey, I'm Avana! What's uuuup? ✨" })).toBeVisible()
-    await expect(
-      page.getByText("Ask me anything, your positions, or the markets. No question's too basic, promise! 💛"),
-    ).toBeVisible()
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+      /Good morning!|Good afternoon!|Good evening!|Welcome back!|Hey!|Morning,|Afternoon,|Evening,|Hey,/,
+    )
     await expect(page.getByLabel("Ask Avana a question")).toBeVisible()
     await expect(page.getByRole("button", { name: "Add attachment" })).toHaveCount(0)
 

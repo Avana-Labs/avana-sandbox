@@ -97,7 +97,7 @@ test.describe("sandbox onboarding", () => {
     }
 
     await expect(canvas).toHaveAttribute("data-onboarding-step", "done", { timeout: 20_000 })
-    await expect(page.getByText("Synthetic transaction receipt")).toBeVisible()
+    await expect(page.getByText("Your sandbox is live.")).toBeVisible()
     await attachResponsiveStateScreenshots(page, canvas, "onboarding-success")
 
     await page.reload()

@@ -85,6 +85,10 @@ vi.mock("next/navigation", () => ({
   }),
 }))
 
+vi.mock("convex/react", () => ({
+  useQuery: () => undefined,
+}))
+
 const lendSessionContext = {
   walletId: "demo-wallet",
   state: { markets: {} },
@@ -373,9 +377,13 @@ describe("DashboardPageClient", () => {
     expect(screen.getByRole("tab", { name: "Borrow" })).toBeInTheDocument()
     expect(screen.getByRole("tab", { name: "Multiply" })).toBeInTheDocument()
     expect(screen.getByRole("tab", { name: "Rewards" })).toBeInTheDocument()
-    expect(screen.getByRole("tab", { name: "All Transactions" })).toBeInTheDocument()
+    expect(screen.queryByRole("tab", { name: "All Transactions" })).not.toBeInTheDocument()
     expect(screen.queryByRole("link", { name: "Rewards" })).toBeNull()
-    expect(screen.getByRole("heading", { name: "Your Dashboard" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", {
+        name: /Good morning!|Good afternoon!|Good evening!|Welcome back!|Hey!/,
+      }),
+    ).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Wallet Balance" })).toBeInTheDocument()
   })
 
@@ -499,8 +507,8 @@ describe("DashboardPageClient", () => {
     expect(claimReward).toHaveBeenCalledWith("bring-3-active-users")
   })
 
-  it("feeds product transactions into the combined activity table", async () => {
-    searchTab = "transactions"
+  it("feeds product transactions into the combined activity feed", async () => {
+    searchTab = "wallet"
     borrowTxHistory = [
       {
         id: "history-1",
@@ -536,10 +544,10 @@ describe("DashboardPageClient", () => {
 
     renderRewardsPage()
 
-    // Combined activity lives on the All Transactions tab (borrow + multiply + lend + reward-claim).
-    await waitFor(() => expect(screen.getByText("sim_abc123")).toBeInTheDocument())
-    expect(screen.getByText("Simulated transaction")).toBeInTheDocument()
-    expect(screen.getByText("0xmultiply")).toBeInTheDocument()
-    expect(screen.getByText("1250")).toBeInTheDocument()
+    // Combined activity lives in the Activity feed (desktop sidebar + mobile before Learn).
+    await waitFor(() => expect(screen.getAllByText("sim_abc123").length).toBeGreaterThan(0))
+    expect(screen.getAllByText("Simulated transaction").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("0xmultiply").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("1250").length).toBeGreaterThan(0)
   })
 })

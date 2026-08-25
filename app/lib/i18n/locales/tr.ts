@@ -443,6 +443,7 @@ const dict: TranslationDictionary = {
   "My Borrows": "Borçlarım",
   "My LP Collaterals": "LP Teminatlarım",
   "No activity matches the current filters.": "Mevcut filtrelerle eşleşen etkinlik yok.",
+  "No recent activity.": "Yakın zamanda etkinlik yok.",
   "No assets match these filters.": "Bu filtrelerle eşleşen varlık yok.",
   "No assets match your filter.": "Filtrenizle eşleşen varlık yok.",
   "No debt": "Borç yok",

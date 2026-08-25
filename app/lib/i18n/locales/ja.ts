@@ -429,6 +429,7 @@ const dict: TranslationDictionary = {
   "My Borrows": "マイ借入",
   "My LP Collaterals": "マイ LP 担保",
   "No activity matches the current filters.": "現在のフィルターに一致するアクティビティはありません。",
+  "No recent activity.": "最近のアクティビティはありません。",
   "No assets match these filters.": "これらのフィルターに一致する資産はありません。",
   "No assets match your filter.": "フィルターに一致する資産はありません。",
   "No debt": "負債なし",

@@ -441,6 +441,7 @@ const dict: TranslationDictionary = {
   "My Borrows": "मेरे उधार",
   "My LP Collaterals": "मेरे LP कोलैटरल",
   "No activity matches the current filters.": "कोई भी गतिविधि वर्तमान फ़िल्टर से मेल नहीं खाती।",
+  "No recent activity.": "कोई हाल की गतिविधि नहीं है।",
   "No assets match these filters.": "कोई एसेट इन फ़िल्टर से मेल नहीं खाता।",
   "No assets match your filter.": "कोई एसेट आपके फ़िल्टर से मेल नहीं खाता।",
   "No debt": "कोई ऋण नहीं",

@@ -15,6 +15,7 @@ vi.mock("convex/react", () => ({
   useQuery: (query: { name?: string } | undefined, args: unknown) => {
     if (args === "skip") return undefined
     if (query?.name === "getEconomyStatus") return economyMock()
+    if (query?.name === "getMine") return null
     return walletStateMock()
   },
   useMutation: () => noopMutation,
@@ -36,6 +37,7 @@ vi.mock("@/convex/_generated/api", () => ({
         claim: {},
       },
     },
+    wallet: { profiles: { getMine: { name: "getMine" }, savePreferences: {} } },
   },
 }))
 

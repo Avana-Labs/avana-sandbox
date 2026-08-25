@@ -128,15 +128,6 @@ export const rebuildMarketSnapshots = action({
   },
 })
 
-export const upsertRevenue = action({
-  args: rowsArgs,
-  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
-    requireSeedSecret(seedSecret)
-    requireSafeSeedRows(rows)
-    return ctx.runMutation(internal.seed.upsertRevenue, { rows })
-  },
-})
-
 export const upsertBorrowRevenueDaily = action({
   args: rowsArgs,
   handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
@@ -161,15 +152,6 @@ export const upsertMultiplyRevenueDaily = action({
     requireSeedSecret(seedSecret)
     requireSafeSeedRows(rows)
     return ctx.runMutation(internal.multiply.cashflow.upsertRevenueDaily, { rows })
-  },
-})
-
-export const upsertRisk = action({
-  args: rowsArgs,
-  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
-    requireSeedSecret(seedSecret)
-    requireSafeSeedRows(rows)
-    return ctx.runMutation(internal.seed.upsertRisk, { rows })
   },
 })
 
@@ -206,15 +188,6 @@ export const upsertAllocation = action({
     requireSeedSecret(seedSecret)
     requireSafeSeedRows(rows)
     return ctx.runMutation(internal.seed.upsertAllocation, { rows })
-  },
-})
-
-export const upsertContent = action({
-  args: rowsArgs,
-  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
-    requireSeedSecret(seedSecret)
-    requireSafeSeedRows(rows)
-    return ctx.runMutation(internal.seed.upsertContent, { rows })
   },
 })
 

@@ -29,13 +29,13 @@ const WITHDRAWAL_WINDOW_MS = 2 * DAY_MS
 
 async function seedLiquidUsdc(t: T, wallet: string, amount: number) {
   await t.run(async (ctx) => {
-    await ctx.db.insert("sandboxBalances", {
+    await ctx.db.insert("walletLiquidBalances", {
       wallet: wallet.toLowerCase(),
-      assetSlug: "usdc",
+      assetId: "usdc",
       symbol: "USDC",
       amount,
       valueUsd: amount * USDC_PRICE,
-      priceUsd: USDC_PRICE,
+      state: "available",
       updatedAt: Date.now(),
     })
   })
@@ -55,9 +55,9 @@ async function readPosition(t: T, wallet: string, marketId: string) {
 async function readLiquid(t: T, wallet: string, marketId: string) {
   return t.run(async (ctx) => {
     const row = await ctx.db
-      .query("sandboxBalances")
-      .withIndex("by_wallet_asset", (q) => q.eq("wallet", wallet.toLowerCase()).eq("assetSlug", marketId))
-      .unique()
+      .query("walletLiquidBalances")
+      .withIndex("by_wallet_asset", (q) => q.eq("wallet", wallet.toLowerCase()).eq("assetId", marketId))
+      .first()
     return row?.amount ?? 0
   })
 }
@@ -1179,7 +1179,7 @@ describe("sandbox umbrella — getSessionState", () => {
     delete process.env.SANDBOX_DEV_CONTROLS
   })
 
-  test("walletBalances mirror sandboxBalances after stake + unstake", async () => {
+  test("walletBalances mirror walletLiquidBalances after stake + unstake", async () => {
     process.env.SANDBOX_DEV_CONTROLS = "true"
     const t = convexTest(schema, modules)
     await seedLiquidUsdc(t, WALLET_A, 1000)

@@ -1,64 +1,14 @@
 "use client"
 
-import { type ComponentProps, useMemo } from "react"
-import { ArrowUpIcon, CheckIcon, ChevronDownIcon, SquareIcon, type LucideIcon } from "lucide-react"
+import { type ComponentProps } from "react"
 import { cn } from "@/lib/utils"
-import { field, floating, ghostButton, iconSwap, iconSwapIn, iconSwapOut, inkButton, mono, paper } from "@/lib/surfaces"
+import { floating, ghostButton, mono, paper } from "@/lib/surfaces"
 import { clamp, pct } from "@/lib/range"
-
-export interface ComposerAttachment {
-  name: string
-  meta: string
-  state: "uploading" | "done" | "error"
-  progress?: number
-  kind?: "image" | "text" | "archive"
-}
-
-export interface ComposerCommand {
-  name: string
-  description: string
-  icon: LucideIcon
-}
-
-export interface ComposerPerson {
-  name: string
-  role: "agent" | "human"
-}
-
-export interface ComposerModel {
-  name: string
-  meta: string
-}
 
 export interface ComposerUsage {
   input: number
   output: number
   total: number
-}
-
-/** Commands whose name starts with the slash query, or none when not typing one. */
-export function useSlashMatches(value: string, commands: readonly ComposerCommand[] | undefined): ComposerCommand[] {
-  return useMemo(() => {
-    if (!commands || !value.startsWith("/")) return []
-    const query = value.slice(1).toLowerCase()
-    return commands.filter((command) => command.name.startsWith(query))
-  }, [commands, value])
-}
-
-/** People matching a trailing @mention, or none when the caret is not in one. */
-export function useMentionMatches(value: string, people: readonly ComposerPerson[] | undefined): ComposerPerson[] {
-  return useMemo(() => {
-    if (!people) return []
-    const match = /@([\w]*)$/.exec(value)
-    if (!match) return []
-    const query = match[1]?.toLowerCase() ?? ""
-    return people.filter((person) => person.name.toLowerCase().startsWith(query))
-  }, [people, value])
-}
-
-/** Replaces the trailing @mention with the chosen name. */
-export function applyMention(value: string, name: string): string {
-  return value.replace(/@[\w]*$/, `@${name} `)
 }
 
 export function Composer({ className, ...props }: ComponentProps<"div">) {
@@ -85,161 +35,12 @@ export function ComposerBar({
   )
 }
 
-export function ComposerMenu({
-  open,
-  align = "start",
-  className,
-  ...props
-}: ComponentProps<"div"> & { open: boolean; align?: "start" | "end" }) {
-  return (
-    <div
-      data-slot="composer-menu"
-      data-open={open || undefined}
-      className={cn(
-        floating,
-        "absolute bottom-full z-10 mb-2 flex w-72 flex-col gap-0.5 rounded-2xl p-1.5",
-        align === "start" ? "start-0 origin-bottom-left" : "end-0 origin-bottom-right",
-        "transition-[opacity,scale] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
-        open ? "scale-100 opacity-100" : "pointer-events-none scale-[0.97] opacity-0",
-        className,
-      )}
-      {...props}
-    />
-  )
-}
-
-export function ComposerMenuItem({
-  active = false,
-  className,
-  ...props
-}: ComponentProps<"button"> & { active?: boolean }) {
-  return (
-    <button
-      type="button"
-      data-slot="composer-menu-item"
-      data-active={active || undefined}
-      className={cn(
-        "flex w-full items-center gap-2.5 rounded-[10px] px-2.5 py-2 text-[13.5px] transition-colors",
-        active ? field : "hover:bg-foreground/[0.04]",
-        className,
-      )}
-      {...props}
-    />
-  )
-}
-
-export function ComposerCommandItem({
-  command,
-  active,
-  ...props
-}: Omit<ComponentProps<"button">, "children"> & {
-  command: ComposerCommand
-  active: boolean
-}) {
-  return (
-    <ComposerMenuItem active={active} {...props}>
-      <command.icon className="text-foreground/35 size-3.5 shrink-0" />
-      <span className="font-medium">/{command.name}</span>
-      <span className="text-foreground/45 flex-1 truncate text-start text-xs">{command.description}</span>
-      {active && <kbd className="bg-foreground/[0.06] text-foreground/45 rounded px-1 font-mono text-[10px]">↵</kbd>}
-    </ComposerMenuItem>
-  )
-}
-
-export function ComposerPersonItem({
-  person,
-  active,
-  ...props
-}: Omit<ComponentProps<"button">, "children"> & {
-  person: ComposerPerson
-  active: boolean
-}) {
-  return (
-    <ComposerMenuItem active={active} {...props}>
-      <span className="bg-foreground/[0.06] text-foreground/45 flex size-5 shrink-0 items-center justify-center rounded-full text-[9px] font-medium">
-        {person.name[0]}
-      </span>
-      <span className="flex-1 truncate text-start">{person.name}</span>
-      <span className={cn(mono, "text-foreground/35")}>{person.role}</span>
-    </ComposerMenuItem>
-  )
-}
-
-export function ComposerInput({
-  onSubmit,
-  onKeyDown,
-  className,
-  ...props
-}: Omit<ComponentProps<"input">, "onSubmit"> & { onSubmit?: () => void }) {
-  return (
-    <input
-      data-slot="composer-input"
-      onKeyDown={(event) => {
-        onKeyDown?.(event)
-        if (event.defaultPrevented) return
-        if (event.key !== "Enter" || event.nativeEvent.isComposing) return
-        onSubmit?.()
-      }}
-      className={cn(
-        "placeholder:text-foreground/35 min-h-11 w-full bg-transparent px-3 text-[15px] caret-blue-500 outline-none dark:caret-blue-400",
-        className,
-      )}
-      {...props}
-    />
-  )
-}
-
 export function ComposerToolbar({ className, ...props }: ComponentProps<"div">) {
   return <div data-slot="composer-toolbar" className={cn("flex items-center justify-between", className)} {...props} />
 }
 
 export function ComposerActions({ className, ...props }: ComponentProps<"div">) {
   return <div data-slot="composer-actions" className={cn("flex items-center gap-1.5", className)} {...props} />
-}
-
-export function ComposerModelTrigger({
-  model,
-  open,
-  className,
-  ...props
-}: Omit<ComponentProps<"button">, "children"> & {
-  model: string
-  open: boolean
-}) {
-  return (
-    <button
-      type="button"
-      aria-expanded={open}
-      data-slot="composer-model-trigger"
-      className={cn(
-        "text-foreground/55 hover:bg-foreground/[0.06] hover:text-foreground/90 dark:hover:bg-foreground/[0.09] flex h-8 items-center gap-1.5 rounded-full px-3 text-[12.5px] transition-colors",
-        className,
-      )}
-      {...props}
-    >
-      {model}
-      <ChevronDownIcon className="size-3 opacity-60" />
-    </button>
-  )
-}
-
-export function ComposerModelItem({
-  entry,
-  selected,
-  ...props
-}: Omit<ComponentProps<"button">, "children"> & {
-  entry: ComposerModel
-  selected: boolean
-}) {
-  return (
-    <ComposerMenuItem active={selected} {...props}>
-      <span className="flex-1 text-start">{entry.name}</span>
-      <span className={cn(mono, "text-foreground/35 tabular-nums")}>{entry.meta}</span>
-      <span className="flex w-4 justify-end">
-        {selected && <CheckIcon className="fade-in zoom-in-90 animate-in size-3.5 duration-200" />}
-      </span>
-    </ComposerMenuItem>
-  )
 }
 
 export function ComposerContext({
@@ -321,34 +122,5 @@ export function ComposerContext({
         </svg>
       </button>
     </div>
-  )
-}
-
-export function ComposerSend({
-  streaming,
-  idle,
-  className,
-  ...props
-}: Omit<ComponentProps<"button">, "children"> & {
-  streaming: boolean
-  idle: boolean
-}) {
-  return (
-    <button
-      type="button"
-      aria-label={streaming ? "Stop generating" : "Send message"}
-      data-slot="composer-send"
-      className={cn(
-        "grid size-8 place-items-center rounded-full",
-        streaming || !idle
-          ? inkButton
-          : "bg-foreground/[0.06] text-foreground/30 dark:bg-foreground/[0.09] transition-colors",
-        className,
-      )}
-      {...props}
-    >
-      <ArrowUpIcon className={cn(iconSwap, "size-4", streaming ? iconSwapOut : iconSwapIn)} />
-      <SquareIcon className={cn(iconSwap, "size-3 fill-current", streaming ? iconSwapIn : iconSwapOut)} />
-    </button>
   )
 }

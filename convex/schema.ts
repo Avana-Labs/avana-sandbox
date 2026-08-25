@@ -9,9 +9,9 @@
  *   - `markets`                     canonical identity (legacy shared; decoupling track splits by product).
  *   - `walletEvents`                source-of-truth user actions (drives engagement + transaction history).
  *   - `marketDailyStats`            daily market snapshot (drives supply/borrow, utilization, key metrics).
- *   - `marketRevenueDaily`          daily revenue (drives cash-flow card).
+ *   - `borrowRevenueDaily` / `lendRevenueDaily` / `multiplyRevenueDaily` product cash flow.
  *   - `assetPoolAllocationDaily`    daily per-pool allocation per asset (drives allocation breakdown).
- *   - `riskAssessments`             risk rating snapshots.
+ *   - `borrowRiskAssessments` / `lendRiskAssessments` / `multiplyRiskAssessments` product risk.
  *   - `borrow*` / `lend*` / `multiply*`  product-siloed detail params (IRM, risk grid, liquidation, borrowables).
  *
  * If you change field names here, update the matching JSDoc `@convex-source`
@@ -658,10 +658,10 @@ export default defineSchema({
     .index("by_chain_contract", ["chainId", "contractAddress"]),
 
   /**
-   * Historical token prices, one row per (symbol, UTC day) — the last price seen that day. Kept
+   * Historical token prices, one row per (symbol, UTC day) — the daily closing snapshot. Kept
    * SEPARATE from the current `tokenPrices` table (§12): current UI reads `tokenPrices`, charts
    * read this history, so an old value can never be mistaken for the live price. Bounded growth
-   * (one row per token per day) via upsert on (symbol, day).
+   * (one row per token per day) via the daily prices snapshot job.
    */
   tokenPricesHistory: defineTable({
     symbol: v.string(),
@@ -995,7 +995,7 @@ export default defineSchema({
   sandboxProfiles: defineTable({
     /** Lowercased wallet address; must match the authenticated identity. */
     wallet: v.string(),
-    /** Identity subject from the auth issuer (Privy user id or SIWE-JWT subject). */
+    /** @deprecated Migration-only. New identity data belongs in walletProfiles. */
     authSubject: v.optional(v.string()),
     createdAt: v.number(),
     seedVersion: v.number(),
@@ -1020,6 +1020,7 @@ export default defineSchema({
     tweetUrl: v.optional(v.string()),
     tweetedAt: v.optional(v.number()),
     claimTxSynthetic: v.optional(v.string()),
+    /** @deprecated Migration-only. New preferences belong in walletProfiles. */
     preferences: v.optional(
       v.object({
         theme: v.optional(v.string()),
@@ -1036,18 +1037,27 @@ export default defineSchema({
     .index("by_wallet", ["wallet"])
     .index("by_authSubject", ["authSubject"]),
 
-  /** Liquid play-money balances granted at onboarding but not yet deployed into a market. */
-  sandboxBalances: defineTable({
+  /** Permanent wallet identity and display preferences, independent of Sandbox onboarding. */
+  walletProfiles: defineTable({
+    /** Lowercased wallet address derived from the authenticated identity. */
     wallet: v.string(),
-    assetSlug: v.string(),
-    symbol: v.string(),
-    amount: v.number(),
-    valueUsd: v.number(),
-    priceUsd: v.number(),
+    /** Identity subject from the auth issuer (Privy user id or SIWE-JWT subject). */
+    authSubject: v.optional(v.string()),
+    preferences: v.optional(
+      v.object({
+        theme: v.optional(v.string()),
+        language: v.optional(v.string()),
+        currency: v.optional(v.string()),
+        showDollarAmounts: v.optional(v.boolean()),
+        name: v.optional(v.string()),
+        dexSources: v.optional(v.array(v.string())),
+      }),
+    ),
+    createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_wallet", ["wallet"])
-    .index("by_wallet_asset", ["wallet", "assetSlug"]),
+    .index("by_authSubject", ["authSubject"]),
 
   /** Immutable, idempotent manifest of the wallet's diversified $1M starter grant. */
   starterAllocations: defineTable({
@@ -1471,25 +1481,13 @@ export default defineSchema({
     totalEarnedUsd: v.number(),
   }).index("by_wallet", ["wallet"]),
 
-  /**
-   * Optional per-wallet session metadata: which seed version provisioned this
-   * wallet's starter state, when, and last-seen. The hourly transaction rate limit
-   * is enforced by counting `transactions` in the trailing hour (no counter here),
-   * so this table is purely informational/bookkeeping.
-   */
-  sandboxSessions: defineTable({
+  /** Wallet-scoped seed/session metadata and idempotency flags. */
+  walletSessions: defineTable({
     wallet: v.string(),
     authSubject: v.optional(v.string()),
     seedVersion: v.number(),
     seededAt: v.optional(v.number()),
     lastSeenAt: v.number(),
-    /**
-     * Whether the wallet has been through the umbrella-onboarding seed. Set
-     * once by the onboarding claim so a second claim (or a restore/reset)
-     * does not re-seed umbrella positions/balances/activity. Independent of
-     * the `positions` idempotency gate because sandboxActivity + wallet
-     * balances would otherwise duplicate silently.
-     */
     umbrellaSeeded: v.optional(v.boolean()),
   }).index("by_wallet", ["wallet"]),
 
@@ -1958,27 +1956,6 @@ export default defineSchema({
     .index("by_thread", ["threadId"])
     .index("by_message", ["messageId"]),
 
-  // DEPRECATED: the voice/attachment feature and all its Convex functions were
-  // removed. This table definition is retained only so existing prod rows stay
-  // valid; dropping it is a separate destructive migration (delete rows first).
-  askAIAttachments: defineTable({
-    ownerSubject: v.string(),
-    threadId: v.string(),
-    storageId: v.id("_storage"),
-    agentFileId: v.optional(v.string()),
-    name: v.string(),
-    mediaType: v.string(),
-    size: v.number(),
-    status: v.union(v.literal("uploaded"), v.literal("processed"), v.literal("failed")),
-    extractedText: v.optional(v.string()),
-    error: v.optional(v.string()),
-    createdAt: v.number(),
-    updatedAt: v.number(),
-  })
-    .index("by_owner", ["ownerSubject"])
-    .index("by_thread", ["threadId"])
-    .index("by_storage", ["storageId"]),
-
   askAITurns: defineTable({
     threadId: v.string(),
     ownerSubject: v.string(),
@@ -2050,9 +2027,9 @@ export default defineSchema({
 
   /** Normalized cache populated only by external market-provider ingestion. */
   askAIMarketSnapshots: defineTable({
-    // Live sources are coingecko/defillama/aave. uniswap/curve/balancer are legacy
-    // literals kept wide only so stale prod rows validate; narrow to the live three
-    // after running internal.askAIIngestion.purgeLegacyMarketSnapshots.
+    // Only coingecko/defillama/aave are writable by current ingestion. These legacy
+    // literals must remain until production cleanup is verified; narrowing first
+    // makes Convex reject the existing documents during schema validation.
     source: v.union(
       v.literal("coingecko"),
       v.literal("defillama"),
@@ -2066,12 +2043,14 @@ export default defineSchema({
     payload: v.any(),
     sourceUpdatedAt: v.optional(v.number()),
     fetchedAt: v.number(),
+    contentHash: v.optional(v.string()),
   })
     .index("by_source_kind_key", ["source", "kind", "key"])
     .index("by_kind_key", ["kind", "key"])
     .index("by_fetched_at", ["fetchedAt"]),
 
   askAIMarketProviderRuns: defineTable({
+    // Historical run rows use the same legacy source set as market snapshots.
     source: v.union(
       v.literal("coingecko"),
       v.literal("defillama"),
@@ -2088,4 +2067,21 @@ export default defineSchema({
   })
     .index("by_source_completed", ["source", "completedAt"])
     .index("by_status_completed", ["status", "completedAt"]),
+
+  /** Bounded latest ingestion health; one document per active market provider. */
+  askAIMarketProviderState: defineTable({
+    source: v.union(v.literal("defillama"), v.literal("aave")),
+    status: v.union(v.literal("success"), v.literal("failed")),
+    records: v.number(),
+    inserted: v.number(),
+    updated: v.number(),
+    unchanged: v.number(),
+    error: v.optional(v.string()),
+    startedAt: v.number(),
+    completedAt: v.number(),
+    lastCheckedAt: v.number(),
+    lastChangedAt: v.optional(v.number()),
+    lastSuccessAt: v.optional(v.number()),
+    lastFailureAt: v.optional(v.number()),
+  }).index("by_source", ["source"]),
 })

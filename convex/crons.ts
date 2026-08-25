@@ -21,6 +21,7 @@ import { internal } from "./_generated/api"
 const crons = cronJobs()
 
 crons.interval("refresh token prices", { minutes: 10 }, internal.prices.refreshPrices, {})
+crons.daily("snapshot daily token prices", { hourUTC: 23, minuteUTC: 58 }, internal.prices.snapshotDailyTokenPrices, {})
 // FX moves slowly (daily provider updates); hourly keeps the validated fiat layer fresh cheaply.
 crons.interval("refresh fx rates", { hours: 1 }, internal.fx.refreshFxRates, {})
 // Flush each market's running liquidity delta into a persistent daily snapshot near
@@ -37,9 +38,9 @@ crons.interval("rebuild liquidity snapshot", { minutes: 5 }, internal.liquidity.
 // Each source runs on its own staggered schedule so one provider's failure/429 cannot delay the
 // others. DefiLlama covers token prices + cross-protocol pool data (Uniswap/Curve/Balancer/…);
 // Aave covers lending markets via its public keyless v3 API.
-crons.cron("ask ai ingest defillama pools", "3,18,33,48 * * * *", internal.askAIIngestion.ingest, {
+crons.cron("ask ai ingest defillama pools", "3 * * * *", internal.askAIIngestion.ingest, {
   source: "defillama",
 })
-crons.cron("ask ai ingest aave markets", "9,24,39,54 * * * *", internal.askAIIngestion.ingest, { source: "aave" })
+crons.cron("ask ai ingest aave markets", "9,39 * * * *", internal.askAIIngestion.ingest, { source: "aave" })
 
 export default crons

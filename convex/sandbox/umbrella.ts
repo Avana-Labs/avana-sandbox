@@ -3,7 +3,7 @@ import type { MutationCtx, QueryCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
 import type { Doc, Id } from "../_generated/dataModel"
 import { requireSandboxWallet } from "./auth"
-import { upsertWalletBalanceRows } from "../wallet/balances"
+import { readWalletLiquidBalance, upsertLiquidWalletBalance } from "../wallet/balances"
 
 const SECONDS_PER_YEAR = 365 * 24 * 60 * 60
 const COOLDOWN_MS = 20 * 24 * 60 * 60 * 1000
@@ -128,23 +128,10 @@ function rewardAccruedUsd(position: Doc<"positions">, now: number) {
 /**
  * Umbrella liquid-balance writer. Every umbrella stake/unstake mutates the
  * user's spendable balance for the market's underlying token (gho / usdc /
- * usdt / weth), so the write must land in every store that any other product
- * reads:
+ * usdt / weth). `walletLiquidBalances` is the spendable source of truth and
+ * `walletBalances` is its shared aggregate projection.
  *
- *   1. `sandboxBalances` — read by the Convex portfolio snapshot
- *      (`appendPortfolioSnapshot`) and by both `getSessionState` /
- *      `getPortfolioPageState` in convex/sandbox/transactions.ts. If we skip
- *      this, the portfolio "liquid" total drifts by whatever amount the wallet
- *      staked. Onboarding writes the same shape (see convex/sandbox/onboarding.ts
- *      around the starter-allocation loop), so keeping the write here is the
- *      invariant, not a special case.
- *   2. `walletLiquidBalances` — the source of truth Lend / Swap / Borrow read
- *      through `productBalances.listForWallet`. This is the "one wallet
- *      balance" every other product sees.
- *   3. `walletBalances` (via `upsertWalletBalanceRows`) — the shared aggregate
- *      ledger.
- *
- * The three stores are kept in lockstep here so umbrella's post-stake
+ * The two retained ledgers are kept in lockstep here so umbrella's post-stake
  * spendable balance is indistinguishable from what every other product would
  * see: staking 100 GHO decrements the GHO row in each store by the same
  * amount, in the same mutation.
@@ -158,61 +145,18 @@ async function upsertLiquidBalance(
 ) {
   const market = UMBRELLA_MARKETS[marketId]
   const valueUsd = amount * market.priceUsd
-  const existing = await ctx.db
-    .query("sandboxBalances")
-    .withIndex("by_wallet_asset", (q) => q.eq("wallet", wallet).eq("assetSlug", marketId))
-    .unique()
-  if (existing) {
-    await ctx.db.patch(existing._id, { amount, valueUsd, priceUsd: market.priceUsd, updatedAt: now })
-  } else if (amount > 0) {
-    await ctx.db.insert("sandboxBalances", {
-      wallet,
-      assetSlug: marketId,
-      symbol: market.symbol,
-      amount,
-      valueUsd,
-      priceUsd: market.priceUsd,
-      updatedAt: now,
-    })
-  }
-  await upsertWalletBalanceRows(ctx, [
-    {
-      wallet,
-      assetId: marketId,
-      amount,
-      sourceType: "wallet",
-      assetKind: "wallet",
-      symbol: market.symbol,
-      valueUsd6: usd6(valueUsd),
-    },
-  ])
-  // walletLiquidBalances mirrors the "available" bucket every other product
-  // reads via productBalances.listForWallet. Written here (not in
-  // upsertWalletBalanceRows) because the shared aggregate ledger doesn't own
-  // product-specific balance tables.
-  const liquidRows = await ctx.db
-    .query("walletLiquidBalances")
-    .withIndex("by_wallet_asset", (q) => q.eq("wallet", wallet).eq("assetId", marketId))
-    .collect()
-  const liquidExisting = liquidRows[0]
-  const liquidNext = {
+  await upsertLiquidWalletBalance(ctx, {
     wallet,
     assetId: marketId,
     symbol: market.symbol,
-    amount: Math.max(0, amount),
-    valueUsd: Math.max(0, valueUsd),
-    state: "available" as const,
+    amount,
+    valueUsd,
     updatedAt: now,
-  }
-  if (liquidExisting) await ctx.db.patch(liquidExisting._id, liquidNext)
-  else if (liquidNext.amount > 0 || liquidNext.valueUsd > 0) await ctx.db.insert("walletLiquidBalances", liquidNext)
+  })
 }
 
 async function readLiquidBalance(ctx: QueryCtx | MutationCtx, wallet: string, marketId: UmbrellaMarketId) {
-  const row = await ctx.db
-    .query("sandboxBalances")
-    .withIndex("by_wallet_asset", (q) => q.eq("wallet", wallet).eq("assetSlug", marketId))
-    .unique()
+  const row = await readWalletLiquidBalance(ctx, wallet, marketId)
   return row?.amount ?? 0
 }
 
@@ -712,8 +656,8 @@ const UMBRELLA_TEST_FIXTURE = {
 } as const
 
 /**
- * Shared umbrella-seed helper. Seeds wallet balances (sandboxBalances +
- * walletLiquidBalances via upsertLiquidBalance) and open umbrella positions,
+ * Shared umbrella-seed helper. Seeds walletLiquidBalances + walletBalances via
+ * upsertLiquidBalance and open umbrella positions,
  * plus one `sandboxActivity` row per seeded position matching the shape
  * `recordAction` produces (`umbrella_stake`). Both `ensureTestWalletFixtures`
  * and the onboarding claim call this so onboarding parity is by construction.

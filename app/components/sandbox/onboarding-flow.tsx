@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Check, ChevronDown, LoaderCircle, MoveUpRight } from "@/app/components/icons"
-import { useMutation } from "convex/react"
+import { useMutation, useQuery } from "convex/react"
 import { WalletControl } from "@/app/components/wallet-control"
 import { api } from "@/convex/_generated/api"
 import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
@@ -49,6 +49,14 @@ const DEX_SOURCES: Array<{ id: string; label: string }> = [
 
 type BasketSlot = { tokenId: string; weight: number }
 type BasketClaim = { tokenId: string; amount: number; priceUsdAtClaim: number }
+type WalletPreferences = {
+  theme?: string
+  language?: string
+  currency?: string
+  showDollarAmounts?: boolean
+  name?: string
+  dexSources?: string[]
+}
 
 export type OnboardingGateState = {
   onboardingStep:
@@ -59,14 +67,7 @@ export type OnboardingGateState = {
     basketSnapshot?: BasketClaim[]
     tweetUrl?: string
     claimTxSynthetic?: string
-    preferences?: {
-      theme?: string
-      language?: string
-      currency?: string
-      showDollarAmounts?: boolean
-      name?: string
-      dexSources?: string[]
-    }
+    preferences?: WalletPreferences
   } | null
   config: {
     basket: BasketSlot[]
@@ -318,7 +319,7 @@ function BasketPanel({ busy, onClaim }: { busy: boolean; onClaim: () => void }) 
 
 const FIELD_LABEL = "block text-[13px] font-medium text-muted-foreground"
 const FIELD_CONTROL =
-  "mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 text-[15px] text-foreground outline-none transition-colors focus:border-brand"
+  "mt-2 h-12 w-full rounded-2xl border border-border bg-background px-4 text-[15px] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-brand"
 
 /**
  * A labelled dropdown field that mirrors the header's language/currency pickers
@@ -388,17 +389,19 @@ function StepActions({
   onContinue,
   onBack,
   saving = false,
+  disabled = false,
   continueLabel = "Continue",
 }: {
   onContinue: () => void
   onBack?: () => void
   saving?: boolean
+  disabled?: boolean
   continueLabel?: string
 }) {
   const { t } = useTranslation()
   return (
     <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-      <button className={PRIMARY} disabled={saving} onClick={onContinue} type="button">
+      <button className={PRIMARY} disabled={saving || disabled} onClick={onContinue} type="button">
         {saving ? <LoaderCircle className="me-2 size-4 animate-spin" /> : null}
         {t(continueLabel)}
       </button>
@@ -415,41 +418,42 @@ function StepActions({
  * Step 1 of the personalize flow — a short display name, preferred language + currency,
  * and light/dark theme. Language/currency/theme apply app-wide immediately via the shared
  * providers (so this screen itself localizes as you pick), and all four persist to Convex
- * so they follow the wallet on the next sign-in. Name is optional and capped at 10 chars.
+ * so they follow the wallet on the next sign-in. Name is required (Continue stays disabled
+ * until filled) and capped at 10 chars.
  */
 function PersonalizeStep({
-  wallet,
   existing,
   onContinue,
 }: {
-  wallet: string
   existing: OnboardingGateState["profile"]
   onContinue: () => void
 }) {
   const { t } = useTranslation()
-  const savePreferences = useMutation(api.sandbox.onboarding.savePreferences)
+  const savePreferences = useMutation(api.wallet.profiles.savePreferences)
   const prefs = useOptionalLocaleDisplayPreferences()
   const themeCtx = useThemeOptional()
   const setTheme = themeCtx?.setTheme ?? (() => {})
   const [name, setName] = useState(existing?.preferences?.name ?? "")
   const [saving, setSaving] = useState(false)
+  const trimmedName = name.trim().slice(0, MAX_NAME_LENGTH)
+  const canContinue = trimmedName.length > 0
 
   const language = prefs?.language ?? "EN"
   const currency = prefs?.currency ?? "USD"
   const isDark = themeCtx?.resolvedTheme === "dark"
 
   const submit = async () => {
+    if (!canContinue) return
     setSaving(true)
     try {
-      const preferences: {
-        name?: string
-        language: string
-        currency: string
-        theme: "light" | "dark"
-      } = { language, currency, theme: isDark ? "dark" : "light" }
-      const trimmed = name.trim().slice(0, MAX_NAME_LENGTH)
-      if (trimmed) preferences.name = trimmed
-      await savePreferences({ wallet, preferences })
+      await savePreferences({
+        preferences: {
+          name: trimmedName,
+          language,
+          currency,
+          theme: isDark ? "dark" : "light",
+        },
+      })
     } catch {
       // Best-effort: a save blip must never trap the user on this screen.
     } finally {
@@ -467,7 +471,7 @@ function PersonalizeStep({
         <div className="w-full max-w-[420px] space-y-4">
           <div>
             <label className={FIELD_LABEL} htmlFor="onboarding-name">
-              {t("What should we call you?")} <span className="text-muted-foreground/70">({t("optional")})</span>
+              {t("What should we call you?")}
             </label>
             <input
               id="onboarding-name"
@@ -477,6 +481,7 @@ function PersonalizeStep({
               onChange={(event) => setName(event.target.value)}
               placeholder={t("Your name")}
               autoComplete="off"
+              required
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -519,7 +524,7 @@ function PersonalizeStep({
           </div>
         </div>
       </div>
-      <StepActions onContinue={submit} saving={saving} />
+      <StepActions onContinue={submit} saving={saving} disabled={!canContinue} />
     </>
   )
 }
@@ -531,18 +536,16 @@ function PersonalizeStep({
  * advance to funding.
  */
 function LiquiditySourceStep({
-  wallet,
   existing,
   onBack,
   onContinue,
 }: {
-  wallet: string
   existing: OnboardingGateState["profile"]
   onBack: () => void
   onContinue: () => void
 }) {
   const { t } = useTranslation()
-  const savePreferences = useMutation(api.sandbox.onboarding.savePreferences)
+  const savePreferences = useMutation(api.wallet.profiles.savePreferences)
   const [selected, setSelected] = useState<Set<string>>(() => new Set(existing?.preferences?.dexSources ?? []))
   const [saving, setSaving] = useState(false)
 
@@ -557,7 +560,7 @@ function LiquiditySourceStep({
   const submit = async () => {
     setSaving(true)
     try {
-      await savePreferences({ wallet, preferences: { dexSources: [...selected] } })
+      await savePreferences({ preferences: { dexSources: [...selected] } })
     } catch {
       // Best-effort: never trap the user on this screen.
     } finally {
@@ -605,6 +608,8 @@ function LiquiditySourceStep({
 }
 
 export function OnboardingFlow({ wallet, state }: { wallet: string | null; state: OnboardingGateState | null }) {
+  const walletProfile = useQuery(api.wallet.profiles.getMine, wallet ? {} : "skip") as
+    { preferences?: WalletPreferences } | null | undefined
   const beginAnalysis = useMutation(api.sandbox.onboarding.beginAnalysis)
   const completeAnalysis = useMutation(api.sandbox.onboarding.startAnalysis)
   const startTweet = useMutation(api.sandbox.onboarding.startTweet)
@@ -706,14 +711,14 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
   // Skip the personalize sub-steps for a wallet that has already saved them; otherwise show
   // them once when we first land on the "wallet" step. Init in an effect (not render) so a
   // late-resolving profile still initializes correctly.
-  const savedPrefs = state?.profile?.preferences
+  const savedPrefs = walletProfile?.preferences
   const prefsAlreadySet = Boolean(savedPrefs?.name || (savedPrefs?.dexSources && savedPrefs.dexSources.length > 0))
   useEffect(() => {
-    if (step === "wallet" && !prefStepInit.current) {
+    if (step === "wallet" && walletProfile !== undefined && !prefStepInit.current) {
       prefStepInit.current = true
       setPrefStep(prefsAlreadySet ? "fund" : "personalize")
     }
-  }, [step, prefsAlreadySet])
+  }, [step, prefsAlreadySet, walletProfile])
 
   const economy = state?.economy ?? {
     status: "open" as const,
@@ -811,11 +816,13 @@ export function OnboardingFlow({ wallet, state }: { wallet: string | null; state
             </p>
           </>
         ) : step === "wallet" && prefStep === "personalize" ? (
-          <PersonalizeStep wallet={wallet!} existing={state.profile} onContinue={() => setPrefStep("dexSources")} />
+          <PersonalizeStep
+            existing={walletProfile ? { preferences: walletProfile.preferences } : null}
+            onContinue={() => setPrefStep("dexSources")}
+          />
         ) : step === "wallet" && prefStep === "dexSources" ? (
           <LiquiditySourceStep
-            wallet={wallet!}
-            existing={state.profile}
+            existing={walletProfile ? { preferences: walletProfile.preferences } : null}
             onBack={() => setPrefStep("personalize")}
             onContinue={() => setPrefStep("fund")}
           />

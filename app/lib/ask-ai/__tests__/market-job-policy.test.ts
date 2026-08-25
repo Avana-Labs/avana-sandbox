@@ -17,6 +17,8 @@ describe("Ask AI market job policy", () => {
     // Ask AI market cache refreshes without any per-request provider fetch.
     expect(ingestion).toContain("export const ingest = internalAction")
     expect(crons).toContain("internal.askAIIngestion.ingest")
+    expect(crons).toContain('"ask ai ingest defillama pools", "3 * * * *"')
+    expect(crons).toContain('"ask ai ingest aave markets", "9,39 * * * *"')
     // RAG corpus ingestion stays operator-triggered (explicit data-export approval) — no cron.
     expect(crons).not.toContain("askAIRag")
   })

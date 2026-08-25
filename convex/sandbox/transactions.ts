@@ -21,7 +21,7 @@
 import { v, type Infer } from "convex/values"
 import type { MutationCtx, QueryCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
-import { upsertWalletBalanceRows } from "../wallet/balances"
+import { liquidBalanceView, readWalletLiquidBalance, upsertLiquidWalletBalance } from "../wallet/balances"
 import { requireSandboxWallet } from "./auth"
 import { computeSwapQuoteMath } from "./swapQuoteEngine"
 import { tokenNotionalToUsd } from "./collateralUsd"
@@ -31,7 +31,7 @@ import type { Doc } from "../_generated/dataModel"
 type ProductBalanceTable =
   "walletLendBalances" | "walletBorrowBalances" | "walletMultiplyBalances" | "walletLiquidBalances"
 
-/** Apply a successful swap to durable liquid balances (sandboxBalances + walletBalances). */
+/** Apply a successful swap to the canonical liquid and aggregate wallet ledgers. */
 async function applySwapBalanceDelta(
   ctx: MutationCtx,
   wallet: string,
@@ -52,54 +52,29 @@ async function applySwapBalanceDelta(
   ] as const
 
   for (const leg of legs) {
-    const sandbox = await ctx.db
-      .query("sandboxBalances")
-      .withIndex("by_wallet_asset", (q) => q.eq("wallet", wallet).eq("assetSlug", leg.assetId))
-      .unique()
-    const nextAmount = Math.max(0, (sandbox?.amount ?? 0) + leg.delta)
+    const liquid = await readWalletLiquidBalance(ctx, wallet, leg.assetId)
+    const nextAmount = Math.max(0, (liquid?.amount ?? 0) + leg.delta)
     const priceUsd =
-      sandbox?.priceUsd ??
-      (leg.assetId === args.inputAssetId && args.inputAmount > 0
-        ? args.amountUsd / args.inputAmount
-        : leg.assetId === args.outputAssetId && args.outputAmount > 0
-          ? args.amountUsd / args.outputAmount
-          : 1)
+      liquid && liquid.amount > 0
+        ? liquid.valueUsd / liquid.amount
+        : leg.assetId === args.inputAssetId && args.inputAmount > 0
+          ? args.amountUsd / args.inputAmount
+          : leg.assetId === args.outputAssetId && args.outputAmount > 0
+            ? args.amountUsd / args.outputAmount
+            : 1
     const valueUsd = nextAmount * priceUsd
-    if (sandbox) {
-      await ctx.db.patch(sandbox._id, { amount: nextAmount, valueUsd, priceUsd, updatedAt: now })
-    } else if (nextAmount > 0) {
-      await ctx.db.insert("sandboxBalances", {
-        wallet,
-        assetSlug: leg.assetId,
-        symbol: leg.symbol,
-        amount: nextAmount,
-        valueUsd,
-        priceUsd,
-        updatedAt: now,
-      })
-    }
-    await upsertWalletBalanceRows(ctx, [
-      {
-        wallet,
-        assetId: leg.assetId,
-        amount: nextAmount,
-        sourceType: "wallet",
-        assetKind: "wallet",
-        symbol: leg.symbol,
-        valueUsd6: String(Math.round(valueUsd * 1_000_000)),
-      },
-    ])
-    await upsertProductBalanceValue(ctx, "walletLiquidBalances", wallet, {
+    await upsertLiquidWalletBalance(ctx, {
+      wallet,
       assetId: leg.assetId,
       symbol: leg.symbol,
       amount: nextAmount,
       valueUsd,
-      state: "available",
+      updatedAt: now,
     })
   }
 }
 
-/** Debit/credit one liquid asset in sandboxBalances + walletBalances (lend/borrow cash legs). */
+/** Debit/credit one liquid asset in the canonical wallet ledgers. */
 async function applyLiquidAssetDelta(
   ctx: MutationCtx,
   wallet: string,
@@ -109,37 +84,11 @@ async function applyLiquidAssetDelta(
   now: number,
 ) {
   if (!Number.isFinite(delta) || delta === 0) return
-  const sandbox = await ctx.db
-    .query("sandboxBalances")
-    .withIndex("by_wallet_asset", (q) => q.eq("wallet", wallet).eq("assetSlug", assetId))
-    .unique()
-  const priceUsd = sandbox?.priceUsd && sandbox.priceUsd > 0 ? sandbox.priceUsd : 1
-  const nextAmount = Math.max(0, (sandbox?.amount ?? 0) + delta)
+  const liquid = await readWalletLiquidBalance(ctx, wallet, assetId)
+  const priceUsd = liquid && liquid.amount > 0 && liquid.valueUsd > 0 ? liquid.valueUsd / liquid.amount : 1
+  const nextAmount = Math.max(0, (liquid?.amount ?? 0) + delta)
   const valueUsd = nextAmount * priceUsd
-  if (sandbox) {
-    await ctx.db.patch(sandbox._id, { amount: nextAmount, valueUsd, priceUsd, updatedAt: now })
-  } else if (nextAmount > 0) {
-    await ctx.db.insert("sandboxBalances", {
-      wallet,
-      assetSlug: assetId,
-      symbol,
-      amount: nextAmount,
-      valueUsd,
-      priceUsd,
-      updatedAt: now,
-    })
-  }
-  await upsertWalletBalanceRows(ctx, [
-    {
-      wallet,
-      assetId,
-      amount: nextAmount,
-      sourceType: "wallet",
-      assetKind: "wallet",
-      symbol,
-      valueUsd6: String(Math.round(valueUsd * 1_000_000)),
-    },
-  ])
+  await upsertLiquidWalletBalance(ctx, { wallet, assetId, symbol, amount: nextAmount, valueUsd, updatedAt: now })
 }
 
 async function upsertProductBalanceValue(
@@ -622,7 +571,7 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
       .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
       .collect(),
     ctx.db
-      .query("sandboxBalances")
+      .query("walletLiquidBalances")
       .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
       .collect(),
     ctx.db
@@ -1151,11 +1100,8 @@ export const recordTransaction = mutation({
         (args.product === "borrow" && (args.kind === "borrow" || args.kind === "repay"))
       ) {
         const assetId = liquidAssetIdFromArgs(args.assetId, marketSlug)
-        const sandbox = await ctx.db
-          .query("sandboxBalances")
-          .withIndex("by_wallet_asset", (q) => q.eq("wallet", wallet).eq("assetSlug", assetId))
-          .unique()
-        const priceUsd = sandbox?.priceUsd && sandbox.priceUsd > 0 ? sandbox.priceUsd : 1
+        const liquid = await readWalletLiquidBalance(ctx, wallet, assetId)
+        const priceUsd = liquid && liquid.amount > 0 && liquid.valueUsd > 0 ? liquid.valueUsd / liquid.amount : 1
         const tokenAmount = args.amountUsd / priceUsd
         const signed = args.kind === "deposit" || args.kind === "repay" ? -tokenAmount : tokenAmount
         // Affordability: a cash-out (deposit/repay debits liquid) cannot spend more than the wallet
@@ -1163,7 +1109,7 @@ export const recordTransaction = mutation({
         // full amount — minting net worth. Enforced when a liquid row exists (seeded wallets); a
         // wallet with no row for this asset falls through to the existing clamp (fail-open so
         // unseeded/test flows are unaffected).
-        if (signed < 0 && sandbox && sandbox.amount + signed < -1e-6) {
+        if (signed < 0 && liquid && liquid.amount + signed < -1e-6) {
           throw new Error("INSUFFICIENT_BALANCE: not enough liquid balance for this action.")
         }
         await applyLiquidAssetDelta(ctx, wallet, assetId, assetId.toUpperCase(), signed, now)
@@ -1426,13 +1372,13 @@ async function applyProductBucketDelta(
  * A swap is a pure liquid-balance move (debit input token, credit output token) with no
  * position, so it takes the dedicated path here instead of `recordTransaction`'s
  * position-oriented transition validation. Same ownership + idempotency + rate-limit
- * guarantees. On success, sandboxBalances + walletBalances are updated so the dashboard
+ * guarantees. On success, walletLiquidBalances + walletBalances are updated so the dashboard
  * Wallet tab and portfolio liquid legs stay durable. Swaps are USD-neutral at the
  * portfolio-net level, so no portfolio snapshot is appended.
  */
 /**
  * Server-side USD price for a swap leg: the live token oracle (tokenPrices, keyed by lowercase
- * symbol) first, then the wallet's own held sandbox row as a fallback for assets the oracle does
+ * symbol) first, then the wallet's own liquid row as a fallback for assets the oracle does
  * not cover. Returns null when no trustworthy server price exists (validation is then skipped for
  * that leg). Never trusts a client-supplied price.
  */
@@ -1447,11 +1393,8 @@ async function swapLegServerPriceUsd(
     .withIndex("by_symbol", (q) => q.eq("symbol", symbol.toLowerCase()))
     .first()
   if (oracle && oracle.priceUsd > 0 && oracle.status !== "invalid") return oracle.priceUsd
-  const held = await ctx.db
-    .query("sandboxBalances")
-    .withIndex("by_wallet_asset", (q) => q.eq("wallet", wallet).eq("assetSlug", assetId))
-    .unique()
-  if (held?.priceUsd && held.priceUsd > 0) return held.priceUsd
+  const held = await readWalletLiquidBalance(ctx, wallet, assetId)
+  if (held && held.amount > 0 && held.valueUsd > 0) return held.valueUsd / held.amount
   return null
 }
 
@@ -1659,7 +1602,7 @@ export const recordRiskSnapshot = mutation({
   },
 })
 
-/** Merged wallet activity feed: product transactions + onboarding activity, newest first. */
+/** Merged wallet activity feed: product transactions + sandbox activity, newest first. */
 export const getActivity = query({
   args: { wallet: v.string(), limit: v.optional(v.number()) },
   handler: async (ctx, args) => {
@@ -1675,30 +1618,35 @@ export const getActivity = query({
       .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
       .order("desc")
       .take(limit)
-    const merged = [
-      ...txs.map((t) => ({
-        source: "transaction" as const,
-        id: t._id as string,
-        product: t.product as string,
-        kind: t.kind,
-        status: t.status as string,
-        amountUsd: t.amountUsd,
-        marketSlug: t.marketSlug ?? null,
-        hash: t.syntheticTxHash,
-        at: t.at,
-      })),
-      ...acts.map((a) => ({
-        source: "onboarding" as const,
+    const transactionItems = txs.map((t) => ({
+      source: "transaction" as const,
+      id: t._id as string,
+      product: t.product as string,
+      kind: t.kind,
+      status: t.status as string,
+      amountUsd: t.amountUsd,
+      marketSlug: t.marketSlug ?? null,
+      hash: t.syntheticTxHash,
+      at: t.at,
+    }))
+    const activityItems = acts.map((a) => {
+      const umbrellaKind = a.kind.startsWith("umbrella_") ? a.kind.slice("umbrella_".length) : null
+      return {
+        source: "sandboxActivity" as const,
         id: a._id as string,
-        product: "onboarding",
-        kind: a.kind,
+        product: umbrellaKind ? "umbrella" : "onboarding",
+        kind: umbrellaKind ?? a.kind,
         status: "success",
         amountUsd: a.amountUsd,
         marketSlug: a.marketSlug ?? null,
         hash: a.syntheticTxHash,
         at: a.at,
-      })),
-    ]
+      }
+    })
+    const identity = (item: { hash: string; product: string; kind: string; marketSlug: string | null }) =>
+      `${item.hash}\u0000${item.product}\u0000${item.kind}\u0000${item.marketSlug ?? ""}`
+    const transactionIdentities = new Set(transactionItems.map(identity))
+    const merged = [...transactionItems, ...activityItems.filter((item) => !transactionIdentities.has(identity(item)))]
     merged.sort((x, y) => y.at - x.at)
     return merged.slice(0, limit)
   },
@@ -1767,7 +1715,7 @@ export const getSessionState = query({
         .order("desc")
         .take(500),
       ctx.db
-        .query("sandboxBalances")
+        .query("walletLiquidBalances")
         .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
         .collect(),
       ctx.db
@@ -1798,7 +1746,7 @@ export const getSessionState = query({
     return {
       positions: hydratedPositions,
       transactions,
-      balances,
+      balances: balances.map(liquidBalanceView),
       starterAllocation,
       rewardClaims: rewardClaims.map((row) => ({
         rewardPositionId: row.rewardPositionId,
@@ -1877,7 +1825,7 @@ export const getPortfolioPageState = query({
           .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
           .unique(),
         ctx.db
-          .query("sandboxBalances")
+          .query("walletLiquidBalances")
           .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
           .collect(),
         ctx.db
@@ -1917,7 +1865,7 @@ export const getPortfolioPageState = query({
       pools,
       markets,
       rewards,
-      balances,
+      balances: balances.map(liquidBalanceView),
       starterAllocation,
     }
   },

@@ -1,6 +1,6 @@
 import type { ActionProduct } from "./contracts"
 
-export type DashboardTabKey = "wallet" | "lend" | "borrow" | "multiply" | "referrals" | "rewards" | "transactions"
+export type DashboardTabKey = "wallet" | "lend" | "borrow" | "multiply" | "referrals" | "rewards"
 
 const PRODUCT_TAB: Record<ActionProduct, DashboardTabKey> = {
   borrow: "borrow",
@@ -20,15 +20,7 @@ const PRODUCT_SUCCESS_LABEL: Partial<Record<ActionProduct, string>> = {
   umbrella: "Back to Umbrella",
 }
 
-const VALID_TABS = new Set<DashboardTabKey>([
-  "wallet",
-  "lend",
-  "borrow",
-  "multiply",
-  "referrals",
-  "rewards",
-  "transactions",
-])
+const VALID_TABS = new Set<DashboardTabKey>(["wallet", "lend", "borrow", "multiply", "referrals", "rewards"])
 
 export function dashboardTabForProduct(product: ActionProduct): DashboardTabKey {
   return PRODUCT_TAB[product]

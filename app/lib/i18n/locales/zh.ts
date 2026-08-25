@@ -319,6 +319,7 @@ const dict: TranslationDictionary = {
   Loading: "加载中",
   "Price chart": "价格图表",
   "No activity matches the current filters.": "没有活动符合当前筛选条件。",
+  "No recent activity.": "暂无最近活动。",
   "Filter markets": "筛选市场",
   ASSET: "资产",
   "SUPPLY APY": "供应 APY",

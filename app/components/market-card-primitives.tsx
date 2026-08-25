@@ -88,49 +88,6 @@ export function MarketMobileStatRow({
   )
 }
 
-export function MarketMobileInsetStats({
-  children,
-  columns = 2,
-  className,
-}: {
-  children: ReactNode
-  columns?: 2 | 3
-  className?: string
-}) {
-  return (
-    <div
-      className={cn(
-        "grid divide-x divide-border border-t border-border bg-background",
-        columns === 2 ? "grid-cols-2" : "grid-cols-3",
-        className,
-      )}
-    >
-      {children}
-    </div>
-  )
-}
-
-export function MarketMobileInsetStat({
-  value,
-  label,
-  valueClassName,
-}: {
-  value: ReactNode
-  label: ReactNode
-  valueClassName?: string
-}) {
-  return (
-    <div className="flex flex-col items-center justify-center px-2 py-2.5">
-      <span className={cn("font-data text-[14px] font-medium tabular-nums text-foreground", valueClassName)}>
-        {value}
-      </span>
-      <span className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-        {label}
-      </span>
-    </div>
-  )
-}
-
 export function MarketMobilePrimaryAction({
   children,
   className,

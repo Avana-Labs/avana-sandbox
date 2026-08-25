@@ -28,12 +28,11 @@ import type * as borrow_poolBorrowables from "../borrow/poolBorrowables.js";
 import type * as borrow_riskAssessment from "../borrow/riskAssessment.js";
 import type * as borrow_riskParameters from "../borrow/riskParameters.js";
 import type * as borrow_spokes from "../borrow/spokes.js";
-import type * as cashflow from "../cashflow.js";
 import type * as cashflowHelpers from "../cashflowHelpers.js";
-import type * as content from "../content.js";
 import type * as contractAddresses from "../contractAddresses.js";
 import type * as crons from "../crons.js";
 import type * as fx from "../fx.js";
+import type * as legacyMarketCoverage from "../legacyMarketCoverage.js";
 import type * as lend_cashflow from "../lend/cashflow.js";
 import type * as lend_content from "../lend/content.js";
 import type * as lend_dailyStats from "../lend/dailyStats.js";
@@ -55,7 +54,6 @@ import type * as multiply_riskParameters from "../multiply/riskParameters.js";
 import type * as multiply_tokenParameters from "../multiply/tokenParameters.js";
 import type * as prices from "../prices.js";
 import type * as rateLimits from "../rateLimits.js";
-import type * as risk from "../risk.js";
 import type * as sandbox_auth from "../sandbox/auth.js";
 import type * as sandbox_collateralUsd from "../sandbox/collateralUsd.js";
 import type * as sandbox_dev from "../sandbox/dev.js";
@@ -80,6 +78,8 @@ import type * as wallet_debts from "../wallet/debts.js";
 import type * as wallet_feeApyWads from "../wallet/feeApyWads.js";
 import type * as wallet_lpTokenPrices from "../wallet/lpTokenPrices.js";
 import type * as wallet_productBalances from "../wallet/productBalances.js";
+import type * as wallet_profiles from "../wallet/profiles.js";
+import type * as wallet_sessions from "../wallet/sessions.js";
 
 import type {
   ApiFromModules,
@@ -108,12 +108,11 @@ declare const fullApi: ApiFromModules<{
   "borrow/riskAssessment": typeof borrow_riskAssessment;
   "borrow/riskParameters": typeof borrow_riskParameters;
   "borrow/spokes": typeof borrow_spokes;
-  cashflow: typeof cashflow;
   cashflowHelpers: typeof cashflowHelpers;
-  content: typeof content;
   contractAddresses: typeof contractAddresses;
   crons: typeof crons;
   fx: typeof fx;
+  legacyMarketCoverage: typeof legacyMarketCoverage;
   "lend/cashflow": typeof lend_cashflow;
   "lend/content": typeof lend_content;
   "lend/dailyStats": typeof lend_dailyStats;
@@ -135,7 +134,6 @@ declare const fullApi: ApiFromModules<{
   "multiply/tokenParameters": typeof multiply_tokenParameters;
   prices: typeof prices;
   rateLimits: typeof rateLimits;
-  risk: typeof risk;
   "sandbox/auth": typeof sandbox_auth;
   "sandbox/collateralUsd": typeof sandbox_collateralUsd;
   "sandbox/dev": typeof sandbox_dev;
@@ -160,6 +158,8 @@ declare const fullApi: ApiFromModules<{
   "wallet/feeApyWads": typeof wallet_feeApyWads;
   "wallet/lpTokenPrices": typeof wallet_lpTokenPrices;
   "wallet/productBalances": typeof wallet_productBalances;
+  "wallet/profiles": typeof wallet_profiles;
+  "wallet/sessions": typeof wallet_sessions;
 }>;
 
 /**

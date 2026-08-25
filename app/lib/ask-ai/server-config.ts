@@ -15,7 +15,6 @@ export function getAskAIServerConfig() {
     maxOutputTokens: readPositiveInteger(process.env.ASK_AI_MAX_OUTPUT_TOKENS, ASK_AI_CONFIG.maxOutputTokens),
     providers: {
       openAIConfigured: Boolean(process.env.OPENAI_API_KEY),
-      coinGeckoConfigured: Boolean(process.env.COINGECKO_API_KEY),
     },
   }
 }

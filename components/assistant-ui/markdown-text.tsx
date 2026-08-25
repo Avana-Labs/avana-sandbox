@@ -4,7 +4,6 @@ import "@assistant-ui/react-markdown/styles/dot.css"
 
 import {
   type CodeHeaderProps,
-  MarkdownTextPrimitive,
   unstable_memoizeMarkdownComponents as memoizeMarkdownComponents,
   useIsMarkdownCodeBlock,
 } from "@assistant-ui/react-markdown"
@@ -15,12 +14,6 @@ import { CheckIcon, CopyIcon } from "lucide-react"
 
 import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button"
 import { cn } from "@/lib/utils"
-
-const MarkdownTextImpl = () => {
-  return <MarkdownTextPrimitive remarkPlugins={[remarkGfm]} className="aui-md" components={defaultComponents} defer />
-}
-
-export const MarkdownText = memo(MarkdownTextImpl)
 
 export const MarkdownTextContent = memo(function MarkdownTextContent({ text }: { text: string }) {
   return (

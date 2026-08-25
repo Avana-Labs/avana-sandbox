@@ -9,8 +9,10 @@ const beginAnalysis = vi.fn().mockResolvedValue("analyzing")
 const beginClaim = vi.fn().mockResolvedValue("claimPending")
 const claim = vi.fn().mockResolvedValue({ status: "done", allocatedUsd: 1_000_000 })
 const noop = vi.fn().mockResolvedValue(undefined)
+let walletProfile: { preferences?: { name?: string; dexSources?: string[] } } | null = null
 
 vi.mock("convex/react", () => ({
+  useQuery: () => walletProfile,
   useMutation: (ref: { fn: () => unknown }) => {
     const name = String(ref?.fn ?? "")
     if (name.includes("startAnalysis")) return startAnalysis
@@ -36,6 +38,7 @@ vi.mock("@/convex/_generated/api", () => ({
         claim: { fn: () => "claim" },
       },
     },
+    wallet: { profiles: { getMine: { fn: () => "getMine" }, savePreferences: { fn: () => "savePreferences" } } },
   },
 }))
 
@@ -64,6 +67,7 @@ function stateWithStep(
 afterEach(() => {
   cleanup()
   vi.clearAllMocks()
+  walletProfile = null
 })
 
 describe("OnboardingFlow — stranded loading recovery (issue #83)", () => {
@@ -124,13 +128,15 @@ describe("OnboardingFlow — personalize + liquidity-source steps", () => {
     expect(screen.getByText(/Now let's make Avana yours/i)).toBeInTheDocument()
     const nameInput = screen.getByPlaceholderText(/Your name/i)
     expect(nameInput).toHaveAttribute("maxLength", "10")
+    expect(screen.getByRole("button", { name: /^Continue$/i })).toBeDisabled()
     fireEvent.change(nameInput, { target: { value: "ElizabethAlexandra" } })
+    expect(screen.getByRole("button", { name: /^Continue$/i })).toBeEnabled()
     fireEvent.click(screen.getByRole("button", { name: /^Continue$/i }))
 
     // The save is capped at 10 chars regardless of the raw input length.
     await waitFor(() =>
       expect(noop).toHaveBeenCalledWith(
-        expect.objectContaining({ wallet: WALLET, preferences: expect.objectContaining({ name: "ElizabethA" }) }),
+        expect.objectContaining({ preferences: expect.objectContaining({ name: "ElizabethA" }) }),
       ),
     )
 
@@ -140,9 +146,7 @@ describe("OnboardingFlow — personalize + liquidity-source steps", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Continue$/i }))
 
     await waitFor(() =>
-      expect(noop).toHaveBeenCalledWith(
-        expect.objectContaining({ wallet: WALLET, preferences: { dexSources: ["uniswap"] } }),
-      ),
+      expect(noop).toHaveBeenCalledWith(expect.objectContaining({ preferences: { dexSources: ["uniswap"] } })),
     )
 
     // Then the original funding card.
@@ -151,7 +155,7 @@ describe("OnboardingFlow — personalize + liquidity-source steps", () => {
 
   it("skips both steps for a wallet that has already saved preferences", () => {
     const state = stateWithStep("wallet")
-    state.profile = { ...state.profile, preferences: { name: "Sam", dexSources: ["uniswap"] } }
+    walletProfile = { preferences: { name: "Sam", dexSources: ["uniswap"] } }
     render(<OnboardingFlow wallet={WALLET} state={state} />)
 
     expect(screen.getByText(/Let's fund your sandbox/i)).toBeInTheDocument()

@@ -436,6 +436,7 @@ const dict: TranslationDictionary = {
   "My Borrows": "اقتراضاتي",
   "My LP Collaterals": "ضمانات LP الخاصة بي",
   "No activity matches the current filters.": "لا يوجد نشاط يطابق عوامل التصفية الحالية.",
+  "No recent activity.": "لا يوجد نشاط حديث.",
   "No assets match these filters.": "لا توجد أصول تطابق عوامل التصفية هذه.",
   "No assets match your filter.": "لا توجد أصول تطابق تصفيتك.",
   "No debt": "لا يوجد دين",

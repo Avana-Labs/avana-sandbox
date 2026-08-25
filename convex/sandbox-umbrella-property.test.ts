@@ -21,13 +21,13 @@ const DAY_MS = 24 * 60 * 60 * 1000
 
 async function seedLiquid(t: T, amount: number) {
   await t.run(async (ctx) => {
-    await ctx.db.insert("sandboxBalances", {
+    await ctx.db.insert("walletLiquidBalances", {
       wallet: WALLET.toLowerCase(),
-      assetSlug: MARKET,
+      assetId: MARKET,
       symbol: "USDC",
       amount,
       valueUsd: amount,
-      priceUsd: 1,
+      state: "available",
       updatedAt: Date.now(),
     })
   })
@@ -47,9 +47,9 @@ async function readPosition(t: T) {
 async function readLiquid(t: T) {
   return t.run(async (ctx) => {
     const row = await ctx.db
-      .query("sandboxBalances")
-      .withIndex("by_wallet_asset", (q) => q.eq("wallet", WALLET.toLowerCase()).eq("assetSlug", MARKET))
-      .unique()
+      .query("walletLiquidBalances")
+      .withIndex("by_wallet_asset", (q) => q.eq("wallet", WALLET.toLowerCase()).eq("assetId", MARKET))
+      .first()
     return row?.amount ?? 0
   })
 }

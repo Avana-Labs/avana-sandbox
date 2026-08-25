@@ -55,6 +55,8 @@ export function Header() {
 
   // Main chrome: divider only after the page scrolls past the header.
   // Ask / action flow headers keep a permanent border-b on their own sticky bars.
+  // Use border-b (not inset shadow) so the line stays visible above the inner
+  // chrome rows on mobile — inset shadows paint under descendant content.
   useEffect(() => {
     if (!mounted) return
 
@@ -163,8 +165,8 @@ export function Header() {
     <header
       ref={headerRef}
       className={cn(
-        "sticky top-0 z-40 flex h-14 items-center bg-background text-foreground transition-[box-shadow] duration-200",
-        mounted && showDivider ? "shadow-[inset_0_-1px_0_hsl(var(--border))]" : "shadow-none",
+        "sticky top-0 z-40 flex h-14 items-center border-b bg-background text-foreground transition-[border-color] duration-200",
+        mounted && showDivider ? "border-border" : "border-transparent",
       )}
     >
       {/* Full desktop: sides hug content so long locales can't clip labels; search flexes. */}
@@ -246,7 +248,9 @@ export function Header() {
 
       {/* Phone / portrait tablet */}
       <div className="h-full min-w-0 flex-1 lg:hidden">
-        <div className="relative flex h-full w-full items-center justify-between bg-background px-4 text-foreground sm:px-6">
+        {/* No local bg — the sticky header already paints background; a fill here
+            would cover the shared inset divider that desktop uses after scroll. */}
+        <div className="relative flex h-full w-full items-center justify-between px-4 text-foreground sm:px-6">
           <div className="flex items-center gap-3">
             <Link href="/" aria-label={t("Home")} title={t("Home")} className="inline-flex items-center">
               {renderMobileBrand()}

@@ -4,8 +4,8 @@ import { type ThreadMessage, ThreadPrimitive } from "@assistant-ui/react"
 import { useMutation } from "convex/react"
 import Link from "next/link"
 import { ArrowUp, Check, ChevronDown, Copy, Square, ThumbsDown, ThumbsUp } from "lucide-react"
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
-import type { ComponentType } from "react"
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
+import type { ComponentType, MouseEvent as ReactMouseEvent } from "react"
 import { Code2, PieChart, Sparkles, SunMedium, TrendingUp } from "@/app/components/icons"
 import { ASK_AI_CONFIG } from "@/app/lib/ask-ai/config"
 import { Chart } from "@/components/elements/chart"
@@ -27,6 +27,7 @@ import { MarkdownTextContent } from "@/components/assistant-ui/markdown-text"
 import { api } from "@/convex/_generated/api"
 import type { AskAIUsage } from "@/app/lib/ask-ai/chat-protocol"
 import { formatAskAIMessageTimestamp } from "@/app/lib/ask-ai/message-timestamp"
+import { formatAskAIGreeting } from "@/app/lib/ask-ai/greeting"
 import { AskAIFinancialResultCard, type AskAIFinancialResult } from "./ask-ai-financial-result-card"
 
 const FEEDBACK_REASONS = ["Incorrect", "Outdated data", "Not helpful", "Missing context", "Unsafe", "Other"]
@@ -309,21 +310,32 @@ function Composer({
   usage,
   disabled = false,
   running,
+  value,
+  onChange,
   onSend,
   onCancel,
 }: {
   usage?: AskAIUsage
   disabled?: boolean
   running: boolean
+  value: string
+  onChange: (value: string) => void
   onSend: (prompt: string) => void | Promise<void>
   onCancel: () => void | Promise<void>
 }) {
-  const [text, setText] = useState("")
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const submit = () => {
-    const prompt = text.trim()
+    const prompt = value.trim()
     if (!prompt || disabled || running) return
-    setText("")
+    onChange("")
     void onSend(prompt)
+  }
+  const focusComposer = (event: ReactMouseEvent<HTMLElement>) => {
+    const target = event.target as HTMLElement
+    // Keep send/stop/context controls clickable; everything else focuses typing.
+    if (target.closest("button, a, textarea, input, [role='button']")) return
+    if (disabled) return
+    textareaRef.current?.focus()
   }
   return (
     <form
@@ -335,10 +347,11 @@ function Composer({
       }}
     >
       <ElementComposer className="max-w-none">
-        <ComposerBar className="cursor-text bg-card focus-within:border-border">
+        <ComposerBar className="relative cursor-text bg-card focus-within:border-border" onClick={focusComposer}>
           <textarea
-            value={text}
-            onChange={(event) => setText(event.currentTarget.value)}
+            ref={textareaRef}
+            value={value}
+            onChange={(event) => onChange(event.currentTarget.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter" && !event.shiftKey) {
                 event.preventDefault()
@@ -353,10 +366,12 @@ function Composer({
             rows={1}
             disabled={disabled}
             enterKeyHint="send"
-            className="max-h-48 min-h-10 w-full resize-none bg-transparent px-2.5 py-1 text-base leading-6 outline-none placeholder:text-muted-foreground/60"
+            // Textarea fills the card; bottom padding clears the overlaid toolbar so
+            // nearly the whole composer is a real typing hit-target (not just one row).
+            className="max-h-48 min-h-[5.25rem] w-full resize-none bg-transparent px-2.5 pb-11 pt-1 text-base leading-6 outline-none placeholder:text-muted-foreground/60"
           />
-          <ComposerToolbar className="relative">
-            <ComposerActions>
+          <ComposerToolbar className="pointer-events-none absolute inset-x-2.5 bottom-2.5">
+            <ComposerActions className="pointer-events-auto">
               {usage ? (
                 <ComposerContext
                   usage={{
@@ -367,7 +382,7 @@ function Composer({
                 />
               ) : null}
             </ComposerActions>
-            <ComposerActions>
+            <ComposerActions className="pointer-events-auto">
               {running ? (
                 <button
                   type="button"
@@ -381,7 +396,7 @@ function Composer({
                 <button
                   type="submit"
                   aria-label="Send message"
-                  disabled={disabled || !text.trim()}
+                  disabled={disabled || !value.trim()}
                   className="inline-flex size-9 items-center justify-center rounded-full bg-foreground text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-foreground/15 disabled:text-foreground/40"
                 >
                   <ArrowUp className="size-[18px]" />
@@ -411,6 +426,7 @@ export function AskAIThread({
   onCancelRunning,
   onCancelQueued,
   loading = false,
+  displayName = null,
 }: {
   threadsOpen: boolean
   onToggleThreads: () => void
@@ -427,8 +443,16 @@ export function AskAIThread({
   onCancelRunning: () => void | Promise<void>
   onCancelQueued: (turnId: string) => void | Promise<void>
   loading?: boolean
+  /** Onboarding `preferences.name` when signed in; guests pass null. */
+  displayName?: string | null
 }) {
   const isEmpty = messages.length === 0
+  const [draft, setDraft] = useState("")
+  const [hoveredPrompt, setHoveredPrompt] = useState<string | null>(null)
+  const composerValue = hoveredPrompt ?? draft
+  // Freeze the clock on mount; recompute only when the display name arrives from Convex.
+  const [greetingNow] = useState(() => new Date())
+  const greeting = useMemo(() => formatAskAIGreeting(displayName, greetingNow), [displayName, greetingNow])
   const scrollSignature = (() => {
     const last = messages.at(-1)
     const content = last?.content
@@ -494,11 +518,8 @@ export function AskAIThread({
             ) : (
               <>
                 {isEmpty ? (
-                  <div className="mb-6 flex flex-col items-center gap-1.5 px-4 text-center">
-                    <h1 className="text-2xl font-medium tracking-tight">Hey, I&apos;m Avana! What&apos;s uuuup? ✨</h1>
-                    <p className="text-sm text-muted-foreground">
-                      Ask me anything, your positions, or the markets. No question&apos;s too basic, promise! 💛
-                    </p>
+                  <div className="mb-6 flex flex-col items-center px-4 text-center">
+                    <h1 className="text-2xl font-medium tracking-tight">{greeting}</h1>
                   </div>
                 ) : null}
 
@@ -556,16 +577,37 @@ export function AskAIThread({
                 usage={usage}
                 disabled={messagesRemaining === 0}
                 running={Boolean(runningPrompt)}
+                value={composerValue}
+                onChange={(next) => {
+                  setHoveredPrompt(null)
+                  setDraft(next)
+                }}
                 onSend={onSend}
                 onCancel={onCancelRunning}
               />
               {isEmpty ? (
-                <div className="flex w-full flex-wrap items-center justify-center gap-2 px-4">
+                <div
+                  className="flex w-full flex-wrap items-center justify-center gap-2 px-4"
+                  onMouseLeave={() => setHoveredPrompt(null)}
+                  onBlur={(event) => {
+                    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                      setHoveredPrompt(null)
+                    }
+                  }}
+                >
                   {ASK_AI_SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (
                     <ThreadPrimitive.Suggestion
                       key={label}
                       prompt={prompt}
                       send
+                      title={prompt}
+                      aria-label={`${label}: ${prompt}`}
+                      onMouseEnter={() => setHoveredPrompt(prompt)}
+                      onFocus={() => setHoveredPrompt(prompt)}
+                      onClick={() => {
+                        setHoveredPrompt(null)
+                        setDraft("")
+                      }}
                       className="flex h-auto items-center gap-1.5 whitespace-nowrap rounded-full border border-border/60 px-3.5 py-1.5 text-sm font-normal text-foreground transition-colors hover:bg-muted"
                     >
                       <Icon className="size-4" aria-hidden />
