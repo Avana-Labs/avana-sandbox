@@ -27,7 +27,6 @@ import {
 } from "./selectors"
 import { selectBorrowSnapshot, selectPortfolioDebtRows, selectPortfolioSupplyRows } from "./dashboard-selectors"
 import { BORROW_DEXES, BORROW_PENDING_ROWS } from "@/app/lib/data/catalog/borrow"
-import { serializeBorrowSystemState } from "./codec"
 
 function fixedToNumber(value: bigint, decimals: number) {
   return Number.parseFloat(formatFixed(value, decimals))
@@ -181,7 +180,10 @@ export function buildBorrowPageData(
 
   return {
     walletId,
-    borrowSessionSeed: serializeBorrowSystemState(state),
+    // Session seed lives in AvanaSessionsProvider (client). Shipping the full
+    // serialized BorrowSystemState here duplicated ~250KB+ into every catalog RSC
+    // payload without a consumer on the list page (C06).
+    borrowSessionSeed: "",
     poolCatalog,
     heroMetrics: {
       totalTvlUsd,

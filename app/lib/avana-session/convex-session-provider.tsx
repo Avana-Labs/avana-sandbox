@@ -29,7 +29,15 @@ class ConvexSessionErrorBoundary extends Component<{ walletId: string; children:
 export function ConvexSessionProvider({ walletId, children }: { walletId: string; children: ReactNode }) {
   const { isAuthenticated } = useConvexAuth()
 
-  if (!isAuthenticated) return null
+  // Instant Paint: keep product chrome mounted on the local session while Convex
+  // auth settles. Returning null blanked the whole tree (open-gate / SIWE restore).
+  if (!isAuthenticated) {
+    return (
+      <div aria-label="Authenticating wallet session">
+        <AvanaSessionsProvider walletId={walletId}>{children}</AvanaSessionsProvider>
+      </div>
+    )
+  }
 
   return (
     <ConvexSessionErrorBoundary walletId={walletId}>

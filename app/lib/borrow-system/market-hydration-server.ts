@@ -23,7 +23,8 @@ const convexClient = requestCache((): ConvexHttpClient | null => {
 /**
  * Server-side fetch of the Convex market reference snapshots. Returns [] when no
  * deployment is configured or it's unreachable, so callers degrade to the catalog
- * base and the page always renders.
+ * base and the page always renders. Prefer `fetchConvexMarketSnapshot` on detail
+ * pages (C04) — this list path is for catalogs / session hydration.
  */
 export async function fetchConvexMarketSnapshots(): Promise<ConvexMarketSnapshot[]> {
   const client = convexClient()
@@ -32,6 +33,21 @@ export async function fetchConvexMarketSnapshots(): Promise<ConvexMarketSnapshot
     return (await client.query(api.markets.listBorrowMarketSnapshots, {})) as ConvexMarketSnapshot[]
   } catch {
     return []
+  }
+}
+
+/** One borrow pool/asset snapshot for detail builders (slug-scoped; C04). */
+export async function fetchConvexMarketSnapshot(
+  scope: "pool" | "asset",
+  slug: string,
+): Promise<ConvexMarketSnapshot | null> {
+  const client = convexClient()
+  if (!client) return null
+  try {
+    const row = await client.query(api.markets.getMarketSnapshot, { scope, slug })
+    return (row as ConvexMarketSnapshot | null) ?? null
+  } catch {
+    return null
   }
 }
 

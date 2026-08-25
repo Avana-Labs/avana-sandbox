@@ -12,17 +12,17 @@ import {
   fetchBorrowPoolBorrowables,
   fetchBorrowRiskParameters,
   fetchBorrowRiskParametersForSlugs,
-  fetchCashflowBreakdown,
   fetchContent,
-  fetchConvexMarketSnapshots,
+  fetchConvexMarketSnapshot,
   fetchHistoricalUtilization,
   fetchPoolContractAddresses,
-  fetchQuickStats,
   fetchRecentTransactions,
   fetchRisk,
   fetchSupplyBorrow,
   type ConvexContractAddressRow,
 } from "@/app/lib/borrow-system/market-hydration-server"
+import type { PreloadedQuickStatRow } from "@/app/lib/detail-page/apply-preloaded-overlays"
+import { emptySeriesFamily, shouldStripMockSeriesForLive } from "@/app/lib/detail-page/strip-mock-series"
 import { canonicalPriceMap } from "@/app/lib/prices/canonical"
 import { priceKey } from "@/app/lib/prices/format"
 import { formatOraclePrice, formatPairRate } from "@/app/lib/borrow-detail/formatters"
@@ -290,39 +290,31 @@ function applyRiskParametersToAbout<T extends { about: AssetDetail["about"] | Po
 }
 
 async function getPoolDetailFromConvexUncached(id: string): Promise<PoolDetail | null> {
-  const snapshots = await fetchConvexMarketSnapshots()
-  if (shouldFailClosedWithoutSnapshots(resolveDataSourceMode(), snapshots.length)) return null
+  const routeId = normalizeBorrowMarketRouteId(id)
   const state = buildMockBorrowSystemState(detailWalletId)
-  const hydratedState = snapshots.length > 0 ? mergeConvexMarketSnapshots(state, snapshots) : state
-  const detail = resolvePoolDetailFromState(hydratedState, detailWalletId, normalizeBorrowMarketRouteId(id))
+  // Resolve against catalog first so we know the Convex slug without pulling every snapshot.
+  const catalogDetail = resolvePoolDetailFromState(state, detailWalletId, routeId)
+  if (!catalogDetail) return null
+
+  const snap = await fetchConvexMarketSnapshot("pool", catalogDetail.row.id)
+  if (shouldFailClosedWithoutSnapshots(resolveDataSourceMode(), snap ? 1 : 0)) return null
+  const hydratedState = snap ? mergeConvexMarketSnapshots(state, [snap]) : state
+  const detail = resolvePoolDetailFromState(hydratedState, detailWalletId, routeId)
   if (!detail) return null
 
-  // Hero series are no longer fetched here — the page preloads them via preloadPoolHero
-  // (convex/nextjs preloadQuery) and hands the tokens to the live hero, so the series is
-  // fetched exactly once and the client hydrates from it instead of re-fetching.
-  const [
-    cashflow,
-    transactions,
-    risk,
-    quickStats,
-    content,
-    riskParameters,
-    poolBorrowables,
-    liquidationRisk,
-    siloedMarket,
-    contractAddresses,
-  ] = await Promise.all([
-    fetchCashflowBreakdown("pool", detail.row.id),
-    fetchRecentTransactions("pool", detail.row.id),
-    fetchRisk("pool", detail.row.id),
-    fetchQuickStats("pool", detail.row.id),
-    fetchContent("pool", detail.row.id),
-    fetchBorrowRiskParameters(detail.row.id),
-    fetchBorrowPoolBorrowables(detail.row.id),
-    fetchBorrowLiquidationRisk(detail.row.id),
-    fetchBorrowMarket(detail.row.id),
-    fetchPoolContractAddresses(detail.row.id),
-  ])
+  // Hero / quick-stats / cashflow are preloaded on the page (preloadQuery) and merged
+  // via applyPoolPreloadedOverlays — do not HTTP-fetch those queries here (C03).
+  const [transactions, risk, content, riskParameters, poolBorrowables, liquidationRisk, siloedMarket, contractAddresses] =
+    await Promise.all([
+      fetchRecentTransactions("pool", detail.row.id),
+      fetchRisk("pool", detail.row.id),
+      fetchContent("pool", detail.row.id),
+      fetchBorrowRiskParameters(detail.row.id),
+      fetchBorrowPoolBorrowables(detail.row.id),
+      fetchBorrowLiquidationRisk(detail.row.id),
+      fetchBorrowMarket(detail.row.id),
+      fetchPoolContractAddresses(detail.row.id),
+    ])
   // Capacity labels are now sourced solely from borrowRiskParameters (Convex-seeded
   // via borrowPoolCapacityLabels at seed time). Read-time overlay removed — it re-applied
   // the same 1.75×/2.25× heuristic on top of the already-seeded value, silently masking
@@ -332,10 +324,10 @@ async function getPoolDetailFromConvexUncached(id: string): Promise<PoolDetail |
   // per-stat overlays that used to layer them on top of the Convex quickStats have been
   // deleted. premiumBps flows from Convex risk when present, else 0 (fail-closed).
   const convexRisk = (risk as typeof detail.risk | null) ?? null
-  const mergedQuickStats = syncQuickStatsRiskPremium(
+  const baseQuickStats = syncQuickStatsRiskPremium(
     injectSiloedMarketQuickStats(
       injectPoolOraclePrice(
-        mergeConvexQuickStats(detail.quickStats, quickStats),
+        detail.quickStats,
         canonicalPriceMap(),
         detail.row.visuals[0].symbol,
         detail.row.visuals[1].symbol,
@@ -347,10 +339,11 @@ async function getPoolDetailFromConvexUncached(id: string): Promise<PoolDetail |
   const hydrated = applyDetailContentOverlay(
     {
       ...detail,
-      quickStats: mergedQuickStats,
+      quickStats: baseQuickStats,
       // heroFeed / heroBorrowedFeed / heroUtilizationFeed are set by the page from the
       // preloaded hero series (preloadPoolHero), not built here.
-      cashflow: (cashflow as typeof detail.cashflow | null) ?? EMPTY_CASHFLOW_CARD,
+      // cashflow filled by applyPoolPreloadedOverlays from the page preload (C03).
+      cashflow: EMPTY_CASHFLOW_CARD,
       transactions: (transactions as typeof detail.transactions | null) ?? [],
       risk: convexRisk ?? EMPTY_RISK_ASSESSMENT,
       borrowableAssets: mapConvexBorrowables(poolBorrowables),
@@ -370,8 +363,9 @@ async function getPoolDetailFromConvexUncached(id: string): Promise<PoolDetail |
     contractAddresses,
   )
 
-  if (!riskParameters?.parameters.length) return withIdentity
-  return applyRiskParametersToAbout(withIdentity, riskParameters)
+  const stripped = stripPoolHeroMetricSeriesForLive(withIdentity)
+  if (!riskParameters?.parameters.length) return stripped
+  return applyRiskParametersToAbout(stripped, riskParameters)
 }
 
 async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail | null> {
@@ -384,9 +378,8 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
   if (!record) return null
   const slug = record.id
 
-  const snapshots = await fetchConvexMarketSnapshots()
-  if (shouldFailClosedWithoutSnapshots(resolveDataSourceMode(), snapshots.length)) return null
-  const snap = snapshots.find((row) => row.scope === "asset" && row.slug === slug)
+  const snap = await fetchConvexMarketSnapshot("asset", slug)
+  if (shouldFailClosedWithoutSnapshots(resolveDataSourceMode(), snap ? 1 : 0)) return null
   const detail = resolveAssetDetailFromState(
     slug,
     snap
@@ -400,16 +393,15 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
   )
   if (!detail) return null
 
-  // Hero series preloaded by the page (preloadAssetHero) — not fetched here.
+  // Hero / quick-stats / cashflow preloaded on the page — not fetched here (C03).
+  // cashflowTrend stays here (no matching page preload yet).
   const [
     supplyBorrow,
     historicalUtilization,
-    cashflow,
     cashflowTrend,
     transactions,
     allocation,
     risk,
-    quickStats,
     content,
     riskParameters,
     interestRateModel,
@@ -418,12 +410,10 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
   ] = await Promise.all([
     fetchSupplyBorrow(slug),
     fetchHistoricalUtilization(slug),
-    fetchCashflowBreakdown("asset", slug),
     fetchAssetCashflowTrend(slug),
     fetchRecentTransactions("asset", slug),
     fetchAllocation(slug),
     fetchRisk("asset", slug),
-    fetchQuickStats("asset", slug),
     fetchContent("asset", slug),
     fetchBorrowRiskParameters(slug),
     fetchBorrowInterestRateModel(slug),
@@ -437,13 +427,13 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
     {
       ...detail,
       quickStats: injectSiloedMarketQuickStats(
-        injectBaselinePrice(mergeConvexQuickStats(detail.quickStats, quickStats), record.baseAssetId),
+        injectBaselinePrice(detail.quickStats, record.baseAssetId),
         siloedMarket,
       ),
       // heroFeed / heroBorrowedFeed / heroUtilizationFeed set by the page from preloadAssetHero.
       supplyBorrow: (supplyBorrow as typeof detail.supplyBorrow | null) ?? EMPTY_SUPPLY_BORROW,
       historicalUtilization: (historicalUtilization as typeof detail.historicalUtilization | null) ?? EMPTY_SERIES,
-      cashflow: (cashflow as typeof detail.cashflow | null) ?? EMPTY_CASHFLOW_CARD,
+      cashflow: EMPTY_CASHFLOW_CARD,
       cashflowTrend: (cashflowTrend as typeof detail.cashflowTrend | null) ?? EMPTY_CASHFLOW_TREND,
       transactions: (transactions as typeof detail.transactions | null) ?? [],
       allocation: (allocationWithCf as typeof detail.allocation | null) ?? [],
@@ -464,15 +454,49 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
   )
 
   return applyRiskParametersToAbout(
-    injectContractAddressStats(
-      {
-        ...hydrated,
-        hero: overlayHeroIdentity(hydrated.hero, siloedMarket),
-      },
-      contractAddresses,
+    stripAssetHeroMetricSeriesForLive(
+      injectContractAddressStats(
+        {
+          ...hydrated,
+          hero: overlayHeroIdentity(hydrated.hero, siloedMarket),
+        },
+        contractAddresses,
+      ),
     ),
     riskParameters,
   )
+}
+
+function stripPoolHeroMetricSeriesForLive(detail: PoolDetail): PoolDetail {
+  if (!shouldStripMockSeriesForLive()) return detail
+  return {
+    ...detail,
+    heroMetric: {
+      ...detail.heroMetric,
+      series: {
+        tvl: emptySeriesFamily(`${detail.row.id}:tvl`, "Supplied"),
+        borrowed: emptySeriesFamily(`${detail.row.id}:borrowed`, "Borrowed"),
+        utilization: emptySeriesFamily(`${detail.row.id}:utilization`, "Utilization"),
+      },
+    },
+  }
+}
+
+function stripAssetHeroMetricSeriesForLive(detail: AssetDetail): AssetDetail {
+  if (!shouldStripMockSeriesForLive()) return detail
+  return {
+    ...detail,
+    heroMetric: {
+      ...detail.heroMetric,
+      series: {
+        price: emptySeriesFamily(`${detail.id}:price`, "Price"),
+        supply: emptySeriesFamily(`${detail.id}:supply`, "Total Supplied"),
+        borrow: emptySeriesFamily(`${detail.id}:borrow`, "Total Borrowed"),
+        utilization: emptySeriesFamily(`${detail.id}:util`, "Utilization"),
+        apy: emptySeriesFamily(`${detail.id}:apy`, "Borrow APY"),
+      },
+    },
+  }
 }
 
 // Request-scoped memoization: `generateMetadata` and the page body both call these
@@ -480,3 +504,57 @@ async function getAssetDetailFromConvexUncached(id: string): Promise<AssetDetail
 // fan-out twice. React.cache() dedups by argument for the lifetime of the request.
 export const getPoolDetailFromConvex = cache(getPoolDetailFromConvexUncached)
 export const getAssetDetailFromConvex = cache(getAssetDetailFromConvexUncached)
+
+/**
+ * Merge page `preloadQuery` results for quick stats + cashflow onto a builder detail.
+ * Re-applies pool oracle price + risk-premium sync after the Convex merge (C03).
+ */
+export function applyPoolPreloadedOverlays(
+  detail: PoolDetail,
+  overlays: {
+    quickStats?: ReadonlyArray<PreloadedQuickStatRow> | null
+    cashflow?: PoolDetail["cashflow"] | null
+  },
+): PoolDetail {
+  const quickStats =
+    overlays.quickStats != null
+      ? syncQuickStatsRiskPremium(
+          injectPoolOraclePrice(
+            mergeConvexQuickStats(detail.quickStats, overlays.quickStats),
+            canonicalPriceMap(),
+            detail.row.visuals[0].symbol,
+            detail.row.visuals[1].symbol,
+          ),
+          detail.risk?.premiumBps ?? 0,
+        )
+      : detail.quickStats
+  return {
+    ...detail,
+    quickStats,
+    cashflow: overlays.cashflow ?? detail.cashflow,
+  }
+}
+
+/** Same as applyPoolPreloadedOverlays for asset details (baseline price, not pair rate). */
+export function applyAssetPreloadedOverlays(
+  detail: AssetDetail,
+  overlays: {
+    quickStats?: ReadonlyArray<PreloadedQuickStatRow> | null
+    cashflow?: AssetDetail["cashflow"] | null
+    /** Base asset id for injectBaselinePrice (e.g. record.baseAssetId). */
+    baselinePriceSymbol: string
+  },
+): AssetDetail {
+  const quickStats =
+    overlays.quickStats != null
+      ? injectBaselinePrice(
+          mergeConvexQuickStats(detail.quickStats, overlays.quickStats),
+          overlays.baselinePriceSymbol,
+        )
+      : detail.quickStats
+  return {
+    ...detail,
+    quickStats,
+    cashflow: overlays.cashflow ?? detail.cashflow,
+  }
+}

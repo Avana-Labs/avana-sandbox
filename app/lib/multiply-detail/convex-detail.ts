@@ -1,19 +1,18 @@
 import "server-only"
 import { requestCache as cache } from "@/app/lib/detail-page/request-cache"
 import {
-  fetchMultiplyCashflowBreakdown,
   fetchMultiplyContent,
   fetchMultiplyContractAddresses,
   fetchMultiplyLiquidationRisk,
   fetchMultiplyMarket,
   fetchMultiplyMarketSnapshot,
-  fetchMultiplyQuickStats,
   fetchMultiplyRecentTransactions,
   fetchMultiplyRisk,
   fetchMultiplyRiskParameters,
   fetchMultiplySupplyBorrow,
   type ConvexContractAddressRow,
 } from "@/app/lib/multiply-system/market-hydration-server"
+import type { PreloadedQuickStatRow } from "@/app/lib/detail-page/apply-preloaded-overlays"
 import {
   applyDetailContentOverlay,
   injectBaselinePrice,
@@ -154,33 +153,20 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
   if (!detail) return null
   const slug = detail.id
 
-  // Supply hero series preloaded by the page (preloadMultiplyHero) — not fetched here.
-  const [
-    cashflow,
-    transactions,
-    risk,
-    quickStats,
-    content,
-    riskParameters,
-    liquidationRisk,
-    siloedMarket,
-    snapshot,
-    supplyBorrow,
-    contractAddresses,
-  ] = await Promise.all([
-    fetchMultiplyCashflowBreakdown(slug),
-    fetchMultiplyRecentTransactions(slug),
-    fetchMultiplyRisk(slug),
-    fetchMultiplyQuickStats(slug),
-    fetchMultiplyContent(slug),
-    fetchMultiplyRiskParameters(slug),
-    fetchMultiplyLiquidationRisk(slug),
+  // Supply hero / quick-stats / cashflow preloaded on the page — not fetched here (C03).
+  const [transactions, risk, content, riskParameters, liquidationRisk, siloedMarket, snapshot, supplyBorrow, contractAddresses] =
+    await Promise.all([
+      fetchMultiplyRecentTransactions(slug),
+      fetchMultiplyRisk(slug),
+      fetchMultiplyContent(slug),
+      fetchMultiplyRiskParameters(slug),
+      fetchMultiplyLiquidationRisk(slug),
 
-    fetchMultiplyMarket(slug),
-    fetchMultiplyMarketSnapshot(slug),
-    fetchMultiplySupplyBorrow(slug),
-    fetchMultiplyContractAddresses(slug),
-  ])
+      fetchMultiplyMarket(slug),
+      fetchMultiplyMarketSnapshot(slug),
+      fetchMultiplySupplyBorrow(slug),
+      fetchMultiplyContractAddresses(slug),
+    ])
   // Fail closed in live mode when Convex has no snapshot — matches borrow detail
   // so the page never silently renders the mock catalog next to an empty live list.
   if (shouldFailClosedInLive(resolveDataSourceMode(), snapshot != null)) return null
@@ -190,14 +176,14 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
       ...detail,
       quickStats: injectSiloedMarketQuickStats(
         injectAvailableUsdQuickStat(
-          injectBaselinePrice(mergeConvexQuickStats(detail.quickStats, quickStats), detail.row.protocol),
+          injectBaselinePrice(detail.quickStats, detail.row.protocol),
           snapshot?.availableUsd,
           formatCompactUsd,
         ),
         siloedMarket,
       ),
       // heroFeed set by the page from preloadMultiplyHero.
-      cashflow: (cashflow as typeof detail.cashflow) ?? detail.cashflow,
+      cashflow: { bars: [], rows: [], periodLabel: "" },
       transactions: mapConvexTransactions(transactions) ?? detail.transactions,
       risk: (risk as typeof detail.risk) ?? detail.risk,
       liquidationRisk: liquidationRisk?.stats?.length
@@ -240,3 +226,26 @@ function buildEmptySupplyBorrow(slug: string): MultiplyMarketDetail["supplyBorro
 // Request-scoped memoization so generateMetadata + the page body share one Convex
 // fan-out per request instead of running it twice.
 export const getMultiplyMarketDetailFromConvex = cache(getMultiplyMarketDetailFromConvexUncached)
+
+/** Merge page preloadQuery results onto multiply detail (C03 — avoid double HTTP fetch). */
+export function applyMultiplyPreloadedOverlays(
+  detail: MultiplyMarketDetail,
+  overlays: {
+    quickStats?: ReadonlyArray<PreloadedQuickStatRow> | null
+    cashflow?: MultiplyMarketDetail["cashflow"] | null
+    baselinePriceSymbol: string
+  },
+): MultiplyMarketDetail {
+  const quickStats =
+    overlays.quickStats != null
+      ? injectBaselinePrice(
+          mergeConvexQuickStats(detail.quickStats, overlays.quickStats),
+          overlays.baselinePriceSymbol,
+        )
+      : detail.quickStats
+  return {
+    ...detail,
+    quickStats,
+    cashflow: overlays.cashflow ?? detail.cashflow,
+  }
+}
