@@ -304,17 +304,25 @@ async function getPoolDetailFromConvexUncached(id: string): Promise<PoolDetail |
 
   // Hero / quick-stats / cashflow are preloaded on the page (preloadQuery) and merged
   // via applyPoolPreloadedOverlays — do not HTTP-fetch those queries here (C03).
-  const [transactions, risk, content, riskParameters, poolBorrowables, liquidationRisk, siloedMarket, contractAddresses] =
-    await Promise.all([
-      fetchRecentTransactions("pool", detail.row.id),
-      fetchRisk("pool", detail.row.id),
-      fetchContent("pool", detail.row.id),
-      fetchBorrowRiskParameters(detail.row.id),
-      fetchBorrowPoolBorrowables(detail.row.id),
-      fetchBorrowLiquidationRisk(detail.row.id),
-      fetchBorrowMarket(detail.row.id),
-      fetchPoolContractAddresses(detail.row.id),
-    ])
+  const [
+    transactions,
+    risk,
+    content,
+    riskParameters,
+    poolBorrowables,
+    liquidationRisk,
+    siloedMarket,
+    contractAddresses,
+  ] = await Promise.all([
+    fetchRecentTransactions("pool", detail.row.id),
+    fetchRisk("pool", detail.row.id),
+    fetchContent("pool", detail.row.id),
+    fetchBorrowRiskParameters(detail.row.id),
+    fetchBorrowPoolBorrowables(detail.row.id),
+    fetchBorrowLiquidationRisk(detail.row.id),
+    fetchBorrowMarket(detail.row.id),
+    fetchPoolContractAddresses(detail.row.id),
+  ])
   // Capacity labels are now sourced solely from borrowRiskParameters (Convex-seeded
   // via borrowPoolCapacityLabels at seed time). Read-time overlay removed — it re-applied
   // the same 1.75×/2.25× heuristic on top of the already-seeded value, silently masking
@@ -547,10 +555,7 @@ export function applyAssetPreloadedOverlays(
 ): AssetDetail {
   const quickStats =
     overlays.quickStats != null
-      ? injectBaselinePrice(
-          mergeConvexQuickStats(detail.quickStats, overlays.quickStats),
-          overlays.baselinePriceSymbol,
-        )
+      ? injectBaselinePrice(mergeConvexQuickStats(detail.quickStats, overlays.quickStats), overlays.baselinePriceSymbol)
       : detail.quickStats
   return {
     ...detail,

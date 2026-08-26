@@ -8,10 +8,7 @@ import { normalizeBorrowAssetRouteId } from "@/app/lib/borrow-routes"
 import { preloadAssetHero } from "@/app/lib/borrow-detail/hero-preload"
 import { preloadDetailQuickStats } from "@/app/lib/detail-page/quick-stats-preload"
 import { preloadDetailCashflow } from "@/app/lib/detail-page/cashflow-preload"
-import {
-  readPreloadedCashflow,
-  readPreloadedQuickStats,
-} from "@/app/lib/detail-page/apply-preloaded-overlays"
+import { readPreloadedCashflow, readPreloadedQuickStats } from "@/app/lib/detail-page/apply-preloaded-overlays"
 import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { AssetDetailClient } from "@/app/borrow/assets/[assetId]/asset-detail-client"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"

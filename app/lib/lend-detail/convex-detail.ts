@@ -149,17 +149,25 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
 
   // Supply hero / quick-stats / cashflow preloaded on the page — not fetched here (C03).
   // supplyBorrow from Convex replaces PRNG series on the live path (C05).
-  const [transactions, risk, content, riskParameters, interestRateModel, siloedMarket, contractAddresses, supplyBorrow] =
-    await Promise.all([
-      fetchLendRecentTransactions(slug),
-      fetchLendRisk(slug),
-      fetchLendContent(slug),
-      fetchLendRiskParameters(slug),
-      fetchLendInterestRateModel(slug),
-      fetchLendMarket(slug),
-      fetchLendContractAddresses(slug),
-      fetchLendSupplyBorrow(slug),
-    ])
+  const [
+    transactions,
+    risk,
+    content,
+    riskParameters,
+    interestRateModel,
+    siloedMarket,
+    contractAddresses,
+    supplyBorrow,
+  ] = await Promise.all([
+    fetchLendRecentTransactions(slug),
+    fetchLendRisk(slug),
+    fetchLendContent(slug),
+    fetchLendRiskParameters(slug),
+    fetchLendInterestRateModel(slug),
+    fetchLendMarket(slug),
+    fetchLendContractAddresses(slug),
+    fetchLendSupplyBorrow(slug),
+  ])
 
   const headline = resolveLendHeadlineRates({
     snapshotBacked: Boolean(snapshot),
@@ -224,10 +232,7 @@ export function applyLendPreloadedOverlays(
 ): LendMarketDetail {
   const quickStats =
     overlays.quickStats != null
-      ? injectBaselinePrice(
-          mergeConvexQuickStats(detail.quickStats, overlays.quickStats),
-          overlays.baselinePriceSymbol,
-        )
+      ? injectBaselinePrice(mergeConvexQuickStats(detail.quickStats, overlays.quickStats), overlays.baselinePriceSymbol)
       : detail.quickStats
   return {
     ...detail,

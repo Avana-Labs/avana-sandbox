@@ -1,5 +1,3 @@
-import { readFile } from "node:fs/promises"
-import { join } from "node:path"
 import { ImageResponse } from "next/og"
 
 // Branded share card used for og:image + (via summary_large_image) the X/Twitter card.
@@ -13,18 +11,8 @@ export const contentType = "image/png"
 const BRAND = "#01AACF"
 const INK = "#0B0D12"
 const PAPER = "#EEF0F4"
-const DIATYPE = "Diatype"
 
-async function loadDiatypeFonts() {
-  const fontsDir = join(process.cwd(), "public/fonts/diatype/core")
-  // Satori prefers static faces over the variable file for reliable weight matching.
-  const regular = await readFile(join(fontsDir, "ABCDiatype-Regular-Trial.woff2"))
-  return [{ name: DIATYPE, data: regular, style: "normal" as const, weight: 400 as const }]
-}
-
-export default async function OpengraphImage() {
-  const fonts = await loadDiatypeFonts()
-
+export default function OpengraphImage() {
   return new ImageResponse(
     <div
       style={{
@@ -36,7 +24,7 @@ export default async function OpengraphImage() {
         padding: "80px",
         background: PAPER,
         color: INK,
-        fontFamily: DIATYPE,
+        fontFamily: "sans-serif",
       }}
     >
       {/* brand mark */}
@@ -92,6 +80,6 @@ export default async function OpengraphImage() {
         <div style={{ marginLeft: "auto", fontSize: 30, fontWeight: 400, color: BRAND }}>app.avana.cc</div>
       </div>
     </div>,
-    { ...size, fonts },
+    { ...size },
   )
 }

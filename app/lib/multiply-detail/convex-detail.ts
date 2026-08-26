@@ -154,19 +154,28 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
   const slug = detail.id
 
   // Supply hero / quick-stats / cashflow preloaded on the page — not fetched here (C03).
-  const [transactions, risk, content, riskParameters, liquidationRisk, siloedMarket, snapshot, supplyBorrow, contractAddresses] =
-    await Promise.all([
-      fetchMultiplyRecentTransactions(slug),
-      fetchMultiplyRisk(slug),
-      fetchMultiplyContent(slug),
-      fetchMultiplyRiskParameters(slug),
-      fetchMultiplyLiquidationRisk(slug),
+  const [
+    transactions,
+    risk,
+    content,
+    riskParameters,
+    liquidationRisk,
+    siloedMarket,
+    snapshot,
+    supplyBorrow,
+    contractAddresses,
+  ] = await Promise.all([
+    fetchMultiplyRecentTransactions(slug),
+    fetchMultiplyRisk(slug),
+    fetchMultiplyContent(slug),
+    fetchMultiplyRiskParameters(slug),
+    fetchMultiplyLiquidationRisk(slug),
 
-      fetchMultiplyMarket(slug),
-      fetchMultiplyMarketSnapshot(slug),
-      fetchMultiplySupplyBorrow(slug),
-      fetchMultiplyContractAddresses(slug),
-    ])
+    fetchMultiplyMarket(slug),
+    fetchMultiplyMarketSnapshot(slug),
+    fetchMultiplySupplyBorrow(slug),
+    fetchMultiplyContractAddresses(slug),
+  ])
   // Fail closed in live mode when Convex has no snapshot — matches borrow detail
   // so the page never silently renders the mock catalog next to an empty live list.
   if (shouldFailClosedInLive(resolveDataSourceMode(), snapshot != null)) return null
@@ -238,10 +247,7 @@ export function applyMultiplyPreloadedOverlays(
 ): MultiplyMarketDetail {
   const quickStats =
     overlays.quickStats != null
-      ? injectBaselinePrice(
-          mergeConvexQuickStats(detail.quickStats, overlays.quickStats),
-          overlays.baselinePriceSymbol,
-        )
+      ? injectBaselinePrice(mergeConvexQuickStats(detail.quickStats, overlays.quickStats), overlays.baselinePriceSymbol)
       : detail.quickStats
   return {
     ...detail,
