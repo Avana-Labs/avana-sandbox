@@ -2,11 +2,13 @@ import { defineConfig, devices } from "@playwright/test"
 
 const testPort = process.env.PLAYWRIGHT_PORT ?? "3000"
 const testBaseUrl = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${testPort}`
+const testReadinessUrl = `${testBaseUrl}/actions/lend/deposit?amount=1&market=usdc`
 
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
+  timeout: 90_000,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
   reporter: [["list"], ["html", { open: "never" }]],
@@ -17,10 +19,12 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   webServer: {
-    command: `NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1 npm run dev -- --port ${testPort}`,
-    url: testBaseUrl,
+    command: `NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1 PORT=${testPort} npm run dev`,
+    // Compile the shared transaction shell before workers start. Waiting on `/` only
+    // reports the server ready while the first financial route is still a >60s cold build.
+    url: testReadinessUrl,
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    timeout: 240_000,
   },
   projects: [
     {
