@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
-import { isLighthouseAuditMode, shouldUseOpenGateSession } from "@/app/lib/test-mode"
+import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 import { priceKey } from "./format"
 import { PRICE_FIXTURE } from "./price-fixture"
 
@@ -28,6 +28,7 @@ export type PriceFreshness = {
 export type PriceStatus = {
   updatedAt: number | null
   staleAfterMs: number
+  invalidAfterMs?: number
   count: number
 }
 
@@ -109,10 +110,10 @@ export function TokenPricesProvider({
   // depends on that subscription to escape the fixture. Token prices are PUBLIC data.
   const seed = initialPrices ?? EMPTY_PRICES
 
-  // Skip the realtime subscription when there's no Convex client (nothing to query) and on the
-  // open-gate/Lighthouse test surfaces (deterministic static catalog). The seed still flows, so
-  // prices stay live from SSR; the subscription, when present, only layers fresher values on top.
-  if (!realtime || !hasConvexClient || shouldUseOpenGateSession() || isLighthouseAuditMode()) {
+  // Skip the realtime subscription when there's no Convex client (nothing to query) and during
+  // Lighthouse audits. Public/open-gate product routes still subscribe because price data is
+  // public and action valuations must not stay pinned to a server seed.
+  if (!realtime || !hasConvexClient || isLighthouseAuditMode()) {
     return <TokenPricesContext.Provider value={seed}>{children}</TokenPricesContext.Provider>
   }
   return (

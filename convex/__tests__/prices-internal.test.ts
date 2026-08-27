@@ -114,6 +114,30 @@ describe("refreshPrices rejects insane/low-confidence quotes (C1)", () => {
     expect(prices.map((p) => p.symbol)).not.toContain("eth")
   })
 
+  test("drops implausible USD-stable quotes before they reach transaction previews", async () => {
+    const t = convexTest(schema, modules)
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({
+        ok: true,
+        json: async () => ({
+          coins: {
+            [IDS.usdc]: { price: 0.3, decimals: 6, confidence: 0.99 },
+            [IDS.usdt]: { price: 1.01, decimals: 6, confidence: 0.99 },
+            [IDS.eth]: { price: 3210.5, decimals: 18, confidence: 0.99 },
+          },
+        }),
+      })) as unknown as typeof fetch,
+    )
+
+    const result = await t.action(internal.prices.refreshPrices, {})
+    expect(result.written).toBe(2)
+    const prices = await t.query(api.prices.getPrices, {})
+    expect(prices.map((price) => price.symbol)).not.toContain("usdc")
+    expect(prices.map((price) => price.symbol)).toContain("usdt")
+    expect(prices.map((price) => price.symbol)).toContain("eth")
+  })
+
   test("missing confidence is treated as acceptable (kept)", async () => {
     const t = convexTest(schema, modules)
     vi.stubGlobal(

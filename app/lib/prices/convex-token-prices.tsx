@@ -9,6 +9,7 @@ import { PriceStatusContext, TokenPricesContext } from "./token-prices-context"
 import { applyLiveRates } from "@/app/lib/currency/rates"
 import { FX_RATES_UPDATED_EVENT } from "@/app/lib/currency/rates"
 import type { CurrencyCode } from "@/app/components/display-preferences"
+import { validatedConvexPriceMap } from "./validated-convex-price"
 
 class TokenPricesErrorBoundary extends React.Component<
   { children: React.ReactNode; fallbackChildren: React.ReactNode },
@@ -28,22 +29,39 @@ function ConvexTokenPricesQuery({ children, seed = {} }: { children: React.React
   const snapshot = useQuery(api.prices.getPriceSnapshot, {})
   const rows = snapshot?.prices
   const status = snapshot?.status
+  const [validationNow, setValidationNow] = React.useState(() => Date.now())
+  React.useEffect(() => {
+    if (!rows?.length) return
+    const timer = window.setInterval(() => setValidationNow(Date.now()), 60_000)
+    return () => window.clearInterval(timer)
+  }, [rows])
   // Start from the server seed (live prices fetched during SSR) and overlay the realtime rows
   // on top when the subscription delivers them — so consumers stay live even while the query is
   // loading or when it never resolves (no realtime client on this route).
   const map = React.useMemo(() => {
     const next: Record<string, number> = { ...seed }
-    for (const row of rows ?? []) next[priceKey(row.symbol)] = row.priceUsd
+    const validated = validatedConvexPriceMap(rows ?? [], validationNow, status?.invalidAfterMs)
+    for (const row of rows ?? []) {
+      if (!(row.symbol.trim().toLowerCase() in validated)) delete next[priceKey(row.symbol)]
+    }
+    for (const [symbol, priceUsd] of Object.entries(validated)) next[priceKey(symbol)] = priceUsd
     return next
-  }, [rows, seed])
+  }, [rows, seed, status?.invalidAfterMs, validationNow])
   // Overlay the same seed+live prices onto the module canonical store so the engine + any
   // non-reactive `canonicalPriceUsd` reader also sees the refreshed price (not just the
   // fixture). Effect, not render, to avoid a side-effect during render.
   React.useEffect(() => {
     const merged: Record<string, number> = { ...seed }
-    for (const row of rows ?? []) merged[row.symbol] = row.priceUsd
+    const validated = validatedConvexPriceMap(rows ?? [], validationNow, status?.invalidAfterMs)
+    for (const row of rows ?? []) {
+      if (!(row.symbol.trim().toLowerCase() in validated)) {
+        delete merged[priceKey(row.symbol)]
+        delete merged[row.symbol]
+      }
+    }
+    for (const [symbol, priceUsd] of Object.entries(validated)) merged[symbol] = priceUsd
     if (Object.keys(merged).length > 0) setCanonicalPrices(merged)
-  }, [rows, seed])
+  }, [rows, seed, status?.invalidAfterMs, validationNow])
 
   // Fiat FX rates from the validated Convex layer (convex/fx.ts). Apply them onto the currency
   // overlay so conversion flows through Convex rather than only the client poll, then notify the

@@ -35,12 +35,13 @@ function Probe() {
 afterEach(() => {
   cleanup()
   snapshot.current = undefined
+  vi.useRealTimers()
 })
 
 describe("TokenPricesProvider public (signed-out) sessions", () => {
   it("opens the live subscription and surfaces oracle prices without sign-in", async () => {
     snapshot.current = {
-      prices: [{ symbol: "AAVE", priceUsd: 88.25 }],
+      prices: [{ symbol: "AAVE", priceUsd: 88.25, updatedAt: Date.now(), status: "fresh" }],
       status: { updatedAt: Date.now(), staleAfterMs: 3 * 60 * 60 * 1000, count: 1 },
     }
 
@@ -53,5 +54,30 @@ describe("TokenPricesProvider public (signed-out) sessions", () => {
     // If the sign-in gate were still in place the lazy Convex subtree would never mount
     // and this would stay "undefined"; ungated, the public quote flows through.
     await waitFor(() => expect(screen.getByTestId("aave").textContent).toBe("88.25"))
+  })
+
+  it("ages out a quote when the Convex subscription stops updating", async () => {
+    vi.useFakeTimers()
+    const now = new Date("2026-08-27T12:00:00Z")
+    vi.setSystemTime(now)
+    snapshot.current = {
+      prices: [{ symbol: "AAVE", priceUsd: 88.25, updatedAt: now.getTime(), status: "fresh" }],
+      status: {
+        updatedAt: now.getTime(),
+        staleAfterMs: 15 * 60 * 1000,
+        invalidAfterMs: 45 * 60 * 1000,
+        count: 1,
+      },
+    }
+
+    render(
+      <TokenPricesProvider initialPrices={{ aave: 88.25 }}>
+        <Probe />
+      </TokenPricesProvider>,
+    )
+
+    expect(screen.getByTestId("aave").textContent).toBe("88.25")
+    await vi.advanceTimersByTimeAsync(46 * 60 * 1000)
+    expect(screen.getByTestId("aave").textContent).not.toBe("88.25")
   })
 })
