@@ -11,6 +11,7 @@ import { api } from "@/convex/_generated/api"
 import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
 import type { LendConvexSnapshot } from "@/app/lib/lend-system/market-hydration"
 import type { MultiplyConvexSnapshot } from "@/app/lib/multiply-system/market-hydration"
+import { isUsableConvexPrice } from "@/app/lib/prices/validated-convex-price"
 import { useBorrowSessionContext, useLendSessionContext, useMultiplySessionContext } from "./avana-sessions-provider"
 
 export function ConvexMarketSnapshotHydrators() {
@@ -23,6 +24,7 @@ export function ConvexMarketSnapshotHydrators() {
   // the same snapshot cache and filtering server-side — so visiting /borrow still
   // subscribed to lend + multiply and re-rendered three times.
   const snapshots = useQuery(api.markets.listMarketSnapshots)
+  const priceSnapshot = useQuery(api.prices.getPriceSnapshot, {})
 
   useEffect(() => {
     if (!snapshots) return
@@ -32,9 +34,19 @@ export function ConvexMarketSnapshotHydrators() {
 
   useEffect(() => {
     if (!snapshots) return
-    const rows = snapshots.filter((row) => row.scope === "lend")
+    const priceBySymbol = new Map(
+      (priceSnapshot?.prices ?? [])
+        .filter((row) => isUsableConvexPrice(row, Date.now(), priceSnapshot?.status.invalidAfterMs))
+        .map((row) => [row.symbol.trim().toLowerCase(), row] as const),
+    )
+    const rows = snapshots
+      .filter((row) => row.scope === "lend")
+      .map((row) => {
+        const price = priceBySymbol.get(row.symbol.trim().toLowerCase())
+        return price ? { ...row, assetPriceUsd: price.priceUsd, priceUpdatedAt: price.updatedAt } : row
+      })
     if (rows.length > 0) lend.hydrateMarketData(rows as LendConvexSnapshot[])
-  }, [lend.hydrateMarketData, snapshots])
+  }, [lend.hydrateMarketData, priceSnapshot, snapshots])
 
   useEffect(() => {
     if (!snapshots) return

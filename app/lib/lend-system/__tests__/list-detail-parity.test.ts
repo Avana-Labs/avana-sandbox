@@ -24,6 +24,8 @@ describe("lend list ↔ detail field parity after Convex hydration", () => {
     supplyApyPct: 4.2,
     reserveFactorPct: 15,
     rewardsApyPct: 0.75,
+    assetPriceUsd: 1.01,
+    priceUpdatedAt: 1_777_777_777_777,
   }
 
   const hydrated = mergeConvexLendSnapshots(state, [snap])
@@ -56,6 +58,12 @@ describe("lend list ↔ detail field parity after Convex hydration", () => {
 
   it("rewardsApy matches the snapshot", () => {
     expect(hydratedMarket.rewardsApy).toBeCloseTo(snap.rewardsApyPct! / 100, 4)
+  })
+
+  it("engine valuation and freshness use the same Convex quote as the UI", () => {
+    expect(hydratedMarket.assetPriceUsd).toBe(snap.assetPriceUsd)
+    expect(hydratedMarket.asset.priceUsd).toBe(snap.assetPriceUsd)
+    expect(hydratedMarket.priceUpdatedAt).toBe(snap.priceUpdatedAt)
   })
 
   it("silent field fallback preserves the previous value when a re-hydration omits it", () => {

@@ -4,6 +4,7 @@ import { api } from "@/convex/_generated/api"
 import { type ConvexSeriesPoint } from "@/app/lib/borrow-system/market-hydration-server"
 import type { LendConvexSnapshot } from "@/app/lib/lend-system/market-hydration"
 import { requestCache } from "@/app/lib/detail-page/request-cache"
+import { isUsableConvexPrice } from "@/app/lib/prices/validated-convex-price"
 
 /**
  * Server-side Convex fetchers for the lend (single-asset supply) detail page.
@@ -43,20 +44,33 @@ export async function fetchLendMarketSnapshots(): Promise<LendConvexSnapshot[]> 
   const client = convexClient()
   if (!client) return []
   try {
-    const rows = await client.query(api.markets.listLendMarketSnapshots, {})
-    return rows.map((row) => ({
-      slug: row.slug,
-      scope: row.scope,
-      name: row.name,
-      symbol: row.symbol,
-      reserveFactorPct: row.reserveFactorPct,
-      rewardsApyPct: row.rewardsApyPct,
-      suppliedUsd: row.suppliedUsd,
-      borrowedUsd: row.borrowedUsd,
-      availableUsd: row.availableUsd,
-      utilizationPct: row.utilizationPct,
-      supplyApyPct: row.supplyApyPct,
-    }))
+    const [rows, priceSnapshot] = await Promise.all([
+      client.query(api.markets.listLendMarketSnapshots, {}),
+      client.query(api.prices.getPriceSnapshot, {}),
+    ])
+    const priceBySymbol = new Map(
+      priceSnapshot.prices
+        .filter((row) => isUsableConvexPrice(row, Date.now(), priceSnapshot.status.invalidAfterMs))
+        .map((row) => [row.symbol.trim().toLowerCase(), row] as const),
+    )
+    return rows.map((row) => {
+      const price = priceBySymbol.get(row.symbol.trim().toLowerCase())
+      return {
+        slug: row.slug,
+        scope: row.scope,
+        name: row.name,
+        symbol: row.symbol,
+        reserveFactorPct: row.reserveFactorPct,
+        rewardsApyPct: row.rewardsApyPct,
+        assetPriceUsd: price?.priceUsd,
+        priceUpdatedAt: price?.updatedAt,
+        suppliedUsd: row.suppliedUsd,
+        borrowedUsd: row.borrowedUsd,
+        availableUsd: row.availableUsd,
+        utilizationPct: row.utilizationPct,
+        supplyApyPct: row.supplyApyPct,
+      }
+    })
   } catch {
     return []
   }

@@ -13,6 +13,8 @@ export type LendConvexSnapshot = {
   symbol?: string
   reserveFactorPct?: number
   rewardsApyPct?: number
+  assetPriceUsd?: number
+  priceUpdatedAt?: number
   suppliedUsd: number
   borrowedUsd: number
   availableUsd: number
@@ -38,7 +40,13 @@ export function mergeConvexLendSnapshots(
     if (snap.scope !== "lend") continue
     const existing = markets[snap.slug]
     if (!existing) continue
-    const price = existing.assetPriceUsd || 1
+    const hasLivePrice =
+      snap.assetPriceUsd !== undefined &&
+      Number.isFinite(snap.assetPriceUsd) &&
+      snap.assetPriceUsd > 0 &&
+      snap.priceUpdatedAt !== undefined &&
+      Number.isFinite(snap.priceUpdatedAt)
+    const price = hasLivePrice ? snap.assetPriceUsd! : existing.assetPriceUsd || 1
     const supplyApy = snap.supplyApyPct / 100
     let rewardsApy: number
     if (snap.rewardsApyPct !== undefined && Number.isFinite(snap.rewardsApyPct)) {
@@ -78,10 +86,13 @@ export function mergeConvexLendSnapshots(
       rewardsApy,
       reserveFactor,
       totalApy: supplyApy + rewardsApy,
+      assetPriceUsd: price,
+      priceUpdatedAt: hasLivePrice ? snap.priceUpdatedAt! : existing.priceUpdatedAt,
       asset: {
         ...existing.asset,
         name: assetName,
         symbol: assetSymbol,
+        priceUsd: price,
       },
     }
     if (
@@ -93,8 +104,11 @@ export function mergeConvexLendSnapshots(
       existing.rewardsApy === next.rewardsApy &&
       existing.reserveFactor === next.reserveFactor &&
       existing.totalApy === next.totalApy &&
+      existing.assetPriceUsd === next.assetPriceUsd &&
+      existing.priceUpdatedAt === next.priceUpdatedAt &&
       existing.asset.name === next.asset.name &&
-      existing.asset.symbol === next.asset.symbol
+      existing.asset.symbol === next.asset.symbol &&
+      existing.asset.priceUsd === next.asset.priceUsd
     ) {
       continue
     }
