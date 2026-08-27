@@ -70,6 +70,7 @@ export async function fetchMultiplyMarketSnapshots(): Promise<MultiplyConvexSnap
       name: row.name,
       symbol: row.symbol,
       maxLtvPct: row.maxLtvPct,
+      reserveFactorPct: row.reserveFactorPct,
       suppliedUsd: row.suppliedUsd,
       borrowedUsd: row.borrowedUsd,
       availableUsd: row.availableUsd,
