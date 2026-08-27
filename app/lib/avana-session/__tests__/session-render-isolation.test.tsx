@@ -74,4 +74,39 @@ describe("session render isolation (perf A1)", () => {
       expect(after[key], `${key} context identity should be stable across an inert parent re-render`).toBe(before[key])
     }
   })
+
+  it("keeps every wallet-backed session unhydrated while authoritative Convex reads are pending", async () => {
+    const hydrated: Record<string, boolean | undefined> = {}
+
+    function Consumers() {
+      hydrated.borrow = useBorrowSessionContext().isHydrated
+      hydrated.lend = useLendSessionContext().isHydrated
+      hydrated.multiply = useMultiplySessionContext().isHydrated
+      hydrated.swap = useSwapSessionContext().isHydrated
+      hydrated.umbrella = useUmbrellaSessionContext().isHydrated
+      return null
+    }
+
+    await act(async () => {
+      render(
+        <AvanaSessionsProvider
+          walletId="0xfeed000000000000000000000000000000000001"
+          persistLocalState={false}
+          persistUmbrellaState={false}
+          sessionSource="convex"
+          authoritativeWalletPending
+        >
+          <Consumers />
+        </AvanaSessionsProvider>,
+      )
+    })
+
+    expect(hydrated).toEqual({
+      borrow: false,
+      lend: false,
+      multiply: false,
+      swap: false,
+      umbrella: false,
+    })
+  })
 })

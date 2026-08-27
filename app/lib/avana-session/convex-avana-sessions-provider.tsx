@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, type ReactNode } from "react"
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { useConvex, useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import type { SwapQuote, SwapQuoteRequest } from "@/app/lib/swap-system/quote-provider"
@@ -77,7 +77,7 @@ function ConvexWalletHydrators({
   }, [ensurePortfolioSnapshot, ensureUmbrellaFixtures, walletId])
 
   useEffect(() => {
-    if (!session) return
+    if (!session || productBalances === undefined) return
     const { borrow: borrowHistory, lend: lendHistory, multiply: multiplyHistory } = historiesRef.current
     const pending = pendingHydrationIntentIds([...borrowHistory, ...lendHistory, ...multiplyHistory], Date.now())
     if (!shouldApplyHydration(session, pending)) return
@@ -165,8 +165,13 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
   const umbrellaSessionState = useQuery(api.sandbox.umbrella.getSessionState, { wallet: walletId })
   const recordUmbrellaAction = useMutation(api.sandbox.umbrella.recordAction)
   const revisionByKeyRef = useRef(new Map<string, number>())
+  const [walletHydrationPending, setWalletHydrationPending] = useState(true)
+  useEffect(() => setWalletHydrationPending(true), [walletId])
   const handleWalletHydrated = useCallback(
-    (positions: readonly PositionRevisionSummary[]) => captureHydratedRevisions(revisionByKeyRef.current, positions),
+    (positions: readonly PositionRevisionSummary[]) => {
+      captureHydratedRevisions(revisionByKeyRef.current, positions)
+      setWalletHydrationPending(false)
+    },
     [],
   )
 
@@ -282,6 +287,7 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
       persistUmbrellaAction={persistUmbrellaAction}
       persistUmbrellaState={false}
       sessionSource="convex"
+      authoritativeWalletPending={walletHydrationPending}
     >
       <ConvexMarketSnapshotHydrators />
       <ConvexWalletHydrators walletId={walletId} onWalletHydrated={handleWalletHydrated} />
