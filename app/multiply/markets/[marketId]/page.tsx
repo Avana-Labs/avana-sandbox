@@ -53,12 +53,13 @@ export default async function MarketDetailPage({ params }: PageProps) {
   const { marketId } = await params
   if (isLighthouseAuditMode()) return <LighthouseAuditSurface title="Total value locked" eyebrow={marketId} />
 
-  const [detailRaw, heroBundle, quickStatsPreload, cashflowPreload] = await Promise.all([
+  const [liveDetail, heroBundle, quickStatsPreload, cashflowPreload] = await Promise.all([
     getMultiplyMarketDetailFromConvex(marketId),
     preloadMultiplyHero(marketId),
     preloadDetailQuickStats("multiply", marketId),
     preloadDetailCashflow("multiply", marketId),
   ])
+  const detailRaw = preferLive(liveDetail, getMultiplyMarketDetail(marketId), `multiply market detail:${marketId}`)
   if (!detailRaw) notFound()
   const detail = applyMultiplyPreloadedOverlays(detailRaw, {
     quickStats: readPreloadedQuickStats(quickStatsPreload),

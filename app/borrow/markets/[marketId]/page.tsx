@@ -51,12 +51,13 @@ export default async function MarketDetailPage({ params }: PageProps) {
   if (isLighthouseAuditMode()) return <LighthouseAuditSurface title="Total supplied" eyebrow={marketId} />
 
   const detailPromise = getPoolDetailFromConvex(marketId)
-  const [{ preloads: heroPreloads, feeds }, quickStatsPreload, cashflowPreload, detailRaw] = await Promise.all([
+  const [{ preloads: heroPreloads, feeds }, quickStatsPreload, cashflowPreload, liveDetail] = await Promise.all([
     preloadPoolHero(marketId),
     preloadDetailQuickStats("pool", marketId),
     preloadDetailCashflow("pool", marketId),
     detailPromise,
   ])
+  const detailRaw = preferLive(liveDetail, getPoolDetail(marketId), `borrow market detail:${marketId}`)
   if (!detailRaw) notFound()
   const detail = applyPoolPreloadedOverlays(detailRaw, {
     quickStats: readPreloadedQuickStats(quickStatsPreload),
