@@ -16,7 +16,7 @@ import {
 import type { LendDepositSimulation, LendMarket, LendPosition, LendSystemState, LendWithdrawSimulation } from "./types"
 import { validateDepositAction, validateWithdrawAction } from "./validation"
 
-const PRICE_STALE_MS = 86_400_000
+const PRICE_STALE_MS = 45 * 60 * 1000
 
 function isPriceStale(market: LendMarket, now: number) {
   return now - market.priceUpdatedAt > PRICE_STALE_MS
