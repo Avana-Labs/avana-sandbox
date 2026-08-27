@@ -48,6 +48,33 @@ describe("SandboxMultiplyReadAdapter", () => {
 })
 
 describe("SandboxMultiplyTransactionAdapter", () => {
+  it("rejects a multiply intent backed by a stale or unavailable Convex price", async () => {
+    let multiplyState = makeExampleMultiplySystemState()
+    const adapter = new SandboxMultiplyTransactionAdapter({
+      readState: () => multiplyState,
+      writeState: (nextState) => {
+        multiplyState = nextState
+      },
+    })
+    const intent = adapter.createIntent({
+      type: "multiply",
+      walletId: "wallet-2",
+      marketId: "eth-usdt",
+      collateralAmount: 0.5,
+      selectedMultiplier: 2,
+      collateralPriceUsd: 2_000,
+      collateralPriceStale: true,
+    })
+
+    const preview = await adapter.previewTransaction(intent)
+    const result = await adapter.executeTransaction(intent)
+
+    expect(preview.allowed).toBe(false)
+    expect(preview.validationErrors.join(" ")).toContain("Collateral price is stale")
+    expect(result.receipt.status).toBe("failed")
+    expect(multiplyState.transactions).toHaveLength(0)
+  })
+
   it("rejects multiply intents that would open below the liquidation threshold", async () => {
     let multiplyState = makeExampleMultiplySystemState()
     multiplyState = {

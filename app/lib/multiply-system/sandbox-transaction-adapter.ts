@@ -105,6 +105,7 @@ function toPreview(
       selectedMultiplier: action.selectedMultiplier,
       existingPosition: existing,
       collateralPriceOverrideUsd: action.collateralPriceUsd,
+      collateralPriceStale: action.collateralPriceStale,
     })
 
     return {
