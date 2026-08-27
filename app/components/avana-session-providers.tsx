@@ -34,7 +34,17 @@ function OpenGateConvexProvider({ children }: { children: ReactNode }) {
 
 /** Instant Paint: always paint children; upgrade to Convex when JWT/chunk are ready. */
 function LocalSessionFallback({ walletId, children }: { walletId: string; children: ReactNode }) {
-  return <AvanaSessionsProvider walletId={walletId}>{children}</AvanaSessionsProvider>
+  return (
+    <AvanaSessionsProvider
+      walletId={walletId}
+      persistLocalState={false}
+      persistUmbrellaState={false}
+      sessionSource="convex"
+      authoritativeWalletPending
+    >
+      {children}
+    </AvanaSessionsProvider>
+  )
 }
 
 function OpenGateSessionTree({ children }: { children: ReactNode }) {
