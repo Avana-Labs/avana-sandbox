@@ -664,12 +664,14 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
     totalEarnedUsd: earned,
   }
 
-  const current = await ctx.db
+  const currentRows = await ctx.db
     .query("portfolioCurrent")
     .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-    .unique()
+    .collect()
+  const [current, ...duplicates] = currentRows.sort((left, right) => right.at - left.at)
   if (current) await ctx.db.replace(current._id, snapshot)
   else await ctx.db.insert("portfolioCurrent", snapshot)
+  for (const duplicate of duplicates) await ctx.db.delete(duplicate._id)
 
   const latestHistory = await ctx.db
     .query("portfolioSnapshots")
@@ -1814,7 +1816,8 @@ export const getPortfolioPageState = query({
         ctx.db
           .query("portfolioCurrent")
           .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-          .unique(),
+          .order("desc")
+          .first(),
         ctx.db
           .query("riskSnapshots")
           .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
@@ -1831,7 +1834,8 @@ export const getPortfolioPageState = query({
         ctx.db
           .query("starterAllocations")
           .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-          .unique(),
+          .order("desc")
+          .first(),
         Promise.all(
           [...poolSlugs].map((slug) =>
             ctx.db
@@ -1907,7 +1911,8 @@ export const getPortfolio = query({
       ctx.db
         .query("portfolioCurrent")
         .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-        .unique(),
+        .order("desc")
+        .first(),
       ctx.db
         .query("positions")
         .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
@@ -2022,10 +2027,12 @@ export const ensurePortfolioSnapshot = mutation({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
-    const current = await ctx.db
+    const currentRows = await ctx.db
       .query("portfolioCurrent")
       .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-      .unique()
+      .collect()
+    const [current, ...duplicates] = currentRows.sort((left, right) => right.at - left.at)
+    for (const duplicate of duplicates) await ctx.db.delete(duplicate._id)
     if (current) return { wrote: false as const }
     await appendPortfolioSnapshot(ctx, wallet, Date.now())
     return { wrote: true as const }

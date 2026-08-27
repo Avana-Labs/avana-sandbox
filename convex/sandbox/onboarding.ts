@@ -213,6 +213,134 @@ async function profileForWallet(ctx: QueryCtx | MutationCtx, wallet: string) {
     .unique()
 }
 
+/**
+ * Onboarding is the authoritative initialization boundary for a sandbox wallet.
+ * Open-gate/dev fixtures can create wallet state before the user finishes onboarding;
+ * carrying that state into the starter grant duplicates positions and, critically,
+ * creates more than one `portfolioCurrent` row. Reset only wallet-scoped sandbox
+ * financial state here. Identity/preferences and the onboarding profile are preserved.
+ */
+async function resetPreOnboardingWalletState(ctx: MutationCtx, wallet: string) {
+  const [existingPosition, existingCurrent, existingAllocation, existingSession] = await Promise.all([
+    ctx.db
+      .query("positions")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .first(),
+    ctx.db
+      .query("portfolioCurrent")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .first(),
+    ctx.db
+      .query("starterAllocations")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .first(),
+    ctx.db
+      .query("walletSessions")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .first(),
+  ])
+  if (!existingPosition && !existingCurrent && !existingAllocation && !existingSession) return
+
+  const walletRows = await Promise.all([
+    ctx.db
+      .query("positionCollateral")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("positionDebt")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("transactions")
+      .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("riskSnapshots")
+      .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("liquidationPreviews")
+      .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("liquidationActions")
+      .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("portfolioSnapshots")
+      .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("portfolioCurrent")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("starterAllocations")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("sandboxActivity")
+      .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("sandboxRewards")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("sandboxRewardClaims")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("umbrellaCooldownTranches")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("walletBalances")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("walletLendBalances")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("walletBorrowBalances")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("walletMultiplyBalances")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("walletLiquidBalances")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("walletCollateralPositions")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("walletDebts")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("walletClaimPositions")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("walletSessions")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("positions")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+  ])
+
+  for (const rows of walletRows) {
+    for (const row of rows) await ctx.db.delete(row._id)
+  }
+}
+
 function onboardingProfileView(profile: Awaited<ReturnType<typeof profileForWallet>>) {
   if (!profile) return null
   return {
@@ -500,6 +628,8 @@ export const claim = mutation({
       const priceUsdAtClaim = catalogBySlug.get(leg.marketSlug)?.priceUsd ?? SANDBOX_TOKEN_PRICE_USD[symbol] ?? 1
       return { tokenId: leg.marketSlug, amount: leg.amountUsd / priceUsdAtClaim, priceUsdAtClaim }
     })
+
+    await resetPreOnboardingWalletState(ctx, wallet)
 
     const syntheticTxHash = `sim-claim-${(profile.tierSeed ?? "0").slice(0, 8)}-${now.toString(36)}`
     const receiptHashes: string[] = []

@@ -229,6 +229,110 @@ describe("sandbox onboarding + economy caps", () => {
     ).rejects.toThrow(/WALLET_MISMATCH/)
   })
 
+  test("claim replaces pre-onboarding financial state and preserves singleton invariants", async () => {
+    const t = convexTest(schema, modules)
+    const wallet = WALLET.toLowerCase()
+    const asUser = t.withIdentity({ subject: WALLET })
+    await t.run(seedStarterTestMarkets)
+
+    await t.run(async (ctx) => {
+      const now = Date.now()
+      const stalePosition = await ctx.db.insert("positions", {
+        wallet,
+        product: "borrow",
+        marketSlug: "pool-0",
+        status: "open",
+        collateralValueUsd6: "25000000000",
+        debtValueUsd6: "0",
+        openedAt: now,
+        lastUpdatedAt: now,
+        openTxSynthetic: "stale-position",
+      })
+      await ctx.db.insert("positionCollateral", {
+        wallet,
+        positionId: stalePosition,
+        marketSlug: "pool-0",
+        collateralShares: "1",
+        principalTokenAmount: "1",
+        collateralEnabled: true,
+        collateralValueUsd6: "25000000000",
+        updatedAt: now,
+      })
+      await ctx.db.insert("transactions", {
+        wallet,
+        intentId: "stale-action",
+        product: "borrow",
+        kind: "deposit",
+        status: "success",
+        marketSlug: "pool-0",
+        positionId: stalePosition,
+        requestedAmountUsd6: "25000000000",
+        executedAmountUsd6: "25000000000",
+        amountUsd: 25_000,
+        syntheticTxHash: "stale-action",
+        simulated: true,
+        at: now,
+      })
+      const stalePortfolio = {
+        wallet,
+        at: now,
+        totalValueUsd: 25_000,
+        totalSuppliedUsd: 25_000,
+        totalBorrowedUsd: 0,
+        availableToBorrowUsd: 15_000,
+        totalMultiplyExposureUsd: 0,
+        totalEarnedUsd: 0,
+      }
+      await ctx.db.insert("portfolioCurrent", stalePortfolio)
+      await ctx.db.insert("portfolioCurrent", { ...stalePortfolio, at: now + 1 })
+      await ctx.db.insert("portfolioSnapshots", stalePortfolio)
+      await ctx.db.insert("walletSessions", {
+        wallet,
+        seedVersion: 1,
+        seededAt: now,
+        lastSeenAt: now,
+        umbrellaSeeded: true,
+      })
+    })
+
+    await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+    await expect(asUser.mutation(api.sandbox.onboarding.claim, { wallet: WALLET })).resolves.toMatchObject({
+      status: "done",
+      allocatedUsd: 1_000_000,
+    })
+
+    const persisted = await t.run(async (ctx) => ({
+      current: await ctx.db
+        .query("portfolioCurrent")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect(),
+      allocations: await ctx.db
+        .query("starterAllocations")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect(),
+      positions: await ctx.db
+        .query("positions")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect(),
+      staleTransactions: await ctx.db
+        .query("transactions")
+        .withIndex("by_wallet_intent", (q) => q.eq("wallet", wallet).eq("intentId", "stale-action"))
+        .collect(),
+    }))
+    expect(persisted.current).toHaveLength(1)
+    expect(persisted.allocations).toHaveLength(1)
+    expect(persisted.positions).toHaveLength(25)
+    expect(persisted.staleTransactions).toHaveLength(0)
+
+    await expect(asUser.query(api.sandbox.transactions.getPortfolio, { wallet: WALLET })).resolves.toMatchObject({
+      latest: { totalValueUsd: 1_000_000 },
+      openPositions: 25,
+    })
+    await expect(asUser.mutation(api.sandbox.transactions.ensurePortfolioSnapshot, { wallet: WALLET })).resolves.toEqual(
+      { wrote: false },
+    )
+  })
+
   test("economy counters are sharded off the hot claim row; live counts stay exact", async () => {
     const t = convexTest(schema, modules)
     await t.run(seedStarterTestMarkets)

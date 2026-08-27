@@ -419,6 +419,42 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
     expect(stored.history).toHaveLength(1)
   })
 
+  test("reads and repairs legacy duplicate current-portfolio rows", async () => {
+    const t = convexTest(schema, modules)
+    const wallet = WALLET.toLowerCase()
+    const asUser = t.withIdentity({ subject: WALLET })
+    const base = {
+      wallet,
+      totalValueUsd: 1_000,
+      totalSuppliedUsd: 1_000,
+      totalBorrowedUsd: 0,
+      availableToBorrowUsd: 700,
+      totalMultiplyExposureUsd: 0,
+      totalEarnedUsd: 0,
+    }
+    await t.run(async (ctx) => {
+      await ctx.db.insert("portfolioCurrent", { ...base, at: 1 })
+      await ctx.db.insert("portfolioCurrent", { ...base, at: 2, totalValueUsd: 2_000 })
+    })
+
+    const portfolio = await asUser.query(api.sandbox.transactions.getPortfolio, { wallet: WALLET })
+    expect(portfolio.latest?.totalValueUsd).toBe(2_000)
+    const pageState = await asUser.query(api.sandbox.transactions.getPortfolioPageState, { wallet: WALLET })
+    expect(pageState.snapshots.at(-1)?.totalValueUsd).toBe(2_000)
+
+    await expect(asUser.mutation(api.sandbox.transactions.ensurePortfolioSnapshot, { wallet: WALLET })).resolves.toEqual(
+      { wrote: false },
+    )
+    const rows = await t.run((ctx) =>
+      ctx.db
+        .query("portfolioCurrent")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect(),
+    )
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.totalValueUsd).toBe(2_000)
+  })
+
   test("excludes umbrella staked principal + rewards from the portfolio snapshot value", async () => {
     const t = convexTest(schema, modules)
     const wallet = WALLET.toLowerCase()
