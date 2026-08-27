@@ -1,6 +1,8 @@
-# Avana Webapp (Sandbox)
+# Avana Sandbox
 
-Interactive frontend for exploring **Avana** — borrow against LP positions on Aave v4. Everything runs locally with **synthetic wallets, markets, and transactions** so you can learn flows, stress-test UX, and validate engine behavior without mainnet risk.
+Avana is a lending protocol built on Aave V4 that enables AMM liquidity pool positions to be used as collateral. Liquidity providers from Uniswap, Balancer, Curve, or Aerodrome can deposit supported LP positions, have them evaluated inside market-specific risk frameworks, and borrow against them while the positions stay active in the underlying pools.
+
+This is an interactive free risk frontend demo for exploring **Avana**. You can try to borrow against LP positions on Aave v4 here in a sandbox, not real transaction way. Everything runs locally with **synthetic wallets, markets, and transactions** so you can learn flows, stress-test UX, and validate engine behavior without mainnet risk.
 
 ## Main routes
 
@@ -11,7 +13,6 @@ Interactive frontend for exploring **Avana** — borrow against LP positions on 
 | `/lend`      | Supply / withdraw stable and volatile assets              |
 | `/multiply`  | Loop markets, leverage ruler, deleverage                  |
 | `/dashboard` | Portfolio tabs: Borrow, Lend, Multiply, Activity          |
-| `/rewards`   | AVA quest rewards + product-linked claim flows            |
 
 ## Core flows to exercise
 
@@ -20,9 +21,7 @@ Interactive frontend for exploring **Avana** — borrow against LP positions on 
 3. **Repay / Remove / Claim** — Pay down debt, withdraw collateral %, or claim fee rewards.
 4. **Lend** — Deposit wallet balance into a market; withdraw supplied position.
 5. **Multiply** — Set collateral amount + multiplier; review net APY, LTV, liquidation price.
-6. **Rewards** — Complete quest-style tasks; claim AVA and product rewards.
 
-Lightpaper: [https://avana-ashen.vercel.app/lightpaper](https://avana-ashen.vercel.app/lightpaper)
 
 ## Contributing
 
