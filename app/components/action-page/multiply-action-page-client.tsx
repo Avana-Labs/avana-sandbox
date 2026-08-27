@@ -44,7 +44,11 @@ import {
   resolveMultiplyCollateralPriceUsd,
 } from "@/app/lib/multiply-system/collateral-limits"
 import { formatActionAmount } from "@/app/lib/action-system/formatters"
-import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
+import {
+  useCanonicalPriceFor,
+  usePriceFor,
+  usePriceFreshness,
+} from "@/app/lib/prices/token-prices-context"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
@@ -72,6 +76,8 @@ export function MultiplyActionPageClient({
   const router = useRouter()
   const { walletId } = useAvanaIdentity()
   const session = useMultiplySessionContext()
+  const livePriceFor = usePriceFor()
+  const priceFreshness = usePriceFreshness()
   const isExitKind = kind === "deleverage" || kind === "close"
   const priceFor = useCanonicalPriceFor()
   const walletPositions = useMemo(
@@ -107,6 +113,8 @@ export function MultiplyActionPageClient({
   // — the SAME guard the engine applies to the exposure. `??` alone passed a 0/NaN oracle
   // reading through and zeroed the displayed collateral USD while the exposure stayed at the
   // catalog price ("$0 under the field vs ~$525 exposure"). (E5)
+  const liveCollateralPriceUsd = market ? livePriceFor(market.collateralAsset.symbol) : undefined
+  const collateralPriceStale = priceFreshness.stale || liveCollateralPriceUsd === undefined
   const collateralPriceUsd = market
     ? resolveMultiplyCollateralPriceUsd(priceFor(market.collateralAsset.symbol), market.collateralAsset.priceUsd)
     : 0
@@ -267,6 +275,7 @@ export function MultiplyActionPageClient({
         collateralAmount: multiplyCollateralAmount,
         selectedMultiplier: parsedMultiplier,
         collateralPriceUsd,
+        collateralPriceStale,
       }
 
       setPreviewUi(null)
@@ -335,7 +344,18 @@ export function MultiplyActionPageClient({
     return () => {
       cancelled = true
     }
-  }, [deferredAmount, collateralPriceUsd, kind, market, maxCollateralAmount, multiplier, position, session, walletId])
+  }, [
+    collateralPriceStale,
+    collateralPriceUsd,
+    deferredAmount,
+    kind,
+    market,
+    maxCollateralAmount,
+    multiplier,
+    position,
+    session,
+    walletId,
+  ])
 
   useEffect(() => {
     // Editing inputs after a failed submit clears the stale error banner and returns to
@@ -409,6 +429,7 @@ export function MultiplyActionPageClient({
               collateralAmount: parsedAmount!,
               selectedMultiplier: parsedMultiplier!,
               collateralPriceUsd,
+              collateralPriceStale,
             }
           : kind === "close"
             ? {
@@ -496,6 +517,7 @@ export function MultiplyActionPageClient({
     amount,
     closeHref,
     collateralPriceUsd,
+    collateralPriceStale,
     descriptor.primaryVerb,
     hasUserInput,
     isExitKind,

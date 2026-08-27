@@ -4,6 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
 import { MultiplyActionPageClient } from "@/app/components/action-page/multiply-action-page-client"
+import { TokenPricesContext } from "@/app/lib/prices/token-prices-context"
+import { PRICE_FIXTURE } from "@/app/lib/prices/price-fixture"
 
 // The action client now consults wagmi (via useWrongNetwork) to gate submission; stub the two
 // hooks the guard uses so these no-WagmiProvider unit tests render (disconnected → not blocked).
@@ -22,7 +24,13 @@ import {
 } from "@/app/lib/multiply-system/storage"
 import { serializeMultiplySystemState } from "@/app/lib/multiply-system/codec"
 
-const renderWithProviders = (ui: ReactNode) => render(<DisplayPreferencesProvider>{ui}</DisplayPreferencesProvider>)
+const TEST_PRICES = Object.fromEntries(Object.entries(PRICE_FIXTURE).map(([symbol, price]) => [symbol.toLowerCase(), price]))
+const renderWithProviders = (ui: ReactNode) =>
+  render(
+    <TokenPricesContext.Provider value={TEST_PRICES}>
+      <DisplayPreferencesProvider>{ui}</DisplayPreferencesProvider>
+    </TokenPricesContext.Provider>,
+  )
 const DEMO_WALLET_ID = "demo-wallet"
 
 function seedExistingMultiplyPosition() {
@@ -128,6 +136,23 @@ describe("MultiplyActionPageClient", () => {
     expect(screen.getByTestId("action-review-stage")).toHaveTextContent("0.01")
     expect(screen.getByTestId("action-review-stage")).toHaveTextContent("Target leverage")
     expect(screen.queryByText(/0\.01.*2\.00x/)).not.toBeInTheDocument()
+  })
+
+  it("blocks a leverage open when Convex has no validated collateral quote", async () => {
+    render(
+      <TokenPricesContext.Provider value={{}}>
+        <DisplayPreferencesProvider>
+          <AvanaSessionsProvider>
+            <MultiplyActionPageClient kind="multiply" initialMarketId="eth-usdt" initialMultiplier="2" />
+          </AvanaSessionsProvider>
+        </DisplayPreferencesProvider>
+      </TokenPricesContext.Provider>,
+    )
+
+    fireEvent.change(screen.getByLabelText("Collateral amount"), { target: { value: "0.01" } })
+
+    await waitFor(() => expect(screen.getByText(/Collateral price is stale/)).toBeInTheDocument())
+    expect(screen.getByRole("button", { name: /price/i })).toBeDisabled()
   })
 
   it("rejects an absurd collateral amount and blocks Review", async () => {

@@ -90,6 +90,8 @@ export type MultiplyAction =
       // catalog seed price so the persisted position is valued at exactly the price
       // shown in the confirm preview (single source of truth for the dollar figures).
       collateralPriceUsd?: number
+      /** Fail closed when the validated Convex quote is missing or stale. */
+      collateralPriceStale?: boolean
       at?: number
     }
   | {
