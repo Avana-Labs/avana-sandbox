@@ -1,6 +1,76 @@
 import { v } from "convex/values"
 import { mutation, query } from "../_generated/server"
 import { requireSandboxWallet } from "./auth"
+import { deriveClaimAmountUsd } from "./rewards_catalog"
+
+const MAX_REWARD_EVENTS = 10_000
+const MAX_REWARD_CLAIMS = 64
+const MAX_REWARD_TEXT = 200
+
+type JsonRecord = Record<string, unknown>
+
+function isRecord(value: unknown): value is JsonRecord {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+}
+
+function boundedText(value: unknown) {
+  return typeof value === "string" && value.length > 0 && value.length <= MAX_REWARD_TEXT
+}
+
+function parseRewardsState(stateJson: string, wallet: string) {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(stateJson)
+  } catch {
+    throw new Error("INVALID_REWARDS_STATE")
+  }
+  if (!isRecord(parsed) || !Array.isArray(parsed.events) || !Array.isArray(parsed.claims)) {
+    throw new Error("INVALID_REWARDS_STATE")
+  }
+  if (parsed.events.length > MAX_REWARD_EVENTS || parsed.claims.length > MAX_REWARD_CLAIMS) {
+    throw new Error("REWARDS_STATE_TOO_LARGE")
+  }
+  for (const event of parsed.events) {
+    if (
+      !isRecord(event) ||
+      !boundedText(event.id) ||
+      !boundedText(event.type) ||
+      !boundedText(event.product) ||
+      typeof event.wallet !== "string" ||
+      event.wallet.toLowerCase() !== wallet ||
+      typeof event.timestamp !== "number" ||
+      !Number.isFinite(event.timestamp)
+    ) {
+      throw new Error("INVALID_REWARDS_STATE")
+    }
+    if (event.amountUsd !== undefined && (typeof event.amountUsd !== "number" || !Number.isFinite(event.amountUsd))) {
+      throw new Error("INVALID_REWARDS_STATE")
+    }
+    for (const field of [event.marketId, event.referredWallet]) {
+      if (field !== undefined && !boundedText(field)) throw new Error("INVALID_REWARDS_STATE")
+    }
+  }
+  for (const claim of parsed.claims) {
+    if (
+      !isRecord(claim) ||
+      !boundedText(claim.claimId) ||
+      !boundedText(claim.taskId) ||
+      !boundedText(claim.syntheticTxHash) ||
+      typeof claim.wallet !== "string" ||
+      claim.wallet.toLowerCase() !== wallet ||
+      claim.rewardSymbol !== "AVA" ||
+      claim.status !== "confirmed" ||
+      typeof claim.amount !== "number" ||
+      !Number.isFinite(claim.amount) ||
+      claim.amount !== deriveClaimAmountUsd([claim.taskId as string]) ||
+      typeof claim.claimedAt !== "number" ||
+      !Number.isFinite(claim.claimedAt)
+    ) {
+      throw new Error("INVALID_REWARDS_STATE")
+    }
+  }
+  return parsed as JsonRecord & { events: JsonRecord[]; claims: JsonRecord[] }
+}
 
 export const getState = query({
   args: { wallet: v.string() },
@@ -22,15 +92,26 @@ export const saveState = mutation({
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
     if (args.stateJson.length > 1_000_000) throw new Error("REWARDS_STATE_TOO_LARGE")
-    try {
-      JSON.parse(args.stateJson)
-    } catch {
-      throw new Error("INVALID_REWARDS_STATE")
-    }
+    const parsed = parseRewardsState(args.stateJson, wallet)
     const existing = await ctx.db
       .query("sandboxRewards")
       .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
       .unique()
+    if (parsed.claims.length > 0) {
+      const authorizedClaims = new Set<string>()
+      const rewardTransactions = await ctx.db
+        .query("transactions")
+        .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+        .order("desc")
+        .take(500)
+      for (const transaction of rewardTransactions) {
+        if (transaction.product !== "rewards" || transaction.status !== "success") continue
+        for (const taskId of transaction.claimedTaskIds ?? []) authorizedClaims.add(taskId)
+      }
+      for (const claim of parsed.claims) {
+        if (!authorizedClaims.has(claim.taskId as string)) throw new Error("UNAUTHORIZED_REWARD_CLAIM")
+      }
+    }
     const updatedAt = Date.now()
     if (existing) {
       const currentRevision = existing.revision ?? 0

@@ -7,19 +7,28 @@ import { api } from "../_generated/api"
 const modules = import.meta.glob("../**/*.*s")
 const WALLET = "0xAbC0000000000000000000000000000000000001"
 
+function rewardState(eventId?: string) {
+  return JSON.stringify({
+    events: eventId
+      ? [{ id: eventId, wallet: WALLET, product: "profile", type: "wallet_connected", timestamp: 1 }]
+      : [],
+    claims: [],
+  })
+}
+
 describe("sandbox rewards OCC", () => {
   it("p1-10: saveState requires expectedRevision when a row already exists", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
     await asUser.mutation(api.sandbox.rewards.saveState, {
       wallet: WALLET,
-      stateJson: JSON.stringify({ events: [], claims: [] }),
+      stateJson: rewardState(),
     })
 
     await expect(
       asUser.mutation(api.sandbox.rewards.saveState, {
         wallet: WALLET,
-        stateJson: JSON.stringify({ events: [{ id: "e1" }], claims: [] }),
+        stateJson: rewardState("e1"),
       }),
     ).rejects.toThrow(/REVISION_REQUIRED/)
   })
@@ -29,23 +38,23 @@ describe("sandbox rewards OCC", () => {
     const asUser = t.withIdentity({ subject: WALLET })
     await asUser.mutation(api.sandbox.rewards.saveState, {
       wallet: WALLET,
-      stateJson: JSON.stringify({ events: [], claims: [] }),
+      stateJson: rewardState(),
     })
 
     await asUser.mutation(api.sandbox.rewards.saveState, {
       wallet: WALLET,
       expectedRevision: 0,
-      stateJson: JSON.stringify({ events: [{ id: "e1" }], claims: [] }),
+      stateJson: rewardState("e1"),
     })
 
     const result = await asUser.mutation(api.sandbox.rewards.saveState, {
       wallet: WALLET,
       expectedRevision: 0,
-      stateJson: JSON.stringify({ events: [{ id: "e2" }], claims: [] }),
+      stateJson: rewardState("e2"),
     })
     expect(result).toMatchObject({ revision: 1, stale: true })
 
     const state = await asUser.query(api.sandbox.rewards.getState, { wallet: WALLET })
-    expect(JSON.parse(state?.stateJson ?? "{}")).toEqual({ events: [{ id: "e1" }], claims: [] })
+    expect(state?.stateJson).toBe(rewardState("e1"))
   })
 })

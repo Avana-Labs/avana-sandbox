@@ -10,6 +10,7 @@ import { parseFixed } from "@/app/lib/credit-engine"
 const push = vi.fn()
 let searchTab: string | null = "lend"
 const claimReward = vi.fn()
+const recordRewardsClaim = vi.fn(async () => ({ transactionId: "rewards-tx", idempotent: false, amountUsd: 50 }))
 const claimAllRewards = vi.fn()
 const completeEducation = vi.fn()
 const favoriteMarket = vi.fn()
@@ -87,6 +88,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("convex/react", () => ({
   useQuery: () => undefined,
+  useMutation: () => recordRewardsClaim,
 }))
 
 const lendSessionContext = {
@@ -321,6 +323,7 @@ describe("DashboardPageClient", () => {
     dateNowSpy = vi.spyOn(Date, "now").mockReturnValue(now)
     push.mockReset()
     claimReward.mockReset()
+    recordRewardsClaim.mockClear()
     claimAllRewards.mockReset()
     completeEducation.mockReset()
     favoriteMarket.mockReset()
@@ -365,7 +368,11 @@ describe("DashboardPageClient", () => {
       .find((button) => button.getAttribute("data-testid") !== "action-footer-primary")
     expect(questClaimButton).toBeDefined()
     await userEvent.click(questClaimButton!)
-    expect(claimReward).toHaveBeenCalledWith("first-borrow")
+    await waitFor(() => expect(claimReward).toHaveBeenCalledWith("first-borrow"))
+    expect(recordRewardsClaim).toHaveBeenCalledWith(
+      expect.objectContaining({ wallet: "demo-wallet", taskIds: ["first-borrow"] }),
+    )
+    expect(recordRewardsClaim.mock.invocationCallOrder[0]).toBeLessThan(claimReward.mock.invocationCallOrder[0]!)
   }, 20_000)
 
   it("renders wallet inside the same dashboard tab strip", async () => {
@@ -504,7 +511,10 @@ describe("DashboardPageClient", () => {
     })
     await clickQuestAction("Claim 140 AVA")
 
-    expect(claimReward).toHaveBeenCalledWith("bring-3-active-users")
+    await waitFor(() => expect(claimReward).toHaveBeenCalledWith("bring-3-active-users"))
+    expect(recordRewardsClaim).toHaveBeenCalledWith(
+      expect.objectContaining({ wallet: "demo-wallet", taskIds: ["bring-3-active-users"] }),
+    )
   })
 
   it("feeds product transactions into the combined activity feed", async () => {
