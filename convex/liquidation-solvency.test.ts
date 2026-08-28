@@ -24,6 +24,33 @@ const MARKET = "uni-v3-bluechip-weth-usdc"
  */
 async function seedVictim(t: ReturnType<typeof convexTest>, collateralUsd6: string, debtUsd6: string) {
   return await t.run(async (ctx) => {
+    await ctx.db.insert("tokenPrices", {
+      symbol: "usdc",
+      llamaId: "coingecko:usd-coin",
+      priceUsd: 1,
+      source: "test",
+      confidence: 1,
+      fetchedAt: Date.now(),
+      updatedAt: Date.now(),
+    })
+    await ctx.db.insert("walletLiquidBalances", {
+      wallet: KEEPER.toLowerCase(),
+      assetId: "usdc",
+      symbol: "USDC",
+      amount: 10_000,
+      valueUsd: 10_000,
+      state: "available",
+      updatedAt: Date.now(),
+    })
+    await ctx.db.insert("markets", {
+      scope: "pool",
+      slug: MARKET,
+      chainId: 1,
+      name: "Test LP",
+      symbol: "TEST-LP",
+      priceUsd: 1,
+      createdAt: Date.now(),
+    })
     const positionId = await ctx.db.insert("positions", {
       wallet: VICTIM.toLowerCase(),
       product: "borrow",
@@ -87,6 +114,7 @@ describe("recordLiquidation — server-side solvency gate (P1-2)", () => {
       asKeeper.mutation(api.sandbox.liquidation.recordLiquidation, {
         wallet: VICTIM,
         liquidatorWallet: KEEPER,
+        intentId: "solvent-rejected",
         positionId: ids.positionId,
         debtPositionId: ids.debtPositionId,
         marketSlug: MARKET,
@@ -109,9 +137,10 @@ describe("recordLiquidation — server-side solvency gate (P1-2)", () => {
     // $2000 collateral @ 85% LT = $1700 < $2000 debt → underwater.
     const ids = await seedVictim(t, "2000000000", "2000000000")
     const asKeeper = t.withIdentity({ subject: KEEPER })
-    await asKeeper.mutation(api.sandbox.liquidation.recordLiquidation, {
+    const intent = {
       wallet: VICTIM,
       liquidatorWallet: KEEPER,
+      intentId: "underwater-success",
       positionId: ids.positionId,
       debtPositionId: ids.debtPositionId,
       marketSlug: MARKET,
@@ -120,14 +149,58 @@ describe("recordLiquidation — server-side solvency gate (P1-2)", () => {
       liquidationBonusBps: 1000,
       healthFactorWadBefore: "850000000000000000",
       healthFactorWadAfter: "900000000000000000",
-    })
+    } as const
+    const first = await asKeeper.mutation(api.sandbox.liquidation.recordLiquidation, intent)
+    const replay = await asKeeper.mutation(api.sandbox.liquidation.recordLiquidation, intent)
+    expect(first.idempotent).toBe(false)
+    expect(replay).toMatchObject({ id: first.id, hash: first.hash, idempotent: true })
     const state = await t.run(async (ctx) => ({
       position: await ctx.db.get(ids.positionId),
       debt: await ctx.db.get(ids.debtPositionId),
+      keeperLiquid: await ctx.db
+        .query("walletLiquidBalances")
+        .withIndex("by_wallet", (q) => q.eq("wallet", KEEPER.toLowerCase()))
+        .unique(),
+      keeperCollateral: await ctx.db
+        .query("walletBorrowBalances")
+        .withIndex("by_wallet", (q) => q.eq("wallet", KEEPER.toLowerCase()))
+        .unique(),
+      actions: await ctx.db.query("liquidationActions").collect(),
     }))
     expect(state.position?.debtValueUsd6).toBe("1500000000")
     expect(state.position?.collateralValueUsd6).toBe("1450000000")
     expect(state.debt?.principalBorrowedUsd6).toBe("1500000000")
+    expect(state.keeperLiquid).toMatchObject({ amount: 9500, valueUsd: 9500 })
+    expect(state.keeperCollateral).toMatchObject({ marketId: MARKET, amount: 550, valueUsd: 550 })
+    expect(state.actions).toHaveLength(1)
+  })
+
+  test("rejects an underwater liquidation the keeper cannot fund", async () => {
+    const t = convexTest(schema, modules)
+    const ids = await seedVictim(t, "2000000000", "2000000000")
+    await t.run(async (ctx) => {
+      const balance = await ctx.db
+        .query("walletLiquidBalances")
+        .withIndex("by_wallet", (q) => q.eq("wallet", KEEPER.toLowerCase()))
+        .unique()
+      await ctx.db.patch(balance!._id, { amount: 1, valueUsd: 1 })
+    })
+    await expect(
+      t.withIdentity({ subject: KEEPER }).mutation(api.sandbox.liquidation.recordLiquidation, {
+        wallet: VICTIM,
+        liquidatorWallet: KEEPER,
+        intentId: "unfunded-keeper",
+        positionId: ids.positionId,
+        debtPositionId: ids.debtPositionId,
+        marketSlug: MARKET,
+        repaidUsd6: "500000000",
+        seizedCollateralUsd6: "550000000",
+        healthFactorWadBefore: "850000000000000000",
+        healthFactorWadAfter: "900000000000000000",
+      }),
+    ).rejects.toThrow(/INSUFFICIENT_LIQUIDATOR_BALANCE/)
+    const unchanged = await t.run(async (ctx) => ctx.db.get(ids.positionId))
+    expect(unchanged).toMatchObject({ collateralValueUsd6: "2000000000", debtValueUsd6: "2000000000" })
   })
 
   test("rejects a repay above the 50% close factor", async () => {
@@ -138,6 +211,7 @@ describe("recordLiquidation — server-side solvency gate (P1-2)", () => {
       asKeeper.mutation(api.sandbox.liquidation.recordLiquidation, {
         wallet: VICTIM,
         liquidatorWallet: KEEPER,
+        intentId: "close-factor-rejected",
         positionId: ids.positionId,
         debtPositionId: ids.debtPositionId,
         marketSlug: MARKET,
@@ -157,6 +231,7 @@ describe("recordLiquidation — server-side solvency gate (P1-2)", () => {
       asKeeper.mutation(api.sandbox.liquidation.recordLiquidation, {
         wallet: VICTIM,
         liquidatorWallet: KEEPER,
+        intentId: "bonus-rejected",
         positionId: ids.positionId,
         debtPositionId: ids.debtPositionId,
         marketSlug: MARKET,

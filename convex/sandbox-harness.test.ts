@@ -157,31 +157,33 @@ describe("multi-user harness — calm + borrowHeavy (protocol isolation)", () =>
 })
 
 describe("multi-user harness — liquidationStorm-lite", () => {
-  test("a keeper records liquidations across multiple victims; each side sees its rows", async () => {
+  test("a keeper cannot manufacture liquidation history without victim positions", async () => {
     const t = convexTest(schema, modules)
     const keeper = wallet(100)
     const asKeeper = t.withIdentity({ subject: keeper })
     const victims = [wallet(0), wallet(1), wallet(2)]
 
-    for (const victim of victims) {
-      await asKeeper.mutation(api.sandbox.liquidation.recordLiquidation, {
-        wallet: victim,
-        liquidatorWallet: keeper,
-        repaidUsd6: "500000000",
-        seizedCollateralUsd6: "550000000",
-        healthFactorWadBefore: "900000000000000000",
-        healthFactorWadAfter: "1050000000000000000",
-      })
+    for (const [index, victim] of victims.entries()) {
+      await expect(
+        asKeeper.mutation(api.sandbox.liquidation.recordLiquidation, {
+          wallet: victim,
+          liquidatorWallet: keeper,
+          intentId: `missing-victim-${index}`,
+          repaidUsd6: "500000000",
+          seizedCollateralUsd6: "550000000",
+          healthFactorWadBefore: "900000000000000000",
+          healthFactorWadAfter: "1050000000000000000",
+        }),
+      ).rejects.toThrow(/victim position is required/)
     }
 
     const keeperView = await asKeeper.query(api.sandbox.liquidation.getLiquidations, { wallet: keeper })
-    expect(keeperView.asLiquidator.length).toBe(victims.length)
+    expect(keeperView.asLiquidator).toHaveLength(0)
 
     for (const victim of victims) {
       const asVictim = t.withIdentity({ subject: victim })
       const victimView = await asVictim.query(api.sandbox.liquidation.getLiquidations, { wallet: victim })
-      expect(victimView.asVictim.length).toBe(1)
-      expect(victimView.asVictim[0]?.liquidatorWallet).toBe(keeper)
+      expect(victimView.asVictim).toHaveLength(0)
     }
   })
 })

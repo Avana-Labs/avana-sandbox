@@ -76,17 +76,23 @@ async function applySwapBalanceDelta(
 }
 
 /** Debit/credit one liquid asset in the canonical wallet ledgers. */
-async function applyLiquidAssetDelta(
+export async function applyLiquidAssetDelta(
   ctx: MutationCtx,
   wallet: string,
   assetId: string,
   symbol: string,
   delta: number,
   now: number,
+  priceUsdOverride?: number,
 ) {
   if (!Number.isFinite(delta) || delta === 0) return
   const liquid = await readWalletLiquidBalance(ctx, wallet, assetId)
-  const priceUsd = liquid && liquid.amount > 0 && liquid.valueUsd > 0 ? liquid.valueUsd / liquid.amount : 1
+  const priceUsd =
+    priceUsdOverride && Number.isFinite(priceUsdOverride) && priceUsdOverride > 0
+      ? priceUsdOverride
+      : liquid && liquid.amount > 0 && liquid.valueUsd > 0
+        ? liquid.valueUsd / liquid.amount
+        : 1
   const nextAmount = Math.max(0, (liquid?.amount ?? 0) + delta)
   const valueUsd = nextAmount * priceUsd
   await upsertLiquidWalletBalance(ctx, { wallet, assetId, symbol, amount: nextAmount, valueUsd, updatedAt: now })
@@ -126,7 +132,7 @@ async function upsertProductBalanceValue(
   await ctx.db.insert(table, { ...next, wallet } as never)
 }
 
-async function adjustProductBalanceUsd(
+export async function adjustProductBalanceUsd(
   ctx: MutationCtx,
   table: ProductBalanceTable,
   wallet: string,
@@ -134,6 +140,7 @@ async function adjustProductBalanceUsd(
   symbol: string,
   deltaUsd: number,
   now: number,
+  priceUsdOverride?: number,
 ) {
   if (!Number.isFinite(deltaUsd) || deltaUsd === 0) return
   const rows = await ctx.db
@@ -156,7 +163,12 @@ async function adjustProductBalanceUsd(
         (match.assetId === undefined || ("assetId" in candidate ? candidate.assetId : undefined) === match.assetId),
     )
   const nextValueUsd = Math.max(0, (existing?.valueUsd ?? 0) + deltaUsd)
-  const priceUsd = existing && existing.amount > 0 && existing.valueUsd > 0 ? existing.valueUsd / existing.amount : 1
+  const priceUsd =
+    priceUsdOverride && Number.isFinite(priceUsdOverride) && priceUsdOverride > 0
+      ? priceUsdOverride
+      : existing && existing.amount > 0 && existing.valueUsd > 0
+        ? existing.valueUsd / existing.amount
+        : 1
   const nextAmount = priceUsd > 0 ? nextValueUsd / priceUsd : nextValueUsd
   if (existing) {
     await ctx.db.patch(existing._id, { amount: nextAmount, valueUsd: nextValueUsd, updatedAt: now })
@@ -561,10 +573,7 @@ async function assertBorrowCollateralConserved(
     .collect()
   for (const [marketSlug, nextUsd] of nextByMarket) {
     const ownedUsd = rows
-      .filter(
-        (row) =>
-          row.marketId === marketSlug && (row.state === "poolAvailable" || row.state === "collateral"),
-      )
+      .filter((row) => row.marketId === marketSlug && (row.state === "poolAvailable" || row.state === "collateral"))
       .reduce((sum, row) => sum + row.valueUsd, 0)
     if (nextUsd > ownedUsd + 0.02) {
       throw new Error("INSUFFICIENT_COLLATERAL_BALANCE: pledged collateral exceeds this wallet's pool balance.")
