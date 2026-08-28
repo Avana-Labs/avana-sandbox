@@ -1177,12 +1177,7 @@ export const recordRewardsClaim = mutation({
     // Server-authoritative path (current client): the concrete quest ids being
     // claimed. The payout is derived on-server from these, so a forged amount
     // can't inflate totals.
-    taskIds: v.optional(v.array(v.string())),
-    // Backward-compat (legacy client): a pre-computed USD amount. Only trusted
-    // when `taskIds` is absent, so a still-deployed old client keeps working
-    // through a rollout where this function is deployed before that client is.
-    // Ignored entirely when taskIds is present.
-    amountUsd: v.optional(v.number()),
+    taskIds: v.array(v.string()),
     syntheticTxHash: v.string(),
   },
   handler: async (ctx, args) => {
@@ -1193,39 +1188,89 @@ export const recordRewardsClaim = mutation({
       .first()
     if (prior) return { transactionId: prior._id, idempotent: true }
 
-    const taskIds = args.taskIds ?? []
-    const usingCatalog = taskIds.length > 0
+    const taskIds = args.taskIds
+    if (taskIds.length === 0) throw new Error("EMPTY_CLAIM: at least one task id is required")
+    if (new Set(taskIds).size !== taskIds.length) throw new Error("DUPLICATE_TASK_ID")
+    const amountUsd = deriveClaimAmountUsd(taskIds)
 
-    if (!usingCatalog && args.amountUsd == null) {
-      throw new Error("EMPTY_CLAIM: taskIds (preferred) or a legacy amountUsd is required")
+    const [walletTransactions, rewardsState] = await Promise.all([
+      ctx.db
+        .query("transactions")
+        .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+        .order("desc")
+        .take(1000),
+      ctx.db
+        .query("sandboxRewards")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .unique(),
+    ])
+    let events: Array<{ wallet?: string; type?: string; marketId?: string }> = []
+    try {
+      const parsed = rewardsState ? (JSON.parse(rewardsState.stateJson) as { events?: unknown }) : null
+      if (Array.isArray(parsed?.events)) events = parsed.events as typeof events
+    } catch {
+      // saveState already rejects malformed JSON. Treat legacy malformed rows as no evidence.
     }
-
-    // Server-authoritative payout when taskIds are provided: derive it from the
-    // on-server catalog so a forged inflated value has nothing to inflate. Unknown
-    // ids trip the catalog throw and reject the whole claim. The legacy amountUsd
-    // path is only reached when no taskIds are sent (old client during rollout).
-    const amountUsd = usingCatalog ? deriveClaimAmountUsd(taskIds) : (args.amountUsd ?? 0)
+    const walletEvents = events.filter((event) => event.wallet?.toLowerCase() === wallet)
+    const hasEvent = (type: string, marketId?: string) =>
+      walletEvents.some((event) => event.type === type && (marketId == null || event.marketId === marketId))
+    const successful = walletTransactions.filter((row) => row.status === "success")
+    const isEligible = (taskId: string) => {
+      switch (taskId) {
+        case "connect-wallet":
+          return true
+        case "review-risk-basics":
+          return hasEvent("education_completed")
+        case "run-first-simulation":
+          return hasEvent("simulation_created")
+        case "favorite-market":
+          return hasEvent("market_favorited")
+        case "first-lend-deposit":
+          return successful.some((row) => row.product === "lend" && row.kind === "deposit")
+        case "supply-5k-lend":
+          return successful
+            .filter((row) => row.product === "lend" && row.kind === "deposit")
+            .reduce((sum, row) => sum + row.amountUsd, 0) >= 500
+        case "first-borrow":
+          return successful.some((row) => row.product === "borrow" && row.kind === "borrow")
+        case "first-repay":
+          return successful.some((row) => row.product === "borrow" && row.kind === "repay")
+        case "first-multiply":
+          return successful.some((row) => row.product === "multiply" && row.kind === "multiply")
+        case "first-deleverage":
+          return successful.some((row) => row.product === "multiply" && row.kind === "deleverage")
+        case "use-curve-position":
+          return hasEvent("sandbox_tour_completed", "curve-sandbox-tour")
+        case "use-uniswap-v4-position":
+          return hasEvent("sandbox_tour_completed", "uniswap-v4-sandbox-tour")
+        case "share-referral-link":
+          return hasEvent("referral_link_created")
+        case "invite-first-wallet":
+          return hasEvent("referral_connected")
+        case "bring-3-active-users":
+          return walletEvents.filter((event) => event.type === "referral_activated").length >= 3
+        default:
+          return false
+      }
+    }
+    for (const id of taskIds) {
+      if (!isEligible(id)) throw new Error(`TASK_NOT_ELIGIBLE: ${id}`)
+    }
 
     // Server-authoritative single-claim guard: reject a claim that re-uses any
     // task id already paid out on a prior successful rewards-claim row for this
     // wallet. This is durable — the client's rewards state blob can go stale
     // (multi-device, cold reload) without opening a double-claim window. Only
     // enforceable on the catalog path (legacy claims carry no task ids).
-    if (usingCatalog) {
-      const priorClaims = await ctx.db
-        .query("transactions")
-        .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
-        .collect()
-      const alreadyClaimed = new Set<string>()
-      for (const row of priorClaims) {
-        if (row.product === "rewards" && row.kind === "claim" && row.status === "success" && row.claimedTaskIds) {
-          for (const id of row.claimedTaskIds) alreadyClaimed.add(id)
-        }
+    const alreadyClaimed = new Set<string>()
+    for (const row of walletTransactions) {
+      if (row.product === "rewards" && row.kind === "claim" && row.status === "success" && row.claimedTaskIds) {
+        for (const id of row.claimedTaskIds) alreadyClaimed.add(id)
       }
-      for (const id of taskIds) {
-        if (alreadyClaimed.has(id)) {
-          throw new Error(`TASK_ALREADY_CLAIMED: ${id}`)
-        }
+    }
+    for (const id of taskIds) {
+      if (alreadyClaimed.has(id)) {
+        throw new Error(`TASK_ALREADY_CLAIMED: ${id}`)
       }
     }
 
@@ -1240,7 +1285,7 @@ export const recordRewardsClaim = mutation({
       requestedAmountUsd6: String(Math.round(amountUsd * 1_000_000)),
       executedAmountUsd6: String(Math.round(amountUsd * 1_000_000)),
       amountUsd,
-      claimedTaskIds: usingCatalog ? taskIds : undefined,
+      claimedTaskIds: taskIds,
       syntheticTxHash: args.syntheticTxHash,
       simulated: true,
       at: now,
