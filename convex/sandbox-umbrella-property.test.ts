@@ -21,6 +21,15 @@ const DAY_MS = 24 * 60 * 60 * 1000
 
 async function seedLiquid(t: T, amount: number) {
   await t.run(async (ctx) => {
+    await ctx.db.insert("tokenPrices", {
+      symbol: "usdc",
+      llamaId: "test:usdc",
+      priceUsd: 1,
+      confidence: 0.99,
+      status: "fresh",
+      source: "test",
+      updatedAt: Date.now(),
+    })
     await ctx.db.insert("walletLiquidBalances", {
       wallet: WALLET.toLowerCase(),
       assetId: MARKET,
