@@ -53,6 +53,25 @@ export const REWARDS_CATALOG_AVA: Record<string, number> = {
   "avana-ambassador": 400,
 }
 
+/** Quests currently rendered by buildDefaultRewardsCatalog; retired ids remain above only for history. */
+export const ACTIVE_REWARDS_TASK_IDS = new Set([
+  "connect-wallet",
+  "review-risk-basics",
+  "run-first-simulation",
+  "first-lend-deposit",
+  "supply-5k-lend",
+  "favorite-market",
+  "first-borrow",
+  "first-repay",
+  "use-curve-position",
+  "first-multiply",
+  "first-deleverage",
+  "use-uniswap-v4-position",
+  "share-referral-link",
+  "invite-first-wallet",
+  "bring-3-active-users",
+])
+
 /** Sandbox AVA→USD conversion (1:1 — see file header). */
 export const AVA_USD_PRICE = 1
 
@@ -67,6 +86,9 @@ export function deriveClaimAmountUsd(taskIds: readonly string[]): number {
     const amount = REWARDS_CATALOG_AVA[id]
     if (amount === undefined) {
       throw new Error(`UNKNOWN_TASK_ID: ${id}`)
+    }
+    if (!ACTIVE_REWARDS_TASK_IDS.has(id)) {
+      throw new Error(`INACTIVE_TASK_ID: ${id}`)
     }
     totalAva += amount
   }
