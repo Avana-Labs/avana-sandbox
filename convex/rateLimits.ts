@@ -27,21 +27,19 @@ function safeEqual(a: string, b: string): boolean {
  * external Convex client (which cannot call internal functions). It is therefore
  * hardened two ways:
  *  - the client-supplied key/limit/windowMs are bounded (below), and
- *  - when `CONVEX_RATE_LIMIT_SECRET` is set in the Convex environment, a matching
- *    `secret` is required. The secret defaults to unset (fail-open) so existing
- *    deployments keep working; set it in BOTH the Convex and Next environments to
- *    fully gate this mutation and eliminate cross-user bucket poisoning.
+ *  - a matching `CONVEX_RATE_LIMIT_SECRET` is always required. Failing closed keeps
+ *    direct callers from poisoning another user's SIWE bucket.
  */
 export const consume = mutation({
   args: {
     key: v.string(),
     limit: v.number(),
     windowMs: v.number(),
-    secret: v.optional(v.string()),
+    secret: v.string(),
   },
   handler: async (ctx, { key, limit, windowMs, secret }) => {
     const requiredSecret = process.env.CONVEX_RATE_LIMIT_SECRET
-    if (requiredSecret && !(secret && safeEqual(secret, requiredSecret))) {
+    if (!requiredSecret || !safeEqual(secret, requiredSecret)) {
       throw new Error("UNAUTHORIZED: rate-limit secret required")
     }
     if (
