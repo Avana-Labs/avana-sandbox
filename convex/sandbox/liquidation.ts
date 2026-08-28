@@ -17,7 +17,14 @@ import type { MutationCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
 import { getAuthedWallet, requireSandboxWallet } from "./auth"
 import { tokenNotionalToUsd } from "./collateralUsd"
-import { appendPortfolioSnapshot, applyLedgerDelta } from "./transactions"
+import { readWalletLiquidBalance } from "../wallet/balances"
+import { validatedTokenPriceUsd } from "./oraclePrice"
+import {
+  adjustProductBalanceUsd,
+  appendPortfolioSnapshot,
+  applyLedgerDelta,
+  applyLiquidAssetDelta,
+} from "./transactions"
 
 /** A single liquidation may repay at most this share of outstanding debt (50%). */
 const LIQUIDATION_CLOSE_FACTOR_BPS = 5_000
@@ -25,6 +32,8 @@ const LIQUIDATION_CLOSE_FACTOR_BPS = 5_000
 const DEFAULT_LIQUIDATION_BONUS_BPS = 1_000
 /** Hard server-side ceiling on the seize premium (defends a tampered client). */
 const MAX_LIQUIDATION_BONUS_BPS = 2_000
+const MAX_LIQUIDATIONS_PER_HOUR = 200
+const MAX_INTENT_ID_LENGTH = 128
 /**
  * Liquidation-threshold basis, hand-synced with the borrow path's server-side
  * solvency re-derivation (convex/sandbox/transactions.ts
@@ -111,6 +120,7 @@ export const recordLiquidation = mutation({
     wallet: v.string(),
     /** The keeper performing the liquidation; must equal the authed wallet. */
     liquidatorWallet: v.string(),
+    intentId: v.string(),
     positionId: v.optional(v.id("positions")),
     debtPositionId: v.optional(v.id("positionDebt")),
     marketSlug: v.optional(v.string()),
@@ -126,15 +136,33 @@ export const recordLiquidation = mutation({
     if (liquidator !== args.liquidatorWallet.toLowerCase()) {
       throw new Error("LIQUIDATOR_MISMATCH: the caller must be the liquidator.")
     }
+    if (!args.intentId || args.intentId.length > MAX_INTENT_ID_LENGTH) {
+      throw new Error("INVALID_LIQUIDATION: intentId is required and must be at most 128 characters.")
+    }
+    const prior = await ctx.db
+      .query("liquidationActions")
+      .withIndex("by_liquidator_intent", (q) => q.eq("liquidatorWallet", liquidator).eq("intentId", args.intentId))
+      .unique()
+    if (prior) return { id: prior._id, hash: prior.syntheticTxHash, idempotent: true }
+    if (!args.positionId) {
+      throw new Error("INVALID_LIQUIDATION: a victim position is required.")
+    }
     requirePositiveUsd6(args.repaidUsd6, "repaidUsd6")
     requirePositiveUsd6(args.seizedCollateralUsd6, "seizedCollateralUsd6")
     if (args.healthFactorWadBefore !== null && BigInt(args.healthFactorWadBefore) >= 1_000_000_000_000_000_000n) {
       throw new Error("INVALID_LIQUIDATION: the victim position is not underwater.")
     }
     const now = Date.now()
-    const hash = `sim-liquidate-${now.toString(36)}`
+    const recent = await ctx.db
+      .query("liquidationActions")
+      .withIndex("by_liquidator_at", (q) => q.eq("liquidatorWallet", liquidator).gte("at", now - 60 * 60 * 1000))
+      .take(MAX_LIQUIDATIONS_PER_HOUR)
+    if (recent.length >= MAX_LIQUIDATIONS_PER_HOUR) {
+      throw new Error(`RATE_LIMITED: more than ${MAX_LIQUIDATIONS_PER_HOUR} liquidations in the last hour.`)
+    }
+    const hash = `sim-liquidate-${args.intentId.slice(0, 8)}-${now.toString(36)}`
 
-    if (args.positionId) {
+    {
       const position = await ctx.db.get(args.positionId)
       const victim = args.wallet.toLowerCase()
       if (!position || position.wallet !== victim || position.product !== "borrow") {
@@ -152,6 +180,9 @@ export const recordLiquidation = mutation({
       ])
       const debt = args.debtPositionId ? debtRows.find((row) => row._id === args.debtPositionId) : debtRows[0]
       if (!debt) throw new Error("INVALID_LIQUIDATION: debt position was not found.")
+      if (args.marketSlug && args.marketSlug !== position.marketSlug) {
+        throw new Error("INVALID_LIQUIDATION: market does not match the victim position.")
+      }
 
       // ── Server-side solvency + sizing gate (P1-2) ──────────────────────────
       // `healthFactorWadBefore` above is CLIENT-supplied and spoofable — a caller
@@ -192,6 +223,30 @@ export const recordLiquidation = mutation({
         throw new Error("INVALID_LIQUIDATION: seized collateral exceeds the close-factor × bonus cap.")
       }
 
+      // A liquidation is an exchange, not a free administrative write. Charge the
+      // authenticated keeper in the debt asset at the current Convex oracle price before
+      // mutating the victim. The whole mutation is atomic, so any later failure rolls this back.
+      const debtAssetId = debt.baseAssetId.toLowerCase()
+      const debtPriceUsd = await validatedTokenPriceUsd(ctx, debtAssetId, now)
+      if (debtPriceUsd === null) {
+        throw new Error("ORACLE_UNAVAILABLE: current debt-asset price is required for liquidation.")
+      }
+      const liquidatorBalance = await readWalletLiquidBalance(ctx, liquidator, debtAssetId)
+      const repaidUsd = Number(repay) / 1_000_000
+      const repaymentTokens = repaidUsd / debtPriceUsd
+      if (!liquidatorBalance || liquidatorBalance.amount + 1e-9 < repaymentTokens) {
+        throw new Error("INSUFFICIENT_LIQUIDATOR_BALANCE: keeper cannot fund this repayment.")
+      }
+      await applyLiquidAssetDelta(
+        ctx,
+        liquidator,
+        debtAssetId,
+        debtAssetId.toUpperCase(),
+        -repaymentTokens,
+        now,
+        debtPriceUsd,
+      )
+
       const currentPrincipal = BigInt(debt.principalBorrowedUsd6)
       const nextPrincipal = currentPrincipal > repay ? currentPrincipal - repay : 0n
       const currentShares = BigInt(debt.debtSharesUsd6)
@@ -203,6 +258,7 @@ export const recordLiquidation = mutation({
       })
 
       let remainingSeize = BigInt(args.seizedCollateralUsd6)
+      const seizedByMarket = new Map<string, bigint>()
       for (const collateral of collateralRows) {
         if (remainingSeize === 0n) break
         const currentValue = BigInt(collateral.collateralValueUsd6 ?? "0")
@@ -217,6 +273,7 @@ export const recordLiquidation = mutation({
           principalTokenAmount: currentValue > 0n ? ((currentTokenAmount * nextValue) / currentValue).toString() : "0",
           updatedAt: now,
         })
+        seizedByMarket.set(collateral.marketSlug, (seizedByMarket.get(collateral.marketSlug) ?? 0n) + seized)
         remainingSeize -= seized
       }
       if (remainingSeize > 0n) {
@@ -242,9 +299,34 @@ export const recordLiquidation = mutation({
         ...(closed ? { closedAt: now } : {}),
       })
 
-      const repaidUsd = Number(repay) / 1_000_000
       const seizedUsd = Number(BigInt(args.seizedCollateralUsd6)) / 1_000_000
-      const marketSlug = args.marketSlug ?? position.marketSlug
+      const marketSlug = position.marketSlug
+      for (const [collateralMarket, seizedUsd6] of seizedByMarket) {
+        const [pool, market] = await Promise.all([
+          ctx.db
+            .query("pools")
+            .withIndex("by_slug", (q) => q.eq("slug", collateralMarket))
+            .unique(),
+          ctx.db
+            .query("markets")
+            .withIndex("by_scope_slug", (q) => q.eq("scope", "pool").eq("slug", collateralMarket))
+            .unique(),
+        ])
+        const collateralPriceUsd = pool?.lpTokenPriceUsd ?? market?.priceUsd
+        if (!collateralPriceUsd || !Number.isFinite(collateralPriceUsd) || collateralPriceUsd <= 0) {
+          throw new Error(`ORACLE_UNAVAILABLE: current LP price is required for ${collateralMarket}.`)
+        }
+        await adjustProductBalanceUsd(
+          ctx,
+          "walletBorrowBalances",
+          liquidator,
+          { marketId: collateralMarket, poolId: collateralMarket, state: "poolAvailable" },
+          market?.symbol ?? collateralMarket.toUpperCase(),
+          Number(seizedUsd6) / 1_000_000,
+          now,
+          collateralPriceUsd,
+        )
+      }
       await ctx.db.insert("transactions", {
         wallet: victim,
         intentId: `liquidation:${hash}`,
@@ -263,12 +345,13 @@ export const recordLiquidation = mutation({
         at: now,
       })
       await applyLedgerDelta(ctx, marketSlug, -repaidUsd, -seizedUsd, now)
-      await appendPortfolioSnapshot(ctx, victim, now)
+      await Promise.all([appendPortfolioSnapshot(ctx, victim, now), appendPortfolioSnapshot(ctx, liquidator, now)])
     }
 
     const id = await ctx.db.insert("liquidationActions", {
       wallet: args.wallet.toLowerCase(),
       liquidatorWallet: liquidator,
+      intentId: args.intentId,
       positionId: args.positionId,
       debtPositionId: args.debtPositionId,
       marketSlug: args.marketSlug,
@@ -280,7 +363,7 @@ export const recordLiquidation = mutation({
       syntheticTxHash: hash,
       at: now,
     })
-    return { id, hash }
+    return { id, hash, idempotent: false }
   },
 })
 

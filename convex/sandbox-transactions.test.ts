@@ -514,9 +514,9 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
     const pageState = await asUser.query(api.sandbox.transactions.getPortfolioPageState, { wallet: WALLET })
     expect(pageState.snapshots.at(-1)?.totalValueUsd).toBe(2_000)
 
-    await expect(asUser.mutation(api.sandbox.transactions.ensurePortfolioSnapshot, { wallet: WALLET })).resolves.toEqual(
-      { wrote: false },
-    )
+    await expect(
+      asUser.mutation(api.sandbox.transactions.ensurePortfolioSnapshot, { wallet: WALLET }),
+    ).resolves.toEqual({ wrote: false })
     const rows = await t.run((ctx) =>
       ctx.db
         .query("portfolioCurrent")
@@ -568,28 +568,20 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
 })
 
 describe("liquidation recording", () => {
-  test("records a liquidation gated on the liquidator (acting on a victim it does not own)", async () => {
+  test("rejects an audit-only liquidation with no victim position", async () => {
     const t = convexTest(schema, modules)
     const asLiquidator = t.withIdentity({ subject: OTHER })
-    const res = await asLiquidator.mutation(api.sandbox.liquidation.recordLiquidation, {
-      wallet: WALLET, // victim
-      liquidatorWallet: OTHER,
-      repaidUsd6: "500000000",
-      seizedCollateralUsd6: "550000000",
-      healthFactorWadBefore: "900000000000000000",
-      healthFactorWadAfter: "1100000000000000000",
-    })
-    expect(res.hash).toMatch(/^sim-liquidate-/)
-
-    // The liquidator sees it as an outgoing liquidation.
-    const liq = await asLiquidator.query(api.sandbox.liquidation.getLiquidations, { wallet: OTHER })
-    expect(liq.asLiquidator).toHaveLength(1)
-    expect(liq.asLiquidator[0]?.wallet).toBe(WALLET.toLowerCase())
-
-    // The victim sees it as an incoming liquidation.
-    const asVictim = t.withIdentity({ subject: WALLET })
-    const victimView = await asVictim.query(api.sandbox.liquidation.getLiquidations, { wallet: WALLET })
-    expect(victimView.asVictim).toHaveLength(1)
+    await expect(
+      asLiquidator.mutation(api.sandbox.liquidation.recordLiquidation, {
+        wallet: WALLET,
+        liquidatorWallet: OTHER,
+        intentId: "missing-position",
+        repaidUsd6: "500000000",
+        seizedCollateralUsd6: "550000000",
+        healthFactorWadBefore: "900000000000000000",
+        healthFactorWadAfter: "1100000000000000000",
+      }),
+    ).rejects.toThrow(/victim position is required/)
   })
 
   test("rejects a liquidation whose liquidatorWallet is not the caller", async () => {
@@ -599,6 +591,7 @@ describe("liquidation recording", () => {
       asUser.mutation(api.sandbox.liquidation.recordLiquidation, {
         wallet: OTHER,
         liquidatorWallet: OTHER, // caller is WALLET, not OTHER
+        intentId: "wrong-liquidator",
         repaidUsd6: "1",
         seizedCollateralUsd6: "1",
         healthFactorWadBefore: null,
@@ -610,6 +603,33 @@ describe("liquidation recording", () => {
   test("atomically reduces victim debt and collateral and records the transaction", async () => {
     const t = convexTest(schema, modules)
     const ids = await t.run(async (ctx) => {
+      await ctx.db.insert("tokenPrices", {
+        symbol: "usdc",
+        llamaId: "coingecko:usd-coin",
+        priceUsd: 1,
+        source: "test",
+        confidence: 1,
+        fetchedAt: Date.now(),
+        updatedAt: Date.now(),
+      })
+      await ctx.db.insert("markets", {
+        scope: "pool",
+        slug: "uni-v3-bluechip-weth-usdc",
+        chainId: 1,
+        name: "Test LP",
+        symbol: "TEST-LP",
+        priceUsd: 1,
+        createdAt: Date.now(),
+      })
+      await ctx.db.insert("walletLiquidBalances", {
+        wallet: OTHER.toLowerCase(),
+        assetId: "usdc",
+        symbol: "USDC",
+        amount: 10_000,
+        valueUsd: 10_000,
+        state: "available",
+        updatedAt: Date.now(),
+      })
       const positionId = await ctx.db.insert("positions", {
         wallet: WALLET.toLowerCase(),
         product: "borrow",
@@ -648,6 +668,7 @@ describe("liquidation recording", () => {
     await asLiquidator.mutation(api.sandbox.liquidation.recordLiquidation, {
       wallet: WALLET,
       liquidatorWallet: OTHER,
+      intentId: "atomic-liquidation",
       positionId: ids.positionId,
       debtPositionId: ids.debtPositionId,
       marketSlug: "uni-v3-bluechip-weth-usdc",
@@ -685,6 +706,33 @@ describe("liquidation recording", () => {
   test("bumps position revision so a victim's stale-read write is rejected (regression: C-2)", async () => {
     const t = convexTest(schema, modules)
     const ids = await t.run(async (ctx) => {
+      await ctx.db.insert("tokenPrices", {
+        symbol: "usdc",
+        llamaId: "coingecko:usd-coin",
+        priceUsd: 1,
+        source: "test",
+        confidence: 1,
+        fetchedAt: Date.now(),
+        updatedAt: Date.now(),
+      })
+      await ctx.db.insert("walletLiquidBalances", {
+        wallet: OTHER.toLowerCase(),
+        assetId: "usdc",
+        symbol: "USDC",
+        amount: 10_000,
+        valueUsd: 10_000,
+        state: "available",
+        updatedAt: Date.now(),
+      })
+      await ctx.db.insert("markets", {
+        scope: "pool",
+        slug: "uni-v3-bluechip-weth-usdc",
+        chainId: 1,
+        name: "Test LP",
+        symbol: "TEST-LP",
+        priceUsd: 1,
+        createdAt: Date.now(),
+      })
       const positionId = await ctx.db.insert("positions", {
         wallet: WALLET.toLowerCase(),
         product: "borrow",
@@ -725,6 +773,7 @@ describe("liquidation recording", () => {
     await asLiquidator.mutation(api.sandbox.liquidation.recordLiquidation, {
       wallet: WALLET,
       liquidatorWallet: OTHER,
+      intentId: "revision-liquidation",
       positionId: ids.positionId,
       debtPositionId: ids.debtPositionId,
       marketSlug: "uni-v3-bluechip-weth-usdc",
