@@ -128,6 +128,13 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
     expect(portfolio.latest?.totalBorrowedUsd).toBe(1000)
     // Borrow credits the liquid wallet, so net portfolio stays flat (cash +1000, debt +1000).
     expect(portfolio.latest?.totalValueUsd).toBe(0)
+    const risk = await asUser.query(api.sandbox.transactions.getRiskSeries, { wallet: WALLET })
+    expect(risk).toEqual([
+      expect.objectContaining({
+        healthFactorWad: "1700000000000000000",
+        trigger: "borrow",
+      }),
+    ])
   })
 
   test("rejects malformed fixed-point position state before writing", async () => {
@@ -693,6 +700,10 @@ describe("liquidation recording", () => {
         .query("portfolioSnapshots")
         .withIndex("by_wallet_at", (q) => q.eq("wallet", WALLET.toLowerCase()))
         .collect(),
+      risk: await ctx.db
+        .query("riskSnapshots")
+        .withIndex("by_wallet_at", (q) => q.eq("wallet", WALLET.toLowerCase()))
+        .unique(),
     }))
     expect(state.position?.debtValueUsd6).toBe("1500000000")
     expect(state.position?.collateralValueUsd6).toBe("1450000000")
@@ -701,6 +712,12 @@ describe("liquidation recording", () => {
     expect(state.transactions).toHaveLength(1)
     expect(state.transactions[0]?.kind).toBe("liquidation")
     expect(state.snapshots).toHaveLength(1)
+    expect(state.risk).toMatchObject({
+      collateralValueUsd6: "1450000000",
+      totalBorrowedUsd6: "1500000000",
+      healthFactorWad: "821666667000000000",
+      trigger: "liquidation",
+    })
   })
 
   test("bumps position revision so a victim's stale-read write is rejected (regression: C-2)", async () => {

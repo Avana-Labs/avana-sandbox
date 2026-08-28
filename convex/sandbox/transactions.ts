@@ -277,6 +277,7 @@ function liquidAssetIdFromArgs(assetId?: string, marketSlug?: string): string {
 export const MAX_TX_PER_HOUR = 200
 const PORTFOLIO_HISTORY_INTERVAL_MS = 60 * 60 * 1000
 const MAX_PORTFOLIO_HISTORY_ROWS = 365
+const MAX_RISK_HISTORY_ROWS = 365
 
 /** Global multiply leverage ceiling, mirrors MULTIPLY_ACTION_MAX_LEVERAGE (client slider). */
 const MAX_MULTIPLIER = 10
@@ -539,6 +540,104 @@ async function assertBorrowSolvent(
   if (debtUsd > liquidationValueUsd + 0.01) {
     throw new Error("INVALID_TRANSITION: borrow position would be undercollateralized (health factor < 1).")
   }
+}
+
+function numberToUsd6(value: number) {
+  return Math.max(0, Math.round(value * 1_000_000)).toString()
+}
+
+function ratioToWad(value: number | null) {
+  if (value === null || !Number.isFinite(value)) return null
+  return Math.max(0, Math.round(value * 1_000_000_000) * 1_000_000_000).toString()
+}
+
+/** Derive risk history from persisted positions and server market parameters. */
+export async function appendServerRiskSnapshot(ctx: MutationCtx, wallet: string, now: number, trigger: string) {
+  const positions = await ctx.db
+    .query("positions")
+    .withIndex("by_wallet_product", (q) => q.eq("wallet", wallet).eq("product", "borrow"))
+    .collect()
+  const open = positions.filter((position) => position.status === "open")
+  let collateralValueUsd = 0
+  let borrowCapacityUsd = 0
+  let liquidationValueUsd = 0
+  let totalBorrowedUsd = 0
+  const spokeTotals = new Map<
+    string,
+    { borrowCapacityUsd: number; liquidationValueUsd: number; totalBorrowedUsd: number }
+  >()
+
+  for (const position of open) {
+    const [collateralRows, debtRows] = await Promise.all([
+      ctx.db
+        .query("positionCollateral")
+        .withIndex("by_position", (q) => q.eq("positionId", position._id))
+        .collect(),
+      ctx.db
+        .query("positionDebt")
+        .withIndex("by_position", (q) => q.eq("positionId", position._id))
+        .collect(),
+    ])
+    const spokeId = position.spokeId ?? position.marketSlug
+    const spoke = spokeTotals.get(spokeId) ?? { borrowCapacityUsd: 0, liquidationValueUsd: 0, totalBorrowedUsd: 0 }
+    for (const collateral of collateralRows) {
+      if (collateral.collateralEnabled === false) continue
+      let valueUsd: number
+      let pool: Awaited<ReturnType<typeof serverCollateralValueUsd>>["pool"]
+      if (BigInt(collateral.principalTokenAmount) > 0n || BigInt(collateral.collateralShares) > 0n) {
+        const valued = await serverCollateralValueUsd(ctx, collateral)
+        valueUsd = valued.valueUsd
+        pool = valued.pool
+      } else {
+        valueUsd = usd6Number(collateral.collateralValueUsd6)
+        pool = await ctx.db
+          .query("pools")
+          .withIndex("by_slug", (q) => q.eq("slug", collateral.marketSlug))
+          .unique()
+      }
+      const collateralFactorPct = pool?.maxLtvPct ?? 75
+      const liquidationThresholdPct =
+        pool?.liquidationThresholdPct ?? liquidationThresholdFromMaxLtv(collateralFactorPct)
+      collateralValueUsd += valueUsd
+      borrowCapacityUsd += valueUsd * (collateralFactorPct / 100)
+      liquidationValueUsd += valueUsd * (liquidationThresholdPct / 100)
+      spoke.borrowCapacityUsd += valueUsd * (collateralFactorPct / 100)
+      spoke.liquidationValueUsd += valueUsd * (liquidationThresholdPct / 100)
+    }
+    const positionDebtUsd = debtRows.reduce((sum, debt) => sum + usd6Number(debt.principalBorrowedUsd6), 0)
+    totalBorrowedUsd += positionDebtUsd
+    spoke.totalBorrowedUsd += positionDebtUsd
+    spokeTotals.set(spokeId, spoke)
+  }
+
+  const healthFactor = totalBorrowedUsd > 0 ? liquidationValueUsd / totalBorrowedUsd : null
+  const id = await ctx.db.insert("riskSnapshots", {
+    wallet,
+    collateralValueUsd6: numberToUsd6(collateralValueUsd),
+    borrowCapacityUsd6: numberToUsd6(borrowCapacityUsd),
+    availableBorrowCapacityUsd6: numberToUsd6(Math.max(0, borrowCapacityUsd - totalBorrowedUsd)),
+    totalBorrowedUsd6: numberToUsd6(totalBorrowedUsd),
+    currentLtvWad: ratioToWad(collateralValueUsd > 0 ? totalBorrowedUsd / collateralValueUsd : 0)!,
+    healthFactorWad: ratioToWad(healthFactor),
+    spokes: [...spokeTotals.entries()].map(([spokeId, spoke]) => ({
+      spokeId,
+      availableCreditUsd6: numberToUsd6(Math.max(0, spoke.borrowCapacityUsd - spoke.totalBorrowedUsd)),
+      totalBorrowedUsd6: numberToUsd6(spoke.totalBorrowedUsd),
+      liquidationBufferUsd6: numberToUsd6(Math.max(0, spoke.liquidationValueUsd - spoke.totalBorrowedUsd)),
+      healthFactorWad: ratioToWad(
+        spoke.totalBorrowedUsd > 0 ? spoke.liquidationValueUsd / spoke.totalBorrowedUsd : null,
+      ),
+    })),
+    trigger: trigger.slice(0, 100),
+    at: now,
+  })
+  const rows = await ctx.db
+    .query("riskSnapshots")
+    .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+    .order("desc")
+    .take(MAX_RISK_HISTORY_ROWS + 25)
+  for (const stale of rows.slice(MAX_RISK_HISTORY_ROWS)) await ctx.db.delete(stale._id)
+  return id
 }
 
 /** A client cannot create more pledged LP collateral than this wallet owns in that pool. */
@@ -1204,6 +1303,7 @@ export const recordTransaction = mutation({
       }
       await applyProductBucketDelta(ctx, wallet, args, marketSlug, now, existingPosition)
       await appendPortfolioSnapshot(ctx, wallet, now)
+      if (args.product === "borrow") await appendServerRiskSnapshot(ctx, wallet, now, args.kind)
     }
 
     return {
@@ -1683,33 +1783,6 @@ export const getWalletSwapTransactions = query({
       hash: row.syntheticTxHash,
       at: row.at,
     }))
-  },
-})
-
-/** Append a SPOKE-scoped risk/health snapshot (Credit-Engine-computed; analytics). */
-export const recordRiskSnapshot = mutation({
-  args: {
-    wallet: v.string(),
-    collateralValueUsd6: v.string(),
-    borrowCapacityUsd6: v.string(),
-    availableBorrowCapacityUsd6: v.string(),
-    totalBorrowedUsd6: v.string(),
-    currentLtvWad: v.string(),
-    healthFactorWad: v.union(v.string(), v.null()),
-    spokes: v.array(
-      v.object({
-        spokeId: v.string(),
-        availableCreditUsd6: v.string(),
-        totalBorrowedUsd6: v.string(),
-        liquidationBufferUsd6: v.string(),
-        healthFactorWad: v.union(v.string(), v.null()),
-      }),
-    ),
-    trigger: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
-    return ctx.db.insert("riskSnapshots", { ...args, wallet, at: Date.now() })
   },
 })
 
