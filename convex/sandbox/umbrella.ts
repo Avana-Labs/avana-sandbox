@@ -4,6 +4,7 @@ import { mutation, query } from "../_generated/server"
 import type { Doc, Id } from "../_generated/dataModel"
 import { requireSandboxWallet } from "./auth"
 import { readWalletLiquidBalance, upsertLiquidWalletBalance } from "../wallet/balances"
+import { validatedTokenPriceUsd } from "./oraclePrice"
 
 const SECONDS_PER_YEAR = 365 * 24 * 60 * 60
 const COOLDOWN_MS = 20 * 24 * 60 * 60 * 1000
@@ -143,9 +144,10 @@ async function upsertLiquidBalance(
   marketId: UmbrellaMarketId,
   amount: number,
   now: number,
+  priceUsd: number = UMBRELLA_MARKETS[marketId].priceUsd,
 ) {
   const market = UMBRELLA_MARKETS[marketId]
-  const valueUsd = amount * market.priceUsd
+  const valueUsd = amount * priceUsd
   await upsertLiquidWalletBalance(ctx, {
     wallet,
     assetId: marketId,
@@ -455,19 +457,24 @@ export const recordAction = mutation({
     if (!Number.isFinite(args.amount) || args.amount < 0) throw new Error("INVALID_AMOUNT")
     const amount = Math.max(0, args.amount)
     if (args.kind !== "claim" && amount <= 0) throw new Error("INVALID_AMOUNT")
+    const livePriceUsd =
+      args.kind === "claim" ? null : await validatedTokenPriceUsd(ctx, market.symbol, now)
+    if (args.kind !== "claim" && !livePriceUsd) {
+      throw new Error("ORACLE_UNAVAILABLE: Umbrella actions require a current Convex token price.")
+    }
     const liquid = await readLiquidBalance(ctx, wallet, args.marketId)
     const position = await readUmbrellaPosition(ctx, wallet, args.marketId)
     const accruedUsd = position ? rewardAccruedUsd(position, now) : 0
     const earnedUsd = position ? numberFromUsd6(position.earnedUsd6) + accruedUsd : 0
     const suppliedUsd = position ? numberFromUsd6(position.suppliedUsd6) : 0
     const cooldownUsd = position ? numberFromUsd6(position.cooldownAmountUsd6) : 0
-    const amountUsd = amount * market.priceUsd
+    const amountUsd = amount * (livePriceUsd ?? market.priceUsd)
     let nextPositionId: Id<"positions"> | undefined = position?._id
     let txAmountUsd = amountUsd
 
     if (args.kind === "stake") {
       if (amount > liquid) throw new Error("INSUFFICIENT_BALANCE")
-      await upsertLiquidBalance(ctx, wallet, args.marketId, liquid - amount, now)
+      await upsertLiquidBalance(ctx, wallet, args.marketId, liquid - amount, now, livePriceUsd!)
       const nextSuppliedUsd = suppliedUsd + amountUsd
       const payload = {
         wallet,
@@ -587,7 +594,7 @@ export const recordAction = mutation({
           })
         }
       }
-      await upsertLiquidBalance(ctx, wallet, args.marketId, liquid + amount, now)
+      await upsertLiquidBalance(ctx, wallet, args.marketId, liquid + amount, now, livePriceUsd!)
       const nextSuppliedUsd = Math.max(0, suppliedUsd - amountUsd)
       await ctx.db.patch(position._id, {
         status: nextSuppliedUsd > 0 ? "open" : "closed",
