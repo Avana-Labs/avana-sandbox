@@ -1,4 +1,4 @@
-import { act, renderHook } from "@testing-library/react"
+import { act, renderHook, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
   buildDefaultUmbrellaState,
@@ -54,6 +54,37 @@ describe("buildDefaultUmbrellaState seed prices", () => {
     expect(state.markets.gho.priceUsd).toBe(sandboxBaselinePriceUsd("GHO"))
     expect(state.markets.usdc.priceUsd).toBe(sandboxBaselinePriceUsd("USDC"))
     expect(state.markets.usdt.priceUsd).toBe(sandboxBaselinePriceUsd("USDT"))
+  })
+})
+
+describe("useUmbrellaSession Convex hydration", () => {
+  it("never exposes demo positions while the Convex snapshot is loading", async () => {
+    const persistAction = vi.fn()
+    const view = renderHook(
+      ({ remoteState }) =>
+        useUmbrellaSession({
+          walletId: "convex-wallet",
+          persistState: false,
+          persistAction,
+          remoteState,
+        }),
+      { initialProps: { remoteState: undefined } },
+    )
+
+    expect(view.result.current.isHydrated).toBe(false)
+    expect(Object.values(view.result.current.positions).every((position) => position.valueUsd === 0)).toBe(true)
+    expect(Object.values(view.result.current.walletBalances).every((balance) => balance === 0)).toBe(true)
+
+    view.rerender({
+      remoteState: {
+        walletId: "convex-wallet",
+        walletBalances: { gho: 0, usdc: 25, usdt: 0, weth: 0 },
+        positions: [],
+        transactions: [],
+      },
+    })
+    await waitFor(() => expect(view.result.current.isHydrated).toBe(true))
+    expect(view.result.current.walletBalances.usdc).toBe(25)
   })
 })
 
