@@ -50,6 +50,16 @@ describe("liquidity bounded fold (compaction) matches the naive sum", () => {
         state: "available",
         updatedAt: 1,
       })
+      await ctx.db.insert("walletBorrowBalances", {
+        wallet: WALLET.toLowerCase(),
+        marketId: "uni-v3-bluechip-weth-usdc",
+        poolId: "uni-v3-bluechip-weth-usdc",
+        symbol: "WETH/USDC",
+        amount: 2000,
+        valueUsd: 2000,
+        state: "collateral",
+        updatedAt: 1,
+      })
     })
 
     // Market A: a borrow ($1000) then a partial repay ($400) on the borrowable asset.

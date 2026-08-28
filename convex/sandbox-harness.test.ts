@@ -93,6 +93,18 @@ describe("multi-user harness — calm + borrowHeavy (protocol isolation)", () =>
 
     for (let i = 0; i < WALLETS; i++) {
       const w = wallet(i)
+      await t.run(async (ctx) => {
+        await ctx.db.insert("walletBorrowBalances", {
+          wallet: w,
+          marketId: "uni-v3-bluechip-weth-usdc",
+          poolId: "uni-v3-bluechip-weth-usdc",
+          symbol: "WETH/USDC",
+          amount: 5000,
+          valueUsd: 5000,
+          state: "collateral",
+          updatedAt: 0,
+        })
+      })
       const asUser = t.withIdentity({ subject: w })
       const actions = 1 + Math.floor(random() * 4) // 1..4 borrows each
       for (let a = 0; a < actions; a++) {

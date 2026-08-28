@@ -29,6 +29,18 @@ async function seedPoolMarket(t: ReturnType<typeof convexTest>, priceUsd: number
       ...(priceUsd === undefined ? {} : { priceUsd }),
       createdAt: 0,
     })
+    if (priceUsd !== undefined) {
+      await ctx.db.insert("walletBorrowBalances", {
+        wallet: WALLET.toLowerCase(),
+        marketId: POOL,
+        poolId: POOL,
+        symbol: "WETH/USDC",
+        amount: 2.5,
+        valueUsd: 2000,
+        state: "collateral",
+        updatedAt: 0,
+      })
+    }
   })
 }
 
