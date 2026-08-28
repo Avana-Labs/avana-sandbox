@@ -1,8 +1,7 @@
 import { v } from "convex/values"
 import { query } from "../_generated/server"
-import type { QueryCtx } from "../_generated/server"
 import { requireSandboxWallet } from "./auth"
-import { readWalletLiquidBalance } from "../wallet/balances"
+import { validatedTokenPriceUsd } from "./oraclePrice"
 import {
   SWAP_CHAIN_ID,
   SWAP_FEE_BPS,
@@ -15,18 +14,6 @@ import {
 } from "./swapQuoteEngine"
 
 const DEFAULT_SLIPPAGE_BPS = 50
-
-/** Resolve a swap leg's USD price: live oracle first, then the wallet's held price. Read-only. */
-async function legPriceUsd(ctx: QueryCtx, wallet: string, assetId: string, symbol: string): Promise<number | null> {
-  const oracle = await ctx.db
-    .query("tokenPrices")
-    .withIndex("by_symbol", (q) => q.eq("symbol", symbol.toLowerCase()))
-    .first()
-  if (oracle && oracle.priceUsd > 0 && oracle.status !== "invalid") return oracle.priceUsd
-  const held = await readWalletLiquidBalance(ctx, wallet, assetId)
-  if (held && held.amount > 0 && held.valueUsd > 0) return held.valueUsd / held.amount
-  return null
-}
 
 /**
  * Authoritative swap quote, computed server-side from the live token oracle via the shared
@@ -84,8 +71,8 @@ export const getQuote = query({
     const outputSymbol = output!.symbol
 
     const [inputPriceUsd, outputPriceUsd] = await Promise.all([
-      legPriceUsd(ctx, wallet, args.inputAssetId, inputSymbol),
-      legPriceUsd(ctx, wallet, args.outputAssetId, outputSymbol),
+      validatedTokenPriceUsd(ctx, inputSymbol, now),
+      validatedTokenPriceUsd(ctx, outputSymbol, now),
     ])
     if (!inputPriceUsd || !outputPriceUsd) {
       return { ...empty, status: "error" as const }

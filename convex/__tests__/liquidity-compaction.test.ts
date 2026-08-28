@@ -160,6 +160,17 @@ describe("liquidity bounded fold (compaction) matches the naive sum", () => {
 
   test("wallet transactions remain outside the fold after compaction", async () => {
     const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      await ctx.db.insert("walletLiquidBalances", {
+        wallet: WALLET.toLowerCase(),
+        assetId: "usdc",
+        symbol: "USDC",
+        amount: 1000,
+        valueUsd: 1000,
+        state: "available",
+        updatedAt: 1,
+      })
+    })
     const asUser = t.withIdentity({ subject: WALLET })
 
     await asUser.mutation(api.sandbox.transactions.recordTransaction, {
