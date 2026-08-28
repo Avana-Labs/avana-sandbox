@@ -41,6 +41,8 @@ describe("recordSwap — durable swap persistence (#15)", () => {
 
   test("records exactly one swap transaction with the token legs", async () => {
     const t = convexTest(schema, modules)
+    await seedTradable(t, "eth", 2000, 1)
+    await seedPrice(t, "usdc", 1)
     const asUser = t.withIdentity({ subject: WALLET })
     const res = await asUser.mutation(api.sandbox.transactions.recordSwap, swapIntent("s1"))
     expect(res.idempotent).toBe(false)
@@ -53,13 +55,15 @@ describe("recordSwap — durable swap persistence (#15)", () => {
       inputSymbol: "ETH",
       outputSymbol: "USDC",
       inputAmount: 0.5,
-      outputAmount: 967,
-      amountUsd: 967,
+      outputAmount: 993.5,
+      amountUsd: 1000,
     })
   })
 
   test("is idempotent on a replayed intent (no double record)", async () => {
     const t = convexTest(schema, modules)
+    await seedTradable(t, "eth", 2000, 1)
+    await seedPrice(t, "usdc", 1)
     const asUser = t.withIdentity({ subject: WALLET })
     const first = await asUser.mutation(api.sandbox.transactions.recordSwap, swapIntent("s1"))
     const replay = await asUser.mutation(api.sandbox.transactions.recordSwap, swapIntent("s1"))
@@ -105,14 +109,31 @@ describe("recordSwap — durable swap persistence (#15)", () => {
         llamaId: `test:${symbol}`,
         priceUsd,
         source: "baseline",
-        updatedAt: 0,
+        confidence: 0.99,
+        status: "fresh",
+        updatedAt: Date.now(),
+      })
+    })
+  }
+
+  async function seedTradable(t: ReturnType<typeof convexTest>, symbol: string, priceUsd: number, amount: number) {
+    await seedPrice(t, symbol, priceUsd)
+    await t.run(async (ctx) => {
+      await ctx.db.insert("walletLiquidBalances", {
+        wallet: WALLET.toLowerCase(),
+        assetId: symbol,
+        symbol: symbol.toUpperCase(),
+        amount,
+        valueUsd: amount * priceUsd,
+        state: "available",
+        updatedAt: Date.now(),
       })
     })
   }
 
   test("authoritative: recomputes the output from the oracle, ignoring a forged high output", async () => {
     const t = convexTest(schema, modules)
-    await seedPrice(t, "eth", 2000)
+    await seedTradable(t, "eth", 2000, 1)
     await seedPrice(t, "wbtc", 65000)
     const asUser = t.withIdentity({ subject: WALLET })
     // Client forges 1000 WBTC (~$65M) out of a 0.5 ETH input. With both legs priced the server
@@ -130,7 +151,7 @@ describe("recordSwap — durable swap persistence (#15)", () => {
 
   test("authoritative: recomputes amountUsd from the oracle, ignoring a forged high USD", async () => {
     const t = convexTest(schema, modules)
-    await seedPrice(t, "usdc", 1)
+    await seedTradable(t, "usdc", 1, 10)
     await seedPrice(t, "eth", 2000)
     const asUser = t.withIdentity({ subject: WALLET })
     // Client claims $65M moved from a single USDC input; server recomputes amountUsd = 1×$1 = $1.
@@ -151,11 +172,9 @@ describe("recordSwap — durable swap persistence (#15)", () => {
     expect(rows[0].amountUsd).toBeCloseTo(1, 6) // server value, NOT the forged $65M
   })
 
-  test("unpriced-fallback mint guard: still rejects a forged USD above the priced input leg", async () => {
+  test("fails closed when either successful swap leg lacks a live oracle price", async () => {
     const t = convexTest(schema, modules)
-    // Only the INPUT leg (eth) is priced; the output (wbtc) is unpriced → fail-open path, where
-    // the oracle anti-mint bound on the priced input leg still applies.
-    await seedPrice(t, "eth", 2000)
+    await seedTradable(t, "eth", 2000, 1)
     const asUser = t.withIdentity({ subject: WALLET })
     await expect(
       asUser.mutation(
@@ -172,7 +191,7 @@ describe("recordSwap — durable swap persistence (#15)", () => {
 
   test("mint guard: allows a swap consistent with the oracle rate", async () => {
     const t = convexTest(schema, modules)
-    await seedPrice(t, "eth", 2000)
+    await seedTradable(t, "eth", 2000, 1)
     await seedPrice(t, "usdc", 1)
     const asUser = t.withIdentity({ subject: WALLET })
     // 0.5 ETH (~$1000) -> ~967 USDC for a claimed $967: within tolerance, must record.
@@ -182,5 +201,30 @@ describe("recordSwap — durable swap persistence (#15)", () => {
     )
     expect(res.idempotent).toBe(false)
     expect(res.receipt.status).toBe("success")
+  })
+
+  test("rejects a successful swap when the oracle row is expired", async () => {
+    const t = convexTest(schema, modules)
+    await seedTradable(t, "eth", 2000, 1)
+    await seedPrice(t, "usdc", 1)
+    await t.run(async (ctx) => {
+      const eth = await ctx.db
+        .query("tokenPrices")
+        .withIndex("by_symbol", (q) => q.eq("symbol", "eth"))
+        .unique()
+      await ctx.db.patch(eth!._id, { updatedAt: Date.now() - 46 * 60 * 1000 })
+    })
+    await expect(
+      t.withIdentity({ subject: WALLET }).mutation(api.sandbox.transactions.recordSwap, swapIntent("expired")),
+    ).rejects.toThrow(/current and server-verifiable/)
+  })
+
+  test("rejects a successful swap when the authenticated wallet does not hold the input", async () => {
+    const t = convexTest(schema, modules)
+    await seedPrice(t, "eth", 2000)
+    await seedPrice(t, "usdc", 1)
+    await expect(
+      t.withIdentity({ subject: WALLET }).mutation(api.sandbox.transactions.recordSwap, swapIntent("unfunded")),
+    ).rejects.toThrow(/INSUFFICIENT_BALANCE/)
   })
 })

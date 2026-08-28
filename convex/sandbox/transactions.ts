@@ -27,6 +27,7 @@ import { computeSwapQuoteMath } from "./swapQuoteEngine"
 import { tokenNotionalToUsd } from "./collateralUsd"
 import { deriveClaimAmountUsd } from "./rewards_catalog"
 import type { Doc } from "../_generated/dataModel"
+import { PRICE_INVALID_AFTER_MS, PRICE_MIN_CONFIDENCE } from "../prices"
 
 type ProductBalanceTable =
   "walletLendBalances" | "walletBorrowBalances" | "walletMultiplyBalances" | "walletLiquidBalances"
@@ -1380,31 +1381,31 @@ async function applyProductBucketDelta(
  */
 /**
  * Server-side USD price for a swap leg: the live token oracle (tokenPrices, keyed by lowercase
- * symbol) first, then the wallet's own liquid row as a fallback for assets the oracle does
- * not cover. Returns null when no trustworthy server price exists (validation is then skipped for
- * that leg). Never trusts a client-supplied price.
+ * symbol). Returns null when no current, trustworthy server price exists. A successful swap
+ * fails closed when either leg is unpriced; otherwise a caller could choose two unknown symbols
+ * and mint an arbitrary output from client-supplied values.
  */
 async function swapLegServerPriceUsd(
   ctx: MutationCtx,
-  wallet: string,
-  assetId: string,
   symbol: string,
 ): Promise<number | null> {
   const oracle = await ctx.db
     .query("tokenPrices")
     .withIndex("by_symbol", (q) => q.eq("symbol", symbol.toLowerCase()))
     .first()
-  if (oracle && oracle.priceUsd > 0 && oracle.status !== "invalid") return oracle.priceUsd
-  const held = await readWalletLiquidBalance(ctx, wallet, assetId)
-  if (held && held.amount > 0 && held.valueUsd > 0) return held.valueUsd / held.amount
+  const now = Date.now()
+  if (
+    oracle &&
+    Number.isFinite(oracle.priceUsd) &&
+    oracle.priceUsd > 0 &&
+    oracle.status !== "invalid" &&
+    now - oracle.updatedAt < PRICE_INVALID_AFTER_MS &&
+    (oracle.confidence == null || oracle.confidence >= PRICE_MIN_CONFIDENCE)
+  ) {
+    return oracle.priceUsd
+  }
   return null
 }
-
-// A successful swap may deviate from the pure oracle rate by fees, price impact and slippage —
-// realistically a few percent. This bound is intentionally loose (2x) so it never rejects a real
-// swap, while still catching the order-of-magnitude discrepancies that indicate a forged
-// output/USD value (the arbitrary-mint vector).
-const SWAP_ORACLE_MAX_DEVIATION = 1
 
 export const recordSwap = mutation({
   args: {
@@ -1477,32 +1478,30 @@ export const recordSwap = mutation({
     // Server-authoritative execution: recompute the output + USD from the LIVE oracle via the
     // shared swap engine, so the client's quoted values never determine the result (no minting,
     // no client-computed swap). When both legs are priced the engine's output is used for the
-    // balance delta AND the persisted row. When a leg is unpriced (unlisted asset) we fail open
-    // to the client's values, still bounded by the oracle anti-mint guard for the priced leg.
+    // balance delta AND the persisted row. Both legs must be priced and the input must exist in
+    // the authenticated wallet; there is no client-valued or missing-balance success path.
     let executedOutputAmount = args.outputAmount
     let executedAmountUsd = args.amountUsd
     if (status === "success") {
       const [inputPrice, outputPrice] = await Promise.all([
-        swapLegServerPriceUsd(ctx, wallet, args.inputAssetId, args.inputSymbol),
-        swapLegServerPriceUsd(ctx, wallet, args.outputAssetId, args.outputSymbol),
+        swapLegServerPriceUsd(ctx, args.inputSymbol),
+        swapLegServerPriceUsd(ctx, args.outputSymbol),
       ])
-      if (inputPrice && outputPrice) {
-        const math = computeSwapQuoteMath({
-          inputAmount: args.inputAmount,
-          inputPriceUsd: inputPrice,
-          outputPriceUsd: outputPrice,
-          slippageBps: args.slippageBps ?? 50,
-        })
-        executedOutputAmount = math.estimatedOutputAmount
-        executedAmountUsd = math.amountUsd
-      } else {
-        if (inputPrice && args.amountUsd > args.inputAmount * inputPrice * (1 + SWAP_ORACLE_MAX_DEVIATION)) {
-          throw new Error("INVALID_SWAP: claimed USD value exceeds the oracle value of the input leg.")
-        }
-        if (outputPrice && args.outputAmount > (args.amountUsd / outputPrice) * (1 + SWAP_ORACLE_MAX_DEVIATION)) {
-          throw new Error("INVALID_SWAP: output amount exceeds what the oracle rate yields for this USD value.")
-        }
+      if (!inputPrice || !outputPrice) {
+        throw new Error("INVALID_SWAP: both token prices must be current and server-verifiable.")
       }
+      const held = await readWalletLiquidBalance(ctx, wallet, args.inputAssetId)
+      if (!held || held.amount + 1e-12 < args.inputAmount) {
+        throw new Error("INSUFFICIENT_BALANCE: not enough liquid input token for this swap.")
+      }
+      const math = computeSwapQuoteMath({
+        inputAmount: args.inputAmount,
+        inputPriceUsd: inputPrice,
+        outputPriceUsd: outputPrice,
+        slippageBps: args.slippageBps ?? 50,
+      })
+      executedOutputAmount = math.estimatedOutputAmount
+      executedAmountUsd = math.amountUsd
     }
     // Only a successful swap moved value; failed/expired executed nothing.
     const executedUsd6 = status === "success" ? String(Math.round(executedAmountUsd * 1_000_000)) : "0"
