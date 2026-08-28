@@ -84,6 +84,17 @@ describe("wallet actions do not alter protocol liquidity across tabs (H20)", () 
 
   test("multiply: two tabs replaying one open leave protocol liquidity unchanged", async () => {
     const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      await ctx.db.insert("walletLiquidBalances", {
+        wallet: WALLET.toLowerCase(),
+        assetId: "eth",
+        symbol: "ETH",
+        amount: 1,
+        valueUsd: 1000,
+        state: "available",
+        updatedAt: 1,
+      })
+    })
     const tabA = t.withIdentity({ subject: WALLET })
     const tabB = t.withIdentity({ subject: WALLET })
     const intent = {
@@ -98,6 +109,7 @@ describe("wallet actions do not alter protocol liquidity across tabs (H20)", () 
       position: {
         status: "open" as const,
         marketSlug: "eth-usdt",
+        assetId: "eth",
         collateralValueUsd: 3000,
         debtValueUsd: 2000, // equity 1000 → multiplier 3x (within ceiling)
         multiplier: 3,

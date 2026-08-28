@@ -27,6 +27,35 @@ function borrowIntent(intentId: string, overrides: Record<string, unknown> = {})
   }
 }
 
+async function seedBorrowCollateral(t: ReturnType<typeof convexTest>, valueUsd = 2000) {
+  await t.run(async (ctx) => {
+    await ctx.db.insert("walletBorrowBalances", {
+      wallet: WALLET.toLowerCase(),
+      marketId: "uni-v3-bluechip-weth-usdc",
+      poolId: "uni-v3-bluechip-weth-usdc",
+      symbol: "WETH/USDC",
+      amount: valueUsd,
+      valueUsd,
+      state: "collateral",
+      updatedAt: 1,
+    })
+  })
+}
+
+async function seedMultiplyCollateral(t: ReturnType<typeof convexTest>, valueUsd = 1000) {
+  await t.run(async (ctx) => {
+    await ctx.db.insert("walletLiquidBalances", {
+      wallet: WALLET.toLowerCase(),
+      assetId: "eth",
+      symbol: "ETH",
+      amount: 1,
+      valueUsd,
+      state: "available",
+      updatedAt: 1,
+    })
+  })
+}
+
 describe("recordTransaction — ownership, idempotency, rate limit, ledger", () => {
   test("rejects unauthenticated calls", async () => {
     const t = convexTest(schema, modules)
@@ -45,6 +74,7 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
 
   test("writes exactly one transaction row + a position, and the ledger delta", async () => {
     const t = convexTest(schema, modules)
+    await seedBorrowCollateral(t)
     const asUser = t.withIdentity({ subject: WALLET })
     const res = await asUser.mutation(
       api.sandbox.transactions.recordTransaction,
@@ -734,8 +764,81 @@ describe("liquidation recording", () => {
 })
 
 describe("recordTransaction — server-side solvency re-derivation", () => {
+  test("rejects forged Borrow collateral that the authenticated wallet does not own", async () => {
+    const t = convexTest(schema, modules)
+    await expect(
+      t.withIdentity({ subject: WALLET }).mutation(
+        api.sandbox.transactions.recordTransaction,
+        borrowIntent("forged-collateral", {
+          position: {
+            status: "open",
+            marketSlug: "uni-v3-bluechip-weth-usdc",
+            debtValueUsd6: "1000000000",
+            collateral: [
+              {
+                marketSlug: "uni-v3-bluechip-weth-usdc",
+                collateralShares: "2000000000",
+                principalTokenAmount: "2000000000",
+                collateralEnabled: true,
+              },
+            ],
+          },
+        }),
+      ),
+    ).rejects.toThrow(/INSUFFICIENT_COLLATERAL_BALANCE/)
+  })
+
+  test("rejects a Multiply position without authenticated-wallet collateral", async () => {
+    const t = convexTest(schema, modules)
+    await expect(
+      t.withIdentity({ subject: WALLET }).mutation(
+        api.sandbox.transactions.recordTransaction,
+        borrowIntent("forged-multiply", {
+          product: "multiply",
+          kind: "multiply",
+          marketSlug: "eth-usdc-loop",
+          position: {
+            status: "open",
+            marketSlug: "eth-usdc-loop",
+            assetId: "eth",
+            collateralValueUsd: 2000,
+            debtValueUsd: 1000,
+            multiplier: 2,
+            ltv: 0.5,
+          },
+        }),
+      ),
+    ).rejects.toThrow(/INSUFFICIENT_BALANCE/)
+  })
+
+  test("debits the wallet collateral that funds a new Multiply position", async () => {
+    const t = convexTest(schema, modules)
+    await seedMultiplyCollateral(t)
+    await t.withIdentity({ subject: WALLET }).mutation(
+      api.sandbox.transactions.recordTransaction,
+      borrowIntent("funded-multiply", {
+        product: "multiply",
+        kind: "multiply",
+        marketSlug: "eth-usdc-loop",
+        position: {
+          status: "open",
+          marketSlug: "eth-usdc-loop",
+          assetId: "eth",
+          collateralValueUsd: 2000,
+          debtValueUsd: 1000,
+          multiplier: 2,
+          ltv: 0.5,
+        },
+      }),
+    )
+    const liquid = await t.run(async (ctx) => ctx.db.query("walletLiquidBalances").unique())
+    expect(liquid?.amount).toBe(0)
+    expect(liquid?.valueUsd).toBe(0)
+  })
+
   test("rejects an undercollateralized borrow (debt > liquidation value)", async () => {
     const t = convexTest(schema, modules)
+    await seedBorrowCollateral(t)
     const asUser = t.withIdentity({ subject: WALLET })
     await expect(
       asUser.mutation(
@@ -810,6 +913,7 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
 
   test("p0-02: rejects inflated client collateralValueUsd6 when shares revalue underwater", async () => {
     const t = convexTest(schema, modules)
+    await seedBorrowCollateral(t)
     const asUser = t.withIdentity({ subject: WALLET })
     await expect(
       asUser.mutation(
@@ -863,6 +967,7 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
 
   test("marks a multiply position closed when close records a zeroed payload (regression: C-1)", async () => {
     const t = convexTest(schema, modules)
+    await seedMultiplyCollateral(t)
     const asUser = t.withIdentity({ subject: WALLET })
     // Open a 2x loop.
     const open = await asUser.mutation(
@@ -876,6 +981,7 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
         position: {
           status: "open",
           marketSlug: "eth-usdc-loop",
+          assetId: "eth",
           collateralValueUsd: 2000,
           debtValueUsd: 1000,
           multiplier: 2,
@@ -921,6 +1027,7 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
 
   test("returns the position revision on create and on idempotent replay (regression: M-12)", async () => {
     const t = convexTest(schema, modules)
+    await seedMultiplyCollateral(t)
     const asUser = t.withIdentity({ subject: WALLET })
     const create = await asUser.mutation(
       api.sandbox.transactions.recordTransaction,
@@ -931,6 +1038,7 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
         position: {
           status: "open",
           marketSlug: "eth-usdc-loop",
+          assetId: "eth",
           collateralValueUsd: 2000,
           debtValueUsd: 1000,
           multiplier: 2,
@@ -952,6 +1060,7 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
         position: {
           status: "open",
           marketSlug: "eth-usdc-loop",
+          assetId: "eth",
           collateralValueUsd: 2000,
           debtValueUsd: 1000,
           multiplier: 2,
@@ -965,6 +1074,7 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
 
   test("still accepts a healthy borrow (debt within liquidation value)", async () => {
     const t = convexTest(schema, modules)
+    await seedBorrowCollateral(t)
     const asUser = t.withIdentity({ subject: WALLET })
     const res = await asUser.mutation(
       api.sandbox.transactions.recordTransaction,

@@ -529,6 +529,71 @@ async function assertBorrowSolvent(
   }
 }
 
+/** A client cannot create more pledged LP collateral than this wallet owns in that pool. */
+async function assertBorrowCollateralConserved(
+  ctx: MutationCtx,
+  wallet: string,
+  args: { product: "borrow" | "lend" | "multiply"; position?: Infer<typeof positionPayload> },
+) {
+  if (args.product !== "borrow" || !args.position || args.position.status === "closed") return
+  const legs = args.position.collateral ?? []
+  const nextByMarket = new Map<string, number>()
+  for (const leg of legs) {
+    const { valueUsd } = await serverCollateralValueUsd(ctx, leg)
+    nextByMarket.set(leg.marketSlug, (nextByMarket.get(leg.marketSlug) ?? 0) + valueUsd)
+  }
+  const rows = await ctx.db
+    .query("walletBorrowBalances")
+    .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+    .collect()
+  for (const [marketSlug, nextUsd] of nextByMarket) {
+    const ownedUsd = rows
+      .filter(
+        (row) =>
+          row.marketId === marketSlug && (row.state === "poolAvailable" || row.state === "collateral"),
+      )
+      .reduce((sum, row) => sum + row.valueUsd, 0)
+    if (nextUsd > ownedUsd + 0.02) {
+      throw new Error("INSUFFICIENT_COLLATERAL_BALANCE: pledged collateral exceeds this wallet's pool balance.")
+    }
+  }
+}
+
+/** Resolve and validate the wallet-owned equity source for a Multiply increase. */
+async function multiplyLiquidDebit(
+  ctx: MutationCtx,
+  wallet: string,
+  args: { product: "borrow" | "lend" | "multiply"; position?: Infer<typeof positionPayload> },
+  existing?: Doc<"positions">,
+): Promise<{ assetId: string; symbol: string; tokenAmount: number } | null> {
+  if (args.product !== "multiply" || !args.position || args.position.status === "closed") return null
+  const previousEquityUsd = Math.max(0, (existing?.collateralValueUsd ?? 0) - (existing?.debtValueUsd ?? 0))
+  const nextEquityUsd = Math.max(0, (args.position.collateralValueUsd ?? 0) - (args.position.debtValueUsd ?? 0))
+  const increaseUsd = nextEquityUsd - previousEquityUsd
+  if (increaseUsd <= 0.02) return null
+  const marketSlug = args.position.marketSlug
+  const assetId = liquidAssetIdFromArgs(args.position.assetId, marketSlug)
+  const multiplyRows = await ctx.db
+    .query("walletMultiplyBalances")
+    .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+    .collect()
+  const explicitUsd = multiplyRows
+    .filter((row) => row.marketId === marketSlug && row.assetId === assetId && row.state === "available")
+    .reduce((sum, row) => sum + row.valueUsd, 0)
+  if (explicitUsd > 0) {
+    if (explicitUsd + 0.02 < increaseUsd) {
+      throw new Error("INSUFFICIENT_BALANCE: not enough Multiply collateral for this action.")
+    }
+    return null
+  }
+  const liquid = await readWalletLiquidBalance(ctx, wallet, assetId)
+  if (!liquid || liquid.valueUsd + 0.02 < increaseUsd || !(liquid.amount > 0)) {
+    throw new Error("INSUFFICIENT_BALANCE: not enough wallet collateral for this Multiply action.")
+  }
+  const priceUsd = liquid.valueUsd / liquid.amount
+  return { assetId, symbol: liquid.symbol, tokenAmount: increaseUsd / priceUsd }
+}
+
 function _canonicalLedgerDelta(
   args: {
     product: "borrow" | "lend" | "multiply"
@@ -972,6 +1037,7 @@ export const recordTransaction = mutation({
     // Revision actually written to the position this call, returned so the client seeds its
     // optimistic-concurrency map from the server truth instead of inferring it (M-12).
     let writtenRevision: number | undefined
+    let multiplyDebit: { assetId: string; symbol: string; tokenAmount: number } | null = null
     if (args.position && status === "success" && marketSlug) {
       validatePositionPayload(args.position)
       const existing =
@@ -998,7 +1064,9 @@ export const recordTransaction = mutation({
         )
       }
       validateTransactionTransition(args, existing, lendSuppliedBeforeUsd)
+      await assertBorrowCollateralConserved(ctx, wallet, args)
       await assertBorrowSolvent(ctx, args)
+      multiplyDebit = await multiplyLiquidDebit(ctx, wallet, args, existing)
       const fields = {
         spokeId: args.position.spokeId,
         assetId: args.position.assetId ?? args.assetId,
@@ -1114,6 +1182,16 @@ export const recordTransaction = mutation({
           throw new Error("INSUFFICIENT_BALANCE: not enough liquid balance for this action.")
         }
         await applyLiquidAssetDelta(ctx, wallet, assetId, assetId.toUpperCase(), signed, now)
+      }
+      if (multiplyDebit) {
+        await applyLiquidAssetDelta(
+          ctx,
+          wallet,
+          multiplyDebit.assetId,
+          multiplyDebit.symbol,
+          -multiplyDebit.tokenAmount,
+          now,
+        )
       }
       await applyProductBucketDelta(ctx, wallet, args, marketSlug, now, existingPosition)
       await appendPortfolioSnapshot(ctx, wallet, now)
