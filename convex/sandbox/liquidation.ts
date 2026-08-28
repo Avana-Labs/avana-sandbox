@@ -48,8 +48,14 @@ const LIQUIDATION_THRESHOLD_SPREAD_PCT = 10
 const LIQUIDATION_THRESHOLD_CAP_PCT = 95
 
 function requirePositiveUsd6(value: string, field: string) {
-  if (!/^\d+$/.test(value) || BigInt(value) <= 0n) {
+  if (value.length === 0 || value.length > 80 || !/^\d+$/.test(value) || BigInt(value) <= 0n) {
     throw new Error(`INVALID_LIQUIDATION: ${field} must be a positive usd6 integer.`)
+  }
+}
+
+function requireOptionalWad(value: string | null, field: string) {
+  if (value !== null && (value.length === 0 || value.length > 80 || !/^\d+$/.test(value))) {
+    throw new Error(`INVALID_LIQUIDATION: ${field} must be a non-negative integer WAD.`)
   }
 }
 
@@ -91,26 +97,6 @@ async function victimCollateralLiquidationValue(
   return { valueUsd, thresholdPct }
 }
 
-/** Persist a liquidation preview for the owner's own position (analytics audit). */
-export const recordLiquidationPreview = mutation({
-  args: {
-    wallet: v.string(),
-    positionId: v.optional(v.id("positions")),
-    marketSlug: v.optional(v.string()),
-    repayAmountUsd6: v.string(),
-    seizeCollateralUsd6: v.string(),
-    healthFactorWadBefore: v.union(v.string(), v.null()),
-    healthFactorWadAfter: v.union(v.string(), v.null()),
-    liquidationBonusBps: v.optional(v.number()),
-    allowed: v.boolean(),
-    reason: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
-    return ctx.db.insert("liquidationPreviews", { ...args, wallet, at: Date.now() })
-  },
-})
-
 /**
  * Record a liquidation action (liquidator↔victim). The caller must be the
  * liquidator (the authed wallet); the victim `wallet` is recorded as data.
@@ -150,6 +136,8 @@ export const recordLiquidation = mutation({
     }
     requirePositiveUsd6(args.repaidUsd6, "repaidUsd6")
     requirePositiveUsd6(args.seizedCollateralUsd6, "seizedCollateralUsd6")
+    requireOptionalWad(args.healthFactorWadBefore, "healthFactorWadBefore")
+    requireOptionalWad(args.healthFactorWadAfter, "healthFactorWadAfter")
     if (args.healthFactorWadBefore !== null && BigInt(args.healthFactorWadBefore) >= 1_000_000_000_000_000_000n) {
       throw new Error("INVALID_LIQUIDATION: the victim position is not underwater.")
     }

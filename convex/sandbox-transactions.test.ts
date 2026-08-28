@@ -156,6 +156,18 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
     expect(await asUser.query(api.sandbox.transactions.getActivity, { wallet: WALLET })).toHaveLength(0)
   })
 
+  test("rejects oversized fixed-point strings before BigInt parsing or writes", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await expect(
+      asUser.mutation(
+        api.sandbox.transactions.recordTransaction,
+        borrowIntent("oversized-fixed-point", { requestedAmountUsd6: "9".repeat(100_000) }),
+      ),
+    ).rejects.toThrow(/INVALID_POSITION/)
+    expect(await asUser.query(api.sandbox.transactions.getActivity, { wallet: WALLET })).toHaveLength(0)
+  })
+
   test("rejects client amounts that do not match the fixed-point execution", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
