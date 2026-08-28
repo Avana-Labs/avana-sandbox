@@ -26,6 +26,7 @@ import {
 } from "@/app/lib/rewards-engine/task-actions"
 import { RewardsPageSkeleton } from "@/app/components/loading-states"
 import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
+import { useDurableRewardsClaim } from "@/app/lib/rewards-system"
 import { PortfolioStatCards } from "@/app/dashboard/portfolio-stat-cards"
 import { PortfolioRewardsCards } from "@/app/dashboard/_rewards-components/rewards-balance-hero"
 import { DashboardWalletTab } from "./dashboard-wallet-tab"
@@ -306,7 +307,6 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
     state,
     hasHydratedStorage,
     tasks,
-    claimReward,
     completeEducation,
     favoriteMarket,
     recordSimulation,
@@ -317,6 +317,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
     recordReferralLinkCopied,
     applyReferralCode,
   } = useRewardsSessionContext()
+  const persistRewardsClaim = useDurableRewardsClaim()
   // Full dashboard recent activity (all products) so the rewards table isn't claims-only.
   const { data: dashboardData } = useDashboardPage({ walletProfileId: walletId })
   // Closest-to-liquidation position across products. Borrow uses its aggregate HF
@@ -493,7 +494,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
         if (isClaiming) return
         setIsClaiming(true)
         try {
-          await claimReward(taskId)
+          await persistRewardsClaim([taskId])
           reloadSnapshot()
         } finally {
           setIsClaiming(false)
@@ -540,7 +541,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
       }
     },
     [
-      claimReward,
+      persistRewardsClaim,
       isClaiming,
       openReferralDialog,
       recordDailyCheckin,
@@ -771,7 +772,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
           if (!referralTaskId || isClaiming) return
           setIsClaiming(true)
           try {
-            await claimReward(referralTaskId)
+            await persistRewardsClaim([referralTaskId])
             reloadSnapshot()
           } finally {
             setIsClaiming(false)

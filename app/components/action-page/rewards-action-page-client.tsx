@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import { useMutation } from "convex/react"
-import { api } from "@/convex/_generated/api"
 import { useAvanaIdentity, useRewardsSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useDurableRewardsClaim } from "@/app/lib/rewards-system"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor } from "@/app/lib/action-system/contracts"
 import { calculateRewardSummary, evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
@@ -37,7 +36,7 @@ export function RewardsActionPageClient({
   const router = useRouter()
   const { walletId } = useAvanaIdentity()
   const rewards = useRewardsSessionContext()
-  const recordRewardsClaim = useMutation(api.sandbox.transactions.recordRewardsClaim)
+  const persistRewardsClaim = useDurableRewardsClaim()
   const networkGuard = useActionNetworkGuard()
   const [amount, setAmount] = useState("")
   const [stage, setStage] = useState<ActionStage>("configure")
@@ -129,16 +128,8 @@ export function RewardsActionPageClient({
         needsAllowance: false,
         onStage: setStage,
         execute: async () => {
-          const result = []
-          for (const taskId of reviewQuote.taskIds) result.push(await rewards.claimReward(taskId))
-          if (!result.length) throw new Error("Nothing to claim")
-          const hash = result[0]?.syntheticTxHash ?? result[0]?.claimId ?? "sandbox-receipt"
-          await recordRewardsClaim({
-            wallet: walletId,
-            intentId: `rewards:${result[0]!.claimId}:${result.length}`,
-            taskIds: reviewQuote.taskIds,
-            syntheticTxHash: hash,
-          })
+          const result = await persistRewardsClaim(reviewQuote.taskIds)
+          const hash = result.syntheticTxHash
           return {
             receipt: {
               status: "success" as const,
@@ -183,7 +174,7 @@ export function RewardsActionPageClient({
     descriptor.primaryVerb,
     networkGuard.isWrongNetwork,
     previewUi,
-    recordRewardsClaim,
+    persistRewardsClaim,
     reviewQuote,
     rewards,
     router,
