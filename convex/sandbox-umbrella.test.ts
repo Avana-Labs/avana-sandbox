@@ -149,6 +149,12 @@ describe("sandbox umbrella — recordAction lifecycle", () => {
     )
     expect(liquid?.amount).toBe(900)
     expect(liquid?.valueUsd).toBe(810)
+    const hydrated = await t
+      .withIdentity({ subject: WALLET_A })
+      .query(api.sandbox.umbrella.getSessionState, { wallet: WALLET_A })
+    expect(hydrated.markets.usdc.priceUsd).toBe(0.9)
+    expect(hydrated.positions.find((row) => row.marketId === "usdc")?.amount).toBe(100)
+    expect(hydrated.transactions[0]?.amountUsd).toBe(90)
   })
 
   test("stake — fails closed when the Convex price is expired", async () => {

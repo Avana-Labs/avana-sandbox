@@ -21,7 +21,7 @@ import {
 } from "@/app/components/action-page/action-session-loading"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { UmbrellaMarketRiskMetricsCard } from "@/app/umbrella/_detail/market-sections/UmbrellaStress"
-import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
+import { useCanonicalPriceFor, usePriceFor, usePriceFreshness } from "@/app/lib/prices/token-prices-context"
 import type { UmbrellaMarketId } from "@/app/lib/umbrella-system/use-umbrella-session"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 
@@ -52,6 +52,7 @@ function previewFor({
   marketId,
   umbrella,
   livePriceUsd,
+  priceUnavailable,
   now,
 }: {
   kind: UmbrellaActionKind
@@ -59,6 +60,7 @@ function previewFor({
   marketId: UmbrellaMarketId
   umbrella: ReturnType<typeof useUmbrellaSessionContext>
   livePriceUsd: number
+  priceUnavailable: boolean
   now: number
 }): ActionPreviewUi {
   const market = umbrella.markets[marketId]
@@ -76,21 +78,23 @@ function previewFor({
           : null
   const amountUsd = kind === "claim" ? position.pendingRewardsUsd : amount * livePriceUsd
   const blockedReason =
-    kind === "stake" && amount > walletBalance
-      ? `Insufficient ${market.symbol} balance`
-      : kind === "cooldown" && amount > activeStake
-        ? `Insufficient active ${market.symbol}`
-        : kind === "cooldown" && cooldownActive
-          ? "Finish or unstake the current cooldown before starting a new one."
-          : kind === "unstake" && amount > position.cooldownAmount
-            ? `Insufficient cooled ${market.symbol}`
-            : kind === "unstake" && (position.cooldownStatus === "expired" || position.withdrawalWindowExpired)
-              ? "Withdrawal window expired — restart cooldown."
-              : kind === "unstake" && position.cooldownStatus !== "ready"
-                ? "Cooldown is not ready"
-                : kind === "claim" && position.pendingRewardsUsd <= 0
-                  ? "No Umbrella rewards to claim"
-                  : null
+    kind !== "claim" && priceUnavailable
+      ? `Current Convex price unavailable for ${market.symbol}`
+      : kind === "stake" && amount > walletBalance
+        ? `Insufficient ${market.symbol} balance`
+        : kind === "cooldown" && amount > activeStake
+          ? `Insufficient active ${market.symbol}`
+          : kind === "cooldown" && cooldownActive
+            ? "Finish or unstake the current cooldown before starting a new one."
+            : kind === "unstake" && amount > position.cooldownAmount
+              ? `Insufficient cooled ${market.symbol}`
+              : kind === "unstake" && (position.cooldownStatus === "expired" || position.withdrawalWindowExpired)
+                ? "Withdrawal window expired — restart cooldown."
+                : kind === "unstake" && position.cooldownStatus !== "ready"
+                  ? "Cooldown is not ready"
+                  : kind === "claim" && position.pendingRewardsUsd <= 0
+                    ? "No Umbrella rewards to claim"
+                    : null
   const allowed = kind === "claim" ? !blockedReason : amount > 0 && !blockedReason
   const verb =
     kind === "cooldown" ? "Start cooldown" : kind === "unstake" ? "Unstake" : kind === "claim" ? "Claim" : "Stake"
@@ -208,6 +212,8 @@ export function UmbrellaActionPageClient({
   const descriptor = getActionDescriptor("umbrella", kind)
   const router = useRouter()
   const umbrella = useUmbrellaSessionContext()
+  const livePriceFor = usePriceFor()
+  const priceFreshness = usePriceFreshness()
   const priceFor = useCanonicalPriceFor()
   const [marketId, setMarketId] = useState<UmbrellaMarketId>(
     initialMarketId && umbrella.marketOrder.includes(initialMarketId as UmbrellaMarketId)
@@ -240,10 +246,21 @@ export function UmbrellaActionPageClient({
   // Deferred so the preview runs on the settled input, not once per keystroke (INP lever).
   const deferredAmount = useDeferredValue(amount)
   const parsedAmount = parsePositiveActionAmount(deferredAmount) ?? 0
-  const livePriceUsd = priceFor(market.symbol) ?? market.priceUsd
+  const strictLivePriceUsd = livePriceFor(market.symbol)
+  const priceUnavailable = priceFreshness.stale || strictLivePriceUsd === undefined
+  const livePriceUsd = strictLivePriceUsd ?? priceFor(market.symbol) ?? market.priceUsd
   const preview = useMemo(
-    () => previewFor({ kind, amount: parsedAmount, marketId, umbrella, livePriceUsd, now: Date.now() }),
-    [kind, marketId, parsedAmount, umbrella, livePriceUsd],
+    () =>
+      previewFor({
+        kind,
+        amount: parsedAmount,
+        marketId,
+        umbrella,
+        livePriceUsd,
+        priceUnavailable,
+        now: Date.now(),
+      }),
+    [kind, marketId, parsedAmount, umbrella, livePriceUsd, priceUnavailable],
   )
   const assetOptions = umbrella.marketOrder.map((id) => ({
     id,
