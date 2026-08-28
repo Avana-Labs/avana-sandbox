@@ -21,6 +21,10 @@ import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import {
+  ActionSessionLoading,
+  shouldShowActionSessionLoading,
+} from "@/app/components/action-page/action-session-loading"
 
 export function RewardsActionPageClient({
   closeHref = "/dashboard",
@@ -181,6 +185,22 @@ export function RewardsActionPageClient({
     stage,
     successUi,
   ])
+
+  if (shouldShowActionSessionLoading(rewards.hasHydratedStorage)) {
+    return (
+      <ActionPageShell
+        mode={embedded ? "embedded" : "page"}
+        density={sidebar ? "sidebar" : "default"}
+        title={descriptor.title}
+        subtitle={embedded ? undefined : descriptor.subtitle}
+        hideClose={embedded}
+        closeHref={closeHref}
+        simulated={rewards.readAdapter.mode === "sandbox"}
+      >
+        <ActionSessionLoading />
+      </ActionPageShell>
+    )
+  }
 
   const hideTitle = embedded || stage === "success" || isProcessingStage(stage) || stage === "review"
 

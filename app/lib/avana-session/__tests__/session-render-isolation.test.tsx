@@ -84,6 +84,7 @@ describe("session render isolation (perf A1)", () => {
       hydrated.multiply = useMultiplySessionContext().isHydrated
       hydrated.swap = useSwapSessionContext().isHydrated
       hydrated.umbrella = useUmbrellaSessionContext().isHydrated
+      hydrated.rewards = useRewardsSessionContext().hasHydratedStorage
       return null
     }
 
@@ -105,6 +106,7 @@ describe("session render isolation (perf A1)", () => {
       borrow: false,
       lend: false,
       multiply: false,
+      rewards: false,
       swap: false,
       umbrella: false,
     })
