@@ -10,15 +10,6 @@ import { clearRewardsSessionState, readRewardsSessionState, writeRewardsSessionS
 import { REWARDS_SESSION_SYNC_EVENT } from "./session-sync"
 import { withRewardsPersistenceLock } from "./persistence-lock"
 
-/**
- * Freshness rank for a rewards state. Claims and activity events are append-only
- * (you can't un-claim), so the state with more records is the more recent one.
- * Claims dominate so a durably-persisted claim is never lost to a stale snapshot.
- */
-function rewardsStateRank(state: RewardsSessionState): number {
-  return (state.claims?.length ?? 0) * 1_000_000 + (state.events?.length ?? 0)
-}
-
 export function useRewardsSession({
   walletId,
   sessionSeed,
@@ -53,14 +44,19 @@ export function useRewardsSession({
         setHasHydratedStorage(false)
         return
       }
-      const remote = remoteState ? (JSON.parse(remoteState) as RewardsSessionState) : null
-      // Compare against the durable localStorage mirror: if a prior Convex save
-      // failed, the mirror holds the newer claim while Convex is stale. Prefer the
-      // fresher (more-records) state so a claimed balance never reverts on nav.
-      const local = readRewardsSessionState(walletId, sessionSeed)
-      const chosen = remote && rewardsStateRank(remote) >= rewardsStateRank(local) ? remote : local
-      // Track the remote value (not `chosen`) so the persist effect re-pushes a
-      // locally-fresher state up to Convex.
+      let remote: RewardsSessionState | null = null
+      if (remoteState) {
+        try {
+          remote = JSON.parse(remoteState) as RewardsSessionState
+        } catch {
+          // A malformed legacy row must not crash every authenticated page. The
+          // seeded state below replaces it through the normal Convex persistence path.
+        }
+      }
+      // Convex mode has exactly one hydration authority. localStorage remains a
+      // best-effort cache written below, but it can never resurrect rejected,
+      // forged, or stale claims over the authenticated server snapshot.
+      const chosen = remote ?? seededState
       lastRemoteStateRef.current = remoteState
       if (remoteRevision != null) rewardsRevisionRef.current = remoteRevision
       setState(chosen)

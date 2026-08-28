@@ -1,7 +1,8 @@
 import { act, renderHook, waitFor } from "@testing-library/react"
-import { beforeEach, describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import { buildRewardsSessionSeed } from "@/app/lib/rewards-system"
 import { useRewardsSession } from "@/app/lib/rewards-system/use-rewards-session"
+import { writeRewardsSessionState } from "@/app/lib/rewards-system/storage"
 
 describe("useRewardsSession", () => {
   beforeEach(() => {
@@ -89,6 +90,46 @@ describe("useRewardsSession", () => {
       const claims = await secondMount.result.current.readAdapter.readClaimHistory(walletId)
       expect(claims).toHaveLength(1)
       expect(claims.map((claim) => claim.taskId)).toEqual(["connect-wallet"])
+    })
+  })
+
+  it("never lets a fresher local cache override the Convex rewards snapshot", async () => {
+    const walletId = "demo-wallet"
+    const remote = JSON.parse(buildRewardsSessionSeed())
+    const forgedLocal = {
+      ...remote,
+      claims: [
+        {
+          claimId: "forged-local-claim",
+          wallet: walletId,
+          taskId: "connect-wallet",
+          amount: 1_000_000,
+          rewardSymbol: "AVA",
+          status: "confirmed",
+          syntheticTxHash: "forged-local-hash",
+          claimedAt: 1,
+        },
+      ],
+    }
+    writeRewardsSessionState(walletId, forgedLocal)
+    const persistRemoteState = vi.fn(async () => ({ revision: 1 }))
+
+    const { result } = renderHook(() =>
+      useRewardsSession({
+        walletId,
+        sessionSeed: buildRewardsSessionSeed(),
+        persistState: false,
+        remoteState: JSON.stringify(remote),
+        remoteRevision: 0,
+        persistRemoteState,
+      }),
+    )
+
+    await waitFor(async () => {
+      expect(result.current.hasHydratedStorage).toBe(true)
+      const summary = await result.current.readAdapter.readRewardSummary(walletId)
+      expect(summary.totalClaimedAmount).toBe(0)
+      expect(result.current.state.claims).toHaveLength(0)
     })
   })
 })
