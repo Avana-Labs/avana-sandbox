@@ -93,6 +93,21 @@ function num(usd6: string | undefined) {
 }
 
 describe("sandbox umbrella — recordAction lifecycle", () => {
+  test("rejects oversized intent ids before indexed reads or writes", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET_A })
+    await expect(
+      asUser.mutation(api.sandbox.umbrella.recordAction, {
+        wallet: WALLET_A,
+        intentId: "x".repeat(100_000),
+        kind: "stake",
+        marketId: "usdc",
+        amount: 1,
+      }),
+    ).rejects.toThrow(/INVALID_INTENT_ID/)
+    expect(await activityCountFor(t, WALLET_A, "stake")).toBe(0)
+  })
+
   test("stake — happy path debits liquid and creates the position + transaction", async () => {
     const t = convexTest(schema, modules)
     await seedLiquidUsdc(t, WALLET_A, 1000)

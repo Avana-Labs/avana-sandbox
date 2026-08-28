@@ -10,6 +10,7 @@ const SECONDS_PER_YEAR = 365 * 24 * 60 * 60
 const COOLDOWN_MS = 20 * 24 * 60 * 60 * 1000
 const WITHDRAWAL_WINDOW_MS = 2 * 24 * 60 * 60 * 1000
 export const MAX_UMBRELLA_TX_PER_HOUR = 200
+const MAX_UMBRELLA_INTENT_LENGTH = 200
 
 const umbrellaMarketId = v.union(v.literal("gho"), v.literal("usdc"), v.literal("usdt"), v.literal("weth"))
 const umbrellaActionKind = v.union(
@@ -451,6 +452,7 @@ export const recordAction = mutation({
   },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
+    if (!args.intentId || args.intentId.length > MAX_UMBRELLA_INTENT_LENGTH) throw new Error("INVALID_INTENT_ID")
     const existingTx = await ctx.db
       .query("transactions")
       .withIndex("by_wallet_intent", (q) => q.eq("wallet", wallet).eq("intentId", args.intentId))

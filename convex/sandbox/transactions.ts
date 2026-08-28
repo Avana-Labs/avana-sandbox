@@ -349,6 +349,13 @@ const positionPayload = v.object({
 
 const MAX_FIXED_POINT_DIGITS = 80
 const MAX_POSITION_LEGS = 32
+const MAX_IDENTIFIER_LENGTH = 200
+
+function requireBoundedIdentifier(value: string, field: string) {
+  if (value.length === 0 || value.length > MAX_IDENTIFIER_LENGTH) {
+    throw new Error(`INVALID_INPUT: ${field} must contain 1 to ${MAX_IDENTIFIER_LENGTH} characters.`)
+  }
+}
 
 function requireUnsignedInteger(value: string, field: string) {
   if (value.length === 0 || value.length > MAX_FIXED_POINT_DIGITS || !/^\d+$/.test(value)) {
@@ -1087,6 +1094,16 @@ export const recordTransaction = mutation({
   },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
+    requireBoundedIdentifier(args.intentId, "intentId")
+    if (args.marketSlug !== undefined) requireBoundedIdentifier(args.marketSlug, "marketSlug")
+    if (args.assetId !== undefined) requireBoundedIdentifier(args.assetId, "assetId")
+    if ((args.rewardClaims?.length ?? 0) > MAX_POSITION_LEGS) {
+      throw new Error(`INVALID_INPUT: rewardClaims may contain at most ${MAX_POSITION_LEGS} rows.`)
+    }
+    for (const claim of args.rewardClaims ?? []) {
+      requireBoundedIdentifier(claim.rewardPositionId, "rewardPositionId")
+      requireUnsignedInteger(claim.remainingUsd6, "remainingUsd6")
+    }
     const now = Date.now()
 
     // Idempotency — a replayed intent returns the existing row, never double-applies.
@@ -1334,6 +1351,10 @@ export const recordRewardsClaim = mutation({
   },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
+    requireBoundedIdentifier(args.intentId, "intentId")
+    requireBoundedIdentifier(args.syntheticTxHash, "syntheticTxHash")
+    if (args.taskIds.length > 32) throw new Error("INVALID_CLAIM: at most 32 task ids may be claimed at once")
+    for (const taskId of args.taskIds) requireBoundedIdentifier(taskId, "taskId")
     const prior = await ctx.db
       .query("transactions")
       .withIndex("by_wallet_intent", (q) => q.eq("wallet", wallet).eq("intentId", args.intentId))
@@ -1651,6 +1672,18 @@ export const recordSwap = mutation({
   },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
+    requireBoundedIdentifier(args.intentId, "intentId")
+    for (const [field, value] of Object.entries({
+      inputAssetId: args.inputAssetId,
+      outputAssetId: args.outputAssetId,
+      inputSymbol: args.inputSymbol,
+      outputSymbol: args.outputSymbol,
+      provider: args.provider,
+      quoteId: args.quoteId,
+      syntheticTxHash: args.syntheticTxHash,
+    })) {
+      if (value !== undefined) requireBoundedIdentifier(value, field)
+    }
     const now = Date.now()
 
     // Idempotency — a replayed swap id returns the existing row, never double-records.
