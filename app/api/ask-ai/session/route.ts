@@ -66,15 +66,17 @@ export function resetGuestMintThrottle() {
  */
 export async function isGuestMintAllowed(ip: string): Promise<boolean> {
   const url = process.env.NEXT_PUBLIC_CONVEX_URL
-  if (url) {
+  const secret = process.env.CONVEX_RATE_LIMIT_SECRET
+  if (url && secret) {
     try {
       const client = new ConvexHttpClient(url)
-      const { ok } = await client.mutation(api.askAI.recordGuestMint, { ip })
+      const { ok } = await client.mutation(api.askAI.recordGuestMint, { ip, secret })
       return ok
     } catch {
       // Convex unreachable — fall back to the per-instance in-memory limiter.
     }
   }
+  if (process.env.NODE_ENV === "production" && url) return false
   return allowGuestMint(ip)
 }
 

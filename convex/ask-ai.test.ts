@@ -1,6 +1,7 @@
 // @vitest-environment edge-runtime
 import { convexTest } from "convex-test"
 import { register as registerAgent } from "@convex-dev/agent/test"
+import { register as registerRateLimiter } from "@convex-dev/rate-limiter/test"
 import { describe, expect, test } from "vitest"
 import { api, internal } from "./_generated/api"
 import schema from "./schema"
@@ -10,6 +11,7 @@ const modules = import.meta.glob("./**/*.*s")
 function askAITest() {
   const t = convexTest(schema, modules)
   registerAgent(t)
+  registerRateLimiter(t)
   return t
 }
 
