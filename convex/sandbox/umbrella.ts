@@ -8,6 +8,7 @@ import { readWalletLiquidBalance, upsertLiquidWalletBalance } from "../wallet/ba
 const SECONDS_PER_YEAR = 365 * 24 * 60 * 60
 const COOLDOWN_MS = 20 * 24 * 60 * 60 * 1000
 const WITHDRAWAL_WINDOW_MS = 2 * 24 * 60 * 60 * 1000
+export const MAX_UMBRELLA_TX_PER_HOUR = 200
 
 const umbrellaMarketId = v.union(v.literal("gho"), v.literal("usdc"), v.literal("usdt"), v.literal("weth"))
 const umbrellaActionKind = v.union(
@@ -441,10 +442,19 @@ export const recordAction = mutation({
       .unique()
     if (existingTx) return { idempotent: true, receipt: existingTx }
 
+    const now = Date.now()
+    const recent = await ctx.db
+      .query("transactions")
+      .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet).gte("at", now - 60 * 60 * 1000))
+      .take(MAX_UMBRELLA_TX_PER_HOUR)
+    if (recent.length >= MAX_UMBRELLA_TX_PER_HOUR) {
+      throw new Error(`RATE_LIMITED: more than ${MAX_UMBRELLA_TX_PER_HOUR} wallet transactions in the last hour.`)
+    }
+
     const market = UMBRELLA_MARKETS[args.marketId]
+    if (!Number.isFinite(args.amount) || args.amount < 0) throw new Error("INVALID_AMOUNT")
     const amount = Math.max(0, args.amount)
     if (args.kind !== "claim" && amount <= 0) throw new Error("INVALID_AMOUNT")
-    const now = Date.now()
     const liquid = await readLiquidBalance(ctx, wallet, args.marketId)
     const position = await readUmbrellaPosition(ctx, wallet, args.marketId)
     const accruedUsd = position ? rewardAccruedUsd(position, now) : 0
