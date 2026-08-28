@@ -36,6 +36,8 @@ const askAIRateLimiter = new RateLimiter(components.rateLimiter, {
 type AskAIErrorCode = "ASK_AI_GENERATION_FAILED" | "ASK_AI_RATE_LIMITED" | "ASK_AI_UNAVAILABLE"
 const ASK_AI_RUNNING_TIMEOUT_MS = 90_000
 const MAX_THREADS_PER_SUBJECT = 1_000
+const MAX_TURNS_PER_THREAD = 500
+const MAX_FAILED_TURNS_IN_QUEUE = 50
 
 function safeEqual(a: string, b: string) {
   if (a.length !== b.length) return false
@@ -189,7 +191,8 @@ export const messageParts = query({
     const rows = await ctx.db
       .query("askAIMessageParts")
       .withIndex("by_thread", (q) => q.eq("threadId", threadId))
-      .collect()
+      .order("desc")
+      .take(MAX_TURNS_PER_THREAD)
     return rows.map((row) => ({ messageId: row.messageId, parts: row.parts }))
   },
 })
@@ -332,11 +335,20 @@ export const enqueueTurn = mutation({
         "ASK_AI_GENERATION_FAILED",
         `Message must contain 1 to ${ASK_AI_CONFIG.maxInputCharacters} characters`,
       )
-    const queued = await ctx.db
-      .query("askAITurns")
-      .withIndex("by_thread_status_created", (q) => q.eq("threadId", threadId).eq("status", "queued"))
-      .collect()
+    const [queued, threadTurns] = await Promise.all([
+      ctx.db
+        .query("askAITurns")
+        .withIndex("by_thread_status_created", (q) => q.eq("threadId", threadId).eq("status", "queued"))
+        .take(10),
+      ctx.db
+        .query("askAITurns")
+        .withIndex("by_thread_status_created", (q) => q.eq("threadId", threadId))
+        .take(MAX_TURNS_PER_THREAD),
+    ])
     if (queued.length >= 10) throw askAIError("ASK_AI_RATE_LIMITED", "Ask AI queue is full")
+    if (threadTurns.length >= MAX_TURNS_PER_THREAD) {
+      throw askAIError("ASK_AI_RATE_LIMITED", "This chat is full. Start a new chat to continue.")
+    }
     const dayStart = Date.now() - 24 * 60 * 60 * 1_000
     const usageRows = await ctx.db
       .query("askAIUsage")
@@ -430,12 +442,24 @@ export const turnQueue = query({
     // Scope to this thread's turns via the threadId prefix index. The previous
     // by_owner_updated scan collected every turn of every user on a live
     // subscription, so any user's turn write invalidated every open queue.
-    const rows = await ctx.db
-      .query("askAITurns")
-      .withIndex("by_thread_status_created", (q) => q.eq("threadId", threadId))
-      .collect()
+    const rows = (
+      await Promise.all([
+        ctx.db
+          .query("askAITurns")
+          .withIndex("by_thread_status_created", (q) => q.eq("threadId", threadId).eq("status", "queued"))
+          .take(10),
+        ctx.db
+          .query("askAITurns")
+          .withIndex("by_thread_status_created", (q) => q.eq("threadId", threadId).eq("status", "running"))
+          .take(1),
+        ctx.db
+          .query("askAITurns")
+          .withIndex("by_thread_status_created", (q) => q.eq("threadId", threadId).eq("status", "failed"))
+          .order("desc")
+          .take(MAX_FAILED_TURNS_IN_QUEUE),
+      ])
+    ).flat()
     return rows
-      .filter((row) => ["queued", "running", "failed"].includes(row.status))
       .sort((a, b) => a.createdAt - b.createdAt)
       .map((row) => ({
         id: row._id,
