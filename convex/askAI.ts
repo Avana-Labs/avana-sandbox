@@ -26,6 +26,8 @@ const askAIRateLimiter = new RateLimiter(components.rateLimiter, {
   // Backs the /api/ask-ai/session route so clearing the guest cookie can't yield
   // an unlimited supply of fresh quotas across serverless instances.
   guestMintPerIp: { kind: "fixed window", rate: 30, period: 60 * 60 * 1_000 },
+  threadCreatePerSubject: { kind: "fixed window", rate: 30, period: 60 * 60 * 1_000 },
+  threadCreateGlobal: { kind: "fixed window", rate: 5_000, period: 60 * 60 * 1_000 },
 })
 
 // User-facing throws use ConvexError so the friendly message survives Convex's
@@ -33,6 +35,14 @@ const askAIRateLimiter = new RateLimiter(components.rateLimiter, {
 // code -> copy fallback map. See docs/ask-ai-lane-contracts.md §2.
 type AskAIErrorCode = "ASK_AI_GENERATION_FAILED" | "ASK_AI_RATE_LIMITED" | "ASK_AI_UNAVAILABLE"
 const ASK_AI_RUNNING_TIMEOUT_MS = 90_000
+const MAX_THREADS_PER_SUBJECT = 1_000
+
+function safeEqual(a: string, b: string) {
+  if (a.length !== b.length) return false
+  let diff = 0
+  for (let index = 0; index < a.length; index += 1) diff |= a.charCodeAt(index) ^ b.charCodeAt(index)
+  return diff === 0
+}
 
 function askAIError(code: AskAIErrorCode, message: string): ConvexError<{ code: AskAIErrorCode; message: string }> {
   return new ConvexError({ code, message })
@@ -88,6 +98,17 @@ export const create = mutation({
   args: {},
   handler: async (ctx) => {
     const ownerSubject = await requireOwnerSubject(ctx)
+    const existing = await ctx.db
+      .query("askAIThreads")
+      .withIndex("by_owner_status_updated", (q) => q.eq("ownerSubject", ownerSubject))
+      .take(MAX_THREADS_PER_SUBJECT)
+    if (existing.length >= MAX_THREADS_PER_SUBJECT) {
+      throw askAIError("ASK_AI_RATE_LIMITED", "Ask AI thread limit reached. Archive and reuse an existing chat.")
+    }
+    await enforceAskAIRateLimit(() =>
+      askAIRateLimiter.limit(ctx, "threadCreatePerSubject", { key: ownerSubject, throws: true }),
+    )
+    await enforceAskAIRateLimit(() => askAIRateLimiter.limit(ctx, "threadCreateGlobal", { throws: true }))
     const title = "New Chat"
     const threadId = await createThread(ctx, components.agent, { userId: ownerSubject, title })
     const now = Date.now()
@@ -103,23 +124,23 @@ export const create = mutation({
   },
 })
 
+/** Legacy non-paginated reader retained for older clients, but hard-bounded. */
 export const list = query({
   args: { includeArchived: v.optional(v.boolean()) },
   handler: async (ctx, { includeArchived }) => {
     const ownerSubject = await requireOwnerSubject(ctx)
     if (includeArchived) {
-      // Owner-prefix scan across both statuses, not a full-table collect.
       const rows = await ctx.db
         .query("askAIThreads")
         .withIndex("by_owner_status_updated", (q) => q.eq("ownerSubject", ownerSubject))
-        .collect()
+        .take(500)
       return rows.sort((a, b) => b.updatedAt - a.updatedAt)
     }
     return await ctx.db
       .query("askAIThreads")
       .withIndex("by_owner_status_updated", (q) => q.eq("ownerSubject", ownerSubject).eq("status", "active"))
       .order("desc")
-      .collect()
+      .take(500)
   },
 })
 
@@ -202,8 +223,12 @@ export const quota = query({
 // the route; passing a forged ip only spends that key's own budget and cannot
 // mint a JWT (minting stays in the route), so a public mutation is safe here.
 export const recordGuestMint = mutation({
-  args: { ip: v.string() },
-  handler: async (ctx, { ip }) => {
+  args: { ip: v.string(), secret: v.string() },
+  handler: async (ctx, { ip, secret }) => {
+    const requiredSecret = process.env.CONVEX_RATE_LIMIT_SECRET
+    if (!requiredSecret || !safeEqual(secret, requiredSecret)) {
+      throw new Error("UNAUTHORIZED: guest-mint secret required")
+    }
     const key = (ip || "unknown").slice(0, 100)
     const result = await askAIRateLimiter.limit(ctx, "guestMintPerIp", { key })
     return { ok: result.ok, retryAfterMs: Math.max(0, Math.ceil(result.retryAfter ?? 0)) }
