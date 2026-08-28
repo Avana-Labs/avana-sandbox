@@ -11,6 +11,7 @@ import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
 import type { BorrowAssetVisual, BorrowPoolRow, BorrowableAsset } from "@/app/lib/borrow-sim"
 import { normalizeWeights } from "@/app/lib/prices/lp-token-price"
 import type { HomeCollateralPool } from "@/app/lib/borrow-system/home-contracts"
+import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
 
 /** Intrinsic per-market risk premium (bps) from the catalog — the same value the pool detail renders. */
 const CATALOG_RISK_PREMIUM_BPS = new Map(BORROW_POOL_CATALOG.map((row) => [row.id, row.riskPremiumBps]))
@@ -33,7 +34,10 @@ function visualToUi(visual: BorrowSystemState["markets"][string]["display"]["vis
   return {
     symbol: visual.symbol,
     shortLabel: visual.shortLabel,
-    iconUrl: visual.iconUrl ?? undefined,
+    // Convex may retain an old `.svg` URL after the bundled catalog moved to
+    // PNG. Resolve by symbol at the rendering boundary so stale seed metadata
+    // cannot turn every Borrow row into a 404 request.
+    iconUrl: getLocalAssetIcon(visual.symbol),
     bgClass: visual.bgClassName,
     textClass: visual.textClassName,
   }
