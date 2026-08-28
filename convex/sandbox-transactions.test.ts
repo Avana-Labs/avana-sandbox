@@ -181,6 +181,15 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
         state: "deposited",
         updatedAt: 1,
       })
+      await ctx.db.insert("walletLiquidBalances", {
+        wallet: w,
+        assetId: "usdc",
+        symbol: "USDC",
+        amount: 10,
+        valueUsd: 10,
+        state: "available",
+        updatedAt: 1,
+      })
     })
     const asUser = t.withIdentity({ subject: WALLET })
     const res = await asUser.mutation(api.sandbox.transactions.recordTransaction, {
@@ -258,6 +267,28 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
         position: { status: "open" as const, marketSlug: "usdc", suppliedUsd6: "10000000", earnedUsd6: "0" },
       }),
     ).rejects.toThrow(/INSUFFICIENT_BALANCE/)
+  })
+
+  test("rejects a deposit when the authenticated wallet has no liquid source row", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await expect(
+      asUser.mutation(api.sandbox.transactions.recordTransaction, {
+        wallet: WALLET,
+        intentId: "afford-missing",
+        product: "lend" as const,
+        kind: "deposit",
+        marketSlug: "usdc",
+        assetId: "usdc",
+        requestedAmountUsd6: "10000000",
+        executedAmountUsd6: "10000000",
+        amountUsd: 10,
+        simulated: true,
+        position: { status: "open" as const, marketSlug: "usdc", suppliedUsd6: "10000000", earnedUsd6: "0" },
+      }),
+    ).rejects.toThrow(/INSUFFICIENT_BALANCE/)
+
+    expect(await asUser.query(api.sandbox.transactions.getActivity, { wallet: WALLET })).toHaveLength(0)
   })
 
   test("allows a deposit within the wallet's liquid balance", async () => {
@@ -404,6 +435,17 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
 
   test("updates the current portfolio without appending per-action history", async () => {
     const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      await ctx.db.insert("walletLiquidBalances", {
+        wallet: WALLET.toLowerCase(),
+        assetId: "usdc",
+        symbol: "USDC",
+        amount: 1000,
+        valueUsd: 1000,
+        state: "available",
+        updatedAt: 1,
+      })
+    })
     const asUser = t.withIdentity({ subject: WALLET })
     await asUser.mutation(api.sandbox.transactions.recordTransaction, {
       ...borrowIntent("portfolio-current-create"),

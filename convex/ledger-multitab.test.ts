@@ -13,6 +13,20 @@ function liquidityReader(t: ReturnType<typeof convexTest>) {
   return t.withIdentity({ subject: WALLET })
 }
 
+async function seedLiquidUsdc(t: ReturnType<typeof convexTest>, valueUsd = 5000) {
+  await t.run(async (ctx) => {
+    await ctx.db.insert("walletLiquidBalances", {
+      wallet: WALLET.toLowerCase(),
+      assetId: "usdc",
+      symbol: "USDC",
+      amount: valueUsd,
+      valueUsd,
+      state: "available",
+      updatedAt: 1,
+    })
+  })
+}
+
 /**
  * H20 — wallet actions are idempotent across tabs and never alter protocol liquidity.
  *
@@ -47,6 +61,7 @@ describe("wallet actions do not alter protocol liquidity across tabs (H20)", () 
 
   test("supply: two tabs replaying one deposit leave protocol liquidity unchanged", async () => {
     const t = convexTest(schema, modules)
+    await seedLiquidUsdc(t)
     const tabA = t.withIdentity({ subject: WALLET })
     const tabB = t.withIdentity({ subject: WALLET })
     const intent = {
@@ -105,6 +120,7 @@ describe("wallet actions do not alter protocol liquidity across tabs (H20)", () 
 describe("optimistic concurrency — stale write is rejected (not a silent overwrite)", () => {
   test("existing positions reject revisionless updates", async () => {
     const t = convexTest(schema, modules)
+    await seedLiquidUsdc(t)
     const tab = t.withIdentity({ subject: WALLET })
     await tab.mutation(api.sandbox.transactions.recordTransaction, {
       wallet: WALLET,
@@ -135,6 +151,7 @@ describe("optimistic concurrency — stale write is rejected (not a silent overw
 
   test("lend: second tab writing from a stale revision is rejected, matching revision succeeds", async () => {
     const t = convexTest(schema, modules)
+    await seedLiquidUsdc(t)
     const tab = t.withIdentity({ subject: WALLET })
 
     // Seed the position (first write → revision 0).

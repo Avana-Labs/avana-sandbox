@@ -27,7 +27,7 @@ import { computeSwapQuoteMath } from "./swapQuoteEngine"
 import { tokenNotionalToUsd } from "./collateralUsd"
 import { deriveClaimAmountUsd } from "./rewards_catalog"
 import type { Doc } from "../_generated/dataModel"
-import { PRICE_INVALID_AFTER_MS, PRICE_MIN_CONFIDENCE } from "../prices"
+import { validatedTokenPriceUsd } from "./oraclePrice"
 
 type ProductBalanceTable =
   "walletLendBalances" | "walletBorrowBalances" | "walletMultiplyBalances" | "walletLiquidBalances"
@@ -1170,12 +1170,10 @@ export const recordTransaction = mutation({
         const priceUsd = liquid && liquid.amount > 0 && liquid.valueUsd > 0 ? liquid.valueUsd / liquid.amount : 1
         const tokenAmount = args.amountUsd / priceUsd
         const signed = args.kind === "deposit" || args.kind === "repay" ? -tokenAmount : tokenAmount
-        // Affordability: a cash-out (deposit/repay debits liquid) cannot spend more than the wallet
-        // holds. Without this the liquid debit clamps to 0 while the product bucket still credits the
-        // full amount — minting net worth. Enforced when a liquid row exists (seeded wallets); a
-        // wallet with no row for this asset falls through to the existing clamp (fail-open so
-        // unseeded/test flows are unaffected).
-        if (signed < 0 && liquid && liquid.amount + signed < -1e-6) {
+        // Affordability: a deposit/repay debit must be backed by an existing authenticated-wallet
+        // liquid row with enough USD value. Never fail open when the row is absent: clamping that
+        // nonexistent source to zero while crediting the product bucket mints net worth.
+        if (signed < 0 && (!liquid || liquid.valueUsd + 1e-6 < args.amountUsd)) {
           throw new Error("INSUFFICIENT_BALANCE: not enough liquid balance for this action.")
         }
         await applyLiquidAssetDelta(ctx, wallet, assetId, assetId.toUpperCase(), signed, now)
@@ -1499,28 +1497,6 @@ async function applyProductBucketDelta(
  * fails closed when either leg is unpriced; otherwise a caller could choose two unknown symbols
  * and mint an arbitrary output from client-supplied values.
  */
-async function swapLegServerPriceUsd(
-  ctx: MutationCtx,
-  symbol: string,
-): Promise<number | null> {
-  const oracle = await ctx.db
-    .query("tokenPrices")
-    .withIndex("by_symbol", (q) => q.eq("symbol", symbol.toLowerCase()))
-    .first()
-  const now = Date.now()
-  if (
-    oracle &&
-    Number.isFinite(oracle.priceUsd) &&
-    oracle.priceUsd > 0 &&
-    oracle.status !== "invalid" &&
-    now - oracle.updatedAt < PRICE_INVALID_AFTER_MS &&
-    (oracle.confidence == null || oracle.confidence >= PRICE_MIN_CONFIDENCE)
-  ) {
-    return oracle.priceUsd
-  }
-  return null
-}
-
 export const recordSwap = mutation({
   args: {
     wallet: v.string(),
@@ -1610,8 +1586,8 @@ export const recordSwap = mutation({
     let executedAmountUsd = args.amountUsd
     if (status === "success") {
       const [inputPrice, outputPrice] = await Promise.all([
-        swapLegServerPriceUsd(ctx, args.inputSymbol),
-        swapLegServerPriceUsd(ctx, args.outputSymbol),
+        validatedTokenPriceUsd(ctx, args.inputSymbol, now),
+        validatedTokenPriceUsd(ctx, args.outputSymbol, now),
       ])
       if (!inputPrice || !outputPrice) {
         throw new Error("INVALID_SWAP: both token prices must be current and server-verifiable.")
