@@ -60,6 +60,25 @@ async function seedVictim(t: ReturnType<typeof convexTest>, collateralUsd6: stri
 }
 
 describe("recordLiquidation — server-side solvency gate (P1-2)", () => {
+  test("rejects oversized fixed-point input before BigInt parsing", async () => {
+    const t = convexTest(schema, modules)
+    const ids = await seedVictim(t, "2000000000", "2000000000")
+    await expect(
+      t.withIdentity({ subject: KEEPER }).mutation(api.sandbox.liquidation.recordLiquidation, {
+        wallet: VICTIM,
+        liquidatorWallet: KEEPER,
+        intentId: "oversized-liquidation",
+        positionId: ids.positionId,
+        debtPositionId: ids.debtPositionId,
+        marketSlug: MARKET,
+        repaidUsd6: "9".repeat(100_000),
+        seizedCollateralUsd6: "1",
+        healthFactorWadBefore: "0",
+        healthFactorWadAfter: "0",
+      }),
+    ).rejects.toThrow(/positive usd6 integer/)
+  })
+
   test("rejects liquidating a SOLVENT victim even when the client claims HF=0", async () => {
     const t = convexTest(schema, modules)
     // $2000 collateral @ 85% LT = $1700 > $1000 debt → HF ≈ 1.7, solvent.

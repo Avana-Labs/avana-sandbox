@@ -333,13 +333,19 @@ const positionPayload = v.object({
   ),
 })
 
+const MAX_FIXED_POINT_DIGITS = 80
+const MAX_POSITION_LEGS = 32
+
 function requireUnsignedInteger(value: string, field: string) {
-  if (!/^\d+$/.test(value) || BigInt(value) < 0n) {
+  if (value.length === 0 || value.length > MAX_FIXED_POINT_DIGITS || !/^\d+$/.test(value)) {
     throw new Error(`INVALID_POSITION: ${field} must be an unsigned integer string.`)
   }
 }
 
 function validatePositionPayload(position: Infer<typeof positionPayload>) {
+  if ((position.collateral?.length ?? 0) > MAX_POSITION_LEGS || (position.debt?.length ?? 0) > MAX_POSITION_LEGS) {
+    throw new Error(`INVALID_POSITION: a position may contain at most ${MAX_POSITION_LEGS} collateral and debt legs.`)
+  }
   for (const [field, value] of Object.entries({
     collateralValueUsd6: position.collateralValueUsd6,
     debtValueUsd6: position.debtValueUsd6,
