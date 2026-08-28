@@ -67,6 +67,30 @@ describe("recordRewardsClaim — server-authoritative payout", () => {
     expect(rows.filter((r) => r.product === "rewards")).toHaveLength(0)
   })
 
+  test("rejects oversized identifiers and claim arrays before reads or writes", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await expect(
+      asUser.mutation(api.sandbox.transactions.recordRewardsClaim, {
+        wallet: WALLET,
+        intentId: "x".repeat(100_000),
+        taskIds: ["connect-wallet"],
+        syntheticTxHash: "0xhash",
+      }),
+    ).rejects.toThrow(/intentId must contain 1 to 200 characters/)
+    await expect(
+      asUser.mutation(api.sandbox.transactions.recordRewardsClaim, {
+        wallet: WALLET,
+        intentId: "rewards:test:too-many",
+        taskIds: Array.from({ length: 33 }, (_, index) => `task-${index}`),
+        syntheticTxHash: "0xhash",
+      }),
+    ).rejects.toThrow(/at most 32 task ids/)
+
+    const rows = await t.run(async (ctx) => await ctx.db.query("transactions").collect())
+    expect(rows).toHaveLength(0)
+  })
+
   test("rejects an active financial quest without a matching server transaction", async () => {
     const t = convexTest(schema, modules)
     await expect(
