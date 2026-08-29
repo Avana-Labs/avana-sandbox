@@ -53,4 +53,34 @@ describe("useEnsureWalletFixtures", () => {
     expect(ensureUmbrellaFixtures).toHaveBeenCalledTimes(1)
     expect(ensureUmbrellaFixtures).toHaveBeenCalledWith({ wallet: "0xaaa" })
   })
+
+  it("stops retrying when a Convex deployment remains unavailable", async () => {
+    vi.useFakeTimers()
+    const ensurePortfolioSnapshot = vi.fn(async () => {
+      throw new Error("function not found")
+    })
+    const ensureUmbrellaFixtures = vi.fn(async () => undefined)
+
+    renderHook(() =>
+      useEnsureWalletFixtures({
+        walletId: "0xaaa",
+        ensurePortfolioSnapshot,
+        ensureUmbrellaFixtures,
+        retryDelayMs: 10,
+        maxAttempts: 3,
+      }),
+    )
+    await act(async () => {})
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10)
+    })
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(20)
+    })
+
+    expect(ensurePortfolioSnapshot).toHaveBeenCalledTimes(3)
+    expect(ensureUmbrellaFixtures).not.toHaveBeenCalled()
+    expect(vi.getTimerCount()).toBe(0)
+  })
 })

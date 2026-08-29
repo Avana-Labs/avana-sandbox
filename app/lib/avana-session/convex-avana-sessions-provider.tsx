@@ -39,13 +39,16 @@ export function useEnsureWalletFixtures({
   ensurePortfolioSnapshot,
   ensureUmbrellaFixtures,
   retryDelayMs = 1_000,
+  maxAttempts = 3,
 }: {
   walletId: string
   ensurePortfolioSnapshot: EnsureWalletFixture
   ensureUmbrellaFixtures: EnsureWalletFixture
   retryDelayMs?: number
+  maxAttempts?: number
 }) {
   const ensuredWalletRef = useRef<string | null>(null)
+  const attemptsByWalletRef = useRef(new Map<string, number>())
   const [ensureAttempt, setEnsureAttempt] = useState(0)
 
   useEffect(() => {
@@ -53,21 +56,28 @@ export function useEnsureWalletFixtures({
     let cancelled = false
     let retryTimer: ReturnType<typeof setTimeout> | undefined
     ensuredWalletRef.current = walletId
+    const attempt = (attemptsByWalletRef.current.get(walletId) ?? 0) + 1
+    attemptsByWalletRef.current.set(walletId, attempt)
     void (async () => {
       try {
         await ensurePortfolioSnapshot({ wallet: walletId })
         await ensureUmbrellaFixtures({ wallet: walletId })
+        attemptsByWalletRef.current.delete(walletId)
       } catch {
         if (cancelled || ensuredWalletRef.current !== walletId) return
+        if (attempt >= maxAttempts) return
         ensuredWalletRef.current = null
-        retryTimer = setTimeout(() => setEnsureAttempt((attempt) => attempt + 1), retryDelayMs)
+        retryTimer = setTimeout(
+          () => setEnsureAttempt((currentAttempt) => currentAttempt + 1),
+          retryDelayMs * 2 ** (attempt - 1),
+        )
       }
     })()
     return () => {
       cancelled = true
       if (retryTimer) clearTimeout(retryTimer)
     }
-  }, [ensureAttempt, ensurePortfolioSnapshot, ensureUmbrellaFixtures, retryDelayMs, walletId])
+  }, [ensureAttempt, ensurePortfolioSnapshot, ensureUmbrellaFixtures, maxAttempts, retryDelayMs, walletId])
 }
 
 function ConvexWalletHydrators({
