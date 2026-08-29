@@ -80,6 +80,28 @@ export function useEnsureWalletFixtures({
   }, [ensureAttempt, ensurePortfolioSnapshot, ensureUmbrellaFixtures, maxAttempts, retryDelayMs, walletId])
 }
 
+export function useWalletHydrationScope(walletId: string) {
+  const revisionScopeRef = useRef<{ walletId: string; revisions: Map<string, number> } | null>(null)
+  if (revisionScopeRef.current?.walletId !== walletId) {
+    revisionScopeRef.current = { walletId, revisions: new Map() }
+  }
+  const revisions = revisionScopeRef.current.revisions
+  const [hydratedWalletId, setHydratedWalletId] = useState<string | null>(null)
+  const handleWalletHydrated = useCallback(
+    (positions: readonly PositionRevisionSummary[]) => {
+      captureHydratedRevisions(revisions, positions)
+      setHydratedWalletId(walletId)
+    },
+    [revisions, walletId],
+  )
+
+  return {
+    revisions,
+    walletHydrationPending: hydratedWalletId !== walletId,
+    handleWalletHydrated,
+  }
+}
+
 function ConvexWalletHydrators({
   walletId,
   onWalletHydrated,
@@ -197,24 +219,14 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
   const rewardsState = useQuery(api.sandbox.rewards.getState, { wallet: walletId })
   const umbrellaSessionState = useQuery(api.sandbox.umbrella.getSessionState, { wallet: walletId })
   const recordUmbrellaAction = useMutation(api.sandbox.umbrella.recordAction)
-  const revisionByKeyRef = useRef(new Map<string, number>())
-  const [walletHydrationPending, setWalletHydrationPending] = useState(true)
-  useEffect(() => setWalletHydrationPending(true), [walletId])
-  const handleWalletHydrated = useCallback((positions: readonly PositionRevisionSummary[]) => {
-    captureHydratedRevisions(revisionByKeyRef.current, positions)
-    setWalletHydrationPending(false)
-  }, [])
+  const { revisions, walletHydrationPending, handleWalletHydrated } = useWalletHydrationScope(walletId)
 
   const persistBorrowTransaction = useCallback(
     async (result: SandboxActionResult) => {
-      const { args, key } = withExpectedRevision(
-        borrowResultToRecordArgs(result, walletId),
-        "borrow",
-        revisionByKeyRef.current,
-      )
+      const { args, key } = withExpectedRevision(borrowResultToRecordArgs(result, walletId), "borrow", revisions)
       const persisted = await recordTransaction(args)
-      if (persisted.revision != null) seedRevisionFromReceipt(revisionByKeyRef.current, key, persisted.revision)
-      else advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
+      if (persisted.revision != null) seedRevisionFromReceipt(revisions, key, persisted.revision)
+      else advanceRevisionOnSuccess(revisions, key, persisted.idempotent)
       return {
         id: String(persisted.receipt.id),
         hash: persisted.receipt.hash,
@@ -223,18 +235,14 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
         timestamp: persisted.receipt.timestamp,
       }
     },
-    [recordTransaction, walletId],
+    [recordTransaction, revisions, walletId],
   )
   const persistLendTransaction = useCallback(
     async (result: LendSandboxActionResult): Promise<LendTransactionResult> => {
-      const { args, key } = withExpectedRevision(
-        lendResultToRecordArgs(result, walletId),
-        "lend",
-        revisionByKeyRef.current,
-      )
+      const { args, key } = withExpectedRevision(lendResultToRecordArgs(result, walletId), "lend", revisions)
       const persisted = await recordTransaction(args)
-      if (persisted.revision != null) seedRevisionFromReceipt(revisionByKeyRef.current, key, persisted.revision)
-      else advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
+      if (persisted.revision != null) seedRevisionFromReceipt(revisions, key, persisted.revision)
+      else advanceRevisionOnSuccess(revisions, key, persisted.idempotent)
       return {
         id: String(persisted.receipt.id),
         hash: persisted.receipt.hash,
@@ -244,18 +252,14 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
         timestamp: persisted.receipt.timestamp,
       }
     },
-    [recordTransaction, walletId],
+    [recordTransaction, revisions, walletId],
   )
   const persistMultiplyTransaction = useCallback(
     async (result: MultiplySandboxActionResult): Promise<MultiplyTransactionResult> => {
-      const { args, key } = withExpectedRevision(
-        multiplyResultToRecordArgs(result, walletId),
-        "multiply",
-        revisionByKeyRef.current,
-      )
+      const { args, key } = withExpectedRevision(multiplyResultToRecordArgs(result, walletId), "multiply", revisions)
       const persisted = await recordTransaction(args)
-      if (persisted.revision != null) seedRevisionFromReceipt(revisionByKeyRef.current, key, persisted.revision)
-      else advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
+      if (persisted.revision != null) seedRevisionFromReceipt(revisions, key, persisted.revision)
+      else advanceRevisionOnSuccess(revisions, key, persisted.idempotent)
       return {
         id: String(persisted.receipt.id),
         hash: persisted.receipt.hash,
@@ -265,7 +269,7 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
         timestamp: persisted.receipt.timestamp,
       }
     },
-    [recordTransaction, walletId],
+    [recordTransaction, revisions, walletId],
   )
   const persistRewardsState = useCallback(
     (args: { stateJson: string; expectedRevision?: number }) =>
