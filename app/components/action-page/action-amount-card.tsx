@@ -207,7 +207,7 @@ export function ActionAmountCard({
         selectOption(option.id)
       }}
       className={cn(
-        "flex w-full items-start gap-2 rounded-radius-md px-2.5 py-2.5 text-left text-[14px] transition-colors hover:bg-hover",
+        "flex w-full items-start gap-2 rounded-radius-md px-2.5 py-2.5 text-left text-sm transition-colors hover:bg-hover",
         option.id === selectedAssetId && "bg-surface-inset",
       )}
     >
@@ -217,7 +217,7 @@ export function ActionAmountCard({
         <ActionTokenIcon symbol={option.symbol} />
       )}
       <span className="min-w-0 flex-1 break-words leading-snug text-foreground">{option.label}</span>
-      {option.sublabel ? <span className="shrink-0 text-[13px] text-muted-foreground">{option.sublabel}</span> : null}
+      {option.sublabel ? <span className="shrink-0 text-sm text-muted-foreground">{option.sublabel}</span> : null}
     </button>
   )
 
@@ -233,12 +233,12 @@ export function ActionAmountCard({
           type="button"
           onClick={onMax}
           title={t("Use max")}
-          className="max-w-full shrink-0 truncate text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+          className="max-w-full shrink-0 truncate text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           {t(balanceLabel ?? "Balance")}: <span className="text-foreground">{balanceDisplay}</span>
         </button>
       ) : (
-        <div className="max-w-full shrink-0 truncate text-[13px] text-muted-foreground">
+        <div className="max-w-full shrink-0 truncate text-sm text-muted-foreground">
           {t(balanceLabel ?? "Balance")}: <span className="text-foreground">{balanceDisplay}</span>
         </div>
       )
@@ -304,7 +304,7 @@ export function ActionAmountCard({
       {!hideAssetSelector ? (
         <div className="relative shrink-0 max-[360px]:self-end" ref={switchable ? menuRef : undefined}>
           {unitLabel ? (
-            <div className="inline-flex cursor-default items-center rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-normal text-foreground">
+            <div className="inline-flex cursor-default items-center rounded-full border border-border bg-surface-raised px-3 py-1.5 text-sm font-normal text-foreground">
               <span>{unitLabel}</span>
             </div>
           ) : switchable || gated ? (
@@ -327,7 +327,7 @@ export function ActionAmountCard({
               aria-label={t("Change asset, current {asset}").replace("{asset}", assetLabel)}
               disabled={(readOnly && !allowAssetSwitchWhenReadOnly) || (gated && !gatedClickable)}
               className={cn(
-                "inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-normal text-foreground hover:bg-surface-hover",
+                "inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-sm font-normal text-foreground hover:bg-surface-hover",
                 gated ? (gatedClickable ? "opacity-60" : "cursor-default opacity-60") : "cursor-pointer",
               )}
             >
@@ -342,7 +342,7 @@ export function ActionAmountCard({
               </span>
             </button>
           ) : (
-            <div className="inline-flex cursor-default items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-normal text-foreground">
+            <div className="inline-flex cursor-default items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-sm font-normal text-foreground">
               {borrowSymbol ? (
                 <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
               ) : isAssetPlaceholder ? null : (
@@ -366,7 +366,7 @@ export function ActionAmountCard({
   )
 
   const usdRow = (
-    <div className="mt-1 flex items-center justify-between gap-3 text-[14px]">
+    <div className="mt-1 flex items-center justify-between gap-3 text-sm">
       <div className="min-w-0 truncate text-foreground/60">
         <AnimatedTextValue text={approxUsdLabel} />
       </div>
@@ -376,7 +376,7 @@ export function ActionAmountCard({
 
   const gatedHintRow =
     gated && assetPickerHint ? (
-      <div className="mt-1.5 text-[13px] text-muted-foreground">{t(assetPickerHint)}</div>
+      <div className="mt-1.5 text-sm text-muted-foreground">{t(assetPickerHint)}</div>
     ) : null
 
   const assetPickerDialog =
@@ -397,7 +397,7 @@ export function ActionAmountCard({
     <Dialog open={menuOpen} onOpenChange={setMenuOpen}>
       <DialogContent className="max-w-lg gap-0 p-0 pt-2 sm:max-w-[420px]">
         <DialogHeader className="px-4 pb-2 pt-3 text-left space-y-0">
-          <DialogTitle className="text-[13px] font-normal">{t("Select asset")}</DialogTitle>
+          <DialogTitle className="text-sm font-normal">{t("Select asset")}</DialogTitle>
         </DialogHeader>
         <div
           role="listbox"
@@ -423,7 +423,7 @@ export function ActionAmountCard({
           {usdRow}
           {gatedHintRow}
           {showReceiveWethToggle ? (
-            <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3 text-[14px]">
+            <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-3 text-sm">
               <div className="flex items-center gap-1.5 text-muted-foreground">
                 <span>{t("Receive WETH")}</span>
                 <ActionMetricHelp topic="Receive WETH" text="Get wrapped ETH (WETH) instead of native ETH." />
@@ -463,14 +463,14 @@ export function ActionAmountCard({
         data-testid="action-amount-card"
       >
         <div className="px-4 pb-4 pt-4">
-          <div className="text-[14px] font-normal text-muted-foreground">{t(label)}</div>
+          <div className="text-sm font-normal text-muted-foreground">{t(label)}</div>
           {amountRow}
           {usdRow}
           {gatedHintRow}
         </div>
 
         {showReceiveWethToggle ? (
-          <div className="flex items-center justify-between border-t border-border px-4 py-3 text-[14px]">
+          <div className="flex items-center justify-between border-t border-border px-4 py-3 text-sm">
             <div className="flex items-center gap-1.5 text-muted-foreground">
               <span>{t("Receive WETH")}</span>
               <ActionMetricHelp

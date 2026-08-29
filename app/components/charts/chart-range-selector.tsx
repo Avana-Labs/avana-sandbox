@@ -42,7 +42,7 @@ export function ChartRangeSelector({
             type="button"
             onClick={() => onRangeChange(range)}
             className={cn(
-              "relative flex h-7 min-w-8 flex-none items-center justify-center rounded-full px-2 text-[12px] font-normal tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:text-[13px]",
+              "relative flex h-7 min-w-8 flex-none items-center justify-center rounded-full px-2 text-xs font-normal tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:text-sm",
               active ? "bg-muted text-foreground" : "text-foreground/75 hover:text-foreground",
             )}
           >

@@ -346,7 +346,7 @@ export function HomeSwapAction() {
           </div>
 
           {outcome ? (
-            <div className="rounded-radius-xl border border-danger/30 bg-danger/10 p-4 text-[14px] text-foreground">
+            <div className="rounded-radius-xl border border-danger/30 bg-danger/10 p-4 text-sm text-foreground">
               {outcome.message}
             </div>
           ) : null}
@@ -451,7 +451,7 @@ function HomeSwapAssetField({
           type="button"
           onClick={onOpenAssetPicker}
           aria-label={`${label} asset`}
-          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-normal text-foreground hover:bg-surface-hover max-[360px]:self-end"
+          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-sm font-normal text-foreground hover:bg-surface-hover max-[360px]:self-end"
         >
           {asset ? (
             <>
@@ -469,13 +469,13 @@ function HomeSwapAssetField({
           </span>
         </button>
       </div>
-      <div className="mt-1 flex items-center justify-between gap-3 text-[14px]">
+      <div className="mt-1 flex items-center justify-between gap-3 text-sm">
         <span className="min-w-0 truncate text-foreground/60">{fiatLabel}</span>
         {balanceLabel ? (
           <button
             type="button"
             onClick={onBalanceClick}
-            className="max-w-[12rem] shrink-0 truncate text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+            className="max-w-[12rem] shrink-0 truncate text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             Balance: <span className="text-foreground">{balanceLabel}</span>
           </button>

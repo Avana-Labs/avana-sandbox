@@ -214,7 +214,7 @@ export function ExploreLoopsMarketsTable({
   return (
     <section className="mt-7">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="mt-1 text-[22px] font-normal tracking-[-0.03em] text-foreground md:text-[24px]">
+        <h2 className="mt-1 text-2xl font-normal tracking-[-0.03em] text-foreground md:text-2xl">
           {t("Trending")}
         </h2>
         <div className="flex items-center gap-2.5">
@@ -272,7 +272,7 @@ export function ExploreLoopsMarketsTable({
             </div>
           ))
         ) : (
-          <div className="rounded-radius-md border-0 bg-card px-6 py-10 text-[13px] text-muted-foreground shadow-none">
+          <div className="rounded-radius-md border-0 bg-card px-6 py-10 text-sm text-muted-foreground shadow-none">
             {t("No loops in this category yet.")}
           </div>
         )}
@@ -353,7 +353,7 @@ function LoopMarketsSection({
           header while its own table scrolls, then the next group's title takes over. */}
       <div className="sticky top-16 z-20 flex flex-col gap-3 bg-background py-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-[22px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[24px]">
+          <h2 className="text-2xl font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-2xl">
             {t(title)}
           </h2>
         </div>
@@ -380,7 +380,7 @@ function LoopMarketsSection({
                 />
               ))
             ) : (
-              <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground shadow-elev-1">
+              <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground shadow-elev-1">
                 {t("No loops in this category yet.")}
               </div>
             )}
@@ -390,7 +390,7 @@ function LoopMarketsSection({
         {isDesktop ? (
           <div>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1040px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
+              <table className="w-full min-w-[1040px] table-fixed border-separate border-spacing-0 text-xs lg:min-w-full">
                 <colgroup>
                   <col className="w-[4%]" />
                   <col className="w-[14%]" />
@@ -403,10 +403,10 @@ function LoopMarketsSection({
                 </colgroup>
                 <thead>
                   <tr className="bg-table-header text-left text-muted-foreground">
-                    <th className="bg-table-header pb-2 pl-6 pr-3 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header pb-2 pl-6 pr-3 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       #
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("protocol")}
@@ -421,7 +421,7 @@ function LoopMarketsSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("asset")}
@@ -436,7 +436,7 @@ function LoopMarketsSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("apy")}
@@ -451,7 +451,7 @@ function LoopMarketsSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("rewards")}
@@ -466,7 +466,7 @@ function LoopMarketsSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("cf")}
@@ -481,7 +481,7 @@ function LoopMarketsSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pr-6 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pr-6 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("points")}
@@ -496,7 +496,7 @@ function LoopMarketsSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+                    <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-right text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
                   </tr>
                 </thead>
                 <tbody
@@ -551,7 +551,7 @@ const LoopTableRow = React.memo(function LoopTableRow({
       style={{ animationDelay: `${index * 40}ms` }}
     >
       <td
-        className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-normal tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
+        className={`py-3 pl-4 pr-3 align-middle font-data text-sm font-normal tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
       >
         {index + 1}
       </td>
@@ -571,10 +571,10 @@ const LoopTableRow = React.memo(function LoopTableRow({
             </>
           ) : null}
           <span className="min-w-0">
-            <span className="block truncate text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+            <span className="block truncate text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">
               {row.protocolName ?? row.protocol}
             </span>
-            <span className="mt-0.5 block truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground">
+            <span className="mt-0.5 block truncate text-sm font-normal tracking-[-0.03em] text-muted-foreground">
               {row.protocol}
             </span>
           </span>
@@ -596,10 +596,10 @@ const LoopTableRow = React.memo(function LoopTableRow({
             </>
           ) : null}
           <span className="min-w-0">
-            <span className="block truncate text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+            <span className="block truncate text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">
               {row.assetName ?? row.asset}
             </span>
-            <span className="mt-0.5 block truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground">
+            <span className="mt-0.5 block truncate text-sm font-normal tracking-[-0.03em] text-muted-foreground">
               {row.asset}
             </span>
           </span>
@@ -609,7 +609,7 @@ const LoopTableRow = React.memo(function LoopTableRow({
         <CellLink
           href={row.href}
           className={cn(
-            "font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums",
+            "font-data text-base font-normal tracking-[-0.03em] tabular-nums",
             row.apy ? "text-foreground dark:text-white" : "text-muted-foreground",
           )}
         >
@@ -619,17 +619,17 @@ const LoopTableRow = React.memo(function LoopTableRow({
       <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
         <CellLink
           href={row.href}
-          className="block font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white"
+          className="block font-data text-base font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white"
         >
           {row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"}
         </CellLink>
       </td>
       <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
         <CellLink href={row.href} className="block">
-          <span className="block font-data text-[15px] font-normal tabular-nums text-foreground dark:text-white">
+          <span className="block font-data text-base font-normal tabular-nums text-foreground dark:text-white">
             {Math.round(row.collateralFactor * 100)}%
           </span>
-          <span className="mt-0.5 block font-data text-[12px] tabular-nums text-muted-foreground">
+          <span className="mt-0.5 block font-data text-xs tabular-nums text-muted-foreground">
             {t("LT")}: {Math.round(row.liquidationThreshold * 100)}%
           </span>
         </CellLink>
@@ -637,7 +637,7 @@ const LoopTableRow = React.memo(function LoopTableRow({
       <td className={`py-3 px-4 pr-6 ${TABLE_ROW_HOVER_BG}`}>
         {row.waitlistHref ? (
           <div className="inline-flex items-center">
-            <Button asChild size="sm" className="h-6 rounded-xs px-2.5 text-[11px]">
+            <Button asChild size="sm" className="h-6 rounded-xs px-2.5 text-xs">
               <a href={row.waitlistHref} target="_blank" rel="noreferrer">
                 {t("Join waitlist")}
               </a>
@@ -645,14 +645,14 @@ const LoopTableRow = React.memo(function LoopTableRow({
           </div>
         ) : (
           <CellLink href={row.href} className="block text-foreground">
-            <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+            <span className="block text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">
               {row.availablePrimary ??
                 (parseCompactUsdLabel(row.points) == null
                   ? (row.points ?? "—")
                   : compact(parseCompactUsdLabel(row.points) as number))}
             </span>
             {row.availableSecondary ? (
-              <span className="mt-0.5 block text-[13px] tracking-[-0.03em] text-muted-foreground">
+              <span className="mt-0.5 block text-sm tracking-[-0.03em] text-muted-foreground">
                 {parseCompactUsdLabel(row.availableSecondary) == null
                   ? row.availableSecondary
                   : compact(parseCompactUsdLabel(row.availableSecondary) as number)}
@@ -753,10 +753,10 @@ const MobileLoopCard = React.memo(function MobileLoopCard({
                   ) : null}
                 </div>
                 <div className="min-w-0">
-                  <div className="truncate text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+                  <div className="truncate text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">
                     {row.protocol}
                   </div>
-                  <div className="mt-0.5 truncate text-[12px] tracking-[-0.03em] text-muted-foreground">
+                  <div className="mt-0.5 truncate text-xs tracking-[-0.03em] text-muted-foreground">
                     {row.asset}
                   </div>
                 </div>
@@ -817,13 +817,13 @@ function TrendingLoopCard({
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[15px] font-normal tracking-[-0.03em] text-foreground">{snapshot.label}</div>
-          <div className="mt-1 text-[13px] text-muted-foreground dark:text-white/48">{t("Loop market")}</div>
+          <div className="truncate text-base font-normal tracking-[-0.03em] text-foreground">{snapshot.label}</div>
+          <div className="mt-1 text-sm text-muted-foreground dark:text-white/48">{t("Loop market")}</div>
         </div>
 
         <div className="shrink-0 text-right">
-          <div className="font-data text-[15px] font-normal tracking-[-0.03em] text-success">{snapshot.apyLabel}</div>
-          <div className="mt-1 text-[13px] text-muted-foreground dark:text-white/48">{t("LOOP APY")}</div>
+          <div className="font-data text-base font-normal tracking-[-0.03em] text-success">{snapshot.apyLabel}</div>
+          <div className="mt-1 text-sm text-muted-foreground dark:text-white/48">{t("LOOP APY")}</div>
         </div>
       </div>
     </>

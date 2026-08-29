@@ -62,7 +62,7 @@ export function RetrievalChunks({
             )}
           >
             <div className="flex items-baseline gap-2">
-              <span className="text-foreground/90 min-w-0 flex-1 truncate text-[13px] font-normal">{chunk.source}</span>
+              <span className="text-foreground/90 min-w-0 flex-1 truncate text-sm font-normal">{chunk.source}</span>
               <span className={cn(mono, "text-foreground/30 shrink-0")}>{chunk.locator}</span>
               <span
                 className={cn(

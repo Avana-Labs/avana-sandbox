@@ -159,7 +159,7 @@ export function ProcessingNarration({ verb }: { verb: string }) {
           <li
             key={line}
             className={cn(
-              "flex items-center gap-2.5 text-[14px] animate-in fade-in slide-in-from-bottom-1 duration-300 motion-reduce:animate-none",
+              "flex items-center gap-2.5 text-sm animate-in fade-in slide-in-from-bottom-1 duration-300 motion-reduce:animate-none",
               isDone ? "text-muted-foreground" : "font-normal text-foreground",
             )}
           >

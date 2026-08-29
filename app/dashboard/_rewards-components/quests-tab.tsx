@@ -99,18 +99,18 @@ function AvanaQuestCard({
 
       <Card className="flex flex-1 flex-col items-center rounded-radius-md border border-border/60 bg-card p-3 text-center shadow-none">
         <h3
-          className={`line-clamp-2 text-[13px] font-normal leading-4 tracking-[-0.02em] text-foreground ${isClaimed ? "opacity-55" : ""}`}
+          className={`line-clamp-2 text-sm font-normal leading-4 tracking-[-0.02em] text-foreground ${isClaimed ? "opacity-55" : ""}`}
         >
           {t(quest.title)}
         </h3>
-        <p className={`mt-1 line-clamp-1 text-[11px] leading-4 text-muted-foreground ${isClaimed ? "opacity-55" : ""}`}>
+        <p className={`mt-1 line-clamp-1 text-xs leading-4 text-muted-foreground ${isClaimed ? "opacity-55" : ""}`}>
           {t(metaLine)}
         </p>
 
         {/* The prize — coin + amount, the hero of the card. */}
         <div className={`mt-2.5 flex items-center justify-center gap-1.5 ${isClaimed ? "opacity-55" : ""}`}>
           <AvaCoin size={22} />
-          <span className="font-data text-[22px] font-normal leading-none tracking-tight text-foreground">
+          <span className="font-data text-2xl font-normal leading-none tracking-tight text-foreground">
             {rewardValue}
           </span>
         </div>
@@ -123,7 +123,7 @@ function AvanaQuestCard({
             }
           }}
           disabled={isDisabled}
-          className={`mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-radius-sm px-3 text-[13px] font-normal transition-colors [&_svg]:size-4 ${
+          className={`mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-radius-sm px-3 text-sm font-normal transition-colors [&_svg]:size-4 ${
             isClaimable
               ? "bg-brand text-white shadow-sm hover:bg-brand/90"
               : isDisabled
@@ -136,7 +136,7 @@ function AvanaQuestCard({
         </button>
 
         {quest.expiration ? (
-          <div className="mt-2 text-[10px] text-muted-foreground">
+          <div className="mt-2 text-xs text-muted-foreground">
             {t("Expiration")} · {quest.expiration}
           </div>
         ) : null}
@@ -218,7 +218,7 @@ export function RewardsPromoContent({
       {showRewards && activeQuests.length > 0 ? (
         <RewardsQuestSection title={rewardsSectionTitle} quests={activeQuests} onTaskAction={onTaskAction} />
       ) : showRewards ? (
-        <p className="text-[13px] text-muted-foreground">{t("No quests here yet — check back soon.")}</p>
+        <p className="text-sm text-muted-foreground">{t("No quests here yet — check back soon.")}</p>
       ) : null}
     </div>
   )
@@ -241,8 +241,8 @@ export function RewardsQuestSection({
       <div className="flex flex-wrap items-start justify-between gap-3">
         {title ? (
           <div>
-            <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{title}</h2>
-            <p className="mt-1 text-[13px] text-muted-foreground">
+            <h2 className="text-base font-normal tracking-tight text-foreground md:text-lg">{title}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
               {t("{count} rewards").replace("{count}", String(quests.length))}
             </p>
           </div>

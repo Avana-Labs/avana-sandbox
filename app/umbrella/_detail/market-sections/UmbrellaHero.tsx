@@ -55,7 +55,7 @@ export function UmbrellaHero() {
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <h2 className="text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+          <h2 className="text-2xl font-normal leading-none tracking-[-0.03em] text-foreground md:text-2xl">
             {t("Your Umbrella")}
           </h2>
           <button
@@ -75,7 +75,7 @@ export function UmbrellaHero() {
           <div className="grid grid-cols-2 gap-5 lg:grid-cols-4 lg:divide-x lg:divide-border">
             {userUmbrellaSnapshot.map((item) => (
               <div key={item.label} className="min-w-0 lg:px-5 first:lg:pl-0 last:lg:pr-0">
-                <div className="text-[13px] text-muted-foreground">{item.label}</div>
+                <div className="text-sm text-muted-foreground">{item.label}</div>
                 <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
                   <span className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-normal leading-none tracking-[-0.04em] text-foreground">
                     {showDollarAmounts ? item.value : "••••"}
@@ -83,7 +83,7 @@ export function UmbrellaHero() {
                   {showDollarAmounts && item.change ? (
                     <span
                       className={cn(
-                        "text-[13px] font-normal tabular-nums lg:text-[14px]",
+                        "text-sm font-normal tabular-nums lg:text-sm",
                         item.tone === "warning" && "text-warning",
                         item.tone === "danger" && "text-danger",
                         item.tone === "success" && "text-success",

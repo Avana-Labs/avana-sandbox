@@ -56,7 +56,7 @@ export function LearnSection() {
   return (
     <section className="min-w-0">
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+        <h2 className="text-2xl font-normal leading-none tracking-[-0.03em] text-foreground md:text-2xl">
           {t("Learn Avana")}
         </h2>
       </div>
@@ -64,8 +64,8 @@ export function LearnSection() {
         {LEARN_CARDS.map((card) => (
           <article key={card.title} className="rounded-radius-md bg-card px-4 py-4">
             <card.icon className="h-6 w-6 text-brand" strokeWidth={1.75} />
-            <h3 className="mt-4 text-[17px] font-normal tracking-[-0.03em]">{card.title}</h3>
-            <p className="mt-2 text-[14px] leading-6 text-muted-foreground">{card.body}</p>
+            <h3 className="mt-4 text-lg font-normal tracking-[-0.03em]">{card.title}</h3>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">{card.body}</p>
           </article>
         ))}
       </div>

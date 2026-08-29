@@ -359,7 +359,7 @@ export function ActionConfigureStage({
       {showStandaloneLeverage ? (
         <div>
           {leverageHint ? (
-            <p className="mb-3 text-[12px] leading-5 text-muted-foreground">{t(String(leverageHint))}</p>
+            <p className="mb-3 text-xs leading-5 text-muted-foreground">{t(String(leverageHint))}</p>
           ) : null}
           <ActionLeverageRuler
             value={multiplier ?? "3"}

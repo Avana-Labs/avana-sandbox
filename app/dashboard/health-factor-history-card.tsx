@@ -33,7 +33,7 @@ function HealthFactorHistoryInner({ walletId }: { walletId: string | undefined }
 
   return (
     <div className="rounded-radius-md border border-border bg-card px-4 py-4 dark:bg-white/[0.04]">
-      <h4 className="mb-2 text-[13px] font-normal text-muted-foreground">{t("Health factor over time")}</h4>
+      <h4 className="mb-2 text-sm font-normal text-muted-foreground">{t("Health factor over time")}</h4>
       <MarketHeroChart
         feed={feed}
         defaultRange="1M"

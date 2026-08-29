@@ -113,7 +113,7 @@ export function ActionPageShell({
               {t(title)}
             </h1>
             {subtitle ? (
-              <p className="mt-1.5 text-[15px] leading-relaxed text-muted-foreground">{t(subtitle)}</p>
+              <p className="mt-1.5 text-base leading-relaxed text-muted-foreground">{t(subtitle)}</p>
             ) : null}
           </div>
         ) : null}

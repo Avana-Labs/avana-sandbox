@@ -47,14 +47,14 @@ function FeeCard({
 }) {
   return (
     <div className="rounded-radius-md border-0 bg-card px-4 py-4 dark:bg-white/[0.04]">
-      <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
         {label}
         <Info className="h-3 w-3" />
       </div>
       <div className="mt-3 flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <AvanaCoin />
-          <span className="truncate text-[24px] font-normal leading-none tracking-[-0.03em] text-foreground sm:text-[26px]">
+          <span className="truncate text-2xl font-normal leading-none tracking-[-0.03em] text-foreground sm:text-3xl">
             {hidden ? "••••" : value}
           </span>
         </div>

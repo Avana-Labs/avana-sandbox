@@ -72,8 +72,8 @@ function PoolIdentity({ row }: { row: DashboardWalletBalanceRow }) {
       <div className="flex min-w-0 items-center gap-3">
         <TokenIcon symbol={row.symbol} size="table" />
         <div className="flex min-w-0 flex-col">
-          <div className="truncate text-[15px] font-normal tracking-[-0.03em] text-foreground">{row.name}</div>
-          <div className="text-[11px] text-muted-foreground">{detail.protocol}</div>
+          <div className="truncate text-base font-normal tracking-[-0.03em] text-foreground">{row.name}</div>
+          <div className="text-xs text-muted-foreground">{detail.protocol}</div>
         </div>
       </div>
     )
@@ -87,7 +87,7 @@ function PoolSourceStatus({ row }: { row: DashboardWalletBalanceRow }) {
   return (
     <span
       className={[
-        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-normal",
+        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-normal",
         pledged ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
       ].join(" ")}
     >
@@ -100,8 +100,8 @@ function PoolSourceStatus({ row }: { row: DashboardWalletBalanceRow }) {
 function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
   return (
     <div className="flex flex-col items-end pr-4">
-      <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground">{token}</span>
-      <span className="text-[13px] text-muted-foreground">{usd}</span>
+      <span className="text-base font-normal tracking-[-0.03em] text-foreground">{token}</span>
+      <span className="text-sm text-muted-foreground">{usd}</span>
     </div>
   )
 }
@@ -109,7 +109,7 @@ function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
 function WalletMetric({ label, value }: { label: string; value: string }) {
   return (
     <article className="min-w-0 space-y-1.5">
-      <div className="text-[13px] text-muted-foreground">{label}</div>
+      <div className="text-sm text-muted-foreground">{label}</div>
       <div className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-normal leading-none tracking-[-0.04em] text-foreground">
         {value}
       </div>
@@ -132,7 +132,7 @@ function PnlCell({
     return (
       <div className="text-right">
         <div className="font-data tabular-nums text-foreground">{MASK}</div>
-        <div className="mt-0.5 text-[13px] text-muted-foreground">{MASK}</div>
+        <div className="mt-0.5 text-sm text-muted-foreground">{MASK}</div>
       </div>
     )
   }
@@ -146,7 +146,7 @@ function PnlCell({
   return (
     <div className="text-right">
       <div className={`font-data tabular-nums ${toneClass}`}>{exact(pnl.pnlUsd)}</div>
-      <div className={`mt-0.5 text-[12px] ${toneClass}`}>
+      <div className={`mt-0.5 text-xs ${toneClass}`}>
         {arrow} {pct}
       </div>
     </div>
@@ -183,9 +183,7 @@ export function DashboardWalletTab({ walletId, balances }: { walletId: string; b
   return (
     <section id="dashboard-wallet" className={detailSectionStackClass} aria-label={t("Wallet balances")}>
       <section className="space-y-4">
-        <h2 className="text-[19px] font-normal tracking-[-0.03em] text-foreground md:text-[20px]">
-          {t("Wallet Balance")}
-        </h2>
+        <h2 className="text-xl font-normal tracking-[-0.03em] text-foreground md:text-xl">{t("Wallet Balance")}</h2>
         <div className="grid w-full grid-cols-1 gap-5 xl:gap-x-8">
           <WalletMetric label={t("Wallet Value")} value={m(exact(totalWalletUsd))} />
         </div>
@@ -214,12 +212,12 @@ function WalletBalanceSection({
   return (
     <section className="min-w-0">
       <div className="mb-4">
-        <h3 className="text-[18px] font-normal tracking-tight text-foreground md:text-[20px]">{title}</h3>
-        <p className="mt-1 text-[13px] text-muted-foreground">{sectionCount(rows.length, "token", "tokens")}</p>
+        <h3 className="text-lg font-normal tracking-tight text-foreground md:text-xl">{title}</h3>
+        <p className="mt-1 text-sm text-muted-foreground">{sectionCount(rows.length, "token", "tokens")}</p>
       </div>
 
       <DesktopTableSurface className="hidden !rounded-none md:block">
-        <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
+        <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-sm">
           <colgroup>
             <col className="w-[29%]" />
             <col className="w-[13%]" />
@@ -228,7 +226,7 @@ function WalletBalanceSection({
             <col className="w-[20%]" />
           </colgroup>
           <thead>
-            <tr className="text-left text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <tr className="text-left text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <th className="bg-table-header px-5 pb-2 pt-2.5">{t("Asset")}</th>
               <th className="bg-table-header px-4 pb-2 pt-2.5 text-right">{t("Price")}</th>
               <th className="bg-table-header px-4 pb-2 pt-2.5 text-right">{t("Balance")}</th>
@@ -243,27 +241,27 @@ function WalletBalanceSection({
                   <div className="flex min-w-0 items-center gap-3">
                     <TokenIcon symbol={row.symbol} size="table" />
                     <div className="min-w-0">
-                      <div className="truncate text-[15px] font-normal tracking-[-0.03em] text-foreground">
+                      <div className="truncate text-base font-normal tracking-[-0.03em] text-foreground">
                         {row.name}
                       </div>
-                      <div className="mt-0.5 text-[13px] text-muted-foreground">
+                      <div className="mt-0.5 text-sm text-muted-foreground">
                         {row.symbol} · {row.sourceLabel}
                       </div>
                     </div>
                   </div>
                 </td>
                 <td
-                  className={`px-4 py-4 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground ${TABLE_ROW_HOVER_BG}`}
+                  className={`px-4 py-4 text-right text-base font-normal tracking-[-0.03em] text-foreground ${TABLE_ROW_HOVER_BG}`}
                 >
                   {m(row.valueUsd > 0 && row.amount > 0 ? exact(row.valueUsd / row.amount) : DASH)}
                 </td>
                 <td
-                  className={`px-4 py-4 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground ${TABLE_ROW_HOVER_BG}`}
+                  className={`px-4 py-4 text-right text-base font-normal tracking-[-0.03em] text-foreground ${TABLE_ROW_HOVER_BG}`}
                 >
                   {m(formatAssetAmount(row.amount, row.symbol))}
                 </td>
                 <td
-                  className={`px-4 py-4 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground ${TABLE_ROW_HOVER_BG}`}
+                  className={`px-4 py-4 text-right text-base font-normal tracking-[-0.03em] text-foreground ${TABLE_ROW_HOVER_BG}`}
                 >
                   {m(exact(row.valueUsd))}
                 </td>
@@ -274,7 +272,7 @@ function WalletBalanceSection({
             ))}
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-5 py-8 text-center text-[14px] text-muted-foreground">
+                <td colSpan={5} className="px-5 py-8 text-center text-sm text-muted-foreground">
                   {t("No wallet balances found.")}
                 </td>
               </tr>
@@ -285,27 +283,27 @@ function WalletBalanceSection({
 
       <div className="space-y-3 md:hidden">
         {rows.map((row) => (
-          <div key={row.id} className="rounded-radius-lg border border-border bg-card p-4">
+          <div key={row.id} className="rounded-radius-md border-0 bg-card p-4 shadow-none">
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 items-center gap-3">
                 <TokenIcon symbol={row.symbol} size="md" />
                 <div className="min-w-0">
                   <div className="truncate font-normal text-foreground">{row.name}</div>
-                  <div className="text-[13px] text-muted-foreground">
+                  <div className="text-sm text-muted-foreground">
                     {row.symbol} · {row.sourceLabel}
                   </div>
                 </div>
               </div>
               <div className="text-right">
-                <div className="font-data text-[15px] font-normal tabular-nums text-foreground">
+                <div className="font-data text-base font-normal tabular-nums text-foreground">
                   {m(exact(row.valueUsd))}
                 </div>
-                <div className="font-data text-[12.5px] tabular-nums text-muted-foreground">
+                <div className="font-data text-xs tabular-nums text-muted-foreground">
                   {m(formatAssetAmount(row.amount, row.symbol))}
                 </div>
               </div>
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-3 text-[13px]">
+            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
               <div>
                 <div className="text-muted-foreground">{t("Price")}</div>
                 <div className="mt-1 font-data tabular-nums text-foreground">
@@ -322,7 +320,7 @@ function WalletBalanceSection({
           </div>
         ))}
         {rows.length === 0 ? (
-          <div className="rounded-radius-lg border border-border bg-card p-5 text-center text-[14px] text-muted-foreground">
+          <div className="rounded-radius-md border-0 bg-card p-5 text-center text-sm text-muted-foreground shadow-none">
             {t("No wallet balances found.")}
           </div>
         ) : null}
@@ -348,12 +346,12 @@ function PoolsBalanceSection({
   return (
     <section className="min-w-0">
       <div className="mb-4">
-        <h3 className="text-[18px] font-normal tracking-tight text-foreground md:text-[20px]">{title}</h3>
-        <p className="mt-1 text-[13px] text-muted-foreground">{sectionCount(rows.length, "pool", "pools")}</p>
+        <h3 className="text-lg font-normal tracking-tight text-foreground md:text-xl">{title}</h3>
+        <p className="mt-1 text-sm text-muted-foreground">{sectionCount(rows.length, "pool", "pools")}</p>
       </div>
 
       <DesktopTableSurface className="hidden !rounded-none md:block">
-        <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
+        <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-sm">
           <colgroup>
             <col className="w-[28%]" />
             <col className="w-[16%]" />
@@ -361,7 +359,7 @@ function PoolsBalanceSection({
             <col className="w-[30%]" />
           </colgroup>
           <thead>
-            <tr className="text-left text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <tr className="text-left text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <th className="bg-table-header px-5 pb-2 pt-2.5">{t("Pool")}</th>
               <th className="bg-table-header px-4 pb-2 pt-2.5">{t("Status")}</th>
               <th className="bg-table-header px-4 pb-2 pt-2.5 text-right">{t("Balance")}</th>
@@ -389,7 +387,7 @@ function PoolsBalanceSection({
             })}
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-5 py-8 text-center text-[14px] text-muted-foreground">
+                <td colSpan={5} className="px-5 py-8 text-center text-sm text-muted-foreground">
                   {t("No wallet balances found.")}
                 </td>
               </tr>
@@ -401,14 +399,14 @@ function PoolsBalanceSection({
       <div className="space-y-3 md:hidden">
         {rows.map((row) => {
           return (
-            <div key={row.id} className="rounded-radius-lg border border-border bg-card p-4">
+            <div key={row.id} className="rounded-radius-md border-0 bg-card p-4 shadow-none">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-3">
                   <PoolIdentity row={row} />
                 </div>
                 <PoolSourceStatus row={row} />
               </div>
-              <div className="mt-4 grid grid-cols-2 gap-3 text-[13px]">
+              <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <div className="text-muted-foreground">{t("Status")}</div>
                   <div className="mt-1">
@@ -419,18 +417,18 @@ function PoolsBalanceSection({
                   <div className="text-muted-foreground">{t("Balance")}</div>
                   <div className="mt-1 flex flex-col gap-0.5">
                     <span className="font-data tabular-nums text-foreground">{m(formatPoolAmount(row.amount))}</span>
-                    <span className="text-[13px] text-muted-foreground">{m(exact(row.valueUsd))}</span>
+                    <span className="text-sm text-muted-foreground">{m(exact(row.valueUsd))}</span>
                   </div>
                 </div>
               </div>
-              <div className="mt-3 grid grid-cols-1 gap-3 text-[13px]">
+              <div className="mt-3 grid grid-cols-1 gap-3 text-sm">
                 <div>
                   <div className="text-muted-foreground">{t("Fees")}</div>
                   <div className="mt-1 flex flex-col gap-0.5">
                     <span className="font-data tabular-nums text-foreground">
                       {m(exact(poolUiDetail(row).feesUsd))}
                     </span>
-                    <span className="text-[13px] text-muted-foreground">{m(t("Unclaimed fees"))}</span>
+                    <span className="text-sm text-muted-foreground">{m(t("Unclaimed fees"))}</span>
                   </div>
                 </div>
               </div>
@@ -438,7 +436,7 @@ function PoolsBalanceSection({
           )
         })}
         {rows.length === 0 ? (
-          <div className="rounded-radius-lg border border-border bg-card p-5 text-center text-[14px] text-muted-foreground">
+          <div className="rounded-radius-md border-0 bg-card p-5 text-center text-sm text-muted-foreground shadow-none">
             {t("No wallet balances found.")}
           </div>
         ) : null}

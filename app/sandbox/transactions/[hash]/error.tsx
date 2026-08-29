@@ -21,7 +21,7 @@ export default function SyntheticTransactionError({ error, reset }: { error: Err
   return (
     <main className="mx-auto flex min-h-[70vh] w-full max-w-md flex-col px-5 py-12 md:py-16">
       <header className="mb-6">
-        <h1 className="text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+        <h1 className="text-2xl font-normal leading-none tracking-[-0.03em] text-foreground md:text-2xl">
           {t("Transaction receipt")}
         </h1>
       </header>

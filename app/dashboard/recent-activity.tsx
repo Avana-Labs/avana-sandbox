@@ -191,7 +191,7 @@ export function RecentActivity({
   return (
     <div className="min-w-0 min-h-0">
       {isLoadingConvex && !sortedRows.length ? (
-        <div className="rounded-radius-md border border-border px-4 py-8 text-center text-[13px] text-muted-foreground">
+        <div className="rounded-radius-md border border-border px-4 py-8 text-center text-sm text-muted-foreground">
           {t("Loading")}…
         </div>
       ) : sortedRows.length ? (
@@ -230,10 +230,10 @@ export function RecentActivity({
                 >
                   <TokenIcon symbol={inferActivityTokenSymbol(row)} size="md" className="shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[14px] font-normal leading-5 tracking-[-0.02em] text-foreground">
+                    <div className="truncate text-sm font-normal leading-5 tracking-[-0.02em] text-foreground">
                       {row.primaryLabel}
                     </div>
-                    <div className="mt-0.5 truncate text-[12.5px] leading-4 text-muted-foreground">
+                    <div className="mt-0.5 truncate text-xs leading-4 text-muted-foreground">
                       {[t(KIND_LABEL[row.kind]), row.secondaryLabel || null, formatRelativeTime(row.at)]
                         .filter(Boolean)
                         .join(" · ")}
@@ -242,7 +242,7 @@ export function RecentActivity({
                   <div className="flex shrink-0 items-center gap-1.5">
                     <span
                       className={cn(
-                        "font-data text-[14px] font-normal tabular-nums tracking-[-0.02em]",
+                        "font-data text-sm font-normal tabular-nums tracking-[-0.02em]",
                         amountToneClass(row),
                       )}
                     >
@@ -265,7 +265,7 @@ export function RecentActivity({
           {hasMore ? (
             <div
               ref={sentinelRef}
-              className="border-t border-border px-3.5 py-3 text-center text-[12.5px] text-muted-foreground"
+              className="border-t border-border px-3.5 py-3 text-center text-xs text-muted-foreground"
               aria-live="polite"
             >
               {isLoadingMore ? `${t("Loading")}…` : null}
@@ -273,7 +273,7 @@ export function RecentActivity({
           ) : null}
         </div>
       ) : (
-        <div className="rounded-radius-md border border-border px-4 py-8 text-center text-[13px] text-muted-foreground">
+        <div className="rounded-radius-md border border-border px-4 py-8 text-center text-sm text-muted-foreground">
           {t("No recent activity.")}
         </div>
       )}

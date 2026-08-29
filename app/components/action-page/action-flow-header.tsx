@@ -45,7 +45,7 @@ export function ActionFlowHeader({
       </Link>
 
       <div className="pointer-events-none absolute left-1/2 w-[min(520px,calc(100%-128px))] -translate-x-1/2 text-center sm:w-[min(560px,calc(100%-192px))]">
-        <div className="truncate text-[13px] font-normal leading-none text-foreground sm:text-sm">{stepText}</div>
+        <div className="truncate text-sm font-normal leading-none text-foreground sm:text-sm">{stepText}</div>
         <div className="mx-auto mt-1.5 h-1 w-full max-w-[180px] overflow-hidden rounded-full bg-muted sm:max-w-[520px]">
           <div
             className="h-full rounded-full bg-brand transition-[width] duration-500 ease-out"

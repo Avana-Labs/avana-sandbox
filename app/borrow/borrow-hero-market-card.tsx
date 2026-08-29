@@ -35,13 +35,13 @@ export function HeroMarketCard({ title, subtitle, hideTitleOnMobile = false, cla
         <div className="mb-3">
           <h3
             className={cn(
-              "text-[14px] tracking-tight text-foreground md:text-[15px]",
+              "text-sm tracking-tight text-foreground md:text-base",
               hideTitleOnMobile ? "hidden md:block" : "",
             )}
           >
             {title}
           </h3>
-          {subtitle ? <p className="mt-0.5 text-[11.5px] leading-4 text-muted-foreground">{subtitle}</p> : null}
+          {subtitle ? <p className="mt-0.5 text-xs leading-4 text-muted-foreground">{subtitle}</p> : null}
         </div>
       ) : null}
 
@@ -57,12 +57,12 @@ export function HeroMarketCard({ title, subtitle, hideTitleOnMobile = false, cla
             </div>
 
             <div className="ml-auto flex min-w-0 shrink-0 flex-col items-end gap-1 text-right">
-              <div className="font-data text-[13px] font-normal tabular-nums leading-tight tracking-tight text-foreground md:text-[14px]">
+              <div className="font-data text-sm font-normal tabular-nums leading-tight tracking-tight text-foreground md:text-sm">
                 {row.value}
               </div>
               <div
                 className={cn(
-                  "font-data text-[11px] font-normal tabular-nums leading-tight md:text-[12px]",
+                  "font-data text-xs font-normal tabular-nums leading-tight md:text-xs",
                   row.deltaClassName,
                 )}
               >

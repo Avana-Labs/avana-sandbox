@@ -114,7 +114,7 @@ export function Header() {
           href={link.href}
           aria-label={t(link.label)}
           title={t(link.label)}
-          className={`inline-flex shrink-0 items-center rounded-full font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
+          className={`inline-flex shrink-0 items-center rounded-full font-sans text-base font-normal leading-[1.15] transition-colors ${
             compact ? "px-2.5 py-1.5" : "px-3 py-2"
           } ${isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
         >
@@ -139,7 +139,7 @@ export function Header() {
           href={link.href}
           aria-label={t(link.label)}
           title={t(link.label)}
-          className={`group inline-flex shrink-0 items-center rounded-full font-sans text-[16px] font-normal leading-[1.15] transition-colors ${
+          className={`group inline-flex shrink-0 items-center rounded-full font-sans text-base font-normal leading-[1.15] transition-colors ${
             compact ? "px-1.5 py-1.5" : "px-2.5 py-2"
           } ${
             isActive

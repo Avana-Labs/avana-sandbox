@@ -97,12 +97,12 @@ function MerklMysteryCard({ amount }: { amount: number }) {
 
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <AvaCoin size={22} />
-          <span className="font-data text-[22px] font-normal leading-none tracking-tight text-foreground">
+          <span className="font-data text-2xl font-normal leading-none tracking-tight text-foreground">
             {formatAvaAmount(amount)}
           </span>
         </div>
 
-        <div className="mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-radius-sm bg-muted/60 px-3 text-[13px] font-normal text-muted-foreground [&_svg]:size-4">
+        <div className="mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-radius-sm bg-muted/60 px-3 text-sm font-normal text-muted-foreground [&_svg]:size-4">
           <LockKeyhole />
           {t("Locked")}
         </div>
@@ -120,10 +120,10 @@ export function MerklRewardsSection() {
     <section aria-label={t("Merkl Rewards")} className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">
+          <h2 className="text-base font-normal tracking-tight text-foreground md:text-lg">
             {t("Merkl Rewards")}
           </h2>
-          <p className="mt-1 text-[13px] text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             {t("{count} rewards").replace("{count}", String(count))} · {t("Open on Launch Date")}
           </p>
         </div>

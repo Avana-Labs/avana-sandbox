@@ -48,7 +48,7 @@ export function ErrorState({ title, detail, retrying, onRetry, className, ...pro
       <CircleAlertIcon className="mt-0.5 size-4 shrink-0 text-red-500/80" />
       <div>
         <p className="font-normal text-red-600 dark:text-red-400">{title}</p>
-        <p className="mt-0.5 text-[13px] leading-snug text-red-600/60 dark:text-red-400/60">{detail}</p>
+        <p className="mt-0.5 text-sm leading-snug text-red-600/60 dark:text-red-400/60">{detail}</p>
       </div>
       {onRetry ? (
         <button

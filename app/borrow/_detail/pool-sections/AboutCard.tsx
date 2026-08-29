@@ -72,8 +72,8 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
         <h2
           className={
             compact
-              ? "truncate text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]"
-              : "truncate text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]"
+              ? "truncate text-2xl font-normal leading-none tracking-[-0.03em] text-foreground md:text-2xl"
+              : "truncate text-2xl font-normal leading-none tracking-[-0.03em] text-foreground md:text-2xl"
           }
         >
           {t(title)}
@@ -83,8 +83,8 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
       <p
         className={
           plain
-            ? "text-[15px] leading-[1.6] text-muted-foreground md:text-[16px]"
-            : "px-4 text-[15px] leading-[1.6] text-muted-foreground md:text-[16px]"
+            ? "text-base leading-[1.6] text-muted-foreground md:text-base"
+            : "px-4 text-base leading-[1.6] text-muted-foreground md:text-base"
         }
       >
         {shownDescription}
@@ -100,7 +100,7 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
       </p>
 
       {visibleStats.length > 0 ? (
-        <dl className={plain ? "text-[13.5px]" : "px-4 pb-2 text-[13.5px]"}>
+        <dl className={plain ? "text-sm" : "px-4 pb-2 text-sm"}>
           {visibleStats.map((s) => {
             const help = ABOUT_CONTRACT_ADDRESS_HELP[s.label]
             return (

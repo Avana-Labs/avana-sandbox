@@ -39,7 +39,7 @@ export function DetailActionTabs<T extends string>({ items, value, onChange, ari
             data-state={active ? "active" : "inactive"}
             onClick={() => onChange(item.id)}
             className={cn(
-              "shrink-0 rounded-full px-2.5 py-2 text-[14px] font-normal leading-none text-foreground/65 transition-colors hover:text-foreground sm:px-3.5 sm:text-[15px]",
+              "shrink-0 rounded-full px-2.5 py-2 text-sm font-normal leading-none text-foreground/65 transition-colors hover:text-foreground sm:px-3.5 sm:text-base",
               active && "bg-muted px-3 py-2.5 text-foreground sm:px-4",
             )}
           >

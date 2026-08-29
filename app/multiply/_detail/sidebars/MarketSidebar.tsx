@@ -52,7 +52,7 @@ function MarketActionRail({ detail, className, embedActions = false }: Props & {
   if (!market) {
     return (
       <div className={cn("rounded-radius-xl border border-border bg-background px-4 py-5", className)}>
-        <p className="text-[15px] leading-6 text-muted-foreground">
+        <p className="text-base leading-6 text-muted-foreground">
           {t("Open a looped position in {name}.").replace("{name}", detail.hero.name)}
         </p>
         <ActionPageLaunchCta

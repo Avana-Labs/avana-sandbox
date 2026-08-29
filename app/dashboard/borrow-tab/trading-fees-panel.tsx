@@ -57,7 +57,7 @@ export function TradingFeesPanel({
       value: (
         <span className="inline-flex items-baseline gap-2">
           {m(exact(summary.unrealizedPlUsd))}
-          <span className={cn("text-[13px] font-normal", plPositive ? "text-success" : "text-danger")}>
+          <span className={cn("text-sm font-normal", plPositive ? "text-success" : "text-danger")}>
             {plPositive ? "+" : ""}
             {summary.unrealizedPlPct.toFixed(2)}%
           </span>
@@ -78,7 +78,7 @@ export function TradingFeesPanel({
     return (
       <section>
         <AssetSummaryStrip metrics={summaryMetrics} />
-        <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-[13px] text-muted-foreground">
+        <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-sm text-muted-foreground">
           {t("No liquidity pools yet. Provide liquidity to start earning trading fees.")}
         </div>
       </section>
@@ -89,8 +89,8 @@ export function TradingFeesPanel({
     <section>
       {showHeading ? (
         <div className="mb-4">
-          <h3 className="text-[18px] font-normal tracking-tight text-foreground md:text-[20px]">{t("Trading Fees")}</h3>
-          <p className="mt-1 text-[13px] text-muted-foreground">{formatSectionCount(rows.length, "pool", "pools")}</p>
+          <h3 className="text-lg font-normal tracking-tight text-foreground md:text-xl">{t("Trading Fees")}</h3>
+          <p className="mt-1 text-sm text-muted-foreground">{formatSectionCount(rows.length, "pool", "pools")}</p>
         </div>
       ) : null}
       <AssetSummaryStrip metrics={summaryMetrics} />
@@ -99,7 +99,7 @@ export function TradingFeesPanel({
       <div className="hidden md:block">
         <DesktopTableSurface className="!rounded-none">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[680px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className="w-full min-w-[680px] table-fixed border-separate border-spacing-0 text-sm">
               <colgroup>
                 <col className="w-[24%]" />
                 <col className="w-[13%]" />
@@ -141,7 +141,7 @@ export function TradingFeesPanel({
                     </td>
                     <td
                       className={cn(
-                        "py-3.5 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white",
+                        "py-3.5 text-right text-base font-normal tracking-[-0.03em] text-foreground dark:text-white",
                         TABLE_ROW_HOVER_BG,
                       )}
                     >
@@ -226,10 +226,10 @@ function PoolIdentity({
         </span>
       </span>
       <div className="flex min-w-0 flex-col">
-        <span className="truncate text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+        <span className="truncate text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">
           {label}
         </span>
-        <span className="text-[11px] text-muted-foreground">{protocol}</span>
+        <span className="text-xs text-muted-foreground">{protocol}</span>
       </div>
     </div>
   )
@@ -240,7 +240,7 @@ function RangeStatus({ inRange }: { inRange: boolean }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-normal",
+        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-normal",
         inRange ? "bg-success/12 text-success" : "bg-amber-500/12 text-amber-600 dark:text-amber-400",
       )}
     >
@@ -253,8 +253,8 @@ function RangeStatus({ inRange }: { inRange: boolean }) {
 function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
   return (
     <div className="flex flex-col items-end pr-4">
-      <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">{token}</span>
-      <span className="text-[13px] text-muted-foreground dark:text-white/40">{usd}</span>
+      <span className="text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">{token}</span>
+      <span className="text-sm text-muted-foreground dark:text-white/40">{usd}</span>
     </div>
   )
 }
@@ -287,10 +287,10 @@ function TradingFeeMobileCard({
               </span>
             </span>
             <div className="min-w-0">
-              <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+              <div className="text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">
                 {row.poolLabel}
               </div>
-              <div className="text-[11px] text-muted-foreground">{row.protocol}</div>
+              <div className="text-xs text-muted-foreground">{row.protocol}</div>
             </div>
           </div>
         }
@@ -303,7 +303,7 @@ function TradingFeeMobileCard({
           value={
             <span>
               {mask(row.depositedToken)}
-              <span className="ml-2 text-[13px] text-muted-foreground">{mask(exact(row.depositedUsd))}</span>
+              <span className="ml-2 text-sm text-muted-foreground">{mask(exact(row.depositedUsd))}</span>
             </span>
           }
         />
@@ -312,7 +312,7 @@ function TradingFeeMobileCard({
           value={
             <span>
               {mask(row.feesEarnedToken)}
-              <span className="ml-2 text-[13px] text-muted-foreground">{mask(exact(row.feesEarnedUsd))}</span>
+              <span className="ml-2 text-sm text-muted-foreground">{mask(exact(row.feesEarnedUsd))}</span>
             </span>
           }
         />
@@ -321,7 +321,7 @@ function TradingFeeMobileCard({
         <Button
           type="button"
           variant="brand"
-          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
+          className="h-11 gap-2.5 rounded-radius-sm px-4 text-sm font-normal [&_svg]:size-[18px]"
           onClick={(event) => {
             event.stopPropagation()
             onClaim()
@@ -333,7 +333,7 @@ function TradingFeeMobileCard({
         <Button
           type="button"
           variant="brand-secondary"
-          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
+          className="h-11 gap-2.5 rounded-radius-sm px-4 text-sm font-normal [&_svg]:size-[18px]"
           onClick={(event) => {
             event.stopPropagation()
             onRemove()

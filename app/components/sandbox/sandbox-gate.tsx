@@ -64,9 +64,9 @@ function GateUnavailable({ variant = "error" }: { variant?: "error" | "offline" 
             <br />
             <span className="text-foreground">{t(copy.headlineActive)}</span>
           </h1>
-          <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">{t(copy.note)}</p>
+          <p className="mt-6 max-w-[520px] text-base leading-6 text-muted-foreground">{t(copy.note)}</p>
           <button
-            className="mt-9 inline-flex min-h-12 items-center justify-center rounded-full bg-brand px-7 text-[15px] font-normal text-brand-foreground shadow-elev-1 transition-colors hover:bg-brand/90"
+            className="mt-9 inline-flex min-h-12 items-center justify-center rounded-full bg-brand px-7 text-base font-normal text-brand-foreground shadow-elev-1 transition-colors hover:bg-brand/90"
             onClick={() => window.location.reload()}
             type="button"
           >

@@ -10,7 +10,7 @@ type MetricLabelProps = { label: string; tooltip: string }
 
 function MetricLabel({ label, tooltip }: MetricLabelProps) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[14px] text-muted-foreground">
+    <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
       {label}
       <ActionMetricHelp text={tooltip} topic={label} />
     </span>
@@ -31,15 +31,15 @@ export function UmbrellaMarketRiskMetrics({ market }: { market: UmbrellaMarket }
           label={t("Coverage")}
           tooltip={t("Total user-staked capital available to absorb losses for this asset.")}
         />
-        <span className="text-[15px] font-normal tabular-nums">{formatCompactUsd(market.totalStakedUsd)}</span>
+        <span className="text-base font-normal tabular-nums">{formatCompactUsd(market.totalStakedUsd)}</span>
       </div>
       <div className="flex items-center justify-between gap-3">
         <MetricLabel label={t("Target")} tooltip={t("Desired amount of user-staked coverage for this asset.")} />
-        <span className="text-[15px] font-normal tabular-nums">{formatCompactUsd(market.targetCoverageUsd)}</span>
+        <span className="text-base font-normal tabular-nums">{formatCompactUsd(market.targetCoverageUsd)}</span>
       </div>
       <div className="flex items-center justify-between gap-3">
         <MetricLabel label={t("APY")} tooltip={t("Estimated annual staking yield paid to stakers of this asset.")} />
-        <span className="text-[15px] font-normal tabular-nums">{formatPct(market.apy)}%</span>
+        <span className="text-base font-normal tabular-nums">{formatPct(market.apy)}%</span>
       </div>
       <div className="flex items-center justify-between gap-3">
         <MetricLabel
@@ -48,7 +48,7 @@ export function UmbrellaMarketRiskMetrics({ market }: { market: UmbrellaMarket }
             "Coverage currently in cooldown across all stakers of this asset. Cooldown positions still absorb losses until they finish the 20-day wait and are unstaked.",
           )}
         />
-        <span className="text-[15px] font-normal tabular-nums">{formatCompactUsd(market.amountInCooldownUsd)}</span>
+        <span className="text-base font-normal tabular-nums">{formatCompactUsd(market.amountInCooldownUsd)}</span>
       </div>
     </div>
   )
@@ -108,7 +108,7 @@ export function UmbrellaMarketRiskWaterfall({ market }: { market: UmbrellaMarket
 
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <div>
-          <div className="inline-flex items-center gap-1.5 text-[16px] font-normal tracking-[-0.04em] text-brand">
+          <div className="inline-flex items-center gap-1.5 text-base font-normal tracking-[-0.04em] text-brand">
             {t("{amount} deficit offset").replace("{amount}", formatCompactUsd(market.deficitOffsetUsd))}
             <ActionMetricHelp
               text={t(
@@ -119,7 +119,7 @@ export function UmbrellaMarketRiskWaterfall({ market }: { market: UmbrellaMarket
           </div>
         </div>
         <div className="text-left sm:text-right">
-          <div className="inline-flex items-center gap-1.5 text-[16px] font-normal tracking-[-0.04em] text-danger sm:flex-row-reverse">
+          <div className="inline-flex items-center gap-1.5 text-base font-normal tracking-[-0.04em] text-danger sm:flex-row-reverse">
             {t("{amount} active deficit").replace("{amount}", formatCompactUsd(market.currentDeficitUsd))}
             <ActionMetricHelp
               text={t(
@@ -133,7 +133,7 @@ export function UmbrellaMarketRiskWaterfall({ market }: { market: UmbrellaMarket
         </div>
       </div>
 
-      <div className="mt-2 text-[12px] text-muted-foreground">
+      <div className="mt-2 text-xs text-muted-foreground">
         {t("{pct}% of target coverage.").replace("{pct}", formatPct(coverageRatioPct))}
       </div>
     </div>
@@ -154,15 +154,15 @@ export function UmbrellaStress() {
   return (
     <section>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+        <h2 className="text-2xl font-normal leading-none tracking-[-0.03em] text-foreground md:text-2xl">
           {t("Market Level Risk")}
         </h2>
       </div>
 
       <div className="rounded-radius-md bg-card px-4 py-4">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <p className="text-[13px] text-muted-foreground">{t("Total coverage")}</p>
-          <p className="font-data text-[22px] font-normal leading-none tracking-tight text-foreground md:text-[26px]">
+          <p className="text-sm text-muted-foreground">{t("Total coverage")}</p>
+          <p className="font-data text-2xl font-normal leading-none tracking-tight text-foreground md:text-3xl">
             {formatCompactUsd(totalStakedUsd)}
           </p>
         </div>
@@ -186,23 +186,23 @@ export function UmbrellaStress() {
 
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <div className="text-[18px] font-normal tracking-[-0.04em] text-brand">
+            <div className="text-lg font-normal tracking-[-0.04em] text-brand">
               {t("{pct}% of target").replace(
                 "{pct}",
                 formatPct(targetCoverageUsd > 0 ? (totalStakedUsd / targetCoverageUsd) * 100 : 0),
               )}
             </div>
-            <div className="mt-2 text-[14px] font-normal text-muted-foreground">
+            <div className="mt-2 text-sm font-normal text-muted-foreground">
               {t("{staked} staked · {target} target")
                 .replace("{staked}", formatCompactUsd(totalStakedUsd))
                 .replace("{target}", formatCompactUsd(targetCoverageUsd))}
             </div>
           </div>
           <div className="text-left sm:text-right">
-            <div className="text-[18px] font-normal tracking-[-0.04em] text-warning">
+            <div className="text-lg font-normal tracking-[-0.04em] text-warning">
               {t("{amount} in cooldown").replace("{amount}", formatCompactUsd(cooldownUsd))}
             </div>
-            <div className="mt-2 text-[14px] font-normal text-muted-foreground">
+            <div className="mt-2 text-sm font-normal text-muted-foreground">
               {t("{pct}% of coverage cooling · {deficits} deficits absorbed")
                 .replace("{pct}", formatPct(totalStakedUsd > 0 ? (cooldownUsd / totalStakedUsd) * 100 : 0))
                 .replace("{deficits}", formatCompactUsd(activeDeficitsUsd))}

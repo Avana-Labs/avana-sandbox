@@ -382,7 +382,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
 
           {outcome ? (
             <div
-              className={`rounded-radius-xl border p-4 text-[14px] ${
+              className={`rounded-radius-xl border p-4 text-sm ${
                 outcome.tone === "success"
                   ? "border-brand/30 bg-brand/10 text-foreground"
                   : "border-danger/30 bg-danger/10 text-foreground"
@@ -476,7 +476,7 @@ function SwapAssetField({
           type="button"
           onClick={onOpenAssetPicker}
           aria-label={`${label} asset`}
-          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-normal text-foreground hover:bg-surface-hover max-[360px]:self-end"
+          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-sm font-normal text-foreground hover:bg-surface-hover max-[360px]:self-end"
         >
           <SwapAssetIcon asset={asset} className="size-8" />
           <span>{asset.symbol}</span>
@@ -485,13 +485,13 @@ function SwapAssetField({
           </span>
         </button>
       </div>
-      <div className="mt-1 flex min-h-5 items-center justify-between gap-3 text-[14px]">
+      <div className="mt-1 flex min-h-5 items-center justify-between gap-3 text-sm">
         <span className="min-w-0 truncate text-foreground/60">{fiatLabel}</span>
         {balanceLabel ? (
           <button
             type="button"
             onClick={onBalanceClick}
-            className="max-w-[12rem] shrink-0 truncate text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+            className="max-w-[12rem] shrink-0 truncate text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             Balance: <span className="text-foreground">{balanceLabel}</span>
           </button>

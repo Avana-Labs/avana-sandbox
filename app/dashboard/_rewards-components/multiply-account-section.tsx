@@ -84,7 +84,7 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
         title={t("Available to use")}
       />
       <div className="space-y-4">
-        <h3 className="text-[18px] font-normal tracking-tight text-foreground md:text-[20px]">
+        <h3 className="text-lg font-normal tracking-tight text-foreground md:text-xl">
           {t("Multiply Health")}
         </h3>
         <div className="grid gap-4 xl:grid-cols-2">

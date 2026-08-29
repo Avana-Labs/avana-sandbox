@@ -13,9 +13,9 @@ const BUBBLE_DIMENSIONS: Record<TokenBubbleSize, { box: string; text: string; px
   xs: { box: "size-4", text: "text-[7px]", px: 16 },
   sm: { box: "size-5", text: "text-[8px]", px: 20 },
   md: { box: "size-7", text: "text-[9px]", px: 28 },
-  table: { box: "size-12", text: "text-[12px]", px: TOKEN_ICON_TABLE_PX },
-  lg: { box: "size-9", text: "text-[10px]", px: 36 },
-  xl: { box: "size-11", text: "text-[11px]", px: 44 },
+  table: { box: "size-12", text: "text-xs", px: TOKEN_ICON_TABLE_PX },
+  lg: { box: "size-9", text: "text-xs", px: 36 },
+  xl: { box: "size-11", text: "text-xs", px: 44 },
 }
 
 export function TokenBubble({
@@ -90,8 +90,8 @@ export function TokenPairCell({
 }) {
   const bubbleSize: TokenBubbleSize = size === "lg" ? "xl" : size === "md" ? "table" : "sm"
   const offset = size === "lg" ? "-ml-3" : size === "md" ? "-ml-2.5" : "-ml-2"
-  const nameCls = size === "lg" ? "text-[15px]" : size === "md" ? "text-[14px]" : "text-[13.5px]"
-  const subtitleCls = size === "lg" ? "text-[12px]" : "text-xs"
+  const nameCls = size === "lg" ? "text-base" : size === "md" ? "text-sm" : "text-sm"
+  const subtitleCls = size === "lg" ? "text-xs" : "text-xs"
   return (
     <div className="flex items-center gap-3">
       <div className="flex items-center">
@@ -120,8 +120,8 @@ export function TokenSingleCell({
   eager?: boolean
 }) {
   const bubbleSize: TokenBubbleSize = size === "lg" ? "xl" : size === "md" ? "table" : "sm"
-  const nameCls = size === "lg" ? "text-[15px]" : "text-[14px]"
-  const subtitleCls = size === "lg" ? "text-[12px]" : "text-xs"
+  const nameCls = size === "lg" ? "text-base" : "text-sm"
+  const subtitleCls = size === "lg" ? "text-xs" : "text-xs"
   return (
     <div className="flex items-center gap-3">
       <TokenBubble visual={visual} size={bubbleSize} eager={eager} />
@@ -135,7 +135,7 @@ export function TokenSingleCell({
 
 export function DexPill({ dex }: { dex: DexChip }) {
   return (
-    <span className="inline-flex items-center rounded-xs border border-border bg-surface-inset px-1.5 py-0.5 text-[11px] font-normal text-muted-foreground">
+    <span className="inline-flex items-center rounded-xs border border-border bg-surface-inset px-1.5 py-0.5 text-xs font-normal text-muted-foreground">
       {dex.label}
       {dex.starred ? <span className="ml-0.5 text-amber-500">★</span> : null}
     </span>
@@ -163,7 +163,7 @@ export const TrendSpark = memo(function TrendSpark({
 })
 
 export function HfNumber({ value, tone, size = "md" }: { value: string; tone: string; size?: "sm" | "md" | "lg" }) {
-  const textSize = size === "lg" ? "text-[20px]" : size === "sm" ? "text-[11px]" : "text-[13px]"
+  const textSize = size === "lg" ? "text-xl" : size === "sm" ? "text-xs" : "text-sm"
   return <span className={cn("font-data font-normal tabular-nums", textSize, tone)}>{value}</span>
 }
 
@@ -178,7 +178,7 @@ export function PillButton({
 }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: PillVariant; size?: "sm" | "md" }) {
   const base =
     "inline-flex items-center justify-center rounded-radius-sm font-normal transition-colors disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
-  const sizeCls = size === "md" ? "h-9 px-4 text-[13px]" : "h-7 px-2.5 text-[12px]"
+  const sizeCls = size === "md" ? "h-9 px-4 text-sm" : "h-7 px-2.5 text-xs"
   const variantCls = {
     primary:
       "bg-brand text-white shadow-elev-1 hover:bg-brand/90 active:bg-brand/80 disabled:!opacity-100 disabled:bg-brand-soft disabled:text-brand-soft-foreground disabled:shadow-none",
@@ -196,8 +196,8 @@ export function PillButton({
 export function StatItem({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div className="min-w-0">
-      <div className="text-[10.5px] font-normal uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
-      <div className={cn("mt-1 font-data text-[15px] font-normal tabular-nums text-foreground", tone)}>{value}</div>
+      <div className="text-xs font-normal uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
+      <div className={cn("mt-1 font-data text-base font-normal tabular-nums text-foreground", tone)}>{value}</div>
     </div>
   )
 }

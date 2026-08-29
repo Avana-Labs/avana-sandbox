@@ -56,7 +56,7 @@ export function ActionReviewStage({
       {!hideHeader ? (
         <div className="pb-1">
           <h2 className="text-ui-heading font-normal tracking-[-0.03em] text-foreground">{t(title)}</h2>
-          {subtitle ? <p className="mt-1.5 text-[15px] leading-relaxed text-muted-foreground">{t(subtitle)}</p> : null}
+          {subtitle ? <p className="mt-1.5 text-base leading-relaxed text-muted-foreground">{t(subtitle)}</p> : null}
         </div>
       ) : null}
 
@@ -130,7 +130,7 @@ export function ActionReviewStage({
       {blockedReason ? <ActionOutcomeBanner tone="error" title="Action unavailable" message={blockedReason} /> : null}
 
       {confirmationGate ? (
-        <label className="flex cursor-pointer items-start gap-3 rounded-radius-xl border border-danger/30 bg-danger/10 p-4 text-[13px] leading-relaxed text-foreground">
+        <label className="flex cursor-pointer items-start gap-3 rounded-radius-xl border border-danger/30 bg-danger/10 p-4 text-sm leading-relaxed text-foreground">
           <input
             type="checkbox"
             checked={confirmationGate.checked}

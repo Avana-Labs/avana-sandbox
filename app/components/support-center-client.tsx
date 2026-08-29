@@ -335,7 +335,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
     <main className="min-h-[calc(100vh-56px)] bg-background text-foreground">
       <div className="mx-auto w-full max-w-[960px] px-4 pb-16 pt-8 sm:px-6 sm:pt-12 lg:px-8">
         <header className="border-b border-border pb-6 sm:pb-8">
-          <h1 className="max-w-[12ch] text-[32px] font-normal leading-[1.04] tracking-[-0.04em] sm:text-[48px]">
+          <h1 className="max-w-[12ch] text-4xl font-normal leading-[1.04] tracking-[-0.04em] sm:text-5xl">
             {t("How can we help?")}
           </h1>
         </header>
@@ -350,7 +350,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
               ].map(([label, isActive], index) => (
                 <li key={label as string} className="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center lg:gap-3">
                   <span
-                    className={`flex size-7 shrink-0 items-center justify-center rounded-full border text-[12px] font-normal ${
+                    className={`flex size-7 shrink-0 items-center justify-center rounded-full border text-xs font-normal ${
                       isActive
                         ? "border-brand bg-brand text-white"
                         : "border-border bg-background text-muted-foreground"
@@ -359,7 +359,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                     {index + 1}
                   </span>
                   <span
-                    className={`text-[11px] font-normal leading-tight sm:text-[12px] lg:text-[14px] ${
+                    className={`text-xs font-normal leading-tight sm:text-xs lg:text-sm ${
                       isActive ? "text-foreground" : "text-muted-foreground"
                     }`}
                   >
@@ -385,10 +385,10 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                       />
                     </svg>
                   </div>
-                  <h2 className="mt-4 text-[22px] font-normal tracking-[-0.03em] text-foreground sm:text-[24px]">
+                  <h2 className="mt-4 text-2xl font-normal tracking-[-0.03em] text-foreground sm:text-2xl">
                     {t("Request received")}
                   </h2>
-                  <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
+                  <p className="mt-2 text-base leading-6 text-muted-foreground">
                     {t("Thanks — we’ve logged your message about")}{" "}
                     <span className="font-normal text-foreground">
                       {selectedTopic?.label ? t(selectedTopic.label) : selectedTopic?.label}
@@ -398,7 +398,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                   <Button
                     type="button"
                     onClick={handleReset}
-                    className="mt-6 h-10 rounded-xs bg-brand px-5 text-[14px] font-normal text-white hover:bg-brand/90"
+                    className="mt-6 h-10 rounded-xs bg-brand px-5 text-sm font-normal text-white hover:bg-brand/90"
                   >
                     {t("Submit another request")}
                   </Button>
@@ -407,23 +407,23 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
             ) : stage !== 3 ? (
               <div className="max-w-[560px] space-y-6 sm:space-y-7">
                 <div>
-                  <h2 className="text-[22px] font-normal tracking-[-0.03em] text-foreground sm:text-[24px]">
+                  <h2 className="text-2xl font-normal tracking-[-0.03em] text-foreground sm:text-2xl">
                     {t("Tell us what happened")}
                   </h2>
-                  <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
+                  <p className="mt-2 text-base leading-6 text-muted-foreground">
                     {t("Choose the closest match so we can show the most relevant guidance first.")}
                   </p>
                 </div>
 
                 <div className="space-y-5">
                   <div className="space-y-2">
-                    <label htmlFor="support-category" className="block text-[14px] font-normal text-foreground">
+                    <label htmlFor="support-category" className="block text-sm font-normal text-foreground">
                       {t("Category")}
                     </label>
                     <Select value={categoryValue} onValueChange={handleCategoryChange}>
                       <SelectTrigger
                         id="support-category"
-                        className="h-11 w-full border-border bg-background px-3.5 text-[16px] font-normal shadow-none sm:text-[15px]"
+                        className="h-11 w-full border-border bg-background px-3.5 text-base font-normal shadow-none sm:text-base"
                       >
                         <SelectValue placeholder={t("Select...")} />
                       </SelectTrigger>
@@ -432,7 +432,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                           <SelectItem
                             key={category.value}
                             value={category.value}
-                            className="py-3 text-[15px] font-normal"
+                            className="py-3 text-base font-normal"
                           >
                             {t(category.label)}
                           </SelectItem>
@@ -443,19 +443,19 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
 
                   {categoryValue ? (
                     <div className="space-y-2">
-                      <label htmlFor="support-topic" className="block text-[14px] font-normal text-foreground">
+                      <label htmlFor="support-topic" className="block text-sm font-normal text-foreground">
                         {t("Topic")}
                       </label>
                       <Select value={topicValue} onValueChange={handleTopicChange}>
                         <SelectTrigger
                           id="support-topic"
-                          className="h-11 w-full border-border bg-background px-3.5 text-[16px] font-normal shadow-none sm:text-[15px]"
+                          className="h-11 w-full border-border bg-background px-3.5 text-base font-normal shadow-none sm:text-base"
                         >
                           <SelectValue placeholder={t("Select...")} />
                         </SelectTrigger>
                         <SelectContent className="max-h-[420px]">
                           {selectedCategory?.topics.map((topic) => (
-                            <SelectItem key={topic.value} value={topic.value} className="py-3 text-[15px] font-normal">
+                            <SelectItem key={topic.value} value={topic.value} className="py-3 text-base font-normal">
                               {t(topic.label)}
                             </SelectItem>
                           ))}
@@ -467,12 +467,12 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
 
                 {hasArticles ? (
                   <div className="border-y border-border py-5">
-                    <h3 className="text-[15px] font-normal text-foreground">{t("Recommended articles")}</h3>
+                    <h3 className="text-base font-normal text-foreground">{t("Recommended articles")}</h3>
                     <div className="mt-3 divide-y divide-border">
                       {selectedTopic?.articles.map((article) => (
                         <button key={article.title} type="button" className="block w-full py-3 text-left">
-                          <div className="text-[15px] font-normal text-brand">{t(article.title)}</div>
-                          <p className="mt-1 max-w-[56ch] text-[13px] leading-5 text-muted-foreground">
+                          <div className="text-base font-normal text-brand">{t(article.title)}</div>
+                          <p className="mt-1 max-w-[56ch] text-sm leading-5 text-muted-foreground">
                             {t(article.body)}
                           </p>
                         </button>
@@ -484,10 +484,10 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
             ) : (
               <div className="max-w-[560px] space-y-6 sm:space-y-7">
                 <div className="border-b border-border pb-5">
-                  <h2 className="text-[22px] font-normal tracking-[-0.03em] text-foreground sm:text-[24px]">
+                  <h2 className="text-2xl font-normal tracking-[-0.03em] text-foreground sm:text-2xl">
                     {t("Contact support")}
                   </h2>
-                  <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
+                  <p className="mt-2 text-base leading-6 text-muted-foreground">
                     {t("Tell us more about")}{" "}
                     <span className="font-normal text-foreground">
                       {selectedTopic?.label ? t(selectedTopic.label) : selectedTopic?.label}
@@ -496,7 +496,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                   </p>
                 </div>
 
-                <dl className="grid gap-x-6 gap-y-3 text-[13px] sm:grid-cols-2">
+                <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
                   <div>
                     <dt className="font-normal text-muted-foreground">{t("Category")}</dt>
                     <dd className="mt-1 text-foreground">
@@ -512,14 +512,14 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                 </dl>
 
                 <div className="space-y-2">
-                  <label htmlFor="support-message" className="block text-[14px] font-normal text-foreground">
+                  <label htmlFor="support-message" className="block text-sm font-normal text-foreground">
                     {t("Describe the issue")}
                   </label>
                   <textarea
                     id="support-message"
                     value={message}
                     onChange={(event) => setMessage(event.target.value)}
-                    className="h-[220px] w-full resize-none rounded-radius-sm border border-border bg-background px-3.5 py-3 text-[16px] leading-6 text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-brand focus:ring-2 focus:ring-brand/15 sm:h-[260px] sm:text-[15px]"
+                    className="h-[220px] w-full resize-none rounded-radius-sm border border-border bg-background px-3.5 py-3 text-base leading-6 text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-brand focus:ring-2 focus:ring-brand/15 sm:h-[260px] sm:text-base"
                     placeholder={t(
                       "Include what you were trying to do, what happened, and any transaction or market details that may help.",
                     )}
@@ -531,7 +531,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
             {sendStatus !== "sent" ? (
               <>
                 {sendStatus === "error" && sendError ? (
-                  <p className="mt-5 max-w-[560px] rounded-radius-sm border border-rose-500/30 bg-rose-500/10 px-3.5 py-2.5 text-[13px] leading-5 text-rose-600 dark:text-rose-400">
+                  <p className="mt-5 max-w-[560px] rounded-radius-sm border border-rose-500/30 bg-rose-500/10 px-3.5 py-2.5 text-sm leading-5 text-rose-600 dark:text-rose-400">
                     {sendError}
                   </p>
                 ) : null}
@@ -541,7 +541,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                     variant="ghost"
                     onClick={handleBack}
                     disabled={sendStatus === "sending"}
-                    className="h-10 px-0 text-[14px] font-normal text-brand hover:bg-transparent hover:text-brand/80 sm:h-9"
+                    className="h-10 px-0 text-sm font-normal text-brand hover:bg-transparent hover:text-brand/80 sm:h-9"
                   >
                     {t("Back")}
                   </Button>
@@ -550,7 +550,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                     type="button"
                     onClick={stage === 3 ? handleSend : handleContinue}
                     disabled={stage !== 3 ? !canContinue : !canSend}
-                    className="h-10 rounded-xs bg-brand px-5 text-[14px] font-normal text-white hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-surface-inset disabled:text-muted-foreground sm:h-9"
+                    className="h-10 rounded-xs bg-brand px-5 text-sm font-normal text-white hover:bg-brand/90 disabled:cursor-not-allowed disabled:bg-surface-inset disabled:text-muted-foreground sm:h-9"
                   >
                     {footerLabel}
                   </Button>

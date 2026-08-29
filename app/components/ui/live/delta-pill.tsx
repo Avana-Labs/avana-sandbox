@@ -85,7 +85,7 @@ export function DeltaPill({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-data text-[10.5px] font-normal tabular-nums",
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-data text-xs font-normal tabular-nums",
         tone,
         className,
       )}

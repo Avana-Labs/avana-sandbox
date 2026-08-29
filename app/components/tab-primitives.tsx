@@ -43,7 +43,7 @@ export function PillTabStrip<T extends string>({
       {items.map((item) => {
         const active = item.id === value
         const buttonClassName = cn(
-          "group shrink-0 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[14px] font-normal leading-none transition-colors sm:px-3 sm:text-[15px]",
+          "group shrink-0 whitespace-nowrap rounded-full px-2.5 py-1.5 text-sm font-normal leading-none transition-colors sm:px-3 sm:text-base",
           active ? "bg-field-bottom text-foreground" : "text-muted-foreground hover:text-foreground",
           tabClassName,
         )
@@ -136,8 +136,8 @@ export function UnderlineTabStrip<T extends string>({
               onClick={() => onChange(item.id)}
               data-state={active ? "active" : "inactive"}
               className={cn(
-                "relative h-auto shrink-0 rounded-none border-0 px-0 pb-3 pt-0 text-[15px] font-normal text-muted-foreground transition-colors after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-full after:rounded-full after:bg-transparent sm:pb-4",
-                active ? "text-[16px] text-foreground after:bg-foreground" : "hover:text-foreground",
+                "relative h-auto shrink-0 rounded-none border-0 px-0 pb-3 pt-0 text-base font-normal text-muted-foreground transition-colors after:absolute after:bottom-0 after:left-0 after:h-[3px] after:w-full after:rounded-full after:bg-transparent sm:pb-4",
+                active ? "text-base text-foreground after:bg-foreground" : "hover:text-foreground",
                 tabClassName,
               )}
             >

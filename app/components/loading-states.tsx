@@ -108,19 +108,19 @@ export function HomeWorkspaceSkeleton() {
           <div className="mt-3 flex flex-col gap-2">
             <div className="flex flex-col gap-1">
               <HomeFieldSkeleton tone="raised">
-                <div className="text-[15px] font-normal text-foreground/75">{t("Sell")}</div>
+                <div className="text-base font-normal text-foreground/75">{t("Sell")}</div>
                 <div className="mt-1.5 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
                   <div className="h-[1em] min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-normal leading-none tracking-[-0.04em] text-muted-foreground/60">
                     0
                   </div>
-                  <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-normal text-foreground max-[360px]:self-end">
+                  <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-sm font-normal text-foreground max-[360px]:self-end">
                     {t("Select Asset")}
                     <span aria-hidden className="text-muted-foreground">
                       ▾
                     </span>
                   </span>
                 </div>
-                <div className="mt-1 flex items-center justify-between gap-3 text-[14px]">
+                <div className="mt-1 flex items-center justify-between gap-3 text-sm">
                   {/* Neutral placeholder while data loads — never a literal "$0.00",
                       which reads as a real (zero) value. Matches the app-wide "—"
                       missing-value convention. */}
@@ -129,19 +129,19 @@ export function HomeWorkspaceSkeleton() {
               </HomeFieldSkeleton>
 
               <HomeFieldSkeleton tone="inset">
-                <div className="text-[15px] font-normal text-foreground/75">{t("Buy")}</div>
+                <div className="text-base font-normal text-foreground/75">{t("Buy")}</div>
                 <div className="mt-1.5 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
                   <div className="h-[1em] min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-normal leading-none tracking-[-0.04em] text-muted-foreground/60">
                     0
                   </div>
-                  <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-normal text-foreground max-[360px]:self-end">
+                  <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-sm font-normal text-foreground max-[360px]:self-end">
                     {t("Select Asset")}
                     <span aria-hidden className="text-muted-foreground">
                       ▾
                     </span>
                   </span>
                 </div>
-                <div className="mt-1 flex items-center justify-between gap-3 text-[14px]">
+                <div className="mt-1 flex items-center justify-between gap-3 text-sm">
                   {/* Neutral placeholder while data loads — never a literal "$0.00",
                       which reads as a real (zero) value. Matches the app-wide "—"
                       missing-value convention. */}
@@ -153,7 +153,7 @@ export function HomeWorkspaceSkeleton() {
             <button
               type="button"
               disabled
-              className="mt-1 inline-flex h-14 w-full items-center justify-center rounded-radius-xl bg-brand-soft text-[15px] font-normal text-brand-soft-foreground"
+              className="mt-1 inline-flex h-14 w-full items-center justify-center rounded-radius-xl bg-brand-soft text-base font-normal text-brand-soft-foreground"
               data-testid="action-footer-primary"
             >
               {t("Select Asset")}

@@ -70,7 +70,7 @@ export function ComposerContext({
         )}
       >
         <div className="flex items-baseline justify-between">
-          <p className="text-[13.5px] font-normal">Context</p>
+          <p className="text-sm font-normal">Context</p>
           <p className={cn(mono, "tabular-nums", warn ? "text-red-500 dark:text-red-400" : "text-foreground/35")}>
             {Math.round(fraction * 100)}%
           </p>
@@ -86,7 +86,7 @@ export function ComposerContext({
         </div>
         <div className="flex flex-col gap-2">
           {segments.map((segment) => (
-            <div key={segment.label} className="text-foreground/55 flex items-center gap-2.5 text-[13px]">
+            <div key={segment.label} className="text-foreground/55 flex items-center gap-2.5 text-sm">
               <span aria-hidden className={cn("size-1.5 rounded-full", segment.className)} />
               <span className="flex-1">{segment.label}</span>
               <span className={cn(mono, "text-foreground/40 tabular-nums")}>{segment.value.toLocaleString()}</span>
@@ -94,7 +94,7 @@ export function ComposerContext({
           ))}
         </div>
         <div className="bg-foreground/[0.06] h-px" />
-        <div className="text-foreground/55 flex items-center justify-between text-[13px]">
+        <div className="text-foreground/55 flex items-center justify-between text-sm">
           <span>Total</span>
           <span className={cn(mono, "text-foreground/40 tabular-nums")}>
             {used.toLocaleString()} / {usage.total.toLocaleString()}

@@ -50,11 +50,11 @@ export function ActionInfoRow({
   return (
     <div
       className={cn(
-        "flex items-center justify-between gap-4 px-4 py-3.5 text-[15px] max-[360px]:flex-col max-[360px]:items-start max-[360px]:gap-1.5",
+        "flex items-center justify-between gap-4 px-4 py-3.5 text-base max-[360px]:flex-col max-[360px]:items-start max-[360px]:gap-1.5",
         className,
       )}
     >
-      <div className="flex items-center gap-1.5 text-[14px] text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
         <span>{t(label)}</span>
         {tip ? <ActionMetricHelp text={tip} topic={label} /> : null}
       </div>
@@ -151,8 +151,8 @@ export function ActionMetricRow({
   const tip = resolveMetricTooltip(id, label, tooltip)
   return (
     <div data-testid={`metric-${label.toLowerCase().replace(/\s+/g, "-")}`}>
-      <div className="flex items-center justify-between gap-4 px-4 py-3.5 text-[15px] max-[360px]:flex-col max-[360px]:items-start max-[360px]:gap-1.5">
-        <div className="flex items-center gap-1.5 text-[14px] text-muted-foreground">
+      <div className="flex items-center justify-between gap-4 px-4 py-3.5 text-base max-[360px]:flex-col max-[360px]:items-start max-[360px]:gap-1.5">
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
           <span>{t(label)}</span>
           {tip ? <ActionMetricHelp text={tip} topic={label} /> : null}
         </div>

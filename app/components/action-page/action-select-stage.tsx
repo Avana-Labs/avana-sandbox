@@ -55,15 +55,15 @@ export function ActionSelectStage({
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder={t(searchPlaceholder)}
-          className="h-11 w-full rounded-full border border-[#e6e6e6] bg-[#fafafa] pl-11 pr-4 text-[14px] font-normal tracking-[-0.01em] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-foreground/20 dark:border-border/60 dark:bg-surface-2 dark:focus:border-brand/30"
+          className="h-11 w-full rounded-full border border-[#e6e6e6] bg-[#fafafa] pl-11 pr-4 text-sm font-normal tracking-[-0.01em] text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-foreground/20 dark:border-border/60 dark:bg-surface-2 dark:focus:border-brand/30"
         />
       </label>
 
       <div className="mt-3 flex flex-col gap-0.5">
         {filtered.length === 0 ? (
           <div className="px-4 py-8 text-center">
-            <div className="text-[14px] font-normal">{t(emptyTitle)}</div>
-            <div className="mt-1 text-[13px] text-muted-foreground">{t(emptyDescription)}</div>
+            <div className="text-sm font-normal">{t(emptyTitle)}</div>
+            <div className="mt-1 text-sm text-muted-foreground">{t(emptyDescription)}</div>
           </div>
         ) : (
           filtered.map((item) => (
@@ -87,15 +87,15 @@ export function ActionSelectStage({
                   <ActionTokenIcon symbol={item.symbol} />
                 )}
                 <div className="min-w-0">
-                  <div className="truncate text-[14px] font-normal">{item.name}</div>
-                  <div className="truncate text-[13px] text-muted-foreground">{item.sublabel ?? item.symbol}</div>
+                  <div className="truncate text-sm font-normal">{item.name}</div>
+                  <div className="truncate text-sm text-muted-foreground">{item.sublabel ?? item.symbol}</div>
                 </div>
               </div>
               <div className="flex shrink-0 items-center gap-2.5">
                 <div className="text-right">
-                  <div className="text-[14px] font-normal text-foreground">{item.trailingLabel}</div>
+                  <div className="text-sm font-normal text-foreground">{item.trailingLabel}</div>
                   {item.trailingSublabel ? (
-                    <div className="mt-0.5 text-[13px] text-muted-foreground">{item.trailingSublabel}</div>
+                    <div className="mt-0.5 text-sm text-muted-foreground">{item.trailingSublabel}</div>
                   ) : null}
                 </div>
                 <ChevronRight

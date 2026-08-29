@@ -54,9 +54,9 @@ export function ActionWorkspaceTabs({
         revealLabels
           ? // Active width follows label content (w-max) so localized verbs like
             // JA スワップ / ES Intercambiar are not clipped by English-tuned px widths.
-            "home-reveal-tab h-10 w-10 overflow-hidden px-0 py-2 text-[14px] font-normal text-muted-foreground data-[state=active]:w-max data-[state=active]:max-w-full data-[state=active]:px-3.5 [&_svg]:size-4"
+            "home-reveal-tab h-10 w-10 overflow-hidden px-0 py-2 text-sm font-normal text-muted-foreground data-[state=active]:w-max data-[state=active]:max-w-full data-[state=active]:px-3.5 [&_svg]:size-4"
           : withIcons
-            ? "px-3.5 py-2 text-[14px] font-normal text-muted-foreground sm:px-3.5 sm:text-[14px] data-[state=active]:bg-neutral-200 data-[state=active]:text-foreground dark:data-[state=active]:bg-neutral-800 [&_svg]:size-4"
+            ? "px-3.5 py-2 text-sm font-normal text-muted-foreground sm:px-3.5 sm:text-sm data-[state=active]:bg-neutral-200 data-[state=active]:text-foreground dark:data-[state=active]:bg-neutral-800 [&_svg]:size-4"
             : undefined
       }
       cssOnly={revealLabels}

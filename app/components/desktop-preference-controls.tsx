@@ -65,18 +65,18 @@ export function DesktopPreferenceControls() {
       >
         {view === "root" ? (
           <>
-            <DropdownMenuLabel className="px-3 py-2.5 text-[16px] font-normal normal-case tracking-normal text-foreground dark:text-white">
+            <DropdownMenuLabel className="px-3 py-2.5 text-base font-normal normal-case tracking-normal text-foreground dark:text-white">
               {t("Global preferences")}
             </DropdownMenuLabel>
             <PriceFreshnessNotice className="px-3 pb-1" />
             <div className="space-y-2 px-3 pb-1">
               <div className="flex items-center justify-between gap-3">
-                <span className="text-[14px] text-muted-foreground dark:text-white/64">{t("Theme")}</span>
+                <span className="text-sm text-muted-foreground dark:text-white/64">{t("Theme")}</span>
                 <div className="flex items-center overflow-hidden rounded-full border border-border bg-surface p-1 dark:border-white/12 dark:bg-[#1a1a1a]">
                   <button
                     type="button"
                     onClick={() => setTheme("light")}
-                    className={`rounded-full px-2.5 py-1.5 text-[13px] font-normal ${
+                    className={`rounded-full px-2.5 py-1.5 text-sm font-normal ${
                       mounted && resolvedTheme === "light"
                         ? "bg-foreground text-background dark:bg-[#2a2a2a] dark:text-white"
                         : "text-muted-foreground dark:text-white/64"
@@ -87,7 +87,7 @@ export function DesktopPreferenceControls() {
                   <button
                     type="button"
                     onClick={() => setTheme("dark")}
-                    className={`rounded-full px-2.5 py-1.5 text-[13px] font-normal ${
+                    className={`rounded-full px-2.5 py-1.5 text-sm font-normal ${
                       mounted && resolvedTheme === "dark"
                         ? "bg-foreground text-background dark:bg-[#2a2a2a] dark:text-white"
                         : "text-muted-foreground dark:text-white/64"
@@ -99,7 +99,7 @@ export function DesktopPreferenceControls() {
               </div>
             </div>
             <DropdownMenuItem
-              className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-3 text-[14px] text-foreground outline-none hover:bg-hover focus:bg-hover dark:text-white"
+              className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-3 text-sm text-foreground outline-none hover:bg-hover focus:bg-hover dark:text-white"
               onSelect={(event) => {
                 event.preventDefault()
                 setView("language")
@@ -112,7 +112,7 @@ export function DesktopPreferenceControls() {
               </span>
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-3 text-[14px] text-foreground outline-none hover:bg-hover focus:bg-hover dark:text-white"
+              className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-3 text-sm text-foreground outline-none hover:bg-hover focus:bg-hover dark:text-white"
               onSelect={(event) => {
                 event.preventDefault()
                 setView("currency")
@@ -125,7 +125,7 @@ export function DesktopPreferenceControls() {
               </span>
             </DropdownMenuItem>
             <DropdownMenuItem
-              className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-3 text-[14px] text-foreground outline-none hover:bg-hover focus:bg-hover dark:text-white"
+              className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-3 text-sm text-foreground outline-none hover:bg-hover focus:bg-hover dark:text-white"
               onSelect={(event) => {
                 event.preventDefault()
                 setView("network")
@@ -142,7 +142,7 @@ export function DesktopPreferenceControls() {
 
         {view === "language" ? (
           <>
-            <DropdownMenuLabel className="flex items-center gap-1 px-1 py-1.5 text-[14px] font-normal normal-case tracking-normal text-foreground dark:text-white">
+            <DropdownMenuLabel className="flex items-center gap-1 px-1 py-1.5 text-sm font-normal normal-case tracking-normal text-foreground dark:text-white">
               <button
                 type="button"
                 onClick={() => setView("root")}
@@ -156,7 +156,7 @@ export function DesktopPreferenceControls() {
               {LANGUAGE_OPTIONS.map((option) => (
                 <DropdownMenuItem
                   key={option.code}
-                  className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-2.5 text-[14px] text-foreground outline-none hover:bg-hover focus:bg-hover dark:text-white"
+                  className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-2.5 text-sm text-foreground outline-none hover:bg-hover focus:bg-hover dark:text-white"
                   onSelect={(event) => {
                     event.preventDefault()
                     setLanguage(option.code)
@@ -173,7 +173,7 @@ export function DesktopPreferenceControls() {
 
         {view === "currency" ? (
           <>
-            <DropdownMenuLabel className="flex items-center gap-1 px-1 py-1.5 text-[14px] font-normal normal-case tracking-normal text-foreground dark:text-white">
+            <DropdownMenuLabel className="flex items-center gap-1 px-1 py-1.5 text-sm font-normal normal-case tracking-normal text-foreground dark:text-white">
               <button
                 type="button"
                 onClick={() => setView("root")}
@@ -187,7 +187,7 @@ export function DesktopPreferenceControls() {
               {CURRENCY_OPTIONS.map((option) => (
                 <DropdownMenuItem
                   key={option.code}
-                  className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-2.5 text-[14px] text-foreground outline-none hover:bg-hover focus:bg-hover dark:text-white"
+                  className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-2.5 text-sm text-foreground outline-none hover:bg-hover focus:bg-hover dark:text-white"
                   onSelect={(event) => {
                     event.preventDefault()
                     setCurrency(option.code)
@@ -207,7 +207,7 @@ export function DesktopPreferenceControls() {
 
         {view === "network" ? (
           <>
-            <DropdownMenuLabel className="flex items-center gap-1 px-1 py-1.5 text-[14px] font-normal normal-case tracking-normal text-foreground dark:text-white">
+            <DropdownMenuLabel className="flex items-center gap-1 px-1 py-1.5 text-sm font-normal normal-case tracking-normal text-foreground dark:text-white">
               <button
                 type="button"
                 onClick={() => setView("root")}
@@ -221,7 +221,7 @@ export function DesktopPreferenceControls() {
               {NETWORK_OPTIONS.map((option) => (
                 <DropdownMenuItem
                   key={option.code}
-                  className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-2.5 text-[14px] text-foreground outline-none hover:bg-hover focus:bg-hover dark:text-white"
+                  className="flex cursor-pointer items-center justify-between rounded-[16px] px-3 py-2.5 text-sm text-foreground outline-none hover:bg-hover focus:bg-hover dark:text-white"
                   onSelect={(event) => {
                     event.preventDefault()
                     if (option.unavailable) return
@@ -233,7 +233,7 @@ export function DesktopPreferenceControls() {
                   <span className="flex items-center gap-2">
                     {option.code === currentNetwork.code ? <Check className="h-4 w-4 text-brand" /> : null}
                     {option.unavailable ? (
-                      <span className="text-[12px] text-muted-foreground/80 dark:text-white/48">
+                      <span className="text-xs text-muted-foreground/80 dark:text-white/48">
                         {t("Unavailable")}
                       </span>
                     ) : null}

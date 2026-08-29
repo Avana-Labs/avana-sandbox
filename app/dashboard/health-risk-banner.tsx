@@ -38,17 +38,17 @@ export function HealthRiskBanner({
       className={`flex flex-wrap items-start justify-between gap-3 rounded-radius-md border ${band.bar.border} bg-card px-4 py-3 shadow-elev-1`}
     >
       <div className="flex min-w-0 items-start gap-2.5">
-        <span className={`mt-0.5 text-[16px] leading-none ${band.bar.text}`} aria-hidden="true">
+        <span className={`mt-0.5 text-base leading-none ${band.bar.text}`} aria-hidden="true">
           ⚠
         </span>
         <div className="min-w-0">
-          <p className="text-[13px] font-normal text-foreground">
+          <p className="text-sm font-normal text-foreground">
             {t("A position is near liquidation (health factor {hf}).").replace(
               "{hf}",
               formatHealthFactor(healthFactor),
             )}
           </p>
-          <p className="mt-0.5 text-[12px] text-muted-foreground">
+          <p className="mt-0.5 text-xs text-muted-foreground">
             {t("Repay or add collateral to reduce your liquidation risk.")}
           </p>
         </div>
@@ -56,7 +56,7 @@ export function HealthRiskBanner({
       <div className="flex items-center gap-2">
         <Link
           href={href}
-          className={`inline-flex h-8 items-center rounded-radius-sm border ${band.bar.border} px-3 text-[12px] font-normal ${band.bar.text}`}
+          className={`inline-flex h-8 items-center rounded-radius-sm border ${band.bar.border} px-3 text-xs font-normal ${band.bar.text}`}
         >
           {actionLabel}
         </Link>
@@ -64,7 +64,7 @@ export function HealthRiskBanner({
           type="button"
           onClick={() => setDismissed(true)}
           aria-label={t("Dismiss")}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-radius-sm text-[16px] leading-none text-muted-foreground hover:text-foreground"
+          className="inline-flex h-8 w-8 items-center justify-center rounded-radius-sm text-base leading-none text-muted-foreground hover:text-foreground"
         >
           ×
         </button>

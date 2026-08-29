@@ -45,19 +45,19 @@ export function ProductAvailableCard({
   return (
     <section className="space-y-3">
       <div className="flex items-baseline justify-between gap-3">
-        <h3 className="text-[18px] font-normal tracking-tight text-foreground md:text-[20px]">{title}</h3>
-        <span className="font-data text-[15px] tabular-nums text-foreground">{m(exact(total))}</span>
+        <h3 className="text-lg font-normal tracking-tight text-foreground md:text-xl">{title}</h3>
+        <span className="font-data text-base tabular-nums text-foreground">{m(exact(total))}</span>
       </div>
       <ul className="divide-y divide-border rounded-radius-md border border-border bg-card">
         {rows.map((row) => (
           <li key={row.id} className="flex items-center justify-between gap-3 px-4 py-3">
             <span className="flex min-w-0 items-center gap-2.5">
               <TokenIcon symbol={row.symbol} size="table" />
-              <span className="truncate text-[14px] font-normal text-foreground">{row.symbol}</span>
+              <span className="truncate text-sm font-normal text-foreground">{row.symbol}</span>
             </span>
             <span className="text-right">
-              <span className="block font-data text-[14px] tabular-nums text-foreground">{m(exact(row.valueUsd))}</span>
-              <span className="block text-[12px] text-muted-foreground">
+              <span className="block font-data text-sm tabular-nums text-foreground">{m(exact(row.valueUsd))}</span>
+              <span className="block text-xs text-muted-foreground">
                 {showDollarAmounts ? `${row.amount} ${row.symbol}` : MASK}
               </span>
             </span>
@@ -98,7 +98,7 @@ export function SectionTabStrip<T extends string>({
               onClick={() => onChange(tab.id)}
               data-state={active ? "active" : "inactive"}
               className={cn(
-                "shrink-0 whitespace-nowrap border-b-2 pb-2 text-left text-[15px] font-normal tracking-[-0.03em] transition-colors md:text-[17px]",
+                "shrink-0 whitespace-nowrap border-b-2 pb-2 text-left text-base font-normal tracking-[-0.03em] transition-colors md:text-lg",
                 active
                   ? "border-foreground text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground",

@@ -97,7 +97,7 @@ function TokenRail({
               )
             ) : (
               <div className="rounded-radius-md border border-border bg-surface-raised px-5 py-4">
-                <p className="text-[15px] leading-6 text-muted-foreground">
+                <p className="text-base leading-6 text-muted-foreground">
                   {t("Deposit LP collateral before borrowing {symbol}.").replace("{symbol}", detail.hero.symbol)}
                 </p>
                 <Button
@@ -139,10 +139,10 @@ function TokenRail({
           <DialogTitle className="sr-only">{t("Deposit collateral first")}</DialogTitle>
           <div className="space-y-4 px-6 pb-6 pt-5">
             <div className="space-y-2">
-              <h3 className="text-[22px] font-normal tracking-[-0.03em] text-foreground">
+              <h3 className="text-2xl font-normal tracking-[-0.03em] text-foreground">
                 {t("You need to deposit an asset before you can borrow.")}
               </h3>
-              <p className="text-[14px] leading-6 text-muted-foreground">
+              <p className="text-sm leading-6 text-muted-foreground">
                 {t("To borrow {symbol}, deposit LP collateral first.").replace("{symbol}", detail.hero.symbol)}
               </p>
             </div>

@@ -37,8 +37,8 @@ export function ActionRiskBanner({
         )}
       />
       <div>
-        <div className="text-[15px] font-normal">{t(title)}</div>
-        <div className="mt-1 text-[13px] leading-relaxed opacity-90">{t(message)}</div>
+        <div className="text-base font-normal">{t(title)}</div>
+        <div className="mt-1 text-sm leading-relaxed opacity-90">{t(message)}</div>
       </div>
     </div>
   )
@@ -65,8 +65,8 @@ export function ActionOutcomeBanner({
     >
       <AlertTriangle className={cn("mt-0.5 size-4 shrink-0", tone === "error" ? "text-danger" : "text-success")} />
       <div>
-        <div className="text-[15px] font-normal">{t(title)}</div>
-        <div className="mt-1 text-[13px] text-muted-foreground">{t(message)}</div>
+        <div className="text-base font-normal">{t(title)}</div>
+        <div className="mt-1 text-sm text-muted-foreground">{t(message)}</div>
       </div>
     </div>
   )
@@ -77,7 +77,7 @@ export function ActionWalletToast({ message }: { message: string }) {
   return (
     <div
       data-testid="action-wallet-toast"
-      className="fixed bottom-6 left-1/2 z-[60] w-[min(calc(100vw-2rem),420px)] -translate-x-1/2 rounded-full border border-border bg-surface-raised px-4 py-3 text-center text-[13px] shadow-elev-3"
+      className="fixed bottom-6 left-1/2 z-[60] w-[min(calc(100vw-2rem),420px)] -translate-x-1/2 rounded-full border border-border bg-surface-raised px-4 py-3 text-center text-sm shadow-elev-3"
     >
       {t(message)}
     </div>

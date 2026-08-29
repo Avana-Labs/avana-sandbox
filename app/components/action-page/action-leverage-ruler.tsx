@@ -84,7 +84,7 @@ export function ActionLeverageRuler({
   const ruler = (
     <div data-testid="action-leverage-ruler">
       <div className="flex items-center justify-between gap-4">
-        <div className="text-[14px] font-normal text-muted-foreground">{t(label)}</div>
+        <div className="text-sm font-normal text-muted-foreground">{t(label)}</div>
         <label className="relative block">
           <span className="sr-only">{t("Custom {label}").replace("{label}", t(label))}</span>
           <input
@@ -96,11 +96,11 @@ export function ActionLeverageRuler({
             value={value}
             onChange={(event) => onChange(event.target.value)}
             aria-label={t("Custom {label}").replace("{label}", t(label))}
-            className="h-9 w-20 rounded-full border border-border bg-background pl-3 pr-7 text-right font-data text-[14px] font-normal tabular-nums text-foreground outline-none focus:border-brand"
+            className="h-9 w-20 rounded-full border border-border bg-background pl-3 pr-7 text-right font-data text-sm font-normal tabular-nums text-foreground outline-none focus:border-brand"
           />
           <span
             aria-hidden
-            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[13px] text-muted-foreground"
+            className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground"
           >
             x
           </span>
@@ -125,7 +125,7 @@ export function ActionLeverageRuler({
           />
         ) : null}
         <div
-          className="pointer-events-none absolute bottom-[calc(50%+1rem)] z-30 -translate-x-1/2 font-data text-[15px] font-normal leading-none tracking-[-0.02em] text-foreground transition-[left] duration-150 ease-out"
+          className="pointer-events-none absolute bottom-[calc(50%+1rem)] z-30 -translate-x-1/2 font-data text-base font-normal leading-none tracking-[-0.02em] text-foreground transition-[left] duration-150 ease-out"
           style={{ left: thumbLeft }}
           aria-live="polite"
           aria-atomic="true"
@@ -143,7 +143,7 @@ export function ActionLeverageRuler({
         />
       </div>
 
-      <div className="mt-3 flex items-center justify-between px-1 font-data text-[13px] font-normal text-muted-foreground">
+      <div className="mt-3 flex items-center justify-between px-1 font-data text-sm font-normal text-muted-foreground">
         <span>{formatEndpoint(min)}</span>
         {recommendedMax != null ? (
           <span className="text-emerald-600 dark:text-emerald-400">

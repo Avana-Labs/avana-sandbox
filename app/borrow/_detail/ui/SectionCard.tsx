@@ -42,11 +42,11 @@ export function SectionCard({
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
           <div className="min-w-0">
             {title ? (
-              <h2 className="text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+              <h2 className="text-2xl font-normal leading-none tracking-[-0.03em] text-foreground md:text-2xl">
                 {title}
               </h2>
             ) : null}
-            {subtitle ? <p className="mt-0.5 text-[11.5px] text-muted-foreground">{subtitle}</p> : null}
+            {subtitle ? <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p> : null}
           </div>
           {rightSlot ? <div className="flex shrink-0 items-center gap-2">{rightSlot}</div> : null}
         </div>

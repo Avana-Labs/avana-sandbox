@@ -61,13 +61,13 @@ export function SwapAssetPickerDialog({
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t("Find an asset")}
             aria-label={t("Find an asset")}
-            className="h-8 min-w-0 flex-1 bg-transparent text-[16px] font-normal text-foreground outline-none placeholder:text-muted-foreground"
+            className="h-8 min-w-0 flex-1 bg-transparent text-base font-normal text-foreground outline-none placeholder:text-muted-foreground"
           />
         </div>
 
-        <div className="flex items-center gap-2 border-b border-border px-5 py-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground">
+        <div className="flex items-center gap-2 border-b border-border px-5 py-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">
           <span>{t("Supported assets")}</span>
-          <span className="ml-auto rounded-full bg-surface-inset px-1.5 py-0.5 text-[10px] font-normal tabular-nums text-muted-foreground/80">
+          <span className="ml-auto rounded-full bg-surface-inset px-1.5 py-0.5 text-xs font-normal tabular-nums text-muted-foreground/80">
             {filteredAssets.length}
           </span>
         </div>
@@ -91,14 +91,14 @@ export function SwapAssetPickerDialog({
               >
                 <SwapAssetIcon asset={asset} className="size-8" />
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[14px] font-normal text-foreground">{asset.name}</span>
-                  <span className="block truncate text-[12px] leading-5 text-muted-foreground">{asset.symbol}</span>
+                  <span className="block truncate text-sm font-normal text-foreground">{asset.name}</span>
+                  <span className="block truncate text-xs leading-5 text-muted-foreground">{asset.symbol}</span>
                 </span>
                 <span className="text-right">
-                  <span className="block font-data text-[13px] font-normal text-foreground">
+                  <span className="block font-data text-sm font-normal text-foreground">
                     {amount.toLocaleString(undefined, { maximumFractionDigits: 6 })} {asset.symbol}
                   </span>
-                  <span className="block font-data text-[12px] text-muted-foreground">
+                  <span className="block font-data text-xs text-muted-foreground">
                     {exact(amount * asset.priceUsd)}
                   </span>
                 </span>
@@ -107,7 +107,7 @@ export function SwapAssetPickerDialog({
             )
           })}
           {filteredAssets.length === 0 ? (
-            <div className="px-4 py-10 text-center text-[13px] text-muted-foreground">{t("No assets found.")}</div>
+            <div className="px-4 py-10 text-center text-sm text-muted-foreground">{t("No assets found.")}</div>
           ) : null}
         </div>
       </DialogContent>

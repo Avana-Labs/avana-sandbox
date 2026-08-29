@@ -54,7 +54,7 @@ export function AskAssistantTrigger({
           ? tone === "brand"
             ? "inline-flex h-10 w-10 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
             : "inline-flex h-10 w-10 items-center justify-center text-muted-foreground transition-colors hover:text-brand focus-visible:outline-none focus-visible:ring-0 active:scale-95 dark:hover:text-[#7DDCFF] [-webkit-tap-highlight-color:transparent]"
-          : "flex h-7 shrink-0 items-center gap-1.5 rounded-full bg-[#ececec] px-3 text-[13px] font-normal text-foreground transition-colors hover:bg-[#e3e3e3] focus-visible:outline-none focus-visible:ring-0 lg:h-8 lg:gap-2 lg:px-3.5 lg:text-[14px] dark:bg-surface-hover dark:hover:bg-[hsl(0_0%_21%)]"
+          : "flex h-7 shrink-0 items-center gap-1.5 rounded-full bg-[#ececec] px-3 text-sm font-normal text-foreground transition-colors hover:bg-[#e3e3e3] focus-visible:outline-none focus-visible:ring-0 lg:h-8 lg:gap-2 lg:px-3.5 lg:text-sm dark:bg-surface-hover dark:hover:bg-[hsl(0_0%_21%)]"
       }
     >
       {iconOnly ? (

@@ -73,8 +73,8 @@ export function DashboardInvestments({
       {showHeading ? (
         <div className="mb-3 flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-[18px] font-normal tracking-tight text-foreground md:text-[20px]">{title}</h2>
-            {countLabel ? <p className="mt-1 text-[13px] text-muted-foreground">{countLabel}</p> : null}
+            <h2 className="text-lg font-normal tracking-tight text-foreground md:text-xl">{title}</h2>
+            {countLabel ? <p className="mt-1 text-sm text-muted-foreground">{countLabel}</p> : null}
           </div>
           {claimableUsd > 0 && onClaimRewards ? (
             <Button type="button" size="sm" disabled={isClaimingRewards} onClick={onClaimRewards}>
@@ -91,14 +91,14 @@ export function DashboardInvestments({
       ) : null}
 
       {investments.length === 0 ? (
-        <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-[13px] text-muted-foreground">
+        <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-sm text-muted-foreground">
           No lending positions yet. Supply assets to start earning yield.
         </div>
       ) : (
         <>
           <div className="hidden overflow-x-auto md:block">
             <DesktopTableSurface className="!rounded-none">
-              <table className="w-full min-w-[500px] table-fixed border-separate border-spacing-0 text-[13px]">
+              <table className="w-full min-w-[500px] table-fixed border-separate border-spacing-0 text-sm">
                 <colgroup>
                   {showIndexColumn ? <col className="w-[6%]" /> : null}
                   <col className={showIndexColumn ? "w-[24%]" : "w-[26%]"} />
@@ -107,19 +107,19 @@ export function DashboardInvestments({
                   <col className={showIndexColumn ? "w-[36%]" : "w-[40%]"} />
                 </colgroup>
                 <thead>
-                  <tr className="text-left text-[11.5px] font-normal text-muted-foreground">
+                  <tr className="text-left text-xs font-normal text-muted-foreground">
                     {showIndexColumn ? (
-                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                         #
                       </th>
                     ) : null}
-                    <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-5 pb-2 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       Asset
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       Deposited
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       APY
                     </th>
                     <SilentActionHeader className="!rounded-none pr-5" />
@@ -137,7 +137,7 @@ export function DashboardInvestments({
                       >
                         {showIndexColumn ? (
                           <td
-                            className={`py-3.5 pl-4 pr-3 align-middle font-data text-[14px] font-normal tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
+                            className={`py-3.5 pl-4 pr-3 align-middle font-data text-sm font-normal tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
                           >
                             {index + 1}
                           </td>
@@ -146,26 +146,26 @@ export function DashboardInvestments({
                           <div className="flex items-center gap-2.5">
                             <TokenIcon symbol={token.symbol} size="table" />
                             <div className="flex min-w-0 flex-col">
-                              <span className="truncate text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+                              <span className="truncate text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">
                                 {token.name}
                               </span>
-                              <span className="mt-0.5 text-[13px] text-muted-foreground">{token.symbol}</span>
+                              <span className="mt-0.5 text-sm text-muted-foreground">{token.symbol}</span>
                             </div>
                           </div>
                         </td>
                         <td className={`py-3.5 text-right ${TABLE_ROW_HOVER_BG}`}>
-                          <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+                          <div className="text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">
                             {m(formatTokenAmount(token.balance, token.symbol))}
                           </div>
-                          <div className="text-[13px] text-muted-foreground">
+                          <div className="text-sm text-muted-foreground">
                             {m(formatUsdExact(token.suppliedUsd))}
                           </div>
                         </td>
                         <td className={`py-3.5 text-right ${TABLE_ROW_HOVER_BG}`}>
-                          <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+                          <div className="text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">
                             {token.apyPct.toFixed(2)}%
                           </div>
-                          <div className="text-[13px] text-muted-foreground">
+                          <div className="text-sm text-muted-foreground">
                             {m(`+${formatUsdExact(token.earnedUsd)}`)}
                           </div>
                         </td>
@@ -233,8 +233,8 @@ export function DashboardInvestments({
                       <div className="flex min-w-0 items-center gap-2.5">
                         <TokenIcon symbol={token.symbol} size="table" />
                         <div className="min-w-0">
-                          <div className="text-[13px] font-normal text-foreground">{token.name}</div>
-                          <div className="text-[11px] text-muted-foreground">{token.symbol}</div>
+                          <div className="text-sm font-normal text-foreground">{token.name}</div>
+                          <div className="text-xs text-muted-foreground">{token.symbol}</div>
                         </div>
                       </div>
                     }
@@ -246,7 +246,7 @@ export function DashboardInvestments({
                       value={
                         <span>
                           {m(formatTokenAmount(token.balance, token.symbol))}
-                          <span className="ml-2 text-[13px] text-muted-foreground">
+                          <span className="ml-2 text-sm text-muted-foreground">
                             {m(formatUsdExact(token.suppliedUsd))}
                           </span>
                         </span>
@@ -257,7 +257,7 @@ export function DashboardInvestments({
                       value={
                         <span>
                           {m(`+${formatUsdExact(token.earnedUsd)}`)}
-                          <span className="ml-2 text-[13px] text-muted-foreground">
+                          <span className="ml-2 text-sm text-muted-foreground">
                             {m(`${formatUsdExact(token.dailyEarnedUsd)}/day`)}
                           </span>
                         </span>
@@ -268,7 +268,7 @@ export function DashboardInvestments({
                     <Button
                       type="button"
                       variant="brand"
-                      className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
+                      className="h-11 gap-2.5 rounded-radius-sm px-4 text-sm font-normal [&_svg]:size-[18px]"
                       onClick={(event) => {
                         event.stopPropagation()
                         router.push(
@@ -282,7 +282,7 @@ export function DashboardInvestments({
                     <Button
                       type="button"
                       variant="brand-secondary"
-                      className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
+                      className="h-11 gap-2.5 rounded-radius-sm px-4 text-sm font-normal [&_svg]:size-[18px]"
                       onClick={(event) => {
                         event.stopPropagation()
                         router.push(

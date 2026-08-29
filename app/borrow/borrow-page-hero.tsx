@@ -86,7 +86,7 @@ export function BorrowPageHero({ pageData }: { pageData: BorrowPageData }) {
 
       <div className="mt-6 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="mt-1 text-[22px] font-normal tracking-[-0.03em] text-foreground md:text-[24px]">Explore</h2>
+          <h2 className="mt-1 text-2xl font-normal tracking-[-0.03em] text-foreground md:text-2xl">Explore</h2>
           <div className="flex items-center gap-2.5">
             <HowItWorks topic="borrow" className="hidden md:inline-flex" />
             <CarouselArrowButtons

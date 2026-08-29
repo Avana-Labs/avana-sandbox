@@ -21,7 +21,7 @@ export function DetailFaqSection({ title, items, className, id }: DetailFaqSecti
 
   return (
     <section id={id} className={cn("min-w-0 space-y-2.5", className)}>
-      <h2 className="text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+      <h2 className="text-2xl font-normal leading-none tracking-[-0.03em] text-foreground md:text-2xl">
         {title}
       </h2>
 
@@ -37,10 +37,10 @@ export function DetailFaqSection({ title, items, className, id }: DetailFaqSecti
               index > 0 && "border-t border-border/70 dark:border-white/10",
             )}
           >
-            <AccordionTrigger className="py-4 text-left text-[16px] font-normal tracking-[-0.02em] text-muted-foreground transition-colors hover:text-foreground data-[state=open]:text-foreground md:py-[18px]">
+            <AccordionTrigger className="py-4 text-left text-base font-normal tracking-[-0.02em] text-muted-foreground transition-colors hover:text-foreground data-[state=open]:text-foreground md:py-[18px]">
               <span className="max-w-[calc(100%-20px)]">{item.question}</span>
             </AccordionTrigger>
-            <AccordionContent className="pb-5 text-[15px] leading-[1.6] text-muted-foreground dark:text-white/68 md:text-[16px]">
+            <AccordionContent className="pb-5 text-base leading-[1.6] text-muted-foreground dark:text-white/68 md:text-base">
               {item.answer}
             </AccordionContent>
           </AccordionItem>

@@ -65,7 +65,7 @@ function CashflowCardView({ detail }: { detail: Props["detail"] }) {
   return (
     <SectionCard title={t("Cashflow breakdown")} chrome="plain" bodyClassName="p-0">
       <div className="overflow-x-auto">
-        <table className="w-full table-fixed text-[13px]">
+        <table className="w-full table-fixed text-sm">
           <colgroup>
             <col className="w-[40%]" />
             <col className="w-[20%]" />
@@ -73,7 +73,7 @@ function CashflowCardView({ detail }: { detail: Props["detail"] }) {
             <col className="w-[20%]" />
           </colgroup>
           <thead>
-            <tr className="border-b border-border text-left text-[10.5px] font-normal uppercase tracking-[0.06em] text-muted-foreground">
+            <tr className="border-b border-border text-left text-xs font-normal uppercase tracking-[0.06em] text-muted-foreground">
               <th className="pb-2 pt-3">{t("Line")}</th>
               <th className="pb-2 pt-3 text-right">{t("1D")}</th>
               <th className="pb-2 pt-3 text-right">{t("30 Days")}</th>
@@ -86,7 +86,7 @@ function CashflowCardView({ detail }: { detail: Props["detail"] }) {
                 key={i}
                 className={cn("transition-colors hover:bg-hover", row.highlighted ? "bg-surface-inset/40" : undefined)}
               >
-                <th scope="row" className="py-2.5 text-left text-[14px] font-normal text-muted-foreground">
+                <th scope="row" className="py-2.5 text-left text-sm font-normal text-muted-foreground">
                   {t(row.label)}
                 </th>
                 <td

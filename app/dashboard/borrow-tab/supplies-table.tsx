@@ -70,14 +70,14 @@ export function SuppliesPanel({
       ) : null}
       {showHeading ? (
         <div className="mb-3">
-          <h3 className="text-[18px] font-normal tracking-tight text-foreground md:text-[20px]">
+          <h3 className="text-lg font-normal tracking-tight text-foreground md:text-xl">
             {t("My Collaterals")}
           </h3>
-          <p className="mt-1 text-[13px] text-muted-foreground">{formatSectionCount(rows.length, "asset", "assets")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{formatSectionCount(rows.length, "asset", "assets")}</p>
         </div>
       ) : null}
       {rows.length === 0 ? (
-        <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-[13px] text-muted-foreground">
+        <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-sm text-muted-foreground">
           {t("No collateral deposited yet. Supply an asset to start backing loans.")}
         </div>
       ) : (
@@ -85,7 +85,7 @@ export function SuppliesPanel({
           <div className="hidden md:block">
             <DesktopTableSurface className="!rounded-none">
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
+                <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-sm">
                   <colgroup>
                     <col className="w-[28%]" />
                     <col className="w-[16%]" />
@@ -94,20 +94,20 @@ export function SuppliesPanel({
                     <col className="w-[24%]" />
                   </colgroup>
                   <thead>
-                    <tr className="text-left text-[11.5px] font-normal text-muted-foreground">
-                      <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <tr className="text-left text-xs font-normal text-muted-foreground">
+                      <th className="bg-table-header px-5 pb-2 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                         {t("Pool")}
                       </th>
-                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                         {t("Collateral")}
                       </th>
-                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                         {t("Borrow Power")}
                       </th>
-                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                         {t("Health")}
                       </th>
-                      <th className="bg-table-header px-5 pb-2 pt-2.5 pr-6 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+                      <th className="bg-table-header px-5 pb-2 pt-2.5 pr-6 text-right text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
                     </tr>
                   </thead>
                   <tbody>
@@ -134,12 +134,12 @@ export function SuppliesPanel({
                             />
                           </td>
                           <td
-                            className={`py-3 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}
+                            className={`py-3 pl-4 text-right font-data text-sm tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}
                           >
                             {m(compact(row.pool.collateralUsd))}
                           </td>
                           <td
-                            className={`py-3 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}
+                            className={`py-3 pl-4 text-right font-data text-sm tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}
                           >
                             {m(compact(row.remainingBorrowPowerUsd))}
                           </td>
@@ -274,10 +274,10 @@ export function SuppliesHealthFactorCard({
     <div className="mb-4 rounded-radius-md border border-border bg-card px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
       <div className="flex h-6 items-center justify-between gap-3">
         <div className="flex items-baseline gap-2">
-          <span className="font-data text-[20px] font-normal leading-none tracking-tight text-foreground">
+          <span className="font-data text-xl font-normal leading-none tracking-tight text-foreground">
             {masked ? "••" : hfLabel}
           </span>
-          <span className="text-[13px] font-normal text-foreground">{t("Credit Health")}</span>
+          <span className="text-sm font-normal text-foreground">{t("Credit Health")}</span>
           <ActionMetricHelp
             topic="Credit Health"
             text={t(
@@ -287,7 +287,7 @@ export function SuppliesHealthFactorCard({
         </div>
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full bg-table-header px-2.5 py-0.5 text-[10px] font-normal tracking-wide",
+            "inline-flex items-center gap-1.5 rounded-full bg-table-header px-2.5 py-0.5 text-xs font-normal tracking-wide",
             status.tone === "positive" && "text-success",
             status.tone === "warning" && "text-amber-600",
             status.tone === "danger" && "text-rose-600",
@@ -310,7 +310,7 @@ export function SuppliesHealthFactorCard({
       <div className="mt-9">
         <HealthFactorPositionBar value={averageHealthFactor} heightClassName="h-2.5" />
 
-        <div className="mt-4 flex h-4 items-center justify-between text-[11px] font-normal text-muted-foreground">
+        <div className="mt-4 flex h-4 items-center justify-between text-xs font-normal text-muted-foreground">
           {HF_ZONES.map((zone, index) => {
             const isActive = index === activeZoneIdx
             return (

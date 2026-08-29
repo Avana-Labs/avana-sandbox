@@ -39,10 +39,10 @@ export function RiskSection({ detail }: Props) {
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div className="min-w-0">
             <div className="flex items-baseline gap-2">
-              <span className="font-data text-[26px] font-normal tabular-nums text-foreground md:text-[30px]">
+              <span className="font-data text-3xl font-normal tabular-nums text-foreground md:text-3xl">
                 {formatBpsAsPct(risk.premiumBps)}
               </span>
-              <span className="text-[12px] text-muted-foreground">({risk.premiumBps} bps)</span>
+              <span className="text-xs text-muted-foreground">({risk.premiumBps} bps)</span>
             </div>
           </div>
           <div className="flex flex-col items-center">
@@ -53,7 +53,7 @@ export function RiskSection({ detail }: Props) {
               size={140}
             />
             {risk.lastReviewed ? (
-              <p className="mt-1 text-[10.5px] text-muted-foreground">
+              <p className="mt-1 text-xs text-muted-foreground">
                 {t("Last reviewed {date}").replace("{date}", risk.lastReviewed)}
               </p>
             ) : null}
@@ -80,7 +80,7 @@ export function RiskSection({ detail }: Props) {
                       <div className="flex min-w-0 flex-wrap items-center gap-2">
                         <span
                           className={cn(
-                            "truncate text-[15px] font-normal tracking-[-0.02em] transition-colors",
+                            "truncate text-base font-normal tracking-[-0.02em] transition-colors",
                             open ? "text-foreground" : "text-muted-foreground",
                           )}
                         >
@@ -89,14 +89,14 @@ export function RiskSection({ detail }: Props) {
                         <RiskLevelPill level={item.level} size="sm" />
                       </div>
                       {open ? (
-                        <p className="mt-2 max-w-[560px] text-[13px] leading-5 text-muted-foreground">
+                        <p className="mt-2 max-w-[560px] text-sm leading-5 text-muted-foreground">
                           {t(item.description)}
                         </p>
                       ) : null}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       {relatedMetric ? (
-                        <span className="hidden font-data text-[11.5px] tabular-nums text-muted-foreground sm:inline">
+                        <span className="hidden font-data text-xs tabular-nums text-muted-foreground sm:inline">
                           {relatedMetric}
                         </span>
                       ) : null}

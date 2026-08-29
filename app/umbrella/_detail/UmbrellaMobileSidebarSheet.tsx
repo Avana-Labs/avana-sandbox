@@ -62,14 +62,14 @@ export function UmbrellaMobileSidebarSheet({
         </DialogDescription>
         <div className="flex items-center justify-between border-b border-border px-4 py-3 max-md:pt-6 md:hidden">
           <div>
-            <div className="text-[14px] font-normal text-foreground">{t("Umbrella")}</div>
-            <div className="text-[11px] text-muted-foreground">{t("Stake, claim, cooldown, unstake")}</div>
+            <div className="text-sm font-normal text-foreground">{t("Umbrella")}</div>
+            <div className="text-xs text-muted-foreground">{t("Stake, claim, cooldown, unstake")}</div>
           </div>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
             aria-label={t("Close umbrella actions")}
-            className="h-8 rounded-radius-sm border border-border bg-surface-raised px-3 text-[12px] font-normal text-foreground hover:bg-surface-hover"
+            className="h-8 rounded-radius-sm border border-border bg-surface-raised px-3 text-xs font-normal text-foreground hover:bg-surface-hover"
           >
             {t("Close")}
           </button>

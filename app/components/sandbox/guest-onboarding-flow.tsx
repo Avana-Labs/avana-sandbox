@@ -7,7 +7,7 @@ import { AVANA_EXTERNAL_LINKS } from "@/app/components/external-links"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 const PRIMARY =
-  "inline-flex min-h-12 items-center justify-center rounded-full bg-brand px-7 text-[15px] font-normal text-brand-foreground shadow-elev-1 transition-colors hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
+  "inline-flex min-h-12 items-center justify-center rounded-full bg-brand px-7 text-base font-normal text-brand-foreground shadow-elev-1 transition-colors hover:bg-brand/90 disabled:cursor-not-allowed disabled:opacity-50"
 
 export function GuestOnboardingFlow() {
   const [hasStarted, setHasStarted] = useState(false)
@@ -33,14 +33,14 @@ export function GuestOnboardingFlow() {
             <h1 className="max-w-[600px] text-balance text-[clamp(1.85rem,3.2vw,2.4rem)] font-normal leading-[1.14] tracking-[-0.03em]">
               {t("Welcome to the Avana Sandbox")}
             </h1>
-            <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">
+            <p className="mt-6 max-w-[520px] text-base leading-6 text-muted-foreground">
               {t(
                 "This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.",
               )}
             </p>
             <ul className="mt-7 space-y-2.5">
               {["Unlimited practice funds", "No transactions to sign", "No real assets involved"].map((perk) => (
-                <li className="flex items-center gap-2.5 text-[15px] font-normal" key={perk}>
+                <li className="flex items-center gap-2.5 text-base font-normal" key={perk}>
                   <Check className="size-4 shrink-0 text-emerald-500" strokeWidth={2.75} />
                   {t(perk)}
                 </li>
@@ -60,7 +60,7 @@ export function GuestOnboardingFlow() {
             <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <WalletControl size="desktop" />
             </div>
-            <p className="mt-8 max-w-[430px] text-[13px] leading-5 text-muted-foreground">
+            <p className="mt-8 max-w-[430px] text-sm leading-5 text-muted-foreground">
               {t("By connecting your wallet, you agree to the")}{" "}
               <a
                 className="text-foreground underline underline-offset-2 hover:text-brand"

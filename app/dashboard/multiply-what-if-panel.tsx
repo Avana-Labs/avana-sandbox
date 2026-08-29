@@ -114,22 +114,22 @@ export function MultiplyWhatIfPanel({ state, walletId }: { state: MultiplySystem
       <div className="mb-3 flex flex-col gap-1">
         <h3
           id="dashboard-multiply-what-if-heading"
-          className="text-[16px] font-normal tracking-tight text-foreground md:text-[17px]"
+          className="text-base font-normal tracking-tight text-foreground md:text-lg"
         >
           {t("What-if: price move")}
         </h3>
-        <p className="text-[13px] text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           {t("Slide to preview how a collateral price move changes health factor and liquidation price.")}
         </p>
       </div>
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <label className="flex flex-col gap-1 text-[12px] font-normal text-muted-foreground sm:flex-1">
+        <label className="flex flex-col gap-1 text-xs font-normal text-muted-foreground sm:flex-1">
           <span className="uppercase tracking-[0.08em]">{t("Position")}</span>
           <select
             value={activeId ?? ""}
             onChange={(event) => setSelectedId(event.target.value)}
-            className="h-9 rounded-radius-sm border border-border bg-background px-2 text-[13px] text-foreground"
+            className="h-9 rounded-radius-sm border border-border bg-background px-2 text-sm text-foreground"
           >
             {options.map((option) => (
               <option key={option.positionId} value={option.positionId}>
@@ -139,7 +139,7 @@ export function MultiplyWhatIfPanel({ state, walletId }: { state: MultiplySystem
           </select>
         </label>
 
-        <label className="flex flex-col gap-1 text-[12px] font-normal text-muted-foreground sm:flex-1">
+        <label className="flex flex-col gap-1 text-xs font-normal text-muted-foreground sm:flex-1">
           <span className="uppercase tracking-[0.08em]">
             {t("Price move")}: {formatSignedPct(pricePctMove)}
           </span>
@@ -159,38 +159,38 @@ export function MultiplyWhatIfPanel({ state, walletId }: { state: MultiplySystem
       {projection ? (
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div>
-            <dt className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground">{t("Scenario price")}</dt>
-            <dd className="mt-1 font-data text-[15px] font-normal tabular-nums text-foreground">
+            <dt className="text-xs uppercase tracking-[0.08em] text-muted-foreground">{t("Scenario price")}</dt>
+            <dd className="mt-1 font-data text-base font-normal tabular-nums text-foreground">
               {m(formatUsdExact(projection.scenarioPriceUsd))}
             </dd>
-            <dd className="text-[12px] text-muted-foreground">
+            <dd className="text-xs text-muted-foreground">
               {t("now")} {m(formatUsdExact(projection.currentPriceUsd))}
             </dd>
           </div>
           <div>
-            <dt className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground">{t("Collateral value")}</dt>
-            <dd className="mt-1 font-data text-[15px] font-normal tabular-nums text-foreground">
+            <dt className="text-xs uppercase tracking-[0.08em] text-muted-foreground">{t("Collateral value")}</dt>
+            <dd className="mt-1 font-data text-base font-normal tabular-nums text-foreground">
               {m(formatUsdExact(projection.after?.collateralValueUsd ?? 0))}
             </dd>
-            <dd className="text-[12px] text-muted-foreground">
+            <dd className="text-xs text-muted-foreground">
               {t("was")} {m(formatUsdExact(projection.before?.collateralValueUsd ?? 0))}
             </dd>
           </div>
           <div>
-            <dt className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground">{t("Health factor")}</dt>
-            <dd className={`mt-1 font-data text-[15px] font-normal tabular-nums ${afterBand.textClass}`}>
+            <dt className="text-xs uppercase tracking-[0.08em] text-muted-foreground">{t("Health factor")}</dt>
+            <dd className={`mt-1 font-data text-base font-normal tabular-nums ${afterBand.textClass}`}>
               {formatHealthFactor(afterHfNum)}
             </dd>
-            <dd className="text-[12px] text-muted-foreground">
+            <dd className="text-xs text-muted-foreground">
               {t("was")} {formatHealthFactor(beforeHfNum)}
             </dd>
           </div>
           <div>
-            <dt className="text-[11px] uppercase tracking-[0.08em] text-muted-foreground">{t("Liq. price")}</dt>
-            <dd className="mt-1 font-data text-[15px] font-normal tabular-nums text-foreground">
+            <dt className="text-xs uppercase tracking-[0.08em] text-muted-foreground">{t("Liq. price")}</dt>
+            <dd className="mt-1 font-data text-base font-normal tabular-nums text-foreground">
               {projection.after?.liquidationPrice != null ? m(formatUsdExact(projection.after.liquidationPrice)) : "—"}
             </dd>
-            <dd className="text-[12px] text-muted-foreground">
+            <dd className="text-xs text-muted-foreground">
               {beforeHfNum != null && projection.before?.liquidationPrice != null
                 ? `${t("was")} ${m(formatUsdExact(projection.before.liquidationPrice))}`
                 : ""}
@@ -198,7 +198,7 @@ export function MultiplyWhatIfPanel({ state, walletId }: { state: MultiplySystem
           </div>
         </dl>
       ) : (
-        <p className="text-[13px] text-muted-foreground">{t("Select a position to preview.")}</p>
+        <p className="text-sm text-muted-foreground">{t("Select a position to preview.")}</p>
       )}
     </section>
   )

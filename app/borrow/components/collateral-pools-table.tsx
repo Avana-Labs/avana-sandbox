@@ -55,7 +55,7 @@ function EventTagList({ events }: { events?: BorrowPoolEvent[] }) {
         return (
           <span
             key={`${event.label}-${index}`}
-            className={cn("inline-flex items-center rounded-xs px-1.5 py-0.5 text-[10px] font-normal", toneClass)}
+            className={cn("inline-flex items-center rounded-xs px-1.5 py-0.5 text-xs font-normal", toneClass)}
           >
             {event.label}
           </span>
@@ -102,7 +102,7 @@ function SectionTabs({
           type="button"
           onClick={() => onTabChange(tab.id as SectionTabId)}
           className={[
-            "border-b-2 pb-2 text-left text-[15px] font-normal tracking-[-0.03em] transition-colors md:text-[17px]",
+            "border-b-2 pb-2 text-left text-base font-normal tracking-[-0.03em] transition-colors md:text-lg",
             activeTab === tab.id
               ? "border-foreground text-foreground"
               : "border-transparent text-muted-foreground hover:text-foreground",
@@ -155,10 +155,10 @@ function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
         </span>
       </div>
       <div className="min-w-0">
-        <div className="truncate text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+        <div className="truncate text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">
           {formatBorrowPairLabel(pool)}
         </div>
-        <div className="mt-1 truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+        <div className="mt-1 truncate text-sm font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
           {subtitle}
         </div>
       </div>
@@ -198,7 +198,7 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
       style={{ animationDelay: `${index * 40}ms` }}
     >
       <td
-        className={`py-2.5 pl-6 pr-3 align-middle font-data text-[14px] font-normal tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
+        className={`py-2.5 pl-6 pr-3 align-middle font-data text-sm font-normal tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
       >
         {index + 1}
       </td>
@@ -206,30 +206,30 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
         <CollateralAssetCell pool={pool} />
       </td>
       <td
-        className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+        className={`py-2.5 px-4 text-base font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
       >
         <span className="tabular-nums">{formatApy((pool.aprMin + pool.aprMax) / 2)}</span>
       </td>
       <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+        <div className="text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">
           <span className="tabular-nums">{compact(pool.tvlUsd)}</span>
         </div>
       </td>
       <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white">
+        <div className="font-data text-base font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white">
           {formatLtvPct(pool.ltv)}
         </div>
-        <div className="mt-0.5 font-data text-[12px] tabular-nums text-muted-foreground">
+        <div className="mt-0.5 font-data text-xs tabular-nums text-muted-foreground">
           {t("LT")}: {poolLiquidationThresholdPct(pool)}%
         </div>
       </td>
       <td
-        className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+        className={`py-2.5 px-4 text-base font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
       >
         <span className="tabular-nums">{formatRiskPremium(pool.riskPremiumBps)}</span>
       </td>
       <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+        <div className="text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">
           <span className="tabular-nums">{compact(pool.availableUsd)}</span>
         </div>
       </td>
@@ -329,13 +329,13 @@ function CollateralDesktopTable({
 
   const table = (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[1120px] text-[12px]">
+      <table className="w-full min-w-[1120px] text-xs">
         <thead>
           <tr className="bg-table-header text-left text-muted-foreground">
-            <th className="pb-2 pt-2.5 pl-6 pr-3 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 pl-6 pr-3 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               #
             </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("asset")}
@@ -350,7 +350,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("apy")}
@@ -363,7 +363,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("deposits")}
@@ -378,7 +378,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("cf")}
@@ -391,7 +391,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("risk")}
@@ -406,7 +406,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 pr-6 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 pr-6 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("supplied")}
@@ -421,7 +421,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 pr-5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+            <th className="pb-2 pt-2.5 px-4 pr-5 text-right text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
           </tr>
         </thead>
         <tbody key={`collateral-${sortKey}-${sortDirection}-${sortedRows.length}`}>
@@ -436,9 +436,9 @@ function CollateralDesktopTable({
           ))}
           {pending.map((row) => (
             <tr key={row.id}>
-              <td className="px-6 py-2.5 text-[12px] text-muted-foreground" colSpan={8}>
+              <td className="px-6 py-2.5 text-xs text-muted-foreground" colSpan={8}>
                 {row.label}
-                <span className="ml-2 text-[12px] text-muted-foreground">· {row.subLabel}</span>
+                <span className="ml-2 text-xs text-muted-foreground">· {row.subLabel}</span>
               </td>
             </tr>
           ))}
@@ -541,7 +541,7 @@ function SpokeDesktopSection({
               setActiveTab(tab)
             }}
           />
-          <h3 className="text-[22px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[24px]">
+          <h3 className="text-2xl font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-2xl">
             {spoke.label}
           </h3>
         </div>
@@ -659,7 +659,7 @@ function SpokeMobileSection({
   return (
     <section ref={sectionRef} className="space-y-2">
       <div className="sticky top-16 z-20 -mx-1 flex items-center justify-between gap-3 bg-background px-1 pb-3 pt-2">
-        <h3 className="text-[16px] font-normal tracking-tight text-foreground md:text-[18px]">{spoke.label}</h3>
+        <h3 className="text-base font-normal tracking-tight text-foreground md:text-lg">{spoke.label}</h3>
         <SectionTabs
           activeTab={activeTab}
           onTabChange={(tab) => {
@@ -753,7 +753,7 @@ function SpokeMobileSection({
               <button
                 type="button"
                 onClick={() => setExpanded(true)}
-                className="flex h-11 w-full items-center justify-center rounded-radius-lg border border-border bg-surface-raised text-[13px] font-normal text-foreground transition-colors hover:bg-surface-hover"
+                className="flex h-11 w-full items-center justify-center rounded-radius-lg border border-border bg-surface-raised text-sm font-normal text-foreground transition-colors hover:bg-surface-hover"
               >
                 {t("View {count} more {spoke} markets")
                   .replace("{count}", String(hiddenRowCount))

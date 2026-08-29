@@ -22,8 +22,8 @@ export function MultiplyHero({ metrics }: { metrics: MultiplyHeroMetrics }) {
     <section className="mb-4">
       <div className="flex w-full items-start justify-between gap-4 pb-4">
         <div className="min-w-0 space-y-1.5">
-          <p className="text-[13px] text-muted-foreground">{t("Multiply TVL")}</p>
-          <p className="font-data text-[17px] md:text-[18px] font-normal leading-none tracking-normal tabular-nums text-foreground">
+          <p className="text-sm text-muted-foreground">{t("Multiply TVL")}</p>
+          <p className="font-data text-lg md:text-lg font-normal leading-none tracking-normal tabular-nums text-foreground">
             {showDollarAmounts ? fc.compact(metrics.totalLiquidityUsd) : HIDDEN}
           </p>
         </div>
@@ -31,11 +31,11 @@ export function MultiplyHero({ metrics }: { metrics: MultiplyHeroMetrics }) {
         <div className="hidden md:ml-auto md:flex md:gap-8 md:text-right">
           {stats.map((metric) => (
             <div key={metric.label} className="min-w-0 space-y-1.5">
-              <p className="flex items-center justify-end gap-1.5 text-[13px] text-muted-foreground">
+              <p className="flex items-center justify-end gap-1.5 text-sm text-muted-foreground">
                 <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground" />
                 {metric.label}
               </p>
-              <p className="font-data text-[17px] md:text-[18px] font-normal leading-none tracking-normal tabular-nums text-foreground">
+              <p className="font-data text-lg md:text-lg font-normal leading-none tracking-normal tabular-nums text-foreground">
                 {metric.sensitive && !showDollarAmounts ? HIDDEN : metric.value}
               </p>
             </div>

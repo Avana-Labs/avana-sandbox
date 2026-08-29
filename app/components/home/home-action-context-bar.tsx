@@ -49,7 +49,7 @@ export function HomeActionContextBar({
           >
             {valueLabel}
           </div>
-          <div className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-normal max-[360px]:self-end">
+          <div className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-sm font-normal max-[360px]:self-end">
             {pool ? (
               <ActionTokenPairIcon
                 collateralSymbol={collateralSymbol ?? "LP"}
@@ -66,7 +66,7 @@ export function HomeActionContextBar({
             ) : null}
           </div>
         </button>
-        <div className="mt-1 text-[14px] text-foreground/60">
+        <div className="mt-1 text-sm text-foreground/60">
           <AnimatedTextValue text={approxUsdLabel} />
         </div>
       </SwapStyleField>

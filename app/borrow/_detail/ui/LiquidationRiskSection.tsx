@@ -25,11 +25,11 @@ function DeltaArrow({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-0.5 font-data text-[12px] font-normal tabular-nums",
+        "inline-flex items-center gap-0.5 font-data text-xs font-normal tabular-nums",
         isGood ? "text-success" : "text-rose-500",
       )}
     >
-      <span className="text-[10px] leading-none">{direction === "up" ? "▲" : "▼"}</span>
+      <span className="text-xs leading-none">{direction === "up" ? "▲" : "▼"}</span>
       {deltaLabel}
     </span>
   )
@@ -46,7 +46,7 @@ export function LiquidationRiskSection({ stats, className }: Props) {
   return (
     <section aria-label={t("Liquidation Risk")} className={cn("min-w-0", className)}>
       <div className="mb-6 flex items-center gap-1.5">
-        <h2 className="text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+        <h2 className="text-2xl font-normal leading-none tracking-[-0.03em] text-foreground md:text-2xl">
           {t("Liquidation Risk")}
         </h2>
         <ActionMetricHelp
@@ -59,10 +59,10 @@ export function LiquidationRiskSection({ stats, className }: Props) {
         {stats.map((stat) => (
           <article key={stat.id} className="min-w-0">
             <div className="flex items-center gap-1">
-              <span className="text-[13px] font-normal leading-snug text-muted-foreground">{t(stat.label)}</span>
+              <span className="text-sm font-normal leading-snug text-muted-foreground">{t(stat.label)}</span>
             </div>
             <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-              <span className="font-data text-[19px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[21px]">
+              <span className="font-data text-xl font-normal leading-none tracking-[-0.03em] text-foreground md:text-2xl">
                 {stat.value}
               </span>
               <DeltaArrow

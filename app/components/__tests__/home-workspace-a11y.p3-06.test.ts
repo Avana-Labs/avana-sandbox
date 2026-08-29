@@ -8,6 +8,6 @@ describe("home workspace accessibility", () => {
     const chart = readFileSync(resolve(__dirname, "../charts/market-hero-chart.tsx"), "utf8")
     expect(workspace).toMatch(/ariaLabel=\{t\("Express actions"\)\}/)
     expect(chart).not.toMatch(/sr-only/)
-    expect(chart).toMatch(/text-\[12px\] font-normal uppercase/)
+    expect(chart).toMatch(/text-xs font-normal uppercase/)
   })
 })

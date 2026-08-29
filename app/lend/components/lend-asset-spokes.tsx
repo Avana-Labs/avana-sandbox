@@ -137,7 +137,7 @@ function AssetRowView({
       onClick={() => router.push(detailHref)}
     >
       <td
-        className={`py-3 pl-6 pr-3 align-middle font-data text-[14px] font-normal tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
+        className={`py-3 pl-6 pr-3 align-middle font-data text-sm font-normal tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
       >
         {index + 1}
       </td>
@@ -145,10 +145,10 @@ function AssetRowView({
         <div className="flex min-w-0 items-center gap-3">
           <AssetIcon row={row} eager={index < 2} />
           <div className="min-w-0">
-            <div className="truncate text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
+            <div className="truncate text-base font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-base">
               {row.name}
             </div>
-            <div className="mt-0.5 text-[13px] font-normal tracking-[-0.03em] text-muted-foreground md:text-[13px]">
+            <div className="mt-0.5 text-sm font-normal tracking-[-0.03em] text-muted-foreground md:text-sm">
               <AssetSubLabel symbol={row.symbol} />
             </div>
           </div>
@@ -156,31 +156,31 @@ function AssetRowView({
       </td>
 
       <td
-        className={`py-3 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px] ${TABLE_ROW_HOVER_BG}`}
+        className={`py-3 px-4 text-base font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-base ${TABLE_ROW_HOVER_BG}`}
       >
         <span className="tabular-nums">{row.supplyApyLabel ?? row.apy}</span>
       </td>
 
       <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
+        <div className="text-base font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-base">
           <span className="tabular-nums">{row.totalDepositsLabel ?? row.totalDepositsPrimary}</span>
         </div>
-        <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
+        <div className="mt-0.5 text-sm tracking-[-0.03em] text-muted-foreground">
           {redenominateCompactUsd(row.totalDepositsSecondaryLabel ?? row.totalDepositsSecondary, ctx)}
         </div>
       </td>
 
       <td
-        className={`py-3 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px] ${TABLE_ROW_HOVER_BG}`}
+        className={`py-3 px-4 text-base font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-base ${TABLE_ROW_HOVER_BG}`}
       >
         <span className="tabular-nums">{row.utilizationLabel ?? "—"}</span>
       </td>
 
       <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[15px]">
+        <div className="text-base font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-base">
           <span className="tabular-nums">{row.availableLiquidityLabel ?? row.availableLiquidityPrimary}</span>
         </div>
-        <div className="mt-0.5 text-[13px] tracking-[-0.03em] text-muted-foreground">
+        <div className="mt-0.5 text-sm tracking-[-0.03em] text-muted-foreground">
           {redenominateCompactUsd(row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary, ctx)}
         </div>
       </td>
@@ -255,10 +255,10 @@ function AssetCardView({
           <div className="flex min-w-0 items-center gap-3">
             <AssetIcon row={row} eager={index < 2} />
             <div className="min-w-0">
-              <div className="truncate text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+              <div className="truncate text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">
                 {row.name}
               </div>
-              <div className="mt-0.5 text-[12px] tracking-[-0.03em] text-muted-foreground">
+              <div className="mt-0.5 text-xs tracking-[-0.03em] text-muted-foreground">
                 <AssetSubLabel symbol={row.symbol} />
               </div>
             </div>
@@ -272,7 +272,7 @@ function AssetCardView({
           value={
             <span>
               {row.totalDepositsLabel ?? row.totalDepositsPrimary}
-              <span className="ml-2 text-[12px] tracking-[-0.03em] text-muted-foreground">
+              <span className="ml-2 text-xs tracking-[-0.03em] text-muted-foreground">
                 {redenominateCompactUsd(row.totalDepositsSecondaryLabel ?? row.totalDepositsSecondary, ctx)}
               </span>
             </span>
@@ -284,7 +284,7 @@ function AssetCardView({
           value={
             <span>
               {row.availableLiquidityLabel ?? row.availableLiquidityPrimary}
-              <span className="ml-2 text-[12px] tracking-[-0.03em] text-muted-foreground">
+              <span className="ml-2 text-xs tracking-[-0.03em] text-muted-foreground">
                 {redenominateCompactUsd(row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary, ctx)}
               </span>
             </span>
@@ -417,13 +417,13 @@ function AssetSection({
         <div>
           <h2
             className={cn(
-              "text-[22px] font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-[24px]",
-              title === "Ethereum-Based" ? "md:text-[23px]" : "",
+              "text-2xl font-normal tracking-[-0.03em] text-foreground dark:text-white md:text-2xl",
+              title === "Ethereum-Based" ? "md:text-2xl" : "",
             )}
           >
             {t(title)}
           </h2>
-          {subtitle ? <p className="mt-1 text-[13px] text-muted-foreground dark:text-white/44">{t(subtitle)}</p> : null}
+          {subtitle ? <p className="mt-1 text-sm text-muted-foreground dark:text-white/44">{t(subtitle)}</p> : null}
         </div>
       </div>
 
@@ -446,7 +446,7 @@ function AssetSection({
                   />
                 ))
               ) : (
-                <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-[13px] text-muted-foreground">
+                <div className="rounded-radius-lg border border-border bg-card px-4 py-8 text-center text-sm text-muted-foreground">
                   {t("No assets match these filters.")}
                 </div>
               )}
@@ -454,7 +454,7 @@ function AssetSection({
           ) : null}
           {isDesktop ? (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1120px] table-fixed border-separate border-spacing-0 text-[12px]">
+              <table className="w-full min-w-[1120px] table-fixed border-separate border-spacing-0 text-xs">
                 <colgroup>
                   <col className="w-[4%]" />
                   <col className="w-[18%]" />
@@ -466,10 +466,10 @@ function AssetSection({
                 </colgroup>
                 <thead>
                   <tr className="bg-table-header text-left text-muted-foreground">
-                    <th className="bg-table-header pb-2 pl-6 pr-3 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header pb-2 pl-6 pr-3 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       #
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("asset")}
@@ -484,7 +484,7 @@ function AssetSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("supplyApy")}
@@ -499,7 +499,7 @@ function AssetSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("totalDeposits")}
@@ -514,7 +514,7 @@ function AssetSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("utilization")}
@@ -529,7 +529,7 @@ function AssetSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pr-6 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pr-6 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("availableLiquidity")}
@@ -544,7 +544,7 @@ function AssetSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+                    <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-right text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
                   </tr>
                 </thead>
                 <tbody
@@ -564,7 +564,7 @@ function AssetSection({
                     ))
                   ) : (
                     <tr>
-                      <td className="px-6 py-10 text-[12px] text-muted-foreground dark:text-white/60" colSpan={7}>
+                      <td className="px-6 py-10 text-xs text-muted-foreground dark:text-white/60" colSpan={7}>
                         {t("No assets match these filters.")}
                       </td>
                     </tr>
@@ -658,7 +658,7 @@ export function LendAssetSpokes({
             </div>
           ))
         ) : (
-          <div className="rounded-radius-md border-0 bg-card px-6 py-10 text-[13px] text-muted-foreground shadow-none">
+          <div className="rounded-radius-md border-0 bg-card px-6 py-10 text-sm text-muted-foreground shadow-none">
             {t("No assets match these filters.")}
           </div>
         )}

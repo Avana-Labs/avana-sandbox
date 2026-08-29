@@ -34,7 +34,7 @@ export function QuotaBanner({
       {...props}
     >
       <div className="flex items-baseline gap-2">
-        <span className={cn("text-[13.5px] font-normal", tight && "text-amber-700 dark:text-amber-400")}>
+        <span className={cn("text-sm font-normal", tight && "text-amber-700 dark:text-amber-400")}>
           {left} {unit} left
         </span>
         <span className={cn(mono, "text-foreground/30 ms-auto tabular-nums")}>resets {resetsIn}</span>

@@ -63,18 +63,18 @@ export function LendHeroIdentity({
 
           <div className="min-w-0">
             <div className="flex min-w-0 translate-y-1 items-baseline gap-3 whitespace-nowrap">
-              <h1 className="min-w-0 truncate text-[25px] font-normal leading-none tracking-[-0.02em] text-foreground">
+              <h1 className="min-w-0 truncate text-3xl font-normal leading-none tracking-[-0.02em] text-foreground">
                 {detail.hero.name}
               </h1>
-              <span className="shrink-0 text-[20px] font-normal leading-none tracking-[-0.01em] text-foreground/55">
+              <span className="shrink-0 text-xl font-normal leading-none tracking-[-0.01em] text-foreground/55">
                 {detail.hero.symbol}
               </span>
             </div>
-            <div className="mt-2 flex flex-wrap items-center gap-3 text-[15px] font-normal text-foreground/75">
+            <div className="mt-2 flex flex-wrap items-center gap-3 text-base font-normal text-foreground/75">
               <span>{chainLabel}</span>
               <span aria-hidden className="h-5 w-px bg-border" />
               {isPlaceholderContract ? (
-                <span className="inline-flex min-h-8 items-center text-[15px] font-normal leading-none text-foreground/75">
+                <span className="inline-flex min-h-8 items-center text-base font-normal leading-none text-foreground/75">
                   {contractLabel}
                 </span>
               ) : (
@@ -83,7 +83,7 @@ export function LendHeroIdentity({
                   onClick={async () => {
                     await navigator.clipboard.writeText(contractLabel)
                   }}
-                  className="inline-flex min-h-8 items-center gap-1.5 rounded-full text-[15px] font-normal leading-none text-foreground/75 transition-colors hover:text-foreground"
+                  className="inline-flex min-h-8 items-center gap-1.5 rounded-full text-base font-normal leading-none text-foreground/75 transition-colors hover:text-foreground"
                   aria-label={`${t("Copy")} ${contractLabel}`}
                 >
                   <Copy className="h-4 w-4" strokeWidth={1.5} aria-hidden="true" />
@@ -276,7 +276,7 @@ function TokenAvatar({ visual }: { visual: LendMarketDetail["hero"]["visual"] })
           fetchPriority="high"
         />
       ) : (
-        <span className="text-[12px] font-normal">{visual.shortLabel}</span>
+        <span className="text-xs font-normal">{visual.shortLabel}</span>
       )}
     </span>
   )

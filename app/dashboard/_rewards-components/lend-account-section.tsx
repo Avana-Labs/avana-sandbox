@@ -79,23 +79,23 @@ function LendOpportunitySection({
   return (
     <section>
       <div className="mb-3">
-        <h2 className="text-[18px] font-normal tracking-tight text-foreground md:text-[20px]">
+        <h2 className="text-lg font-normal tracking-tight text-foreground md:text-xl">
           {t("Lend Opportunity")}
         </h2>
-        <p className="mt-1 text-[13px] text-muted-foreground">
+        <p className="mt-1 text-sm text-muted-foreground">
           {t("{count} assets").replace("{count}", String(opportunities.length))}
         </p>
       </div>
 
       {opportunities.length === 0 ? (
-        <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-[13px] text-muted-foreground">
+        <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-sm text-muted-foreground">
           {t("No curated opportunities right now. Browse markets on the lend page to supply assets.")}
         </div>
       ) : (
         <>
           <div className="hidden overflow-x-auto md:block">
             <DesktopTableSurface className="!rounded-none">
-              <table className="w-full min-w-[620px] table-fixed border-separate border-spacing-0 text-[13px]">
+              <table className="w-full min-w-[620px] table-fixed border-separate border-spacing-0 text-sm">
                 <colgroup>
                   <col className="w-[32%]" />
                   <col className="w-[18%]" />
@@ -104,13 +104,13 @@ function LendOpportunitySection({
                 </colgroup>
                 <thead>
                   <tr className="text-left">
-                    <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-5 pb-2 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       {t("Asset")}
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       {t("APY")}
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       {t("TVL")}
                     </th>
                     <SilentActionHeader className="!rounded-none pr-5" />
@@ -129,21 +129,21 @@ function LendOpportunitySection({
                           <div className="flex items-center gap-2.5">
                             <TokenIcon symbol={pool.symbol} size="table" />
                             <div className="flex min-w-0 flex-col">
-                              <span className="truncate text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+                              <span className="truncate text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">
                                 {pool.name}
                               </span>
-                              <span className="mt-0.5 text-[13px] text-muted-foreground">{pool.bucketDescription}</span>
+                              <span className="mt-0.5 text-sm text-muted-foreground">{pool.bucketDescription}</span>
                             </div>
                           </div>
                         </td>
                         <td className={`py-3.5 text-right ${TABLE_ROW_HOVER_BG}`}>
-                          <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+                          <div className="text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">
                             {pool.apyPct.toFixed(2)}%
                           </div>
-                          <div className="text-[13px] text-muted-foreground">{pool.bucketTitle}</div>
+                          <div className="text-sm text-muted-foreground">{pool.bucketTitle}</div>
                         </td>
                         <td
-                          className={`py-3.5 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+                          className={`py-3.5 text-right text-base font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
                         >
                           {formatUsdExact(pool.tvlUsd)}
                         </td>
@@ -192,8 +192,8 @@ function LendOpportunitySection({
                       <div className="flex min-w-0 items-center gap-2.5">
                         <TokenIcon symbol={pool.symbol} size="table" />
                         <div className="min-w-0">
-                          <div className="truncate text-[13px] font-normal text-foreground">{pool.name}</div>
-                          <div className="truncate text-[11px] text-muted-foreground">{pool.bucketDescription}</div>
+                          <div className="truncate text-sm font-normal text-foreground">{pool.name}</div>
+                          <div className="truncate text-xs text-muted-foreground">{pool.bucketDescription}</div>
                         </div>
                       </div>
                     }
@@ -206,7 +206,7 @@ function LendOpportunitySection({
                   <Button
                     type="button"
                     variant="brand"
-                    className="h-11 w-full gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
+                    className="h-11 w-full gap-2.5 rounded-radius-sm px-4 text-sm font-normal [&_svg]:size-[18px]"
                     onClick={(event) => {
                       event.stopPropagation()
                       router.push(

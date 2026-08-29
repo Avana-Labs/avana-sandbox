@@ -71,7 +71,7 @@ export function CollateralPositionsPanel({
     return (
       <section>
         <AssetSummaryStrip metrics={summaryMetrics} />
-        <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-[13px] text-muted-foreground">
+        <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-sm text-muted-foreground">
           {t("No collateral deposited yet. Supply an asset to start backing loans.")}
         </div>
       </section>
@@ -82,10 +82,10 @@ export function CollateralPositionsPanel({
     <section>
       {showHeading ? (
         <div className="mb-4">
-          <h3 className="text-[18px] font-normal tracking-tight text-foreground md:text-[20px]">
+          <h3 className="text-lg font-normal tracking-tight text-foreground md:text-xl">
             {t("Collateral Positions")}
           </h3>
-          <p className="mt-1 text-[13px] text-muted-foreground">{formatSectionCount(rows.length, "asset", "assets")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{formatSectionCount(rows.length, "asset", "assets")}</p>
         </div>
       ) : null}
       <AssetSummaryStrip metrics={summaryMetrics} />
@@ -94,7 +94,7 @@ export function CollateralPositionsPanel({
       <div className="hidden md:block">
         <DesktopTableSurface className="!rounded-none">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-sm">
               <colgroup>
                 <col className="w-[22%]" />
                 <col className="w-[14%]" />
@@ -144,7 +144,7 @@ export function CollateralPositionsPanel({
                     </td>
                     <td
                       className={cn(
-                        "py-3.5 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white",
+                        "py-3.5 text-right text-base font-normal tracking-[-0.03em] text-foreground dark:text-white",
                         TABLE_ROW_HOVER_BG,
                       )}
                     >
@@ -155,13 +155,13 @@ export function CollateralPositionsPanel({
                     </td>
                     <td
                       className={cn(
-                        "py-3.5 text-right font-data text-[15px] tabular-nums text-foreground",
+                        "py-3.5 text-right font-data text-base tabular-nums text-foreground",
                         TABLE_ROW_HOVER_BG,
                       )}
                     >
                       {row.collateralFactorPct.toFixed(0)}%
                     </td>
-                    <td className={cn("py-3.5 text-right text-[13px] text-foreground", TABLE_ROW_HOVER_BG)}>
+                    <td className={cn("py-3.5 text-right text-sm text-foreground", TABLE_ROW_HOVER_BG)}>
                       {t(row.collateralEnabled ? "Yes" : "No")}
                     </td>
                     <td className={cn("py-3.5 pr-5", TABLE_ROW_HOVER_RIGHT)}>
@@ -225,10 +225,10 @@ function AssetIdentity({ symbol, name }: { symbol: string; name: string }) {
     <div className="flex items-center gap-2.5">
       <TokenIcon symbol={symbol} size="table" />
       <div className="flex min-w-0 flex-col">
-        <span className="truncate text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+        <span className="truncate text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">
           {name}
         </span>
-        <span className="text-[11px] text-muted-foreground">{symbol}</span>
+        <span className="text-xs text-muted-foreground">{symbol}</span>
       </div>
     </div>
   )
@@ -246,8 +246,8 @@ function MetricHeader({ label, help, align = "left" }: { label: string; help: st
 function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
   return (
     <div className="flex flex-col items-end pr-4">
-      <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">{token}</span>
-      <span className="text-[13px] text-muted-foreground dark:text-white/40">{usd}</span>
+      <span className="text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">{token}</span>
+      <span className="text-sm text-muted-foreground dark:text-white/40">{usd}</span>
     </div>
   )
 }
@@ -275,10 +275,10 @@ function CollateralMobileCard({
           <div className="flex min-w-0 items-center gap-2.5">
             <TokenIcon symbol={row.symbol} size="table" />
             <div className="min-w-0">
-              <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+              <div className="text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">
                 {row.name}
               </div>
-              <div className="text-[11px] text-muted-foreground">{row.symbol}</div>
+              <div className="text-xs text-muted-foreground">{row.symbol}</div>
             </div>
           </div>
         }
@@ -290,7 +290,7 @@ function CollateralMobileCard({
           value={
             <span>
               {mask(row.depositedToken)}
-              <span className="ml-2 text-[13px] text-muted-foreground">{mask(exact(row.depositedUsd))}</span>
+              <span className="ml-2 text-sm text-muted-foreground">{mask(exact(row.depositedUsd))}</span>
             </span>
           }
         />
@@ -299,7 +299,7 @@ function CollateralMobileCard({
           value={
             <span>
               {mask(row.earningsToken)}
-              <span className="ml-2 text-[13px] text-muted-foreground">{mask(exact(row.earningsUsd))}</span>
+              <span className="ml-2 text-sm text-muted-foreground">{mask(exact(row.earningsUsd))}</span>
             </span>
           }
         />
@@ -326,7 +326,7 @@ function CollateralMobileCard({
         <Button
           type="button"
           variant="brand"
-          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
+          className="h-11 gap-2.5 rounded-radius-sm px-4 text-sm font-normal [&_svg]:size-[18px]"
           onClick={(event) => {
             event.stopPropagation()
             onDeposit()
@@ -338,7 +338,7 @@ function CollateralMobileCard({
         <Button
           type="button"
           variant="brand-secondary"
-          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
+          className="h-11 gap-2.5 rounded-radius-sm px-4 text-sm font-normal [&_svg]:size-[18px]"
           onClick={(event) => {
             event.stopPropagation()
             onWithdraw()

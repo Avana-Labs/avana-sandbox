@@ -56,12 +56,12 @@ export function MultiplyCollateralTable({
       <section>
         {showHeading ? (
           <div className="mb-4">
-            <h3 className="text-[18px] font-normal tracking-tight text-foreground md:text-[20px]">
+            <h3 className="text-lg font-normal tracking-tight text-foreground md:text-xl">
               {t("Multiply Positions")}
             </h3>
           </div>
         ) : null}
-        <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-[13px] text-muted-foreground">
+        <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-sm text-muted-foreground">
           {t("No active Multiply positions")}
         </div>
       </section>
@@ -72,10 +72,10 @@ export function MultiplyCollateralTable({
     <section>
       {showHeading ? (
         <div className="mb-4">
-          <h3 className="text-[18px] font-normal tracking-tight text-foreground md:text-[20px]">
+          <h3 className="text-lg font-normal tracking-tight text-foreground md:text-xl">
             {t("Multiply Positions")}
           </h3>
-          <p className="mt-1 text-[13px] text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             {t("{count} positions").replace("{count}", String(activeRows.length))}
           </p>
         </div>
@@ -83,7 +83,7 @@ export function MultiplyCollateralTable({
       <div className="rounded-radius-md bg-transparent dark:bg-transparent">
         <div className="hidden overflow-x-auto md:block">
           <DesktopTableSurface className="!rounded-none">
-            <table className="w-full min-w-[700px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className="w-full min-w-[700px] table-fixed border-separate border-spacing-0 text-sm">
               <colgroup>
                 <col className="w-[20%]" />
                 <col className="w-[11%]" />
@@ -95,26 +95,26 @@ export function MultiplyCollateralTable({
                 <col className="w-[22%]" />
               </colgroup>
               <thead>
-                <tr className="text-left text-[11.5px] font-normal text-muted-foreground">
-                  <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                <tr className="text-left text-xs font-normal text-muted-foreground">
+                  <th className="bg-table-header px-5 pb-2 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Market")}
                   </th>
-                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Exposure")}
                   </th>
-                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Multiplier")}
                   </th>
-                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Debt")}
                   </th>
-                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Health")}
                   </th>
-                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Liq. price")}
                   </th>
-                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                  <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                     {t("Net APY")}
                   </th>
                   <SilentActionHeader className="!rounded-none pr-5" />
@@ -131,42 +131,42 @@ export function MultiplyCollateralTable({
                       <div className="flex items-center gap-2.5">
                         <TokenIcon symbol={row.collateralToken} size="table" />
                         <span className="min-w-0">
-                          <span className="block truncate text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+                          <span className="block truncate text-sm font-normal tracking-[-0.03em] text-foreground dark:text-white">
                             {row.label}
                           </span>
-                          <span className="mt-0.5 block truncate text-[13px] text-muted-foreground dark:text-white/38">
+                          <span className="mt-0.5 block truncate text-sm text-muted-foreground dark:text-white/38">
                             {row.collateralToken} / {row.borrowableToken}
                           </span>
                         </span>
                       </div>
                     </td>
                     <td
-                      className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+                      className={`px-4 py-3 text-right font-data tabular-nums text-sm text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
                     >
                       {usd(row.collateralUsd)}
                     </td>
                     <td
-                      className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+                      className={`px-4 py-3 text-right font-data tabular-nums text-sm text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
                     >
                       {row.multiplier.toFixed(2)}x
                     </td>
                     <td
-                      className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+                      className={`px-4 py-3 text-right font-data tabular-nums text-sm text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
                     >
                       {usd(row.debtUsd)}
                     </td>
                     <td
-                      className={`px-4 py-3 text-right font-data tabular-nums text-[13px] ${healthFactorBand(row.healthFactor).textClass} ${TABLE_ROW_HOVER_BG}`}
+                      className={`px-4 py-3 text-right font-data tabular-nums text-sm ${healthFactorBand(row.healthFactor).textClass} ${TABLE_ROW_HOVER_BG}`}
                     >
                       {formatHealthFactor(row.healthFactor)}
                     </td>
                     <td
-                      className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+                      className={`px-4 py-3 text-right font-data tabular-nums text-sm text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
                     >
                       {liqPrice(row.liquidationPriceUsd)}
                     </td>
                     <td
-                      className={`px-4 py-3 text-right font-data tabular-nums text-[13px] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+                      className={`px-4 py-3 text-right font-data tabular-nums text-sm text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
                     >
                       {formatPct(row.netApyPct)}
                     </td>
@@ -245,13 +245,13 @@ export function MultiplyCollateralTable({
               <MarketMobileCardHeader
                 identity={
                   <div className="flex min-w-0 items-center gap-2.5">
-                    <span className="text-[13px] text-muted-foreground dark:text-white/38">{index + 1}</span>
+                    <span className="text-sm text-muted-foreground dark:text-white/38">{index + 1}</span>
                     <TokenIcon symbol={row.collateralToken} size="table" />
                     <div className="min-w-0">
-                      <div className="text-[14px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+                      <div className="text-sm font-normal tracking-[-0.03em] text-foreground dark:text-white">
                         {row.label}
                       </div>
-                      <div className="truncate text-[13px] text-muted-foreground dark:text-white/38">
+                      <div className="truncate text-sm text-muted-foreground dark:text-white/38">
                         {row.protocol}
                       </div>
                     </div>
@@ -286,7 +286,7 @@ export function MultiplyCollateralTable({
                 <Button
                   type="button"
                   variant="brand-secondary"
-                  className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
+                  className="h-11 gap-2.5 rounded-radius-sm px-4 text-sm font-normal [&_svg]:size-[18px]"
                   onClick={(event) => {
                     event.stopPropagation()
                     router.push(
@@ -303,7 +303,7 @@ export function MultiplyCollateralTable({
                 <Button
                   type="button"
                   variant="brand"
-                  className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
+                  className="h-11 gap-2.5 rounded-radius-sm px-4 text-sm font-normal [&_svg]:size-[18px]"
                   onClick={(event) => {
                     event.stopPropagation()
                     router.push(
@@ -320,7 +320,7 @@ export function MultiplyCollateralTable({
                 <Button
                   type="button"
                   variant="brand-secondary"
-                  className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
+                  className="h-11 gap-2.5 rounded-radius-sm px-4 text-sm font-normal [&_svg]:size-[18px]"
                   onClick={(event) => {
                     event.stopPropagation()
                     router.push(

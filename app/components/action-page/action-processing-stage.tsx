@@ -29,7 +29,7 @@ export function ActionProcessingStage({
     <div className="space-y-4" data-testid="action-processing-stage">
       <ActionCard className="overflow-hidden">
         <div className="relative px-4 pb-2 pt-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand-soft px-3 py-1 text-[11px] font-normal text-brand-soft-foreground">
+          <div className="inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand-soft px-3 py-1 text-xs font-normal text-brand-soft-foreground">
             <LoaderCircle className="size-3.5 animate-spin" />
             {t(
               stage === "submitted"
@@ -61,7 +61,7 @@ export function ActionProcessingStage({
       {closeHref ? (
         <Link
           href={closeHref}
-          className="flex h-12 w-full items-center justify-center rounded-full border border-border bg-surface-raised text-[15px] font-normal text-foreground transition-colors hover:bg-surface-hover"
+          className="flex h-12 w-full items-center justify-center rounded-full border border-border bg-surface-raised text-base font-normal text-foreground transition-colors hover:bg-surface-hover"
         >
           {t("Close")}
         </Link>
@@ -69,7 +69,7 @@ export function ActionProcessingStage({
         <button
           type="button"
           onClick={onClose}
-          className="h-12 w-full rounded-full border border-border bg-surface-raised text-[15px] font-normal text-foreground transition-colors hover:bg-surface-hover"
+          className="h-12 w-full rounded-full border border-border bg-surface-raised text-base font-normal text-foreground transition-colors hover:bg-surface-hover"
         >
           {t("Close")}
         </button>

@@ -39,7 +39,7 @@ function HeroDeltaText({
         <span
           className={cn(
             "leading-none",
-            variant === "strong" ? "text-[12px]" : variant === "quiet" ? "text-[12px]" : "text-[11px]",
+            variant === "strong" ? "text-xs" : variant === "quiet" ? "text-xs" : "text-xs",
           )}
         >
           {tone === "positive" ? "▲" : "▼"}
@@ -48,16 +48,16 @@ function HeroDeltaText({
           className={cn(
             "tabular-nums",
             variant === "strong"
-              ? "text-[15px] font-normal"
+              ? "text-base font-normal"
               : variant === "quiet"
-                ? "text-[13px] font-normal lg:text-[14px]"
-                : "text-[14px] font-normal",
+                ? "text-sm font-normal lg:text-sm"
+                : "text-sm font-normal",
           )}
         >
           {value}
         </span>
       </div>
-      {meta ? <span className="text-[13px] font-normal text-muted-foreground">{meta}</span> : null}
+      {meta ? <span className="text-sm font-normal text-muted-foreground">{meta}</span> : null}
     </div>
   )
 }
@@ -77,7 +77,7 @@ export function HeroBalanceDisplay({
   return (
     <div className={cn("space-y-1.5", className)}>
       {label ? (
-        <span className="block text-[10.5px] font-normal uppercase tracking-[0.06em] text-muted-foreground">
+        <span className="block text-xs font-normal uppercase tracking-[0.06em] text-muted-foreground">
           {label}
         </span>
       ) : null}
@@ -86,10 +86,10 @@ export function HeroBalanceDisplay({
           className={cn(
             "leading-none text-foreground",
             variant === "strong"
-              ? "text-[29px] font-normal tracking-[-0.03em] sm:text-[32px] md:text-[34px]"
+              ? "text-3xl font-normal tracking-[-0.03em] sm:text-4xl md:text-4xl"
               : variant === "quiet"
                 ? "font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-normal tracking-[-0.04em]"
-                : "text-[26px] font-normal tracking-[-0.03em] sm:text-[28px] md:text-[30px]",
+                : "text-3xl font-normal tracking-[-0.03em] sm:text-3xl md:text-3xl",
           )}
         >
           {hidden ? "••••••••" : value}
@@ -97,11 +97,11 @@ export function HeroBalanceDisplay({
         {valueSuffix}
       </div>
       {hidden ? (
-        <span className="text-[13px] text-muted-foreground">••••••••</span>
+        <span className="text-sm text-muted-foreground">••••••••</span>
       ) : (
         <HeroDeltaText value={delta} tone={deltaTone} meta={meta} variant={variant} />
       )}
-      {subtitle ? <div className="text-[13px] text-muted-foreground">{hidden ? "••••••••" : subtitle}</div> : null}
+      {subtitle ? <div className="text-sm text-muted-foreground">{hidden ? "••••••••" : subtitle}</div> : null}
     </div>
   )
 }

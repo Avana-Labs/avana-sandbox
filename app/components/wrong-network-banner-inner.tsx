@@ -26,17 +26,17 @@ export function WrongNetworkBannerInner() {
     >
       <AlertTriangle className="size-4 shrink-0 text-amber-600 dark:text-amber-300" />
       <div className="min-w-0 flex-1">
-        <div className="text-[14px] font-normal">{t("Wrong network")}</div>
-        <div className="mt-0.5 text-[13px] leading-relaxed opacity-90">
+        <div className="text-sm font-normal">{t("Wrong network")}</div>
+        <div className="mt-0.5 text-sm leading-relaxed opacity-90">
           {t("Switch your wallet to {chain} to continue.").replace("{chain}", targetChainName)}
         </div>
-        {switchError ? <div className="mt-1 text-[12px] text-rose-600 dark:text-rose-300">{switchError}</div> : null}
+        {switchError ? <div className="mt-1 text-xs text-rose-600 dark:text-rose-300">{switchError}</div> : null}
       </div>
       <button
         type="button"
         onClick={() => void switchToTargetChain()}
         disabled={isSwitching}
-        className="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-amber-500 px-4 text-[13px] font-normal text-amber-950 transition-colors hover:bg-amber-500/90 disabled:opacity-70"
+        className="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-amber-500 px-4 text-sm font-normal text-amber-950 transition-colors hover:bg-amber-500/90 disabled:opacity-70"
       >
         {isSwitching ? t("Switching…") : switchLabel}
       </button>

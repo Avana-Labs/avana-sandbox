@@ -49,7 +49,7 @@ export function AboutNewsSection({
         <>
           <section aria-label={t(newsTitle)} className="space-y-5">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="truncate text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+              <h2 className="truncate text-2xl font-normal leading-none tracking-[-0.03em] text-foreground md:text-2xl">
                 {t(newsTitle)}
               </h2>
               {governanceUrl ? (
@@ -57,7 +57,7 @@ export function AboutNewsSection({
                   href={governanceUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="shrink-0 text-[13px] font-normal text-sky-500 transition-colors hover:text-sky-400"
+                  className="shrink-0 text-sm font-normal text-sky-500 transition-colors hover:text-sky-400"
                 >
                   {t("View all")}
                 </a>
@@ -70,7 +70,7 @@ export function AboutNewsSection({
                   <>
                     <div className="flex min-w-0 items-start justify-between gap-4">
                       <div className="min-w-0">
-                        <div className="flex items-center gap-1 text-[14px] font-normal leading-snug text-muted-foreground">
+                        <div className="flex items-center gap-1 text-sm font-normal leading-snug text-muted-foreground">
                           {t(parameter.label)}
                           {parameter.description ? (
                             <ActionMetricHelp text={parameter.description} topic={parameter.label} />
@@ -78,12 +78,12 @@ export function AboutNewsSection({
                         </div>
                       </div>
                       {parameter.status ? (
-                        <span className="shrink-0 rounded-full bg-surface-inset px-2.5 py-1 text-[12px] font-normal leading-none text-muted-foreground">
+                        <span className="shrink-0 rounded-full bg-surface-inset px-2.5 py-1 text-xs font-normal leading-none text-muted-foreground">
                           {t(parameter.status)}
                         </span>
                       ) : null}
                     </div>
-                    <div className="mt-2 font-data text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground">
+                    <div className="mt-2 font-data text-2xl font-normal leading-none tracking-[-0.03em] text-foreground">
                       {t(parameter.value)}
                     </div>
                   </>
@@ -109,11 +109,11 @@ export function AboutNewsSection({
           </section>
 
           <section aria-label={t("Parameter changelog")} className="space-y-5">
-            <h2 className="text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+            <h2 className="text-2xl font-normal leading-none tracking-[-0.03em] text-foreground md:text-2xl">
               {t("Parameter changelog")}
             </h2>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] table-fixed border-separate border-spacing-0 text-[13px]">
+              <table className="w-full min-w-[720px] table-fixed border-separate border-spacing-0 text-sm">
                 <colgroup>
                   <col className="w-[24%]" />
                   <col className="w-[16%]" />
@@ -123,19 +123,19 @@ export function AboutNewsSection({
                 </colgroup>
                 <thead>
                   <tr className="bg-table-header text-left text-muted-foreground">
-                    <th className="bg-table-header pb-2 pl-5 pr-4 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header pb-2 pl-5 pr-4 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       {t("Parameter")}
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       {t("Previous")}
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       {t("Current")}
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       {t("Date")}
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       {t("Source")}
                     </th>
                   </tr>
@@ -143,17 +143,17 @@ export function AboutNewsSection({
                 <tbody className="divide-y divide-border dark:divide-white/6">
                   {governanceParameters.changelog.map((entry) => (
                     <tr key={entry.id} className="transition-colors hover:bg-hover">
-                      <th scope="row" className="py-3 pl-5 pr-4 text-left text-[13px] font-normal text-foreground">
+                      <th scope="row" className="py-3 pl-5 pr-4 text-left text-sm font-normal text-foreground">
                         {t(entry.parameter)}
                       </th>
-                      <td className="px-4 py-3 font-data text-[13px] font-normal tabular-nums text-muted-foreground">
+                      <td className="px-4 py-3 font-data text-sm font-normal tabular-nums text-muted-foreground">
                         {t(entry.previous)}
                       </td>
-                      <td className="px-4 py-3 font-data text-[13px] font-normal tabular-nums text-foreground">
+                      <td className="px-4 py-3 font-data text-sm font-normal tabular-nums text-foreground">
                         {t(entry.current)}
                       </td>
-                      <td className="px-4 py-3 text-[13px] text-muted-foreground">{t(entry.date)}</td>
-                      <td className="min-w-0 px-4 py-3 pr-5 text-[13px]">
+                      <td className="px-4 py-3 text-sm text-muted-foreground">{t(entry.date)}</td>
+                      <td className="min-w-0 px-4 py-3 pr-5 text-sm">
                         {entry.href ? (
                           <a
                             href={entry.href}
@@ -162,14 +162,14 @@ export function AboutNewsSection({
                             className="group block min-w-0 text-muted-foreground transition-colors hover:text-foreground"
                           >
                             <span className="block truncate">{t(entry.source)}</span>
-                            <span className="block truncate text-[12px] text-text-low transition-colors group-hover:text-muted-foreground">
+                            <span className="block truncate text-xs text-text-low transition-colors group-hover:text-muted-foreground">
                               {t(entry.executor)}
                             </span>
                           </a>
                         ) : (
                           <span className="block min-w-0 text-muted-foreground">
                             <span className="block truncate">{t(entry.source)}</span>
-                            <span className="block truncate text-[12px] text-text-low">{t(entry.executor)}</span>
+                            <span className="block truncate text-xs text-text-low">{t(entry.executor)}</span>
                           </span>
                         )}
                       </td>

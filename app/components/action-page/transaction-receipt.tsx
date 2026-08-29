@@ -103,7 +103,7 @@ export function TransactionReceipt({ data, className }: { data: TransactionRecei
       >
         <div className="relative px-4 pb-2 pt-4">
           <div className="flex items-center justify-between">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-normal text-emerald-300">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-normal text-emerald-300">
               <CheckCircle2 className="size-3.5" />
               {t(data.statusLabel ?? "Confirmed")}
             </div>
@@ -112,7 +112,7 @@ export function TransactionReceipt({ data, className }: { data: TransactionRecei
                 href={data.hashHref ?? undefined}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1 text-[12px] text-muted-foreground transition-colors hover:text-foreground"
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
               >
                 {t("Explorer")}
                 <ExternalLink className="size-3.5" />
@@ -124,10 +124,10 @@ export function TransactionReceipt({ data, className }: { data: TransactionRecei
             <ActionTokenIcon symbol={data.symbol} className="size-14" />
             <h2 className="mt-4 text-[1.25rem] font-normal tracking-[-0.03em]">{t(data.title)}</h2>
             {data.description ? (
-              <p className="mt-1.5 max-w-sm text-[14px] text-muted-foreground">{t(data.description)}</p>
+              <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">{t(data.description)}</p>
             ) : null}
             {hashNode ? (
-              <p className="mt-2 font-data text-[12px] text-muted-foreground">
+              <p className="mt-2 font-data text-xs text-muted-foreground">
                 {t("Receipt")}: {hashNode}
               </p>
             ) : null}
@@ -163,7 +163,7 @@ export function TransactionReceipt({ data, className }: { data: TransactionRecei
                   />
                 ))}
               </div>
-              <p className="mt-2 break-all text-center font-data text-[12px] text-muted-foreground">{data.hash}</p>
+              <p className="mt-2 break-all text-center font-data text-xs text-muted-foreground">{data.hash}</p>
             </div>
           ) : null}
         </div>

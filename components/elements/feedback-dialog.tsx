@@ -33,7 +33,7 @@ export function FeedbackDialog({
       className={cn(
         paper,
         "flex w-full max-w-sm rounded-[20px] p-4",
-        sent ? "items-center gap-2.5 text-[13.5px]" : "flex-col gap-3",
+        sent ? "items-center gap-2.5 text-sm" : "flex-col gap-3",
         className,
       )}
 
@@ -59,7 +59,7 @@ export function FeedbackDialog({
             <span className="bg-foreground/[0.05] text-foreground/45 flex size-7 shrink-0 items-center justify-center rounded-lg">
               <ThumbsDownIcon className="size-3.5" />
             </span>
-            <span className="text-[13.5px] font-normal">What went wrong?</span>
+            <span className="text-sm font-normal">What went wrong?</span>
             <span className={cn(mono, "text-foreground/30 ms-auto")}>optional</span>
           </div>
 

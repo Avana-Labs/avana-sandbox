@@ -105,7 +105,7 @@ export function LendMarketDetailClient({
           <DetailPageWidth>
             <nav
               aria-label={t("Breadcrumb")}
-              className="mb-4 flex items-center gap-1.5 text-[15px] text-muted-foreground md:text-[16px]"
+              className="mb-4 flex items-center gap-1.5 text-base text-muted-foreground md:text-base"
             >
               <Link href="/lend" className="transition-colors hover:text-foreground">
                 {t("Lend")}
@@ -134,7 +134,7 @@ export function LendMarketDetailClient({
                   afterAbout={
                     <>
                       <section aria-label={t("Key Statistics")} className="space-y-6">
-                        <h2 className="text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+                        <h2 className="text-2xl font-normal leading-none tracking-[-0.03em] text-foreground md:text-2xl">
                           Key Statistics
                         </h2>
                         <QuickStatsGrid detail={detail} quickStatsPreload={quickStatsPreload} product="lend" />
