@@ -32,6 +32,44 @@ import {
   type PositionRevisionSummary,
 } from "./optimistic-revision"
 
+type EnsureWalletFixture = (args: { wallet: string }) => Promise<unknown>
+
+export function useEnsureWalletFixtures({
+  walletId,
+  ensurePortfolioSnapshot,
+  ensureUmbrellaFixtures,
+  retryDelayMs = 1_000,
+}: {
+  walletId: string
+  ensurePortfolioSnapshot: EnsureWalletFixture
+  ensureUmbrellaFixtures: EnsureWalletFixture
+  retryDelayMs?: number
+}) {
+  const ensuredWalletRef = useRef<string | null>(null)
+  const [ensureAttempt, setEnsureAttempt] = useState(0)
+
+  useEffect(() => {
+    if (ensuredWalletRef.current === walletId) return
+    let cancelled = false
+    let retryTimer: ReturnType<typeof setTimeout> | undefined
+    ensuredWalletRef.current = walletId
+    void (async () => {
+      try {
+        await ensurePortfolioSnapshot({ wallet: walletId })
+        await ensureUmbrellaFixtures({ wallet: walletId })
+      } catch {
+        if (cancelled || ensuredWalletRef.current !== walletId) return
+        ensuredWalletRef.current = null
+        retryTimer = setTimeout(() => setEnsureAttempt((attempt) => attempt + 1), retryDelayMs)
+      }
+    })()
+    return () => {
+      cancelled = true
+      if (retryTimer) clearTimeout(retryTimer)
+    }
+  }, [ensureAttempt, ensurePortfolioSnapshot, ensureUmbrellaFixtures, retryDelayMs, walletId])
+}
+
 function ConvexWalletHydrators({
   walletId,
   onWalletHydrated,
@@ -57,24 +95,9 @@ function ConvexWalletHydrators({
     lend: lend.transactionHistory,
     multiply: multiply.transactionHistory,
   }
-  const ensuredRef = useRef(false)
-
-  useEffect(() => {
-    if (ensuredRef.current) return
-    ensuredRef.current = true
-    void (async () => {
-      try {
-        await ensurePortfolioSnapshot({ wallet: walletId })
-        // Seed the open-gate/test wallet with umbrella fixtures on first mount.
-        // The mutation is a no-op for any wallet other than the canonical test
-        // address and for wallets that already have umbrella positions, so this
-        // is safe to fire unconditionally.
-        await ensureUmbrellaFixtures({ wallet: walletId })
-      } catch {
-        ensuredRef.current = false
-      }
-    })()
-  }, [ensurePortfolioSnapshot, ensureUmbrellaFixtures, walletId])
+  // Seed the wallet snapshot and the canonical test wallet's Umbrella fixtures.
+  // Both mutations are idempotent, so retrying a partial/transient failure is safe.
+  useEnsureWalletFixtures({ walletId, ensurePortfolioSnapshot, ensureUmbrellaFixtures })
 
   useEffect(() => {
     if (!session || productBalances === undefined) return
@@ -167,13 +190,10 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
   const revisionByKeyRef = useRef(new Map<string, number>())
   const [walletHydrationPending, setWalletHydrationPending] = useState(true)
   useEffect(() => setWalletHydrationPending(true), [walletId])
-  const handleWalletHydrated = useCallback(
-    (positions: readonly PositionRevisionSummary[]) => {
-      captureHydratedRevisions(revisionByKeyRef.current, positions)
-      setWalletHydrationPending(false)
-    },
-    [],
-  )
+  const handleWalletHydrated = useCallback((positions: readonly PositionRevisionSummary[]) => {
+    captureHydratedRevisions(revisionByKeyRef.current, positions)
+    setWalletHydrationPending(false)
+  }, [])
 
   const persistBorrowTransaction = useCallback(
     async (result: SandboxActionResult) => {
