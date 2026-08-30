@@ -82,9 +82,7 @@ export function CollateralPositionsPanel({
     <section>
       {showHeading ? (
         <div className="mb-4">
-          <h3 className="text-lg font-normal tracking-tight text-foreground md:text-xl">
-            {t("Collateral Positions")}
-          </h3>
+          <h3 className="text-lg font-normal tracking-tight text-foreground md:text-xl">{t("Collateral Positions")}</h3>
           <p className="mt-1 text-sm text-muted-foreground">{formatSectionCount(rows.length, "asset", "assets")}</p>
         </div>
       ) : null}
@@ -275,9 +273,7 @@ function CollateralMobileCard({
           <div className="flex min-w-0 items-center gap-2.5">
             <TokenIcon symbol={row.symbol} size="table" />
             <div className="min-w-0">
-              <div className="text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">
-                {row.name}
-              </div>
+              <div className="text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">{row.name}</div>
               <div className="text-xs text-muted-foreground">{row.symbol}</div>
             </div>
           </div>

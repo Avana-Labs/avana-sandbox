@@ -37,10 +37,7 @@ function HeroDeltaText({
         }
       >
         <span
-          className={cn(
-            "leading-none",
-            variant === "strong" ? "text-xs" : variant === "quiet" ? "text-xs" : "text-xs",
-          )}
+          className={cn("leading-none", variant === "strong" ? "text-xs" : variant === "quiet" ? "text-xs" : "text-xs")}
         >
           {tone === "positive" ? "▲" : "▼"}
         </span>
@@ -77,9 +74,7 @@ export function HeroBalanceDisplay({
   return (
     <div className={cn("space-y-1.5", className)}>
       {label ? (
-        <span className="block text-xs font-normal uppercase tracking-[0.06em] text-muted-foreground">
-          {label}
-        </span>
+        <span className="block text-xs font-normal uppercase tracking-[0.06em] text-muted-foreground">{label}</span>
       ) : null}
       <div className="flex items-center gap-2">
         <span

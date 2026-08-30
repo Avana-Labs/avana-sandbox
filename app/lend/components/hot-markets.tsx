@@ -275,9 +275,7 @@ export function HotMarkets({
     <section>
       <div className="w-full">
         <div className="mb-5 flex items-center justify-between gap-3">
-          <h2 className="mt-1 text-2xl font-normal tracking-[-0.03em] text-foreground md:text-2xl">
-            {t("Featured")}
-          </h2>
+          <h2 className="mt-1 text-2xl font-normal tracking-[-0.03em] text-foreground md:text-2xl">{t("Featured")}</h2>
           <div className="flex items-center gap-2.5">
             <HowItWorks topic="lend" className="hidden md:inline-flex" />
             <CarouselArrowButtons

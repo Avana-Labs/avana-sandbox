@@ -157,9 +157,7 @@ export function DashboardInvestments({
                           <div className="text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">
                             {m(formatTokenAmount(token.balance, token.symbol))}
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            {m(formatUsdExact(token.suppliedUsd))}
-                          </div>
+                          <div className="text-sm text-muted-foreground">{m(formatUsdExact(token.suppliedUsd))}</div>
                         </td>
                         <td className={`py-3.5 text-right ${TABLE_ROW_HOVER_BG}`}>
                           <div className="text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">

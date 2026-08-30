@@ -120,9 +120,7 @@ export function MerklRewardsSection() {
     <section aria-label={t("Merkl Rewards")} className="space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-base font-normal tracking-tight text-foreground md:text-lg">
-            {t("Merkl Rewards")}
-          </h2>
+          <h2 className="text-base font-normal tracking-tight text-foreground md:text-lg">{t("Merkl Rewards")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {t("{count} rewards").replace("{count}", String(count))} · {t("Open on Launch Date")}
           </p>

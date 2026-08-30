@@ -70,9 +70,7 @@ export function SuppliesPanel({
       ) : null}
       {showHeading ? (
         <div className="mb-3">
-          <h3 className="text-lg font-normal tracking-tight text-foreground md:text-xl">
-            {t("My Collaterals")}
-          </h3>
+          <h3 className="text-lg font-normal tracking-tight text-foreground md:text-xl">{t("My Collaterals")}</h3>
           <p className="mt-1 text-sm text-muted-foreground">{formatSectionCount(rows.length, "asset", "assets")}</p>
         </div>
       ) : null}

@@ -79,9 +79,7 @@ function LendOpportunitySection({
   return (
     <section>
       <div className="mb-3">
-        <h2 className="text-lg font-normal tracking-tight text-foreground md:text-xl">
-          {t("Lend Opportunity")}
-        </h2>
+        <h2 className="text-lg font-normal tracking-tight text-foreground md:text-xl">{t("Lend Opportunity")}</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           {t("{count} assets").replace("{count}", String(opportunities.length))}
         </p>

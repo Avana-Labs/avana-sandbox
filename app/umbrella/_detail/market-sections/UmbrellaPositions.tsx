@@ -114,9 +114,7 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                 <tr>
                   <td colSpan={5} className="py-8 pl-5 pr-5 text-center">
                     <div className="flex flex-wrap items-center justify-center gap-3">
-                      <span className="text-sm text-muted-foreground">
-                        {t("You have no Umbrella positions yet.")}
-                      </span>
+                      <span className="text-sm text-muted-foreground">{t("You have no Umbrella positions yet.")}</span>
                       <Button asChild size="table" variant="table-primary" className="w-auto">
                         <Link href={actionPagePath("umbrella", "stake", { return: "/umbrella" })}>
                           <ActionIcon label={t("Stake")} />

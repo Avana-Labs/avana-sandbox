@@ -56,9 +56,7 @@ export function MultiplyCollateralTable({
       <section>
         {showHeading ? (
           <div className="mb-4">
-            <h3 className="text-lg font-normal tracking-tight text-foreground md:text-xl">
-              {t("Multiply Positions")}
-            </h3>
+            <h3 className="text-lg font-normal tracking-tight text-foreground md:text-xl">{t("Multiply Positions")}</h3>
           </div>
         ) : null}
         <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-sm text-muted-foreground">
@@ -72,9 +70,7 @@ export function MultiplyCollateralTable({
     <section>
       {showHeading ? (
         <div className="mb-4">
-          <h3 className="text-lg font-normal tracking-tight text-foreground md:text-xl">
-            {t("Multiply Positions")}
-          </h3>
+          <h3 className="text-lg font-normal tracking-tight text-foreground md:text-xl">{t("Multiply Positions")}</h3>
           <p className="mt-1 text-sm text-muted-foreground">
             {t("{count} positions").replace("{count}", String(activeRows.length))}
           </p>
@@ -251,9 +247,7 @@ export function MultiplyCollateralTable({
                       <div className="text-sm font-normal tracking-[-0.03em] text-foreground dark:text-white">
                         {row.label}
                       </div>
-                      <div className="truncate text-sm text-muted-foreground dark:text-white/38">
-                        {row.protocol}
-                      </div>
+                      <div className="truncate text-sm text-muted-foreground dark:text-white/38">{row.protocol}</div>
                     </div>
                   </div>
                 }

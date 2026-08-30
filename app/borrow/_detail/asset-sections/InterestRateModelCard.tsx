@@ -224,12 +224,7 @@ export function InterestRateModelCard({ utilizationPct, borrowAprPct, protocolPa
                 strokeDasharray="5 5"
               />
 
-              <text
-                x={optimalX}
-                y={PLOT_TOP}
-                textAnchor="middle"
-                className="fill-muted-foreground text-xs font-normal"
-              >
+              <text x={optimalX} y={PLOT_TOP} textAnchor="middle" className="fill-muted-foreground text-xs font-normal">
                 {t("Optimal")}
               </text>
               <text
@@ -247,9 +242,7 @@ export function InterestRateModelCard({ utilizationPct, borrowAprPct, protocolPa
         <aside className="flex min-w-0 flex-col justify-center lg:pl-2">
           <div>
             <div className="flex items-center gap-1">
-              <span className="text-sm font-normal leading-snug text-muted-foreground">
-                {t("Utilization rate")}
-              </span>
+              <span className="text-sm font-normal leading-snug text-muted-foreground">{t("Utilization rate")}</span>
               {utilizationHelp ? <ActionMetricHelp text={utilizationHelp} topic="Utilization rate" /> : null}
             </div>
             <div className="mt-2 font-data text-3xl font-normal leading-none tracking-[-0.03em] text-foreground md:text-4xl">

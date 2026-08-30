@@ -472,9 +472,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                       {selectedTopic?.articles.map((article) => (
                         <button key={article.title} type="button" className="block w-full py-3 text-left">
                           <div className="text-base font-normal text-brand">{t(article.title)}</div>
-                          <p className="mt-1 max-w-[56ch] text-sm leading-5 text-muted-foreground">
-                            {t(article.body)}
-                          </p>
+                          <p className="mt-1 max-w-[56ch] text-sm leading-5 text-muted-foreground">{t(article.body)}</p>
                         </button>
                       ))}
                     </div>

@@ -54,13 +54,9 @@ export function Sources({ sources, open, onOpenChange, className }: SourcesProps
                 </span>
                 <span className={cn(mono, "text-foreground/40 truncate")}>{source.domain}</span>
               </div>
-              <span className="text-foreground/90 line-clamp-2 text-sm leading-snug font-normal">
-                {source.title}
-              </span>
+              <span className="text-foreground/90 line-clamp-2 text-sm leading-snug font-normal">{source.title}</span>
               {source.locator ? <span className="text-foreground/50 text-xs">{source.locator}</span> : null}
-              {source.version ? (
-                <span className={cn(mono, "text-foreground/35 text-xs")}>{source.version}</span>
-              ) : null}
+              {source.version ? <span className={cn(mono, "text-foreground/35 text-xs")}>{source.version}</span> : null}
             </a>
           ))}
         </div>

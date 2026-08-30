@@ -112,9 +112,7 @@ export function ActionPageShell({
             <h1 className="text-[1.5rem] font-normal tracking-[-0.03em] text-foreground sm:text-[1.625rem]">
               {t(title)}
             </h1>
-            {subtitle ? (
-              <p className="mt-1.5 text-base leading-relaxed text-muted-foreground">{t(subtitle)}</p>
-            ) : null}
+            {subtitle ? <p className="mt-1.5 text-base leading-relaxed text-muted-foreground">{t(subtitle)}</p> : null}
           </div>
         ) : null}
 

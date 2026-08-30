@@ -411,9 +411,7 @@ export function HeroAreaChart({
         >
           <div className="flex flex-col gap-0.5">
             <span className="text-xs font-normal text-muted-foreground">{activePoint.label}</span>
-            <span className="font-data text-xs font-normal text-foreground">
-              {formatValue(activePoint.value)}
-            </span>
+            <span className="font-data text-xs font-normal text-foreground">{formatValue(activePoint.value)}</span>
           </div>
         </div>
       ) : null}

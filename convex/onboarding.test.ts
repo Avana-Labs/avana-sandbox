@@ -328,9 +328,9 @@ describe("sandbox onboarding + economy caps", () => {
       latest: { totalValueUsd: 1_000_000 },
       openPositions: 25,
     })
-    await expect(asUser.mutation(api.sandbox.transactions.ensurePortfolioSnapshot, { wallet: WALLET })).resolves.toEqual(
-      { wrote: false },
-    )
+    await expect(
+      asUser.mutation(api.sandbox.transactions.ensurePortfolioSnapshot, { wallet: WALLET }),
+    ).resolves.toEqual({ wrote: false })
   })
 
   test("economy counters are sharded off the hot claim row; live counts stay exact", async () => {

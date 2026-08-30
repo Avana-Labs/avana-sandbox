@@ -148,9 +148,7 @@ export function HowItWorks({ topic, className }: { topic: HowItWorksTopic; class
               </div>
             ))}
             {content.footnote ? (
-              <p className="border-t border-border pt-3 text-xs leading-5 text-muted-foreground">
-                {content.footnote}
-              </p>
+              <p className="border-t border-border pt-3 text-xs leading-5 text-muted-foreground">{content.footnote}</p>
             ) : null}
           </div>
         </DialogContent>

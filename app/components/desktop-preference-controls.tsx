@@ -233,9 +233,7 @@ export function DesktopPreferenceControls() {
                   <span className="flex items-center gap-2">
                     {option.code === currentNetwork.code ? <Check className="h-4 w-4 text-brand" /> : null}
                     {option.unavailable ? (
-                      <span className="text-xs text-muted-foreground/80 dark:text-white/48">
-                        {t("Unavailable")}
-                      </span>
+                      <span className="text-xs text-muted-foreground/80 dark:text-white/48">{t("Unavailable")}</span>
                     ) : null}
                   </span>
                 </DropdownMenuItem>

@@ -375,9 +375,7 @@ export function ActionAmountCard({
   )
 
   const gatedHintRow =
-    gated && assetPickerHint ? (
-      <div className="mt-1.5 text-sm text-muted-foreground">{t(assetPickerHint)}</div>
-    ) : null
+    gated && assetPickerHint ? <div className="mt-1.5 text-sm text-muted-foreground">{t(assetPickerHint)}</div> : null
 
   const assetPickerDialog =
     useDialogPicker && switchable && pickerTokens ? (

@@ -214,9 +214,7 @@ export function ExploreLoopsMarketsTable({
   return (
     <section className="mt-7">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="mt-1 text-2xl font-normal tracking-[-0.03em] text-foreground md:text-2xl">
-          {t("Trending")}
-        </h2>
+        <h2 className="mt-1 text-2xl font-normal tracking-[-0.03em] text-foreground md:text-2xl">{t("Trending")}</h2>
         <div className="flex items-center gap-2.5">
           <HowItWorks topic="multiply" className="hidden md:inline-flex" />
           <CarouselArrowButtons
@@ -756,9 +754,7 @@ const MobileLoopCard = React.memo(function MobileLoopCard({
                   <div className="truncate text-base font-normal tracking-[-0.03em] text-foreground dark:text-white">
                     {row.protocol}
                   </div>
-                  <div className="mt-0.5 truncate text-xs tracking-[-0.03em] text-muted-foreground">
-                    {row.asset}
-                  </div>
+                  <div className="mt-0.5 truncate text-xs tracking-[-0.03em] text-muted-foreground">{row.asset}</div>
                 </div>
               </div>
             </div>

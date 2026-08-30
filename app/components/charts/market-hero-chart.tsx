@@ -132,9 +132,7 @@ export function MarketHeroChart({
   return (
     <div className="relative space-y-2">
       {/* Metric name kept for screen readers / internal recognition; hidden visually. */}
-      {label ? (
-        <p className="text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">{label}</p>
-      ) : null}
+      {label ? <p className="text-xs font-normal uppercase tracking-[0.08em] text-muted-foreground">{label}</p> : null}
       <HeroBalanceDisplay
         value={value}
         delta={delta}
