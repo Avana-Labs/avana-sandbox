@@ -1,6 +1,12 @@
 import { z } from "zod"
 import { executeSourceLoad, type DataSourceRequestContext } from "@/app/lib/data/core/source-runtime"
-import { liveRewardsPageSource, type FetchRewardsPageInput, type RewardsPageSource } from "./source"
+import {
+  liveRewardsPageSource,
+  mockRewardsPageSource,
+  type FetchRewardsPageInput,
+  type RewardsPageSource,
+} from "./source"
+import { resolveDataSourceMode } from "../source-mode"
 import type { RewardsPageData } from "./types"
 
 const rewardsPageSchema = z.object({
@@ -28,7 +34,7 @@ export async function fetchRewardsPage(
   source?: RewardsPageSource,
   context?: DataSourceRequestContext,
 ): Promise<RewardsPageData> {
-  const primarySource = source ?? liveRewardsPageSource
+  const primarySource = source ?? (resolveDataSourceMode() === "mock" ? mockRewardsPageSource : liveRewardsPageSource)
   const response = await executeSourceLoad<RewardsPageSource, unknown>({
     primary: primarySource,
     operation: "getRewardsPageData",

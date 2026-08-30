@@ -19,7 +19,7 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   webServer: {
-    command: `NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1 PORT=${testPort} npm run dev`,
+    command: `NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1 AVANA_DATA_SOURCE=mock PORT=${testPort} npm run dev`,
     // Compile the shared transaction shell before workers start. Waiting on `/` only
     // reports the server ready while the first financial route is still a >60s cold build.
     url: testReadinessUrl,
