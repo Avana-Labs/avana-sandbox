@@ -89,7 +89,7 @@ const shortWallet = (wallet: string) => `${wallet.slice(0, 6)}…${wallet.slice(
 const SHARE_URL = "https://app.avana.cc"
 /**
  * Launch-style tweet auto-populated into the X composer. (X Web Intents can't attach an
- * image — the preview card comes from SHARE_URL's twitter:image meta, served by /og.)
+ * image — the preview card comes from SHARE_URL's twitter:image meta, served by /opengraph-image.)
  * Used only as the fallback when Convex config carries no tweetTemplate.
  */
 const DEFAULT_SHARE_TEXT = [

@@ -2,8 +2,9 @@ import { readFile } from "node:fs/promises"
 import { join } from "node:path"
 import { ImageResponse } from "next/og"
 
-// Branded share card used for og:image + (via summary_large_image) the X/Twitter card.
-// Served from the app's own origin so the share preview works on any deploy domain.
+// Branded share card for og:image + (via summary_large_image) the X/Twitter card.
+// File convention: app/opengraph-image.tsx is served at /opengraph-image on the app origin
+// so the share preview works on any deploy domain.
 // Runs on the default Node.js runtime so the card is statically generated at build
 // time — pinning the edge runtime would disable static generation for this route.
 export const alt = "Avana: a new Aave v4 lending market built for AMM markets"
