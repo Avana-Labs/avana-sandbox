@@ -22,7 +22,6 @@ This is an interactive free risk frontend demo for exploring **Avana**. You can 
 4. **Lend** — Deposit wallet balance into a market; withdraw supplied position.
 5. **Multiply** — Set collateral amount + multiplier; review net APY, LTV, liquidation price.
 
-
 ## Contributing
 
 Keep changes focused: engine logic in `app/lib/*-engine`, product UI in `app/{borrow,lend,multiply}`, shared action chrome in `app/components/action-page`. Run `npm test` and `npm run build` before opening a PR.
