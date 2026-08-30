@@ -6,7 +6,7 @@ import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-pr
 import { hasConvexClient, MarketLiquidityProvider } from "@/app/lib/convex/market-liquidity-provider"
 import { useConvexSiweAuth, useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { useOpenGateAuthBootstrap } from "@/app/lib/siwe/use-open-gate-auth-bootstrap"
-import { shouldUseOpenGateSession, TEST_MODE_WALLET_ADDRESS } from "@/app/lib/test-mode"
+import { isPlaywrightTestMode, shouldUseOpenGateSession, TEST_MODE_WALLET_ADDRESS } from "@/app/lib/test-mode"
 
 const ConvexSessionProvider = lazy(async () => ({
   default: (await import("@/app/lib/avana-session/convex-session-provider")).ConvexSessionProvider,
@@ -18,8 +18,8 @@ const ConvexSessionProvider = lazy(async () => ({
 // When NEXT_PUBLIC_CONVEX_URL is absent (Playwright CI / Lighthouse without backend),
 // point at an unreachable local port so useQuery resolves to undefined (loading) instead
 // of throwing "Could not find Convex client".
-const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL
 const OFFLINE_CONVEX_URL = "http://127.0.0.1:0"
+const convexUrl = isPlaywrightTestMode() ? undefined : process.env.NEXT_PUBLIC_CONVEX_URL
 const openGateConvexClient = new ConvexReactClient(
   convexUrl && /^https?:\/\//.test(convexUrl) ? convexUrl : OFFLINE_CONVEX_URL,
 )
@@ -77,6 +77,17 @@ function OpenGateSessionTree({ children }: { children: ReactNode }) {
 
 export function AvanaSessionProviders({ walletId, children }: { walletId?: string; children: ReactNode }) {
   const { authedWallet, isSignedIn } = useSiweAuth()
+  if (isPlaywrightTestMode()) {
+    return (
+      <OpenGateConvexProvider>
+        <MarketLiquidityProvider live={false}>
+          <AvanaSessionsProvider walletId={TEST_MODE_WALLET_ADDRESS} persistLocalState persistUmbrellaState={false}>
+            {children}
+          </AvanaSessionsProvider>
+        </MarketLiquidityProvider>
+      </OpenGateConvexProvider>
+    )
+  }
   if (shouldUseOpenGateSession()) {
     return (
       <OpenGateConvexProvider>

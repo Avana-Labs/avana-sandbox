@@ -41,7 +41,7 @@ export const mockRewardsPageAdapter = createDataSourceAdapter({
   mode: "mock",
 })
 
-function buildRewardsPageData(wallet: string, state: RewardsSessionState): RewardsPageData {
+function buildRewardsPageData(wallet: string, state: RewardsSessionState): DataSourceResponse<RewardsPageData> {
   const now = Date.now()
   const tasks = buildDefaultRewardsCatalog(now)
   const progress = evaluateAllTasksForUser({

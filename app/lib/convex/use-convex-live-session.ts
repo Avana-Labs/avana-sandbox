@@ -2,16 +2,18 @@
 
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
-import { shouldUseOpenGateSession } from "@/app/lib/test-mode"
+import { isPlaywrightTestMode, shouldUseOpenGateSession } from "@/app/lib/test-mode"
 
 /**
  * True when a `ConvexProvider` is mounted above the current subtree, so client
  * `useQuery`/`usePreloadedQuery` are safe to call.
  *
  * This MUST mirror the provider tree in `AvanaSessionProviders`:
- *   - open-gate (dev/test): `OpenGateConvexProvider` is always mounted (even when
+ *   - dev open-gate: `OpenGateConvexProvider` is always mounted (even when
  *     `NEXT_PUBLIC_CONVEX_URL` is absent it points at an unreachable client so
  *     queries resolve to `undefined`, never throw) → always live.
+ *   - Playwright test mode: an inert provider keeps direct Convex hooks structurally valid,
+ *     while reactive wallet reads stay on their static/mock variants.
  *   - signed-in production: `MarketLiquidityProvider` mounts its
  *     `ConvexProviderWithAuth` only when `hasConvexClient && isSignedIn && authedWallet`.
  *   - signed-out production: NO ConvexProvider → NOT live (a `useQuery` there throws
@@ -23,6 +25,7 @@ import { shouldUseOpenGateSession } from "@/app/lib/test-mode"
  */
 export function useConvexLiveSession(): boolean {
   const { authedWallet, isSignedIn } = useSiweAuth()
+  if (isPlaywrightTestMode()) return false
   if (shouldUseOpenGateSession()) return true
   return Boolean(hasConvexClient && isSignedIn && authedWallet)
 }

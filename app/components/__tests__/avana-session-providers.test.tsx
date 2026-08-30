@@ -5,6 +5,7 @@ import { AvanaSessionProviders } from "../avana-session-providers"
 const mocks = vi.hoisted(() => ({
   convexAuthenticated: false,
   openGate: false,
+  playwright: false,
   openGateReady: true,
   siwe: {
     authedWallet: "0x1111111111111111111111111111111111111111",
@@ -33,6 +34,7 @@ vi.mock("@/app/lib/siwe/use-open-gate-auth-bootstrap", () => ({
 }))
 
 vi.mock("@/app/lib/test-mode", () => ({
+  isPlaywrightTestMode: () => mocks.playwright,
   shouldUseOpenGateSession: () => mocks.openGate,
   TEST_MODE_WALLET_ADDRESS: "0x2222222222222222222222222222222222222222",
 }))
@@ -68,6 +70,7 @@ describe("AvanaSessionProviders", () => {
     mocks.convexAuthenticated = false
     mocks.siwe.isSignedIn = true
     mocks.openGate = false
+    mocks.playwright = false
     mocks.openGateReady = true
   })
 
@@ -128,6 +131,21 @@ describe("AvanaSessionProviders", () => {
     // Instant Paint: never blank — local session carries chrome while JWT mints.
     expect(screen.getByTestId("local-session")).toBeInTheDocument()
     expect(screen.getByText("App content")).toBeInTheDocument()
+    expect(screen.queryByTestId("convex-session")).not.toBeInTheDocument()
+  })
+
+  it("keeps Playwright test mode on the local session without Convex auth bootstrap", async () => {
+    mocks.playwright = true
+    mocks.openGate = true
+    mocks.siwe.isSignedIn = false
+
+    render(
+      <AvanaSessionProviders>
+        <div>App content</div>
+      </AvanaSessionProviders>,
+    )
+
+    expect(screen.getByTestId("local-session")).toHaveTextContent("App content")
     expect(screen.queryByTestId("convex-session")).not.toBeInTheDocument()
   })
 })

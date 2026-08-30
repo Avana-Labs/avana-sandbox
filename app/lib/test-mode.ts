@@ -1,6 +1,7 @@
 /**
- * Dev "open gate" shortcut — auto-injects TEST_MODE_WALLET_ADDRESS, skips the onboarding/auth
- * gate, and serves mock data, so you can iterate on the app without connecting a wallet.
+ * Dev "open gate" shortcut — auto-injects TEST_MODE_WALLET_ADDRESS and skips the onboarding/auth
+ * gate, so you can iterate on the app without connecting a wallet. Dev open-gate uses live
+ * Convex; Playwright separately selects deterministic mock data and a local-only session.
  *
  * ── SAFETY: it can NEVER activate in a production build ──────────────────────────────────────
  * Every `next build` (local `npm run start`, Vercel, and every deploy) runs with
@@ -66,9 +67,8 @@ export function shouldUseOpenGateSession(): boolean {
 
 /**
  * The dev open-gate session (fake wallet, skip SIWE) is INTENTIONALLY decoupled from the
- * mock data source. Open-gate now reads live Convex data against a shared dev wallet, so
- * dev work exercises the same reads/writes production users hit — no mock catalog overlay.
- * Mock data remains available for isolated unit/e2e work via an explicit AVANA_DATA_SOURCE.
+ * mock data source. Dev work reads live Convex against a shared wallet. Playwright sets
+ * AVANA_DATA_SOURCE=mock explicitly and its provider tree stays local-only.
  */
 export function shouldUseMockDataSource(): boolean {
   return process.env.AVANA_DATA_SOURCE === "mock"
