@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation"
 import { Header } from "@/app/components/header"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useHydrated, useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
-import { useWalletGate } from "@/app/lib/web3/wallet-gate"
 import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { GuestOnboardingFlow } from "./guest-onboarding-flow"
@@ -83,7 +82,6 @@ export function SandboxGate({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const hydrated = useHydrated()
   const { authedWallet, isSignedIn } = useSiweAuth()
-  const { active: walletActive } = useWalletGate()
   // Ask AI is public for guests (knowledge / markets without a wallet). Signed-in
   // users keep the normal AuthedGate mounted so closing Ask doesn't tear down the
   // product shell and flash a blank screen while Convex/session rehydrate.
@@ -97,13 +95,6 @@ export function SandboxGate({ children }: { children: ReactNode }) {
   // Hold a layout-stable shell until the client has hydrated — never onboarding,
   // never a blank document (Instant Paint). The top page-loading bar still runs.
   if (!hydrated) {
-    return (
-      <LockedShell>
-        <ProductRoutePending />
-      </LockedShell>
-    )
-  }
-  if (isSignedIn && !walletActive) {
     return (
       <LockedShell>
         <ProductRoutePending />
