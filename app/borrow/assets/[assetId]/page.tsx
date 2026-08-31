@@ -58,8 +58,12 @@ export default async function BorrowAssetPage({ params }: PageProps) {
     preloadDetailQuickStats("asset", canonicalSlug),
     preloadDetailCashflow("asset", canonicalSlug),
   ])
-  const detailBase = preferLive(detailRawConvex, getAssetDetail(assetId), `borrow asset page:${assetId}`)
-  if (!detailBase) notFound()
+  // Fail closed like the pool / lend / multiply detail routes: getAssetDetailFromConvex
+  // already returns null in live mode when Convex has no snapshot, so honor that with a
+  // notFound() instead of swapping the whole mock catalog detail back in. (Mock mode
+  // returns a catalog-built detail here, so the demo/Playwright routes still render.)
+  if (!detailRawConvex) notFound()
+  const detailBase = detailRawConvex
   const spoke = resolveSpokeBorrowable(normalizeBorrowAssetRouteId(assetId))
   const detail = applyAssetPreloadedOverlays(detailBase, {
     quickStats: readPreloadedQuickStats(quickStatsPreload),
