@@ -1255,9 +1255,11 @@ export const recordRewardsClaim = mutation({
         case "first-lend-deposit":
           return successful.some((row) => row.product === "lend" && row.kind === "deposit")
         case "supply-5k-lend":
-          return successful
-            .filter((row) => row.product === "lend" && row.kind === "deposit")
-            .reduce((sum, row) => sum + row.amountUsd, 0) >= 500
+          return (
+            successful
+              .filter((row) => row.product === "lend" && row.kind === "deposit")
+              .reduce((sum, row) => sum + row.amountUsd, 0) >= 500
+          )
         case "first-borrow":
           return successful.some((row) => row.product === "borrow" && row.kind === "borrow")
         case "first-repay":
