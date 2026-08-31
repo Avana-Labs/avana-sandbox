@@ -1,7 +1,7 @@
 "use client"
 
 import { Archive, ArchiveRestore, Check, Pencil, X } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { triggerPageLoading } from "@/app/lib/page-loading"
 import { QuotaBanner } from "@/components/elements/quota-banner"
@@ -49,6 +49,16 @@ export function AskAIThreadList({
   const [draftTitle, setDraftTitle] = useState("")
   const [showArchived, setShowArchived] = useState(false)
   const router = useRouter()
+  const asideRef = useRef<HTMLElement>(null)
+  // When closed, the drawer is only translated/collapsed offscreen but stays in the DOM, so
+  // without `inert` its New Thread / rename / archive controls remain focusable and exposed to
+  // assistive tech. Toggle it imperatively — React 18 has no typed `inert` prop.
+  useEffect(() => {
+    const node = asideRef.current
+    if (!node) return
+    if (open) node.removeAttribute("inert")
+    else node.setAttribute("inert", "")
+  }, [open])
   return (
     <>
       {open ? (
@@ -60,6 +70,7 @@ export function AskAIThreadList({
         />
       ) : null}
       <aside
+        ref={asideRef}
         aria-label="Ask AI thread history"
         className={`fixed bottom-0 left-0 top-16 z-50 flex w-[min(86vw,300px)] flex-col overflow-hidden border-r border-border/40 bg-background text-foreground transition-transform lg:static lg:z-auto lg:shrink-0 lg:border-r-0 lg:bg-muted/20 lg:transition-[width,padding] ${
           open ? "translate-x-0 p-3 lg:w-[260px]" : "-translate-x-full p-3 lg:w-0 lg:translate-x-0 lg:p-0"
