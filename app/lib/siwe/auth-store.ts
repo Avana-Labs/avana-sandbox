@@ -12,6 +12,28 @@ export type SiweToken = { jwt: string; wallet: string }
 const STORAGE_KEY = "avana.siwe.token.v1"
 const LEGACY_LOCAL_STORAGE_KEY = STORAGE_KEY
 
+// Non-sensitive presence hint (NO token, just "1") mirrored to a browser cookie so the SERVER can
+// tell a never-signed-in visitor (no cookie) from someone who might be signed in (cookie present).
+// The sandbox gate uses it to SSR the onboarding hero for guests without flashing it at signed-in
+// users. Auth is tab-scoped (sessionStorage), so a lingering cookie only ever makes the gate MORE
+// conservative (hold the neutral shell) — it can never render a wrong-state view. Set on sign-in,
+// cleared on explicit sign-out only.
+const AUTH_HINT_COOKIE = "avana_auth_hint"
+function writeAuthHintCookie() {
+  try {
+    document.cookie = `${AUTH_HINT_COOKIE}=1; path=/; max-age=86400; samesite=lax`
+  } catch {
+    // cookies unavailable (private mode) — the gate just falls back to the neutral shell
+  }
+}
+function clearAuthHintCookie() {
+  try {
+    document.cookie = `${AUTH_HINT_COOKIE}=; path=/; max-age=0; samesite=lax`
+  } catch {
+    // ignore
+  }
+}
+
 let current: SiweToken | null = null
 let loaded = false
 const listeners = new Set<() => void>()
@@ -68,6 +90,7 @@ export function setSiweToken(jwt: string, wallet: string) {
   } catch {
     // ignore storage failures (private mode, etc.) — in-memory token still works
   }
+  writeAuthHintCookie()
   emit()
 }
 
@@ -80,6 +103,7 @@ export function clearSiweToken() {
   } catch {
     // ignore
   }
+  clearAuthHintCookie()
   emit()
 }
 

@@ -78,7 +78,7 @@ function GateUnavailable({ variant = "error" }: { variant?: "error" | "offline" 
 }
 
 /** Every wallet stays inside the gate until Convex confirms completed onboarding. */
-export function SandboxGate({ children }: { children: ReactNode }) {
+export function SandboxGate({ children, authHint }: { children: ReactNode; authHint?: "guest" | "maybe-authed" }) {
   const pathname = usePathname()
   const hydrated = useHydrated()
   const { authedWallet, isSignedIn } = useSiweAuth()
@@ -95,6 +95,18 @@ export function SandboxGate({ children }: { children: ReactNode }) {
   // Hold a layout-stable shell until the client has hydrated — never onboarding,
   // never a blank document (Instant Paint). The top page-loading bar still runs.
   if (!hydrated) {
+    // A visitor with no auth-hint cookie (authHint === "guest") has never signed in on this
+    // browser, so there is no onboarded session to protect — SSR the onboarding hero immediately
+    // for a fast guest LCP instead of waiting a full hydration cycle. Anyone who MIGHT be signed in
+    // (cookie present, or hint unknown) keeps the neutral shell until the client confirms, which
+    // preserves the no-onboarding-flash guarantee for returning users.
+    if (authHint === "guest") {
+      return (
+        <LockedShell>
+          <GuestOnboardingFlow />
+        </LockedShell>
+      )
+    }
     return (
       <LockedShell>
         <ProductRoutePending />

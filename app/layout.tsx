@@ -1,6 +1,6 @@
 import "./globals.css"
 import type { Metadata } from "next"
-import { headers } from "next/headers"
+import { cookies, headers } from "next/headers"
 import localFont from "next/font/local"
 import type React from "react"
 import { Suspense } from "react"
@@ -127,6 +127,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const initialTokenPrices = await loadServerTokenPrices()
   // Per-request CSP nonce (set by middleware) for the inline theme-bootstrap script below.
   const nonce = (await headers()).get("x-nonce") ?? undefined
+  // Server-readable presence hint (no token) so SandboxGate can SSR the onboarding hero for
+  // never-signed-in visitors (fast guest LCP) while holding the neutral shell for anyone who might
+  // be signed in. See app/lib/siwe/auth-store.ts and app/components/sandbox/sandbox-gate.tsx.
+  const authHint: "guest" | "maybe-authed" = (await cookies()).has("avana_auth_hint") ? "maybe-authed" : "guest"
 
   return (
     <html
@@ -156,7 +160,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <DisplayPreferencesProvider>
             <WalletGateProvider>
               <Web3ProviderBoundary>
-                <SandboxGate>
+                <SandboxGate authHint={authHint}>
                   <ProductRuntimeProviders initialTokenPrices={initialTokenPrices}>
                     <CurrencyDisplayBoundary>
                       <ConditionalSiteChrome>
