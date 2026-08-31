@@ -22,6 +22,7 @@ import { validatedTokenPriceUsd } from "./oraclePrice"
 import {
   adjustProductBalanceUsd,
   appendPortfolioSnapshot,
+  appendServerRiskSnapshot,
   applyLedgerDelta,
   applyLiquidAssetDelta,
 } from "./transactions"
@@ -334,6 +335,7 @@ export const recordLiquidation = mutation({
       })
       await applyLedgerDelta(ctx, marketSlug, -repaidUsd, -seizedUsd, now)
       await Promise.all([appendPortfolioSnapshot(ctx, victim, now), appendPortfolioSnapshot(ctx, liquidator, now)])
+      await appendServerRiskSnapshot(ctx, victim, now, "liquidation")
     }
 
     const id = await ctx.db.insert("liquidationActions", {
