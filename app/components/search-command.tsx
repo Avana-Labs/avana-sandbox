@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { rankResults } from "@/app/lib/search-ranking"
 import { useCurrency } from "@/app/lib/currency/use-currency"
-import { useBorrowSessionContextOptional } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useBorrowSessionContextOptional } from "@/app/lib/avana-session/avana-sessions-context"
 import type { BorrowPoolRow, BorrowableAsset } from "@/app/lib/borrow-sim"
 
 type SearchTab = "all" | "pools" | "borrow" | "lend"

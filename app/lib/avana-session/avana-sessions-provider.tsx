@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useEffect, useMemo, useRef, useCallback, type ReactNode } from "react"
+import { useEffect, useMemo, useRef, useCallback, type ReactNode } from "react"
 import { useMarketLiquidity } from "@/app/lib/convex/market-liquidity-provider"
 import { useRewardsSession } from "@/app/lib/rewards-system"
 import type { SandboxActionResult } from "@/app/lib/borrow-system/contracts"
@@ -18,13 +18,23 @@ import {
 import type { SwapTransactionRecord } from "@/app/lib/swap-system/transaction-adapter"
 import type { SwapQuote, SwapQuoteRequest } from "@/app/lib/swap-system/quote-provider"
 import { useAvanaSession } from "./use-avana-session"
+import {
+  AvanaIdentityContext,
+  AvanaSessionsContext,
+  BorrowSessionContext,
+  LendSessionContext,
+  MultiplySessionContext,
+  RewardsSessionContext,
+  SwapSessionContext,
+  UmbrellaSessionContext,
+} from "./avana-sessions-context"
 
-type BorrowSession = ReturnType<typeof useBorrowSession>
-type MultiplySession = ReturnType<typeof useMultiplySession>
-type LendSession = ReturnType<typeof useLendSession>
-type RewardsSession = ReturnType<typeof useRewardsSession>
-type SwapSession = ReturnType<typeof useSwapSession>
-type UmbrellaSession = ReturnType<typeof useUmbrellaSession>
+export type BorrowSession = ReturnType<typeof useBorrowSession>
+export type MultiplySession = ReturnType<typeof useMultiplySession>
+export type LendSession = ReturnType<typeof useLendSession>
+export type RewardsSession = ReturnType<typeof useRewardsSession>
+export type SwapSession = ReturnType<typeof useSwapSession>
+export type UmbrellaSession = ReturnType<typeof useUmbrellaSession>
 
 function usd6ToNumber(value: bigint) {
   return Number(value) / 1_000_000
@@ -177,15 +187,6 @@ export type AvanaSessions = {
 }
 
 export type AvanaIdentity = Pick<AvanaSessions, "walletId" | "walletAddress" | "sandboxMode">
-
-const AvanaSessionsContext = createContext<AvanaSessions | null>(null)
-const AvanaIdentityContext = createContext<AvanaIdentity | null>(null)
-const BorrowSessionContext = createContext<BorrowSession | null>(null)
-const MultiplySessionContext = createContext<MultiplySession | null>(null)
-const LendSessionContext = createContext<LendSession | null>(null)
-const RewardsSessionContext = createContext<RewardsSession | null>(null)
-const SwapSessionContext = createContext<SwapSession | null>(null)
-const UmbrellaSessionContext = createContext<UmbrellaSession | null>(null)
 
 export function AvanaSessionsProvider({
   walletId,
@@ -368,80 +369,15 @@ export function AvanaSessionsProvider({
   )
 }
 
-export function useAvanaSessions() {
-  const context = useContext(AvanaSessionsContext)
-  if (!context) {
-    throw new Error("useAvanaSessions must be used within AvanaSessionsProvider")
-  }
-  return context
-}
-
-export function useOptionalAvanaSessions() {
-  return useContext(AvanaSessionsContext)
-}
-
-export function useAvanaIdentity() {
-  const context = useContext(AvanaIdentityContext)
-  if (!context) {
-    throw new Error("useAvanaIdentity must be used within AvanaSessionsProvider")
-  }
-  return context
-}
-
-export function useBorrowSessionContext() {
-  const context = useContext(BorrowSessionContext)
-  if (!context) {
-    throw new Error("useBorrowSessionContext must be used within AvanaSessionsProvider")
-  }
-  return context
-}
-
-/**
- * Returns the borrow session when mounted inside AvanaSessionsProvider, null otherwise.
- * Use in components that appear in BOTH session-scoped surfaces (dashboard, borrow) AND
- * chromed shells that may render without a session (e.g. the global search command
- * inside a test-only wrapper). Session-scoped consumers should keep useBorrowSessionContext.
- */
-export function useBorrowSessionContextOptional() {
-  return useContext(BorrowSessionContext)
-}
-
-export function useMultiplySessionContext() {
-  const context = useContext(MultiplySessionContext)
-  if (!context) {
-    throw new Error("useMultiplySessionContext must be used within AvanaSessionsProvider")
-  }
-  return context
-}
-
-export function useLendSessionContext() {
-  const context = useContext(LendSessionContext)
-  if (!context) {
-    throw new Error("useLendSessionContext must be used within AvanaSessionsProvider")
-  }
-  return context
-}
-
-export function useRewardsSessionContext() {
-  const context = useContext(RewardsSessionContext)
-  if (!context) {
-    throw new Error("useRewardsSessionContext must be used within AvanaSessionsProvider")
-  }
-  return context
-}
-
-export function useSwapSessionContext() {
-  const context = useContext(SwapSessionContext)
-  if (!context) {
-    throw new Error("useSwapSessionContext must be used within AvanaSessionsProvider")
-  }
-  return context
-}
-
-export function useUmbrellaSessionContext() {
-  const context = useContext(UmbrellaSessionContext)
-  if (!context) {
-    throw new Error("useUmbrellaSessionContext must be used within AvanaSessionsProvider")
-  }
-  return context
-}
+export {
+  useAvanaIdentity,
+  useAvanaSessions,
+  useBorrowSessionContext,
+  useBorrowSessionContextOptional,
+  useLendSessionContext,
+  useMultiplySessionContext,
+  useOptionalAvanaSessions,
+  useRewardsSessionContext,
+  useSwapSessionContext,
+  useUmbrellaSessionContext,
+} from "./avana-sessions-context"
