@@ -237,6 +237,45 @@ type AskAISource = {
   version?: string
 }
 
+function askAIWebSourceDomain(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "")
+  } catch {
+    return url
+  }
+}
+
+// Web-search citations (from the provider-executed openai.tools.webSearch tool) arrive on each
+// step's `sources` as { sourceType: 'url', url, title }. Map them into the Sources-card shape so
+// a user can follow where a web-grounded answer came from — these were previously discarded.
+function askAIWebSources(steps: readonly unknown[]): AskAISource[] {
+  return steps.flatMap((step) => {
+    const stepSources = (step as { sources?: unknown }).sources
+    if (!Array.isArray(stepSources)) return []
+    return stepSources.flatMap((source) => {
+      if (!source || typeof source !== "object") return []
+      const candidate = source as { sourceType?: unknown; url?: unknown; title?: unknown }
+      if (candidate.sourceType !== "url" || typeof candidate.url !== "string" || candidate.url.length === 0) return []
+      const domain = askAIWebSourceDomain(candidate.url)
+      const title =
+        typeof candidate.title === "string" && candidate.title.trim().length > 0 ? candidate.title.trim() : domain
+      return [{ domain, title, locator: "", url: candidate.url, kind: "web" }]
+    })
+  })
+}
+
+// Collapse repeated citations (web search can return the same URL more than once, and a web hit
+// can coincide with a knowledge source) so the card shows each source once.
+function dedupeAskAISources(sources: AskAISource[]): AskAISource[] {
+  const seen = new Set<string>()
+  return sources.filter((source) => {
+    const key = source.url ?? `${source.domain}::${source.title}::${source.locator}`
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  })
+}
+
 const ASK_AI_ERROR_CODES = ["ASK_AI_GENERATION_FAILED", "ASK_AI_RATE_LIMITED", "ASK_AI_UNAVAILABLE"] as const
 type AskAIErrorCode = (typeof ASK_AI_ERROR_CODES)[number]
 
@@ -468,10 +507,11 @@ export const generateTurn = internalAction({
             : [],
         ),
       )
-      const sources = [
+      const sources = dedupeAskAISources([
         ...(prefetched?.sources ?? []),
         ...ragResults.flatMap((ragResult) => (ragResult.sources ?? []) as AskAISource[]),
-      ]
+        ...askAIWebSources(steps),
+      ])
       // One entry per financial tool call the model actually made. `payload` is
       // the tool's structured result verbatim; `dataProvenance` is read
       // defensively because Lane D adds it to the tool output separately.

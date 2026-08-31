@@ -7,6 +7,17 @@ const { useQuery, testMode } = vi.hoisted(() => ({
 }))
 
 vi.mock("convex/react", () => ({ useQuery }))
+// Stub the lazily-imported Convex prices module so React.lazy(() => import("./convex-token-prices"))
+// never pulls the real convex/_generated graph. That dynamic import resolving AFTER the test env was
+// torn down produced a flaky EnvironmentTeardownError under the full (unsharded) vitest run. The stub
+// still calls the mocked useQuery when rendered, so the "did NOT open a subscription" assertions below
+// stay meaningful — a regression that mounted it would still trip expect(useQuery).not.toHaveBeenCalled().
+vi.mock("@/app/lib/prices/convex-token-prices", () => ({
+  default: () => {
+    useQuery()
+    return null
+  },
+}))
 vi.mock("@/app/lib/convex/market-liquidity-provider", () => ({
   hasConvexClient: true,
 }))

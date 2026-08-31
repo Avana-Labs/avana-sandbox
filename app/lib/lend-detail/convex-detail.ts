@@ -21,7 +21,9 @@ import {
 import { QUICK_STAT_ALIASES } from "@/app/lib/detail-page/live-quick-stats"
 import { injectSiloedMarketQuickStats, overlayHeroIdentity } from "@/app/lib/detail-page/siloed-market-overlay"
 import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
-import { shouldFailClosedInLive } from "@/app/lib/detail-page/live-fallback"
+import { preferLiveOrNull, shouldFailClosedInLive } from "@/app/lib/detail-page/live-fallback"
+import { EMPTY_RISK_ASSESSMENT } from "@/app/lib/detail-page/empty-risk-assessment"
+import { warnLiveFallback } from "@/app/lib/data/providers/hydration-telemetry"
 import {
   ABOUT_CONTRACT_ADDRESS_SALTS,
   aboutContractAddressLabelForSalt,
@@ -129,10 +131,11 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
   if (!market) return null
   const slug = market.marketId
 
+  const mode = resolveDataSourceMode()
   const snapshot = await fetchLendMarketSnapshot(slug)
   // Fail closed in live mode when Convex has no snapshot — matches borrow detail
   // so the page never silently renders the mock catalog next to an empty live list.
-  if (shouldFailClosedInLive(resolveDataSourceMode(), snapshot != null)) return null
+  if (shouldFailClosedInLive(mode, snapshot != null)) return null
   const detail = buildLendMarketDetail(
     market,
     snapshot
@@ -183,6 +186,11 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
     utilization: emptySeries(`${slug}:sb:utilization`, "Utilization"),
   }
 
+  // protocolParameters has no empty-state card (an IRM table with no rows reads as
+  // broken), so keep the catalog rows when Convex has no IRM — but make the fallback
+  // loud in live so the missing lendInterestRateModel seed gets fixed.
+  if (mode === "live" && !interestRateModel) warnLiveFallback("lend", slug, "interestRateModel")
+
   const hydrated = applyDetailContentOverlay(
     {
       ...detail,
@@ -195,14 +203,17 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
       supplyBorrow: shouldStripMockSeriesForLive()
         ? ((supplyBorrow as typeof detail.supplyBorrow | null) ?? emptySupplyBorrow)
         : ((supplyBorrow as typeof detail.supplyBorrow | null) ?? detail.supplyBorrow),
-      transactions: (transactions as typeof detail.transactions) ?? detail.transactions,
-      risk: (risk as typeof detail.risk) ?? detail.risk,
+      // Fail closed in live: empty (not the catalog copy) when Convex has no rows.
+      // The client overlays the wallet's own session transactions on top of this.
+      transactions:
+        preferLiveOrNull(mode, transactions as typeof detail.transactions | null, detail.transactions) ?? [],
+      risk: preferLiveOrNull(mode, risk as typeof detail.risk | null, detail.risk) ?? EMPTY_RISK_ASSESSMENT,
       utilizationPct: headline.utilizationPct,
       borrowAprPct: headline.borrowAprPct,
       protocolParameters: interestRateModel ? irmProtocolParameters(interestRateModel) : detail.protocolParameters,
     },
     content,
-    { clearWhenMissing: resolveDataSourceMode() === "live" },
+    { clearWhenMissing: mode === "live" },
   )
 
   return applyRiskParametersToAbout(

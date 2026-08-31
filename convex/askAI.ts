@@ -359,6 +359,10 @@ export const enqueueTurn = mutation({
     await enforceAskAIRateLimit(() =>
       askAIRateLimiter.limit(ctx, "perSubjectDaily", { key: ownerSubject, throws: true }),
     )
+    // Global daily backstop caps aggregate spend across all subjects. perSubjectBurst is
+    // intentionally not enforced here: the turn queue is designed to let a single subject
+    // stack several messages at once, which a 1-per-5s burst limit would break.
+    await enforceAskAIRateLimit(() => askAIRateLimiter.limit(ctx, "globalDaily", { throws: true }))
     const saved = await saveMessage(ctx, components.agent, { threadId, userId: ownerSubject, prompt: text })
     const now = Date.now()
     const wallet = await getAuthedWallet(ctx)

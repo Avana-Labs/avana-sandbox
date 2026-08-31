@@ -135,6 +135,14 @@ function DirectUserMessage({ message }: { message: ThreadMessage }) {
   )
 }
 
+// Sources renders collapsed by default and expands on click. It owns its open state so the
+// disclosure actually works — it was previously rendered with a hardcoded open={false} and a
+// no-op onOpenChange, which left the pill permanently shut and its links unreachable.
+function SourcesPart({ sources }: { sources: Source[] }) {
+  const [open, setOpen] = useState(false)
+  return <Sources sources={sources} open={open} onOpenChange={setOpen} className="max-w-none" />
+}
+
 function DirectAssistantPart({ part }: { part: ThreadMessage["content"][number] }) {
   if (part.type === "text") return <MarkdownTextContent text={part.text} />
   if (part.type !== "data") return null
@@ -143,10 +151,7 @@ function DirectAssistantPart({ part }: { part: ThreadMessage["content"][number] 
     const data = part.data as { label: string; value: string; points: number[]; delta?: string }
     return <Chart {...data} visibleCount={data.points.length} variant="line" className="max-w-md" />
   }
-  if (part.name === "sources")
-    return (
-      <Sources sources={part.data as Source[]} open={false} onOpenChange={() => undefined} className="max-w-none" />
-    )
+  if (part.name === "sources") return <SourcesPart sources={part.data as Source[]} />
   if (part.name === "retrieval") {
     const data = part.data as { query: string; chunks: RetrievalChunk[] }
     return (
@@ -589,7 +594,7 @@ export function AskAIThread({
                 onSend={onSend}
                 onCancel={onCancelRunning}
               />
-              {isEmpty ? (
+              {isEmpty && messagesRemaining !== 0 ? (
                 <div
                   className="flex w-full flex-wrap items-center justify-center gap-2 px-4"
                   onMouseLeave={() => setHoveredPrompt(null)}

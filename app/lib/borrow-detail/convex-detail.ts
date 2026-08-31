@@ -47,6 +47,8 @@ import { buildMockLiquidationRiskStats } from "@/app/lib/detail-page/liquidation
 import { injectSiloedMarketQuickStats, overlayHeroIdentity } from "@/app/lib/detail-page/siloed-market-overlay"
 import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
 import { shouldFailClosedWithoutSnapshots } from "@/app/lib/borrow-detail/live-fallback"
+import { preferLiveOrNull } from "@/app/lib/detail-page/live-fallback"
+import { EMPTY_RISK_ASSESSMENT } from "@/app/lib/detail-page/empty-risk-assessment"
 import {
   ABOUT_CONTRACT_ADDRESS_SALTS,
   aboutContractAddressLabelForSalt,
@@ -139,15 +141,6 @@ export function syncQuickStatsRiskPremium(quickStats: QuickStat[], premiumBps: n
  * that makes the corresponding UI section render empty (no rows, no bars).
  */
 const EMPTY_CASHFLOW_CARD: import("./types").CashflowCard = { bars: [], rows: [], periodLabel: "" }
-const EMPTY_RISK_ASSESSMENT: import("./types").RiskAssessment = {
-  premiumBps: 0,
-  level: "low",
-  score: 0,
-  headline: "",
-  summary: "",
-  breakdown: [],
-  metrics: [],
-}
 const EMPTY_CASHFLOW_TREND: import("./types").CashflowTrend = {
   totalLabel: "",
   periodLabel: "",
@@ -296,8 +289,9 @@ async function getPoolDetailFromConvexUncached(id: string): Promise<PoolDetail |
   const catalogDetail = resolvePoolDetailFromState(state, detailWalletId, routeId)
   if (!catalogDetail) return null
 
+  const mode = resolveDataSourceMode()
   const snap = await fetchConvexMarketSnapshot("pool", catalogDetail.row.id)
-  if (shouldFailClosedWithoutSnapshots(resolveDataSourceMode(), snap ? 1 : 0)) return null
+  if (shouldFailClosedWithoutSnapshots(mode, snap ? 1 : 0)) return null
   const hydratedState = snap ? mergeConvexMarketSnapshots(state, [snap]) : state
   const detail = resolvePoolDetailFromState(hydratedState, detailWalletId, routeId)
   if (!detail) return null
@@ -355,12 +349,18 @@ async function getPoolDetailFromConvexUncached(id: string): Promise<PoolDetail |
       transactions: (transactions as typeof detail.transactions | null) ?? [],
       risk: convexRisk ?? EMPTY_RISK_ASSESSMENT,
       borrowableAssets: mapConvexBorrowables(poolBorrowables),
-      liquidationRisk: liquidationRisk?.stats?.length
-        ? liquidationRisk.stats
-        : (detail.liquidationRisk ?? buildMockLiquidationRiskStats(detail.row.id)),
+      // Fail closed in live: never fabricate liquidation KPIs. When Convex has no
+      // liquidation rows the card renders its empty state (the client guards on
+      // length); the PRNG mock stays reserved for the demo catalog (mock mode).
+      liquidationRisk:
+        preferLiveOrNull(
+          mode,
+          liquidationRisk?.stats?.length ? liquidationRisk.stats : null,
+          detail.liquidationRisk ?? buildMockLiquidationRiskStats(detail.row.id),
+        ) ?? [],
     },
     content,
-    { clearWhenMissing: resolveDataSourceMode() === "live" },
+    { clearWhenMissing: mode === "live" },
   )
 
   const withIdentity = injectContractAddressStats(

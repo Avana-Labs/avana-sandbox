@@ -7,18 +7,15 @@ import * as Sentry from "@sentry/nextjs"
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
-  // Add optional integrations for additional features
-  integrations: [Sentry.replayIntegration()],
+  // Session Replay is intentionally NOT enabled. replayIntegration pulls in rrweb (~hundreds of
+  // KB), which Turbopack bundles onto the first-load critical path of EVERY page (it was the
+  // single biggest chunk on `/`). With no reference to it anywhere, rrweb tree-shakes out entirely.
+  // Error + performance reporting is unaffected. If replay is ever needed again, load it from
+  // Sentry's CDN (a separate bundle + a CSP script-src allowance) rather than bundling it.
+  integrations: [],
 
   // Sampled at 10% in production to bound trace volume; raise locally if needed.
   tracesSampleRate: 0.1,
-
-  // No routine session replay in production; replays are captured only on error
-  // via replaysOnErrorSampleRate below.
-  replaysSessionSampleRate: 0,
-
-  // Define how likely Replay events are sampled when an error occurs.
-  replaysOnErrorSampleRate: 1.0,
 
   dataCollection: {
     // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:

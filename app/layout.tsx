@@ -1,6 +1,6 @@
 import "./globals.css"
 import type { Metadata } from "next"
-import { headers } from "next/headers"
+import { cookies, headers } from "next/headers"
 import localFont from "next/font/local"
 import type React from "react"
 import { Suspense } from "react"
@@ -36,8 +36,14 @@ const diatypeSans = localFont({
     },
   ],
   variable: "--font-diatype-sans",
+  // preload puts the font on the critical path so it is fetched well before first paint (~170ms
+  // vs ~800ms when it was off the critical path). With the font already available when text paints,
+  // `swap` renders directly in Diatype — no fallback→Diatype swap flash. preload (not `optional`) is
+  // what fixes the flash; `swap` keeps the preload "used" so there is no "preloaded but not used"
+  // console warning (which `optional` produced whenever the font missed its short block window) and
+  // guarantees the brand font always applies. CLS stays 0 via the metric-matched fallback.
   display: "swap",
-  preload: false,
+  preload: true,
 })
 
 const themeBootstrapScript = `(()=>{const storageKey="avana-theme";const root=document.documentElement;const storedTheme=window.localStorage.getItem(storageKey);const theme=storedTheme==="light"||storedTheme==="dark"||storedTheme==="system"?storedTheme:"light";const systemTheme=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";const resolvedTheme=theme==="system"?systemTheme:theme;root.classList.toggle("dark",resolvedTheme==="dark");root.style.colorScheme=resolvedTheme})()`
@@ -124,6 +130,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const initialTokenPrices = await loadServerTokenPrices()
   // Per-request CSP nonce (set by middleware) for the inline theme-bootstrap script below.
   const nonce = (await headers()).get("x-nonce") ?? undefined
+  // Server-readable presence hint (no token) so SandboxGate can SSR the onboarding hero for
+  // never-signed-in visitors (fast guest LCP) while holding the neutral shell for anyone who might
+  // be signed in. See app/lib/siwe/auth-store.ts and app/components/sandbox/sandbox-gate.tsx.
+  const authHint: "guest" | "maybe-authed" = (await cookies()).has("avana_auth_hint") ? "maybe-authed" : "guest"
 
   return (
     <html
@@ -153,7 +163,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <DisplayPreferencesProvider>
             <WalletGateProvider>
               <Web3ProviderBoundary>
-                <SandboxGate>
+                <SandboxGate authHint={authHint}>
                   <ProductRuntimeProviders initialTokenPrices={initialTokenPrices}>
                     <CurrencyDisplayBoundary>
                       <ConditionalSiteChrome>
