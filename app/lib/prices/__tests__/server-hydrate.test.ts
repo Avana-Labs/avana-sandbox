@@ -5,6 +5,12 @@ import { canonicalPriceUsd, resetCanonicalPrices } from "@/app/lib/prices/canoni
 const { fetchTokenPrices } = vi.hoisted(() => ({ fetchTokenPrices: vi.fn() }))
 vi.mock("@/app/lib/borrow-system/market-hydration-server", () => ({ fetchTokenPrices }))
 
+// unstable_cache needs the Next server cache context, which is absent in a plain unit test; make it
+// a passthrough so the overlay logic under test runs against the mocked fetch directly. In the real
+// server runtime it caches the result across requests (that is the C3 TTFB win) but returns the
+// same value, so the behavior asserted here is unchanged.
+vi.mock("next/cache", () => ({ unstable_cache: (fn: (...args: never[]) => unknown) => fn }))
+
 import { hydrateCanonicalPricesFromConvex } from "@/app/lib/prices/server-hydrate"
 
 afterEach(() => {
