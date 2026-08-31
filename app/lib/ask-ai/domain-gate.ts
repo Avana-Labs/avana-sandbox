@@ -174,8 +174,14 @@ export function classifyAskAIDomain(message: string): DomainResult {
   }
 
   // A market-data request needs a real signal (price/rate/yield/TVL/etc.), so a
-  // bare token name alone falls through to conversational handling below.
-  if (MARKET_SIGNAL_PATTERN.test(normalized)) {
+  // bare token name alone falls through to conversational handling below. An
+  // education-framed protocol question keeps its educational intent even when it
+  // mentions a market word ("how might markets react?", "explain APY"); those are
+  // answered from knowledge, not a live market card.
+  if (
+    MARKET_SIGNAL_PATTERN.test(normalized) &&
+    !(matchesAny(normalized, EDUCATION_PATTERNS) && PROTOCOL_TOPIC_PATTERN.test(normalized))
+  ) {
     return {
       allowed: true,
       category: "crypto_market",
