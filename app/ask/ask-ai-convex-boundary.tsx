@@ -7,6 +7,7 @@ import { isJwtExpired } from "@/app/lib/siwe/token-expiry"
 import { useLiveSiweToken } from "@/app/lib/siwe/use-siwe-auth"
 import {
   getAskAIGuestToken,
+  refreshAskAIGuestToken,
   setAskAIGuestToken,
   useAskAIGuestToken,
   type AskAIGuestToken,
@@ -19,9 +20,18 @@ const askAIConvexClient = convexUrl && /^https?:\/\//.test(convexUrl) ? new Conv
 function useAskAIAuth() {
   const guest = useAskAIGuestToken()
   const siwe = useLiveSiweToken()
-  const jwt = siwe && !isJwtExpired(siwe.jwt) ? siwe.jwt : (guest?.jwt ?? null)
-  const fetchAccessToken = useCallback(async () => jwt, [jwt])
-  return { isLoading: false, isAuthenticated: jwt != null, fetchAccessToken }
+  // Convex calls this before the token expires (forceRefreshToken) and after any auth-expired
+  // error. Reading the stores here (rather than closing over a snapshot) keeps it current, and
+  // re-minting on refresh is what stops a guest session from silently dropping at the 1h TTL.
+  const fetchAccessToken = useCallback(async ({ forceRefreshToken }: { forceRefreshToken: boolean }) => {
+    const siweToken = getSiweToken()
+    if (siweToken && !isJwtExpired(siweToken.jwt)) return siweToken.jwt
+    const current = getAskAIGuestToken()
+    if (current && !forceRefreshToken) return current.jwt
+    return (await refreshAskAIGuestToken()) ?? current?.jwt ?? null
+  }, [])
+  const isAuthenticated = (siwe != null && !isJwtExpired(siwe.jwt)) || guest != null
+  return { isLoading: false, isAuthenticated, fetchAccessToken }
 }
 
 export function AskAIConvexBoundary({ children }: { children: ReactNode }) {
