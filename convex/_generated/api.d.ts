@@ -60,6 +60,7 @@ import type * as sandbox_dev from "../sandbox/dev.js";
 import type * as sandbox_liquidation from "../sandbox/liquidation.js";
 import type * as sandbox_migrations from "../sandbox/migrations.js";
 import type * as sandbox_onboarding from "../sandbox/onboarding.js";
+import type * as sandbox_oraclePrice from "../sandbox/oraclePrice.js";
 import type * as sandbox_rewards from "../sandbox/rewards.js";
 import type * as sandbox_rewards_catalog from "../sandbox/rewards_catalog.js";
 import type * as sandbox_starterAllocation from "../sandbox/starterAllocation.js";
@@ -140,6 +141,7 @@ declare const fullApi: ApiFromModules<{
   "sandbox/liquidation": typeof sandbox_liquidation;
   "sandbox/migrations": typeof sandbox_migrations;
   "sandbox/onboarding": typeof sandbox_onboarding;
+  "sandbox/oraclePrice": typeof sandbox_oraclePrice;
   "sandbox/rewards": typeof sandbox_rewards;
   "sandbox/rewards_catalog": typeof sandbox_rewards_catalog;
   "sandbox/starterAllocation": typeof sandbox_starterAllocation;
