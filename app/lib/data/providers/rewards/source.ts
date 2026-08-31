@@ -35,6 +35,60 @@ export const liveRewardsPageAdapter = createDataSourceAdapter({
   mode: "live",
 })
 
+export const mockRewardsPageAdapter = createDataSourceAdapter({
+  id: "rewards-mock",
+  label: "Rewards page mock source",
+  mode: "mock",
+})
+
+function buildRewardsPageData(wallet: string, state: RewardsSessionState): DataSourceResponse<RewardsPageData> {
+  const now = Date.now()
+  const tasks = buildDefaultRewardsCatalog(now)
+  const progress = evaluateAllTasksForUser({
+    tasks,
+    wallet,
+    events: state.events,
+    claims: state.claims,
+    now,
+    firstLoginAt: state.firstLoginAt,
+  })
+  const progressByTask = new Map(progress.map((entry) => [entry.taskId, entry]))
+  const iconForTag = (tag: string): RewardsQuestIconId => {
+    if (tag === "lend") return "droplets"
+    if (tag === "borrow") return "rocket"
+    if (tag === "multiply") return "layers3"
+    if (tag === "referral") return "link2"
+    if (tag === "streak") return "flame"
+    if (tag === "risk" || tag === "education") return "shieldCheck"
+    if (tag === "mastery") return "trophy"
+    return "wallet"
+  }
+  const questsByTab = tasks.reduce<RewardsPageData["questsByTab"]>((result, task) => {
+    const tab = resolveRewardsPromoTab(task)
+    const taskProgress = progressByTask.get(task.id)
+    result[tab].push({
+      id: task.id,
+      title: task.title,
+      description: task.description,
+      reward: `${task.rewardAmount} ${task.rewardSymbol}`,
+      cta: taskProgress?.status === "claimed" ? "Claimed" : task.actionLabel,
+      category: task.tag,
+      iconId: iconForTag(task.tag),
+      image: imageForTask(task.id),
+    })
+    return result
+  }, emptyRewardsQuestsByTab())
+
+  return {
+    fetchedAt: new Date().toISOString(),
+    data: {
+      walletProfileId: wallet,
+      promoTabs: REWARDS_PROMO_TABS,
+      questsByTab,
+    },
+  }
+}
+
 export const liveRewardsPageSource: RewardsPageSource = {
   adapter: liveRewardsPageAdapter,
   async getRewardsPageData(input) {
@@ -53,50 +107,20 @@ export const liveRewardsPageSource: RewardsPageSource = {
           firstLoginAt: Date.now(),
           favoriteMarketIds: [],
         }
-    const now = Date.now()
-    const tasks = buildDefaultRewardsCatalog(now)
-    const progress = evaluateAllTasksForUser({
-      tasks,
-      wallet,
-      events: state.events,
-      claims: state.claims,
-      now,
-      firstLoginAt: state.firstLoginAt,
-    })
-    const progressByTask = new Map(progress.map((entry) => [entry.taskId, entry]))
-    const iconForTag = (tag: string): RewardsQuestIconId => {
-      if (tag === "lend") return "droplets"
-      if (tag === "borrow") return "rocket"
-      if (tag === "multiply") return "layers3"
-      if (tag === "referral") return "link2"
-      if (tag === "streak") return "flame"
-      if (tag === "risk" || tag === "education") return "shieldCheck"
-      if (tag === "mastery") return "trophy"
-      return "wallet"
-    }
-    const questsByTab = tasks.reduce<RewardsPageData["questsByTab"]>((result, task) => {
-      const tab = resolveRewardsPromoTab(task)
-      const taskProgress = progressByTask.get(task.id)
-      result[tab].push({
-        id: task.id,
-        title: task.title,
-        description: task.description,
-        reward: `${task.rewardAmount} ${task.rewardSymbol}`,
-        cta: taskProgress?.status === "claimed" ? "Claimed" : task.actionLabel,
-        category: task.tag,
-        iconId: iconForTag(task.tag),
-        image: imageForTask(task.id),
-      })
-      return result
-    }, emptyRewardsQuestsByTab())
+    return buildRewardsPageData(wallet, state)
+  },
+}
 
-    return {
-      fetchedAt: new Date().toISOString(),
-      data: {
-        walletProfileId: wallet,
-        promoTabs: REWARDS_PROMO_TABS,
-        questsByTab,
-      },
-    }
+export const mockRewardsPageSource: RewardsPageSource = {
+  adapter: mockRewardsPageAdapter,
+  async getRewardsPageData(input) {
+    return buildRewardsPageData(input.walletProfileId, {
+      events: [],
+      claims: [],
+      referralProfiles: {},
+      relationships: [],
+      firstLoginAt: Date.now(),
+      favoriteMarketIds: [],
+    })
   },
 }

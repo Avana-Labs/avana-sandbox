@@ -15,7 +15,7 @@ async function installAuthToken(page: import("@playwright/test").Page, token: st
   const wallet = walletFromToken(token)
   await page.addInitScript(
     ({ jwt, address }) => {
-      window.localStorage.setItem("avana.siwe.token.v1", JSON.stringify({ jwt, wallet: address }))
+      window.sessionStorage.setItem("avana.siwe.token.v1", JSON.stringify({ jwt, wallet: address }))
     },
     { jwt: token, address: wallet },
   )
@@ -113,8 +113,7 @@ test.describe("sandbox onboarding", () => {
     const secondWallet = walletFromToken(SECOND_AUTH_TOKEN!)
     await page.evaluate(
       ({ jwt, wallet }) => {
-        window.localStorage.setItem("avana.siwe.token.v1", JSON.stringify({ jwt, wallet }))
-        window.dispatchEvent(new StorageEvent("storage", { key: "avana.siwe.token.v1" }))
+        window.sessionStorage.setItem("avana.siwe.token.v1", JSON.stringify({ jwt, wallet }))
       },
       { jwt: SECOND_AUTH_TOKEN!, wallet: secondWallet },
     )

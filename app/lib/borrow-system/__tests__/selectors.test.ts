@@ -44,6 +44,17 @@ describe("borrow system selectors", () => {
     expect(snapshot.availableCreditUsd).toBeGreaterThan(0)
   })
 
+  it("normalizes stale Convex SVG token paths to bundled PNG assets", () => {
+    const state = buildMockBorrowSystemState("demo-wallet")
+    for (const market of Object.values(state.markets)) {
+      for (const visual of market.display.visuals) visual.iconUrl = `/asset-icons/${visual.symbol.toLowerCase()}.svg`
+    }
+
+    const markets = selectBorrowMarketSummaries(state, "demo-wallet")
+    expect(markets.flatMap((market) => market.visuals).every((visual) => visual.iconUrl?.endsWith(".png"))).toBe(true)
+    expect(markets.flatMap((market) => market.visuals).some((visual) => visual.iconUrl?.endsWith(".svg"))).toBe(false)
+  })
+
   it("surfaces a real, per-market risk premium on the borrow list (not a uniform 0.00%)", () => {
     // A browsing wallet has no positions, so the wallet-scoped premium is 0 for every spoke.
     // The list must instead show the intrinsic per-market premium from the catalog.

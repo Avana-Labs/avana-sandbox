@@ -108,12 +108,12 @@ export function HomeWorkspaceSkeleton() {
           <div className="mt-3 flex flex-col gap-2">
             <div className="flex flex-col gap-1">
               <HomeFieldSkeleton tone="raised">
-                <div className="text-[15px] font-medium text-foreground/75">{t("Sell")}</div>
+                <div className="text-[15px] font-normal text-foreground/75">{t("Sell")}</div>
                 <div className="mt-1.5 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
-                  <div className="h-[1em] min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-muted-foreground/60">
+                  <div className="h-[1em] min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-normal leading-none tracking-[-0.04em] text-muted-foreground/60">
                     0
                   </div>
-                  <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground max-[360px]:self-end">
+                  <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-normal text-foreground max-[360px]:self-end">
                     {t("Select Asset")}
                     <span aria-hidden className="text-muted-foreground">
                       ▾
@@ -129,12 +129,12 @@ export function HomeWorkspaceSkeleton() {
               </HomeFieldSkeleton>
 
               <HomeFieldSkeleton tone="inset">
-                <div className="text-[15px] font-medium text-foreground/75">{t("Buy")}</div>
+                <div className="text-[15px] font-normal text-foreground/75">{t("Buy")}</div>
                 <div className="mt-1.5 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
-                  <div className="h-[1em] min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-muted-foreground/60">
+                  <div className="h-[1em] min-w-0 flex-1 text-[clamp(1.5rem,4vw,2rem)] font-normal leading-none tracking-[-0.04em] text-muted-foreground/60">
                     0
                   </div>
-                  <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground max-[360px]:self-end">
+                  <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-normal text-foreground max-[360px]:self-end">
                     {t("Select Asset")}
                     <span aria-hidden className="text-muted-foreground">
                       ▾
@@ -153,7 +153,7 @@ export function HomeWorkspaceSkeleton() {
             <button
               type="button"
               disabled
-              className="mt-1 inline-flex h-14 w-full items-center justify-center rounded-radius-xl bg-brand-soft text-[15px] font-semibold text-brand-soft-foreground"
+              className="mt-1 inline-flex h-14 w-full items-center justify-center rounded-radius-xl bg-brand-soft text-[15px] font-normal text-brand-soft-foreground"
               data-testid="action-footer-primary"
             >
               {t("Select Asset")}
@@ -237,6 +237,46 @@ export function RewardsPageSkeleton() {
             ))}
           </div>
         </section>
+      </div>
+    </Page>
+  )
+}
+
+/**
+ * Instant Paint — layout-stable product chrome while session/auth chunks attach.
+ * Used only as a Suspense / dynamic() fallback (not route `loading.tsx`, which
+ * still flashes on every soft navigation — see file header).
+ */
+export function ProductRoutePending() {
+  return (
+    <Page>
+      <div data-testid="product-route-pending" className="space-y-8">
+        <div className="space-y-3">
+          <Skeleton className="h-8 w-48 rounded-xs" />
+          <Skeleton className="h-4 w-72 max-w-full rounded-xs" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Surface className="p-4">
+            <Skeleton className="mb-3 h-3.5 w-24 rounded-xs" />
+            <Skeleton className="h-8 w-32 rounded-xs" />
+          </Surface>
+          <Surface className="p-4">
+            <Skeleton className="mb-3 h-3.5 w-24 rounded-xs" />
+            <Skeleton className="h-8 w-32 rounded-xs" />
+          </Surface>
+          <Surface className="p-4">
+            <Skeleton className="mb-3 h-3.5 w-24 rounded-xs" />
+            <Skeleton className="h-8 w-32 rounded-xs" />
+          </Surface>
+        </div>
+        <Surface className="p-4">
+          <Skeleton className="mb-4 h-4 w-40 rounded-xs" />
+          <div className="space-y-3">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <Skeleton key={`product-row-${index}`} className="h-12 w-full rounded-xs" />
+            ))}
+          </div>
+        </Surface>
       </div>
     </Page>
   )

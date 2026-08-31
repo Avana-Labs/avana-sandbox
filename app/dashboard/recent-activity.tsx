@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useQuery } from "convex/react"
 import { ChevronRight } from "@/app/components/icons"
 import { TokenIcon } from "@/app/components/token-icon"
+import { getTokenIconMeta } from "@/app/lib/token-icons"
 import { api } from "@/convex/_generated/api"
 import type { PortfolioActivityRow } from "@/app/lib/data/providers/portfolio"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
@@ -41,18 +42,31 @@ const KIND_LABEL: Record<PortfolioActivityRow["kind"], string> = {
   liquidation: "Liquidation",
 }
 
-/** Pull a token symbol from activity labels for the row icon (dummy-friendly). */
+/** A candidate resolves to a real logo only when the icon registry has an image for it. */
+function resolvesToLogo(symbol: string | undefined): symbol is string {
+  return Boolean(symbol && getTokenIconMeta(symbol).iconUrl)
+}
+
+/**
+ * Resolve the row's token symbol for the icon. Rewards → AVA. Otherwise we prefer the
+ * row's real market/asset data (`marketId`, which encodes the underlying token — "gho",
+ * "wsteth", "wbtc-weth-…") and only accept a candidate that maps to an actual logo, so
+ * label words that are NOT tokens ("multiply", "claim") can never leak through as a
+ * letter-circle fallback. Ends on ETH — a real logo — so a row always shows a logo.
+ */
 export function inferActivityTokenSymbol(row: PortfolioActivityRow): string {
   if (row.product === "rewards") return "AVA"
-  if (row.product === "onboarding") return row.marketId?.toUpperCase() ?? "USDC"
 
   const secondary = row.secondaryLabel.replace(/\s+claimed$/i, "").trim()
-  const secondaryTail = secondary.split(/\s+/).at(-1)
-  if (secondaryTail && /^[A-Za-z][A-Za-z0-9]{0,9}$/.test(secondaryTail)) return secondaryTail
-
-  const primaryTail = row.primaryLabel.trim().split(/\s+/).at(-1)
-  if (primaryTail && /^[A-Za-z][A-Za-z0-9]{0,9}$/.test(primaryTail)) return primaryTail
-
+  const candidates = [
+    row.marketId,
+    ...(row.marketId ? row.marketId.split(/[-_:]/) : []),
+    secondary.split(/\s+/).at(-1),
+    row.primaryLabel.trim().split(/\s+/).at(-1),
+  ]
+  for (const candidate of candidates) {
+    if (resolvesToLogo(candidate)) return candidate
+  }
   return "ETH"
 }
 

@@ -338,19 +338,29 @@ export function useLendSession({
       }
       const history: LendTransactionHistoryItem[] = data.transactions
         .filter((transaction) => transaction.product === "lend")
-        .map((transaction) => ({
-          id: String(transaction._id),
-          intentId: transaction.intentId ?? String(transaction._id),
-          walletId,
-          marketId: transaction.marketSlug ?? "rewards",
-          kind: transaction.kind as LendTransactionHistoryItem["kind"],
-          status: transaction.status,
-          asset: stateRef.current.markets[transaction.marketSlug ?? ""]?.asset.symbol ?? "",
-          amount: transaction.amountUsd,
-          simulated: transaction.simulated,
-          timestamp: transaction.at,
-          hash: transaction.syntheticTxHash,
-        }))
+        .map((transaction) => {
+          const market = stateRef.current.markets[transaction.marketSlug ?? ""]
+          const assetPriceUsd = market?.assetPriceUsd ?? 0
+          const kind = transaction.kind as LendTransactionHistoryItem["kind"]
+          return {
+            id: String(transaction._id),
+            intentId: transaction.intentId ?? String(transaction._id),
+            walletId,
+            marketId: transaction.marketSlug ?? "rewards",
+            kind,
+            status: transaction.status,
+            asset: market?.asset.symbol ?? "",
+            // `amount` is a TOKEN quantity — the read-model values a supply/withdraw row as
+            // `amount × assetPriceUsd`. The Convex transaction only records USD, so convert back
+            // to tokens here; without it a $37.5k ETH/cbBTC deposit rendered as amountUsd × price
+            // (e.g. $2.4B). Claims are already USD-denominated and pass through unchanged.
+            amount:
+              kind === "claim" || !(assetPriceUsd > 0) ? transaction.amountUsd : transaction.amountUsd / assetPriceUsd,
+            simulated: transaction.simulated,
+            timestamp: transaction.at,
+            hash: transaction.syntheticTxHash,
+          }
+        })
       const walletBalances: LendSystemState["walletBalances"] = { [walletId]: {} }
       for (const row of data.lendBalances ?? []) {
         if (row.state !== "available") continue

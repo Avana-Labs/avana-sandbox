@@ -5,11 +5,11 @@ import { usePathname } from "next/navigation"
 import { Header } from "@/app/components/header"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useHydrated, useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
-import { useWalletGate } from "@/app/lib/web3/wallet-gate"
 import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { GuestOnboardingFlow } from "./guest-onboarding-flow"
 import styles from "./onboarding-flow.module.css"
+import { ProductRoutePending } from "@/app/components/loading-states"
 
 const AuthedGate = lazy(async () => ({ default: (await import("./authed-sandbox-gate")).AuthedSandboxGate }))
 
@@ -58,14 +58,14 @@ function GateUnavailable({ variant = "error" }: { variant?: "error" | "offline" 
           </div>
         </div>
         <div className={styles.reveal}>
-          <h1 className="max-w-[600px] text-balance text-[clamp(1.85rem,3.2vw,2.4rem)] font-medium leading-[1.14] tracking-[-0.03em]">
+          <h1 className="max-w-[600px] text-balance text-[clamp(1.85rem,3.2vw,2.4rem)] font-normal leading-[1.14] tracking-[-0.03em]">
             <span className="text-muted-foreground">{t(copy.headlineMuted)}</span>
             <br />
             <span className="text-foreground">{t(copy.headlineActive)}</span>
           </h1>
           <p className="mt-6 max-w-[520px] text-[15px] leading-6 text-muted-foreground">{t(copy.note)}</p>
           <button
-            className="mt-9 inline-flex min-h-12 items-center justify-center rounded-full bg-brand px-7 text-[15px] font-semibold text-brand-foreground shadow-elev-1 transition-colors hover:bg-brand/90"
+            className="mt-9 inline-flex min-h-12 items-center justify-center rounded-full bg-brand px-7 text-[15px] font-normal text-brand-foreground shadow-elev-1 transition-colors hover:bg-brand/90"
             onClick={() => window.location.reload()}
             type="button"
           >
@@ -82,7 +82,6 @@ export function SandboxGate({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const hydrated = useHydrated()
   const { authedWallet, isSignedIn } = useSiweAuth()
-  const { active: walletActive } = useWalletGate()
   // Ask AI is public for guests (knowledge / markets without a wallet). Signed-in
   // users keep the normal AuthedGate mounted so closing Ask doesn't tear down the
   // product shell and flash a blank screen while Convex/session rehydrate.
@@ -93,12 +92,15 @@ export function SandboxGate({ children }: { children: ReactNode }) {
   // The SIWE session is read from a client-only store that reads as signed-out on the
   // server and the first hydration render. Rendering OnboardingFlow in that window is
   // what flashed the onboarding screen at already-onboarded users on every load/refresh.
-  // Hold a neutral placeholder until the client has hydrated — never onboarding.
-  // Never render onboarding until SIWE hydrates or the wallet SDK is mounted —
-  // return nothing during those windows. The top page-loading bar carries the
-  // "something is happening" signal; the page just stays blank until ready.
-  if (!hydrated) return null
-  if (isSignedIn && !walletActive) return null
+  // Hold a layout-stable shell until the client has hydrated — never onboarding,
+  // never a blank document (Instant Paint). The top page-loading bar still runs.
+  if (!hydrated) {
+    return (
+      <LockedShell>
+        <ProductRoutePending />
+      </LockedShell>
+    )
+  }
   if (!isSignedIn || !authedWallet) {
     return (
       <LockedShell>

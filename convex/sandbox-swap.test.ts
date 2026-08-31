@@ -39,6 +39,15 @@ describe("recordSwap — durable swap persistence (#15)", () => {
     ).rejects.toThrow(/WALLET_MISMATCH/)
   })
 
+  test("rejects oversized identifiers before indexed reads or writes", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await expect(asUser.mutation(api.sandbox.transactions.recordSwap, swapIntent("x".repeat(100_000)))).rejects.toThrow(
+      /intentId must contain 1 to 200 characters/,
+    )
+    expect(await asUser.query(api.sandbox.transactions.getWalletSwapTransactions, { wallet: WALLET })).toHaveLength(0)
+  })
+
   test("records exactly one swap transaction with the token legs", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })

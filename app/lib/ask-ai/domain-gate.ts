@@ -67,6 +67,13 @@ const MARKET_PATTERNS = [
 
 const TOKEN_PRICE_LOOKUP_PATTERN = /\b(price|prices|worth|quote|cost)\b/i
 
+// A market-data request needs a real data signal (price, rate, yield, TVL,
+// volume, market cap, etc.), not merely a token or protocol name. Without this,
+// "who created aave" or "is aave safe" name a token but ask for no market data,
+// yet still render an unrequested price chart and market table.
+const MARKET_SIGNAL_PATTERN =
+  /\b(price|prices|priced|worth|trading at|quote|quotes|cost|apr|apy|yield|yields|rate|rates|utilization|tvl|liquidity|volume|market|markets|market cap|marketcap)\b/i
+
 const EDUCATION_PATTERNS = [
   /\b(explain|what is|what does|how does|how might|how would|how could|why does|methodology|work)\b/i,
   /\b(avana|lp collateral|health factor|ltv|liquidation threshold|oracle|aave hub)\b/i,
@@ -151,21 +158,30 @@ export function classifyAskAIDomain(message: string): DomainResult {
   }
 
   // Lookup language wins over the generic "what is" education pattern. This
-  // keeps "What is the Aave token price right now?" on cached Convex data.
+  // keeps "What is the Aave token price right now?" on cached Convex data. A
+  // bare "aave" mention, though, is NOT automatically a market-data request:
+  // compare and educational asks keep their own intents, an actual market signal
+  // routes to the market card path, and anything else ("who created aave", "is
+  // aave safe") falls through to the conversational handling below so it never
+  // renders an unrequested price chart or market table.
   if (/\baave\b/i.test(normalized)) {
-    return {
-      allowed: true,
-      category: "aave",
-      intent: /\bcompare\b/i.test(normalized)
-        ? "comparison"
-        : matchesAny(normalized, EDUCATION_PATTERNS)
-          ? "education"
-          : "market",
-      confidence: 0.97,
-    }
+    if (/\bcompare\b/i.test(normalized))
+      return { allowed: true, category: "aave", intent: "comparison", confidence: 0.97 }
+    if (matchesAny(normalized, EDUCATION_PATTERNS))
+      return { allowed: true, category: "aave", intent: "education", confidence: 0.97 }
+    if (MARKET_SIGNAL_PATTERN.test(normalized))
+      return { allowed: true, category: "aave", intent: "market", confidence: 0.97 }
   }
 
-  if (matchesAny(normalized, MARKET_PATTERNS)) {
+  // A market-data request needs a real signal (price/rate/yield/TVL/etc.), so a
+  // bare token name alone falls through to conversational handling below. An
+  // education-framed protocol question keeps its educational intent even when it
+  // mentions a market word ("how might markets react?", "explain APY"); those are
+  // answered from knowledge, not a live market card.
+  if (
+    MARKET_SIGNAL_PATTERN.test(normalized) &&
+    !(matchesAny(normalized, EDUCATION_PATTERNS) && PROTOCOL_TOPIC_PATTERN.test(normalized))
+  ) {
     return {
       allowed: true,
       category: "crypto_market",
@@ -226,8 +242,13 @@ export function toolChoiceForAskAIStep(route: AskAITurnRoute, stepNumber: number
 // Only turn on web search when the user is clearly asking about recent public
 // events. Prices, pools, balances, and risk are answered from Convex data — web
 // search is never a substitute for a Convex tool (see agent-instructions.ts).
+// Current public events, incidents, and "what's going on" style asks route to
+// web search. This deliberately covers security incidents ("hack", "exploit")
+// and recency cues ("latest", "right now"); routeAskAITurn only honors it for
+// otherwise-unsupported turns, so a price/position/pool question phrased with a
+// time cue still uses Convex data rather than the web.
 const NEWS_EVENT_PATTERN =
-  /\b(news|headline|headlines|announc(?:e|ed|ement|ing)|breaking|event|events|what happened|happening this week)\b/i
+  /\b(news|headlines?|announc(?:e|ed|ement|ing)|breaking|events?|what happened|happening|going on|latest|recently|trending|hacks?|hacked|exploits?|exploited|attacks?|attacked|breach(?:es|ed)?|drained|rug ?pulls?|rugged|vulnerabilit(?:y|ies)|incidents?|this week|this month|right now)\b/i
 
 /**
  * Deterministic, zero-cost turn router. Topic scope (politely redirecting
@@ -251,7 +272,10 @@ export function routeAskAITurn(message: string): AskAITurnRoute {
 
   // Greetings and bare clarifications need no tools at all — answer in one step.
   if (isAskAIGreeting(normalized) || isAskAIClarificationPrompt(normalized)) return plan([], 1, "fast")
-  if (wantsNewsOrEvents) return plan(["web_search"], 2, "fast")
+  // Only open-ended current-events asks reach web search. Anything Convex can
+  // answer (prices, pools, the user's positions, risk, Avana how-to) keeps its
+  // own tools even when phrased with a "latest"/"right now" recency cue.
+  if (wantsNewsOrEvents && intent === "unsupported") return plan(["web_search"], 2, "fast")
 
   switch (intent) {
     case "position":

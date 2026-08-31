@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, type ReactNode } from "react"
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { useConvex, useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import type { SwapQuote, SwapQuoteRequest } from "@/app/lib/swap-system/quote-provider"
@@ -32,6 +32,76 @@ import {
   type PositionRevisionSummary,
 } from "./optimistic-revision"
 
+type EnsureWalletFixture = (args: { wallet: string }) => Promise<unknown>
+
+export function useEnsureWalletFixtures({
+  walletId,
+  ensurePortfolioSnapshot,
+  ensureUmbrellaFixtures,
+  retryDelayMs = 1_000,
+  maxAttempts = 3,
+}: {
+  walletId: string
+  ensurePortfolioSnapshot: EnsureWalletFixture
+  ensureUmbrellaFixtures: EnsureWalletFixture
+  retryDelayMs?: number
+  maxAttempts?: number
+}) {
+  const ensuredWalletRef = useRef<string | null>(null)
+  const attemptsByWalletRef = useRef(new Map<string, number>())
+  const [ensureAttempt, setEnsureAttempt] = useState(0)
+
+  useEffect(() => {
+    if (ensuredWalletRef.current === walletId) return
+    let cancelled = false
+    let retryTimer: ReturnType<typeof setTimeout> | undefined
+    ensuredWalletRef.current = walletId
+    const attempt = (attemptsByWalletRef.current.get(walletId) ?? 0) + 1
+    attemptsByWalletRef.current.set(walletId, attempt)
+    void (async () => {
+      try {
+        await ensurePortfolioSnapshot({ wallet: walletId })
+        await ensureUmbrellaFixtures({ wallet: walletId })
+        attemptsByWalletRef.current.delete(walletId)
+      } catch {
+        if (cancelled || ensuredWalletRef.current !== walletId) return
+        if (attempt >= maxAttempts) return
+        ensuredWalletRef.current = null
+        retryTimer = setTimeout(
+          () => setEnsureAttempt((currentAttempt) => currentAttempt + 1),
+          retryDelayMs * 2 ** (attempt - 1),
+        )
+      }
+    })()
+    return () => {
+      cancelled = true
+      if (retryTimer) clearTimeout(retryTimer)
+    }
+  }, [ensureAttempt, ensurePortfolioSnapshot, ensureUmbrellaFixtures, maxAttempts, retryDelayMs, walletId])
+}
+
+export function useWalletHydrationScope(walletId: string) {
+  const revisionScopeRef = useRef<{ walletId: string; revisions: Map<string, number> } | null>(null)
+  if (revisionScopeRef.current?.walletId !== walletId) {
+    revisionScopeRef.current = { walletId, revisions: new Map() }
+  }
+  const revisions = revisionScopeRef.current.revisions
+  const [hydratedWalletId, setHydratedWalletId] = useState<string | null>(null)
+  const handleWalletHydrated = useCallback(
+    (positions: readonly PositionRevisionSummary[]) => {
+      captureHydratedRevisions(revisions, positions)
+      setHydratedWalletId(walletId)
+    },
+    [revisions, walletId],
+  )
+
+  return {
+    revisions,
+    walletHydrationPending: hydratedWalletId !== walletId,
+    handleWalletHydrated,
+  }
+}
+
 function ConvexWalletHydrators({
   walletId,
   onWalletHydrated,
@@ -57,27 +127,12 @@ function ConvexWalletHydrators({
     lend: lend.transactionHistory,
     multiply: multiply.transactionHistory,
   }
-  const ensuredRef = useRef(false)
+  // Seed the wallet snapshot and the canonical test wallet's Umbrella fixtures.
+  // Both mutations are idempotent, so retrying a partial/transient failure is safe.
+  useEnsureWalletFixtures({ walletId, ensurePortfolioSnapshot, ensureUmbrellaFixtures })
 
   useEffect(() => {
-    if (ensuredRef.current) return
-    ensuredRef.current = true
-    void (async () => {
-      try {
-        await ensurePortfolioSnapshot({ wallet: walletId })
-        // Seed the open-gate/test wallet with umbrella fixtures on first mount.
-        // The mutation is a no-op for any wallet other than the canonical test
-        // address and for wallets that already have umbrella positions, so this
-        // is safe to fire unconditionally.
-        await ensureUmbrellaFixtures({ wallet: walletId })
-      } catch {
-        ensuredRef.current = false
-      }
-    })()
-  }, [ensurePortfolioSnapshot, ensureUmbrellaFixtures, walletId])
-
-  useEffect(() => {
-    if (!session) return
+    if (!session || productBalances === undefined) return
     const { borrow: borrowHistory, lend: lendHistory, multiply: multiplyHistory } = historiesRef.current
     const pending = pendingHydrationIntentIds([...borrowHistory, ...lendHistory, ...multiplyHistory], Date.now())
     if (!shouldApplyHydration(session, pending)) return
@@ -164,22 +219,14 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
   const rewardsState = useQuery(api.sandbox.rewards.getState, { wallet: walletId })
   const umbrellaSessionState = useQuery(api.sandbox.umbrella.getSessionState, { wallet: walletId })
   const recordUmbrellaAction = useMutation(api.sandbox.umbrella.recordAction)
-  const revisionByKeyRef = useRef(new Map<string, number>())
-  const handleWalletHydrated = useCallback(
-    (positions: readonly PositionRevisionSummary[]) => captureHydratedRevisions(revisionByKeyRef.current, positions),
-    [],
-  )
+  const { revisions, walletHydrationPending, handleWalletHydrated } = useWalletHydrationScope(walletId)
 
   const persistBorrowTransaction = useCallback(
     async (result: SandboxActionResult) => {
-      const { args, key } = withExpectedRevision(
-        borrowResultToRecordArgs(result, walletId),
-        "borrow",
-        revisionByKeyRef.current,
-      )
+      const { args, key } = withExpectedRevision(borrowResultToRecordArgs(result, walletId), "borrow", revisions)
       const persisted = await recordTransaction(args)
-      if (persisted.revision != null) seedRevisionFromReceipt(revisionByKeyRef.current, key, persisted.revision)
-      else advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
+      if (persisted.revision != null) seedRevisionFromReceipt(revisions, key, persisted.revision)
+      else advanceRevisionOnSuccess(revisions, key, persisted.idempotent)
       return {
         id: String(persisted.receipt.id),
         hash: persisted.receipt.hash,
@@ -188,18 +235,14 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
         timestamp: persisted.receipt.timestamp,
       }
     },
-    [recordTransaction, walletId],
+    [recordTransaction, revisions, walletId],
   )
   const persistLendTransaction = useCallback(
     async (result: LendSandboxActionResult): Promise<LendTransactionResult> => {
-      const { args, key } = withExpectedRevision(
-        lendResultToRecordArgs(result, walletId),
-        "lend",
-        revisionByKeyRef.current,
-      )
+      const { args, key } = withExpectedRevision(lendResultToRecordArgs(result, walletId), "lend", revisions)
       const persisted = await recordTransaction(args)
-      if (persisted.revision != null) seedRevisionFromReceipt(revisionByKeyRef.current, key, persisted.revision)
-      else advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
+      if (persisted.revision != null) seedRevisionFromReceipt(revisions, key, persisted.revision)
+      else advanceRevisionOnSuccess(revisions, key, persisted.idempotent)
       return {
         id: String(persisted.receipt.id),
         hash: persisted.receipt.hash,
@@ -209,18 +252,14 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
         timestamp: persisted.receipt.timestamp,
       }
     },
-    [recordTransaction, walletId],
+    [recordTransaction, revisions, walletId],
   )
   const persistMultiplyTransaction = useCallback(
     async (result: MultiplySandboxActionResult): Promise<MultiplyTransactionResult> => {
-      const { args, key } = withExpectedRevision(
-        multiplyResultToRecordArgs(result, walletId),
-        "multiply",
-        revisionByKeyRef.current,
-      )
+      const { args, key } = withExpectedRevision(multiplyResultToRecordArgs(result, walletId), "multiply", revisions)
       const persisted = await recordTransaction(args)
-      if (persisted.revision != null) seedRevisionFromReceipt(revisionByKeyRef.current, key, persisted.revision)
-      else advanceRevisionOnSuccess(revisionByKeyRef.current, key, persisted.idempotent)
+      if (persisted.revision != null) seedRevisionFromReceipt(revisions, key, persisted.revision)
+      else advanceRevisionOnSuccess(revisions, key, persisted.idempotent)
       return {
         id: String(persisted.receipt.id),
         hash: persisted.receipt.hash,
@@ -230,7 +269,7 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
         timestamp: persisted.receipt.timestamp,
       }
     },
-    [recordTransaction, walletId],
+    [recordTransaction, revisions, walletId],
   )
   const persistRewardsState = useCallback(
     (args: { stateJson: string; expectedRevision?: number }) =>
@@ -282,6 +321,7 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
       persistUmbrellaAction={persistUmbrellaAction}
       persistUmbrellaState={false}
       sessionSource="convex"
+      authoritativeWalletPending={walletHydrationPending}
     >
       <ConvexMarketSnapshotHydrators />
       <ConvexWalletHydrators walletId={walletId} onWalletHydrated={handleWalletHydrated} />

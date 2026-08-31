@@ -26,7 +26,9 @@ export const config = {
     // Run on document requests; skip static assets and image optimization (they need no CSP and
     // stay cacheable). Also skip Next's prefetch requests.
     {
-      source: "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|txt|xml)$).*)",
+      // Skip Sentry tunnel (`/monitoring`) so client error reporting is not rewritten/CSP-blocked.
+      source:
+        "/((?!_next/static|_next/image|monitoring|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|ico|webp|txt|xml)$).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

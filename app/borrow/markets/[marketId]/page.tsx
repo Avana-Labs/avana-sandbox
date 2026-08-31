@@ -2,10 +2,11 @@ import { notFound } from "next/navigation"
 import type { Metadata } from "next"
 import { SchemaMarkup, buildBreadcrumbSchema, buildFaqSchema, buildWebPageSchema } from "@/app/components/seo/schema"
 import { getPoolDetail } from "@/app/lib/borrow-detail"
-import { getPoolDetailFromConvex } from "@/app/lib/borrow-detail/convex-detail"
+import { applyPoolPreloadedOverlays, getPoolDetailFromConvex } from "@/app/lib/borrow-detail/convex-detail"
 import { preloadPoolHero } from "@/app/lib/borrow-detail/hero-preload"
 import { preloadDetailQuickStats } from "@/app/lib/detail-page/quick-stats-preload"
 import { preloadDetailCashflow } from "@/app/lib/detail-page/cashflow-preload"
+import { readPreloadedCashflow, readPreloadedQuickStats } from "@/app/lib/detail-page/apply-preloaded-overlays"
 import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { BorrowMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
@@ -49,13 +50,18 @@ export default async function MarketDetailPage({ params }: PageProps) {
   const { marketId } = await params
   if (isLighthouseAuditMode()) return <LighthouseAuditSurface title="Total supplied" eyebrow={marketId} />
 
-  const detail = await getPoolDetailFromConvex(marketId)
-  if (!detail) notFound()
-  // Preload the hero series once on the server; build the initial feeds from the preloaded
-  // value and hand the tokens to the client so the live hero hydrates instead of re-fetching.
-  const { preloads: heroPreloads, feeds } = await preloadPoolHero(marketId)
-  const quickStatsPreload = await preloadDetailQuickStats("pool", marketId)
-  const cashflowPreload = await preloadDetailCashflow("pool", marketId)
+  const detailPromise = getPoolDetailFromConvex(marketId)
+  const [{ preloads: heroPreloads, feeds }, quickStatsPreload, cashflowPreload, detailRaw] = await Promise.all([
+    preloadPoolHero(marketId),
+    preloadDetailQuickStats("pool", marketId),
+    preloadDetailCashflow("pool", marketId),
+    detailPromise,
+  ])
+  if (!detailRaw) notFound()
+  const detail = applyPoolPreloadedOverlays(detailRaw, {
+    quickStats: readPreloadedQuickStats(quickStatsPreload),
+    cashflow: readPreloadedCashflow(cashflowPreload),
+  })
   const detailWithFeeds = { ...detail, ...feeds }
   const canonicalUrl = `https://avana.cc/borrow/markets/${marketId}`
   return (

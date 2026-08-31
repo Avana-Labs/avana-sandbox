@@ -204,6 +204,7 @@ export function AvanaSessionsProvider({
   remoteUmbrellaState,
   persistUmbrellaAction,
   sessionSource = "demo",
+  authoritativeWalletPending = false,
 }: {
   walletId?: string
   children: ReactNode
@@ -230,6 +231,8 @@ export function AvanaSessionsProvider({
   remoteUmbrellaState?: ConvexUmbrellaSessionState | null
   persistUmbrellaAction?: PersistUmbrellaAction
   sessionSource?: "demo" | "convex"
+  /** Keep every wallet-backed surface loading until the authoritative Convex reads settle. */
+  authoritativeWalletPending?: boolean
 }) {
   const { deltas: liquidityDeltas } = useMarketLiquidity()
   const liquidityDeltasRef = useRef(liquidityDeltas)
@@ -278,6 +281,31 @@ export function AvanaSessionsProvider({
     persistAction: persistUmbrellaAction,
   })
 
+  const visibleBorrow = useMemo(
+    () => (authoritativeWalletPending ? { ...borrow, isHydrated: false } : borrow),
+    [authoritativeWalletPending, borrow],
+  )
+  const visibleMultiply = useMemo(
+    () => (authoritativeWalletPending ? { ...multiply, isHydrated: false } : multiply),
+    [authoritativeWalletPending, multiply],
+  )
+  const visibleLend = useMemo(
+    () => (authoritativeWalletPending ? { ...lend, isHydrated: false } : lend),
+    [authoritativeWalletPending, lend],
+  )
+  const visibleSwap = useMemo(
+    () => (authoritativeWalletPending ? { ...swap, isHydrated: false } : swap),
+    [authoritativeWalletPending, swap],
+  )
+  const visibleUmbrella = useMemo(
+    () => (authoritativeWalletPending ? { ...umbrella, isHydrated: false } : umbrella),
+    [authoritativeWalletPending, umbrella],
+  )
+  const visibleRewards = useMemo(
+    () => (authoritativeWalletPending ? { ...rewards, hasHydratedStorage: false } : rewards),
+    [authoritativeWalletPending, rewards],
+  )
+
   useRewardsEventBridge({
     walletId: avana.walletId,
     borrow,
@@ -293,14 +321,24 @@ export function AvanaSessionsProvider({
       walletId: avana.walletId,
       walletAddress: avana.walletAddress,
       sandboxMode: avana.sandboxMode,
-      borrow,
-      multiply,
-      lend,
-      rewards,
-      swap,
-      umbrella,
+      borrow: visibleBorrow,
+      multiply: visibleMultiply,
+      lend: visibleLend,
+      rewards: visibleRewards,
+      swap: visibleSwap,
+      umbrella: visibleUmbrella,
     }),
-    [avana.walletId, avana.walletAddress, avana.sandboxMode, borrow, multiply, lend, rewards, swap, umbrella],
+    [
+      avana.walletId,
+      avana.walletAddress,
+      avana.sandboxMode,
+      visibleBorrow,
+      visibleMultiply,
+      visibleLend,
+      visibleRewards,
+      visibleSwap,
+      visibleUmbrella,
+    ],
   )
   const identity = useMemo<AvanaIdentity>(
     () => ({
@@ -314,12 +352,12 @@ export function AvanaSessionsProvider({
   return (
     <AvanaSessionsContext.Provider value={value}>
       <AvanaIdentityContext.Provider value={identity}>
-        <BorrowSessionContext.Provider value={borrow}>
-          <MultiplySessionContext.Provider value={multiply}>
-            <LendSessionContext.Provider value={lend}>
-              <RewardsSessionContext.Provider value={rewards}>
-                <SwapSessionContext.Provider value={swap}>
-                  <UmbrellaSessionContext.Provider value={umbrella}>{children}</UmbrellaSessionContext.Provider>
+        <BorrowSessionContext.Provider value={visibleBorrow}>
+          <MultiplySessionContext.Provider value={visibleMultiply}>
+            <LendSessionContext.Provider value={visibleLend}>
+              <RewardsSessionContext.Provider value={visibleRewards}>
+                <SwapSessionContext.Provider value={visibleSwap}>
+                  <UmbrellaSessionContext.Provider value={visibleUmbrella}>{children}</UmbrellaSessionContext.Provider>
                 </SwapSessionContext.Provider>
               </RewardsSessionContext.Provider>
             </LendSessionContext.Provider>

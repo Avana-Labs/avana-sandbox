@@ -49,6 +49,7 @@
     "test:ask-ai:live": "RUN_ASK_AI_LIVE_EVALS=1 vitest run app/lib/ask-ai/__tests__/live-model-evals.test.ts",
     "ask-ai:corpus:check": "node scripts/render-ask-ai-corpus.mjs --check",
     "test:e2e": "playwright test",
+    "test:e2e:prepare-actions": "node scripts/action-e2e-fixtures.mjs",
     "test:e2e:audit": "playwright test tests/e2e/app-audit.spec.ts",
     "test:e2e:browser-soak": "playwright test tests/e2e/browser-session-soak.spec.ts --project=chromium",
     "test:e2e:performance": "playwright test tests/e2e/route-performance.spec.ts",
@@ -61,7 +62,8 @@
     "lighthouse:build": "AVANA_NEXT_DIST_DIR=.next-lighthouse NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE=1 NEXT_PUBLIC_LIGHTHOUSE_AUDIT_ARTIFACT=1 npm run build",
     "lighthouse:serve": "AVANA_NEXT_DIST_DIR=.next-lighthouse NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE=1 NEXT_PUBLIC_LIGHTHOUSE_AUDIT_ARTIFACT=1 npm run start -- --port 3001",
     "lighthouse:gpu": "LH_ENABLE_GPU=1 LH_OUTPUT_DIR=.artifacts/lighthouse-gpu npm run lighthouse:budgets",
-    "lighthouse:analyze": "node scripts/analyze-lighthouse-bundles.mjs"
+    "lighthouse:analyze": "node scripts/analyze-lighthouse-bundles.mjs",
+    "perf:instant-paint-baseline": "node scripts/instant-paint-baseline.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.44",
@@ -80,6 +82,7 @@
     "@radix-ui/react-separator": "1.1.15",
     "@radix-ui/react-slot": "1.3.3",
     "@radix-ui/react-switch": "1.3.7",
+    "@sentry/nextjs": "^10.71.0",
     "@tanstack/react-query": "^5.101.4",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",

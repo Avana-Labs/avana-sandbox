@@ -257,27 +257,69 @@ function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFi
     }
     case "market": {
       const providerData = Array.isArray(p.providerData) ? p.providerData : []
-      const rows = providerData.flatMap((entry, index) => {
+      const markets = Array.isArray(p.markets) ? p.markets : []
+      const pctApy = (value: unknown, suffix: string): string | null =>
+        typeof value === "number" && Number.isFinite(value)
+          ? `${value.toLocaleString("en-US", { maximumFractionDigits: 2 })}% ${suffix}`
+          : null
+      // Candidate rows come from BOTH the canonical Avana markets (which carry
+      // supply/borrow APY + TVL) and the external provider snapshots/prices, so
+      // an APY question isn't reduced to a lone token-price row when the lending
+      // data lives in `markets`. Each row is scored so dedupe-by-symbol keeps the
+      // most useful line: a rated market/pool beats an unrated one, which beats a
+      // bare token-price row (price only, redundant with the chart).
+      type MarketRow = { symbol: string; score: number; isPrice: boolean; id: string; cells: string[] }
+      const candidates: MarketRow[] = []
+      markets.forEach((entry, index) => {
+        const m = asObject(entry)
+        const label = String(m.symbol ?? m.name ?? m.slug ?? "Market")
+        const rate =
+          pctApy(m.supplyApyPct, "supply") ??
+          pctApy(m.borrowAprPct, "borrow") ??
+          pctApy(m.apyPct, "APY") ??
+          "Unavailable"
+        candidates.push({
+          symbol: label.toLowerCase(),
+          isPrice: false,
+          score: 2 + (rate === "Unavailable" ? 0 : 1),
+          id: `market-mkt-${index}`,
+          cells: [label, rate, usd(m.tvlUsd) ?? "Unavailable", String(m.venueLabel ?? "Avana")],
+        })
+      })
+      providerData.forEach((entry, index) => {
         const result = asObject(entry)
         const data = asObject(result.data)
         const label = String(data.symbol ?? data.pool ?? data.name ?? result.key ?? "Market")
+        const isPrice = result.kind === "token_price"
         const rate =
-          usd(data.priceUsd) ??
-          (typeof data.apyPct === "number"
-            ? `${data.apyPct.toLocaleString("en-US", { maximumFractionDigits: 2 })}% APY`
-            : null) ??
-          (typeof data.supplyApyPct === "number"
-            ? `${data.supplyApyPct.toLocaleString("en-US", { maximumFractionDigits: 2 })}% supply`
-            : "Unavailable")
+          usd(data.priceUsd) ?? pctApy(data.apyPct, "APY") ?? pctApy(data.supplyApyPct, "supply") ?? "Unavailable"
         const size = usd(data.tvlUsd) ?? usd(data.sizeUsd) ?? usd(data.availableLiquidityUsd) ?? "Unavailable"
-        return [
-          {
-            id: `market-${index}-${String(result.key ?? label)}`,
-            cells: [label, rate, size, String(result.source ?? "Convex")],
-          },
-        ]
+        candidates.push({
+          symbol: label.toLowerCase(),
+          isPrice,
+          score: (isPrice ? 0 : 2) + (rate === "Unavailable" ? 0 : 1),
+          id: `market-pd-${index}-${String(result.key ?? label)}`,
+          cells: [label, rate, size, String(result.source ?? "Convex")],
+        })
       })
-      return table("market", "Market results", ["Market", "Price or rate", "TVL or size", "Source"], rows)
+      // One row per symbol, keeping the highest-scored (Map preserves insertion
+      // order, and updating a key keeps its original position).
+      const bySymbol = new Map<string, MarketRow>()
+      for (const candidate of candidates) {
+        const existing = bySymbol.get(candidate.symbol)
+        if (!existing || candidate.score > existing.score) bySymbol.set(candidate.symbol, candidate)
+      }
+      let rows = Array.from(bySymbol.values())
+      // The price chart already shows price, so drop bare token-price rows once
+      // any richer market/pool row is present (removes the lone "aave $123.38
+      // Unavailable" line users saw under an APY answer).
+      if (rows.some((row) => !row.isPrice)) rows = rows.filter((row) => !row.isPrice)
+      return table(
+        "market",
+        "Market results",
+        ["Market", "Price or rate", "TVL or size", "Source"],
+        rows.map((row) => ({ id: row.id, cells: row.cells })),
+      )
     }
     case "pool": {
       const providerData = Array.isArray(p.providerData) ? p.providerData : []

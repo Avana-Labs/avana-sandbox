@@ -1,10 +1,9 @@
 "use client"
 
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { shouldUseOpenGateSession } from "@/app/lib/test-mode"
 
 export function shouldShowActionSessionLoading(isHydrated: boolean | undefined) {
-  return isHydrated === false && !shouldUseOpenGateSession()
+  return isHydrated === false
 }
 
 export function ActionSessionLoading() {

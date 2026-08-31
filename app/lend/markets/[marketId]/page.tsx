@@ -2,10 +2,11 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { SchemaMarkup, buildBreadcrumbSchema, buildFaqSchema, buildWebPageSchema } from "@/app/components/seo/schema"
 import { getLendMarketDetail } from "@/app/lib/lend-detail"
-import { getLendMarketDetailFromConvex } from "@/app/lib/lend-detail/convex-detail"
+import { applyLendPreloadedOverlays, getLendMarketDetailFromConvex } from "@/app/lib/lend-detail/convex-detail"
 import { preloadLendHero } from "@/app/lib/lend-detail/hero-preload"
 import { preloadDetailQuickStats } from "@/app/lib/detail-page/quick-stats-preload"
 import { preloadDetailCashflow } from "@/app/lib/detail-page/cashflow-preload"
+import { readPreloadedCashflow, readPreloadedQuickStats } from "@/app/lib/detail-page/apply-preloaded-overlays"
 import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { LendMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
@@ -49,11 +50,19 @@ export default async function LendMarketDetailPage({ params }: PageProps) {
   const { marketId } = await params
   if (isLighthouseAuditMode()) return <LighthouseAuditSurface title="Supply APY" eyebrow={marketId} />
 
-  const detail = await getLendMarketDetailFromConvex(marketId)
-  if (!detail) notFound()
-  const { preloads: heroPreloads, feeds } = await preloadLendHero(marketId)
-  const quickStatsPreload = await preloadDetailQuickStats("lend", marketId)
-  const cashflowPreload = await preloadDetailCashflow("lend", marketId)
+  const [detailRaw, heroBundle, quickStatsPreload, cashflowPreload] = await Promise.all([
+    getLendMarketDetailFromConvex(marketId),
+    preloadLendHero(marketId),
+    preloadDetailQuickStats("lend", marketId),
+    preloadDetailCashflow("lend", marketId),
+  ])
+  if (!detailRaw) notFound()
+  const detail = applyLendPreloadedOverlays(detailRaw, {
+    quickStats: readPreloadedQuickStats(quickStatsPreload),
+    cashflow: readPreloadedCashflow(cashflowPreload),
+    baselinePriceSymbol: detailRaw.hero.symbol,
+  })
+  const { preloads: heroPreloads, feeds } = heroBundle
   const detailWithFeeds = { ...detail, ...feeds }
   const canonicalUrl = `https://avana.cc/lend/markets/${marketId}`
   return (

@@ -19,10 +19,6 @@ const MultiplyCollateralTable = lazy(async () => ({
   default: (await import("@/app/dashboard/multiply-collateral-table")).MultiplyCollateralTable,
 }))
 
-const MultiplyWhatIfPanel = lazy(async () => ({
-  default: (await import("@/app/dashboard/multiply-what-if-panel")).MultiplyWhatIfPanel,
-}))
-
 const EMPTY_MULTIPLY_TAB: PortfolioMultiplyTabData = {
   creditLines: {
     approvedUsd: 0,
@@ -101,9 +97,6 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
       </div>
       <AccountModuleBoundary>
         <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} returnHref={returnHref} />
-      </AccountModuleBoundary>
-      <AccountModuleBoundary>
-        <MultiplyWhatIfPanel state={multiplySession.state} walletId={walletId ?? null} />
       </AccountModuleBoundary>
     </section>
   )

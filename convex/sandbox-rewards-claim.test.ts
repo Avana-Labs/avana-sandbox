@@ -14,26 +14,41 @@ const modules = import.meta.glob("./**/*.*s")
 
 const WALLET = "0x0000000000000000000000000000000000000abc"
 
+async function seedRewardEvents(t: ReturnType<typeof convexTest>, types: string[]) {
+  await t.run(async (ctx) => {
+    await ctx.db.insert("sandboxRewards", {
+      wallet: WALLET,
+      stateJson: JSON.stringify({
+        events: types.map((type, index) => ({ id: `event-${index}`, wallet: WALLET, type })),
+        claims: [],
+      }),
+      updatedAt: 1,
+      revision: 0,
+    })
+  })
+}
+
 describe("recordRewardsClaim — server-authoritative payout", () => {
   test("payout is derived from the on-server catalog, not the client", async () => {
     const t = convexTest(schema, modules)
+    await seedRewardEvents(t, ["education_completed"])
     const asUser = t.withIdentity({ subject: WALLET })
 
-    // connect-wallet = 25 AVA, create-profile = 20 AVA → 45 AVA at 1:1 USD.
+    // connect-wallet = 25 AVA, review-risk-basics = 15 AVA → 40 AVA at 1:1 USD.
     const result = await asUser.mutation(api.sandbox.transactions.recordRewardsClaim, {
       wallet: WALLET,
       intentId: "rewards:test:1",
-      taskIds: ["connect-wallet", "create-profile"],
+      taskIds: ["connect-wallet", "review-risk-basics"],
       syntheticTxHash: "0xdeadbeef1",
     })
     expect(result.idempotent).toBe(false)
-    expect(result.amountUsd).toBe(45)
+    expect(result.amountUsd).toBe(40)
 
     // The persisted transaction matches the derived amount, not any client input.
     const rows = await t.run(async (ctx) => await ctx.db.query("transactions").collect())
     const rewardRow = rows.find((r) => r.intentId === "rewards:test:1")
-    expect(rewardRow?.amountUsd).toBe(45)
-    expect(rewardRow?.claimedTaskIds).toEqual(["connect-wallet", "create-profile"])
+    expect(rewardRow?.amountUsd).toBe(40)
+    expect(rewardRow?.claimedTaskIds).toEqual(["connect-wallet", "review-risk-basics"])
   })
 
   test("forged unknown task ids are rejected", async () => {
@@ -50,6 +65,42 @@ describe("recordRewardsClaim — server-authoritative payout", () => {
 
     const rows = await t.run(async (ctx) => await ctx.db.query("transactions").collect())
     expect(rows.filter((r) => r.product === "rewards")).toHaveLength(0)
+  })
+
+  test("rejects oversized identifiers and claim arrays before reads or writes", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await expect(
+      asUser.mutation(api.sandbox.transactions.recordRewardsClaim, {
+        wallet: WALLET,
+        intentId: "x".repeat(100_000),
+        taskIds: ["connect-wallet"],
+        syntheticTxHash: "0xhash",
+      }),
+    ).rejects.toThrow(/intentId must contain 1 to 200 characters/)
+    await expect(
+      asUser.mutation(api.sandbox.transactions.recordRewardsClaim, {
+        wallet: WALLET,
+        intentId: "rewards:test:too-many",
+        taskIds: Array.from({ length: 33 }, (_, index) => `task-${index}`),
+        syntheticTxHash: "0xhash",
+      }),
+    ).rejects.toThrow(/at most 32 task ids/)
+
+    const rows = await t.run(async (ctx) => await ctx.db.query("transactions").collect())
+    expect(rows).toHaveLength(0)
+  })
+
+  test("rejects an active financial quest without a matching server transaction", async () => {
+    const t = convexTest(schema, modules)
+    await expect(
+      t.withIdentity({ subject: WALLET }).mutation(api.sandbox.transactions.recordRewardsClaim, {
+        wallet: WALLET,
+        intentId: "rewards:test:not-eligible",
+        taskIds: ["first-borrow"],
+        syntheticTxHash: "0xnoteligible",
+      }),
+    ).rejects.toThrow(/TASK_NOT_ELIGIBLE/)
   })
 
   test("claiming an already-paid task on a fresh intent id is rejected", async () => {
@@ -73,7 +124,7 @@ describe("recordRewardsClaim — server-authoritative payout", () => {
     ).rejects.toThrow(/TASK_ALREADY_CLAIMED/)
   })
 
-  test("empty taskIds AND no legacy amount are rejected", async () => {
+  test("empty taskIds are rejected", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
     await expect(
@@ -86,28 +137,35 @@ describe("recordRewardsClaim — server-authoritative payout", () => {
     ).rejects.toThrow(/EMPTY_CLAIM/)
   })
 
-  test("legacy amountUsd path (no taskIds) still records for a rollout-old client", async () => {
-    // A still-deployed old client calls with amountUsd and no taskIds. The deploy
-    // must not break it: the amount is trusted verbatim (transitional), the row is
-    // written, but it carries no claimedTaskIds (so it can't be double-claim-guarded).
+  test("rejects retired tasks that remain in the historical payout catalog", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
-    const result = await asUser.mutation(api.sandbox.transactions.recordRewardsClaim, {
-      wallet: WALLET,
-      intentId: "rewards:test:legacy",
-      amountUsd: 12.5,
-      syntheticTxHash: "0xhash-legacy",
-    })
-    expect(result.idempotent).toBe(false)
-    expect(result.amountUsd).toBe(12.5)
-    const rows = await t.run(async (ctx) => await ctx.db.query("transactions").collect())
-    const row = rows.find((r) => r.intentId === "rewards:test:legacy")
-    expect(row?.amountUsd).toBe(12.5)
-    expect(row?.claimedTaskIds).toBeUndefined()
+    await expect(
+      asUser.mutation(api.sandbox.transactions.recordRewardsClaim, {
+        wallet: WALLET,
+        intentId: "rewards:test:retired",
+        taskIds: ["create-profile"],
+        syntheticTxHash: "0xhash-retired",
+      }),
+    ).rejects.toThrow(/INACTIVE_TASK_ID/)
+  })
+
+  test("rejects a duplicated task id inside one claim", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await expect(
+      asUser.mutation(api.sandbox.transactions.recordRewardsClaim, {
+        wallet: WALLET,
+        intentId: "rewards:test:duplicate",
+        taskIds: ["connect-wallet", "connect-wallet"],
+        syntheticTxHash: "0xhash-duplicate",
+      }),
+    ).rejects.toThrow(/DUPLICATE_TASK_ID/)
   })
 
   test("prior intent id still short-circuits idempotently", async () => {
     const t = convexTest(schema, modules)
+    await seedRewardEvents(t, ["market_favorited"])
     const asUser = t.withIdentity({ subject: WALLET })
 
     const first = await asUser.mutation(api.sandbox.transactions.recordRewardsClaim, {

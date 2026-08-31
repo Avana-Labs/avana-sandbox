@@ -2,10 +2,14 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { SchemaMarkup, buildBreadcrumbSchema, buildFaqSchema, buildWebPageSchema } from "@/app/components/seo/schema"
 import { getMultiplyMarketDetail } from "@/app/lib/multiply-detail"
-import { getMultiplyMarketDetailFromConvex } from "@/app/lib/multiply-detail/convex-detail"
+import {
+  applyMultiplyPreloadedOverlays,
+  getMultiplyMarketDetailFromConvex,
+} from "@/app/lib/multiply-detail/convex-detail"
 import { preloadMultiplyHero } from "@/app/lib/multiply-detail/hero-preload"
 import { preloadDetailQuickStats } from "@/app/lib/detail-page/quick-stats-preload"
 import { preloadDetailCashflow } from "@/app/lib/detail-page/cashflow-preload"
+import { readPreloadedCashflow, readPreloadedQuickStats } from "@/app/lib/detail-page/apply-preloaded-overlays"
 import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { MultiplyMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
@@ -49,11 +53,19 @@ export default async function MarketDetailPage({ params }: PageProps) {
   const { marketId } = await params
   if (isLighthouseAuditMode()) return <LighthouseAuditSurface title="Total value locked" eyebrow={marketId} />
 
-  const detail = await getMultiplyMarketDetailFromConvex(marketId)
-  if (!detail) notFound()
-  const { preloads: heroPreloads, feeds } = await preloadMultiplyHero(marketId)
-  const quickStatsPreload = await preloadDetailQuickStats("multiply", marketId)
-  const cashflowPreload = await preloadDetailCashflow("multiply", marketId)
+  const [detailRaw, heroBundle, quickStatsPreload, cashflowPreload] = await Promise.all([
+    getMultiplyMarketDetailFromConvex(marketId),
+    preloadMultiplyHero(marketId),
+    preloadDetailQuickStats("multiply", marketId),
+    preloadDetailCashflow("multiply", marketId),
+  ])
+  if (!detailRaw) notFound()
+  const detail = applyMultiplyPreloadedOverlays(detailRaw, {
+    quickStats: readPreloadedQuickStats(quickStatsPreload),
+    cashflow: readPreloadedCashflow(cashflowPreload),
+    baselinePriceSymbol: detailRaw.row.protocol,
+  })
+  const { preloads: heroPreloads, feeds } = heroBundle
   const detailWithFeeds = { ...detail, ...feeds }
   const canonicalUrl = `https://avana.cc/multiply/markets/${marketId}`
   return (

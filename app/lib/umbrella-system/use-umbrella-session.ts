@@ -550,6 +550,15 @@ function stateFromConvex(walletId: string, remote: ConvexUmbrellaSessionState): 
   }
 }
 
+function emptyConvexUmbrellaState(walletId: string): UmbrellaState {
+  return stateFromConvex(walletId, {
+    walletId,
+    walletBalances: { gho: 0, usdc: 0, usdt: 0, weth: 0 },
+    positions: [],
+    transactions: [],
+  })
+}
+
 export function useUmbrellaSession({
   walletId,
   persistState = true,
@@ -561,8 +570,11 @@ export function useUmbrellaSession({
   remoteState?: ConvexUmbrellaSessionState | null
   persistAction?: PersistUmbrellaAction
 }) {
+  const expectsRemoteState = Boolean(persistAction)
   const seededState = useMemo(() => buildDefaultUmbrellaState(walletId), [walletId])
-  const [state, setState] = useState<UmbrellaState>(seededState)
+  const [state, setState] = useState<UmbrellaState>(() =>
+    expectsRemoteState ? emptyConvexUmbrellaState(walletId) : seededState,
+  )
   const stateRef = useRef(state)
   stateRef.current = state
   // Hydration semantics (mirrors lend/borrow):
@@ -571,28 +583,32 @@ export function useUmbrellaSession({
   //    (test / SSR-only use — nothing to wait on).
   //  - false otherwise (still fetching).
   const remoteSettledRef = useRef(false)
-  const [isHydrated, setIsHydrated] = useState(() => !persistState && remoteState === undefined)
+  const [isHydrated, setIsHydrated] = useState(() => !expectsRemoteState && !persistState && remoteState === undefined)
 
   useEffect(() => {
     if (remoteState !== undefined) {
       remoteSettledRef.current = true
       setIsHydrated(true)
-    } else if (!persistState) {
+    } else if (!persistState && !expectsRemoteState) {
       remoteSettledRef.current = false
       setIsHydrated(true)
     } else {
       remoteSettledRef.current = false
       setIsHydrated(false)
     }
-  }, [persistState, remoteState])
+  }, [expectsRemoteState, persistState, remoteState])
 
   useEffect(() => {
     if (remoteState) {
       setState(stateFromConvex(walletId, remoteState))
       return
     }
+    if (expectsRemoteState) {
+      setState(emptyConvexUmbrellaState(walletId))
+      return
+    }
     setState(persistState ? readUmbrellaState(walletId) : buildDefaultUmbrellaState(walletId))
-  }, [persistState, remoteState, walletId])
+  }, [expectsRemoteState, persistState, remoteState, walletId])
 
   useEffect(() => {
     if (!persistState || state.walletId !== walletId) return

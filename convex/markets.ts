@@ -129,6 +129,27 @@ export const getMultiplySupplyBorrow = query({
   },
 })
 
+/** Lend variant of getSupplyBorrow — same shape, scope="lend" (C05: replace PRNG series). */
+export const getLendSupplyBorrow = query({
+  args: { slug: v.string() },
+  handler: async (ctx, { slug }) => {
+    const rows = await dailyRowsForScope(ctx, "lend", slug, "1Y")
+    if (rows.length === 0) return null
+    const market = await resolveMarket(ctx, "lend", slug)
+    const prefix = market?._id ?? slug
+    const mk = (field: keyof DailyStatAmounts, id: string, label: string) => ({
+      id,
+      label,
+      points: rows.map((r) => ({ t: r.day, v: Number(r[field] ?? 0) })),
+    })
+    return {
+      supplied: mk("suppliedUsd", `${prefix}:sb:supplied`, "Supplied"),
+      borrowed: mk("borrowedUsd", `${prefix}:sb:borrowed`, "Borrowed"),
+      utilization: mk("utilizationPct", `${prefix}:sb:utilization`, "Utilization"),
+    }
+  },
+})
+
 /**
  * Quick-stats row values + 24h deltas derived from the two most recent daily
  * snapshots. The UI's `QuickStat[]` shape is built here so the data seam
@@ -347,6 +368,22 @@ export const listMultiplyMarketSnapshots = query({
   handler: async (ctx) => {
     const rows = await listMarketSnapshotRows(ctx)
     return rows.filter((row) => row.scope === "multiply")
+  },
+})
+
+/**
+ * Single-market reference snapshot for detail pages (C04). Reads the same
+ * `marketSnapshotsCache` + live deltas as `list*MarketSnapshots`, but returns
+ * one row so Next.js detail builders do not pull the full catalog over HTTP.
+ */
+export const getMarketSnapshot = query({
+  args: {
+    scope: v.union(v.literal("asset"), v.literal("pool"), v.literal("lend"), v.literal("multiply")),
+    slug: v.string(),
+  },
+  handler: async (ctx, { scope, slug }) => {
+    const rows = await listMarketSnapshotRows(ctx)
+    return rows.find((row) => row.scope === scope && row.slug === slug) ?? null
   },
 })
 

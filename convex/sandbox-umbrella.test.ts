@@ -12,6 +12,7 @@ import { convexTest, type TestConvex } from "convex-test"
 import { afterEach, beforeEach, describe, expect, test } from "vitest"
 import schema from "./schema"
 import { api } from "./_generated/api"
+import { MAX_UMBRELLA_TX_PER_HOUR } from "./sandbox/umbrella"
 
 const modules = import.meta.glob("./**/*.*s")
 
@@ -77,6 +78,21 @@ function num(usd6: string | undefined) {
 }
 
 describe("sandbox umbrella — recordAction lifecycle", () => {
+  test("rejects oversized intent ids before indexed reads or writes", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET_A })
+    await expect(
+      asUser.mutation(api.sandbox.umbrella.recordAction, {
+        wallet: WALLET_A,
+        intentId: "x".repeat(100_000),
+        kind: "stake",
+        marketId: "usdc",
+        amount: 1,
+      }),
+    ).rejects.toThrow(/INVALID_INTENT_ID/)
+    expect(await activityCountFor(t, WALLET_A, "stake")).toBe(0)
+  })
+
   test("stake — happy path debits liquid and creates the position + transaction", async () => {
     const t = convexTest(schema, modules)
     await seedLiquidUsdc(t, WALLET_A, 1000)
@@ -134,6 +150,51 @@ describe("sandbox umbrella — recordAction lifecycle", () => {
         amount: 0,
       }),
     ).rejects.toThrow(/INVALID_AMOUNT/)
+  })
+
+  test.each([Number.NaN, Number.POSITIVE_INFINITY, -1])("stake — corrupt numeric amount %s rejects", async (amount) => {
+    const t = convexTest(schema, modules)
+    await seedLiquidUsdc(t, WALLET_A, 1000)
+    await expect(
+      t.withIdentity({ subject: WALLET_A }).mutation(api.sandbox.umbrella.recordAction, {
+        wallet: WALLET_A,
+        intentId: `stake-invalid-${String(amount)}`,
+        kind: "stake",
+        marketId: "usdc",
+        amount,
+      }),
+    ).rejects.toThrow(/INVALID_AMOUNT|not a valid Convex value/)
+  })
+
+  test("rate limits Umbrella writes against the wallet-wide transaction history", async () => {
+    const t = convexTest(schema, modules)
+    const now = Date.now()
+    await t.run(async (ctx) => {
+      for (let index = 0; index < MAX_UMBRELLA_TX_PER_HOUR; index += 1) {
+        await ctx.db.insert("transactions", {
+          wallet: WALLET_A.toLowerCase(),
+          intentId: `seed-${index}`,
+          product: "umbrella",
+          kind: "claim",
+          status: "success",
+          requestedAmountUsd6: "0",
+          executedAmountUsd6: "0",
+          amountUsd: 0,
+          syntheticTxHash: `seed-${index}`,
+          simulated: true,
+          at: now,
+        })
+      }
+    })
+    await expect(
+      t.withIdentity({ subject: WALLET_A }).mutation(api.sandbox.umbrella.recordAction, {
+        wallet: WALLET_A,
+        intentId: "rate-limited",
+        kind: "stake",
+        marketId: "usdc",
+        amount: 1,
+      }),
+    ).rejects.toThrow(/RATE_LIMITED/)
   })
 
   test("stake — idempotent by intentId (no double-debit)", async () => {

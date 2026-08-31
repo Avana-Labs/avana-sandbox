@@ -62,13 +62,12 @@ export async function fetchLendMarketSnapshots(): Promise<LendConvexSnapshot[]> 
   }
 }
 
-/** Latest-day reference snapshot for one lend market (from `listMarketSnapshots`). */
+/** Latest-day reference snapshot for one lend market (slug-scoped; C04). */
 export async function fetchLendMarketSnapshot(slug: string): Promise<LendMarketSnapshot | null> {
   const client = convexClient()
   if (!client) return null
   try {
-    const rows = await client.query(api.markets.listLendMarketSnapshots, {})
-    const match = rows.find((row) => row.slug === slug)
+    const match = await client.query(api.markets.getMarketSnapshot, { scope: "lend", slug })
     if (!match) return null
     return {
       slug: match.slug,
@@ -93,6 +92,17 @@ export async function fetchLendSupplySeries(slug: string): Promise<ConvexSeriesP
     return (res?.points ?? []) as ConvexSeriesPoint[]
   } catch {
     return []
+  }
+}
+
+/** Supply/borrow/utilization series for lend hero secondary tabs (C05 — no PRNG). */
+export async function fetchLendSupplyBorrow(slug: string) {
+  const client = convexClient()
+  if (!client) return null
+  try {
+    return await client.query(api.markets.getLendSupplyBorrow, { slug })
+  } catch {
+    return null
   }
 }
 
