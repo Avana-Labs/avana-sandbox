@@ -1,6 +1,16 @@
 import "server-only"
+import { unstable_cache } from "next/cache"
 import { fetchTokenPrices } from "@/app/lib/borrow-system/market-hydration-server"
 import { setCanonicalPrices } from "./canonical"
+
+/**
+ * Cross-request cache for the oracle round-trip. The root layout awaits the price seed on every
+ * render; without this each request blocks on a fresh Convex query — a per-request TTFB tax.
+ * Prices are decorative and tolerate a short staleness window, so serve a cached value and
+ * revalidate in the background every 60s. The client overlay still refreshes live once mounted.
+ * `fetchTokenPrices` reads no request-specific data (a plain Convex query), so it is cache-safe.
+ */
+const getCachedTokenPrices = unstable_cache(fetchTokenPrices, ["server-token-prices"], { revalidate: 60 })
 
 /**
  * Seed the canonical price store with the live Convex oracle prices during SSR.
@@ -35,7 +45,7 @@ export async function hydrateCanonicalPricesFromConvex(): Promise<void> {
  */
 export async function loadServerTokenPrices(): Promise<Record<string, number>> {
   try {
-    const prices = await fetchTokenPrices()
+    const prices = await getCachedTokenPrices()
     if (prices) {
       setCanonicalPrices(prices)
       return prices
