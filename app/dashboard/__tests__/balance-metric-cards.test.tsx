@@ -98,6 +98,9 @@ describe("Lend Balance metric cards", () => {
           projectedEarnings30dUsd: 534.25,
           projectedEarnings90dUsd: 1_602.74,
           projectedEarnings6mUsd: 3_250,
+          // null anchor → the live counters render their settled base (no elapsed accrual),
+          // so the assertions below are deterministic.
+          accrualSinceMs: null,
         }}
       />,
     )
@@ -115,7 +118,10 @@ describe("Lend Balance metric cards", () => {
       expect(screen.getByText(label)).toBeTruthy()
     }
     expect(screen.getByText("6.50%")).toBeTruthy()
-    expect(screen.getByText("2.56%")).toBeTruthy()
+    // Interest Earned + Yield Generated now accrue live from the recorded base interest
+    // ($2,500 of $100,000 = 2.50%); the extra decimals mark them as live counters.
+    expect(screen.getByText("$2,500.0000")).toBeTruthy()
+    expect(screen.getByText("2.50%")).toBeTruthy()
     expect(screen.queryByText("Rewards Earned")).toBeNull()
   })
 })

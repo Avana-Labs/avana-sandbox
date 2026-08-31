@@ -1,6 +1,8 @@
 "use client"
 
+import type { ReactNode } from "react"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
+import { LiveInterestEarnedUsd, LiveYieldGeneratedPct } from "./live-accrual"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { formatUsdExact } from "@/app/lib/borrow-sim"
 import { formatHealthFactor } from "@/app/lib/data/borrow-domain"
@@ -26,7 +28,7 @@ function formatLeverage(value: number) {
 
 type MetricItem = {
   label: string
-  value: string
+  value: ReactNode
   description: string
 }
 
@@ -324,6 +326,9 @@ export function DashboardLendPerformanceSection({
   const m = (value: string) => (showDollarAmounts ? value : MASK)
 
   const projectionHint = t("Projected earnings at current rates")
+  // Yearly USD the whole supplied balance earns at the current blend (principal × Net APY).
+  // The live counters accrue this from `accrualSinceMs` (when supply started) in real time.
+  const accrualRatePerYearUsd = metrics.totalSuppliedUsd * (metrics.netApyPct / 100)
 
   const items: MetricItem[] = [
     {
@@ -338,12 +343,29 @@ export function DashboardLendPerformanceSection({
     },
     {
       label: t("Interest Earned"),
-      value: m(formatUsdExact(metrics.interestEarnedUsd)),
-      description: t("Supply interest accrued across your lending positions (excludes protocol rewards)"),
+      value: showDollarAmounts ? (
+        <LiveInterestEarnedUsd
+          anchorMs={metrics.accrualSinceMs}
+          ratePerYearUsd={accrualRatePerYearUsd}
+          baseUsd={metrics.interestEarnedUsd}
+        />
+      ) : (
+        MASK
+      ),
+      description: t("Supply interest accruing in real time across your lending positions (excludes protocol rewards)"),
     },
     {
       label: t("Yield Generated"),
-      value: showDollarAmounts ? formatPct(metrics.yieldGeneratedPct) : MASK,
+      value: showDollarAmounts ? (
+        <LiveYieldGeneratedPct
+          anchorMs={metrics.accrualSinceMs}
+          ratePerYearUsd={accrualRatePerYearUsd}
+          principalUsd={metrics.totalSuppliedUsd}
+          baseUsd={metrics.interestEarnedUsd}
+        />
+      ) : (
+        MASK
+      ),
       description: t("Interest earned as a percentage of principal you supplied"),
     },
     {

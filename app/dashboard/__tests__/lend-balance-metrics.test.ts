@@ -79,6 +79,7 @@ describe("buildLendBalanceMetrics — wallet aggregate formulas", () => {
       projectedEarnings30dUsd: 0,
       projectedEarnings90dUsd: 0,
       projectedEarnings6mUsd: 0,
+      accrualSinceMs: null,
     })
   })
 

@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
-import { isLighthouseAuditMode, shouldUseOpenGateSession } from "@/app/lib/test-mode"
+import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 import { priceKey } from "./format"
 import { PRICE_FIXTURE } from "./price-fixture"
 
@@ -109,10 +109,13 @@ export function TokenPricesProvider({
   // depends on that subscription to escape the fixture. Token prices are PUBLIC data.
   const seed = initialPrices ?? EMPTY_PRICES
 
-  // Skip the realtime subscription when there's no Convex client (nothing to query) and on the
-  // open-gate/Lighthouse test surfaces (deterministic static catalog). The seed still flows, so
-  // prices stay live from SSR; the subscription, when present, only layers fresher values on top.
-  if (!realtime || !hasConvexClient || shouldUseOpenGateSession() || isLighthouseAuditMode()) {
+  // Skip the realtime subscription when there's no Convex client (nothing to query) and under the
+  // Lighthouse audit (deterministic static catalog). Open-gate sessions DO subscribe: otherwise the
+  // dashboard's client price context froze at the initial-load seed while detail pages re-SSR'd
+  // fresh, so the SAME token showed two prices (e.g. AAVE $123.25 on the wallet card vs $123.33 on
+  // the lend detail). The subscription also calls setCanonicalPrices, so the module store the
+  // detail pages / Lend / Borrow / Multiply tabs read stays in lockstep with the wallet card.
+  if (!realtime || !hasConvexClient || isLighthouseAuditMode()) {
     return <TokenPricesContext.Provider value={seed}>{children}</TokenPricesContext.Provider>
   }
   return (

@@ -281,6 +281,11 @@ export type LendBalanceMetrics = {
   projectedEarnings30dUsd: number
   projectedEarnings90dUsd: number
   projectedEarnings6mUsd: number
+  /**
+   * When supply started (earliest supply tx), for the real-time Interest Earned / Yield
+   * Generated counters to accrue from. `null` when there is no supply history to anchor on.
+   */
+  accrualSinceMs: number | null
 }
 
 const LEND_PROJECTION_HORIZONS_DAYS = {
@@ -345,6 +350,14 @@ export function buildLendBalanceMetrics(data: PortfolioLendTabData): LendBalance
   )
   const yieldGeneratedPct = lendYieldGeneratedPct(interestEarnedUsd, investments)
 
+  // Anchor the live counters at the earliest supply so interest accrues from when funds were
+  // actually supplied (not from page load, which would start every counter at $0).
+  const supplyStartMs = (data.history ?? [])
+    .filter((row) => row.kind === "supply")
+    .map((row) => Date.parse(row.at))
+    .filter((ms) => Number.isFinite(ms) && ms > 0)
+  const accrualSinceMs = supplyStartMs.length > 0 ? Math.min(...supplyStartMs) : null
+
   return {
     totalSuppliedUsd,
     netApyPct,
@@ -354,5 +367,6 @@ export function buildLendBalanceMetrics(data: PortfolioLendTabData): LendBalance
     projectedEarnings30dUsd: projectLendPortfolioEarningsUsd(investments, LEND_PROJECTION_HORIZONS_DAYS.d30),
     projectedEarnings90dUsd: projectLendPortfolioEarningsUsd(investments, LEND_PROJECTION_HORIZONS_DAYS.d90),
     projectedEarnings6mUsd: projectLendPortfolioEarningsUsd(investments, LEND_PROJECTION_HORIZONS_DAYS.m6),
+    accrualSinceMs,
   }
 }
