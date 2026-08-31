@@ -27,6 +27,7 @@ import {
 } from "@/app/lib/detail-page/siloed-market-overlay"
 import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
 import { preferLiveOrNull, shouldFailClosedInLive } from "@/app/lib/detail-page/live-fallback"
+import { EMPTY_RISK_ASSESSMENT } from "@/app/lib/detail-page/empty-risk-assessment"
 import {
   ABOUT_CONTRACT_ADDRESS_SALTS,
   aboutContractAddressLabelForSalt,
@@ -194,8 +195,10 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
       ),
       // heroFeed set by the page from preloadMultiplyHero.
       cashflow: { bars: [], rows: [], periodLabel: "" },
-      transactions: mapConvexTransactions(transactions) ?? detail.transactions,
-      risk: (risk as typeof detail.risk) ?? detail.risk,
+      // Fail closed in live: empty (not the catalog copy) when Convex has no rows.
+      // The client overlays the wallet's own session transactions on top of this.
+      transactions: preferLiveOrNull(mode, mapConvexTransactions(transactions), detail.transactions) ?? [],
+      risk: preferLiveOrNull(mode, risk as typeof detail.risk | null, detail.risk) ?? EMPTY_RISK_ASSESSMENT,
       // Fail closed in live: never fabricate liquidation KPIs (see borrow detail).
       liquidationRisk:
         preferLiveOrNull(

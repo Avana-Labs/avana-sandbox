@@ -48,6 +48,7 @@ import { injectSiloedMarketQuickStats, overlayHeroIdentity } from "@/app/lib/det
 import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
 import { shouldFailClosedWithoutSnapshots } from "@/app/lib/borrow-detail/live-fallback"
 import { preferLiveOrNull } from "@/app/lib/detail-page/live-fallback"
+import { EMPTY_RISK_ASSESSMENT } from "@/app/lib/detail-page/empty-risk-assessment"
 import {
   ABOUT_CONTRACT_ADDRESS_SALTS,
   aboutContractAddressLabelForSalt,
@@ -140,15 +141,6 @@ export function syncQuickStatsRiskPremium(quickStats: QuickStat[], premiumBps: n
  * that makes the corresponding UI section render empty (no rows, no bars).
  */
 const EMPTY_CASHFLOW_CARD: import("./types").CashflowCard = { bars: [], rows: [], periodLabel: "" }
-const EMPTY_RISK_ASSESSMENT: import("./types").RiskAssessment = {
-  premiumBps: 0,
-  level: "low",
-  score: 0,
-  headline: "",
-  summary: "",
-  breakdown: [],
-  metrics: [],
-}
 const EMPTY_CASHFLOW_TREND: import("./types").CashflowTrend = {
   totalLabel: "",
   periodLabel: "",
