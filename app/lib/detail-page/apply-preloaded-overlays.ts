@@ -14,7 +14,9 @@ export type PreloadedQuickStatRow = {
   delta?: DeltaStat
 }
 
-export function readPreloadedQuickStats(preload: QuickStatsPreload | null): ReadonlyArray<PreloadedQuickStatRow> | null {
+export function readPreloadedQuickStats(
+  preload: QuickStatsPreload | null,
+): ReadonlyArray<PreloadedQuickStatRow> | null {
   if (!preload) return null
   try {
     const rows = preloadedQueryResult(preload)

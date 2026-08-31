@@ -51,7 +51,7 @@ function median(nums) {
 
 async function probeServerMode() {
   try {
-    const res = await fetch(`${BASE_URL}/borrow`, { method: "HEAD", redirect: "follow" })
+    await fetch(`${BASE_URL}/borrow`, { method: "HEAD", redirect: "follow" })
     // Next does not expose mode on HEAD reliably; infer from env hint or leave unknown.
     return process.env.SERVER_MODE || (process.env.NODE_ENV === "production" ? "production" : "unknown")
   } catch {
@@ -62,7 +62,6 @@ async function probeServerMode() {
 async function measureOnce(path) {
   const url = `${BASE_URL}${path}`
   const started = performance.now()
-  let ttfbMs = 0
   const res = await fetch(url, {
     headers: {
       Accept: "text/html",
@@ -71,7 +70,7 @@ async function measureOnce(path) {
     },
     redirect: "follow",
   })
-  ttfbMs = performance.now() - started
+  const ttfbMs = performance.now() - started
   const buf = Buffer.from(await res.arrayBuffer())
   const totalMs = performance.now() - started
   const html = buf.toString("utf8")
@@ -186,11 +185,10 @@ async function main() {
     }
   }
 
-  let previous = null
   let previousByRoute = null
   if (compareFile && existsSync(compareFile)) {
     try {
-      previous = JSON.parse(readFileSync(compareFile, "utf8"))
+      const previous = JSON.parse(readFileSync(compareFile, "utf8"))
       previousByRoute = new Map((previous.routes || []).map((r) => [r.route, r]))
       console.log(`Comparing against ${compareFile} (${previous.capturedAt || "unknown time"})`)
     } catch {
@@ -208,7 +206,11 @@ async function main() {
     warmup: WARMUP,
     commit: process.env.GIT_COMMIT || null,
     note: "TTFB = time to first response headers+body start via fetch; totalMs includes full HTML download. Prefer production `next start` for deploy-relevant numbers.",
-    routes: results.map(({ samples, ...rest }) => rest),
+    routes: results.map((row) => {
+      const { samples, ...rest } = row
+      void samples
+      return rest
+    }),
   }
 
   mkdirSync(outDir, { recursive: true })

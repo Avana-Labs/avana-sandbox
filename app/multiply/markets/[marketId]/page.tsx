@@ -9,10 +9,7 @@ import {
 import { preloadMultiplyHero } from "@/app/lib/multiply-detail/hero-preload"
 import { preloadDetailQuickStats } from "@/app/lib/detail-page/quick-stats-preload"
 import { preloadDetailCashflow } from "@/app/lib/detail-page/cashflow-preload"
-import {
-  readPreloadedCashflow,
-  readPreloadedQuickStats,
-} from "@/app/lib/detail-page/apply-preloaded-overlays"
+import { readPreloadedCashflow, readPreloadedQuickStats } from "@/app/lib/detail-page/apply-preloaded-overlays"
 import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { MultiplyMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
