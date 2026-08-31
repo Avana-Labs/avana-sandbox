@@ -594,7 +594,7 @@ export function AskAIThread({
                 onSend={onSend}
                 onCancel={onCancelRunning}
               />
-              {isEmpty ? (
+              {isEmpty && messagesRemaining !== 0 ? (
                 <div
                   className="flex w-full flex-wrap items-center justify-center gap-2 px-4"
                   onMouseLeave={() => setHoveredPrompt(null)}
