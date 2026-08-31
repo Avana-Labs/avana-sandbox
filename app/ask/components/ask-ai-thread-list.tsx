@@ -65,7 +65,7 @@ export function AskAIThreadList({
           open ? "translate-x-0 p-3 lg:w-[260px]" : "-translate-x-full p-3 lg:w-0 lg:translate-x-0 lg:p-0"
         }`}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <button
             type="button"
             onClick={() => void onNewThread()}
@@ -89,7 +89,7 @@ export function AskAIThreadList({
           </button>
         </div>
 
-        <div className="mt-6 flex-1">
+        <div className="mt-6 min-h-0 flex-1 overflow-y-auto">
           <p className="px-2.5 text-xs font-medium text-muted-foreground">Today</p>
           {threads.length === 0 ? (
             <p className="mt-1 px-2.5 text-sm text-muted-foreground">No threads yet</p>
