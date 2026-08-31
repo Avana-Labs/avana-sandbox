@@ -28,6 +28,7 @@ export type PriceFreshness = {
 export type PriceStatus = {
   updatedAt: number | null
   staleAfterMs: number
+  invalidAfterMs?: number
   count: number
 }
 

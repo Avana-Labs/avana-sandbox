@@ -75,6 +75,12 @@ const liveRates: Partial<Record<CurrencyCode, number>> = {}
 /** Overlay live rates on top of the baseline. Ignores non-positive/NaN values. */
 export function applyLiveRates(rates: Partial<Record<CurrencyCode, number>>): void {
   for (const code of Object.keys(rates) as CurrencyCode[]) {
+    // USD is the accounting base unit, not a market FX quote. Never allow a stale,
+    // duplicated, or malformed Convex/cache row to turn $1 of USD into anything else.
+    if (code === "USD") {
+      liveRates.USD = 1
+      continue
+    }
     const rate = rates[code]
     if (typeof rate === "number" && Number.isFinite(rate) && rate > 0) {
       liveRates[code] = rate
@@ -88,6 +94,7 @@ export function hasLiveRates(): boolean {
 }
 
 export function exchangeRateFor(currency: CurrencyCode): number {
+  if (currency === "USD") return 1
   const live = liveRates[currency]
   if (typeof live === "number" && Number.isFinite(live) && live > 0) {
     return live

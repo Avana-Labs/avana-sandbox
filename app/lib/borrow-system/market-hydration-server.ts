@@ -1,6 +1,7 @@
 import "server-only"
 import { ConvexHttpClient } from "convex/browser"
 import { api } from "@/convex/_generated/api"
+import { validatedConvexPriceMap } from "@/app/lib/prices/validated-convex-price"
 import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
 import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
 import { allocationVenueLabel } from "@/app/lib/borrow-detail/allocation"
@@ -370,8 +371,8 @@ export async function fetchTokenPrices(): Promise<Record<string, number> | null>
   try {
     const rows = await client.query(api.prices.getPrices, {})
     if (!rows || rows.length === 0) return null
-    const map: Record<string, number> = {}
-    for (const r of rows) map[r.symbol.toLowerCase()] = r.priceUsd
+    const map = validatedConvexPriceMap(rows)
+    if (Object.keys(map).length === 0) return null
     return map
   } catch {
     return null

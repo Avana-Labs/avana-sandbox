@@ -20,8 +20,8 @@ describe("live FX overlay (rates.ts)", () => {
 
   it("USD is always identity", () => {
     applyLiveRates({ USD: 2 })
-    // exchangeRateFor returns the applied value, but USD from the API is always 1.
-    expect(exchangeRateFor("USD")).toBe(2)
+    expect(exchangeRateFor("USD")).toBe(1)
+    expect(currencyContext("USD").rate).toBe(1)
   })
 })
 
