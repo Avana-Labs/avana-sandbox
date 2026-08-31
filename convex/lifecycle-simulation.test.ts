@@ -43,6 +43,18 @@ describe("Phase 6 — multi-user lifecycle simulation", () => {
         const now = Date.now()
         const rows = await ctx.db.query("tokenPrices").collect()
         for (const row of rows) await ctx.db.patch(row._id, { confidence: 0.99, status: "fresh", updatedAt: now })
+        // The post-onboarding action swaps usdc <-> eth. seedStarterTestMarkets seeds usdc but not
+        // eth, so add a fresh, server-verifiable eth price for the fail-closed swap oracle, which
+        // resolves token prices by lowercased symbol.
+        await ctx.db.insert("tokenPrices", {
+          symbol: "eth",
+          llamaId: "test:eth",
+          priceUsd: 3000,
+          source: "test",
+          confidence: 0.99,
+          status: "fresh",
+          updatedAt: now,
+        })
       })
 
       let catalogUpdatedAtAfterFirstClaim: number | null = null
