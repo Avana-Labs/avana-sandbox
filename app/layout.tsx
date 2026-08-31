@@ -36,8 +36,11 @@ const diatypeSans = localFont({
     },
   ],
   variable: "--font-diatype-sans",
-  display: "swap",
-  preload: false,
+  // `optional` + `preload` eliminates the fallback→Diatype swap flash: the font is fetched on
+  // the critical path (preload) and, if it is not ready within the brief block window, the load
+  // keeps the metric-matched fallback for that view instead of swapping mid-paint. CLS stays 0.
+  display: "optional",
+  preload: true,
 })
 
 const themeBootstrapScript = `(()=>{const storageKey="avana-theme";const root=document.documentElement;const storedTheme=window.localStorage.getItem(storageKey);const theme=storedTheme==="light"||storedTheme==="dark"||storedTheme==="system"?storedTheme:"light";const systemTheme=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";const resolvedTheme=theme==="system"?systemTheme:theme;root.classList.toggle("dark",resolvedTheme==="dark");root.style.colorScheme=resolvedTheme})()`
