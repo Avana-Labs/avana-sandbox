@@ -192,7 +192,6 @@ function DirectAssistantMessage({
     .join("\n")
   const status = "status" in message ? message.status : undefined
   const complete = status?.type === "complete"
-  const running = status?.type === "running"
   const failed = status?.type === "incomplete"
   const errorValue = failed && status && "error" in status ? status.error : undefined
   const persisted = !message.id.endsWith("-assistant")
