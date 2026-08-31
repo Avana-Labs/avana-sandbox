@@ -36,10 +36,13 @@ const diatypeSans = localFont({
     },
   ],
   variable: "--font-diatype-sans",
-  // `optional` + `preload` eliminates the fallback→Diatype swap flash: the font is fetched on
-  // the critical path (preload) and, if it is not ready within the brief block window, the load
-  // keeps the metric-matched fallback for that view instead of swapping mid-paint. CLS stays 0.
-  display: "optional",
+  // preload puts the font on the critical path so it is fetched well before first paint (~170ms
+  // vs ~800ms when it was off the critical path). With the font already available when text paints,
+  // `swap` renders directly in Diatype — no fallback→Diatype swap flash. preload (not `optional`) is
+  // what fixes the flash; `swap` keeps the preload "used" so there is no "preloaded but not used"
+  // console warning (which `optional` produced whenever the font missed its short block window) and
+  // guarantees the brand font always applies. CLS stays 0 via the metric-matched fallback.
+  display: "swap",
   preload: true,
 })
 
