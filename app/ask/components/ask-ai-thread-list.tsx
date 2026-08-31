@@ -80,7 +80,7 @@ export function AskAIThreadList({
           <button
             type="button"
             onClick={() => void onNewThread()}
-            className="flex h-8 min-w-0 flex-1 items-center gap-2 rounded-md bg-muted px-2.5 text-left text-sm font-normal transition-colors hover:bg-muted/80"
+            className="flex h-11 lg:h-8 min-w-0 flex-1 items-center gap-2 rounded-md bg-muted px-2.5 text-left text-sm font-normal transition-colors hover:bg-muted/80"
           >
             <span
               aria-hidden
@@ -94,7 +94,7 @@ export function AskAIThreadList({
             type="button"
             aria-label="Close sidebar"
             onClick={onClose}
-            className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
+            className="inline-flex size-11 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
           >
             <X className="size-4" />
           </button>
@@ -110,7 +110,7 @@ export function AskAIThreadList({
                 renamingId === thread.threadId ? (
                   <form
                     key={thread.threadId}
-                    className="flex h-8 items-center gap-1"
+                    className="flex h-11 lg:h-8 items-center gap-1"
                     onSubmit={(event) => {
                       event.preventDefault()
                       void onRenameThread(thread.threadId, draftTitle).then(() => setRenamingId(null))
@@ -122,12 +122,12 @@ export function AskAIThreadList({
                       value={draftTitle}
                       maxLength={80}
                       onChange={(event) => setDraftTitle(event.target.value)}
-                      className="h-8 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      className="h-11 lg:h-8 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-sm outline-none focus:ring-2 focus:ring-ring"
                     />
                     <button
                       type="submit"
                       aria-label="Save thread name"
-                      className="inline-flex size-7 items-center justify-center"
+                      className="inline-flex size-11 items-center justify-center lg:size-7"
                     >
                       <Check className="size-3.5" />
                     </button>
@@ -135,7 +135,7 @@ export function AskAIThreadList({
                       type="button"
                       aria-label="Cancel thread rename"
                       onClick={() => setRenamingId(null)}
-                      className="inline-flex size-7 items-center justify-center"
+                      className="inline-flex size-11 items-center justify-center lg:size-7"
                     >
                       <X className="size-3.5" />
                     </button>
@@ -143,7 +143,7 @@ export function AskAIThreadList({
                 ) : (
                   <div
                     key={thread.threadId}
-                    className={`group flex h-8 items-center rounded-md hover:bg-muted ${
+                    className={`group flex h-11 lg:h-8 items-center rounded-md hover:bg-muted ${
                       activeThreadId === thread.threadId ? "bg-muted" : ""
                     }`}
                   >
@@ -155,7 +155,7 @@ export function AskAIThreadList({
                         // is a static column and should stay open when switching threads.
                         if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) onClose()
                       }}
-                      className="h-8 min-w-0 flex-1 truncate px-2.5 text-left text-sm"
+                      className="h-11 lg:h-8 min-w-0 flex-1 truncate px-2.5 text-left text-sm"
                     >
                       {thread.title}
                     </button>
@@ -166,7 +166,7 @@ export function AskAIThreadList({
                         setDraftTitle(thread.title)
                         setRenamingId(thread.threadId)
                       }}
-                      className="mr-1 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 hover:text-foreground focus:opacity-100 group-hover:opacity-100"
+                      className="mr-1 inline-flex size-11 items-center justify-center rounded-md text-muted-foreground opacity-100 hover:text-foreground lg:size-7 lg:opacity-0 lg:focus:opacity-100 lg:group-hover:opacity-100"
                     >
                       <Pencil className="size-3.5" />
                     </button>
@@ -174,7 +174,7 @@ export function AskAIThreadList({
                       type="button"
                       aria-label={`Archive ${thread.title}`}
                       onClick={() => void onArchiveThread(thread.threadId)}
-                      className="mr-1 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 hover:text-foreground focus:opacity-100 group-hover:opacity-100"
+                      className="mr-1 inline-flex size-11 items-center justify-center rounded-md text-muted-foreground opacity-100 hover:text-foreground lg:size-7 lg:opacity-0 lg:focus:opacity-100 lg:group-hover:opacity-100"
                     >
                       <Archive className="size-3.5" />
                     </button>
@@ -205,7 +205,10 @@ export function AskAIThreadList({
               {showArchived ? (
                 <div className="mt-1 flex flex-col gap-0.5">
                   {archivedThreads.map((thread) => (
-                    <div key={thread.threadId} className="group flex h-8 items-center rounded-md hover:bg-muted">
+                    <div
+                      key={thread.threadId}
+                      className="group flex h-11 lg:h-8 items-center rounded-md hover:bg-muted"
+                    >
                       <span className="min-w-0 flex-1 truncate px-2.5 text-sm text-muted-foreground">
                         {thread.title}
                       </span>
@@ -213,7 +216,7 @@ export function AskAIThreadList({
                         type="button"
                         aria-label={`Restore ${thread.title}`}
                         onClick={() => void onUnarchiveThread(thread.threadId)}
-                        className="mr-1 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground hover:text-foreground"
+                        className="mr-1 inline-flex size-11 items-center justify-center rounded-md text-muted-foreground hover:text-foreground lg:size-7"
                       >
                         <ArchiveRestore className="size-3.5" />
                       </button>
