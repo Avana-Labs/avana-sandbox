@@ -118,6 +118,8 @@ function TokenAvatar({ visual }: { visual: BorrowAssetVisual }) {
           width={TOKEN_ICON_TABLE_PX}
           height={TOKEN_ICON_TABLE_PX}
           className="size-full object-contain"
+          loading="eager"
+          unoptimized
         />
       ) : (
         visual.shortLabel
@@ -144,6 +146,8 @@ function PoolAvatar({ visuals }: { visuals: [BorrowAssetVisual, BorrowAssetVisua
             width={TOKEN_ICON_TABLE_PX}
             height={TOKEN_ICON_TABLE_PX}
             className="size-full object-contain"
+            loading="eager"
+            unoptimized
           />
         ) : (
           <span className="text-[9px] font-medium">{visuals[0].shortLabel}</span>
@@ -164,6 +168,8 @@ function PoolAvatar({ visuals }: { visuals: [BorrowAssetVisual, BorrowAssetVisua
             width={TOKEN_ICON_TABLE_PX}
             height={TOKEN_ICON_TABLE_PX}
             className="size-full object-contain"
+            loading="eager"
+            unoptimized
           />
         ) : (
           <span className="text-[9px] font-medium">{visuals[1].shortLabel}</span>
