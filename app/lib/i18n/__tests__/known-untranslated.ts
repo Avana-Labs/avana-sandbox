@@ -85,6 +85,7 @@ export const KNOWN_UNTRANSLATED: readonly string[] = [
   "Source",
   "Stake",
   "Status",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)",
   "Target",
   "Tokens",
   "Transaction receipt",
