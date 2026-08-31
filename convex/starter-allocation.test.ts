@@ -2,11 +2,13 @@ import { describe, expect, test } from "vitest"
 import {
   assertCatalogCanSatisfyStarter,
   buildStarterAllocationPlan,
+  buildStarterLiquidTokenLegs,
   STARTER_BUCKETS,
   STARTER_EQUITY_USD,
   type StarterMarket,
   type StarterPricedMarket,
 } from "./sandbox/starterAllocation"
+import { SWAP_ENGINE_ASSETS, getSwapEngineAsset } from "./sandbox/swapQuoteEngine"
 
 function catalog(scope: StarterMarket["scope"], count: number): StarterMarket[] {
   return Array.from({ length: count }, (_, index) => ({
@@ -116,5 +118,48 @@ describe("assertCatalogCanSatisfyStarter (fail-closed onboarding gate)", () => {
     )
     const zeroPriced = pricedCatalog().map((market) => ({ ...market, priceUsd: 0 }))
     expect(() => assertCatalogCanSatisfyStarter("0xabc", zeroPriced)).toThrow(/positive price/)
+  })
+})
+
+describe("buildStarterLiquidTokenLegs", () => {
+  const prices: Record<string, number> = { usdc: 1, weth: 2000, wbtc: 40_000 }
+  const tokens = [
+    { id: "usdc", symbol: "USDC" },
+    { id: "weth", symbol: "WETH" },
+    { id: "wbtc", symbol: "WBTC" },
+  ]
+  const priceFor = (t: { id: string; symbol: string }) => prices[t.id] ?? 0
+
+  test("splits the total to the cent and sizes each leg in token units", () => {
+    const legs = buildStarterLiquidTokenLegs(tokens, priceFor, 100_000)
+    expect(legs.map((l) => l.assetId)).toEqual(["usdc", "weth", "wbtc"])
+    const sum = legs.reduce((s, l) => s + l.amountUsd, 0)
+    expect(Math.round(sum * 100)).toBe(100_000 * 100) // exact to the cent
+    const weth = legs.find((l) => l.assetId === "weth")!
+    expect(weth.amount).toBeCloseTo(weth.amountUsd / 2000, 12)
+  })
+
+  test("seeds only REAL swap-catalog tokens (regression: no 'Unsupported asset' liquid rows)", () => {
+    // Every non-LP swappable engine asset must resolve — the pre-fix seed used spoke-borrowable
+    // composite ids ("uni-v2:wbtc") that getSwapEngineAsset/getSwapAsset can't resolve.
+    const realTokens = SWAP_ENGINE_ASSETS.filter((a) => a.isSwapEnabled && !a.isLpToken)
+    const legs = buildStarterLiquidTokenLegs(realTokens, () => 1, 100_000)
+    for (const leg of legs) {
+      const asset = getSwapEngineAsset(leg.assetId)
+      expect(asset, `liquid leg ${leg.assetId} must be a real swap asset`).toBeDefined()
+      expect(asset?.isLpToken).toBe(false)
+      expect(leg.assetId).not.toContain(":") // never a spoke-borrowable composite slug
+    }
+  })
+
+  test("degrades a non-positive or non-finite price to 1 rather than emitting Infinity/NaN", () => {
+    const legs = buildStarterLiquidTokenLegs([{ id: "usdc", symbol: "USDC" }], () => 0, 5_000)
+    expect(legs[0]!.priceUsd).toBe(1)
+    expect(legs[0]!.amount).toBe(5_000)
+    expect(Number.isFinite(legs[0]!.amount)).toBe(true)
+  })
+
+  test("returns [] for an empty token set", () => {
+    expect(buildStarterLiquidTokenLegs([], priceFor, 100_000)).toEqual([])
   })
 })

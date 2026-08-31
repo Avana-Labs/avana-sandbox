@@ -62,10 +62,11 @@ describe("sandbox onboarding + economy caps", () => {
         .withIndex("by_wallet_at", (q) => q.eq("wallet", WALLET.toLowerCase()))
         .collect(),
     )
-    // 12 starter-basket asset grants + 1 onboardingClaim + 3 umbrella_stake rows
+    // 8 starter-basket asset grants (the liquid bucket seeds the real swap-catalog tokens —
+    // eth/usdc/gho/wbtc/link/aave/usdt/weth) + 1 onboardingClaim + 3 umbrella_stake rows
     // (the umbrella-seed helper now writes a sandboxActivity row per seeded position,
     // matching what recordAction produces — FIX 4).
-    expect(activity).toHaveLength(16)
+    expect(activity).toHaveLength(12)
     expect(activity.some((entry) => entry.kind === "onboardingClaim")).toBe(true)
     expect(activity.filter((entry) => entry.kind === "umbrella_stake")).toHaveLength(3)
   })
@@ -201,11 +202,12 @@ describe("sandbox onboarding + economy caps", () => {
         .withIndex("by_wallet", (queryBuilder) => queryBuilder.eq("wallet", WALLET.toLowerCase()))
         .collect(),
     )
-    // Umbrella onboarding upserts four wallet balances (GHO / USDC / USDT /
-    // WETH) via upsertSandboxBalance. They're independent of the starter
-    // catalog's assetSlugs, so all four add fresh rows on top of the twelve
-    // starter balances.
-    expect(balances).toHaveLength(16)
+    // The liquid bucket now seeds the 8 real swap-catalog tokens
+    // (eth/usdc/gho/wbtc/link/aave/usdt/weth). Umbrella onboarding upserts four wallet
+    // balances (GHO / USDC / USDT / WETH) via upsertSandboxBalance — all four now share an
+    // assetId with a seeded liquid token, so they merge into those rows instead of adding
+    // fresh ones. Total distinct wallet balances: 8.
+    expect(balances).toHaveLength(8)
 
     const portfolio = await asUser.query(api.sandbox.transactions.getPortfolio, { wallet: WALLET })
     expect(portfolio.snapshots).toHaveLength(1)

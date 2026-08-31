@@ -3,6 +3,32 @@ import type { MutationCtx } from "../_generated/server"
 import { internalMutation, mutation, query } from "../_generated/server"
 import { requireSandboxWallet } from "../sandbox/auth"
 
+/**
+ * Live-LP collateral reprice is only trustworthy when the claim anchor (`claimLp`,
+ * derived as valueUsd/amount from the collateral row) shares a basis with the live pool
+ * price (`liveLp` = markets.priceUsd, scope "pool"). Onboarding-seeded collateral is
+ * stored USD-denominated — the seed values it with pool priceUsd = 1, so amount == valueUsd
+ * and claimLp ≈ 1 — while `liveLp` is the oracle's LP *unit* price (Σ wᵢ·pᵢ, e.g. ~$40k for a
+ * WBTC/WETH pool). Scaling the frozen claim USD by liveLp/claimLp across those mismatched
+ * bases inflated Net Value ~40000× (a $43,750 leg became ~$1.75B, headline hit ~$7.1B).
+ * A genuine intra-session token move is bounded; a basis mismatch is orders of magnitude
+ * off. Only apply the reprice when the scale falls inside a plausible drift band; otherwise
+ * keep the frozen (correct at claim) USD.
+ */
+export const COLLATERAL_REPRICE_DRIFT_BAND = { min: 0.1, max: 10 } as const
+
+export function resolveCollateralRepriceScale(
+  liveLp: number | undefined,
+  claimLp: number | undefined,
+): number | undefined {
+  if (liveLp === undefined || claimLp === undefined) return undefined
+  if (!(liveLp > 0) || !(claimLp > 0) || !Number.isFinite(liveLp) || !Number.isFinite(claimLp)) return undefined
+  const scale = liveLp / claimLp
+  if (!Number.isFinite(scale)) return undefined
+  if (scale < COLLATERAL_REPRICE_DRIFT_BAND.min || scale > COLLATERAL_REPRICE_DRIFT_BAND.max) return undefined
+  return scale
+}
+
 const lendState = v.union(v.literal("available"), v.literal("deposited"))
 const borrowState = v.union(
   v.literal("poolAvailable"),
@@ -186,8 +212,9 @@ export const listForWallet = query({
 
       const liveLp = liveLpBySlug.get(row.marketId)
       const claimLp = claimLpBySlug.get(row.marketId)
-      if (liveLp !== undefined && claimLp !== undefined && claimLp > 0) {
-        const valueUsd = frozenValueUsd * (liveLp / claimLp)
+      const scale = resolveCollateralRepriceScale(liveLp, claimLp)
+      if (scale !== undefined && liveLp !== undefined) {
+        const valueUsd = frozenValueUsd * scale
         return { ...row, valueUsd, amount: valueUsd / liveLp }
       }
       return { ...row, valueUsd: frozenValueUsd, amount: claimPrice > 0 ? frozenValueUsd / claimPrice : frozenValueUsd }

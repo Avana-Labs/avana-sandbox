@@ -15,8 +15,15 @@ import { mutation, query } from "../_generated/server"
 import { upsertWalletBalanceRows } from "../wallet/balances"
 import { replaceProductBalanceRows } from "../wallet/productBalances"
 import { readWalletSession, upsertWalletSession } from "../wallet/sessions"
+import { upsertPortfolioCurrent } from "./transactions"
 import { requireSandboxWallet, getAuthSubject } from "./auth"
-import { assertCatalogCanSatisfyStarter, buildStarterAllocationPlan, STARTER_EQUITY_USD } from "./starterAllocation"
+import {
+  assertCatalogCanSatisfyStarter,
+  buildStarterAllocationPlan,
+  buildStarterLiquidTokenLegs,
+  STARTER_EQUITY_USD,
+} from "./starterAllocation"
+import { SWAP_ENGINE_ASSETS } from "./swapQuoteEngine"
 import { seedUmbrellaWallet, UMBRELLA_ONBOARDING_TOKEN_PRICES } from "./umbrella"
 
 const DEFAULT_ECONOMY = {
@@ -83,6 +90,7 @@ export const SANDBOX_TOKEN_PRICE_USD: Record<string, number> = {
   wbtc: 65_000,
   cbbtc: 65_000,
   aave: 105,
+  link: 18,
   uni: 12,
   crv: 0.5,
 }
@@ -494,12 +502,23 @@ export const claim = mutation({
     assertCatalogCanSatisfyStarter(wallet, starterCatalog)
 
     const allocation = buildStarterAllocationPlan(wallet, starterCatalog)
-    const basketSnapshot = allocation.liquid.map((leg) => {
-      const market = marketBySlug.get(leg.marketSlug)
-      const symbol = market?.symbol.toLowerCase() ?? leg.marketSlug
-      const priceUsdAtClaim = catalogBySlug.get(leg.marketSlug)?.priceUsd ?? SANDBOX_TOKEN_PRICE_USD[symbol] ?? 1
-      return { tokenId: leg.marketSlug, amount: leg.amountUsd / priceUsdAtClaim, priceUsdAtClaim }
-    })
+    // The liquid (wallet) bucket seeds REAL swap-catalog tokens instead of the spoke-borrowable
+    // `scope:"asset"` markets the planner selects — those composite slugs ("uni-v2:wbtc",
+    // "bal-boosted:usdc"…) are not in the swap catalog, so they showed as "Unsupported asset".
+    // Preserve the EXACT dollar total the planner assigned to liquid so the $1M grand total and
+    // every other bucket are unchanged.
+    const liquidTargetUsd = allocation.liquid.reduce((sum, leg) => sum + leg.amountUsd, 0)
+    const liquidTokens = SWAP_ENGINE_ASSETS.filter((asset) => asset.isSwapEnabled && !asset.isLpToken)
+    const liquidLegs = buildStarterLiquidTokenLegs(
+      liquidTokens,
+      (token) => SANDBOX_TOKEN_PRICE_USD[token.id] ?? SANDBOX_TOKEN_PRICE_USD[token.symbol.toLowerCase()] ?? 1,
+      liquidTargetUsd,
+    )
+    const basketSnapshot = liquidLegs.map((leg) => ({
+      tokenId: leg.assetId,
+      amount: leg.amount,
+      priceUsdAtClaim: leg.priceUsd,
+    }))
 
     const syntheticTxHash = `sim-claim-${(profile.tierSeed ?? "0").slice(0, 8)}-${now.toString(36)}`
     const receiptHashes: string[] = []
@@ -509,29 +528,22 @@ export const claim = mutation({
     const productBorrowRows: Parameters<typeof replaceProductBalanceRows>[2]["borrow"] = []
     const productMultiplyRows: Parameters<typeof replaceProductBalanceRows>[2]["multiply"] = []
 
-    for (const [index, leg] of allocation.liquid.entries()) {
-      const market = marketBySlug.get(leg.marketSlug)
-      // Skip a missing asset rather than failing the whole claim (the plan only ever
-      // references seeded slugs, so this is just belt-and-suspenders against seed drift).
-      if (!market) continue
-      const symbol = market.symbol.toLowerCase()
-      const priceUsd = catalogBySlug.get(leg.marketSlug)?.priceUsd ?? SANDBOX_TOKEN_PRICE_USD[symbol] ?? 1
-      const amount = leg.amountUsd / priceUsd
+    for (const [index, leg] of liquidLegs.entries()) {
       productLiquidRows.push({
-        assetId: leg.marketSlug,
-        symbol: market.symbol,
-        amount,
+        assetId: leg.assetId,
+        symbol: leg.symbol,
+        amount: leg.amount,
         valueUsd: leg.amountUsd,
         state: "available",
       })
       await upsertWalletBalanceRows(ctx, [
         {
           wallet,
-          assetId: leg.marketSlug,
-          amount,
+          assetId: leg.assetId,
+          amount: leg.amount,
           sourceType: "wallet",
           assetKind: "wallet",
-          symbol: market.symbol,
+          symbol: leg.symbol,
           valueUsd6: String(Math.round(leg.amountUsd * 1_000_000)),
         },
       ])
@@ -541,7 +553,7 @@ export const claim = mutation({
         wallet,
         kind: "starterAssetGrant",
         amountUsd: leg.amountUsd,
-        marketSlug: leg.marketSlug,
+        marketSlug: leg.assetId,
         syntheticTxHash: hash,
         at: now,
       })
@@ -803,7 +815,10 @@ export const claim = mutation({
       totalEarnedUsd: 0,
     }
     await ctx.db.insert("portfolioSnapshots", initialPortfolio)
-    await ctx.db.insert("portfolioCurrent", initialPortfolio)
+    // Idempotent write (never a bare insert): the dashboard's ensurePortfolioSnapshot may have
+    // already written a portfolioCurrent row, and a second row makes every `.unique()` read
+    // throw — which previously rolled this whole claim back, leaving the wallet stuck.
+    await upsertPortfolioCurrent(ctx, wallet, initialPortfolio)
     // Set umbrellaSeeded so a second onboarding claim (or a wallet reset that
     // wipes positions) doesn't re-run seedUmbrellaWallet against a wallet that
     // still has walletLiquidBalances/sandboxActivity from the first seed.

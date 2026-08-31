@@ -3,7 +3,7 @@ import { convexTest } from "convex-test"
 import { describe, expect, test } from "vitest"
 import schema from "./schema"
 import { api } from "./_generated/api"
-import { MAX_TX_PER_HOUR } from "./sandbox/transactions"
+import { MAX_TX_PER_HOUR, upsertPortfolioCurrent } from "./sandbox/transactions"
 
 // Rooted at the convex directory so convex-test can resolve "sandbox/*".
 const modules = import.meta.glob("./**/*.*s")
@@ -908,5 +908,64 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
       }),
     )
     expect(res.receipt.status).toBe("success")
+  })
+})
+
+describe("portfolioCurrent duplicate tolerance (regression: .unique() bricked the wallet)", () => {
+  // A race between the onboarding claim's insert and the dashboard's first snapshot write left
+  // TWO portfolioCurrent rows. Every read used `.unique()`, which then threw on the wallet —
+  // breaking getPortfolio (dashboard "Something went wrong") AND the claim's own snapshot step,
+  // which rolled the whole claim back so the $1M portfolio never seeded.
+  const wallet = WALLET.toLowerCase()
+  const snap = (at: number, totalValueUsd: number) => ({
+    wallet,
+    at,
+    totalValueUsd,
+    totalSuppliedUsd: 0,
+    totalBorrowedUsd: 0,
+    availableToBorrowUsd: 0,
+    totalMultiplyExposureUsd: 0,
+    totalEarnedUsd: 0,
+  })
+
+  test("getPortfolio returns the newest row instead of throwing when duplicates exist", async () => {
+    const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      await ctx.db.insert("portfolioCurrent", snap(1000, 111))
+      await ctx.db.insert("portfolioCurrent", snap(2000, 222)) // duplicate from a concurrent writer
+    })
+    const asUser = t.withIdentity({ subject: WALLET })
+    const portfolio = await asUser.query(api.sandbox.transactions.getPortfolio, { wallet: WALLET })
+    expect(portfolio.latest?.at).toBe(2000)
+    expect(portfolio.latest?.totalValueUsd).toBe(222)
+  })
+
+  test("upsertPortfolioCurrent self-heals duplicates down to one row", async () => {
+    const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      await ctx.db.insert("portfolioCurrent", snap(1000, 111))
+      await ctx.db.insert("portfolioCurrent", snap(2000, 222))
+      await upsertPortfolioCurrent(ctx, wallet, snap(3000, 333))
+      const rows = await ctx.db
+        .query("portfolioCurrent")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect()
+      expect(rows).toHaveLength(1)
+      expect(rows[0]!.at).toBe(3000)
+      expect(rows[0]!.totalValueUsd).toBe(333)
+    })
+  })
+
+  test("upsertPortfolioCurrent inserts exactly one row when none exist", async () => {
+    const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      await upsertPortfolioCurrent(ctx, wallet, snap(500, 55))
+      const rows = await ctx.db
+        .query("portfolioCurrent")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect()
+      expect(rows).toHaveLength(1)
+      expect(rows[0]!.at).toBe(500)
+    })
   })
 })

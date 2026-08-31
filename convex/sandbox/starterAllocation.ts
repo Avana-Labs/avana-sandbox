@@ -56,6 +56,38 @@ function splitExact(amountUsd: number, count: number) {
   return Array.from({ length: count }, (_, index) => (baseCents + (index < remainder ? 1 : 0)) / 100)
 }
 
+export type StarterLiquidTokenLeg = {
+  assetId: string
+  symbol: string
+  priceUsd: number
+  amountUsd: number
+  amount: number
+}
+
+/**
+ * Build the liquid (wallet) starter legs from REAL swap-catalog tokens instead of the
+ * spoke-borrowable `scope:"asset"` markets the allocation planner selects. Those markets
+ * carry composite ids ("uni-v2:wbtc", "bal-boosted:usdc"…) that are NOT in the swap catalog,
+ * so `getSwapAsset` can't resolve them — the wallet rendered them as "Unsupported asset" and
+ * downstream valuation treated them as unknown. `totalUsd` is split exactly across `tokens`
+ * (so the seeded liquid total is preserved to the cent) and each leg is sized in token units
+ * at its resolved price. A non-positive/NaN price degrades to 1 rather than producing Infinity.
+ */
+export function buildStarterLiquidTokenLegs(
+  tokens: readonly { id: string; symbol: string }[],
+  priceUsdFor: (token: { id: string; symbol: string }) => number,
+  totalUsd: number,
+): StarterLiquidTokenLeg[] {
+  if (tokens.length === 0) return []
+  const amounts = splitExact(totalUsd, tokens.length)
+  return tokens.map((token, index) => {
+    const resolved = priceUsdFor(token)
+    const priceUsd = resolved > 0 && Number.isFinite(resolved) ? resolved : 1
+    const amountUsd = amounts[index]!
+    return { assetId: token.id, symbol: token.symbol, priceUsd, amountUsd, amount: amountUsd / priceUsd }
+  })
+}
+
 function allocateBucket(
   candidates: StarterMarket[],
   amountUsd: number,

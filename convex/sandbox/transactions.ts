@@ -564,6 +564,53 @@ function _canonicalLedgerDelta(
   }
 }
 
+type PortfolioSnapshotValue = {
+  wallet: string
+  at: number
+  totalValueUsd: number
+  totalSuppliedUsd: number
+  totalBorrowedUsd: number
+  availableToBorrowUsd: number
+  totalMultiplyExposureUsd: number
+  totalEarnedUsd: number
+}
+
+/**
+ * Read the wallet's single current-portfolio row tolerantly. A race between the onboarding
+ * claim's insert and the dashboard's first snapshot write (or two concurrent snapshot
+ * writers) can leave >1 row — `.unique()` then THROWS and bricks EVERY read (getPortfolio)
+ * and the claim's own snapshot step (rolling the whole claim back). Collect and return the
+ * newest instead; a following `upsertPortfolioCurrent` self-heals the duplicates.
+ */
+async function latestPortfolioCurrent(ctx: QueryCtx | MutationCtx, wallet: string) {
+  const rows = await ctx.db
+    .query("portfolioCurrent")
+    .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+    .collect()
+  if (rows.length <= 1) return rows[0] ?? null
+  return rows.reduce((newest, row) => (row._creationTime > newest._creationTime ? row : newest), rows[0])
+}
+
+/**
+ * Write the wallet's current-portfolio row idempotently: replace the newest existing row and
+ * delete any duplicates a prior race left behind (self-heal), or insert when none exist. This
+ * is the ONLY safe way to write portfolioCurrent — a bare `insert` (as the onboarding claim
+ * used) creates a second row whenever the dashboard already wrote one, bricking `.unique()`.
+ */
+export async function upsertPortfolioCurrent(ctx: MutationCtx, wallet: string, snapshot: PortfolioSnapshotValue) {
+  const rows = await ctx.db
+    .query("portfolioCurrent")
+    .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+    .collect()
+  if (rows.length === 0) {
+    await ctx.db.insert("portfolioCurrent", snapshot)
+    return
+  }
+  const sorted = [...rows].sort((left, right) => right._creationTime - left._creationTime)
+  await ctx.db.replace(sorted[0]._id, snapshot)
+  for (const extra of sorted.slice(1)) await ctx.db.delete(extra._id)
+}
+
 export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, now: number) {
   const [positions, balances, walletDebts, walletCollateral] = await Promise.all([
     ctx.db
@@ -664,12 +711,7 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
     totalEarnedUsd: earned,
   }
 
-  const current = await ctx.db
-    .query("portfolioCurrent")
-    .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-    .unique()
-  if (current) await ctx.db.replace(current._id, snapshot)
-  else await ctx.db.insert("portfolioCurrent", snapshot)
+  await upsertPortfolioCurrent(ctx, wallet, snapshot)
 
   const latestHistory = await ctx.db
     .query("portfolioSnapshots")
@@ -1811,10 +1853,7 @@ export const getPortfolioPageState = query({
           .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
           .order("desc")
           .take(MAX_PORTFOLIO_HISTORY_ROWS),
-        ctx.db
-          .query("portfolioCurrent")
-          .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-          .unique(),
+        latestPortfolioCurrent(ctx, wallet),
         ctx.db
           .query("riskSnapshots")
           .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
@@ -1904,10 +1943,7 @@ export const getPortfolio = query({
         .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
         .order("desc")
         .take(MAX_PORTFOLIO_HISTORY_ROWS),
-      ctx.db
-        .query("portfolioCurrent")
-        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-        .unique(),
+      latestPortfolioCurrent(ctx, wallet),
       ctx.db
         .query("positions")
         .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
@@ -2022,10 +2058,7 @@ export const ensurePortfolioSnapshot = mutation({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
-    const current = await ctx.db
-      .query("portfolioCurrent")
-      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-      .unique()
+    const current = await latestPortfolioCurrent(ctx, wallet)
     if (current) return { wrote: false as const }
     await appendPortfolioSnapshot(ctx, wallet, Date.now())
     return { wrote: true as const }
