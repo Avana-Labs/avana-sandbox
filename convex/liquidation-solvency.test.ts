@@ -67,7 +67,6 @@ describe("recordLiquidation — server-side solvency gate (P1-2)", () => {
       t.withIdentity({ subject: KEEPER }).mutation(api.sandbox.liquidation.recordLiquidation, {
         wallet: VICTIM,
         liquidatorWallet: KEEPER,
-        intentId: "oversized-liquidation",
         positionId: ids.positionId,
         debtPositionId: ids.debtPositionId,
         marketSlug: MARKET,
