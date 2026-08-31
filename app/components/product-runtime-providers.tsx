@@ -56,9 +56,16 @@ export function ProductRuntimeProviders({
   }
 
   if (!isSignedIn && !needsProductRuntime(pathname)) {
-    // Still provide the server-seeded prices so any price consumer rendered outside the
-    // product runtime resolves live values instead of the fixture.
-    return <TokenPricesProvider initialPrices={initialTokenPrices}>{children}</TokenPricesProvider>
+    // Still provide the server-seeded prices so any price consumer rendered outside the product
+    // runtime resolves live values instead of the fixture. No Convex session is mounted on this
+    // branch (guest, non-product route like `/`), so realtime={false} avoids lazy-loading
+    // convex/react for a subscription that would only throw for lack of a provider and fall back
+    // to this same seed. Mirrors the guest `/ask` branch above.
+    return (
+      <TokenPricesProvider initialPrices={initialTokenPrices} realtime={false}>
+        {children}
+      </TokenPricesProvider>
+    )
   }
 
   return (
