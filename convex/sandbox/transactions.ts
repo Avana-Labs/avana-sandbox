@@ -27,6 +27,7 @@ import { computeSwapQuoteMath } from "./swapQuoteEngine"
 import { tokenNotionalToUsd } from "./collateralUsd"
 import { deriveClaimAmountUsd } from "./rewards_catalog"
 import type { Doc } from "../_generated/dataModel"
+import { validatedTokenPriceUsd } from "./oraclePrice"
 
 type ProductBalanceTable =
   "walletLendBalances" | "walletBorrowBalances" | "walletMultiplyBalances" | "walletLiquidBalances"
@@ -75,17 +76,23 @@ async function applySwapBalanceDelta(
 }
 
 /** Debit/credit one liquid asset in the canonical wallet ledgers. */
-async function applyLiquidAssetDelta(
+export async function applyLiquidAssetDelta(
   ctx: MutationCtx,
   wallet: string,
   assetId: string,
   symbol: string,
   delta: number,
   now: number,
+  priceUsdOverride?: number,
 ) {
   if (!Number.isFinite(delta) || delta === 0) return
   const liquid = await readWalletLiquidBalance(ctx, wallet, assetId)
-  const priceUsd = liquid && liquid.amount > 0 && liquid.valueUsd > 0 ? liquid.valueUsd / liquid.amount : 1
+  const priceUsd =
+    priceUsdOverride && Number.isFinite(priceUsdOverride) && priceUsdOverride > 0
+      ? priceUsdOverride
+      : liquid && liquid.amount > 0 && liquid.valueUsd > 0
+        ? liquid.valueUsd / liquid.amount
+        : 1
   const nextAmount = Math.max(0, (liquid?.amount ?? 0) + delta)
   const valueUsd = nextAmount * priceUsd
   await upsertLiquidWalletBalance(ctx, { wallet, assetId, symbol, amount: nextAmount, valueUsd, updatedAt: now })
@@ -125,7 +132,7 @@ async function upsertProductBalanceValue(
   await ctx.db.insert(table, { ...next, wallet } as never)
 }
 
-async function adjustProductBalanceUsd(
+export async function adjustProductBalanceUsd(
   ctx: MutationCtx,
   table: ProductBalanceTable,
   wallet: string,
@@ -133,6 +140,7 @@ async function adjustProductBalanceUsd(
   symbol: string,
   deltaUsd: number,
   now: number,
+  priceUsdOverride?: number,
 ) {
   if (!Number.isFinite(deltaUsd) || deltaUsd === 0) return
   const rows = await ctx.db
@@ -155,7 +163,12 @@ async function adjustProductBalanceUsd(
         (match.assetId === undefined || ("assetId" in candidate ? candidate.assetId : undefined) === match.assetId),
     )
   const nextValueUsd = Math.max(0, (existing?.valueUsd ?? 0) + deltaUsd)
-  const priceUsd = existing && existing.amount > 0 && existing.valueUsd > 0 ? existing.valueUsd / existing.amount : 1
+  const priceUsd =
+    priceUsdOverride && Number.isFinite(priceUsdOverride) && priceUsdOverride > 0
+      ? priceUsdOverride
+      : existing && existing.amount > 0 && existing.valueUsd > 0
+        ? existing.valueUsd / existing.amount
+        : 1
   const nextAmount = priceUsd > 0 ? nextValueUsd / priceUsd : nextValueUsd
   if (existing) {
     await ctx.db.patch(existing._id, { amount: nextAmount, valueUsd: nextValueUsd, updatedAt: now })
@@ -264,6 +277,7 @@ function liquidAssetIdFromArgs(assetId?: string, marketSlug?: string): string {
 export const MAX_TX_PER_HOUR = 200
 const PORTFOLIO_HISTORY_INTERVAL_MS = 60 * 60 * 1000
 const MAX_PORTFOLIO_HISTORY_ROWS = 365
+const MAX_RISK_HISTORY_ROWS = 365
 
 /** Global multiply leverage ceiling, mirrors MULTIPLY_ACTION_MAX_LEVERAGE (client slider). */
 const MAX_MULTIPLIER = 10
@@ -539,6 +553,166 @@ async function assertBorrowSolvent(
   if (debtUsd > liquidationValueUsd + 0.01) {
     throw new Error("INVALID_TRANSITION: borrow position would be undercollateralized (health factor < 1).")
   }
+}
+
+function numberToUsd6(value: number) {
+  return Math.max(0, Math.round(value * 1_000_000)).toString()
+}
+
+function ratioToWad(value: number | null) {
+  if (value === null || !Number.isFinite(value)) return null
+  return Math.max(0, Math.round(value * 1_000_000_000) * 1_000_000_000).toString()
+}
+
+/** Derive risk history from persisted positions and server market parameters. */
+export async function appendServerRiskSnapshot(ctx: MutationCtx, wallet: string, now: number, trigger: string) {
+  const positions = await ctx.db
+    .query("positions")
+    .withIndex("by_wallet_product", (q) => q.eq("wallet", wallet).eq("product", "borrow"))
+    .collect()
+  const open = positions.filter((position) => position.status === "open")
+  let collateralValueUsd = 0
+  let borrowCapacityUsd = 0
+  let liquidationValueUsd = 0
+  let totalBorrowedUsd = 0
+  const spokeTotals = new Map<
+    string,
+    { borrowCapacityUsd: number; liquidationValueUsd: number; totalBorrowedUsd: number }
+  >()
+
+  for (const position of open) {
+    const [collateralRows, debtRows] = await Promise.all([
+      ctx.db
+        .query("positionCollateral")
+        .withIndex("by_position", (q) => q.eq("positionId", position._id))
+        .collect(),
+      ctx.db
+        .query("positionDebt")
+        .withIndex("by_position", (q) => q.eq("positionId", position._id))
+        .collect(),
+    ])
+    const spokeId = position.spokeId ?? position.marketSlug
+    const spoke = spokeTotals.get(spokeId) ?? { borrowCapacityUsd: 0, liquidationValueUsd: 0, totalBorrowedUsd: 0 }
+    for (const collateral of collateralRows) {
+      if (collateral.collateralEnabled === false) continue
+      let valueUsd: number
+      let pool: Awaited<ReturnType<typeof serverCollateralValueUsd>>["pool"]
+      if (BigInt(collateral.principalTokenAmount) > 0n || BigInt(collateral.collateralShares) > 0n) {
+        const valued = await serverCollateralValueUsd(ctx, collateral)
+        valueUsd = valued.valueUsd
+        pool = valued.pool
+      } else {
+        valueUsd = usd6Number(collateral.collateralValueUsd6)
+        pool = await ctx.db
+          .query("pools")
+          .withIndex("by_slug", (q) => q.eq("slug", collateral.marketSlug))
+          .unique()
+      }
+      const collateralFactorPct = pool?.maxLtvPct ?? 75
+      const liquidationThresholdPct =
+        pool?.liquidationThresholdPct ?? liquidationThresholdFromMaxLtv(collateralFactorPct)
+      collateralValueUsd += valueUsd
+      borrowCapacityUsd += valueUsd * (collateralFactorPct / 100)
+      liquidationValueUsd += valueUsd * (liquidationThresholdPct / 100)
+      spoke.borrowCapacityUsd += valueUsd * (collateralFactorPct / 100)
+      spoke.liquidationValueUsd += valueUsd * (liquidationThresholdPct / 100)
+    }
+    const positionDebtUsd = debtRows.reduce((sum, debt) => sum + usd6Number(debt.principalBorrowedUsd6), 0)
+    totalBorrowedUsd += positionDebtUsd
+    spoke.totalBorrowedUsd += positionDebtUsd
+    spokeTotals.set(spokeId, spoke)
+  }
+
+  const healthFactor = totalBorrowedUsd > 0 ? liquidationValueUsd / totalBorrowedUsd : null
+  const id = await ctx.db.insert("riskSnapshots", {
+    wallet,
+    collateralValueUsd6: numberToUsd6(collateralValueUsd),
+    borrowCapacityUsd6: numberToUsd6(borrowCapacityUsd),
+    availableBorrowCapacityUsd6: numberToUsd6(Math.max(0, borrowCapacityUsd - totalBorrowedUsd)),
+    totalBorrowedUsd6: numberToUsd6(totalBorrowedUsd),
+    currentLtvWad: ratioToWad(collateralValueUsd > 0 ? totalBorrowedUsd / collateralValueUsd : 0)!,
+    healthFactorWad: ratioToWad(healthFactor),
+    spokes: [...spokeTotals.entries()].map(([spokeId, spoke]) => ({
+      spokeId,
+      availableCreditUsd6: numberToUsd6(Math.max(0, spoke.borrowCapacityUsd - spoke.totalBorrowedUsd)),
+      totalBorrowedUsd6: numberToUsd6(spoke.totalBorrowedUsd),
+      liquidationBufferUsd6: numberToUsd6(Math.max(0, spoke.liquidationValueUsd - spoke.totalBorrowedUsd)),
+      healthFactorWad: ratioToWad(
+        spoke.totalBorrowedUsd > 0 ? spoke.liquidationValueUsd / spoke.totalBorrowedUsd : null,
+      ),
+    })),
+    trigger: trigger.slice(0, 100),
+    at: now,
+  })
+  const rows = await ctx.db
+    .query("riskSnapshots")
+    .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+    .order("desc")
+    .take(MAX_RISK_HISTORY_ROWS + 25)
+  for (const stale of rows.slice(MAX_RISK_HISTORY_ROWS)) await ctx.db.delete(stale._id)
+  return id
+}
+
+/** A client cannot create more pledged LP collateral than this wallet owns in that pool. */
+async function assertBorrowCollateralConserved(
+  ctx: MutationCtx,
+  wallet: string,
+  args: { product: "borrow" | "lend" | "multiply"; position?: Infer<typeof positionPayload> },
+) {
+  if (args.product !== "borrow" || !args.position || args.position.status === "closed") return
+  const legs = args.position.collateral ?? []
+  const nextByMarket = new Map<string, number>()
+  for (const leg of legs) {
+    const { valueUsd } = await serverCollateralValueUsd(ctx, leg)
+    nextByMarket.set(leg.marketSlug, (nextByMarket.get(leg.marketSlug) ?? 0) + valueUsd)
+  }
+  const rows = await ctx.db
+    .query("walletBorrowBalances")
+    .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+    .collect()
+  for (const [marketSlug, nextUsd] of nextByMarket) {
+    const ownedUsd = rows
+      .filter((row) => row.marketId === marketSlug && (row.state === "poolAvailable" || row.state === "collateral"))
+      .reduce((sum, row) => sum + row.valueUsd, 0)
+    if (nextUsd > ownedUsd + 0.02) {
+      throw new Error("INSUFFICIENT_COLLATERAL_BALANCE: pledged collateral exceeds this wallet's pool balance.")
+    }
+  }
+}
+
+/** Resolve and validate the wallet-owned equity source for a Multiply increase. */
+async function multiplyLiquidDebit(
+  ctx: MutationCtx,
+  wallet: string,
+  args: { product: "borrow" | "lend" | "multiply"; position?: Infer<typeof positionPayload> },
+  existing?: Doc<"positions">,
+): Promise<{ assetId: string; symbol: string; tokenAmount: number } | null> {
+  if (args.product !== "multiply" || !args.position || args.position.status === "closed") return null
+  const previousEquityUsd = Math.max(0, (existing?.collateralValueUsd ?? 0) - (existing?.debtValueUsd ?? 0))
+  const nextEquityUsd = Math.max(0, (args.position.collateralValueUsd ?? 0) - (args.position.debtValueUsd ?? 0))
+  const increaseUsd = nextEquityUsd - previousEquityUsd
+  if (increaseUsd <= 0.02) return null
+  const marketSlug = args.position.marketSlug
+  const assetId = liquidAssetIdFromArgs(args.position.assetId, marketSlug)
+  const multiplyRows = await ctx.db
+    .query("walletMultiplyBalances")
+    .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+    .collect()
+  const explicitUsd = multiplyRows
+    .filter((row) => row.marketId === marketSlug && row.assetId === assetId && row.state === "available")
+    .reduce((sum, row) => sum + row.valueUsd, 0)
+  if (explicitUsd > 0) {
+    if (explicitUsd + 0.02 < increaseUsd) {
+      throw new Error("INSUFFICIENT_BALANCE: not enough Multiply collateral for this action.")
+    }
+    return null
+  }
+  const liquid = await readWalletLiquidBalance(ctx, wallet, assetId)
+  if (!liquid || liquid.valueUsd + 0.02 < increaseUsd || !(liquid.amount > 0)) {
+    throw new Error("INSUFFICIENT_BALANCE: not enough wallet collateral for this Multiply action.")
+  }
+  const priceUsd = liquid.valueUsd / liquid.amount
+  return { assetId, symbol: liquid.symbol, tokenAmount: increaseUsd / priceUsd }
 }
 
 function _canonicalLedgerDelta(
@@ -1034,6 +1208,7 @@ export const recordTransaction = mutation({
     // Revision actually written to the position this call, returned so the client seeds its
     // optimistic-concurrency map from the server truth instead of inferring it (M-12).
     let writtenRevision: number | undefined
+    let multiplyDebit: { assetId: string; symbol: string; tokenAmount: number } | null = null
     if (args.position && status === "success" && marketSlug) {
       validatePositionPayload(args.position)
       const existing =
@@ -1060,7 +1235,9 @@ export const recordTransaction = mutation({
         )
       }
       validateTransactionTransition(args, existing, lendSuppliedBeforeUsd)
+      await assertBorrowCollateralConserved(ctx, wallet, args)
       await assertBorrowSolvent(ctx, args)
+      multiplyDebit = await multiplyLiquidDebit(ctx, wallet, args, existing)
       const fields = {
         spokeId: args.position.spokeId,
         assetId: args.position.assetId ?? args.assetId,
@@ -1169,18 +1346,27 @@ export const recordTransaction = mutation({
         const priceUsd = liquid && liquid.amount > 0 && liquid.valueUsd > 0 ? liquid.valueUsd / liquid.amount : 1
         const tokenAmount = args.amountUsd / priceUsd
         const signed = args.kind === "deposit" || args.kind === "repay" ? -tokenAmount : tokenAmount
-        // Affordability: a cash-out (deposit/repay debits liquid) cannot spend more than the wallet
-        // holds. Without this the liquid debit clamps to 0 while the product bucket still credits the
-        // full amount — minting net worth. Enforced when a liquid row exists (seeded wallets); a
-        // wallet with no row for this asset falls through to the existing clamp (fail-open so
-        // unseeded/test flows are unaffected).
-        if (signed < 0 && liquid && liquid.amount + signed < -1e-6) {
+        // Affordability: a deposit/repay debit must be backed by an existing authenticated-wallet
+        // liquid row with enough USD value. Never fail open when the row is absent: clamping that
+        // nonexistent source to zero while crediting the product bucket mints net worth.
+        if (signed < 0 && (!liquid || liquid.valueUsd + 1e-6 < args.amountUsd)) {
           throw new Error("INSUFFICIENT_BALANCE: not enough liquid balance for this action.")
         }
         await applyLiquidAssetDelta(ctx, wallet, assetId, assetId.toUpperCase(), signed, now)
       }
+      if (multiplyDebit) {
+        await applyLiquidAssetDelta(
+          ctx,
+          wallet,
+          multiplyDebit.assetId,
+          multiplyDebit.symbol,
+          -multiplyDebit.tokenAmount,
+          now,
+        )
+      }
       await applyProductBucketDelta(ctx, wallet, args, marketSlug, now, existingPosition)
       await appendPortfolioSnapshot(ctx, wallet, now)
+      if (args.product === "borrow") await appendServerRiskSnapshot(ctx, wallet, now, args.kind)
     }
 
     return {
@@ -1494,32 +1680,10 @@ async function applyProductBucketDelta(
  */
 /**
  * Server-side USD price for a swap leg: the live token oracle (tokenPrices, keyed by lowercase
- * symbol) first, then the wallet's own liquid row as a fallback for assets the oracle does
- * not cover. Returns null when no trustworthy server price exists (validation is then skipped for
- * that leg). Never trusts a client-supplied price.
+ * symbol). Returns null when no current, trustworthy server price exists. A successful swap
+ * fails closed when either leg is unpriced; otherwise a caller could choose two unknown symbols
+ * and mint an arbitrary output from client-supplied values.
  */
-async function swapLegServerPriceUsd(
-  ctx: MutationCtx,
-  wallet: string,
-  assetId: string,
-  symbol: string,
-): Promise<number | null> {
-  const oracle = await ctx.db
-    .query("tokenPrices")
-    .withIndex("by_symbol", (q) => q.eq("symbol", symbol.toLowerCase()))
-    .first()
-  if (oracle && oracle.priceUsd > 0 && oracle.status !== "invalid") return oracle.priceUsd
-  const held = await readWalletLiquidBalance(ctx, wallet, assetId)
-  if (held && held.amount > 0 && held.valueUsd > 0) return held.valueUsd / held.amount
-  return null
-}
-
-// A successful swap may deviate from the pure oracle rate by fees, price impact and slippage —
-// realistically a few percent. This bound is intentionally loose (2x) so it never rejects a real
-// swap, while still catching the order-of-magnitude discrepancies that indicate a forged
-// output/USD value (the arbitrary-mint vector).
-const SWAP_ORACLE_MAX_DEVIATION = 1
-
 export const recordSwap = mutation({
   args: {
     wallet: v.string(),
@@ -1603,32 +1767,30 @@ export const recordSwap = mutation({
     // Server-authoritative execution: recompute the output + USD from the LIVE oracle via the
     // shared swap engine, so the client's quoted values never determine the result (no minting,
     // no client-computed swap). When both legs are priced the engine's output is used for the
-    // balance delta AND the persisted row. When a leg is unpriced (unlisted asset) we fail open
-    // to the client's values, still bounded by the oracle anti-mint guard for the priced leg.
+    // balance delta AND the persisted row. Both legs must be priced and the input must exist in
+    // the authenticated wallet; there is no client-valued or missing-balance success path.
     let executedOutputAmount = args.outputAmount
     let executedAmountUsd = args.amountUsd
     if (status === "success") {
       const [inputPrice, outputPrice] = await Promise.all([
-        swapLegServerPriceUsd(ctx, wallet, args.inputAssetId, args.inputSymbol),
-        swapLegServerPriceUsd(ctx, wallet, args.outputAssetId, args.outputSymbol),
+        validatedTokenPriceUsd(ctx, args.inputSymbol, now),
+        validatedTokenPriceUsd(ctx, args.outputSymbol, now),
       ])
-      if (inputPrice && outputPrice) {
-        const math = computeSwapQuoteMath({
-          inputAmount: args.inputAmount,
-          inputPriceUsd: inputPrice,
-          outputPriceUsd: outputPrice,
-          slippageBps: args.slippageBps ?? 50,
-        })
-        executedOutputAmount = math.estimatedOutputAmount
-        executedAmountUsd = math.amountUsd
-      } else {
-        if (inputPrice && args.amountUsd > args.inputAmount * inputPrice * (1 + SWAP_ORACLE_MAX_DEVIATION)) {
-          throw new Error("INVALID_SWAP: claimed USD value exceeds the oracle value of the input leg.")
-        }
-        if (outputPrice && args.outputAmount > (args.amountUsd / outputPrice) * (1 + SWAP_ORACLE_MAX_DEVIATION)) {
-          throw new Error("INVALID_SWAP: output amount exceeds what the oracle rate yields for this USD value.")
-        }
+      if (!inputPrice || !outputPrice) {
+        throw new Error("INVALID_SWAP: both token prices must be current and server-verifiable.")
       }
+      const held = await readWalletLiquidBalance(ctx, wallet, args.inputAssetId)
+      if (!held || held.amount + 1e-12 < args.inputAmount) {
+        throw new Error("INSUFFICIENT_BALANCE: not enough liquid input token for this swap.")
+      }
+      const math = computeSwapQuoteMath({
+        inputAmount: args.inputAmount,
+        inputPriceUsd: inputPrice,
+        outputPriceUsd: outputPrice,
+        slippageBps: args.slippageBps ?? 50,
+      })
+      executedOutputAmount = math.estimatedOutputAmount
+      executedAmountUsd = math.amountUsd
     }
     // Only a successful swap moved value; failed/expired executed nothing.
     const executedUsd6 = status === "success" ? String(Math.round(executedAmountUsd * 1_000_000)) : "0"
@@ -1700,33 +1862,6 @@ export const getWalletSwapTransactions = query({
       hash: row.syntheticTxHash,
       at: row.at,
     }))
-  },
-})
-
-/** Append a SPOKE-scoped risk/health snapshot (Credit-Engine-computed; analytics). */
-export const recordRiskSnapshot = mutation({
-  args: {
-    wallet: v.string(),
-    collateralValueUsd6: v.string(),
-    borrowCapacityUsd6: v.string(),
-    availableBorrowCapacityUsd6: v.string(),
-    totalBorrowedUsd6: v.string(),
-    currentLtvWad: v.string(),
-    healthFactorWad: v.union(v.string(), v.null()),
-    spokes: v.array(
-      v.object({
-        spokeId: v.string(),
-        availableCreditUsd6: v.string(),
-        totalBorrowedUsd6: v.string(),
-        liquidationBufferUsd6: v.string(),
-        healthFactorWad: v.union(v.string(), v.null()),
-      }),
-    ),
-    trigger: v.optional(v.string()),
-  },
-  handler: async (ctx, args) => {
-    const wallet = await requireSandboxWallet(ctx, args.wallet)
-    return ctx.db.insert("riskSnapshots", { ...args, wallet, at: Date.now() })
   },
 })
 

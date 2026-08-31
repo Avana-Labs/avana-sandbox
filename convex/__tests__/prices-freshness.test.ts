@@ -3,7 +3,7 @@ import { convexTest } from "convex-test"
 import { afterEach, describe, expect, test, vi } from "vitest"
 import schema from "../schema"
 import { api, internal } from "../_generated/api"
-import { PRICE_STALE_AFTER_MS } from "../prices"
+import { PRICE_INVALID_AFTER_MS, PRICE_STALE_AFTER_MS } from "../prices"
 
 const modules = import.meta.glob("../**/*.*s")
 
@@ -42,7 +42,12 @@ describe("getPriceStatus surfaces price freshness", () => {
     const snapshot = await t.query(api.prices.getPriceSnapshot, {})
     expect(snapshot.prices).toHaveLength(1)
     expect(snapshot.prices[0]).toMatchObject({ symbol: "eth", priceUsd: 3200 })
-    expect(snapshot.status).toEqual({ updatedAt, staleAfterMs: PRICE_STALE_AFTER_MS, count: 1 })
+    expect(snapshot.status).toEqual({
+      updatedAt,
+      staleAfterMs: PRICE_STALE_AFTER_MS,
+      invalidAfterMs: PRICE_INVALID_AFTER_MS,
+      count: 1,
+    })
   })
 
   test("a fresh refresh reports a recent updatedAt", async () => {

@@ -1439,6 +1439,7 @@ export default defineSchema({
   liquidationActions: defineTable({
     wallet: v.string(),
     liquidatorWallet: v.string(),
+    intentId: v.optional(v.string()),
     positionId: v.optional(v.id("positions")),
     debtPositionId: v.optional(v.id("positionDebt")),
     marketSlug: v.optional(v.string()),
@@ -1451,7 +1452,8 @@ export default defineSchema({
     at: v.number(),
   })
     .index("by_wallet_at", ["wallet", "at"])
-    .index("by_liquidator_at", ["liquidatorWallet", "at"]),
+    .index("by_liquidator_at", ["liquidatorWallet", "at"])
+    .index("by_liquidator_intent", ["liquidatorWallet", "intentId"]),
 
   /**
    * Append-only portfolio time series per wallet (mirrors `PortfolioSnapshotRecord`;

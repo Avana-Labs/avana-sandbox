@@ -9,19 +9,20 @@ const WALLET = "0xAbC0000000000000000000000000000000000001"
 
 async function seedPrices(t: ReturnType<typeof convexTest>) {
   await t.run(async (ctx) => {
+    const now = Date.now()
     await ctx.db.insert("tokenPrices", {
       symbol: "eth",
       llamaId: "coingecko:ethereum",
       priceUsd: 2000,
       source: "test",
-      updatedAt: 1,
+      updatedAt: now,
     })
     await ctx.db.insert("tokenPrices", {
       symbol: "usdc",
       llamaId: "coingecko:usd-coin",
       priceUsd: 1,
       source: "test",
-      updatedAt: 1,
+      updatedAt: now,
     })
   })
 }
@@ -69,7 +70,7 @@ describe("sandbox.swap.getQuote", () => {
         llamaId: "coingecko:ethereum",
         priceUsd: 2000,
         source: "test",
-        updatedAt: 1,
+        updatedAt: Date.now(),
       })
     })
     const asUser = t.withIdentity({ subject: WALLET })

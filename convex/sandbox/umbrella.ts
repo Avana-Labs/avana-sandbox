@@ -4,6 +4,7 @@ import { mutation, query } from "../_generated/server"
 import type { Doc, Id } from "../_generated/dataModel"
 import { requireSandboxWallet } from "./auth"
 import { readWalletLiquidBalance, upsertLiquidWalletBalance } from "../wallet/balances"
+import { validatedTokenPriceUsd } from "./oraclePrice"
 
 const SECONDS_PER_YEAR = 365 * 24 * 60 * 60
 const COOLDOWN_MS = 20 * 24 * 60 * 60 * 1000
@@ -108,8 +109,7 @@ function numberFromUsd6(value?: string) {
   return Number(BigInt(value ?? "0")) / 1_000_000
 }
 
-function tokenAmountFromUsd(marketId: UmbrellaMarketId, usd: number) {
-  const priceUsd = UMBRELLA_MARKETS[marketId].priceUsd
+function tokenAmountFromUsd(usd: number, priceUsd: number) {
   return priceUsd > 0 ? usd / priceUsd : usd
 }
 
@@ -144,9 +144,10 @@ async function upsertLiquidBalance(
   marketId: UmbrellaMarketId,
   amount: number,
   now: number,
+  priceUsd: number = UMBRELLA_MARKETS[marketId].priceUsd,
 ) {
   const market = UMBRELLA_MARKETS[marketId]
-  const valueUsd = amount * market.priceUsd
+  const valueUsd = amount * priceUsd
   await upsertLiquidWalletBalance(ctx, {
     wallet,
     assetId: marketId,
@@ -285,44 +286,57 @@ export const getSessionState = query({
     const authed = await requireSandboxWallet(ctx, wallet)
     const now = Date.now()
     const marketIds = Object.keys(UMBRELLA_MARKETS) as UmbrellaMarketId[]
-    const [balances, positions, transactions, aggregatesPerMarket, overlays, tranchesByWallet] = await Promise.all([
-      Promise.all(marketIds.map((marketId) => readLiquidBalance(ctx, authed, marketId))),
-      ctx.db
-        .query("positions")
-        .withIndex("by_wallet_product", (q) => q.eq("wallet", authed).eq("product", "umbrella"))
-        .collect(),
-      ctx.db
-        .query("transactions")
-        .withIndex("by_wallet_product_at", (q) => q.eq("wallet", authed).eq("product", "umbrella"))
-        .order("desc")
-        .collect(),
-      // Live market-level aggregates: sum every wallet's suppliedUsd6 and
-      // cooldownAmountUsd6 for each umbrella market so Coverage and Amount in
-      // cooldown move as users stake / cool / unstake. Added on top of the
-      // catalog baseline (which represents pre-existing external liquidity).
-      Promise.all(
-        marketIds.map(async (marketId) => {
-          const rows = await ctx.db
-            .query("positions")
-            .withIndex("by_product_market", (q) => q.eq("product", "umbrella").eq("marketSlug", marketId))
-            .collect()
-          let stakedUsd = 0
-          let cooldownUsd = 0
-          for (const row of rows) {
-            stakedUsd += numberFromUsd6(row.suppliedUsd6)
-            cooldownUsd += numberFromUsd6(row.cooldownAmountUsd6)
-          }
-          return { marketId, stakedUsd, cooldownUsd }
-        }),
-      ),
-      Promise.all(marketIds.map((marketId) => readUmbrellaMarketOverlay(ctx, marketId))),
-      // Every active tranche for this wallet, folded per market below. Reads
-      // the by_wallet index once — cheaper than per-position round-trips.
-      ctx.db
-        .query("umbrellaCooldownTranches")
-        .withIndex("by_wallet", (q) => q.eq("wallet", authed))
-        .collect(),
-    ])
+    const [balances, positions, transactions, aggregatesPerMarket, overlays, tranchesByWallet, priceRows] =
+      await Promise.all([
+        Promise.all(marketIds.map((marketId) => readLiquidBalance(ctx, authed, marketId))),
+        ctx.db
+          .query("positions")
+          .withIndex("by_wallet_product", (q) => q.eq("wallet", authed).eq("product", "umbrella"))
+          .collect(),
+        ctx.db
+          .query("transactions")
+          .withIndex("by_wallet_product_at", (q) => q.eq("wallet", authed).eq("product", "umbrella"))
+          .order("desc")
+          .collect(),
+        // Live market-level aggregates: sum every wallet's suppliedUsd6 and
+        // cooldownAmountUsd6 for each umbrella market so Coverage and Amount in
+        // cooldown move as users stake / cool / unstake. Added on top of the
+        // catalog baseline (which represents pre-existing external liquidity).
+        Promise.all(
+          marketIds.map(async (marketId) => {
+            const rows = await ctx.db
+              .query("positions")
+              .withIndex("by_product_market", (q) => q.eq("product", "umbrella").eq("marketSlug", marketId))
+              .collect()
+            let stakedUsd = 0
+            let cooldownUsd = 0
+            for (const row of rows) {
+              stakedUsd += numberFromUsd6(row.suppliedUsd6)
+              cooldownUsd += numberFromUsd6(row.cooldownAmountUsd6)
+            }
+            return { marketId, stakedUsd, cooldownUsd }
+          }),
+        ),
+        Promise.all(marketIds.map((marketId) => readUmbrellaMarketOverlay(ctx, marketId))),
+        // Every active tranche for this wallet, folded per market below. Reads
+        // the by_wallet index once — cheaper than per-position round-trips.
+        ctx.db
+          .query("umbrellaCooldownTranches")
+          .withIndex("by_wallet", (q) => q.eq("wallet", authed))
+          .collect(),
+        ctx.db.query("tokenPrices").collect(),
+      ])
+    const convexPrices = new Map(
+      priceRows
+        .filter(
+          (row) =>
+            Number.isFinite(row.priceUsd) &&
+            row.priceUsd > 0 &&
+            row.status !== "invalid" &&
+            (row.confidence == null || row.confidence >= 0.8),
+        )
+        .map((row) => [row.symbol.toLowerCase(), row.priceUsd]),
+    )
     // Fold each per-wallet aggregate + the live umbrellaMarketState overlay
     // into the catalog baseline. The catalog holds Target / APY / priceUsd as
     // static config; totalStakedUsd / amountInCooldownUsd move live from the
@@ -342,6 +356,7 @@ export const getSessionState = query({
           marketId,
           {
             ...base,
+            priceUsd: convexPrices.get(base.symbol.toLowerCase()) ?? base.priceUsd,
             totalStakedUsd: base.totalStakedUsd + (agg?.stakedUsd ?? 0),
             amountInCooldownUsd: base.amountInCooldownUsd + (agg?.cooldownUsd ?? 0),
             currentDeficitUsd: overlay.currentDeficitUsd,
@@ -350,7 +365,7 @@ export const getSessionState = query({
           },
         ]
       }),
-    )
+    ) as Record<UmbrellaMarketId, (typeof UMBRELLA_MARKETS)[UmbrellaMarketId] & { totalSlashedUsd: number }>
     return {
       walletId: authed,
       markets: liveMarkets,
@@ -399,7 +414,7 @@ export const getSessionState = query({
           _id: position._id,
           marketId,
           suppliedUsd: numberFromUsd6(position.suppliedUsd6),
-          amount: tokenAmountFromUsd(marketId, numberFromUsd6(position.suppliedUsd6)),
+          amount: tokenAmountFromUsd(numberFromUsd6(position.suppliedUsd6), liveMarkets[marketId].priceUsd),
           pendingRewardsUsd: numberFromUsd6(position.earnedUsd6) + rewardAccruedUsd(position, now),
           claimedRewardsUsd: numberFromUsd6(position.claimedRewardsUsd6),
           cooldownUsd,
@@ -457,19 +472,23 @@ export const recordAction = mutation({
     if (!Number.isFinite(args.amount) || args.amount < 0) throw new Error("INVALID_AMOUNT")
     const amount = Math.max(0, args.amount)
     if (args.kind !== "claim" && amount <= 0) throw new Error("INVALID_AMOUNT")
+    const livePriceUsd = args.kind === "claim" ? null : await validatedTokenPriceUsd(ctx, market.symbol, now)
+    if (args.kind !== "claim" && !livePriceUsd) {
+      throw new Error("ORACLE_UNAVAILABLE: Umbrella actions require a current Convex token price.")
+    }
     const liquid = await readLiquidBalance(ctx, wallet, args.marketId)
     const position = await readUmbrellaPosition(ctx, wallet, args.marketId)
     const accruedUsd = position ? rewardAccruedUsd(position, now) : 0
     const earnedUsd = position ? numberFromUsd6(position.earnedUsd6) + accruedUsd : 0
     const suppliedUsd = position ? numberFromUsd6(position.suppliedUsd6) : 0
     const cooldownUsd = position ? numberFromUsd6(position.cooldownAmountUsd6) : 0
-    const amountUsd = amount * market.priceUsd
+    const amountUsd = amount * (livePriceUsd ?? market.priceUsd)
     let nextPositionId: Id<"positions"> | undefined = position?._id
     let txAmountUsd = amountUsd
 
     if (args.kind === "stake") {
       if (amount > liquid) throw new Error("INSUFFICIENT_BALANCE")
-      await upsertLiquidBalance(ctx, wallet, args.marketId, liquid - amount, now)
+      await upsertLiquidBalance(ctx, wallet, args.marketId, liquid - amount, now, livePriceUsd!)
       const nextSuppliedUsd = suppliedUsd + amountUsd
       const payload = {
         wallet,
@@ -589,7 +608,7 @@ export const recordAction = mutation({
           })
         }
       }
-      await upsertLiquidBalance(ctx, wallet, args.marketId, liquid + amount, now)
+      await upsertLiquidBalance(ctx, wallet, args.marketId, liquid + amount, now, livePriceUsd!)
       const nextSuppliedUsd = Math.max(0, suppliedUsd - amountUsd)
       await ctx.db.patch(position._id, {
         status: nextSuppliedUsd > 0 ? "open" : "closed",

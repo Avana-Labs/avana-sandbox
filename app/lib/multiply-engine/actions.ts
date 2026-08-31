@@ -93,6 +93,7 @@ export function applyMultiplyAction(state: MultiplySystemState, action: Multiply
       selectedMultiplier: action.selectedMultiplier,
       existingPosition: existing,
       collateralPriceOverrideUsd: action.collateralPriceUsd,
+      collateralPriceStale: action.collateralPriceStale,
     })
 
     if (!simulation.validation.allowed) {
@@ -113,7 +114,7 @@ export function applyMultiplyAction(state: MultiplySystemState, action: Multiply
       next,
       action.walletId,
       action.marketId,
-      -(action.collateralAmount * market.collateralAsset.priceUsd),
+      -(action.collateralAmount * (action.collateralPriceUsd ?? market.collateralAsset.priceUsd)),
     )
     next.transactions.push({
       id: `tx-${next.transactions.length + 1}`,

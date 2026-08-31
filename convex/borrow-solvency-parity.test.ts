@@ -27,6 +27,16 @@ async function seedPool(t: ReturnType<typeof convexTest>, overrides: Record<stri
       createdAt: 0,
       ...overrides,
     })
+    await ctx.db.insert("walletBorrowBalances", {
+      wallet: WALLET.toLowerCase(),
+      marketId: POOL,
+      poolId: POOL,
+      symbol: "WETH/USDC",
+      amount: 1000,
+      valueUsd: 1000,
+      state: "collateral",
+      updatedAt: 0,
+    })
   })
 }
 

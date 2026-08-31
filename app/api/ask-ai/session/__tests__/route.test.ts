@@ -3,6 +3,7 @@ import {
   ASK_AI_GUEST_COOKIE,
   MINT_THROTTLE_MAX,
   allowGuestMint,
+  isGuestMintAllowed,
   readAskGuestId,
   readClientIp,
   resetGuestMintThrottle,
@@ -20,6 +21,24 @@ describe("Ask AI durable guest identity", () => {
     `${ASK_AI_GUEST_COOKIE}=not-a-uuid`,
     `${ASK_AI_GUEST_COOKIE}=123e4567-e89b-12d3-a456-426614174000`,
   ])("rejects an absent or invalid guest cookie: %s", (cookie) => expect(readAskGuestId(cookie)).toBeNull())
+})
+
+describe("Ask AI shared guest mint configuration", () => {
+  it("fails closed in production when the shared Convex secret is missing", async () => {
+    const previousNodeEnv = process.env.NODE_ENV
+    const previousUrl = process.env.NEXT_PUBLIC_CONVEX_URL
+    const previousSecret = process.env.CONVEX_RATE_LIMIT_SECRET
+    process.env.NODE_ENV = "production"
+    process.env.NEXT_PUBLIC_CONVEX_URL = "https://staging.convex.cloud"
+    delete process.env.CONVEX_RATE_LIMIT_SECRET
+    await expect(isGuestMintAllowed("203.0.113.7")).resolves.toBe(false)
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV
+    else process.env.NODE_ENV = previousNodeEnv
+    if (previousUrl === undefined) delete process.env.NEXT_PUBLIC_CONVEX_URL
+    else process.env.NEXT_PUBLIC_CONVEX_URL = previousUrl
+    if (previousSecret === undefined) delete process.env.CONVEX_RATE_LIMIT_SECRET
+    else process.env.CONVEX_RATE_LIMIT_SECRET = previousSecret
+  })
 })
 
 describe("Ask AI guest mint throttle", () => {

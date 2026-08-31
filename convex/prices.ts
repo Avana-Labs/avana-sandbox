@@ -96,6 +96,17 @@ export function classifyPriceStatus(ageMs: number): "fresh" | "stale" | "invalid
  */
 export const PRICE_MIN_CONFIDENCE = 0.8
 
+const USD_PEGGED_SYMBOLS = new Set(["usdc", "usdt", "dai", "gho", "crvusd", "usde", "frxusd", "usdg", "rlusd"])
+export const USD_PEGGED_MIN_PRICE = 0.5
+export const USD_PEGGED_MAX_PRICE = 1.5
+
+/** Reject provider/identity failures without pretending that a normal market depeg cannot happen. */
+export function isPlausibleTokenPrice(symbol: string, priceUsd: number) {
+  if (!Number.isFinite(priceUsd) || priceUsd <= 0) return false
+  if (!USD_PEGGED_SYMBOLS.has(symbol.toLowerCase())) return true
+  return priceUsd >= USD_PEGGED_MIN_PRICE && priceUsd <= USD_PEGGED_MAX_PRICE
+}
+
 /** All token prices (one row per base symbol). Small table — safe to collect. */
 export const getPrices = query({
   args: {},
@@ -151,12 +162,18 @@ export const getPriceSnapshot = query({
       priceUsd: r.priceUsd,
       confidence: r.confidence,
       source: r.source,
+      status: r.status,
       updatedAt: r.updatedAt,
     }))
     const updatedAt = rows.length === 0 ? null : Math.min(...rows.map((r) => r.updatedAt))
     return {
       prices,
-      status: { updatedAt, staleAfterMs: PRICE_STALE_AFTER_MS, count: rows.length },
+      status: {
+        updatedAt,
+        staleAfterMs: PRICE_STALE_AFTER_MS,
+        invalidAfterMs: PRICE_INVALID_AFTER_MS,
+        count: rows.length,
+      },
     }
   },
 })
@@ -327,7 +344,7 @@ export const refreshPrices = internalAction({
           // Guard the STORED value: `typeof NaN === "number"` (and 0 / negatives are numbers),
           // so a plain type check lets insane quotes through to be stored as authoritative and
           // divided by downstream. Require a finite, strictly-positive USD price.
-          if (!Number.isFinite(coin.price) || coin.price <= 0) return null
+          if (!isPlausibleTokenPrice(symbol, coin.price)) return null
           // Reject shaky quotes. DefiLlama reports `confidence` on a 0–1 scale (our tracked
           // coins normally resolve at 0.99); anything under the threshold is too unreliable to
           // treat as the real price. Missing confidence is treated as acceptable so an omitted

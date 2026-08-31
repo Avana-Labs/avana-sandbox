@@ -27,6 +27,35 @@ function borrowIntent(intentId: string, overrides: Record<string, unknown> = {})
   }
 }
 
+async function seedBorrowCollateral(t: ReturnType<typeof convexTest>, valueUsd = 2000) {
+  await t.run(async (ctx) => {
+    await ctx.db.insert("walletBorrowBalances", {
+      wallet: WALLET.toLowerCase(),
+      marketId: "uni-v3-bluechip-weth-usdc",
+      poolId: "uni-v3-bluechip-weth-usdc",
+      symbol: "WETH/USDC",
+      amount: valueUsd,
+      valueUsd,
+      state: "collateral",
+      updatedAt: 1,
+    })
+  })
+}
+
+async function seedMultiplyCollateral(t: ReturnType<typeof convexTest>, valueUsd = 1000) {
+  await t.run(async (ctx) => {
+    await ctx.db.insert("walletLiquidBalances", {
+      wallet: WALLET.toLowerCase(),
+      assetId: "eth",
+      symbol: "ETH",
+      amount: 1,
+      valueUsd,
+      state: "available",
+      updatedAt: 1,
+    })
+  })
+}
+
 describe("recordTransaction — ownership, idempotency, rate limit, ledger", () => {
   test("rejects unauthenticated calls", async () => {
     const t = convexTest(schema, modules)
@@ -45,6 +74,7 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
 
   test("writes exactly one transaction row + a position, and the ledger delta", async () => {
     const t = convexTest(schema, modules)
+    await seedBorrowCollateral(t)
     const asUser = t.withIdentity({ subject: WALLET })
     const res = await asUser.mutation(
       api.sandbox.transactions.recordTransaction,
@@ -98,6 +128,13 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
     expect(portfolio.latest?.totalBorrowedUsd).toBe(1000)
     // Borrow credits the liquid wallet, so net portfolio stays flat (cash +1000, debt +1000).
     expect(portfolio.latest?.totalValueUsd).toBe(0)
+    const risk = await asUser.query(api.sandbox.transactions.getRiskSeries, { wallet: WALLET })
+    expect(risk).toEqual([
+      expect.objectContaining({
+        healthFactorWad: "1700000000000000000",
+        trigger: "borrow",
+      }),
+    ])
   })
 
   test("rejects malformed fixed-point position state before writing", async () => {
@@ -181,6 +218,15 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
         state: "deposited",
         updatedAt: 1,
       })
+      await ctx.db.insert("walletLiquidBalances", {
+        wallet: w,
+        assetId: "usdc",
+        symbol: "USDC",
+        amount: 10,
+        valueUsd: 10,
+        state: "available",
+        updatedAt: 1,
+      })
     })
     const asUser = t.withIdentity({ subject: WALLET })
     const res = await asUser.mutation(api.sandbox.transactions.recordTransaction, {
@@ -258,6 +304,28 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
         position: { status: "open" as const, marketSlug: "usdc", suppliedUsd6: "10000000", earnedUsd6: "0" },
       }),
     ).rejects.toThrow(/INSUFFICIENT_BALANCE/)
+  })
+
+  test("rejects a deposit when the authenticated wallet has no liquid source row", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await expect(
+      asUser.mutation(api.sandbox.transactions.recordTransaction, {
+        wallet: WALLET,
+        intentId: "afford-missing",
+        product: "lend" as const,
+        kind: "deposit",
+        marketSlug: "usdc",
+        assetId: "usdc",
+        requestedAmountUsd6: "10000000",
+        executedAmountUsd6: "10000000",
+        amountUsd: 10,
+        simulated: true,
+        position: { status: "open" as const, marketSlug: "usdc", suppliedUsd6: "10000000", earnedUsd6: "0" },
+      }),
+    ).rejects.toThrow(/INSUFFICIENT_BALANCE/)
+
+    expect(await asUser.query(api.sandbox.transactions.getActivity, { wallet: WALLET })).toHaveLength(0)
   })
 
   test("allows a deposit within the wallet's liquid balance", async () => {
@@ -404,6 +472,17 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
 
   test("updates the current portfolio without appending per-action history", async () => {
     const t = convexTest(schema, modules)
+    await t.run(async (ctx) => {
+      await ctx.db.insert("walletLiquidBalances", {
+        wallet: WALLET.toLowerCase(),
+        assetId: "usdc",
+        symbol: "USDC",
+        amount: 1000,
+        valueUsd: 1000,
+        state: "available",
+        updatedAt: 1,
+      })
+    })
     const asUser = t.withIdentity({ subject: WALLET })
     await asUser.mutation(api.sandbox.transactions.recordTransaction, {
       ...borrowIntent("portfolio-current-create"),
@@ -481,28 +560,20 @@ describe("recordTransaction — ownership, idempotency, rate limit, ledger", () 
 })
 
 describe("liquidation recording", () => {
-  test("records a liquidation gated on the liquidator (acting on a victim it does not own)", async () => {
+  test("rejects an audit-only liquidation with no victim position", async () => {
     const t = convexTest(schema, modules)
     const asLiquidator = t.withIdentity({ subject: OTHER })
-    const res = await asLiquidator.mutation(api.sandbox.liquidation.recordLiquidation, {
-      wallet: WALLET, // victim
-      liquidatorWallet: OTHER,
-      repaidUsd6: "500000000",
-      seizedCollateralUsd6: "550000000",
-      healthFactorWadBefore: "900000000000000000",
-      healthFactorWadAfter: "1100000000000000000",
-    })
-    expect(res.hash).toMatch(/^sim-liquidate-/)
-
-    // The liquidator sees it as an outgoing liquidation.
-    const liq = await asLiquidator.query(api.sandbox.liquidation.getLiquidations, { wallet: OTHER })
-    expect(liq.asLiquidator).toHaveLength(1)
-    expect(liq.asLiquidator[0]?.wallet).toBe(WALLET.toLowerCase())
-
-    // The victim sees it as an incoming liquidation.
-    const asVictim = t.withIdentity({ subject: WALLET })
-    const victimView = await asVictim.query(api.sandbox.liquidation.getLiquidations, { wallet: WALLET })
-    expect(victimView.asVictim).toHaveLength(1)
+    await expect(
+      asLiquidator.mutation(api.sandbox.liquidation.recordLiquidation, {
+        wallet: WALLET,
+        liquidatorWallet: OTHER,
+        intentId: "missing-position",
+        repaidUsd6: "500000000",
+        seizedCollateralUsd6: "550000000",
+        healthFactorWadBefore: "900000000000000000",
+        healthFactorWadAfter: "1100000000000000000",
+      }),
+    ).rejects.toThrow(/victim position is required/)
   })
 
   test("rejects a liquidation whose liquidatorWallet is not the caller", async () => {
@@ -512,6 +583,7 @@ describe("liquidation recording", () => {
       asUser.mutation(api.sandbox.liquidation.recordLiquidation, {
         wallet: OTHER,
         liquidatorWallet: OTHER, // caller is WALLET, not OTHER
+        intentId: "wrong-liquidator",
         repaidUsd6: "1",
         seizedCollateralUsd6: "1",
         healthFactorWadBefore: null,
@@ -523,6 +595,33 @@ describe("liquidation recording", () => {
   test("atomically reduces victim debt and collateral and records the transaction", async () => {
     const t = convexTest(schema, modules)
     const ids = await t.run(async (ctx) => {
+      await ctx.db.insert("tokenPrices", {
+        symbol: "usdc",
+        llamaId: "coingecko:usd-coin",
+        priceUsd: 1,
+        source: "test",
+        confidence: 1,
+        fetchedAt: Date.now(),
+        updatedAt: Date.now(),
+      })
+      await ctx.db.insert("markets", {
+        scope: "pool",
+        slug: "uni-v3-bluechip-weth-usdc",
+        chainId: 1,
+        name: "Test LP",
+        symbol: "TEST-LP",
+        priceUsd: 1,
+        createdAt: Date.now(),
+      })
+      await ctx.db.insert("walletLiquidBalances", {
+        wallet: OTHER.toLowerCase(),
+        assetId: "usdc",
+        symbol: "USDC",
+        amount: 10_000,
+        valueUsd: 10_000,
+        state: "available",
+        updatedAt: Date.now(),
+      })
       const positionId = await ctx.db.insert("positions", {
         wallet: WALLET.toLowerCase(),
         product: "borrow",
@@ -561,6 +660,7 @@ describe("liquidation recording", () => {
     await asLiquidator.mutation(api.sandbox.liquidation.recordLiquidation, {
       wallet: WALLET,
       liquidatorWallet: OTHER,
+      intentId: "atomic-liquidation",
       positionId: ids.positionId,
       debtPositionId: ids.debtPositionId,
       marketSlug: "uni-v3-bluechip-weth-usdc",
@@ -585,6 +685,10 @@ describe("liquidation recording", () => {
         .query("portfolioSnapshots")
         .withIndex("by_wallet_at", (q) => q.eq("wallet", WALLET.toLowerCase()))
         .collect(),
+      risk: await ctx.db
+        .query("riskSnapshots")
+        .withIndex("by_wallet_at", (q) => q.eq("wallet", WALLET.toLowerCase()))
+        .unique(),
     }))
     expect(state.position?.debtValueUsd6).toBe("1500000000")
     expect(state.position?.collateralValueUsd6).toBe("1450000000")
@@ -593,11 +697,44 @@ describe("liquidation recording", () => {
     expect(state.transactions).toHaveLength(1)
     expect(state.transactions[0]?.kind).toBe("liquidation")
     expect(state.snapshots).toHaveLength(1)
+    expect(state.risk).toMatchObject({
+      collateralValueUsd6: "1450000000",
+      totalBorrowedUsd6: "1500000000",
+      healthFactorWad: "821666667000000000",
+      trigger: "liquidation",
+    })
   })
 
   test("bumps position revision so a victim's stale-read write is rejected (regression: C-2)", async () => {
     const t = convexTest(schema, modules)
     const ids = await t.run(async (ctx) => {
+      await ctx.db.insert("tokenPrices", {
+        symbol: "usdc",
+        llamaId: "coingecko:usd-coin",
+        priceUsd: 1,
+        source: "test",
+        confidence: 1,
+        fetchedAt: Date.now(),
+        updatedAt: Date.now(),
+      })
+      await ctx.db.insert("walletLiquidBalances", {
+        wallet: OTHER.toLowerCase(),
+        assetId: "usdc",
+        symbol: "USDC",
+        amount: 10_000,
+        valueUsd: 10_000,
+        state: "available",
+        updatedAt: Date.now(),
+      })
+      await ctx.db.insert("markets", {
+        scope: "pool",
+        slug: "uni-v3-bluechip-weth-usdc",
+        chainId: 1,
+        name: "Test LP",
+        symbol: "TEST-LP",
+        priceUsd: 1,
+        createdAt: Date.now(),
+      })
       const positionId = await ctx.db.insert("positions", {
         wallet: WALLET.toLowerCase(),
         product: "borrow",
@@ -638,6 +775,7 @@ describe("liquidation recording", () => {
     await asLiquidator.mutation(api.sandbox.liquidation.recordLiquidation, {
       wallet: WALLET,
       liquidatorWallet: OTHER,
+      intentId: "revision-liquidation",
       positionId: ids.positionId,
       debtPositionId: ids.debtPositionId,
       marketSlug: "uni-v3-bluechip-weth-usdc",
@@ -677,8 +815,81 @@ describe("liquidation recording", () => {
 })
 
 describe("recordTransaction — server-side solvency re-derivation", () => {
+  test("rejects forged Borrow collateral that the authenticated wallet does not own", async () => {
+    const t = convexTest(schema, modules)
+    await expect(
+      t.withIdentity({ subject: WALLET }).mutation(
+        api.sandbox.transactions.recordTransaction,
+        borrowIntent("forged-collateral", {
+          position: {
+            status: "open",
+            marketSlug: "uni-v3-bluechip-weth-usdc",
+            debtValueUsd6: "1000000000",
+            collateral: [
+              {
+                marketSlug: "uni-v3-bluechip-weth-usdc",
+                collateralShares: "2000000000",
+                principalTokenAmount: "2000000000",
+                collateralEnabled: true,
+              },
+            ],
+          },
+        }),
+      ),
+    ).rejects.toThrow(/INSUFFICIENT_COLLATERAL_BALANCE/)
+  })
+
+  test("rejects a Multiply position without authenticated-wallet collateral", async () => {
+    const t = convexTest(schema, modules)
+    await expect(
+      t.withIdentity({ subject: WALLET }).mutation(
+        api.sandbox.transactions.recordTransaction,
+        borrowIntent("forged-multiply", {
+          product: "multiply",
+          kind: "multiply",
+          marketSlug: "eth-usdc-loop",
+          position: {
+            status: "open",
+            marketSlug: "eth-usdc-loop",
+            assetId: "eth",
+            collateralValueUsd: 2000,
+            debtValueUsd: 1000,
+            multiplier: 2,
+            ltv: 0.5,
+          },
+        }),
+      ),
+    ).rejects.toThrow(/INSUFFICIENT_BALANCE/)
+  })
+
+  test("debits the wallet collateral that funds a new Multiply position", async () => {
+    const t = convexTest(schema, modules)
+    await seedMultiplyCollateral(t)
+    await t.withIdentity({ subject: WALLET }).mutation(
+      api.sandbox.transactions.recordTransaction,
+      borrowIntent("funded-multiply", {
+        product: "multiply",
+        kind: "multiply",
+        marketSlug: "eth-usdc-loop",
+        position: {
+          status: "open",
+          marketSlug: "eth-usdc-loop",
+          assetId: "eth",
+          collateralValueUsd: 2000,
+          debtValueUsd: 1000,
+          multiplier: 2,
+          ltv: 0.5,
+        },
+      }),
+    )
+    const liquid = await t.run(async (ctx) => ctx.db.query("walletLiquidBalances").unique())
+    expect(liquid?.amount).toBe(0)
+    expect(liquid?.valueUsd).toBe(0)
+  })
+
   test("rejects an undercollateralized borrow (debt > liquidation value)", async () => {
     const t = convexTest(schema, modules)
+    await seedBorrowCollateral(t)
     const asUser = t.withIdentity({ subject: WALLET })
     await expect(
       asUser.mutation(
@@ -753,6 +964,7 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
 
   test("p0-02: rejects inflated client collateralValueUsd6 when shares revalue underwater", async () => {
     const t = convexTest(schema, modules)
+    await seedBorrowCollateral(t)
     const asUser = t.withIdentity({ subject: WALLET })
     await expect(
       asUser.mutation(
@@ -806,6 +1018,7 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
 
   test("marks a multiply position closed when close records a zeroed payload (regression: C-1)", async () => {
     const t = convexTest(schema, modules)
+    await seedMultiplyCollateral(t)
     const asUser = t.withIdentity({ subject: WALLET })
     // Open a 2x loop.
     const open = await asUser.mutation(
@@ -819,6 +1032,7 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
         position: {
           status: "open",
           marketSlug: "eth-usdc-loop",
+          assetId: "eth",
           collateralValueUsd: 2000,
           debtValueUsd: 1000,
           multiplier: 2,
@@ -864,6 +1078,7 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
 
   test("returns the position revision on create and on idempotent replay (regression: M-12)", async () => {
     const t = convexTest(schema, modules)
+    await seedMultiplyCollateral(t)
     const asUser = t.withIdentity({ subject: WALLET })
     const create = await asUser.mutation(
       api.sandbox.transactions.recordTransaction,
@@ -874,6 +1089,7 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
         position: {
           status: "open",
           marketSlug: "eth-usdc-loop",
+          assetId: "eth",
           collateralValueUsd: 2000,
           debtValueUsd: 1000,
           multiplier: 2,
@@ -895,6 +1111,7 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
         position: {
           status: "open",
           marketSlug: "eth-usdc-loop",
+          assetId: "eth",
           collateralValueUsd: 2000,
           debtValueUsd: 1000,
           multiplier: 2,
@@ -908,6 +1125,7 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
 
   test("still accepts a healthy borrow (debt within liquidation value)", async () => {
     const t = convexTest(schema, modules)
+    await seedBorrowCollateral(t)
     const asUser = t.withIdentity({ subject: WALLET })
     const res = await asUser.mutation(
       api.sandbox.transactions.recordTransaction,

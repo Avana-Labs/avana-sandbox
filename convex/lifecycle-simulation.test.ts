@@ -39,6 +39,23 @@ describe("Phase 6 — multi-user lifecycle simulation", () => {
     async () => {
       const t = convexTest(schema, modules)
       await t.run(seedStarterTestMarkets)
+      await t.run(async (ctx) => {
+        const now = Date.now()
+        const rows = await ctx.db.query("tokenPrices").collect()
+        for (const row of rows) await ctx.db.patch(row._id, { confidence: 0.99, status: "fresh", updatedAt: now })
+        // The post-onboarding action swaps usdc <-> eth. seedStarterTestMarkets seeds usdc but not
+        // eth, so add a fresh, server-verifiable eth price for the fail-closed swap oracle, which
+        // resolves token prices by lowercased symbol.
+        await ctx.db.insert("tokenPrices", {
+          symbol: "eth",
+          llamaId: "test:eth",
+          priceUsd: 3000,
+          source: "test",
+          confidence: 0.99,
+          status: "fresh",
+          updatedAt: now,
+        })
+      })
 
       let catalogUpdatedAtAfterFirstClaim: number | null = null
 
@@ -67,14 +84,24 @@ describe("Phase 6 — multi-user lifecycle simulation", () => {
         }
 
         // --- A post-onboarding action (swap) ---
+        const held = await t.run(async (ctx) => {
+          const rows = await ctx.db
+            .query("walletLiquidBalances")
+            .withIndex("by_wallet", (q) => q.eq("wallet", address))
+            .collect()
+          return rows.find((row) => row.amount > 0)!
+        })
+        const inputAmount = Math.min(0.25, held.amount / 2)
+        const outputAssetId = held.assetId === "usdc" ? "eth" : "usdc"
+        const outputSymbol = outputAssetId.toUpperCase()
         const swap = await asUser.mutation(api.sandbox.transactions.recordSwap, {
           wallet: address,
           intentId: `${address}-swap-1`,
-          inputAssetId: "eth",
-          outputAssetId: "usdc",
-          inputSymbol: "ETH",
-          outputSymbol: "USDC",
-          inputAmount: 0.25,
+          inputAssetId: held.assetId,
+          outputAssetId,
+          inputSymbol: held.symbol,
+          outputSymbol,
+          inputAmount,
           outputAmount: 483.5,
           amountUsd: 483.5,
         })
@@ -83,11 +110,11 @@ describe("Phase 6 — multi-user lifecycle simulation", () => {
         const replay = await asUser.mutation(api.sandbox.transactions.recordSwap, {
           wallet: address,
           intentId: `${address}-swap-1`,
-          inputAssetId: "eth",
-          outputAssetId: "usdc",
-          inputSymbol: "ETH",
-          outputSymbol: "USDC",
-          inputAmount: 0.25,
+          inputAssetId: held.assetId,
+          outputAssetId,
+          inputSymbol: held.symbol,
+          outputSymbol,
+          inputAmount,
           outputAmount: 483.5,
           amountUsd: 483.5,
         })

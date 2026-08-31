@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { assertSameOrigin, assertSameOriginRead } from "../request-guards"
+import { assertSameOrigin, assertSameOriginRead, rateLimitShared } from "../request-guards"
 
 function req(headers: Record<string, string>) {
   return new Request("https://avana.cc/api/siwe/verify", { method: "POST", headers })
@@ -61,5 +61,23 @@ describe("assertSameOriginRead — GET-tuned (fx-rates)", () => {
       headers: { get: () => null },
     } as unknown as Request
     expect(assertSameOriginRead(bare)).toBe(true)
+  })
+})
+
+describe("shared rate-limit production boundary", () => {
+  it("fails closed when Convex is configured without the shared secret", async () => {
+    const previousNodeEnv = process.env.NODE_ENV
+    const previousUrl = process.env.NEXT_PUBLIC_CONVEX_URL
+    const previousSecret = process.env.CONVEX_RATE_LIMIT_SECRET
+    process.env.NODE_ENV = "production"
+    process.env.NEXT_PUBLIC_CONVEX_URL = "https://staging.convex.cloud"
+    delete process.env.CONVEX_RATE_LIMIT_SECRET
+    await expect(rateLimitShared("siwe-nonce:test", 30, 60_000)).resolves.toBe(false)
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV
+    else process.env.NODE_ENV = previousNodeEnv
+    if (previousUrl === undefined) delete process.env.NEXT_PUBLIC_CONVEX_URL
+    else process.env.NEXT_PUBLIC_CONVEX_URL = previousUrl
+    if (previousSecret === undefined) delete process.env.CONVEX_RATE_LIMIT_SECRET
+    else process.env.CONVEX_RATE_LIMIT_SECRET = previousSecret
   })
 })

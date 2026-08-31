@@ -30,6 +30,21 @@ const WITHDRAWAL_WINDOW_MS = 2 * DAY_MS
 
 async function seedLiquidUsdc(t: T, wallet: string, amount: number) {
   await t.run(async (ctx) => {
+    const price = await ctx.db
+      .query("tokenPrices")
+      .withIndex("by_symbol", (q) => q.eq("symbol", "usdc"))
+      .unique()
+    if (!price) {
+      await ctx.db.insert("tokenPrices", {
+        symbol: "usdc",
+        llamaId: "test:usdc",
+        priceUsd: USDC_PRICE,
+        confidence: 0.99,
+        status: "fresh",
+        source: "test",
+        updatedAt: Date.now(),
+      })
+    }
     await ctx.db.insert("walletLiquidBalances", {
       wallet: wallet.toLowerCase(),
       assetId: "usdc",
@@ -120,6 +135,62 @@ describe("sandbox umbrella — recordAction lifecycle", () => {
     )
     expect(tx?.kind).toBe("stake")
     expect(tx?.product).toBe("umbrella")
+  })
+
+  test("stake — values execution and the remaining wallet balance from the live Convex price", async () => {
+    const t = convexTest(schema, modules)
+    await seedLiquidUsdc(t, WALLET_A, 1000)
+    await t.run(async (ctx) => {
+      const price = await ctx.db
+        .query("tokenPrices")
+        .withIndex("by_symbol", (q) => q.eq("symbol", "usdc"))
+        .unique()
+      await ctx.db.patch(price!._id, { priceUsd: 0.9, updatedAt: Date.now() })
+    })
+    await t.withIdentity({ subject: WALLET_A }).mutation(api.sandbox.umbrella.recordAction, {
+      wallet: WALLET_A,
+      intentId: "stake-depeg",
+      kind: "stake",
+      marketId: "usdc",
+      amount: 100,
+    })
+    const position = await readPosition(t, WALLET_A, "usdc")
+    expect(num(position?.suppliedUsd6)).toBe(90)
+    const liquid = await t.run(async (ctx) =>
+      ctx.db
+        .query("walletLiquidBalances")
+        .withIndex("by_wallet_asset", (q) => q.eq("wallet", WALLET_A.toLowerCase()).eq("assetId", "usdc"))
+        .unique(),
+    )
+    expect(liquid?.amount).toBe(900)
+    expect(liquid?.valueUsd).toBe(810)
+    const hydrated = await t
+      .withIdentity({ subject: WALLET_A })
+      .query(api.sandbox.umbrella.getSessionState, { wallet: WALLET_A })
+    expect(hydrated.markets.usdc.priceUsd).toBe(0.9)
+    expect(hydrated.positions.find((row) => row.marketId === "usdc")?.amount).toBe(100)
+    expect(hydrated.transactions[0]?.amountUsd).toBe(90)
+  })
+
+  test("stake — fails closed when the Convex price is expired", async () => {
+    const t = convexTest(schema, modules)
+    await seedLiquidUsdc(t, WALLET_A, 1000)
+    await t.run(async (ctx) => {
+      const price = await ctx.db
+        .query("tokenPrices")
+        .withIndex("by_symbol", (q) => q.eq("symbol", "usdc"))
+        .unique()
+      await ctx.db.patch(price!._id, { updatedAt: Date.now() - 46 * 60 * 1000 })
+    })
+    await expect(
+      t.withIdentity({ subject: WALLET_A }).mutation(api.sandbox.umbrella.recordAction, {
+        wallet: WALLET_A,
+        intentId: "stake-stale",
+        kind: "stake",
+        marketId: "usdc",
+        amount: 100,
+      }),
+    ).rejects.toThrow(/ORACLE_UNAVAILABLE/)
   })
 
   test("stake — insufficient balance rejects", async () => {
