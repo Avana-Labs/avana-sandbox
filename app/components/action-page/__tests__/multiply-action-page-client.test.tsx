@@ -24,7 +24,9 @@ import {
 } from "@/app/lib/multiply-system/storage"
 import { serializeMultiplySystemState } from "@/app/lib/multiply-system/codec"
 
-const TEST_PRICES = Object.fromEntries(Object.entries(PRICE_FIXTURE).map(([symbol, price]) => [symbol.toLowerCase(), price]))
+const TEST_PRICES = Object.fromEntries(
+  Object.entries(PRICE_FIXTURE).map(([symbol, price]) => [symbol.toLowerCase(), price]),
+)
 const renderWithProviders = (ui: ReactNode) =>
   render(
     <TokenPricesContext.Provider value={TEST_PRICES}>
