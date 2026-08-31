@@ -200,7 +200,12 @@ function DirectAssistantMessage({
   return (
     <div className="group/msg px-2 text-foreground">
       <div className="flex flex-col gap-3" aria-live="polite" aria-atomic="false">
-        {running && renderableContent.length === 0 ? (
+        {renderableContent.length === 0 && !failed ? (
+          // An assistant bubble with no content and no error is always still
+          // working: the transient running turn, a streaming turn before its
+          // first token (a long web search can sit here for many seconds), or
+          // the brief gap before rich parts merge in. Keep the live indicator
+          // for all of them so the chat never shows a blank turn.
           <ThinkingIndicatorLive />
         ) : (
           renderableContent.map((part, index) => <DirectAssistantPart key={`${message.id}-${index}`} part={part} />)

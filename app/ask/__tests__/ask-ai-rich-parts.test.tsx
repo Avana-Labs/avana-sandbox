@@ -185,6 +185,44 @@ describe("AskAIPageClient rich parts", () => {
     expect(screen.getByText("ETH is $4,321.")).toBeInTheDocument()
   })
 
+  it("renders lending markets (APY + TVL) and drops the redundant lone price row", () => {
+    messagesMock.mockReturnValue({
+      status: "Exhausted",
+      loadMore: vi.fn(),
+      results: [
+        { id: "u1", role: "user", text: "aave supply apy on lending markets", _creationTime: 1, status: "success" },
+        { id: "a1", role: "assistant", text: "AAVE supply APY is 7.56%.", _creationTime: 2, status: "success" },
+      ],
+    })
+    partsMock.mockReturnValue([
+      {
+        messageId: "a1",
+        parts: {
+          financialResults: [
+            {
+              kind: "market",
+              payload: {
+                // Lending data lives in `markets`; the only `providerData` hit is a
+                // bare token price, which must not become the whole table.
+                markets: [{ symbol: "AAVE", supplyApyPct: 7.56, tvlUsd: 101_011_986, venueLabel: "Aave" }],
+                providerData: [
+                  { source: "defillama", kind: "token_price", key: "aave", data: { symbol: "aave", priceUsd: 123.38 } },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    ])
+
+    render(<AskAIPageClient />)
+    expect(screen.getByRole("columnheader", { name: "Market" })).toBeInTheDocument()
+    expect(screen.getByText("7.56% supply")).toBeInTheDocument()
+    expect(screen.getByText("$101,011,986.00")).toBeInTheDocument()
+    // The lone token-price row is dropped once a richer market row exists.
+    expect(screen.queryByText("$123.38")).not.toBeInTheDocument()
+  })
+
   it("shows only Umbrella data for an Umbrella-focused portfolio result", () => {
     messagesMock.mockReturnValue({
       status: "Exhausted",

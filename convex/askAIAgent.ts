@@ -313,7 +313,10 @@ export const generateTurn = internalAction({
       tools: turnTools,
     })
     try {
-      if (route.intent === "market" || route.intent === "pool" || route.intent === "comparison") {
+      if (
+        route.tools.includes("search_markets") &&
+        (route.intent === "market" || route.intent === "pool" || route.intent === "comparison")
+      ) {
         const searched = await ctx.runQuery(api.askAITools.searchMarkets, { query: turn.prompt, limit: 5 })
         const payload = route.intent === "market" ? exactPricePayload(searched, turn.prompt) : searched
         prefetched = {
@@ -519,7 +522,13 @@ export const generateTurn = internalAction({
           return [{ title, locator, text, ...(score !== undefined ? { score } : {}) }]
         })
       })
-      const visual = financialResults.flatMap(({ kind, payload }) => {
+      // Only surface the price chart when the user actually asked about price,
+      // value, or a trend/chart, never for a question that merely named a token.
+      const wantsPriceVisual =
+        /\b(price|prices|worth|cost|value|quote|chart|charts|graph|graphs|trend|trends|history|historical|over time|performance|movement|1d|24h|7d|30d)\b/i.test(
+          turn.prompt,
+        )
+      const visual = (!wantsPriceVisual ? [] : financialResults).flatMap(({ kind, payload }) => {
         if (kind !== "market" || !payload || typeof payload !== "object") return []
         const rows = (payload as { providerData?: unknown }).providerData
         if (!Array.isArray(rows)) return []
