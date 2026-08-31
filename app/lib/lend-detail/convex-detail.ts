@@ -205,7 +205,8 @@ async function getLendMarketDetailFromConvexUncached(id: string): Promise<LendMa
         : ((supplyBorrow as typeof detail.supplyBorrow | null) ?? detail.supplyBorrow),
       // Fail closed in live: empty (not the catalog copy) when Convex has no rows.
       // The client overlays the wallet's own session transactions on top of this.
-      transactions: preferLiveOrNull(mode, transactions as typeof detail.transactions | null, detail.transactions) ?? [],
+      transactions:
+        preferLiveOrNull(mode, transactions as typeof detail.transactions | null, detail.transactions) ?? [],
       risk: preferLiveOrNull(mode, risk as typeof detail.risk | null, detail.risk) ?? EMPTY_RISK_ASSESSMENT,
       utilizationPct: headline.utilizationPct,
       borrowAprPct: headline.borrowAprPct,
