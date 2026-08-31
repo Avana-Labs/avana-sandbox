@@ -44,11 +44,7 @@ import {
   resolveMultiplyCollateralPriceUsd,
 } from "@/app/lib/multiply-system/collateral-limits"
 import { formatActionAmount } from "@/app/lib/action-system/formatters"
-import {
-  useCanonicalPriceFor,
-  usePriceFor,
-  usePriceFreshness,
-} from "@/app/lib/prices/token-prices-context"
+import { useCanonicalPriceFor, usePriceFor, usePriceFreshness } from "@/app/lib/prices/token-prices-context"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 

@@ -10,13 +10,16 @@ const now = 2_000_000_000_000
 describe("validated Convex prices", () => {
   it("accepts current positive high-confidence rows", () => {
     expect(
-      isUsableConvexPrice({
-        symbol: "AAVE",
-        priceUsd: 126,
-        confidence: 0.99,
-        status: "fresh",
-        updatedAt: now - 60_000,
-      }, now),
+      isUsableConvexPrice(
+        {
+          symbol: "AAVE",
+          priceUsd: 126,
+          confidence: 0.99,
+          status: "fresh",
+          updatedAt: now - 60_000,
+        },
+        now,
+      ),
     ).toBe(true)
   })
 
