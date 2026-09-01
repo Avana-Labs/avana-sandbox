@@ -92,7 +92,7 @@ export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref
     <section id="dashboard-borrow-account" className={`scroll-mt-24 ${detailSectionStackClass}`}>
       <DashboardCreditOverviewSection title={t("Borrow Balance")} metrics={borrowBalanceMetrics} />
 
-      <AccountModuleBoundary>
+      <AccountModuleBoundary product="borrow">
         <DashboardBorrowTab
           collateralPositions={collateralPositions}
           debtPositions={debtPositions}

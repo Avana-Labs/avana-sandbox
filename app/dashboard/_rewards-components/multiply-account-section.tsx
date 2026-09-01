@@ -95,7 +95,7 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
           />
         </div>
       </div>
-      <AccountModuleBoundary>
+      <AccountModuleBoundary product="multiply">
         <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} returnHref={returnHref} />
       </AccountModuleBoundary>
     </section>

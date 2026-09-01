@@ -113,6 +113,28 @@ export function SectionTabStrip<T extends string>({
   )
 }
 
-export function AccountModuleBoundary({ children }: { children: ReactNode }) {
-  return <Suspense fallback={<Skeleton className="h-64 w-full rounded-radius-md" />}>{children}</Suspense>
+const ACCOUNT_MODULE_FALLBACK_HEIGHT = {
+  borrow: "h-[520px]",
+  multiply: "h-[560px]",
+} as const
+
+export function AccountModuleBoundary({
+  children,
+  product,
+}: {
+  children: ReactNode
+  product: keyof typeof ACCOUNT_MODULE_FALLBACK_HEIGHT
+}) {
+  return (
+    <Suspense
+      fallback={
+        <Skeleton
+          className={cn("w-full rounded-radius-md", ACCOUNT_MODULE_FALLBACK_HEIGHT[product])}
+          data-testid={`${product}-account-module-skeleton`}
+        />
+      }
+    >
+      {children}
+    </Suspense>
+  )
 }

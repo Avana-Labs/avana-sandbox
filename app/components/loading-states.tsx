@@ -370,7 +370,10 @@ export function BorrowPageSkeleton() {
           </div>
           <div className="flex gap-3 overflow-hidden" data-testid="borrow-skeleton-carousel">
             {Array.from({ length: 4 }).map((_, index) => (
-              <Surface key={`borrow-discovery-${index}`} className="h-[157px] w-80 shrink-0 p-4">
+              <Surface
+                key={`borrow-discovery-${index}`}
+                className="h-[172px] w-[19rem] shrink-0 p-3.5 md:h-[158px] md:w-80 md:p-4"
+              >
                 <div className="space-y-3.5">
                   {Array.from({ length: 2 }).map((__, rowIndex) => (
                     <div key={`borrow-discovery-${index}-${rowIndex}`} className="flex items-center gap-3 px-1 py-1">
