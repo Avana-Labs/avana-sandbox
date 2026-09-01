@@ -42,7 +42,7 @@ function Page({ children, className, mainClassName }: BlockProps & { mainClassNa
     <div className="bg-background" role="status" aria-busy="true" aria-live="polite" aria-label={t("Loading")}>
       <span className="sr-only">{t("Loading…")}</span>
       <main className={cn("container mx-auto", mainClassName ?? "px-4 py-8")}>
-        <div className={cn("skeleton-enter mx-auto max-w-[1152px]", className)}>{children}</div>
+        <div className={cn("mx-auto max-w-[1152px]", className)}>{children}</div>
       </main>
     </div>
   )
@@ -90,7 +90,7 @@ export function HomeWorkspaceSkeleton() {
       data-testid="home-workspace-loading"
     >
       <span className="sr-only">{t("Loading…")}</span>
-      <section className="skeleton-enter flex min-h-[calc(100dvh-4rem)] justify-center px-4 pb-12 pt-14 md:pb-16 md:pt-20">
+      <section className="flex min-h-[calc(100dvh-4rem)] justify-center px-4 pb-12 pt-14 md:pb-16 md:pt-20">
         <div className="w-full max-w-[480px]">
           {/* Mirror the real card's icon tab strip 1:1 (same ActionWorkspaceTabs,
               Swap active) so the skeleton shows icons and the card reveals with

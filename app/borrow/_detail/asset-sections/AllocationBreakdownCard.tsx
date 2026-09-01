@@ -197,12 +197,11 @@ export function AllocationBreakdownCard({ detail, id }: Props) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border dark:divide-white/6">
-                {rows.map((row, index) => (
+                {rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="asset-swap group cursor-pointer transition-colors"
+                    className="group cursor-pointer transition-colors"
                     onClick={() => router.push(row.href)}
-                    style={{ animationDelay: `${index * 40}ms` }}
                   >
                     <td
                       className={`py-2.5 pl-4 pr-2 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 sm:pl-6 ${TABLE_ROW_HOVER_LEFT}`}

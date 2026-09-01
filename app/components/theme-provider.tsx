@@ -41,7 +41,9 @@ function applyThemeClass(resolvedTheme: "light" | "dark") {
   root.style.colorScheme = resolvedTheme
 }
 
-function disableThemeTransitions() {
+function applyThemeWithoutTransitions(resolvedTheme: "light" | "dark") {
+  document.head.querySelectorAll('[data-avana-theme-transition="true"]').forEach((node) => node.remove())
+
   const style = document.createElement("style")
   style.setAttribute("data-avana-theme-transition", "true")
   style.textContent = `
@@ -56,11 +58,13 @@ function disableThemeTransitions() {
   `
   document.head.appendChild(style)
 
-  return () => {
-    window.requestAnimationFrame(() => {
-      style.remove()
-    })
-  }
+  applyThemeClass(resolvedTheme)
+
+  // Force the new theme to compute while transitions are disabled, then remove
+  // the guard synchronously. Leaving this style mounted disables every animation
+  // in the app, including the global skeleton shimmer.
+  void document.documentElement.offsetHeight
+  style.remove()
 }
 
 type ThemeProviderProps = React.PropsWithChildren<{
@@ -111,16 +115,10 @@ export function ThemeProvider({
       return
     }
 
-    let restoreTransitions: (() => void) | undefined
-
     if (disableTransitionOnChange) {
-      restoreTransitions = disableThemeTransitions()
-    }
-
-    applyThemeClass(resolvedTheme)
-
-    return () => {
-      restoreTransitions?.()
+      applyThemeWithoutTransitions(resolvedTheme)
+    } else {
+      applyThemeClass(resolvedTheme)
     }
   }, [disableTransitionOnChange, resolvedTheme])
 

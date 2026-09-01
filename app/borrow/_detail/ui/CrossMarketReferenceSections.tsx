@@ -142,12 +142,11 @@ export function AssetsYouCanBorrowSection({
               </tr>
             </thead>
             <tbody className="divide-y divide-border dark:divide-white/6">
-              {rows.map((asset, index) => (
+              {rows.map((asset) => (
                 <tr
                   key={asset.id}
-                  className="asset-swap group cursor-pointer transition-colors"
+                  className="group cursor-pointer transition-colors"
                   onClick={() => router.push(asset.href)}
-                  style={{ animationDelay: `${index * 40}ms` }}
                 >
                   <td
                     className={`py-2.5 pl-6 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
