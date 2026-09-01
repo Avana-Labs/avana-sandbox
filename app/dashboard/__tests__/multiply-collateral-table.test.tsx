@@ -93,6 +93,20 @@ describe("MultiplyCollateralTable", () => {
     expect(screen.getAllByText("Liq. price").length).toBeGreaterThan(0)
   })
 
+  it("splits exposure from debt and risk instead of rendering one wide table", () => {
+    render(
+      <DisplayPreferencesProvider>
+        <MultiplyCollateralTable rows={rows} />
+      </DisplayPreferencesProvider>,
+    )
+
+    expect(screen.getByRole("heading", { name: "Exposure" })).toBeTruthy()
+    expect(screen.getByRole("heading", { name: "Debt & Risk" })).toBeTruthy()
+    expect(screen.getAllByRole("button", { name: "Multiply" })).toHaveLength(2)
+    expect(screen.getAllByRole("button", { name: "Deleverage" })).toHaveLength(2)
+    expect(screen.getAllByRole("button", { name: "Close" })).toHaveLength(2)
+  })
+
   it("renders a dash when a position has no liquidation price (debt-free)", () => {
     render(
       <DisplayPreferencesProvider>
@@ -100,8 +114,7 @@ describe("MultiplyCollateralTable", () => {
       </DisplayPreferencesProvider>,
     )
 
-    // A debt-free position has no liquidation price; it must read "—", not "$0".
-    expect(screen.getAllByText("—").length).toBeGreaterThan(0)
+    expect(screen.getByText("No active Multiply debt")).toBeTruthy()
   })
 
   it("routes desktop deleverage to the multiply action page", () => {
