@@ -61,7 +61,7 @@ export function LendHeroIdentity({
 
           <div className="min-w-0">
             <div className="flex min-w-0 translate-y-1 items-baseline gap-3 whitespace-nowrap">
-              <h1 className="min-w-0 truncate text-[25px] font-semibold leading-none tracking-[-0.02em] text-foreground">
+              <h1 className="min-w-0 truncate text-[26px] font-normal leading-8 tracking-[-0.015em] text-foreground sm:text-[28px]">
                 {detail.hero.name}
               </h1>
               <span className="shrink-0 text-[20px] font-medium leading-none tracking-[-0.01em] text-foreground/55">

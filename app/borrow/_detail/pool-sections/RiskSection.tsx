@@ -53,7 +53,7 @@ export function RiskSection({ detail }: Props) {
               size={140}
             />
             {risk.lastReviewed ? (
-              <p className="mt-1 text-[10.5px] text-muted-foreground">
+              <p className="mt-1 text-[11px] text-muted-foreground">
                 {t("Last reviewed {date}").replace("{date}", risk.lastReviewed)}
               </p>
             ) : null}
@@ -96,7 +96,7 @@ export function RiskSection({ detail }: Props) {
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       {relatedMetric ? (
-                        <span className="hidden font-data text-[11.5px] tabular-nums text-muted-foreground sm:inline">
+                        <span className="hidden font-data text-[12px] tabular-nums text-muted-foreground sm:inline">
                           {relatedMetric}
                         </span>
                       ) : null}

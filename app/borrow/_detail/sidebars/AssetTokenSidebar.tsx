@@ -139,7 +139,7 @@ function TokenRail({
           <DialogTitle className="sr-only">{t("Deposit collateral first")}</DialogTitle>
           <div className="space-y-4 px-6 pb-6 pt-5">
             <div className="space-y-2">
-              <h3 className="text-[22px] font-medium tracking-[-0.03em] text-foreground">
+              <h3 className="text-[22px] font-medium tracking-[-0.01em] text-foreground">
                 {t("You need to deposit an asset before you can borrow.")}
               </h3>
               <p className="text-[14px] leading-6 text-muted-foreground">

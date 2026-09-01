@@ -68,7 +68,7 @@ export function CollateralHistoryCard({ transactions, title = "Transactions" }: 
   return (
     <section className="min-w-0">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[24px] font-semibold tracking-[-0.03em] text-foreground">{t(title)}</h2>
+        <h2 className="text-[24px] font-normal tracking-[-0.01em] text-foreground">{t(title)}</h2>
         <PillTabStrip
           items={FILTERS.map((filter) => ({ id: filter.id, label: t(filter.label) }))}
           value={activeFilter}
@@ -88,7 +88,7 @@ export function CollateralHistoryCard({ transactions, title = "Transactions" }: 
               <col />
             </colgroup>
             <thead>
-              <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+              <tr className="border-b border-border text-left text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                 <th className="rounded-l-radius-lg bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Time")}
                 </th>
@@ -114,7 +114,7 @@ export function CollateralHistoryCard({ transactions, title = "Transactions" }: 
                   <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
                     <span
                       className={cn(
-                        "inline-block whitespace-nowrap text-[15px] font-medium tracking-[-0.03em]",
+                        "inline-block whitespace-nowrap text-[15px] font-medium tracking-normal",
                         KIND_TONE[tx.kind],
                       )}
                     >
@@ -122,12 +122,12 @@ export function CollateralHistoryCard({ transactions, title = "Transactions" }: 
                     </span>
                   </td>
                   <td
-                    className={`px-3 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}
+                    className={`px-3 py-3 align-middle text-right font-data text-[15px] font-normal tracking-normal tabular-nums text-foreground ${ROW_HOVER_BG}`}
                   >
                     {tx.amountLabel.replace(/^\+/, "")}
                   </td>
                   <td
-                    className={`px-5 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}
+                    className={`px-5 py-3 align-middle text-right font-data text-[15px] font-normal tracking-normal tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}
                   >
                     {tx.walletHref ? (
                       <a
@@ -159,7 +159,7 @@ export function CollateralHistoryCard({ transactions, title = "Transactions" }: 
               <col />
             </colgroup>
             <thead>
-              <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+              <tr className="border-b border-border text-left text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                 <th className="rounded-l-radius-lg bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   {t("Time")}
                 </th>
@@ -185,7 +185,7 @@ export function CollateralHistoryCard({ transactions, title = "Transactions" }: 
                   <td className={`px-3 py-3 align-middle ${ROW_HOVER_BG}`}>
                     <span
                       className={cn(
-                        "inline-block whitespace-nowrap text-[15px] font-medium tracking-[-0.03em]",
+                        "inline-block whitespace-nowrap text-[15px] font-medium tracking-normal",
                         KIND_TONE[tx.kind],
                       )}
                     >
@@ -193,12 +193,12 @@ export function CollateralHistoryCard({ transactions, title = "Transactions" }: 
                     </span>
                   </td>
                   <td
-                    className={`px-3 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_BG}`}
+                    className={`px-3 py-3 align-middle text-right font-data text-[15px] font-normal tracking-normal tabular-nums text-foreground ${ROW_HOVER_BG}`}
                   >
                     {tx.amountLabel.replace(/^\+/, "")}
                   </td>
                   <td
-                    className={`px-5 py-3 align-middle text-right font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}
+                    className={`px-5 py-3 align-middle text-right font-data text-[15px] font-normal tracking-normal tabular-nums text-foreground ${ROW_HOVER_RIGHT}`}
                   >
                     {tx.walletHref ? (
                       <a

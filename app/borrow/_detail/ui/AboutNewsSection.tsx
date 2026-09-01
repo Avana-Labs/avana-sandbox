@@ -49,7 +49,7 @@ export function AboutNewsSection({
         <>
           <section aria-label={t(newsTitle)} className="space-y-5">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="truncate text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+              <h2 className="truncate text-[22px] font-medium leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
                 {t(newsTitle)}
               </h2>
               {governanceUrl ? (
@@ -83,7 +83,7 @@ export function AboutNewsSection({
                         </span>
                       ) : null}
                     </div>
-                    <div className="mt-2 font-data text-[22px] font-semibold leading-none tracking-[-0.03em] text-foreground">
+                    <div className="mt-2 font-data text-[22px] font-normal leading-none tracking-[-0.01em] text-foreground">
                       {t(parameter.value)}
                     </div>
                   </>
@@ -109,7 +109,7 @@ export function AboutNewsSection({
           </section>
 
           <section aria-label={t("Parameter changelog")} className="space-y-5">
-            <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+            <h2 className="text-[22px] font-medium leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
               {t("Parameter changelog")}
             </h2>
             <div className="overflow-x-auto">

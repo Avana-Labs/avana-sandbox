@@ -105,7 +105,7 @@ export function AssetDetailClient({
                   afterAbout={
                     <>
                       <section aria-label={t("Key Statistics")} className="space-y-6">
-                        <h2 className="text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+                        <h2 className="text-[22px] font-normal leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
                           Key Statistics
                         </h2>
                         <QuickStatsGrid

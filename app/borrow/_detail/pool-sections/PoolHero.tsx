@@ -63,7 +63,7 @@ export function PoolHeroIdentity({
 
           <div className="min-w-0">
             <div className="flex min-w-0 translate-y-1 items-baseline gap-2.5 whitespace-nowrap">
-              <h1 className="min-w-0 truncate text-[25px] font-semibold leading-none tracking-[-0.02em] text-foreground">
+              <h1 className="min-w-0 truncate text-[26px] font-normal leading-8 tracking-[-0.015em] text-foreground sm:text-[28px]">
                 {detail.hero.name}
               </h1>
             </div>

@@ -55,7 +55,7 @@ function CashflowCardView({ detail }: { detail: Props["detail"] }) {
             <col className="w-[20%]" />
           </colgroup>
           <thead>
-            <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+            <tr className="border-b border-border text-left text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
               <th className="pb-2 pt-3">{t("Line")}</th>
               <th className="pb-2 pt-3 text-right">{t("1D")}</th>
               <th className="pb-2 pt-3 text-right">{t("30 Days")}</th>

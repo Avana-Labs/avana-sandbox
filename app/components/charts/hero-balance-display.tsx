@@ -48,9 +48,9 @@ function HeroDeltaText({
           className={cn(
             "tabular-nums",
             variant === "strong"
-              ? "text-[15px] font-semibold"
+              ? "text-[15px] font-normal"
               : variant === "quiet"
-                ? "text-[13px] font-semibold lg:text-[14px]"
+                ? "text-[13px] font-normal lg:text-[14px]"
                 : "text-[14px] font-medium",
           )}
         >
@@ -77,7 +77,7 @@ export function HeroBalanceDisplay({
   return (
     <div className={cn("space-y-1.5", className)}>
       {label ? (
-        <span className="block text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+        <span className="block text-[11px] font-normal uppercase leading-4 tracking-[0.06em] text-muted-foreground">
           {label}
         </span>
       ) : null}
@@ -86,10 +86,10 @@ export function HeroBalanceDisplay({
           className={cn(
             "leading-none text-foreground",
             variant === "strong"
-              ? "text-[29px] font-semibold tracking-[-0.03em] sm:text-[32px] md:text-[34px]"
+              ? "text-[29px] font-normal tracking-[-0.015em] sm:text-[32px] md:text-[34px]"
               : variant === "quiet"
-                ? "font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium tracking-[-0.04em]"
-                : "text-[26px] font-normal tracking-[-0.03em] sm:text-[28px] md:text-[30px]",
+                ? "font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-normal tracking-[-0.02em]"
+                : "text-[26px] font-normal tracking-[-0.015em] sm:text-[28px] md:text-[30px]",
           )}
         >
           {hidden ? "••••••••" : value}

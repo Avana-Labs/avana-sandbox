@@ -141,7 +141,7 @@ export function InterestRateModelCard({ utilizationPct, borrowAprPct, protocolPa
   return (
     <section className={cn("min-w-0", className)} aria-label={t("Interest rate model")}>
       <div className="flex items-center gap-1.5">
-        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+        <h2 className="text-[22px] font-medium leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
           {t("Interest rate model")}
         </h2>
         <ActionMetricHelp text={helpText} topic="Interest rate model" />
@@ -252,7 +252,7 @@ export function InterestRateModelCard({ utilizationPct, borrowAprPct, protocolPa
               </span>
               {utilizationHelp ? <ActionMetricHelp text={utilizationHelp} topic="Utilization rate" /> : null}
             </div>
-            <div className="mt-2 font-data text-[28px] font-semibold leading-none tracking-[-0.03em] text-foreground md:text-[32px]">
+            <div className="mt-2 font-data text-[28px] font-normal leading-none tracking-[-0.01em] text-foreground md:text-[32px]">
               {formatPct(currentUtilization)}
             </div>
           </div>

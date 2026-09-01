@@ -63,7 +63,7 @@ function StatsGrid({ stats, columns = 3 }: { stats: QuickStatLike[]; columns?: 3
               <span className="text-[13px] font-normal leading-snug text-muted-foreground">{t(stat.label)}</span>
               {tooltip ? <ActionMetricHelp text={tooltip} topic={stat.label} /> : null}
             </div>
-            <div className="mt-1.5 font-data text-[19px] font-semibold leading-none tracking-[-0.03em] text-foreground md:text-[21px]">
+            <div className="mt-1.5 font-data text-[20px] font-normal leading-none tracking-[-0.01em] text-foreground md:text-[22px]">
               {redenominateCompactUsd(stat.value, ctx)}
             </div>
           </article>
@@ -82,7 +82,7 @@ function QuickStatsGridView({ detail, className, hideRisk = false }: Omit<Props,
       {market.length > 0 ? <StatsGrid stats={market} /> : null}
       {!hideRisk && risk.length > 0 ? (
         <section aria-label={t("Risk exposure")} className="space-y-5">
-          <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+          <h2 className="text-[22px] font-medium leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
             {t("Risk exposure")}
           </h2>
           <StatsGrid stats={risk} columns={4} />

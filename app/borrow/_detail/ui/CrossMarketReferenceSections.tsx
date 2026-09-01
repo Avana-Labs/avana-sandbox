@@ -100,7 +100,7 @@ export function AssetsYouCanBorrowSection({
   return (
     <section aria-label={t("Assets You Can Borrow")} className="space-y-5">
       <div className="flex items-center gap-1.5">
-        <h2 className="text-[22px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[24px]">
+        <h2 className="text-[22px] font-medium tracking-[-0.01em] text-foreground dark:text-white md:text-[24px]">
           {t("Assets You Can Borrow")}
         </h2>
         <ActionMetricHelp text={helpText} topic="Assets You Can Borrow" />
@@ -157,10 +157,10 @@ export function AssetsYouCanBorrowSection({
                     <div className="flex min-w-0 items-center gap-4">
                       <TokenBubble visual={asset.visual} size="table" ring={false} className="bg-transparent" />
                       <div className="min-w-0">
-                        <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                        <div className="truncate text-[15px] font-medium tracking-normal text-foreground dark:text-white">
                           {asset.name}
                         </div>
-                        <div className="mt-0.5 truncate text-[13px] font-normal tracking-[-0.03em] tabular-nums text-muted-foreground dark:text-white/38">
+                        <div className="mt-0.5 truncate text-[13px] font-normal tracking-normal tabular-nums text-muted-foreground dark:text-white/38">
                           {formatApy(asset.apy)}
                           {asset.tvlUsd !== undefined ? ` · ${compact(asset.tvlUsd)} ${t("Supply")}` : ""}
                         </div>
@@ -168,7 +168,7 @@ export function AssetsYouCanBorrowSection({
                     </div>
                   </td>
                   <td
-                    className={`py-2.5 px-4 font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+                    className={`py-2.5 px-4 font-data text-[15px] font-normal tracking-normal tabular-nums text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
                   >
                     <span className="tabular-nums">{formatApy(asset.apy)}</span>
                   </td>
