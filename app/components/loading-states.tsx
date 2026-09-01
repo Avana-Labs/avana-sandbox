@@ -4,6 +4,7 @@ import type { ReactNode } from "react"
 import { usePathname } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
 import { HOME_MODE_ITEMS } from "@/app/components/home/home-workspace-card"
@@ -240,6 +241,96 @@ export function UmbrellaPageSkeleton() {
   )
 }
 
+// -----------------------------------------------------------------------------
+// dashboard (`/dashboard`) — full-width portfolio stat cards on top, then a two
+// column body: left = tab strip + positions table, right = rewards cards +
+// activity list. Mirrors `dashboard-page-client.tsx` so the real page reveals in
+// place. Rendered BARE (no Page wrapper): the dashboard route already wraps its
+// content in `main.container > div.max-w-[1152px]`, so this must slot inside that
+// same wrapper — double-wrapping is exactly what shifted the old skeleton down.
+// -----------------------------------------------------------------------------
+
+export function DashboardPageSkeleton() {
+  return (
+    <div className={detailSectionStackClass}>
+      <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-20">
+        {/* Greeting row + portfolio stat cards (full-width, matches PortfolioStatCards). */}
+        <div className="min-w-0 pb-8 lg:col-span-2">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <Skeleton className="h-7 w-44 rounded-xs md:h-8" />
+              <Skeleton className="size-8 shrink-0 rounded-full" />
+            </div>
+            <div className="hidden gap-2 lg:flex">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <Skeleton key={`dashboard-action-${index}`} className="size-10 rounded-full" />
+              ))}
+            </div>
+          </div>
+          <ul className="flex w-full gap-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <li
+                key={`dashboard-stat-${index}`}
+                className="w-[min(320px,88%)] shrink-0 snap-start sm:w-[calc((100%-0.75rem)/2)] lg:w-[calc((100%-1.5rem)/3)]"
+              >
+                <Skeleton className="h-[176px] w-full rounded-radius-md" shimmer />
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Right sidebar: rewards cards + activity list. */}
+        <aside className="min-w-0 lg:col-start-2 lg:row-start-2 lg:pt-8">
+          <div className="space-y-3">
+            {Array.from({ length: 2 }).map((_, index) => (
+              <Surface key={`dashboard-reward-${index}`} className="p-4">
+                <Skeleton className="h-3.5 w-24 rounded-xs" />
+                <Skeleton className="mt-3 h-8 w-32 rounded-xs" />
+              </Surface>
+            ))}
+          </div>
+          <section className="mt-10 hidden border-t border-border pt-10 lg:block">
+            <Skeleton className="mb-5 h-7 w-24 rounded-xs md:h-8" />
+            <div className="space-y-3">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <Skeleton key={`dashboard-activity-${index}`} className="h-12 w-full rounded-xs" />
+              ))}
+            </div>
+          </section>
+        </aside>
+
+        {/* Left main: tab strip + positions table. */}
+        <div className="min-w-0 lg:col-start-1 lg:row-start-2 lg:pt-8">
+          <div className="mb-6 border-b border-border/90">
+            <div className="flex gap-6 pb-3 sm:gap-9 sm:pb-4">
+              {["w-16", "w-20", "w-16", "w-20"].map((width, index) => (
+                <Skeleton key={`dashboard-tab-${index}`} className={cn("h-4 rounded-xs", width)} />
+              ))}
+            </div>
+          </div>
+          <Surface className="px-4 py-2">
+            <div className="divide-y divide-border/70">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={`dashboard-row-${index}`} className="flex items-center justify-between gap-4 py-4">
+                  <div className="flex min-w-0 flex-1 items-center gap-3">
+                    <Skeleton className="size-9 shrink-0 rounded-full" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24 rounded-xs" />
+                      <Skeleton className="h-3 w-16 rounded-xs" />
+                    </div>
+                  </div>
+                  <Skeleton className="hidden h-4 w-16 rounded-xs sm:block" />
+                  <Skeleton className="h-8 w-20 rounded-radius-sm" />
+                </div>
+              ))}
+            </div>
+          </Surface>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /**
  * Route-aware content skeleton. Rendered BELOW the persistent site header (the
  * header lives above the session/auth gates now), so each product route reveals
@@ -251,14 +342,17 @@ export function RouteContentSkeleton() {
   const pathname = usePathname()
   if (pathname === "/") return <HomeWorkspaceSkeleton />
   if (pathname === "/umbrella" || pathname.startsWith("/umbrella/")) return <UmbrellaPageSkeleton />
-  if (
-    pathname === "/dashboard" ||
-    pathname.startsWith("/dashboard/") ||
-    pathname === "/rewards" ||
-    pathname.startsWith("/rewards/")
-  ) {
-    return <RewardsPageSkeleton />
+  if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
+    // Same wrapper the dashboard route uses (`main.container px-3 py-6 sm:px-4
+    // md:py-10 > div.max-w-[1152px]`) so the route-level skeleton, the client's
+    // own skeleton, and the real content all paint at the identical position.
+    return (
+      <Page mainClassName="px-3 py-6 sm:px-4 md:py-10">
+        <DashboardPageSkeleton />
+      </Page>
+    )
   }
+  if (pathname === "/rewards" || pathname.startsWith("/rewards/")) return <RewardsPageSkeleton />
   return <ProductRoutePending />
 }
 
