@@ -5,10 +5,8 @@ import { Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
 import type { AssetHeroPreloads } from "@/app/lib/borrow-detail/hero-preload"
-import { usePreloadedQuery } from "convex/react"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
-import { buildHeroFeedFromConvexSeries, getAssetHeroFeed } from "@/app/lib/chart-feeds"
-import { useConvexLiveSession } from "@/app/lib/convex/use-convex-live-session"
+import { getAssetHeroFeed } from "@/app/lib/chart-feeds"
 import { useDashboardBorrowLive } from "@/app/dashboard/use-dashboard-borrow-live"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
@@ -20,7 +18,7 @@ import {
 } from "@/app/borrow/_detail/lib/hero-chart-feeds"
 import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { currentDebtValueUsd6 } from "@/app/lib/credit-engine"
-import { buildEmptyChartFeed, buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-feed"
+import { buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-feed"
 
 type Props = {
   detail: AssetDetail
@@ -154,37 +152,10 @@ export function AssetHeroIdentity({
   )
 }
 
-/**
- * Live wrapper (mirrors PoolHeroLive): hydrates the three asset hero series from the
- * server-preloaded tokens via `usePreloadedQuery` (no client re-fetch) and subscribes for
- * updates, overriding the server-built feed props. Only mounted where a Convex provider
- * exists AND preload tokens were handed down — see the chooser below.
- */
-function AssetHeroLive({ preloads, ...props }: Props & { preloads: AssetHeroPreloads }) {
-  const { detail } = props
-  const supply = usePreloadedQuery(preloads.supply)
-  const borrow = usePreloadedQuery(preloads.borrow)
-  const utilization = usePreloadedQuery(preloads.utilization)
-  const liveDetail = React.useMemo(
-    () => ({
-      ...detail,
-      heroFeed: buildHeroFeedFromConvexSeries(supply?.points ?? [], "usdCompact") ?? buildEmptyChartFeed(),
-      heroBorrowedFeed: buildHeroFeedFromConvexSeries(borrow?.points ?? [], "usdCompact") ?? buildEmptyChartFeed(),
-      heroUtilizationFeed:
-        buildHeroFeedFromConvexSeries(utilization?.points ?? [], "percent") ?? buildEmptyChartFeed("percent"),
-    }),
-    [detail, supply, borrow, utilization],
-  )
-  return <AssetHeroView {...props} detail={liveDetail} />
-}
-
 export function AssetHero(props: Props) {
-  const live = useConvexLiveSession()
-  return live && props.heroPreloads ? (
-    <AssetHeroLive {...props} preloads={props.heroPreloads} />
-  ) : (
-    <AssetHeroView {...props} />
-  )
+  // `detail` already contains the server-preloaded Convex snapshot. Rendering it
+  // directly prevents a second client-side series from replacing visible values.
+  return <AssetHeroView {...props} />
 }
 
 function AssetHeroView({ detail, leading, actions, className, hideIdentity = false }: Props) {

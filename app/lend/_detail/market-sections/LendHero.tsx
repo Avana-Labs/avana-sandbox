@@ -4,12 +4,10 @@ import * as React from "react"
 import { Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
-import { usePreloadedQuery } from "convex/react"
 import type { LendHeroPreloads } from "@/app/lib/lend-detail/hero-preload"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { formatChartValue, type ChartFeed, type ChartRangeData, type ChartValueFormat } from "@/app/components/charts"
-import { buildHeroFeedFromConvexSeries, getLendMarketHeroFeed } from "@/app/lib/chart-feeds"
-import { useConvexLiveSession } from "@/app/lib/convex/use-convex-live-session"
+import { getLendMarketHeroFeed } from "@/app/lib/chart-feeds"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
   isPlaceholderHeroContractAddress,
@@ -18,7 +16,7 @@ import {
   resolveHeroContractLabel,
 } from "@/app/borrow/_detail/lib/hero-chart-feeds"
 import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
-import { buildEmptyChartFeed, buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-feed"
+import { buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-feed"
 
 type LendHeroProps = {
   detail: LendMarketDetail
@@ -114,33 +112,10 @@ export function LendHeroIdentity({
   )
 }
 
-/**
- * Live wrapper: hydrates the lend supply hero series from the server-preloaded token via
- * `usePreloadedQuery` (no client re-fetch) and subscribes for updates, overriding the
- * server `heroFeed` (the Supplied tab). Only the Supplied metric has a hero-series query;
- * Borrowed/Utilization stay on the server `supplyBorrow` snapshot. Only mounted where a
- * Convex provider exists AND preload tokens were handed down — see the chooser below.
- */
-function LendHeroLive({ preloads, ...props }: LendHeroProps & { preloads: LendHeroPreloads }) {
-  const { detail } = props
-  const supply = usePreloadedQuery(preloads.supply)
-  const liveDetail = React.useMemo(
-    () => ({
-      ...detail,
-      heroFeed: buildHeroFeedFromConvexSeries(supply?.points ?? [], "usdCompact") ?? buildEmptyChartFeed(),
-    }),
-    [detail, supply],
-  )
-  return <LendHeroView {...props} detail={liveDetail} />
-}
-
 export function LendHero(props: LendHeroProps) {
-  const live = useConvexLiveSession()
-  return live && props.heroPreloads ? (
-    <LendHeroLive {...props} preloads={props.heroPreloads} />
-  ) : (
-    <LendHeroView {...props} />
-  )
+  // Match the Lend index strategy: preserve the server-provided market snapshot
+  // through hydration rather than swapping in a second client-built value set.
+  return <LendHeroView {...props} />
 }
 
 function LendHeroView({ detail, leading, actions, className, hideIdentity = false }: LendHeroProps) {

@@ -4,11 +4,9 @@ import * as React from "react"
 import { Copy, Globe, MessageSquare } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import type { MultiplyMarketDetail } from "@/app/lib/multiply-detail"
-import { usePreloadedQuery } from "convex/react"
 import type { MultiplyHeroPreloads } from "@/app/lib/multiply-detail/hero-preload"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
-import { buildHeroFeedFromConvexSeries, getMultiplyMarketHeroFeed } from "@/app/lib/chart-feeds"
-import { useConvexLiveSession } from "@/app/lib/convex/use-convex-live-session"
+import { getMultiplyMarketHeroFeed } from "@/app/lib/chart-feeds"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
   buildFeedFromSeries,
@@ -20,7 +18,7 @@ import {
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
 import { useAvanaIdentity } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useDashboardMultiplyLive } from "@/app/dashboard/use-dashboard-multiply-live"
-import { buildEmptyChartFeed, buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-feed"
+import { buildWalletPositionFeed } from "@/app/lib/chart-feeds/wallet-position-feed"
 
 type MarketHeroProps = {
   detail: MultiplyMarketDetail
@@ -115,33 +113,10 @@ export function MarketHeroIdentity({
   )
 }
 
-/**
- * Live wrapper: hydrates the multiply supply hero series from the server-preloaded token
- * via `usePreloadedQuery` (no client re-fetch) and subscribes for updates, overriding the
- * server `heroFeed` (Supplied tab). Only the Supplied metric has a hero-series query;
- * Borrowed/Utilization stay on the server `supplyBorrow` snapshot. Only mounted where a
- * Convex provider exists AND preload tokens were handed down — see the chooser below.
- */
-function MarketHeroLive({ preloads, ...props }: MarketHeroProps & { preloads: MultiplyHeroPreloads }) {
-  const { detail } = props
-  const supply = usePreloadedQuery(preloads.supply)
-  const liveDetail = React.useMemo(
-    () => ({
-      ...detail,
-      heroFeed: buildHeroFeedFromConvexSeries(supply?.points ?? [], "usdCompact") ?? buildEmptyChartFeed(),
-    }),
-    [detail, supply],
-  )
-  return <MarketHeroView {...props} detail={liveDetail} />
-}
-
 export function MarketHero(props: MarketHeroProps) {
-  const live = useConvexLiveSession()
-  return live && props.heroPreloads ? (
-    <MarketHeroLive {...props} preloads={props.heroPreloads} />
-  ) : (
-    <MarketHeroView {...props} />
-  )
+  // `detail` is the already-merged server snapshot. Keeping it as the sole
+  // public metric source avoids a mock/live-looking value handoff on hydration.
+  return <MarketHeroView {...props} />
 }
 
 function MarketHeroView({ detail, leading, actions, className, hideIdentity = false }: MarketHeroProps) {

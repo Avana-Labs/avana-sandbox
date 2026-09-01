@@ -1,13 +1,10 @@
 "use client"
 
-import * as React from "react"
-import { usePreloadedQuery } from "convex/react"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { resolveBorrowDetailMetricHelp } from "@/app/lib/borrow-detail/metric-help"
 import { redenominateCompactUsd } from "@/app/lib/currency/format"
 import { useCurrency } from "@/app/lib/currency/use-currency"
-import { useConvexLiveSession } from "@/app/lib/convex/use-convex-live-session"
-import { mergeLiveQuickStats, type QuickStatsProduct } from "@/app/lib/detail-page/live-quick-stats"
+import type { QuickStatsProduct } from "@/app/lib/detail-page/live-quick-stats"
 import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
@@ -95,30 +92,8 @@ function QuickStatsGridView({ detail, className, hideRisk = false }: Omit<Props,
   )
 }
 
-/**
- * Live wrapper: hydrates getQuickStats from the server-preloaded token via
- * `usePreloadedQuery` (no client re-fetch) and subscribes for updates, re-merging the fresh
- * values over the already-merged base via the shared alias map. Only mounted where a Convex
- * provider exists AND a preload token + product were supplied — see the chooser below.
- */
-function QuickStatsGridLive({
-  preload,
-  product,
-  ...props
-}: Omit<Props, "quickStatsPreload" | "product"> & { preload: QuickStatsPreload; product: QuickStatsProduct }) {
-  const live = usePreloadedQuery(preload)
-  const detail = React.useMemo(
-    () => ({ ...props.detail, quickStats: mergeLiveQuickStats(props.detail.quickStats, live, product) }),
-    [props.detail, live, product],
-  )
-  return <QuickStatsGridView {...props} detail={detail} />
-}
-
 export function QuickStatsGrid(props: Props) {
-  const liveSession = useConvexLiveSession()
-  return liveSession && props.quickStatsPreload && props.product ? (
-    <QuickStatsGridLive {...props} preload={props.quickStatsPreload} product={props.product} />
-  ) : (
-    <QuickStatsGridView {...props} />
-  )
+  // Every detail route merges its preload into `detail` on the server. Do not
+  // replace those visible stats during client hydration.
+  return <QuickStatsGridView {...props} />
 }
