@@ -9,7 +9,7 @@ import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { GuestOnboardingFlow } from "./guest-onboarding-flow"
 import styles from "./onboarding-flow.module.css"
-import { ProductRoutePending } from "@/app/components/loading-states"
+import { HomePagePendingShell, ProductRoutePending } from "@/app/components/loading-states"
 
 const AuthedGate = lazy(async () => ({ default: (await import("./authed-sandbox-gate")).AuthedSandboxGate }))
 
@@ -106,6 +106,9 @@ export function SandboxGate({ children, authHint }: { children: ReactNode; authH
           <GuestOnboardingFlow />
         </LockedShell>
       )
+    }
+    if (pathname === "/") {
+      return <HomePagePendingShell />
     }
     return (
       <LockedShell>

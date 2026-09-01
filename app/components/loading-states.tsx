@@ -3,6 +3,7 @@
 import type { ReactNode } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import { Header } from "@/app/components/header"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
 import { HOME_MODE_ITEMS } from "@/app/components/home/home-workspace-card"
@@ -161,6 +162,16 @@ export function HomeWorkspaceSkeleton() {
           </div>
         </div>
       </section>
+    </div>
+  )
+}
+
+/** Homepage Instant Paint — header + express swap skeleton, no catalog chrome. */
+export function HomePagePendingShell() {
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <Header />
+      <HomeWorkspaceSkeleton />
     </div>
   )
 }
