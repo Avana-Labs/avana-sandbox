@@ -7,6 +7,7 @@ describe("CategoryChips scroll affordance", () => {
     const source = readFileSync(resolve(__dirname, "../category-chips.tsx"), "utf8")
     expect(source).toMatch(/flex-nowrap/)
     expect(source).toMatch(/overflow-x-auto/)
+    expect(source).toMatch(/MOBILE_EDGE_RAIL_CLASS/)
     expect(source).toMatch(/whitespace-nowrap/)
     expect(source).not.toMatch(/truncate/)
   })

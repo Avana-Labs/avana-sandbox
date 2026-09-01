@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils"
 import type { CategoryChip } from "@/app/lib/markets/category"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { MOBILE_EDGE_RAIL_CLASS } from "./horizontal-rail"
 
 /**
  * Horizontal, single-select category filter chips (BTC / ETH / Forex / Utility / Smart
@@ -26,7 +27,8 @@ export function CategoryChips({
       role="tablist"
       aria-label={t("Filter by category")}
       className={cn(
-        "flex flex-nowrap items-center gap-2.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] snap-x snap-mandatory [&::-webkit-scrollbar]:hidden",
+        "flex flex-nowrap items-center gap-2.5 overflow-x-auto pb-1 [scrollbar-width:none] snap-x snap-mandatory md:px-1 md:scroll-px-1 [&::-webkit-scrollbar]:hidden",
+        MOBILE_EDGE_RAIL_CLASS,
         className,
       )}
     >

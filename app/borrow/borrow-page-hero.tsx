@@ -8,6 +8,8 @@ import { useCurrency } from "@/app/lib/currency/use-currency"
 import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { formatBorrowPairLabel, formatLtvPct } from "@/app/lib/borrow-sim"
 import { formatApy } from "@/app/lib/format"
+import { MOBILE_EDGE_RAIL_CLASS } from "@/app/lib/ui/horizontal-rail"
+import { cn } from "@/lib/utils"
 import { HeroMarketCard } from "./borrow-hero-market-card"
 import { BorrowHeroLiveMetrics } from "./borrow-hero-live-metrics"
 
@@ -106,7 +108,10 @@ export function BorrowPageHero({ pageData }: { pageData: BorrowPageData }) {
 
         <div
           ref={scrollerRef}
-          className="overflow-x-auto scroll-smooth pb-1 [scrollbar-width:none] snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
+          className={cn(
+            "overflow-x-auto scroll-smooth pb-1 [scrollbar-width:none] snap-x snap-mandatory [&::-webkit-scrollbar]:hidden",
+            MOBILE_EDGE_RAIL_CLASS,
+          )}
         >
           <div className="flex min-w-max gap-3">
             {heroCards.map((card) => (
