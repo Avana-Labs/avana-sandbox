@@ -560,6 +560,11 @@ const dict: TranslationDictionary = {
   "Lend Rewards": "Hadiah Pinjaman",
   "Multiply Overview": "Ikhtisar Multiply",
   "Multiply Positions": "Posisi Multiply",
+  "Debt & Risk": "Utang & Risiko",
+  "Position size, multiplier, and current net yield": "Ukuran posisi, pengali, dan imbal hasil bersih saat ini",
+  "Borrowed balance, health factor, and liquidation threshold":
+    "Saldo pinjaman, faktor kesehatan, dan ambang likuidasi",
+  "No active Multiply debt": "Tidak ada utang Multiply aktif",
   "Loading your portfolio": "Memuat portofolio Anda",
   "We couldn't load your portfolio": "Kami tidak dapat memuat portofolio Anda",
   "The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard.":

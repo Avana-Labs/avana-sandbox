@@ -553,6 +553,10 @@ const dict: TranslationDictionary = {
   "Lend Rewards": "貸出リワード",
   "Multiply Overview": "ループ概要",
   "Multiply Positions": "ループポジション",
+  "Debt & Risk": "債務とリスク",
+  "Position size, multiplier, and current net yield": "ポジション規模、倍率、現在の純利回り",
+  "Borrowed balance, health factor, and liquidation threshold": "借入残高、ヘルスファクター、清算しきい値",
+  "No active Multiply debt": "有効なMultiply債務はありません",
   "Loading your portfolio": "ポートフォリオを読み込んでいます",
   "We couldn't load your portfolio": "ポートフォリオを読み込めませんでした",
   "The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard.":

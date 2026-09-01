@@ -666,6 +666,10 @@ const dict: TranslationDictionary = {
   "Lend Rewards": "借出奖励",
   "Multiply Overview": "循环概览",
   "Multiply Positions": "循环头寸",
+  "Debt & Risk": "债务与风险",
+  "Position size, multiplier, and current net yield": "头寸规模、倍数和当前净收益率",
+  "Borrowed balance, health factor, and liquidation threshold": "借款余额、健康系数和清算阈值",
+  "No active Multiply debt": "没有活跃的 Multiply 债务",
   "Loading your portfolio": "正在加载您的投资组合",
   "We couldn't load your portfolio": "无法加载您的投资组合",
   "The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard.":

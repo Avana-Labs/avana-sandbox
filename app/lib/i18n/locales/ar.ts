@@ -560,6 +560,10 @@ const dict: TranslationDictionary = {
   "Lend Rewards": "مكافآت الإقراض",
   "Multiply Overview": "نظرة عامة على المضاعفة",
   "Multiply Positions": "مراكز المضاعفة",
+  "Debt & Risk": "الديون والمخاطر",
+  "Position size, multiplier, and current net yield": "حجم المركز والمضاعف وصافي العائد الحالي",
+  "Borrowed balance, health factor, and liquidation threshold": "الرصيد المقترض وعامل الصحة وحد التصفية",
+  "No active Multiply debt": "لا توجد ديون Multiply نشطة",
   "Loading your portfolio": "جارٍ تحميل محفظتك",
   "We couldn't load your portfolio": "تعذّر علينا تحميل محفظتك",
   "The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard.":

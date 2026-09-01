@@ -551,6 +551,10 @@ const dict: TranslationDictionary = {
   "Lend Rewards": "대출 리워드",
   "Multiply Overview": "루핑 개요",
   "Multiply Positions": "루핑 포지션",
+  "Debt & Risk": "부채 및 위험",
+  "Position size, multiplier, and current net yield": "포지션 규모, 배수 및 현재 순수익률",
+  "Borrowed balance, health factor, and liquidation threshold": "차입 잔액, 건전성 지수 및 청산 기준",
+  "No active Multiply debt": "활성 Multiply 부채가 없습니다",
   "Loading your portfolio": "포트폴리오 불러오는 중",
   "We couldn't load your portfolio": "포트폴리오를 불러올 수 없습니다",
   "The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard.":

@@ -558,6 +558,10 @@ const dict: TranslationDictionary = {
   "Lend Rewards": "Uitleenbeloningen",
   "Multiply Overview": "Multiply-overzicht",
   "Multiply Positions": "Multiply-posities",
+  "Debt & Risk": "Schuld en risico",
+  "Position size, multiplier, and current net yield": "Positiegrootte, multiplier en huidig nettorendement",
+  "Borrowed balance, health factor, and liquidation threshold": "Geleend saldo, gezondheidsfactor en liquidatiedrempel",
+  "No active Multiply debt": "Geen actieve Multiply-schuld",
   "Loading your portfolio": "Je portfolio laden",
   "We couldn't load your portfolio": "We konden je portfolio niet laden",
   "The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard.":

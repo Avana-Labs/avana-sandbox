@@ -685,6 +685,11 @@ const dict: TranslationDictionary = {
   "Lend Rewards": "Recompensas de préstamo",
   "Multiply Overview": "Resumen de Multiply",
   "Multiply Positions": "Posiciones de Multiply",
+  "Debt & Risk": "Deuda y riesgo",
+  "Position size, multiplier, and current net yield": "Tamaño de la posición, multiplicador y rendimiento neto actual",
+  "Borrowed balance, health factor, and liquidation threshold":
+    "Saldo prestado, factor de salud y umbral de liquidación",
+  "No active Multiply debt": "No hay deuda de Multiply activa",
   "Loading your portfolio": "Cargando tu portafolio",
   "We couldn't load your portfolio": "No pudimos cargar tu portafolio",
   "The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard.":
