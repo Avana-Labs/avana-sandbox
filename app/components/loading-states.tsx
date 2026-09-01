@@ -356,144 +356,280 @@ function ProductMetricStripSkeleton() {
   )
 }
 
-function DiscoveryCardSkeleton({ paired = false }: { paired?: boolean }) {
-  return (
-    <Surface className="h-[104px] w-[min(372px,calc(100vw-2rem))] shrink-0 p-5">
-      <div className="flex h-full items-center gap-3">
-        <div className={cn("relative shrink-0", paired ? "h-16 w-24" : "size-16")}>
-          <Skeleton className="absolute left-0 top-0 size-16 rounded-full" />
-          {paired ? <Skeleton className="absolute left-8 top-0 size-16 rounded-full" /> : null}
-        </div>
-        <div className="min-w-0 flex-1 space-y-2">
-          <Skeleton className="h-4 w-28 rounded-xs" />
-          <Skeleton className="h-3 w-20 rounded-xs" />
-        </div>
-        <div className="space-y-2">
-          <Skeleton className="ml-auto h-4 w-14 rounded-xs" />
-          <Skeleton className="ml-auto h-3 w-12 rounded-xs" />
-        </div>
-      </div>
-    </Surface>
-  )
-}
-
-function ProductTableSkeleton({ paired = false }: { paired?: boolean }) {
-  return (
-    <div className="mt-8 space-y-5">
-      <div className="flex items-end justify-between gap-4">
-        <div className="space-y-2">
-          <Skeleton className="h-7 w-44 rounded-xs" />
-          <Skeleton className="h-3 w-64 max-w-[55vw] rounded-xs" />
-        </div>
-        <Skeleton className="h-10 w-40 rounded-full" />
-      </div>
-      <Surface className="overflow-hidden">
-        <div className="hidden grid-cols-[minmax(220px,1fr)_repeat(3,minmax(92px,0.45fr))_180px] gap-4 border-b border-border px-4 py-3 md:grid">
-          {Array.from({ length: 5 }).map((_, index) => (
-            <Skeleton key={`table-heading-${index}`} className="h-3 w-16 rounded-xs" />
-          ))}
-        </div>
-        <div className="divide-y divide-border/70 px-4">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <div key={`market-row-${index}`} className="flex min-h-[72px] items-center gap-4 py-3">
-              <div className="flex min-w-0 flex-1 items-center gap-3">
-                <div className={cn("relative shrink-0", paired ? "h-10 w-14" : "size-10")}>
-                  <Skeleton className="absolute left-0 top-0 size-10 rounded-full" />
-                  {paired ? <Skeleton className="absolute left-4 top-0 size-10 rounded-full" /> : null}
-                </div>
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-28 rounded-xs" />
-                  <Skeleton className="h-3 w-20 rounded-xs" />
-                </div>
-              </div>
-              {Array.from({ length: 3 }).map((__, metricIndex) => (
-                <Skeleton key={`market-row-${index}-metric-${metricIndex}`} className="hidden h-4 w-16 rounded-xs md:block" />
-              ))}
-              <div className="flex gap-2">
-                <Skeleton className="h-9 w-20 rounded-radius-sm" />
-                <Skeleton className="hidden h-9 w-20 rounded-radius-sm lg:block" />
-              </div>
-            </div>
-          ))}
-        </div>
-      </Surface>
-    </div>
-  )
-}
-
-function ProductIndexSkeleton({
-  testId,
-  pairedCards,
-  borrowCards = false,
-}: {
-  testId: string
-  pairedCards?: boolean
-  borrowCards?: boolean
-}) {
+export function BorrowPageSkeleton() {
   return (
     <Page mainClassName="px-4 py-8">
-      <div data-testid={testId}>
+      <div data-testid="borrow-page-skeleton">
         <ProductMetricStripSkeleton />
-        <div className="mt-3 space-y-3">
+
+        <div className="mb-4 mt-[37px] space-y-3">
           <div className="flex items-center justify-between gap-3">
             <Skeleton className="h-7 w-24 rounded-xs" />
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="hidden h-9 w-28 rounded-full md:block" />
               <Skeleton className="size-9 rounded-full" />
               <Skeleton className="size-9 rounded-full" />
             </div>
           </div>
-          <div className="flex gap-3 overflow-hidden">
-            {Array.from({ length: 3 }).map((_, index) =>
-              borrowCards ? (
-                <Surface key={`borrow-discovery-${index}`} className="h-[154px] w-[min(372px,calc(100vw-2rem))] shrink-0 p-4">
-                  <div className="space-y-3">
-                    {Array.from({ length: 2 }).map((__, rowIndex) => (
-                      <div key={`borrow-discovery-${index}-${rowIndex}`} className="flex items-center gap-3">
-                        <div className="relative h-10 w-14 shrink-0">
-                          <Skeleton className="absolute left-0 top-0 size-10 rounded-full" />
-                          <Skeleton className="absolute left-4 top-0 size-10 rounded-full" />
-                        </div>
-                        <div className="flex-1 space-y-2">
-                          <Skeleton className="h-4 w-24 rounded-xs" />
-                          <Skeleton className="h-3 w-32 rounded-xs" />
-                        </div>
-                        <Skeleton className="h-4 w-14 rounded-xs" />
+          <div className="flex gap-3 overflow-hidden" data-testid="borrow-skeleton-carousel">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Surface key={`borrow-discovery-${index}`} className="h-[157px] w-80 shrink-0 p-4">
+                <div className="space-y-3.5">
+                  {Array.from({ length: 2 }).map((__, rowIndex) => (
+                    <div key={`borrow-discovery-${index}-${rowIndex}`} className="flex items-center gap-3 px-1 py-1">
+                      <div className="relative h-10 w-[52px] shrink-0">
+                        <Skeleton className="absolute left-0 top-0 size-10 rounded-full" />
+                        <Skeleton className="absolute left-3 top-0 size-10 rounded-full" />
                       </div>
-                    ))}
-                  </div>
-                </Surface>
-              ) : (
-                <DiscoveryCardSkeleton key={`discovery-${index}`} paired={pairedCards} />
-              ),
-            )}
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <Skeleton className="h-4 w-24 rounded-xs" />
+                        <Skeleton className="h-3 w-28 rounded-xs" />
+                      </div>
+                      <div className="space-y-2">
+                        <Skeleton className="ml-auto h-4 w-14 rounded-xs" />
+                        <Skeleton className="ml-auto h-3 w-12 rounded-xs" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Surface>
+            ))}
           </div>
         </div>
-        {borrowCards ? (
-          <div className="mt-8 flex items-center justify-between border-b border-border pb-3">
-            <div className="flex gap-6">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <Skeleton key={`borrow-tab-${index}`} className="h-4 w-16 rounded-xs" />
-              ))}
-            </div>
-            <Skeleton className="h-10 w-44 rounded-full" />
+
+        <div aria-hidden className="h-[5px]" />
+        <div className="flex items-center justify-between gap-4 py-[29px]" data-testid="borrow-skeleton-filters">
+          <div className="flex min-w-0 gap-2 overflow-hidden">
+            {["w-14", "w-24", "w-24", "w-24", "w-24", "w-24"].map((width, index) => (
+              <Skeleton key={`borrow-filter-${index}`} className={cn("h-10 shrink-0 rounded-full", width)} />
+            ))}
           </div>
-        ) : null}
-        <ProductTableSkeleton paired={pairedCards || borrowCards} />
+          <Skeleton className="h-10 w-[274px] shrink-0 rounded-full" />
+        </div>
+
+        <div className="pb-6 pt-3">
+          <section className="mb-2">
+            <div className="mt-4">
+              <div
+                className="flex items-center justify-between gap-3 py-[18px]"
+                data-testid="borrow-skeleton-spoke-header"
+              >
+                <div className="flex gap-8">
+                  <Skeleton className="h-5 w-20 rounded-xs" />
+                  <Skeleton className="h-5 w-24 rounded-xs" />
+                </div>
+                <Skeleton className="h-7 w-40 rounded-xs" />
+              </div>
+              <div className="overflow-hidden bg-table-row" data-testid="borrow-skeleton-table">
+                <div className="grid grid-cols-[46px_minmax(220px,1fr)_90px_150px_90px_100px_110px_190px] items-center gap-0 px-4 py-3">
+                  {Array.from({ length: 8 }).map((_, index) => (
+                    <Skeleton key={`borrow-heading-${index}`} className="h-3 w-14 rounded-xs" />
+                  ))}
+                </div>
+                <div className="divide-y divide-border/70">
+                  {Array.from({ length: 5 }).map((_, index) => (
+                    <div key={`borrow-market-${index}`} className="flex min-h-[72px] items-center gap-4 px-4 py-3">
+                      <Skeleton className="h-4 w-5 rounded-xs" />
+                      <div className="flex min-w-[220px] flex-1 items-center gap-4">
+                        <div className="relative h-10 w-[52px] shrink-0">
+                          <Skeleton className="absolute left-0 top-0 size-10 rounded-full" />
+                          <Skeleton className="absolute left-3 top-0 size-10 rounded-full" />
+                        </div>
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-28 rounded-xs" />
+                          <Skeleton className="h-3 w-24 rounded-xs" />
+                        </div>
+                      </div>
+                      {Array.from({ length: 5 }).map((__, metricIndex) => (
+                        <Skeleton key={`borrow-market-${index}-${metricIndex}`} className="h-4 w-16 rounded-xs" />
+                      ))}
+                      <div className="flex gap-2">
+                        <Skeleton className="h-9 w-20 rounded-radius-sm" />
+                        <Skeleton className="h-9 w-20 rounded-radius-sm" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
       </div>
     </Page>
   )
 }
 
-export function BorrowPageSkeleton() {
-  return <ProductIndexSkeleton testId="borrow-page-skeleton" borrowCards />
-}
-
 export function LendPageSkeleton() {
-  return <ProductIndexSkeleton testId="lend-page-skeleton" />
+  return (
+    <Page mainClassName="px-4 py-8">
+      <div data-testid="lend-page-skeleton">
+        <ProductMetricStripSkeleton />
+
+        <section className="mt-[41px]">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <Skeleton className="h-7 w-24 rounded-xs" />
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="hidden h-9 w-28 rounded-full md:block" />
+              <Skeleton className="size-9 rounded-full" />
+              <Skeleton className="size-9 rounded-full" />
+            </div>
+          </div>
+          <div className="-mx-4 flex h-44 gap-3 overflow-hidden pl-4 sm:-mx-6 sm:pl-6" data-testid="lend-skeleton-carousel">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Surface key={`lend-featured-${index}`} className="relative h-44 w-[372px] shrink-0 overflow-hidden p-6">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <Skeleton className="size-16 rounded-full" />
+                    <div className="space-y-2 pt-1">
+                      <Skeleton className="h-4 w-28 rounded-xs" />
+                      <Skeleton className="h-3 w-20 rounded-xs" />
+                    </div>
+                  </div>
+                  <div className="space-y-2 pt-1">
+                    <Skeleton className="ml-auto h-4 w-14 rounded-xs" />
+                    <Skeleton className="ml-auto h-3 w-9 rounded-xs" />
+                  </div>
+                </div>
+                <Skeleton className="absolute bottom-5 left-4 right-4 h-[58px] rounded-xs" />
+              </Surface>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-[38px] space-y-[58px]">
+          <MarketFiltersSkeleton testId="lend-skeleton-filters" searchWidth="w-[280px]" />
+          <MarketGroupSkeleton testId="lend-skeleton" paired={false} columns={7} rowCount={7} />
+        </section>
+      </div>
+    </Page>
+  )
 }
 
 export function MultiplyPageSkeleton() {
-  return <ProductIndexSkeleton testId="multiply-page-skeleton" pairedCards />
+  return (
+    <Page mainClassName="px-4 py-8">
+      <div data-testid="multiply-page-skeleton">
+        <ProductMetricStripSkeleton />
+
+        <section className="mt-[41px]">
+          <div className="flex items-center justify-between gap-3">
+            <Skeleton className="h-7 w-24 rounded-xs" />
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="hidden h-9 w-28 rounded-full md:block" />
+              <Skeleton className="size-9 rounded-full" />
+              <Skeleton className="size-9 rounded-full" />
+            </div>
+          </div>
+          <div
+            className="-mx-4 mt-5 flex h-[104px] gap-3 overflow-hidden pl-4 sm:-mx-6 sm:pl-6"
+            data-testid="multiply-skeleton-carousel"
+          >
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Surface key={`multiply-trending-${index}`} className="h-[104px] w-[372px] shrink-0 p-5">
+                <div className="flex h-full items-center gap-3">
+                  <div className="relative h-16 w-24 shrink-0">
+                    <Skeleton className="absolute left-0 top-0 size-16 rounded-full" />
+                    <Skeleton className="absolute left-8 top-0 size-16 rounded-full" />
+                  </div>
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <Skeleton className="h-4 w-28 rounded-xs" />
+                    <Skeleton className="h-3 w-20 rounded-xs" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="ml-auto h-4 w-14 rounded-xs" />
+                    <Skeleton className="ml-auto h-3 w-16 rounded-xs" />
+                  </div>
+                </div>
+              </Surface>
+            ))}
+          </div>
+
+          <div className="mt-11">
+            <MarketFiltersSkeleton testId="multiply-skeleton-filters" searchWidth="w-[280px]" padded={false} />
+          </div>
+
+          <div className="mt-[68px]">
+            <MarketGroupSkeleton testId="multiply-skeleton" paired columns={8} rowCount={4} />
+          </div>
+        </section>
+      </div>
+    </Page>
+  )
+}
+
+function MarketFiltersSkeleton({
+  testId,
+  searchWidth,
+  padded = true,
+}: {
+  testId: string
+  searchWidth: string
+  padded?: boolean
+}) {
+  return (
+    <div
+      className={cn("flex items-center justify-between gap-4", padded && "py-2.5")}
+      data-testid={testId}
+    >
+      <div className="flex min-w-0 gap-2 overflow-hidden">
+        {["w-14", "w-24", "w-24", "w-24", "w-24", "w-24"].map((width, index) => (
+          <Skeleton key={`${testId}-${index}`} className={cn("h-10 shrink-0 rounded-full", width)} />
+        ))}
+      </div>
+      <Skeleton className={cn("h-10 shrink-0 rounded-full", searchWidth)} />
+    </div>
+  )
+}
+
+function MarketGroupSkeleton({
+  testId,
+  paired,
+  columns,
+  rowCount,
+}: {
+  testId: string
+  paired: boolean
+  columns: number
+  rowCount: number
+}) {
+  return (
+    <section className="space-y-5">
+      <div className="flex min-h-[55px] items-center" data-testid={`${testId}-group-header`}>
+        <Skeleton className="h-7 w-36 rounded-xs" />
+      </div>
+      <div className="overflow-hidden bg-table-row" data-testid={`${testId}-table`}>
+        <div className="flex items-center justify-between px-6 py-3">
+          {Array.from({ length: columns }).map((_, index) => (
+            <Skeleton key={`${testId}-heading-${index}`} className="h-3 w-16 rounded-xs" />
+          ))}
+        </div>
+        <div className="divide-y divide-border/70">
+          {Array.from({ length: rowCount }).map((_, index) => (
+            <div key={`${testId}-row-${index}`} className="flex min-h-[72px] items-center gap-4 px-6 py-3">
+              <Skeleton className="h-4 w-5 rounded-xs" />
+              <div className="flex min-w-[190px] flex-1 items-center gap-3">
+                <div className={cn("relative shrink-0", paired ? "h-10 w-[52px]" : "size-10")}>
+                  <Skeleton className="absolute left-0 top-0 size-10 rounded-full" />
+                  {paired ? <Skeleton className="absolute left-3 top-0 size-10 rounded-full" /> : null}
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-24 rounded-xs" />
+                  <Skeleton className="h-3 w-20 rounded-xs" />
+                </div>
+              </div>
+              {Array.from({ length: paired ? 5 : 4 }).map((__, metricIndex) => (
+                <Skeleton key={`${testId}-row-${index}-${metricIndex}`} className="h-4 w-16 rounded-xs" />
+              ))}
+              <div className="flex gap-2">
+                <Skeleton className="h-9 w-20 rounded-radius-sm" />
+                <Skeleton className="h-9 w-20 rounded-radius-sm" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
 }
 
 // -----------------------------------------------------------------------------
