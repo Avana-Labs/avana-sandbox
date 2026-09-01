@@ -290,7 +290,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
                   className="flex items-end justify-between gap-5 py-3"
                 >
                   <span
-                    className={`text-[clamp(1.5rem,6.1vw,2.1rem)] font-[560] leading-[1.02] tracking-[-0.04em] ${
+                    className={`text-[clamp(1.5rem,6.1vw,2.1rem)] font-normal leading-[1.04] tracking-[-0.04em] ${
                       isActive ? "text-foreground" : "text-foreground"
                     }`}
                   >
