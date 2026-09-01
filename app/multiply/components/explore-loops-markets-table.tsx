@@ -92,7 +92,13 @@ function buildLoopSearchText(row: MultiplyPageData["lendRows"][number]): string 
     .toLowerCase()
 }
 
-import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
+import {
+  TABLE_BODY_ROW,
+  TABLE_HEADER_ROW,
+  TABLE_ROW_HOVER_BG,
+  TABLE_ROW_HOVER_LEFT,
+  TABLE_ROW_HOVER_RIGHT,
+} from "@/app/lib/ui/table-row-hover"
 
 type MultiplyCategoryTabId = CategoryChip["id"]
 
@@ -404,7 +410,7 @@ function LoopMarketsSection({
                   <col className="w-[22%]" />
                 </colgroup>
                 <thead>
-                  <tr className="bg-table-header text-left text-muted-foreground">
+                  <tr className={TABLE_HEADER_ROW}>
                     <th className="bg-table-header pb-2 pl-6 pr-3 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       #
                     </th>
@@ -548,12 +554,12 @@ const LoopTableRow = React.memo(function LoopTableRow({
 
   return (
     <tr
-      className="group asset-swap cursor-pointer transition-colors"
+      className={`${TABLE_BODY_ROW} group asset-swap cursor-pointer transition-colors`}
       onClick={() => router.push(row.href)}
       style={{ animationDelay: `${index * 40}ms` }}
     >
       <td
-        className={`py-3 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
+        className={`py-3 pl-6 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
       >
         {index + 1}
       </td>

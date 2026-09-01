@@ -33,7 +33,13 @@ import { cn } from "@/lib/utils"
 import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import { Button } from "@/components/ui/button"
 
-import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
+import {
+  TABLE_BODY_ROW,
+  TABLE_HEADER_ROW,
+  TABLE_ROW_HOVER_BG,
+  TABLE_ROW_HOVER_LEFT,
+  TABLE_ROW_HOVER_RIGHT,
+} from "@/app/lib/ui/table-row-hover"
 
 type BorrowableAssetsTableProps = {
   rows: BorrowableAsset[]
@@ -219,7 +225,10 @@ const LoanAssetsRow = memo(function LoanAssetsRow({
   const { compact } = useCurrency()
   const { t } = useTranslation()
   return (
-    <tr className="group cursor-pointer transition-colors" onClick={() => router.push(borrowAssetDetailPath(asset.id))}>
+    <tr
+      className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`}
+      onClick={() => router.push(borrowAssetDetailPath(asset.id))}
+    >
       <td
         className={`py-2.5 pl-6 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
       >
@@ -351,7 +360,7 @@ function LoanAssetsSection({
     <div className="overflow-x-auto">
       <table className="w-full min-w-[980px] text-[12px]">
         <thead>
-          <tr className="bg-table-header text-left text-muted-foreground">
+          <tr className={TABLE_HEADER_ROW}>
             <th className="pb-2 pt-2.5 pl-6 pr-3 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               #
             </th>
@@ -454,7 +463,10 @@ const AssetsRow = memo(function AssetsRow({
   const { compact } = useCurrency()
   const { t } = useTranslation()
   return (
-    <tr className="group cursor-pointer transition-colors" onClick={() => router.push(borrowAssetDetailPath(asset.id))}>
+    <tr
+      className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`}
+      onClick={() => router.push(borrowAssetDetailPath(asset.id))}
+    >
       <td
         className={`py-2.5 pl-5 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
       >
@@ -569,7 +581,7 @@ function AssetsSection({
         <div className="overflow-x-auto">
           <table className="w-full min-w-[980px] text-[13px]">
             <thead>
-              <tr className="bg-table-header text-left text-muted-foreground">
+              <tr className={TABLE_HEADER_ROW}>
                 <th className="pb-2 pt-2.5 pl-5 pr-3 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                   #
                 </th>

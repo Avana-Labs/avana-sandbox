@@ -37,7 +37,13 @@ import { formatPairRate } from "@/app/lib/borrow-detail/formatters"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
+import {
+  TABLE_BODY_ROW,
+  TABLE_HEADER_ROW,
+  TABLE_ROW_HOVER_BG,
+  TABLE_ROW_HOVER_LEFT,
+  TABLE_ROW_HOVER_RIGHT,
+} from "@/app/lib/ui/table-row-hover"
 
 function EventTagList({ events }: { events?: BorrowPoolEvent[] }) {
   if (!events || events.length === 0) return null
@@ -193,7 +199,7 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
   const { compact } = useCurrency()
   const { t } = useTranslation()
   return (
-    <tr className="group cursor-pointer transition-colors" onClick={() => onViewMarket(pool)}>
+    <tr className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`} onClick={() => onViewMarket(pool)}>
       <td
         className={`py-2.5 pl-6 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
       >
@@ -328,7 +334,7 @@ function CollateralDesktopTable({
     <div className="overflow-x-auto">
       <table className="w-full min-w-[1120px] text-[12px]">
         <thead>
-          <tr className="bg-table-header text-left text-muted-foreground">
+          <tr className={TABLE_HEADER_ROW}>
             <th className="pb-2 pt-2.5 pl-6 pr-3 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               #
             </th>

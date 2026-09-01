@@ -22,7 +22,13 @@ import { TokenIcon } from "@/app/components/token-icon"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
 import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { cn } from "@/lib/utils"
-import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
+import {
+  TABLE_BODY_ROW,
+  TABLE_HEADER_ROW,
+  TABLE_ROW_HOVER_BG,
+  TABLE_ROW_HOVER_LEFT,
+  TABLE_ROW_HOVER_RIGHT,
+} from "@/app/lib/ui/table-row-hover"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { formatTokenPrice } from "@/app/lib/prices/format"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -134,7 +140,7 @@ function AssetRowView({
   const detailReturn = detailHref
   return (
     <tr
-      className="asset-swap group cursor-pointer transition-colors"
+      className={`${TABLE_BODY_ROW} asset-swap group cursor-pointer transition-colors`}
       style={{ animationDelay: `${delay}ms` }}
       onClick={() => router.push(detailHref)}
     >
@@ -460,7 +466,7 @@ function AssetSection({
                   <col className="w-[24%]" />
                 </colgroup>
                 <thead>
-                  <tr className="bg-table-header text-left text-muted-foreground">
+                  <tr className={TABLE_HEADER_ROW}>
                     <th className="bg-table-header pb-2 pl-6 pr-3 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       #
                     </th>
