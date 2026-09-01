@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
 import { ArrowUpRight, BadgeDollarSign, Layers3, Search, Sparkles } from "@/app/components/icons"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { SearchTrigger } from "./search-trigger"
@@ -39,6 +38,65 @@ const TABS: Array<{ id: SearchTab; label: string }> = [
   { id: "borrow", label: "Borrow" },
   { id: "lend", label: "Lend" },
 ]
+
+const searchIconPreloads = new Map<string, Promise<void>>()
+
+function preloadSearchIcon(src: string) {
+  const existing = searchIconPreloads.get(src)
+  if (existing) return existing
+
+  const preload = new Promise<void>((resolve) => {
+    const image = new window.Image()
+    let settled = false
+    const finish = () => {
+      if (settled) return
+      settled = true
+      resolve()
+    }
+    image.onerror = finish
+    image.onload = () => {
+      if (typeof image.decode === "function") {
+        void image.decode().catch(() => undefined).finally(finish)
+      } else {
+        finish()
+      }
+    }
+    image.src = src
+    if (image.complete) image.onload?.(new Event("load"))
+  })
+
+  searchIconPreloads.set(src, preload)
+  return preload
+}
+
+async function preloadSearchResultIcons(results: SearchResult[]) {
+  if (typeof window === "undefined") return
+  const urls = new Set<string>()
+  for (const result of results) {
+    const visuals = Array.isArray(result.visual) ? result.visual : [result.visual]
+    for (const visual of visuals) {
+      if (visual.iconUrl) urls.add(visual.iconUrl)
+    }
+  }
+  await Promise.all(Array.from(urls, preloadSearchIcon))
+}
+
+function SearchResultImage({ src }: { src: string }) {
+  return (
+    // These small local icons are decoded before result rows are published.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt=""
+      width={TOKEN_ICON_TABLE_PX}
+      height={TOKEN_ICON_TABLE_PX}
+      loading="eager"
+      decoding="sync"
+      fetchPriority="high"
+      className="size-full object-contain"
+    />
+  )
+}
 
 async function getSearchResults(
   formatCompactCurrency: (usd: number) => string,
@@ -112,15 +170,7 @@ function TokenAvatar({ visual }: { visual: BorrowAssetVisual }) {
       )}
     >
       {visual.iconUrl ? (
-        <Image
-          src={visual.iconUrl}
-          alt=""
-          width={TOKEN_ICON_TABLE_PX}
-          height={TOKEN_ICON_TABLE_PX}
-          className="size-full object-contain"
-          loading="eager"
-          unoptimized
-        />
+        <SearchResultImage src={visual.iconUrl} />
       ) : (
         visual.shortLabel
       )}
@@ -140,15 +190,7 @@ function PoolAvatar({ visuals }: { visuals: [BorrowAssetVisual, BorrowAssetVisua
         )}
       >
         {visuals[0].iconUrl ? (
-          <Image
-            src={visuals[0].iconUrl}
-            alt=""
-            width={TOKEN_ICON_TABLE_PX}
-            height={TOKEN_ICON_TABLE_PX}
-            className="size-full object-contain"
-            loading="eager"
-            unoptimized
-          />
+          <SearchResultImage src={visuals[0].iconUrl} />
         ) : (
           <span className="text-[9px] font-medium">{visuals[0].shortLabel}</span>
         )}
@@ -162,15 +204,7 @@ function PoolAvatar({ visuals }: { visuals: [BorrowAssetVisual, BorrowAssetVisua
         )}
       >
         {visuals[1].iconUrl ? (
-          <Image
-            src={visuals[1].iconUrl}
-            alt=""
-            width={TOKEN_ICON_TABLE_PX}
-            height={TOKEN_ICON_TABLE_PX}
-            className="size-full object-contain"
-            loading="eager"
-            unoptimized
-          />
+          <SearchResultImage src={visuals[1].iconUrl} />
         ) : (
           <span className="text-[9px] font-medium">{visuals[1].shortLabel}</span>
         )}
@@ -263,7 +297,9 @@ export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: b
         if (hydratedPools.length === 0) hydratedPools = BORROW_POOL_CATALOG
         if (hydratedAssets.length === 0) hydratedAssets = BORROWABLE_ASSETS
       }
-      setResults(await getSearchResults(compact, t, hydratedPools, hydratedAssets))
+      const nextResults = await getSearchResults(compact, t, hydratedPools, hydratedAssets)
+      await preloadSearchResultIcons(nextResults)
+      setResults(nextResults)
     } finally {
       setLoadingResults(false)
     }
@@ -272,6 +308,12 @@ export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: b
   useEffect(() => {
     setResults(null)
   }, [compact])
+
+  // Start result and icon preparation while the header is idle. Opening search
+  // immediately still uses the loading state until the same promise completes.
+  useEffect(() => {
+    void loadResults()
+  }, [loadResults])
 
   useEffect(() => {
     return registerSlashShortcut(() => {
