@@ -22,6 +22,7 @@ import {
   toFriendlyAskAIError,
 } from "./components/ask-ai-thread"
 import { AskAIThreadList } from "./components/ask-ai-thread-list"
+import { AskAILoadingBody } from "./components/ask-ai-skeleton"
 import type { AskAIFinancialResult } from "./components/ask-ai-financial-result-card"
 import { AskAIMessagePartsSubscriber, type AskAIMessagePartsRow } from "./message-parts-subscriber"
 
@@ -386,8 +387,10 @@ function persistedAssistantParts(messageId: string, text: string, rich?: Persist
 
 export function AskAIPageClient({
   onActiveTitleChange,
+  onReadyChange,
 }: {
   onActiveTitleChange?: (title: string | null) => void
+  onReadyChange?: (ready: boolean) => void
 } = {}) {
   // This component mounts only after hydration, so initialize the desktop
   // sidebar from the real viewport immediately. Starting at false and opening it
@@ -423,11 +426,8 @@ export function AskAIPageClient({
     loadMore: loadMoreArchivedThreads,
   } = usePaginatedQuery(api.askAI.listPage, { status: "archived" }, { initialNumItems: 20 })
   const resolvedActiveThreadId = threads.some((thread) => thread.threadId === activeThreadId) ? activeThreadId : null
-  // Surface the active thread's subject to the app-shell header ("Ask AI" when blank/new).
+  // Surface the active thread's subject only when the whole initial view is ready.
   const activeThreadTitle = threads.find((thread) => thread.threadId === resolvedActiveThreadId)?.title ?? null
-  useEffect(() => {
-    onActiveTitleChange?.(activeThreadTitle && activeThreadTitle !== "New Chat" ? activeThreadTitle : null)
-  }, [activeThreadTitle, onActiveTitleChange])
   const quota = useQuery(api.askAI.quota, {})
   const siwe = useLiveSiweToken()
   const walletProfile = useQuery(api.wallet.profiles.getMine, siwe?.wallet ? {} : "skip") as
@@ -453,6 +453,25 @@ export function AskAIPageClient({
     api.askAI.turnQueue,
     resolvedActiveThreadId ? { threadId: resolvedActiveThreadId } : "skip",
   )
+  const threadListsReady = threadPageStatus !== "LoadingFirstPage" && archivedPageStatus !== "LoadingFirstPage"
+  const selectionReady = draftThread || threads.length === 0 || Boolean(resolvedActiveThreadId)
+  const selectedThreadReady =
+    !resolvedActiveThreadId || (messagePageStatus !== "LoadingFirstPage" && turnQueue !== undefined)
+  const profileReady = !siwe?.wallet || walletProfile !== undefined
+  const initialDataReady =
+    threadListsReady && selectionReady && selectedThreadReady && quota !== undefined && profileReady
+  const [hasInitialized, setHasInitialized] = useState(false)
+  const contentReady = hasInitialized || initialDataReady
+
+  useEffect(() => {
+    if (initialDataReady) setHasInitialized(true)
+  }, [initialDataReady])
+
+  useEffect(() => {
+    if (!contentReady) return
+    onActiveTitleChange?.(activeThreadTitle && activeThreadTitle !== "New Chat" ? activeThreadTitle : null)
+    onReadyChange?.(true)
+  }, [activeThreadTitle, contentReady, onActiveTitleChange, onReadyChange])
   // Rich assistant parts (cards/sources) come from a separate, non-streamed query
   // (so they aren't re-fetched per streamed token) via a fail-soft subscriber that
   // can't blank the chat if that query errors. Merged into the messages by id.
@@ -711,6 +730,8 @@ export function AskAIPageClient({
     queue: queueAdapter,
     suggestions: ASK_AI_SUGGESTIONS.map((suggestion) => ({ prompt: suggestion.prompt })),
   })
+
+  if (!contentReady) return <AskAILoadingBody emptyThread={threadListsReady && threads.length === 0} />
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
