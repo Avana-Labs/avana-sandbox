@@ -6,6 +6,7 @@ import { ArrowUpRight } from "@/app/components/icons"
 import type { AboutCard as AboutCardData } from "@/app/lib/borrow-detail"
 import { ABOUT_CONTRACT_ADDRESS_HELP } from "@/app/lib/detail-page/about-contract-addresses"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { SectionCardCopy } from "../ui"
 
 type Props = { about: AboutCardData; title?: string; compact?: boolean; plain?: boolean }
 
@@ -80,13 +81,7 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
         </h2>
       </div>
 
-      <p
-        className={
-          plain
-            ? "text-[15px] leading-[1.6] text-muted-foreground md:text-[16px]"
-            : "px-4 text-[15px] leading-[1.6] text-muted-foreground md:text-[16px]"
-        }
-      >
+      <SectionCardCopy className={plain ? undefined : "px-4"}>
         {shownDescription}
         {isLong ? (
           <button
@@ -97,7 +92,7 @@ export function AboutCard({ about, title = "About", compact = false, plain = fal
             {expanded ? t("show less") : t("read more")}
           </button>
         ) : null}
-      </p>
+      </SectionCardCopy>
 
       {visibleStats.length > 0 ? (
         <dl className={plain ? "text-[14px]" : "px-4 pb-2 text-[14px]"}>

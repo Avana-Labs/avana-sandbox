@@ -17,6 +17,32 @@ type SectionCardProps = {
   id?: string
 }
 
+export function SectionCardPrimaryMetric({ className, ...props }: React.ComponentPropsWithoutRef<"span">) {
+  return (
+    <span
+      className={cn(
+        "font-data text-[26px] font-medium leading-none tabular-nums text-foreground md:text-[30px]",
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+
+export function SectionCardSupportingLabel({ className, ...props }: React.ComponentPropsWithoutRef<"span">) {
+  return <span className={cn("text-[12px] font-normal leading-4 text-muted-foreground", className)} {...props} />
+}
+
+export function SectionCardCopy({ className, ...props }: React.ComponentPropsWithoutRef<"p">) {
+  return <p className={cn("text-[15px] leading-[1.6] text-muted-foreground md:text-[16px]", className)} {...props} />
+}
+
+export function SectionCardActions({ className, ...props }: React.ComponentPropsWithoutRef<"div">) {
+  return (
+    <div className={cn("mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4", className)} {...props} />
+  )
+}
+
 /**
  * Canonical section shell used across `/multiply`, `/lend`, and now the borrow
  * detail pages. Title sits OUTSIDE the Card (matches `HotMarkets`,
