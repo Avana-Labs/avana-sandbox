@@ -31,7 +31,7 @@ export function SwapStyleField({
       data-tone={tone}
       {...props}
     >
-      <div className="text-[15px] font-medium text-foreground/75">{label}</div>
+      <div className="text-[15px] font-normal leading-5 text-foreground/70">{label}</div>
       {children}
     </div>
   )
