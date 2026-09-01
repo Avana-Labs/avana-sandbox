@@ -649,6 +649,37 @@ html[data-lighthouse-audit="true"] .reveal-in {
   }
 }
 
+/* Skeleton "moving train" sweep — a bright band that travels left → right across
+   a muted base. This is the DEFAULT for every <Skeleton>: a directional shimmer
+   instead of the old opacity fade. The band is a compositor-cheap translateX on an
+   ::after layer, so many placeholders can run at once. Reduced-motion drops the
+   sweep (base stays static). */
+.skeleton-sweep {
+  position: relative;
+  overflow: hidden;
+  background-color: hsl(var(--muted) / 0.7);
+}
+.skeleton-sweep::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.55) 50%, transparent 100%);
+}
+.dark .skeleton-sweep::after {
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.08) 50%, transparent 100%);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton-sweep::after {
+    animation: skeleton-sweep 1.6s ease-in-out infinite;
+  }
+}
+@keyframes skeleton-sweep {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 /* Soft entrance for a whole loading view: fades + lifts in so the skeleton
    doesn't pop. Honors reduced-motion below. */
 @keyframes skeleton-enter {
