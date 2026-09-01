@@ -16,9 +16,9 @@ export function MarketMobileCard({
   return (
     <div
       className={cn(
-        // Mobile cards sit on the hover/active surface by default (never transparent) and have
-        // NO hover state — on touch, :hover sticks after a tap, so it's dropped here.
-        "border-b border-border bg-hover px-4 py-3",
+        // Use the same solid, rounded surface as Dashboard snapshot cards. Keep
+        // touch cards free of a sticky hover state.
+        "rounded-radius-md border-0 bg-card px-4 py-3 shadow-none",
         clickable ? "cursor-pointer" : "",
         className,
       )}
