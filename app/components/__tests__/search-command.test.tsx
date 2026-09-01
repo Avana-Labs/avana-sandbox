@@ -33,6 +33,17 @@ describe("SearchCommand keyboard navigation", () => {
     return screen.getByRole("combobox")
   }
 
+  it("shows loading state before results arrive, not an empty-results message", async () => {
+    render(<SearchCommand />)
+    fireEvent.click(screen.getByRole("button", { name: "Search Avana" }))
+
+    expect(screen.getByText("Loading results")).toBeInTheDocument()
+    expect(screen.queryByText("No results found")).not.toBeInTheDocument()
+
+    await waitFor(() => expect(screen.getAllByRole("option").length).toBeGreaterThan(0))
+    expect(screen.queryByText("Loading results")).not.toBeInTheDocument()
+  })
+
   it("navigates results with ArrowDown/ArrowUp and opens with Enter", async () => {
     const input = await openAndLoad()
 

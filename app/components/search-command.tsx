@@ -290,6 +290,7 @@ export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: b
 
   const normalizedQuery = query.trim().toLowerCase()
   const resolvedResults = results ?? []
+  const resultsPending = results === null
 
   const groupedResults = useMemo<Array<[SearchResult["tab"], SearchResult[]]>>(() => {
     const tabScoped = resolvedResults.filter((result) => activeTab === "all" || result.tab === activeTab)
@@ -418,13 +419,19 @@ export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: b
             })}
           </div>
 
-          <div id="search-command-results" role="listbox" className="max-h-[430px] overflow-y-auto px-2 py-2.5">
-            {loadingResults && results == null ? (
-              <div className="px-5 py-12 text-center">
-                <p className="text-[15px] font-medium text-foreground">{t("Loading results")}</p>
-                <p className="mt-1 text-[13px] text-muted-foreground">
-                  {t("Preparing pools, borrow assets, and lend assets.")}
-                </p>
+          <div
+            id="search-command-results"
+            role="listbox"
+            className="min-h-[430px] max-h-[430px] overflow-y-auto px-2 py-2.5"
+          >
+            {resultsPending ? (
+              <div className="flex min-h-[400px] items-center justify-center px-5 py-12 text-center">
+                <div>
+                  <p className="text-[15px] font-medium text-foreground">{t("Loading results")}</p>
+                  <p className="mt-1 text-[13px] text-muted-foreground">
+                    {t("Preparing pools, borrow assets, and lend assets.")}
+                  </p>
+                </div>
               </div>
             ) : groupedResults.length > 0 ? (
               groupedResults.map(([tab, group]) => (
