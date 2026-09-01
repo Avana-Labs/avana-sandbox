@@ -214,7 +214,7 @@ export function ExploreLoopsMarketsTable({
   return (
     <section className="mt-7">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">
+        <h2 className="mt-1 text-[22px] font-normal tracking-[-0.01em] text-foreground md:text-[24px]">
           {t("Trending")}
         </h2>
         <div className="flex items-center gap-2.5">
@@ -354,7 +354,7 @@ function LoopMarketsSection({
           header while its own table scrolls, then the next group's title takes over. */}
       <div className="sticky top-16 z-20 flex flex-col gap-3 bg-background py-2 md:flex-row md:items-end md:justify-between">
         <div>
-          <h2 className="text-[22px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[24px]">
+          <h2 className="text-[22px] font-normal tracking-[-0.01em] text-foreground dark:text-white md:text-[24px]">
             {t(title)}
           </h2>
         </div>
@@ -404,10 +404,10 @@ function LoopMarketsSection({
                 </colgroup>
                 <thead>
                   <tr className="bg-table-header text-left text-muted-foreground">
-                    <th className="bg-table-header pb-2 pl-6 pr-3 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header pb-2 pl-6 pr-3 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       #
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("protocol")}
@@ -422,7 +422,7 @@ function LoopMarketsSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("asset")}
@@ -437,7 +437,7 @@ function LoopMarketsSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("apy")}
@@ -452,7 +452,7 @@ function LoopMarketsSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("rewards")}
@@ -467,7 +467,7 @@ function LoopMarketsSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("cf")}
@@ -482,7 +482,7 @@ function LoopMarketsSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pr-6 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className="bg-table-header px-4 pb-2 pr-6 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       <button
                         type="button"
                         onClick={() => toggleSort("points")}
@@ -497,7 +497,7 @@ function LoopMarketsSection({
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+                    <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
                   </tr>
                 </thead>
                 <tbody
@@ -574,10 +574,10 @@ const LoopTableRow = React.memo(function LoopTableRow({
             </>
           ) : null}
           <span className="min-w-0">
-            <span className="block truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+            <span className="block truncate text-[15px] font-normal tracking-normal text-foreground dark:text-white">
               {row.protocolName ?? row.protocol}
             </span>
-            <span className="mt-0.5 block truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground">
+            <span className="mt-0.5 block truncate text-[13px] font-normal tracking-normal text-muted-foreground">
               {row.protocol}
             </span>
           </span>
@@ -601,10 +601,10 @@ const LoopTableRow = React.memo(function LoopTableRow({
             </>
           ) : null}
           <span className="min-w-0">
-            <span className="block truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+            <span className="block truncate text-[15px] font-normal tracking-normal text-foreground dark:text-white">
               {row.assetName ?? row.asset}
             </span>
-            <span className="mt-0.5 block truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground">
+            <span className="mt-0.5 block truncate text-[13px] font-normal tracking-normal text-muted-foreground">
               {row.asset}
             </span>
           </span>
@@ -614,7 +614,7 @@ const LoopTableRow = React.memo(function LoopTableRow({
         <CellLink
           href={row.href}
           className={cn(
-            "font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums",
+            "font-data text-[15px] font-normal tracking-normal tabular-nums",
             row.apy ? "text-foreground dark:text-white" : "text-muted-foreground",
           )}
         >
@@ -624,7 +624,7 @@ const LoopTableRow = React.memo(function LoopTableRow({
       <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
         <CellLink
           href={row.href}
-          className="block font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white"
+          className="block font-data text-[15px] font-normal tracking-normal tabular-nums text-foreground dark:text-white"
         >
           {row.rewardRows?.[0]?.value ?? row.partnerRewards ?? "—"}
         </CellLink>
@@ -650,14 +650,14 @@ const LoopTableRow = React.memo(function LoopTableRow({
           </div>
         ) : (
           <CellLink href={row.href} className="block text-foreground">
-            <span className="block text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+            <span className="block text-[15px] font-normal tracking-normal text-foreground dark:text-white">
               {row.availablePrimary ??
                 (parseCompactUsdLabel(row.points) == null
                   ? (row.points ?? "—")
                   : compact(parseCompactUsdLabel(row.points) as number))}
             </span>
             {row.availableSecondary ? (
-              <span className="mt-0.5 block text-[13px] tracking-[-0.03em] text-muted-foreground">
+              <span className="mt-0.5 block text-[13px] tracking-normal text-muted-foreground">
                 {parseCompactUsdLabel(row.availableSecondary) == null
                   ? row.availableSecondary
                   : compact(parseCompactUsdLabel(row.availableSecondary) as number)}
@@ -762,12 +762,10 @@ const MobileLoopCard = React.memo(function MobileLoopCard({
                   ) : null}
                 </div>
                 <div className="min-w-0">
-                  <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                  <div className="truncate text-[15px] font-normal tracking-normal text-foreground dark:text-white">
                     {row.protocol}
                   </div>
-                  <div className="mt-0.5 truncate text-[12px] tracking-[-0.03em] text-muted-foreground">
-                    {row.asset}
-                  </div>
+                  <div className="mt-0.5 truncate text-[12px] tracking-normal text-muted-foreground">{row.asset}</div>
                 </div>
               </div>
             </div>
@@ -840,12 +838,12 @@ function TrendingLoopCard({
         </div>
 
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground">{snapshot.label}</div>
+          <div className="truncate text-[15px] font-normal tracking-normal text-foreground">{snapshot.label}</div>
           <div className="mt-1 text-[13px] text-muted-foreground dark:text-white/48">{t("Loop market")}</div>
         </div>
 
         <div className="shrink-0 text-right">
-          <div className="font-data text-[15px] font-medium tracking-[-0.03em] text-success">{snapshot.apyLabel}</div>
+          <div className="font-data text-[15px] font-normal tracking-normal text-success">{snapshot.apyLabel}</div>
           <div className="mt-1 text-[13px] text-muted-foreground dark:text-white/48">{t("LOOP APY")}</div>
         </div>
       </div>

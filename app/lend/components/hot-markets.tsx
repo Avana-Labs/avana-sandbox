@@ -184,12 +184,12 @@ function FeaturedCard({
         <div className="flex min-w-0 items-start gap-3">
           <AssetIcon asset={asset} />
           <div className="min-w-0">
-            <div className="truncate text-[15px] font-medium tracking-[-0.03em]">{asset.displayName}</div>
+            <div className="truncate text-[15px] font-normal tracking-normal">{asset.displayName}</div>
             <div className="mt-1 text-[13px] text-muted-foreground dark:text-white/48">{asset.eyebrow}</div>
           </div>
         </div>
         <div className="shrink-0 text-right">
-          <div className="text-[15px] font-medium tracking-[-0.03em]">{apyPct.toFixed(2)}%</div>
+          <div className="text-[15px] font-normal tracking-normal">{apyPct.toFixed(2)}%</div>
           <div className="mt-1 text-[13px] text-muted-foreground dark:text-white/48">APY</div>
         </div>
       </div>
@@ -275,7 +275,7 @@ export function HotMarkets({
     <section>
       <div className="w-full">
         <div className="mb-5 flex items-center justify-between gap-3">
-          <h2 className="mt-1 text-[22px] font-medium tracking-[-0.03em] text-foreground md:text-[24px]">
+          <h2 className="mt-1 text-[22px] font-normal tracking-[-0.01em] text-foreground md:text-[24px]">
             {t("Featured")}
           </h2>
           <div className="flex items-center gap-2.5">

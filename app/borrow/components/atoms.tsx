@@ -90,7 +90,7 @@ export function TokenPairCell({
 }) {
   const bubbleSize: TokenBubbleSize = size === "lg" ? "xl" : size === "md" ? "table" : "sm"
   const offset = size === "lg" ? "-ml-3" : size === "md" ? "-ml-2.5" : "-ml-2"
-  const nameCls = size === "lg" ? "text-[15px]" : size === "md" ? "text-[14px]" : "text-[13.5px]"
+  const nameCls = size === "lg" ? "text-[15px]" : size === "md" ? "text-[14px]" : "text-[13px]"
   const subtitleCls = size === "lg" ? "text-[12px]" : "text-xs"
   return (
     <div className="flex items-center gap-3">
@@ -196,8 +196,8 @@ export function PillButton({
 export function StatItem({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
     <div className="min-w-0">
-      <div className="text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
-      <div className={cn("mt-1 font-data text-[15px] font-medium tabular-nums text-foreground", tone)}>{value}</div>
+      <div className="text-[11px] font-normal uppercase leading-4 tracking-[0.06em] text-muted-foreground">{label}</div>
+      <div className={cn("mt-1 font-data text-[15px] font-normal tabular-nums text-foreground", tone)}>{value}</div>
     </div>
   )
 }

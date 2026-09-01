@@ -102,7 +102,7 @@ function SectionTabs({
           type="button"
           onClick={() => onTabChange(tab.id as SectionTabId)}
           className={[
-            "border-b-2 pb-2 text-left text-[15px] font-normal tracking-[-0.03em] transition-colors md:text-[17px]",
+            "border-b-2 pb-2 text-left text-[15px] font-normal tracking-normal transition-colors md:text-[17px]",
             activeTab === tab.id
               ? "border-foreground text-foreground"
               : "border-transparent text-muted-foreground hover:text-foreground",
@@ -155,10 +155,10 @@ function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
         </span>
       </div>
       <div className="min-w-0">
-        <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+        <div className="truncate text-[15px] font-normal tracking-normal text-foreground dark:text-white">
           {formatBorrowPairLabel(pool)}
         </div>
-        <div className="mt-1 truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+        <div className="mt-1 truncate text-[13px] font-normal tracking-normal text-muted-foreground dark:text-white/38">
           {subtitle}
         </div>
       </div>
@@ -202,17 +202,17 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
         <CollateralAssetCell pool={pool} />
       </td>
       <td
-        className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+        className={`py-2.5 px-4 text-[15px] font-normal tracking-normal text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
       >
         <span className="tabular-nums">{formatApy((pool.aprMin + pool.aprMax) / 2)}</span>
       </td>
       <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+        <div className="text-[15px] font-normal tracking-normal text-foreground dark:text-white">
           <span className="tabular-nums">{compact(pool.tvlUsd)}</span>
         </div>
       </td>
       <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white">
+        <div className="font-data text-[15px] font-normal tracking-normal tabular-nums text-foreground dark:text-white">
           {formatLtvPct(pool.ltv)}
         </div>
         <div className="mt-0.5 font-data text-[12px] tabular-nums text-muted-foreground">
@@ -220,12 +220,12 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
         </div>
       </td>
       <td
-        className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+        className={`py-2.5 px-4 text-[15px] font-normal tracking-normal text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
       >
         <span className="tabular-nums">{formatRiskPremium(pool.riskPremiumBps)}</span>
       </td>
       <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+        <div className="text-[15px] font-normal tracking-normal text-foreground dark:text-white">
           <span className="tabular-nums">{compact(pool.availableUsd)}</span>
         </div>
       </td>
@@ -328,10 +328,10 @@ function CollateralDesktopTable({
       <table className="w-full min-w-[1120px] text-[12px]">
         <thead>
           <tr className="bg-table-header text-left text-muted-foreground">
-            <th className="pb-2 pt-2.5 pl-6 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 pl-6 pr-3 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               #
             </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("asset")}
@@ -346,7 +346,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("apy")}
@@ -359,7 +359,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("deposits")}
@@ -374,7 +374,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("cf")}
@@ -387,7 +387,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("risk")}
@@ -402,7 +402,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 pr-6 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("supplied")}
@@ -417,7 +417,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 pr-5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+            <th className="pb-2 pt-2.5 px-4 pr-5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
           </tr>
         </thead>
         <tbody key={`collateral-${sortKey}-${sortDirection}-${sortedRows.length}`}>
@@ -537,7 +537,7 @@ function SpokeDesktopSection({
               setActiveTab(tab)
             }}
           />
-          <h3 className="text-[22px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[24px]">
+          <h3 className="text-[22px] font-normal tracking-[-0.01em] text-foreground dark:text-white md:text-[24px]">
             {spoke.label}
           </h3>
         </div>
