@@ -13,6 +13,7 @@ import { TokenIcon } from "@/app/components/token-icon"
 import {
   MarketMobileCard,
   MarketMobileCardHeader,
+  MarketMobileIdentityText,
   MarketMobileMetric,
   MarketMobilePrimaryAction,
   MarketMobileSecondaryAction,
@@ -210,14 +211,10 @@ export function DebtsPanel({
                     identity={
                       <div className="flex min-w-0 items-center gap-2.5">
                         <TokenIcon symbol={row.debtAssetSymbol} size="table" />
-                        <div className="min-w-0">
-                          <div className="truncate text-[15px] font-medium tracking-normal text-foreground">
-                            {row.debtAssetSymbol}
-                          </div>
-                          <div className="truncate text-[13px] text-muted-foreground">
-                            {t("against {pool}").replace("{pool}", row.pool.name)}
-                          </div>
-                        </div>
+                        <MarketMobileIdentityText
+                          title={row.debtAssetSymbol}
+                          subtitle={t("against {pool}").replace("{pool}", row.pool.name)}
+                        />
                       </div>
                     }
                     metric={

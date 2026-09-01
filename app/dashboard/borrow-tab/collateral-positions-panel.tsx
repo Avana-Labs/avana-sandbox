@@ -10,9 +10,11 @@ import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-t
 import {
   MarketMobileCard,
   MarketMobileCardHeader,
+  MarketMobileIdentityText,
   MarketMobileMetric,
   MarketMobileStatList,
   MarketMobileStatRow,
+  MarketMobileSupportingValue,
 } from "@/app/components/market-card-primitives"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -272,10 +274,7 @@ function CollateralMobileCard({
         identity={
           <div className="flex min-w-0 items-center gap-2.5">
             <TokenIcon symbol={row.symbol} size="table" />
-            <div className="min-w-0">
-              <div className="text-[15px] font-medium tracking-normal text-foreground dark:text-white">{row.name}</div>
-              <div className="text-[11px] text-muted-foreground">{row.symbol}</div>
-            </div>
+            <MarketMobileIdentityText title={row.name} subtitle={row.symbol} />
           </div>
         }
         metric={<MarketMobileMetric value={`${row.apyPct.toFixed(2)}%`} label="APY" />}
@@ -286,7 +285,7 @@ function CollateralMobileCard({
           value={
             <span>
               {mask(row.depositedToken)}
-              <span className="ml-2 text-[13px] text-muted-foreground">{mask(exact(row.depositedUsd))}</span>
+              <MarketMobileSupportingValue>{mask(exact(row.depositedUsd))}</MarketMobileSupportingValue>
             </span>
           }
         />
@@ -295,7 +294,7 @@ function CollateralMobileCard({
           value={
             <span>
               {mask(row.earningsToken)}
-              <span className="ml-2 text-[13px] text-muted-foreground">{mask(exact(row.earningsUsd))}</span>
+              <MarketMobileSupportingValue>{mask(exact(row.earningsUsd))}</MarketMobileSupportingValue>
             </span>
           }
         />

@@ -16,4 +16,16 @@ describe("MarketMobileCard surfaces", () => {
     expect(cardBlock).not.toMatch(/hover:bg-hover/)
     expect(cardBlock).not.toMatch(/shadow-elev-1/)
   })
+
+  it("defines one mobile identity and supporting-value type hierarchy", () => {
+    const source = readFileSync(resolve(__dirname, "../market-card-primitives.tsx"), "utf8")
+    const identity = source.slice(
+      source.indexOf("export function MarketMobileIdentityText"),
+      source.indexOf("export function MarketMobileSupportingValue"),
+    )
+
+    expect(identity).toMatch(/text-\[15px\].*font-medium/)
+    expect(identity).toMatch(/text-\[12px\].*font-normal/)
+    expect(source).toMatch(/MarketMobileSupportingValue[\s\S]*text-\[12px\]/)
+  })
 })

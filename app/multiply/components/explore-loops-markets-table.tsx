@@ -8,6 +8,7 @@ import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-t
 import {
   MarketMobileCard,
   MarketMobileCardHeader,
+  MarketMobileIdentityText,
   MarketMobileMetric,
   MarketMobileStatList,
   MarketMobileStatRow,
@@ -761,12 +762,7 @@ const MobileLoopCard = React.memo(function MobileLoopCard({
                     </div>
                   ) : null}
                 </div>
-                <div className="min-w-0">
-                  <div className="truncate text-[15px] font-normal tracking-normal text-foreground dark:text-white">
-                    {row.protocol}
-                  </div>
-                  <div className="mt-0.5 truncate text-[12px] tracking-normal text-muted-foreground">{row.asset}</div>
-                </div>
+                <MarketMobileIdentityText title={row.protocol} subtitle={row.asset} />
               </div>
             </div>
           }

@@ -10,6 +10,7 @@ import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-t
 import {
   MarketMobileCard,
   MarketMobileCardHeader,
+  MarketMobileIdentityText,
   MarketMobileMetric,
   MarketMobilePrimaryAction,
   MarketMobileStatList,
@@ -148,10 +149,7 @@ const BorrowableMobileCardRow = memo(function BorrowableMobileCardRow({
           identity={
             <div className="flex items-center gap-2.5">
               <TokenBubble visual={asset.visual} size="table" eager={index < 2} />
-              <div className="min-w-0">
-                <div className="text-[14px] font-medium text-foreground">{asset.symbol}</div>
-                <div className="text-[12px] text-muted-foreground">{asset.name}</div>
-              </div>
+              <MarketMobileIdentityText title={asset.symbol} subtitle={asset.name} />
             </div>
           }
           metric={

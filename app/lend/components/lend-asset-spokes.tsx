@@ -10,6 +10,7 @@ import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-t
 import {
   MarketMobileCard,
   MarketMobileCardHeader,
+  MarketMobileIdentityText,
   MarketMobileMetric,
   MarketMobilePrimaryAction,
   MarketMobileSecondaryAction,
@@ -254,14 +255,7 @@ function AssetCardView({
         identity={
           <div className="flex min-w-0 items-center gap-3">
             <AssetIcon row={row} eager={index < 2} />
-            <div className="min-w-0">
-              <div className="truncate text-[15px] font-normal tracking-normal text-foreground dark:text-white">
-                {row.name}
-              </div>
-              <div className="mt-0.5 text-[12px] tracking-normal text-muted-foreground">
-                <AssetSubLabel symbol={row.symbol} />
-              </div>
-            </div>
+            <MarketMobileIdentityText title={row.name} subtitle={<AssetSubLabel symbol={row.symbol} />} />
           </div>
         }
         metric={<MarketMobileMetric value={row.supplyApyLabel ?? row.apy} label={t("APY")} />}

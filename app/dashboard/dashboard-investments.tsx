@@ -8,9 +8,11 @@ import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app
 import {
   MarketMobileCard,
   MarketMobileCardHeader,
+  MarketMobileIdentityText,
   MarketMobileMetric,
   MarketMobileStatList,
   MarketMobileStatRow,
+  MarketMobileSupportingValue,
 } from "@/app/components/market-card-primitives"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -232,10 +234,7 @@ export function DashboardInvestments({
                     identity={
                       <div className="flex min-w-0 items-center gap-2.5">
                         <TokenIcon symbol={token.symbol} size="table" />
-                        <div className="min-w-0">
-                          <div className="text-[13px] font-medium text-foreground">{token.name}</div>
-                          <div className="text-[11px] text-muted-foreground">{token.symbol}</div>
-                        </div>
+                        <MarketMobileIdentityText title={token.name} subtitle={token.symbol} />
                       </div>
                     }
                     metric={<MarketMobileMetric value={`${token.apyPct.toFixed(2)}%`} label="APY" />}
@@ -246,9 +245,9 @@ export function DashboardInvestments({
                       value={
                         <span>
                           {m(formatTokenAmount(token.balance, token.symbol))}
-                          <span className="ml-2 text-[13px] text-muted-foreground">
+                          <MarketMobileSupportingValue>
                             {m(formatUsdExact(token.suppliedUsd))}
-                          </span>
+                          </MarketMobileSupportingValue>
                         </span>
                       }
                     />
@@ -257,9 +256,9 @@ export function DashboardInvestments({
                       value={
                         <span>
                           {m(`+${formatUsdExact(token.earnedUsd)}`)}
-                          <span className="ml-2 text-[13px] text-muted-foreground">
+                          <MarketMobileSupportingValue>
                             {m(`${formatUsdExact(token.dailyEarnedUsd)}/day`)}
-                          </span>
+                          </MarketMobileSupportingValue>
                         </span>
                       }
                     />

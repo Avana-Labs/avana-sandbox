@@ -46,6 +46,33 @@ export function MarketMobileCardHeader({
   )
 }
 
+export function MarketMobileIdentityText({
+  title,
+  subtitle,
+  className,
+}: {
+  title: ReactNode
+  subtitle?: ReactNode
+  className?: string
+}) {
+  return (
+    <div className={cn("min-w-0", className)}>
+      <div className="truncate text-[15px] font-medium leading-5 tracking-normal text-foreground dark:text-white">
+        {title}
+      </div>
+      {subtitle ? (
+        <div className="mt-0.5 truncate text-[12px] font-normal leading-4 tracking-normal text-muted-foreground dark:text-white/48">
+          {subtitle}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+export function MarketMobileSupportingValue({ children }: { children: ReactNode }) {
+  return <span className="ml-2 text-[12px] font-normal tracking-normal text-muted-foreground">{children}</span>
+}
+
 export function MarketMobileMetric({
   value,
   label,

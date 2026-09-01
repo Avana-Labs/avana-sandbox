@@ -9,9 +9,11 @@ import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-t
 import {
   MarketMobileCard,
   MarketMobileCardHeader,
+  MarketMobileIdentityText,
   MarketMobileMetric,
   MarketMobileStatList,
   MarketMobileStatRow,
+  MarketMobileSupportingValue,
 } from "@/app/components/market-card-primitives"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -286,12 +288,7 @@ function TradingFeeMobileCard({
                 <TokenIcon symbol={row.token1} size="table" />
               </span>
             </span>
-            <div className="min-w-0">
-              <div className="text-[15px] font-medium tracking-normal text-foreground dark:text-white">
-                {row.poolLabel}
-              </div>
-              <div className="text-[11px] text-muted-foreground">{row.protocol}</div>
-            </div>
+            <MarketMobileIdentityText title={row.poolLabel} subtitle={row.protocol} />
           </div>
         }
         metric={<MarketMobileMetric value={`${row.apyPct.toFixed(2)}%`} label="APY" />}
@@ -303,7 +300,7 @@ function TradingFeeMobileCard({
           value={
             <span>
               {mask(row.depositedToken)}
-              <span className="ml-2 text-[13px] text-muted-foreground">{mask(exact(row.depositedUsd))}</span>
+              <MarketMobileSupportingValue>{mask(exact(row.depositedUsd))}</MarketMobileSupportingValue>
             </span>
           }
         />
@@ -312,7 +309,7 @@ function TradingFeeMobileCard({
           value={
             <span>
               {mask(row.feesEarnedToken)}
-              <span className="ml-2 text-[13px] text-muted-foreground">{mask(exact(row.feesEarnedUsd))}</span>
+              <MarketMobileSupportingValue>{mask(exact(row.feesEarnedUsd))}</MarketMobileSupportingValue>
             </span>
           }
         />
