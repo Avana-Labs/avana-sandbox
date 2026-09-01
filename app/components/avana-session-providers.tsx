@@ -3,7 +3,7 @@
 import { lazy, Suspense, type ReactNode } from "react"
 import { ConvexProviderWithAuth, ConvexReactClient } from "convex/react"
 import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
-import { pendingUmbrellaPersistAction } from "@/app/lib/umbrella-system/use-umbrella-session"
+import { PendingConvexSessionProvider } from "@/app/lib/avana-session/pending-convex-session-provider"
 import { hasConvexClient, MarketLiquidityProvider } from "@/app/lib/convex/market-liquidity-provider"
 import { useConvexSiweAuth, useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { useOpenGateAuthBootstrap } from "@/app/lib/siwe/use-open-gate-auth-bootstrap"
@@ -35,18 +35,7 @@ function OpenGateConvexProvider({ children }: { children: ReactNode }) {
 
 /** Instant Paint: always paint children; upgrade to Convex when JWT/chunk are ready. */
 function LocalSessionFallback({ walletId, children }: { walletId: string; children: ReactNode }) {
-  return (
-    <AvanaSessionsProvider
-      walletId={walletId}
-      persistLocalState={false}
-      persistUmbrellaState={false}
-      sessionSource="convex"
-      authoritativeWalletPending
-      persistUmbrellaAction={pendingUmbrellaPersistAction}
-    >
-      {children}
-    </AvanaSessionsProvider>
-  )
+  return <PendingConvexSessionProvider walletId={walletId}>{children}</PendingConvexSessionProvider>
 }
 
 function OpenGateSessionTree({ children }: { children: ReactNode }) {

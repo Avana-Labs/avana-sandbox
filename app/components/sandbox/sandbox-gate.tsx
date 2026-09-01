@@ -2,14 +2,13 @@
 
 import { Component, lazy, Suspense, type ReactNode } from "react"
 import { usePathname } from "next/navigation"
-import { Header } from "@/app/components/header"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useHydrated, useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { GuestOnboardingFlow } from "./guest-onboarding-flow"
 import styles from "./onboarding-flow.module.css"
-import { HomePagePendingShell, ProductRoutePending } from "@/app/components/loading-states"
+import { RouteContentSkeleton } from "@/app/components/loading-states"
 
 const AuthedGate = lazy(async () => ({ default: (await import("./authed-sandbox-gate")).AuthedSandboxGate }))
 
@@ -23,13 +22,11 @@ class GateErrorBoundary extends Component<{ children: ReactNode }, { errored: bo
   }
 }
 
+// Content-only shell for the gate's focused states (onboarding / error). The
+// persistent site header + frame are rendered above the gate now, so this only
+// owns the inner content padding.
 function LockedShell({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <Header />
-      <main className="flex flex-1 px-5 py-6 sm:px-8">{children}</main>
-    </div>
-  )
+  return <main className="flex flex-1 px-5 py-6 sm:px-8">{children}</main>
 }
 
 function GateUnavailable({ variant = "error" }: { variant?: "error" | "offline" }) {
@@ -107,14 +104,7 @@ export function SandboxGate({ children, authHint }: { children: ReactNode; authH
         </LockedShell>
       )
     }
-    if (pathname === "/") {
-      return <HomePagePendingShell />
-    }
-    return (
-      <LockedShell>
-        <ProductRoutePending />
-      </LockedShell>
-    )
+    return <RouteContentSkeleton />
   }
   if (!isSignedIn || !authedWallet) {
     return (

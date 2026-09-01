@@ -66,7 +66,7 @@ describe("Umbrella page", () => {
     }
   })
 
-  it("shows zero wallet metrics while the Convex umbrella snapshot is pending", () => {
+  it("shows a loading skeleton (never demo stakes) while the Convex umbrella snapshot is pending", () => {
     render(
       <DisplayPreferencesProvider>
         <AvanaSessionsProvider
@@ -82,8 +82,12 @@ describe("Umbrella page", () => {
       </DisplayPreferencesProvider>,
     )
 
+    // Single hydration gate: while the umbrella query is pending we render the
+    // layout-matched skeleton — never the seeded demo stakes, never a flash of $0
+    // tiles or the "no positions" empty state (those are real, hydrated content).
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument()
     expect(screen.queryByText("$38,544")).not.toBeInTheDocument()
     expect(screen.queryByText("Stake GHO")).not.toBeInTheDocument()
-    expect(screen.getAllByText("You have no Umbrella positions yet.").length).toBeGreaterThan(0)
+    expect(screen.queryByText("You have no Umbrella positions yet.")).not.toBeInTheDocument()
   })
 })

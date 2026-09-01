@@ -163,20 +163,24 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <DisplayPreferencesProvider>
             <WalletGateProvider>
               <Web3ProviderBoundary>
-                <SandboxGate authHint={authHint}>
-                  <ProductRuntimeProviders initialTokenPrices={initialTokenPrices}>
-                    <CurrencyDisplayBoundary>
-                      <ConditionalSiteChrome>
-                        <Suspense fallback={null}>
-                          <PageLoadingBar />
-                        </Suspense>
-                        <ScrollResetOnNavigate />
+                {/* Site chrome (header + action-route suppression) is hoisted ABOVE the
+                    session/auth gates so the header stays painted through every loading
+                    state — the gates only ever swap the content region below it. Header's
+                    subtree reads no gated context (currency/token-price/convex/session). */}
+                <ConditionalSiteChrome>
+                  <Suspense fallback={null}>
+                    <PageLoadingBar />
+                  </Suspense>
+                  <ScrollResetOnNavigate />
+                  <SandboxGate authHint={authHint}>
+                    <ProductRuntimeProviders initialTokenPrices={initialTokenPrices}>
+                      <CurrencyDisplayBoundary>
                         {children}
-                      </ConditionalSiteChrome>
-                      <DeferredGlobalChrome />
-                    </CurrencyDisplayBoundary>
-                  </ProductRuntimeProviders>
-                </SandboxGate>
+                        <DeferredGlobalChrome />
+                      </CurrencyDisplayBoundary>
+                    </ProductRuntimeProviders>
+                  </SandboxGate>
+                </ConditionalSiteChrome>
               </Web3ProviderBoundary>
             </WalletGateProvider>
           </DisplayPreferencesProvider>

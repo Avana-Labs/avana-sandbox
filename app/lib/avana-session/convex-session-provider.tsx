@@ -3,7 +3,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react"
 import { useConvexAuth } from "convex/react"
 import { ConvexAvanaSessionsProvider } from "./convex-avana-sessions-provider"
-import { AvanaSessionsProvider } from "./avana-sessions-provider"
+import { PendingConvexSessionProvider } from "./pending-convex-session-provider"
 
 class ConvexSessionErrorBoundary extends Component<{ walletId: string; children: ReactNode }, { hasError: boolean }> {
   state = { hasError: false }
@@ -20,7 +20,11 @@ class ConvexSessionErrorBoundary extends Component<{ walletId: string; children:
 
   render() {
     if (this.state.hasError) {
-      return <AvanaSessionsProvider walletId={this.props.walletId}>{this.props.children}</AvanaSessionsProvider>
+      return (
+        <PendingConvexSessionProvider walletId={this.props.walletId}>
+          {this.props.children}
+        </PendingConvexSessionProvider>
+      )
     }
     return this.props.children
   }
@@ -34,7 +38,7 @@ export function ConvexSessionProvider({ walletId, children }: { walletId: string
   if (!isAuthenticated) {
     return (
       <div aria-label="Authenticating wallet session">
-        <AvanaSessionsProvider walletId={walletId}>{children}</AvanaSessionsProvider>
+        <PendingConvexSessionProvider walletId={walletId}>{children}</PendingConvexSessionProvider>
       </div>
     )
   }

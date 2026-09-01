@@ -1,9 +1,9 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { usePathname } from "next/navigation"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
-import { Header } from "@/app/components/header"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
 import { HOME_MODE_ITEMS } from "@/app/components/home/home-workspace-card"
@@ -166,14 +166,100 @@ export function HomeWorkspaceSkeleton() {
   )
 }
 
-/** Homepage Instant Paint — header + express swap skeleton, no catalog chrome. */
-export function HomePagePendingShell() {
+// -----------------------------------------------------------------------------
+// umbrella (`/umbrella`) — hero (4 metric tiles) + positions table on the left,
+// a sticky 360px action sidebar (4 tabs + action panel) on the right. Mirrors
+// `app/umbrella/page.tsx` 1:1 so the real page reveals in place with no shift.
+// -----------------------------------------------------------------------------
+
+export function UmbrellaPageSkeleton() {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <Header />
-      <HomeWorkspaceSkeleton />
-    </div>
+    <Page mainClassName="px-3 py-6 pb-28 sm:px-4 md:py-10 lg:pb-10">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
+        <div className="min-w-0 space-y-10">
+          {/* Hero: "Your Umbrella" heading row + 4-tile metrics card. */}
+          <div>
+            <div className="mb-6 flex items-center justify-between gap-3">
+              <Skeleton className="h-7 w-44 rounded-xs md:h-8" />
+              <Skeleton className="h-8 w-28 rounded-full" />
+            </div>
+            <Surface className="px-4 py-5 sm:px-5">
+              <div className="grid grid-cols-2 gap-5 lg:grid-cols-4 lg:divide-x lg:divide-border">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div key={`umbrella-hero-${index}`} className="min-w-0 lg:px-5 first:lg:pl-0 last:lg:pr-0">
+                    <Skeleton className="h-3.5 w-24 rounded-xs" />
+                    <Skeleton className="mt-3 h-7 w-28 rounded-xs" shimmer />
+                  </div>
+                ))}
+              </div>
+            </Surface>
+          </div>
+
+          {/* Positions: heading + table rows (asset · stake · APY · rewards · CTA). */}
+          <section>
+            <Skeleton className="mb-6 h-7 w-48 rounded-xs md:h-8" />
+            <Surface className="px-4 py-2">
+              <div className="divide-y divide-border/70">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <div key={`umbrella-row-${index}`} className="flex items-center justify-between gap-4 py-4">
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <Skeleton className="h-4 w-28 rounded-xs" />
+                      <Skeleton className="h-3 w-20 rounded-xs" />
+                    </div>
+                    <Skeleton className="hidden h-4 w-16 rounded-xs sm:block" />
+                    <Skeleton className="hidden h-4 w-12 rounded-xs sm:block" />
+                    <Skeleton className="h-9 w-20 rounded-radius-sm" />
+                  </div>
+                ))}
+              </div>
+            </Surface>
+          </section>
+        </div>
+
+        {/* Action sidebar (desktop): 4-tab strip + action panel. */}
+        <aside className="hidden lg:block lg:self-start">
+          <div className="sticky top-20 space-y-4">
+            <div className="flex gap-2">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <Skeleton key={`umbrella-tab-${index}`} className="h-9 flex-1 rounded-full" />
+              ))}
+            </div>
+            <Surface className="space-y-3 p-4">
+              <Skeleton className="h-5 w-24 rounded-xs" />
+              <Skeleton className="h-[120px] w-full rounded-radius-md" shimmer />
+              <div className="grid grid-cols-2 gap-3">
+                <Skeleton className="h-16 w-full rounded-radius-md" />
+                <Skeleton className="h-16 w-full rounded-radius-md" />
+              </div>
+              <Skeleton className="h-14 w-full rounded-radius-md" />
+            </Surface>
+          </div>
+        </aside>
+      </div>
+    </Page>
   )
+}
+
+/**
+ * Route-aware content skeleton. Rendered BELOW the persistent site header (the
+ * header lives above the session/auth gates now), so each product route reveals
+ * its own layout-matched skeleton while the session chunk / Convex data attaches
+ * — never a generic block that swaps the whole page. Falls back to the neutral
+ * product skeleton for routes without a bespoke one.
+ */
+export function RouteContentSkeleton() {
+  const pathname = usePathname()
+  if (pathname === "/") return <HomeWorkspaceSkeleton />
+  if (pathname === "/umbrella" || pathname.startsWith("/umbrella/")) return <UmbrellaPageSkeleton />
+  if (
+    pathname === "/dashboard" ||
+    pathname.startsWith("/dashboard/") ||
+    pathname === "/rewards" ||
+    pathname.startsWith("/rewards/")
+  ) {
+    return <RewardsPageSkeleton />
+  }
+  return <ProductRoutePending />
 }
 
 // -----------------------------------------------------------------------------

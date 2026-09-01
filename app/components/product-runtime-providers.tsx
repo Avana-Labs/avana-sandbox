@@ -4,24 +4,18 @@ import dynamic from "next/dynamic"
 import { usePathname } from "next/navigation"
 import type { ReactNode } from "react"
 import { PreferencesProfileSync } from "@/app/components/preferences-profile-sync"
-import { ProductRoutePending, HomePagePendingShell } from "@/app/components/loading-states"
+import { RouteContentSkeleton } from "@/app/components/loading-states"
 import { TokenPricesProvider } from "@/app/lib/prices/token-prices-context"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
-
-function AvanaSessionProvidersLoading() {
-  const pathname = usePathname()
-  if (pathname === "/") {
-    return <HomePagePendingShell />
-  }
-  return <ProductRoutePending />
-}
 
 const AvanaSessionProviders = dynamic(
   () => import("@/app/components/avana-session-providers").then((mod) => mod.AvanaSessionProviders),
   {
     ssr: false,
     // Instant Paint: never blank the product tree while the session chunk downloads.
-    loading: () => <AvanaSessionProvidersLoading />,
+    // The persistent site header lives above this gate, so we paint only the
+    // route-matched content skeleton here.
+    loading: () => <RouteContentSkeleton />,
   },
 )
 
