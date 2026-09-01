@@ -7,7 +7,10 @@ import { createCatalogPageSources } from "@/app/lib/data/providers/catalog-page-
 import { buildMultiplyPageData } from "@/app/lib/multiply-system/read-model"
 import { buildMultiplyCatalogBaselineState } from "@/app/lib/multiply-system/mock"
 import { mergeConvexMultiplySnapshots } from "@/app/lib/multiply-system/market-hydration"
-import { fetchMultiplyMarketSnapshots } from "@/app/lib/multiply-system/market-hydration-server"
+import {
+  fetchMultiplyMarketSnapshots,
+  fetchMultiplyTokenParameters,
+} from "@/app/lib/multiply-system/market-hydration-server"
 import type { MultiplyPageData } from "./types"
 
 export type MultiplyPageSource = {
@@ -20,7 +23,14 @@ const catalogSources = createCatalogPageSources({
   buildBaselineState: buildMultiplyCatalogBaselineState,
   fetchSnapshots: fetchMultiplyMarketSnapshots,
   mergeSnapshots: mergeConvexMultiplySnapshots,
-  readPageData: (state, walletId) => buildMultiplyPageData(walletId, state),
+  // Fetch the live token parameters server-side too, so the SSR page carries real
+  // APYs/logos — the client then renders them on first paint instead of the bundled
+  // static constants (kills the mock-then-live swap). Degrades to undefined (→ static
+  // fallback) only when Convex is unreachable.
+  readPageData: async (state, walletId) => {
+    const convexTokens = await fetchMultiplyTokenParameters()
+    return buildMultiplyPageData(walletId, state, convexTokens.length > 0 ? convexTokens : undefined)
+  },
   mockWalletId: "catalog",
 })
 

@@ -43,8 +43,16 @@ export function MultiplyClient({
   // liquidity and deleveraging returns it (see applyMultiplyAction). The server and
   // first client render keep the static page data so static generation is preserved
   // and there is no hydration mismatch.
+  // First paint uses `pageData` — now server-rendered with LIVE token parameters, so
+  // it carries real APYs/logos, not the bundled static constants. Only once the
+  // client's own `convexTokens` query resolves do we rebuild (same live params, plus
+  // the wallet's session overlay). Never rebuild with `convexTokens === undefined`,
+  // which would swap real → static → real (the mock flash).
   const livePageData = React.useMemo(
-    () => (hasMounted ? buildMultiplyPageData(session.walletId, session.state, convexTokens ?? undefined) : pageData),
+    () =>
+      hasMounted && convexTokens !== undefined
+        ? buildMultiplyPageData(session.walletId, session.state, convexTokens)
+        : pageData,
     [convexTokens, hasMounted, pageData, session.state, session.walletId],
   )
 
