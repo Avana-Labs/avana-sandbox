@@ -13,7 +13,6 @@ import {
 import type { RewardsPageData } from "@/app/lib/data/providers/rewards"
 import { useAvanaSessions, useRewardsSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { getWalletBalanceForLendMarket } from "@/app/lib/lend-system/wallet-balances"
-import { buildPortfolioMultiplyData } from "@/app/lib/multiply-system/read-model"
 import type { RewardTask, UserRewardProgress } from "@/app/lib/rewards-engine"
 import { calculateRewardSummary, evaluateAllTasksForUser } from "@/app/lib/rewards-engine"
 import {
@@ -38,8 +37,7 @@ import {
   mapConvexSwapTransactionsToActivityRows,
   mapSwapTransactionHistoryToActivityRows,
 } from "@/app/dashboard/swap-activity"
-import { buildPortfolioBorrowData, mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
-import { HealthRiskBanner, type HealthRiskProduct } from "@/app/dashboard/health-risk-banner"
+import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
 import { useDashboardPage } from "@/app/dashboard/use-dashboard-page"
 import { ActionIcon } from "@/app/components/action-icon"
@@ -320,36 +318,6 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
   const persistRewardsClaim = useDurableRewardsClaim()
   // Full dashboard recent activity (all products) so the rewards table isn't claims-only.
   const { data: dashboardData } = useDashboardPage({ walletProfileId: walletId })
-  // Closest-to-liquidation position across products. Borrow uses its aggregate HF
-  // (the hero definition); multiply's creditLines.averageHealthFactor is already the
-  // worst active position. We surface whichever is lower so the banner deep-links to
-  // the action that actually reduces that position's risk.
-  const healthRisk = useMemo<{ product: HealthRiskProduct; hf: number } | null>(() => {
-    const candidates: Array<{ product: HealthRiskProduct; hf: number | null }> = []
-    try {
-      if (avana.borrow?.state?.accounts?.[walletId]) {
-        const borrow = buildPortfolioBorrowData(avana.borrow.state, walletId)
-        candidates.push({ product: "borrow", hf: borrow.creditLines.averageHealthFactor })
-      }
-    } catch {
-      /* borrow session not ready */
-    }
-    try {
-      if (avana.multiply?.state?.positions) {
-        const multiply = buildPortfolioMultiplyData(walletId, avana.multiply.state)
-        candidates.push({ product: "multiply", hf: multiply.creditLines.averageHealthFactor })
-      }
-    } catch {
-      /* multiply session not ready */
-    }
-    const finite = candidates.filter(
-      (candidate): candidate is { product: HealthRiskProduct; hf: number } =>
-        candidate.hf != null && Number.isFinite(candidate.hf),
-    )
-    if (finite.length === 0) return null
-    return finite.reduce((worst, candidate) => (candidate.hf < worst.hf ? candidate : worst))
-  }, [avana.borrow?.state, avana.multiply?.state, walletId])
-
   const [now, setNow] = useState(0)
   const [isClaiming, setIsClaiming] = useState(false)
   const [educationOpen, setEducationOpen] = useState(false)
@@ -619,7 +587,6 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
   return (
     <>
       <div className={detailSectionStackClass}>
-        {healthRisk ? <HealthRiskBanner healthFactor={healthRisk.hf} product={healthRisk.product} /> : null}
         <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-20">
           <div className="min-w-0 pb-8 lg:col-span-2">
             <PortfolioStatCards activeTab={activeDashboardTab} />

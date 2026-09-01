@@ -13,6 +13,7 @@ import type { PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfoli
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { HealthRiskBanner } from "@/app/dashboard/health-risk-banner"
 import { AccountModuleBoundary, ProductAvailableCard } from "./account-sections-shared"
 
 const MultiplyCollateralTable = lazy(async () => ({
@@ -83,6 +84,7 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
         <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
           {t("Multiply Health")}
         </h3>
+        <HealthRiskBanner healthFactor={multiplySnapshot.averageHealthFactor} product="multiply" />
         <div className="grid gap-4 xl:grid-cols-2">
           <SuppliesHealthFactorCard
             averageHealthFactor={multiplySnapshot.averageHealthFactor}

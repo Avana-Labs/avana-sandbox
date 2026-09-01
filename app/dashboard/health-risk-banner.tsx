@@ -9,9 +9,9 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 export type HealthRiskProduct = "borrow" | "multiply"
 
 /**
- * Proactive, dismissible banner shown above the portfolio hero when the wallet's
- * closest-to-liquidation position lands in the shared `danger` or `watch` band. It
- * deep-links to the action that reduces risk for the product that triggered it —
+ * Proactive, dismissible banner shown inside the matching product tab, directly
+ * beneath its health heading, when a position lands in the shared `danger` or
+ * `watch` band. It deep-links to the action that reduces risk for that product —
  * Repay for borrow, Deleverage for multiply. All tones come from the shared health
  * band (no invented colours) so it reads consistently with the HF bars elsewhere.
  */
