@@ -141,7 +141,7 @@ export function TradingFeesPanel({
                     </td>
                     <td
                       className={cn(
-                        "py-3.5 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white",
+                        "py-3.5 text-right text-[15px] font-normal tracking-normal text-foreground dark:text-white",
                         TABLE_ROW_HOVER_BG,
                       )}
                     >
@@ -226,7 +226,7 @@ function PoolIdentity({
         </span>
       </span>
       <div className="flex min-w-0 flex-col">
-        <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+        <span className="truncate text-[15px] font-medium tracking-normal text-foreground dark:text-white">
           {label}
         </span>
         <span className="text-[11px] text-muted-foreground">{protocol}</span>
@@ -253,7 +253,7 @@ function RangeStatus({ inRange }: { inRange: boolean }) {
 function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
   return (
     <div className="flex flex-col items-end pr-4">
-      <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">{token}</span>
+      <span className="text-[15px] font-normal tracking-normal text-foreground dark:text-white">{token}</span>
       <span className="text-[13px] text-muted-foreground dark:text-white/40">{usd}</span>
     </div>
   )
@@ -287,7 +287,7 @@ function TradingFeeMobileCard({
               </span>
             </span>
             <div className="min-w-0">
-              <div className="text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+              <div className="text-[15px] font-medium tracking-normal text-foreground dark:text-white">
                 {row.poolLabel}
               </div>
               <div className="text-[11px] text-muted-foreground">{row.protocol}</div>
@@ -321,7 +321,7 @@ function TradingFeeMobileCard({
         <Button
           type="button"
           variant="brand"
-          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
           onClick={(event) => {
             event.stopPropagation()
             onClaim()
@@ -333,7 +333,7 @@ function TradingFeeMobileCard({
         <Button
           type="button"
           variant="brand-secondary"
-          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
           onClick={(event) => {
             event.stopPropagation()
             onRemove()

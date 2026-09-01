@@ -72,7 +72,7 @@ function PoolIdentity({ row }: { row: DashboardWalletBalanceRow }) {
       <div className="flex min-w-0 items-center gap-3">
         <TokenIcon symbol={row.symbol} size="table" />
         <div className="flex min-w-0 flex-col">
-          <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground">{row.name}</div>
+          <div className="truncate text-[15px] font-medium tracking-normal text-foreground">{row.name}</div>
           <div className="text-[11px] text-muted-foreground">{detail.protocol}</div>
         </div>
       </div>
@@ -100,7 +100,7 @@ function PoolSourceStatus({ row }: { row: DashboardWalletBalanceRow }) {
 function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
   return (
     <div className="flex flex-col items-end pr-4">
-      <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground">{token}</span>
+      <span className="text-[15px] font-normal tracking-normal text-foreground">{token}</span>
       <span className="text-[13px] text-muted-foreground">{usd}</span>
     </div>
   )
@@ -110,7 +110,7 @@ function WalletMetric({ label, value }: { label: string; value: string }) {
   return (
     <article className="min-w-0 space-y-1.5">
       <div className="text-[13px] text-muted-foreground">{label}</div>
-      <div className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
+      <div className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-[-0.02em] text-foreground">
         {value}
       </div>
     </article>
@@ -183,7 +183,7 @@ export function DashboardWalletTab({ walletId, balances }: { walletId: string; b
   return (
     <section id="dashboard-wallet" className={detailSectionStackClass} aria-label={t("Wallet balances")}>
       <section className="space-y-4">
-        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">
+        <h2 className="text-[20px] font-medium tracking-[-0.01em] text-foreground md:text-[20px]">
           {t("Wallet Balance")}
         </h2>
         <div className="grid w-full grid-cols-1 gap-5 xl:gap-x-8">
@@ -243,9 +243,7 @@ function WalletBalanceSection({
                   <div className="flex min-w-0 items-center gap-3">
                     <TokenIcon symbol={row.symbol} size="table" />
                     <div className="min-w-0">
-                      <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground">
-                        {row.name}
-                      </div>
+                      <div className="truncate text-[15px] font-medium tracking-normal text-foreground">{row.name}</div>
                       <div className="mt-0.5 text-[13px] text-muted-foreground">
                         {row.symbol} · {row.sourceLabel}
                       </div>
@@ -253,17 +251,17 @@ function WalletBalanceSection({
                   </div>
                 </td>
                 <td
-                  className={`px-4 py-4 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground ${TABLE_ROW_HOVER_BG}`}
+                  className={`px-4 py-4 text-right text-[15px] font-normal tracking-normal text-foreground ${TABLE_ROW_HOVER_BG}`}
                 >
                   {m(row.valueUsd > 0 && row.amount > 0 ? exact(row.valueUsd / row.amount) : DASH)}
                 </td>
                 <td
-                  className={`px-4 py-4 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground ${TABLE_ROW_HOVER_BG}`}
+                  className={`px-4 py-4 text-right text-[15px] font-normal tracking-normal text-foreground ${TABLE_ROW_HOVER_BG}`}
                 >
                   {m(formatAssetAmount(row.amount, row.symbol))}
                 </td>
                 <td
-                  className={`px-4 py-4 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground ${TABLE_ROW_HOVER_BG}`}
+                  className={`px-4 py-4 text-right text-[15px] font-normal tracking-normal text-foreground ${TABLE_ROW_HOVER_BG}`}
                 >
                   {m(exact(row.valueUsd))}
                 </td>
@@ -300,7 +298,7 @@ function WalletBalanceSection({
                 <div className="font-data text-[15px] font-medium tabular-nums text-foreground">
                   {m(exact(row.valueUsd))}
                 </div>
-                <div className="font-data text-[12.5px] tabular-nums text-muted-foreground">
+                <div className="font-data text-[12px] tabular-nums text-muted-foreground">
                   {m(formatAssetAmount(row.amount, row.symbol))}
                 </div>
               </div>

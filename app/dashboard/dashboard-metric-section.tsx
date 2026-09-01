@@ -86,7 +86,7 @@ export function DashboardOverviewSection({
   return (
     <section className="space-y-4 pb-3">
       {hideHeading ? null : (
-        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+        <h2 className="text-[20px] font-medium tracking-[-0.01em] text-foreground md:text-[20px]">{title}</h2>
       )}
       <MetricGrid
         labelOnTop
@@ -183,7 +183,7 @@ export function DashboardCreditOverviewSection({
   return (
     <section className="space-y-4 pb-3">
       {hideHeading ? null : (
-        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+        <h2 className="text-[20px] font-medium tracking-[-0.01em] text-foreground md:text-[20px]">{title}</h2>
       )}
       <MetricGrid labelOnTop metrics={items} />
     </section>
@@ -256,7 +256,7 @@ export function DashboardMultiplyBalanceSection({
   return (
     <section className="space-y-4 pb-3">
       {hideHeading ? null : (
-        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+        <h2 className="text-[20px] font-medium tracking-[-0.01em] text-foreground md:text-[20px]">{title}</h2>
       )}
       <MetricGrid labelOnTop metrics={items} />
     </section>
@@ -276,7 +276,7 @@ export function DashboardPerformanceSection({
 
   return (
     <section className="space-y-4 pb-3">
-      <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+      <h2 className="text-[20px] font-medium tracking-[-0.01em] text-foreground md:text-[20px]">{title}</h2>
       <MetricGrid
         metrics={[
           {
@@ -393,7 +393,7 @@ export function DashboardLendPerformanceSection({
   return (
     <section className="space-y-4 pb-3">
       {hideHeading ? null : (
-        <h2 className="text-[19px] font-medium tracking-[-0.03em] text-foreground md:text-[20px]">{title}</h2>
+        <h2 className="text-[20px] font-medium tracking-[-0.01em] text-foreground md:text-[20px]">{title}</h2>
       )}
       <MetricGrid labelOnTop metrics={items} />
     </section>

@@ -94,7 +94,7 @@ export function SuppliesPanel({
                     <col className="w-[24%]" />
                   </colgroup>
                   <thead>
-                    <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
+                    <tr className="text-left text-[11px] font-medium text-muted-foreground">
                       <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                         {t("Pool")}
                       </th>
@@ -274,10 +274,10 @@ export function SuppliesHealthFactorCard({
     <div className="mb-4 rounded-radius-md border border-border bg-card px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
       <div className="flex h-6 items-center justify-between gap-3">
         <div className="flex items-baseline gap-2">
-          <span className="font-data text-[20px] font-bold leading-none tracking-tight text-foreground">
+          <span className="font-data text-[20px] font-normal leading-none tracking-tight text-foreground">
             {masked ? "••" : hfLabel}
           </span>
-          <span className="text-[13px] font-semibold text-foreground">{t("Credit Health")}</span>
+          <span className="text-[13px] font-normal text-foreground">{t("Credit Health")}</span>
           <ActionMetricHelp
             topic="Credit Health"
             text={t(
@@ -287,7 +287,7 @@ export function SuppliesHealthFactorCard({
         </div>
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full bg-table-header px-2.5 py-0.5 text-[10px] font-bold tracking-wide",
+            "inline-flex items-center gap-1.5 rounded-full bg-table-header px-2.5 py-0.5 text-[10px] font-normal tracking-wide",
             status.tone === "positive" && "text-success",
             status.tone === "warning" && "text-amber-600",
             status.tone === "danger" && "text-rose-600",

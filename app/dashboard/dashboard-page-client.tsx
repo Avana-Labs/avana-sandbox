@@ -638,7 +638,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
               id="dashboard-activity"
               className="mt-10 hidden scroll-mt-24 border-t border-border pt-10 lg:block"
             >
-              <h2 className="mb-5 text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+              <h2 className="mb-5 text-[22px] font-medium leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
                 {t("Activity")}
               </h2>
               <RecentActivity rows={allActivityRows} walletId={walletId} />
@@ -648,7 +648,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
           <div className="min-w-0 lg:col-start-1 lg:row-start-2 lg:pt-8">
             <section>
               <div className="mb-6 mt-10 border-t border-border pt-10 md:mt-12 md:pt-12 lg:hidden">
-                <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground">
+                <h2 className="text-[22px] font-medium leading-none tracking-[-0.01em] text-foreground">
                   {t("Dashboard Positions")}
                 </h2>
               </div>
@@ -659,7 +659,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
                 ariaLabel={t("Dashboard tabs")}
                 className="mb-6"
                 listClassName="w-max min-w-full gap-6 px-2 sm:gap-9 sm:px-0"
-                tabClassName="text-[17px] font-medium tracking-[-0.03em] md:text-[18px]"
+                tabClassName="text-[18px] font-medium tracking-[-0.01em] md:text-[18px]"
               />
 
               <div className="min-w-0">
@@ -680,7 +680,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
 
               {/* Mobile — Activity sits above Learn Avana. */}
               <section className="mt-10 border-t border-border pt-10 md:mt-12 md:pt-12 lg:hidden">
-                <h2 className="mb-5 text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground">
+                <h2 className="mb-5 text-[22px] font-medium leading-none tracking-[-0.01em] text-foreground">
                   {t("Activity")}
                 </h2>
                 <RecentActivity rows={allActivityRows} walletId={walletId} />
@@ -699,7 +699,7 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
           {claimHref ? (
             <Link
               href={claimHref}
-              className={primaryCtaClass({ size: "compact", className: "w-full gap-2.5 font-bold [&_svg]:size-5" })}
+              className={primaryCtaClass({ size: "compact", className: "w-full gap-2.5 font-normal [&_svg]:size-5" })}
             >
               <ActionIcon label="Claim" />
               {t("Claim rewards")}

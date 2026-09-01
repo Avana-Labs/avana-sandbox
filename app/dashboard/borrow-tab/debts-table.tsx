@@ -94,7 +94,7 @@ export function DebtsPanel({
                     <col className="w-[19%]" />
                   </colgroup>
                   <thead>
-                    <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
+                    <tr className="text-left text-[11px] font-medium text-muted-foreground">
                       <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                         {t("Debt")}
                       </th>
@@ -130,7 +130,7 @@ export function DebtsPanel({
                             <div className="flex min-w-0 items-center gap-2.5">
                               <TokenIcon symbol={debtSymbol} size="table" />
                               <div className="min-w-0">
-                                <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                                <div className="truncate text-[15px] font-medium tracking-normal text-foreground dark:text-white">
                                   {debtSymbol}
                                 </div>
                                 <div className="mt-0.5 truncate text-[13px] text-muted-foreground">
@@ -211,7 +211,7 @@ export function DebtsPanel({
                       <div className="flex min-w-0 items-center gap-2.5">
                         <TokenIcon symbol={row.debtAssetSymbol} size="table" />
                         <div className="min-w-0">
-                          <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground">
+                          <div className="truncate text-[15px] font-medium tracking-normal text-foreground">
                             {row.debtAssetSymbol}
                           </div>
                           <div className="truncate text-[13px] text-muted-foreground">
@@ -315,10 +315,10 @@ export function CurrentLtvCard({
     <div className="mb-4 rounded-radius-md border border-border bg-card px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
       <div className="flex h-6 items-center justify-between gap-3">
         <div className="flex min-w-0 items-baseline gap-2">
-          <span className="font-data text-[20px] font-bold leading-none tracking-tight text-foreground">
+          <span className="font-data text-[20px] font-normal leading-none tracking-tight text-foreground">
             {borrowingPowerLabel}
           </span>
-          <span className="text-[13px] font-semibold text-foreground">{t("Borrowing Power")}</span>
+          <span className="text-[13px] font-normal text-foreground">{t("Borrowing Power")}</span>
           <ActionMetricHelp
             topic="Borrowing Power"
             text={t(
@@ -338,7 +338,7 @@ export function CurrentLtvCard({
           className="pointer-events-none absolute bottom-full z-10 -translate-x-1/2 pb-1 text-center"
           style={{ left: `${barFillPct}%` }}
         >
-          <div className="rounded-md bg-foreground px-1.5 py-0.5 font-data text-[11px] font-bold text-background">
+          <div className="rounded-md bg-foreground px-1.5 py-0.5 font-data text-[11px] font-normal text-background">
             {masked ? "••" : `${liqUtilizationPct.toFixed(1)}%`}
           </div>
           <div className="-mt-px text-[10px] leading-none text-foreground">▼</div>
@@ -364,11 +364,11 @@ export function CurrentLtvCard({
 
       <div className="mt-2.5 flex items-center justify-between text-[11px] font-medium text-muted-foreground">
         <span>
-          {t("Used")} <span className="font-semibold text-foreground">{usedLabel}</span>
+          {t("Used")} <span className="font-normal text-foreground">{usedLabel}</span>
         </span>
         <span className="inline-flex items-center gap-2">
           <span>
-            {t("Liq. max")} <span className="font-semibold text-foreground">{maxLabel}</span>
+            {t("Liq. max")} <span className="font-normal text-foreground">{maxLabel}</span>
           </span>
           <span className={liqPercentTone}>
             {masked ? "••" : t("{percent}% of liq. max").replace("{percent}", liqUtilizationPct.toFixed(0))}
@@ -380,11 +380,11 @@ export function CurrentLtvCard({
         <div className="mt-3 flex items-center justify-between border-t border-border pt-3 text-[11px] font-medium text-muted-foreground">
           <span>
             {t("Interest / day")}{" "}
-            <span className="font-semibold text-rose-500">{masked ? "••" : exact(dailyInterestUsd ?? 0)}</span>
+            <span className="font-normal text-rose-500">{masked ? "••" : exact(dailyInterestUsd ?? 0)}</span>
           </span>
           <span>
             {t("Accrued interest")}{" "}
-            <span className="font-semibold text-foreground">{masked ? "••" : exact(accruedInterestUsd ?? 0)}</span>
+            <span className="font-normal text-foreground">{masked ? "••" : exact(accruedInterestUsd ?? 0)}</span>
           </span>
         </div>
       ) : null}

@@ -125,7 +125,7 @@ export function DebtPositionsPanel({
                     </td>
                     <td
                       className={cn(
-                        "py-3.5 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white",
+                        "py-3.5 text-right text-[15px] font-normal tracking-normal text-foreground dark:text-white",
                         TABLE_ROW_HOVER_BG,
                       )}
                     >
@@ -195,9 +195,7 @@ function AssetIdentity({ symbol, name }: { symbol: string; name: string }) {
     <div className="flex items-center gap-2.5">
       <TokenIcon symbol={symbol} size="table" />
       <div className="flex min-w-0 flex-col">
-        <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
-          {name}
-        </span>
+        <span className="truncate text-[15px] font-medium tracking-normal text-foreground dark:text-white">{name}</span>
         <span className="text-[11px] text-muted-foreground">{symbol}</span>
       </div>
     </div>
@@ -207,7 +205,7 @@ function AssetIdentity({ symbol, name }: { symbol: string; name: string }) {
 function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
   return (
     <div className="flex flex-col items-end pr-4">
-      <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">{token}</span>
+      <span className="text-[15px] font-normal tracking-normal text-foreground dark:text-white">{token}</span>
       <span className="text-[13px] text-muted-foreground dark:text-white/40">{usd}</span>
     </div>
   )
@@ -236,9 +234,7 @@ function DebtMobileCard({
           <div className="flex min-w-0 items-center gap-2.5">
             <TokenIcon symbol={row.symbol} size="table" />
             <div className="min-w-0">
-              <div className="text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
-                {row.name}
-              </div>
+              <div className="text-[15px] font-medium tracking-normal text-foreground dark:text-white">{row.name}</div>
               <div className="text-[11px] text-muted-foreground">{row.symbol}</div>
             </div>
           </div>
@@ -269,7 +265,7 @@ function DebtMobileCard({
         <Button
           type="button"
           variant="brand"
-          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
           onClick={(event) => {
             event.stopPropagation()
             onBorrow()
@@ -281,7 +277,7 @@ function DebtMobileCard({
         <Button
           type="button"
           variant="brand-secondary"
-          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
           onClick={(event) => {
             event.stopPropagation()
             onRepay()

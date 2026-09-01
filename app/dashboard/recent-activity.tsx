@@ -247,7 +247,7 @@ export function RecentActivity({
                     <div className="truncate text-[14px] font-medium leading-5 tracking-[-0.02em] text-foreground">
                       {row.primaryLabel}
                     </div>
-                    <div className="mt-0.5 truncate text-[12.5px] leading-4 text-muted-foreground">
+                    <div className="mt-0.5 truncate text-[12px] leading-4 text-muted-foreground">
                       {[t(KIND_LABEL[row.kind]), row.secondaryLabel || null, formatRelativeTime(row.at)]
                         .filter(Boolean)
                         .join(" · ")}
@@ -279,7 +279,7 @@ export function RecentActivity({
           {hasMore ? (
             <div
               ref={sentinelRef}
-              className="border-t border-border px-3.5 py-3 text-center text-[12.5px] text-muted-foreground"
+              className="border-t border-border px-3.5 py-3 text-center text-[12px] text-muted-foreground"
               aria-live="polite"
             >
               {isLoadingMore ? `${t("Loading")}…` : null}

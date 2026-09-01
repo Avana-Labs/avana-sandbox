@@ -54,7 +54,7 @@ function FeeCard({
       <div className="mt-3 flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <AvanaCoin />
-          <span className="truncate text-[24px] font-normal leading-none tracking-[-0.03em] text-foreground sm:text-[26px]">
+          <span className="truncate text-[24px] font-normal leading-none tracking-[-0.01em] text-foreground sm:text-[26px]">
             {hidden ? "••••" : value}
           </span>
         </div>
@@ -105,14 +105,14 @@ export function PortfolioRewardsCards({
           hidden={!showDollarAmounts}
           action={
             claimHref ? (
-              <Button asChild size="sm" className="shrink-0 gap-2 font-bold [&_svg]:size-4">
+              <Button asChild size="sm" className="shrink-0 gap-2 font-normal [&_svg]:size-4">
                 <Link href={claimHref}>
                   <CircleDollarSign className="size-4" />
                   {t("Claim Rewards")}
                 </Link>
               </Button>
             ) : (
-              <Button type="button" size="sm" disabled className="shrink-0 gap-2 font-bold [&_svg]:size-4">
+              <Button type="button" size="sm" disabled className="shrink-0 gap-2 font-normal [&_svg]:size-4">
                 <CircleDollarSign className="size-4" />
                 {t("Claim Rewards")}
               </Button>

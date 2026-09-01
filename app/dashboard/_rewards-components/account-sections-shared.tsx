@@ -98,7 +98,7 @@ export function SectionTabStrip<T extends string>({
               onClick={() => onChange(tab.id)}
               data-state={active ? "active" : "inactive"}
               className={cn(
-                "shrink-0 whitespace-nowrap border-b-2 pb-2 text-left text-[15px] font-normal tracking-[-0.03em] transition-colors md:text-[17px]",
+                "shrink-0 whitespace-nowrap border-b-2 pb-2 text-left text-[15px] font-normal tracking-normal transition-colors md:text-[18px]",
                 active
                   ? "border-foreground text-foreground"
                   : "border-transparent text-muted-foreground hover:text-foreground",

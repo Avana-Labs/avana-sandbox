@@ -107,7 +107,7 @@ export function DashboardInvestments({
                   <col className={showIndexColumn ? "w-[36%]" : "w-[40%]"} />
                 </colgroup>
                 <thead>
-                  <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
+                  <tr className="text-left text-[11px] font-medium text-muted-foreground">
                     {showIndexColumn ? (
                       <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                         #
@@ -146,7 +146,7 @@ export function DashboardInvestments({
                           <div className="flex items-center gap-2.5">
                             <TokenIcon symbol={token.symbol} size="table" />
                             <div className="flex min-w-0 flex-col">
-                              <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                              <span className="truncate text-[15px] font-medium tracking-normal text-foreground dark:text-white">
                                 {token.name}
                               </span>
                               <span className="mt-0.5 text-[13px] text-muted-foreground">{token.symbol}</span>
@@ -154,7 +154,7 @@ export function DashboardInvestments({
                           </div>
                         </td>
                         <td className={`py-3.5 text-right ${TABLE_ROW_HOVER_BG}`}>
-                          <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+                          <div className="text-[15px] font-normal tracking-normal text-foreground dark:text-white">
                             {m(formatTokenAmount(token.balance, token.symbol))}
                           </div>
                           <div className="text-[13px] text-muted-foreground">
@@ -162,7 +162,7 @@ export function DashboardInvestments({
                           </div>
                         </td>
                         <td className={`py-3.5 text-right ${TABLE_ROW_HOVER_BG}`}>
-                          <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+                          <div className="text-[15px] font-normal tracking-normal text-foreground dark:text-white">
                             {token.apyPct.toFixed(2)}%
                           </div>
                           <div className="text-[13px] text-muted-foreground">
@@ -268,7 +268,7 @@ export function DashboardInvestments({
                     <Button
                       type="button"
                       variant="brand"
-                      className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+                      className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
                       onClick={(event) => {
                         event.stopPropagation()
                         router.push(
@@ -282,7 +282,7 @@ export function DashboardInvestments({
                     <Button
                       type="button"
                       variant="brand-secondary"
-                      className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+                      className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
                       onClick={(event) => {
                         event.stopPropagation()
                         router.push(
