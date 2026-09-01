@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import { CarouselArrowButtons, useOverflowCarousel } from "@/app/components/carousel-arrow-buttons"
 import { HowItWorks } from "@/app/components/how-it-works"
 import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
@@ -77,7 +78,10 @@ function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => stri
 
 export function BorrowPageHero({ pageData }: { pageData: BorrowPageData }) {
   const { compact } = useCurrency()
-  const heroCards = buildHeroCards(pageData, compact)
+  // Memoize so the hero cards keep a stable identity across re-renders; rebuilding
+  // them every render churned the scroller's children and reflowed it (a flicker)
+  // whenever live data swapped in or any parent re-rendered.
+  const heroCards = useMemo(() => buildHeroCards(pageData, compact), [pageData, compact])
   const { scrollerRef, canPrev, canNext, scrollByCard } = useOverflowCarousel()
 
   return (

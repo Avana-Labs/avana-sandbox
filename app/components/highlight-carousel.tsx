@@ -70,10 +70,28 @@ export const HighlightCarousel = forwardRef<HighlightCarouselHandle, HighlightCa
     const track = trackRef.current
     if (!sequence || !track) return
 
+    // Only snap to the start on the FIRST measurement. Later ResizeObserver fires
+    // (live data swapping into the row post-mount, font/layout settle) must NOT
+    // reset scroll to 0 — that snapped the marquee back mid-animation, which read
+    // as a flicker "back and forth" before it settled. On a resize, keep the
+    // current offset and re-wrap it into the new loop range so motion continues.
+    let hasMeasured = false
     const updateWidth = () => {
-      sequenceWidthRef.current = sequence.offsetWidth
-      xRef.current = 0
-      track.style.transform = "translate3d(0px, 0, 0)"
+      const nextWidth = sequence.offsetWidth
+      sequenceWidthRef.current = nextWidth
+      if (!hasMeasured) {
+        hasMeasured = true
+        xRef.current = 0
+        track.style.transform = "translate3d(0px, 0, 0)"
+        return
+      }
+      if (nextWidth > 0) {
+        let x = xRef.current
+        while (x <= -nextWidth) x += nextWidth
+        while (x > 0) x -= nextWidth
+        xRef.current = x
+        track.style.transform = `translate3d(${x}px, 0, 0)`
+      }
     }
 
     updateWidth()

@@ -564,6 +564,8 @@ const LoopTableRow = React.memo(function LoopTableRow({
                 src={row.protocolLogo}
                 alt=""
                 aria-hidden="true"
+                width={48}
+                height={48}
                 className="size-12 shrink-0 object-contain"
                 loading={index < 2 ? "eager" : "lazy"}
                 fetchPriority={index < 2 ? "high" : undefined}
@@ -589,6 +591,8 @@ const LoopTableRow = React.memo(function LoopTableRow({
                 src={assetLogo}
                 alt=""
                 aria-hidden="true"
+                width={48}
+                height={48}
                 className="size-12 shrink-0 object-contain"
                 loading={index < 2 ? "eager" : "lazy"}
                 fetchPriority={index < 2 ? "high" : undefined}
@@ -732,6 +736,8 @@ const MobileLoopCard = React.memo(function MobileLoopCard({
                         src={protocolLogo}
                         alt=""
                         aria-hidden="true"
+                        width={48}
+                        height={48}
                         className="size-full object-contain"
                         loading={index < 2 ? "eager" : "lazy"}
                         fetchPriority={index < 2 ? "high" : undefined}
@@ -745,6 +751,8 @@ const MobileLoopCard = React.memo(function MobileLoopCard({
                         src={assetLogo}
                         alt=""
                         aria-hidden="true"
+                        width={48}
+                        height={48}
                         className="size-full object-contain"
                         loading={index < 2 ? "eager" : "lazy"}
                         fetchPriority={index < 2 ? "high" : undefined}
@@ -805,13 +813,27 @@ function TrendingLoopCard({
           {collateralSrc ? (
             <span className="absolute left-0 top-1/2 z-10 flex size-16 -translate-y-1/2 items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={collateralSrc} alt="" aria-hidden="true" className="size-full object-contain" />
+              <img
+                src={collateralSrc}
+                alt=""
+                aria-hidden="true"
+                width={64}
+                height={64}
+                className="size-full object-contain"
+              />
             </span>
           ) : null}
           {borrowSrc ? (
             <span className="absolute left-8 top-1/2 flex size-16 -translate-y-1/2 items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={borrowSrc} alt="" aria-hidden="true" className="size-full object-contain" />
+              <img
+                src={borrowSrc}
+                alt=""
+                aria-hidden="true"
+                width={64}
+                height={64}
+                className="size-full object-contain"
+              />
             </span>
           ) : null}
         </div>
