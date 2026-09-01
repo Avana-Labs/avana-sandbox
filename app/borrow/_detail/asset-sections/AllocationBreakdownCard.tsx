@@ -197,7 +197,7 @@ export function AllocationBreakdownCard({ detail, id }: Props) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border dark:divide-white/6">
-                {rows.map((row) => (
+                {rows.map((row, index) => (
                   <tr
                     key={row.id}
                     className="group cursor-pointer transition-colors"

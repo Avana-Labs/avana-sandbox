@@ -192,10 +192,7 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
   const { compact } = useCurrency()
   const { t } = useTranslation()
   return (
-    <tr
-      className="group cursor-pointer transition-colors"
-      onClick={() => onViewMarket(pool)}
-    >
+    <tr className="group cursor-pointer transition-colors" onClick={() => onViewMarket(pool)}>
       <td
         className={`py-2.5 pl-6 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
       >

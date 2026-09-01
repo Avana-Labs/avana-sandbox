@@ -56,7 +56,10 @@ function preloadSearchIcon(src: string) {
     image.onerror = finish
     image.onload = () => {
       if (typeof image.decode === "function") {
-        void image.decode().catch(() => undefined).finally(finish)
+        void image
+          .decode()
+          .catch(() => undefined)
+          .finally(finish)
       } else {
         finish()
       }
@@ -169,11 +172,7 @@ function TokenAvatar({ visual }: { visual: BorrowAssetVisual }) {
         visual.iconUrl ? undefined : cn("overflow-hidden rounded-full", visual.bgClass, visual.textClass),
       )}
     >
-      {visual.iconUrl ? (
-        <SearchResultImage src={visual.iconUrl} />
-      ) : (
-        visual.shortLabel
-      )}
+      {visual.iconUrl ? <SearchResultImage src={visual.iconUrl} /> : visual.shortLabel}
     </span>
   )
 }

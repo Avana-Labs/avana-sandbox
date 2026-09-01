@@ -125,7 +125,9 @@ vi.mock("@/app/borrow/components/collateral-pools-table", () => ({
     onBorrowAssetMobile: (asset: typeof asset) => void
   }) => (
     <div>
-      <span data-testid="rendered-market">{groups.flatMap((group) => group.spokes).flatMap((spoke) => spoke.rows)[0]?.name}</span>
+      <span data-testid="rendered-market">
+        {groups.flatMap((group) => group.spokes).flatMap((spoke) => spoke.rows)[0]?.name}
+      </span>
       <button type="button" onClick={() => onUseAsCollateral(market)}>
         open-supply
       </button>

@@ -9,10 +9,10 @@ describe("SandboxGate first paint", () => {
     // The !hydrated branch may SSR the onboarding hero ONLY for a visitor with no auth-hint cookie
     // (authHint === "guest") — they have never signed in on this browser, so there is no onboarded
     // session to flash, and it gives guests a fast LCP. Anyone who MIGHT be signed in keeps the
-    // neutral ProductRoutePending shell (no welcome flicker) until SIWE hydrates.
+    // route-matched content skeleton (no welcome flicker) until SIWE hydrates.
     const hydratedBlock = source.split("if (!hydrated)")[1]?.split("if (!isSignedIn || !authedWallet)")[0] ?? ""
     expect(hydratedBlock).toMatch(/authHint === "guest"/)
-    expect(hydratedBlock).toMatch(/<ProductRoutePending/)
+    expect(hydratedBlock).toMatch(/<RouteContentSkeleton/)
     // GuestOnboardingFlow must appear only inside the authHint === "guest" guard, never before it.
     const beforeGuestGuard = hydratedBlock.split('authHint === "guest"')[0] ?? ""
     expect(beforeGuestGuard).not.toMatch(/<GuestOnboardingFlow/)

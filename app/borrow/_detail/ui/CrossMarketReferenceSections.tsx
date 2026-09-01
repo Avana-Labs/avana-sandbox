@@ -142,7 +142,7 @@ export function AssetsYouCanBorrowSection({
               </tr>
             </thead>
             <tbody className="divide-y divide-border dark:divide-white/6">
-              {rows.map((asset) => (
+              {rows.map((asset, index) => (
                 <tr
                   key={asset.id}
                   className="group cursor-pointer transition-colors"

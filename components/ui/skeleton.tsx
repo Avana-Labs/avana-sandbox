@@ -35,15 +35,12 @@ function Skeleton({ className, shimmer: _shimmer, ...props }: SkeletonProps) {
     // provider replaces an identical loading tree, the new skeleton continues
     // the existing sweep instead of restarting from the left edge.
     const timelineTime = Number(document.timeline.currentTime ?? 0)
-    const animation = element.animate(
-      [{ backgroundPosition: "-125% 0" }, { backgroundPosition: "225% 0" }],
-      {
-        duration: SKELETON_SHIMMER_DURATION_MS,
-        delay: -(timelineTime % SKELETON_SHIMMER_DURATION_MS),
-        easing: "linear",
-        iterations: Infinity,
-      },
-    )
+    const animation = element.animate([{ backgroundPosition: "-125% 0" }, { backgroundPosition: "225% 0" }], {
+      duration: SKELETON_SHIMMER_DURATION_MS,
+      delay: -(timelineTime % SKELETON_SHIMMER_DURATION_MS),
+      easing: "linear",
+      iterations: Infinity,
+    })
 
     return () => animation.cancel()
   }, [])

@@ -218,10 +218,7 @@ const LoanAssetsRow = memo(function LoanAssetsRow({
   const { compact } = useCurrency()
   const { t } = useTranslation()
   return (
-    <tr
-      className="group cursor-pointer transition-colors"
-      onClick={() => router.push(borrowAssetDetailPath(asset.id))}
-    >
+    <tr className="group cursor-pointer transition-colors" onClick={() => router.push(borrowAssetDetailPath(asset.id))}>
       <td
         className={`py-2.5 pl-6 pr-3 align-middle font-data text-[13px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
       >
