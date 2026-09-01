@@ -2,6 +2,7 @@ import { cleanup, render, screen, within } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
+import { pendingUmbrellaPersistAction } from "@/app/lib/umbrella-system/use-umbrella-session"
 import UmbrellaPage from "@/app/umbrella/page"
 
 function renderUmbrellaPage() {
@@ -63,5 +64,26 @@ describe("Umbrella page", () => {
     for (const label of ["Stake", "Claim", "Cooldown", "Unstake"]) {
       expect(within(tablist).getByRole("tab", { name: label })).toBeInTheDocument()
     }
+  })
+
+  it("shows zero wallet metrics while the Convex umbrella snapshot is pending", () => {
+    render(
+      <DisplayPreferencesProvider>
+        <AvanaSessionsProvider
+          walletId="umbrella-test-wallet"
+          persistLocalState={false}
+          persistUmbrellaState={false}
+          sessionSource="convex"
+          authoritativeWalletPending
+          persistUmbrellaAction={pendingUmbrellaPersistAction}
+        >
+          <UmbrellaPage />
+        </AvanaSessionsProvider>
+      </DisplayPreferencesProvider>,
+    )
+
+    expect(screen.queryByText("$38,544")).not.toBeInTheDocument()
+    expect(screen.queryByText("Stake GHO")).not.toBeInTheDocument()
+    expect(screen.getAllByText("You have no Umbrella positions yet.").length).toBeGreaterThan(0)
   })
 })

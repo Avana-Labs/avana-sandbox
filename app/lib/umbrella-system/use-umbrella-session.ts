@@ -158,6 +158,11 @@ export type PersistUmbrellaAction = (args: {
   amount: number
 }) => Promise<PersistUmbrellaActionResult>
 
+/** Marks a Convex-backed session as pending so wallet metrics stay at zero until remote data arrives. */
+export const pendingUmbrellaPersistAction: PersistUmbrellaAction = async () => {
+  throw new Error("Umbrella session not ready")
+}
+
 const UMBRELLA_STATE_PREFIX = `avana.umbrella.session.${SESSION_CACHE_VERSION}`
 
 export const UMBRELLA_MARKET_ORDER: UmbrellaMarketId[] = ["gho", "usdc", "usdt", "weth"]

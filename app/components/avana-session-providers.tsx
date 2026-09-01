@@ -3,6 +3,7 @@
 import { lazy, Suspense, type ReactNode } from "react"
 import { ConvexProviderWithAuth, ConvexReactClient } from "convex/react"
 import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
+import { pendingUmbrellaPersistAction } from "@/app/lib/umbrella-system/use-umbrella-session"
 import { hasConvexClient, MarketLiquidityProvider } from "@/app/lib/convex/market-liquidity-provider"
 import { useConvexSiweAuth, useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { useOpenGateAuthBootstrap } from "@/app/lib/siwe/use-open-gate-auth-bootstrap"
@@ -41,6 +42,7 @@ function LocalSessionFallback({ walletId, children }: { walletId: string; childr
       persistUmbrellaState={false}
       sessionSource="convex"
       authoritativeWalletPending
+      persistUmbrellaAction={pendingUmbrellaPersistAction}
     >
       {children}
     </AvanaSessionsProvider>
