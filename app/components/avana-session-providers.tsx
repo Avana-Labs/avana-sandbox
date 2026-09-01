@@ -5,12 +5,14 @@ import { ConvexProviderWithAuth, ConvexReactClient } from "convex/react"
 import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
 import { PendingConvexSessionProvider } from "@/app/lib/avana-session/pending-convex-session-provider"
 import { hasConvexClient, MarketLiquidityProvider } from "@/app/lib/convex/market-liquidity-provider"
+import { getSiweConvexClient, SiweConvexProvider } from "@/app/lib/convex/siwe-convex-provider"
 import { useConvexSiweAuth, useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { useOpenGateAuthBootstrap } from "@/app/lib/siwe/use-open-gate-auth-bootstrap"
 import { isPlaywrightTestMode, shouldUseOpenGateSession, TEST_MODE_WALLET_ADDRESS } from "@/app/lib/test-mode"
 
+const loadConvexSessionProvider = () => import("@/app/lib/avana-session/convex-session-provider")
 const ConvexSessionProvider = lazy(async () => ({
-  default: (await import("@/app/lib/avana-session/convex-session-provider")).ConvexSessionProvider,
+  default: (await loadConvexSessionProvider()).ConvexSessionProvider,
 }))
 
 // Module-scope Convex client for the dev open-gate path. Mounted synchronously so the
@@ -20,10 +22,8 @@ const ConvexSessionProvider = lazy(async () => ({
 // point at an unreachable local port so useQuery resolves to undefined (loading) instead
 // of throwing "Could not find Convex client".
 const OFFLINE_CONVEX_URL = "http://127.0.0.1:0"
-const convexUrl = isPlaywrightTestMode() ? undefined : process.env.NEXT_PUBLIC_CONVEX_URL
-const openGateConvexClient = new ConvexReactClient(
-  convexUrl && /^https?:\/\//.test(convexUrl) ? convexUrl : OFFLINE_CONVEX_URL,
-)
+const openGateConvexClient =
+  (isPlaywrightTestMode() ? null : getSiweConvexClient()) ?? new ConvexReactClient(OFFLINE_CONVEX_URL)
 
 function OpenGateConvexProvider({ children }: { children: ReactNode }) {
   return (
@@ -91,15 +91,21 @@ export function AvanaSessionProviders({ walletId, children }: { walletId?: strin
   // A signed-in SIWE wallet drives the entire session (positions, seeds, Convex reads);
   // otherwise keep the explicit / default (demo) wallet so the public demo is unchanged.
   const effectiveWalletId = isSignedIn && authedWallet ? authedWallet : walletId
+  const liveSession = Boolean(hasConvexClient && isSignedIn && authedWallet)
+  // SiweConvexProvider here (this module is only loaded for signed-in / product routes) so
+  // the shared client's Connect + Authenticate fire while this SSR'd tree hydrates — not
+  // after a later lazy gate import. Nested wrappers reuse the same client (no second socket).
   return (
-    <MarketLiquidityProvider live={Boolean(hasConvexClient && isSignedIn && authedWallet)}>
-      {hasConvexClient && isSignedIn && authedWallet ? (
-        <Suspense fallback={<LocalSessionFallback walletId={authedWallet}>{children}</LocalSessionFallback>}>
-          <ConvexSessionProvider walletId={authedWallet}>{children}</ConvexSessionProvider>
-        </Suspense>
-      ) : (
-        <AvanaSessionsProvider walletId={effectiveWalletId}>{children}</AvanaSessionsProvider>
-      )}
-    </MarketLiquidityProvider>
+    <SiweConvexProvider>
+      <MarketLiquidityProvider live={liveSession}>
+        {liveSession && authedWallet ? (
+          <Suspense fallback={<LocalSessionFallback walletId={authedWallet}>{children}</LocalSessionFallback>}>
+            <ConvexSessionProvider walletId={authedWallet}>{children}</ConvexSessionProvider>
+          </Suspense>
+        ) : (
+          <AvanaSessionsProvider walletId={effectiveWalletId}>{children}</AvanaSessionsProvider>
+        )}
+      </MarketLiquidityProvider>
+    </SiweConvexProvider>
   )
 }

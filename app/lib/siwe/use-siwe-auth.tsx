@@ -1,13 +1,35 @@
 "use client"
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react"
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react"
 import { clearSiweToken, getSiweToken, subscribeSiwe, type SiweToken } from "./auth-store"
 import { getJwtExpirySeconds, isJwtExpired } from "./token-expiry"
 import { IS_DEV_SHORTCUT_MODE, TEST_MODE_WALLET_ADDRESS } from "@/app/lib/test-mode"
 
+/**
+ * The session the SERVER verified from the `avana_siwe` cookie for this request (root layout).
+ * It is the store's server/hydration snapshot: SSR and the first client render already read
+ * "signed in as X" instead of "unknown", so signed-in users never hydrate through a signed-out
+ * frame and guests get the guest tree from the first byte. Context (not module state) because
+ * the server renders many requests in one process.
+ */
+const ServerSiweSessionContext = createContext<SiweToken | null>(null)
+
+export function SiweServerSessionProvider({ session, children }: { session: SiweToken | null; children: ReactNode }) {
+  return <ServerSiweSessionContext.Provider value={session}>{children}</ServerSiweSessionContext.Provider>
+}
+
 /** Reactively read the current SIWE token (null when signed out). */
 export function useSiweToken(): SiweToken | null {
-  return useSyncExternalStore(subscribeSiwe, getSiweToken, () => null)
+  const serverSession = useContext(ServerSiweSessionContext)
+  return useSyncExternalStore(subscribeSiwe, getSiweToken, () => serverSession)
 }
 
 const noopSubscribe = () => () => {}

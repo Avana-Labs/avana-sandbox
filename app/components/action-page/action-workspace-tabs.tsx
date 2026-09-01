@@ -59,7 +59,6 @@ export function ActionWorkspaceTabs({
             ? "px-3.5 py-2 text-[14px] font-normal text-muted-foreground sm:px-3.5 sm:text-[14px] data-[state=active]:bg-neutral-200 data-[state=active]:text-foreground dark:data-[state=active]:bg-neutral-800 [&_svg]:size-4"
             : undefined
       }
-      cssOnly={revealLabels}
     />
   )
 }

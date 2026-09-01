@@ -1,17 +1,9 @@
 "use client"
 
-import dynamic from "next/dynamic"
-import { HomeWorkspaceSkeleton } from "@/app/components/loading-states"
+import { HomePageWorkspaceRuntime } from "@/app/components/home-page-workspace-runtime"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 
 const HOME_WORKSPACE_WALLET_ID = "home-demo-wallet"
-const HomePageWorkspaceRuntime = dynamic(
-  () => import("@/app/components/home-page-workspace-runtime").then((mod) => mod.HomePageWorkspaceRuntime),
-  {
-    ssr: false,
-    loading: () => <HomeWorkspaceSkeleton />,
-  },
-)
 
 export function HomePageClient() {
   const { isSignedIn } = useSiweAuth()

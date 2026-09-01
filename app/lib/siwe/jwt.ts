@@ -79,6 +79,43 @@ function mintJwt(payloadClaims: Record<string, unknown>, issuer: string): string
   return `${signingInput}.${b64url(signature)}`
 }
 
+/**
+ * Verify a wallet JWT WE minted (signature, expiry, audience, wallet scope) and return its
+ * wallet. Used only to decide what to SERVER-RENDER for a visitor carrying the session cookie
+ * (see app/lib/siwe/auth-store.ts); it never authorizes anything — Convex still verifies the
+ * bearer token independently on every authed call. Returns null for anything not trustworthy.
+ */
+export function verifySandboxJwt(token: string): { wallet: string; exp: number } | null {
+  const parts = token.split(".")
+  if (parts.length !== 3) return null
+  const [encodedHeader, encodedPayload, encodedSignature] = parts as [string, string, string]
+  try {
+    const header = JSON.parse(Buffer.from(encodedHeader, "base64url").toString("utf8")) as { alg?: unknown }
+    if (header.alg !== "RS256") return null
+    const key = crypto.createPublicKey({ key: getPublicJwk() as crypto.JsonWebKeyInput["key"], format: "jwk" })
+    const valid = crypto.verify(
+      "sha256",
+      Buffer.from(`${encodedHeader}.${encodedPayload}`),
+      key,
+      Buffer.from(encodedSignature, "base64url"),
+    )
+    if (!valid) return null
+    const payload = JSON.parse(Buffer.from(encodedPayload, "base64url").toString("utf8")) as {
+      aud?: unknown
+      exp?: unknown
+      scope?: unknown
+      wallet?: unknown
+    }
+    const now = Math.floor(Date.now() / 1000)
+    if (payload.aud !== AUDIENCE || payload.scope !== "wallet") return null
+    if (typeof payload.exp !== "number" || payload.exp <= now) return null
+    if (typeof payload.wallet !== "string" || !/^0x[0-9a-f]{40}$/.test(payload.wallet)) return null
+    return { wallet: payload.wallet, exp: payload.exp }
+  } catch {
+    return null
+  }
+}
+
 /** Mint a wallet identity after SIWE verification. */
 export function mintSandboxJwt(wallet: string, issuer: string): string {
   const normalized = wallet.toLowerCase()

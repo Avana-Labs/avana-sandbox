@@ -1,16 +1,26 @@
 "use client"
 
-import { Component, lazy, Suspense, type ReactNode } from "react"
+import { Component, lazy, Suspense, useState, type ReactNode } from "react"
+import dynamic from "next/dynamic"
 import { usePathname } from "next/navigation"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
-import { useHydrated, useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
+import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { GuestOnboardingFlow } from "./guest-onboarding-flow"
 import styles from "./onboarding-flow.module.css"
 import { RouteContentSkeleton } from "@/app/components/loading-states"
 
-const AuthedGate = lazy(async () => ({ default: (await import("./authed-sandbox-gate")).AuthedSandboxGate }))
+import type { GateVerdict } from "./authed-sandbox-gate"
+
+const AuthedGateChecker = lazy(async () => ({ default: (await import("./authed-sandbox-gate")).AuthedGateChecker }))
+// The ONE Convex auth boundary for the signed-in tree. `dynamic` (SSR on) keeps `convex/react`
+// out of the guest layout chunk while still shipping it in the signed-in page's preloaded
+// chunk set — so the WebSocket `Connect` + `Authenticate` fire during hydration, not after a
+// second lazy import resolves (~1.4s earlier on a throttled mobile).
+const SignedInConvexBoundary = dynamic(() =>
+  import("@/app/lib/convex/siwe-convex-provider").then((mod) => mod.SiweConvexProvider),
+)
 
 class GateErrorBoundary extends Component<{ children: ReactNode }, { errored: boolean }> {
   state = { errored: false }
@@ -74,10 +84,46 @@ function GateUnavailable({ variant = "error" }: { variant?: "error" | "offline" 
   )
 }
 
-/** Every wallet stays inside the gate until Convex confirms completed onboarding. */
-export function SandboxGate({ children, authHint }: { children: ReactNode; authHint?: "guest" | "maybe-authed" }) {
+/**
+ * Signed-in host. Owns the page's mount: `children` sit at a FIXED position in this tree
+ * while the lazily loaded Convex checker renders as a sibling and reports its verdict, so a
+ * page the server rendered for a known-onboarded wallet (`optimistic`, from the
+ * `avana_onboarded` cookie) is never unmounted by the gate resolving. Wallets without the
+ * cookie hold the route skeleton until Convex answers.
+ */
+function AuthedGateHost({
+  wallet,
+  optimistic,
+  children,
+}: {
+  wallet: string
+  optimistic: boolean
+  children: ReactNode
+}) {
   const pathname = usePathname()
-  const hydrated = useHydrated()
+  const isAskRoute = pathname === "/ask" || pathname.startsWith("/ask/")
+  const [verdict, setVerdict] = useState<GateVerdict>("unknown")
+  const showChildren = verdict === "done" || (verdict === "unknown" && (optimistic || isAskRoute))
+  return (
+    <SignedInConvexBoundary>
+      {showChildren ? children : verdict === "unknown" ? <RouteContentSkeleton /> : null}
+      <Suspense fallback={null}>
+        <AuthedGateChecker wallet={wallet} optimistic={optimistic} onVerdict={setVerdict} />
+      </Suspense>
+    </SignedInConvexBoundary>
+  )
+}
+
+/** Every wallet stays inside the gate until Convex confirms completed onboarding. */
+export function SandboxGate({
+  children,
+  onboardedWallet,
+}: {
+  children: ReactNode
+  /** Wallet named by the `avana_onboarded` cookie (root layout), if it matches the session wallet. */
+  onboardedWallet?: string
+}) {
+  const pathname = usePathname()
   const { authedWallet, isSignedIn } = useSiweAuth()
   // Ask AI is public for guests (knowledge / markets without a wallet). Signed-in
   // users keep the normal AuthedGate mounted so closing Ask doesn't tear down the
@@ -86,26 +132,9 @@ export function SandboxGate({ children, authHint }: { children: ReactNode; authH
   if (isAskRoute && !isSignedIn) return <>{children}</>
   if (IS_DEV_SHORTCUT_MODE) return <>{children}</>
   if (!hasConvexClient) return <GateUnavailable variant="offline" />
-  // The SIWE session is read from a client-only store that reads as signed-out on the
-  // server and the first hydration render. Rendering OnboardingFlow in that window is
-  // what flashed the onboarding screen at already-onboarded users on every load/refresh.
-  // Hold a layout-stable shell until the client has hydrated — never onboarding,
-  // never a blank document (Instant Paint). The top page-loading bar still runs.
-  if (!hydrated) {
-    // A visitor with no auth-hint cookie (authHint === "guest") has never signed in on this
-    // browser, so there is no onboarded session to protect — SSR the onboarding hero immediately
-    // for a fast guest LCP instead of waiting a full hydration cycle. Anyone who MIGHT be signed in
-    // (cookie present, or hint unknown) keeps the neutral shell until the client confirms, which
-    // preserves the no-onboarding-flash guarantee for returning users.
-    if (authHint === "guest") {
-      return (
-        <LockedShell>
-          <GuestOnboardingFlow />
-        </LockedShell>
-      )
-    }
-    return <RouteContentSkeleton />
-  }
+  // The SIWE store's server/hydration snapshot is seeded from the verified `avana_siwe` cookie
+  // (root layout), so `isSignedIn` is truthful during SSR and the first client render: guests get the onboarding hero server-rendered (fast LCP, nothing to flash), and
+  // signed-in users never pass through a signed-out frame.
   if (!isSignedIn || !authedWallet) {
     return (
       <LockedShell>
@@ -115,9 +144,9 @@ export function SandboxGate({ children, authHint }: { children: ReactNode; authH
   }
   return (
     <GateErrorBoundary key={authedWallet}>
-      <Suspense fallback={<>{children}</>}>
-        <AuthedGate wallet={authedWallet}>{children}</AuthedGate>
-      </Suspense>
+      <AuthedGateHost wallet={authedWallet} optimistic={onboardedWallet === authedWallet}>
+        {children}
+      </AuthedGateHost>
     </GateErrorBoundary>
   )
 }

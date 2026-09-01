@@ -3,19 +3,27 @@ import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 
 describe("SandboxGate first paint", () => {
-  it("p1-23: pre-hydration shell SSRs onboarding only for cookieless guests, never for maybe-signed-in", () => {
+  it("p1-23: renders the onboarding hero only on the signed-out branch, never as a pre-hydration guess", () => {
     const source = readFileSync(resolve(__dirname, "../sandbox-gate.tsx"), "utf8")
-    expect(source).toMatch(/if \(!hydrated\)/)
-    // The !hydrated branch may SSR the onboarding hero ONLY for a visitor with no auth-hint cookie
-    // (authHint === "guest") — they have never signed in on this browser, so there is no onboarded
-    // session to flash, and it gives guests a fast LCP. Anyone who MIGHT be signed in keeps the
-    // route-matched content skeleton (no welcome flicker) until SIWE hydrates.
-    const hydratedBlock = source.split("if (!hydrated)")[1]?.split("if (!isSignedIn || !authedWallet)")[0] ?? ""
-    expect(hydratedBlock).toMatch(/authHint === "guest"/)
-    expect(hydratedBlock).toMatch(/<RouteContentSkeleton/)
-    // GuestOnboardingFlow must appear only inside the authHint === "guest" guard, never before it.
-    const beforeGuestGuard = hydratedBlock.split('authHint === "guest"')[0] ?? ""
-    expect(beforeGuestGuard).not.toMatch(/<GuestOnboardingFlow/)
+    // The SIWE store is seeded from the server-verified session cookie, so the gate must not carry a
+    // "we don't know yet" hydration branch anymore: signed-out → guest hero; signed-in → host.
+    expect(source).not.toMatch(/useHydrated/)
+    const body = source.split("export function SandboxGate")[1] ?? ""
+    const guestBranch = body.split("if (!isSignedIn || !authedWallet)")[1]?.split("return (")[1] ?? ""
+    expect(guestBranch).toMatch(/<GuestOnboardingFlow/)
+    // GuestOnboardingFlow must appear only inside that guard.
+    const beforeGuard = body.split("if (!isSignedIn || !authedWallet)")[0] ?? ""
+    expect(beforeGuard).not.toMatch(/<GuestOnboardingFlow/)
+  })
+
+  it("keeps the server-rendered product mounted while the Convex checker resolves", () => {
+    const source = readFileSync(resolve(__dirname, "../sandbox-gate.tsx"), "utf8")
+    const host = source.split("function AuthedGateHost")[1]?.split("export function SandboxGate")[0] ?? ""
+    // Children render at a fixed position; the checker is a lazy SIBLING inside its own Suspense,
+    // so its chunk arriving or its verdict changing never re-parents (remounts) the page.
+    expect(host).toMatch(/\{showChildren \? children/)
+    expect(host).toMatch(/<Suspense fallback=\{null\}>\s*<AuthedGateChecker/)
+    expect(host).not.toMatch(/<AuthedGateChecker[^>]*>\s*\{children\}/)
   })
 
   it("does not block signed-in pages on the deferred wallet SDK", () => {

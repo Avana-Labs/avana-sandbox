@@ -51,12 +51,20 @@ describe("WrongNetworkBanner (gate gating)", () => {
     expect(container.firstChild).toBeNull()
   })
 
-  it("mounts the banner body once the wallet SDK is active and on the wrong network", async () => {
+  it("registers a portal slot for the SDK runtime once the wallet SDK is active", async () => {
     reset()
     state.isWrongNetwork = true
-    render(<WrongNetworkBanner />)
-    // Body is dynamically imported — await it.
-    expect(await screen.findByRole("alert")).toBeInTheDocument()
+    const { container } = render(<WrongNetworkBanner />)
+    // The body lives in the wallet runtime (a sibling of the app tree) and is portalled into
+    // this slot, so the app tree only ever contains the slot element itself.
+    expect(container.firstChild).not.toBeNull()
+    const { useWalletSlots } = await import("@/app/lib/web3/wallet-slots")
+    function Probe() {
+      const slots = useWalletSlots()
+      return <output>{slots.map((s) => s.kind).join(",")}</output>
+    }
+    render(<Probe />)
+    expect(await screen.findByText("wrong-network-banner")).toBeInTheDocument()
   })
 })
 

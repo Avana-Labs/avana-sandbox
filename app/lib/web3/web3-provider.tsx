@@ -1,7 +1,11 @@
 "use client"
 
 import { useEffect, useState, type ReactNode } from "react"
+import { createPortal } from "react-dom"
 import { useTheme } from "@/app/components/theme-provider"
+import { ConnectedWalletControl } from "@/app/components/wallet-control-connected"
+import { WrongNetworkBannerInner } from "@/app/components/wrong-network-banner-inner"
+import { useWalletSlots } from "@/app/lib/web3/wallet-slots"
 import { WagmiProvider, createConfig, http } from "wagmi"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { ConnectKitProvider, SIWEProvider, getDefaultConfig, useModal } from "connectkit"
@@ -11,7 +15,7 @@ import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 import { TARGET_CHAIN } from "@/app/lib/web3/target-chain"
 import { useWalletGate } from "@/app/lib/web3/wallet-gate"
 import { useWrongNetwork } from "@/app/lib/web3/use-wrong-network"
-import { WrongNetworkStateProvider } from "@/app/lib/web3/wrong-network-context"
+import { publishWrongNetworkState, WrongNetworkStateProvider } from "@/app/lib/web3/wrong-network-context"
 
 const walletConnectProjectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID ?? ""
 // The headless QA harness seeds a SIWE token without a live wagmi connection, so the
@@ -94,7 +98,41 @@ function WalletGateBridge() {
  */
 function WrongNetworkBridge({ children }: { children: ReactNode }) {
   const state = useWrongNetwork()
+  // The app tree is a sibling, not a descendant, so publish to the store as well as context.
+  useEffect(() => {
+    publishWrongNetworkState(state)
+  }, [state])
+  useEffect(() => () => publishWrongNetworkState(null), [])
   return <WrongNetworkStateProvider value={state}>{children}</WrongNetworkStateProvider>
+}
+
+/** Renders the wagmi-backed components into the slots the app tree registered (see wallet-slots). */
+function WalletSlotPortals() {
+  const slots = useWalletSlots()
+  return (
+    <>
+      {slots.map((slot) =>
+        createPortal(
+          slot.kind === "wrong-network-banner" ? (
+            <WrongNetworkBannerInner />
+          ) : (
+            <ConnectedWalletControl size={slot.kind === "wallet-control-mobile" ? "mobile" : "desktop"} />
+          ),
+          slot.element,
+          slot.id,
+        ),
+      )}
+    </>
+  )
+}
+
+/** The whole wallet runtime, mounted once as a sibling of the app by `Web3ProviderBoundary`. */
+export function Web3Runtime() {
+  return (
+    <Web3Provider>
+      <WalletSlotPortals />
+    </Web3Provider>
+  )
 }
 
 export function Web3Provider({ children }: { children: ReactNode }) {

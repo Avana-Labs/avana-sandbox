@@ -523,9 +523,24 @@ describe("sandbox onboarding + economy caps", () => {
     expect(economy.userCount).toBe(1)
     expect(economy.status).toBe("open")
     expect(economy.perUserTargetUsd).toBe(1_000_000)
+
+    const doneGate = await asUser.query(api.sandbox.onboarding.getOnboardingGateState, { wallet: WALLET })
+    expect(doneGate.onboardingStep).toBe("done")
+    expect(doneGate.economy).toBeNull()
   })
 
-  test("getWalletOnboardingState and getEconomyStatus enforce wallet-identity match", async () => {
+  test("getOnboardingGateState includes economy only while onboarding is in progress", async () => {
+    const t = convexTest(schema, modules)
+    const asUser = t.withIdentity({ subject: WALLET })
+    await t.run(seedStarterTestMarkets)
+    await asUser.mutation(api.sandbox.onboarding.startAnalysis, { wallet: WALLET })
+
+    const mid = await asUser.query(api.sandbox.onboarding.getOnboardingGateState, { wallet: WALLET })
+    expect(mid.onboardingStep).not.toBe("done")
+    expect(mid.economy).toMatchObject({ status: "open", userCap: 10_000 })
+  })
+
+  test("onboarding gate queries enforce wallet-identity match", async () => {
     const t = convexTest(schema, modules)
     const asUser = t.withIdentity({ subject: WALLET })
     await expect(
@@ -534,5 +549,8 @@ describe("sandbox onboarding + economy caps", () => {
     await expect(asUser.query(api.sandbox.onboarding.getEconomyStatus, { wallet: "0xdifferent" })).rejects.toThrow(
       /WALLET_MISMATCH/,
     )
+    await expect(
+      asUser.query(api.sandbox.onboarding.getOnboardingGateState, { wallet: "0xdifferent" }),
+    ).rejects.toThrow(/WALLET_MISMATCH/)
   })
 })

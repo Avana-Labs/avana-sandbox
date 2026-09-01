@@ -11,16 +11,20 @@ import { InpReporter } from "./components/inp-reporter"
 import { ThemeProvider } from "./components/theme-provider"
 import { DisplayPreferencesProvider } from "./components/display-preferences"
 import { WalletGateProvider } from "./lib/web3/wallet-gate"
+import { SiweServerSessionProvider } from "./lib/siwe/use-siwe-auth"
+import { verifySandboxJwt } from "./lib/siwe/jwt"
 import { Web3ProviderBoundary } from "./lib/web3/web3-provider-boundary"
 import { PageLoadingBar } from "./components/page-loading-bar"
 import { ScrollResetOnNavigate } from "./components/scroll-reset-on-navigate"
 import { DeferredGlobalChrome } from "./components/deferred-global-chrome"
 import { ConditionalSiteChrome } from "./components/conditional-site-chrome"
 import { SandboxGate } from "./components/sandbox/sandbox-gate"
+import { ONBOARDED_COOKIE } from "./components/sandbox/onboarded-cookie"
 import { CurrencyDisplayBoundary } from "./components/currency-display-boundary"
 import { ProductRuntimeProviders } from "./components/product-runtime-providers"
 import { isLighthouseAuditMode } from "./lib/test-mode"
 import { loadServerTokenPrices } from "./lib/prices/server-hydrate"
+import { loadServerFxRates } from "./lib/currency/server-hydrate"
 // Only load Vercel Analytics / Speed Insights when actually running on Vercel — their
 // scripts are served by Vercel's edge (/_vercel/*), so a local `next start` build 404s
 // on them and logs console errors (a Lighthouse best-practices failure). On Vercel the
@@ -44,6 +48,9 @@ const diatypeSans = localFont({
   // guarantees the brand font always applies. CLS stays 0 via the metric-matched fallback.
   display: "swap",
   preload: true,
+  // Metric-matched fallback so the preload+swap path does not double-paint the hero
+  // (fallback glyphs and Diatype occupy the same boxes; CLS stays 0).
+  adjustFontFallback: "Arial",
 })
 
 const themeBootstrapScript = `(()=>{const storageKey="avana-theme";const root=document.documentElement;const storedTheme=window.localStorage.getItem(storageKey);const theme=storedTheme==="light"||storedTheme==="dark"||storedTheme==="system"?storedTheme:"light";const systemTheme=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";const resolvedTheme=theme==="system"?systemTheme:theme;root.classList.toggle("dark",resolvedTheme==="dark");root.style.colorScheme=resolvedTheme})()`
@@ -127,13 +134,22 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // TokenPricesContext, so CLIENT-rendered prices (lend list, borrow table, action pages) are
   // live from SSR without depending on the realtime subscription (which only mounts on
   // authenticated product routes). Fail-open: returns {} and never blocks render.
-  const initialTokenPrices = await loadServerTokenPrices()
+  const [initialTokenPrices, initialFxRates] = await Promise.all([loadServerTokenPrices(), loadServerFxRates()])
   // Per-request CSP nonce (set by middleware) for the inline theme-bootstrap script below.
   const nonce = (await headers()).get("x-nonce") ?? undefined
-  // Server-readable presence hint (no token) so SandboxGate can SSR the onboarding hero for
-  // never-signed-in visitors (fast guest LCP) while holding the neutral shell for anyone who might
-  // be signed in. See app/lib/siwe/auth-store.ts and app/components/sandbox/sandbox-gate.tsx.
-  const authHint: "guest" | "maybe-authed" = (await cookies()).has("avana_auth_hint") ? "maybe-authed" : "guest"
+  // Server-readable session: the client mirrors its SIWE JWT into the `avana_siwe` cookie
+  // (app/lib/siwe/auth-store.ts). Re-verifying it here (signature + expiry, no network) tells us
+  // definitively whether this visitor is signed in; the SIWE store hydrates from this snapshot so
+  // SandboxGate SSRs the onboarding hero for guests and the product for signed-in users.
+  const jar = await cookies()
+  const sessionJwt = jar.get("avana_siwe")?.value
+  const verified = sessionJwt ? verifySandboxJwt(sessionJwt) : null
+  const serverSession = verified && sessionJwt ? { jwt: sessionJwt, wallet: verified.wallet } : null
+  // Wallet that last finished onboarding on this browser (set by the gate checker). Only honoured
+  // when it names the verified session wallet, so the product is server-rendered for returning
+  // users while a different/new wallet still waits for Convex behind the skeleton.
+  const onboardedCookie = jar.get(ONBOARDED_COOKIE)?.value?.toLowerCase()
+  const onboardedWallet = serverSession && onboardedCookie === serverSession.wallet ? onboardedCookie : undefined
 
   return (
     <html
@@ -160,29 +176,31 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className="min-h-screen bg-background">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <DisplayPreferencesProvider>
-            <WalletGateProvider>
-              <Web3ProviderBoundary>
-                {/* Site chrome (header + action-route suppression) is hoisted ABOVE the
+          <DisplayPreferencesProvider initialFxRates={initialFxRates}>
+            <SiweServerSessionProvider session={serverSession}>
+              <WalletGateProvider>
+                <Web3ProviderBoundary>
+                  {/* Site chrome (header + action-route suppression) is hoisted ABOVE the
                     session/auth gates so the header stays painted through every loading
                     state — the gates only ever swap the content region below it. Header's
                     subtree reads no gated context (currency/token-price/convex/session). */}
-                <ConditionalSiteChrome>
-                  <Suspense fallback={null}>
-                    <PageLoadingBar />
-                  </Suspense>
-                  <ScrollResetOnNavigate />
-                  <SandboxGate authHint={authHint}>
-                    <ProductRuntimeProviders initialTokenPrices={initialTokenPrices}>
-                      <CurrencyDisplayBoundary>
-                        {children}
-                        <DeferredGlobalChrome />
-                      </CurrencyDisplayBoundary>
-                    </ProductRuntimeProviders>
-                  </SandboxGate>
-                </ConditionalSiteChrome>
-              </Web3ProviderBoundary>
-            </WalletGateProvider>
+                  <ConditionalSiteChrome>
+                    <Suspense fallback={null}>
+                      <PageLoadingBar />
+                    </Suspense>
+                    <ScrollResetOnNavigate />
+                    <SandboxGate onboardedWallet={onboardedWallet}>
+                      <ProductRuntimeProviders initialTokenPrices={initialTokenPrices}>
+                        <CurrencyDisplayBoundary>
+                          {children}
+                          <DeferredGlobalChrome />
+                        </CurrencyDisplayBoundary>
+                      </ProductRuntimeProviders>
+                    </SandboxGate>
+                  </ConditionalSiteChrome>
+                </Web3ProviderBoundary>
+              </WalletGateProvider>
+            </SiweServerSessionProvider>
           </DisplayPreferencesProvider>
         </ThemeProvider>
         {/* INP attribution — dev console + field beacon; captures which interaction is slow. */}

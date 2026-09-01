@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, type ReactNode } from "react"
+import { createContext, useContext, useSyncExternalStore, type ReactNode } from "react"
 import { TARGET_CHAIN_ID, TARGET_CHAIN_NAME } from "@/app/lib/web3/target-chain"
 
 /**
@@ -42,7 +42,26 @@ export function WrongNetworkStateProvider({ value, children }: { value: WrongNet
   return <WrongNetworkContext.Provider value={value}>{children}</WrongNetworkContext.Provider>
 }
 
+// The wallet SDK is mounted as a SIBLING of the app (so mounting it never remounts the app), which
+// means it cannot be an ancestor of the action pages. It publishes its state here instead.
+let published: WrongNetworkState | null = null
+const listeners = new Set<() => void>()
+const subscribe = (listener: () => void) => {
+  listeners.add(listener)
+  return () => listeners.delete(listener)
+}
+const getSnapshot = () => published
+const getServerSnapshot = () => null
+
+/** Called by the mounted wallet provider whenever wagmi-backed wrong-network state changes. */
+export function publishWrongNetworkState(state: WrongNetworkState | null) {
+  published = state
+  for (const listener of listeners) listener()
+}
+
 /** Read wrong-network state. Returns the inert default when no wallet provider is mounted. */
 export function useWrongNetworkState(): WrongNetworkState {
-  return useContext(WrongNetworkContext) ?? INERT
+  const fromContext = useContext(WrongNetworkContext)
+  const fromStore = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+  return fromContext ?? fromStore ?? INERT
 }

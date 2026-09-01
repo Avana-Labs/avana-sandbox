@@ -1,28 +1,17 @@
 // This file configures the initialization of Sentry on the client.
 // The added config here will be used whenever a users loads a page in their browser.
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
+//
+// The SDK itself is NOT imported here: a static import bundles ~63KB (gzipped) of Sentry into
+// the framework chunk that must download and execute before React can hydrate. The actual
+// `Sentry.init` (and its options) live in `app/lib/monitoring/sentry-client.ts` and run once
+// the page is idle. Early errors are buffered and forwarded, so coverage is unchanged.
 
-import * as Sentry from "@sentry/nextjs"
+import {
+  onRouterTransitionStart as forwardRouterTransitionStart,
+  scheduleSentryLoad,
+} from "@/app/lib/monitoring/sentry-client"
 
-Sentry.init({
-  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+scheduleSentryLoad()
 
-  // Session Replay is intentionally NOT enabled. replayIntegration pulls in rrweb (~hundreds of
-  // KB), which Turbopack bundles onto the first-load critical path of EVERY page (it was the
-  // single biggest chunk on `/`). With no reference to it anywhere, rrweb tree-shakes out entirely.
-  // Error + performance reporting is unaffected. If replay is ever needed again, load it from
-  // Sentry's CDN (a separate bundle + a CSP script-src allowance) rather than bundling it.
-  integrations: [],
-
-  // Sampled at 10% in production to bound trace volume; raise locally if needed.
-  tracesSampleRate: 0.1,
-
-  dataCollection: {
-    // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:
-    // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#dataCollection
-    // userInfo: false,
-    // httpBodies: [],
-  },
-})
-
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart
+export const onRouterTransitionStart = forwardRouterTransitionStart

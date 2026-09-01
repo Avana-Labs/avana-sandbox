@@ -16,7 +16,7 @@ import {
 } from "./lazy-search-command"
 import { personalDesktopHeaderLinks } from "./site-nav"
 import { WalletControl } from "@/app/components/wallet-control"
-import { DesktopPreferenceControls } from "./desktop-preference-controls"
+import { DesktopPreferenceControls } from "./desktop-preference-trigger"
 import { cn } from "@/lib/utils"
 
 function HeaderBrand() {

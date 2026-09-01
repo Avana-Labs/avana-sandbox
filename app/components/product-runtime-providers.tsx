@@ -4,19 +4,11 @@ import dynamic from "next/dynamic"
 import { usePathname } from "next/navigation"
 import type { ReactNode } from "react"
 import { PreferencesProfileSync } from "@/app/components/preferences-profile-sync"
-import { RouteContentSkeleton } from "@/app/components/loading-states"
 import { TokenPricesProvider } from "@/app/lib/prices/token-prices-context"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 
-const AvanaSessionProviders = dynamic(
-  () => import("@/app/components/avana-session-providers").then((mod) => mod.AvanaSessionProviders),
-  {
-    ssr: false,
-    // Instant Paint: never blank the product tree while the session chunk downloads.
-    // The persistent site header lives above this gate, so we paint only the
-    // route-matched content skeleton here.
-    loading: () => <RouteContentSkeleton />,
-  },
+const AvanaSessionProviders = dynamic(() =>
+  import("@/app/components/avana-session-providers").then((mod) => mod.AvanaSessionProviders),
 )
 
 const PRODUCT_RUNTIME_ROUTES = [

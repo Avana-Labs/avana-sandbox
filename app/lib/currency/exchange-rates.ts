@@ -23,7 +23,7 @@ const SUPPORTED = Object.keys(USD_PER_UNIT_BASELINE) as CurrencyCode[]
 type LiveRateMap = Partial<Record<CurrencyCode, number>>
 type CachedRates = { fetchedAt: number; rates: LiveRateMap }
 
-function pickSupported(raw: Record<string, unknown>): LiveRateMap {
+export function pickSupportedFxRates(raw: Record<string, unknown>): LiveRateMap {
   const out: LiveRateMap = {}
   for (const code of SUPPORTED) {
     const value = raw[code]
@@ -83,7 +83,7 @@ export async function fetchLiveRates(options?: { force?: boolean }): Promise<boo
     const data = (await res.json()) as { result?: string; rates?: Record<string, number> | null }
     if (data.result !== "success" || !data.rates) return false
 
-    const rates = pickSupported(data.rates)
+    const rates = pickSupportedFxRates(data.rates)
     if (Object.keys(rates).length === 0) return false
 
     applyLiveRates(rates)
