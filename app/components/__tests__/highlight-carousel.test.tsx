@@ -75,6 +75,25 @@ describe("HighlightCarousel", () => {
     expect(track.style.transform).toBe("translate3d(-0.5px, 0, 0)")
   })
 
+  it("preserves its phase when a provider remounts the carousel", () => {
+    const first = render(
+      <HighlightCarousel syncKey="provider-remount" durationSeconds={38} renderSequence={() => <div>Market</div>} />,
+    )
+    const firstTrack = first.container.firstElementChild?.firstElementChild as HTMLDivElement
+
+    runNextFrame(1_000)
+    runNextFrame(1_050)
+    expect(firstTrack.style.transform).toBe("translate3d(-0.5px, 0, 0)")
+
+    first.unmount()
+    const second = render(
+      <HighlightCarousel syncKey="provider-remount" durationSeconds={38} renderSequence={() => <div>Market</div>} />,
+    )
+    const secondTrack = second.container.firstElementChild?.firstElementChild as HTMLDivElement
+
+    expect(secondTrack.style.transform).toBe("translate3d(-0.5px, 0, 0)")
+  })
+
   it("eases one card on arrow step instead of jumping", () => {
     const ref = createRef<HighlightCarouselHandle>()
     const { container } = render(

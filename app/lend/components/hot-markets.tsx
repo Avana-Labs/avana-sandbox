@@ -294,6 +294,7 @@ export function HotMarkets({
         <HighlightCarousel
           ref={carouselRef}
           className="h-[176px]"
+          syncKey="lend-featured"
           renderSequence={renderSequence}
           onHoverChange={(hovered) => {
             if (!hovered) setHover(null)

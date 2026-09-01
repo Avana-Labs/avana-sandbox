@@ -233,6 +233,7 @@ export function ExploreLoopsMarketsTable({
       <HighlightCarousel
         ref={carouselRef}
         className="mt-5 h-[104px]"
+        syncKey="multiply-trending"
         renderSequence={(interactive) =>
           trendingSnapshots.map((snapshot, index) => (
             <TrendingLoopCard
