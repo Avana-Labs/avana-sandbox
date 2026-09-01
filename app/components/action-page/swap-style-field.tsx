@@ -2,6 +2,10 @@
 
 import { Children, Fragment } from "react"
 import { ArrowDown } from "@/app/components/icons"
+import {
+  ACTION_FIELD_STACK_CLASS,
+  ACTION_FIELD_SURFACE_CLASS,
+} from "@/app/components/action-page/action-surface-tokens"
 import { cn } from "@/lib/utils"
 import type { ComponentPropsWithoutRef, ReactNode } from "react"
 
@@ -20,11 +24,12 @@ export function SwapStyleField({
   return (
     <div
       className={cn(
-        "px-4 py-3 transition-[border-color,box-shadow,transform] duration-200 motion-safe:active:scale-[0.985]",
+        ACTION_FIELD_SURFACE_CLASS,
+        "transition-[border-color,box-shadow,transform] duration-200 motion-safe:active:scale-[0.985]",
         tone === "raised" &&
-          "rounded-radius-xl border border-border bg-field-top text-card-foreground shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] focus-within:border-brand/35 focus-within:shadow-[0_0_0_1px_hsl(var(--brand)/0.18),0_12px_32px_-20px_hsl(var(--brand)/0.22)] dark:shadow-none",
+          "border border-border bg-field-top text-card-foreground shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] focus-within:border-brand/35 focus-within:shadow-[0_0_0_1px_hsl(var(--brand)/0.18),0_12px_32px_-20px_hsl(var(--brand)/0.22)] dark:shadow-none",
         tone === "inset" &&
-          "rounded-radius-xl border border-transparent bg-field-bottom focus-within:border-brand/30 focus-within:shadow-[0_0_0_1px_hsl(var(--brand)/0.12),0_8px_24px_-18px_hsl(var(--brand)/0.16)]",
+          "border border-transparent bg-field-bottom focus-within:border-brand/30 focus-within:shadow-[0_0_0_1px_hsl(var(--brand)/0.12),0_8px_24px_-18px_hsl(var(--brand)/0.16)]",
         className,
       )}
       data-testid="swap-style-field"
@@ -48,7 +53,7 @@ export function SwapStyleFieldStack({
 }) {
   const items = Children.toArray(children)
   return (
-    <div className={cn("flex flex-col gap-1", className)} data-testid="swap-style-field-stack">
+    <div className={cn(ACTION_FIELD_STACK_CLASS, className)} data-testid="swap-style-field-stack">
       {items.map((child, index) => (
         <Fragment key={index}>
           {child}

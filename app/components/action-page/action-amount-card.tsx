@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { ActionTokenIcon, ActionTokenPairIcon } from "@/app/components/action-page/action-token-icon"
 import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
+import { ACTION_FIELD_RADIUS_CLASS } from "@/app/components/action-page/action-surface-tokens"
 import { primaryCtaClass, SECONDARY_CTA_CLASS } from "@/app/components/action-page/action-cta"
 import { AnimatedTextValue } from "@/app/components/action-page/action-live-value"
 import { TokenPickerDialog } from "@/app/components/home/token-picker-dialog"
@@ -459,7 +460,7 @@ export function ActionAmountCard({
   return (
     <>
       <div
-        className="rounded-radius-xl border border-transparent bg-field-bottom text-card-foreground"
+        className={cn(ACTION_FIELD_RADIUS_CLASS, "border border-transparent bg-field-bottom text-card-foreground")}
         data-testid="action-amount-card"
       >
         <div className="px-4 pb-4 pt-4">
