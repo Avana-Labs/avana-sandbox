@@ -4,6 +4,7 @@ import { Component, lazy, Suspense, type ReactNode } from "react"
 import { usePathname } from "next/navigation"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useHydrated, useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
+import { prefetchAuthenticatedHomeChunks } from "@/app/lib/perf/prefetch-authenticated-home-chunks"
 import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { GuestOnboardingFlow } from "./guest-onboarding-flow"
@@ -76,6 +77,7 @@ function GateUnavailable({ variant = "error" }: { variant?: "error" | "offline" 
 
 /** Every wallet stays inside the gate until Convex confirms completed onboarding. */
 export function SandboxGate({ children, authHint }: { children: ReactNode; authHint?: "guest" | "maybe-authed" }) {
+  if (authHint === "maybe-authed") prefetchAuthenticatedHomeChunks()
   const pathname = usePathname()
   const hydrated = useHydrated()
   const { authedWallet, isSignedIn } = useSiweAuth()

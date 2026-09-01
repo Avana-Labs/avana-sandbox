@@ -2,13 +2,15 @@
 
 import dynamic from "next/dynamic"
 import { HomeWorkspaceSkeleton } from "@/app/components/loading-states"
+import { prefetchAuthenticatedHomeChunks } from "@/app/lib/perf/prefetch-authenticated-home-chunks"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
+
+prefetchAuthenticatedHomeChunks()
 
 const HOME_WORKSPACE_WALLET_ID = "home-demo-wallet"
 const HomePageWorkspaceRuntime = dynamic(
   () => import("@/app/components/home-page-workspace-runtime").then((mod) => mod.HomePageWorkspaceRuntime),
   {
-    ssr: false,
     loading: () => <HomeWorkspaceSkeleton />,
   },
 )
