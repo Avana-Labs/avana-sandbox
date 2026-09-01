@@ -358,7 +358,7 @@
     font-size: 14px;
     font-weight: 400;
     line-height: 1.4;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     /* Render text with grayscale antialiasing instead of the browser default
        (subpixel), which makes white-on-dark text look heavier/bolder than it is.
        This gives the lighter, crisper weight seen in comparable dashboards. */
@@ -793,4 +793,23 @@ button,
 /* Premium depth: flat cards — tone steps only, no borders/shadows */
 .surface-elevated {
   box-shadow: none;
+}
+
+/* Keep compact display tracking from becoming visually dense on desktop. */
+@media (min-width: 1280px) {
+  [class~="tracking-[-0.06em]"] {
+    letter-spacing: -0.03em;
+  }
+
+  [class~="tracking-[-0.04em]"] {
+    letter-spacing: -0.02em;
+  }
+
+  [class~="tracking-[-0.03em]"] {
+    letter-spacing: -0.015em;
+  }
+
+  [class~="tracking-[-0.02em]"] {
+    letter-spacing: -0.01em;
+  }
 }
