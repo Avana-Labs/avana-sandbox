@@ -723,7 +723,7 @@ const MobileLoopCard = React.memo(function MobileLoopCard({
 }) {
   const { t } = useTranslation()
   return (
-    <Link href={row.href}>
+    <Link href={row.href} className="block">
       <MarketMobileCard clickable>
         <MarketMobileCardHeader
           identity={
