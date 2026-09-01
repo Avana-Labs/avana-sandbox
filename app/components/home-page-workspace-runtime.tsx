@@ -47,7 +47,7 @@ function HomePageWorkspace() {
   }
 
   return (
-    <div className="reveal-in bg-background">
+    <div className="bg-background">
       <HomeWorkspaceCard mode={mode} onModeChange={setMode}>
         {mode === "borrow" ? <BorrowActionPageClient kind="borrow" embedded layout="home" closeHref="/" /> : null}
         {mode === "swap" ? <HomeSwapAction /> : null}
