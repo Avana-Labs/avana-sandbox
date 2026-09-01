@@ -9,6 +9,7 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
+  MarketMobileActionFooter,
   MarketMobileCardHeader,
   MarketMobileIdentityText,
   MarketMobileMetric,
@@ -171,15 +172,17 @@ const BorrowableMobileCardRow = memo(function BorrowableMobileCardRow({
           />
         </MarketMobileStatList>
 
-        <MarketMobilePrimaryAction
-          onClick={(event) => {
-            event.stopPropagation()
-            onBorrow(asset)
-          }}
-        >
-          <ActionIcon label="Borrow" />
-          {t("Borrow")}
-        </MarketMobilePrimaryAction>
+        <MarketMobileActionFooter columns={1}>
+          <MarketMobilePrimaryAction
+            onClick={(event) => {
+              event.stopPropagation()
+              onBorrow(asset)
+            }}
+          >
+            <ActionIcon label="Borrow" />
+            {t("Borrow")}
+          </MarketMobilePrimaryAction>
+        </MarketMobileActionFooter>
       </MarketMobileCard>
     </li>
   )

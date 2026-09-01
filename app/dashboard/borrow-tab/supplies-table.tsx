@@ -24,6 +24,7 @@ import { HfNumber, TokenPairCell } from "@/app/borrow/components/atoms"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
+  MarketMobileActionFooter,
   MarketMobileCardHeader,
   MarketMobileMetric,
   MarketMobilePrimaryAction,
@@ -219,7 +220,7 @@ export function SuppliesPanel({
                     <MarketMobileStatRow label={t("Borrow Power")} value={m(compact(row.remainingBorrowPowerUsd))} />
                     <MarketMobileStatRow label={t("LP APR")} value={formatApy(row.pairApr)} />
                   </MarketMobileStatList>
-                  <div className="mt-4 flex gap-2">
+                  <MarketMobileActionFooter>
                     <MarketMobileSecondaryAction
                       onClick={(event) => {
                         event.stopPropagation()
@@ -246,7 +247,7 @@ export function SuppliesPanel({
                       <ActionIcon label="Borrow" />
                       {t("Borrow")}
                     </MarketMobilePrimaryAction>
-                  </div>
+                  </MarketMobileActionFooter>
                 </MarketMobileCard>
               )
             })}

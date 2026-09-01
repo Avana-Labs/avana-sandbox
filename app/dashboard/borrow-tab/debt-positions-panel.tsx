@@ -8,6 +8,7 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
+  MarketMobileActionFooter,
   MarketMobileCardHeader,
   MarketMobileIdentityText,
   MarketMobileMetric,
@@ -260,7 +261,7 @@ function DebtMobileCard({
           }
         />
       </MarketMobileStatList>
-      <div className="grid grid-cols-2 gap-2">
+      <MarketMobileActionFooter>
         <Button
           type="button"
           variant="brand"
@@ -285,7 +286,7 @@ function DebtMobileCard({
           <ActionIcon label="Repay" />
           {t("Repay")}
         </Button>
-      </div>
+      </MarketMobileActionFooter>
     </MarketMobileCard>
   )
 }

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
+  MarketMobileActionFooter,
   MarketMobileCardHeader,
   MarketMobileIdentityText,
   MarketMobileMetric,
@@ -286,7 +287,7 @@ function AssetCardView({
         />
       </MarketMobileStatList>
       {onDeposit ? (
-        <div className="mt-4 flex gap-2">
+        <MarketMobileActionFooter>
           <MarketMobilePrimaryAction
             className="mt-0 flex-1"
             onClick={(event) => {
@@ -314,7 +315,7 @@ function AssetCardView({
             <ActionIcon label="Withdraw" />
             {t("Withdraw")}
           </MarketMobileSecondaryAction>
-        </div>
+        </MarketMobileActionFooter>
       ) : null}
     </MarketMobileCard>
   )

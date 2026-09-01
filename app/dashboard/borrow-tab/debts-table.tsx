@@ -12,6 +12,7 @@ import { HfNumber } from "@/app/borrow/components/atoms"
 import { TokenIcon } from "@/app/components/token-icon"
 import {
   MarketMobileCard,
+  MarketMobileActionFooter,
   MarketMobileCardHeader,
   MarketMobileIdentityText,
   MarketMobileMetric,
@@ -242,7 +243,7 @@ export function DebtsPanel({
                       valueClassName="text-rose-500"
                     />
                   </MarketMobileStatList>
-                  <div className="mt-4 flex gap-2">
+                  <MarketMobileActionFooter>
                     <MarketMobileSecondaryAction
                       onClick={(event) => {
                         event.stopPropagation()
@@ -262,7 +263,7 @@ export function DebtsPanel({
                       <ActionIcon label="Borrow" />
                       {t("Borrow")}
                     </MarketMobilePrimaryAction>
-                  </div>
+                  </MarketMobileActionFooter>
                 </MarketMobileCard>
               )
             })}

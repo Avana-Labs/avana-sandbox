@@ -8,6 +8,7 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
+  MarketMobileActionFooter,
   MarketMobileCardHeader,
   MarketMobileMetric,
   MarketMobilePrimaryAction,
@@ -701,7 +702,7 @@ function SpokeMobileSection({
                       <MarketMobileStatRow label={t("Max LTV")} value={formatLtvPct(pool.ltv)} />
                       <MarketMobileStatRow label={t("Premium")} value={formatRiskPremium(pool.riskPremiumBps)} />
                     </MarketMobileStatList>
-                    <div className="mt-4 flex gap-2">
+                    <MarketMobileActionFooter>
                       <MarketMobilePrimaryAction
                         className="mt-0 flex-1"
                         onClick={(event) => {
@@ -726,7 +727,7 @@ function SpokeMobileSection({
                         <ActionIcon label="Borrow" />
                         {t("Borrow")}
                       </MarketMobileSecondaryAction>
-                    </div>
+                    </MarketMobileActionFooter>
                   </MarketMobileCard>
                 </li>
               ))}

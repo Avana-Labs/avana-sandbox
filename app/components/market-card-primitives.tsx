@@ -117,6 +117,28 @@ export function MarketMobileStatRow({
   )
 }
 
+export function MarketMobileActionFooter({
+  children,
+  columns = 2,
+  className,
+}: {
+  children: ReactNode
+  columns?: 1 | 2 | 3
+  className?: string
+}) {
+  return (
+    <div
+      className={cn(
+        "mt-4 grid gap-2 [&>*]:min-w-0 [&>button]:mt-0",
+        columns === 1 ? "grid-cols-1" : columns === 2 ? "grid-cols-2" : "grid-cols-3",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  )
+}
+
 export function MarketMobilePrimaryAction({
   children,
   className,

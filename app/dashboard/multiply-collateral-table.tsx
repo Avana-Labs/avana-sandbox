@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { formatCompactUsd, formatUsdExact } from "@/app/lib/borrow-sim"
 import {
   MarketMobileCard,
+  MarketMobileActionFooter,
   MarketMobileCardHeader,
   MarketMobileIdentityText,
   MarketMobileMetric,
@@ -276,7 +277,7 @@ export function MultiplyCollateralTable({
                 />
               </MarketMobileStatList>
 
-              <div className="grid grid-cols-3 gap-2">
+              <MarketMobileActionFooter columns={3}>
                 <Button
                   type="button"
                   variant="brand-secondary"
@@ -327,7 +328,7 @@ export function MultiplyCollateralTable({
                 >
                   {t("Close")}
                 </Button>
-              </div>
+              </MarketMobileActionFooter>
             </MarketMobileCard>
           ))}
         </div>

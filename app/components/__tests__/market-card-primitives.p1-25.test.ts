@@ -28,4 +28,14 @@ describe("MarketMobileCard surfaces", () => {
     expect(identity).toMatch(/text-\[12px\].*font-normal/)
     expect(source).toMatch(/MarketMobileSupportingValue[\s\S]*text-\[12px\]/)
   })
+
+  it("defines one action footer with stable spacing and column variants", () => {
+    const source = readFileSync(resolve(__dirname, "../market-card-primitives.tsx"), "utf8")
+    const footer = source.slice(source.indexOf("export function MarketMobileActionFooter"))
+
+    expect(footer).toMatch(/mt-4 grid gap-2/)
+    expect(footer).toMatch(/columns === 1[\s\S]*grid-cols-1/)
+    expect(footer).toMatch(/columns === 2[\s\S]*grid-cols-2[\s\S]*grid-cols-3/)
+    expect(footer).toMatch(/\[&>button\]:mt-0/)
+  })
 })

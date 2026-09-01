@@ -9,6 +9,7 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
+  MarketMobileActionFooter,
   MarketMobileCardHeader,
   MarketMobileIdentityText,
   MarketMobileMetric,
@@ -317,7 +318,7 @@ function CollateralMobileCard({
           value={t(row.collateralEnabled ? "Yes" : "No")}
         />
       </MarketMobileStatList>
-      <div className="grid grid-cols-2 gap-2">
+      <MarketMobileActionFooter>
         <Button
           type="button"
           variant="brand"
@@ -342,7 +343,7 @@ function CollateralMobileCard({
           <ActionIcon label="Remove" />
           {t("Remove")}
         </Button>
-      </div>
+      </MarketMobileActionFooter>
     </MarketMobileCard>
   )
 }
