@@ -42,15 +42,20 @@ describe("HighlightCarousel", () => {
     act(() => callback(time))
   }
 
-  it("preserves the original distance and duration calculation", () => {
+  it("advances at the speed calc but clamps a stalled frame (no lurch)", () => {
     const { container } = render(<HighlightCarousel durationSeconds={38} renderSequence={() => <div>Market</div>} />)
     const viewport = container.firstElementChild as HTMLDivElement
     const track = viewport.firstElementChild as HTMLDivElement
 
-    runNextFrame(1_000)
-    runNextFrame(2_000)
+    // speed = offsetWidth(380) / durationSeconds(38) = 10px/s.
+    runNextFrame(1_000) // seed the clock (no move)
+    runNextFrame(1_050) // 50ms → 10 * 0.05 = 0.5px
+    expect(track.style.transform).toBe("translate3d(-0.5px, 0, 0)")
 
-    expect(track.style.transform).toBe("translate3d(-10px, 0, 0)")
+    // A ~4s starved frame (heavy load) is clamped to 50ms, so it advances another
+    // 0.5px — NOT ~40px. This is what stops the marquee lurching/shaking on load.
+    runNextFrame(5_000)
+    expect(track.style.transform).toBe("translate3d(-1px, 0, 0)")
   })
 
   it("stops scheduling frames while hovered and resumes from the same position", () => {
@@ -58,16 +63,16 @@ describe("HighlightCarousel", () => {
     const viewport = container.firstElementChild as HTMLDivElement
     const track = viewport.firstElementChild as HTMLDivElement
 
-    runNextFrame(1_000)
-    runNextFrame(2_000)
+    runNextFrame(1_000) // seed
+    runNextFrame(1_050) // 50ms → -0.5px
     fireEvent.mouseEnter(viewport)
 
     expect(frames.size).toBe(0)
-    expect(track.style.transform).toBe("translate3d(-10px, 0, 0)")
+    expect(track.style.transform).toBe("translate3d(-0.5px, 0, 0)")
 
     fireEvent.mouseLeave(viewport)
     expect(frames.size).toBe(1)
-    expect(track.style.transform).toBe("translate3d(-10px, 0, 0)")
+    expect(track.style.transform).toBe("translate3d(-0.5px, 0, 0)")
   })
 
   it("eases one card on arrow step instead of jumping", () => {

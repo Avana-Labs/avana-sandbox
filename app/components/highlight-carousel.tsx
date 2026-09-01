@@ -70,28 +70,14 @@ export const HighlightCarousel = forwardRef<HighlightCarouselHandle, HighlightCa
     const track = trackRef.current
     if (!sequence || !track) return
 
-    // Only snap to the start on the FIRST measurement. Later ResizeObserver fires
-    // (live data swapping into the row post-mount, font/layout settle) must NOT
-    // reset scroll to 0 — that snapped the marquee back mid-animation, which read
-    // as a flicker "back and forth" before it settled. On a resize, keep the
-    // current offset and re-wrap it into the new loop range so motion continues.
-    let hasMeasured = false
+    // Measurement ONLY writes the width — never the transform. The animation loop
+    // below is the single writer of `track.style.transform`, so a ResizeObserver
+    // fire (images/fonts settling, live data landing) can never snap the marquee
+    // back or fight the current frame. The track starts at translate 0 (inline
+    // style) and the loop eases it left once a non-zero width is known; the loop's
+    // own wrap is seamless because the sequence is rendered twice.
     const updateWidth = () => {
-      const nextWidth = sequence.offsetWidth
-      sequenceWidthRef.current = nextWidth
-      if (!hasMeasured) {
-        hasMeasured = true
-        xRef.current = 0
-        track.style.transform = "translate3d(0px, 0, 0)"
-        return
-      }
-      if (nextWidth > 0) {
-        let x = xRef.current
-        while (x <= -nextWidth) x += nextWidth
-        while (x > 0) x -= nextWidth
-        xRef.current = x
-        track.style.transform = `translate3d(${x}px, 0, 0)`
-      }
+      sequenceWidthRef.current = sequence.offsetWidth
     }
 
     updateWidth()
@@ -129,11 +115,21 @@ export const HighlightCarousel = forwardRef<HighlightCarouselHandle, HighlightCa
           previousTime = time
         } else if (previousTime !== null) {
           const speed = sequenceWidth / durationSeconds
-          const nextX = xRef.current - speed * ((time - previousTime) / 1000)
-          xRef.current = nextX <= -sequenceWidth ? nextX + sequenceWidth : nextX
+          // Clamp the frame delta. During load/hydration rAF frames get starved, so
+          // an unclamped `time - previousTime` can be hundreds of ms → the track
+          // lurches a big distance in one frame (the "shake"), and repeated stalls
+          // read as "stop, jump, restart". Capping dt keeps motion continuous no
+          // matter how delayed a frame is.
+          const dt = Math.min((time - previousTime) / 1000, 0.05)
+          let nextX = xRef.current - speed * dt
+          // Seamless wrap (while-loop in case a clamp still lands past one sequence).
+          while (nextX <= -sequenceWidth) nextX += sequenceWidth
+          xRef.current = nextX
           track.style.transform = `translate3d(${xRef.current}px, 0, 0)`
           previousTime = time
         } else {
+          // First frame after (re)start: seed the clock without moving, so resuming
+          // from a pause continues from the same position instead of jumping.
           previousTime = time
         }
       } else {
