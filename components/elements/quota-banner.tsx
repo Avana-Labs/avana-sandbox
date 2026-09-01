@@ -34,7 +34,7 @@ export function QuotaBanner({
       {...props}
     >
       <div className="flex items-baseline gap-2">
-        <span className={cn("text-[13.5px] font-medium", tight && "text-amber-700 dark:text-amber-400")}>
+        <span className={cn("text-[14px] font-normal leading-5", tight && "text-amber-700 dark:text-amber-400")}>
           {left} {unit} left
         </span>
         <span className={cn(mono, "text-foreground/30 ms-auto tabular-nums")}>resets {resetsIn}</span>
@@ -57,7 +57,7 @@ export function QuotaBanner({
         <button
           type="button"
           onClick={onUpgrade}
-          className={cn(inkButton, "ms-auto flex h-7 items-center rounded-full px-3 text-xs font-medium")}
+          className={cn(inkButton, "ms-auto flex h-7 items-center rounded-full px-3 text-[12px] font-normal leading-4")}
         >
           {upgradeLabel}
         </button>

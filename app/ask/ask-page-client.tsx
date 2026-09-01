@@ -86,7 +86,7 @@ export function AskPageClient() {
 
         <div className="pointer-events-none absolute left-1/2 w-[min(520px,calc(100%-128px))] -translate-x-1/2 text-center sm:w-[min(560px,calc(100%-192px))]">
           {contentReady ? (
-            <div className="truncate text-lg font-medium leading-none text-foreground">
+            <div className="truncate text-[18px] font-normal leading-6 tracking-[-0.01em] text-foreground">
               {headerTitle ?? t("Ask AI")}
             </div>
           ) : (
