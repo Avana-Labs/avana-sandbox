@@ -331,6 +331,298 @@ export function DashboardPageSkeleton() {
   )
 }
 
+// -----------------------------------------------------------------------------
+// product indexes — each mirrors the real route's metric strip, horizontal
+// discovery cards, controls, and market table. These live at the provider/auth
+// boundary only; there are deliberately no route `loading.tsx` files.
+// -----------------------------------------------------------------------------
+
+function ProductMetricStripSkeleton() {
+  return (
+    <div className="flex w-full items-start justify-between gap-4 pb-4">
+      <div className="space-y-2">
+        <Skeleton className="h-3 w-20 rounded-xs" />
+        <Skeleton className="h-[18px] w-24 rounded-xs" />
+      </div>
+      <div className="hidden gap-8 md:flex">
+        {Array.from({ length: 2 }).map((_, index) => (
+          <div key={`metric-${index}`} className="space-y-2 text-right">
+            <Skeleton className="ml-auto h-3 w-28 rounded-xs" />
+            <Skeleton className="ml-auto h-[18px] w-16 rounded-xs" />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function DiscoveryCardSkeleton({ paired = false }: { paired?: boolean }) {
+  return (
+    <Surface className="h-[104px] w-[min(372px,calc(100vw-2rem))] shrink-0 p-5">
+      <div className="flex h-full items-center gap-3">
+        <div className={cn("relative shrink-0", paired ? "h-16 w-24" : "size-16")}>
+          <Skeleton className="absolute left-0 top-0 size-16 rounded-full" />
+          {paired ? <Skeleton className="absolute left-8 top-0 size-16 rounded-full" /> : null}
+        </div>
+        <div className="min-w-0 flex-1 space-y-2">
+          <Skeleton className="h-4 w-28 rounded-xs" />
+          <Skeleton className="h-3 w-20 rounded-xs" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="ml-auto h-4 w-14 rounded-xs" />
+          <Skeleton className="ml-auto h-3 w-12 rounded-xs" />
+        </div>
+      </div>
+    </Surface>
+  )
+}
+
+function ProductTableSkeleton({ paired = false }: { paired?: boolean }) {
+  return (
+    <div className="mt-8 space-y-5">
+      <div className="flex items-end justify-between gap-4">
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-44 rounded-xs" />
+          <Skeleton className="h-3 w-64 max-w-[55vw] rounded-xs" />
+        </div>
+        <Skeleton className="h-10 w-40 rounded-full" />
+      </div>
+      <Surface className="overflow-hidden">
+        <div className="hidden grid-cols-[minmax(220px,1fr)_repeat(3,minmax(92px,0.45fr))_180px] gap-4 border-b border-border px-4 py-3 md:grid">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <Skeleton key={`table-heading-${index}`} className="h-3 w-16 rounded-xs" />
+          ))}
+        </div>
+        <div className="divide-y divide-border/70 px-4">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div key={`market-row-${index}`} className="flex min-h-[72px] items-center gap-4 py-3">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <div className={cn("relative shrink-0", paired ? "h-10 w-14" : "size-10")}>
+                  <Skeleton className="absolute left-0 top-0 size-10 rounded-full" />
+                  {paired ? <Skeleton className="absolute left-4 top-0 size-10 rounded-full" /> : null}
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-28 rounded-xs" />
+                  <Skeleton className="h-3 w-20 rounded-xs" />
+                </div>
+              </div>
+              {Array.from({ length: 3 }).map((__, metricIndex) => (
+                <Skeleton key={`market-row-${index}-metric-${metricIndex}`} className="hidden h-4 w-16 rounded-xs md:block" />
+              ))}
+              <div className="flex gap-2">
+                <Skeleton className="h-9 w-20 rounded-radius-sm" />
+                <Skeleton className="hidden h-9 w-20 rounded-radius-sm lg:block" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </Surface>
+    </div>
+  )
+}
+
+function ProductIndexSkeleton({
+  testId,
+  pairedCards,
+  borrowCards = false,
+}: {
+  testId: string
+  pairedCards?: boolean
+  borrowCards?: boolean
+}) {
+  return (
+    <Page mainClassName="px-4 py-8">
+      <div data-testid={testId}>
+        <ProductMetricStripSkeleton />
+        <div className="mt-3 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <Skeleton className="h-7 w-24 rounded-xs" />
+            <div className="flex gap-2">
+              <Skeleton className="size-9 rounded-full" />
+              <Skeleton className="size-9 rounded-full" />
+            </div>
+          </div>
+          <div className="flex gap-3 overflow-hidden">
+            {Array.from({ length: 3 }).map((_, index) =>
+              borrowCards ? (
+                <Surface key={`borrow-discovery-${index}`} className="h-[154px] w-[min(372px,calc(100vw-2rem))] shrink-0 p-4">
+                  <div className="space-y-3">
+                    {Array.from({ length: 2 }).map((__, rowIndex) => (
+                      <div key={`borrow-discovery-${index}-${rowIndex}`} className="flex items-center gap-3">
+                        <div className="relative h-10 w-14 shrink-0">
+                          <Skeleton className="absolute left-0 top-0 size-10 rounded-full" />
+                          <Skeleton className="absolute left-4 top-0 size-10 rounded-full" />
+                        </div>
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-4 w-24 rounded-xs" />
+                          <Skeleton className="h-3 w-32 rounded-xs" />
+                        </div>
+                        <Skeleton className="h-4 w-14 rounded-xs" />
+                      </div>
+                    ))}
+                  </div>
+                </Surface>
+              ) : (
+                <DiscoveryCardSkeleton key={`discovery-${index}`} paired={pairedCards} />
+              ),
+            )}
+          </div>
+        </div>
+        {borrowCards ? (
+          <div className="mt-8 flex items-center justify-between border-b border-border pb-3">
+            <div className="flex gap-6">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <Skeleton key={`borrow-tab-${index}`} className="h-4 w-16 rounded-xs" />
+              ))}
+            </div>
+            <Skeleton className="h-10 w-44 rounded-full" />
+          </div>
+        ) : null}
+        <ProductTableSkeleton paired={pairedCards || borrowCards} />
+      </div>
+    </Page>
+  )
+}
+
+export function BorrowPageSkeleton() {
+  return <ProductIndexSkeleton testId="borrow-page-skeleton" borrowCards />
+}
+
+export function LendPageSkeleton() {
+  return <ProductIndexSkeleton testId="lend-page-skeleton" />
+}
+
+export function MultiplyPageSkeleton() {
+  return <ProductIndexSkeleton testId="multiply-page-skeleton" pairedCards />
+}
+
+// -----------------------------------------------------------------------------
+// market details — breadcrumb + identity span both columns, followed by the
+// chart/about/stat stack and the sticky product action rail. Pair/single-token
+// identities match each real detail route.
+// -----------------------------------------------------------------------------
+
+function DetailIdentitySkeleton({ paired }: { paired: boolean }) {
+  return (
+    <div className="flex items-center justify-between gap-6 border-b border-border pb-5">
+      <div className="flex min-w-0 items-center gap-4">
+        <div className={cn("relative shrink-0", paired ? "h-16 w-[86px]" : "size-16")}>
+          <Skeleton className="absolute left-0 top-0 size-16 rounded-full" />
+          {paired ? <Skeleton className="absolute left-[22px] top-0 size-16 rounded-full" /> : null}
+        </div>
+        <div className="space-y-2.5">
+          <Skeleton className="h-6 w-48 rounded-xs" />
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-4 w-20 rounded-xs" />
+            <Skeleton className="h-4 w-28 rounded-xs" />
+          </div>
+        </div>
+      </div>
+      <div className="hidden gap-2 lg:flex">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <Skeleton key={`detail-social-${index}`} className="size-9 rounded-full" />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function DetailActionRailSkeleton() {
+  return (
+    <div className="mt-6">
+      <div className="grid grid-cols-2 gap-2">
+        <Skeleton className="h-10 rounded-full" />
+        <Skeleton className="h-10 rounded-full" />
+      </div>
+      <Surface className="mt-3 space-y-3 p-4">
+        <Skeleton className="h-4 w-24 rounded-xs" />
+        <Skeleton className="h-[112px] w-full rounded-radius-md" />
+        <div className="grid grid-cols-2 gap-3">
+          <Skeleton className="h-14 rounded-radius-md" />
+          <Skeleton className="h-14 rounded-radius-md" />
+        </div>
+        <Skeleton className="h-14 w-full rounded-radius-md" />
+      </Surface>
+    </div>
+  )
+}
+
+function DetailPageSkeleton({ testId, paired }: { testId: string; paired: boolean }) {
+  return (
+    <Page mainClassName="px-4 pb-24 pt-12 md:pb-12 md:pt-14">
+      <div data-testid={testId}>
+        <div className="mb-4 flex items-center gap-2">
+          <Skeleton className="h-4 w-16 rounded-xs" />
+          <Skeleton className="h-4 w-28 rounded-xs" />
+        </div>
+        <div className="grid lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-x-20">
+          <div className="min-w-0 lg:col-span-2">
+            <DetailIdentitySkeleton paired={paired} />
+          </div>
+          <div className="min-w-0 lg:col-start-1 lg:row-start-2">
+            <section className="mb-12 pt-9">
+              <Skeleton className="h-8 w-36 rounded-xs" />
+              <Skeleton className="mt-5 h-[260px] w-full rounded-xs" shimmer />
+              <div className="mt-4 flex gap-5">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <Skeleton key={`detail-range-${index}`} className="h-4 w-8 rounded-xs" />
+                ))}
+              </div>
+              <div className="mt-5 flex gap-5 border-t border-border pt-4">
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <Skeleton key={`detail-metric-tab-${index}`} className="h-4 w-20 rounded-xs" />
+                ))}
+              </div>
+            </section>
+            <section className="space-y-10">
+              <div className="space-y-3">
+                <Skeleton className="h-7 w-44 rounded-xs" />
+                <Skeleton className="h-4 w-full rounded-xs" />
+                <Skeleton className="h-4 w-11/12 rounded-xs" />
+                <Skeleton className="h-4 w-4/5 rounded-xs" />
+              </div>
+              <div className="space-y-6">
+                <Skeleton className="h-7 w-36 rounded-xs" />
+                <div className="grid grid-cols-2 gap-x-6 gap-y-6 sm:grid-cols-3">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div key={`detail-stat-${index}`} className="space-y-2">
+                      <Skeleton className="h-3 w-24 rounded-xs" />
+                      <Skeleton className="h-5 w-20 rounded-xs" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <Surface className="h-[280px] w-full p-5">
+                <Skeleton className="h-7 w-40 rounded-xs" />
+                <Skeleton className="mt-6 h-[190px] w-full rounded-xs" />
+              </Surface>
+            </section>
+          </div>
+          <aside className="hidden lg:col-start-2 lg:row-start-2 lg:block lg:self-start">
+            <DetailActionRailSkeleton />
+          </aside>
+        </div>
+      </div>
+    </Page>
+  )
+}
+
+export function BorrowPoolDetailSkeleton() {
+  return <DetailPageSkeleton testId="borrow-pool-detail-skeleton" paired />
+}
+
+export function BorrowAssetDetailSkeleton() {
+  return <DetailPageSkeleton testId="borrow-asset-detail-skeleton" paired={false} />
+}
+
+export function LendMarketDetailSkeleton() {
+  return <DetailPageSkeleton testId="lend-market-detail-skeleton" paired={false} />
+}
+
+export function MultiplyMarketDetailSkeleton() {
+  return <DetailPageSkeleton testId="multiply-market-detail-skeleton" paired />
+}
+
 /**
  * Route-aware content skeleton. Rendered BELOW the persistent site header (the
  * header lives above the session/auth gates now), so each product route reveals
@@ -351,6 +643,17 @@ export function RouteContentSkeleton() {
     // placeholder before their focused shells mount.
     return <div data-testid="focused-route-pending" className="min-h-[100dvh] bg-background" aria-hidden />
   }
+  if (pathname.startsWith("/borrow/markets/") || pathname.startsWith("/borrow/pool/")) {
+    return <BorrowPoolDetailSkeleton />
+  }
+  if (pathname.startsWith("/borrow/assets/") || pathname.startsWith("/borrow/asset/")) {
+    return <BorrowAssetDetailSkeleton />
+  }
+  if (pathname.startsWith("/lend/markets/")) return <LendMarketDetailSkeleton />
+  if (pathname.startsWith("/multiply/markets/")) return <MultiplyMarketDetailSkeleton />
+  if (pathname === "/borrow") return <BorrowPageSkeleton />
+  if (pathname === "/lend") return <LendPageSkeleton />
+  if (pathname === "/multiply") return <MultiplyPageSkeleton />
   if (pathname === "/") return <HomeWorkspaceSkeleton />
   if (pathname === "/umbrella" || pathname.startsWith("/umbrella/")) return <UmbrellaPageSkeleton />
   if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
