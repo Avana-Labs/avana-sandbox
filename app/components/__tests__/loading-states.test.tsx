@@ -10,11 +10,10 @@ import { HomeWorkspaceSkeleton } from "@/app/components/loading-states"
 describe("HomeWorkspaceSkeleton placeholder policy", () => {
   afterEach(cleanup)
 
-  it("uses the neutral '—' placeholder, never a fake '$0.00' that reads as real data", () => {
+  it("matches the unloaded swap card's zero-dollar values", () => {
     const { container } = render(<HomeWorkspaceSkeleton />)
 
-    expect(container.textContent).not.toContain("$0.00")
-    // The Sell + Buy field value lines both fall back to the em-dash placeholder.
-    expect(screen.getAllByText("—").length).toBeGreaterThanOrEqual(2)
+    expect(screen.getAllByText("$0.00")).toHaveLength(2)
+    expect(container.textContent).not.toContain("—")
   })
 })

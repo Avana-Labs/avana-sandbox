@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { useCurrency } from "@/app/lib/currency/use-currency"
 import { ActionWorkspaceTabs } from "@/app/components/action-page/action-workspace-tabs"
 import { HOME_MODE_ITEMS } from "@/app/components/home/home-workspace-card"
 
@@ -78,6 +79,8 @@ function HomeFieldSkeleton({ children, tone }: { children: ReactNode; tone: "rai
 
 export function HomeWorkspaceSkeleton() {
   const { t } = useTranslation()
+  const { exact } = useCurrency()
+  const zeroUsdLabel = exact(0)
   return (
     // Keep the loading testid on the root so the initial-HTML shell assertion in
     // tests/e2e/route-performance.spec.ts still finds it.
@@ -123,10 +126,7 @@ export function HomeWorkspaceSkeleton() {
                   </span>
                 </div>
                 <div className="mt-1 flex items-center justify-between gap-3 text-[14px]">
-                  {/* Neutral placeholder while data loads — never a literal "$0.00",
-                      which reads as a real (zero) value. Matches the app-wide "—"
-                      missing-value convention. */}
-                  <span className="min-w-0 truncate text-foreground/60">—</span>
+                  <span className="min-w-0 truncate text-foreground/60">{zeroUsdLabel}</span>
                 </div>
               </HomeFieldSkeleton>
 
@@ -144,10 +144,7 @@ export function HomeWorkspaceSkeleton() {
                   </span>
                 </div>
                 <div className="mt-1 flex items-center justify-between gap-3 text-[14px]">
-                  {/* Neutral placeholder while data loads — never a literal "$0.00",
-                      which reads as a real (zero) value. Matches the app-wide "—"
-                      missing-value convention. */}
-                  <span className="min-w-0 truncate text-foreground/60">—</span>
+                  <span className="min-w-0 truncate text-foreground/60">{zeroUsdLabel}</span>
                 </div>
               </HomeFieldSkeleton>
             </div>
@@ -474,7 +471,10 @@ export function LendPageSkeleton() {
               <Skeleton className="size-9 rounded-full" />
             </div>
           </div>
-          <div className="-mx-4 flex h-44 gap-3 overflow-hidden pl-4 sm:-mx-6 sm:pl-6" data-testid="lend-skeleton-carousel">
+          <div
+            className="-mx-4 flex h-44 gap-3 overflow-hidden pl-4 sm:-mx-6 sm:pl-6"
+            data-testid="lend-skeleton-carousel"
+          >
             {Array.from({ length: 4 }).map((_, index) => (
               <Surface key={`lend-featured-${index}`} className="relative h-44 w-[372px] shrink-0 overflow-hidden p-6">
                 <div className="flex items-start justify-between gap-3">
@@ -567,10 +567,7 @@ function MarketFiltersSkeleton({
   padded?: boolean
 }) {
   return (
-    <div
-      className={cn("flex items-center justify-between gap-4", padded && "py-2.5")}
-      data-testid={testId}
-    >
+    <div className={cn("flex items-center justify-between gap-4", padded && "py-2.5")} data-testid={testId}>
       <div className="flex min-w-0 gap-2 overflow-hidden">
         {["w-14", "w-24", "w-24", "w-24", "w-24", "w-24"].map((width, index) => (
           <Skeleton key={`${testId}-${index}`} className={cn("h-10 shrink-0 rounded-full", width)} />
