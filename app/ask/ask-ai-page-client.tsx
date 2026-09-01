@@ -389,7 +389,14 @@ export function AskAIPageClient({
 }: {
   onActiveTitleChange?: (title: string | null) => void
 } = {}) {
-  const [threadsOpen, setThreadsOpen] = useState(false)
+  // This component mounts only after hydration, so initialize the desktop
+  // sidebar from the real viewport immediately. Starting at false and opening it
+  // in an effect shifted the body skeleton sideways during the final handoff.
+  const [threadsOpen, setThreadsOpen] = useState(() =>
+    typeof window !== "undefined" && typeof window.matchMedia === "function"
+      ? window.matchMedia("(min-width: 1024px)").matches
+      : false,
+  )
   // This component is mounted client-only (gated on useHydrated in ask-page-client), so reading
   // sessionStorage in the initializer is safe and restores the active thread on the first paint.
   const [activeThreadId, setActiveThreadId] = useState<string | null>(() =>

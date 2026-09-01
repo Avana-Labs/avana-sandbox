@@ -4,7 +4,7 @@
 // reveals a shimmer (not a flash of the empty state or a blank panel) before content resolves.
 export function AskAIThreadSkeleton() {
   return (
-    <div className="mx-auto flex w-full max-w-[44rem] flex-1 flex-col gap-7 px-4 pt-10" aria-hidden>
+    <div data-testid="ask-ai-thread-skeleton" className="flex w-full flex-col gap-7 pt-10" aria-hidden>
       <span className="ml-auto block h-8 w-[38%] animate-pulse rounded-2xl bg-foreground/10" />
       <div className="space-y-2.5">
         <span className="block h-3.5 w-[72%] animate-pulse rounded-full bg-foreground/10" />
@@ -24,7 +24,7 @@ export function AskAIThreadSkeleton() {
 // stable loaded shapes. Only the message viewport skeletonizes.
 export function AskAILoadingBody() {
   return (
-    <main className="flex h-[calc(100dvh-56px)] w-full overflow-hidden lg:h-[calc(100dvh-56px)]">
+    <main className="flex h-[calc(100dvh-56px)] w-full overflow-hidden lg:h-[calc(100dvh-56px)] [@media(min-height:684px)]:min-h-[620px]">
       <aside aria-hidden className="hidden w-[260px] shrink-0 flex-col bg-muted/20 p-3 lg:flex">
         <div className="flex h-8 items-center gap-2 rounded-md bg-muted px-2.5 text-sm">
           <span className="text-xl font-light leading-none">+</span>
@@ -34,8 +34,12 @@ export function AskAILoadingBody() {
         <p className="mt-1 px-2.5 text-sm text-muted-foreground">Loading conversations</p>
       </aside>
       <section className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
-        <div className="h-14 shrink-0" />
-        <AskAIThreadSkeleton />
+        <div className="h-16 shrink-0" />
+        <div className="flex min-h-0 flex-1 flex-col [--thread-max-width:44rem]">
+          <div className="relative flex flex-1 flex-col overflow-x-auto overflow-y-auto">
+            <div className="mx-auto flex w-full max-w-[44rem] flex-1 flex-col px-4 pt-4" />
+          </div>
+        </div>
       </section>
     </main>
   )

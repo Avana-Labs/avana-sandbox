@@ -340,6 +340,17 @@ export function DashboardPageSkeleton() {
  */
 export function RouteContentSkeleton() {
   const pathname = usePathname()
+  if (
+    pathname === "/ask" ||
+    pathname.startsWith("/ask/") ||
+    pathname === "/actions" ||
+    pathname.startsWith("/actions/")
+  ) {
+    // Ask and action pages own their client/auth initialization states. Showing
+    // the generic product/table skeleton here creates a large, unrelated
+    // placeholder before their focused shells mount.
+    return <div data-testid="focused-route-pending" className="min-h-[100dvh] bg-background" aria-hidden />
+  }
   if (pathname === "/") return <HomeWorkspaceSkeleton />
   if (pathname === "/umbrella" || pathname.startsWith("/umbrella/")) return <UmbrellaPageSkeleton />
   if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
