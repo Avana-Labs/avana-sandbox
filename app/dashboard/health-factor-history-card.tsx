@@ -3,6 +3,7 @@
 import { Component, type ReactNode } from "react"
 import { MarketHeroChart } from "@/app/components/charts/market-hero-chart"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { DASHBOARD_SNAPSHOT_SURFACE_CLASS } from "@/app/components/card-surface-tokens"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useHealthFactorHistory } from "@/app/dashboard/use-dashboard-history-feeds"
 
@@ -32,7 +33,7 @@ function HealthFactorHistoryInner({ walletId }: { walletId: string | undefined }
   if (pointCount < 2) return null
 
   return (
-    <div className="rounded-radius-md border border-border bg-card px-4 py-4 dark:bg-white/[0.04]">
+    <div className={`${DASHBOARD_SNAPSHOT_SURFACE_CLASS} px-4 py-4`}>
       <h4 className="mb-2 text-[13px] font-medium text-muted-foreground">{t("Health factor over time")}</h4>
       <MarketHeroChart
         feed={feed}

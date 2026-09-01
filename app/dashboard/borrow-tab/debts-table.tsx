@@ -1,6 +1,7 @@
 "use client"
 
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
+import { DASHBOARD_SNAPSHOT_SURFACE_CLASS } from "@/app/components/card-surface-tokens"
 import { ActionIcon } from "@/app/components/action-icon"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -310,7 +311,7 @@ export function CurrentLtvCard({
   const statusToneClass = hasPosition ? "bg-emerald-500/10 text-success" : "bg-muted text-muted-foreground"
 
   return (
-    <div className="mb-4 rounded-radius-md border border-border bg-card px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
+    <div className={`${DASHBOARD_SNAPSHOT_SURFACE_CLASS} px-5 py-4 md:px-6 md:py-5`}>
       <div className="flex h-6 items-center justify-between gap-3">
         <div className="flex min-w-0 items-baseline gap-2">
           <span className="font-data text-[20px] font-normal leading-none tracking-tight text-foreground">

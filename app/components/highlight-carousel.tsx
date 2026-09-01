@@ -3,6 +3,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 import { useMediaQuery } from "@/app/lib/use-media-query"
+import { DASHBOARD_SNAPSHOT_SURFACE_CLASS } from "@/app/components/card-surface-tokens"
 
 /**
  * Shared surface styling for the Lend "Featured" and Multiply "Trending"
@@ -10,8 +11,7 @@ import { useMediaQuery } from "@/app/lib/use-media-query"
  * matching the Borrow "Explore" cards. Card dimensions are left to the caller
  * so each surface can size to its own content.
  */
-export const HIGHLIGHT_CARD_CLASS =
-  "relative block shrink-0 overflow-hidden rounded-radius-md border-0 bg-card text-left shadow-none"
+export const HIGHLIGHT_CARD_CLASS = `relative block shrink-0 overflow-hidden text-left ${DASHBOARD_SNAPSHOT_SURFACE_CLASS}`
 
 const DEFAULT_MARQUEE_DURATION_SECONDS = 38
 const STEP_MS = 420
