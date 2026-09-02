@@ -147,6 +147,7 @@ describe("Ask AI atomic cost gate", () => {
       owner.mutation(api.askAI.beginTurn, {
         threadId: thread.threadId,
         prompt: "One more should fail",
+        clientRequestId: "shared-gate-begin",
       }),
     ).rejects.toMatchObject({ data: { code: "ASK_AI_RATE_LIMITED" } })
   })

@@ -65,7 +65,7 @@ describe("Ask AI turn error contract", () => {
       const thread = await owner.mutation(api.askAI.create, {})
 
       await expect(
-        owner.mutation(api.askAI.beginTurn, { threadId: thread.threadId, prompt: "Any question" }),
+        owner.mutation(api.askAI.beginTurn, { threadId: thread.threadId, prompt: "Any question", clientRequestId: "begin-token" }),
       ).rejects.toMatchObject({
         data: { code: "ASK_AI_RATE_LIMITED", message: expect.stringContaining("daily token limit") },
       })
@@ -75,11 +75,30 @@ describe("Ask AI turn error contract", () => {
       const t = askAITest()
       const owner = t.withIdentity({ subject: "ask-guest:begin-ratelimit" })
       const thread = await owner.mutation(api.askAI.create, {})
-      await owner.mutation(api.askAI.beginTurn, { threadId: thread.threadId, prompt: "First question" })
+      await owner.mutation(api.askAI.beginTurn, {
+        threadId: thread.threadId,
+        prompt: "First question",
+        clientRequestId: "begin-rate-1",
+      })
 
       await expect(
-        owner.mutation(api.askAI.beginTurn, { threadId: thread.threadId, prompt: "Second question" }),
+        owner.mutation(api.askAI.beginTurn, {
+          threadId: thread.threadId,
+          prompt: "Second question",
+          clientRequestId: "begin-rate-2",
+        }),
       ).rejects.toMatchObject({ data: { code: "ASK_AI_RATE_LIMITED", message: expect.any(String) } })
+    })
+
+    test("missing clientRequestId -> ASK_AI_GENERATION_FAILED", async () => {
+      const t = askAITest()
+      const owner = t.withIdentity({ subject: "ask-guest:begin-noid" })
+      const thread = await owner.mutation(api.askAI.create, {})
+      await expect(
+        owner.mutation(api.askAI.beginTurn, { threadId: thread.threadId, prompt: "Needs an idempotency key" }),
+      ).rejects.toMatchObject({
+        data: { code: "ASK_AI_GENERATION_FAILED", message: expect.stringContaining("request ID") },
+      })
     })
   })
 

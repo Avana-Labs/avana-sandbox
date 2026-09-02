@@ -321,9 +321,10 @@ export const beginTurn = mutation({
   args: {
     threadId: v.string(),
     prompt: v.string(),
+    clientRequestId: v.optional(v.string()),
     retryPromptMessageId: v.optional(v.string()),
   },
-  handler: async (ctx, { threadId, prompt, retryPromptMessageId }) => {
+  handler: async (ctx, { threadId, prompt, clientRequestId, retryPromptMessageId }) => {
     const { ownerSubject, thread } = await requireOwnedThread(ctx, threadId)
     if (thread.status !== "active") throw new Error("Thread is archived")
     const text = prompt.trim()
@@ -345,7 +346,20 @@ export const beginTurn = mutation({
         previousTurn.status === "cancelled")
     )
       throw new Error("This turn cannot be retried")
+
+    const requestId = clientRequestId?.trim() ?? ""
     if (!previousTurn) {
+      if (!requestId || requestId.length > 100)
+        throw askAIError("ASK_AI_GENERATION_FAILED", "Message request ID is invalid")
+      const existing = await ctx.db
+        .query("askAITurns")
+        .withIndex("by_owner_request", (q) => q.eq("ownerSubject", ownerSubject).eq("clientRequestId", requestId))
+        .unique()
+      if (existing) {
+        if (existing.threadId !== threadId || existing.prompt !== text)
+          throw askAIError("ASK_AI_GENERATION_FAILED", "Message request ID was already used")
+        return { messageId: existing.promptMessageId, ownerSubject, duplicate: true as const }
+      }
       await enforceAskAICostGate(ctx, ownerSubject, { enforceBurst: true, enforceConcurrent: true })
     }
     const saved = previousTurn
@@ -357,6 +371,7 @@ export const beginTurn = mutation({
       await ctx.db.insert("askAITurns", {
         threadId,
         ownerSubject,
+        clientRequestId: requestId,
         promptMessageId: saved.messageId,
         prompt: text,
         status: "running",
@@ -370,6 +385,7 @@ export const beginTurn = mutation({
     return {
       ...saved,
       ownerSubject,
+      duplicate: false as const,
     }
   },
 })
