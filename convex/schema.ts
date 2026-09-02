@@ -657,6 +657,20 @@ export default defineSchema({
     .index("by_chain_contract", ["chainId", "contractAddress"]),
 
   /**
+   * Last successful oracle/FX provider check. Written on every successful refresh even when
+   * quote rows are unchanged, so freshness stays observable without rewriting every quote
+   * (which would invalidate every price subscriber).
+   */
+  oracleProviderHealth: defineTable({
+    kind: v.union(v.literal("prices"), v.literal("fx")),
+    checkedAt: v.number(),
+    sourceUpdatedAt: v.optional(v.number()),
+    quoteCount: v.number(),
+    written: v.number(),
+    unchanged: v.number(),
+  }).index("by_kind", ["kind"]),
+
+  /**
    * Historical token prices, one row per (symbol, UTC day) — the daily closing snapshot. Kept
    * SEPARATE from the current `tokenPrices` table (§12): current UI reads `tokenPrices`, charts
    * read this history, so an old value can never be mistaken for the live price. Bounded growth
