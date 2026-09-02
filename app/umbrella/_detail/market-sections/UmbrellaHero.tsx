@@ -26,15 +26,13 @@ export function UmbrellaHero() {
   const readySymbols = readyIds.map((id) => umbrella.markets[id].symbol).join(", ")
   const expiredIds = umbrella.marketOrder.filter((id) => umbrella.positions[id].cooldownStatus === "expired")
   const expiredUsd = expiredIds.reduce((sum, id) => sum + umbrella.positions[id].cooldownValueUsd, 0)
-  const expiredSymbols = expiredIds.map((id) => umbrella.markets[id].symbol).join(", ")
   const withdrawalReadyTile = (() => {
     if (expiredIds.length > 0) {
-      const combinedValue = readyUsd + expiredUsd
       return {
-        label: t("Withdrawal ready"),
-        value: formatCompactUsd(combinedValue),
-        change: t("{symbols} expired — restart cooldown").replace("{symbols}", expiredSymbols),
-        tone: "danger" as const,
+        label: t("Restart cooldown"),
+        value: formatCompactUsd(expiredUsd),
+        change: "",
+        tone: "muted" as const,
       }
     }
     return {

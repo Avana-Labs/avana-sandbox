@@ -1186,6 +1186,7 @@ const dict: TranslationDictionary = {
   "Previous market risk": "Предыдущий рыночный риск",
   Ready: "Готово",
   "Removes in": "Удалится через",
+  "Restart": "Перезапуск",
   "Restart cooldown": "Перезапустить кулдаун",
   Stake: "Стейк",
   "Stake in umbrella": "Стейкать в Защите",

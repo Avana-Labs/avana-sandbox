@@ -445,7 +445,7 @@ function trancheLabels(
     return {
       status,
       remaining: "Expired",
-      removesIn: "Restart cooldown",
+      removesIn: "Restart",
       cooldownEndsAt,
       withdrawalWindowEndsAt,
       withdrawalWindowExpired,

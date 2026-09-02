@@ -1230,6 +1230,7 @@ const dict: TranslationDictionary = {
   "Previous market risk": "Risque de marché précédent",
   Ready: "Prêt",
   "Removes in": "Retiré dans",
+  "Restart": "Redémarrer",
   "Restart cooldown": "Redémarrer le cooldown",
   Stake: "Stake",
   "Stake in umbrella": "Staker dans Protection",

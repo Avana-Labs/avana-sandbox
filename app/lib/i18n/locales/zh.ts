@@ -1240,6 +1240,7 @@ const dict: TranslationDictionary = {
   "Previous market risk": "上次市场风险",
   Ready: "就绪",
   "Removes in": "剩余移除时间",
+  "Restart": "重启",
   "Restart cooldown": "重新开始冷却",
   Stake: "质押",
   "Stake in umbrella": "在保护中质押",

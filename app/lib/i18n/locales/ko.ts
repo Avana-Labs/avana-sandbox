@@ -1160,6 +1160,7 @@ const dict: TranslationDictionary = {
   "Previous market risk": "이전 마켓 리스크",
   Ready: "준비 완료",
   "Removes in": "제거까지",
+  "Restart": "재시작",
   "Restart cooldown": "쿨다운 다시 시작",
   Stake: "스테이크",
   "Stake in umbrella": "보호에 스테이크",

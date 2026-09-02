@@ -1174,6 +1174,7 @@ const dict: TranslationDictionary = {
   "Previous market risk": "Önceki piyasa riski",
   Ready: "Hazır",
   "Removes in": "Kaldırılma süresi",
+  "Restart": "Yeniden başlat",
   "Restart cooldown": "Cooldown'ı yeniden başlat",
   Stake: "Stake",
   "Stake in umbrella": "Koruma'da stake et",

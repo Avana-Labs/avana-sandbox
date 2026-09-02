@@ -1179,6 +1179,7 @@ const dict: TranslationDictionary = {
   "Previous market risk": "Risiko pasar sebelumnya",
   Ready: "Siap",
   "Removes in": "Dihapus dalam",
+  "Restart": "Mulai ulang",
   "Restart cooldown": "Mulai ulang cooldown",
   Stake: "Stake",
   "Stake in umbrella": "Stake di Proteksi",

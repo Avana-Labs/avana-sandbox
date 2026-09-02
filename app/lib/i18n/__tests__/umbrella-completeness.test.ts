@@ -49,6 +49,7 @@ export const UMBRELLA_TRANSLATION_KEYS: readonly string[] = [
   "Ready",
   "Remove",
   "Removes in",
+  "Restart",
   "Restart cooldown",
   "Rewards",
   "Sandbox wallet",
@@ -91,7 +92,6 @@ export const UMBRELLA_TRANSLATION_KEYS: readonly string[] = [
   "{pct}% of target",
   "{pct}% of target coverage.",
   "{staked} staked · {target} target",
-  "{symbols} expired — restart cooldown",
   "{time} left",
   "{value} total",
 ]

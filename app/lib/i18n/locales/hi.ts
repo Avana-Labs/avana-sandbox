@@ -1170,6 +1170,7 @@ const dict: TranslationDictionary = {
   "Previous market risk": "पिछला मार्केट जोखिम",
   Ready: "तैयार",
   "Removes in": "में हटाया जाएगा",
+  "Restart": "पुनः प्रारंभ",
   "Restart cooldown": "कूलडाउन दोबारा शुरू करें",
   Stake: "स्टेक",
   "Stake in umbrella": "सुरक्षा में स्टेक करें",
