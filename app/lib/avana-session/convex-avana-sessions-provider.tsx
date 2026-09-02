@@ -347,7 +347,10 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
       remoteSwapTransactions={remoteSwapTransactions}
       remoteRewardsState={remoteRewardsState}
       remoteRewardsRevision={remoteRewardsRevision}
-      persistRewardsState={persistRewardsState}
+      // Only write rewards when this route owns the rewards subscription. Otherwise
+      // remoteState is forced to null (query skipped) and a create-without-revision
+      // hits REVISION_REQUIRED against an existing Convex row.
+      persistRewardsState={scope.rewards ? persistRewardsState : undefined}
       persistLocalState={false}
       remoteUmbrellaState={remoteUmbrellaState}
       persistUmbrellaAction={persistUmbrellaAction}

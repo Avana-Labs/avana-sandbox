@@ -7,9 +7,10 @@ import * as Sentry from "@sentry/nextjs"
 
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+  enabled: process.env.NODE_ENV === "production",
 
   // Sampled at 10% in production to bound trace volume; raise locally if needed.
-  tracesSampleRate: 0.1,
+  tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 0,
 
   dataCollection: {
     // To disable sending user data and HTTP bodies, uncomment the lines below. For more info visit:

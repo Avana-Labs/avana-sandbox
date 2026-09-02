@@ -77,4 +77,42 @@ describe("SIWE memory-only auth store", () => {
     window.dispatchEvent(new StorageEvent("storage", { key: "some-other-key", newValue: "x" }))
     expect(getSiweSession()).toEqual({ wallet: WALLET })
   })
+
+  it("force-refreshes via /api/siwe/token when open-gate is off", async () => {
+    setSiweSession(WALLET)
+    const token = liveJwt("cookie")
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(tokenResponse(token))
+
+    await expect(fetchSiweAccessToken(true)).resolves.toBe(token)
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/siwe/token",
+      expect.objectContaining({ method: "POST" }),
+    )
+  })
+
+  it("open-gate force-refresh uses /api/siwe/dev-token and keeps the session on cookie 401s", async () => {
+    vi.resetModules()
+    vi.doMock("@/app/lib/test-mode", () => ({
+      shouldUseOpenGateSession: () => true,
+    }))
+    const store = await import("@/app/lib/siwe/auth-store")
+    store.clearSiweToken()
+    store.setSiweToken(liveJwt("open"), WALLET)
+
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(tokenResponse(liveJwt("refreshed")))
+    await expect(store.fetchSiweAccessToken(true)).resolves.toMatch(/refreshed/)
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/siwe/dev-token",
+      expect.objectContaining({ method: "POST" }),
+    )
+    expect(store.getSiweSession()).toEqual({ wallet: WALLET })
+
+    fetchMock.mockResolvedValue({ ok: false, status: 401, json: async () => ({}) } as Response)
+    await expect(store.fetchSiweAccessToken(true)).resolves.toBeNull()
+    expect(store.getSiweSession()).toEqual({ wallet: WALLET })
+
+    store.clearSiweToken()
+    vi.doUnmock("@/app/lib/test-mode")
+    vi.resetModules()
+  })
 })

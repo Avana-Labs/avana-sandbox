@@ -8,6 +8,7 @@ describe("rewards saveState client OCC", () => {
     expect(source).toMatch(/expectedRevision:\s*args\.expectedRevision/)
     expect(source).toMatch(/remoteRewardsRevision/)
     expect(source).toMatch(/rewardsState\.revision \?\? 0/)
+    expect(source).toMatch(/persistRewardsState=\{scope\.rewards \? persistRewardsState : undefined\}/)
   })
 
   it("p1-10: useRewardsSession seeds revision inside the persistence lock", () => {

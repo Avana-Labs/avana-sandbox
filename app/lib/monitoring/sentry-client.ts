@@ -28,8 +28,13 @@ function onEarlyRejection(event: PromiseRejectionEvent) {
 export function loadSentry(): Promise<SentryModule> {
   if (modulePromise) return modulePromise
   modulePromise = import("@sentry/nextjs").then((Sentry) => {
+    const isProd = process.env.NODE_ENV === "production"
     Sentry.init({
       dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+      // Local `npm run dev` still has a DSN in `.env.local`. Keep the SDK quiet there so
+      // expected Convex OCC/auth noise and Fast Refresh unhandledRejections are not shipped
+      // to the shared project (and so Sentry itself does not spam the browser console).
+      enabled: isProd,
 
       // Session Replay is intentionally NOT enabled. replayIntegration pulls in rrweb (~hundreds
       // of KB). Error + performance reporting is unaffected. If replay is ever needed again,
@@ -37,11 +42,22 @@ export function loadSentry(): Promise<SentryModule> {
       integrations: [],
 
       // Sampled at 10% in production to bound trace volume; raise locally if needed.
-      tracesSampleRate: 0.1,
+      tracesSampleRate: isProd ? 0.1 : 0,
+
+      ignoreErrors: [
+        // Convex client surfaces thrown mutation guards as opaque "Server Error" strings.
+        /^\[CONVEX M\(/,
+        /REVISION_REQUIRED/,
+        /UNAUTHENTICATED/,
+      ],
     })
     window.removeEventListener("error", onEarlyError)
     window.removeEventListener("unhandledrejection", onEarlyRejection)
-    for (const error of earlyErrors.splice(0)) Sentry.captureException(error)
+    if (isProd) {
+      for (const error of earlyErrors.splice(0)) Sentry.captureException(error)
+    } else {
+      earlyErrors.length = 0
+    }
     loaded = Sentry
     return Sentry
   })

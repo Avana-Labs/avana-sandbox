@@ -1,5 +1,6 @@
 "use client"
 
+import { shouldUseOpenGateSession } from "@/app/lib/test-mode"
 import { isJwtExpired } from "./token-expiry"
 
 /** Public client state. The bearer credential is deliberately not part of it. */
@@ -123,15 +124,24 @@ export async function fetchSiweAccessToken(forceRefresh = false): Promise<string
   if (!current) return null
   if (refreshPromise) return refreshPromise
 
-  refreshPromise = fetch("/api/siwe/token", {
+  // Open-gate has a memory JWT from `/api/siwe/dev-token`, not an `avana_siwe` cookie.
+  // Convex often force-refreshes via this helper; hitting `/api/siwe/token` returns 401 and
+  // used to clear the open-gate session — then wallet mutations fail as UNAUTHENTICATED
+  // while the UI still looks signed in via the TEST_MODE_WALLET fallback.
+  const openGate = shouldUseOpenGateSession()
+  const refreshUrl = openGate ? "/api/siwe/dev-token" : "/api/siwe/token"
+
+  refreshPromise = fetch(refreshUrl, {
     method: "POST",
     headers: { "content-type": "application/json" },
     cache: "no-store",
   })
     .then(async (response) => {
       if (response.status === 401) {
-        applySession(null)
-        broadcastSession(null)
+        if (!openGate) {
+          applySession(null)
+          broadcastSession(null)
+        }
         return null
       }
       if (!response.ok) throw new Error(`Could not refresh wallet session (${response.status}).`)
