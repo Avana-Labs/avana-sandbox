@@ -1,7 +1,6 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import type { PortfolioMultiplyCollateral } from "@/app/lib/data/providers/portfolio"
-import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { MultiplyCollateralTable } from "@/app/dashboard/multiply-collateral-table"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 
@@ -76,8 +75,8 @@ describe("MultiplyCollateralTable", () => {
       </DisplayPreferencesProvider>,
     )
 
-    // Two rows in, one closed: only the single open position is counted.
-    expect(screen.getByText("1 positions")).toBeTruthy()
+    // Desktop and mobile each render one Manage action for the single open row.
+    expect(screen.getAllByRole("button", { name: "Manage" })).toHaveLength(2)
   })
 
   it("shows the projected liquidation price for an active position", () => {
@@ -89,22 +88,30 @@ describe("MultiplyCollateralTable", () => {
 
     // liquidationPriceUsd (2100) is surfaced exact (once per responsive layout:
     // desktop table + mobile card) rather than compacted to "$2.1K".
-    expect(screen.getAllByText("$2,100").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("Liq. price").length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/\$2,100/).length).toBeGreaterThan(0)
+    expect(screen.getByRole("columnheader", { name: "Risk" })).toBeTruthy()
   })
 
-  it("splits exposure from debt and risk instead of rendering one wide table", () => {
+  it("renders one compact loop table with one action per position", () => {
     render(
       <DisplayPreferencesProvider>
         <MultiplyCollateralTable rows={rows} />
       </DisplayPreferencesProvider>,
     )
 
-    expect(screen.getByRole("heading", { name: "Exposure" })).toBeTruthy()
-    expect(screen.getByRole("heading", { name: "Debt & Risk" })).toBeTruthy()
-    expect(screen.getAllByRole("button", { name: "Multiply" })).toHaveLength(2)
-    expect(screen.getAllByRole("button", { name: "Deleverage" })).toHaveLength(2)
-    expect(screen.getAllByRole("button", { name: "Close" })).toHaveLength(2)
+    expect(screen.getByRole("heading", { name: "Loop Positions" })).toBeTruthy()
+    expect(screen.getByText("Exposure, return, and liquidation risk for each active loop")).toBeTruthy()
+    expect(screen.getByRole("columnheader", { name: "Loop" })).toBeTruthy()
+    expect(screen.getByRole("columnheader", { name: "Position" })).toBeTruthy()
+    expect(screen.getByRole("columnheader", { name: "Risk" })).toBeTruthy()
+    expect(screen.getAllByRole("button", { name: "Manage" })).toHaveLength(2)
+    expect(screen.queryByRole("button", { name: "Multiply" })).toBeNull()
+    expect(screen.queryByRole("button", { name: "Deleverage" })).toBeNull()
+    expect(screen.queryByRole("button", { name: "Close" })).toBeNull()
+    expect(screen.getAllByText("ETH loop")).toHaveLength(2)
+    expect(screen.getAllByText("Borrowing USDT")).toHaveLength(2)
+    expect(screen.getAllByText("$3.5K equity · 2.00×")).toHaveLength(1)
+    expect(screen.getAllByText("$7.0K exposure · 3.20% Net APY")).toHaveLength(1)
   })
 
   it("renders a dash when a position has no liquidation price (debt-free)", () => {
@@ -114,10 +121,10 @@ describe("MultiplyCollateralTable", () => {
       </DisplayPreferencesProvider>,
     )
 
-    expect(screen.getByText("No active Multiply debt")).toBeTruthy()
+    expect(screen.getAllByText(/—/).length).toBeGreaterThan(0)
   })
 
-  it("routes desktop deleverage to the multiply action page", () => {
+  it("routes desktop Manage to the loop market page", () => {
     push.mockClear()
     render(
       <DisplayPreferencesProvider>
@@ -125,12 +132,7 @@ describe("MultiplyCollateralTable", () => {
       </DisplayPreferencesProvider>,
     )
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Deleverage" })[0]!)
-    expect(push).toHaveBeenCalledWith(
-      actionPagePath("multiply", "deleverage", {
-        market: "eth-usdt",
-        return: "/multiply/markets/eth-usdt",
-      }),
-    )
+    fireEvent.click(screen.getAllByRole("button", { name: "Manage" })[0]!)
+    expect(push).toHaveBeenCalledWith("/multiply/markets/eth-usdt")
   })
 })
