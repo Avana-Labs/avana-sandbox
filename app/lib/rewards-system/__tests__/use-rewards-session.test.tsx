@@ -132,4 +132,82 @@ describe("useRewardsSession", () => {
       expect(result.current.state.claims).toHaveLength(0)
     })
   })
+
+  it("seeds expectedRevision before the next locked save after create", async () => {
+    const walletId = "0xabc0000000000000000000000000000000000001"
+    const revisionsSeen: Array<number | undefined> = []
+    let releaseFirst!: () => void
+    const firstGate = new Promise<void>((resolve) => {
+      releaseFirst = resolve
+    })
+    let persistCount = 0
+    const persistRemoteState = vi.fn(async (args: { expectedRevision?: number }) => {
+      revisionsSeen.push(args.expectedRevision)
+      persistCount += 1
+      if (persistCount === 1) {
+        await firstGate
+        return { revision: 0, stale: false }
+      }
+      return { revision: (args.expectedRevision ?? 0) + 1, stale: false }
+    })
+
+    const { result } = renderHook(() =>
+      useRewardsSession({
+        walletId,
+        sessionSeed: buildRewardsSessionSeed(),
+        persistState: false,
+        remoteState: null,
+        remoteRevision: null,
+        persistRemoteState,
+      }),
+    )
+
+    await waitFor(() => expect(result.current.hasHydratedStorage).toBe(true))
+    await waitFor(() => expect(persistRemoteState).toHaveBeenCalledTimes(1))
+    expect(revisionsSeen[0]).toBeUndefined()
+
+    await act(async () => {
+      await result.current.completeEducation()
+    })
+
+    // Second write is queued behind the lock; only runs after create returns revision 0.
+    releaseFirst()
+
+    await waitFor(() => {
+      expect(revisionsSeen.length).toBeGreaterThanOrEqual(2)
+      expect(revisionsSeen[1]).toBe(0)
+    })
+  })
+
+  it("treats a remote row with a missing revision as expectedRevision 0", async () => {
+    const walletId = "demo-wallet"
+    const remote = buildRewardsSessionSeed()
+    const revisionsSeen: Array<number | undefined> = []
+    const persistRemoteState = vi.fn(async (args: { expectedRevision?: number }) => {
+      revisionsSeen.push(args.expectedRevision)
+      return { revision: (args.expectedRevision ?? 0) + 1, stale: false }
+    })
+
+    const { result } = renderHook(() =>
+      useRewardsSession({
+        walletId,
+        sessionSeed: remote,
+        persistState: false,
+        remoteState: remote,
+        remoteRevision: null,
+        persistRemoteState,
+      }),
+    )
+
+    await waitFor(() => expect(result.current.hasHydratedStorage).toBe(true))
+
+    await act(async () => {
+      await result.current.completeEducation()
+    })
+
+    await waitFor(() => {
+      expect(revisionsSeen.length).toBeGreaterThanOrEqual(1)
+      expect(revisionsSeen[0]).toBe(0)
+    })
+  })
 })

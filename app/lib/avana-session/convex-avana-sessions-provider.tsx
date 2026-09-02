@@ -327,9 +327,14 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
   const remoteRewardsState = !scope.rewards
     ? null
     : (rewardsState?.stateJson ?? (rewardsState === null ? null : undefined))
+  // Missing `revision` on legacy rows matches server (`existing.revision ?? 0`).
   const remoteRewardsRevision = !scope.rewards
     ? null
-    : (rewardsState?.revision ?? (rewardsState === null ? null : undefined))
+    : rewardsState === undefined
+      ? undefined
+      : rewardsState === null
+        ? null
+        : (rewardsState.revision ?? 0)
   const remoteSwapTransactions = !scope.swapTransactions ? [] : (durableSwapTransactions ?? undefined)
   return (
     <AvanaSessionsProvider

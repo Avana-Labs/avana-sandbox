@@ -58,7 +58,9 @@ export function useRewardsSession({
       // forged, or stale claims over the authenticated server snapshot.
       const chosen = remote ?? seededState
       lastRemoteStateRef.current = remoteState
-      if (remoteRevision != null) rewardsRevisionRef.current = remoteRevision
+      // Server treats missing revision as 0 (`existing.revision ?? 0`). Mirror that
+      // whenever a remote row exists so the next saveState includes expectedRevision.
+      if (remoteState) rewardsRevisionRef.current = remoteRevision ?? 0
       setState(chosen)
       setHasHydratedStorage(true)
       return
@@ -77,19 +79,20 @@ export function useRewardsSession({
       writeRewardsSessionState(walletId, state)
       if (serialized === lastRemoteStateRef.current || !persistRemoteState) return
       lastRemoteStateRef.current = serialized
-      void withRewardsPersistenceLock(walletId, () =>
-        persistRemoteState({
+      // Seed revision inside the lock before the next queued write runs. Updating
+      // outside the lock races: create → queued update still sees undefined
+      // expectedRevision → server REVISION_REQUIRED.
+      void withRewardsPersistenceLock(walletId, async () => {
+        const result = await persistRemoteState({
           stateJson: serialized,
           expectedRevision: rewardsRevisionRef.current,
-        }),
-      )
-        .then((result) => {
-          const revision = (result as { revision?: number } | null)?.revision
-          if (revision != null) rewardsRevisionRef.current = revision
         })
-        .catch(() => {
-          lastRemoteStateRef.current = null
-        })
+        const revision = (result as { revision?: number } | null)?.revision
+        if (revision != null) rewardsRevisionRef.current = revision
+        return result
+      }).catch(() => {
+        lastRemoteStateRef.current = null
+      })
       return
     }
     isPersistingRef.current = true
