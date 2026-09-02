@@ -15,10 +15,7 @@ import type { LendMarketDetail } from "@/app/lib/lend-detail"
 import type { LendHeroPreloads } from "@/app/lib/lend-detail/hero-preload"
 import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
 import type { CashflowPreload } from "@/app/lib/detail-page/cashflow-preload"
-import {
-  DetailMarketTransactions,
-  LEND_KIND_CONFIG,
-} from "@/app/components/detail-transaction-table/detail-market-transactions"
+import { LEND_KIND_CONFIG } from "@/app/components/detail-transaction-table/detail-market-transactions"
 import { mapBorrowTxRow, mapLendSessionRows } from "@/app/lib/detail-page/transaction-history"
 import {
   DeferredDetailContent,

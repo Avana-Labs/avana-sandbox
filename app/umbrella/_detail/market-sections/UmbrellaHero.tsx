@@ -83,7 +83,6 @@ export function UmbrellaHero() {
                       className={cn(
                         "text-[13px] font-semibold tabular-nums lg:text-[14px]",
                         item.tone === "warning" && "text-warning",
-                        item.tone === "danger" && "text-danger",
                         item.tone === "success" && "text-success",
                         item.tone === "muted" && "text-muted-foreground",
                       )}
