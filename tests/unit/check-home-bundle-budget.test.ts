@@ -46,9 +46,11 @@ describe("home bundle budget", () => {
     fs.mkdirSync(path.dirname(clientManifestPath), { recursive: true })
     fs.writeFileSync(
       clientManifestPath,
-      `globalThis.__RSC_MANIFEST = globalThis.__RSC_MANIFEST || {}; globalThis.__RSC_MANIFEST["/page"] = ${JSON.stringify({
-        entryJSFiles: { "[project]/app/layout": [chunkRel], "[project]/app/page": [] },
-      })};`,
+      `globalThis.__RSC_MANIFEST = globalThis.__RSC_MANIFEST || {}; globalThis.__RSC_MANIFEST["/page"] = ${JSON.stringify(
+        {
+          entryJSFiles: { "[project]/app/layout": [chunkRel], "[project]/app/page": [] },
+        },
+      )};`,
     )
     const routeBuildManifestPath = path.join(distDir, "server/app/page/build-manifest.json")
     fs.mkdirSync(path.dirname(routeBuildManifestPath), { recursive: true })

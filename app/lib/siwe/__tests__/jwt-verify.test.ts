@@ -1,12 +1,6 @@
 import crypto from "node:crypto"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
-import {
-  mintAskGuestJwt,
-  mintSandboxJwt,
-  mintSiweSessionJwt,
-  verifySandboxJwt,
-  verifySiweSessionJwt,
-} from "../jwt"
+import { mintAskGuestJwt, mintSandboxJwt, mintSiweSessionJwt, verifySandboxJwt, verifySiweSessionJwt } from "../jwt"
 
 const WALLET = "0x1111111111111111111111111111111111111111"
 const previous = process.env.SIWE_JWT_PRIVATE_JWK

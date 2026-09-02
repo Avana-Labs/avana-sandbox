@@ -24,7 +24,12 @@ const FORBIDDEN_GROUPS = {
 export function parseClientReferenceManifest(source) {
   const assignment = source.lastIndexOf("= {")
   if (assignment < 0) throw new Error("client-reference manifest has no assignment")
-  return JSON.parse(source.slice(assignment + 2).trim().replace(/;$/, ""))
+  return JSON.parse(
+    source
+      .slice(assignment + 2)
+      .trim()
+      .replace(/;$/, ""),
+  )
 }
 
 export function collectInitialFiles({ clientManifest, routeBuildManifest }) {

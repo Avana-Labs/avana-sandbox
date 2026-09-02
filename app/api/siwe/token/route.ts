@@ -10,15 +10,9 @@ export async function POST(req: Request) {
   const session = (await cookies()).get("avana_siwe")?.value
   const verified = session ? verifySiweSessionJwt(session) : null
   if (!verified) {
-    return Response.json(
-      { error: "session expired" },
-      { status: 401, headers: { "cache-control": "no-store" } },
-    )
+    return Response.json({ error: "session expired" }, { status: 401, headers: { "cache-control": "no-store" } })
   }
 
   const token = mintSandboxJwt(verified.wallet, resolveIssuer(new URL(req.url).origin))
-  return Response.json(
-    { token, wallet: verified.wallet },
-    { headers: { "cache-control": "no-store" } },
-  )
+  return Response.json({ token, wallet: verified.wallet }, { headers: { "cache-control": "no-store" } })
 }

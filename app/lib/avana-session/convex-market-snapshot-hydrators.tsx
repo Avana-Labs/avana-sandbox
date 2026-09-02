@@ -15,11 +15,7 @@ import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydrat
 import type { LendConvexSnapshot } from "@/app/lib/lend-system/market-hydration"
 import type { MultiplyConvexSnapshot } from "@/app/lib/multiply-system/market-hydration"
 import { PriceStatusContext, usePriceFor } from "@/app/lib/prices/token-prices-context"
-import {
-  useBorrowSessionContext,
-  useLendSessionContext,
-  useMultiplySessionContext,
-} from "./avana-sessions-provider"
+import { useBorrowSessionContext, useLendSessionContext, useMultiplySessionContext } from "./avana-sessions-provider"
 import type { ProductRuntimeScope } from "./product-runtime-scope"
 
 export function ConvexMarketSnapshotHydrators({ scope }: { scope: ProductRuntimeScope }) {

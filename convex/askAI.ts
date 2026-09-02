@@ -107,9 +107,7 @@ async function enforceAskAICostGate(
     await assertConcurrentGenerationCapacity(ctx, ownerSubject)
   }
 
-  await enforceAskAIRateLimit(() =>
-    askAIRateLimiter.limit(ctx, "perSubjectDaily", { key: ownerSubject, throws: true }),
-  )
+  await enforceAskAIRateLimit(() => askAIRateLimiter.limit(ctx, "perSubjectDaily", { key: ownerSubject, throws: true }))
   if (options.enforceBurst) {
     await enforceAskAIRateLimit(() =>
       askAIRateLimiter.limit(ctx, "perSubjectBurst", { key: ownerSubject, throws: true }),
@@ -122,9 +120,7 @@ async function assertConcurrentGenerationCapacity(ctx: MutationCtx, ownerSubject
   const [subjectRunning, globalRunning] = await Promise.all([
     ctx.db
       .query("askAITurns")
-      .withIndex("by_owner_status_created", (q) =>
-        q.eq("ownerSubject", ownerSubject).eq("status", "running"),
-      )
+      .withIndex("by_owner_status_created", (q) => q.eq("ownerSubject", ownerSubject).eq("status", "running"))
       .take(MAX_CONCURRENT_GENERATIONS_PER_SUBJECT + 1),
     ctx.db
       .query("askAITurns")

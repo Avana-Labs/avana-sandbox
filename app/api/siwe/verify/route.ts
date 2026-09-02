@@ -94,8 +94,5 @@ export async function POST(req: Request) {
     path: "/",
     maxAge: 7 * 24 * 60 * 60,
   })
-  return Response.json(
-    { wallet: address.toLowerCase() },
-    { headers: { "cache-control": "no-store" } },
-  )
+  return Response.json({ wallet: address.toLowerCase() }, { headers: { "cache-control": "no-store" } })
 }

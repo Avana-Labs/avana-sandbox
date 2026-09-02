@@ -10,8 +10,7 @@ const walletId = "demo-wallet"
 let state = buildMockBorrowSystemState(walletId)
 
 vi.mock("next/dynamic", () => ({
-  default:
-    (loader: () => Promise<{ default: (props: Record<string, unknown>) => ReactNode }>) =>
+  default: (loader: () => Promise<{ default: (props: Record<string, unknown>) => ReactNode }>) =>
     function DynamicTestComponent(props: Record<string, unknown>) {
       const [Component, setComponent] = useState<((props: Record<string, unknown>) => ReactNode) | null>(null)
       useEffect(() => {
@@ -59,7 +58,6 @@ vi.mock("@/app/components/home-page-workspace-runtime", () => ({
     )
   },
 }))
-
 
 vi.mock("@/app/components/action-page/borrow-action-page-client", () => ({
   BorrowActionPageClient: ({

@@ -105,8 +105,7 @@ export const upsertFxRates = internalMutation({
     for (const row of rows) {
       checkedAt = Math.max(checkedAt, row.fetchedAt ?? row.updatedAt)
       if (row.sourceUpdatedAt != null) {
-        sourceUpdatedAt =
-          sourceUpdatedAt == null ? row.sourceUpdatedAt : Math.min(sourceUpdatedAt, row.sourceUpdatedAt)
+        sourceUpdatedAt = sourceUpdatedAt == null ? row.sourceUpdatedAt : Math.min(sourceUpdatedAt, row.sourceUpdatedAt)
       }
       const existing = await ctx.db
         .query("fxRates")

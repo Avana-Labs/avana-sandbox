@@ -65,7 +65,11 @@ describe("Ask AI turn error contract", () => {
       const thread = await owner.mutation(api.askAI.create, {})
 
       await expect(
-        owner.mutation(api.askAI.beginTurn, { threadId: thread.threadId, prompt: "Any question", clientRequestId: "begin-token" }),
+        owner.mutation(api.askAI.beginTurn, {
+          threadId: thread.threadId,
+          prompt: "Any question",
+          clientRequestId: "begin-token",
+        }),
       ).rejects.toMatchObject({
         data: { code: "ASK_AI_RATE_LIMITED", message: expect.stringContaining("daily token limit") },
       })

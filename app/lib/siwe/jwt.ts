@@ -139,21 +139,19 @@ export function verifySiweSessionJwt(token: string): { wallet: string; exp: numb
 /** Mint a wallet identity after SIWE verification. */
 export function mintSandboxJwt(wallet: string, issuer: string): string {
   const normalized = wallet.toLowerCase()
-  return mintJwt(
-    { sub: normalized, wallet: normalized, scope: "wallet" },
-    issuer,
-    { audience: CONVEX_AUDIENCE, ttlSeconds: ACCESS_TTL_SECONDS },
-  )
+  return mintJwt({ sub: normalized, wallet: normalized, scope: "wallet" }, issuer, {
+    audience: CONVEX_AUDIENCE,
+    ttlSeconds: ACCESS_TTL_SECONDS,
+  })
 }
 
 /** Mint the HttpOnly browser session used to request short-lived Convex access tokens. */
 export function mintSiweSessionJwt(wallet: string, issuer: string): string {
   const normalized = wallet.toLowerCase()
-  return mintJwt(
-    { sub: normalized, wallet: normalized, scope: "session" },
-    issuer,
-    { audience: SESSION_AUDIENCE, ttlSeconds: SESSION_TTL_SECONDS },
-  )
+  return mintJwt({ sub: normalized, wallet: normalized, scope: "session" }, issuer, {
+    audience: SESSION_AUDIENCE,
+    ttlSeconds: SESSION_TTL_SECONDS,
+  })
 }
 
 /**
@@ -162,9 +160,8 @@ export function mintSiweSessionJwt(wallet: string, issuer: string): string {
  */
 export function mintAskGuestJwt(guestId: string, issuer: string): string {
   if (!/^[0-9a-f-]{36}$/i.test(guestId)) throw new Error("Invalid Ask AI guest id")
-  return mintJwt(
-    { sub: `ask-guest:${guestId.toLowerCase()}`, scope: "ask-ai" },
-    issuer,
-    { audience: CONVEX_AUDIENCE, ttlSeconds: GUEST_TTL_SECONDS },
-  )
+  return mintJwt({ sub: `ask-guest:${guestId.toLowerCase()}`, scope: "ask-ai" }, issuer, {
+    audience: CONVEX_AUDIENCE,
+    ttlSeconds: GUEST_TTL_SECONDS,
+  })
 }

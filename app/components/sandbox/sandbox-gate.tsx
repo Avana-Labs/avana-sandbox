@@ -14,9 +14,7 @@ import styles from "./onboarding-flow.module.css"
 // import keeps the Convex client runtime out of the guest layout entry while still
 // shipping product HTML for returning wallets. Rendering this only when signed in
 // matters — a dynamic import that always mounts still lands in the initial graph.
-const SignedInSandboxGate = dynamic(() =>
-  import("./signed-in-sandbox-gate").then((mod) => mod.SignedInSandboxGate),
-)
+const SignedInSandboxGate = dynamic(() => import("./signed-in-sandbox-gate").then((mod) => mod.SignedInSandboxGate))
 
 // Content-only shell for the gate's focused states (onboarding / error). The
 // persistent site header + frame are rendered above the gate now, so this only

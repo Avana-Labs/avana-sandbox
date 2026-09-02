@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "too many requests" }, { status: 429 })
   }
 
-  let body: { wallet?: string; token?: string } = {}
+  let body: { wallet?: string; token?: string }
   try {
     body = (await req.json()) as { wallet?: string; token?: string }
   } catch {

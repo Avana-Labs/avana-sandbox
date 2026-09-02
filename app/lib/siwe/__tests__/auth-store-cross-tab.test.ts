@@ -54,11 +54,9 @@ describe("SIWE memory-only auth store", () => {
     const token = liveJwt("one")
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(tokenResponse(token))
 
-    await expect(Promise.all([fetchSiweAccessToken(), fetchSiweAccessToken(), fetchSiweAccessToken()])).resolves.toEqual([
-      token,
-      token,
-      token,
-    ])
+    await expect(
+      Promise.all([fetchSiweAccessToken(), fetchSiweAccessToken(), fetchSiweAccessToken()]),
+    ).resolves.toEqual([token, token, token])
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 

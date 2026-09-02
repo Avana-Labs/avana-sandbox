@@ -1,19 +1,7 @@
 "use client"
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useSyncExternalStore,
-  type ReactNode,
-} from "react"
-import {
-  fetchSiweAccessToken,
-  getSiweSession,
-  hydrateSiweSession,
-  subscribeSiwe,
-  type SiweSession,
-} from "./auth-store"
+import { createContext, useCallback, useContext, useSyncExternalStore, type ReactNode } from "react"
+import { fetchSiweAccessToken, getSiweSession, hydrateSiweSession, subscribeSiwe, type SiweSession } from "./auth-store"
 import { IS_DEV_SHORTCUT_MODE, TEST_MODE_WALLET_ADDRESS } from "@/app/lib/test-mode"
 
 /**

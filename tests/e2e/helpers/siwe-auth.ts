@@ -20,9 +20,7 @@ export async function installSiweSession(
   const wallet = walletFromAuthToken(token)
   const request = options?.request ?? page.request
   const origin =
-    options?.origin ??
-    process.env.PLAYWRIGHT_BASE_URL ??
-    `http://127.0.0.1:${process.env.PLAYWRIGHT_PORT ?? "3000"}`
+    options?.origin ?? process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${process.env.PLAYWRIGHT_PORT ?? "3000"}`
   const headers: Record<string, string> = {
     "content-type": "application/json",
     origin,

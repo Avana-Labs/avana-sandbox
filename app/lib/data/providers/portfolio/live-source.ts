@@ -1,9 +1,6 @@
 import { createDataSourceAdapter } from "@/app/lib/data/core/source-runtime"
 import { api } from "@/convex/_generated/api"
-import {
-  getAuthenticatedConvexClient,
-  getAuthenticatedWallet,
-} from "@/app/lib/data/providers/live-convex-client"
+import { getAuthenticatedConvexClient, getAuthenticatedWallet } from "@/app/lib/data/providers/live-convex-client"
 import { MULTIPLY_LIQUIDATION_THRESHOLD_FACTOR, worstMultiplyHealthFactor } from "@/app/lib/multiply-system/read-model"
 import { liquidationThresholdPctFromMaxLtvPct } from "@/app/lib/borrow-system/liquidation-threshold"
 import type {

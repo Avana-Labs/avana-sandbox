@@ -26,7 +26,11 @@ describe("Ask AI cross-user message-read isolation", () => {
     const userA = t.withIdentity({ subject: "ask-guest:owner-a" })
     const userB = t.withIdentity({ subject: "ask-guest:owner-b" })
     const thread = await userA.mutation(api.askAI.create, {})
-    await userA.mutation(api.askAI.beginTurn, { threadId: thread.threadId, prompt: "A's private question", clientRequestId: "authz-begin-a" })
+    await userA.mutation(api.askAI.beginTurn, {
+      threadId: thread.threadId,
+      prompt: "A's private question",
+      clientRequestId: "authz-begin-a",
+    })
 
     // Owner A can read; the query returns their own page.
     await expect(

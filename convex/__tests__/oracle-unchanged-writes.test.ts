@@ -84,8 +84,22 @@ describe("unchanged oracle refreshes skip quote writes", () => {
   test("identical FX refresh writes zero rate rows but advances provider health", async () => {
     const t = convexTest(schema, modules)
     const rows = [
-      { currency: "USD", usdPerUnit: 1, source: "er-api", status: "fresh" as const, updatedAt: 1_000, fetchedAt: 1_000 },
-      { currency: "EUR", usdPerUnit: 0.92, source: "er-api", status: "fresh" as const, updatedAt: 1_000, fetchedAt: 1_000 },
+      {
+        currency: "USD",
+        usdPerUnit: 1,
+        source: "er-api",
+        status: "fresh" as const,
+        updatedAt: 1_000,
+        fetchedAt: 1_000,
+      },
+      {
+        currency: "EUR",
+        usdPerUnit: 0.92,
+        source: "er-api",
+        status: "fresh" as const,
+        updatedAt: 1_000,
+        fetchedAt: 1_000,
+      },
     ]
     expect(await t.mutation(internal.fx.upsertFxRates, { rows })).toEqual({ written: 2, unchanged: 0 })
     expect(
