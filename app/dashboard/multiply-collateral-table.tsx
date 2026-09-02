@@ -174,9 +174,7 @@ function PairedTokenIcons({ row }: { row: PortfolioMultiplyCollateral }) {
   return (
     <span className="relative block h-12 w-[58px] shrink-0">
       <TokenIcon symbol={row.collateralToken} size="table" className="absolute left-0 top-0" />
-      <span className="absolute bottom-[-2px] right-0 rounded-full bg-background p-0.5 ring-2 ring-background">
-        <TokenIcon symbol={row.borrowableToken} size="sm" />
-      </span>
+      <TokenIcon symbol={row.borrowableToken} size="md" className="absolute bottom-0 right-0" />
     </span>
   )
 }
