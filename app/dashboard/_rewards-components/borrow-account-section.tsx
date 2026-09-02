@@ -83,7 +83,10 @@ export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref
       totalBorrowedUsd: borrowSnapshot.totalBorrowedUsd,
       availableToBorrowUsd: borrowSnapshot.approvedUsd,
       healthFactor: borrowSnapshot.averageHealthFactor,
-      liquidationBufferUsd: Math.max(0, borrowSnapshot.liquidationThresholdUsd - borrowSnapshot.totalBorrowedUsd),
+      liquidationBufferUsd:
+        borrowSnapshot.totalBorrowedUsd > 0
+          ? Math.max(0, borrowSnapshot.liquidationThresholdUsd - borrowSnapshot.totalBorrowedUsd)
+          : null,
       netApyPct: fallback.performance.netApyPct,
       interestOwedUsd: fallback.performance.interestOwedUsd,
     }

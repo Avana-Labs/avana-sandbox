@@ -47,6 +47,27 @@ describe("Borrow Balance metric cards", () => {
     expect(screen.getByText("3.25%")).toBeTruthy()
     expect(screen.queryByText("Total Collateral")).toBeNull()
   })
+
+  it("renders no liquidation buffer for a debt-free wallet", () => {
+    render(
+      <DashboardCreditOverviewSection
+        title="Borrow Balance"
+        metrics={{
+          netValueUsd: 351_809,
+          collateralValueUsd: 351_809,
+          totalBorrowedUsd: 0,
+          availableToBorrowUsd: 249_754,
+          healthFactor: null,
+          liquidationBufferUsd: null,
+          netApyPct: 2,
+          interestOwedUsd: 0,
+        }}
+      />,
+    )
+
+    expect(screen.getAllByText("—")).toHaveLength(2)
+    expect(screen.queryByText("$284,276")).toBeNull()
+  })
 })
 
 describe("Multiply Balance metric cards", () => {

@@ -16,8 +16,8 @@ const TOLERANCE = 1
 // so the assertion isolates the ACTION's effect on Net Value, not the interest that
 // ticks with wall-clock time between two reads.
 
-describe("credit overview Net Value stays flat on net-neutral actions", () => {
-  it("does not drift when borrowing (cash received offsets debt owed)", () => {
+describe("credit overview Net Value tracks pledged collateral minus debt", () => {
+  it("falls by the new debt when borrowing", () => {
     const state = makeExampleBorrowSystemState()
     const before = buildBorrowDashboardMetrics(state, "wallet-1", state.now).overview.netValueUsd
 
@@ -30,10 +30,10 @@ describe("credit overview Net Value stays flat on net-neutral actions", () => {
     })
     const after = buildBorrowDashboardMetrics(next, "wallet-1", next.now).overview.netValueUsd
 
-    expect(Math.abs(after - before)).toBeLessThanOrEqual(TOLERANCE)
+    expect(before - after).toBeCloseTo(16, 6)
   })
 
-  it("does not drift when removing fairly-valued collateral (value moves into LP balance)", () => {
+  it("falls when collateral leaves the protocol position", () => {
     const state = makeExampleBorrowSystemState()
     const before = buildBorrowDashboardMetrics(state, "wallet-1", state.now).overview.netValueUsd
 
@@ -45,12 +45,10 @@ describe("credit overview Net Value stays flat on net-neutral actions", () => {
     })
     const after = buildBorrowDashboardMetrics(next, "wallet-1", next.now).overview.netValueUsd
 
-    // Before this fix the LP balance the collateral moved into was uncounted, so
-    // Net Value fell by the full ~$210 removed.
-    expect(Math.abs(after - before)).toBeLessThanOrEqual(TOLERANCE)
+    expect(before - after).toBeCloseTo(210, 6)
   })
 
-  it("does not drift when fully removing a collateral market that leaves no position row behind", () => {
+  it("excludes a fully removed collateral market from the position value", () => {
     const state = makeExampleBorrowSystemState()
     const before = buildBorrowDashboardMetrics(state, "wallet-1", state.now).overview.netValueUsd
 
@@ -65,7 +63,8 @@ describe("credit overview Net Value stays flat on net-neutral actions", () => {
     expect(
       next.accounts["wallet-1"]!.collateralPositions.some((position) => position.id === "wallet-1:curve-eth-usdt"),
     ).toBe(false)
-    expect(Math.abs(after - before)).toBeLessThanOrEqual(TOLERANCE)
+    expect(before - after).toBeGreaterThan(TOLERANCE)
+    expect(next.accounts["wallet-1"]!.walletReturnedLpBalancesUsd6?.["curve-eth-usdt"]).toBeGreaterThan(0n)
   })
 
   it("does not drift when re-supplying LP that was first returned from collateral removal", () => {

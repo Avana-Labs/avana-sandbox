@@ -1,4 +1,4 @@
-import { accrueBorrowSystemState, calculateCreditMetrics, usd6ToNumber } from "@/app/lib/credit-engine"
+import { accrueBorrowSystemState, calculateCreditMetrics, clampNetApyWad, usd6ToNumber } from "@/app/lib/credit-engine"
 import type { BorrowSystemState } from "@/app/lib/credit-engine"
 import type { MultiplySystemState } from "@/app/lib/multiply-engine"
 import { multiplyNetApyFraction } from "@/app/lib/multiply-system/read-model"
@@ -33,7 +33,7 @@ export type BorrowBalanceMetrics = {
   totalBorrowedUsd: number
   availableToBorrowUsd: number
   healthFactor: number | null
-  liquidationBufferUsd: number
+  liquidationBufferUsd: number | null
   netApyPct: number
   interestOwedUsd: number
 }
@@ -123,7 +123,7 @@ export function buildBorrowDashboardMetrics(
     overview: {
       netValueUsd: balance.netValueUsd,
       totalBorrowedUsd: balance.totalBorrowedUsd,
-      liquidationBufferUsd: balance.liquidationBufferUsd,
+      liquidationBufferUsd: balance.liquidationBufferUsd ?? 0,
       riskPremiumPct: wadToPct(metrics.riskPremiumWad),
     },
     performance: {
@@ -148,19 +148,25 @@ export function buildBorrowBalanceMetrics(
 ): BorrowBalanceMetrics {
   const accrued = accrueBorrowSystemState(state, now)
   const metrics = calculateCreditMetrics(accrued, walletId)
-  const account = accrued.accounts[walletId]
-  const returnedLpBalancesUsd6 = account
-    ? Object.values(account.walletReturnedLpBalancesUsd6 ?? {}).reduce((sum, value) => sum + value, 0n)
-    : 0n
+  const netPositionValueUsd6 = metrics.poolCollateralValueUsd6 - metrics.totalBorrowedUsd6
+  const rawNetApyWad =
+    netPositionValueUsd6 > 0n
+      ? ((metrics.annualYieldEarnedUsd6 - metrics.annualBorrowCostUsd6) * WAD) / netPositionValueUsd6
+      : 0n
 
   return {
-    netValueUsd: usd6ToNumber(metrics.netAccountValueUsd6 + returnedLpBalancesUsd6),
+    // Borrow Balance is protocol-position equity. The account's liquid wallet balance
+    // is shown separately on the dashboard and must not be counted again here.
+    netValueUsd: usd6ToNumber(netPositionValueUsd6),
     collateralValueUsd: usd6ToNumber(metrics.poolCollateralValueUsd6),
     totalBorrowedUsd: usd6ToNumber(metrics.totalBorrowedUsd6),
     availableToBorrowUsd: usd6ToNumber(metrics.availableCreditUsd6),
     healthFactor: metrics.totalBorrowedUsd6 > 0n ? wadToNumber(metrics.healthFactorWad) : null,
-    liquidationBufferUsd: usd6ToNumber(metrics.liquidationBufferUsd6 > 0n ? metrics.liquidationBufferUsd6 : 0n),
-    netApyPct: wadToPct(metrics.netApyWad),
+    liquidationBufferUsd:
+      metrics.totalBorrowedUsd6 > 0n
+        ? usd6ToNumber(metrics.liquidationBufferUsd6 > 0n ? metrics.liquidationBufferUsd6 : 0n)
+        : null,
+    netApyPct: wadToPct(clampNetApyWad(rawNetApyWad)),
     interestOwedUsd: usd6ToNumber(metrics.interestOwedUsd6),
   }
 }

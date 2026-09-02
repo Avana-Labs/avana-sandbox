@@ -165,8 +165,12 @@ export function DashboardCreditOverviewSection({
     },
     {
       label: t("Liquidation Buffer"),
-      value: m(formatUsdExact(metrics.liquidationBufferUsd)),
-      description: t("Distance from liquidation based on current collateral value"),
+      value: showDollarAmounts
+        ? metrics.liquidationBufferUsd === null
+          ? "—"
+          : formatUsdExact(metrics.liquidationBufferUsd)
+        : MASK,
+      description: t("Amount an active loan can lose before reaching liquidation; unavailable when you have no debt"),
     },
     {
       label: t("Net APY"),
