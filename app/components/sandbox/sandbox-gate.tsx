@@ -1,7 +1,7 @@
 "use client"
 
-import { Component, lazy, Suspense, useState, type ReactNode } from "react"
 import dynamic from "next/dynamic"
+import type { ReactNode } from "react"
 import { usePathname } from "next/navigation"
 import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
@@ -9,28 +9,14 @@ import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { GuestOnboardingFlow } from "./guest-onboarding-flow"
 import styles from "./onboarding-flow.module.css"
-import { RouteContentSkeleton } from "@/app/components/loading-states"
 
-import type { GateVerdict } from "./authed-sandbox-gate"
-
-const AuthedGateChecker = lazy(async () => ({ default: (await import("./authed-sandbox-gate")).AuthedGateChecker }))
-// The ONE Convex auth boundary for the signed-in tree. `dynamic` (SSR on) keeps `convex/react`
-// out of the guest layout chunk while still shipping it in the signed-in page's preloaded
-// chunk set — so the WebSocket `Connect` + `Authenticate` fire during hydration, not after a
-// second lazy import resolves (~1.4s earlier on a throttled mobile).
-const SignedInConvexBoundary = dynamic(() =>
-  import("@/app/lib/convex/siwe-convex-provider").then((mod) => mod.SiweConvexProvider),
+// Signed-in-only module: Convex provider + onboarding checker. SSR-enabled dynamic
+// import keeps the Convex client runtime out of the guest layout entry while still
+// shipping product HTML for returning wallets. Rendering this only when signed in
+// matters — a dynamic import that always mounts still lands in the initial graph.
+const SignedInSandboxGate = dynamic(() =>
+  import("./signed-in-sandbox-gate").then((mod) => mod.SignedInSandboxGate),
 )
-
-class GateErrorBoundary extends Component<{ children: ReactNode }, { errored: boolean }> {
-  state = { errored: false }
-  static getDerivedStateFromError() {
-    return { errored: true }
-  }
-  render() {
-    return this.state.errored ? <GateUnavailable variant="error" /> : <>{this.props.children}</>
-  }
-}
 
 // Content-only shell for the gate's focused states (onboarding / error). The
 // persistent site header + frame are rendered above the gate now, so this only
@@ -84,36 +70,6 @@ function GateUnavailable({ variant = "error" }: { variant?: "error" | "offline" 
   )
 }
 
-/**
- * Signed-in host. Owns the page's mount: `children` sit at a FIXED position in this tree
- * while the lazily loaded Convex checker renders as a sibling and reports its verdict, so a
- * page the server rendered for a known-onboarded wallet (`optimistic`, from the
- * `avana_onboarded` cookie) is never unmounted by the gate resolving. Wallets without the
- * cookie hold the route skeleton until Convex answers.
- */
-function AuthedGateHost({
-  wallet,
-  optimistic,
-  children,
-}: {
-  wallet: string
-  optimistic: boolean
-  children: ReactNode
-}) {
-  const pathname = usePathname()
-  const isAskRoute = pathname === "/ask" || pathname.startsWith("/ask/")
-  const [verdict, setVerdict] = useState<GateVerdict>("unknown")
-  const showChildren = verdict === "done" || (verdict === "unknown" && (optimistic || isAskRoute))
-  return (
-    <SignedInConvexBoundary>
-      {showChildren ? children : verdict === "unknown" ? <RouteContentSkeleton /> : null}
-      <Suspense fallback={null}>
-        <AuthedGateChecker wallet={wallet} optimistic={optimistic} onVerdict={setVerdict} />
-      </Suspense>
-    </SignedInConvexBoundary>
-  )
-}
-
 /** Every wallet stays inside the gate until Convex confirms completed onboarding. */
 export function SandboxGate({
   children,
@@ -143,10 +99,8 @@ export function SandboxGate({
     )
   }
   return (
-    <GateErrorBoundary key={authedWallet}>
-      <AuthedGateHost wallet={authedWallet} optimistic={onboardedWallet === authedWallet}>
-        {children}
-      </AuthedGateHost>
-    </GateErrorBoundary>
+    <SignedInSandboxGate key={authedWallet} wallet={authedWallet} optimistic={onboardedWallet === authedWallet}>
+      {children}
+    </SignedInSandboxGate>
   )
 }

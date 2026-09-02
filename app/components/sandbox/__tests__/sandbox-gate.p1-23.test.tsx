@@ -17,13 +17,21 @@ describe("SandboxGate first paint", () => {
   })
 
   it("keeps the server-rendered product mounted while the Convex checker resolves", () => {
-    const source = readFileSync(resolve(__dirname, "../sandbox-gate.tsx"), "utf8")
-    const host = source.split("function AuthedGateHost")[1]?.split("export function SandboxGate")[0] ?? ""
+    const host = readFileSync(resolve(__dirname, "../signed-in-sandbox-gate.tsx"), "utf8")
     // Children render at a fixed position; the checker is a lazy SIBLING inside its own Suspense,
     // so its chunk arriving or its verdict changing never re-parents (remounts) the page.
     expect(host).toMatch(/\{showChildren \? children/)
     expect(host).toMatch(/<Suspense fallback=\{null\}>\s*<AuthedGateChecker/)
     expect(host).not.toMatch(/<AuthedGateChecker[^>]*>\s*\{children\}/)
+  })
+
+  it("keeps Convex behind the signed-in-only import boundary", () => {
+    const source = readFileSync(resolve(__dirname, "../sandbox-gate.tsx"), "utf8")
+    expect(source).toMatch(/import\("\.\/signed-in-sandbox-gate"\)/)
+    expect(source).toMatch(/dynamic\(/)
+    expect(source).not.toMatch(/from ["']convex\/react["']/)
+    expect(source).not.toMatch(/siwe-convex-provider/)
+    expect(source).not.toMatch(/\blazy\s*\(/)
   })
 
   it("does not block signed-in pages on the deferred wallet SDK", () => {

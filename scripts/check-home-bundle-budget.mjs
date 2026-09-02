@@ -13,7 +13,7 @@ import process from "node:process"
 import { pathToFileURL } from "node:url"
 import { gzipSync } from "node:zlib"
 
-const DEFAULT_MAX_GZIP_BYTES = 425 * 1024
+const DEFAULT_MAX_GZIP_BYTES = 250 * 1024
 const FORBIDDEN_GROUPS = {
   convex: ["ConvexReactClient", "BaseConvexClient"],
   connectkit: ["ConnectKitProvider", "connectkit"],
@@ -74,7 +74,9 @@ function resolveDistDir() {
 export function runBundleBudget({
   distDir = resolveDistDir(),
   maxGzipBytes = Number(process.env.HOME_BUNDLE_MAX_GZIP_BYTES ?? DEFAULT_MAX_GZIP_BYTES),
-  enforceForbidden = process.env.HOME_BUNDLE_ENFORCE_FORBIDDEN === "1",
+  // Default ON so CI fails when Convex/wallet SDKs leak into the guest `/` entry.
+  // Set HOME_BUNDLE_ENFORCE_FORBIDDEN=0 only while diagnosing a known leak.
+  enforceForbidden = process.env.HOME_BUNDLE_ENFORCE_FORBIDDEN !== "0",
 } = {}) {
   const clientManifestPath = path.join(distDir, "server/app/page_client-reference-manifest.js")
   const routeBuildManifestPath = path.join(distDir, "server/app/page/build-manifest.json")

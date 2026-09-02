@@ -32,12 +32,26 @@ describe("critical-path import guardrails", () => {
     expect(config).toMatch(/productionBrowserSourceMaps/)
   })
 
-  it("signed-in gate uses one combined onboarding query and a route skeleton", () => {
+  it("signed-in gate uses one combined onboarding query behind a signed-in-only module", () => {
     const checker = read("app/components/sandbox/authed-sandbox-gate.tsx")
     expect(checker).toMatch(/getOnboardingGateState/)
     expect(checker).not.toMatch(/getWalletOnboardingState/)
     expect(checker).not.toMatch(/getEconomyStatus/)
     const gate = read("app/components/sandbox/sandbox-gate.tsx")
-    expect(gate).toMatch(/RouteContentSkeleton/)
+    expect(gate).toMatch(/signed-in-sandbox-gate/)
+    expect(gate).not.toMatch(/from ["']convex\/react["']/)
+    expect(gate).not.toMatch(/siwe-convex-provider/)
+    const host = read("app/components/sandbox/signed-in-sandbox-gate.tsx")
+    expect(host).toMatch(/RouteContentSkeleton/)
+    expect(host).toMatch(/SiweConvexProvider/)
+  })
+
+  it("keeps the guest home entry off the session/Convex workspace graph", () => {
+    const home = read("app/components/home-page-client.tsx")
+    expect(home).toMatch(/dynamic\(/)
+    expect(home).toMatch(/home-page-workspace-runtime/)
+    expect(home).not.toMatch(/from ["']@\/app\/components\/home-page-workspace-runtime["']/)
+    expect(home).not.toMatch(/avana-sessions-provider/)
+    expect(home).not.toMatch(/from ["']convex\/react["']/)
   })
 })

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { HomePageClient } from "@/app/components/home-page-client"
@@ -8,6 +8,25 @@ import { selectAllAvailableCollateralPools, selectBorrowCollateralPools } from "
 
 const walletId = "demo-wallet"
 let state = buildMockBorrowSystemState(walletId)
+
+vi.mock("next/dynamic", () => ({
+  default:
+    (loader: () => Promise<{ default: (props: Record<string, unknown>) => ReactNode }>) =>
+    function DynamicTestComponent(props: Record<string, unknown>) {
+      const [Component, setComponent] = useState<((props: Record<string, unknown>) => ReactNode) | null>(null)
+      useEffect(() => {
+        let cancelled = false
+        void loader().then((mod) => {
+          if (!cancelled) setComponent(() => mod.default)
+        })
+        return () => {
+          cancelled = true
+        }
+      }, [])
+      if (!Component) return null
+      return <Component {...props} />
+    },
+}))
 
 vi.mock("@/app/components/home-page-workspace-runtime", () => ({
   HomePageWorkspaceRuntime: function MockHomeWorkspaceRuntime() {
@@ -40,6 +59,7 @@ vi.mock("@/app/components/home-page-workspace-runtime", () => ({
     )
   },
 }))
+
 
 vi.mock("@/app/components/action-page/borrow-action-page-client", () => ({
   BorrowActionPageClient: ({
