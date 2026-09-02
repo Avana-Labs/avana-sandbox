@@ -20,6 +20,7 @@ function MobileMenuTrigger({ onIntent, onOpen }: { onIntent: () => void; onOpen:
       aria-expanded={false}
       onPointerEnter={onIntent}
       onFocus={onIntent}
+      onTouchStart={onIntent}
       onClick={onOpen}
       className="inline-flex h-10 w-10 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent] xl:hidden"
     >

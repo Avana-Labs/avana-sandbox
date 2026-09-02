@@ -31,6 +31,7 @@ import { loadServerFxRates } from "./lib/currency/server-hydrate"
 // VERCEL env var is set and the scripts resolve normally.
 const enableProductionAnalytics = process.env.NODE_ENV === "production" && Boolean(process.env.VERCEL)
 const enableInpReporter = process.env.NODE_ENV !== "production" || process.env.ENABLE_WEB_VITALS_LOGS === "1"
+const enableWebVitalsBeacon = process.env.ENABLE_WEB_VITALS_LOGS === "1"
 
 const diatypeSans = localFont({
   src: [
@@ -200,7 +201,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </DisplayPreferencesProvider>
         </ThemeProvider>
         {/* In production, don't load or call the custom collector unless it is explicitly enabled. */}
-        {enableInpReporter ? <InpReporter /> : null}
+        {enableInpReporter ? <InpReporter enableBeacon={enableWebVitalsBeacon} /> : null}
         {enableProductionAnalytics ? <AnalyticsErrorSuppressor /> : null}
         {enableProductionAnalytics ? <Analytics /> : null}
         {enableProductionAnalytics ? <SpeedInsights /> : null}

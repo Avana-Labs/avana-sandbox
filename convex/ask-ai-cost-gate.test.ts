@@ -96,6 +96,36 @@ describe("Ask AI atomic cost gate", () => {
     expect(row?.status).toBe("cancelled")
   })
 
+  test("retryFailedTurn is blocked by the same cost gate", async () => {
+    const t = askAITest()
+    const owner = t.withIdentity({ subject: "ask-guest:retry-gate" })
+    const thread = await owner.mutation(api.askAI.create, {})
+    const turn = await owner.mutation(api.askAI.enqueueTurn, {
+      threadId: thread.threadId,
+      prompt: "Will fail then retry",
+      clientRequestId: "retry-gate",
+    })
+    await t.run(async (ctx) => {
+      await ctx.db.patch(turn.turnId, { status: "failed", updatedAt: Date.now() })
+      await ctx.db.insert("askAIUsage", {
+        ownerSubject: "ask-guest:retry-gate",
+        threadId: thread.threadId,
+        messageId: "seed-retry",
+        model: "gpt-5.6-luna",
+        provider: "openai",
+        inputTokens: ASK_AI_CONFIG.limits.dailyTokenBudget,
+        outputTokens: 0,
+        totalTokens: ASK_AI_CONFIG.limits.dailyTokenBudget,
+        createdAt: Date.now(),
+      })
+    })
+    await expect(owner.mutation(api.askAI.retryFailedTurn, { turnId: turn.turnId })).rejects.toMatchObject({
+      data: { code: "ASK_AI_RATE_LIMITED" },
+    })
+    const row = await t.run(async (ctx) => ctx.db.get(turn.turnId))
+    expect(row?.status).toBe("failed")
+  })
+
   test("enqueueTurn and beginTurn share daily subject + global caps", async () => {
     const t = askAITest()
     const owner = t.withIdentity({ subject: "ask-guest:shared-gate" })

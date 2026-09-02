@@ -202,26 +202,35 @@ function quoteUnchanged(
 export const getPriceStatus = query({
   args: {},
   handler: async (ctx) => {
-    const rows = await ctx.db.query("tokenPrices").collect()
     const health = await readProviderHealth(ctx, "prices")
-    if (rows.length === 0 && !health) {
+    if (health) {
+      return {
+        updatedAt: health.checkedAt,
+        staleAfterMs: PRICE_STALE_AFTER_MS,
+        count: health.quoteCount,
+      }
+    }
+    const rows = await ctx.db.query("tokenPrices").collect()
+    if (rows.length === 0) {
       return { updatedAt: null, staleAfterMs: PRICE_STALE_AFTER_MS, count: 0 }
     }
-    const quoteUpdatedAt = rows.length === 0 ? null : Math.min(...rows.map((r) => r.updatedAt))
-    const updatedAt =
-      health?.checkedAt != null
-        ? Math.max(health.checkedAt, quoteUpdatedAt ?? health.checkedAt)
-        : quoteUpdatedAt
-    return { updatedAt, staleAfterMs: PRICE_STALE_AFTER_MS, count: rows.length }
+    return {
+      updatedAt: Math.min(...rows.map((r) => r.updatedAt)),
+      staleAfterMs: PRICE_STALE_AFTER_MS,
+      count: rows.length,
+    }
   },
 })
 
-/** Prices and freshness from one reactive table read for client-wide consumers. */
+/**
+ * Live price map for clients. Reads ONLY `tokenPrices` so an identical provider refresh
+ * that advances `oracleProviderHealth` does not invalidate this subscription.
+ * Freshness/`checkedAt` comes from `getPriceStatus`.
+ */
 export const getPriceSnapshot = query({
   args: {},
   handler: async (ctx) => {
     const rows = await ctx.db.query("tokenPrices").collect()
-    const health = await readProviderHealth(ctx, "prices")
     const prices = rows.map((r) => ({
       symbol: r.symbol,
       priceUsd: r.priceUsd,
@@ -231,14 +240,10 @@ export const getPriceSnapshot = query({
       updatedAt: r.updatedAt,
     }))
     const quoteUpdatedAt = rows.length === 0 ? null : Math.min(...rows.map((r) => r.updatedAt))
-    const updatedAt =
-      health?.checkedAt != null
-        ? Math.max(health.checkedAt, quoteUpdatedAt ?? health.checkedAt)
-        : quoteUpdatedAt
     return {
       prices,
       status: {
-        updatedAt,
+        updatedAt: quoteUpdatedAt,
         staleAfterMs: PRICE_STALE_AFTER_MS,
         invalidAfterMs: PRICE_INVALID_AFTER_MS,
         count: rows.length,

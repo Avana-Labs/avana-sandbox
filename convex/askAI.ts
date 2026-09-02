@@ -560,6 +560,8 @@ export const retryFailedTurn = mutation({
     if (!turn) throw new Error("Ask AI turn not found")
     const ownerSubject = await requireOwnerSubject(ctx)
     if (turn.ownerSubject !== ownerSubject || turn.status !== "failed") throw new Error("Ask AI turn cannot be retried")
+    // Same atomic cost gate as enqueue/begin — retries must not bypass daily/token/concurrent caps.
+    await enforceAskAICostGate(ctx, ownerSubject, { enforceBurst: true, enforceConcurrent: true })
     await ctx.db.patch(turnId, { status: "queued", updatedAt: Date.now() })
     await ctx.scheduler.runAfter(0, internal.askAIAgent.generateTurn, { turnId })
   },

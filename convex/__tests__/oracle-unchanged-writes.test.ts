@@ -96,7 +96,32 @@ describe("unchanged oracle refreshes skip quote writes", () => {
 
     const stored = await t.run(async (ctx) => ctx.db.query("fxRates").collect())
     expect(stored.every((row) => row.updatedAt === 1_000)).toBe(true)
-    const { status } = await t.query(api.fx.getFxRates, {})
-    expect(status.updatedAt).toBe(2_000)
+    const quotes = await t.query(api.fx.getFxRates, {})
+    expect(quotes.status.updatedAt).toBe(1_000)
+    const health = await t.query(api.fx.getFxStatus, {})
+    expect(health.updatedAt).toBe(2_000)
+  })
+
+  test("unchanged price refresh does not change getPriceSnapshot quote status", async () => {
+    const t = convexTest(schema, modules)
+    const row = {
+      symbol: "eth",
+      llamaId: "coingecko:ethereum",
+      priceUsd: 3200,
+      source: "defillama",
+      status: "fresh" as const,
+      updatedAt: 1_000,
+      fetchedAt: 1_000,
+    }
+    await t.mutation(internal.prices.upsertPrices, { rows: [row] })
+    const before = await t.query(api.prices.getPriceSnapshot, {})
+    await t.mutation(internal.prices.upsertPrices, {
+      rows: [{ ...row, updatedAt: 2_000, fetchedAt: 2_000 }],
+    })
+    const after = await t.query(api.prices.getPriceSnapshot, {})
+    expect(after.prices).toEqual(before.prices)
+    expect(after.status.updatedAt).toBe(1_000)
+    const health = await t.query(api.prices.getPriceStatus, {})
+    expect(health.updatedAt).toBe(2_000)
   })
 })

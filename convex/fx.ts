@@ -46,11 +46,9 @@ export function classifyFxStatus(ageMs: number): "fresh" | "stale" | "invalid" {
 export const getFxRates = query({
   args: {},
   handler: async (ctx) => {
+    // Quote-only read: identical FX refreshes that only patch oracleProviderHealth must not
+    // invalidate this subscription. Provider checkedAt lives on getFxStatus.
     const rows = await ctx.db.query("fxRates").collect()
-    const health = await ctx.db
-      .query("oracleProviderHealth")
-      .withIndex("by_kind", (q) => q.eq("kind", "fx"))
-      .unique()
     const rates = rows.map((r) => ({
       currency: r.currency,
       usdPerUnit: r.usdPerUnit,
@@ -59,11 +57,29 @@ export const getFxRates = query({
       updatedAt: r.updatedAt,
     }))
     const quoteUpdatedAt = rows.length === 0 ? null : Math.min(...rows.map((r) => r.updatedAt))
-    const updatedAt =
-      health?.checkedAt != null
-        ? Math.max(health.checkedAt, quoteUpdatedAt ?? health.checkedAt)
-        : quoteUpdatedAt
-    return { rates, status: { updatedAt, staleAfterMs: FX_STALE_AFTER_MS, count: rows.length } }
+    return { rates, status: { updatedAt: quoteUpdatedAt, staleAfterMs: FX_STALE_AFTER_MS, count: rows.length } }
+  },
+})
+
+export const getFxStatus = query({
+  args: {},
+  handler: async (ctx) => {
+    const health = await ctx.db
+      .query("oracleProviderHealth")
+      .withIndex("by_kind", (q) => q.eq("kind", "fx"))
+      .unique()
+    if (health) {
+      return { updatedAt: health.checkedAt, staleAfterMs: FX_STALE_AFTER_MS, count: health.quoteCount }
+    }
+    const rows = await ctx.db.query("fxRates").collect()
+    if (rows.length === 0) {
+      return { updatedAt: null, staleAfterMs: FX_STALE_AFTER_MS, count: 0 }
+    }
+    return {
+      updatedAt: Math.min(...rows.map((r) => r.updatedAt)),
+      staleAfterMs: FX_STALE_AFTER_MS,
+      count: rows.length,
+    }
   },
 })
 
