@@ -19,9 +19,22 @@ import { getAuthedWallet } from "./sandbox/auth"
 type AskAICtx = QueryCtx | MutationCtx
 
 const askAIRateLimiter = new RateLimiter(components.rateLimiter, {
-  perSubjectDaily: { kind: "fixed window", rate: 20, period: 24 * 60 * 60 * 1_000 },
-  perSubjectBurst: { kind: "token bucket", rate: 1, period: 5_000, capacity: 1 },
-  globalDaily: { kind: "fixed window", rate: 20_000, period: 24 * 60 * 60 * 1_000 },
+  perSubjectDaily: {
+    kind: "fixed window",
+    rate: ASK_AI_CONFIG.limits.messagesPerDay,
+    period: 24 * 60 * 60 * 1_000,
+  },
+  perSubjectBurst: {
+    kind: "token bucket",
+    rate: 1,
+    period: ASK_AI_CONFIG.limits.minimumMessageIntervalMs,
+    capacity: 1,
+  },
+  globalDaily: {
+    kind: "fixed window",
+    rate: ASK_AI_CONFIG.limits.globalMessagesPerDay,
+    period: 24 * 60 * 60 * 1_000,
+  },
   // Shared, cross-instance cap on minting NEW guest identities per client IP.
   // Backs the /api/ask-ai/session route so clearing the guest cookie can't yield
   // an unlimited supply of fresh quotas across serverless instances.
@@ -34,10 +47,14 @@ const askAIRateLimiter = new RateLimiter(components.rateLimiter, {
 // production error redaction and Lane C can render error.data.message with a
 // code -> copy fallback map. See docs/ask-ai-lane-contracts.md §2.
 type AskAIErrorCode = "ASK_AI_GENERATION_FAILED" | "ASK_AI_RATE_LIMITED" | "ASK_AI_UNAVAILABLE"
+
 const ASK_AI_RUNNING_TIMEOUT_MS = 90_000
 const MAX_THREADS_PER_SUBJECT = 1_000
 const MAX_TURNS_PER_THREAD = 500
 const MAX_FAILED_TURNS_IN_QUEUE = 50
+/** Global + per-subject caps on turns currently generating a model response. */
+const MAX_CONCURRENT_GENERATIONS_GLOBAL = 100
+const MAX_CONCURRENT_GENERATIONS_PER_SUBJECT = 2
 
 function safeEqual(a: string, b: string) {
   if (a.length !== b.length) return false
@@ -63,6 +80,68 @@ async function enforceAskAIRateLimit<T>(run: () => Promise<T>): Promise<T> {
         "Ask AI is handling a lot of requests right now. Please wait a moment and try again.",
       )
     throw error
+  }
+}
+
+/**
+ * Single atomic Ask AI cost gate for every turn submission entry point.
+ * Enforces daily subject/global message caps, burst spacing, optional concurrent
+ * generation caps, and the daily token budget — before any message or turn
+ * row is persisted.
+ */
+async function enforceAskAICostGate(
+  ctx: MutationCtx,
+  ownerSubject: string,
+  options: { enforceBurst: boolean; enforceConcurrent: boolean },
+): Promise<void> {
+  const dayStart = Date.now() - 24 * 60 * 60 * 1_000
+  const usageRows = await ctx.db
+    .query("askAIUsage")
+    .withIndex("by_owner_created", (q) => q.eq("ownerSubject", ownerSubject).gte("createdAt", dayStart))
+    .collect()
+  if (usageRows.reduce((sum, row) => sum + row.totalTokens, 0) >= ASK_AI_CONFIG.limits.dailyTokenBudget) {
+    throw askAIError("ASK_AI_RATE_LIMITED", "Ask AI daily token limit reached. Need help? Contact Avana Support.")
+  }
+
+  if (options.enforceConcurrent) {
+    await assertConcurrentGenerationCapacity(ctx, ownerSubject)
+  }
+
+  await enforceAskAIRateLimit(() =>
+    askAIRateLimiter.limit(ctx, "perSubjectDaily", { key: ownerSubject, throws: true }),
+  )
+  if (options.enforceBurst) {
+    await enforceAskAIRateLimit(() =>
+      askAIRateLimiter.limit(ctx, "perSubjectBurst", { key: ownerSubject, throws: true }),
+    )
+  }
+  await enforceAskAIRateLimit(() => askAIRateLimiter.limit(ctx, "globalDaily", { throws: true }))
+}
+
+async function assertConcurrentGenerationCapacity(ctx: MutationCtx, ownerSubject: string): Promise<void> {
+  const [subjectRunning, globalRunning] = await Promise.all([
+    ctx.db
+      .query("askAITurns")
+      .withIndex("by_owner_status_created", (q) =>
+        q.eq("ownerSubject", ownerSubject).eq("status", "running"),
+      )
+      .take(MAX_CONCURRENT_GENERATIONS_PER_SUBJECT + 1),
+    ctx.db
+      .query("askAITurns")
+      .withIndex("by_status_created", (q) => q.eq("status", "running"))
+      .take(MAX_CONCURRENT_GENERATIONS_GLOBAL + 1),
+  ])
+  if (subjectRunning.length >= MAX_CONCURRENT_GENERATIONS_PER_SUBJECT) {
+    throw askAIError(
+      "ASK_AI_RATE_LIMITED",
+      "Ask AI is already generating a response. Wait for it to finish, or cancel it, then try again.",
+    )
+  }
+  if (globalRunning.length >= MAX_CONCURRENT_GENERATIONS_GLOBAL) {
+    throw askAIError(
+      "ASK_AI_RATE_LIMITED",
+      "Ask AI is handling a lot of requests right now. Please wait a moment and try again.",
+    )
   }
 }
 
@@ -202,7 +281,7 @@ export const quota = query({
   handler: async (ctx) => {
     const ownerSubject = await requireOwnerSubject(ctx)
     const current = await askAIRateLimiter.getValue(ctx, "perSubjectDaily", { key: ownerSubject })
-    const limit = 20
+    const limit = ASK_AI_CONFIG.limits.messagesPerDay
     const remaining = Math.max(0, Math.min(limit, Math.floor(current.value)))
     const dayStart = Date.now() - 24 * 60 * 60 * 1_000
     const usageRows = await ctx.db
@@ -267,20 +346,7 @@ export const beginTurn = mutation({
     )
       throw new Error("This turn cannot be retried")
     if (!previousTurn) {
-      const dayStart = Date.now() - 24 * 60 * 60 * 1_000
-      const usageRows = await ctx.db
-        .query("askAIUsage")
-        .withIndex("by_owner_created", (q) => q.eq("ownerSubject", ownerSubject).gte("createdAt", dayStart))
-        .collect()
-      if (usageRows.reduce((sum, row) => sum + row.totalTokens, 0) >= ASK_AI_CONFIG.limits.dailyTokenBudget)
-        throw askAIError("ASK_AI_RATE_LIMITED", "Ask AI daily token limit reached. Need help? Contact Avana Support.")
-      await enforceAskAIRateLimit(() =>
-        askAIRateLimiter.limit(ctx, "perSubjectDaily", { key: ownerSubject, throws: true }),
-      )
-      await enforceAskAIRateLimit(() =>
-        askAIRateLimiter.limit(ctx, "perSubjectBurst", { key: ownerSubject, throws: true }),
-      )
-      await enforceAskAIRateLimit(() => askAIRateLimiter.limit(ctx, "globalDaily", { throws: true }))
+      await enforceAskAICostGate(ctx, ownerSubject, { enforceBurst: true, enforceConcurrent: true })
     }
     const saved = previousTurn
       ? { messageId: previousTurn.promptMessageId }
@@ -349,20 +415,11 @@ export const enqueueTurn = mutation({
     if (threadTurns.length >= MAX_TURNS_PER_THREAD) {
       throw askAIError("ASK_AI_RATE_LIMITED", "This chat is full. Start a new chat to continue.")
     }
-    const dayStart = Date.now() - 24 * 60 * 60 * 1_000
-    const usageRows = await ctx.db
-      .query("askAIUsage")
-      .withIndex("by_owner_created", (q) => q.eq("ownerSubject", ownerSubject).gte("createdAt", dayStart))
-      .collect()
-    if (usageRows.reduce((sum, row) => sum + row.totalTokens, 0) >= ASK_AI_CONFIG.limits.dailyTokenBudget)
-      throw askAIError("ASK_AI_RATE_LIMITED", "Ask AI daily token limit reached. Need help? Contact Avana Support.")
-    await enforceAskAIRateLimit(() =>
-      askAIRateLimiter.limit(ctx, "perSubjectDaily", { key: ownerSubject, throws: true }),
-    )
-    // Global daily backstop caps aggregate spend across all subjects. perSubjectBurst is
-    // intentionally not enforced here: the turn queue is designed to let a single subject
-    // stack several messages at once, which a 1-per-5s burst limit would break.
-    await enforceAskAIRateLimit(() => askAIRateLimiter.limit(ctx, "globalDaily", { throws: true }))
+    // Atomic cost gate before any message/turn persistence. Concurrent generation
+    // is enforced at claim time so queued turns can still stack safely. Burst is
+    // enforced on beginTurn (immediate generation); enqueue relies on queue depth
+    // plus daily/global/token caps so a short intentional stack still works.
+    await enforceAskAICostGate(ctx, ownerSubject, { enforceBurst: false, enforceConcurrent: false })
     const saved = await saveMessage(ctx, components.agent, { threadId, userId: ownerSubject, prompt: text })
     const now = Date.now()
     const wallet = await getAuthedWallet(ctx)
@@ -404,6 +461,14 @@ export const claimQueuedTurn = internalMutation({
       .unique()
     if (!thread || thread.ownerSubject !== turn.ownerSubject || thread.status !== "active") {
       await ctx.db.patch(turnId, { status: "cancelled", updatedAt: Date.now() })
+      return null
+    }
+    try {
+      await assertConcurrentGenerationCapacity(ctx, turn.ownerSubject)
+    } catch {
+      // At capacity: leave queued and retry shortly so other subjects' turns
+      // still drain when a running generation completes elsewhere.
+      await ctx.scheduler.runAfter(2_500, internal.askAIAgent.generateTurn, { turnId })
       return null
     }
     await ctx.db.patch(turnId, { status: "running", updatedAt: Date.now() })

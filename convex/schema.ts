@@ -1990,7 +1990,9 @@ export default defineSchema({
   })
     .index("by_owner_request", ["ownerSubject", "clientRequestId"])
     .index("by_prompt_message", ["promptMessageId"])
-    .index("by_thread_status_created", ["threadId", "status", "createdAt"]),
+    .index("by_thread_status_created", ["threadId", "status", "createdAt"])
+    .index("by_status_created", ["status", "createdAt"])
+    .index("by_owner_status_created", ["ownerSubject", "status", "createdAt"]),
 
   askAIFeedback: defineTable({
     ownerSubject: v.string(),
