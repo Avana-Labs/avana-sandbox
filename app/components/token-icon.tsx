@@ -25,6 +25,7 @@ export function TokenIcon({
   ring = false,
   meta: metaOverride,
   eager = false,
+  pixelSize,
 }: {
   symbol: string
   size?: TokenIconSize
@@ -32,9 +33,12 @@ export function TokenIcon({
   ring?: boolean
   meta?: TokenIconMeta
   eager?: boolean
+  /** Overrides the preset size box and image resolution (paired-loop layouts). */
+  pixelSize?: number
 }) {
   const meta = metaOverride ?? getTokenIconMeta(symbol)
-  const { box, text, px } = DIMENSIONS[size]
+  const { box, text, px: presetPx } = DIMENSIONS[size]
+  const px = pixelSize ?? presetPx
   const [failed, setFailed] = useState(false)
   const showIcon = Boolean(meta.iconUrl) && !failed
   const fallbackLabel = meta.symbol[0]?.toUpperCase() ?? "?"
@@ -43,7 +47,7 @@ export function TokenIcon({
     <span
       className={cn(
         "relative inline-flex shrink-0 items-center justify-center font-semibold",
-        box,
+        pixelSize == null ? box : null,
         // A real token icon renders as a bare transparent PNG — no circular plate, card
         // background, ring or clip. Only the letter fallback keeps the colored avatar circle.
         showIcon
@@ -51,6 +55,7 @@ export function TokenIcon({
           : cn("overflow-hidden rounded-full", ring && "ring-2 ring-background", meta.bgClass, meta.textClass, text),
         className,
       )}
+      style={pixelSize == null ? undefined : { width: pixelSize, height: pixelSize }}
     >
       {showIcon ? (
         <Image

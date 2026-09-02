@@ -69,6 +69,8 @@ const dict: TranslationDictionary = {
   Value: "القيمة",
   Utilization: "معدل الاستخدام",
   "Supply & Borrow": "الإيداع والاقتراض",
+  "Supply {collateral}": "إيداع {collateral}",
+  "Borrow {borrow}": "اقتراض {borrow}",
   Borrowed: "المُقترَض",
   Available: "متاح",
   "Supply APY": "عائد الإيداع السنوي",

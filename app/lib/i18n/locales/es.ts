@@ -283,6 +283,8 @@ const dict: TranslationDictionary = {
   "Supply & Utilization": "Suministro y utilizacion",
   "Deposits, borrows, and utilization over time.": "Depositos, prestamos y utilizacion a lo largo del tiempo.",
   "Supply & Borrow": "Suministro y prestamo",
+  "Supply {collateral}": "Suministrar {collateral}",
+  "Borrow {borrow}": "Pedir prestado {borrow}",
   "Leverage usage across this market over time.": "Uso de apalancamiento en este mercado a lo largo del tiempo.",
   "{view} over time": "{view} a lo largo del tiempo",
   "Deposit {symbol}": "Depositar {symbol}",

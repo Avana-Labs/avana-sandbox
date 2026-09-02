@@ -69,6 +69,8 @@ const dict: TranslationDictionary = {
   Value: "मूल्य",
   Utilization: "उपयोग दर",
   "Supply & Borrow": "सप्लाई और उधार",
+  "Supply {collateral}": "{collateral} आपूर्ति करें",
+  "Borrow {borrow}": "{borrow} उधार लें",
   Borrowed: "उधार लिया",
   Available: "उपलब्ध",
   "Supply APY": "सप्लाई APY",

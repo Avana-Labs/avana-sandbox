@@ -89,7 +89,7 @@ describe("MultiplyCollateralTable", () => {
     // liquidationPriceUsd (2100) is surfaced exact (once per responsive layout:
     // desktop table + mobile card) rather than compacted to "$2.1K".
     expect(screen.getAllByText(/\$2,100/).length).toBeGreaterThan(0)
-    expect(screen.getByRole("columnheader", { name: "Risk" })).toBeTruthy()
+    expect(screen.getByRole("columnheader", { name: "RISK" })).toBeTruthy()
   })
 
   it("renders one compact loop table with one action per position", () => {
@@ -101,15 +101,15 @@ describe("MultiplyCollateralTable", () => {
 
     expect(screen.getByRole("heading", { name: "Loop Positions" })).toBeTruthy()
     expect(screen.getByText("Exposure, return, and liquidation risk for each active loop")).toBeTruthy()
-    expect(screen.getByRole("columnheader", { name: "Loop" })).toBeTruthy()
-    expect(screen.getByRole("columnheader", { name: "Position" })).toBeTruthy()
-    expect(screen.getByRole("columnheader", { name: "Risk" })).toBeTruthy()
+    expect(screen.getByRole("columnheader", { name: "LOOP" })).toBeTruthy()
+    expect(screen.getByRole("columnheader", { name: "POSITION" })).toBeTruthy()
+    expect(screen.getByRole("columnheader", { name: "RISK" })).toBeTruthy()
     expect(screen.getAllByRole("button", { name: "Manage" })).toHaveLength(2)
     expect(screen.queryByRole("button", { name: "Multiply" })).toBeNull()
     expect(screen.queryByRole("button", { name: "Deleverage" })).toBeNull()
     expect(screen.queryByRole("button", { name: "Close" })).toBeNull()
-    expect(screen.getAllByText("ETH loop")).toHaveLength(2)
-    expect(screen.getAllByText("Borrowing USDT")).toHaveLength(2)
+    expect(screen.getAllByText("Supply ETH")).toHaveLength(2)
+    expect(screen.getAllByText("Borrow USDT")).toHaveLength(2)
     expect(screen.getAllByText("$3.5K equity · 2.00×")).toHaveLength(1)
     expect(screen.getAllByText("$7.0K exposure · 3.20% Net APY")).toHaveLength(1)
   })

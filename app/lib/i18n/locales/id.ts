@@ -60,6 +60,8 @@ const dict: TranslationDictionary = {
   Value: "Nilai",
   Utilization: "Utilisasi",
   "Supply & Borrow": "Suplai & Pinjam",
+  "Supply {collateral}": "Pasok {collateral}",
+  "Borrow {borrow}": "Pinjam {borrow}",
   Borrowed: "Dipinjam",
   Available: "Tersedia",
   "Supply APY": "APY Suplai",

@@ -31,7 +31,6 @@ export const KNOWN_UNTRANSLATED: readonly string[] = [
   "Assets",
   "Available to Borrow",
   "Breadcrumb",
-  "Borrowing",
   "CF",
   "Claim",
   "Claim {amount} AVA",
@@ -110,5 +109,4 @@ export const KNOWN_UNTRANSLATED: readonly string[] = [
   "Yield Generated",
   "equity",
   "exposure",
-  "loop",
 ] as const

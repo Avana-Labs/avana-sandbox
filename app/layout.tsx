@@ -53,8 +53,6 @@ const diatypeSans = localFont({
   adjustFontFallback: "Arial",
 })
 
-const themeBootstrapScript = `(()=>{const storageKey="avana-theme";const root=document.documentElement;const storedTheme=window.localStorage.getItem(storageKey);const theme=storedTheme==="light"||storedTheme==="dark"||storedTheme==="system"?storedTheme:"light";const systemTheme=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";const resolvedTheme=theme==="system"?systemTheme:theme;root.classList.toggle("dark",resolvedTheme==="dark");root.style.colorScheme=resolvedTheme})()`
-
 export const metadata: Metadata = {
   metadataBase: new URL("https://avana.cc"),
   title: {
@@ -167,12 +165,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           imageSizes="220px"
         />
         <link rel="preload" as="image" href="/avana-icon-64.png" />
-        {/* Inline to avoid a render-blocking theme-bootstrap network request.
-            suppressHydrationWarning: the browser clears the `nonce` content attribute after
-            parsing the HTML (a CSP anti-exfiltration measure), so React's hydration diff sees
-            server `nonce="…"` vs. live `nonce=""`. The script is already CSP-authorized at parse
-            time; there is nothing to patch up, so silence the expected mismatch. */}
-        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} suppressHydrationWarning />
+        {/* Plain server script — next/script re-hydrates and mismatches the CSP nonce. */}
+        <script src="/theme-bootstrap.js" nonce={nonce} suppressHydrationWarning />
       </head>
       <body className="min-h-screen bg-background">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>

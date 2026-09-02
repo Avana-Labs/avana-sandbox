@@ -13,6 +13,14 @@ import {
   MarketMobileStatList,
   MarketMobileStatRow,
 } from "@/app/components/market-card-primitives"
+import { TokenIcon } from "@/app/components/token-icon"
+import {
+  TOKEN_ICON_TABLE_PAIR_WIDTH_PX,
+  TOKEN_ICON_TABLE_PX,
+  TOKEN_ICON_TRENDING_PX,
+  pairedLoopBorrowPx,
+  pairedLoopContainerWidthPx,
+} from "@/app/lib/token-icon-sizes"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import { Button } from "@/components/ui/button"
@@ -24,12 +32,14 @@ import {
   HighlightCarousel,
   type HighlightCarouselHandle,
 } from "@/app/components/highlight-carousel"
-import { hasImageSrc, resolveImageSrc } from "@/lib/image-src"
-import { resolveMultiplyTokenLogo } from "@/lib/multiply-token-logo"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { MarketFilterBar } from "@/app/lib/ui/market-filter-bar"
 import { CATEGORY_CHIPS, categorizeMarket, type CategoryChip } from "@/app/lib/markets/category"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import {
+  translateMultiplyLoopBorrowLabel,
+  translateMultiplyLoopSupplyLabel,
+} from "@/app/lib/multiply-system/market-labels"
 import { useMediaQuery } from "@/app/lib/use-media-query"
 import { RevealSentinel, useProgressiveReveal } from "@/app/lib/ui/use-progressive-reveal"
 
@@ -94,15 +104,33 @@ function buildLoopSearchText(row: MultiplyPageData["lendRows"][number]): string 
 
 import {
   TABLE_BODY_ROW,
+  TABLE_HEADER_CELL,
   TABLE_HEADER_ROW,
   TABLE_ROW_HOVER_BG,
   TABLE_ROW_HOVER_LEFT,
   TABLE_ROW_HOVER_RIGHT,
+  formatTableHeaderLabel,
 } from "@/app/lib/ui/table-row-hover"
 
 type MultiplyCategoryTabId = CategoryChip["id"]
 
 type LoopSortKey = "protocol" | "asset" | "apy" | "rewards" | "cf" | "points"
+
+function sortHeaderButtonClass(active: boolean) {
+  return cn(
+    "flex items-center gap-2 whitespace-nowrap !uppercase transition-colors",
+    active ? "text-foreground dark:text-white" : "text-muted-foreground/70 dark:text-white/42",
+  )
+}
+
+function formatTrendingLeverageLabel(maxLeverageLabel: string) {
+  const match = maxLeverageLabel.trim().match(/^([\d.]+)x$/i)
+  if (!match) return maxLeverageLabel.toUpperCase()
+  const value = Number.parseFloat(match[1] ?? "")
+  if (!Number.isFinite(value)) return maxLeverageLabel.toUpperCase()
+  const compact = Number.isInteger(value) ? String(value) : value.toFixed(1).replace(/\.0$/, "")
+  return `${compact}X`
+}
 
 function parseCompactUsdLabel(value?: string) {
   if (!value) return null
@@ -144,7 +172,7 @@ export function ExploreLoopsMarketsTable({
   pageSize,
   rows,
   trendingSnapshots,
-  tokenLogos,
+  tokenLogos: _tokenLogos,
 }: ExploreLoopsMarketsTableProps) {
   const { t } = useTranslation()
   const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all")
@@ -270,7 +298,6 @@ export function ExploreLoopsMarketsTable({
                 initialIsDesktop={initialIsDesktop}
                 title={group.title}
                 rows={group.rows}
-                tokenLogos={tokenLogos}
               />
               {group.title === "Ethereum-Based" ? (
                 <div className="flex justify-center">
@@ -301,12 +328,10 @@ function LoopMarketsSection({
   initialIsDesktop,
   title,
   rows,
-  tokenLogos,
 }: {
   initialIsDesktop: boolean
   title: string
   rows: MultiplyPageData["lendRows"]
-  tokenLogos: MultiplyPageData["tokenLogos"]
 }) {
   const { t } = useTranslation()
   const { compact } = useCurrency()
@@ -376,10 +401,6 @@ function LoopMarketsSection({
                   key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
                   row={row}
                   index={index}
-                  protocolLogo={getResolvedLogo(row.protocolLogo)}
-                  assetLogo={getResolvedLogo(
-                    tokenLogos[row.asset as keyof typeof tokenLogos] ?? resolveMultiplyTokenLogo(row.asset),
-                  )}
                   availableLabel={
                     parseCompactUsdLabel(row.points) == null
                       ? (row.points ?? "—")
@@ -401,110 +422,67 @@ function LoopMarketsSection({
               <table className="w-full min-w-[1040px] table-fixed border-separate border-spacing-0 text-[12px] lg:min-w-full">
                 <colgroup>
                   <col className="w-[4%]" />
-                  <col className="w-[14%]" />
-                  <col className="w-[14%]" />
+                  <col className="w-[22%]" />
                   <col className="w-[10%]" />
                   <col className="w-[13%]" />
                   <col className="w-[11%]" />
                   <col className="w-[12%]" />
-                  <col className="w-[22%]" />
+                  <col className="w-[28%]" />
                 </colgroup>
                 <thead>
                   <tr className={TABLE_HEADER_ROW}>
-                    <th className="bg-table-header pb-2 pl-6 pr-3 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                      #
-                    </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className={cn(TABLE_HEADER_CELL, "pl-6 pr-3")}>#</th>
+                    <th className={cn(TABLE_HEADER_CELL, "px-4 pl-6")}>
                       <button
                         type="button"
                         onClick={() => toggleSort("protocol")}
-                        className={cn(
-                          "flex items-center gap-2 whitespace-nowrap transition-colors",
-                          sortKey === "protocol"
-                            ? "text-foreground dark:text-white"
-                            : "text-muted-foreground/70 dark:text-white/42",
-                        )}
+                        className={sortHeaderButtonClass(sortKey === "protocol")}
                       >
-                        <span>{t("Pool")}</span>
+                        <span>{formatTableHeaderLabel(t("Loop"))}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                      <button
-                        type="button"
-                        onClick={() => toggleSort("asset")}
-                        className={cn(
-                          "flex items-center gap-2 whitespace-nowrap transition-colors",
-                          sortKey === "asset"
-                            ? "text-foreground dark:text-white"
-                            : "text-muted-foreground/70 dark:text-white/42",
-                        )}
-                      >
-                        <span>{t("Borrowable")}</span>
-                        <SortIcon />
-                      </button>
-                    </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className={cn(TABLE_HEADER_CELL, "px-4")}>
                       <button
                         type="button"
                         onClick={() => toggleSort("apy")}
-                        className={cn(
-                          "flex items-center gap-2 whitespace-nowrap transition-colors",
-                          sortKey === "apy"
-                            ? "text-foreground dark:text-white"
-                            : "text-muted-foreground/70 dark:text-white/42",
-                        )}
+                        className={sortHeaderButtonClass(sortKey === "apy")}
                       >
-                        <span>{t("APY")}</span>
+                        <span>{formatTableHeaderLabel(t("APY"))}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className={cn(TABLE_HEADER_CELL, "px-4")}>
                       <button
                         type="button"
                         onClick={() => toggleSort("rewards")}
-                        className={cn(
-                          "flex items-center gap-2 whitespace-nowrap transition-colors",
-                          sortKey === "rewards"
-                            ? "text-foreground dark:text-white"
-                            : "text-muted-foreground/70 dark:text-white/42",
-                        )}
+                        className={sortHeaderButtonClass(sortKey === "rewards")}
                       >
-                        <span>{t("Leverage")}</span>
+                        <span>{formatTableHeaderLabel(t("Leverage"))}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className={cn(TABLE_HEADER_CELL, "px-4")}>
                       <button
                         type="button"
                         onClick={() => toggleSort("cf")}
-                        className={cn(
-                          "flex items-center gap-2 whitespace-nowrap transition-colors",
-                          sortKey === "cf"
-                            ? "text-foreground dark:text-white"
-                            : "text-muted-foreground/70 dark:text-white/42",
-                        )}
+                        className={sortHeaderButtonClass(sortKey === "cf")}
                       >
-                        <span>{t("CF")}</span>
+                        <span>{formatTableHeaderLabel(t("CF"))}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pr-6 pt-2.5 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+                    <th className={cn(TABLE_HEADER_CELL, "px-4 pr-6")}>
                       <button
                         type="button"
                         onClick={() => toggleSort("points")}
-                        className={cn(
-                          "flex w-full items-center gap-2 whitespace-nowrap transition-colors",
-                          sortKey === "points"
-                            ? "text-foreground dark:text-white"
-                            : "text-muted-foreground/70 dark:text-white/42",
-                        )}
+                        className={cn(sortHeaderButtonClass(sortKey === "points"), "w-full")}
                       >
-                        <span>{t("Available")}</span>
+                        <span>{formatTableHeaderLabel(t("Available"))}</span>
                         <SortIcon />
                       </button>
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+                    <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")} />
                   </tr>
                 </thead>
                 <tbody
@@ -516,7 +494,6 @@ function LoopMarketsSection({
                       key={`${row.kind}-${row.protocol}-${row.asset}-${row.href}-${index}`}
                       row={row}
                       index={index}
-                      tokenLogos={tokenLogos}
                     />
                   ))}
                 </tbody>
@@ -531,25 +508,17 @@ function LoopMarketsSection({
 
 // Memoized so an unchanged row doesn't re-render when a sibling row changes (e.g. a
 // re-sort or a keystroke that leaves this row's props identical). Props are stable
-// references (row, tokenLogos) plus a primitive index; hooks are read internally.
+// references (row) plus a primitive index; hooks are read internally.
 const LoopTableRow = React.memo(function LoopTableRow({
   row,
   index,
-  tokenLogos,
 }: {
   row: MultiplyPageData["lendRows"][number]
   index: number
-  tokenLogos: MultiplyPageData["tokenLogos"]
 }) {
   const router = useRouter()
   const { t } = useTranslation()
   const { compact } = useCurrency()
-  // Resolve case-insensitively: the Convex-hydrated tokenLogos keys can differ in case from
-  // the catalog's mixed-case symbols (cbBTC/crvUSD/wstETH), so a strict lookup misses them —
-  // fall back to the local resolver, which normalizes case.
-  const assetLogo = resolveImageSrc(
-    tokenLogos[row.asset as keyof typeof tokenLogos] ?? resolveMultiplyTokenLogo(row.asset),
-  )
   const hasNegativeApy = isNegativeMultiplyApy(row.apy)
 
   return (
@@ -564,55 +533,14 @@ const LoopTableRow = React.memo(function LoopTableRow({
         {index + 1}
       </td>
       <td className={`py-3 pl-6 pr-4 ${TABLE_ROW_HOVER_BG}`}>
-        <CellLink href={row.href} className="flex items-center gap-2.5">
-          {hasImageSrc(row.protocolLogo) ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={row.protocolLogo}
-                alt=""
-                aria-hidden="true"
-                width={48}
-                height={48}
-                className="size-12 shrink-0 object-contain"
-                loading={index < 2 ? "eager" : "lazy"}
-                fetchPriority={index < 2 ? "high" : undefined}
-              />
-            </>
-          ) : null}
+        <CellLink href={row.href} className="flex min-w-0 items-center gap-3">
+          <PairedLoopIcons collateralSymbol={row.protocol} borrowSymbol={row.asset} eager={index < 2} />
           <span className="min-w-0">
             <span className="block truncate text-[15px] font-normal tracking-normal text-foreground dark:text-white">
-              {row.protocolName ?? row.protocol}
+              {translateMultiplyLoopSupplyLabel(t, row.protocol)}
             </span>
-            <span className="mt-0.5 block truncate text-[13px] font-normal tracking-normal text-muted-foreground">
-              {row.protocol}
-            </span>
-          </span>
-        </CellLink>
-      </td>
-      <td className={`py-3 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <CellLink href={row.href} className="flex min-w-0 items-center gap-2.5">
-          {assetLogo ? (
-            <>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={assetLogo}
-                alt=""
-                aria-hidden="true"
-                width={48}
-                height={48}
-                className="size-12 shrink-0 object-contain"
-                loading={index < 2 ? "eager" : "lazy"}
-                fetchPriority={index < 2 ? "high" : undefined}
-              />
-            </>
-          ) : null}
-          <span className="min-w-0">
-            <span className="block truncate text-[15px] font-normal tracking-normal text-foreground dark:text-white">
-              {row.assetName ?? row.asset}
-            </span>
-            <span className="mt-0.5 block truncate text-[13px] font-normal tracking-normal text-muted-foreground">
-              {row.asset}
+            <span className="mt-0.5 block truncate text-[13px] font-normal tracking-normal text-muted-foreground dark:text-white/38">
+              {translateMultiplyLoopBorrowLabel(t, row.asset)}
             </span>
           </span>
         </CellLink>
@@ -718,14 +646,10 @@ const LoopTableRow = React.memo(function LoopTableRow({
 const MobileLoopCard = React.memo(function MobileLoopCard({
   row,
   index,
-  protocolLogo,
-  assetLogo,
   availableLabel,
 }: {
   row: MultiplyPageData["lendRows"][number]
   index: number
-  protocolLogo?: string | null
-  assetLogo?: string | null
   availableLabel: string
 }) {
   const { t } = useTranslation()
@@ -734,42 +658,12 @@ const MobileLoopCard = React.memo(function MobileLoopCard({
       <MarketMobileCard clickable>
         <MarketMobileCardHeader
           identity={
-            <div className="min-w-0">
-              <div className="flex items-center gap-3">
-                <div className="relative flex h-12 w-[72px] items-center">
-                  {protocolLogo ? (
-                    <div className="absolute left-0 top-0 z-10 flex size-12 items-center justify-center">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={protocolLogo}
-                        alt=""
-                        aria-hidden="true"
-                        width={48}
-                        height={48}
-                        className="size-full object-contain"
-                        loading={index < 2 ? "eager" : "lazy"}
-                        fetchPriority={index < 2 ? "high" : undefined}
-                      />
-                    </div>
-                  ) : null}
-                  {assetLogo ? (
-                    <div className="absolute left-6 top-0 flex size-12 items-center justify-center">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={assetLogo}
-                        alt=""
-                        aria-hidden="true"
-                        width={48}
-                        height={48}
-                        className="size-full object-contain"
-                        loading={index < 2 ? "eager" : "lazy"}
-                        fetchPriority={index < 2 ? "high" : undefined}
-                      />
-                    </div>
-                  ) : null}
-                </div>
-                <MarketMobileIdentityText title={row.protocol} subtitle={row.asset} />
-              </div>
+            <div className="flex min-w-0 items-center gap-3">
+              <PairedLoopIcons collateralSymbol={row.protocol} borrowSymbol={row.asset} eager={index < 2} />
+              <MarketMobileIdentityText
+                title={translateMultiplyLoopSupplyLabel(t, row.protocol)}
+                subtitle={translateMultiplyLoopBorrowLabel(t, row.asset)}
+              />
             </div>
           }
           metric={
@@ -800,53 +694,32 @@ function TrendingLoopCard({
   interactive?: boolean
 }) {
   const { t } = useTranslation()
-  const collateralSrc = resolveImageSrc(snapshot.collateralLogo)
-  const borrowSrc = resolveImageSrc(snapshot.borrowLogo, snapshot.collateralLogo)
 
   const cardClassName = cn(HIGHLIGHT_CARD_CLASS, "h-[104px] w-[min(372px,calc(100vw-2rem))] p-5")
 
   const content = (
     <>
       <div className="relative z-10 flex h-full items-center gap-3">
-        {/* Overlapping collateral → borrow icon pair, sized to match the big
-            single icon on the Lend "Featured" cards (64px). */}
-        <div className="relative flex h-16 w-[96px] shrink-0 items-center">
-          {collateralSrc ? (
-            <span className="absolute left-0 top-1/2 z-10 flex size-16 -translate-y-1/2 items-center justify-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={collateralSrc}
-                alt=""
-                aria-hidden="true"
-                width={64}
-                height={64}
-                className="size-full object-contain"
-              />
-            </span>
-          ) : null}
-          {borrowSrc ? (
-            <span className="absolute left-8 top-1/2 flex size-16 -translate-y-1/2 items-center justify-center">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={borrowSrc}
-                alt=""
-                aria-hidden="true"
-                width={64}
-                height={64}
-                className="size-full object-contain"
-              />
-            </span>
-          ) : null}
-        </div>
+        <TrendingPairedLoopIcons
+          collateralSymbol={snapshot.collateralSymbol}
+          borrowSymbol={snapshot.borrowSymbol}
+          eager
+        />
 
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[15px] font-normal tracking-normal text-foreground">{snapshot.label}</div>
-          <div className="mt-1 text-[13px] text-muted-foreground dark:text-white/48">{t("Loop market")}</div>
+          <div className="truncate text-[15px] font-normal tracking-normal text-foreground">
+            {translateMultiplyLoopSupplyLabel(t, snapshot.collateralSymbol)}
+          </div>
+          <div className="mt-1 truncate text-[13px] text-muted-foreground dark:text-white/48">
+            {translateMultiplyLoopBorrowLabel(t, snapshot.borrowSymbol)}
+          </div>
         </div>
 
         <div className="shrink-0 text-right">
           <div className="font-data text-[15px] font-normal tracking-normal text-success">{snapshot.apyLabel}</div>
-          <div className="mt-1 text-[13px] text-muted-foreground dark:text-white/48">{t("LOOP APY")}</div>
+          <div className="mt-1 font-data text-[13px] text-muted-foreground dark:text-white/48">
+            {formatTrendingLeverageLabel(snapshot.maxLeverageLabel)}
+          </div>
         </div>
       </div>
     </>
@@ -864,6 +737,69 @@ function TrendingLoopCard({
     <Link href={snapshot.href} className={cardClassName}>
       {content}
     </Link>
+  )
+}
+
+const TRENDING_BORROW_PX = pairedLoopBorrowPx(TOKEN_ICON_TRENDING_PX)
+const TRENDING_CONTAINER_WIDTH_PX = pairedLoopContainerWidthPx(TOKEN_ICON_TRENDING_PX)
+
+function TrendingPairedLoopIcons({
+  collateralSymbol,
+  borrowSymbol,
+  eager = false,
+}: {
+  collateralSymbol: string
+  borrowSymbol: string
+  eager?: boolean
+}) {
+  return (
+    <span
+      className="relative block shrink-0"
+      style={{ height: TOKEN_ICON_TRENDING_PX, width: TRENDING_CONTAINER_WIDTH_PX }}
+    >
+      <TokenIcon
+        symbol={collateralSymbol}
+        size="table"
+        pixelSize={TOKEN_ICON_TRENDING_PX}
+        className="absolute left-0 top-0"
+        eager={eager}
+      />
+      <TokenIcon
+        symbol={borrowSymbol}
+        size="md"
+        pixelSize={TRENDING_BORROW_PX}
+        className="absolute bottom-0 right-0 z-10"
+        eager={eager}
+      />
+    </span>
+  )
+}
+
+function PairedLoopIcons({
+  collateralSymbol,
+  borrowSymbol,
+  eager = false,
+}: {
+  collateralSymbol: string
+  borrowSymbol: string
+  eager?: boolean
+}) {
+  const borrowPx = pairedLoopBorrowPx(TOKEN_ICON_TABLE_PX)
+
+  return (
+    <span
+      className="relative block shrink-0"
+      style={{ height: TOKEN_ICON_TABLE_PX, width: TOKEN_ICON_TABLE_PAIR_WIDTH_PX }}
+    >
+      <TokenIcon symbol={collateralSymbol} size="table" className="absolute left-0 top-0" eager={eager} />
+      <TokenIcon
+        symbol={borrowSymbol}
+        size="md"
+        pixelSize={borrowPx}
+        className="absolute bottom-0 right-0 z-10"
+        eager={eager}
+      />
+    </span>
   )
 }
 
@@ -887,8 +823,4 @@ function CellLink({ href, className, children }: { href: string; className?: str
       {children}
     </Link>
   )
-}
-
-function getResolvedLogo(value?: string | null) {
-  return value ? resolveImageSrc(value) : null
 }

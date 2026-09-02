@@ -10,7 +10,7 @@ import {
   mapDeleveragePreviewToActionUi,
   mapMultiplyPreviewToActionUi,
 } from "@/app/lib/action-system/adapters/multiply-preview-mapper"
-import { formatMultiplyLoopMarketLabel } from "@/app/lib/multiply-system/market-labels"
+import { translateMultiplyLoopMarketLabel } from "@/app/lib/multiply-system/market-labels"
 import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionConfigureStage, ActionConfigureAmountSection } from "@/app/components/action-page/action-configure-stage"
@@ -99,7 +99,7 @@ export function MultiplyActionPageClient({
     if (kind !== "multiply") return undefined
     const options = Object.values(session.state.markets).map((entry) => ({
       id: entry.id,
-      label: formatMultiplyLoopMarketLabel(entry.collateralAsset.symbol, entry.borrowAsset.symbol),
+      label: translateMultiplyLoopMarketLabel(t, entry.collateralAsset.symbol, entry.borrowAsset.symbol),
       symbol: entry.collateralAsset.symbol,
       borrowSymbol: entry.borrowAsset.symbol,
     }))
@@ -213,7 +213,7 @@ export function MultiplyActionPageClient({
           if (cancelled) return
           setPreviewUi(
             mapClosePreviewToActionUi(preview, {
-              marketLabel: formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
+              marketLabel: translateMultiplyLoopMarketLabel(t, market.collateralAsset.symbol, market.borrowAsset.symbol),
               collateralSymbol: market.collateralAsset.symbol,
             }),
           )
@@ -256,7 +256,7 @@ export function MultiplyActionPageClient({
             borrowSymbol: market.borrowAsset.symbol,
             collateralAmount: multiplyCollateralAmount,
             collateralPriceUsd,
-            marketLabel: formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
+            marketLabel: translateMultiplyLoopMarketLabel(t, market.collateralAsset.symbol, market.borrowAsset.symbol),
             multiplier: parsedMultiplier,
             maxCollateralAmount: maxCollateralAmount!,
           }),
@@ -290,7 +290,7 @@ export function MultiplyActionPageClient({
               // priced — no further display rescale (scale === 1). This keeps the preview
               // exactly equal to the persisted/dashboard position.
               catalogCollateralPriceUsd: collateralPriceUsd,
-              marketLabel: formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
+              marketLabel: translateMultiplyLoopMarketLabel(t, market.collateralAsset.symbol, market.borrowAsset.symbol),
               // Display the SAME supply APY the engine feeds into Net APY. After a Convex
               // snapshot updates economics.supplyApy but leaves the seed collateralAsset.apy
               // untouched, the two diverge — showing "Collateral APY 7.60%" while Net APY
@@ -328,7 +328,7 @@ export function MultiplyActionPageClient({
         if (cancelled) return
         setPreviewUi(
           mapDeleveragePreviewToActionUi(preview, {
-            marketLabel: formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
+            marketLabel: translateMultiplyLoopMarketLabel(t, market.collateralAsset.symbol, market.borrowAsset.symbol),
             targetMultiplier: parsedMultiplier,
             collateralSymbol: market.collateralAsset.symbol,
           }),
@@ -443,7 +443,7 @@ export function MultiplyActionPageClient({
       const intent = session.createIntent(action)
       const preview = await session.previewTransaction(intent)
       if (!preview.allowed) throw new Error(preview.validationErrors[0] ?? "Action unavailable")
-      const marketLabel = formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol)
+      const marketLabel = translateMultiplyLoopMarketLabel(t, market.collateralAsset.symbol, market.borrowAsset.symbol)
       const executionPreviewUi =
         kind === "multiply"
           ? mapMultiplyPreviewToActionUi(preview, {

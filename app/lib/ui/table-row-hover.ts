@@ -5,11 +5,16 @@
  * `text-right` for numeric columns.
  */
 export const TABLE_HEADER_CELL =
-  "bg-table-header pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58"
+  "bg-table-header pb-2 pt-2.5 text-[11px] font-medium !uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58"
 
 /** Canonical 33px desktop header strip and 72px populated row geometry. */
 export const TABLE_HEADER_ROW =
-  "h-[33px] bg-table-header text-left text-muted-foreground [&>th]:pb-2 [&>th]:pt-2.5 [&>th]:text-[11px] [&>th]:font-medium [&>th]:uppercase [&>th]:tracking-[0.08em] [&>th]:text-muted-foreground [&>th:first-child]:pl-6 [&>th:last-child]:pr-5 dark:[&>th]:text-white/58"
+  "h-[33px] bg-table-header text-left text-muted-foreground [&>th]:pb-2 [&>th]:pt-2.5 [&>th]:text-[11px] [&>th]:font-medium [&>th]:!uppercase [&>th]:tracking-[0.08em] [&>th]:text-muted-foreground [&>th:first-child]:pl-6 [&>th:last-child]:pr-5 dark:[&>th]:text-white/58"
+
+/** Force uppercase labels — CSS alone is overridden in some sortable header buttons. */
+export function formatTableHeaderLabel(label: string): string {
+  return label.toLocaleUpperCase("en-US")
+}
 
 export const TABLE_BODY_ROW = "h-[72px]"
 

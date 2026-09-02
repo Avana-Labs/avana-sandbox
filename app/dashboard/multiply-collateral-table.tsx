@@ -12,19 +12,27 @@ import {
 } from "@/app/components/market-card-primitives"
 import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
+import { pairedLoopBorrowPx, TOKEN_ICON_TABLE_PAIR_WIDTH_PX, TOKEN_ICON_TABLE_PX } from "@/app/lib/token-icon-sizes"
 import { formatCompactUsd, formatUsdExact } from "@/app/lib/borrow-sim"
 import type { PortfolioMultiplyCollateral } from "@/app/lib/data/providers/portfolio"
 import { healthFactorBand } from "@/app/lib/health/health-factor-bands"
+import {
+  translateMultiplyLoopBorrowLabel,
+  translateMultiplyLoopSupplyLabel,
+} from "@/app/lib/multiply-system/market-labels"
 import { formatHealthFactor } from "@/app/lib/home-sim"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
   TABLE_BODY_ROW,
+  TABLE_HEADER_CELL,
   TABLE_HEADER_ROW,
   TABLE_ROW_HOVER_BG,
   TABLE_ROW_HOVER_LEFT,
   TABLE_ROW_HOVER_RIGHT,
+  formatTableHeaderLabel,
 } from "@/app/lib/ui/table-row-hover"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 const MASK = "••••"
 
@@ -97,9 +105,9 @@ export function MultiplyCollateralTable({
             </colgroup>
             <thead>
               <tr className={TABLE_HEADER_ROW}>
-                <th className="px-5">{t("Loop")}</th>
-                <th className="px-4">{t("Position")}</th>
-                <th className="px-4">{t("Risk")}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-5")}>{formatTableHeaderLabel(t("Loop"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("Position"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("Risk"))}</th>
                 <SilentActionHeader className="!rounded-none pr-5" />
               </tr>
             </thead>
@@ -171,10 +179,20 @@ export function MultiplyCollateralTable({
 }
 
 function PairedTokenIcons({ row }: { row: PortfolioMultiplyCollateral }) {
+  const borrowPx = pairedLoopBorrowPx(TOKEN_ICON_TABLE_PX)
+
   return (
-    <span className="relative block h-12 w-[58px] shrink-0">
+    <span
+      className="relative block shrink-0"
+      style={{ height: TOKEN_ICON_TABLE_PX, width: TOKEN_ICON_TABLE_PAIR_WIDTH_PX }}
+    >
       <TokenIcon symbol={row.collateralToken} size="table" className="absolute left-0 top-0" />
-      <TokenIcon symbol={row.borrowableToken} size="md" className="absolute bottom-0 right-0" />
+      <TokenIcon
+        symbol={row.borrowableToken}
+        size="md"
+        pixelSize={borrowPx}
+        className="absolute bottom-0 right-0 z-10"
+      />
     </span>
   )
 }
@@ -185,8 +203,8 @@ function LoopIdentity({ row }: { row: PortfolioMultiplyCollateral }) {
     <div className="flex min-w-0 items-center gap-3">
       <PairedTokenIcons row={row} />
       <MarketMobileIdentityText
-        title={`${row.collateralToken} ${t("loop")}`}
-        subtitle={`${t("Borrowing")} ${row.borrowableToken}`}
+        title={translateMultiplyLoopSupplyLabel(t, row.collateralToken)}
+        subtitle={translateMultiplyLoopBorrowLabel(t, row.borrowableToken)}
       />
     </div>
   )
@@ -200,10 +218,10 @@ function LoopCell({ row }: { row: PortfolioMultiplyCollateral }) {
         <PairedTokenIcons row={row} />
         <span className="min-w-0">
           <span className="block truncate text-[14px] font-medium text-foreground dark:text-white">
-            {row.collateralToken} {t("loop")}
+            {translateMultiplyLoopSupplyLabel(t, row.collateralToken)}
           </span>
           <span className="mt-0.5 block truncate text-[13px] text-muted-foreground dark:text-white/38">
-            {t("Borrowing")} {row.borrowableToken}
+            {translateMultiplyLoopBorrowLabel(t, row.borrowableToken)}
           </span>
         </span>
       </div>

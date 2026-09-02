@@ -60,6 +60,8 @@ const dict: TranslationDictionary = {
   Value: "가치",
   Utilization: "이용률",
   "Supply & Borrow": "공급 및 대출",
+  "Supply {collateral}": "{collateral} 공급",
+  "Borrow {borrow}": "{borrow} 대출",
   Borrowed: "대출액",
   Available: "사용 가능",
   "Supply APY": "공급 APY",

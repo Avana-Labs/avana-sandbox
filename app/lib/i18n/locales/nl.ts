@@ -60,6 +60,8 @@ const dict: TranslationDictionary = {
   Value: "Waarde",
   Utilization: "Benutting",
   "Supply & Borrow": "Storting & Lenen",
+  "Supply {collateral}": "{collateral} aanbieden",
+  "Borrow {borrow}": "{borrow} Lenen",
   Borrowed: "Geleend",
   Available: "Beschikbaar",
   "Supply APY": "Storting-APY",

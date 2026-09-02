@@ -60,6 +60,8 @@ const dict: TranslationDictionary = {
   Value: "Стоимость",
   Utilization: "Загрузка",
   "Supply & Borrow": "Депозит и заём",
+  "Supply {collateral}": "Внести {collateral}",
+  "Borrow {borrow}": "Занять {borrow}",
   Borrowed: "Заёмные",
   Available: "Доступно",
   "Supply APY": "APY по депозиту",

@@ -116,6 +116,12 @@ const TOKEN_MAP: Record<string, TokenIconMeta> = {
     bgClass: "bg-rose-100",
     textClass: "text-rose-700",
   },
+  CRVUSD: {
+    symbol: "crvUSD",
+    iconUrl: getLocalAssetIcon("crvUSD"),
+    bgClass: "bg-rose-100",
+    textClass: "text-rose-700",
+  },
   CRV: {
     symbol: "CRV",
     iconUrl: getLocalAssetIcon("CRV"),
@@ -238,6 +244,33 @@ const TOKEN_MAP: Record<string, TokenIconMeta> = {
  * so a symbol missing from LOCAL_ASSET_ICON_SLUGS silently pins to the gray placeholder
  * forever. The guardrail asserts no entry falls through that way.
  */
+/** Canonical uppercase symbols → user-facing ticker casing. */
+const DISPLAY_SYMBOL_ALIASES: Record<string, string> = {
+  CRVUSD: "crvUSD",
+  WSTETH: "wstETH",
+  STETH: "stETH",
+  CBETH: "cbETH",
+  WEETH: "weETH",
+  RETH: "rETH",
+  SDAI: "sDAI",
+  CBBTC: "cbBTC",
+  USDE: "USDe",
+}
+
+export function formatTokenDisplaySymbol(symbol: string): string {
+  const trimmed = symbol.trim()
+  if (!trimmed) return trimmed
+
+  const upper = trimmed.toUpperCase()
+  const aliased = DISPLAY_SYMBOL_ALIASES[upper]
+  if (aliased) return aliased
+
+  const mapped = TOKEN_MAP[trimmed] ?? TOKEN_MAP[upper]
+  if (mapped) return mapped.symbol
+
+  return trimmed
+}
+
 export function allTokenIconMetas(): readonly TokenIconMeta[] {
   return Object.values(TOKEN_MAP)
 }
@@ -246,14 +279,13 @@ export function getTokenIconMeta(symbol: string): TokenIconMeta {
   const mapped = TOKEN_MAP[symbol] ?? TOKEN_MAP[symbol.toUpperCase()]
   if (mapped) return mapped
 
-  // Symbol absent from the curated map (e.g. "CRVUSD", whose only TOKEN_MAP keys are
-  // "crvUSD"/"CRV"): fall back to the complete, case-insensitive local-asset alias
-  // map so it still resolves its real icon instead of dropping to a text glyph.
-  // getLocalAssetIcon returns the neutral placeholder for a truly unknown symbol —
-  // treat that as "no icon" so the colored-letter fallback still renders.
+  // Symbol absent from the curated map: fall back to the complete, case-insensitive
+  // local-asset alias map so it still resolves its real icon instead of dropping to
+  // a text glyph. getLocalAssetIcon returns the neutral placeholder for a truly
+  // unknown symbol — treat that as "no icon" so the colored-letter fallback renders.
   const localIcon = getLocalAssetIcon(symbol)
   return {
-    symbol,
+    symbol: formatTokenDisplaySymbol(symbol),
     iconUrl: localIcon === LOCAL_ASSET_ICON_FALLBACK ? undefined : localIcon,
     bgClass: "bg-muted",
     textClass: "text-foreground",

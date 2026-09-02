@@ -58,6 +58,8 @@ const dict: TranslationDictionary = {
   Share: "Participação",
   Utilization: "Utilização",
   "Supply & Borrow": "Fornecimento e empréstimo",
+  "Supply {collateral}": "Fornecer {collateral}",
+  "Borrow {borrow}": "Tomar emprestado {borrow}",
   Borrowed: "Emprestado",
   Available: "Disponível",
   "Supply APY": "APY de fornecimento",

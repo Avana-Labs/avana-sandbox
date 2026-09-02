@@ -279,6 +279,8 @@ const dict: TranslationDictionary = {
   "Supply & Utilization": "供应与利用率",
   "Deposits, borrows, and utilization over time.": "存入、借出和利用率的时间变化。",
   "Supply & Borrow": "供应与借款",
+  "Supply {collateral}": "存入 {collateral}",
+  "Borrow {borrow}": "借入 {borrow}",
   "Leverage usage across this market over time.": "该市场中的杠杆使用随时间变化。",
   "{view} over time": "{view} 随时间变化",
   "Deposit {symbol}": "存入 {symbol}",

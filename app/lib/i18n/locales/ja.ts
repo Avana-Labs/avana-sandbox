@@ -59,6 +59,8 @@ const dict: TranslationDictionary = {
   Share: "シェア",
   Utilization: "利用率",
   "Supply & Borrow": "供給と借入",
+  "Supply {collateral}": "{collateral} を供給",
+  "Borrow {borrow}": "{borrow} を借入",
   Borrowed: "借入額",
   Available: "利用可能",
   "Supply APY": "供給APY",

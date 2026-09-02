@@ -70,6 +70,8 @@ const dict: TranslationDictionary = {
   Value: "Değer",
   Utilization: "Kullanım oranı",
   "Supply & Borrow": "Arz ve Borç",
+  "Supply {collateral}": "{collateral} teminat ver",
+  "Borrow {borrow}": "{borrow} borç al",
   Borrowed: "Borç alınan",
   Available: "Kullanılabilir",
   "Supply APY": "Arz APY",
