@@ -265,12 +265,16 @@ function registerSlashShortcut(open: () => void) {
   }
 }
 
-export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: boolean; tone?: "nav" | "brand" } = {}) {
+export function SearchCommand({
+  iconOnly = false,
+  tone = "nav",
+  initialOpen = false,
+}: { iconOnly?: boolean; tone?: "nav" | "brand"; initialOpen?: boolean } = {}) {
   const router = useRouter()
   const { t } = useTranslation()
   const { compact } = useCurrency()
   const borrowSession = useBorrowSessionContextOptional()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(initialOpen)
   const [query, setQuery] = useState("")
   const [activeTab, setActiveTab] = useState<SearchTab>("all")
   const [results, setResults] = useState<SearchResult[] | null>(null)
@@ -307,12 +311,6 @@ export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: b
   useEffect(() => {
     setResults(null)
   }, [compact])
-
-  // Start result and icon preparation while the header is idle. Opening search
-  // immediately still uses the loading state until the same promise completes.
-  useEffect(() => {
-    void loadResults()
-  }, [loadResults])
 
   useEffect(() => {
     return registerSlashShortcut(() => {

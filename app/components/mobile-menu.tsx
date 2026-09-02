@@ -32,11 +32,12 @@ type MobileMenuView = "root" | "language" | "currency" | "network"
 type MobileMenuProps = {
   actions?: ReactNode
   brand?: ReactNode
+  initialOpen?: boolean
 }
 
-export function MobileMenu({ actions, brand }: MobileMenuProps) {
-  const [open, setOpen] = useState(false)
-  const [renderMenu, setRenderMenu] = useState(false)
+export function MobileMenu({ actions, brand, initialOpen = false }: MobileMenuProps) {
+  const [open, setOpen] = useState(initialOpen)
+  const [renderMenu, setRenderMenu] = useState(initialOpen)
   const [isShown, setIsShown] = useState(false)
   const [settingsIntroActive, setSettingsIntroActive] = useState(false)
   const [view, setView] = useState<MobileMenuView>("root")

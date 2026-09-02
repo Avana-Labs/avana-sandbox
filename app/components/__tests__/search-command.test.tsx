@@ -53,6 +53,11 @@ describe("SearchCommand keyboard navigation", () => {
     return screen.getByRole("combobox")
   }
 
+  it("opens immediately after an intent-loaded trigger requests the module", () => {
+    render(<SearchCommand initialOpen />)
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+  })
+
   it("shows loading state before results arrive, not an empty-results message", async () => {
     render(<SearchCommand />)
     fireEvent.click(screen.getByRole("button", { name: "Search Avana" }))
