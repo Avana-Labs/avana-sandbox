@@ -365,6 +365,9 @@ export type TxHistoryRow = {
   timeLabel?: string
   kind: "supply" | "withdraw" | "borrow" | "repay" | "liquidation" | "rewards" | "cooldown"
   amountLabel: string
+  tokenAmountLabel?: string
+  tokenSymbol?: string
+  tokenSymbolSecondary?: string
   token0AmountLabel?: string
   token1AmountLabel?: string
   counterpartyLabel?: string

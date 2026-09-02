@@ -1046,6 +1046,7 @@ const dict: TranslationDictionary = {
   "This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.":
     "이 위험 없는 Avana 샌드박스에서는 샌드박스 자금으로 연습용 LP 포지션을 담보로 대출하고, 예치하고, 전략을 루프로 실행해 볼 수 있습니다. 실제 자산은 사용하지 않습니다. 지갑 서명도 필요 없습니다. 실제 앱으로 전환하기 전에 Avana의 작동 방식을 빠르게 이해할 수 있는 방법입니다.",
   "Unlimited practice funds": "무제한 연습 자금",
+  "No transactions yet": "아직 거래 없음",
   "No transactions to sign": "서명할 거래 없음",
   "No real assets involved": "실제 자산 없음",
   "Connect a wallet.": "지갑을 연결하세요.",
@@ -1160,7 +1161,7 @@ const dict: TranslationDictionary = {
   "Previous market risk": "이전 마켓 리스크",
   Ready: "준비 완료",
   "Removes in": "제거까지",
-  "Restart": "재시작",
+  Restart: "재시작",
   "Restart cooldown": "쿨다운 다시 시작",
   Stake: "스테이크",
   "Stake in umbrella": "보호에 스테이크",

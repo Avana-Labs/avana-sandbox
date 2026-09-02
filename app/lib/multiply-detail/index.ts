@@ -77,6 +77,9 @@ export type MultiplyTxHistoryRow = {
   timeLabel?: string
   kind: "open" | "add" | "reduce" | "close" | "interest" | "rebalance"
   amountLabel: string
+  tokenAmountLabel?: string
+  tokenSymbol?: string
+  tokenSymbolSecondary?: string
   counterpartyLabel?: string
   walletLabel?: string
   walletHref?: string
@@ -402,6 +405,9 @@ function buildTransactions(row: MultiplyMarketRow): MultiplyTxHistoryRow[] {
       timeLabel: formatRelativeAge(ageMs),
       kind,
       amountLabel: `${prefix}${formatCompactUsd(amount)}`,
+      tokenAmountLabel: formatCompactUsd(amount).replace(/^\$/, ""),
+      tokenSymbol: row.protocol.toUpperCase(),
+      tokenSymbolSecondary: row.asset.toUpperCase(),
       counterpartyLabel: kind === "open" ? `${row.protocol} collateral` : undefined,
       walletLabel: `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
       walletHref: `https://etherscan.io/address/${walletAddress}`,

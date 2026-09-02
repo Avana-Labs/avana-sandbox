@@ -1071,6 +1071,7 @@ const dict: TranslationDictionary = {
   "This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.":
     "Безрисковая песочница Avana позволяет брать займы под тренировочные LP-позиции, кредитовать и зацикливать стратегии, используя средства песочницы. Никаких реальных активов. Никаких подписей кошелька. Просто быстрый способ понять, как работает Avana, прежде чем перейти в рабочее приложение.",
   "Unlimited practice funds": "Неограниченные учебные средства",
+  "No transactions yet": "Пока нет транзакций",
   "No transactions to sign": "Никаких транзакций для подписи",
   "No real assets involved": "Без реальных активов",
   "Connect a wallet.": "Подключите кошелёк.",
@@ -1186,7 +1187,7 @@ const dict: TranslationDictionary = {
   "Previous market risk": "Предыдущий рыночный риск",
   Ready: "Готово",
   "Removes in": "Удалится через",
-  "Restart": "Перезапуск",
+  Restart: "Перезапуск",
   "Restart cooldown": "Перезапустить кулдаун",
   Stake: "Стейк",
   "Stake in umbrella": "Стейкать в Защите",

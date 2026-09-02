@@ -631,6 +631,35 @@ export const getMultiplyHeroSeries = query({
   },
 })
 
+const detailTxKindValidator = v.union(
+  v.literal("supply"),
+  v.literal("withdraw"),
+  v.literal("borrow"),
+  v.literal("repay"),
+  v.literal("liquidation"),
+  v.literal("rewards"),
+  v.literal("open"),
+  v.literal("add"),
+  v.literal("reduce"),
+  v.literal("close"),
+  v.literal("interest"),
+  v.literal("rebalance"),
+)
+
+const detailTxRowValidator = v.object({
+  id: v.string(),
+  at: v.string(),
+  kind: detailTxKindValidator,
+  amountLabel: v.string(),
+  tokenAmountLabel: v.optional(v.string()),
+  tokenSymbol: v.optional(v.string()),
+  tokenSymbolSecondary: v.optional(v.string()),
+  walletLabel: v.string(),
+  counterpartyLabel: v.optional(v.string()),
+  txHashShort: v.string(),
+  source: v.union(v.literal("sandbox"), v.literal("seed")),
+})
+
 /**
  * Recent transactions for a market's detail-page history card.
  * Prefers live sandbox `transactions` for this marketSlug (user activity).
@@ -643,6 +672,7 @@ export const getRecentTransactions = query({
     slug: v.string(),
     limit: v.optional(v.number()),
   },
+  returns: v.array(detailTxRowValidator),
   handler: async (ctx, { scope, slug, limit }) => {
     const take = limit ?? 12
     const sandboxRows = await ctx.db
@@ -656,8 +686,9 @@ export const getRecentTransactions = query({
       .map((r) => ({
         id: String(r._id),
         at: new Date(r.at).toISOString(),
-        kind: mapSandboxTxKind(r.kind),
+        kind: mapSandboxTxKind(scope, r.kind),
         amountLabel: formatCompactUsd(r.amountUsd),
+        ...tokenFieldsFromSandboxRow(r),
         walletLabel: `${r.wallet.slice(0, 6)}…${r.wallet.slice(-4)}`,
         counterpartyLabel: undefined as string | undefined,
         txHashShort: r.syntheticTxHash.slice(0, 10),
@@ -675,11 +706,9 @@ export const getRecentTransactions = query({
     return rows.map((r) => ({
       id: String(r._id),
       at: new Date(r.at).toISOString(),
-      kind:
-        r.kind === "rewardsClaim"
-          ? ("rewards" as const)
-          : (r.kind as "supply" | "withdraw" | "borrow" | "repay" | "liquidation"),
+      kind: mapSeedWalletEventKind(scope, r.kind),
       amountLabel: formatCompactUsd(r.amountUsd),
+      ...tokenFieldsFromMarketSlug(slug, r.amountUsd),
       walletLabel: `${r.wallet.slice(0, 6)}…${r.wallet.slice(-4)}`,
       counterpartyLabel: r.counterparty ? `${r.counterparty.slice(0, 6)}…${r.counterparty.slice(-4)}` : undefined,
       txHashShort: r.txHash.slice(0, 10),
@@ -688,14 +717,68 @@ export const getRecentTransactions = query({
   },
 })
 
-function mapSandboxTxKind(kind: string): "supply" | "withdraw" | "borrow" | "repay" | "liquidation" | "rewards" {
+type DetailTxKind =
+  | "supply"
+  | "withdraw"
+  | "borrow"
+  | "repay"
+  | "liquidation"
+  | "rewards"
+  | "open"
+  | "add"
+  | "reduce"
+  | "close"
+  | "interest"
+  | "rebalance"
+
+function mapSandboxTxKind(scope: MarketScope, kind: string): DetailTxKind {
+  if (scope === "multiply") {
+    if (kind === "multiply") return "open"
+    if (kind === "deleverage") return "reduce"
+    if (kind === "close") return "close"
+    return "rebalance"
+  }
   if (kind === "deposit") return "supply"
   if (kind === "withdraw") return "withdraw"
-  if (kind === "borrow" || kind === "multiply") return "borrow"
-  if (kind === "repay" || kind === "deleverage" || kind === "close") return "repay"
+  if (kind === "borrow") return "borrow"
+  if (kind === "repay") return "repay"
   if (kind === "claim") return "rewards"
   if (kind === "liquidate" || kind === "liquidation") return "liquidation"
   return "supply"
+}
+
+function mapSeedWalletEventKind(scope: MarketScope, kind: string): DetailTxKind {
+  if (scope === "multiply") {
+    if (kind === "supply" || kind === "borrow") return "add"
+    if (kind === "withdraw" || kind === "repay") return "reduce"
+    if (kind === "liquidation") return "close"
+    if (kind === "rewardsClaim") return "interest"
+    return "rebalance"
+  }
+  if (kind === "rewardsClaim") return "rewards"
+  return kind as "supply" | "withdraw" | "borrow" | "repay" | "liquidation"
+}
+
+function tokenFieldsFromSandboxRow(row: { assetId?: string; marketSlug?: string; amountUsd: number }) {
+  const tokenSymbol = normalizeTokenSymbol(row.assetId ?? row.marketSlug ?? "eth")
+  return {
+    tokenSymbol,
+    tokenAmountLabel: formatCompactUsd(row.amountUsd).replace(/^\$/, ""),
+  }
+}
+
+function tokenFieldsFromMarketSlug(slug: string, amountUsd: number) {
+  const tokenSymbol = normalizeTokenSymbol(slug)
+  return {
+    tokenSymbol,
+    tokenAmountLabel: formatCompactUsd(amountUsd).replace(/^\$/, ""),
+  }
+}
+
+function normalizeTokenSymbol(raw: string) {
+  const base = raw.includes(":") ? raw.split(":").pop()! : raw
+  const token = base.split("-").pop() ?? base
+  return token.replace(/[^a-z0-9]/gi, "").toUpperCase() || "ETH"
 }
 
 async function dailyRows(ctx: QueryCtx, marketId: Id<"markets">, range: RangeId): Promise<DailyStatAmounts[]> {

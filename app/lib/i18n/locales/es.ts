@@ -1161,6 +1161,7 @@ const dict: TranslationDictionary = {
   "This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.":
     "Este entorno de práctica de Avana, sin riesgo, te permite pedir prestado con posiciones de LP de práctica, prestar y crear bucles de estrategias con fondos de práctica. Sin activos reales. Sin firmas de billetera. Solo una forma rápida de entender cómo funciona Avana antes de pasar a la app real.",
   "Unlimited practice funds": "Fondos de práctica ilimitados",
+  "No transactions yet": "Aún no hay transacciones",
   "No transactions to sign": "Sin transacciones que firmar",
   "No real assets involved": "Sin activos reales",
   "By connecting your wallet, you agree to the": "Al conectar tu billetera, aceptas los",
@@ -1299,7 +1300,7 @@ const dict: TranslationDictionary = {
   "Previous market risk": "Riesgo de mercado anterior",
   Ready: "Listo",
   "Removes in": "Se elimina en",
-  "Restart": "Reiniciar",
+  Restart: "Reiniciar",
   "Restart cooldown": "Reiniciar enfriamiento",
   Stake: "Stake",
   "Stake in umbrella": "Hacer stake en Protección",

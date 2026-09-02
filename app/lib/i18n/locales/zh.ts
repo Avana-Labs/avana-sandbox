@@ -1105,6 +1105,7 @@ const dict: TranslationDictionary = {
   "This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.":
     "这个零风险的 Avana 沙盒让你使用沙盒资金，以练习 LP 仓位借款、放贷并循环运用各种策略。不涉及真实资产。无需钱包签名。让你在切换到正式应用前，快速了解 Avana 的运作方式。",
   "Unlimited practice funds": "无限练习资金",
+  "No transactions yet": "暂无交易",
   "No transactions to sign": "无需签署交易",
   "No real assets involved": "不涉及真实资产",
   "By connecting your wallet, you agree to the": "连接钱包即表示你同意",
@@ -1240,7 +1241,7 @@ const dict: TranslationDictionary = {
   "Previous market risk": "上次市场风险",
   Ready: "就绪",
   "Removes in": "剩余移除时间",
-  "Restart": "重启",
+  Restart: "重启",
   "Restart cooldown": "重新开始冷却",
   Stake: "质押",
   "Stake in umbrella": "在保护中质押",

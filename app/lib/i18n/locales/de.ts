@@ -1069,6 +1069,7 @@ const dict: TranslationDictionary = {
   "Welcome to the Avana Sandbox": "Willkommen in der Avana-Sandbox",
   "This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.":
     "In dieser risikofreien Avana-Sandbox kannst du gegen Übungs-LP-Positionen leihen, verleihen und Strategien loopen – mit Sandbox-Guthaben. Keine echten Assets. Keine Wallet-Signaturen. Einfach schnell verstehen, wie Avana funktioniert, bevor du zur Live-App wechselst.",
+  "No transactions yet": "Noch keine Transaktionen",
   "No transactions to sign": "Keine Transaktionen zu signieren",
   "Connect a wallet.": "Verbinde ein Wallet.",
   "We'll set up your sandbox and scope it to your address.":
@@ -1229,7 +1230,7 @@ const dict: TranslationDictionary = {
   "Previous market risk": "Vorheriges Marktrisiko",
   Ready: "Bereit",
   "Removes in": "Entfällt in",
-  "Restart": "Neu starten",
+  Restart: "Neu starten",
   "Restart cooldown": "Cooldown neu starten",
   Stake: "Stake",
   "Stake in umbrella": "In Schutz staken",

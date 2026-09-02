@@ -9,11 +9,11 @@ describe("borrow pledge vocabulary", () => {
     expect(isValidAction("borrow", "pledge")).toBe(true)
 
     const history = readFileSync(
-      resolve(__dirname, "../../borrow/_detail/pool-sections/CollateralHistoryCard.tsx"),
+      resolve(__dirname, "../../components/detail-transaction-table/kind-configs.ts"),
       "utf8",
     )
-    expect(history).toMatch(/id: "borrow", label: "Borrow"/)
-    expect(history).toMatch(/id: "repay", label: "Repay"/)
+    expect(history).toMatch(/borrow: "Borrow"/)
+    expect(history).toMatch(/repay: "Repay"/)
 
     const client = readFileSync(
       resolve(__dirname, "../../components/action-page/borrow-action-page-client.tsx"),

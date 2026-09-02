@@ -234,6 +234,8 @@ function buildTransactions(market: LendMarket): TxHistoryRow[] {
       timeLabel: formatRelativeAge(ageMs),
       kind,
       amountLabel: `${kind === "withdraw" ? "-" : "+"}${formatCompactUsd(amount)}`,
+      tokenAmountLabel: formatCompactUsd(amount).replace(/^\$/, ""),
+      tokenSymbol: market.asset.symbol,
       walletLabel,
       walletHref: `https://etherscan.io/address/${walletAddress}`,
       txHashShort: `0x${Math.floor(rand() * 0xffffff)

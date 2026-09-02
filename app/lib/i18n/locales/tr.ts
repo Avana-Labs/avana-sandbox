@@ -1060,6 +1060,7 @@ const dict: TranslationDictionary = {
   "Welcome to the Avana Sandbox": "Avana Test Ortamına Hoş Geldiniz",
   "This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.":
     "Bu risksiz Avana Test Ortamı, test fonlarını kullanarak alıştırma LP pozisyonları karşılığında borç almanıza, borç vermenize ve stratejileri döngüye almanıza olanak tanır. Gerçek varlık yok. Cüzdan imzası yok. Sadece canlı uygulamaya geçmeden önce Avana'nın nasıl çalıştığını anlamanın hızlı bir yolu.",
+  "No transactions yet": "Henüz işlem yok",
   "No transactions to sign": "İmzalanacak işlem yok",
   "Connect a wallet.": "Bir cüzdan bağlayın.",
   "We'll set up your sandbox and scope it to your address.": "Test ortamınızı kurup adresinize özel hale getireceğiz.",
@@ -1174,7 +1175,7 @@ const dict: TranslationDictionary = {
   "Previous market risk": "Önceki piyasa riski",
   Ready: "Hazır",
   "Removes in": "Kaldırılma süresi",
-  "Restart": "Yeniden başlat",
+  Restart: "Yeniden başlat",
   "Restart cooldown": "Cooldown'ı yeniden başlat",
   Stake: "Stake",
   "Stake in umbrella": "Koruma'da stake et",

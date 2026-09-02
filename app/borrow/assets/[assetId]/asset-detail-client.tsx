@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { ActionIcon } from "@/app/components/action-icon"
@@ -23,6 +24,9 @@ import { withGovernanceParameterView } from "@/app/borrow/_detail/lib/governance
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { AssetTokenSidebar } from "@/app/borrow/_detail/sidebars"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { BORROW_ASSET_KIND_CONFIG } from "@/app/components/detail-transaction-table/detail-market-transactions"
+import { mapBorrowSessionRows, mapBorrowTxRow } from "@/app/lib/detail-page/transaction-history"
 import { cn } from "@/lib/utils"
 
 const DetailFaqSection = dynamic(() => import("@/app/borrow/_detail/ui").then((mod) => mod.DetailFaqSection), {
@@ -41,8 +45,11 @@ const CashflowCard = dynamic(
   () => import("@/app/borrow/_detail/pool-sections/CashflowCard").then((mod) => mod.CashflowCard),
   { ssr: false, loading: () => <DeferredBlock className="h-[240px]" /> },
 )
-const TransactionHistoryCard = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections").then((mod) => mod.TransactionHistoryCard),
+const DetailMarketTransactionsDeferred = dynamic(
+  () =>
+    import("@/app/components/detail-transaction-table/detail-market-transactions").then(
+      (mod) => mod.DetailMarketTransactions,
+    ),
   { ssr: false, loading: () => <DeferredBlock className="h-[360px]" /> },
 )
 const RiskSection = dynamic(() => import("@/app/borrow/_detail/pool-sections").then((mod) => mod.RiskSection), {
@@ -67,8 +74,14 @@ export function AssetDetailClient({
   cashflowPreload = null,
 }: Props) {
   const { t } = useTranslation()
+  const session = useBorrowSessionContext()
   const closeHref = `/borrow/assets/${detail.row.id}`
   const about = withGovernanceParameterView(detail.about, detail.protocolParameters)
+  const seedRows = React.useMemo(() => detail.transactions.map(mapBorrowTxRow), [detail.transactions])
+  const sessionRows = React.useMemo(
+    () => mapBorrowSessionRows(session.transactionHistory, detail.row.id, detail.hero.symbol),
+    [detail.hero.symbol, detail.row.id, session.transactionHistory],
+  )
   return (
     <div className="min-h-screen bg-background text-foreground">
       <main className="pb-24 pt-12 md:pb-12 md:pt-14">
@@ -130,7 +143,14 @@ export function AssetDetailClient({
                       title={t("General FAQs")}
                       items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
                     />
-                    <TransactionHistoryCard transactions={detail.transactions} assetSymbol={detail.hero.symbol} />
+                    <DetailMarketTransactionsDeferred
+                      scope="asset"
+                      slug={detail.row.id}
+                      seedRows={seedRows}
+                      sessionRows={sessionRows}
+                      kindConfig={BORROW_ASSET_KIND_CONFIG}
+                      context={{ assetSymbol: detail.hero.symbol }}
+                    />
                     <DetailPageNotice product="borrow" />
                   </DeferredDetailContent>
                 </section>

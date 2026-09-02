@@ -1066,6 +1066,7 @@ const dict: TranslationDictionary = {
   "This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.":
     "In deze risicovrije Avana-sandbox kun je lenen tegen oefen-LP-posities, uitlenen en strategieën loopen met sandboxgeld. Geen echte assets. Geen wallet-handtekeningen. Gewoon een snelle manier om te begrijpen hoe Avana werkt voordat je naar de live app overschakelt.",
   "Unlimited practice funds": "Onbeperkt oefengeld",
+  "No transactions yet": "Nog geen transacties",
   "No transactions to sign": "Geen transacties om te ondertekenen",
   "No real assets involved": "Geen echte activa",
   "Connect a wallet.": "Verbind een wallet.",
@@ -1179,7 +1180,7 @@ const dict: TranslationDictionary = {
   "Previous market risk": "Vorig marktrisico",
   Ready: "Klaar",
   "Removes in": "Verwijderd over",
-  "Restart": "Opnieuw",
+  Restart: "Opnieuw",
   "Restart cooldown": "Cooldown opnieuw starten",
   Stake: "Stake",
   "Stake in umbrella": "Staken in Protectie",
