@@ -210,4 +210,65 @@ describe("useRewardsSession", () => {
       expect(revisionsSeen[0]).toBe(0)
     })
   })
+
+  it("does not save without expectedRevision when persist turns on before remote loads", async () => {
+    const walletId = "demo-wallet"
+    const remote = buildRewardsSessionSeed()
+    const persistRemoteState = vi.fn(async (args: { expectedRevision?: number }) => ({
+      revision: (args.expectedRevision ?? 0) + 1,
+      stale: false,
+    }))
+
+    // Non-rewards route: null remote, no persist (local hydrate only).
+    const { result, rerender } = renderHook(
+      ({
+        remoteState,
+        remoteRevision,
+        persist,
+      }: {
+        remoteState: string | null | undefined
+        remoteRevision: number | null | undefined
+        persist?: typeof persistRemoteState
+      }) =>
+        useRewardsSession({
+          walletId,
+          sessionSeed: remote,
+          persistState: false,
+          remoteState,
+          remoteRevision,
+          persistRemoteState: persist,
+        }),
+      {
+        initialProps: {
+          remoteState: null as string | null | undefined,
+          remoteRevision: null as number | null | undefined,
+          persist: undefined as typeof persistRemoteState | undefined,
+        },
+      },
+    )
+
+    await waitFor(() => expect(result.current.hasHydratedStorage).toBe(true))
+    await act(async () => {
+      await result.current.completeEducation()
+    })
+    expect(persistRemoteState).not.toHaveBeenCalled()
+
+    // Rewards route mounts: persist enabled while getState is still loading.
+    rerender({ remoteState: undefined, remoteRevision: undefined, persist: persistRemoteState })
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(persistRemoteState).not.toHaveBeenCalled()
+
+    // Snapshot arrives — only then may writes include expectedRevision.
+    rerender({ remoteState: remote, remoteRevision: 61, persist: persistRemoteState })
+    await waitFor(() => expect(result.current.hasHydratedStorage).toBe(true))
+    await act(async () => {
+      await result.current.completeEducation()
+    })
+    await waitFor(() => expect(persistRemoteState).toHaveBeenCalled())
+    expect(persistRemoteState.mock.calls.every((call) => call[0].expectedRevision === 61 || call[0].expectedRevision === 62)).toBe(
+      true,
+    )
+  })
 })

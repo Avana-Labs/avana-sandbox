@@ -60,7 +60,8 @@ export function useRewardsSession({
       lastRemoteStateRef.current = remoteState
       // Server treats missing revision as 0 (`existing.revision ?? 0`). Mirror that
       // whenever a remote row exists so the next saveState includes expectedRevision.
-      if (remoteState) rewardsRevisionRef.current = remoteRevision ?? 0
+      // Confirmed-empty remote clears the ref so the next write is a create.
+      rewardsRevisionRef.current = remoteState ? (remoteRevision ?? 0) : undefined
       setState(chosen)
       setHasHydratedStorage(true)
       return
@@ -73,11 +74,17 @@ export function useRewardsSession({
   useEffect(() => {
     if (!hasHydratedStorage) return
     if (!persistState) {
+      // Wait until Convex getState has resolved for this route. Navigating onto a
+      // rewards-scoped page enables persistRemoteState while hasHydratedStorage can
+      // still be true from a prior null-remote (non-rewards) route — saving then
+      // omits expectedRevision and hits REVISION_REQUIRED against the existing row.
+      if (remoteState === undefined || !persistRemoteState) return
+      if (remoteState !== null && rewardsRevisionRef.current == null) return
       const serialized = JSON.stringify(state)
       // Durable write-through: mirror to localStorage so a failed/unreachable Convex
       // save doesn't drop the claim on the next navigation (hydration picks it up).
       writeRewardsSessionState(walletId, state)
-      if (serialized === lastRemoteStateRef.current || !persistRemoteState) return
+      if (serialized === lastRemoteStateRef.current) return
       lastRemoteStateRef.current = serialized
       // Seed revision inside the lock before the next queued write runs. Updating
       // outside the lock races: create → queued update still sees undefined
@@ -103,7 +110,7 @@ export function useRewardsSession({
     queueMicrotask(() => {
       isPersistingRef.current = false
     })
-  }, [hasHydratedStorage, persistRemoteState, persistState, walletId, state])
+  }, [hasHydratedStorage, persistRemoteState, persistState, remoteState, walletId, state])
 
   useEffect(() => {
     if (!persistState || typeof window === "undefined") return undefined

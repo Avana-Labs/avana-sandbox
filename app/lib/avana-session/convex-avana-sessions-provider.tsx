@@ -339,21 +339,22 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
   return (
     <AvanaSessionsProvider
       walletId={walletId}
-      persistBorrowTransaction={persistBorrowTransaction}
-      persistLendTransaction={persistLendTransaction}
-      persistMultiplyTransaction={persistMultiplyTransaction}
-      persistSwapTransaction={persistSwapTransaction}
-      serverGetSwapQuote={serverGetSwapQuote}
+      // Scope-gate every Convex writer. A skipped query forces remote=null/[] while the
+      // session hook still looks "hydrated"; an ungated persist then writes without OCC
+      // context (REVISION_REQUIRED) or against empty local state. Same class of bug as
+      // rewards saveState on `/` → `/dashboard`.
+      persistBorrowTransaction={scope.walletSession ? persistBorrowTransaction : undefined}
+      persistLendTransaction={scope.walletSession ? persistLendTransaction : undefined}
+      persistMultiplyTransaction={scope.walletSession ? persistMultiplyTransaction : undefined}
+      persistSwapTransaction={scope.swapTransactions ? persistSwapTransaction : undefined}
+      serverGetSwapQuote={scope.swapTransactions ? serverGetSwapQuote : undefined}
       remoteSwapTransactions={remoteSwapTransactions}
       remoteRewardsState={remoteRewardsState}
       remoteRewardsRevision={remoteRewardsRevision}
-      // Only write rewards when this route owns the rewards subscription. Otherwise
-      // remoteState is forced to null (query skipped) and a create-without-revision
-      // hits REVISION_REQUIRED against an existing Convex row.
       persistRewardsState={scope.rewards ? persistRewardsState : undefined}
       persistLocalState={false}
       remoteUmbrellaState={remoteUmbrellaState}
-      persistUmbrellaAction={persistUmbrellaAction}
+      persistUmbrellaAction={scope.umbrella ? persistUmbrellaAction : undefined}
       persistUmbrellaState={false}
       sessionSource="convex"
       authoritativeWalletPending={scope.walletSession ? walletHydrationPending : false}
