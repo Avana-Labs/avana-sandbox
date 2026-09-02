@@ -19,7 +19,7 @@ import { v } from "convex/values"
 import { internalMutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
 import type { Id } from "./_generated/dataModel"
 import { internal } from "./_generated/api"
-import { foldDeltas } from "./liquidity"
+import { foldDeltas, appendLiquidityDelta } from "./liquidity"
 
 /** Single cache row discriminator (see `marketSnapshotsCache` in schema.ts). */
 const SNAPSHOTS_SINGLETON = "markets"
@@ -495,7 +495,7 @@ export const rollupDailyStats = internalMutation({
       // Rebase the running ledger to zero for this market: the delta is now baked into
       // the persisted daily row, so the accumulator restarts from the fresh snapshot.
       if (d.supplied !== 0 || d.borrowed !== 0) {
-        await ctx.db.insert("marketLiquidityDeltas", {
+        await appendLiquidityDelta(ctx, {
           marketSlug: market.slug,
           borrowedDeltaUsd: -d.borrowed,
           suppliedDeltaUsd: -d.supplied,
@@ -505,9 +505,8 @@ export const rollupDailyStats = internalMutation({
       }
     }
 
-    // Refresh the shared caches so every surface reads the flushed snapshot + zeroed
-    // delta right away instead of waiting for the 5-minute rebuild crons.
-    await ctx.scheduler.runAfter(0, internal.liquidity.rebuildDeltaSnapshot, {})
+    // Aggregate liquidity cache is bumped inside appendLiquidityDelta. Refresh market
+    // snapshot cache so chart surfaces see the flushed daily rows immediately.
     await ctx.scheduler.runAfter(0, internal.markets.rebuildMarketSnapshots, {})
 
     return { day: today, written, rebased }
