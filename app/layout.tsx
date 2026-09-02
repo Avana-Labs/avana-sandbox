@@ -12,7 +12,7 @@ import { ThemeProvider } from "./components/theme-provider"
 import { DisplayPreferencesProvider } from "./components/display-preferences"
 import { WalletGateProvider } from "./lib/web3/wallet-gate"
 import { SiweServerSessionProvider } from "./lib/siwe/use-siwe-auth"
-import { verifySandboxJwt } from "./lib/siwe/jwt"
+import { verifySiweSessionJwt } from "./lib/siwe/jwt"
 import { Web3ProviderBoundary } from "./lib/web3/web3-provider-boundary"
 import { PageLoadingBar } from "./components/page-loading-bar"
 import { ScrollResetOnNavigate } from "./components/scroll-reset-on-navigate"
@@ -137,14 +137,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const [initialTokenPrices, initialFxRates] = await Promise.all([loadServerTokenPrices(), loadServerFxRates()])
   // Per-request CSP nonce (set by middleware) for the inline theme-bootstrap script below.
   const nonce = (await headers()).get("x-nonce") ?? undefined
-  // Server-readable session: the client mirrors its SIWE JWT into the `avana_siwe` cookie
-  // (app/lib/siwe/auth-store.ts). Re-verifying it here (signature + expiry, no network) tells us
-  // definitively whether this visitor is signed in; the SIWE store hydrates from this snapshot so
-  // SandboxGate SSRs the onboarding hero for guests and the product for signed-in users.
+  // Server-owned HttpOnly SIWE session. Re-verifying it here (signature + expiry, no network)
+  // tells us whether this visitor is signed in; only the wallet metadata is handed to the client.
   const jar = await cookies()
   const sessionJwt = jar.get("avana_siwe")?.value
-  const verified = sessionJwt ? verifySandboxJwt(sessionJwt) : null
-  const serverSession = verified && sessionJwt ? { jwt: sessionJwt, wallet: verified.wallet } : null
+  const verified = sessionJwt ? verifySiweSessionJwt(sessionJwt) : null
+  const serverSession = verified ? { wallet: verified.wallet } : null
   // Wallet that last finished onboarding on this browser (set by the gate checker). Only honoured
   // when it names the verified session wallet, so the product is server-rendered for returning
   // users while a different/new wallet still waits for Convex behind the skeleton.

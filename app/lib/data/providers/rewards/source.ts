@@ -92,7 +92,7 @@ function buildRewardsPageData(wallet: string, state: RewardsSessionState): DataS
 export const liveRewardsPageSource: RewardsPageSource = {
   adapter: liveRewardsPageAdapter,
   async getRewardsPageData(input) {
-    const { client, wallet } = getAuthenticatedConvexClient(liveRewardsPageAdapter.id, "getRewardsPageData")
+    const { client, wallet } = await getAuthenticatedConvexClient(liveRewardsPageAdapter.id, "getRewardsPageData")
     if (input.walletProfileId && input.walletProfileId.toLowerCase() !== wallet) {
       throw new Error("Requested rewards do not match the authenticated wallet.")
     }

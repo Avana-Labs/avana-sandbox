@@ -13,8 +13,11 @@ import crypto from "node:crypto"
 
 type Jwk = JsonWebKey & { kid?: string; alg?: string; use?: string }
 
-const AUDIENCE = "convex"
-const TTL_SECONDS = 60 * 60 // 1h
+const CONVEX_AUDIENCE = "convex"
+const SESSION_AUDIENCE = "avana-session"
+const ACCESS_TTL_SECONDS = 15 * 60
+const GUEST_TTL_SECONDS = 60 * 60
+const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60
 
 function b64url(input: Buffer | string): string {
   return Buffer.from(input).toString("base64url")
@@ -60,17 +63,21 @@ export function resolveIssuer(requestOrigin: string): string {
 }
 
 /** Mint an RS256 JWT carrying the supplied identity claims. */
-function mintJwt(payloadClaims: Record<string, unknown>, issuer: string): string {
+function mintJwt(
+  payloadClaims: Record<string, unknown>,
+  issuer: string,
+  { audience, ttlSeconds }: { audience: string; ttlSeconds: number },
+): string {
   const jwk = privateJwk()
   const key = crypto.createPrivateKey({ key: jwk as crypto.JsonWebKeyInput["key"], format: "jwk" })
   const now = Math.floor(Date.now() / 1000)
   const header = { alg: "RS256", typ: "JWT", kid: jwk.kid }
   const payload = {
     iss: issuer,
-    aud: AUDIENCE,
+    aud: audience,
     iat: now,
     nbf: now,
-    exp: now + TTL_SECONDS,
+    exp: now + ttlSeconds,
     ...payloadClaims,
   }
   const signingInput = `${b64url(JSON.stringify(header))}.${b64url(JSON.stringify(payload))}`
@@ -85,7 +92,10 @@ function mintJwt(payloadClaims: Record<string, unknown>, issuer: string): string
  * (see app/lib/siwe/auth-store.ts); it never authorizes anything — Convex still verifies the
  * bearer token independently on every authed call. Returns null for anything not trustworthy.
  */
-export function verifySandboxJwt(token: string): { wallet: string; exp: number } | null {
+function verifyWalletJwt(
+  token: string,
+  { audience, scope }: { audience: string; scope: "wallet" | "session" },
+): { wallet: string; exp: number } | null {
   const parts = token.split(".")
   if (parts.length !== 3) return null
   const [encodedHeader, encodedPayload, encodedSignature] = parts as [string, string, string]
@@ -107,7 +117,7 @@ export function verifySandboxJwt(token: string): { wallet: string; exp: number }
       wallet?: unknown
     }
     const now = Math.floor(Date.now() / 1000)
-    if (payload.aud !== AUDIENCE || payload.scope !== "wallet") return null
+    if (payload.aud !== audience || payload.scope !== scope) return null
     if (typeof payload.exp !== "number" || payload.exp <= now) return null
     if (typeof payload.wallet !== "string" || !/^0x[0-9a-f]{40}$/.test(payload.wallet)) return null
     return { wallet: payload.wallet, exp: payload.exp }
@@ -116,10 +126,34 @@ export function verifySandboxJwt(token: string): { wallet: string; exp: number }
   }
 }
 
+/** Verify a short-lived Convex bearer token minted by this app. */
+export function verifySandboxJwt(token: string): { wallet: string; exp: number } | null {
+  return verifyWalletJwt(token, { audience: CONVEX_AUDIENCE, scope: "wallet" })
+}
+
+/** Verify the server-owned browser session. This token is never accepted by Convex. */
+export function verifySiweSessionJwt(token: string): { wallet: string; exp: number } | null {
+  return verifyWalletJwt(token, { audience: SESSION_AUDIENCE, scope: "session" })
+}
+
 /** Mint a wallet identity after SIWE verification. */
 export function mintSandboxJwt(wallet: string, issuer: string): string {
   const normalized = wallet.toLowerCase()
-  return mintJwt({ sub: normalized, wallet: normalized, scope: "wallet" }, issuer)
+  return mintJwt(
+    { sub: normalized, wallet: normalized, scope: "wallet" },
+    issuer,
+    { audience: CONVEX_AUDIENCE, ttlSeconds: ACCESS_TTL_SECONDS },
+  )
+}
+
+/** Mint the HttpOnly browser session used to request short-lived Convex access tokens. */
+export function mintSiweSessionJwt(wallet: string, issuer: string): string {
+  const normalized = wallet.toLowerCase()
+  return mintJwt(
+    { sub: normalized, wallet: normalized, scope: "session" },
+    issuer,
+    { audience: SESSION_AUDIENCE, ttlSeconds: SESSION_TTL_SECONDS },
+  )
 }
 
 /**
@@ -128,5 +162,9 @@ export function mintSandboxJwt(wallet: string, issuer: string): string {
  */
 export function mintAskGuestJwt(guestId: string, issuer: string): string {
   if (!/^[0-9a-f-]{36}$/i.test(guestId)) throw new Error("Invalid Ask AI guest id")
-  return mintJwt({ sub: `ask-guest:${guestId.toLowerCase()}`, scope: "ask-ai" }, issuer)
+  return mintJwt(
+    { sub: `ask-guest:${guestId.toLowerCase()}`, scope: "ask-ai" },
+    issuer,
+    { audience: CONVEX_AUDIENCE, ttlSeconds: GUEST_TTL_SECONDS },
+  )
 }

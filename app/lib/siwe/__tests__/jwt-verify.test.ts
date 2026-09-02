@@ -1,6 +1,12 @@
 import crypto from "node:crypto"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
-import { mintAskGuestJwt, mintSandboxJwt, verifySandboxJwt } from "../jwt"
+import {
+  mintAskGuestJwt,
+  mintSandboxJwt,
+  mintSiweSessionJwt,
+  verifySandboxJwt,
+  verifySiweSessionJwt,
+} from "../jwt"
 
 const WALLET = "0x1111111111111111111111111111111111111111"
 const previous = process.env.SIWE_JWT_PRIVATE_JWK
@@ -14,7 +20,7 @@ afterAll(() => {
   else process.env.SIWE_JWT_PRIVATE_JWK = previous
 })
 
-describe("verifySandboxJwt (server-readable session cookie)", () => {
+describe("SIWE JWT purposes", () => {
   it("accepts a wallet token we minted and returns its wallet", () => {
     const token = mintSandboxJwt(WALLET, "https://avana.test")
     expect(verifySandboxJwt(token)?.wallet).toBe(WALLET)
@@ -32,6 +38,15 @@ describe("verifySandboxJwt (server-readable session cookie)", () => {
     expect(verifySandboxJwt(mintAskGuestJwt(crypto.randomUUID(), "https://avana.test"))).toBeNull()
     expect(verifySandboxJwt("not.a.jwt")).toBeNull()
     expect(verifySandboxJwt("")).toBeNull()
+  })
+
+  it("keeps browser sessions and Convex bearer tokens purpose-bound", () => {
+    const session = mintSiweSessionJwt(WALLET, "https://avana.test")
+    const access = mintSandboxJwt(WALLET, "https://avana.test")
+
+    expect(verifySiweSessionJwt(session)?.wallet).toBe(WALLET)
+    expect(verifySandboxJwt(session)).toBeNull()
+    expect(verifySiweSessionJwt(access)).toBeNull()
   })
 
   it("rejects a token signed by a different key", () => {

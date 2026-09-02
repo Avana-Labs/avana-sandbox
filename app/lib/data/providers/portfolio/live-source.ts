@@ -1,6 +1,9 @@
 import { createDataSourceAdapter } from "@/app/lib/data/core/source-runtime"
 import { api } from "@/convex/_generated/api"
-import { getAuthenticatedConvexClient } from "@/app/lib/data/providers/live-convex-client"
+import {
+  getAuthenticatedConvexClient,
+  getAuthenticatedWallet,
+} from "@/app/lib/data/providers/live-convex-client"
 import { MULTIPLY_LIQUIDATION_THRESHOLD_FACTOR, worstMultiplyHealthFactor } from "@/app/lib/multiply-system/read-model"
 import { liquidationThresholdPctFromMaxLtvPct } from "@/app/lib/borrow-system/liquidation-threshold"
 import type {
@@ -24,10 +27,13 @@ export const livePortfolioPageAdapter = createDataSourceAdapter({
 export const livePortfolioPageSource: PortfolioPageSource = {
   adapter: livePortfolioPageAdapter,
   getDefaultWalletProfileId() {
-    return getAuthenticatedConvexClient(livePortfolioPageAdapter.id, "getDefaultWalletProfileId").wallet
+    return getAuthenticatedWallet(livePortfolioPageAdapter.id, "getDefaultWalletProfileId").wallet
   },
   async getPortfolioPageRecords(walletProfileId) {
-    const { client, wallet } = getAuthenticatedConvexClient(livePortfolioPageAdapter.id, "getPortfolioPageRecords")
+    const { client, wallet } = await getAuthenticatedConvexClient(
+      livePortfolioPageAdapter.id,
+      "getPortfolioPageRecords",
+    )
     if (walletProfileId && walletProfileId.toLowerCase() !== wallet) {
       throw new Error("Requested portfolio does not match the authenticated wallet.")
     }

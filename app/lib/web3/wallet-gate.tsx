@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
-import { getSiweToken, subscribeSiwe } from "@/app/lib/siwe/auth-store"
+import { getSiweSession, subscribeSiwe } from "@/app/lib/siwe/auth-store"
 import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 import { scheduleIdle } from "./schedule-idle"
 
@@ -79,13 +79,13 @@ export function WalletGateProvider({ children }: { children: ReactNode }) {
     const startWhenSettled = () => {
       cancelIdle = scheduleIdle(activate, 8000)
     }
-    const hasToken = getSiweToken() != null
+    const hasToken = getSiweSession() != null
     if (hasToken && document.readyState === "complete") startWhenSettled()
     else if (hasToken) window.addEventListener("load", startWhenSettled, { once: true })
     // A token can also appear later — e.g. sign-in completing in another tab. That is a direct
     // response to user intent, so mount immediately rather than waiting for idle.
     const unsubscribe = subscribeSiwe(() => {
-      if (getSiweToken() != null) activate()
+      if (getSiweSession() != null) activate()
     })
     return () => {
       window.removeEventListener("load", startWhenSettled)

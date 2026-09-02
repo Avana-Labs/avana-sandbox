@@ -1,168 +1,153 @@
 "use client"
 
-import { getJwtExpirySeconds } from "./token-expiry"
+import { isJwtExpired } from "./token-expiry"
 
-/**
- * Tiny external store for the SIWE session token. Kept outside React context so the
- * `ConvexProviderWithAuth` useAuth hook and the sign-in UI read the same token without
- * provider-nesting constraints.
- *
- * Persistence is a first-party cookie (`avana_siwe`) holding the short-lived JWT, mirrored to
- * sessionStorage for the fast same-tab path. The cookie exists so the SERVER can know, at
- * request time, whether the visitor is signed in: the root layout re-verifies the JWT's
- * signature/expiry (app/lib/siwe/jwt.ts) and either server-renders the guest onboarding hero
- * or hands the session to the client as the hydration snapshot — so neither state is gated
- * behind a "we don't know yet" placeholder. The cookie is a rendering hint only: no server
- * route accepts it as a credential (Convex verifies the bearer JWT it receives over the
- * WebSocket), so it carries no CSRF surface. It is JS-readable on purpose — the same exposure
- * sessionStorage already had — so the client store can hydrate synchronously with no fetch.
- */
-
+/** Public client state. The bearer credential is deliberately not part of it. */
+export type SiweSession = { wallet: string }
 export type SiweToken = { jwt: string; wallet: string }
 
-const STORAGE_KEY = "avana.siwe.token.v1"
-const LEGACY_LOCAL_STORAGE_KEY = STORAGE_KEY
-export const SIWE_SESSION_COOKIE = "avana_siwe"
-// Pre-cookie presence hint; cleared on sight so old browsers don't carry a stale cookie around.
-const LEGACY_HINT_COOKIE = "avana_auth_hint"
+const AUTH_EVENT_KEY = "avana.siwe.event.v2"
+const LEGACY_STORAGE_KEY = "avana.siwe.token.v1"
+const CHANNEL_NAME = "avana-auth"
 
-function readCookie(name: string): string | null {
-  try {
-    for (const part of document.cookie.split("; ")) {
-      if (part.startsWith(`${name}=`)) return decodeURIComponent(part.slice(name.length + 1))
-    }
-  } catch {
-    // cookies unavailable
-  }
-  return null
-}
-
-function cookieAttrs() {
-  const secure = typeof location !== "undefined" && location.protocol === "https:" ? "; secure" : ""
-  return `path=/; samesite=lax${secure}`
-}
-
-function writeSessionCookie(jwt: string) {
-  try {
-    const exp = getJwtExpirySeconds(jwt)
-    const maxAge = exp == null ? 60 * 60 : Math.max(0, exp - Math.floor(Date.now() / 1000))
-    document.cookie = `${SIWE_SESSION_COOKIE}=${encodeURIComponent(jwt)}; max-age=${maxAge}; ${cookieAttrs()}`
-  } catch {
-    // cookies unavailable (private mode) — the in-memory/sessionStorage token still works
-  }
-}
-
-function clearCookie(name: string) {
-  try {
-    document.cookie = `${name}=; max-age=0; ${cookieAttrs()}`
-  } catch {
-    // ignore
-  }
-}
-
-/** Wallet claim of a JWT we minted (`sub` = lowercase address), or null if unreadable. */
-function walletFromJwt(jwt: string): string | null {
-  const payload = jwt.split(".")[1]
-  if (!payload) return null
-  try {
-    const claims = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/"))) as { wallet?: unknown }
-    return typeof claims.wallet === "string" && /^0x[0-9a-f]{40}$/.test(claims.wallet) ? claims.wallet : null
-  } catch {
-    return null
-  }
-}
-
-let current: SiweToken | null = null
-let loaded = false
+let current: SiweSession | null = null
+let accessToken: SiweToken | null = null
+let refreshPromise: Promise<string | null> | null = null
+let channel: BroadcastChannel | null = null
 const listeners = new Set<() => void>()
-
-function ensureLoaded() {
-  if (loaded || typeof window === "undefined") return
-  loaded = true
-  try {
-    const raw = window.sessionStorage.getItem(STORAGE_KEY)
-    current = raw ? (JSON.parse(raw) as SiweToken) : null
-    window.localStorage.removeItem(LEGACY_LOCAL_STORAGE_KEY)
-  } catch {
-    current = null
-  }
-  if (current === null) {
-    // New tab / restored browser: the cookie is the durable copy.
-    const jwt = readCookie(SIWE_SESSION_COOKIE)
-    const wallet = jwt ? walletFromJwt(jwt) : null
-    if (jwt && wallet) {
-      current = { jwt, wallet }
-      try {
-        window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(current))
-      } catch {
-        // ignore
-      }
-    } else if (jwt) {
-      clearCookie(SIWE_SESSION_COOKIE)
-    }
-  }
-  if (readCookie(LEGACY_HINT_COOKIE) != null) clearCookie(LEGACY_HINT_COOKIE)
-}
 
 function emit() {
   for (const listener of listeners) listener()
 }
 
-/**
- * Storage cleanup sync: if another tab clears legacy persistent auth storage, mirror
- * that sign-out in this tab.
- */
-function handleStorage(event: StorageEvent) {
-  if (event.key !== null && event.key !== LEGACY_LOCAL_STORAGE_KEY) return
+function applySession(session: SiweSession | null) {
+  const normalized = session ? { wallet: session.wallet.toLowerCase() } : null
+  if (current?.wallet === normalized?.wallet) return
+  current = normalized
+  if (!normalized || accessToken?.wallet !== normalized.wallet) accessToken = null
+  emit()
+}
 
-  const changed = current !== null
-  current = null
-  loaded = true
+function authChannel() {
+  // Vitest files execute concurrently in one process; a real BroadcastChannel
+  // would make isolated test stores behave like tabs and clear each other.
+  if (process.env.NODE_ENV === "test" || channel || typeof BroadcastChannel === "undefined") return channel
+  channel = new BroadcastChannel(CHANNEL_NAME)
+  channel.addEventListener("message", (event: MessageEvent<SiweSession | null>) => applySession(event.data))
+  return channel
+}
+
+function broadcastSession(session: SiweSession | null) {
+  authChannel()?.postMessage(session)
   try {
-    window.sessionStorage.removeItem(STORAGE_KEY)
+    window.localStorage.setItem(AUTH_EVENT_KEY, JSON.stringify({ session, at: Date.now() }))
   } catch {
-    // ignore
+    // Storage may be unavailable. BroadcastChannel remains the primary path.
   }
-  clearCookie(SIWE_SESSION_COOKIE)
-  if (changed) emit()
+}
+
+function handleStorage(event: StorageEvent) {
+  if (event.key === LEGACY_STORAGE_KEY) {
+    try {
+      window.localStorage.removeItem(LEGACY_STORAGE_KEY)
+      window.sessionStorage.removeItem(LEGACY_STORAGE_KEY)
+    } catch {
+      // Best-effort removal of the deprecated bearer persistence.
+    }
+    return
+  }
+  if (event.key !== AUTH_EVENT_KEY || !event.newValue) return
+  try {
+    const parsed = JSON.parse(event.newValue) as { session?: SiweSession | null }
+    applySession(parsed.session ?? null)
+  } catch {
+    // Ignore malformed events from unrelated/old application code.
+  }
 }
 
 if (typeof window !== "undefined") {
+  try {
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY)
+    window.sessionStorage.removeItem(LEGACY_STORAGE_KEY)
+  } catch {
+    // Storage may be unavailable.
+  }
   window.addEventListener("storage", handleStorage)
+  authChannel()
 }
 
-export function getSiweToken(): SiweToken | null {
-  ensureLoaded()
+export function hydrateSiweSession(session: SiweSession | null) {
+  if (session) applySession(session)
+}
+
+export function getSiweSession(): SiweSession | null {
   return current
 }
 
+/** Memory-only access-token snapshot for non-reactive adapters. */
+export function getSiweToken(): SiweToken | null {
+  if (accessToken && isJwtExpired(accessToken.jwt)) accessToken = null
+  return accessToken
+}
+
+/** Accept an already-minted access token in dev/open-gate mode only. */
 export function setSiweToken(jwt: string, wallet: string) {
-  current = { jwt, wallet: wallet.toLowerCase() }
-  loaded = true
-  try {
-    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(current))
-    window.localStorage.removeItem(LEGACY_LOCAL_STORAGE_KEY)
-  } catch {
-    // ignore storage failures (private mode, etc.) — in-memory token still works
-  }
-  writeSessionCookie(jwt)
-  emit()
+  const session = { wallet: wallet.toLowerCase() }
+  accessToken = { jwt, wallet: session.wallet }
+  applySession(session)
+  broadcastSession(session)
+}
+
+export function setSiweSession(wallet: string) {
+  const session = { wallet: wallet.toLowerCase() }
+  applySession(session)
+  broadcastSession(session)
 }
 
 export function clearSiweToken() {
-  current = null
-  loaded = true
-  try {
-    window.sessionStorage.removeItem(STORAGE_KEY)
-    window.localStorage.removeItem(LEGACY_LOCAL_STORAGE_KEY)
-  } catch {
-    // ignore
-  }
-  clearCookie(SIWE_SESSION_COOKIE)
-  emit()
+  accessToken = null
+  refreshPromise = null
+  applySession(null)
+  broadcastSession(null)
 }
 
 export function subscribeSiwe(listener: () => void): () => void {
   listeners.add(listener)
   return () => listeners.delete(listener)
+}
+
+/** Mint one access token for all simultaneous Convex consumers. No polling. */
+export async function fetchSiweAccessToken(forceRefresh = false): Promise<string | null> {
+  const cached = getSiweToken()
+  if (!forceRefresh && cached) return cached.jwt
+  if (!current) return null
+  if (refreshPromise) return refreshPromise
+
+  refreshPromise = fetch("/api/siwe/token", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    cache: "no-store",
+  })
+    .then(async (response) => {
+      if (response.status === 401) {
+        applySession(null)
+        broadcastSession(null)
+        return null
+      }
+      if (!response.ok) throw new Error(`Could not refresh wallet session (${response.status}).`)
+      const next = (await response.json()) as { token: string; wallet: string }
+      if (!current) return null
+      if (next.wallet.toLowerCase() !== current.wallet) {
+        applySession(null)
+        broadcastSession(null)
+        return null
+      }
+      accessToken = { jwt: next.token, wallet: current.wallet }
+      return next.token
+    })
+    .finally(() => {
+      refreshPromise = null
+    })
+
+  return refreshPromise
 }
