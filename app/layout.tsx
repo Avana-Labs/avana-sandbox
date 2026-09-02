@@ -53,6 +53,8 @@ const diatypeSans = localFont({
   adjustFontFallback: "Arial",
 })
 
+const themeBootstrapScript = `(()=>{const storageKey="avana-theme";const root=document.documentElement;const storedTheme=window.localStorage.getItem(storageKey);const theme=storedTheme==="light"||storedTheme==="dark"||storedTheme==="system"?storedTheme:"light";const systemTheme=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";const resolvedTheme=theme==="system"?systemTheme:theme;root.classList.toggle("dark",resolvedTheme==="dark");root.style.colorScheme=resolvedTheme})()`
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://avana.cc"),
   title: {
@@ -165,8 +167,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           imageSizes="220px"
         />
         <link rel="preload" as="image" href="/avana-icon-64.png" />
-        {/* Plain server script — next/script re-hydrates and mismatches the CSP nonce. */}
-        <script src="/theme-bootstrap.js" nonce={nonce} suppressHydrationWarning />
+        {/* Inline so theme/color-scheme apply before first paint — external src added a
+            network hop and could shift scrollbar-gutter when overlays open. */}
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} suppressHydrationWarning />
       </head>
       <body className="min-h-screen bg-background">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>

@@ -23,7 +23,13 @@ import {
 import { formatHealthFactor } from "@/app/lib/home-sim"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
+  TABLE_BASE,
   TABLE_BODY_ROW,
+  TABLE_CELL_NUMERIC,
+  TABLE_CELL_PADDING,
+  TABLE_CELL_PADDING_TRAILING,
+  TABLE_CELL_PRIMARY,
+  TABLE_CELL_SECONDARY,
   TABLE_HEADER_CELL,
   TABLE_HEADER_ROW,
   TABLE_ROW_HOVER_BG,
@@ -96,7 +102,7 @@ export function MultiplyCollateralTable({
 
       <div className="hidden overflow-x-auto md:block">
         <DesktopTableSurface className="!rounded-none">
-          <table className="w-full min-w-[720px] table-fixed border-separate border-spacing-0 text-[13px]">
+          <table className={`w-full min-w-[720px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
             <colgroup>
               <col className="w-[30%]" />
               <col className="w-[35%]" />
@@ -121,7 +127,7 @@ export function MultiplyCollateralTable({
                   <LoopCell row={row} />
                   <PositionCell row={row} usd={usd} />
                   <RiskCell row={row} liqPrice={liqPrice} />
-                  <td className={`px-4 py-4 pr-5 ${TABLE_ROW_HOVER_RIGHT}`}>
+                  <td className={cn(TABLE_CELL_PADDING_TRAILING, TABLE_ROW_HOVER_RIGHT)}>
                     <HoverActionGroup>
                       <Button
                         type="button"
@@ -213,14 +219,14 @@ function LoopIdentity({ row }: { row: PortfolioMultiplyCollateral }) {
 function LoopCell({ row }: { row: PortfolioMultiplyCollateral }) {
   const { t } = useTranslation()
   return (
-    <td className={`py-4 pl-5 pr-4 ${TABLE_ROW_HOVER_LEFT}`}>
+    <td className={cn(TABLE_CELL_PADDING, "pl-5", TABLE_ROW_HOVER_LEFT)}>
       <div className="flex min-w-0 items-center gap-3">
         <PairedTokenIcons row={row} />
         <span className="min-w-0">
-          <span className="block truncate text-[14px] font-medium text-foreground dark:text-white">
+          <span className={cn("block truncate", TABLE_CELL_PRIMARY)}>
             {translateMultiplyLoopSupplyLabel(t, row.collateralToken)}
           </span>
-          <span className="mt-0.5 block truncate text-[13px] text-muted-foreground dark:text-white/38">
+          <span className={cn("block truncate", TABLE_CELL_SECONDARY)}>
             {translateMultiplyLoopBorrowLabel(t, row.borrowableToken)}
           </span>
         </span>
@@ -232,11 +238,11 @@ function LoopCell({ row }: { row: PortfolioMultiplyCollateral }) {
 function PositionCell({ row, usd }: { row: PortfolioMultiplyCollateral; usd: (value: number) => string }) {
   const { t } = useTranslation()
   return (
-    <td className={`px-4 py-4 ${TABLE_ROW_HOVER_BG}`}>
-      <span className="block font-data text-[13px] tabular-nums text-foreground dark:text-white">
+    <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+      <span className={cn("block", TABLE_CELL_NUMERIC)}>
         {usd(positionEquityUsd(row))} {t("equity")} · {row.multiplier.toFixed(2)}×
       </span>
-      <span className="mt-1 block font-data text-[13px] tabular-nums text-muted-foreground">
+      <span className={cn("block", TABLE_CELL_SECONDARY)}>
         {usd(row.collateralUsd)} {t("exposure")} · {formatPct(row.netApyPct)} {t("Net APY")}
       </span>
     </td>
@@ -246,11 +252,11 @@ function PositionCell({ row, usd }: { row: PortfolioMultiplyCollateral; usd: (va
 function RiskCell({ row, liqPrice }: { row: PortfolioMultiplyCollateral; liqPrice: (value: number | null) => string }) {
   const { t } = useTranslation()
   return (
-    <td className={`px-4 py-4 ${TABLE_ROW_HOVER_BG}`}>
-      <span className={`block font-data text-[13px] tabular-nums ${healthFactorBand(row.healthFactor).textClass}`}>
+    <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+      <span className={cn("block", TABLE_CELL_NUMERIC, healthFactorBand(row.healthFactor).textClass)}>
         {t("HF")} {formatHealthFactor(row.healthFactor)}
       </span>
-      <span className="mt-1 block font-data text-[13px] tabular-nums text-muted-foreground">
+      <span className={cn("block", TABLE_CELL_SECONDARY)}>
         {t("Liq. at")} {liqPrice(row.liquidationPriceUsd)}
       </span>
     </td>

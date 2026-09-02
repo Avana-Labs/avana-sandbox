@@ -20,10 +20,20 @@ import {
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
+  TABLE_BASE,
+  TABLE_BODY_ROW,
+  TABLE_CELL_NUMERIC,
+  TABLE_CELL_NUMERIC_DATA,
+  TABLE_CELL_PADDING,
+  TABLE_CELL_PADDING_TRAILING,
+  TABLE_CELL_PRIMARY,
+  TABLE_CELL_SECONDARY,
   TABLE_HEADER_CELL,
+  TABLE_HEADER_ROW,
   TABLE_ROW_HOVER_BG,
   TABLE_ROW_HOVER_LEFT,
   TABLE_ROW_HOVER_RIGHT,
+  formatTableHeaderLabel,
 } from "@/app/lib/ui/table-row-hover"
 import { formatSectionCount } from "@/app/lib/ui/section-count"
 import { cn } from "@/lib/utils"
@@ -97,7 +107,7 @@ export function CollateralPositionsPanel({
       <div className="hidden md:block">
         <DesktopTableSurface className="!rounded-none">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className={`w-full min-w-[640px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
               <colgroup>
                 <col className="w-[22%]" />
                 <col className="w-[14%]" />
@@ -108,13 +118,13 @@ export function CollateralPositionsPanel({
                 <col className="w-[16%]" />
               </colgroup>
               <thead>
-                <tr className="text-left">
-                  <th className={cn(HEADER_CLASS, "pl-5")}>
+                <tr className={TABLE_HEADER_ROW}>
+                  <th className={cn(HEADER_CLASS, "pl-5 text-left")}>
                     <MetricHeader label={t("Asset")} help="The underlying token for this reserve" />
                   </th>
-                  <th className={cn(HEADER_CLASS, "text-right")}>{t("Deposited")}</th>
-                  <th className={cn(HEADER_CLASS, "text-right")}>{t("APY")}</th>
-                  <th className={cn(HEADER_CLASS, "text-right")}>{t("Earnings")}</th>
+                  <th className={cn(HEADER_CLASS, "text-right")}>{formatTableHeaderLabel(t("Deposited"))}</th>
+                  <th className={cn(HEADER_CLASS, "text-right")}>{formatTableHeaderLabel(t("APY"))}</th>
+                  <th className={cn(HEADER_CLASS, "text-right")}>{formatTableHeaderLabel(t("Earnings"))}</th>
                   <th className={cn(HEADER_CLASS, "text-right")}>
                     <MetricHeader
                       label={t("Collateral Factor")}
@@ -136,38 +146,28 @@ export function CollateralPositionsPanel({
                 {rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="group cursor-pointer transition-colors"
+                    className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`}
                     onClick={() => router.push(detailHref(row.marketId))}
                   >
-                    <td className={cn("py-3.5 pl-5", TABLE_ROW_HOVER_LEFT)}>
+                    <td className={cn(TABLE_CELL_PADDING, "pl-5", TABLE_ROW_HOVER_LEFT)}>
                       <AssetIdentity symbol={row.symbol} name={row.name} />
                     </td>
-                    <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
+                    <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
                       <TokenUsdCell token={m(row.depositedToken)} usd={m(exact(row.depositedUsd))} />
                     </td>
-                    <td
-                      className={cn(
-                        "py-3.5 text-right text-[15px] font-normal tracking-normal text-foreground dark:text-white",
-                        TABLE_ROW_HOVER_BG,
-                      )}
-                    >
+                    <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_CELL_NUMERIC, TABLE_ROW_HOVER_BG)}>
                       {row.apyPct.toFixed(2)}%
                     </td>
-                    <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
+                    <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
                       <TokenUsdCell token={m(row.earningsToken)} usd={m(exact(row.earningsUsd))} />
                     </td>
-                    <td
-                      className={cn(
-                        "py-3.5 text-right font-data text-[15px] tabular-nums text-foreground",
-                        TABLE_ROW_HOVER_BG,
-                      )}
-                    >
+                    <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_CELL_NUMERIC_DATA, TABLE_ROW_HOVER_BG)}>
                       {row.collateralFactorPct.toFixed(0)}%
                     </td>
-                    <td className={cn("py-3.5 text-right text-[13px] text-foreground", TABLE_ROW_HOVER_BG)}>
+                    <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_CELL_PRIMARY, TABLE_ROW_HOVER_BG)}>
                       {t(row.collateralEnabled ? "Yes" : "No")}
                     </td>
-                    <td className={cn("py-3.5 pr-5", TABLE_ROW_HOVER_RIGHT)}>
+                    <td className={cn(TABLE_CELL_PADDING_TRAILING, TABLE_ROW_HOVER_RIGHT)}>
                       <HoverActionGroup className="gap-2">
                         <Button
                           type="button"
@@ -228,8 +228,8 @@ function AssetIdentity({ symbol, name }: { symbol: string; name: string }) {
     <div className="flex items-center gap-2.5">
       <TokenIcon symbol={symbol} size="table" />
       <div className="flex min-w-0 flex-col">
-        <span className="truncate text-[15px] font-medium tracking-normal text-foreground dark:text-white">{name}</span>
-        <span className="text-[11px] text-muted-foreground">{symbol}</span>
+        <span className={cn("truncate", TABLE_CELL_PRIMARY)}>{name}</span>
+        <span className={TABLE_CELL_SECONDARY}>{symbol}</span>
       </div>
     </div>
   )
@@ -246,9 +246,9 @@ function MetricHeader({ label, help, align = "left" }: { label: string; help: st
 
 function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
   return (
-    <div className="flex flex-col items-end pr-4">
-      <span className="text-[15px] font-normal tracking-normal text-foreground dark:text-white">{token}</span>
-      <span className="text-[13px] text-muted-foreground dark:text-white/40">{usd}</span>
+    <div className="flex flex-col items-end">
+      <span className={TABLE_CELL_NUMERIC}>{token}</span>
+      <span className={TABLE_CELL_SECONDARY}>{usd}</span>
     </div>
   )
 }

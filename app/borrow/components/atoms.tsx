@@ -90,8 +90,13 @@ export function TokenPairCell({
 }) {
   const bubbleSize: TokenBubbleSize = size === "lg" ? "xl" : size === "md" ? "table" : "sm"
   const offset = size === "lg" ? "-ml-3" : size === "md" ? "-ml-2.5" : "-ml-2"
-  const nameCls = size === "lg" ? "text-[15px]" : size === "md" ? "text-[14px]" : "text-[13px]"
-  const subtitleCls = size === "lg" ? "text-[12px]" : "text-xs"
+  const nameCls =
+    size === "lg"
+      ? "text-[15px] font-normal tracking-normal"
+      : size === "md"
+        ? "text-[15px] font-normal tracking-normal"
+        : "text-[13px] font-medium"
+  const subtitleCls = size === "lg" ? "text-[12px]" : "text-[13px] font-normal tracking-normal"
   return (
     <div className="flex items-center gap-3">
       <div className="flex items-center">
@@ -99,7 +104,7 @@ export function TokenPairCell({
         <TokenBubble visual={visuals[1]} size={bubbleSize} className={offset} />
       </div>
       <div className="min-w-0">
-        <div className={cn("font-medium leading-tight text-foreground", nameCls)}>{name}</div>
+        <div className={cn("leading-tight text-foreground dark:text-white", nameCls)}>{name}</div>
         {subtitle ? <div className={cn("mt-0.5 truncate text-muted-foreground", subtitleCls)}>{subtitle}</div> : null}
       </div>
     </div>
@@ -162,9 +167,19 @@ export const TrendSpark = memo(function TrendSpark({
   )
 })
 
-export function HfNumber({ value, tone, size = "md" }: { value: string; tone: string; size?: "sm" | "md" | "lg" }) {
-  const textSize = size === "lg" ? "text-[20px]" : size === "sm" ? "text-[11px]" : "text-[13px]"
-  return <span className={cn("font-data font-medium tabular-nums", textSize, tone)}>{value}</span>
+export function HfNumber({
+  value,
+  tone,
+  size = "md",
+}: {
+  value: string
+  tone: string
+  size?: "sm" | "md" | "lg" | "table"
+}) {
+  const textSize =
+    size === "lg" ? "text-[20px]" : size === "sm" ? "text-[11px]" : size === "table" ? "text-[15px]" : "text-[13px]"
+  const weight = size === "table" ? "font-normal" : "font-medium"
+  return <span className={cn("font-data tabular-nums", weight, textSize, tone)}>{value}</span>
 }
 
 export type PillVariant = "primary" | "ghost" | "danger" | "success"

@@ -46,6 +46,7 @@ export function DesktopPreferenceMenu({ initialOpen = false }: { initialOpen?: b
 
   return (
     <DropdownMenu
+      modal={false}
       open={open}
       onOpenChange={(nextOpen) => {
         setOpen(nextOpen)

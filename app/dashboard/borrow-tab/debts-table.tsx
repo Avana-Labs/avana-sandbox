@@ -27,7 +27,22 @@ import { liqUtilizationBarClass, liqUtilizationPercentTextClass } from "@/app/li
 import { cn } from "@/lib/utils"
 
 import { formatSectionCount } from "@/app/lib/ui/section-count"
-import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
+import {
+  TABLE_BASE,
+  TABLE_BODY_ROW,
+  TABLE_CELL_CAPTION,
+  TABLE_CELL_NUMERIC,
+  TABLE_CELL_PADDING,
+  TABLE_CELL_PADDING_TRAILING,
+  TABLE_CELL_PRIMARY,
+  TABLE_CELL_SECONDARY,
+  TABLE_HEADER_CELL,
+  TABLE_HEADER_ROW,
+  TABLE_ROW_HOVER_BG,
+  TABLE_ROW_HOVER_LEFT,
+  TABLE_ROW_HOVER_RIGHT,
+  formatTableHeaderLabel,
+} from "@/app/lib/ui/table-row-hover"
 
 type DebtsTableProps = {
   rows: DebtRowContext[]
@@ -87,7 +102,7 @@ export function DebtsPanel({
           <div className="hidden md:block">
             <DesktopTableSurface className="!rounded-none">
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
+                <table className={`w-full min-w-[640px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
                   <colgroup>
                     <col className="w-[26%]" />
                     <col className="w-[15%]" />
@@ -97,26 +112,22 @@ export function DebtsPanel({
                     <col className="w-[19%]" />
                   </colgroup>
                   <thead>
-                    <tr className="text-left text-[11px] font-medium text-muted-foreground">
-                      <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                        {t("Debt")}
+                    <tr className={TABLE_HEADER_ROW}>
+                      <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>{formatTableHeaderLabel(t("Debt"))}</th>
+                      <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                        {formatTableHeaderLabel(t("Borrowed"))}
                       </th>
-                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                        {t("Borrowed")}
+                      <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                        {formatTableHeaderLabel(t("Interest / day"))}
                       </th>
-                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                        {t("Interest / day")}
+                      <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                        {formatTableHeaderLabel(t("Health"))}
                       </th>
-                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                        {t("Health")}
-                      </th>
-                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                        {t("Liq.")}
-                      </th>
-                      <th className="bg-table-header px-4 pb-2 pt-2.5 pr-5 text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+                      <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{formatTableHeaderLabel(t("Liq."))}</th>
+                      <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-left")} />
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-border dark:divide-white/6">
                     {rows.map((row) => {
                       const hfTone = healthFactorToneClass(row.healthFactor)
                       const detailHref = `/borrow/markets/${row.pool.id}`
@@ -124,48 +135,42 @@ export function DebtsPanel({
                       return (
                         <tr
                           key={row.id ?? row.pool.id}
-                          className="group cursor-pointer transition-colors"
+                          className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`}
                           onClick={() => router.push(detailHref)}
                         >
-                          <td className={`py-3 pl-5 ${TABLE_ROW_HOVER_LEFT}`}>
+                          <td className={cn(TABLE_CELL_PADDING, "pl-5", TABLE_ROW_HOVER_LEFT)}>
                             {/* Debt is a single borrowed token, not the collateral LP pool — show the
                             borrowed asset, with the collateral market as context. */}
                             <div className="flex min-w-0 items-center gap-2.5">
                               <TokenIcon symbol={debtSymbol} size="table" />
                               <div className="min-w-0">
-                                <div className="truncate text-[15px] font-medium tracking-normal text-foreground dark:text-white">
-                                  {debtSymbol}
-                                </div>
-                                <div className="mt-0.5 truncate text-[13px] text-muted-foreground">
+                                <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{debtSymbol}</div>
+                                <div className={cn("truncate", TABLE_CELL_SECONDARY)}>
                                   {t("against {pool}").replace("{pool}", row.pool.name)}
                                 </div>
                               </div>
                             </div>
                           </td>
-                          <td className={`py-3 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
-                            <div className="font-data text-[13px] tabular-nums text-foreground">
-                              {m(compact(row.borrowedUsd))}
-                            </div>
-                            <div className="text-[11px] text-muted-foreground">
+                          <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
+                            <div className={TABLE_CELL_NUMERIC}>{m(compact(row.borrowedUsd))}</div>
+                            <div className={TABLE_CELL_CAPTION}>
                               {showBalance ? `${row.borrowedUsd.toFixed(0)} ${debtSymbol}` : MASK}
                             </div>
                           </td>
-                          <td className={`py-3 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
-                            <div className="font-data text-[13px] tabular-nums text-rose-500">
+                          <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
+                            <div className={cn(TABLE_CELL_NUMERIC, "text-rose-500")}>
                               {showBalance ? `+${exact(row.dailyInterestUsd)}` : MASK}
                             </div>
-                            <div className="text-[11px] text-muted-foreground">{t("per day")}</div>
+                            <div className={TABLE_CELL_CAPTION}>{t("per day")}</div>
                           </td>
-                          <td className={`py-3 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
-                            <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
+                          <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
+                            <HfNumber size="table" value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
                           </td>
-                          <td className={`py-3 pl-4 text-right ${TABLE_ROW_HOVER_BG}`}>
-                            <div className="font-data text-[13px] tabular-nums text-foreground">
-                              {m(exact(row.liquidationThresholdUsd))}
-                            </div>
-                            <div className="text-[11px] text-muted-foreground">{t("liquidation value")}</div>
+                          <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
+                            <div className={TABLE_CELL_NUMERIC}>{m(exact(row.liquidationThresholdUsd))}</div>
+                            <div className={TABLE_CELL_CAPTION}>{t("liquidation value")}</div>
                           </td>
-                          <td className={`py-3 pl-4 pr-5 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
+                          <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-left", TABLE_ROW_HOVER_RIGHT)}>
                             <HoverActionGroup align="start" className="gap-2">
                               <Button
                                 type="button"

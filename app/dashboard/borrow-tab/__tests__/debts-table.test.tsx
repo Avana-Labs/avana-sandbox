@@ -106,7 +106,7 @@ describe("DebtsPanel", () => {
     )
 
     // The daily interest (mobile-only before) now has a dedicated desktop column.
-    expect(container.textContent).toMatch(/Interest \/ day/)
+    expect(container.textContent).toMatch(/INTEREST \/ DAY/)
     expect(container.textContent).toMatch(/0\.94/)
   })
 

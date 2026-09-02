@@ -294,11 +294,7 @@ export function ExploreLoopsMarketsTable({
         {groupedSections.length > 0 ? (
           groupedSections.map((group) => (
             <div key={group.title} className="space-y-8">
-              <LoopMarketsSection
-                initialIsDesktop={initialIsDesktop}
-                title={group.title}
-                rows={group.rows}
-              />
+              <LoopMarketsSection initialIsDesktop={initialIsDesktop} title={group.title} rows={group.rows} />
               {group.title === "Ethereum-Based" ? (
                 <div className="flex justify-center">
                   <div className="h-px w-full max-w-[980px] bg-gradient-to-r from-transparent via-border/80 to-transparent dark:via-white/10" />

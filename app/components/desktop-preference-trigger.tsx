@@ -9,7 +9,14 @@ export const preferencesTriggerClassName =
   "inline-flex size-10 items-center justify-center rounded-full border border-border bg-background text-muted-foreground outline-none transition-colors hover:bg-hover hover:text-foreground focus:outline-none focus-visible:outline-none dark:bg-[#181818] dark:text-white/72 dark:hover:bg-surface-hover dark:hover:text-white [-webkit-tap-highlight-color:transparent]"
 
 const loadMenu = () => import("./desktop-preference-controls").then((mod) => mod.DesktopPreferenceMenu)
-const DesktopPreferenceMenu = dynamic(loadMenu, { ssr: false })
+const DesktopPreferenceMenu = dynamic(loadMenu, {
+  ssr: false,
+  loading: () => (
+    <button type="button" aria-hidden tabIndex={-1} className={preferencesTriggerClassName}>
+      <MoreHorizontal className="size-5" strokeWidth={2.35} />
+    </button>
+  ),
+})
 
 /**
  * Header preferences button. The Radix dropdown (menu + dismissable layer + floating-ui, ~40KB

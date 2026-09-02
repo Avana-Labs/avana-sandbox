@@ -213,7 +213,11 @@ export function MultiplyActionPageClient({
           if (cancelled) return
           setPreviewUi(
             mapClosePreviewToActionUi(preview, {
-              marketLabel: translateMultiplyLoopMarketLabel(t, market.collateralAsset.symbol, market.borrowAsset.symbol),
+              marketLabel: translateMultiplyLoopMarketLabel(
+                t,
+                market.collateralAsset.symbol,
+                market.borrowAsset.symbol,
+              ),
               collateralSymbol: market.collateralAsset.symbol,
             }),
           )
@@ -290,7 +294,11 @@ export function MultiplyActionPageClient({
               // priced — no further display rescale (scale === 1). This keeps the preview
               // exactly equal to the persisted/dashboard position.
               catalogCollateralPriceUsd: collateralPriceUsd,
-              marketLabel: translateMultiplyLoopMarketLabel(t, market.collateralAsset.symbol, market.borrowAsset.symbol),
+              marketLabel: translateMultiplyLoopMarketLabel(
+                t,
+                market.collateralAsset.symbol,
+                market.borrowAsset.symbol,
+              ),
               // Display the SAME supply APY the engine feeds into Net APY. After a Convex
               // snapshot updates economics.supplyApy but leaves the seed collateralAsset.apy
               // untouched, the two diverge — showing "Collateral APY 7.60%" while Net APY

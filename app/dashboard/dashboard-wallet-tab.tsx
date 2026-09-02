@@ -6,7 +6,23 @@ import { useAmountDisplayPreferences } from "@/app/components/display-preference
 import { TokenIcon } from "@/app/components/token-icon"
 import { DesktopTableSurface } from "@/app/components/market-table-primitives"
 import { getTokenIconMeta } from "@/app/lib/token-icons"
-import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
+import {
+  TABLE_BASE,
+  TABLE_BODY_ROW,
+  TABLE_CELL_CAPTION,
+  TABLE_CELL_NUMERIC,
+  TABLE_CELL_PADDING,
+  TABLE_CELL_PADDING_TRAILING,
+  TABLE_CELL_PRIMARY,
+  TABLE_CELL_SECONDARY,
+  TABLE_HEADER_CELL,
+  TABLE_HEADER_ROW,
+  TABLE_ROW_HOVER_BG,
+  TABLE_ROW_HOVER_LEFT,
+  TABLE_ROW_HOVER_RIGHT,
+  formatTableHeaderLabel,
+} from "@/app/lib/ui/table-row-hover"
+import { cn } from "@/lib/utils"
 import { buildDashboardWalletBalanceRows, type DashboardWalletBalanceRow } from "@/app/lib/swap-system"
 import type { UserAssetBalance } from "@/app/lib/swap-system"
 import { useConvexProductWalletBalances } from "@/app/lib/swap-system/use-convex-wallet-balances"
@@ -72,8 +88,8 @@ function PoolIdentity({ row }: { row: DashboardWalletBalanceRow }) {
       <div className="flex min-w-0 items-center gap-3">
         <TokenIcon symbol={row.symbol} size="table" />
         <div className="flex min-w-0 flex-col">
-          <div className="truncate text-[15px] font-medium tracking-normal text-foreground">{row.name}</div>
-          <div className="text-[11px] text-muted-foreground">{detail.protocol}</div>
+          <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{row.name}</div>
+          <div className={TABLE_CELL_SECONDARY}>{detail.protocol}</div>
         </div>
       </div>
     )
@@ -99,9 +115,9 @@ function PoolSourceStatus({ row }: { row: DashboardWalletBalanceRow }) {
 
 function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
   return (
-    <div className="flex flex-col items-end pr-4">
-      <span className="text-[15px] font-normal tracking-normal text-foreground">{token}</span>
-      <span className="text-[13px] text-muted-foreground">{usd}</span>
+    <div className="flex flex-col items-end">
+      <span className={cn(TABLE_CELL_NUMERIC)}>{token}</span>
+      <span className={TABLE_CELL_SECONDARY}>{usd}</span>
     </div>
   )
 }
@@ -145,8 +161,8 @@ function PnlCell({
 
   return (
     <div className="text-right">
-      <div className={`font-data tabular-nums ${toneClass}`}>{exact(pnl.pnlUsd)}</div>
-      <div className={`mt-0.5 text-[12px] ${toneClass}`}>
+      <div className={cn(TABLE_CELL_NUMERIC, toneClass)}>{exact(pnl.pnlUsd)}</div>
+      <div className={cn(TABLE_CELL_CAPTION, toneClass)}>
         {arrow} {pct}
       </div>
     </div>
@@ -219,7 +235,7 @@ function WalletBalanceSection({
       </div>
 
       <DesktopTableSurface className="hidden !rounded-none md:block">
-        <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
+        <table className={`w-full min-w-[640px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
           <colgroup>
             <col className="w-[29%]" />
             <col className="w-[13%]" />
@@ -228,44 +244,38 @@ function WalletBalanceSection({
             <col className="w-[20%]" />
           </colgroup>
           <thead>
-            <tr className="text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-              <th className="bg-table-header px-5 pb-2 pt-2.5">{t("Asset")}</th>
-              <th className="bg-table-header px-4 pb-2 pt-2.5 text-right">{t("Price")}</th>
-              <th className="bg-table-header px-4 pb-2 pt-2.5 text-right">{t("Balance")}</th>
-              <th className="bg-table-header px-4 pb-2 pt-2.5 text-right">{t("Value")}</th>
-              <th className="bg-table-header px-4 pb-2 pt-2.5 text-right">{t("P/L")}</th>
+            <tr className={TABLE_HEADER_ROW}>
+              <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>{formatTableHeaderLabel(t("Asset"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{formatTableHeaderLabel(t("Price"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{formatTableHeaderLabel(t("Balance"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{formatTableHeaderLabel(t("Value"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>{formatTableHeaderLabel(t("P/L"))}</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border dark:divide-white/6">
             {rows.map((row) => (
-              <tr key={row.id} className="group">
-                <td className={`px-5 py-4 align-middle ${TABLE_ROW_HOVER_LEFT}`}>
+              <tr key={row.id} className={`${TABLE_BODY_ROW} group`}>
+                <td className={cn(TABLE_CELL_PADDING, "pl-5", TABLE_ROW_HOVER_LEFT)}>
                   <div className="flex min-w-0 items-center gap-3">
                     <TokenIcon symbol={row.symbol} size="table" />
                     <div className="min-w-0">
-                      <div className="truncate text-[15px] font-medium tracking-normal text-foreground">{row.name}</div>
-                      <div className="mt-0.5 text-[13px] text-muted-foreground">
+                      <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{row.name}</div>
+                      <div className={TABLE_CELL_SECONDARY}>
                         {row.symbol} · {row.sourceLabel}
                       </div>
                     </div>
                   </div>
                 </td>
-                <td
-                  className={`px-4 py-4 text-right text-[15px] font-normal tracking-normal text-foreground ${TABLE_ROW_HOVER_BG}`}
-                >
+                <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_CELL_NUMERIC, TABLE_ROW_HOVER_BG)}>
                   {m(row.valueUsd > 0 && row.amount > 0 ? exact(row.valueUsd / row.amount) : DASH)}
                 </td>
-                <td
-                  className={`px-4 py-4 text-right text-[15px] font-normal tracking-normal text-foreground ${TABLE_ROW_HOVER_BG}`}
-                >
+                <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_CELL_NUMERIC, TABLE_ROW_HOVER_BG)}>
                   {m(formatAssetAmount(row.amount, row.symbol))}
                 </td>
-                <td
-                  className={`px-4 py-4 text-right text-[15px] font-normal tracking-normal text-foreground ${TABLE_ROW_HOVER_BG}`}
-                >
+                <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_CELL_NUMERIC, TABLE_ROW_HOVER_BG)}>
                   {m(exact(row.valueUsd))}
                 </td>
-                <td className={`px-4 py-4 ${TABLE_ROW_HOVER_RIGHT}`}>
+                <td className={cn(TABLE_CELL_PADDING_TRAILING, TABLE_ROW_HOVER_RIGHT)}>
                   <PnlCell row={row} exact={exact} showBalance={showBalance} />
                 </td>
               </tr>
@@ -351,7 +361,7 @@ function PoolsBalanceSection({
       </div>
 
       <DesktopTableSurface className="hidden !rounded-none md:block">
-        <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
+        <table className={`w-full min-w-[640px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
           <colgroup>
             <col className="w-[28%]" />
             <col className="w-[16%]" />
@@ -359,27 +369,27 @@ function PoolsBalanceSection({
             <col className="w-[30%]" />
           </colgroup>
           <thead>
-            <tr className="text-left text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-              <th className="bg-table-header px-5 pb-2 pt-2.5">{t("Pool")}</th>
-              <th className="bg-table-header px-4 pb-2 pt-2.5">{t("Status")}</th>
-              <th className="bg-table-header px-4 pb-2 pt-2.5 text-right">{t("Balance")}</th>
-              <th className="bg-table-header px-4 pb-2 pt-2.5 text-right">{t("Fees")}</th>
+            <tr className={TABLE_HEADER_ROW}>
+              <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>{formatTableHeaderLabel(t("Pool"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4 text-left")}>{formatTableHeaderLabel(t("Status"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{formatTableHeaderLabel(t("Balance"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>{formatTableHeaderLabel(t("Fees"))}</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-border dark:divide-white/6">
             {rows.map((row) => {
               return (
-                <tr key={row.id} className="group">
-                  <td className={`px-5 py-4 align-middle ${TABLE_ROW_HOVER_LEFT}`}>
+                <tr key={row.id} className={`${TABLE_BODY_ROW} group`}>
+                  <td className={cn(TABLE_CELL_PADDING, "pl-5", TABLE_ROW_HOVER_LEFT)}>
                     <PoolIdentity row={row} />
                   </td>
-                  <td className={`px-4 py-4 ${TABLE_ROW_HOVER_BG}`}>
+                  <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
                     <PoolSourceStatus row={row} />
                   </td>
-                  <td className={`px-4 py-4 text-right ${TABLE_ROW_HOVER_BG}`}>
+                  <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
                     <TokenUsdCell token={m(formatPoolAmount(row.amount))} usd={m(exact(row.valueUsd))} />
                   </td>
-                  <td className={`px-4 py-4 text-right ${TABLE_ROW_HOVER_RIGHT}`}>
+                  <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
                     <TokenUsdCell token={m(exact(poolUiDetail(row).feesUsd))} usd={m(t("Unclaimed fees"))} />
                   </td>
                 </tr>

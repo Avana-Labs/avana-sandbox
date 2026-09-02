@@ -21,7 +21,23 @@ import { TokenIcon } from "@/app/components/token-icon"
 import type { PortfolioLendTabData, PortfolioSupplyPosition } from "@/app/lib/data/providers/portfolio"
 import { formatUsdExact } from "@/app/lib/borrow-sim"
 import { getActiveCurrency } from "@/app/lib/currency/active-rate"
-import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
+import {
+  TABLE_BASE,
+  TABLE_CELL_INDEX,
+  TABLE_CELL_NUMERIC,
+  TABLE_CELL_PADDING,
+  TABLE_CELL_PADDING_LEADING,
+  TABLE_CELL_PADDING_TRAILING,
+  TABLE_CELL_PRIMARY,
+  TABLE_CELL_SECONDARY,
+  TABLE_HEADER_CELL,
+  TABLE_HEADER_ROW,
+  TABLE_ROW_HOVER_BG,
+  TABLE_ROW_HOVER_LEFT,
+  TABLE_ROW_HOVER_RIGHT,
+  formatTableHeaderLabel,
+} from "@/app/lib/ui/table-row-hover"
+import { cn } from "@/lib/utils"
 
 const MASK = "••••"
 
@@ -101,7 +117,7 @@ export function DashboardInvestments({
         <>
           <div className="hidden overflow-x-auto md:block">
             <DesktopTableSurface className="!rounded-none">
-              <table className="w-full min-w-[500px] table-fixed border-separate border-spacing-0 text-[13px]">
+              <table className={`w-full min-w-[500px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
                 <colgroup>
                   {showIndexColumn ? <col className="w-[6%]" /> : null}
                   <col className={showIndexColumn ? "w-[24%]" : "w-[26%]"} />
@@ -110,21 +126,13 @@ export function DashboardInvestments({
                   <col className={showIndexColumn ? "w-[36%]" : "w-[40%]"} />
                 </colgroup>
                 <thead>
-                  <tr className="text-left text-[11px] font-medium text-muted-foreground">
-                    {showIndexColumn ? (
-                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                        #
-                      </th>
-                    ) : null}
-                    <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                      Asset
+                  <tr className={TABLE_HEADER_ROW}>
+                    {showIndexColumn ? <th className={cn(TABLE_HEADER_CELL, "px-4 text-left")}>#</th> : null}
+                    <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>{formatTableHeaderLabel(t("Asset"))}</th>
+                    <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                      {formatTableHeaderLabel(t("Deposited"))}
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                      Deposited
-                    </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                      APY
-                    </th>
+                    <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{formatTableHeaderLabel(t("APY"))}</th>
                     <SilentActionHeader className="!rounded-none pr-5" />
                   </tr>
                 </thead>
@@ -139,40 +147,34 @@ export function DashboardInvestments({
                         onClick={() => router.push(detailHref)}
                       >
                         {showIndexColumn ? (
-                          <td
-                            className={`py-3.5 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
-                          >
+                          <td className={cn(TABLE_CELL_PADDING_LEADING, TABLE_CELL_INDEX, TABLE_ROW_HOVER_LEFT)}>
                             {index + 1}
                           </td>
                         ) : null}
-                        <td className={`py-3.5 pl-5 ${showIndexColumn ? TABLE_ROW_HOVER_BG : TABLE_ROW_HOVER_LEFT}`}>
+                        <td
+                          className={cn(
+                            TABLE_CELL_PADDING,
+                            "pl-5",
+                            showIndexColumn ? TABLE_ROW_HOVER_BG : TABLE_ROW_HOVER_LEFT,
+                          )}
+                        >
                           <div className="flex items-center gap-2.5">
                             <TokenIcon symbol={token.symbol} size="table" />
                             <div className="flex min-w-0 flex-col">
-                              <span className="truncate text-[15px] font-medium tracking-normal text-foreground dark:text-white">
-                                {token.name}
-                              </span>
-                              <span className="mt-0.5 text-[13px] text-muted-foreground">{token.symbol}</span>
+                              <span className={cn("truncate", TABLE_CELL_PRIMARY)}>{token.name}</span>
+                              <span className={TABLE_CELL_SECONDARY}>{token.symbol}</span>
                             </div>
                           </div>
                         </td>
-                        <td className={`py-3.5 text-right ${TABLE_ROW_HOVER_BG}`}>
-                          <div className="text-[15px] font-normal tracking-normal text-foreground dark:text-white">
-                            {m(formatTokenAmount(token.balance, token.symbol))}
-                          </div>
-                          <div className="text-[13px] text-muted-foreground">
-                            {m(formatUsdExact(token.suppliedUsd))}
-                          </div>
+                        <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
+                          <div className={TABLE_CELL_NUMERIC}>{m(formatTokenAmount(token.balance, token.symbol))}</div>
+                          <div className={TABLE_CELL_SECONDARY}>{m(formatUsdExact(token.suppliedUsd))}</div>
                         </td>
-                        <td className={`py-3.5 text-right ${TABLE_ROW_HOVER_BG}`}>
-                          <div className="text-[15px] font-normal tracking-normal text-foreground dark:text-white">
-                            {token.apyPct.toFixed(2)}%
-                          </div>
-                          <div className="text-[13px] text-muted-foreground">
-                            {m(`+${formatUsdExact(token.earnedUsd)}`)}
-                          </div>
+                        <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
+                          <div className={TABLE_CELL_NUMERIC}>{token.apyPct.toFixed(2)}%</div>
+                          <div className={TABLE_CELL_SECONDARY}>{m(`+${formatUsdExact(token.earnedUsd)}`)}</div>
                         </td>
-                        <td className={`py-3.5 pr-5 ${TABLE_ROW_HOVER_RIGHT}`}>
+                        <td className={cn(TABLE_CELL_PADDING_TRAILING, TABLE_ROW_HOVER_RIGHT)}>
                           <HoverActionGroup className="justify-end gap-2">
                             <Button
                               type="button"
