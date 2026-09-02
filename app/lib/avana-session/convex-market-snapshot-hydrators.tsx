@@ -4,55 +4,58 @@
  * Public market-reference hydrate only (no wallet / swap / rewards queries).
  * Used by DEV_OPEN_GATE where SIWE is skipped but list/detail must still share
  * Convex snapshot TVLs instead of catalog ~$99M figures.
+ *
+ * Prices come from TokenPricesContext (the shared oracle subscription) —
+ * this module must NOT open a second prices query.
  */
-import { useEffect } from "react"
+import { useContext, useEffect } from "react"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import type { ConvexMarketSnapshot } from "@/app/lib/borrow-system/market-hydration"
 import type { LendConvexSnapshot } from "@/app/lib/lend-system/market-hydration"
 import type { MultiplyConvexSnapshot } from "@/app/lib/multiply-system/market-hydration"
-import { isUsableConvexPrice } from "@/app/lib/prices/validated-convex-price"
-import { useBorrowSessionContext, useLendSessionContext, useMultiplySessionContext } from "./avana-sessions-provider"
+import { PriceStatusContext, usePriceFor } from "@/app/lib/prices/token-prices-context"
+import {
+  useBorrowSessionContext,
+  useLendSessionContext,
+  useMultiplySessionContext,
+} from "./avana-sessions-provider"
+import type { ProductRuntimeScope } from "./product-runtime-scope"
 
-export function ConvexMarketSnapshotHydrators() {
+export function ConvexMarketSnapshotHydrators({ scope }: { scope: ProductRuntimeScope }) {
   const borrow = useBorrowSessionContext()
   const lend = useLendSessionContext()
   const multiply = useMultiplySessionContext()
+  const priceFor = usePriceFor()
+  const priceStatus = useContext(PriceStatusContext)
   // One reactive subscription for all products instead of three. The rows carry
-  // `scope`, so we partition client-side. Previously this component opened three
-  // separate subscriptions (borrow / lend / multiply) on EVERY route — each reading
-  // the same snapshot cache and filtering server-side — so visiting /borrow still
-  // subscribed to lend + multiply and re-rendered three times.
-  const snapshots = useQuery(api.markets.listMarketSnapshots)
-  const priceSnapshot = useQuery(api.prices.getPriceSnapshot, {})
+  // `scope`, so we partition client-side. Skipped on routes that do not need catalogs.
+  const snapshots = useQuery(api.markets.listMarketSnapshots, scope.marketSnapshots ? {} : "skip")
 
   useEffect(() => {
-    if (!snapshots) return
+    if (!scope.hydrateBorrowMarkets || !snapshots) return
     const rows = snapshots.filter((row) => row.scope === "pool" || row.scope === "asset")
     if (rows.length > 0) borrow.hydrateMarketData(rows as ConvexMarketSnapshot[])
-  }, [borrow.hydrateMarketData, snapshots])
+  }, [borrow.hydrateMarketData, scope.hydrateBorrowMarkets, snapshots])
 
   useEffect(() => {
-    if (!snapshots) return
-    const priceBySymbol = new Map(
-      (priceSnapshot?.prices ?? [])
-        .filter((row) => isUsableConvexPrice(row, Date.now(), priceSnapshot?.status.invalidAfterMs))
-        .map((row) => [row.symbol.trim().toLowerCase(), row] as const),
-    )
+    if (!scope.hydrateLendMarkets || !snapshots) return
     const rows = snapshots
       .filter((row) => row.scope === "lend")
       .map((row) => {
-        const price = priceBySymbol.get(row.symbol.trim().toLowerCase())
-        return price ? { ...row, assetPriceUsd: price.priceUsd, priceUpdatedAt: price.updatedAt } : row
+        const assetPriceUsd = priceFor(row.symbol)
+        return assetPriceUsd != null
+          ? { ...row, assetPriceUsd, priceUpdatedAt: priceStatus?.updatedAt ?? undefined }
+          : row
       })
     if (rows.length > 0) lend.hydrateMarketData(rows as LendConvexSnapshot[])
-  }, [lend.hydrateMarketData, priceSnapshot, snapshots])
+  }, [lend.hydrateMarketData, priceFor, priceStatus?.updatedAt, scope.hydrateLendMarkets, snapshots])
 
   useEffect(() => {
-    if (!snapshots) return
+    if (!scope.hydrateMultiplyMarkets || !snapshots) return
     const rows = snapshots.filter((row) => row.scope === "multiply")
     if (rows.length > 0) multiply.hydrateMarketData(rows as MultiplyConvexSnapshot[])
-  }, [multiply.hydrateMarketData, snapshots])
+  }, [multiply.hydrateMarketData, scope.hydrateMultiplyMarkets, snapshots])
 
   return null
 }

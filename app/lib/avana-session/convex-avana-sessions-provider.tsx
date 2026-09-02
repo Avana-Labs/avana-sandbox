@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
+import { usePathname } from "next/navigation"
 import { useConvex, useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import type { SwapQuote, SwapQuoteRequest } from "@/app/lib/swap-system/quote-provider"
@@ -23,6 +24,7 @@ import {
   useSwapSessionContext,
 } from "./avana-sessions-provider"
 import { ConvexMarketSnapshotHydrators } from "./convex-market-snapshot-hydrators"
+import { resolveProductRuntimeScope, type ProductRuntimeScope } from "./product-runtime-scope"
 import { pendingHydrationIntentIds, shouldApplyHydration } from "./wallet-hydration-guard"
 import {
   advanceRevisionOnSuccess,
@@ -104,9 +106,11 @@ export function useWalletHydrationScope(walletId: string) {
 
 function ConvexWalletHydrators({
   walletId,
+  scope,
   onWalletHydrated,
 }: {
   walletId: string
+  scope: ProductRuntimeScope
   onWalletHydrated: (positions: readonly PositionRevisionSummary[]) => void
 }) {
   const borrow = useBorrowSessionContext()
@@ -115,8 +119,9 @@ function ConvexWalletHydrators({
   const swap = useSwapSessionContext()
   const ensurePortfolioSnapshot = useMutation(api.sandbox.transactions.ensurePortfolioSnapshot)
   const ensureUmbrellaFixtures = useMutation(api.sandbox.umbrella.ensureTestWalletFixtures)
-  const session = useQuery(api.sandbox.transactions.getSessionState, { wallet: walletId })
-  const productBalances = useQuery(api.wallet.productBalances.listForWallet, { wallet: walletId })
+  const walletArgs = scope.walletSession ? { wallet: walletId } : "skip"
+  const session = useQuery(api.sandbox.transactions.getSessionState, walletArgs)
+  const productBalances = useQuery(api.wallet.productBalances.listForWallet, walletArgs)
   const historiesRef = useRef({
     borrow: borrow.transactionHistory,
     lend: lend.transactionHistory,
@@ -127,9 +132,13 @@ function ConvexWalletHydrators({
     lend: lend.transactionHistory,
     multiply: multiply.transactionHistory,
   }
-  // Seed the wallet snapshot and the canonical test wallet's Umbrella fixtures.
-  // Both mutations are idempotent, so retrying a partial/transient failure is safe.
-  useEnsureWalletFixtures({ walletId, ensurePortfolioSnapshot, ensureUmbrellaFixtures })
+  // Seed the wallet snapshot (idempotent). Umbrella fixtures only on umbrella/dashboard.
+  const noopEnsure = useCallback(async () => undefined, [])
+  useEnsureWalletFixtures({
+    walletId,
+    ensurePortfolioSnapshot: scope.walletSession ? ensurePortfolioSnapshot : noopEnsure,
+    ensureUmbrellaFixtures: scope.ensureUmbrellaFixtures ? ensureUmbrellaFixtures : noopEnsure,
+  })
 
   useEffect(() => {
     if (!session || productBalances === undefined) return
@@ -212,12 +221,20 @@ function ConvexWalletHydrators({
 }
 
 export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: string; children: ReactNode }) {
+  const pathname = usePathname()
+  const scope = resolveProductRuntimeScope(pathname)
   const recordTransaction = useMutation(api.sandbox.transactions.recordTransaction)
   const recordSwap = useMutation(api.sandbox.transactions.recordSwap)
-  const durableSwapTransactions = useQuery(api.sandbox.transactions.getWalletSwapTransactions, { wallet: walletId })
+  const durableSwapTransactions = useQuery(
+    api.sandbox.transactions.getWalletSwapTransactions,
+    scope.swapTransactions ? { wallet: walletId } : "skip",
+  )
   const saveRewardsState = useMutation(api.sandbox.rewards.saveState)
-  const rewardsState = useQuery(api.sandbox.rewards.getState, { wallet: walletId })
-  const umbrellaSessionState = useQuery(api.sandbox.umbrella.getSessionState, { wallet: walletId })
+  const rewardsState = useQuery(api.sandbox.rewards.getState, scope.rewards ? { wallet: walletId } : "skip")
+  const umbrellaSessionState = useQuery(
+    api.sandbox.umbrella.getSessionState,
+    scope.umbrella ? { wallet: walletId } : "skip",
+  )
   const recordUmbrellaAction = useMutation(api.sandbox.umbrella.recordAction)
   const { revisions, walletHydrationPending, handleWalletHydrated } = useWalletHydrationScope(walletId)
 
@@ -302,8 +319,18 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
     (args) => recordUmbrellaAction({ wallet: walletId, ...args }),
     [recordUmbrellaAction, walletId],
   )
-  const remoteUmbrellaState: ConvexUmbrellaSessionState | null | undefined =
-    umbrellaSessionState === undefined ? undefined : (umbrellaSessionState as unknown as ConvexUmbrellaSessionState)
+  const remoteUmbrellaState: ConvexUmbrellaSessionState | null | undefined = !scope.umbrella
+    ? null
+    : umbrellaSessionState === undefined
+      ? undefined
+      : (umbrellaSessionState as unknown as ConvexUmbrellaSessionState)
+  const remoteRewardsState = !scope.rewards
+    ? null
+    : (rewardsState?.stateJson ?? (rewardsState === null ? null : undefined))
+  const remoteRewardsRevision = !scope.rewards
+    ? null
+    : (rewardsState?.revision ?? (rewardsState === null ? null : undefined))
+  const remoteSwapTransactions = !scope.swapTransactions ? [] : (durableSwapTransactions ?? undefined)
   return (
     <AvanaSessionsProvider
       walletId={walletId}
@@ -312,19 +339,19 @@ export function ConvexAvanaSessionsProvider({ walletId, children }: { walletId: 
       persistMultiplyTransaction={persistMultiplyTransaction}
       persistSwapTransaction={persistSwapTransaction}
       serverGetSwapQuote={serverGetSwapQuote}
-      remoteSwapTransactions={durableSwapTransactions ?? undefined}
-      remoteRewardsState={rewardsState?.stateJson ?? (rewardsState === null ? null : undefined)}
-      remoteRewardsRevision={rewardsState?.revision ?? (rewardsState === null ? null : undefined)}
+      remoteSwapTransactions={remoteSwapTransactions}
+      remoteRewardsState={remoteRewardsState}
+      remoteRewardsRevision={remoteRewardsRevision}
       persistRewardsState={persistRewardsState}
       persistLocalState={false}
       remoteUmbrellaState={remoteUmbrellaState}
       persistUmbrellaAction={persistUmbrellaAction}
       persistUmbrellaState={false}
       sessionSource="convex"
-      authoritativeWalletPending={walletHydrationPending}
+      authoritativeWalletPending={scope.walletSession ? walletHydrationPending : false}
     >
-      <ConvexMarketSnapshotHydrators />
-      <ConvexWalletHydrators walletId={walletId} onWalletHydrated={handleWalletHydrated} />
+      <ConvexMarketSnapshotHydrators scope={scope} />
+      <ConvexWalletHydrators walletId={walletId} scope={scope} onWalletHydrated={handleWalletHydrated} />
       {children}
     </AvanaSessionsProvider>
   )
