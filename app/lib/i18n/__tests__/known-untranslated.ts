@@ -25,6 +25,32 @@ export const KNOWN_UNTRANSLATED: readonly string[] = [
   "Equity",
   "leverage",
   "debt",
+  // Borrow "My Debts" table — column (i) help text.
+  "The asset you've borrowed against your collateral.",
+  "Your outstanding loan balance in this asset, valued live.",
+  "Interest accrued on this debt so far, ticking in real time.",
+  // Wallet tab — Tokens + Pools table column (i) help text.
+  "A token held directly in your connected wallet.",
+  "The amount of this token in your wallet.",
+  "The token balance valued at its live price.",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.",
+  "Whether the position's price range is active and earning fees.",
+  "The current value of your pooled tokens.",
+  "Trading fees this position has earned, claimable to your wallet.",
+  // Lend investments table — column (i) help text.
+  "The token you've supplied to earn lending yield.",
+  "Your supplied balance in this asset, valued at its live price.",
+  "Current annual percentage yield on your deposit, before protocol rewards.",
+  // Borrow "My Collaterals" table — column (i) help text.
+  "The collateral asset backing your borrowing, valued at its live price.",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.",
+  // Multiply Positions table — redesigned column (i) help text + Value caption.
+  "The collateral you supply and the asset you borrow against it to build leverage.",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.",
+  "Exp.",
   // Multiply Balance — Interest Earned tile help text.
   "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)",
   "{amount} in cooldown",
