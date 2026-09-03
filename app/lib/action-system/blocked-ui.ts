@@ -1,9 +1,6 @@
 export type BlockedCta = {
   /** Short, button-sized label describing why the action can't proceed. */
   label: string
-  /** When true the CTA stays active and should navigate the user somewhere that
-   *  unblocks them (e.g. pledge collateral) instead of sitting disabled. */
-  redirect?: boolean
 }
 
 /**

@@ -64,12 +64,6 @@ vi.mock("@/app/components/home-workspace-primitives", () => ({
   PairVisual: () => <div />,
 }))
 
-vi.mock("@/components/ui/dialog", () => ({
-  Dialog: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DialogContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DialogTitle: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-}))
-
 vi.mock("@/app/components/action-page/action-page-launch-cta", () => ({
   ActionPageLaunchCta: ({ kind, label, amount }: { kind: string; label?: string; amount?: string }) => (
     <a data-testid={`action-launch-${kind}`} data-amount={amount ?? ""} href={`/actions/borrow/${kind}`}>

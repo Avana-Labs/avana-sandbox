@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState, type ReactNode } from "react"
-import { useRouter } from "next/navigation"
 import type { ActionPreviewUi, ActionStage } from "@/app/lib/action-system/contracts"
 import { ActionAmountCard, ActionFooter, type ActionAssetOption } from "@/app/components/action-page/action-amount-card"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
@@ -22,7 +21,6 @@ import {
   shouldShowWalletToast,
   walletToastMessage,
 } from "@/app/lib/action-system/stage-machine"
-import { blockedCtaLabel } from "@/app/lib/action-system/blocked-ui"
 
 function formatBlockedOutcomeMessage(blockedReason: string, balanceValue?: string | null) {
   const normalizedBalance = balanceValue?.replace(/[^\d.]/g, "") ?? ""
@@ -87,10 +85,6 @@ type ActionConfigureStageProps = {
   assetPickerDisabled?: boolean
   assetPickerHint?: string
   onAssetPickerBlocked?: () => void
-  /** When the current block should route the user elsewhere (e.g. pledge
-   *  collateral before borrowing), the primary CTA stays active and navigates
-   *  here instead of sitting disabled. */
-  blockedRedirectHref?: string | null
   /** Product-specific detail content that replaces the generic rate/market/metrics
    *  block (e.g. the Umbrella market-risk card). The risk banner + network fee row
    *  still render around it. */
@@ -248,14 +242,12 @@ export function ActionConfigureStage({
   assetLabel,
   amountUnitLabel,
   inputLabel,
-  blockedRedirectHref,
   detailsSlot,
   deferDetailsUntilAmount = false,
   animateDetails = true,
   allowAssetSwitchWhenReadOnly = false,
 }: ActionConfigureStageProps) {
   const { t } = useTranslation()
-  const router = useRouter()
   const configureStage = stage === "error" ? "configure" : stage
   const isValid = Boolean(preview?.allowed)
   // Progressive disclosure (opt-in): keep the risk banner + network-fee row hidden
@@ -263,13 +255,6 @@ export function ActionConfigureStage({
   const showDeferredDetails = !deferDetailsUntilAmount || parsePositiveActionAmount(amount) != null
   const blockedReason = preview?.blockedReason ?? null
   const amountEntered = parsePositiveActionAmount(amount) != null
-  // Only reasons the label mapper flags as "redirect" (legacy) turn the CTA into
-  // an active navigation; every other block leaves it disabled. Redirects are no
-  // longer used for no-collateral — inline banners explain the block instead.
-  const blockedRedirects = blockedReason
-    ? Boolean(blockedCtaLabel(blockedReason, { symbol: assetSymbol }).redirect)
-    : false
-  const isRedirectBlock = Boolean(blockedReason && blockedRedirectHref && blockedRedirects)
   const primaryLabel = primaryCtaLabel({
     stage: configureStage,
     verb,
@@ -283,14 +268,8 @@ export function ActionConfigureStage({
     isValid,
     isPending,
     blockedReason,
-    blockedRedirect: isRedirectBlock,
   })
-  // A redirect block (legacy) sends the tap elsewhere; prefer inline banners.
   const handlePrimary = () => {
-    if (isRedirectBlock && blockedRedirectHref) {
-      router.push(blockedRedirectHref)
-      return
-    }
     onPrimary?.()
   }
   const secondaryLabel = secondaryCtaLabel(stage, { canGoBack })
