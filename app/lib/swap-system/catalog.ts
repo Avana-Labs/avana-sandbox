@@ -121,6 +121,23 @@ export const SWAP_ASSETS: SwapAsset[] = [
     maximumSwapAmount: 500,
   },
   {
+    // Multiply collateral (see multiply-system/catalog markets crv-crvusd, crvusd-usdt), surfaced in
+    // the dashboard "Available to use" card. Metadata-only so the row resolves a real name/icon/price
+    // instead of "Unsupported asset"; not swap-routed (isSwapEnabled: false → adds no SWAP_PAIRS).
+    id: "crvusd",
+    chainId: SWAP_CHAIN_ID,
+    symbol: "crvUSD",
+    name: "Curve USD",
+    decimals: 18,
+    assetType: "erc20",
+    isNative: false,
+    isLpToken: false,
+    isSwapEnabled: false,
+    priceUsd: sandboxBaselinePriceUsd("CRVUSD"),
+    minimumSwapAmount: 0,
+    maximumSwapAmount: 0,
+  },
+  {
     id: "eth-usdc-lp",
     chainId: SWAP_CHAIN_ID,
     symbol: "ETH/USDC LP",
