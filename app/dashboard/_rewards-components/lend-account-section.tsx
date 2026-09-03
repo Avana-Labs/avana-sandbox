@@ -7,6 +7,7 @@ import { useDashboardLendLive } from "@/app/dashboard/use-dashboard-lend-live"
 import { buildLendBalanceMetrics, buildLendDashboardMetrics } from "@/app/dashboard/dashboard-tab-metrics"
 import { DashboardLendPerformanceSection } from "@/app/dashboard/dashboard-metric-section"
 import { DashboardInvestments } from "@/app/dashboard/dashboard-investments"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 import type { PortfolioLendTabData } from "@/app/lib/data/providers/portfolio"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -61,6 +62,11 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
         walletId={walletId ?? ""}
         sourceTypes={["lend_available"]}
         title={t("Available to deposit")}
+        action={{
+          icon: "deposit",
+          label: t("Deposit"),
+          href: (row) => actionPagePath("lend", "deposit", { market: row.symbol.toLowerCase(), return: returnHref }),
+        }}
       />
       <DashboardInvestments
         investments={lendTabData.investments}

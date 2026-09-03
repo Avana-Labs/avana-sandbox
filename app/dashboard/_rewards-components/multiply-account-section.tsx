@@ -79,6 +79,11 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
         walletId={walletId ?? ""}
         sourceTypes={["multiply_available"]}
         title={t("Available to use")}
+        action={{
+          icon: "multiply",
+          label: t("Multiply"),
+          href: () => "/multiply",
+        }}
       />
       <div className="space-y-4">
         <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
