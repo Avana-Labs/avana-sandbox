@@ -33,7 +33,6 @@ import {
   TABLE_ROW_HOVER_BG,
   TABLE_ROW_HOVER_LEFT,
   TABLE_ROW_HOVER_RIGHT,
-  formatTableHeaderLabel,
 } from "@/app/lib/ui/table-row-hover"
 import { formatSectionCount } from "@/app/lib/ui/section-count"
 import { cn } from "@/lib/utils"
@@ -122,9 +121,23 @@ export function CollateralPositionsPanel({
                   <th className={cn(HEADER_CLASS, "pl-5 text-left")}>
                     <MetricHeader label={t("Asset")} help="The underlying token for this reserve" />
                   </th>
-                  <th className={cn(HEADER_CLASS, "text-right")}>{formatTableHeaderLabel(t("Deposited"))}</th>
-                  <th className={cn(HEADER_CLASS, "text-right")}>{formatTableHeaderLabel(t("APY"))}</th>
-                  <th className={cn(HEADER_CLASS, "text-right")}>{formatTableHeaderLabel(t("Earnings"))}</th>
+                  <th className={cn(HEADER_CLASS, "text-right")}>
+                    <MetricHeader
+                      label={t("Deposited")}
+                      help="Your supplied balance in this asset, valued at its live price"
+                      align="right"
+                    />
+                  </th>
+                  <th className={cn(HEADER_CLASS, "text-right")}>
+                    <MetricHeader
+                      label={t("APY")}
+                      help="Current supply yield earned on this collateral"
+                      align="right"
+                    />
+                  </th>
+                  <th className={cn(HEADER_CLASS, "text-right")}>
+                    <MetricHeader label={t("Earnings")} help="Yield this collateral has earned so far" align="right" />
+                  </th>
                   <th className={cn(HEADER_CLASS, "text-right")}>
                     <MetricHeader
                       label={t("Collateral Factor")}

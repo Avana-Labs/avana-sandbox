@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { ActionIcon } from "@/app/components/action-icon"
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { Button } from "@/components/ui/button"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
@@ -43,6 +44,23 @@ import {
 import { cn } from "@/lib/utils"
 
 const MASK = "••••"
+
+function InvestmentsMetricHeader({
+  label,
+  help,
+  align = "left",
+}: {
+  label: string
+  help: string
+  align?: "left" | "right"
+}) {
+  return (
+    <span className={cn("inline-flex items-center gap-1", align === "right" && "justify-end")}>
+      {formatTableHeaderLabel(label)}
+      <ActionMetricHelp topic={label} text={help} />
+    </span>
+  )
+}
 
 function formatClaimableUsd(value: number) {
   const { rate, symbol, zeroDecimal } = getActiveCurrency()
@@ -187,11 +205,26 @@ export function DashboardInvestments({
                 <thead>
                   <tr className={TABLE_HEADER_ROW}>
                     {showIndexColumn ? <th className={cn(TABLE_HEADER_CELL, "px-4 text-left")}>#</th> : null}
-                    <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>{formatTableHeaderLabel(t("Asset"))}</th>
-                    <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
-                      {formatTableHeaderLabel(t("Deposited"))}
+                    <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>
+                      <InvestmentsMetricHeader
+                        label={t("Asset")}
+                        help={t("The token you've supplied to earn lending yield.")}
+                      />
                     </th>
-                    <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{formatTableHeaderLabel(t("APY"))}</th>
+                    <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                      <InvestmentsMetricHeader
+                        label={t("Deposited")}
+                        help={t("Your supplied balance in this asset, valued at its live price.")}
+                        align="right"
+                      />
+                    </th>
+                    <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                      <InvestmentsMetricHeader
+                        label={t("APY")}
+                        help={t("Current annual percentage yield on your deposit, before protocol rewards.")}
+                        align="right"
+                      />
+                    </th>
                     <SilentActionHeader className="!rounded-none pr-5" />
                   </tr>
                 </thead>

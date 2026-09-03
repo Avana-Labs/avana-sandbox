@@ -79,8 +79,9 @@ describe("SuppliesPanel column scope", () => {
     expect(view.getAllByText(/^RISK$/).length).toBeGreaterThan(0)
     expect(view.getAllByText(/^Health$/).length).toBeGreaterThan(0)
     // Liquidation value comes from the SAME field the My Debts table reads
-    // (liquidationThresholdUsd), so the two tables never disagree.
-    expect(view.getAllByText(/^Liq\.$/).length).toBeGreaterThan(0)
+    // (liquidationThresholdUsd), so the two tables never disagree. It is labelled
+    // "Liq." with an (i) that explains it is a USD figure (vs Multiply's per-token price).
+    expect(container.textContent).toMatch(/Liq\./)
     expect(container.textContent).toMatch(/4,100/)
     // No per-position "Max Borrow" label is shown that would imply the borrow
     // capacity belongs to this single dust-sized row.

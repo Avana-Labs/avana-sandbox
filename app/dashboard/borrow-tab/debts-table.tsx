@@ -63,6 +63,15 @@ type DebtsTableProps = {
 
 const MASK = "••••"
 
+function DebtsMetricHeader({ label, help, align = "left" }: { label: string; help: string; align?: "left" | "right" }) {
+  return (
+    <span className={cn("inline-flex items-center gap-1", align === "right" && "justify-end")}>
+      {formatTableHeaderLabel(label)}
+      <ActionMetricHelp topic={label} text={help} />
+    </span>
+  )
+}
+
 /**
  * Interest owed, ticking in real time — the debt mirror of the Lend Assets APY cell's earned
  * counter. Big line is the borrow rate; this small line accrues `borrowed × APR` on top of the
@@ -135,12 +144,25 @@ export function DebtsPanel({
                   </colgroup>
                   <thead>
                     <tr className={TABLE_HEADER_ROW}>
-                      <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>{formatTableHeaderLabel(t("Debt"))}</th>
-                      <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
-                        {formatTableHeaderLabel(t("Borrowed"))}
+                      <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>
+                        <DebtsMetricHeader
+                          label={t("Debt")}
+                          help={t("The asset you've borrowed against your collateral.")}
+                        />
                       </th>
                       <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
-                        {formatTableHeaderLabel(t("Interest Owed"))}
+                        <DebtsMetricHeader
+                          label={t("Borrowed")}
+                          help={t("Your outstanding loan balance in this asset, valued live.")}
+                          align="right"
+                        />
+                      </th>
+                      <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                        <DebtsMetricHeader
+                          label={t("Interest Owed")}
+                          help={t("Interest accrued on this debt so far, ticking in real time.")}
+                          align="right"
+                        />
                       </th>
                       <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-left")} />
                     </tr>

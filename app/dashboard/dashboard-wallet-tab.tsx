@@ -45,6 +45,23 @@ const MASK = "••••"
 // Do not invent LP fee/status analytics — show dashes until live data exists.
 const LP_UI_DETAILS: Record<string, { feesUsd: number; status: "inactive"; protocol: string }> = {}
 
+function WalletMetricHeader({
+  label,
+  help,
+  align = "left",
+}: {
+  label: string
+  help: string
+  align?: "left" | "right"
+}) {
+  return (
+    <span className={cn("inline-flex items-center gap-1", align === "right" && "justify-end")}>
+      {formatTableHeaderLabel(label)}
+      <ActionMetricHelp topic={label} text={help} />
+    </span>
+  )
+}
+
 function sectionCount(count: number, singular: string, plural: string) {
   return `${count} ${count === 1 ? singular : plural}`
 }
@@ -395,9 +412,23 @@ function WalletBalanceSection({
           </colgroup>
           <thead>
             <tr className={TABLE_HEADER_ROW}>
-              <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>{formatTableHeaderLabel(t("Asset"))}</th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{formatTableHeaderLabel(t("Balance"))}</th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{formatTableHeaderLabel(t("Value"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>
+                <WalletMetricHeader label={t("Asset")} help={t("A token held directly in your connected wallet.")} />
+              </th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                <WalletMetricHeader
+                  label={t("Balance")}
+                  help={t("The amount of this token in your wallet.")}
+                  align="right"
+                />
+              </th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                <WalletMetricHeader
+                  label={t("Value")}
+                  help={t("The token balance valued at its live price.")}
+                  align="right"
+                />
+              </th>
               <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")} aria-label={t("Swap")} />
             </tr>
           </thead>
@@ -511,10 +542,32 @@ function PoolsBalanceSection({
           </colgroup>
           <thead>
             <tr className={TABLE_HEADER_ROW}>
-              <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>{formatTableHeaderLabel(t("Pool"))}</th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4 text-left")}>{formatTableHeaderLabel(t("Status"))}</th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{formatTableHeaderLabel(t("Balance"))}</th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>{formatTableHeaderLabel(t("Fees"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>
+                <WalletMetricHeader
+                  label={t("Pool")}
+                  help={t("A liquidity-pool position you hold, paired tokens supplied to a DEX.")}
+                />
+              </th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4 text-left")}>
+                <WalletMetricHeader
+                  label={t("Status")}
+                  help={t("Whether the position's price range is active and earning fees.")}
+                />
+              </th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                <WalletMetricHeader
+                  label={t("Balance")}
+                  help={t("The current value of your pooled tokens.")}
+                  align="right"
+                />
+              </th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
+                <WalletMetricHeader
+                  label={t("Fees")}
+                  help={t("Trading fees this position has earned, claimable to your wallet.")}
+                  align="right"
+                />
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border dark:divide-white/6">

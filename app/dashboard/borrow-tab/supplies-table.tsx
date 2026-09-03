@@ -56,6 +56,23 @@ type SuppliesTableProps = {
 
 const MASK = "••••"
 
+function SuppliesMetricHeader({
+  label,
+  help,
+  align = "left",
+}: {
+  label: string
+  help: string
+  align?: "left" | "right"
+}) {
+  return (
+    <span className={cn("inline-flex items-center gap-1", align === "right" && "justify-end")}>
+      {formatTableHeaderLabel(label)}
+      <ActionMetricHelp topic={label} text={help} />
+    </span>
+  )
+}
+
 export function SuppliesPanel({
   rows,
   totals,
@@ -99,12 +116,29 @@ export function SuppliesPanel({
                   <thead>
                     <tr className={TABLE_HEADER_ROW}>
                       <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>
-                        {formatTableHeaderLabel(t("Collateral"))}
+                        <SuppliesMetricHeader
+                          label={t("Collateral")}
+                          help={t("The collateral asset backing your borrowing, valued at its live price.")}
+                        />
                       </th>
                       <th className={cn(TABLE_HEADER_CELL, "whitespace-nowrap px-4 text-right")}>
-                        {formatTableHeaderLabel(t("Borrow Power"))}
+                        <SuppliesMetricHeader
+                          label={t("Borrow Power")}
+                          help={t(
+                            "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.",
+                          )}
+                          align="right"
+                        />
                       </th>
-                      <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{formatTableHeaderLabel(t("Risk"))}</th>
+                      <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                        <SuppliesMetricHeader
+                          label={t("Risk")}
+                          help={t(
+                            "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.",
+                          )}
+                          align="right"
+                        />
+                      </th>
                       <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-left")} />
                     </tr>
                   </thead>
