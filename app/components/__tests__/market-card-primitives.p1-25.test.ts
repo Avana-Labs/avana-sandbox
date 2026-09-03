@@ -25,8 +25,11 @@ describe("MarketMobileCard surfaces", () => {
     )
 
     expect(identity).toMatch(/text-\[15px\].*font-medium/)
-    expect(identity).toMatch(/text-\[12px\].*font-normal/)
-    expect(source).toMatch(/MarketMobileSupportingValue[\s\S]*text-\[12px\]/)
+    expect(identity).toMatch(/text-\[13px\].*font-normal/)
+    expect(source).toMatch(/MarketMobileSupportingValue[\s\S]*text-\[13px\]/)
+    // Stat rows: labels readable on mobile, values one step larger than labels.
+    expect(source).toMatch(/MarketMobileStatRow[\s\S]*text-\[13px\][\s\S]*text-muted-foreground/)
+    expect(source).toMatch(/MarketMobileStatRow[\s\S]*text-\[15px\]/)
   })
 
   it("defines one action footer with stable spacing and column variants", () => {

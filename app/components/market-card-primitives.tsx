@@ -61,7 +61,7 @@ export function MarketMobileIdentityText({
         {title}
       </div>
       {subtitle ? (
-        <div className="mt-0.5 truncate text-[12px] font-normal leading-4 tracking-normal text-muted-foreground dark:text-white/48">
+        <div className="mt-0.5 truncate text-[13px] font-normal leading-4 tracking-normal text-muted-foreground dark:text-white/48">
           {subtitle}
         </div>
       ) : null}
@@ -70,7 +70,7 @@ export function MarketMobileIdentityText({
 }
 
 export function MarketMobileSupportingValue({ children }: { children: ReactNode }) {
-  return <span className="ml-2 text-[12px] font-normal tracking-normal text-muted-foreground">{children}</span>
+  return <span className="ml-2 text-[13px] font-normal tracking-normal text-muted-foreground">{children}</span>
 }
 
 export function MarketMobileMetric({
@@ -89,7 +89,7 @@ export function MarketMobileMetric({
       >
         {value}
       </div>
-      <div className="mt-0.5 text-[11px] font-normal uppercase leading-4 tracking-[0.06em] text-muted-foreground">
+      <div className="mt-0.5 text-[13px] font-normal leading-4 tracking-normal text-muted-foreground">
         {label}
       </div>
     </>
@@ -97,7 +97,7 @@ export function MarketMobileMetric({
 }
 
 export function MarketMobileStatList({ children, className }: { children: ReactNode; className?: string }) {
-  return <dl className={cn("divide-y divide-border text-[12px] leading-4", className)}>{children}</dl>
+  return <dl className={cn("divide-y divide-border leading-5", className)}>{children}</dl>
 }
 
 export function MarketMobileStatRow({
@@ -110,9 +110,14 @@ export function MarketMobileStatRow({
   valueClassName?: string
 }) {
   return (
-    <div className="flex items-center justify-between py-2">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className={cn("font-data font-normal tabular-nums whitespace-nowrap text-foreground", valueClassName)}>
+    <div className="flex items-center justify-between gap-3 py-2.5">
+      <dt className="text-[13px] text-muted-foreground">{label}</dt>
+      <dd
+        className={cn(
+          "font-data text-[15px] font-normal tabular-nums whitespace-nowrap text-foreground",
+          valueClassName,
+        )}
+      >
         {value}
       </dd>
     </div>

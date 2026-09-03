@@ -2,6 +2,16 @@
 
 import Link from "next/link"
 import { ActionIcon } from "@/app/components/action-icon"
+import {
+  MarketMobileActionFooter,
+  MarketMobileCard,
+  MarketMobileCardHeader,
+  MarketMobileIdentityText,
+  MarketMobileMetric,
+  MarketMobileStatList,
+  MarketMobileStatRow,
+  MarketMobileSupportingValue,
+} from "@/app/components/market-card-primitives"
 import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
 import { Button } from "@/components/ui/button"
@@ -16,7 +26,7 @@ import {
   TABLE_ROW_HOVER_RIGHT,
 } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
-import { formatCompactUsd, formatPct, formatUsd } from "../format"
+import { formatPct, formatUsd } from "../format"
 
 type PositionRow = {
   id: UmbrellaMarketId
@@ -32,12 +42,10 @@ type PositionRow = {
   apyReward: string
   pendingRewards: number
   pendingRewardsLabel: string
+  claimedRewardsUsd: number
   claimedRewardsLabel: string
   cooldownStatus: "idle" | "cooling" | "ready" | "expired"
   hasClaim: boolean
-  coverageRatioPct: number
-  coverageRatioLabel: string
-  targetLiquidityLabel: string
 }
 
 export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (marketId: UmbrellaMarketId) => void }) {
@@ -47,7 +55,6 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
     const market = umbrella.markets[id]
     const position = umbrella.positions[id]
     const activeStakeUsd = Math.max(position.valueUsd - position.cooldownValueUsd, 0)
-    const coverageRatioPct = market.targetCoverageUsd > 0 ? (market.totalStakedUsd / market.targetCoverageUsd) * 100 : 0
     return {
       id,
       asset: market.asset,
@@ -62,12 +69,10 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
       apyReward: `${formatPct(market.rewardApy)}%`,
       pendingRewards: position.pendingRewardsUsd,
       pendingRewardsLabel: formatUsd(position.pendingRewardsUsd),
+      claimedRewardsUsd: position.claimedRewardsUsd,
       claimedRewardsLabel: formatUsd(position.claimedRewardsUsd),
       cooldownStatus: position.cooldownStatus,
       hasClaim: position.pendingRewardsUsd > 0,
-      coverageRatioPct,
-      coverageRatioLabel: t("{pct}% of target").replace("{pct}", formatPct(coverageRatioPct)),
-      targetLiquidityLabel: t("{amount} target").replace("{amount}", formatCompactUsd(market.targetCoverageUsd)),
     }
   })
 
@@ -199,7 +204,7 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
 
       <div className="space-y-2 md:hidden">
         {showEmptyState ? (
-          <div className="flex flex-col items-center gap-3 rounded-radius-md bg-card px-3 py-6 text-center">
+          <MarketMobileCard className="flex flex-col items-center gap-3 py-6 text-center">
             <span className="text-[14px] text-muted-foreground">{t("You have no Umbrella positions yet.")}</span>
             <Button asChild size="sm" variant="brand" className="h-10 w-full gap-2">
               <Link href={actionPagePath("umbrella", "stake", { return: "/umbrella" })}>
@@ -207,68 +212,65 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                 {t("Stake")}
               </Link>
             </Button>
-          </div>
+          </MarketMobileCard>
         ) : (
           visible.map((row) => (
-            <div key={row.id} className="rounded-radius-md bg-card px-3 py-3" onClick={() => handleRowClick(row.id)}>
-              <div className="flex items-center gap-3">
-                <TokenIcon symbol={row.symbol} size="table" />
-                <div>
-                  <div className="font-semibold text-foreground">{row.asset}</div>
-                  <div className="text-[13px] text-muted-foreground">
-                    {row.coverage} · {row.coverageRatioLabel}
+            <MarketMobileCard key={row.id} clickable className="space-y-2" onClick={() => handleRowClick(row.id)}>
+              <MarketMobileCardHeader
+                identity={
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <TokenIcon symbol={row.symbol} size="table" />
+                    <MarketMobileIdentityText title={row.asset} subtitle={row.coverage} />
                   </div>
-                  <div className="text-[12px] text-muted-foreground">{row.targetLiquidityLabel}</div>
-                </div>
-              </div>
-
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                <div>
-                  <div className="text-[13px] text-muted-foreground">{t("Active stake")}</div>
-                  <div className="font-medium">{row.activeStakeLabel}</div>
-                </div>
-                <div>
-                  <div className="text-[13px] text-muted-foreground">{t("Cooling")}</div>
-                  <div className={cn("font-medium", row.coolingUsd > 0 ? "text-warning" : "text-muted-foreground")}>
-                    {row.coolingLabel}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[13px] text-muted-foreground">{t("APY")}</div>
-                  <div className="font-medium">{row.apyTotal}</div>
-                  <div className="text-[12px] text-muted-foreground">
-                    {t("base {base} + reward {reward}")
-                      .replace("{base}", row.apyBase)
-                      .replace("{reward}", row.apyReward)}
-                  </div>
-                </div>
-                <div className="col-span-2">
-                  <div className="text-[13px] text-muted-foreground">{t("Rewards")}</div>
-                  <div className="font-medium text-success">
-                    {t("{amount} pending").replace("{amount}", row.pendingRewardsLabel)}
-                  </div>
-                  <div className="text-[12px] text-muted-foreground">
-                    {t("{amount} claimed").replace("{amount}", row.claimedRewardsLabel)}
-                  </div>
-                </div>
-              </div>
-
-              {row.hasClaim && (
-                <div className="mt-3 flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()}>
-                  <Button asChild size="sm" variant="brand" className="h-9 flex-1 gap-2">
-                    <Link
-                      href={actionPagePath("umbrella", "claim", {
-                        market: row.id,
-                        return: "/umbrella",
-                      })}
+                }
+                metric={<MarketMobileMetric value={row.apyTotal} label={t("APY")} />}
+              />
+              <MarketMobileStatList>
+                <MarketMobileStatRow label={t("Active stake")} value={row.activeStakeLabel} />
+                {row.coolingUsd > 0 ? (
+                  <MarketMobileStatRow
+                    label={t("Cooling")}
+                    value={row.coolingLabel}
+                    valueClassName="text-warning"
+                  />
+                ) : null}
+                <MarketMobileStatRow
+                  label={t("Rewards")}
+                  value={
+                    <span>
+                      {row.pendingRewardsLabel}
+                      {row.claimedRewardsUsd > 0 ? (
+                        <MarketMobileSupportingValue>
+                          {t("{amount} claimed").replace("{amount}", row.claimedRewardsLabel)}
+                        </MarketMobileSupportingValue>
+                      ) : null}
+                    </span>
+                  }
+                  valueClassName="text-success"
+                />
+              </MarketMobileStatList>
+              {row.hasClaim ? (
+                <div onClick={(event) => event.stopPropagation()}>
+                  <MarketMobileActionFooter columns={1}>
+                    <Button
+                      asChild
+                      variant="brand"
+                      className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal"
                     >
-                      <ActionIcon label={t("Claim")} />
-                      {t("Claim")}
-                    </Link>
-                  </Button>
+                      <Link
+                        href={actionPagePath("umbrella", "claim", {
+                          market: row.id,
+                          return: "/umbrella",
+                        })}
+                      >
+                        <ActionIcon label={t("Claim")} />
+                        {t("Claim")}
+                      </Link>
+                    </Button>
+                  </MarketMobileActionFooter>
                 </div>
-              )}
-            </div>
+              ) : null}
+            </MarketMobileCard>
           ))
         )}
       </div>
