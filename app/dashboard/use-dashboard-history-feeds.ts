@@ -81,26 +81,6 @@ export function sliceSnapshotsByRange<Row extends { at: number }>(snapshots: Row
   return filtered.length > 0 ? filtered : snapshots.slice(-1)
 }
 
-function toChartPoints<Row extends { at: number }>(snapshots: Row[], value: (row: Row) => number): ChartPoint[] {
-  return snapshots.map((row, index) => ({
-    time: index,
-    value: value(row),
-    label:
-      index === snapshots.length - 1
-        ? "Now"
-        : new Date(row.at).toLocaleDateString([], { month: "short", day: "numeric" }),
-  }))
-}
-
-function buildRangeData<Row extends { at: number }>(snapshots: Row[], value: (row: Row) => number): ChartRangeData {
-  const chronological = [...snapshots].sort((a, b) => a.at - b.at)
-  const ranges: ChartRangeData = { ...EMPTY_RANGE_DATA }
-  for (const range of Object.keys(EMPTY_RANGE_DATA) as ChartRangeOption[]) {
-    ranges[range] = toChartPoints(sliceSnapshotsByRange(chronological, range), value)
-  }
-  return ranges
-}
-
 function buildFeedFromRangeData(rangeData: ChartRangeData, valueFormat: ChartFeed["valueFormat"]): ChartFeed {
   const primary = rangeData.All
   const first = primary[0]?.value ?? 0
