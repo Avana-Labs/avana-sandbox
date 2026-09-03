@@ -376,9 +376,9 @@ describe("MultiplyActionPageClient", () => {
     expect(numberInput.value).toBe("1.8")
   })
 
-  it("E4: the displayed Collateral APY matches the supply APY used in Net APY", async () => {
+  it("E4: Net APY uses live supply APY and the Collateral/Borrow APY card is gone", async () => {
     // Diverge the live supply APY from the seed collateralAsset.apy (the post-Convex-
-    // hydration case) so the test fails if the panel shows the stale collateral apy.
+    // hydration case) so Net APY must read economics.supplyApy, not the stale seed.
     const state = buildMockMultiplySystemState(DEMO_WALLET_ID)
     state.walletBalancesUsd[DEMO_WALLET_ID] = { "aave-gho": 12_500 }
     const aave = state.markets["aave-gho"]!
@@ -398,8 +398,11 @@ describe("MultiplyActionPageClient", () => {
     const input = await screen.findByLabelText("Collateral amount")
     fireEvent.change(input, { target: { value: "5" } })
 
-    // The Collateral APY row must read 7.94% (the value fed into Net APY), not 7.60%.
-    await waitFor(() => expect(screen.getByText(/AAVE · 7\.94%/)).toBeInTheDocument())
+    // Rates moved to Market Rates on the detail page — action no longer shows this card.
+    await waitFor(() => expect(screen.getByText("Net APY")).toBeInTheDocument())
+    expect(screen.queryByText("Collateral APY")).not.toBeInTheDocument()
+    expect(screen.queryByText("Borrow APY")).not.toBeInTheDocument()
+    expect(screen.queryByText(/AAVE · 7\.94%/)).not.toBeInTheDocument()
     expect(screen.queryByText(/AAVE · 7\.60%/)).not.toBeInTheDocument()
   })
 

@@ -299,10 +299,8 @@ export function MultiplyActionPageClient({
                 market.collateralAsset.symbol,
                 market.borrowAsset.symbol,
               ),
-              // Display the SAME supply APY the engine feeds into Net APY. After a Convex
-              // snapshot updates economics.supplyApy but leaves the seed collateralAsset.apy
-              // untouched, the two diverge — showing "Collateral APY 7.60%" while Net APY
-              // reconciles with 7.94%. Single-source it from economics.supplyApy. (E4)
+              // Feed economics.supplyApy into the preview engine (not seed collateralAsset.apy)
+              // so Net APY stays aligned after Convex hydration updates rates. (E4)
               collateralApy: market.economics.supplyApy,
               borrowApy: market.borrowAsset.borrowApy,
               multiplier: parsedMultiplier,
@@ -462,7 +460,7 @@ export function MultiplyActionPageClient({
               collateralPriceUsd,
               catalogCollateralPriceUsd: collateralPriceUsd,
               multiplier: parsedMultiplier!,
-              // Same source as Net APY — see the configure-preview note above. (E4)
+              // Same supply APY source as configure preview — see note above. (E4)
               collateralApy: market.economics.supplyApy,
               borrowApy: market.borrowAsset.borrowApy,
               maxLtv: market.risk.maxLtv,

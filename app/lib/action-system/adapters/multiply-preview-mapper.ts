@@ -147,16 +147,6 @@ export function mapMultiplyPreviewToActionUi(
     rateValue: "",
     marketLabel: "Market",
     marketValue: options.marketLabel,
-    marketBreakdown: {
-      collateral: {
-        symbol: options.collateralSymbol,
-        apy: formatActionRatioPercent(options.collateralApy),
-      },
-      borrow: {
-        symbol: options.borrowSymbol,
-        apy: formatActionRatioPercent(options.borrowApy),
-      },
-    },
     balanceLabel: "Selected leverage",
     balanceValue: `${options.multiplier.toFixed(2)}x`,
     maxAmount: options.multiplier,
