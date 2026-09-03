@@ -103,7 +103,7 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
             <thead>
               <tr className="text-left">
                 <th className={cn(TABLE_HEADER_CELL, "pl-5")}>{t("Asset")}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("Stake")}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("Active stake")}</th>
                 <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("APY")}</th>
                 <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("Rewards")}</th>
                 <SilentActionHeader className="!rounded-none pr-5" />

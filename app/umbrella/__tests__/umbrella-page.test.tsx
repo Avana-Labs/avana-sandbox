@@ -23,7 +23,8 @@ describe("Umbrella page", () => {
   it("renders each seeded market with its APY breakdown", () => {
     renderUmbrellaPage()
 
-    expect(screen.getByText("Your Umbrella stake")).toBeInTheDocument()
+    expect(screen.getByText("Total position value")).toBeInTheDocument()
+    expect(screen.getByText("Includes active stake and cooldown")).toBeInTheDocument()
     // Canonical compact USD is one decimal ($55.0M), shared with the rest of the app
     // (previously the Umbrella-only formatter emitted two decimals, "$55.00M"). The
     // hero market sub-label was removed, so this now anchors on the Total coverage tile.

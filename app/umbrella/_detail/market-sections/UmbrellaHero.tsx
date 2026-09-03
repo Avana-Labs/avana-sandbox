@@ -43,7 +43,13 @@ export function UmbrellaHero() {
     }
   })()
   const userUmbrellaSnapshot = [
-    { label: t("Your Umbrella stake"), value: formatUsd(totalStakedUsd), change: "", tone: "muted" as const },
+    {
+      label: t("Total position value"),
+      hint: t("Includes active stake and cooldown"),
+      value: formatUsd(totalStakedUsd),
+      change: "",
+      tone: "muted" as const,
+    },
     { label: t("Weighted APY"), value: `${formatPct(weightedApy)}%`, change: "", tone: "muted" as const },
     { label: t("In cooldown"), value: formatCompactUsd(cooldownUsd), change: "", tone: "warning" as const },
     withdrawalReadyTile,
@@ -72,8 +78,15 @@ export function UmbrellaHero() {
         <div className="relative">
           <div className="grid grid-cols-2 gap-5 lg:grid-cols-4 lg:divide-x lg:divide-border">
             {userUmbrellaSnapshot.map((item) => (
-              <div key={item.label} className="min-w-0 lg:px-5 first:lg:pl-0 last:lg:pr-0">
+              <div
+                key={item.label}
+                className="min-w-0 lg:px-5 first:lg:pl-0 last:lg:pr-0"
+                title={"hint" in item && item.hint ? item.hint : undefined}
+              >
                 <div className="text-[13px] text-muted-foreground">{item.label}</div>
+                {"hint" in item && item.hint ? (
+                  <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground/80">{item.hint}</div>
+                ) : null}
                 <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
                   <span className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
                     {showDollarAmounts ? item.value : "••••"}
