@@ -731,7 +731,7 @@ export function AskAIPageClient({
     suggestions: ASK_AI_SUGGESTIONS.map((suggestion) => ({ prompt: suggestion.prompt })),
   })
 
-  if (!contentReady) return <AskAILoadingBody emptyThread={threadListsReady && threads.length === 0} />
+  if (!contentReady) return <AskAILoadingBody />
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>

@@ -5,24 +5,23 @@ import { AskAILoadingBody } from "@/app/ask/components/ask-ai-skeleton"
 afterEach(cleanup)
 
 describe("Ask AI loading body", () => {
-  it("shows one complete layout-matched shell without interim copy", () => {
+  it("shows one first-visit shell without chat bubbles or interim copy", () => {
     const { container } = render(<AskAILoadingBody />)
 
     expect(screen.getByTestId("ask-ai-loading-body")).toBeInTheDocument()
-    expect(screen.getByTestId("ask-ai-thread-skeleton")).toBeInTheDocument()
-    expect(screen.queryByText("Loading conversations")).not.toBeInTheDocument()
-    expect(screen.queryByText("No threads yet")).not.toBeInTheDocument()
-    expect(container.querySelectorAll(".skeleton-shimmer").length).toBeGreaterThan(10)
-  })
-
-  it("shows the empty-chat shape only for a confirmed first-time user", () => {
-    const { rerender } = render(<AskAILoadingBody emptyThread />)
-
     expect(screen.getByTestId("ask-ai-empty-thread-skeleton")).toBeInTheDocument()
     expect(screen.queryByTestId("ask-ai-thread-skeleton")).not.toBeInTheDocument()
+    expect(screen.queryByText("Loading conversations")).not.toBeInTheDocument()
+    expect(screen.queryByText("No threads yet")).not.toBeInTheDocument()
+    expect(container.querySelectorAll(".skeleton-shimmer").length).toBeGreaterThan(8)
+  })
 
-    rerender(<AskAILoadingBody />)
-    expect(screen.queryByTestId("ask-ai-empty-thread-skeleton")).not.toBeInTheDocument()
-    expect(screen.getByTestId("ask-ai-thread-skeleton")).toBeInTheDocument()
+  it("keeps the composer with the greeting instead of pinning it to the bottom", () => {
+    render(<AskAILoadingBody />)
+
+    const empty = screen.getByTestId("ask-ai-empty-thread-skeleton")
+    const column = empty.parentElement
+    expect(column).toHaveClass("justify-center")
+    expect(column?.querySelector(".mt-auto")).not.toBeInTheDocument()
   })
 })
