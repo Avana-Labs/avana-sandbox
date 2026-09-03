@@ -258,7 +258,7 @@ export function DashboardInvestments({
                               }}
                             >
                               <ActionIcon label="Deposit" />
-                              Deposit
+                              Add
                             </Button>
                             <Button
                               type="button"
@@ -348,7 +348,7 @@ export function DashboardInvestments({
                       }}
                     >
                       <ActionIcon label="Deposit" />
-                      Deposit
+                      Add
                     </Button>
                     <Button
                       type="button"
