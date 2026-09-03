@@ -14,15 +14,18 @@ describe("blockedCtaLabel", () => {
     expect(blockedCtaLabel("Insufficient balance").label).toBe("Insufficient balance")
   })
 
-  it("flags the no-collateral block as a redirect", () => {
+  it("maps no-collateral to a disabled in-place label (no redirect)", () => {
     expect(blockedCtaLabel("You have no collateral in this market yet.")).toEqual({
-      label: "Deposit collateral first",
-      redirect: true,
+      label: "No collateral",
     })
     expect(blockedCtaLabel("Deposit collateral before borrowing")).toEqual({
-      label: "Deposit collateral first",
-      redirect: true,
+      label: "No collateral",
     })
+    expect(blockedCtaLabel("You have no collateral in this market yet.").redirect).toBeUndefined()
+  })
+
+  it("maps missing multiply/deleverage positions to No position", () => {
+    expect(blockedCtaLabel("No open position to deleverage in this market.").label).toBe("No position")
   })
 
   it("maps liquidity, borrowing power, and market-state blocks to short labels", () => {
@@ -42,7 +45,7 @@ describe("blockedCtaLabel", () => {
     expect(blockedCtaLabel("Amount must be positive.").label).toBe("Enter an amount")
   })
 
-  it("only redirects for the no-collateral case", () => {
+  it("does not redirect for balance or market blocks", () => {
     expect(blockedCtaLabel("Insufficient wallet balance.").redirect).toBeUndefined()
     expect(blockedCtaLabel("Borrowing unavailable").redirect).toBeUndefined()
   })

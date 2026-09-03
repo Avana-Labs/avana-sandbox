@@ -262,8 +262,10 @@ export function ActionConfigureStage({
   // until an amount is entered, so the empty state stays clean.
   const showDeferredDetails = !deferDetailsUntilAmount || parsePositiveActionAmount(amount) != null
   const blockedReason = preview?.blockedReason ?? null
-  // Only reasons the label mapper flags as "redirect" (e.g. no collateral) turn
-  // the CTA into an active navigation; every other block leaves it disabled.
+  const amountEntered = parsePositiveActionAmount(amount) != null
+  // Only reasons the label mapper flags as "redirect" (legacy) turn the CTA into
+  // an active navigation; every other block leaves it disabled. Redirects are no
+  // longer used for no-collateral — inline banners explain the block instead.
   const blockedRedirects = blockedReason
     ? Boolean(blockedCtaLabel(blockedReason, { symbol: assetSymbol }).redirect)
     : false
@@ -273,7 +275,7 @@ export function ActionConfigureStage({
     verb,
     blockedReason,
     isValid,
-    amountEntered: parsePositiveActionAmount(amount) != null,
+    amountEntered,
     blockedSymbol: assetSymbol,
   })
   const primaryDisabled = shouldDisablePrimaryCta({
@@ -283,8 +285,7 @@ export function ActionConfigureStage({
     blockedReason,
     blockedRedirect: isRedirectBlock,
   })
-  // A redirect block (e.g. "Deposit collateral first") sends the tap to the flow
-  // that unblocks the user instead of running the normal submit handler.
+  // A redirect block (legacy) sends the tap elsewhere; prefer inline banners.
   const handlePrimary = () => {
     if (isRedirectBlock && blockedRedirectHref) {
       router.push(blockedRedirectHref)
@@ -302,6 +303,9 @@ export function ActionConfigureStage({
   // after === before, so showing the metrics would misrepresent a SAFE, unchanged
   // position. Hide the projected metrics and let the block reason speak instead.
   const previewBlocked = Boolean(preview && !preview.allowed && preview.blockedReason)
+  // Match reference UX: keep the amount card clean until the user types, then
+  // surface the inline Action unavailable banner (also show for amount-less actions).
+  const showBlockedBanner = previewBlocked && Boolean(blockedReason) && (hideAmountInput || amountEntered)
   const healthFactorRow = previewBlocked
     ? undefined
     : preview?.metrics.find((row) => isHealthFactorMetric(row.label, row.id))
@@ -448,7 +452,7 @@ export function ActionConfigureStage({
 
       {outcome ? <ActionOutcomeBanner tone={outcome.tone} title={outcome.title} message={outcome.message} /> : null}
 
-      {!outcome && previewBlocked && blockedReason ? (
+      {!outcome && showBlockedBanner && blockedReason ? (
         <ActionOutcomeBanner
           tone="error"
           title="Action unavailable"

@@ -122,7 +122,7 @@ describe("primaryCtaLabel", () => {
         blockedReason: "You have no collateral in this market yet.",
         isValid: false,
       }),
-    ).toBe("Deposit collateral first")
+    ).toBe("No collateral")
   })
 
   it("shows validation label for invalid entered amounts", () => {

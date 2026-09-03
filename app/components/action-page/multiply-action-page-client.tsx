@@ -239,7 +239,24 @@ export function MultiplyActionPageClient({
     }
 
     if (kind === "deleverage" && !position) {
-      setPreviewUi(null)
+      setPreviewUi({
+        allowed: false,
+        amountLabel: "0",
+        amountUsdLabel: "$0",
+        rateLabel: "Net APY",
+        rateValue: "—",
+        marketLabel: translateMultiplyLoopMarketLabel(t, market.collateralAsset.symbol, market.borrowAsset.symbol),
+        marketValue: market.id,
+        balanceLabel: "Position",
+        balanceValue: "None",
+        maxAmount: null,
+        metrics: [],
+        networkFeeLabel: "—",
+        risk: null,
+        blockedReason: "No open position to deleverage in this market.",
+        validationErrors: ["No open position to deleverage in this market."],
+        warnings: [],
+      })
       return
     }
 

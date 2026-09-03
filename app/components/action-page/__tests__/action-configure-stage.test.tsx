@@ -98,6 +98,48 @@ describe("ActionConfigureStage", () => {
     expect(cta).toBeDisabled()
   })
 
+  it("shows the Action unavailable banner only after an amount is entered", () => {
+    const blockedPreview = {
+      ...preview,
+      allowed: false as const,
+      blockedReason: "You have no collateral in this market yet. Supply collateral before borrowing.",
+    }
+
+    const { rerender } = render(
+      <ActionConfigureStage
+        stage="configure"
+        verb="Borrow"
+        amount=""
+        onAmountChange={() => undefined}
+        preview={blockedPreview}
+        assetSymbol="GHO"
+        onPrimary={() => undefined}
+      />,
+    )
+
+    expect(screen.queryByText("Action unavailable")).not.toBeInTheDocument()
+    expect(
+      screen.queryByText("You have no collateral in this market yet. Supply collateral before borrowing."),
+    ).not.toBeInTheDocument()
+
+    rerender(
+      <ActionConfigureStage
+        stage="configure"
+        verb="Borrow"
+        amount="100"
+        onAmountChange={() => undefined}
+        preview={blockedPreview}
+        assetSymbol="GHO"
+        onPrimary={() => undefined}
+      />,
+    )
+
+    expect(screen.getByText("Action unavailable")).toBeInTheDocument()
+    expect(
+      screen.getByText("You have no collateral in this market yet. Supply collateral before borrowing."),
+    ).toBeInTheDocument()
+  })
+
   it("shows receive WETH toggle when enabled", () => {
     render(
       <ActionConfigureStage

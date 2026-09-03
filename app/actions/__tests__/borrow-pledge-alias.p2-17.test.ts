@@ -19,6 +19,8 @@ describe("borrow pledge vocabulary", () => {
       resolve(__dirname, "../../components/action-page/borrow-action-page-client.tsx"),
       "utf8",
     )
-    expect(client).toMatch(/Pledge LP collateral before you can borrow against this market/)
+    expect(client).toMatch(/Choose the asset to borrow/)
+    expect(client).not.toMatch(/Pledge LP collateral before you can borrow against this market/)
+    expect(client).not.toMatch(/blockedRedirectHref/)
   })
 })

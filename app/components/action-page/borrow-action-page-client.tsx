@@ -1054,9 +1054,7 @@ export function BorrowActionPageClient({
             ? "Choose collateral to remove."
             : kind === "supply"
               ? "Choose the LP pool you want to pledge."
-              : kind === "borrow"
-                ? "Pledge LP collateral before you can borrow against this market."
-                : "Choose the asset to borrow."
+              : "Choose the asset to borrow."
       : stage === "success" || isProcessingStage(stage) || stage === "review"
         ? undefined
         : descriptor.subtitle
@@ -1067,12 +1065,6 @@ export function BorrowActionPageClient({
   // list is always scoped to the selected market (wallet-connection gating is
   // already enforced upstream by the sandbox/connect onboarding flow).
   const borrowNeedsCollateral = isHomeLayout && kind === "borrow" && !activeMarketId
-  // A borrow blocked for lack of collateral turns the CTA into a redirect that
-  // sends the user to pledge collateral for this market (no dead-end, no modal).
-  const blockedRedirectHref =
-    kind === "borrow" && previewUi?.blockedReason && !previewUi.allowed
-      ? actionPagePath("borrow", "supply", activeMarketId ? { market: activeMarketId } : {})
-      : null
   const useDialogAssetPicker = kind === "borrow" || kind === "repay"
   const pickerTokens = kind === "borrow" ? borrowTokens : kind === "repay" ? repayTokens : undefined
   const pickerSelectedTokenId =
@@ -1352,7 +1344,6 @@ export function BorrowActionPageClient({
           claimSummary={kind === "claim"}
           assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
           pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
-          blockedRedirectHref={blockedRedirectHref}
         />
       ) : null}
     </ActionPageShell>
