@@ -1499,6 +1499,68 @@ const dict: TranslationDictionary = {
   "Next rewards": "Hadiah berikutnya",
   "Open on Launch Date": "Terbuka pada tanggal peluncuran",
   "Previous rewards": "Hadiah sebelumnya",
+  "The asset you've borrowed against your collateral.": "Aset yang Anda pinjam dengan jaminan Anda.",
+  "Your outstanding loan balance in this asset, valued live.":
+    "Saldo pinjaman terutang Anda dalam aset ini, dinilai secara langsung.",
+  "A token held directly in your connected wallet.": "Token yang disimpan langsung di dompet Anda yang terhubung.",
+  "The amount of this token in your wallet.": "Jumlah token ini di dompet Anda.",
+  "The token balance valued at its live price.": "Saldo token ini, dinilai pada harga langsungnya.",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.":
+    "Posisi pool likuiditas yang Anda miliki, token berpasangan yang dipasok ke DEX.",
+  "Whether the position's price range is active and earning fees.":
+    "Apakah rentang harga posisi sedang aktif dan memperoleh biaya.",
+  "The current value of your pooled tokens.": "Nilai token pool Anda saat ini.",
+  "Trading fees this position has earned, claimable to your wallet.":
+    "Biaya trading yang diperoleh posisi ini, dapat diklaim ke dompet Anda.",
+  "The token you've supplied to earn lending yield.": "Token yang Anda pasok untuk memperoleh imbal hasil pinjaman.",
+  "Your supplied balance in this asset, valued at its live price.":
+    "Saldo yang Anda pasok pada aset ini, dinilai pada harga langsungnya.",
+  "Current annual percentage yield on your deposit, before protocol rewards.":
+    "Imbal hasil persentase tahunan saat ini atas setoran Anda, sebelum imbalan protokol.",
+  "The collateral asset backing your borrowing, valued at its live price.":
+    "Aset jaminan yang mendukung pinjaman Anda, dinilai pada harga langsungnya.",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.":
+    "Seberapa banyak lagi yang dapat Anda pinjam dengan jaminan ini; % menunjukkan seberapa besar batas likuidasi Anda yang sudah terpakai.",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.":
+    "Faktor kesehatan, dan nilai jaminan saat posisi ini dilikuidasi. Di bawah 1.0 memicu likuidasi.",
+  "The collateral you supply and the asset you borrow against it to build leverage.":
+    "Jaminan yang Anda pasok dan aset yang Anda pinjam dengannya untuk membangun leverage.",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.":
+    "Modal Anda sendiri dalam loop (eksposur dikurangi utang). Eksposur adalah total posisi leverage Anda.",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.":
+    "Imbal hasil bersih setelah biaya pinjaman, atas modal Anda. Angka di bawah adalah bunga yang diperoleh sejauh ini, terus bertambah secara langsung.",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.":
+    "Faktor kesehatan, dan harga jaminan saat loop ini dilikuidasi. Di bawah 1.0 memicu likuidasi.",
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)":
+    "Carry bersih yang diperoleh di seluruh loop Multiply Anda, terus terakumulasi secara langsung (imbal hasil suplai dikurangi biaya pinjaman)",
+  "Average APY across your staked positions, weighted by value.":
+    "APY rata-rata di seluruh posisi yang di-stake, tertimbang berdasarkan nilai.",
+  "Additional amount you can borrow against your pledged collateral within Avana credit limits":
+    "Jumlah tambahan yang dapat Anda pinjam dengan jaminan yang telah Anda berikan, dalam batas kredit Avana",
+  "Amount an active loan can lose before reaching liquidation; unavailable when you have no debt":
+    "Jumlah yang bisa hilang dari pinjaman aktif sebelum mencapai likuidasi; tidak tersedia jika Anda tidak memiliki utang",
+  "Combined liquidation value divided by total Multiply debt. Higher is safer; below 1 risks liquidation.":
+    "Nilai likuidasi gabungan dibagi total utang Multiply. Semakin tinggi semakin aman; di bawah 1 berisiko likuidasi.",
+  "Equity-weighted net APY after supply yield and borrow cost":
+    "APY bersih tertimbang ekuitas setelah imbal hasil suplai dan biaya pinjaman",
+  "Exposure, return, and liquidation risk for each active loop":
+    "Eksposur, return, dan risiko likuidasi untuk setiap loop aktif",
+  "Gross Multiply exposure after looping across all positions":
+    "Eksposur Multiply kotor setelah melakukan loop di seluruh posisi",
+  "Interest earned as a percentage of principal you supplied":
+    "Bunga yang diperoleh sebagai persentase dari pokok yang Anda pasok",
+  "Portfolio leverage as position value divided by equity": "Leverage portofolio sebagai nilai posisi dibagi ekuitas",
+  "Projected earnings at current rates": "Perkiraan pendapatan pada suku bunga saat ini",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)":
+    "Bunga pasokan yang terus terkumpul secara langsung di seluruh posisi simpanan Anda (tidak termasuk imbalan protokol)",
+  "Wallet-wide liquidation value divided by total borrowed. Higher is safer; below 1 risks liquidation.":
+    "Nilai likuidasi seluruh dompet dibagi total pinjaman. Semakin tinggi semakin aman; di bawah 1 berisiko likuidasi.",
+  "Prices may be stale": "Harga mungkin sudah usang",
+  "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.":
+    "Suku bunga pinjaman tahunan saat ini atas utang ini. Di bawah, bunga yang terkumpul sejauh ini, terus bertambah secara langsung.",
+  "Total AVA you've earned across completed quests and staking rewards.":
+    "Total AVA yang telah Anda peroleh dari misi yang telah diselesaikan dan hadiah staking.",
+  "AVA you can claim to your wallet right now.": "AVA yang dapat Anda klaim ke dompet Anda sekarang juga.",
 }
 
 export default dict

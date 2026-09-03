@@ -1,5 +1,6 @@
 "use client"
 
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { HowItWorks } from "@/app/components/how-it-works"
 import { Eye, EyeOff } from "@/app/components/icons"
@@ -27,9 +28,13 @@ export function UmbrellaHero() {
   const expiredIds = umbrella.marketOrder.filter((id) => umbrella.positions[id].cooldownStatus === "expired")
   const expiredUsd = expiredIds.reduce((sum, id) => sum + umbrella.positions[id].cooldownValueUsd, 0)
   const withdrawalReadyTile = (() => {
+    const hint = t(
+      "Once cooldown finishes, users can unstake during the withdrawal window before cooldown has to be restarted.",
+    )
     if (expiredIds.length > 0) {
       return {
         label: t("Restart cooldown"),
+        hint,
         value: formatCompactUsd(expiredUsd),
         change: "",
         tone: "muted" as const,
@@ -37,6 +42,7 @@ export function UmbrellaHero() {
     }
     return {
       label: t("Withdrawal ready"),
+      hint,
       value: formatCompactUsd(readyUsd),
       change: readySymbols,
       tone: readyUsd > 0 ? ("success" as const) : ("muted" as const),
@@ -50,8 +56,22 @@ export function UmbrellaHero() {
       change: "",
       tone: "muted" as const,
     },
-    { label: t("Weighted APY"), value: `${formatPct(weightedApy)}%`, change: "", tone: "muted" as const },
-    { label: t("In cooldown"), value: formatCompactUsd(cooldownUsd), change: "", tone: "warning" as const },
+    {
+      label: t("Weighted APY"),
+      hint: t("Average APY across your staked positions, weighted by value."),
+      value: `${formatPct(weightedApy)}%`,
+      change: "",
+      tone: "muted" as const,
+    },
+    {
+      label: t("In cooldown"),
+      hint: t(
+        "Start cooldown before withdrawing. During cooldown, the position keeps earning incentives and remains slashable.",
+      ),
+      value: formatCompactUsd(cooldownUsd),
+      change: "",
+      tone: "warning" as const,
+    },
     withdrawalReadyTile,
   ]
 
@@ -73,20 +93,18 @@ export function UmbrellaHero() {
         </div>
         <HowItWorks topic="umbrella" />
       </div>
-      <section className="relative overflow-hidden rounded-radius-md bg-card px-4 py-5 dark:bg-white/[0.04] sm:px-5">
-        <div className="pointer-events-none absolute inset-0 opacity-40 [background-image:radial-gradient(circle,rgba(148,163,184,0.16)_1px,transparent_1.2px)] [background-position:18px_18px] [background-size:16px_16px] dark:opacity-20 dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.07)_1px,transparent_1.2px)]" />
+      {/* No `overflow-hidden` here — it would clip the tile (i) tooltips. The decorative
+          dot layer carries its own rounding so it still stays within the card corners. */}
+      <section className="relative rounded-radius-md bg-card px-4 py-5 dark:bg-white/[0.04] sm:px-5">
+        <div className="pointer-events-none absolute inset-0 rounded-radius-md opacity-40 [background-image:radial-gradient(circle,rgba(148,163,184,0.16)_1px,transparent_1.2px)] [background-position:18px_18px] [background-size:16px_16px] dark:opacity-20 dark:[background-image:radial-gradient(circle,rgba(255,255,255,0.07)_1px,transparent_1.2px)]" />
         <div className="relative">
           <div className="grid grid-cols-2 gap-5 lg:grid-cols-4 lg:divide-x lg:divide-border">
             {userUmbrellaSnapshot.map((item) => (
-              <div
-                key={item.label}
-                className="min-w-0 lg:px-5 first:lg:pl-0 last:lg:pr-0"
-                title={"hint" in item && item.hint ? item.hint : undefined}
-              >
-                <div className="text-[13px] text-muted-foreground">{item.label}</div>
-                {"hint" in item && item.hint ? (
-                  <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground/80">{item.hint}</div>
-                ) : null}
+              <div key={item.label} className="min-w-0 lg:px-5 first:lg:pl-0 last:lg:pr-0">
+                <div className="flex items-center gap-1 text-[13px] text-muted-foreground">
+                  <span>{item.label}</span>
+                  {"hint" in item && item.hint ? <ActionMetricHelp text={item.hint} topic={item.label} /> : null}
+                </div>
                 <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
                   <span className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
                     {showDollarAmounts ? item.value : "••••"}

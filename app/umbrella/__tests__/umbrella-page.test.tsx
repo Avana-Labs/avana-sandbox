@@ -24,7 +24,9 @@ describe("Umbrella page", () => {
     renderUmbrellaPage()
 
     expect(screen.getByText("Total position value")).toBeInTheDocument()
-    expect(screen.getByText("Includes active stake and cooldown")).toBeInTheDocument()
+    // The "Includes active stake and cooldown" explainer now lives under an (i) tooltip
+    // instead of a visible sub-label.
+    expect(screen.getByLabelText("More information about Total position value")).toBeInTheDocument()
     // Canonical compact USD is one decimal ($55.0M), shared with the rest of the app
     // (previously the Umbrella-only formatter emitted two decimals, "$55.00M"). The
     // hero market sub-label was removed, so this now anchors on the Total coverage tile.
@@ -44,18 +46,16 @@ describe("Umbrella page", () => {
     expect(screen.getAllByText("5.05%").length).toBeGreaterThan(0)
   })
 
-  it("only routes Unstake links for positions whose cooldown is ready", () => {
+  it("never renders an Unstake CTA in the positions table (Claim is the only row action)", () => {
     renderUmbrellaPage()
 
-    const unstakeLinks = screen
-      .getAllByRole("link")
-      .filter((link) => link.getAttribute("href")?.startsWith("/actions/umbrella/unstake"))
-    const hrefs = unstakeLinks.map((link) => link.getAttribute("href")).filter(Boolean) as string[]
-
-    // USDT is seeded with cooldownStatus === "ready", so its Unstake CTA renders.
-    expect(hrefs.some((href) => href.includes("market=usdt"))).toBe(true)
-    // Idle positions (GHO, WETH) never render an Unstake row action anymore.
-    expect(hrefs.some((href) => href.includes("market=gho") && !href.includes("cooldown"))).toBe(false)
+    // Scope to the positions table region — unstaking still lives in the sidebar action rail.
+    const positions = within(screen.getByRole("region", { name: "Umbrella positions" }))
+    const links = positions.getAllByRole("link")
+    // No Unstake row action, even for positions whose cooldown is ready (e.g. seeded USDT).
+    expect(links.some((link) => link.getAttribute("href")?.startsWith("/actions/umbrella/unstake"))).toBe(false)
+    // Positions with pending rewards still expose a Claim row action.
+    expect(links.some((link) => link.getAttribute("href")?.startsWith("/actions/umbrella/claim"))).toBe(true)
   })
 
   it("exposes the four action tabs in the sidebar rail", () => {

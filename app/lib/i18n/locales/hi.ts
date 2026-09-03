@@ -1496,6 +1496,69 @@ const dict: TranslationDictionary = {
   "Next rewards": "अगले पुरस्कार",
   "Open on Launch Date": "लॉन्च तिथि पर खुलेगा",
   "Previous rewards": "पिछले पुरस्कार",
+  "The asset you've borrowed against your collateral.": "वह एसेट जो आपने अपने कोलैटरल के विरुद्ध उधार ली है।",
+  "Your outstanding loan balance in this asset, valued live.": "इस एसेट में आपका बकाया ऋण शेष, लाइव मूल्य पर आंका गया।",
+  "A token held directly in your connected wallet.": "एक टोकन जो सीधे आपके कनेक्टेड वॉलेट में रखा गया है।",
+  "The amount of this token in your wallet.": "आपके वॉलेट में इस टोकन की मात्रा।",
+  "The token balance valued at its live price.": "टोकन शेष, इसकी लाइव कीमत पर आंका गया।",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.":
+    "एक तरलता-पूल पोज़िशन जो आप रखते हैं, DEX को आपूर्ति किए गए जोड़ीदार टोकन।",
+  "Whether the position's price range is active and earning fees.":
+    "क्या पोज़िशन की मूल्य रेंज सक्रिय है और शुल्क अर्जित कर रही है।",
+  "The current value of your pooled tokens.": "आपके पूल किए गए टोकन का मौजूदा मूल्य।",
+  "Trading fees this position has earned, claimable to your wallet.":
+    "इस पोज़िशन द्वारा अर्जित ट्रेडिंग शुल्क, जो आपके वॉलेट में दावा योग्य है।",
+  "The token you've supplied to earn lending yield.":
+    "वह टोकन जो आपने लेंडिंग यील्ड अर्जित करने के लिए आपूर्ति किया है।",
+  "Your supplied balance in this asset, valued at its live price.":
+    "इस एसेट में आपकी आपूर्ति की गई शेष राशि, इसकी लाइव कीमत पर आंकी गई।",
+  "Current annual percentage yield on your deposit, before protocol rewards.":
+    "आपकी जमा राशि पर मौजूदा वार्षिक प्रतिशत प्रतिफल, प्रोटोकॉल रिवॉर्ड्स से पहले।",
+  "The collateral asset backing your borrowing, valued at its live price.":
+    "आपके उधार को समर्थन देने वाला कोलैटरल एसेट, इसकी लाइव कीमत पर आंका गया।",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.":
+    "आप इस कोलैटरल के विरुद्ध और कितना उधार ले सकते हैं; % दिखाता है कि आपकी लिक्विडेशन सीमा का कितना हिस्सा पहले से उपयोग हो चुका है।",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.":
+    "हेल्थ फैक्टर, और वह कोलैटरल मूल्य जिस पर यह पोज़िशन लिक्विडेट हो जाती है। 1.0 से नीचे जाने पर लिक्विडेशन शुरू हो जाता है।",
+  "The collateral you supply and the asset you borrow against it to build leverage.":
+    "वह कोलैटरल जो आप आपूर्ति करते हैं और वह एसेट जिसे आप लीवरेज बनाने के लिए इसके विरुद्ध उधार लेते हैं।",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.":
+    "लूप में आपकी अपनी पूंजी (एक्सपोज़र घटाकर ऋण)। एक्सपोज़र आपकी कुल लीवरेज्ड पोज़िशन है।",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.":
+    "आपकी पूंजी पर, उधार लागत के बाद शुद्ध यील्ड। नीचे दिया गया आंकड़ा अब तक अर्जित ब्याज है, जो लाइव अपडेट होता रहता है।",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.":
+    "हेल्थ फैक्टर, और वह कोलैटरल कीमत जिस पर यह लूप लिक्विडेट हो जाता है। 1.0 से नीचे जाने पर लिक्विडेशन शुरू हो जाता है।",
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)":
+    "आपके Multiply लूप में अर्जित शुद्ध कैरी, जो वास्तविक समय में संचित होती है (आपूर्ति यील्ड घटाकर उधार लागत)",
+  "Average APY across your staked positions, weighted by value.":
+    "आपकी स्टेक्ड पोज़िशनों में औसत APY, मूल्य के अनुसार भारित।",
+  "Additional amount you can borrow against your pledged collateral within Avana credit limits":
+    "Avana क्रेडिट सीमा के भीतर, आपके गिरवी रखे गए कोलैटरल के विरुद्ध आप जितनी अतिरिक्त राशि उधार ले सकते हैं",
+  "Amount an active loan can lose before reaching liquidation; unavailable when you have no debt":
+    "सक्रिय ऋण के लिक्विडेशन तक पहुंचने से पहले वह जितनी राशि गंवा सकता है; कोई ऋण न होने पर अनुपलब्ध",
+  "Combined liquidation value divided by total Multiply debt. Higher is safer; below 1 risks liquidation.":
+    "संयुक्त लिक्विडेशन मूल्य को कुल Multiply ऋण से भाग देकर। अधिक होना सुरक्षित है; 1 से नीचे लिक्विडेशन का जोखिम है।",
+  "Equity-weighted net APY after supply yield and borrow cost":
+    "आपूर्ति यील्ड और उधार लागत के बाद इक्विटी-भारित शुद्ध APY",
+  "Exposure, return, and liquidation risk for each active loop":
+    "प्रत्येक सक्रिय लूप के लिए एक्सपोज़र, रिटर्न और लिक्विडेशन जोखिम",
+  "Gross Multiply exposure after looping across all positions":
+    "सभी पोज़िशनों में लूपिंग के बाद सकल Multiply एक्सपोज़र",
+  "Interest earned as a percentage of principal you supplied":
+    "आपके द्वारा आपूर्ति किए गए मूलधन के प्रतिशत के रूप में अर्जित ब्याज",
+  "Portfolio leverage as position value divided by equity":
+    "पोज़िशन मूल्य को इक्विटी से भाग देकर प्राप्त पोर्टफोलियो लीवरेज",
+  "Projected earnings at current rates": "मौजूदा दरों पर अनुमानित आय",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)":
+    "आपकी लेंडिंग पोज़िशनों में वास्तविक समय में संचित हो रहा सप्लाई ब्याज (प्रोटोकॉल रिवॉर्ड्स को छोड़कर)",
+  "Wallet-wide liquidation value divided by total borrowed. Higher is safer; below 1 risks liquidation.":
+    "वॉलेट-व्यापी लिक्विडेशन मूल्य को कुल उधार से भाग देकर। अधिक होना सुरक्षित है; 1 से नीचे लिक्विडेशन का जोखिम है।",
+  "Prices may be stale": "कीमतें पुरानी हो सकती हैं",
+  "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.":
+    "इस ऋण पर मौजूदा वार्षिक उधार दर। नीचे, अब तक संचित ब्याज दिखाया गया है, जो लाइव अपडेट होता रहता है।",
+  "Total AVA you've earned across completed quests and staking rewards.":
+    "पूर्ण किए गए क्वेस्ट और स्टेकिंग रिवॉर्ड्स से आपके द्वारा अर्जित कुल AVA।",
+  "AVA you can claim to your wallet right now.": "AVA जिसे आप अभी अपने वॉलेट में क्लेम कर सकते हैं।",
 }
 
 export default dict

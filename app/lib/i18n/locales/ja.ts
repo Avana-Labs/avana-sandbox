@@ -1537,6 +1537,65 @@ const dict: TranslationDictionary = {
   "Next rewards": "次のリワード",
   "Open on Launch Date": "ローンチ日に開放",
   "Previous rewards": "前のリワード",
+  "The asset you've borrowed against your collateral.": "担保に対して借り入れている資産。",
+  "Your outstanding loan balance in this asset, valued live.": "ライブ価格で評価した、この資産の未返済ローン残高。",
+  "A token held directly in your connected wallet.": "接続済みのウォレットに直接保有しているトークン。",
+  "The amount of this token in your wallet.": "ウォレット内のこのトークンの数量。",
+  "The token balance valued at its live price.": "ライブ価格で評価したトークン残高。",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.":
+    "DEXに供給したペアトークンで構成される、保有中の流動性プールポジション。",
+  "Whether the position's price range is active and earning fees.":
+    "ポジションの価格レンジがアクティブで、手数料を獲得しているかどうか。",
+  "The current value of your pooled tokens.": "プールしたトークンの現在価値。",
+  "Trading fees this position has earned, claimable to your wallet.":
+    "ウォレットに請求可能な、このポジションが獲得した取引手数料。",
+  "The token you've supplied to earn lending yield.": "レンディング利回りを得るために供給したトークン。",
+  "Your supplied balance in this asset, valued at its live price.": "ライブ価格で評価した、この資産の供給残高。",
+  "Current annual percentage yield on your deposit, before protocol rewards.":
+    "プロトコル報酬適用前の、預け入れ資産の現在の年率。",
+  "The collateral asset backing your borrowing, valued at its live price.":
+    "ライブ価格で評価した、借入を裏付ける担保資産。",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.":
+    "この担保に対してさらに借り入れ可能な残り枠。%は清算限度のうち、すでに使用した割合を示します。",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.":
+    "ヘルスファクターと、このポジションが清算される担保価値。1.0を下回ると清算されます。",
+  "The collateral you supply and the asset you borrow against it to build leverage.":
+    "レバレッジを構築するために供給する担保と、それを担保に借り入れる資産。",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.":
+    "ループにおけるエクイティ（エクスポージャーから負債を差し引いた額）。エクスポージャーは、レバレッジをかけたポジションの合計です。",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.":
+    "エクイティに対する、借入コスト差引後のネット利回り。下の数値はこれまでに獲得した利息で、リアルタイムで増加します。",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.":
+    "ヘルスファクターと、このループが清算される担保価格。1.0を下回ると清算されます。",
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)":
+    "リアルタイムで発生する、Multiplyのループ全体で獲得したネットキャリー（供給利回りから借入コストを差し引いた額）",
+  "Average APY across your staked positions, weighted by value.": "ステークポジション全体の加重平均APY。",
+  "Additional amount you can borrow against your pledged collateral within Avana credit limits":
+    "Avanaの信用枠内で、差し入れた担保に対してさらに借り入れ可能な金額",
+  "Amount an active loan can lose before reaching liquidation; unavailable when you have no debt":
+    "アクティブなローンが清算に達するまでに失いうる金額で、負債がない場合は利用できません",
+  "Combined liquidation value divided by total Multiply debt. Higher is safer; below 1 risks liquidation.":
+    "合算清算価値をMultiplyの総負債で割った値。高いほど安全、1未満は清算リスクがあります。",
+  "Equity-weighted net APY after supply yield and borrow cost":
+    "供給利回りと借入コストを反映した、エクイティ加重ネットAPY",
+  "Exposure, return, and liquidation risk for each active loop":
+    "各アクティブループのエクスポージャー、リターン、清算リスク",
+  "Gross Multiply exposure after looping across all positions":
+    "すべてのポジションでループした後のMultiplyの総エクスポージャー",
+  "Interest earned as a percentage of principal you supplied": "供給した元本に対する割合で示した獲得利息",
+  "Portfolio leverage as position value divided by equity":
+    "ポジション価値をエクイティで割ったポートフォリオレバレッジ",
+  "Projected earnings at current rates": "現在の金利に基づく予想収益",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)":
+    "貸出ポジション全体でリアルタイムに発生する供給利息（プロトコル報酬を除く）",
+  "Wallet-wide liquidation value divided by total borrowed. Higher is safer; below 1 risks liquidation.":
+    "ウォレット全体の清算価値を総借入額で割った値。高いほど安全、1未満は清算リスクがあります。",
+  "Prices may be stale": "価格が古い可能性があります",
+  "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.":
+    "この負債に対する現在の年率の借入金利。下の数値はこれまでに発生した利息で、リアルタイムで増加します。",
+  "Total AVA you've earned across completed quests and staking rewards.":
+    "完了したクエストとステーキング報酬から獲得したAVAの合計。",
+  "AVA you can claim to your wallet right now.": "今すぐウォレットに請求できるAVA。",
 }
 
 export default dict

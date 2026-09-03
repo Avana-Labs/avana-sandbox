@@ -1503,6 +1503,71 @@ const dict: TranslationDictionary = {
   "Next rewards": "Следующие награды",
   "Open on Launch Date": "Откроется в день запуска",
   "Previous rewards": "Предыдущие награды",
+  "The asset you've borrowed against your collateral.": "Актив, который вы заняли под свой залог.",
+  "Your outstanding loan balance in this asset, valued live.":
+    "Остаток непогашенного займа в этом активе, оценённый по текущей цене.",
+  "A token held directly in your connected wallet.":
+    "Токен, который хранится непосредственно в вашем подключённом кошельке.",
+  "The amount of this token in your wallet.": "Количество этого токена в вашем кошельке.",
+  "The token balance valued at its live price.": "Баланс токена, оценённый по его текущей цене.",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.":
+    "LP-позиция, которой вы владеете, — парные токены, предоставленные DEX.",
+  "Whether the position's price range is active and earning fees.":
+    "Активен ли ценовой диапазон позиции и приносит ли он комиссии.",
+  "The current value of your pooled tokens.": "Текущая стоимость ваших токенов в пуле.",
+  "Trading fees this position has earned, claimable to your wallet.":
+    "Торговые комиссии, заработанные этой позицией и доступные к получению в ваш кошелёк.",
+  "The token you've supplied to earn lending yield.":
+    "Токен, который вы предоставили, чтобы получать доходность от кредитования.",
+  "Your supplied balance in this asset, valued at its live price.":
+    "Ваш предоставленный баланс в этом активе, оценённый по его текущей цене.",
+  "Current annual percentage yield on your deposit, before protocol rewards.":
+    "Текущая годовая процентная доходность по вашему депозиту, без учёта наград протокола.",
+  "The collateral asset backing your borrowing, valued at its live price.":
+    "Залоговый актив, обеспечивающий ваш заём, оценённый по его текущей цене.",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.":
+    "Сколько ещё вы можете занять под этот залог; % показывает, какая часть вашего лимита ликвидации уже использована.",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.":
+    "Фактор здоровья и стоимость залога, при которой эта позиция ликвидируется. Ниже 1.0 приводит к ликвидации.",
+  "The collateral you supply and the asset you borrow against it to build leverage.":
+    "Залог, который вы предоставляете, и актив, который вы занимаете под него, чтобы нарастить плечо.",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.":
+    "Ваш собственный капитал в цикле (экспозиция минус долг). Экспозиция — это ваша общая позиция с плечом.",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.":
+    "Чистая доходность на ваш капитал после затрат на займ. Значение ниже показывает проценты, начисленные на данный момент, и обновляется в реальном времени.",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.":
+    "Фактор здоровья и цена залога, при которой этот цикл ликвидируется. Ниже 1.0 приводит к ликвидации.",
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)":
+    "Чистый carry, заработанный по вашим циклам Multiply, начисляемый в реальном времени (доходность поставки минус затраты на займ)",
+  "Average APY across your staked positions, weighted by value.":
+    "Средняя доходность (APY) по вашим позициям в стейкинге, взвешенная по стоимости.",
+  "Additional amount you can borrow against your pledged collateral within Avana credit limits":
+    "Дополнительная сумма, которую вы можете занять под внесённое вами обеспечение в пределах кредитных лимитов Avana",
+  "Amount an active loan can lose before reaching liquidation; unavailable when you have no debt":
+    "Сумма, которую может потерять активный займ, прежде чем наступит ликвидация; недоступно, если у вас нет долга",
+  "Combined liquidation value divided by total Multiply debt. Higher is safer; below 1 risks liquidation.":
+    "Совокупная ликвидационная стоимость, делённая на общий долг Multiply. Чем выше, тем безопаснее; ниже 1 — риск ликвидации.",
+  "Equity-weighted net APY after supply yield and borrow cost":
+    "Чистый APY, взвешенный по собственному капиталу, с учётом доходности поставки и стоимости займа",
+  "Exposure, return, and liquidation risk for each active loop":
+    "Экспозиция, доходность и риск ликвидации по каждому активному циклу",
+  "Gross Multiply exposure after looping across all positions":
+    "Валовая экспозиция Multiply после зацикливания по всем позициям",
+  "Interest earned as a percentage of principal you supplied":
+    "Проценты, заработанные в процентах от основной суммы, которую вы предоставили",
+  "Portfolio leverage as position value divided by equity":
+    "Плечо портфеля — стоимость позиции, делённая на собственный капитал",
+  "Projected earnings at current rates": "Прогнозируемый доход при текущих ставках",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)":
+    "Проценты по депозитам, начисляемые в реальном времени по вашим кредитным позициям (без учёта наград протокола)",
+  "Wallet-wide liquidation value divided by total borrowed. Higher is safer; below 1 risks liquidation.":
+    "Ликвидационная стоимость по всему кошельку, делённая на общий долг. Чем выше, тем безопаснее; ниже 1 — риск ликвидации.",
+  "Prices may be stale": "Цены могут быть устаревшими",
+  "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.":
+    "Текущая годовая ставка займа по этому долгу. Ниже — проценты, начисленные на данный момент, которые обновляются в реальном времени.",
+  "Total AVA you've earned across completed quests and staking rewards.":
+    "Всего AVA, заработанного за выполненные квесты и награды за стейкинг.",
+  "AVA you can claim to your wallet right now.": "AVA, который вы можете получить в свой кошелёк прямо сейчас.",
 }
 
 export default dict

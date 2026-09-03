@@ -1503,6 +1503,68 @@ const dict: TranslationDictionary = {
   "Next rewards": "Sonraki ödüller",
   "Open on Launch Date": "Lansman tarihinde açılır",
   "Previous rewards": "Önceki ödüller",
+  "The asset you've borrowed against your collateral.": "Teminatınıza karşılık borç aldığınız varlık.",
+  "Your outstanding loan balance in this asset, valued live.":
+    "Bu varlıktaki ödenmemiş kredi bakiyeniz, canlı olarak değerlenir.",
+  "A token held directly in your connected wallet.": "Bağlı cüzdanınızda doğrudan tutulan bir token.",
+  "The amount of this token in your wallet.": "Bu tokenin cüzdanınızdaki miktarı.",
+  "The token balance valued at its live price.": "Token bakiyesi, canlı fiyatından değerlenir.",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.":
+    "Elinizde tuttuğunuz bir LP pozisyonu, bir DEX'e sağlanan eşleştirilmiş tokenlar.",
+  "Whether the position's price range is active and earning fees.":
+    "Pozisyonun fiyat aralığının aktif olup olmadığı ve ücret kazanıp kazanmadığı.",
+  "The current value of your pooled tokens.": "Havuzdaki tokenlarınızın güncel değeri.",
+  "Trading fees this position has earned, claimable to your wallet.":
+    "Bu pozisyonun kazandığı, cüzdanınıza talep edilebilir işlem ücretleri.",
+  "The token you've supplied to earn lending yield.": "Borç verme getirisi kazanmak için sağladığınız token.",
+  "Your supplied balance in this asset, valued at its live price.":
+    "Bu varlıkta sağladığınız bakiye, canlı fiyatından değerlenir.",
+  "Current annual percentage yield on your deposit, before protocol rewards.":
+    "Yatırdığınız tutar üzerinden güncel yıllık yüzde getirisi, protokol ödülleri hariç.",
+  "The collateral asset backing your borrowing, valued at its live price.":
+    "Borçlanmanızı güvence altına alan teminat varlığı, canlı fiyatından değerlenir.",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.":
+    "Bu teminata karşılık ne kadar daha borç alabileceğiniz; %, likidasyon limitinizin halihazırda ne kadarının kullanıldığını gösterir.",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.":
+    "Sağlık faktörü ve bu pozisyonun likide edildiği teminat değeri. 1.0'ın altı likidasyonu tetikler.",
+  "The collateral you supply and the asset you borrow against it to build leverage.":
+    "Sağladığınız teminat ve bu teminat karşılığında kaldıraç oluşturmak için borç aldığınız varlık.",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.":
+    "Döngüdeki kendi sermayeniz (maruziyet eksi borç). Maruziyet, toplam kaldıraçlı pozisyonunuzdur.",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.":
+    "Sermayeniz üzerinden, borç maliyetlerinden sonraki net getiri. Aşağıdaki rakam, şimdiye kadar kazanılan ve canlı olarak artan faizdir.",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.":
+    "Sağlık faktörü ve bu döngünün likide edildiği teminat fiyatı. 1.0'ın altı likidasyonu tetikler.",
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)":
+    "Multiply döngüleriniz genelinde kazanılan, canlı olarak biriken net taşıma getirisi (tedarik getirisi eksi borçlanma maliyeti)",
+  "Average APY across your staked positions, weighted by value.":
+    "Stake edilen pozisyonlarınızın değere göre ağırlıklı ortalama APY'si.",
+  "Additional amount you can borrow against your pledged collateral within Avana credit limits":
+    "Avana kredi limitleri dahilinde, teminat olarak verdiğiniz varlığa karşılık borç alabileceğiniz ek tutar",
+  "Amount an active loan can lose before reaching liquidation; unavailable when you have no debt":
+    "Aktif bir kredinin tasfiyeye ulaşmadan önce kaybedebileceği tutar; borcunuz olmadığında kullanılamaz",
+  "Combined liquidation value divided by total Multiply debt. Higher is safer; below 1 risks liquidation.":
+    "Toplam likidasyon değerinin toplam Multiply borcuna bölümü. Ne kadar yüksekse o kadar güvenlidir; 1'in altında likidasyon riski vardır.",
+  "Equity-weighted net APY after supply yield and borrow cost":
+    "Tedarik getirisi ve borçlanma maliyeti sonrası öz sermaye ağırlıklı net APY",
+  "Exposure, return, and liquidation risk for each active loop":
+    "Her aktif döngü için maruziyet, getiri ve likidasyon riski",
+  "Gross Multiply exposure after looping across all positions":
+    "Tüm pozisyonlarda döngü yaptıktan sonraki brüt Multiply maruziyeti",
+  "Interest earned as a percentage of principal you supplied": "Sağladığınız anaparanın yüzdesi olarak kazanılan faiz",
+  "Portfolio leverage as position value divided by equity":
+    "Pozisyon değerinin öz sermayeye bölümü olarak portföy kaldıracı",
+  "Projected earnings at current rates": "Mevcut oranlarla tahmini kazanç",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)":
+    "Ödünç verme pozisyonlarınız genelinde canlı olarak biriken tedarik faizi (protokol ödülleri hariç)",
+  "Wallet-wide liquidation value divided by total borrowed. Higher is safer; below 1 risks liquidation.":
+    "Cüzdan genelinde likidasyon değerinin toplam borca bölümü. Ne kadar yüksekse o kadar güvenlidir; 1'in altında likidasyon riski vardır.",
+  "Prices may be stale": "Fiyatlar güncel olmayabilir",
+  "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.":
+    "Bu borç üzerindeki güncel yıllık borçlanma oranı. Aşağıda, şimdiye kadar biriken ve canlı olarak artan faiz.",
+  "Total AVA you've earned across completed quests and staking rewards.":
+    "Tamamlanan görevler ve stake ödülleri genelinde kazandığınız toplam AVA.",
+  "AVA you can claim to your wallet right now.": "Şu anda cüzdanınıza talep edebileceğiniz AVA.",
 }
 
 export default dict

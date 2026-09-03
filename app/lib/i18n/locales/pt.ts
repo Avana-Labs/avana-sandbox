@@ -1551,6 +1551,69 @@ const dict: TranslationDictionary = {
   "Next rewards": "Próximas recompensas",
   "Open on Launch Date": "Abre na data de lançamento",
   "Previous rewards": "Recompensas anteriores",
+  "The asset you've borrowed against your collateral.": "O ativo que você tomou emprestado contra sua garantia.",
+  "Your outstanding loan balance in this asset, valued live.":
+    "Seu saldo de empréstimo pendente neste ativo, avaliado ao vivo.",
+  "A token held directly in your connected wallet.": "Um token mantido diretamente na sua carteira conectada.",
+  "The amount of this token in your wallet.": "A quantidade deste token na sua carteira.",
+  "The token balance valued at its live price.": "O saldo do token avaliado pelo seu preço ao vivo.",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.":
+    "Uma posição de pool de liquidez que você mantém, tokens pareados fornecidos a uma DEX.",
+  "Whether the position's price range is active and earning fees.":
+    "Se o intervalo de preço da posição está ativo e ganhando taxas.",
+  "The current value of your pooled tokens.": "O valor atual dos seus tokens no pool.",
+  "Trading fees this position has earned, claimable to your wallet.":
+    "Taxas de negociação que esta posição já ganhou, resgatáveis para sua carteira.",
+  "The token you've supplied to earn lending yield.": "O token que você forneceu para ganhar rendimento de empréstimo.",
+  "Your supplied balance in this asset, valued at its live price.":
+    "Seu saldo fornecido neste ativo, avaliado pelo seu preço ao vivo.",
+  "Current annual percentage yield on your deposit, before protocol rewards.":
+    "APY atual sobre o seu depósito, antes das recompensas do protocolo.",
+  "The collateral asset backing your borrowing, valued at its live price.":
+    "O ativo de garantia que respalda seu empréstimo, avaliado pelo seu preço ao vivo.",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.":
+    "Quanto mais você pode tomar emprestado contra esta garantia; o % mostra quanto do seu limite de liquidação já foi utilizado.",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.":
+    "Fator de saúde, e o valor da garantia no qual esta posição é liquidada. Abaixo de 1.0 aciona a liquidação.",
+  "The collateral you supply and the asset you borrow against it to build leverage.":
+    "A garantia que você fornece e o ativo que você toma emprestado contra ela para criar alavancagem.",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.":
+    "Seu próprio capital no loop (exposição menos dívida). Exposição é sua posição alavancada total.",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.":
+    "Rendimento líquido após os custos de empréstimo, sobre seu capital. O valor abaixo mostra os juros recebidos até agora, atualizado ao vivo.",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.":
+    "Fator de saúde, e o preço da garantia no qual este loop é liquidado. Abaixo de 1.0 aciona a liquidação.",
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)":
+    "Carry líquido ganho em seus loops de Multiply, acumulando em tempo real (rendimento de fornecimento menos custo de empréstimo)",
+  "Average APY across your staked positions, weighted by value.":
+    "APY médio nas suas posições em stake, ponderado pelo valor.",
+  "Additional amount you can borrow against your pledged collateral within Avana credit limits":
+    "Valor adicional que você pode tomar emprestado contra sua garantia depositada dentro dos limites de crédito da Avana",
+  "Amount an active loan can lose before reaching liquidation; unavailable when you have no debt":
+    "Valor que um empréstimo ativo pode perder antes de atingir a liquidação; indisponível quando você não tem dívida",
+  "Combined liquidation value divided by total Multiply debt. Higher is safer; below 1 risks liquidation.":
+    "Valor de liquidação combinado dividido pela dívida total de Multiply. Quanto maior, mais seguro; abaixo de 1 há risco de liquidação.",
+  "Equity-weighted net APY after supply yield and borrow cost":
+    "APY líquido ponderado pelo capital próprio após o rendimento de fornecimento e o custo de empréstimo",
+  "Exposure, return, and liquidation risk for each active loop":
+    "Exposição, retorno e risco de liquidação para cada loop ativo",
+  "Gross Multiply exposure after looping across all positions":
+    "Exposição bruta de Multiply após fazer loop em todas as posições",
+  "Interest earned as a percentage of principal you supplied":
+    "Juros recebidos como percentual do principal que você forneceu",
+  "Portfolio leverage as position value divided by equity":
+    "Alavancagem do portfólio como valor da posição dividido pelo capital próprio",
+  "Projected earnings at current rates": "Ganhos projetados às taxas atuais",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)":
+    "Juros de fornecimento acumulando em tempo real nas suas posições de empréstimo (exclui recompensas do protocolo)",
+  "Wallet-wide liquidation value divided by total borrowed. Higher is safer; below 1 risks liquidation.":
+    "Valor de liquidação da carteira dividido pelo total emprestado. Quanto maior, mais seguro; abaixo de 1 há risco de liquidação.",
+  "Prices may be stale": "Preços podem estar desatualizados",
+  "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.":
+    "A taxa de empréstimo anual atual sobre esta dívida. Abaixo, os juros acumulados até agora, atualizados ao vivo.",
+  "Total AVA you've earned across completed quests and staking rewards.":
+    "Total de AVA que você ganhou em missões concluídas e recompensas de staking.",
+  "AVA you can claim to your wallet right now.": "AVA que você pode resgatar para sua carteira agora.",
 }
 
 export default dict

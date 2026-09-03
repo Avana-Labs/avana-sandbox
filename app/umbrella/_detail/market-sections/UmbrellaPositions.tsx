@@ -35,7 +35,6 @@ type PositionRow = {
   claimedRewardsLabel: string
   cooldownStatus: "idle" | "cooling" | "ready" | "expired"
   hasClaim: boolean
-  hasUnstake: boolean
   coverageRatioPct: number
   coverageRatioLabel: string
   targetLiquidityLabel: string
@@ -66,7 +65,6 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
       claimedRewardsLabel: formatUsd(position.claimedRewardsUsd),
       cooldownStatus: position.cooldownStatus,
       hasClaim: position.pendingRewardsUsd > 0,
-      hasUnstake: position.cooldownStatus === "ready",
       coverageRatioPct,
       coverageRatioLabel: t("{pct}% of target").replace("{pct}", formatPct(coverageRatioPct)),
       targetLiquidityLabel: t("{amount} target").replace("{amount}", formatCompactUsd(market.targetCoverageUsd)),
@@ -83,7 +81,7 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
   }
 
   return (
-    <section>
+    <section aria-label={t("Umbrella positions")}>
       <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
           {t("Umbrella positions")}
@@ -189,19 +187,6 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                             </Link>
                           </Button>
                         ) : null}
-                        {row.hasUnstake ? (
-                          <Button asChild size="table" variant="table-primary" className="w-auto">
-                            <Link
-                              href={actionPagePath("umbrella", "unstake", {
-                                market: row.id,
-                                return: "/umbrella",
-                              })}
-                            >
-                              <ActionIcon label={t("Unstake")} />
-                              {t("Unstake")}
-                            </Link>
-                          </Button>
-                        ) : null}
                       </HoverActionGroup>
                     </td>
                   </tr>
@@ -268,17 +253,17 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                 </div>
               </div>
 
-              {row.hasUnstake && (
+              {row.hasClaim && (
                 <div className="mt-3 flex flex-wrap gap-2" onClick={(event) => event.stopPropagation()}>
                   <Button asChild size="sm" variant="brand" className="h-9 flex-1 gap-2">
                     <Link
-                      href={actionPagePath("umbrella", "unstake", {
+                      href={actionPagePath("umbrella", "claim", {
                         market: row.id,
                         return: "/umbrella",
                       })}
                     >
-                      <ActionIcon label="Unstake" />
-                      Unstake
+                      <ActionIcon label={t("Claim")} />
+                      {t("Claim")}
                     </Link>
                   </Button>
                 </div>

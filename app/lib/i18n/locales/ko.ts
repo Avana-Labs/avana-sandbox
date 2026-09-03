@@ -1470,6 +1470,63 @@ const dict: TranslationDictionary = {
   "Next rewards": "다음 리워드",
   "Open on Launch Date": "출시일에 오픈",
   "Previous rewards": "이전 리워드",
+  "The asset you've borrowed against your collateral.": "담보를 기반으로 차입한 자산입니다.",
+  "Your outstanding loan balance in this asset, valued live.":
+    "이 자산에서의 미상환 대출 잔액을 실시간 가격으로 평가한 값입니다.",
+  "A token held directly in your connected wallet.": "연결된 지갑에 직접 보유한 토큰입니다.",
+  "The amount of this token in your wallet.": "지갑에 있는 이 토큰의 수량입니다.",
+  "The token balance valued at its live price.": "토큰 잔액을 실시간 가격으로 평가한 값입니다.",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.":
+    "보유 중인 유동성 풀 포지션으로, DEX에 공급한 페어 토큰입니다.",
+  "Whether the position's price range is active and earning fees.":
+    "포지션의 가격 범위가 활성 상태이며 수수료를 획득하고 있는지 여부입니다.",
+  "The current value of your pooled tokens.": "풀에 공급한 토큰의 현재 가치입니다.",
+  "Trading fees this position has earned, claimable to your wallet.":
+    "이 포지션이 획득한 거래 수수료로, 지갑으로 청구할 수 있습니다.",
+  "The token you've supplied to earn lending yield.": "예치 수익을 얻기 위해 공급한 토큰입니다.",
+  "Your supplied balance in this asset, valued at its live price.":
+    "이 자산에서 공급한 잔액을 실시간 가격으로 평가한 값입니다.",
+  "Current annual percentage yield on your deposit, before protocol rewards.":
+    "예치금에 대한 현재 연간 수익률로, 프로토콜 리워드를 반영하기 전 수치입니다.",
+  "The collateral asset backing your borrowing, valued at its live price.":
+    "차입을 뒷받침하는 담보 자산으로, 실시간 가격으로 평가한 값입니다.",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.":
+    "이 담보로 추가로 차입할 수 있는 금액이며, %는 청산 한도 중 이미 사용된 비율을 나타냅니다.",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.":
+    "건전성 지수와 이 포지션이 청산되는 담보 가치입니다. 1.0 미만이 되면 청산이 발생합니다.",
+  "The collateral you supply and the asset you borrow against it to build leverage.":
+    "레버리지를 만들기 위해 공급하는 담보와 이를 담보로 차입하는 자산입니다.",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.":
+    "루프에 투입한 자기자본입니다 (익스포저에서 부채를 뺀 값). 익스포저는 총 레버리지 포지션입니다.",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.":
+    "차입 비용을 제외한 후 자기자본 기준 순수익률입니다. 아래 수치는 지금까지 획득한 이자로, 실시간으로 갱신됩니다.",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.":
+    "건전성 지수와 이 루프가 청산되는 담보 가격입니다. 1.0 미만이 되면 청산이 발생합니다.",
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)":
+    "Multiply 루프 전반에서 획득한 순 캐리로, 실시간으로 누적됩니다 (공급 수익에서 차입 비용을 뺀 값)",
+  "Average APY across your staked positions, weighted by value.": "스테이킹 포지션의 가치 가중 평균 APY입니다.",
+  "Additional amount you can borrow against your pledged collateral within Avana credit limits":
+    "Avana 신용 한도 내에서 담보로 제공한 자산을 기반으로 추가로 차입할 수 있는 금액",
+  "Amount an active loan can lose before reaching liquidation; unavailable when you have no debt":
+    "활성 대출이 청산에 도달하기 전 감당할 수 있는 손실 금액이며, 부채가 없으면 표시되지 않습니다",
+  "Combined liquidation value divided by total Multiply debt. Higher is safer; below 1 risks liquidation.":
+    "합산 청산 가치를 총 Multiply 부채로 나눈 값입니다. 높을수록 안전하며, 1 미만이면 청산 위험이 있습니다.",
+  "Equity-weighted net APY after supply yield and borrow cost": "공급 수익과 차입 비용을 반영한 자기자본 가중 순 APY",
+  "Exposure, return, and liquidation risk for each active loop": "각 활성 루프의 익스포저, 수익률, 청산 위험",
+  "Gross Multiply exposure after looping across all positions": "모든 포지션에 걸쳐 루핑한 후의 총 Multiply 익스포저",
+  "Interest earned as a percentage of principal you supplied": "공급한 원금 대비 획득한 이자 비율",
+  "Portfolio leverage as position value divided by equity": "포트폴리오 레버리지로, 포지션 가치를 자기자본으로 나눈 값",
+  "Projected earnings at current rates": "현재 금리 기준 예상 수익",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)":
+    "예치 포지션 전반에 실시간으로 누적되는 공급 이자 (프로토콜 리워드 제외)",
+  "Wallet-wide liquidation value divided by total borrowed. Higher is safer; below 1 risks liquidation.":
+    "지갑 전체 청산 가치를 총 대출액으로 나눈 값입니다. 높을수록 안전하며, 1 미만이면 청산 위험이 있습니다.",
+  "Prices may be stale": "가격 정보가 오래되었을 수 있습니다",
+  "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.":
+    "이 부채에 적용되는 현재 연간 차입 금리입니다. 아래는 지금까지 누적된 이자로, 실시간으로 갱신됩니다.",
+  "Total AVA you've earned across completed quests and staking rewards.":
+    "완료한 퀘스트와 스테이킹 리워드를 통해 획득한 총 AVA입니다.",
+  "AVA you can claim to your wallet right now.": "지금 바로 지갑으로 청구할 수 있는 AVA입니다.",
 }
 
 export default dict

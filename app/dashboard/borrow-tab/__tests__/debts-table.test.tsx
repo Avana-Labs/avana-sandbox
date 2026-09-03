@@ -107,7 +107,7 @@ describe("DebtsPanel", () => {
 
     // The column now mirrors the Lend Assets APY cell: big borrow rate on top, the
     // interest owed accruing (from the recorded base) beneath it.
-    expect(container.textContent).toMatch(/INTEREST OWED/)
+    expect(container.textContent).toMatch(/APY/)
     expect(container.textContent).toMatch(/5\.50%/)
     expect(container.textContent).toMatch(/33\.60/)
   })

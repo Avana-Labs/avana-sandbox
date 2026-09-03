@@ -1500,6 +1500,71 @@ const dict: TranslationDictionary = {
   "Next rewards": "Volgende beloningen",
   "Open on Launch Date": "Opent op de lanceringsdatum",
   "Previous rewards": "Vorige beloningen",
+  "The asset you've borrowed against your collateral.": "Het asset dat je hebt geleend tegen je onderpand.",
+  "Your outstanding loan balance in this asset, valued live.":
+    "Je uitstaande leningsaldo in dit asset, live gewaardeerd.",
+  "A token held directly in your connected wallet.":
+    "Een token dat rechtstreeks in je verbonden wallet wordt aangehouden.",
+  "The amount of this token in your wallet.": "De hoeveelheid van dit token in je wallet.",
+  "The token balance valued at its live price.": "Het tokensaldo, gewaardeerd tegen de live prijs.",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.":
+    "Een liquiditeitspoolpositie die je aanhoudt, gekoppelde tokens verstrekt aan een DEX.",
+  "Whether the position's price range is active and earning fees.":
+    "Of het prijsbereik van de positie actief is en vergoedingen verdient.",
+  "The current value of your pooled tokens.": "De huidige waarde van je gepoolde tokens.",
+  "Trading fees this position has earned, claimable to your wallet.":
+    "Handelskosten die deze positie heeft verdiend, claimbaar naar je wallet.",
+  "The token you've supplied to earn lending yield.":
+    "Het token dat je hebt verstrekt om uitleenrendement te verdienen.",
+  "Your supplied balance in this asset, valued at its live price.":
+    "Je verstrekte saldo in dit asset, gewaardeerd tegen de live prijs.",
+  "Current annual percentage yield on your deposit, before protocol rewards.":
+    "Huidig jaarlijks rendementspercentage op je storting, vóór protocolbeloningen.",
+  "The collateral asset backing your borrowing, valued at its live price.":
+    "Het onderpandasset dat je lening dekt, gewaardeerd tegen de live prijs.",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.":
+    "Hoeveel je nog kunt lenen tegen dit onderpand; het % toont hoeveel van je liquidatielimiet al is gebruikt.",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.":
+    "Gezondheidsfactor, en de onderpandwaarde waarbij deze positie wordt geliquideerd. Onder 1.0 volgt liquidatie.",
+  "The collateral you supply and the asset you borrow against it to build leverage.":
+    "Het onderpand dat je verstrekt en het asset dat je ertegen leent om hefboom op te bouwen.",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.":
+    "Je eigen kapitaal in de loop (blootstelling minus schuld). Blootstelling is je totale hefboompositie.",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.":
+    "Nettorendement na leenkosten, op je kapitaal. Het cijfer hieronder is de tot nu toe verdiende rente, die live oploopt.",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.":
+    "Gezondheidsfactor, en de onderpandprijs waarbij deze loop wordt geliquideerd. Onder 1.0 volgt liquidatie.",
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)":
+    "Netto carry verdiend over je Multiply-loops, die in real time oploopt (supply-rendement minus leenkosten)",
+  "Average APY across your staked positions, weighted by value.":
+    "Gemiddelde APY over je gestakete posities, gewogen naar waarde.",
+  "Additional amount you can borrow against your pledged collateral within Avana credit limits":
+    "Extra bedrag dat je kunt lenen tegen je verpande onderpand binnen de Avana-kredietlimieten",
+  "Amount an active loan can lose before reaching liquidation; unavailable when you have no debt":
+    "Bedrag dat een actieve lening kan verliezen voordat liquidatie volgt; niet beschikbaar als je geen schuld hebt",
+  "Combined liquidation value divided by total Multiply debt. Higher is safer; below 1 risks liquidation.":
+    "Gecombineerde liquidatiewaarde gedeeld door totale Multiply-schuld. Hoger is veiliger; onder 1 is er risico op liquidatie.",
+  "Equity-weighted net APY after supply yield and borrow cost":
+    "Netto-APY gewogen naar eigen vermogen, na supply-rendement en leenkosten",
+  "Exposure, return, and liquidation risk for each active loop":
+    "Blootstelling, rendement en liquidatierisico voor elke actieve loop",
+  "Gross Multiply exposure after looping across all positions":
+    "Bruto Multiply-blootstelling na looping over alle posities",
+  "Interest earned as a percentage of principal you supplied":
+    "Rente verdiend als percentage van de hoofdsom die je hebt verstrekt",
+  "Portfolio leverage as position value divided by equity":
+    "Portefeuillehefboom als positiewaarde gedeeld door eigen vermogen",
+  "Projected earnings at current rates": "Geprojecteerde opbrengsten tegen de huidige rentes",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)":
+    "Supply-rente die in real time oploopt over je uitleenposities (exclusief protocolbeloningen)",
+  "Wallet-wide liquidation value divided by total borrowed. Higher is safer; below 1 risks liquidation.":
+    "Wallet-brede liquidatiewaarde gedeeld door totaal geleend. Hoger is veiliger; onder 1 is er risico op liquidatie.",
+  "Prices may be stale": "Prijzen kunnen verouderd zijn",
+  "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.":
+    "De huidige jaarlijkse leenrente op deze schuld. Hieronder de tot nu toe opgebouwde rente, die live oploopt.",
+  "Total AVA you've earned across completed quests and staking rewards.":
+    "Totale AVA die je hebt verdiend uit voltooide quests en staking-beloningen.",
+  "AVA you can claim to your wallet right now.": "AVA die je op dit moment naar je wallet kunt claimen.",
 }
 
 export default dict

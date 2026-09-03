@@ -1613,6 +1613,70 @@ const dict: TranslationDictionary = {
   "Next rewards": "Siguientes recompensas",
   "Open on Launch Date": "Se abre en la fecha de lanzamiento",
   "Previous rewards": "Recompensas anteriores",
+  "The asset you've borrowed against your collateral.": "El activo que has pedido prestado contra tu colateral.",
+  "Your outstanding loan balance in this asset, valued live.":
+    "El saldo pendiente de tu préstamo en este activo, valorado en vivo.",
+  "A token held directly in your connected wallet.": "Un token que tienes directamente en tu billetera conectada.",
+  "The amount of this token in your wallet.": "La cantidad de este token en tu billetera.",
+  "The token balance valued at its live price.": "El saldo del token valorado a su precio en vivo.",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.":
+    "Una posición en un pool de liquidez que tienes, tokens emparejados suministrados a un DEX.",
+  "Whether the position's price range is active and earning fees.":
+    "Si el rango de precio de la posición está activo y ganando comisiones.",
+  "The current value of your pooled tokens.": "El valor actual de tus tokens en el pool.",
+  "Trading fees this position has earned, claimable to your wallet.":
+    "Comisiones de trading que esta posición ha ganado, reclamables a tu billetera.",
+  "The token you've supplied to earn lending yield.":
+    "El token que suministraste para obtener rendimiento de préstamo.",
+  "Your supplied balance in this asset, valued at its live price.":
+    "Tu saldo suministrado en este activo, valorado a su precio en vivo.",
+  "Current annual percentage yield on your deposit, before protocol rewards.":
+    "El APY actual sobre tu depósito, antes de las recompensas del protocolo.",
+  "The collateral asset backing your borrowing, valued at its live price.":
+    "El activo de colateral que respalda tu préstamo, valorado a su precio en vivo.",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.":
+    "Cuánto más puedes pedir prestado contra este colateral; el % muestra qué parte de tu límite de liquidación ya está usada.",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.":
+    "Factor de salud y el valor del colateral en el que esta posición se liquida. Por debajo de 1.0 se activa la liquidación.",
+  "The collateral you supply and the asset you borrow against it to build leverage.":
+    "El colateral que suministras y el activo que pides prestado contra él para generar apalancamiento.",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.":
+    "Tu propio capital en el bucle (exposición menos deuda). La exposición es tu posición apalancada total.",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.":
+    "Rendimiento neto después de los costos de préstamo, sobre tu capital. La cifra de abajo es el interés ganado hasta ahora, actualizándose en vivo.",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.":
+    "Factor de salud y el precio del colateral en el que este bucle se liquida. Por debajo de 1.0 se activa la liquidación.",
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)":
+    "Carry neto obtenido en tus bucles de Multiply, que se acumula en tiempo real (rendimiento de suministro menos costo de préstamo)",
+  "Average APY across your staked positions, weighted by value.":
+    "APY promedio de tus posiciones en stake, ponderado por valor.",
+  "Additional amount you can borrow against your pledged collateral within Avana credit limits":
+    "Monto adicional que puedes pedir prestado contra tu colateral aportado dentro de los límites de crédito de Avana",
+  "Amount an active loan can lose before reaching liquidation; unavailable when you have no debt":
+    "Monto que un préstamo activo puede perder antes de llegar a la liquidación; no disponible cuando no tienes deuda",
+  "Combined liquidation value divided by total Multiply debt. Higher is safer; below 1 risks liquidation.":
+    "Valor de liquidación combinado dividido entre la deuda total de Multiply. Cuanto más alto, más seguro; por debajo de 1 hay riesgo de liquidación.",
+  "Equity-weighted net APY after supply yield and borrow cost":
+    "APY neto ponderado por capital después del rendimiento de suministro y el costo de préstamo",
+  "Exposure, return, and liquidation risk for each active loop":
+    "Exposición, rendimiento y riesgo de liquidación de cada bucle activo",
+  "Gross Multiply exposure after looping across all positions":
+    "Exposición bruta de Multiply después de encadenar bucles en todas las posiciones",
+  "Interest earned as a percentage of principal you supplied":
+    "Interés ganado como porcentaje del capital que suministraste",
+  "Portfolio leverage as position value divided by equity":
+    "Apalancamiento de la cartera calculado como el valor de la posición dividido entre el capital",
+  "Projected earnings at current rates": "Ganancias proyectadas a las tasas actuales",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)":
+    "Interés de suministro que se acumula en tiempo real en tus posiciones de préstamo (excluye recompensas del protocolo)",
+  "Wallet-wide liquidation value divided by total borrowed. Higher is safer; below 1 risks liquidation.":
+    "Valor de liquidación de toda la billetera dividido entre el total prestado. Cuanto más alto, más seguro; por debajo de 1 hay riesgo de liquidación.",
+  "Prices may be stale": "Los precios pueden estar desactualizados",
+  "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.":
+    "La tasa de préstamo anual actual sobre esta deuda. Abajo, el interés acumulado hasta ahora, actualizándose en vivo.",
+  "Total AVA you've earned across completed quests and staking rewards.":
+    "Total de AVA que has ganado en misiones completadas y recompensas de staking.",
+  "AVA you can claim to your wallet right now.": "AVA que puedes reclamar a tu billetera ahora mismo.",
 }
 
 export default dict

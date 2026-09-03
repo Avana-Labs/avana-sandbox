@@ -1533,6 +1533,59 @@ const dict: TranslationDictionary = {
   "Next rewards": "下一批奖励",
   "Open on Launch Date": "在发布日开启",
   "Previous rewards": "上一批奖励",
+  "The asset you've borrowed against your collateral.": "您以抵押品借入的资产。",
+  "Your outstanding loan balance in this asset, valued live.": "您在该资产中的未偿还贷款余额，按实时价格计价。",
+  "A token held directly in your connected wallet.": "您已连接钱包中直接持有的代币。",
+  "The amount of this token in your wallet.": "您钱包中该代币的数量。",
+  "The token balance valued at its live price.": "按实时价格计价的代币余额。",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.":
+    "您持有的流动性池仓位，即向 DEX 提供的一对代币。",
+  "Whether the position's price range is active and earning fees.":
+    "该仓位的价格区间是否处于活跃状态并正在赚取手续费。",
+  "The current value of your pooled tokens.": "您已入池代币的当前价值。",
+  "Trading fees this position has earned, claimable to your wallet.": "该仓位已赚取的交易手续费，可领取至您的钱包。",
+  "The token you've supplied to earn lending yield.": "您存入以赚取借出收益的代币。",
+  "Your supplied balance in this asset, valued at its live price.": "您在该资产中的供应余额，按其实时价格计价。",
+  "Current annual percentage yield on your deposit, before protocol rewards.": "您存款当前的年化收益率，不含协议奖励。",
+  "The collateral asset backing your borrowing, valued at its live price.":
+    "作为您借款担保的抵押资产，按其实时价格计价。",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.":
+    "您基于该抵押品还可借入的金额；该 % 值显示您已使用清算上限的比例。",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.":
+    "健康因子，以及该仓位被清算时的抵押品价值。低于 1.0 即触发清算。",
+  "The collateral you supply and the asset you borrow against it to build leverage.":
+    "您供应的抵押品，以及基于该抵押品借入以构建杠杆的资产。",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.":
+    "您在该循环中的自有资本（敞口减去债务）。敞口是指您的总杠杆仓位。",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.":
+    "扣除借款成本后，您资本的净收益。下方数字为已赚取的利息，实时跳动更新。",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.":
+    "健康因子，以及该循环被清算时的抵押品价格。低于 1.0 即触发清算。",
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)":
+    "在您的 Multiply 循环中赚取的净套利收益，实时累积（供应收益减去借款成本）",
+  "Average APY across your staked positions, weighted by value.": "您质押仓位的平均 APY，按价值加权计算。",
+  "Additional amount you can borrow against your pledged collateral within Avana credit limits":
+    "在 Avana 信用额度内，您可基于已提供的抵押品借入的额外金额",
+  "Amount an active loan can lose before reaching liquidation; unavailable when you have no debt":
+    "活跃借款在触及清算前可承受的损失金额；若您没有债务，则不可用",
+  "Combined liquidation value divided by total Multiply debt. Higher is safer; below 1 risks liquidation.":
+    "合计清算价值除以 Multiply 总债务。数值越高越安全；低于 1 有清算风险。",
+  "Equity-weighted net APY after supply yield and borrow cost": "按权益加权计算的净 APY，即供应收益减去借款成本",
+  "Exposure, return, and liquidation risk for each active loop": "每个活跃循环的敞口、回报和清算风险",
+  "Gross Multiply exposure after looping across all positions": "所有仓位循环后的 Multiply 毛敞口",
+  "Interest earned as a percentage of principal you supplied": "已赚取的利息占您所供应本金的百分比",
+  "Portfolio leverage as position value divided by equity": "投资组合杠杆，即仓位价值除以权益",
+  "Projected earnings at current rates": "按当前利率计算的预计收益",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)":
+    "您所有借出仓位实时累积的供应利息（不含协议奖励）",
+  "Wallet-wide liquidation value divided by total borrowed. Higher is safer; below 1 risks liquidation.":
+    "全钱包清算价值除以总借款额。数值越高越安全；低于 1 有清算风险。",
+  "Prices may be stale": "价格可能已过时",
+  "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.":
+    "该债务当前的年化借款利率。下方为已累计的利息，实时跳动更新。",
+  "Total AVA you've earned across completed quests and staking rewards.":
+    "您通过已完成的任务和质押奖励累计赚取的 AVA 总量。",
+  "AVA you can claim to your wallet right now.": "您现在可领取到钱包的 AVA。",
 }
 
 export default dict

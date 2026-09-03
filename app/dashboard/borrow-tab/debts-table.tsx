@@ -159,8 +159,10 @@ export function DebtsPanel({
                       </th>
                       <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
                         <DebtsMetricHeader
-                          label={t("Interest Owed")}
-                          help={t("Interest accrued on this debt so far, ticking in real time.")}
+                          label={t("APY")}
+                          help={t(
+                            "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.",
+                          )}
                           align="right"
                         />
                       </th>

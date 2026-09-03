@@ -1475,6 +1475,63 @@ const dict: TranslationDictionary = {
   "Next rewards": "المكافآت التالية",
   "Open on Launch Date": "تُفتح في تاريخ الإطلاق",
   "Previous rewards": "المكافآت السابقة",
+  "The asset you've borrowed against your collateral.": "الأصل الذي اقترضته مقابل ضمانك.",
+  "Your outstanding loan balance in this asset, valued live.": "رصيد قرضك القائم بهذا الأصل، بتقييمه الحي.",
+  "A token held directly in your connected wallet.": "رمز محتفَظ به مباشرة في محفظتك المتصلة.",
+  "The amount of this token in your wallet.": "كمية هذا الرمز في محفظتك.",
+  "The token balance valued at its live price.": "رصيد الرمز مُقيَّمًا بسعره الحي.",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.":
+    "مركز تحتفظ به في مجمّع سيولة، وهو عبارة عن زوج رموز مُودَع في DEX.",
+  "Whether the position's price range is active and earning fees.": "ما إذا كان نطاق سعر المركز نشطًا ويحقق رسومًا.",
+  "The current value of your pooled tokens.": "القيمة الحالية لرموزك المجمّعة.",
+  "Trading fees this position has earned, claimable to your wallet.":
+    "رسوم التداول التي حقّقها هذا المركز، وهي قابلة للمطالبة إلى محفظتك.",
+  "The token you've supplied to earn lending yield.": "الرمز الذي أودعته لتحقيق عائد الإقراض.",
+  "Your supplied balance in this asset, valued at its live price.": "رصيدك المودَع بهذا الأصل، مُقيَّمًا بسعره الحي.",
+  "Current annual percentage yield on your deposit, before protocol rewards.":
+    "العائد السنوي الحالي على إيداعك، قبل مكافآت البروتوكول.",
+  "The collateral asset backing your borrowing, valued at its live price.":
+    "أصل الضمان الذي يدعم اقتراضك، مُقيَّمًا بسعره الحي.",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.":
+    "المبلغ الإضافي الذي يمكنك اقتراضه مقابل هذا الضمان؛ وتُظهر % مقدار ما استُخدم بالفعل من حد التصفية لديك.",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.":
+    "عامل السلامة، وقيمة الضمان التي يتم عندها تصفية هذا المركز. أقل من 1.0 يؤدي إلى التصفية.",
+  "The collateral you supply and the asset you borrow against it to build leverage.":
+    "الضمان الذي تودعه والأصل الذي تقترضه مقابله لبناء الرافعة.",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.":
+    "رأس مالك الخاص في الحلقة (الانكشاف ناقص الدين). الانكشاف هو إجمالي مركزك برافعة مالية.",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.":
+    "صافي العائد بعد تكاليف الاقتراض، على رأس مالك. الرقم أدناه هو الفائدة المكتسبة حتى الآن، وهي تتزايد بشكل حي.",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.":
+    "عامل السلامة، وسعر الضمان الذي تتم عنده تصفية هذه الحلقة. أقل من 1.0 يؤدي إلى التصفية.",
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)":
+    "صافي العائد المكتسب عبر حلقات Multiply الخاصة بك، ويتراكم في الوقت الفعلي (عائد التوريد ناقص تكلفة الاقتراض)",
+  "Average APY across your staked positions, weighted by value.": "APY المتوسط عبر مراكزك المرهونة، مرجّحًا بالقيمة.",
+  "Additional amount you can borrow against your pledged collateral within Avana credit limits":
+    "المبلغ الإضافي الذي يمكنك اقتراضه مقابل ضمانك المرهون ضمن حدود ائتمان Avana",
+  "Amount an active loan can lose before reaching liquidation; unavailable when you have no debt":
+    "المقدار الذي يمكن أن يخسره القرض النشط قبل الوصول إلى التصفية؛ غير متاح إذا لم يكن عليك أي دين",
+  "Combined liquidation value divided by total Multiply debt. Higher is safer; below 1 risks liquidation.":
+    "قيمة التصفية الإجمالية مقسومة على إجمالي دين Multiply. الأعلى أكثر أمانًا؛ وأقل من 1 يُعرّض للتصفية.",
+  "Equity-weighted net APY after supply yield and borrow cost":
+    "APY الصافي المرجّح بحقوق الملكية بعد عائد التوريد وتكلفة الاقتراض",
+  "Exposure, return, and liquidation risk for each active loop": "الانكشاف والعائد ومخاطر التصفية لكل حلقة نشطة",
+  "Gross Multiply exposure after looping across all positions":
+    "إجمالي انكشاف Multiply الناتج عن الحلقات عبر جميع المراكز",
+  "Interest earned as a percentage of principal you supplied":
+    "الفائدة المكتسبة كنسبة مئوية من المبلغ الأصلي الذي أودعته",
+  "Portfolio leverage as position value divided by equity": "رافعة المحفظة كقيمة المركز مقسومة على حقوق الملكية",
+  "Projected earnings at current rates": "الأرباح المتوقعة بالمعدلات الحالية",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)":
+    "فوائد التوريد المتراكمة في الوقت الفعلي عبر مراكز الإقراض الخاصة بك (لا تشمل مكافآت البروتوكول)",
+  "Wallet-wide liquidation value divided by total borrowed. Higher is safer; below 1 risks liquidation.":
+    "قيمة التصفية الإجمالية على مستوى المحفظة مقسومة على إجمالي المُقترَض. الأعلى أكثر أمانًا؛ وأقل من 1 يُعرّض للتصفية.",
+  "Prices may be stale": "قد تكون الأسعار غير محدَّثة",
+  "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.":
+    "سعر الاقتراض السنوي الحالي على هذا الدين. وأدناه، الفائدة المتراكمة حتى الآن، تتزايد بشكل حي.",
+  "Total AVA you've earned across completed quests and staking rewards.":
+    "إجمالي AVA الذي كسبته عبر المهام المكتملة ومكافآت الرهن.",
+  "AVA you can claim to your wallet right now.": "AVA الذي يمكنك المطالبة به إلى محفظتك الآن.",
 }
 
 export default dict
