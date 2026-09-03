@@ -881,6 +881,33 @@ export default defineSchema({
     faqs: v.array(v.object({ question: v.string(), answer: v.string() })),
   }).index("by_slug", ["slug"]),
 
+  /**
+   * Governance "Parameter changelog" — real parameter transitions (previous → current)
+   * for a market, one doc per market holding the ordered list (newest first). Distinct
+   * from the thin `*MarketContent.history` timeline: this carries the full change shape
+   * (source, executor, category) the detail table renders. Product-siloed via `product`;
+   * borrow pool + asset share the `"borrow"` product with disjoint slugs (same as
+   * `borrowMarketContent`).
+   */
+  parameterChanges: defineTable({
+    product: v.union(v.literal("borrow"), v.literal("lend"), v.literal("multiply")),
+    slug: v.string(),
+    changes: v.array(
+      v.object({
+        id: v.string(),
+        parameter: v.string(),
+        previous: v.string(),
+        current: v.string(),
+        date: v.string(),
+        source: v.string(),
+        executor: v.string(),
+        category: v.string(),
+        href: v.optional(v.string()),
+      }),
+    ),
+    updatedAt: v.number(),
+  }).index("by_market", ["product", "slug"]),
+
   /** Multiply Risk Premium / assessment card. Distinct from `multiplyRiskParameters`. */
   multiplyRiskAssessments: defineTable({
     slug: v.string(),
