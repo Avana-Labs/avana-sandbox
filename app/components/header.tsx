@@ -8,12 +8,7 @@ import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { AskAssistantTrigger } from "./ask-assistant-trigger"
 import { BrandIcon, BrandLogo } from "./brand-logo"
 import { LazyMobileMenu } from "./lazy-mobile-menu"
-import {
-  LazySearchCommand,
-  LazySearchCommandIconOnly,
-  SearchCommandIconPlaceholder,
-  SearchCommandPlaceholder,
-} from "./lazy-search-command"
+import { LazySearchCommand, LazySearchCommandIconOnly } from "./lazy-search-command"
 import { personalDesktopHeaderLinks } from "./site-nav"
 import { WalletControl } from "@/app/components/wallet-control"
 import { DesktopPreferenceControls } from "./desktop-preference-trigger"
@@ -43,7 +38,7 @@ export function Header() {
   const renderMobileActions = () => (
     <>
       <span className="flex items-center">
-        {mounted ? <LazySearchCommandIconOnly tone="brand" /> : <SearchCommandIconPlaceholder tone="brand" />}
+        <LazySearchCommandIconOnly tone="brand" />
       </span>
       <span className="-me-1 flex items-center">
         <AskAssistantTrigger iconOnly tone="brand" />
@@ -196,7 +191,7 @@ export function Header() {
 
           <div className="flex min-w-0 justify-center px-1">
             <div className="w-full min-w-0 max-w-[380px]">
-              {mounted ? <LazySearchCommand /> : <SearchCommandPlaceholder />}
+              <LazySearchCommand />
             </div>
           </div>
 
@@ -239,7 +234,7 @@ export function Header() {
 
             <div className="flex shrink-0 items-center gap-1.5">
               <span className="flex items-center">
-                {mounted ? <LazySearchCommandIconOnly /> : <SearchCommandIconPlaceholder />}
+                <LazySearchCommandIconOnly />
               </span>
               <span className="flex items-center">
                 <AskAssistantTrigger iconOnly />
