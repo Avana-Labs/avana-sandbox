@@ -36,6 +36,14 @@ export type BorrowBalanceMetrics = {
   liquidationBufferUsd: number | null
   netApyPct: number
   interestOwedUsd: number
+  /**
+   * Debt interest accruing per year (Σ debt × borrow APY) plus the snapshot moment
+   * `interestOwedUsd` is accrued to — together they drive the live Interest Owed counter, which
+   * ticks up from the current amount. Optional: the snapshot/loading fallback omits them and the
+   * figure stays static.
+   */
+  interestOwedPerYearUsd?: number
+  accrualSinceMs?: number
 }
 
 /** Canonical wallet-level Multiply Balance snapshot (8 product metrics). */
@@ -168,6 +176,10 @@ export function buildBorrowBalanceMetrics(
         : null,
     netApyPct: wadToPct(clampNetApyWad(rawNetApyWad)),
     interestOwedUsd: usd6ToNumber(metrics.interestOwedUsd6),
+    // Live Interest Owed ticks up from the current amount: base is accrued to `now`, so the
+    // counter anchors at `now` and adds debt × borrow rate from there (no double-count).
+    interestOwedPerYearUsd: usd6ToNumber(metrics.annualBorrowCostUsd6),
+    accrualSinceMs: now,
   }
 }
 

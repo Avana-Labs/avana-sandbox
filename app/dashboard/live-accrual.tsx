@@ -67,6 +67,28 @@ export function LiveInterestEarnedUsd({
 }
 
 /**
+ * Debt interest accruing in real time — the same client-side accumulator as
+ * {@link LiveInterestEarnedUsd}, for the owed (cost) side. `baseUsd` is the interest already
+ * accrued to the snapshot moment, `anchorMs` is that moment, and `ratePerYearUsd` = debt × borrow
+ * APY, so the figure ticks up from the current amount without double-counting. The red tone is
+ * applied by the caller.
+ */
+export function LiveInterestOwedUsd({
+  anchorMs,
+  ratePerYearUsd,
+  baseUsd = 0,
+  fractionDigits = 4,
+}: {
+  anchorMs: number | null
+  ratePerYearUsd: number
+  baseUsd?: number
+  fractionDigits?: number
+}) {
+  const value = useAccruedUsd(anchorMs, ratePerYearUsd, baseUsd)
+  return <span className="tabular-nums">{formatLiveUsd(value, fractionDigits)}</span>
+}
+
+/**
  * Yield generated so far as a percentage of principal, ticking in real time. Small on a fresh
  * position, so precision adapts (more decimals while it is under a hundredth of a percent) — it
  * still reads as a live, non-zero number instead of a flat 0.00%.

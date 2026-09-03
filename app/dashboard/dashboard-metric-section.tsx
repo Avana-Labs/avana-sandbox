@@ -2,7 +2,8 @@
 
 import type { ReactNode } from "react"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
-import { LiveInterestEarnedUsd, LiveYieldGeneratedPct } from "./live-accrual"
+import { LiveInterestEarnedUsd, LiveInterestOwedUsd, LiveYieldGeneratedPct } from "./live-accrual"
+import { cn } from "@/lib/utils"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { formatUsdExact } from "@/app/lib/borrow-sim"
 import { formatHealthFactor } from "@/app/lib/data/borrow-domain"
@@ -30,14 +31,27 @@ type MetricItem = {
   label: string
   value: ReactNode
   description: string
+  /** Colors the value emerald ("up") or rose ("down") — e.g. interest earned vs owed. */
+  tone?: "up" | "down"
 }
 
 function MetricGrid({ metrics, labelOnTop = false }: { metrics: MetricItem[]; labelOnTop?: boolean }) {
   return (
     <div className="grid w-full grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-x-8">
       {metrics.map((metric) => {
+        const toneClass =
+          metric.tone === "up"
+            ? "text-emerald-700 dark:text-emerald-400"
+            : metric.tone === "down"
+              ? "text-rose-700 dark:text-rose-400"
+              : "text-foreground"
         const value = (
-          <div className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-normal tabular-nums text-foreground">
+          <div
+            className={cn(
+              "font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-normal tabular-nums",
+              toneClass,
+            )}
+          >
             {metric.value}
           </div>
         )
@@ -179,7 +193,18 @@ export function DashboardCreditOverviewSection({
     },
     {
       label: t("Interest Owed"),
-      value: m(formatUsdExact(metrics.interestOwedUsd)),
+      tone: "down",
+      value: !showDollarAmounts ? (
+        MASK
+      ) : metrics.accrualSinceMs != null && metrics.interestOwedPerYearUsd != null ? (
+        <LiveInterestOwedUsd
+          anchorMs={metrics.accrualSinceMs}
+          ratePerYearUsd={metrics.interestOwedPerYearUsd}
+          baseUsd={metrics.interestOwedUsd}
+        />
+      ) : (
+        formatUsdExact(metrics.interestOwedUsd)
+      ),
       description: t("Total interest accrued on your outstanding loans"),
     },
   ]
@@ -295,6 +320,7 @@ export function DashboardPerformanceSection({
           },
           {
             label: t("Interest Owed"),
+            tone: "down",
             value: m(formatUsdExact(metrics.interestOwedUsd)),
             description: t("Total interest accrued on your outstanding loans"),
           },
@@ -347,6 +373,7 @@ export function DashboardLendPerformanceSection({
     },
     {
       label: t("Interest Earned"),
+      tone: "up",
       value: showDollarAmounts ? (
         <LiveInterestEarnedUsd
           anchorMs={metrics.accrualSinceMs}
