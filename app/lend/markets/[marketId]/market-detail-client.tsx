@@ -143,6 +143,14 @@ export function LendMarketDetailClient({
                       utilizationPct={detail.utilizationPct}
                       borrowAprPct={detail.borrowAprPct}
                       protocolParameters={detail.protocolParameters}
+                      borrowedUsd={
+                        detail.supplyBorrow.borrowed.aggregate ??
+                        detail.supplyBorrow.borrowed.points.at(-1)?.v
+                      }
+                      suppliedUsd={
+                        detail.supplyBorrow.supplied.aggregate ??
+                        detail.supplyBorrow.supplied.points.at(-1)?.v
+                      }
                     />
                     <CashflowCard detail={detail} cashflowPreload={cashflowPreload} />
                     <DetailMarketTransactionsDeferred
