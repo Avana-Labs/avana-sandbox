@@ -185,6 +185,10 @@ describe("BorrowActionPageClient", () => {
     )
 
     await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Change asset, current GHO" })).toBeInTheDocument()
+    })
+
+    await waitFor(() => {
       expect(screen.getByTestId("action-context-selector-card")).toBeInTheDocument()
     })
 
@@ -206,5 +210,30 @@ describe("BorrowActionPageClient", () => {
     const href = String(push.mock.calls.at(-1)?.[0] ?? "")
     expect(href).toMatch(/^\/borrow\/markets\/bal-stable/)
     expect(href).not.toBe(`/borrow/markets/${initialMarketId}`)
+  })
+
+  it("keeps GHO selected on asset detail even when the wallet's first pledged pool is another spoke", async () => {
+    const gho = listSpokeBorrowables().find((asset) => asset.id === "bal-stable:gho")
+    expect(gho).toBeTruthy()
+    const initialMarketId = gho!.marketIds.find((id) => id.includes("usdc-dai-usdt")) ?? gho!.marketIds[0]
+    expect(initialMarketId).toBeTruthy()
+
+    renderWithProviders(
+      <AvanaSessionsProvider walletId="demo-wallet">
+        <BorrowActionPageClient
+          kind="borrow"
+          embedded
+          sidebar
+          closeHref="/borrow/assets/bal-stable%3Agho"
+          initialMarketId={initialMarketId}
+          initialAssetId="bal-stable:gho"
+        />
+      </AvanaSessionsProvider>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Change asset, current GHO" })).toBeInTheDocument()
+    })
+    expect(screen.queryByRole("button", { name: /Change asset, current USDC/i })).not.toBeInTheDocument()
   })
 })

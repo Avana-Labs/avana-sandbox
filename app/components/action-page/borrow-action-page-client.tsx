@@ -473,12 +473,26 @@ export function BorrowActionPageClient({
 
   useEffect(() => {
     if (kind !== "borrow" || !activeMarketId || borrowTokens.length === 0) return
-    if (resolvedBorrowAssetId && borrowTokens.some((token) => token.id === resolvedBorrowAssetId)) {
-      if (assetId !== resolvedBorrowAssetId) setAssetId(resolvedBorrowAssetId)
+
+    // Keep a user/route selection that is valid on the active market.
+    const currentResolved = assetId ? resolveBorrowAssetId(session.state, assetId, activeMarketId) : ""
+    if (currentResolved && borrowTokens.some((token) => token.id === currentResolved)) {
+      if (assetId !== currentResolved) setAssetId(currentResolved)
       return
     }
+
+    // Selection missing or off-market (e.g. snapped to another spoke): prefer the
+    // deep-linked asset (bal-stable:gho) before the market's first borrowable.
+    const routeAssetId = initialAssetId
+      ? resolveBorrowAssetId(session.state, initialAssetId, activeMarketId)
+      : ""
+    if (routeAssetId && borrowTokens.some((token) => token.id === routeAssetId)) {
+      if (assetId !== routeAssetId) setAssetId(routeAssetId)
+      return
+    }
+
     setAssetId(borrowTokens[0]!.id)
-  }, [activeMarketId, assetId, borrowTokens, kind, resolvedBorrowAssetId])
+  }, [activeMarketId, assetId, borrowTokens, initialAssetId, kind, session.state])
 
   useEffect(() => {
     if (embedded || !initialMarketId) return
@@ -512,9 +526,20 @@ export function BorrowActionPageClient({
 
   useEffect(() => {
     if (!embedded || usesCollateralContext === false || session.collateralPools.length === 0 || isHomeZeroState) return
+    // Asset-detail sidebar scopes collateral to the borrowable's spoke catalog, which
+    // includes unpledged markets. Do not snap back to the wallet's first pledged pool
+    // (that was replacing Balancer GHO with an unrelated Aerodrome market).
+    if (scopeCollateralToAsset) return
     if (marketId && session.collateralPools.some((pool) => pool.id === marketId)) return
     setMarketId(session.collateralPools[0]!.id)
-  }, [embedded, isHomeZeroState, marketId, session.collateralPools, usesCollateralContext])
+  }, [
+    embedded,
+    isHomeZeroState,
+    marketId,
+    scopeCollateralToAsset,
+    session.collateralPools,
+    usesCollateralContext,
+  ])
 
   useEffect(() => {
     let cancelled = false
