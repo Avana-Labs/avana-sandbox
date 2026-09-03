@@ -159,6 +159,7 @@ const dict: TranslationDictionary = {
   "Join waitlist": "वेटलिस्ट में शामिल हों",
   "Previous page": "पिछला पृष्ठ",
   "Next page": "अगला पृष्ठ",
+  "Transactions pagination": "लेनदेन पृष्ठ क्रमांकन",
   "{page} of {count}": "{count} में से {page}",
   "Max APY": "अधिकतम APY",
   "Max Leverage": "अधिकतम लीवरेज",

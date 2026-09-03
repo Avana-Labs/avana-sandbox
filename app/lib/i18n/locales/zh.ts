@@ -449,6 +449,7 @@ const dict: TranslationDictionary = {
   "Join waitlist": "加入候补名单",
   "Previous page": "上一页",
   "Next page": "下一页",
+  "Transactions pagination": "交易分页",
   "{page} of {count}": "第 {page} 页，共 {count} 页",
   "Max APY": "最高 APY",
   "Max Leverage": "最高杠杆",

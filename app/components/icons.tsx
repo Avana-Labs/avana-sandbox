@@ -3,6 +3,7 @@ import { HugeiconsIcon, type HugeiconsIconProps } from "@hugeicons/react"
 import {
   AlertTriangle as _AlertTriangle,
   ArrowDown as _ArrowDown,
+  ArrowLeft as _ArrowLeft,
   ArrowRight as _ArrowRight,
   ArrowShrinkIcon as _ArrowShrink,
   ArrowUpRight as _ArrowUpRight,
@@ -96,6 +97,7 @@ function makeIcon(icon: HugeiconsIconProps["icon"]): IconComponent {
 
 export const AlertTriangle: IconComponent = makeIcon(_AlertTriangle)
 export const ArrowDown: IconComponent = makeIcon(_ArrowDown)
+export const ArrowLeft: IconComponent = makeIcon(_ArrowLeft)
 export const ArrowRight: IconComponent = makeIcon(_ArrowRight)
 export const ArrowShrink: IconComponent = makeIcon(_ArrowShrink)
 export const ArrowUpRight: IconComponent = makeIcon(_ArrowUpRight)

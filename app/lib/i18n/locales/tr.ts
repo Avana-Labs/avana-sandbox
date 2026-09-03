@@ -161,6 +161,7 @@ const dict: TranslationDictionary = {
   "Join waitlist": "Bekleme listesine katıl",
   "Previous page": "Önceki sayfa",
   "Next page": "Sonraki sayfa",
+  "Transactions pagination": "İşlem sayfalandırması",
   "{page} of {count}": "{count} sayfadan {page}",
   "Max APY": "Maks. APY",
   "Max Leverage": "Maks. kaldıraç",

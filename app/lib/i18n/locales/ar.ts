@@ -157,6 +157,7 @@ const dict: TranslationDictionary = {
   "Join waitlist": "الانضمام إلى قائمة الانتظار",
   "Previous page": "الصفحة السابقة",
   "Next page": "الصفحة التالية",
+  "Transactions pagination": "ترقيم صفحات المعاملات",
   "{page} of {count}": "{page} من {count}",
   "Max APY": "أقصى عائد سنوي",
   "Max Leverage": "أقصى رافعة",

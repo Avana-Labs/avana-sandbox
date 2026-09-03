@@ -1,7 +1,21 @@
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { DetailTransactionTable } from "@/app/components/detail-transaction-table/DetailTransactionTable"
 import { BORROW_POOL_KIND_CONFIG, LEND_KIND_CONFIG } from "@/app/components/detail-transaction-table/kind-configs"
+import type { DetailTransactionRow } from "@/app/lib/detail-page/transaction-history"
+
+function makeRows(count: number): DetailTransactionRow[] {
+  return Array.from({ length: count }, (_, i) => ({
+    id: `tx-${i}`,
+    at: new Date(Date.now() - i * 1000).toISOString(),
+    kind: "supply",
+    amountLabel: `$${i}`,
+    tokenAmountLabel: String(i),
+    tokenSymbol: "USDC",
+    txHashShort: `0x${i}`,
+    walletLabel: `0x${i}…${i}`,
+  }))
+}
 
 vi.mock("@/app/lib/i18n/use-translation", () => ({
   useTranslation: () => ({
@@ -78,5 +92,36 @@ describe("DetailTransactionTable", () => {
   it("shows empty state when no rows", () => {
     render(<DetailTransactionTable transactions={[]} kindConfig={LEND_KIND_CONFIG} />)
     expect(screen.getByText("No transactions yet")).toBeInTheDocument()
+  })
+
+  it("shows no pager when 10 or fewer rows", () => {
+    render(<DetailTransactionTable transactions={makeRows(10)} kindConfig={LEND_KIND_CONFIG} />)
+    expect(screen.queryByLabelText("Transactions pagination")).not.toBeInTheDocument()
+    expect(screen.getAllByRole("row")).toHaveLength(10 + 1) // + header row
+  })
+
+  it("paginates to 10 rows per page and navigates with the buttons", () => {
+    render(<DetailTransactionTable transactions={makeRows(23)} kindConfig={LEND_KIND_CONFIG} />)
+
+    // Page 1: first 10 rows.
+    expect(screen.getByLabelText("Transactions pagination")).toBeInTheDocument()
+    expect(screen.getByText("0 USDC")).toBeInTheDocument()
+    expect(screen.queryByText("10 USDC")).not.toBeInTheDocument()
+    expect(screen.getByLabelText("Previous page")).toBeDisabled()
+
+    // Page 2.
+    fireEvent.click(screen.getByLabelText("Next page"))
+    expect(screen.getByText("10 USDC")).toBeInTheDocument()
+    expect(screen.queryByText("0 USDC")).not.toBeInTheDocument()
+    expect(screen.getByLabelText("Previous page")).not.toBeDisabled()
+
+    // Page 3: last 3 rows, Next disabled.
+    fireEvent.click(screen.getByLabelText("Next page"))
+    expect(screen.getByText("22 USDC")).toBeInTheDocument()
+    expect(screen.getByLabelText("Next page")).toBeDisabled()
+
+    // Back to page 2.
+    fireEvent.click(screen.getByLabelText("Previous page"))
+    expect(screen.getByText("10 USDC")).toBeInTheDocument()
   })
 })

@@ -149,6 +149,7 @@ const dict: TranslationDictionary = {
   "Join waitlist": "대기자 명단 등록",
   "Previous page": "이전 페이지",
   "Next page": "다음 페이지",
+  "Transactions pagination": "거래 페이지 매김",
   "{page} of {count}": "{count}페이지 중 {page}페이지",
   "Max APY": "최대 APY",
   "Max Leverage": "최대 레버리지",

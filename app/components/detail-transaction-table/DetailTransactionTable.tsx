@@ -1,5 +1,7 @@
 "use client"
 
+import * as React from "react"
+import { ArrowLeft, ArrowRight } from "@/app/components/icons"
 import type { DetailTransactionRow } from "@/app/lib/detail-page/transaction-history"
 import { formatRelativeTime } from "@/app/lib/detail-page/transaction-history"
 import { useCurrency } from "@/app/lib/currency/use-currency"
@@ -34,6 +36,8 @@ const COLUMN_WIDTHS: Record<DetailTransactionPreset, string[]> = {
   pool: ["12%", "12%", "16%", "20%", "20%", "20%"],
 }
 
+const PAGE_SIZE = 10
+
 export function DetailTransactionTable({
   transactions,
   preset = "standard",
@@ -50,6 +54,15 @@ export function DetailTransactionTable({
   const poolSymbols =
     preset === "pool" && token0Symbol && token1Symbol ? { token0: token0Symbol, token1: token1Symbol } : undefined
 
+  const [page, setPage] = React.useState(0)
+  const pageCount = Math.max(1, Math.ceil(transactions.length / PAGE_SIZE))
+  const safePage = Math.min(page, pageCount - 1)
+  React.useEffect(() => {
+    if (page > pageCount - 1) setPage(pageCount - 1)
+  }, [page, pageCount])
+  const pageStart = safePage * PAGE_SIZE
+  const pageRows = transactions.slice(pageStart, pageStart + PAGE_SIZE)
+
   return (
     <section className="min-w-0">
       <div className="mb-4">
@@ -63,132 +76,162 @@ export function DetailTransactionTable({
           {t("No transactions yet")}
         </div>
       ) : (
-        <div className="overflow-x-auto md:overflow-x-visible">
-          <table className="w-full min-w-[40rem] table-fixed border-separate border-spacing-0 text-[13px] md:min-w-0">
-            <colgroup>
-              {COLUMN_WIDTHS[preset].map((width, index) => (
-                <col key={columns[index]?.id ?? index} style={{ width }} />
-              ))}
-            </colgroup>
-            <thead>
-              <tr className="text-left text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
-                {columns.map((column, index) => (
-                  <th
-                    key={column.id}
-                    className={cn(
-                      "overflow-hidden bg-table-header px-2 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58",
-                      index === 0 && "rounded-l-radius-lg pl-4",
-                      index === columns.length - 1 && "rounded-r-radius-lg pr-4",
-                      column.align === "right" && "text-right",
-                    )}
-                  >
-                    {t(resolveColumnLabel(column, context, ctx.currency))}
-                  </th>
+        <>
+          <div className="overflow-x-auto md:overflow-x-visible">
+            <table className="w-full min-w-[40rem] table-fixed border-separate border-spacing-0 text-[13px] md:min-w-0">
+              <colgroup>
+                {COLUMN_WIDTHS[preset].map((width, index) => (
+                  <col key={columns[index]?.id ?? index} style={{ width }} />
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.map((row) => (
-                <tr key={row.id} className="group transition-colors">
-                  {columns.map((column, index) => {
-                    const hoverClass =
-                      index === 0
-                        ? `${TABLE_ROW_HOVER_LEFT} group-hover:rounded-l-radius-lg`
-                        : index === columns.length - 1
-                          ? `${TABLE_ROW_HOVER_RIGHT} group-hover:rounded-r-radius-lg`
-                          : TABLE_ROW_HOVER_BG
-                    const padX = index === 0 ? "pl-4 pr-2" : index === columns.length - 1 ? "pl-2 pr-4" : "px-2"
-                    const cellClass = cn("overflow-hidden py-2.5 align-middle", padX, hoverClass)
+              </colgroup>
+              <thead>
+                <tr className="text-left text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+                  {columns.map((column, index) => (
+                    <th
+                      key={column.id}
+                      className={cn(
+                        "overflow-hidden bg-table-header px-2 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58",
+                        index === 0 && "rounded-l-radius-lg pl-4",
+                        index === columns.length - 1 && "rounded-r-radius-lg pr-4",
+                        column.align === "right" && "text-right",
+                      )}
+                    >
+                      {t(resolveColumnLabel(column, context, ctx.currency))}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {pageRows.map((row) => (
+                  <tr key={row.id} className="group transition-colors">
+                    {columns.map((column, index) => {
+                      const hoverClass =
+                        index === 0
+                          ? `${TABLE_ROW_HOVER_LEFT} group-hover:rounded-l-radius-lg`
+                          : index === columns.length - 1
+                            ? `${TABLE_ROW_HOVER_RIGHT} group-hover:rounded-r-radius-lg`
+                            : TABLE_ROW_HOVER_BG
+                      const padX = index === 0 ? "pl-4 pr-2" : index === columns.length - 1 ? "pl-2 pr-4" : "px-2"
+                      const cellClass = cn("overflow-hidden py-2.5 align-middle", padX, hoverClass)
 
-                    if (column.id === "time") {
+                      if (column.id === "time") {
+                        return (
+                          <td
+                            key={column.id}
+                            className={cn(
+                              cellClass,
+                              "font-data text-[13px] font-medium tabular-nums text-muted-foreground",
+                            )}
+                          >
+                            {row.timeLabel ?? formatRelativeTime(row.at, language)}
+                          </td>
+                        )
+                      }
+
+                      if (column.id === "type") {
+                        return (
+                          <td key={column.id} className={cellClass}>
+                            <span
+                              className={cn(
+                                "inline-block whitespace-nowrap text-[14px] font-medium tracking-normal",
+                                resolveTransactionKindTone(kindConfig, row.kind),
+                              )}
+                            >
+                              {t(resolveTransactionKindLabel(kindConfig, row.kind))}
+                            </span>
+                          </td>
+                        )
+                      }
+
+                      if (column.id === "for") {
+                        return (
+                          <td key={column.id} className={cn(cellClass, "text-right")}>
+                            <TransactionTokenCell row={row} priceContext={priceContext} />
+                          </td>
+                        )
+                      }
+
+                      if (column.id === "usd") {
+                        return (
+                          <td key={column.id} className={cn(cellClass, "text-right")}>
+                            <TransactionUsdCell row={row} priceContext={priceContext} poolSymbols={poolSymbols} />
+                          </td>
+                        )
+                      }
+
+                      if (column.id === "token0" || column.id === "token1") {
+                        return (
+                          <td key={column.id} className={cn(cellClass, "text-right")}>
+                            <TransactionPoolTokenCell
+                              row={row}
+                              leg={column.id}
+                              token0Symbol={token0Symbol}
+                              token1Symbol={token1Symbol}
+                              priceContext={priceContext}
+                            />
+                          </td>
+                        )
+                      }
+
                       return (
                         <td
                           key={column.id}
                           className={cn(
                             cellClass,
-                            "font-data text-[13px] font-medium tabular-nums text-muted-foreground",
+                            "text-right font-data text-[13px] font-normal tabular-nums text-foreground",
                           )}
                         >
-                          {row.timeLabel ?? formatRelativeTime(row.at, language)}
+                          {row.walletHref ? (
+                            <a
+                              href={row.walletHref}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="block w-full truncate whitespace-nowrap text-foreground underline-offset-2 hover:underline"
+                            >
+                              {row.walletLabel ?? row.txHashShort}
+                            </a>
+                          ) : (
+                            <span className="block w-full truncate whitespace-nowrap">
+                              {row.walletLabel ?? row.txHashShort}
+                            </span>
+                          )}
                         </td>
                       )
-                    }
-
-                    if (column.id === "type") {
-                      return (
-                        <td key={column.id} className={cellClass}>
-                          <span
-                            className={cn(
-                              "inline-block whitespace-nowrap text-[14px] font-medium tracking-normal",
-                              resolveTransactionKindTone(kindConfig, row.kind),
-                            )}
-                          >
-                            {t(resolveTransactionKindLabel(kindConfig, row.kind))}
-                          </span>
-                        </td>
-                      )
-                    }
-
-                    if (column.id === "for") {
-                      return (
-                        <td key={column.id} className={cn(cellClass, "text-right")}>
-                          <TransactionTokenCell row={row} priceContext={priceContext} />
-                        </td>
-                      )
-                    }
-
-                    if (column.id === "usd") {
-                      return (
-                        <td key={column.id} className={cn(cellClass, "text-right")}>
-                          <TransactionUsdCell row={row} priceContext={priceContext} poolSymbols={poolSymbols} />
-                        </td>
-                      )
-                    }
-
-                    if (column.id === "token0" || column.id === "token1") {
-                      return (
-                        <td key={column.id} className={cn(cellClass, "text-right")}>
-                          <TransactionPoolTokenCell
-                            row={row}
-                            leg={column.id}
-                            token0Symbol={token0Symbol}
-                            token1Symbol={token1Symbol}
-                            priceContext={priceContext}
-                          />
-                        </td>
-                      )
-                    }
-
-                    return (
-                      <td
-                        key={column.id}
-                        className={cn(
-                          cellClass,
-                          "text-right font-data text-[13px] font-normal tabular-nums text-foreground",
-                        )}
-                      >
-                        {row.walletHref ? (
-                          <a
-                            href={row.walletHref}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="block w-full truncate whitespace-nowrap text-foreground underline-offset-2 hover:underline"
-                          >
-                            {row.walletLabel ?? row.txHashShort}
-                          </a>
-                        ) : (
-                          <span className="block w-full truncate whitespace-nowrap">
-                            {row.walletLabel ?? row.txHashShort}
-                          </span>
-                        )}
-                      </td>
-                    )
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {pageCount > 1 && (
+            <nav className="mt-4 flex items-center justify-center gap-2" aria-label={t("Transactions pagination")}>
+              <button
+                type="button"
+                aria-label={t("Previous page")}
+                disabled={safePage === 0}
+                onClick={() => setPage((current) => Math.max(0, current - 1))}
+                className="inline-flex size-9 items-center justify-center rounded-radius-md border border-border bg-muted text-foreground transition-colors hover:bg-hover disabled:pointer-events-none disabled:opacity-40"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+              <span
+                aria-current="page"
+                className="inline-flex h-9 min-w-9 items-center justify-center rounded-radius-md bg-table-header px-3 font-data text-[13px] font-medium tabular-nums text-foreground"
+              >
+                {safePage + 1}
+              </span>
+              <button
+                type="button"
+                aria-label={t("Next page")}
+                disabled={safePage >= pageCount - 1}
+                onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
+                className="inline-flex size-9 items-center justify-center rounded-radius-md border border-border bg-muted text-foreground transition-colors hover:bg-hover disabled:pointer-events-none disabled:opacity-40"
+              >
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </nav>
+          )}
+        </>
       )}
     </section>
   )

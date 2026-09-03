@@ -150,6 +150,7 @@ const dict: TranslationDictionary = {
   "Join waitlist": "Rejoindre la liste d'attente",
   "Previous page": "Page précédente",
   "Next page": "Page suivante",
+  "Transactions pagination": "Pagination des transactions",
   "{page} of {count}": "{page} sur {count}",
   "Max APY": "APY max",
   "Max Leverage": "Levier max",
