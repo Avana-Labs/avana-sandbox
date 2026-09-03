@@ -255,6 +255,9 @@ describe("detail sidebars", () => {
     expect(screen.getByTestId("action-launch-borrow")).toBeInTheDocument()
     expect(screen.queryByRole("tab", { name: "Lend" })).not.toBeInTheDocument()
     expect(screen.queryByRole("tab", { name: "Withdraw" })).not.toBeInTheDocument()
+    expect(screen.queryByText(/Deposit LP collateral before borrowing/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Pledge" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Got it" })).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("tab", { name: "Repay" }))
     expect(screen.getByTestId("action-launch-repay")).toBeInTheDocument()
