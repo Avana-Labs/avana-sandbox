@@ -276,9 +276,20 @@ export function DashboardMultiplyBalanceSection({
       description: t("Distance from liquidation based on current collateral value"),
     },
     {
-      label: t("Risk Premium"),
-      value: showDollarAmounts ? formatPct(metrics.riskPremiumPct) : MASK,
-      description: t("An additional cost on your borrow rate based on the riskiness of your collateral"),
+      label: t("Interest Earned"),
+      tone: metrics.interestEarnedUsd < 0 ? "down" : "up",
+      value: showDollarAmounts ? (
+        <LiveInterestEarnedUsd
+          anchorMs={metrics.accrualSinceMs}
+          ratePerYearUsd={metrics.interestPerYearUsd}
+          baseUsd={metrics.interestEarnedUsd}
+        />
+      ) : (
+        MASK
+      ),
+      description: t(
+        "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)",
+      ),
     },
   ]
 

@@ -25,6 +25,8 @@ export const KNOWN_UNTRANSLATED: readonly string[] = [
   "Equity",
   "leverage",
   "debt",
+  // Multiply Balance — Interest Earned tile help text.
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)",
   "{amount} in cooldown",
   "{count} positions",
   "{progress}/{target} {currency}",

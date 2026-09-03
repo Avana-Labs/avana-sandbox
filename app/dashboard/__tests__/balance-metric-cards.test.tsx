@@ -96,7 +96,7 @@ describe("Multiply Balance metric cards", () => {
       "Net APY",
       "Health Factor",
       "Liquidation Buffer",
-      "Risk Premium",
+      "Interest Earned",
     ]) {
       expect(screen.getByText(label)).toBeTruthy()
     }

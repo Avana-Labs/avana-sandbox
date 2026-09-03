@@ -56,6 +56,14 @@ export type MultiplyBalanceMetrics = {
   healthFactor: number | null
   liquidationBufferUsd: number
   riskPremiumPct: number
+  /**
+   * Net carry earned so far (Σ equity × netApy × elapsed), its yearly rate (Σ equity × netApy),
+   * and the snapshot moment it is accrued to — together they drive the live Interest Earned
+   * counter. Can be negative when a loop's borrow cost outweighs its supply yield.
+   */
+  interestEarnedUsd: number
+  interestPerYearUsd: number
+  accrualSinceMs: number
 }
 
 const WAD = 10n ** 18n
@@ -261,6 +269,18 @@ export function buildMultiplyBalanceMetrics(
   const leverageX = netValueUsd > 0 ? positionValueUsd / netValueUsd : positions.length > 0 ? 1 : 0
   const healthFactor = totalBorrowedUsd > 0 ? tabData.creditLines.liquidationThresholdUsd / totalBorrowedUsd : null
 
+  // Net carry: each loop earns equity × netApy per year, accrued from when it opened. The rate and
+  // the amount-so-far come from the same per-position terms, so the live counter and the headline
+  // Net APY never disagree. netApy is the value revalueMultiplyPosition recomputed from economics.
+  const now = Date.now()
+  let interestPerYearUsd = 0
+  let interestEarnedUsd = 0
+  for (const position of positions) {
+    const equityUsd = Math.max(0, position.collateralValueUsd - position.debtValueUsd)
+    interestPerYearUsd += equityUsd * position.netApy
+    interestEarnedUsd += equityUsd * position.netApy * (Math.max(0, now - position.openedAt) / YEAR_MS)
+  }
+
   return {
     netValueUsd,
     positionValueUsd,
@@ -270,6 +290,9 @@ export function buildMultiplyBalanceMetrics(
     healthFactor,
     liquidationBufferUsd,
     riskPremiumPct,
+    interestEarnedUsd,
+    interestPerYearUsd,
+    accrualSinceMs: now,
   }
 }
 
