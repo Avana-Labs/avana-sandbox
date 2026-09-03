@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import { cn } from "@/lib/utils"
+import { HeroAnimatedNumber } from "./hero-animated-number"
 
 type HeroBalanceDisplayProps = {
   value: string
@@ -16,6 +17,18 @@ type HeroBalanceDisplayProps = {
   subtitle?: ReactNode
   variant?: "default" | "strong" | "quiet"
   className?: string
+  /**
+   * When set with `formatValue`, the headline springs toward this number
+   * (Uniswap-style scrub). `value` remains the a11y / fallback string.
+   */
+  numericValue?: number
+  formatValue?: (value: number) => string
+  /** Optional spring for the absolute delta amount (e.g. $116.62). */
+  numericDeltaAbs?: number
+  formatDeltaAbs?: (value: number) => string
+  /** Optional spring for the percent portion (e.g. 4.89). */
+  numericDeltaPct?: number
+  formatDeltaPct?: (value: number) => string
 }
 
 function HeroDeltaText({
@@ -23,12 +36,23 @@ function HeroDeltaText({
   tone,
   meta,
   variant = "default",
+  numericDeltaAbs,
+  formatDeltaAbs,
+  numericDeltaPct,
+  formatDeltaPct,
 }: {
   value: string
   tone: "positive" | "negative"
   meta?: string
   variant?: "default" | "strong" | "quiet"
+  numericDeltaAbs?: number
+  formatDeltaAbs?: (value: number) => string
+  numericDeltaPct?: number
+  formatDeltaPct?: (value: number) => string
 }) {
+  const useAnimatedDelta =
+    numericDeltaAbs != null && formatDeltaAbs != null && numericDeltaPct != null && formatDeltaPct != null
+
   return (
     <div className="flex items-center gap-2">
       <div
@@ -54,7 +78,16 @@ function HeroDeltaText({
                 : "text-[14px] font-medium",
           )}
         >
-          {value}
+          {useAnimatedDelta ? (
+            <>
+              <HeroAnimatedNumber value={numericDeltaAbs} format={formatDeltaAbs} />
+              {" ("}
+              <HeroAnimatedNumber value={numericDeltaPct} format={formatDeltaPct} />
+              {")"}
+            </>
+          ) : (
+            value
+          )}
         </span>
       </div>
       {meta ? <span className="text-[13px] font-normal text-muted-foreground">{meta}</span> : null}
@@ -73,7 +106,15 @@ export function HeroBalanceDisplay({
   subtitle,
   variant = "default",
   className,
+  numericValue,
+  formatValue,
+  numericDeltaAbs,
+  formatDeltaAbs,
+  numericDeltaPct,
+  formatDeltaPct,
 }: HeroBalanceDisplayProps) {
+  const animateValue = !hidden && numericValue != null && formatValue != null
+
   return (
     <div className={cn("space-y-1.5", className)}>
       {label ? (
@@ -92,14 +133,29 @@ export function HeroBalanceDisplay({
                 : "text-[26px] font-normal tracking-[-0.015em] sm:text-[28px] md:text-[30px]",
           )}
         >
-          {hidden ? "••••••••" : value}
+          {hidden ? (
+            "••••••••"
+          ) : animateValue ? (
+            <HeroAnimatedNumber value={numericValue} format={formatValue} />
+          ) : (
+            value
+          )}
         </span>
         {valueSuffix}
       </div>
       {hidden ? (
         <span className="text-[13px] text-muted-foreground">••••••••</span>
       ) : (
-        <HeroDeltaText value={delta} tone={deltaTone} meta={meta} variant={variant} />
+        <HeroDeltaText
+          value={delta}
+          tone={deltaTone}
+          meta={meta}
+          variant={variant}
+          numericDeltaAbs={numericDeltaAbs}
+          formatDeltaAbs={formatDeltaAbs}
+          numericDeltaPct={numericDeltaPct}
+          formatDeltaPct={formatDeltaPct}
+        />
       )}
       {subtitle ? <div className="text-[13px] text-muted-foreground">{hidden ? "••••••••" : subtitle}</div> : null}
     </div>

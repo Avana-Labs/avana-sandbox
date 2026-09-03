@@ -1,11 +1,14 @@
 "use client"
 
 import dynamic from "next/dynamic"
-import { useMemo, useState, type ReactNode } from "react"
+import { useCallback, useMemo, useState, type ReactNode } from "react"
+import { useCurrency } from "@/app/lib/currency/use-currency"
 import { resolveAvailableRanges, resolveSeriesChange, resolveSeriesTone } from "./chart-data"
 import { ChartRangeSelector } from "./chart-range-selector"
 import { formatChartAxis, formatChartValue } from "./format"
-import type { ChartValueFormat } from "./types"
+import { HeroBalanceDisplay } from "./hero-balance-display"
+import type { HeroScrubSample } from "./hero-scrub"
+import type { ChartFeed, ChartRangeOption, ChartValueFormat } from "./types"
 
 /** Masked axis characters shown when the privacy toggle hides amounts. */
 export const HERO_AXIS_MASK = "••"
@@ -19,10 +22,6 @@ export function heroAxisFormatter(valueFormat: ChartValueFormat, hideValue: bool
   if (hideValue) return () => HERO_AXIS_MASK
   return (value: number) => formatChartAxis(valueFormat, value)
 }
-import { HeroBalanceDisplay } from "./hero-balance-display"
-import type { ChartFeed, ChartRangeOption } from "./types"
-import { redenominateCompactUsd } from "@/app/lib/currency/format"
-import { useCurrency } from "@/app/lib/currency/use-currency"
 
 const HeroAreaChart = dynamic(() => import("./hero-area-chart").then((mod) => mod.HeroAreaChart), {
   ssr: false,
@@ -94,38 +93,36 @@ export function MarketHeroChart({
       ? requestedRange
       : availableRanges[0]
     : defaultRange
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null)
-  // Subscribe to the active currency so the pre-formatted headline re-denominates
-  // in sync with the (live-converting) delta, tooltip, and axis — no mixed $/€.
-  const { ctx } = useCurrency()
+  const [scrub, setScrub] = useState<HeroScrubSample | null>(null)
+  // Subscribe so headline / delta / axis re-render when the active currency changes.
+  useCurrency()
 
   const points = feed.rangeData[activeRange]
-
-  const hoverPoint = hoverIndex != null ? points[hoverIndex] : null
+  const tipValue = points[points.length - 1]?.value ?? 0
 
   // The chart color and the headline delta both follow the active range's
   // real trend (first → last), so a dip shows red everywhere.
   const rangeTone = resolveSeriesTone(points)
+  const rangeChange = useMemo(() => resolveSeriesChange(points), [points])
 
-  const { value, delta, meta, tone } = useMemo(() => {
-    if (hoverPoint) {
-      const first = points[0]?.value ?? hoverPoint.value
-      const pct = first ? ((hoverPoint.value - first) / first) * 100 : 0
-      return {
-        value: formatChartValue(feed.valueFormat, hoverPoint.value),
-        delta: `${Math.abs(pct).toFixed(2)}%`,
-        meta: hoverPoint.label,
-        tone: pct >= 0 ? ("positive" as const) : ("negative" as const),
-      }
-    }
-    const change = resolveSeriesChange(points)
-    return {
-      value: redenominateCompactUsd(feed.headlineValue, ctx),
-      delta: `${formatChartValue(feed.valueFormat, change.changeAbs)} (${Math.abs(change.pct).toFixed(2)}%)`,
-      meta: feed.headlineMeta,
-      tone: rangeTone,
-    }
-  }, [ctx, feed, hoverPoint, points, rangeTone])
+  const displayValue = scrub?.value ?? tipValue
+  const firstValue = points[0]?.value ?? displayValue
+  const scrubPct = firstValue ? ((displayValue - firstValue) / firstValue) * 100 : 0
+  const tone = scrub ? (scrubPct >= 0 ? ("positive" as const) : ("negative" as const)) : rangeTone
+
+  const formatValue = useCallback((v: number) => formatChartValue(feed.valueFormat, v), [feed.valueFormat])
+  const formatDeltaAbs = useCallback((v: number) => formatChartValue(feed.valueFormat, Math.abs(v)), [feed.valueFormat])
+  const formatDeltaPct = useCallback((v: number) => `${Math.abs(v).toFixed(2)}%`, [])
+
+  const valueText = formatValue(displayValue)
+
+  const deltaAbs = scrub ? displayValue - firstValue : rangeChange.changeAbs
+  const deltaPct = scrub ? scrubPct : rangeChange.pct
+  const deltaText = `${formatDeltaAbs(deltaAbs)} (${formatDeltaPct(deltaPct)})`
+
+  // While scrubbing, always surface the sample timestamp (Uniswap header-as-tooltip).
+  // At rest, respect `showMeta` for the feed's headline meta.
+  const meta = scrub ? scrub.label || undefined : showMeta ? feed.headlineMeta : undefined
 
   const showFooter = showRangeSelector || Boolean(metricTabs?.length)
 
@@ -136,25 +133,31 @@ export function MarketHeroChart({
         <p className="text-[12px] font-medium uppercase tracking-[0.08em] text-muted-foreground">{label}</p>
       ) : null}
       <HeroBalanceDisplay
-        value={value}
-        delta={delta}
-        deltaTone={tone}
-        meta={showMeta ? meta : undefined}
+        value={hideValue ? "••••••••" : valueText}
+        delta={deltaText}
+        deltaTone={tone === "neutral" ? "positive" : tone}
+        meta={meta}
         hidden={hideValue}
         variant={balanceVariant}
         className={balanceClassName}
         valueSuffix={balanceSuffix}
         subtitle={balanceSubtitle}
+        numericValue={hideValue ? undefined : displayValue}
+        formatValue={hideValue ? undefined : formatValue}
+        numericDeltaAbs={hideValue ? undefined : Math.abs(deltaAbs)}
+        formatDeltaAbs={hideValue ? undefined : formatDeltaAbs}
+        numericDeltaPct={hideValue ? undefined : Math.abs(deltaPct)}
+        formatDeltaPct={hideValue ? undefined : formatDeltaPct}
       />
       <HeroAreaChart
         data={points}
         activeRange={activeRange}
         height={height}
         gradientId={gradientId}
-        tone={chartTone ?? (hoverPoint ? tone : rangeTone)}
-        formatValue={(v) => formatChartValue(feed.valueFormat, v)}
+        tone={chartTone ?? (scrub ? tone : rangeTone)}
+        formatValue={formatValue}
         formatYAxis={heroAxisFormatter(feed.valueFormat, hideValue)}
-        onActiveIndexChange={setHoverIndex}
+        onScrubChange={setScrub}
       />
       {showFooter ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
