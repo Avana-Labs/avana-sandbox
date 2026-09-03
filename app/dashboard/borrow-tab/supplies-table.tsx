@@ -25,6 +25,7 @@ import {
 } from "@/app/components/market-card-primitives"
 import { HealthFactorPositionBar } from "@/app/components/action-page/action-health-factor-bar"
 import { formatApy } from "@/app/lib/format"
+import { liqUtilizationPercentTextClass } from "@/app/lib/borrow-system/liq-utilization-tone"
 import { formatSectionCount } from "@/app/lib/ui/section-count"
 import { cn } from "@/lib/utils"
 import {
@@ -90,17 +91,17 @@ export function SuppliesPanel({
               <div className="overflow-x-auto">
                 <table className={`w-full min-w-[560px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
                   <colgroup>
-                    <col className="w-[38%]" />
-                    <col className="w-[18%]" />
+                    <col className="w-[36%]" />
+                    <col className="w-[22%]" />
                     <col className="w-[24%]" />
-                    <col className="w-[20%]" />
+                    <col className="w-[18%]" />
                   </colgroup>
                   <thead>
                     <tr className={TABLE_HEADER_ROW}>
                       <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>
                         {formatTableHeaderLabel(t("Collateral"))}
                       </th>
-                      <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                      <th className={cn(TABLE_HEADER_CELL, "whitespace-nowrap px-4 text-right")}>
                         {formatTableHeaderLabel(t("Borrow Power"))}
                       </th>
                       <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{formatTableHeaderLabel(t("Risk"))}</th>
@@ -115,6 +116,12 @@ export function SuppliesPanel({
                       ]
                       const hfTone = healthFactorToneClass(row.healthFactor)
                       const detailHref = `/borrow/markets/${row.pool.id}`
+                      // Per-collateral borrow-power utilization, computed the same way as the global
+                      // Borrow Health card (borrowed ÷ liquidation value) and tinted with its palette.
+                      const usedPct =
+                        row.liquidationThresholdUsd > 0
+                          ? Math.min(100, (row.borrowedUsd / row.liquidationThresholdUsd) * 100)
+                          : 0
                       return (
                         <tr
                           key={row.pool.id}
@@ -127,12 +134,15 @@ export function SuppliesPanel({
                             <TokenPairCell
                               visuals={visuals}
                               name={row.pool.name}
-                              subtitle={m(compact(row.pool.collateralUsd))}
+                              subtitle={m(`${t("Value")}: ${compact(row.pool.collateralUsd)}`)}
                               size="md"
                             />
                           </td>
-                          <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_CELL_NUMERIC, TABLE_ROW_HOVER_BG)}>
-                            {m(compact(row.remainingBorrowPowerUsd))}
+                          <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
+                            <div className={TABLE_CELL_NUMERIC}>{m(compact(row.remainingBorrowPowerUsd))}</div>
+                            <div className={cn(TABLE_CELL_CAPTION, liqUtilizationPercentTextClass(usedPct))}>
+                              {m(`${usedPct.toFixed(0)}% ${t("used")}`)}
+                            </div>
                           </td>
                           <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
                             <HfNumber size="table" value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />

@@ -19,6 +19,8 @@ export const KNOWN_UNTRANSLATED: readonly string[] = [
   "Unrealized P/L",
   "Avana Boost",
   "Member since",
+  // Per-collateral borrow-power utilization caption.
+  "used",
   "{amount} in cooldown",
   "{count} positions",
   "{progress}/{target} {currency}",
