@@ -12,7 +12,6 @@ describe("Dashboard snapshot surfaces", () => {
     for (const path of [
       "../../dashboard/borrow-tab/supplies-table.tsx",
       "../../dashboard/borrow-tab/debts-table.tsx",
-      "../../dashboard/health-factor-history-card.tsx",
     ]) {
       expect(readFileSync(resolve(__dirname, path), "utf8")).toContain("DASHBOARD_SNAPSHOT_SURFACE_CLASS")
     }

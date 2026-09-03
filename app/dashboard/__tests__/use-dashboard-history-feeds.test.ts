@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest"
-import {
-  buildRebasedMetricFeeds,
-  buildRiskSeriesFeed,
-  sliceSnapshotsByRange,
-} from "@/app/dashboard/use-dashboard-history-feeds"
+import { buildRebasedMetricFeeds, sliceSnapshotsByRange } from "@/app/dashboard/use-dashboard-history-feeds"
 
 const LIVE = { netValue: 1000, supplied: 800, borrowed: 200, earned: 8, multiplyExposure: 400 }
 
@@ -79,20 +75,5 @@ describe("buildRebasedMetricFeeds", () => {
     const feeds = buildRebasedMetricFeeds([], LIVE)
     expect(feeds.netValue.rangeData.All).toHaveLength(1)
     expect(feeds.netValue.rangeData.All[0]!.value).toBe(1000)
-  })
-})
-
-describe("buildRiskSeriesFeed", () => {
-  it("filters out null health-factor rows so a repaid window isn't a dip to 0", () => {
-    const now = Date.now()
-    const feed = buildRiskSeriesFeed([
-      { at: now - 3 * DAY_MS, healthFactorWad: "2000000000000000000" }, // 2.0
-      { at: now - 2 * DAY_MS, healthFactorWad: null },
-      { at: now - DAY_MS, healthFactorWad: "1500000000000000000" }, // 1.5
-    ])
-    const points = feed.rangeData.All
-    expect(points).toHaveLength(2)
-    expect(points[0]!.value).toBeCloseTo(2.0, 6)
-    expect(points[1]!.value).toBeCloseTo(1.5, 6)
   })
 })

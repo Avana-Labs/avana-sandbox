@@ -18,7 +18,6 @@ import type { BorrowSnapshot } from "@/app/dashboard/borrow-hero-state"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { HealthFactorHistoryCard } from "@/app/dashboard/health-factor-history-card"
 import { HealthRiskBanner } from "@/app/dashboard/health-risk-banner"
 import { AccountModuleBoundary } from "./account-sections-shared"
 
@@ -96,15 +95,6 @@ export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref
     <section id="dashboard-borrow-account" className={`scroll-mt-24 ${detailSectionStackClass}`}>
       <DashboardCreditOverviewSection title={t("Borrow Balance")} metrics={borrowBalanceMetrics} />
 
-      <AccountModuleBoundary product="borrow">
-        <DashboardBorrowTab
-          collateralPositions={collateralPositions}
-          debtPositions={debtPositions}
-          showSummary={false}
-          returnHref={returnHref}
-        />
-      </AccountModuleBoundary>
-
       <div className="space-y-4">
         <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">{t("Borrow Health")}</h3>
         <HealthRiskBanner healthFactor={borrowSnapshot.averageHealthFactor} product="borrow" />
@@ -119,8 +109,16 @@ export function BorrowAccountSection({ returnHref = "/dashboard" }: { returnHref
             showBalance={showDollarAmounts}
           />
         </div>
-        <HealthFactorHistoryCard walletId={walletId ?? undefined} />
       </div>
+
+      <AccountModuleBoundary product="borrow">
+        <DashboardBorrowTab
+          collateralPositions={collateralPositions}
+          debtPositions={debtPositions}
+          showSummary={false}
+          returnHref={returnHref}
+        />
+      </AccountModuleBoundary>
     </section>
   )
 }

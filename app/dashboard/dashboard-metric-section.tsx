@@ -259,11 +259,6 @@ export function DashboardMultiplyBalanceSection({
       description: t("Portfolio leverage as position value divided by equity"),
     },
     {
-      label: t("Net APY"),
-      value: showDollarAmounts ? formatPct(metrics.netApyPct) : MASK,
-      description: t("Equity-weighted net APY after supply yield and borrow cost"),
-    },
-    {
       label: t("Health Factor"),
       value: showDollarAmounts ? hfLabel : MASK,
       description: t(
@@ -274,6 +269,11 @@ export function DashboardMultiplyBalanceSection({
       label: t("Liquidation Buffer"),
       value: m(formatUsdExact(metrics.liquidationBufferUsd)),
       description: t("Distance from liquidation based on current collateral value"),
+    },
+    {
+      label: t("Net APY"),
+      value: showDollarAmounts ? formatPct(metrics.netApyPct) : MASK,
+      description: t("Equity-weighted net APY after supply yield and borrow cost"),
     },
     {
       label: t("Interest Earned"),

@@ -4,7 +4,11 @@ import { lazy, useMemo } from "react"
 import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { useAvanaIdentity, useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useDashboardMultiplyLive } from "@/app/dashboard/use-dashboard-multiply-live"
-import { buildMultiplyBalanceMetrics, type MultiplyBalanceMetrics } from "@/app/dashboard/dashboard-tab-metrics"
+import {
+  buildMultiplyBalanceMetrics,
+  buildMultiplyPositionLiveApyByMarket,
+  type MultiplyBalanceMetrics,
+} from "@/app/dashboard/dashboard-tab-metrics"
 import { DashboardMultiplyBalanceSection } from "@/app/dashboard/dashboard-metric-section"
 import { SuppliesHealthFactorCard } from "@/app/dashboard/borrow-tab/supplies-table"
 import { CurrentLtvCard } from "@/app/dashboard/borrow-tab/debts-table"
@@ -72,19 +76,14 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
     [multiplySession.state, multiplyTabData, walletId],
   )
 
+  const netApyByMarket = useMemo(
+    () => buildMultiplyPositionLiveApyByMarket(multiplySession.state, walletId ?? ""),
+    [multiplySession.state, walletId],
+  )
+
   return (
     <section id="dashboard-multiply-account" className={`scroll-mt-24 ${detailSectionStackClass}`}>
       <DashboardMultiplyBalanceSection title={t("Multiply Balance")} metrics={multiplyBalanceMetrics} />
-      <ProductAvailableCard
-        walletId={walletId ?? ""}
-        sourceTypes={["multiply_available"]}
-        title={t("Available to use")}
-        action={{
-          icon: "multiply",
-          label: t("Multiply"),
-          href: () => "/multiply",
-        }}
-      />
       <div className="space-y-4">
         <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
           {t("Multiply Health")}
@@ -103,8 +102,22 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
         </div>
       </div>
       <AccountModuleBoundary product="multiply">
-        <MultiplyCollateralTable rows={multiplyTabData.lpCollaterals} returnHref={returnHref} />
+        <MultiplyCollateralTable
+          rows={multiplyTabData.lpCollaterals}
+          netApyByMarket={netApyByMarket}
+          returnHref={returnHref}
+        />
       </AccountModuleBoundary>
+      <ProductAvailableCard
+        walletId={walletId ?? ""}
+        sourceTypes={["multiply_available"]}
+        title={t("Available to use")}
+        action={{
+          icon: "multiply",
+          label: t("Multiply"),
+          href: () => "/multiply",
+        }}
+      />
     </section>
   )
 }

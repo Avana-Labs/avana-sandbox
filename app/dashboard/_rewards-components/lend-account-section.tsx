@@ -58,16 +58,6 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
   return (
     <section id="dashboard-lend-account" className={`scroll-mt-24 ${detailSectionStackClass}`}>
       <DashboardLendPerformanceSection title={t("Lend Balance")} metrics={balanceMetrics} />
-      <ProductAvailableCard
-        walletId={walletId ?? ""}
-        sourceTypes={["lend_available"]}
-        title={t("Available to deposit")}
-        action={{
-          icon: "deposit",
-          label: t("Deposit"),
-          href: (row) => actionPagePath("lend", "deposit", { market: row.symbol.toLowerCase(), return: returnHref }),
-        }}
-      />
       <DashboardInvestments
         investments={lendTabData.investments}
         rewardsSummary={
@@ -83,6 +73,16 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
         countLabel={t("{count} assets").replace("{count}", String(lendTabData.investments.length))}
         returnHref={returnHref}
         accrualSinceMs={balanceMetrics.accrualSinceMs}
+      />
+      <ProductAvailableCard
+        walletId={walletId ?? ""}
+        sourceTypes={["lend_available"]}
+        title={t("Available to deposit")}
+        action={{
+          icon: "deposit",
+          label: t("Deposit"),
+          href: (row) => actionPagePath("lend", "deposit", { market: row.symbol.toLowerCase(), return: returnHref }),
+        }}
       />
     </section>
   )
