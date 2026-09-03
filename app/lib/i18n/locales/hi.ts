@@ -283,7 +283,6 @@ const dict: TranslationDictionary = {
   "Insufficient balance": "अपर्याप्त शेष",
   "Insufficient liquidity": "अपर्याप्त लिक्विडिटी",
   "Insufficient LP": "अपर्याप्त LP",
-  "Deposit collateral first": "पहले संपार्श्विक जमा करें",
   "Borrowing unavailable": "उधार उपलब्ध नहीं",
   "Try a smaller amount": "छोटी राशि आज़माएँ",
   "Supply cap reached": "सप्लाई सीमा पूरी",
@@ -408,7 +407,6 @@ const dict: TranslationDictionary = {
   "Daily Interest": "दैनिक ब्याज",
   day: "दिन",
   "Deposit {symbol}": "{symbol} जमा करें",
-  "Deposit LP collateral before borrowing {symbol}.": "{symbol} उधार लेने से पहले LP कोलैटरल जमा करें।",
   Done: "हो गया",
   Expiration: "समाप्ति",
   Expired: "समाप्त",
@@ -417,7 +415,6 @@ const dict: TranslationDictionary = {
   "Generating link...": "लिंक बन रहा है...",
   "Go back": "वापस जाएँ",
   GOOD: "अच्छा",
-  "Got it": "समझ गया",
   "Health Factor": "हेल्थ फैक्टर",
   "I read it": "मैंने पढ़ा",
   "In this sandbox, every transaction is simulated — use previews to learn before sizing up.":

@@ -271,7 +271,6 @@ const dict: TranslationDictionary = {
   "Insufficient balance": "残高が不足しています",
   "Insufficient liquidity": "流動性が不足しています",
   "Insufficient LP": "LP が不足しています",
-  "Deposit collateral first": "先に担保を入金してください",
   "Borrowing unavailable": "借入はできません",
   "Try a smaller amount": "金額を小さくしてください",
   "Supply cap reached": "供給上限に達しました",
@@ -396,7 +395,6 @@ const dict: TranslationDictionary = {
   "Daily Interest": "日次利息",
   day: "日",
   "Deposit {symbol}": "{symbol} をデポジット",
-  "Deposit LP collateral before borrowing {symbol}.": "{symbol} を借りる前に LP 担保を入金してください。",
   Done: "完了",
   Expiration: "有効期限",
   Expired: "期限切れ",
@@ -405,7 +403,6 @@ const dict: TranslationDictionary = {
   "Generating link...": "リンクを生成中…",
   "Go back": "戻る",
   GOOD: "良好",
-  "Got it": "了解",
   "Health Factor": "ヘルスファクター",
   "I read it": "読みました",
   "In this sandbox, every transaction is simulated — use previews to learn before sizing up.":

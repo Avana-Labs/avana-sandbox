@@ -277,7 +277,6 @@ const dict: TranslationDictionary = {
   "Insufficient balance": "Недостаточно средств",
   "Insufficient liquidity": "Недостаточно ликвидности",
   "Insufficient LP": "Недостаточно LP",
-  "Deposit collateral first": "Сначала внесите залог",
   "Borrowing unavailable": "Заём недоступен",
   "Try a smaller amount": "Попробуйте меньшую сумму",
   "Supply cap reached": "Достигнут лимит предложения",
@@ -402,7 +401,6 @@ const dict: TranslationDictionary = {
   "Daily Interest": "Дневной процент",
   day: "день",
   "Deposit {symbol}": "Внести {symbol}",
-  "Deposit LP collateral before borrowing {symbol}.": "Внесите LP-залог перед займом {symbol}.",
   Done: "Готово",
   Expiration: "Истечение",
   Expired: "Истёк",
@@ -411,7 +409,6 @@ const dict: TranslationDictionary = {
   "Generating link...": "Создание ссылки…",
   "Go back": "Назад",
   GOOD: "ХОРОШО",
-  "Got it": "Понятно",
   "Health Factor": "Фактор здоровья",
   "I read it": "Прочитано",
   "In this sandbox, every transaction is simulated — use previews to learn before sizing up.":

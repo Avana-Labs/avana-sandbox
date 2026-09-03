@@ -41,8 +41,7 @@ function TokenRail({
   embedActions?: boolean
 }) {
   // Borrow-section asset detail: always show the normal Borrow/Repay action card.
-  // Missing collateral is handled inline on the card via ActionOutcomeBanner — never
-  // replace the card with a Pledge wall or Got it modal.
+  // Missing collateral is handled inline on the card via ActionOutcomeBanner.
   const [tab, setTab] = React.useState<SidebarTab>("borrow")
   const closeHref = `/borrow/assets/${detail.row.id}`
   const session = useBorrowSessionContext()

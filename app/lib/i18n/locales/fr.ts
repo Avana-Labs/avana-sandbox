@@ -275,7 +275,6 @@ const dict: TranslationDictionary = {
   "Insufficient balance": "Solde insuffisant",
   "Insufficient liquidity": "Liquidité insuffisante",
   "Insufficient LP": "LP insuffisant",
-  "Deposit collateral first": "Déposez d'abord une garantie",
   "Borrowing unavailable": "Emprunt indisponible",
   "Try a smaller amount": "Essayez un montant plus petit",
   "Supply cap reached": "Plafond d'offre atteint",
@@ -400,7 +399,6 @@ const dict: TranslationDictionary = {
   "Daily Interest": "Intérêt quotidien",
   day: "jour",
   "Deposit {symbol}": "Déposer {symbol}",
-  "Deposit LP collateral before borrowing {symbol}.": "Déposez une garantie LP avant d'emprunter {symbol}.",
   Done: "Terminé",
   Expiration: "Expiration",
   Expired: "Expiré",
@@ -409,7 +407,6 @@ const dict: TranslationDictionary = {
   "Generating link...": "Génération du lien…",
   "Go back": "Retour",
   GOOD: "BON",
-  "Got it": "Compris",
   "Health Factor": "Facteur de santé",
   "I read it": "J'ai lu",
   "In this sandbox, every transaction is simulated — use previews to learn before sizing up.":

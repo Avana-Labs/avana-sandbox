@@ -278,7 +278,6 @@ const dict: TranslationDictionary = {
   "Insufficient balance": "الرصيد غير كافٍ",
   "Insufficient liquidity": "السيولة غير كافية",
   "Insufficient LP": "رصيد LP غير كافٍ",
-  "Deposit collateral first": "أودع الضمان أولاً",
   "Borrowing unavailable": "الاقتراض غير متاح",
   "Try a smaller amount": "جرّب مبلغًا أصغر",
   "Supply cap reached": "تم بلوغ حد التوريد",
@@ -403,7 +402,6 @@ const dict: TranslationDictionary = {
   "Daily Interest": "الفائدة اليومية",
   day: "يوم",
   "Deposit {symbol}": "إيداع {symbol}",
-  "Deposit LP collateral before borrowing {symbol}.": "أودِع ضمان LP قبل اقتراض {symbol}.",
   Done: "تم",
   Expiration: "انتهاء الصلاحية",
   Expired: "منتهي الصلاحية",
@@ -412,7 +410,6 @@ const dict: TranslationDictionary = {
   "Generating link...": "جارٍ إنشاء الرابط...",
   "Go back": "رجوع",
   GOOD: "جيد",
-  "Got it": "حسنًا",
   "Health Factor": "عامل السلامة",
   "I read it": "قرأتُه",
   "In this sandbox, every transaction is simulated — use previews to learn before sizing up.":

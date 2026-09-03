@@ -274,7 +274,6 @@ const dict: TranslationDictionary = {
   "Insufficient balance": "Onvoldoende saldo",
   "Insufficient liquidity": "Onvoldoende liquiditeit",
   "Insufficient LP": "Onvoldoende LP",
-  "Deposit collateral first": "Stort eerst onderpand",
   "Borrowing unavailable": "Lenen niet beschikbaar",
   "Try a smaller amount": "Probeer een kleiner bedrag",
   "Supply cap reached": "Aanbodlimiet bereikt",
@@ -400,7 +399,6 @@ const dict: TranslationDictionary = {
   "Daily Interest": "Dagelijkse rente",
   day: "dag",
   "Deposit {symbol}": "Storten {symbol}",
-  "Deposit LP collateral before borrowing {symbol}.": "Stort LP-onderpand voordat je {symbol} leent.",
   Done: "Klaar",
   Expiration: "Vervaldatum",
   Expired: "Verlopen",
@@ -409,7 +407,6 @@ const dict: TranslationDictionary = {
   "Generating link...": "Link genereren...",
   "Go back": "Terug",
   GOOD: "GOED",
-  "Got it": "Begrepen",
   "Health Factor": "Health Factor",
   "I read it": "Ik heb het gelezen",
   "In this sandbox, every transaction is simulated — use previews to learn before sizing up.":

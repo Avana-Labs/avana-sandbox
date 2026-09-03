@@ -284,7 +284,6 @@ const dict: TranslationDictionary = {
   "Insufficient balance": "Yetersiz bakiye",
   "Insufficient liquidity": "Yetersiz likidite",
   "Insufficient LP": "Yetersiz LP",
-  "Deposit collateral first": "Önce teminat yatırın",
   "Borrowing unavailable": "Borçlanma kullanılamıyor",
   "Try a smaller amount": "Daha küçük bir tutar deneyin",
   "Supply cap reached": "Arz limitine ulaşıldı",
@@ -410,7 +409,6 @@ const dict: TranslationDictionary = {
   "Daily Interest": "Günlük Faiz",
   day: "gün",
   "Deposit {symbol}": "{symbol} yatır",
-  "Deposit LP collateral before borrowing {symbol}.": "{symbol} ödünç almadan önce LP teminatı yatırın.",
   Done: "Tamam",
   Expiration: "Sona erme",
   Expired: "Süresi doldu",
@@ -419,7 +417,6 @@ const dict: TranslationDictionary = {
   "Generating link...": "Bağlantı oluşturuluyor...",
   "Go back": "Geri dön",
   GOOD: "İYİ",
-  "Got it": "Anladım",
   "Health Factor": "Sağlık Faktörü",
   "I read it": "Okudum",
   "In this sandbox, every transaction is simulated — use previews to learn before sizing up.":

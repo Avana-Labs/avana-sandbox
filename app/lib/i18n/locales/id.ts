@@ -277,7 +277,6 @@ const dict: TranslationDictionary = {
   "Insufficient balance": "Saldo tidak cukup",
   "Insufficient liquidity": "Likuiditas tidak cukup",
   "Insufficient LP": "LP tidak cukup",
-  "Deposit collateral first": "Setor jaminan dulu",
   "Borrowing unavailable": "Peminjaman tidak tersedia",
   "Try a smaller amount": "Coba jumlah lebih kecil",
   "Supply cap reached": "Batas pasokan tercapai",
@@ -402,7 +401,6 @@ const dict: TranslationDictionary = {
   "Daily Interest": "Bunga Harian",
   day: "hari",
   "Deposit {symbol}": "Setor {symbol}",
-  "Deposit LP collateral before borrowing {symbol}.": "Setor jaminan LP sebelum meminjam {symbol}.",
   Done: "Selesai",
   Expiration: "Kedaluwarsa",
   Expired: "Kedaluwarsa",
@@ -411,7 +409,6 @@ const dict: TranslationDictionary = {
   "Generating link...": "Membuat tautan...",
   "Go back": "Kembali",
   GOOD: "BAIK",
-  "Got it": "Mengerti",
   "Health Factor": "Health Factor",
   "I read it": "Sudah saya baca",
   "In this sandbox, every transaction is simulated — use previews to learn before sizing up.":

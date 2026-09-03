@@ -270,7 +270,6 @@ const dict: TranslationDictionary = {
   "Insufficient balance": "잔액 부족",
   "Insufficient liquidity": "유동성 부족",
   "Insufficient LP": "LP 부족",
-  "Deposit collateral first": "먼저 담보를 예치하세요",
   "Borrowing unavailable": "대출 불가",
   "Try a smaller amount": "더 작은 금액을 입력하세요",
   "Supply cap reached": "공급 한도 도달",
@@ -395,7 +394,6 @@ const dict: TranslationDictionary = {
   "Daily Interest": "일일 이자",
   day: "일",
   "Deposit {symbol}": "{symbol} 예치",
-  "Deposit LP collateral before borrowing {symbol}.": "{symbol}를 빌리기 전에 LP 담보를 예치하세요.",
   Done: "완료",
   Expiration: "만료",
   Expired: "만료됨",
@@ -404,7 +402,6 @@ const dict: TranslationDictionary = {
   "Generating link...": "링크 생성 중...",
   "Go back": "뒤로 가기",
   GOOD: "양호",
-  "Got it": "확인",
   "Health Factor": "건전성 지수",
   "I read it": "확인했습니다",
   "In this sandbox, every transaction is simulated — use previews to learn before sizing up.":
