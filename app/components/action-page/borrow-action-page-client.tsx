@@ -12,6 +12,8 @@ import {
 } from "@/app/lib/borrow-system/action-preview-runtime"
 import { buildRepayPreviewModel, buildWithdrawPreviewModel } from "@/app/lib/borrow-system/preview-builders"
 import { getBorrowSpoke } from "@/app/lib/borrow-system/registry"
+import { filterPoolsForSpokeAsset } from "@/app/lib/borrow-detail/cross-market"
+import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { ActionKind, ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor, actionPagePath } from "@/app/lib/action-system/contracts"
@@ -120,8 +122,15 @@ export function BorrowActionPageClient({
   // $0 unpledged catalog markets that dead-ends at "Available $0.00". A fresh wallet
   // with no positions still falls back to the full catalog so it can pledge.
   const preferPledgedPools = isHomeBorrowZeroState && session.collateralPools.length > 0
-  const collateralPoolOptions =
+  const unscopedCollateralPoolOptions =
     usesAllMarketPools && !preferPledgedPools ? session.availableCollateralPools : session.collateralPools
+  // Asset detail sidebar: only show collateral pools that unlock THIS borrowable
+  // (same spoke / marketIds). Home Express keeps the full catalog for discovery.
+  const scopeCollateralToAsset = Boolean(sidebar && initialAssetId && (kind === "borrow" || kind === "repay"))
+  const collateralPoolOptions = useMemo(() => {
+    if (!scopeCollateralToAsset || !initialAssetId) return unscopedCollateralPoolOptions
+    return filterPoolsForSpokeAsset(initialAssetId, unscopedCollateralPoolOptions)
+  }, [initialAssetId, scopeCollateralToAsset, unscopedCollateralPoolOptions])
   const hasInvalidInitialMarket = Boolean(
     initialMarketId &&
     !initialAssetId &&
@@ -258,10 +267,25 @@ export function BorrowActionPageClient({
 
   const handlePoolChange = useCallback(
     (poolId: string) => {
+      // Asset detail: switching collateral navigates to that pool's market page so
+      // the whole details surface (hero, about, stats) matches the selected collateral.
+      if (scopeCollateralToAsset && poolId && poolId !== activeMarketId) {
+        router.push(borrowMarketDetailPath(poolId))
+        return
+      }
+
       setMarketId(poolId)
       setAmount("")
       setPercent(kind === "remove" ? initialAmount : "25")
       if (kind === "borrow") {
+        // Prefer keeping the same base asset on the new pool's spoke (GHO stays GHO)
+        // instead of blindly taking the market's first borrowable token.
+        const preferred =
+          assetId.trim().length > 0 ? resolveBorrowAssetId(session.state, assetId, poolId) : ""
+        if (preferred) {
+          setAssetId(preferred)
+          return
+        }
         const tokens = selectHomeBorrowTokensForMarket(session.state, walletId, poolId)
         const nextAssetId = tokens[0]?.id ?? ""
         setAssetId(nextAssetId ? resolveBorrowAssetId(session.state, nextAssetId, poolId) : "")
@@ -282,7 +306,17 @@ export function BorrowActionPageClient({
         setClaimPositionId("")
       }
     },
-    [debtPositions, initialAmount, kind, session.state, walletId],
+    [
+      activeMarketId,
+      assetId,
+      debtPositions,
+      initialAmount,
+      kind,
+      router,
+      scopeCollateralToAsset,
+      session.state,
+      walletId,
+    ],
   )
 
   const selectItems = useMemo(() => {

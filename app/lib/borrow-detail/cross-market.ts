@@ -7,7 +7,7 @@
  */
 
 import { BORROW_POOL_CATALOG, type BorrowAssetVisual, type BorrowPoolRow } from "@/app/lib/borrow-sim"
-import { listSpokeBorrowables, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
+import { listSpokeBorrowables, resolveSpokeBorrowable, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
 import { borrowAssetDetailPath, borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 
 export type BorrowableAssetRef = {
@@ -64,4 +64,16 @@ export function resolveCollateralForAsset(
       href: borrowMarketDetailPath(pool.id),
     }))
     .sort((a, b) => b.collateralFactorPct - a.collateralFactorPct || a.name.localeCompare(b.name))
+}
+
+/**
+ * Restrict a collateral-pool list to markets that unlock borrowing `assetId`
+ * (spoke-scoped via the registry). Used by the asset-detail borrow picker so
+ * Balancer GHO never lists Uniswap v3 Stable pools, etc.
+ */
+export function filterPoolsForSpokeAsset<T extends { id: string }>(assetId: string, pools: T[]): T[] {
+  const asset = resolveSpokeBorrowable(assetId)
+  if (!asset) return []
+  const allowed = new Set(asset.marketIds)
+  return pools.filter((pool) => allowed.has(pool.id))
 }
