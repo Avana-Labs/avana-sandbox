@@ -187,6 +187,44 @@ export function DisplayPreferencesProvider({
     window.localStorage.setItem(CURRENCY_STORAGE_KEY, currency)
   }, [currency])
 
+  // Sibling tabs write the same preference keys; `storage` only fires in other
+  // documents, so this mirrors language/currency/amount visibility without loops.
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key == null || event.newValue == null) return
+
+      if (event.key === STORAGE_KEY) {
+        if (event.newValue !== "true" && event.newValue !== "false") return
+        const next = event.newValue === "true"
+        setShowDollarAmountsState((current) => (current === next ? current : next))
+        return
+      }
+
+      if (event.key === LANGUAGE_STORAGE_KEY) {
+        const migratedLanguage = event.newValue.startsWith("ES-")
+          ? "ES"
+          : event.newValue.startsWith("ZH-")
+            ? "ZH"
+            : event.newValue
+        if (!LANGUAGE_OPTIONS.some((option) => option.code === migratedLanguage)) return
+        const next = migratedLanguage as LanguageCode
+        setLanguageState((current) => (current === next ? current : next))
+        return
+      }
+
+      if (event.key === CURRENCY_STORAGE_KEY) {
+        if (!CURRENCY_OPTIONS.some((option) => option.code === event.newValue)) return
+        const next = event.newValue as CurrencyCode
+        setActiveCurrency(next)
+        currencyRef.current = next
+        setCurrencyState((current) => (current === next ? current : next))
+      }
+    }
+
+    window.addEventListener("storage", handleStorage)
+    return () => window.removeEventListener("storage", handleStorage)
+  }, [])
+
   const setShowDollarAmounts = useCallback((value: boolean) => {
     setShowDollarAmountsState(value)
   }, [])
