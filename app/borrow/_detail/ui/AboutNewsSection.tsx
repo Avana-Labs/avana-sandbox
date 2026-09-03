@@ -47,7 +47,7 @@ export function AboutNewsSection({
   const { t } = useTranslation()
   const newsItems = buildNewsItems(about, newsImageUrl, newsImageLabel)
   const governanceParameters = normalizeGovernanceParameters(about)
-  const changelog = useTablePagination(governanceParameters?.changelog ?? [])
+  const changelog = useTablePagination(governanceParameters?.changelog ?? [], 5)
 
   return (
     <div className={cn(detailSectionStackClass, "pt-10", className)}>
@@ -156,7 +156,7 @@ export function AboutNewsSection({
                       <td className="px-4 py-3 align-top font-data text-[13px] font-medium tabular-nums text-muted-foreground">
                         {t(entry.previous)}
                       </td>
-                      <td className="px-4 py-3 align-top font-data text-[13px] font-medium tabular-nums text-foreground">
+                      <td className="px-4 py-3 align-top font-data text-[13px] font-medium leading-snug tabular-nums text-foreground !whitespace-normal [overflow-wrap:anywhere]">
                         {t(entry.current)}
                       </td>
                       <td className="px-4 py-3 pr-5 align-top text-[13px] text-muted-foreground">

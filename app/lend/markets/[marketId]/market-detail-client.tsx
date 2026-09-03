@@ -145,10 +145,6 @@ export function LendMarketDetailClient({
                       protocolParameters={detail.protocolParameters}
                     />
                     <CashflowCard detail={detail} cashflowPreload={cashflowPreload} />
-                    <DetailFaqSection
-                      title={t("General FAQs")}
-                      items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
-                    />
                     <DetailMarketTransactionsDeferred
                       scope="lend"
                       slug={marketId}
@@ -156,6 +152,10 @@ export function LendMarketDetailClient({
                       sessionRows={sessionRows}
                       kindConfig={LEND_KIND_CONFIG}
                       context={{ assetSymbol: detail.hero.symbol }}
+                    />
+                    <DetailFaqSection
+                      title={t("General FAQs")}
+                      items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
                     />
                     <DetailPageNotice product="lend" />
                   </DeferredDetailContent>

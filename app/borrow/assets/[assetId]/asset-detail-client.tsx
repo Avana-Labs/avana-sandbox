@@ -139,10 +139,6 @@ export function AssetDetailClient({
                     <InterestRateModelCard {...interestRateModelFromAssetDetail(detail)} />
                     <AllocationBreakdownCard detail={detail} />
                     <CashflowCard detail={detail} cashflowPreload={cashflowPreload} />
-                    <DetailFaqSection
-                      title={t("General FAQs")}
-                      items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
-                    />
                     <DetailMarketTransactionsDeferred
                       scope="asset"
                       slug={detail.row.id}
@@ -150,6 +146,10 @@ export function AssetDetailClient({
                       sessionRows={sessionRows}
                       kindConfig={BORROW_ASSET_KIND_CONFIG}
                       context={{ assetSymbol: detail.hero.symbol }}
+                    />
+                    <DetailFaqSection
+                      title={t("General FAQs")}
+                      items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
                     />
                     <DetailPageNotice product="borrow" />
                   </DeferredDetailContent>

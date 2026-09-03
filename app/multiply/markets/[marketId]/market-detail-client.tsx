@@ -123,10 +123,6 @@ export function MarketDetailClient({
                     {detail.liquidationRisk && detail.liquidationRisk.length > 0 ? (
                       <LiquidationRiskSection stats={detail.liquidationRisk} />
                     ) : null}
-                    <DetailFaqSection
-                      title={t("Multiply FAQs")}
-                      items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
-                    />
                     <DetailMarketTransactionsDeferred
                       scope="multiply"
                       slug={marketId}
@@ -137,6 +133,10 @@ export function MarketDetailClient({
                         collateralSymbol: detail.row.protocol,
                         borrowableSymbol: detail.row.asset,
                       }}
+                    />
+                    <DetailFaqSection
+                      title={t("Multiply FAQs")}
+                      items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
                     />
                     <DetailPageNotice product="multiply" />
                   </DeferredDetailContent>

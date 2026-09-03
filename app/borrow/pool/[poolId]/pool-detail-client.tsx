@@ -141,10 +141,6 @@ export function PoolDetailClient({
                     {detail.liquidationRisk && detail.liquidationRisk.length > 0 ? (
                       <LiquidationRiskSection stats={detail.liquidationRisk} />
                     ) : null}
-                    <DetailFaqSection
-                      title={t("General FAQs")}
-                      items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
-                    />
                     <DetailMarketTransactionsDeferred
                       scope="pool"
                       slug={detail.row.id}
@@ -158,6 +154,10 @@ export function PoolDetailClient({
                         token0Weight: String(detail.row.constituents[0]?.weight ?? 0.5),
                         token1Weight: String(detail.row.constituents[1]?.weight ?? 0.5),
                       }}
+                    />
+                    <DetailFaqSection
+                      title={t("General FAQs")}
+                      items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
                     />
                     <DetailPageNotice product="borrow" />
                   </DeferredDetailContent>
