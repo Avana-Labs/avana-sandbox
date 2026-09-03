@@ -32,7 +32,7 @@ function useTransactionPriceContext(context: Record<string, string> = {}): Trans
 
 function EmptyAlign() {
   return (
-    <div className="flex w-full items-center justify-end">
+    <div className="flex w-full items-center justify-start">
       <span className={cn(AMOUNT_CLASS, "text-muted-foreground")}>—</span>
     </div>
   )
@@ -40,7 +40,7 @@ function EmptyAlign() {
 
 function TokenAmountWithIcon({ symbol, amount }: { symbol: string; amount: string }) {
   return (
-    <div className="flex w-full items-center justify-end gap-1.5">
+    <div className="flex w-full items-center justify-start gap-1.5">
       <TokenIcon symbol={symbol} size="sm" className="size-5 shrink-0" />
       <span className={AMOUNT_CLASS}>{amount}</span>
     </div>
@@ -98,7 +98,7 @@ export function TransactionUsdCell({
   if (usdValue == null) return <EmptyAlign />
 
   return (
-    <div className="flex w-full items-center justify-end">
+    <div className="flex w-full items-center justify-start">
       <span className={cn(AMOUNT_CLASS, "text-muted-foreground")}>{compact(usdValue)}</span>
     </div>
   )
@@ -117,7 +117,7 @@ export function TransactionAmountCell({
   priceContext?: TransactionPriceContext
 }) {
   return (
-    <div className="flex w-full items-center justify-end gap-3">
+    <div className="flex w-full items-center justify-start gap-3">
       <TransactionTokenCell row={row} priceContext={priceContext} />
       <TransactionUsdCell row={row} priceContext={priceContext} />
     </div>

@@ -83,7 +83,6 @@ export function DetailTransactionTable({
                         "overflow-hidden bg-table-header px-2 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58",
                         index === 0 && "rounded-l-radius-lg pl-4",
                         index === columns.length - 1 && "rounded-r-radius-lg pr-4",
-                        column.align === "right" && "text-right",
                       )}
                     >
                       {t(resolveColumnLabel(column, context, ctx.currency))}
@@ -135,7 +134,7 @@ export function DetailTransactionTable({
 
                       if (column.id === "for") {
                         return (
-                          <td key={column.id} className={cn(cellClass, "text-right")}>
+                          <td key={column.id} className={cellClass}>
                             <TransactionTokenCell row={row} priceContext={priceContext} />
                           </td>
                         )
@@ -143,7 +142,7 @@ export function DetailTransactionTable({
 
                       if (column.id === "usd") {
                         return (
-                          <td key={column.id} className={cn(cellClass, "text-right")}>
+                          <td key={column.id} className={cellClass}>
                             <TransactionUsdCell row={row} priceContext={priceContext} poolSymbols={poolSymbols} />
                           </td>
                         )
@@ -151,7 +150,7 @@ export function DetailTransactionTable({
 
                       if (column.id === "token0" || column.id === "token1") {
                         return (
-                          <td key={column.id} className={cn(cellClass, "text-right")}>
+                          <td key={column.id} className={cellClass}>
                             <TransactionPoolTokenCell
                               row={row}
                               leg={column.id}
@@ -166,10 +165,7 @@ export function DetailTransactionTable({
                       return (
                         <td
                           key={column.id}
-                          className={cn(
-                            cellClass,
-                            "text-right font-data text-[13px] font-normal tabular-nums text-foreground",
-                          )}
+                          className={cn(cellClass, "font-data text-[13px] font-normal tabular-nums text-foreground")}
                         >
                           {row.walletHref ? (
                             <a
