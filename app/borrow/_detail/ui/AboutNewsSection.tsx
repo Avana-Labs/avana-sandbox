@@ -10,6 +10,7 @@ import { buildNewsItems } from "@/app/borrow/_detail/lib/news"
 import { normalizeGovernanceParameters } from "@/app/borrow/_detail/lib/governance-parameters"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
+import { TablePager, useTablePagination } from "@/app/components/table-pager"
 
 type Props = {
   about: AboutCardData
@@ -40,6 +41,7 @@ export function AboutNewsSection({
   const { t } = useTranslation()
   const newsItems = buildNewsItems(about, newsImageUrl, newsImageLabel)
   const governanceParameters = normalizeGovernanceParameters(about)
+  const changelog = useTablePagination(governanceParameters?.changelog ?? [])
 
   return (
     <div className={cn(detailSectionStackClass, "pt-10", className)}>
@@ -141,7 +143,7 @@ export function AboutNewsSection({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border dark:divide-white/6">
-                  {governanceParameters.changelog.map((entry) => (
+                  {changelog.pageItems.map((entry) => (
                     <tr key={entry.id} className="transition-colors hover:bg-hover">
                       <th scope="row" className="py-3 pl-5 pr-4 text-left text-[13px] font-medium text-foreground">
                         {t(entry.parameter)}
@@ -178,6 +180,12 @@ export function AboutNewsSection({
                 </tbody>
               </table>
             </div>
+            <TablePager
+              page={changelog.page}
+              pageCount={changelog.pageCount}
+              onPageChange={changelog.setPage}
+              label={t("Changelog pagination")}
+            />
           </section>
         </>
       ) : newsItems.length > 0 ? (

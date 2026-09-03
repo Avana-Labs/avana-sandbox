@@ -162,6 +162,7 @@ const dict: TranslationDictionary = {
   "Previous page": "Önceki sayfa",
   "Next page": "Sonraki sayfa",
   "Transactions pagination": "İşlem sayfalandırması",
+  "Changelog pagination": "Değişiklik günlüğü sayfalandırması",
   "{page} of {count}": "{count} sayfadan {page}",
   "Max APY": "Maks. APY",
   "Max Leverage": "Maks. kaldıraç",

@@ -151,6 +151,7 @@ const dict: TranslationDictionary = {
   "Previous page": "Page précédente",
   "Next page": "Page suivante",
   "Transactions pagination": "Pagination des transactions",
+  "Changelog pagination": "Pagination du journal des modifications",
   "{page} of {count}": "{page} sur {count}",
   "Max APY": "APY max",
   "Max Leverage": "Levier max",

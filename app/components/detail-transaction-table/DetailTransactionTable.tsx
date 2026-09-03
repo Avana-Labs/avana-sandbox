@@ -1,7 +1,6 @@
 "use client"
 
-import * as React from "react"
-import { ArrowLeft, ArrowRight } from "@/app/components/icons"
+import { TablePager, useTablePagination } from "@/app/components/table-pager"
 import type { DetailTransactionRow } from "@/app/lib/detail-page/transaction-history"
 import { formatRelativeTime } from "@/app/lib/detail-page/transaction-history"
 import { useCurrency } from "@/app/lib/currency/use-currency"
@@ -36,8 +35,6 @@ const COLUMN_WIDTHS: Record<DetailTransactionPreset, string[]> = {
   pool: ["12%", "12%", "16%", "20%", "20%", "20%"],
 }
 
-const PAGE_SIZE = 10
-
 export function DetailTransactionTable({
   transactions,
   preset = "standard",
@@ -54,14 +51,7 @@ export function DetailTransactionTable({
   const poolSymbols =
     preset === "pool" && token0Symbol && token1Symbol ? { token0: token0Symbol, token1: token1Symbol } : undefined
 
-  const [page, setPage] = React.useState(0)
-  const pageCount = Math.max(1, Math.ceil(transactions.length / PAGE_SIZE))
-  const safePage = Math.min(page, pageCount - 1)
-  React.useEffect(() => {
-    if (page > pageCount - 1) setPage(pageCount - 1)
-  }, [page, pageCount])
-  const pageStart = safePage * PAGE_SIZE
-  const pageRows = transactions.slice(pageStart, pageStart + PAGE_SIZE)
+  const { page, pageCount, pageItems: pageRows, setPage } = useTablePagination(transactions)
 
   return (
     <section className="min-w-0">
@@ -203,34 +193,7 @@ export function DetailTransactionTable({
               </tbody>
             </table>
           </div>
-          {pageCount > 1 && (
-            <nav className="mt-4 flex items-center justify-center gap-2" aria-label={t("Transactions pagination")}>
-              <button
-                type="button"
-                aria-label={t("Previous page")}
-                disabled={safePage === 0}
-                onClick={() => setPage((current) => Math.max(0, current - 1))}
-                className="inline-flex size-9 items-center justify-center rounded-radius-md border border-border bg-muted text-foreground transition-colors hover:bg-hover disabled:pointer-events-none disabled:opacity-40"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </button>
-              <span
-                aria-current="page"
-                className="inline-flex h-9 min-w-9 items-center justify-center rounded-radius-md bg-table-header px-3 font-data text-[13px] font-medium tabular-nums text-foreground"
-              >
-                {safePage + 1}
-              </span>
-              <button
-                type="button"
-                aria-label={t("Next page")}
-                disabled={safePage >= pageCount - 1}
-                onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))}
-                className="inline-flex size-9 items-center justify-center rounded-radius-md border border-border bg-muted text-foreground transition-colors hover:bg-hover disabled:pointer-events-none disabled:opacity-40"
-              >
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            </nav>
-          )}
+          <TablePager page={page} pageCount={pageCount} onPageChange={setPage} label={t("Transactions pagination")} />
         </>
       )}
     </section>

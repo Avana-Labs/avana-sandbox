@@ -150,6 +150,7 @@ const dict: TranslationDictionary = {
   "Previous page": "前のページ",
   "Next page": "次のページ",
   "Transactions pagination": "取引のページ送り",
+  "Changelog pagination": "変更履歴のページ送り",
   "{page} of {count}": "{count} 件中 {page} 件",
   "Max APY": "最大 APY",
   "Max Leverage": "最大レバレッジ",
