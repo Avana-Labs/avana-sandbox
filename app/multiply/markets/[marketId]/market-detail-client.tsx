@@ -65,13 +65,7 @@ export function MarketDetailClient({
   const marketId = detail.id.toLowerCase().replaceAll("_", "-")
 
   const sessionRows = React.useMemo(
-    () =>
-      mapMultiplySessionRows(
-        session.transactionHistory.filter((item) => item.marketId === marketId),
-        marketId,
-        detail.row.protocol,
-        detail.row.asset,
-      ),
+    () => mapMultiplySessionRows(session.transactionHistory, marketId, detail.row.protocol, detail.row.asset),
     [detail.row.asset, detail.row.protocol, marketId, session.transactionHistory],
   )
   const seedRows = React.useMemo(() => detail.transactions.map(mapMultiplyTxRow), [detail.transactions])

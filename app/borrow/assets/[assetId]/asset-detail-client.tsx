@@ -79,7 +79,7 @@ export function AssetDetailClient({
   const about = withGovernanceParameterView(detail.about, detail.protocolParameters)
   const seedRows = React.useMemo(() => detail.transactions.map(mapBorrowTxRow), [detail.transactions])
   const sessionRows = React.useMemo(
-    () => mapBorrowSessionRows(session.transactionHistory, detail.row.id, detail.hero.symbol),
+    () => mapBorrowSessionRows(session.transactionHistory, detail.row.id, detail.hero.symbol, "asset"),
     [detail.hero.symbol, detail.row.id, session.transactionHistory],
   )
   return (

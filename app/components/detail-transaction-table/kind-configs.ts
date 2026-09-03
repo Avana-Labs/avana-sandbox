@@ -78,6 +78,16 @@ export const MULTIPLY_KIND_CONFIG: TransactionKindConfig = {
     close: "Close",
     interest: "Interest",
     rebalance: "Rebalance",
+    multiply: "Open",
+    borrow: "Add collateral",
+    supply: "Add collateral",
+    deposit: "Add collateral",
+    deleverage: "Reduce",
+    repay: "Reduce",
+    withdraw: "Reduce",
+    liquidation: "Close",
+    claim: "Interest",
+    rewards: "Interest",
   },
   tones: {
     open: INFLOW_TONE,
@@ -86,6 +96,16 @@ export const MULTIPLY_KIND_CONFIG: TransactionKindConfig = {
     close: OUTFLOW_TONE,
     interest: NEUTRAL_TONE,
     rebalance: WARNING_TONE,
+    multiply: INFLOW_TONE,
+    borrow: INFLOW_TONE,
+    supply: INFLOW_TONE,
+    deposit: INFLOW_TONE,
+    deleverage: OUTFLOW_TONE,
+    repay: OUTFLOW_TONE,
+    withdraw: OUTFLOW_TONE,
+    liquidation: OUTFLOW_TONE,
+    claim: NEUTRAL_TONE,
+    rewards: NEUTRAL_TONE,
   },
   describeFor: (row, { collateralSymbol, borrowableSymbol }) => {
     if (row.tokenSymbol && row.tokenAmountLabel) {
@@ -135,4 +155,16 @@ export function resolveColumnLabel(
   if (column.id === "token0") return context.token0Symbol || "Token"
   if (column.id === "token1") return context.token1Symbol || "Token"
   return column.label
+}
+
+/** Never render a raw engine kind like "borrow" — fall back to a readable label. */
+export function resolveTransactionKindLabel(config: TransactionKindConfig, kind: string): string {
+  const mapped = config.labels[kind] ?? config.labels[kind.toLowerCase()]
+  if (mapped) return mapped
+  if (!kind) return kind
+  return kind.replace(/[_-]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
+export function resolveTransactionKindTone(config: TransactionKindConfig, kind: string): string | undefined {
+  return config.tones[kind] ?? config.tones[kind.toLowerCase()]
 }

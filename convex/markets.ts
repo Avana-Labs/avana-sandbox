@@ -662,11 +662,42 @@ const detailTxRowValidator = v.object({
   source: v.union(v.literal("sandbox"), v.literal("seed")),
 })
 
+type DetailSandboxTxRow = {
+  id: string
+  at: string
+  kind: DetailTxKind
+  amountLabel: string
+  amountUsd: number
+  tokenAmountLabel?: string
+  token0AmountLabel?: string
+  token1AmountLabel?: string
+  tokenSymbol?: string
+  tokenSymbolSecondary?: string
+  walletLabel: string
+  counterpartyLabel?: string
+  txHashShort: string
+  source: "sandbox"
+}
+
 /**
- * Recent transactions for a market's detail-page history card.
- * Prefers live sandbox `transactions` for this marketSlug (user activity).
- * Falls back to seeded `walletEvents` when no sandbox rows exist yet.
- * Returns shape: `TxHistoryRow[]` (app/lib/borrow-detail/types.ts).
+ * How many of the most-recent transactions (across every wallet) to scan when
+ * building a market's activity feed. `marketSlug` is stored verbatim and
+ * multiply slugs are normalized only on the client, so we can't rely on an
+ * exact index match — we scan this bounded window newest-first and match in
+ * memory (normalized + scoped-asset aware). Fine at sandbox scale.
+ */
+const DETAIL_TX_SCAN = 400
+
+/**
+ * Recent transactions for one product-market detail page — a community feed of
+ * ALL users' sandbox activity on that market, newest first.
+ *
+ * Lend / borrow / multiply are separate products, so rows are product-scoped
+ * (a borrow row never leaks onto a multiply market that shares a slug). Borrow
+ * asset pages match `assetId` as well as `marketSlug` (`gho` and
+ * `bal-stable:gho` are the same asset).
+ *
+ * Falls back to seeded `walletEvents` only when no sandbox activity exists yet.
  */
 export const getRecentTransactions = query({
   args: {
@@ -677,28 +708,15 @@ export const getRecentTransactions = query({
   returns: v.array(detailTxRowValidator),
   handler: async (ctx, { scope, slug, limit }) => {
     const take = limit ?? 12
-    const sandboxRows = await ctx.db
-      .query("transactions")
-      .withIndex("by_market_at", (q) => q.eq("marketSlug", slug))
-      .order("desc")
-      .take(take * 2)
-    const live: Array<{
-      id: string
-      at: string
-      kind: DetailTxKind
-      amountLabel: string
-      amountUsd: number
-      tokenAmountLabel?: string
-      token0AmountLabel?: string
-      token1AmountLabel?: string
-      tokenSymbol?: string
-      tokenSymbolSecondary?: string
-      walletLabel: string
-      counterpartyLabel?: string
-      txHashShort: string
-      source: "sandbox"
-    }> = []
-    for (const r of sandboxRows.filter((row) => row.status === "success" && row.marketSlug === slug).slice(0, take)) {
+    const product = productForDetailScope(scope)
+    const recent = await ctx.db.query("transactions").order("desc").take(DETAIL_TX_SCAN)
+    const live: DetailSandboxTxRow[] = []
+    for (const r of recent) {
+      if (live.length >= take) break
+      if (r.status !== "success") continue
+      if (r.product !== product) continue
+      if (!borrowScopeAllowsKind(scope, r.kind)) continue
+      if (!sandboxRowMatchesDetailMarket(r, scope, slug)) continue
       live.push({
         id: String(r._id),
         at: new Date(r.at).toISOString(),
@@ -738,6 +756,7 @@ export const getRecentTransactions = query({
       source: "seed"
     }> = []
     for (const r of rows) {
+      if (!borrowScopeAllowsKind(scope, r.kind)) continue
       seeded.push({
         id: String(r._id),
         at: new Date(r.at).toISOString(),
@@ -769,11 +788,63 @@ type DetailTxKind =
   | "interest"
   | "rebalance"
 
+function productForDetailScope(scope: MarketScope): "borrow" | "lend" | "multiply" {
+  if (scope === "lend") return "lend"
+  if (scope === "multiply") return "multiply"
+  return "borrow"
+}
+
+/**
+ * Borrow is two page types over the same wallet activity: the pool/market page
+ * shows the COLLATERAL side (pledge, remove, claim fees, liquidation) and the
+ * asset page shows the DEBT side (borrow, repay). A GHO borrow therefore belongs
+ * on the `bal-*:gho` asset page, never on the `bal-*-sdai-usdc` pool page.
+ * Lend/multiply pages have no such split. Accepts raw sandbox kinds
+ * (deposit/withdraw/borrow/repay/claim/liquidate) and seed walletEvents kinds
+ * (supply/withdraw/borrow/repay/liquidation/rewardsClaim).
+ */
+function borrowScopeAllowsKind(scope: MarketScope, kind: string): boolean {
+  if (scope !== "pool" && scope !== "asset") return true
+  const debtSide = kind === "borrow" || kind === "repay"
+  return scope === "asset" ? debtSide : !debtSide
+}
+
+function normalizeDetailMarketKey(value: string): string {
+  return value.trim().toLowerCase().replaceAll("_", "-")
+}
+
+/** `gho` and `bal-stable:gho` are the same asset; `uni-v2:gho` is not. */
+function sandboxKeysMatch(left: string, right: string): boolean {
+  if (!left || !right) return false
+  if (left === right) return true
+  const leftScoped = left.includes(":")
+  const rightScoped = right.includes(":")
+  if (leftScoped === rightScoped) return false
+  const leftToken = left.slice(left.lastIndexOf(":") + 1)
+  const rightToken = right.slice(right.lastIndexOf(":") + 1)
+  return leftToken === rightToken
+}
+
+function sandboxRowMatchesDetailMarket(
+  row: { marketSlug?: string; assetId?: string },
+  scope: MarketScope,
+  slug: string,
+): boolean {
+  const target = normalizeDetailMarketKey(slug)
+  const market = row.marketSlug ? normalizeDetailMarketKey(row.marketSlug) : ""
+  const asset = row.assetId ? normalizeDetailMarketKey(row.assetId) : ""
+  if (sandboxKeysMatch(market, target)) return true
+  if (scope === "asset" && sandboxKeysMatch(asset, target)) return true
+  return false
+}
+
 function mapSandboxTxKind(scope: MarketScope, kind: string): DetailTxKind {
   if (scope === "multiply") {
-    if (kind === "multiply") return "open"
-    if (kind === "deleverage") return "reduce"
-    if (kind === "close") return "close"
+    if (kind === "multiply" || kind === "open") return "open"
+    if (kind === "borrow" || kind === "supply" || kind === "deposit" || kind === "add") return "add"
+    if (kind === "deleverage" || kind === "repay" || kind === "withdraw" || kind === "reduce") return "reduce"
+    if (kind === "close" || kind === "liquidate" || kind === "liquidation") return "close"
+    if (kind === "claim" || kind === "rewards" || kind === "rewardsClaim" || kind === "interest") return "interest"
     return "rebalance"
   }
   if (kind === "deposit") return "supply"
@@ -851,8 +922,7 @@ async function tokenFieldsFromMarket(
   }
 
   const tokenSymbol = (market.symbol ?? normalizeTokenSymbol(market.slug)).toUpperCase()
-  const priceUsd =
-    market.priceUsd && market.priceUsd > 0 ? market.priceUsd : seedTokenPriceUsd(tokenSymbol)
+  const priceUsd = market.priceUsd && market.priceUsd > 0 ? market.priceUsd : seedTokenPriceUsd(tokenSymbol)
   return tokenFieldsFromPrice(tokenSymbol, amountUsd, priceUsd)
 }
 
@@ -860,7 +930,9 @@ function tokenFieldsFromPrice(tokenSymbol: string, amountUsd: number, priceUsd: 
   return {
     tokenSymbol,
     tokenAmountLabel:
-      priceUsd != null && priceUsd > 0 ? formatDetailTokenAmount(amountUsd / priceUsd) : formatDetailTokenAmount(amountUsd),
+      priceUsd != null && priceUsd > 0
+        ? formatDetailTokenAmount(amountUsd / priceUsd)
+        : formatDetailTokenAmount(amountUsd),
   }
 }
 
@@ -885,26 +957,6 @@ const SEED_TOKEN_PRICE_USD: Record<string, number> = {
 
 function seedTokenPriceUsd(symbol: string): number {
   return SEED_TOKEN_PRICE_USD[symbol.toUpperCase()] ?? 1
-}
-
-async function lookupTokenPriceUsd(
-  ctx: QueryCtx,
-  tokenSymbol: string,
-  marketSlug?: string,
-): Promise<number | null> {
-  const oracle = await ctx.db
-    .query("tokenPrices")
-    .withIndex("by_symbol", (q) => q.eq("symbol", tokenSymbol.toLowerCase()))
-    .unique()
-  if (oracle?.priceUsd && oracle.priceUsd > 0) return oracle.priceUsd
-
-  const slug = marketSlug ?? tokenSymbol.toLowerCase()
-  const market = await ctx.db
-    .query("markets")
-    .withIndex("by_slug", (q) => q.eq("slug", slug))
-    .first()
-  if (market?.priceUsd && market.priceUsd > 0) return market.priceUsd
-  return null
 }
 
 function formatDetailTokenAmount(value: number): string {

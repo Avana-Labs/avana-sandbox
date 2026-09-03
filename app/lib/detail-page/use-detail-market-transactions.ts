@@ -8,6 +8,23 @@ import { mergeTransactionRows } from "@/app/lib/detail-page/transaction-history"
 
 type Scope = "asset" | "pool" | "lend" | "multiply"
 
+type ConvexDetailTx = {
+  id: string
+  at: string
+  kind: string
+  amountLabel: string
+  amountUsd?: number
+  tokenAmountLabel?: string
+  token0AmountLabel?: string
+  token1AmountLabel?: string
+  tokenSymbol?: string
+  tokenSymbolSecondary?: string
+  counterpartyLabel?: string
+  walletLabel?: string
+  txHashShort: string
+  source?: "sandbox" | "seed"
+}
+
 export function useDetailMarketTransactions({
   scope,
   slug,
@@ -21,26 +38,20 @@ export function useDetailMarketTransactions({
   seedRows: DetailTransactionRow[]
   sessionRows?: DetailTransactionRow[]
   limit?: number
-  mapConvexRow: (row: {
-    id: string
-    at: string
-    kind: string
-    amountLabel: string
-    tokenAmountLabel?: string
-    tokenSymbol?: string
-    tokenSymbolSecondary?: string
-    counterpartyLabel?: string
-    walletLabel?: string
-    txHashShort: string
-  }) => DetailTransactionRow
+  mapConvexRow: (row: ConvexDetailTx) => DetailTransactionRow
 }) {
   const convexRows = useQuery(api.markets.getRecentTransactions, slug ? { scope, slug, limit } : "skip")
 
   return React.useMemo(() => {
-    const mappedConvex = (convexRows ?? []).map(mapConvexRow)
     if (convexRows === undefined) {
       return mergeTransactionRows(sessionRows, [], seedRows, limit)
     }
-    return mergeTransactionRows(sessionRows, mappedConvex, [], limit)
+    // The query already returns all users' sandbox activity when it exists and
+    // seeded walletEvents only as a fallback, so map whatever it chose.
+    const fromConvex = convexRows.map(mapConvexRow)
+    if (fromConvex.length > 0) {
+      return mergeTransactionRows(sessionRows, fromConvex, [], limit)
+    }
+    return mergeTransactionRows(sessionRows, [], seedRows, limit)
   }, [convexRows, limit, mapConvexRow, seedRows, sessionRows])
 }

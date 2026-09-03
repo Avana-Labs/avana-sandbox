@@ -75,7 +75,7 @@ export function PoolDetailClient({
   const about = withGovernanceParameterView(detail.about, detail.protocolParameters)
   const seedRows = React.useMemo(() => detail.transactions.map(mapBorrowTxRow), [detail.transactions])
   const sessionRows = React.useMemo(
-    () => mapBorrowSessionRows(session.transactionHistory, detail.row.id),
+    () => mapBorrowSessionRows(session.transactionHistory, detail.row.id, undefined, "pool"),
     [detail.row.id, session.transactionHistory],
   )
 

@@ -34,6 +34,34 @@ export type DetailTransactionRow = {
   txHashShort: string
 }
 
+export function normalizeDetailMarketKey(value: string): string {
+  return value.trim().toLowerCase().replaceAll("_", "-")
+}
+
+export function detailMarketKeysMatch(left: string | undefined, right: string | undefined): boolean {
+  if (!left || !right) return false
+  return normalizeDetailMarketKey(left) === normalizeDetailMarketKey(right)
+}
+
+/** `gho` and `bal-stable:gho` are the same asset; `uni-v2:gho` is not. */
+export function scopedAssetKeysMatch(left: string | undefined, right: string | undefined): boolean {
+  if (!left || !right) return false
+  const a = normalizeDetailMarketKey(left)
+  const b = normalizeDetailMarketKey(right)
+  if (a === b) return true
+  if (a.includes(":") === b.includes(":")) return false
+  return a.slice(a.lastIndexOf(":") + 1) === b.slice(b.lastIndexOf(":") + 1)
+}
+
+export function mapMultiplyHistoryKind(kind: string): string {
+  if (kind === "multiply" || kind === "open") return "open"
+  if (kind === "close" || kind === "liquidation") return "close"
+  if (kind === "deleverage" || kind === "reduce" || kind === "repay" || kind === "withdraw") return "reduce"
+  if (kind === "borrow" || kind === "supply" || kind === "deposit" || kind === "add") return "add"
+  if (kind === "claim" || kind === "rewards" || kind === "interest") return "interest"
+  return "rebalance"
+}
+
 export function formatRelativeTime(iso: string, language: LanguageCode = "EN") {
   const locale = LANGUAGE_HTML_LANG[language] ?? "en"
   const elapsedMs = Math.max(0, Date.now() - new Date(iso).getTime())
@@ -77,9 +105,7 @@ export function mergeTransactionRows(
 
 export function mapBorrowTxRow(row: TxHistoryRow): DetailTransactionRow {
   const pairedAmount =
-    row.token0AmountLabel && row.token1AmountLabel
-      ? `${row.token0AmountLabel} / ${row.token1AmountLabel}`
-      : undefined
+    row.token0AmountLabel && row.token1AmountLabel ? `${row.token0AmountLabel} / ${row.token1AmountLabel}` : undefined
   return {
     id: row.id,
     at: row.at,
@@ -124,7 +150,7 @@ export function mapLendSessionRows(
 ): DetailTransactionRow[] {
   const now = Date.now()
   return history
-    .filter((item) => item.marketId === marketId)
+    .filter((item) => detailMarketKeysMatch(item.marketId, marketId))
     .map((item) => {
       const signedUsd =
         priceUsd != null && priceUsd > 0
@@ -145,11 +171,17 @@ export function mapLendSessionRows(
     })
 }
 
+/**
+ * Borrow is split across two page types. The pool/market page (`scope: "pool"`)
+ * shows the COLLATERAL side — pledge (deposit), remove (withdraw), claim fees,
+ * liquidation — and the asset page (`scope: "asset"`) shows the DEBT side —
+ * borrow, repay. Omit `scope` to keep every kind (no side filter).
+ */
 export function mapBorrowSessionRows(
   history: TransactionHistoryItem[],
   marketSlug?: string,
   assetSymbol?: string,
-  priceUsd?: number,
+  scope?: "pool" | "asset",
 ): DetailTransactionRow[] {
   const now = Date.now()
   const actionToKind: Record<TransactionHistoryItem["kind"], string> = {
@@ -160,8 +192,19 @@ export function mapBorrowSessionRows(
     liquidate: "liquidation",
     claim: "rewards",
   }
+  const allowsSide = (kind: TransactionHistoryItem["kind"]) => {
+    if (scope !== "pool" && scope !== "asset") return true
+    const debtSide = kind === "borrow" || kind === "repay"
+    return scope === "asset" ? debtSide : !debtSide
+  }
   return history
-    .filter((item) => !marketSlug || item.marketId === marketSlug || item.assetId === marketSlug)
+    .filter(
+      (item) =>
+        allowsSide(item.kind) &&
+        (!marketSlug ||
+          scopedAssetKeysMatch(item.marketId, marketSlug) ||
+          scopedAssetKeysMatch(item.assetId, marketSlug)),
+    )
     .map((item) => {
       const kind = actionToKind[item.kind]
       const usd = Number(item.executedAmountUsd6) / 1_000_000
@@ -191,20 +234,25 @@ export function mapMultiplySessionRows(
 ): DetailTransactionRow[] {
   const now = Date.now()
   return history
-    .filter((item) => item.marketId === marketId)
-    .map((item) => ({
-      id: item.id,
-      at: new Date(item.timestamp).toISOString(),
-      timeLabel: formatRelativeAge(now - item.timestamp),
-      kind: item.kind === "multiply" ? "open" : "reduce",
-      amountLabel: `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
-      tokenAmountLabel: `${item.multiplierAfter.toFixed(2)}x`,
-      tokenSymbol: collateralSymbol,
-      tokenSymbolSecondary: borrowableSymbol,
-      counterpartyLabel: `${collateralSymbol}/${borrowableSymbol}`,
-      walletLabel: "Sandbox wallet",
-      txHashShort: item.hash.slice(0, 10),
-    }))
+    .filter((item) => detailMarketKeysMatch(item.marketId, marketId))
+    .map((item) => {
+      const usd = item.amountUsd
+      const tokenQty = usd / seedPriceUsdForSymbol(collateralSymbol)
+      return {
+        id: item.id,
+        at: new Date(item.timestamp).toISOString(),
+        timeLabel: formatRelativeAge(now - item.timestamp),
+        kind: mapMultiplyHistoryKind(item.kind),
+        amountLabel: formatCompactUsd(usd),
+        amountUsd: usd,
+        tokenAmountLabel: formatDetailTokenAmount(tokenQty),
+        tokenSymbol: collateralSymbol,
+        tokenSymbolSecondary: borrowableSymbol,
+        counterpartyLabel: `${collateralSymbol}/${borrowableSymbol}`,
+        walletLabel: "Sandbox wallet",
+        txHashShort: item.hash.slice(0, 10),
+      }
+    })
 }
 
 function inferTokenAmountFromLabel(label: string): string | undefined {
@@ -243,10 +291,7 @@ export function enrichDetailTransactionRow(
   return enrichBorrowRowWithAsset(row, symbol)
 }
 
-export function enrichBorrowRowWithAsset(
-  row: DetailTransactionRow,
-  assetSymbol: string,
-): DetailTransactionRow {
+export function enrichBorrowRowWithAsset(row: DetailTransactionRow, assetSymbol: string): DetailTransactionRow {
   const symbol = row.tokenSymbol ?? assetSymbol
   let tokenAmountLabel = row.tokenAmountLabel
 

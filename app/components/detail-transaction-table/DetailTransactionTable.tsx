@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils"
 import {
   PRESET_COLUMNS,
   resolveColumnLabel,
+  resolveTransactionKindLabel,
+  resolveTransactionKindTone,
   type DetailTransactionPreset,
   type TransactionKindConfig,
 } from "./kind-configs"
@@ -118,10 +120,10 @@ export function DetailTransactionTable({
                           <span
                             className={cn(
                               "inline-block whitespace-nowrap text-[14px] font-medium tracking-normal",
-                              kindConfig.tones[row.kind],
+                              resolveTransactionKindTone(kindConfig, row.kind),
                             )}
                           >
-                            {t(kindConfig.labels[row.kind] ?? row.kind)}
+                            {t(resolveTransactionKindLabel(kindConfig, row.kind))}
                           </span>
                         </td>
                       )
