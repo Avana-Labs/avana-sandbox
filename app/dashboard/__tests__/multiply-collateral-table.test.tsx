@@ -102,7 +102,8 @@ describe("MultiplyCollateralTable", () => {
     expect(screen.getByRole("heading", { name: "Loop Positions" })).toBeTruthy()
     expect(screen.getByText("Exposure, return, and liquidation risk for each active loop")).toBeTruthy()
     expect(screen.getByRole("columnheader", { name: "LOOP" })).toBeTruthy()
-    expect(screen.getByRole("columnheader", { name: "POSITION" })).toBeTruthy()
+    expect(screen.getByRole("columnheader", { name: "EQUITY" })).toBeTruthy()
+    expect(screen.getByRole("columnheader", { name: "EXPOSURE" })).toBeTruthy()
     expect(screen.getByRole("columnheader", { name: "RISK" })).toBeTruthy()
     expect(screen.getAllByRole("button", { name: "Manage" })).toHaveLength(2)
     expect(screen.queryByRole("button", { name: "Multiply" })).toBeNull()
@@ -110,8 +111,13 @@ describe("MultiplyCollateralTable", () => {
     expect(screen.queryByRole("button", { name: "Close" })).toBeNull()
     expect(screen.getAllByText("Supply ETH")).toHaveLength(2)
     expect(screen.getAllByText("Borrow USDT")).toHaveLength(2)
-    expect(screen.getAllByText("$3.5K equity · 2.00×")).toHaveLength(1)
-    expect(screen.getAllByText("$7.0K exposure · 3.20% Net APY")).toHaveLength(1)
+    // Position is now two columns: equity over leverage, exposure over borrowed debt
+    // (Net APY is portfolio-level only, not per loop).
+    expect(screen.getAllByText("$3.5K")).toHaveLength(1)
+    expect(screen.getAllByText("2.00× leverage")).toHaveLength(1)
+    expect(screen.getAllByText("$7.0K")).toHaveLength(1)
+    expect(screen.getAllByText("$3.5K debt")).toHaveLength(1)
+    expect(screen.queryByText(/Net APY/)).toBeNull()
   })
 
   it("renders a dash when a position has no liquidation price (debt-free)", () => {

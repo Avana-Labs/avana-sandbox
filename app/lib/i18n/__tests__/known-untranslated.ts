@@ -21,6 +21,10 @@ export const KNOWN_UNTRANSLATED: readonly string[] = [
   "Member since",
   // Per-collateral borrow-power utilization caption.
   "used",
+  // Multiply Loop Positions — split Position column headers/captions.
+  "Equity",
+  "leverage",
+  "debt",
   "{amount} in cooldown",
   "{count} positions",
   "{progress}/{target} {currency}",

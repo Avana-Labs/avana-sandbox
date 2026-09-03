@@ -42,10 +42,6 @@ import { cn } from "@/lib/utils"
 
 const MASK = "••••"
 
-function formatPct(value: number) {
-  return `${value.toFixed(2)}%`
-}
-
 function positionEquityUsd(row: PortfolioMultiplyCollateral) {
   return Math.max(0, row.collateralUsd - row.debtUsd)
 }
@@ -104,15 +100,17 @@ export function MultiplyCollateralTable({
         <DesktopTableSurface className="!rounded-none">
           <table className={`w-full min-w-[720px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
             <colgroup>
-              <col className="w-[30%]" />
-              <col className="w-[35%]" />
-              <col className="w-[21%]" />
+              <col className="w-[26%]" />
+              <col className="w-[18%]" />
+              <col className="w-[20%]" />
+              <col className="w-[22%]" />
               <col className="w-[14%]" />
             </colgroup>
             <thead>
               <tr className={TABLE_HEADER_ROW}>
                 <th className={cn(TABLE_HEADER_CELL, "px-5")}>{formatTableHeaderLabel(t("Loop"))}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("Position"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("Equity"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("Exposure"))}</th>
                 <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("Risk"))}</th>
                 <SilentActionHeader className="!rounded-none pr-5" />
               </tr>
@@ -157,9 +155,8 @@ export function MultiplyCollateralTable({
                 value={`${usd(positionEquityUsd(row))} · ${row.multiplier.toFixed(2)}×`}
               />
               <MarketMobileStatRow
-                label={t("Exposure · Net APY")}
-                value={`${usd(row.collateralUsd)} · ${formatPct(row.netApyPct)}`}
-                valueClassName="text-success"
+                label={t("Exposure")}
+                value={`${usd(row.collateralUsd)} · ${usd(row.debtUsd)} ${t("debt")}`}
               />
               <MarketMobileStatRow
                 label={t("Risk")}
@@ -238,14 +235,22 @@ function LoopCell({ row }: { row: PortfolioMultiplyCollateral }) {
 function PositionCell({ row, usd }: { row: PortfolioMultiplyCollateral; usd: (value: number) => string }) {
   const { t } = useTranslation()
   return (
-    <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
-      <span className={cn("block", TABLE_CELL_NUMERIC)}>
-        {usd(positionEquityUsd(row))} {t("equity")} · {row.multiplier.toFixed(2)}×
-      </span>
-      <span className={cn("block", TABLE_CELL_SECONDARY)}>
-        {usd(row.collateralUsd)} {t("exposure")} · {formatPct(row.netApyPct)} {t("Net APY")}
-      </span>
-    </td>
+    <>
+      <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+        <span className={cn("block", TABLE_CELL_NUMERIC)}>{usd(positionEquityUsd(row))}</span>
+        <span className={cn("block", TABLE_CELL_SECONDARY)}>
+          {row.multiplier.toFixed(2)}× {t("leverage")}
+        </span>
+      </td>
+      <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+        <span className={cn("block", TABLE_CELL_NUMERIC)}>{usd(row.collateralUsd)}</span>
+        {/* Net APY is a portfolio-level figure (Multiply Balance), not per-loop — show the borrowed
+        portion here instead: equity + this debt = the exposure above. */}
+        <span className={cn("block", TABLE_CELL_SECONDARY)}>
+          {usd(row.debtUsd)} {t("debt")}
+        </span>
+      </td>
+    </>
   )
 }
 
