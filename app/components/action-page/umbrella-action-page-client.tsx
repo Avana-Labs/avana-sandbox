@@ -451,6 +451,7 @@ export function UmbrellaActionPageClient({
           singlePrimaryCta={sidebar}
           detailsSlot={<UmbrellaMarketRiskMetricsCard market={market} expanded={hasAmountEntered} />}
           deferDetailsUntilAmount
+          animateDetails={false}
           allowAssetSwitchWhenReadOnly
         />
       ) : null}

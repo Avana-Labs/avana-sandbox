@@ -105,6 +105,9 @@ type ActionConfigureStageProps = {
    *  hidden until the user has entered an amount, keeping the empty state clean.
    *  (detailsSlot content is always shown — the slot decides its own reveal.) */
   deferDetailsUntilAmount?: boolean
+  /** Fade/slide-in the details block when the preview mounts. Defaults to true;
+   *  pass false for a static reveal (e.g. the Umbrella market-risk stats). */
+  animateDetails?: boolean
   /** Keep the asset picker interactive even when the amount is read-only (Claim). */
   allowAssetSwitchWhenReadOnly?: boolean
 }
@@ -257,6 +260,7 @@ export function ActionConfigureStage({
   blockedRedirectHref,
   detailsSlot,
   deferDetailsUntilAmount = false,
+  animateDetails = true,
   allowAssetSwitchWhenReadOnly = false,
 }: ActionConfigureStageProps) {
   const { t } = useTranslation()
@@ -407,7 +411,7 @@ export function ActionConfigureStage({
       ) : null}
 
       {preview && showHomeDetails ? (
-        <div className={cn(previewMotionClassName, "space-y-3")}>
+        <div className={cn(animateDetails ? previewMotionClassName : undefined, "space-y-3")}>
           {detailsSlot ? (
             detailsSlot
           ) : (
