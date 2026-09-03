@@ -283,6 +283,8 @@ const dict: TranslationDictionary = {
   "Not available here": "Hier niet beschikbaar",
   "Nothing to claim": "Niets te claimen",
   "Select rewards": "Beloningen selecteren",
+  "No collateral": "Geen onderpand",
+  "No position": "Geen positie",
   "Nothing to withdraw": "Niets op te nemen",
   "and the Avana team will follow up. You can submit another request any time.":
     "en het Avana-team neemt contact met je op. Je kunt op elk moment een nieuw verzoek indienen.",

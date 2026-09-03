@@ -279,6 +279,8 @@ const dict: TranslationDictionary = {
   "Not available here": "여기서는 사용할 수 없음",
   "Nothing to claim": "청구할 항목 없음",
   "Select rewards": "리워드 선택",
+  "No collateral": "담보 없음",
+  "No position": "포지션 없음",
   "Nothing to withdraw": "출금할 항목 없음",
   "and the Avana team will follow up. You can submit another request any time.":
     "Avana 팀이 곧 연락드립니다. 언제든 다시 요청을 보낼 수 있습니다.",

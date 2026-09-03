@@ -286,6 +286,8 @@ const dict: TranslationDictionary = {
   "Not available here": "Tidak tersedia di sini",
   "Nothing to claim": "Tidak ada yang bisa diklaim",
   "Select rewards": "Pilih hadiah",
+  "No collateral": "Tidak ada jaminan",
+  "No position": "Tidak ada posisi",
   "Nothing to withdraw": "Tidak ada yang bisa ditarik",
   "and the Avana team will follow up. You can submit another request any time.":
     "dan tim Avana akan menindaklanjuti. Anda dapat mengirim permintaan lain kapan saja.",

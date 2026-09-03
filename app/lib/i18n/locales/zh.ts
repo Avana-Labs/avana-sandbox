@@ -559,6 +559,8 @@ const dict: TranslationDictionary = {
   "Not available here": "此处不可用",
   "Nothing to claim": "暂无可领取",
   "Select rewards": "选择奖励",
+  "No collateral": "无抵押品",
+  "No position": "无仓位",
   "Nothing to withdraw": "暂无可提取",
   "and the Avana team will follow up. You can submit another request any time.":
     "Avana 团队会尽快跟进。您可以随时再次提交请求。",

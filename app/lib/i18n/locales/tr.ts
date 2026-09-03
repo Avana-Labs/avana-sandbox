@@ -293,6 +293,8 @@ const dict: TranslationDictionary = {
   "Not available here": "Burada kullanılamıyor",
   "Nothing to claim": "Talep edilecek bir şey yok",
   "Select rewards": "Ödülleri seçin",
+  "No collateral": "Teminat yok",
+  "No position": "Pozisyon yok",
   "Nothing to withdraw": "Çekilecek bir şey yok",
   "and the Avana team will follow up. You can submit another request any time.":
     "Avana ekibi sizinle iletişime geçecek. İstediğiniz zaman yeni bir talep gönderebilirsiniz.",

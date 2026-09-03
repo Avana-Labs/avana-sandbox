@@ -292,6 +292,8 @@ const dict: TranslationDictionary = {
   "Not available here": "यहाँ उपलब्ध नहीं",
   "Nothing to claim": "दावा करने को कुछ नहीं",
   "Select rewards": "रिवॉर्ड चुनें",
+  "No collateral": "कोई कोलैटरल नहीं",
+  "No position": "कोई पोज़िशन नहीं",
   "Nothing to withdraw": "निकालने को कुछ नहीं",
   "and the Avana team will follow up. You can submit another request any time.":
     "और Avana टीम आगे संपर्क करेगी। आप कभी भी दूसरा अनुरोध भेज सकते हैं।",

@@ -287,6 +287,8 @@ const dict: TranslationDictionary = {
   "Not available here": "غير متاح هنا",
   "Nothing to claim": "لا شيء للمطالبة",
   "Select rewards": "اختر المكافآت",
+  "No collateral": "لا يوجد ضمان",
+  "No position": "لا يوجد مركز",
   "Nothing to withdraw": "لا شيء للسحب",
   "and the Avana team will follow up. You can submit another request any time.":
     "وسيتابع فريق Avana معك. يمكنك إرسال طلب آخر في أي وقت.",

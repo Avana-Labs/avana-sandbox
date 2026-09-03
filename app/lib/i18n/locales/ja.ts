@@ -280,6 +280,8 @@ const dict: TranslationDictionary = {
   "Not available here": "ここでは利用できません",
   "Nothing to claim": "受け取るものはありません",
   "Select rewards": "報酬を選択",
+  "No collateral": "担保がありません",
+  "No position": "ポジションがありません",
   "Nothing to withdraw": "引き出すものはありません",
   "and the Avana team will follow up. You can submit another request any time.":
     "Avanaチームが折り返しご連絡します。いつでも別のリクエストを送信できます。",

@@ -285,6 +285,8 @@ const dict: TranslationDictionary = {
   "Not available here": "Indisponível aqui",
   "Nothing to claim": "Nada para resgatar",
   "Select rewards": "Selecionar recompensas",
+  "No collateral": "Sem colateral",
+  "No position": "Sem posição",
   "Nothing to withdraw": "Nada para retirar",
   "and the Avana team will follow up. You can submit another request any time.":
     "e a equipe da Avana entrará em contato. Você pode enviar outra solicitação quando quiser.",
