@@ -73,6 +73,24 @@ function StatsGrid({ stats, columns = 3 }: { stats: QuickStatLike[]; columns?: 3
   )
 }
 
+/** Flat stat grid without the Key Statistics risk-exposure split (e.g. Market Rates). */
+export function FlatStatsGrid({
+  stats,
+  className,
+  columns = 3,
+}: {
+  stats: QuickStatLike[]
+  className?: string
+  columns?: 3 | 4
+}) {
+  if (stats.length === 0) return null
+  return (
+    <div className={cn(className)}>
+      <StatsGrid stats={stats} columns={columns} />
+    </div>
+  )
+}
+
 function QuickStatsGridView({ detail, className, hideRisk = false }: Omit<Props, "quickStatsPreload" | "product">) {
   const { t } = useTranslation()
   const { market, risk } = splitQuickStats(detail.quickStats)

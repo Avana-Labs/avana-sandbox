@@ -7,7 +7,7 @@ import { ActionIcon } from "@/app/components/action-icon"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
-import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
+import { FlatStatsGrid, QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
 import { mapMultiplySessionRows, mapMultiplyTxRow } from "@/app/lib/detail-page/transaction-history"
 import { MULTIPLY_KIND_CONFIG } from "@/app/components/detail-transaction-table/detail-market-transactions"
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
@@ -110,6 +110,12 @@ export function MarketDetailClient({
                           Key Statistics
                         </h2>
                         <QuickStatsGrid detail={detail} quickStatsPreload={quickStatsPreload} product="multiply" />
+                      </section>
+                      <section aria-label={t("Market Rates")} className="space-y-6">
+                        <h2 className="text-[22px] font-normal leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
+                          Market Rates
+                        </h2>
+                        <FlatStatsGrid stats={detail.marketRates} />
                       </section>
                       <RiskSection detail={detail} />
                     </>
