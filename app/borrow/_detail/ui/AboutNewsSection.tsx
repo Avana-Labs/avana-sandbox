@@ -3,6 +3,7 @@
 import type * as React from "react"
 import { cn } from "@/lib/utils"
 import type { AboutCard as AboutCardData } from "@/app/lib/borrow-detail"
+import { ArrowUpRight } from "@/app/components/icons"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { AboutCard } from "@/app/borrow/_detail/pool-sections"
 import { NewsCard } from "./NewsCard"
@@ -11,6 +12,11 @@ import { normalizeGovernanceParameters } from "@/app/borrow/_detail/lib/governan
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { TablePager, useTablePagination } from "@/app/components/table-pager"
+
+/** Trim role suffixes ("executor"/"multisig") so the changelog second line fits on one line. */
+function shortExecutor(executor: string): string {
+  return executor.replace(/\s+(executor|multisig)$/i, "")
+}
 
 type Props = {
   about: AboutCardData
@@ -143,20 +149,9 @@ export function AboutNewsSection({
                     <tr key={entry.id} className="transition-colors hover:bg-hover">
                       <th scope="row" className="py-3 pl-5 pr-4 text-left align-top">
                         <span className="block text-[13px] font-medium text-foreground">{t(entry.parameter)}</span>
-                        {entry.href ? (
-                          <a
-                            href={entry.href}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="mt-0.5 block truncate text-[12px] font-normal text-muted-foreground transition-colors hover:text-foreground"
-                          >
-                            {t(entry.source)} · {t(entry.executor)}
-                          </a>
-                        ) : (
-                          <span className="mt-0.5 block truncate text-[12px] font-normal text-muted-foreground">
-                            {t(entry.source)} · {t(entry.executor)}
-                          </span>
-                        )}
+                        <span className="mt-0.5 block text-[12px] font-normal leading-snug text-muted-foreground">
+                          {t(entry.source)} · {shortExecutor(t(entry.executor))}
+                        </span>
                       </th>
                       <td className="px-4 py-3 align-top font-data text-[13px] font-medium tabular-nums text-muted-foreground">
                         {t(entry.previous)}
@@ -164,7 +159,22 @@ export function AboutNewsSection({
                       <td className="px-4 py-3 align-top font-data text-[13px] font-medium tabular-nums text-foreground">
                         {t(entry.current)}
                       </td>
-                      <td className="px-4 py-3 pr-5 align-top text-[13px] text-muted-foreground">{t(entry.date)}</td>
+                      <td className="px-4 py-3 pr-5 align-top text-[13px] text-muted-foreground">
+                        <span className="inline-flex items-center gap-1.5">
+                          {t(entry.date)}
+                          {entry.href ? (
+                            <a
+                              href={entry.href}
+                              target="_blank"
+                              rel="noreferrer"
+                              aria-label={t("View transaction")}
+                              className="text-muted-foreground transition-colors hover:text-foreground"
+                            >
+                              <ArrowUpRight className="h-3.5 w-3.5" />
+                            </a>
+                          ) : null}
+                        </span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

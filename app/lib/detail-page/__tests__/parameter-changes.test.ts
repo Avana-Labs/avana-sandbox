@@ -107,4 +107,16 @@ describe("buildParameterChangelog", () => {
     const rows = buildParameterChangelog(borrowAssetInput("usdc"))
     expect(new Set(rows.map((r) => r.id)).size).toBe(rows.length)
   })
+
+  it("gives every row a deterministic Etherscan tx link when no proposalHref is set", () => {
+    const input = { ...borrowAssetInput("usdc") }
+    delete (input as { proposalHref?: string }).proposalHref
+    const a = buildParameterChangelog(input)
+    const b = buildParameterChangelog(input)
+    for (const row of a) {
+      expect(row.href).toMatch(/^https:\/\/etherscan\.io\/tx\/0x[0-9a-f]{64}$/)
+    }
+    // Deterministic across runs.
+    expect(a.map((r) => r.href)).toEqual(b.map((r) => r.href))
+  })
 })

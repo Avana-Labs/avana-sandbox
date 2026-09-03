@@ -14,7 +14,7 @@
  */
 
 import { SANDBOX_NOW } from "@/app/lib/deterministic"
-import { prngFromString } from "@/app/lib/borrow-detail/prng"
+import { hashString, prngFromString } from "@/app/lib/borrow-detail/prng"
 
 export type ParameterChangeCategory = "Risk Management" | "Domain Admin" | "Listing" | "Emergency"
 
@@ -421,8 +421,9 @@ export function buildParameterChangelog(input: BuildParameterChangelogInput): Pa
     const jitter = index === 0 || index === ordered.length - 1 ? 0 : (rand() - 0.5) * MS_PER_DAY * 2
     const ms = newest - progress * (newest - oldest) + jitter
     const date = new Date(clampDate(ms, oldest, newest)).toISOString().slice(0, 10)
+    const id = `${input.slug}-chg-${index}`
     return {
-      id: `${input.slug}-chg-${index}`,
+      id,
       parameter: change.parameter,
       previous: change.previous,
       current: change.current,
@@ -430,13 +431,25 @@ export function buildParameterChangelog(input: BuildParameterChangelogInput): Pa
       source: change.source,
       executor: change.executor,
       category: change.category,
-      ...(input.proposalHref ? { href: input.proposalHref } : {}),
+      href: input.proposalHref ?? txHrefFor(id),
     }
   })
 }
 
 function clampDate(ms: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, ms))
+}
+
+/** Deterministic (fake, sandbox-consistent) Etherscan tx link for a change id. */
+function txHrefFor(id: string): string {
+  let hex = ""
+  let seed = id
+  while (hex.length < 64) {
+    const chunk = hashString(seed).toString(16).padStart(8, "0")
+    hex += chunk
+    seed = chunk + seed
+  }
+  return `https://etherscan.io/tx/0x${hex.slice(0, 64)}`
 }
 
 function buildListingChange(input: BuildParameterChangelogInput, rand: () => number): PendingChange {
