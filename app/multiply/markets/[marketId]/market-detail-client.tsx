@@ -109,7 +109,12 @@ export function MarketDetailClient({
                         <h2 className="text-[22px] font-normal leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
                           Key Statistics
                         </h2>
-                        <QuickStatsGrid detail={detail} quickStatsPreload={quickStatsPreload} product="multiply" />
+                        <QuickStatsGrid
+                          detail={detail}
+                          quickStatsPreload={quickStatsPreload}
+                          product="multiply"
+                          columns={4}
+                        />
                       </section>
                       <section aria-label={t("Market Rates")} className="space-y-6">
                         <h2 className="text-[22px] font-normal leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
