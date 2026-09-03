@@ -115,13 +115,12 @@ export function AboutNewsSection({
               {t("Parameter changelog")}
             </h2>
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] table-fixed border-separate border-spacing-0 text-[13px]">
+              <table className="w-full min-w-[560px] table-fixed border-separate border-spacing-0 text-[13px]">
                 <colgroup>
-                  <col className="w-[24%]" />
-                  <col className="w-[16%]" />
-                  <col className="w-[18%]" />
-                  <col className="w-[16%]" />
-                  <col className="w-[26%]" />
+                  <col className="w-[42%]" />
+                  <col className="w-[17%]" />
+                  <col className="w-[21%]" />
+                  <col className="w-[20%]" />
                 </colgroup>
                 <thead>
                   <tr className="bg-table-header text-left text-muted-foreground">
@@ -134,47 +133,38 @@ export function AboutNewsSection({
                     <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
                       {t("Current")}
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                      {t("Date")}
-                    </th>
                     <th className="bg-table-header px-4 pb-2 pr-5 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                      {t("Source")}
+                      {t("Date")}
                     </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border dark:divide-white/6">
                   {changelog.pageItems.map((entry) => (
                     <tr key={entry.id} className="transition-colors hover:bg-hover">
-                      <th scope="row" className="py-3 pl-5 pr-4 text-left text-[13px] font-medium text-foreground">
-                        {t(entry.parameter)}
-                      </th>
-                      <td className="px-4 py-3 font-data text-[13px] font-medium tabular-nums text-muted-foreground">
-                        {t(entry.previous)}
-                      </td>
-                      <td className="px-4 py-3 font-data text-[13px] font-medium tabular-nums text-foreground">
-                        {t(entry.current)}
-                      </td>
-                      <td className="px-4 py-3 text-[13px] text-muted-foreground">{t(entry.date)}</td>
-                      <td className="min-w-0 px-4 py-3 pr-5 text-[13px]">
+                      <th scope="row" className="py-3 pl-5 pr-4 text-left align-top">
+                        <span className="block text-[13px] font-medium text-foreground">{t(entry.parameter)}</span>
                         {entry.href ? (
                           <a
                             href={entry.href}
                             target="_blank"
                             rel="noreferrer"
-                            className="group block min-w-0 text-muted-foreground transition-colors hover:text-foreground"
+                            className="mt-0.5 block truncate text-[12px] font-normal text-muted-foreground transition-colors hover:text-foreground"
                           >
-                            <span className="block truncate">{t(entry.source)}</span>
-                            <span className="block truncate text-[12px] text-text-low transition-colors group-hover:text-muted-foreground">
-                              {t(entry.executor)}
-                            </span>
+                            {t(entry.source)} · {t(entry.executor)}
                           </a>
                         ) : (
-                          <span className="block min-w-0 text-muted-foreground">
-                            <span className="block truncate">{t(entry.source)}</span>
-                            <span className="block truncate text-[12px] text-text-low">{t(entry.executor)}</span>
+                          <span className="mt-0.5 block truncate text-[12px] font-normal text-muted-foreground">
+                            {t(entry.source)} · {t(entry.executor)}
                           </span>
                         )}
+                      </th>
+                      <td className="px-4 py-3 align-top font-data text-[13px] font-medium tabular-nums text-muted-foreground">
+                        {t(entry.previous)}
                       </td>
+                      <td className="px-4 py-3 align-top font-data text-[13px] font-medium tabular-nums text-foreground">
+                        {t(entry.current)}
+                      </td>
+                      <td className="px-4 py-3 pr-5 align-top text-[13px] text-muted-foreground">{t(entry.date)}</td>
                     </tr>
                   ))}
                 </tbody>
