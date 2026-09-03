@@ -24,6 +24,16 @@ import {
 } from "@/app/lib/action-system/stage-machine"
 import { blockedCtaLabel } from "@/app/lib/action-system/blocked-ui"
 
+function formatBlockedOutcomeMessage(blockedReason: string, balanceValue?: string | null) {
+  const normalizedBalance = balanceValue?.replace(/[^\d.]/g, "") ?? ""
+  const isZeroBalance = normalizedBalance === "" || normalizedBalance === "0" || /^0\.0+$/.test(normalizedBalance)
+  const isBalanceBlock = /insufficient/i.test(blockedReason) || /balance/i.test(blockedReason.toLowerCase())
+  if (isBalanceBlock && isZeroBalance) {
+    return `${blockedReason} Fund your wallet or switch accounts to continue.`
+  }
+  return blockedReason
+}
+
 type ActionConfigureStageProps = {
   stage: ActionStage
   verb: string
@@ -449,7 +459,11 @@ export function ActionConfigureStage({
       {outcome ? <ActionOutcomeBanner tone={outcome.tone} title={outcome.title} message={outcome.message} /> : null}
 
       {!outcome && previewBlocked && blockedReason ? (
-        <ActionOutcomeBanner tone="error" title="Action unavailable" message={blockedReason} />
+        <ActionOutcomeBanner
+          tone="error"
+          title="Action unavailable"
+          message={formatBlockedOutcomeMessage(blockedReason, balanceValue ?? preview?.balanceLabel)}
+        />
       ) : null}
 
       {isConfigureVisibleStage(stage) ? (

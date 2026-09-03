@@ -178,4 +178,24 @@ describe("ActionConfigureStage", () => {
     fireEvent.change(screen.getByRole("slider"), { target: { value: "5" } })
     expect(onMultiplierChange).toHaveBeenCalledWith("5")
   })
+
+  it("adds wallet funding guidance when a zero balance blocks the action", () => {
+    render(
+      <ActionConfigureStage
+        stage="configure"
+        verb="Deposit"
+        amount="10"
+        onAmountChange={() => undefined}
+        preview={{
+          ...preview,
+          allowed: false,
+          blockedReason: "Insufficient wallet balance.",
+        }}
+        balanceValue="0"
+        assetSymbol="USDC"
+      />,
+    )
+
+    expect(screen.getByText(/Fund your wallet or switch accounts to continue\./)).toBeInTheDocument()
+  })
 })
