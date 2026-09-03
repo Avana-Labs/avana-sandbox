@@ -1140,6 +1140,7 @@ const dict: TranslationDictionary = {
   "We couldn't load this page.": "Bu sayfayı yükleyemedik.",
   "Active Deficit": "Aktif açık",
   "Active stake": "Aktif stake",
+  "Includes active stake and cooldown": "Aktif stake ve cooldown dahildir",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "Kullanıcıların stake ettiği teminatın açığa çıkmasından önce Avana'nın öncelikle karşıladığı tutar. Stake sahipleri, yalnızca gerçekleşen açık bu ofseti aştığında zarar yazar.",
   "Close umbrella actions": "Koruma işlemlerini kapat",
@@ -1186,6 +1187,7 @@ const dict: TranslationDictionary = {
     "Çekimden önce cooldown'ı başlat. Cooldown sırasında pozisyon teşvik kazanmaya devam eder ve slashing'e açık kalır.",
   Target: "Hedef",
   "Total coverage": "Toplam teminat",
+  "Total position value": "Toplam pozisyon değeri",
   "Total user-staked capital available to absorb losses for this asset.":
     "Bu varlığın zararını karşılamak üzere kullanılabilir toplam kullanıcı stake sermayesi.",
   Umbrella: "Koruma",
@@ -1372,6 +1374,8 @@ const dict: TranslationDictionary = {
   "Repay or add collateral to reduce your liquidation risk.":
     "Likidasyon riskinizi azaltmak için geri ödeyin veya teminat ekleyin.",
   "Review risk": "Riski incele",
+  "Negative net APY: borrow costs exceed supply yield. Review before opening this loop.":
+    "Negatif net getiri: borç maliyetleri tedarik getirisini aşıyor. Bu döngüyü açmadan önce inceleyin.",
   "Review swap": "Takası incele",
   "Rewards Earned": "Kazanılan Ödüller",
   Sandbox: "Sandbox",

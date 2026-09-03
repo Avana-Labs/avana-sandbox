@@ -1208,6 +1208,7 @@ const dict: TranslationDictionary = {
   "We couldn't load this page.": "我们无法加载此页面。",
   "Active Deficit": "有效缺口",
   "Active stake": "有效质押",
+  "Includes active stake and cooldown": "包含有效质押和冷却中金额",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "在用户质押的保障暴露之前,Avana 优先承担的金额。只有当已实现的缺口超过该抵扣值时,质押者才会承受损失。",
   "Close umbrella actions": "关闭保护操作",
@@ -1252,6 +1253,7 @@ const dict: TranslationDictionary = {
     "提取前请先开启冷却。冷却期间,仓位继续获得激励,并仍可被罚没。",
   Target: "目标",
   "Total coverage": "总保障",
+  "Total position value": "仓位总价值",
   "Total user-staked capital available to absorb losses for this asset.": "可用于承担该资产损失的用户质押总资本。",
   Umbrella: "保护",
   "Umbrella Cooldown": "保护冷却",
@@ -1417,6 +1419,8 @@ const dict: TranslationDictionary = {
   refreshing_position: "正在刷新仓位",
   "Repay or add collateral to reduce your liquidation risk.": "还款或添加抵押品以降低清算风险。",
   "Review risk": "查看风险",
+  "Negative net APY: borrow costs exceed supply yield. Review before opening this loop.":
+    "净 APY 为负：借款成本超过供应收益。开仓此循环前请仔细评估。",
   "Review swap": "查看兑换",
   "Rewards Earned": "已赚取奖励",
   Sandbox: "沙盒",

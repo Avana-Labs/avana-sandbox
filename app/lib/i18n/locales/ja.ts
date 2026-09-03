@@ -1186,6 +1186,7 @@ const dict: TranslationDictionary = {
   "We couldn't load this page.": "このページを読み込めませんでした。",
   "Active Deficit": "アクティブ不足額",
   "Active stake": "アクティブなステーク",
+  "Includes active stake and cooldown": "アクティブなステークとクールダウンを含む",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "ユーザーがステークしたカバレッジがさらされる前に、Avana がまずカバーする金額。ステーカーは、実現した不足額がこのオフセットを超えたときにのみ損失を負担します。",
   "Close umbrella actions": "アンブレラのアクションを閉じる",
@@ -1232,6 +1233,7 @@ const dict: TranslationDictionary = {
     "引き出す前にクールダウンを開始してください。クールダウン中もポジションはインセンティブを獲得し続け、スラッシングの対象となります。",
   Target: "目標",
   "Total coverage": "総カバレッジ",
+  "Total position value": "ポジション合計価値",
   "Total user-staked capital available to absorb losses for this asset.":
     "このアセットの損失を吸収するために利用可能な、ユーザーがステークした資本の合計。",
   Umbrella: "アンブレラ",
@@ -1412,6 +1414,8 @@ const dict: TranslationDictionary = {
   "Repay or add collateral to reduce your liquidation risk.":
     "清算リスクを減らすには、返済するか担保を追加してください。",
   "Review risk": "リスクを確認",
+  "Negative net APY: borrow costs exceed supply yield. Review before opening this loop.":
+    "ネット APY がマイナスです。借入コストが供給利回りを上回っています。このループを開く前にご確認ください。",
   "Review swap": "スワップを確認",
   "Rewards Earned": "獲得リワード",
   Sandbox: "サンドボックス",

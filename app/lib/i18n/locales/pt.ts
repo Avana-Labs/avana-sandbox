@@ -1196,6 +1196,7 @@ const dict: TranslationDictionary = {
   "We couldn't load this page.": "Não foi possível carregar esta página.",
   "Active Deficit": "Déficit ativo",
   "Active stake": "Stake ativo",
+  "Includes active stake and cooldown": "Inclui stake ativo e cooldown",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "Valor que a Avana cobre primeiro antes de expor a cobertura em stake dos usuários. Os stakers só assumem perdas quando os déficits realizados excedem este offset.",
   "Close umbrella actions": "Fechar ações de Proteção",
@@ -1242,6 +1243,7 @@ const dict: TranslationDictionary = {
     "Inicie o cooldown antes de sacar. Durante o cooldown, a posição continua ganhando incentivos e permanece sujeita a slashing.",
   Target: "Meta",
   "Total coverage": "Cobertura total",
+  "Total position value": "Valor total da posição",
   "Total user-staked capital available to absorb losses for this asset.":
     "Capital total em stake pelos usuários disponível para absorver perdas deste ativo.",
   Umbrella: "Proteção",
@@ -1415,6 +1417,8 @@ const dict: TranslationDictionary = {
   "Repay or add collateral to reduce your liquidation risk.":
     "Pague ou adicione colateral para reduzir seu risco de liquidação.",
   "Review risk": "Revisar o risco",
+  "Negative net APY: borrow costs exceed supply yield. Review before opening this loop.":
+    "APY líquido negativo: os custos de empréstimo excedem o rendimento do supply. Revise antes de abrir este loop.",
   "Review swap": "Revisar swap",
   "Rewards Earned": "Recompensas ganhas",
   "Scenario price": "Preço do cenário",

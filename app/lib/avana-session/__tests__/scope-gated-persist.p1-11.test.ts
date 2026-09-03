@@ -13,7 +13,9 @@ describe("scope-gated Convex session persists", () => {
   it("p1-11: gates borrow/lend/multiply persists on walletSession", () => {
     expect(source).toMatch(/persistBorrowTransaction=\{scope\.walletSession \? persistBorrowTransaction : undefined\}/)
     expect(source).toMatch(/persistLendTransaction=\{scope\.walletSession \? persistLendTransaction : undefined\}/)
-    expect(source).toMatch(/persistMultiplyTransaction=\{scope\.walletSession \? persistMultiplyTransaction : undefined\}/)
+    expect(source).toMatch(
+      /persistMultiplyTransaction=\{scope\.walletSession \? persistMultiplyTransaction : undefined\}/,
+    )
   })
 
   it("p1-11: gates swap persist + quote on swapTransactions", () => {

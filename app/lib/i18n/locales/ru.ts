@@ -1152,6 +1152,7 @@ const dict: TranslationDictionary = {
   "We couldn't load this page.": "Не удалось загрузить эту страницу.",
   "Active Deficit": "Активный дефицит",
   "Active stake": "Активный стейк",
+  "Includes active stake and cooldown": "Включает активный стейк и период ожидания",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "Сумма, которую Avana покрывает первой, прежде чем задействуется застейканное пользователями покрытие. Стейкеры несут убытки, только когда реализованные дефициты превышают этот офсет.",
   "Close umbrella actions": "Закрыть действия Защиты",
@@ -1198,6 +1199,7 @@ const dict: TranslationDictionary = {
     "Запустите кулдаун перед выводом. Во время кулдауна позиция продолжает получать поощрения и остаётся подверженной слэшингу.",
   Target: "Цель",
   "Total coverage": "Общее покрытие",
+  "Total position value": "Общая стоимость позиции",
   "Total user-staked capital available to absorb losses for this asset.":
     "Общий капитал, застейканный пользователями и доступный для поглощения убытков этого актива.",
   Umbrella: "Защита",
@@ -1377,6 +1379,8 @@ const dict: TranslationDictionary = {
   "Repay or add collateral to reduce your liquidation risk.":
     "Погасите долг или добавьте залог, чтобы снизить риск ликвидации.",
   "Review risk": "Оценить риск",
+  "Negative net APY: borrow costs exceed supply yield. Review before opening this loop.":
+    "Отрицательный чистый APY: затраты на займ превышают доходность поставки. Оцените риск перед открытием этого цикла.",
   "Review swap": "Проверить своп",
   "Rewards Earned": "Заработанные награды",
   Sandbox: "Песочница",

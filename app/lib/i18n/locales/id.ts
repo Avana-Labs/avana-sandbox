@@ -1145,6 +1145,7 @@ const dict: TranslationDictionary = {
   "We couldn't load this page.": "Kami tidak dapat memuat halaman ini.",
   "Active Deficit": "Defisit Aktif",
   "Active stake": "Stake aktif",
+  "Includes active stake and cooldown": "Termasuk stake aktif dan cooldown",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "Jumlah yang ditutup Avana terlebih dahulu sebelum cakupan yang di-stake pengguna terekspos. Staker hanya menanggung kerugian setelah defisit riil melebihi offset ini.",
   "Close umbrella actions": "Tutup tindakan Proteksi",
@@ -1191,6 +1192,7 @@ const dict: TranslationDictionary = {
     "Mulai cooldown sebelum menarik. Selama cooldown, posisi tetap memperoleh insentif dan masih dapat di-slashing.",
   Target: "Target",
   "Total coverage": "Total cakupan",
+  "Total position value": "Nilai posisi total",
   "Total user-staked capital available to absorb losses for this asset.":
     "Total modal yang di-stake pengguna yang tersedia untuk menyerap kerugian aset ini.",
   Umbrella: "Proteksi",
@@ -1371,6 +1373,8 @@ const dict: TranslationDictionary = {
   "Repay or add collateral to reduce your liquidation risk.":
     "Bayar kembali atau tambah jaminan untuk mengurangi risiko likuidasi Anda.",
   "Review risk": "Tinjau risiko",
+  "Negative net APY: borrow costs exceed supply yield. Review before opening this loop.":
+    "APY bersih negatif: biaya pinjaman melebihi hasil supply. Tinjau sebelum membuka loop ini.",
   "Review swap": "Tinjau swap",
   "Rewards Earned": "Imbalan Diperoleh",
   Sandbox: "Sandbox",

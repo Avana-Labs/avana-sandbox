@@ -1127,6 +1127,7 @@ const dict: TranslationDictionary = {
   "We couldn't load this page.": "이 페이지를 불러올 수 없습니다.",
   "Active Deficit": "활성 부족액",
   "Active stake": "활성 스테이크",
+  "Includes active stake and cooldown": "활성 스테이크 및 쿨다운 포함",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "사용자 스테이킹 커버리지가 노출되기 전에 Avana가 먼저 부담하는 금액. 스테이커는 실현된 부족액이 이 오프셋을 초과할 때만 손실을 부담합니다.",
   "Close umbrella actions": "보호 작업 닫기",
@@ -1172,6 +1173,7 @@ const dict: TranslationDictionary = {
     "출금 전에 쿨다운을 시작하세요. 쿨다운 중에도 포지션은 인센티브를 계속 받으며 슬래싱 대상이 됩니다.",
   Target: "목표",
   "Total coverage": "전체 커버리지",
+  "Total position value": "총 포지션 가치",
   "Total user-staked capital available to absorb losses for this asset.":
     "이 자산의 손실을 흡수할 수 있는 사용자 스테이킹 자본 총액.",
   Umbrella: "보호",
@@ -1348,6 +1350,8 @@ const dict: TranslationDictionary = {
   refreshing_position: "포지션 새로 고침 중",
   "Repay or add collateral to reduce your liquidation risk.": "청산 위험을 줄이려면 상환하거나 담보를 추가하세요.",
   "Review risk": "위험 검토",
+  "Negative net APY: borrow costs exceed supply yield. Review before opening this loop.":
+    "순 APY가 음수입니다. 대출 비용이 공급 수익을 초과합니다. 이 루프를 열기 전에 검토하세요.",
   "Review swap": "스왑 검토",
   "Rewards Earned": "획득 리워드",
   Sandbox: "샌드박스",

@@ -1119,6 +1119,7 @@ const dict: TranslationDictionary = {
   "We couldn't load this page.": "تعذّر علينا تحميل هذه الصفحة.",
   "Active Deficit": "العجز النشط",
   "Active stake": "الحصة النشطة",
+  "Includes active stake and cooldown": "يتضمن الحصة النشطة وفترة الانتظار",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "المبلغ الذي تغطيه Avana أولاً قبل تعريض التغطية المُودعة من المستخدمين. لا يتحمّل المودعون خسائر إلا عندما تتجاوز العجوزات المحقّقة هذا الإزاحة.",
   "Close umbrella actions": "إغلاق إجراءات الحماية",
@@ -1165,6 +1166,7 @@ const dict: TranslationDictionary = {
     "ابدأ التبريد قبل السحب. خلال التبريد يستمر المركز في كسب الحوافز ويبقى عرضة للخصم.",
   Target: "هدف",
   "Total coverage": "إجمالي التغطية",
+  "Total position value": "إجمالي قيمة المركز",
   "Total user-staked capital available to absorb losses for this asset.":
     "إجمالي رأس المال المُودَع من المستخدمين والمتاح لاستيعاب خسائر هذا الأصل.",
   Umbrella: "حماية",
@@ -1349,6 +1351,8 @@ const dict: TranslationDictionary = {
   refreshing_position: "جارٍ تحديث المركز",
   "Repay or add collateral to reduce your liquidation risk.": "سدّد أو أضف ضمانًا لتقليل مخاطر التصفية.",
   "Review risk": "مراجعة المخاطر",
+  "Negative net APY: borrow costs exceed supply yield. Review before opening this loop.":
+    "صافي العائد السنوي سلبي: تكاليف الاقتراض تتجاوز عائد التوريد. راجع قبل فتح هذه الحلقة.",
   "Review swap": "مراجعة المبادلة",
   "Rewards Earned": "المكافآت المكتسبة",
   Sandbox: "البيئة التجريبية",

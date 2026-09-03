@@ -1145,6 +1145,7 @@ const dict: TranslationDictionary = {
   "We couldn't load this page.": "We konden deze pagina niet laden.",
   "Active Deficit": "Actief tekort",
   "Active stake": "Actieve stake",
+  "Includes active stake and cooldown": "Inclusief actieve stake en cooldown",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "Bedrag dat Avana eerst dekt voordat door gebruikers gestakete dekking wordt blootgesteld. Stakers dragen pas verlies wanneer gerealiseerde tekorten deze offset overschrijden.",
   "Close umbrella actions": "Protectie-acties sluiten",
@@ -1191,6 +1192,7 @@ const dict: TranslationDictionary = {
     "Start de cooldown voordat je opneemt. Tijdens de cooldown blijft de positie incentives verdienen en blijft ze onderworpen aan slashing.",
   Target: "Doel",
   "Total coverage": "Totale dekking",
+  "Total position value": "Totale positiewaarde",
   "Total user-staked capital available to absorb losses for this asset.":
     "Totaal door gebruikers gestaket kapitaal beschikbaar om verliezen op dit asset op te vangen.",
   Umbrella: "Protectie",
@@ -1361,6 +1363,8 @@ const dict: TranslationDictionary = {
   "Repay or add collateral to reduce your liquidation risk.":
     "Betaal af of voeg onderpand toe om je liquidatierisico te verlagen.",
   "Review risk": "Risico bekijken",
+  "Negative net APY: borrow costs exceed supply yield. Review before opening this loop.":
+    "Negatieve netto-APY: leenkosten overschrijden supply-rendement. Beoordeel voordat u deze loop opent.",
   "Review swap": "Swap controleren",
   "Rewards Earned": "Verdiende beloningen",
   "Scenario price": "Scenarioprijs",

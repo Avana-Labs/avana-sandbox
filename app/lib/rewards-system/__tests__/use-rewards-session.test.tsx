@@ -267,8 +267,8 @@ describe("useRewardsSession", () => {
       await result.current.completeEducation()
     })
     await waitFor(() => expect(persistRemoteState).toHaveBeenCalled())
-    expect(persistRemoteState.mock.calls.every((call) => call[0].expectedRevision === 61 || call[0].expectedRevision === 62)).toBe(
-      true,
-    )
+    expect(
+      persistRemoteState.mock.calls.every((call) => call[0].expectedRevision === 61 || call[0].expectedRevision === 62),
+    ).toBe(true)
   })
 })
