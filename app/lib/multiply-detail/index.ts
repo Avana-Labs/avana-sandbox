@@ -24,11 +24,14 @@ import {
   buildMultiplyFaqs,
   type FaqContent,
 } from "@/app/lib/borrow-detail/content-model"
-import { MULTIPLY_MARKET_ROWS, MULTIPLY_TOKEN_LOGOS, type MultiplyMarketRow } from "@/app/lib/multiply-sim"
+import { MULTIPLY_MARKET_ROWS, type MultiplyMarketRow } from "@/app/lib/multiply-sim"
 import { getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
+import { formatMultiplyLoopPairLabel } from "@/app/lib/multiply-system/market-labels"
 import { catalogMarketToRow } from "@/app/lib/multiply-system/read-model"
 import { buildRiskParameterSet } from "@/app/lib/borrow-detail/risk-parameters"
 import { resolveHeroContractAddress } from "@/app/borrow/_detail/lib/hero-chart-feeds"
+import { resolveMultiplyTokenLogo } from "@/lib/multiply-token-logo"
+import { formatTokenDisplaySymbol } from "@/app/lib/token-icons"
 
 export type MultiplyMarketHero = {
   visuals: [MultiplyTokenVisual, MultiplyTokenVisual]
@@ -140,11 +143,14 @@ function buildQuickStats(row: MultiplyMarketRow, marketId: string): QuickStat[] 
 
 function buildHero(row: MultiplyMarketRow, marketId: string): MultiplyMarketHero {
   const address = resolveHeroContractAddress(marketId)
+  const pairLabel = formatMultiplyLoopPairLabel(row.protocol, row.asset)
+  const collateralLabel = formatTokenDisplaySymbol(row.protocol)
+  const borrowLabel = formatTokenDisplaySymbol(row.asset)
   return {
     visuals: [getVisual(row.protocol), getVisual(row.asset)],
-    name: `${row.protocol} / ${row.asset}`,
+    name: pairLabel,
     venue: "Avana Multiply",
-    subtitle: `Use ${row.protocol} as collateral to multiply ${row.asset} exposure without changing the underlying structure.`,
+    subtitle: `Use ${collateralLabel} as collateral to multiply ${borrowLabel} exposure without changing the underlying structure.`,
     feeTier: `${row.apy} max APY`,
     chain: pickChain(row.protocol, row.asset),
     explorerUrl: `https://etherscan.io/address/${address}`,
@@ -152,13 +158,13 @@ function buildHero(row: MultiplyMarketRow, marketId: string): MultiplyMarketHero
 }
 
 function getVisual(symbol: string): MultiplyTokenVisual {
-  const key = symbol as keyof typeof MULTIPLY_TOKEN_LOGOS
+  const display = formatTokenDisplaySymbol(symbol)
   return {
-    symbol,
-    shortLabel: symbol.slice(0, 2).toUpperCase(),
+    symbol: display,
+    shortLabel: display.slice(0, 2).toUpperCase(),
     bgClass: "bg-surface-inset",
     textClass: "text-foreground",
-    iconUrl: MULTIPLY_TOKEN_LOGOS[key],
+    iconUrl: resolveMultiplyTokenLogo(symbol),
   }
 }
 
@@ -366,7 +372,7 @@ function buildAbout(row: MultiplyMarketRow, marketId: string): AboutCard {
         title: "Deployed",
         description: "Market contracts deployed.",
       },
-      { date: "2025-08-12", title: "Market listed", description: `${row.protocol}/${row.asset} added to Multiply.` },
+      { date: "2025-08-12", title: "Market listed", description: `${formatMultiplyLoopPairLabel(row.protocol, row.asset)} added to Multiply.` },
       {
         date: "2026-01-18",
         title: "Risk limits refreshed",
