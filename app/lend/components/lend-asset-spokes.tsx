@@ -193,9 +193,9 @@ function AssetRowView({
         </div>
       </td>
 
-      <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`}>
+      <td className={`py-3 px-4 pr-4 ${TABLE_ROW_HOVER_RIGHT}`} onClick={(event) => event.stopPropagation()}>
         {onDeposit ? (
-          <div className="flex justify-end">
+          <div className="relative z-10 flex justify-end">
             <HoverActionGroup className="gap-2">
               <Button
                 type="button"
