@@ -1532,6 +1532,97 @@ const dict: TranslationDictionary = {
   "Total AVA you've earned across completed quests and staking rewards.":
     "إجمالي AVA الذي كسبته عبر المهام المكتملة ومكافآت الرهن.",
   "AVA you can claim to your wallet right now.": "AVA الذي يمكنك المطالبة به إلى محفظتك الآن.",
+  "Core Concepts": "المفاهيم الأساسية",
+  "What is Avana?": "ما هو Avana؟",
+  "Protocol overview": "نظرة عامة على البروتوكول",
+  "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.":
+    "Avana هو بروتوكول إقراض بضمان LP مبني حول بنية Hub-and-Spoke في Aave v4.",
+  "Why it exists": "لماذا يوجد",
+  "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.":
+    "الهدف هو تمكين مزودي السيولة من الاقتراض مقابل مراكز نشطة دون إغلاق مركز المجمع أولاً.",
+  "What does the Borrow Spoke do?": "ماذا يفعل Borrow Spoke؟",
+  "LP-specific underwriting": "اكتتاب خاص بـ LP",
+  "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.":
+    "تقوم Borrow Spokes بتقييم المراكز المدعومة ومراقبة الصحة وتوجيه سلوك التصفية لضمان LP.",
+  "Shared coordination": "التنسيق المشترك",
+  "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.":
+    "ينسّق Hub السيولة المشتركة ومحاسبة الدين، بينما يتولى الـ spoke المنطق الخاص بـ LP.",
+  "Borrowing Capacity & Valuation": "قدرة الاقتراض والتقييم",
+  "How is borrowing capacity calculated?": "كيف تُحسب قدرة الاقتراض؟",
+  "Adjusted collateral value": "قيمة الضمان المعدَّلة",
+  "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.":
+    "يُقيَّم كل مركز LP معتمد بشكل مستقل، ثم تُطبَّق عوامل الضمان وضوابط المخاطر الخاصة بالمجمع.",
+  "Aggregated in the spoke": "مجمّع في الـ spoke",
+  "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.":
+    "يجمّع الـ spoke المراكز المعتمدة في قدرة اقتراض، ويطبّق Hub النتيجة.",
+  "Why did my capacity change?": "لماذا تغيّرت قدرتي؟",
+  "Market movement": "حركة السوق",
+  "Capacity can change when the underlying assets move or when recoverable value shifts.":
+    "قد تتغيّر القدرة عندما تتحرك الأصول الأساسية أو عندما تتغيّر القيمة القابلة للاسترداد.",
+  "Risk settings": "إعدادات المخاطر",
+  "Collateral factors and market-specific risk settings can also change the amount shown in the interface.":
+    "يمكن لعوامل الضمان وإعدادات المخاطر الخاصة بالسوق أيضاً أن تغيّر المبلغ الظاهر في الواجهة.",
+  "Health & Liquidation": "الصحة والتصفية",
+  "What is the health factor?": "ما هو عامل الصحة؟",
+  "How to read health": "كيف تقرأ الصحة",
+  "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.":
+    "يعبّر عامل الصحة عن العلاقة بين قيمة الضمان المعدَّلة والدين المستحق داخل Borrow Spoke واحد.",
+  "What it means for users": "ماذا يعني للمستخدمين",
+  "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
+    "مع تقلّص الهامش، يصبح المركز أكثر عرضة للتصفية إذا تحركت ظروف السوق ضده.",
+  "When can liquidation happen?": "متى يمكن أن تحدث التصفية؟",
+  "Triggers": "المحفّزات",
+  "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
+    "إذا أضعفت تحركات السوق الصحة بما يكفي، يمكن أن يصبح المركز قابلاً للتصفية وفق قواعد الـ spoke.",
+  "What happens next": "ماذا يحدث بعد ذلك",
+  "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.":
+    "يراقب الـ spoke المخاطر باستمرار ويوجّه سلوك التصفية، بينما يحافظ Hub على تنسيق الاحتياطيات.",
+  "Leverage Markets": "أسواق الرافعة",
+  "How do leverage markets work?": "كيف تعمل أسواق الرافعة؟",
+  "LP-backed exposure": "تعرض مدعوم بـ LP",
+  "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.":
+    "تتيح أسواق الرافعة لـ Avana دعم الاقتراض المدعوم بـ LP والتعرض الاتجاهي ضمن سير عمل أكثر تخصصاً.",
+  "Position stacking": "تكديس المراكز",
+  "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
+    "يمكن تجميع قدرة الاقتراض من عدة مراكز معتمدة داخل نفس Borrow Spoke.",
+  "Can one account use multiple LP positions?": "هل يمكن لحساب واحد استخدام عدة مراكز LP؟",
+  "Multiple positions": "مراكز متعددة",
+  "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
+    "نعم. يمكن لحساب واحد دمج مراكز LP المدعومة طالما اجتاز كل مركز فحوصات البروتوكول.",
+  "Per-position risk": "المخاطر لكل مركز",
+  "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
+    "يُقيَّم كل مركز وفق شروطه الخاصة قبل إدراجه في قدرة الاقتراض النهائية.",
+  "Fees & Interface Policy": "الرسوم وسياسة الواجهة",
+  "Are interface fees fixed across all integrations?": "هل رسوم الواجهة ثابتة عبر كل التكاملات؟",
+  "Operational settings": "إعدادات تشغيلية",
+  "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
+    "المعدلات الدقيقة والإعفاءات وحالة الطرح إعدادات تشغيلية ويجب التحقق منها في الواجهة الحية.",
+  "Integration differences": "اختلافات التكامل",
+  "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
+    "قد تتبع التكاملات المباشرة أو الواجهات الأمامية من طرف ثالث افتراضات مختلفة، لذا تحقق دائماً من الواجهة التي تستخدمها.",
+  "What counts as protocol economics vs interface policy?":
+    "ما الذي يُعد اقتصاد البروتوكول مقابل سياسة الواجهة؟",
+  "Protocol layer": "طبقة البروتوكول",
+  "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
+    "تقييم الضمان الأساسي وضوابط الدين ومسارات التصفية موجودة في طبقة البروتوكول.",
+  "Interface layer": "طبقة الواجهة",
+  "The frontend can present policy, routing, and support flows differently from one integration to another.":
+    "يمكن للواجهة الأمامية عرض السياسة والتوجيه وتدفقات الدعم بشكل مختلف من تكامل لآخر.",
+  "Risk & Security": "المخاطر والأمان",
+  "What are the main risks?": "ما المخاطر الرئيسية؟",
+  "Market and liquidity risk": "مخاطر السوق والسيولة",
+  "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.":
+    "المخاطر الرئيسية هي تحركات السوق في الأصول الأساسية، والخسارة غير الدائمة، وانحراف النطاق للمراكز المركّزة.",
+  "Liquidation risk": "مخاطر التصفية",
+  "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.":
+    "إذا ضعف هامش الصحة مع بقاء دين مستحق، يمكن أن يصبح المركز قابلاً للتصفية.",
+  "How should I think about security?": "كيف أفكر في الأمان؟",
+  "Protocol guidance": "إرشادات البروتوكول",
+  "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.":
+    "استخدم نفس الحذر الذي تستخدمه مع أي مركز LP واتبع إرشادات مخاطر البروتوكول بدقة.",
+  "Support request": "طلب دعم",
+  "If something looks off, send the details and our team can help you triage the issue.":
+    "إذا بدا شيء غير صحيح، أرسل التفاصيل ويمكن لفريقنا مساعدتك في فرز المشكلة.",
 }
 
 export default dict

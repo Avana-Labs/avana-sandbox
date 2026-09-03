@@ -1559,6 +1559,98 @@ const dict: TranslationDictionary = {
   "Total AVA you've earned across completed quests and staking rewards.":
     "पूर्ण किए गए क्वेस्ट और स्टेकिंग रिवॉर्ड्स से आपके द्वारा अर्जित कुल AVA।",
   "AVA you can claim to your wallet right now.": "AVA जिसे आप अभी अपने वॉलेट में क्लेम कर सकते हैं।",
+  "Core Concepts": "मुख्य अवधारणाएँ",
+  "What is Avana?": "Avana क्या है?",
+  "Protocol overview": "प्रोटोकॉल अवलोकन",
+  "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.":
+    "Avana एक LP-कोलैटरल लेंडिंग प्रोटोकॉल है, जो Aave v4 की Hub-and-Spoke आर्किटेक्चर पर बना है।",
+  "Why it exists": "यह क्यों मौजूद है",
+  "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.":
+    "लक्ष्य यह है कि लिक्विडिटी प्रोवाइडर्स पहले पूल पोजीशन को बंद किए बिना सक्रिय पोजीशन के विरुद्ध उधार ले सकें।",
+  "What does the Borrow Spoke do?": "Borrow Spoke क्या करता है?",
+  "LP-specific underwriting": "LP-विशिष्ट अंडरराइटिंग",
+  "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.":
+    "Borrow Spokes समर्थित पोजीशन का मूल्यांकन करते हैं, स्वास्थ्य की निगरानी करते हैं, और LP कोलैटरल के लिए लिक्विडेशन व्यवहार को रूट करते हैं।",
+  "Shared coordination": "साझा समन्वय",
+  "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.":
+    "Hub साझा लिक्विडिटी और ऋण लेखांकन का समन्वय करता है, जबकि spoke LP-विशिष्ट लॉजिक संभालता है।",
+  "Borrowing Capacity & Valuation": "उधार क्षमता और मूल्यांकन",
+  "How is borrowing capacity calculated?": "उधार क्षमता की गणना कैसे होती है?",
+  "Adjusted collateral value": "समायोजित कोलैटरल मूल्य",
+  "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.":
+    "प्रत्येक स्वीकृत LP पोजीशन का स्वतंत्र रूप से मूल्यांकन होता है, फिर कोलैटरल फैक्टर और पूल-विशिष्ट जोखिम नियंत्रण लागू होते हैं।",
+  "Aggregated in the spoke": "spoke में एकत्रित",
+  "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.":
+    "spoke स्वीकृत पोजीशन को उधार क्षमता में एकत्रित करता है और Hub परिणाम लागू करता है।",
+  "Why did my capacity change?": "मेरी क्षमता क्यों बदल गई?",
+  "Market movement": "बाजार आंदोलन",
+  "Capacity can change when the underlying assets move or when recoverable value shifts.":
+    "जब अंतर्निहित परिसंपत्तियाँ चलती हैं या वसूली योग्य मूल्य बदलता है, तो क्षमता बदल सकती है।",
+  "Risk settings": "जोखिम सेटिंग्स",
+  "Collateral factors and market-specific risk settings can also change the amount shown in the interface.":
+    "कोलैटरल फैक्टर और बाजार-विशिष्ट जोखिम सेटिंग्स भी इंटरफ़ेस में दिखाए गए राशि को बदल सकती हैं।",
+  "Health & Liquidation": "स्वास्थ्य और लिक्विडेशन",
+  "What is the health factor?": "हेल्थ फैक्टर क्या है?",
+  "How to read health": "स्वास्थ्य कैसे पढ़ें",
+  "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.":
+    "हेल्थ फैक्टर एक Borrow Spoke के अंदर समायोजित कोलैटरल मूल्य और बकाया ऋण के संबंध को दर्शाता है।",
+  "What it means for users": "उपयोगकर्ताओं के लिए इसका अर्थ",
+  "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
+    "जैसे-जैसे बफ़र सिकुड़ता है, बाज़ार की स्थितियाँ प्रतिकूल होने पर पोजीशन लिक्विडेशन के प्रति अधिक उजागर हो जाती है।",
+  "When can liquidation happen?": "लिक्विडेशन कब हो सकता है?",
+  "Triggers": "ट्रिगर",
+  "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
+    "यदि बाज़ार की चालें स्वास्थ्य को पर्याप्त रूप से कमज़ोर कर दें, तो spoke के नियमों के तहत पोजीशन लिक्विडेटेबल हो सकती है।",
+  "What happens next": "इसके बाद क्या होता है",
+  "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.":
+    "spoke लगातार जोखिम की निगरानी करता है और लिक्विडेशन व्यवहार को रूट करता है, जबकि Hub रिज़र्व को समन्वित रखता है।",
+  "Leverage Markets": "लेवरेज मार्केट",
+  "How do leverage markets work?": "लेवरेज मार्केट कैसे काम करते हैं?",
+  "LP-backed exposure": "LP-समर्थित एक्सपोज़र",
+  "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.":
+    "लेवरेज मार्केट Avana को अधिक विशिष्ट वर्कफ़्लो में LP-समर्थित उधार और दिशात्मक एक्सपोज़र का समर्थन करने देते हैं।",
+  "Position stacking": "पोजीशन स्टैकिंग",
+  "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
+    "उधार क्षमता को उसी Borrow Spoke के अंदर कई स्वीकृत पोजीशन से एकत्रित किया जा सकता है।",
+  "Can one account use multiple LP positions?": "क्या एक खाता कई LP पोजीशन उपयोग कर सकता है?",
+  "Multiple positions": "कई पोजीशन",
+  "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
+    "हाँ। एक ही खाता समर्थित LP पोजीशन को जोड़ सकता है, जब तक प्रत्येक पोजीशन प्रोटोकॉल की जाँच पास करे।",
+  "Per-position risk": "प्रति-पोजीशन जोखिम",
+  "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
+    "अंतिम उधार क्षमता में शामिल होने से पहले प्रत्येक पोजीशन का अपने मानदंडों पर मूल्यांकन होता है।",
+  "Fees & Interface Policy": "शुल्क और इंटरफ़ेस नीति",
+  "Are interface fees fixed across all integrations?":
+    "क्या सभी इंटीग्रेशन में इंटरफ़ेस शुल्क निश्चित हैं?",
+  "Operational settings": "ऑपरेशनल सेटिंग्स",
+  "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
+    "सटीक शुल्क दरें, छूट और रोलआउट स्थिति ऑपरेशनल सेटिंग्स हैं और लाइव इंटरफ़ेस में सत्यापित की जानी चाहिए।",
+  "Integration differences": "इंटीग्रेशन अंतर",
+  "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
+    "प्रत्यक्ष इंटीग्रेशन या थर्ड-पार्टी फ्रंटएंड अलग धारणाएँ अपना सकते हैं, इसलिए आप जिस इंटरफ़ेस का उपयोग कर रहे हैं उसे हमेशा सत्यापित करें।",
+  "What counts as protocol economics vs interface policy?":
+    "प्रोटोकॉल इकोनॉमिक्स बनाम इंटरफ़ेस नीति क्या गिना जाता है?",
+  "Protocol layer": "प्रोटोकॉल परत",
+  "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
+    "मुख्य कोलैटरल मूल्यांकन, ऋण नियंत्रण और लिक्विडेशन मार्ग प्रोटोकॉल परत पर रहते हैं।",
+  "Interface layer": "इंटरफ़ेस परत",
+  "The frontend can present policy, routing, and support flows differently from one integration to another.":
+    "फ्रंटएंड एक इंटीग्रेशन से दूसरे में नीति, रूटिंग और सपोर्ट फ्लो अलग तरीके से दिखा सकता है।",
+  "Risk & Security": "जोखिम और सुरक्षा",
+  "What are the main risks?": "मुख्य जोखिम क्या हैं?",
+  "Market and liquidity risk": "बाजार और लिक्विडिटी जोखिम",
+  "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.":
+    "मुख्य जोखिम अंतर्निहित परिसंपत्तियों में बाज़ार चालें, अस्थायी हानि (impermanent loss), और केंद्रित पोजीशन के लिए रेंज ड्रिफ्ट हैं।",
+  "Liquidation risk": "लिक्विडेशन जोखिम",
+  "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.":
+    "यदि ऋण बकाया रहने के दौरान स्वास्थ्य बफ़र कमज़ोर हो जाए, तो पोजीशन लिक्विडेटेबल हो सकती है।",
+  "How should I think about security?": "सुरक्षा के बारे में कैसे सोचें?",
+  "Protocol guidance": "प्रोटोकॉल मार्गदर्शन",
+  "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.":
+    "किसी भी LP पोजीशन जितनी सावधानी बरतें और प्रोटोकॉल के जोखिम मार्गदर्शन का ध्यानपूर्वक पालन करें।",
+  "Support request": "सहायता अनुरोध",
+  "If something looks off, send the details and our team can help you triage the issue.":
+    "यदि कुछ गलत लगे, तो विवरण भेजें और हमारी टीम समस्या को वर्गीकृत करने में मदद कर सकती है।",
 }
 
 export default dict

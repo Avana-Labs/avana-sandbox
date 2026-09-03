@@ -1527,6 +1527,96 @@ const dict: TranslationDictionary = {
   "Total AVA you've earned across completed quests and staking rewards.":
     "완료한 퀘스트와 스테이킹 리워드를 통해 획득한 총 AVA입니다.",
   "AVA you can claim to your wallet right now.": "지금 바로 지갑으로 청구할 수 있는 AVA입니다.",
+  "Core Concepts": "핵심 개념",
+  "What is Avana?": "Avana란?",
+  "Protocol overview": "프로토콜 개요",
+  "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.":
+    "Avana는 Aave v4의 Hub-and-Spoke 아키텍처를 기반으로 한 LP 담보 대출 프로토콜입니다.",
+  "Why it exists": "존재하는 이유",
+  "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.":
+    "목표는 유동성 공급자가 풀 포지션을 먼저 해지하지 않고도 활성 포지션을 담보로 대출받을 수 있게 하는 것입니다.",
+  "What does the Borrow Spoke do?": "Borrow Spoke는 무엇을 하나요?",
+  "LP-specific underwriting": "LP 전용 심사",
+  "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.":
+    "Borrow Spoke는 지원되는 포지션을 평가하고, health를 모니터링하며, LP 담보의 청산 동작을 라우팅합니다.",
+  "Shared coordination": "공유 조정",
+  "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.":
+    "Hub는 공유 유동성과 부채 회계를 조율하고, spoke는 LP 전용 로직을 처리합니다.",
+  "Borrowing Capacity & Valuation": "대출 한도 및 평가",
+  "How is borrowing capacity calculated?": "대출 한도는 어떻게 계산되나요?",
+  "Adjusted collateral value": "조정된 담보 가치",
+  "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.":
+    "승인된 각 LP 포지션은 독립적으로 평가된 뒤, 담보 계수와 풀별 위험 통제가 적용됩니다.",
+  "Aggregated in the spoke": "spoke에서 집계",
+  "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.":
+    "spoke는 승인된 포지션을 대출 한도로 집계하고 Hub가 그 결과를 적용합니다.",
+  "Why did my capacity change?": "한도가 왜 바뀌었나요?",
+  "Market movement": "시장 움직임",
+  "Capacity can change when the underlying assets move or when recoverable value shifts.":
+    "기초 자산이 움직이거나 회수 가능 가치가 변하면 한도가 바뀔 수 있습니다.",
+  "Risk settings": "위험 설정",
+  "Collateral factors and market-specific risk settings can also change the amount shown in the interface.":
+    "담보 계수와 시장별 위험 설정도 인터페이스에 표시되는 금액을 바꿀 수 있습니다.",
+  "Health & Liquidation": "Health 및 청산",
+  "What is the health factor?": "헬스 팩터란?",
+  "How to read health": "health 읽는 법",
+  "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.":
+    "헬스 팩터는 하나의 Borrow Spoke 안에서 조정된 담보 가치와 미상환 부채의 관계를 나타냅니다.",
+  "What it means for users": "사용자에게 의미하는 바",
+  "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
+    "버퍼가 줄어들면 시장 상황이 불리해질 때 포지션이 청산에 더 노출됩니다.",
+  "When can liquidation happen?": "청산은 언제 발생할 수 있나요?",
+  "Triggers": "트리거",
+  "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
+    "시장 움직임이 health를 충분히 약화시키면 spoke 규칙에 따라 포지션이 청산 가능해질 수 있습니다.",
+  "What happens next": "이후 과정",
+  "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.":
+    "spoke는 위험을 지속적으로 모니터링하고 청산 동작을 라우팅하며, Hub는 준비금을 조율된 상태로 유지합니다.",
+  "Leverage Markets": "레버리지 마켓",
+  "How do leverage markets work?": "레버리지 마켓은 어떻게 작동하나요?",
+  "LP-backed exposure": "LP 기반 노출",
+  "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.":
+    "레버리지 마켓을 통해 Avana는 LP 기반 대출과 방향성 노출을 더 특화된 워크플로로 지원할 수 있습니다.",
+  "Position stacking": "포지션 스택",
+  "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
+    "대출 한도는 동일한 Borrow Spoke 안의 여러 승인 포지션에서 집계될 수 있습니다.",
+  "Can one account use multiple LP positions?": "한 계정이 여러 LP 포지션을 쓸 수 있나요?",
+  "Multiple positions": "여러 포지션",
+  "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
+    "네. 각 포지션이 프로토콜 검사를 통과하면 한 계정이 지원되는 LP 포지션을 결합할 수 있습니다.",
+  "Per-position risk": "포지션별 위험",
+  "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
+    "각 포지션은 최종 대출 한도에 포함되기 전에 자체 기준으로 평가됩니다.",
+  "Fees & Interface Policy": "수수료 및 인터페이스 정책",
+  "Are interface fees fixed across all integrations?": "인터페이스 수수료가 모든 통합에서 고정인가요?",
+  "Operational settings": "운영 설정",
+  "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
+    "정확한 요율, 면제, 롤아웃 상태는 운영 설정이며 라이브 인터페이스에서 확인해야 합니다.",
+  "Integration differences": "통합 차이",
+  "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
+    "직접 통합이나 서드파티 프론트엔드는 가정이 다를 수 있으므로, 사용 중인 인터페이스를 항상 확인하세요.",
+  "What counts as protocol economics vs interface policy?": "프로토콜 경제와 인터페이스 정책의 구분은?",
+  "Protocol layer": "프로토콜 계층",
+  "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
+    "핵심 담보 평가, 부채 통제, 청산 경로는 프로토콜 계층에 있습니다.",
+  "Interface layer": "인터페이스 계층",
+  "The frontend can present policy, routing, and support flows differently from one integration to another.":
+    "프론트엔드는 정책, 라우팅, 지원 흐름을 통합마다 다르게 표시할 수 있습니다.",
+  "Risk & Security": "위험 및 보안",
+  "What are the main risks?": "주요 위험은 무엇인가요?",
+  "Market and liquidity risk": "시장 및 유동성 위험",
+  "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.":
+    "주요 위험은 기초 자산의 시장 변동, 비영구적 손실, 집중 포지션의 레인지 드리프트입니다.",
+  "Liquidation risk": "청산 위험",
+  "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.":
+    "부채가 남아 있는 상태에서 health 버퍼가 약해지면 포지션이 청산 가능해질 수 있습니다.",
+  "How should I think about security?": "보안은 어떻게 생각해야 하나요?",
+  "Protocol guidance": "프로토콜 가이드",
+  "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.":
+    "일반 LP 포지션과 같은 주의를 기울이고 프로토콜의 위험 가이드를 꼼꼼히 따르세요.",
+  "Support request": "지원 요청",
+  "If something looks off, send the details and our team can help you triage the issue.":
+    "이상해 보이면 세부 정보를 보내 주세요. 팀에서 문제 분류를 도와드릴 수 있습니다.",
 }
 
 export default dict

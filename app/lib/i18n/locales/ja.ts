@@ -1596,6 +1596,96 @@ const dict: TranslationDictionary = {
   "Total AVA you've earned across completed quests and staking rewards.":
     "完了したクエストとステーキング報酬から獲得したAVAの合計。",
   "AVA you can claim to your wallet right now.": "今すぐウォレットに請求できるAVA。",
+  "Core Concepts": "基本概念",
+  "What is Avana?": "Avanaとは？",
+  "Protocol overview": "プロトコル概要",
+  "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.":
+    "Avanaは、Aave v4のHub-and-Spokeアーキテクチャを基盤とするLP担保のレンディングプロトコルです。",
+  "Why it exists": "存在する理由",
+  "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.":
+    "目的は、流動性プロバイダーがプールポジションを先に解消せずに、アクティブなポジションを担保に借り入れできるようにすることです。",
+  "What does the Borrow Spoke do?": "Borrow Spokeは何をするか？",
+  "LP-specific underwriting": "LP特化の引受け",
+  "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.":
+    "Borrow Spokeは対応ポジションを評価し、健全性を監視し、LP担保の清算挙動を振り分けます。",
+  "Shared coordination": "共有の調整",
+  "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.":
+    "Hubは共有流動性と債務会計を調整し、spokeはLP固有のロジックを処理します。",
+  "Borrowing Capacity & Valuation": "借入能力と評価",
+  "How is borrowing capacity calculated?": "借入能力はどう計算されるか？",
+  "Adjusted collateral value": "調整後担保価値",
+  "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.":
+    "承認された各LPポジションは個別に評価され、その後コラテラルファクターとプール固有のリスク制御が適用されます。",
+  "Aggregated in the spoke": "spokeでの集約",
+  "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.":
+    "spokeは承認済みポジションを借入能力に集約し、Hubがその結果を適用します。",
+  "Why did my capacity change?": "なぜ能力が変わったか？",
+  "Market movement": "市場の動き",
+  "Capacity can change when the underlying assets move or when recoverable value shifts.":
+    "原資産が動いたときや回収可能価値が変化したときに、能力は変わり得ます。",
+  "Risk settings": "リスク設定",
+  "Collateral factors and market-specific risk settings can also change the amount shown in the interface.":
+    "コラテラルファクターや市場固有のリスク設定も、画面に表示される金額を変えることがあります。",
+  "Health & Liquidation": "健全性と清算",
+  "What is the health factor?": "ヘルスファクターとは？",
+  "How to read health": "健全性の読み方",
+  "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.":
+    "ヘルスファクターは、1つのBorrow Spoke内における調整後担保価値と未返済債務の関係を表します。",
+  "What it means for users": "ユーザーにとっての意味",
+  "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
+    "バッファが縮むと、市況が不利に動いた場合にポジションは清算リスクにさらされやすくなります。",
+  "When can liquidation happen?": "いつ清算が起きるか？",
+  "Triggers": "トリガー",
+  "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
+    "市場の動きが健全性を十分に弱めると、spokeのルールに基づきポジションは清算可能になります。",
+  "What happens next": "その後の流れ",
+  "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.":
+    "spokeはリスクを継続的に監視して清算挙動を振り分け、Hubは準備金の調整を維持します。",
+  "Leverage Markets": "レバレッジ市場",
+  "How do leverage markets work?": "レバレッジ市場はどう動くか？",
+  "LP-backed exposure": "LP裏付けのエクスポージャー",
+  "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.":
+    "レバレッジ市場により、AvanaはLP裏付けの借入と方向性のあるエクスポージャーをより専門的なフローで支援できます。",
+  "Position stacking": "ポジションの積み上げ",
+  "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
+    "借入能力は、同じBorrow Spoke内の複数の承認済みポジションから集約できます。",
+  "Can one account use multiple LP positions?": "1つのアカウントで複数のLPポジションを使えるか？",
+  "Multiple positions": "複数ポジション",
+  "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
+    "はい。各ポジションがプロトコルのチェックを通過すれば、1つのアカウントで対応LPポジションを組み合わせられます。",
+  "Per-position risk": "ポジションごとのリスク",
+  "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
+    "各ポジションは最終的な借入能力に含まれる前に、個別の条件で評価されます。",
+  "Fees & Interface Policy": "手数料とインターフェース方針",
+  "Are interface fees fixed across all integrations?": "インターフェース手数料はすべての統合で固定か？",
+  "Operational settings": "運用設定",
+  "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
+    "正確な料率、免除、ロールアウト状況は運用設定であり、ライブのインターフェースで確認してください。",
+  "Integration differences": "統合ごとの違い",
+  "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
+    "直接統合や第三者フロントエンドは前提が異なる場合があるため、利用中のインターフェースを必ず確認してください。",
+  "What counts as protocol economics vs interface policy?": "プロトコル経済とインターフェース方針の違いは？",
+  "Protocol layer": "プロトコル層",
+  "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
+    "中核の担保評価、債務制御、清算経路はプロトコル層にあります。",
+  "Interface layer": "インターフェース層",
+  "The frontend can present policy, routing, and support flows differently from one integration to another.":
+    "フロントエンドは、方針・ルーティング・サポートフローを統合ごとに異なる形で提示できます。",
+  "Risk & Security": "リスクとセキュリティ",
+  "What are the main risks?": "主なリスクは何か？",
+  "Market and liquidity risk": "市場と流動性リスク",
+  "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.":
+    "主なリスクは原資産の市場変動、インパーマネントロス、集中ポジションのレンジドリフトです。",
+  "Liquidation risk": "清算リスク",
+  "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.":
+    "債務が残る中で健全性バッファが弱まると、ポジションは清算可能になることがあります。",
+  "How should I think about security?": "セキュリティをどう考えるべきか？",
+  "Protocol guidance": "プロトコルの指針",
+  "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.":
+    "他のLPポジションと同様の注意を払い、プロトコルのリスク指針にしっかり従ってください。",
+  "Support request": "サポート依頼",
+  "If something looks off, send the details and our team can help you triage the issue.":
+    "おかしなものがあれば詳細を送ってください。チームが問題の切り分けをお手伝いします。",
 }
 
 export default dict

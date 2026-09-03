@@ -1565,6 +1565,98 @@ const dict: TranslationDictionary = {
   "Total AVA you've earned across completed quests and staking rewards.":
     "Totale AVA die je hebt verdiend uit voltooide quests en staking-beloningen.",
   "AVA you can claim to your wallet right now.": "AVA die je op dit moment naar je wallet kunt claimen.",
+  "Core Concepts": "Kernconcepten",
+  "What is Avana?": "Wat is Avana?",
+  "Protocol overview": "Protocoloverzicht",
+  "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.":
+    "Avana is een leenprotocol met LP-onderpand, gebouwd rond de Hub-and-Spoke-architectuur van Aave v4.",
+  "Why it exists": "Waarom het bestaat",
+  "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.":
+    "Het doel is liquiditeitsverschaffers te laten lenen tegen actieve posities zonder eerst de poolpositie af te wikkelen.",
+  "What does the Borrow Spoke do?": "Wat doet de Borrow Spoke?",
+  "LP-specific underwriting": "LP-specifieke underwriting",
+  "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.":
+    "Borrow Spokes waarderen ondersteunde posities, bewaken de health en sturen het liquidatiegedrag voor LP-onderpand.",
+  "Shared coordination": "Gedeelde coördinatie",
+  "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.":
+    "De Hub coördineert gedeelde liquiditeit en schuldadministratie, terwijl de spoke de LP-specifieke logica afhandelt.",
+  "Borrowing Capacity & Valuation": "Leencapaciteit & waardering",
+  "How is borrowing capacity calculated?": "Hoe wordt leencapaciteit berekend?",
+  "Adjusted collateral value": "Aangepaste onderpandwaarde",
+  "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.":
+    "Elke goedgekeurde LP-positie wordt onafhankelijk gewaardeerd; daarna worden collateral factors en poolspecifieke risicocontroles toegepast.",
+  "Aggregated in the spoke": "Geaggregeerd in de spoke",
+  "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.":
+    "De spoke aggregeert goedgekeurde posities tot leencapaciteit en de Hub handhaaft het resultaat.",
+  "Why did my capacity change?": "Waarom is mijn capaciteit veranderd?",
+  "Market movement": "Marktbeweging",
+  "Capacity can change when the underlying assets move or when recoverable value shifts.":
+    "Capaciteit kan veranderen wanneer de onderliggende assets bewegen of wanneer de terugvorderbare waarde verschuift.",
+  "Risk settings": "Risico-instellingen",
+  "Collateral factors and market-specific risk settings can also change the amount shown in the interface.":
+    "Collateral factors en marktspecifieke risico-instellingen kunnen ook het bedrag in de interface wijzigen.",
+  "Health & Liquidation": "Health & liquidatie",
+  "What is the health factor?": "Wat is de health factor?",
+  "How to read health": "Health aflezen",
+  "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.":
+    "De health factor drukt de relatie uit tussen aangepaste onderpandwaarde en uitstaande schuld binnen één Borrow Spoke.",
+  "What it means for users": "Wat het betekent voor gebruikers",
+  "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
+    "Naarmate de buffer krimpt, wordt de positie meer blootgesteld aan liquidatie als marktomstandigheden tegenwerken.",
+  "When can liquidation happen?": "Wanneer kan liquidatie plaatsvinden?",
+  "Triggers": "Uitlokkers",
+  "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
+    "Als marktbewegingen de health genoeg verzwakken, kan de positie liquideerbaar worden volgens de regels van de spoke.",
+  "What happens next": "Wat er daarna gebeurt",
+  "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.":
+    "De spoke bewaakt risico continu en stuurt liquidatiegedrag, terwijl de Hub de reserves gecoördineerd houdt.",
+  "Leverage Markets": "Hefboommarkten",
+  "How do leverage markets work?": "Hoe werken hefboommarkten?",
+  "LP-backed exposure": "LP-gedekte exposure",
+  "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.":
+    "Hefboommarkten laten Avana LP-gedekt lenen en directionele exposure ondersteunen in een meer gespecialiseerde workflow.",
+  "Position stacking": "Positiestapeling",
+  "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
+    "Leencapaciteit kan worden geaggregeerd uit meerdere goedgekeurde posities binnen dezelfde Borrow Spoke.",
+  "Can one account use multiple LP positions?": "Kan één account meerdere LP-posities gebruiken?",
+  "Multiple positions": "Meerdere posities",
+  "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
+    "Ja. Eén account kan ondersteunde LP-posities combineren zolang elke positie de controles van het protocol doorstaat.",
+  "Per-position risk": "Risico per positie",
+  "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
+    "Elke positie wordt op eigen voorwaarden beoordeeld voordat deze in de uiteindelijke leencapaciteit wordt opgenomen.",
+  "Fees & Interface Policy": "Kosten & interfacebeleid",
+  "Are interface fees fixed across all integrations?":
+    "Zijn interfacekosten vast voor alle integraties?",
+  "Operational settings": "Operationele instellingen",
+  "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
+    "Exacte tarieven, vrijstellingen en rollout-status zijn operationele instellingen en moeten in de live interface worden gecontroleerd.",
+  "Integration differences": "Integratieverschillen",
+  "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
+    "Directe integraties of third-party frontends kunnen andere aannames volgen, dus controleer altijd de interface die je gebruikt.",
+  "What counts as protocol economics vs interface policy?":
+    "Wat telt als protocoleconomie vs. interfacebeleid?",
+  "Protocol layer": "Protocollaag",
+  "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
+    "Kernwaardering van onderpand, schuldcontroles en liquidatiepaden zitten op de protocollaag.",
+  "Interface layer": "Interfacelaag",
+  "The frontend can present policy, routing, and support flows differently from one integration to another.":
+    "De frontend kan beleid, routing en supportflows per integratie anders presenteren.",
+  "Risk & Security": "Risico & beveiliging",
+  "What are the main risks?": "Wat zijn de belangrijkste risico's?",
+  "Market and liquidity risk": "Markt- en liquiditeitsrisico",
+  "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.":
+    "De belangrijkste risico's zijn marktbewegingen in onderliggende assets, impermanent loss en range-drift bij geconcentreerde posities.",
+  "Liquidation risk": "Liquidatierisico",
+  "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.":
+    "Als de health-buffer verzwakt terwijl er nog schuld openstaat, kan de positie liquideerbaar worden.",
+  "How should I think about security?": "Hoe moet ik over beveiliging denken?",
+  "Protocol guidance": "Protocolrichtlijnen",
+  "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.":
+    "Wees even voorzichtig als bij elke LP-positie en volg de risicorichtlijnen van het protocol nauwgezet.",
+  "Support request": "Supportverzoek",
+  "If something looks off, send the details and our team can help you triage the issue.":
+    "Als iets er niet klopt, stuur de details — ons team helpt je het probleem te beoordelen.",
 }
 
 export default dict

@@ -1677,6 +1677,98 @@ const dict: TranslationDictionary = {
   "Total AVA you've earned across completed quests and staking rewards.":
     "Total de AVA que has ganado en misiones completadas y recompensas de staking.",
   "AVA you can claim to your wallet right now.": "AVA que puedes reclamar a tu billetera ahora mismo.",
+  "Core Concepts": "Conceptos básicos",
+  "What is Avana?": "¿Qué es Avana?",
+  "Protocol overview": "Resumen del protocolo",
+  "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.":
+    "Avana es un protocolo de préstamos con colateral LP construido sobre la arquitectura Hub-and-Spoke de Aave v4.",
+  "Why it exists": "Por qué existe",
+  "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.":
+    "El objetivo es permitir que los proveedores de liquidez pidan prestado contra posiciones activas sin deshacer primero la posición del pool.",
+  "What does the Borrow Spoke do?": "¿Qué hace el Borrow Spoke?",
+  "LP-specific underwriting": "Suscripción específica para LP",
+  "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.":
+    "Los Borrow Spokes valoran las posiciones admitidas, monitorean la salud y gestionan el comportamiento de liquidación del colateral LP.",
+  "Shared coordination": "Coordinación compartida",
+  "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.":
+    "El Hub coordina la liquidez compartida y la contabilidad de deuda, mientras que el spoke gestiona la lógica específica de LP.",
+  "Borrowing Capacity & Valuation": "Capacidad de préstamo y valoración",
+  "How is borrowing capacity calculated?": "¿Cómo se calcula la capacidad de préstamo?",
+  "Adjusted collateral value": "Valor de colateral ajustado",
+  "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.":
+    "Cada posición LP aprobada se valora de forma independiente; luego se aplican factores de colateral y controles de riesgo específicos del pool.",
+  "Aggregated in the spoke": "Agregado en el spoke",
+  "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.":
+    "El spoke agrega las posiciones aprobadas en capacidad de préstamo y el Hub aplica el resultado.",
+  "Why did my capacity change?": "¿Por qué cambió mi capacidad?",
+  "Market movement": "Movimiento del mercado",
+  "Capacity can change when the underlying assets move or when recoverable value shifts.":
+    "La capacidad puede cambiar cuando se mueven los activos subyacentes o cuando cambia el valor recuperable.",
+  "Risk settings": "Ajustes de riesgo",
+  "Collateral factors and market-specific risk settings can also change the amount shown in the interface.":
+    "Los factores de colateral y los ajustes de riesgo específicos del mercado también pueden cambiar el monto mostrado en la interfaz.",
+  "Health & Liquidation": "Salud y liquidación",
+  "What is the health factor?": "¿Qué es el factor de salud?",
+  "How to read health": "Cómo leer la salud",
+  "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.":
+    "El factor de salud expresa la relación entre el valor de colateral ajustado y la deuda pendiente dentro de un Borrow Spoke.",
+  "What it means for users": "Qué significa para los usuarios",
+  "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
+    "A medida que se reduce el margen, la posición queda más expuesta a la liquidación si las condiciones del mercado se vuelven en su contra.",
+  "When can liquidation happen?": "¿Cuándo puede ocurrir la liquidación?",
+  "Triggers": "Disparadores",
+  "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
+    "Si los movimientos del mercado debilitan lo suficiente la salud, la posición puede volverse liquidable según las reglas del spoke.",
+  "What happens next": "Qué ocurre después",
+  "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.":
+    "El spoke monitorea el riesgo de forma continua y gestiona el comportamiento de liquidación, mientras el Hub mantiene las reservas coordinadas.",
+  "Leverage Markets": "Mercados de apalancamiento",
+  "How do leverage markets work?": "¿Cómo funcionan los mercados de apalancamiento?",
+  "LP-backed exposure": "Exposición respaldada por LP",
+  "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.":
+    "Los mercados de apalancamiento permiten a Avana respaldar préstamos con colateral LP y exposición direccional en un flujo más especializado.",
+  "Position stacking": "Apilamiento de posiciones",
+  "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
+    "La capacidad de préstamo puede agregarse a partir de varias posiciones aprobadas dentro del mismo Borrow Spoke.",
+  "Can one account use multiple LP positions?": "¿Puede una cuenta usar varias posiciones LP?",
+  "Multiple positions": "Varias posiciones",
+  "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
+    "Sí. Una sola cuenta puede combinar posiciones LP admitidas siempre que cada posición pase las comprobaciones del protocolo.",
+  "Per-position risk": "Riesgo por posición",
+  "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
+    "Cada posición se evalúa por separado antes de incluirse en la capacidad de préstamo final.",
+  "Fees & Interface Policy": "Comisiones y política de interfaz",
+  "Are interface fees fixed across all integrations?":
+    "¿Las comisiones de interfaz son fijas en todas las integraciones?",
+  "Operational settings": "Ajustes operativos",
+  "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
+    "Las tasas exactas, las exenciones y el estado de despliegue son ajustes operativos y deben verificarse en la interfaz en vivo.",
+  "Integration differences": "Diferencias entre integraciones",
+  "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
+    "Las integraciones directas o los frontends de terceros pueden seguir supuestos distintos, así que verifica siempre la interfaz que estés usando.",
+  "What counts as protocol economics vs interface policy?":
+    "¿Qué cuenta como economía del protocolo frente a política de interfaz?",
+  "Protocol layer": "Capa del protocolo",
+  "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
+    "La valoración central del colateral, los controles de deuda y las vías de liquidación viven en la capa del protocolo.",
+  "Interface layer": "Capa de interfaz",
+  "The frontend can present policy, routing, and support flows differently from one integration to another.":
+    "El frontend puede presentar políticas, enrutamiento y flujos de soporte de forma distinta según la integración.",
+  "Risk & Security": "Riesgo y seguridad",
+  "What are the main risks?": "¿Cuáles son los principales riesgos?",
+  "Market and liquidity risk": "Riesgo de mercado y liquidez",
+  "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.":
+    "Los principales riesgos son los movimientos de mercado en los activos subyacentes, la pérdida impermanente y el desvío de rango en posiciones concentradas.",
+  "Liquidation risk": "Riesgo de liquidación",
+  "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.":
+    "Si el margen de salud se debilita mientras hay deuda pendiente, la posición puede volverse liquidable.",
+  "How should I think about security?": "¿Cómo debo pensar en la seguridad?",
+  "Protocol guidance": "Orientación del protocolo",
+  "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.":
+    "Usa la misma precaución que con cualquier posición LP y sigue de cerca la orientación de riesgo del protocolo.",
+  "Support request": "Solicitud de soporte",
+  "If something looks off, send the details and our team can help you triage the issue.":
+    "Si algo parece incorrecto, envía los detalles y nuestro equipo puede ayudarte a clasificar el problema.",
 }
 
 export default dict

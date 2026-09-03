@@ -1586,6 +1586,96 @@ const dict: TranslationDictionary = {
   "Total AVA you've earned across completed quests and staking rewards.":
     "您通过已完成的任务和质押奖励累计赚取的 AVA 总量。",
   "AVA you can claim to your wallet right now.": "您现在可领取到钱包的 AVA。",
+  "Core Concepts": "核心概念",
+  "What is Avana?": "什么是 Avana？",
+  "Protocol overview": "协议概览",
+  "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.":
+    "Avana 是基于 Aave v4 Hub-and-Spoke 架构构建的 LP 抵押借贷协议。",
+  "Why it exists": "存在的原因",
+  "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.":
+    "目标是让流动性提供者在无需先解除池仓位的情况下，以活跃仓位作为抵押进行借贷。",
+  "What does the Borrow Spoke do?": "Borrow Spoke 做什么？",
+  "LP-specific underwriting": "LP 专项承保",
+  "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.":
+    "Borrow Spoke 对支持的仓位进行估值、监控健康度，并为 LP 抵押品路由清算行为。",
+  "Shared coordination": "共享协调",
+  "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.":
+    "Hub 协调共享流动性与债务记账，而 spoke 处理 LP 专属逻辑。",
+  "Borrowing Capacity & Valuation": "借款能力与估值",
+  "How is borrowing capacity calculated?": "借款能力如何计算？",
+  "Adjusted collateral value": "调整后抵押价值",
+  "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.":
+    "每个获批的 LP 仓位会独立估值，随后应用抵押因子和池级风险控制。",
+  "Aggregated in the spoke": "在 spoke 中汇总",
+  "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.":
+    "spoke 将获批仓位汇总为借款能力，并由 Hub 执行结果。",
+  "Why did my capacity change?": "为什么我的能力变了？",
+  "Market movement": "市场波动",
+  "Capacity can change when the underlying assets move or when recoverable value shifts.":
+    "当标的资产价格变动或可回收价值变化时，借款能力可能随之改变。",
+  "Risk settings": "风险设置",
+  "Collateral factors and market-specific risk settings can also change the amount shown in the interface.":
+    "抵押因子和特定市场的风险设置也可能改变界面显示的金额。",
+  "Health & Liquidation": "健康度与清算",
+  "What is the health factor?": "什么是健康因子？",
+  "How to read health": "如何解读健康度",
+  "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.":
+    "健康因子表示单个 Borrow Spoke 内调整后抵押价值与未偿债务之间的关系。",
+  "What it means for users": "对用户意味着什么",
+  "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
+    "缓冲收窄时，若市场走势不利，仓位更容易面临清算。",
+  "When can liquidation happen?": "何时可能发生清算？",
+  "Triggers": "触发条件",
+  "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
+    "若市场波动足以削弱健康度，仓位可按 spoke 规则变为可清算。",
+  "What happens next": "接下来会发生什么",
+  "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.":
+    "spoke 持续监控风险并路由清算行为，同时 Hub 保持准备金协调。",
+  "Leverage Markets": "杠杆市场",
+  "How do leverage markets work?": "杠杆市场如何运作？",
+  "LP-backed exposure": "LP 支持的敞口",
+  "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.":
+    "杠杆市场让 Avana 能以更专门的流程支持 LP 抵押借贷与方向性敞口。",
+  "Position stacking": "仓位叠加",
+  "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
+    "借款能力可从来自同一 Borrow Spoke 的多个获批仓位汇总。",
+  "Can one account use multiple LP positions?": "一个账户能否使用多个 LP 仓位？",
+  "Multiple positions": "多个仓位",
+  "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
+    "可以。只要每个仓位通过协议检查，单个账户即可合并支持的 LP 仓位。",
+  "Per-position risk": "按仓位风险",
+  "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
+    "每个仓位在纳入最终借款能力前都会按各自条件单独评估。",
+  "Fees & Interface Policy": "费用与界面政策",
+  "Are interface fees fixed across all integrations?": "所有集成的界面费用是否固定？",
+  "Operational settings": "运营设置",
+  "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
+    "确切费率、豁免与上线状态属于运营设置，应在实际界面中核实。",
+  "Integration differences": "集成差异",
+  "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
+    "直接集成或第三方前端可能遵循不同假设，请始终核实您正在使用的界面。",
+  "What counts as protocol economics vs interface policy?": "协议经济与界面政策如何区分？",
+  "Protocol layer": "协议层",
+  "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
+    "核心抵押估值、债务控制与清算路径属于协议层。",
+  "Interface layer": "界面层",
+  "The frontend can present policy, routing, and support flows differently from one integration to another.":
+    "前端可以在不同集成中以不同方式呈现政策、路由与支持流程。",
+  "Risk & Security": "风险与安全",
+  "What are the main risks?": "主要风险有哪些？",
+  "Market and liquidity risk": "市场与流动性风险",
+  "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.":
+    "主要风险包括标的资产的市场波动、无常损失，以及集中仓位的区间漂移。",
+  "Liquidation risk": "清算风险",
+  "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.":
+    "若债务仍在且健康缓冲减弱，仓位可能变为可清算。",
+  "How should I think about security?": "应如何看待安全？",
+  "Protocol guidance": "协议指引",
+  "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.":
+    "请像对待任何 LP 仓位一样谨慎，并严格遵循协议的风险指引。",
+  "Support request": "支持请求",
+  "If something looks off, send the details and our team can help you triage the issue.":
+    "若发现异常，请发送详情，我们的团队可协助排查问题。",
 }
 
 export default dict

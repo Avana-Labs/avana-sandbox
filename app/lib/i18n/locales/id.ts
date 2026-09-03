@@ -1561,6 +1561,98 @@ const dict: TranslationDictionary = {
   "Total AVA you've earned across completed quests and staking rewards.":
     "Total AVA yang telah Anda peroleh dari misi yang telah diselesaikan dan hadiah staking.",
   "AVA you can claim to your wallet right now.": "AVA yang dapat Anda klaim ke dompet Anda sekarang juga.",
+  "Core Concepts": "Konsep inti",
+  "What is Avana?": "Apa itu Avana?",
+  "Protocol overview": "Ikhtisar protokol",
+  "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.":
+    "Avana adalah protokol pinjaman dengan agunan LP yang dibangun di atas arsitektur Hub-and-Spoke Aave v4.",
+  "Why it exists": "Mengapa ada",
+  "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.":
+    "Tujuannya agar penyedia likuiditas dapat meminjam terhadap posisi aktif tanpa terlebih dahulu menutup posisi pool.",
+  "What does the Borrow Spoke do?": "Apa yang dilakukan Borrow Spoke?",
+  "LP-specific underwriting": "Underwriting khusus LP",
+  "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.":
+    "Borrow Spoke menilai posisi yang didukung, memantau health, dan mengarahkan perilaku likuidasi untuk agunan LP.",
+  "Shared coordination": "Koordinasi bersama",
+  "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.":
+    "Hub mengoordinasikan likuiditas bersama dan akuntansi utang, sementara spoke menangani logika khusus LP.",
+  "Borrowing Capacity & Valuation": "Kapasitas pinjaman & valuasi",
+  "How is borrowing capacity calculated?": "Bagaimana kapasitas pinjaman dihitung?",
+  "Adjusted collateral value": "Nilai agunan yang disesuaikan",
+  "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.":
+    "Setiap posisi LP yang disetujui dinilai secara independen, lalu faktor agunan dan kontrol risiko khusus pool diterapkan.",
+  "Aggregated in the spoke": "Digabungkan di spoke",
+  "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.":
+    "Spoke menggabungkan posisi yang disetujui menjadi kapasitas pinjaman dan Hub menerapkan hasilnya.",
+  "Why did my capacity change?": "Mengapa kapasitas saya berubah?",
+  "Market movement": "Pergerakan pasar",
+  "Capacity can change when the underlying assets move or when recoverable value shifts.":
+    "Kapasitas dapat berubah saat aset dasar bergerak atau saat nilai yang dapat dipulihkan bergeser.",
+  "Risk settings": "Pengaturan risiko",
+  "Collateral factors and market-specific risk settings can also change the amount shown in the interface.":
+    "Faktor agunan dan pengaturan risiko khusus pasar juga dapat mengubah jumlah yang ditampilkan di antarmuka.",
+  "Health & Liquidation": "Health & likuidasi",
+  "What is the health factor?": "Apa itu health factor?",
+  "How to read health": "Cara membaca health",
+  "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.":
+    "Health factor menyatakan hubungan antara nilai agunan yang disesuaikan dan utang tertunggak di dalam satu Borrow Spoke.",
+  "What it means for users": "Artinya bagi pengguna",
+  "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
+    "Saat buffer menyusut, posisi semakin terpapar likuidasi jika kondisi pasar bergerak melawannya.",
+  "When can liquidation happen?": "Kapan likuidasi dapat terjadi?",
+  "Triggers": "Pemicu",
+  "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
+    "Jika pergerakan pasar melemahkan health cukup jauh, posisi dapat menjadi dapat dilikuidasi menurut aturan spoke.",
+  "What happens next": "Apa yang terjadi selanjutnya",
+  "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.":
+    "Spoke memantau risiko secara terus-menerus dan mengarahkan perilaku likuidasi, sementara Hub menjaga cadangan tetap terkoordinasi.",
+  "Leverage Markets": "Pasar leverage",
+  "How do leverage markets work?": "Bagaimana pasar leverage bekerja?",
+  "LP-backed exposure": "Eksposur berbasis LP",
+  "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.":
+    "Pasar leverage memungkinkan Avana mendukung pinjaman berbasis LP dan eksposur arah dalam alur yang lebih khusus.",
+  "Position stacking": "Penumpukan posisi",
+  "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
+    "Kapasitas pinjaman dapat digabungkan dari beberapa posisi yang disetujui di dalam Borrow Spoke yang sama.",
+  "Can one account use multiple LP positions?": "Bisakah satu akun memakai beberapa posisi LP?",
+  "Multiple positions": "Beberapa posisi",
+  "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
+    "Ya. Satu akun dapat menggabungkan posisi LP yang didukung selama setiap posisi lolos pemeriksaan protokol.",
+  "Per-position risk": "Risiko per posisi",
+  "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
+    "Setiap posisi dievaluasi secara terpisah sebelum dimasukkan ke kapasitas pinjaman akhir.",
+  "Fees & Interface Policy": "Biaya & kebijakan antarmuka",
+  "Are interface fees fixed across all integrations?":
+    "Apakah biaya antarmuka tetap di semua integrasi?",
+  "Operational settings": "Pengaturan operasional",
+  "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
+    "Tarif tepat, pengecualian, dan status peluncuran adalah pengaturan operasional dan harus diverifikasi di antarmuka live.",
+  "Integration differences": "Perbedaan integrasi",
+  "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
+    "Integrasi langsung atau frontend pihak ketiga dapat mengikuti asumsi berbeda, jadi selalu verifikasi antarmuka yang Anda gunakan.",
+  "What counts as protocol economics vs interface policy?":
+    "Apa yang termasuk ekonomi protokol vs kebijakan antarmuka?",
+  "Protocol layer": "Lapisan protokol",
+  "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
+    "Valuasi agunan inti, kontrol utang, dan jalur likuidasi berada di lapisan protokol.",
+  "Interface layer": "Lapisan antarmuka",
+  "The frontend can present policy, routing, and support flows differently from one integration to another.":
+    "Frontend dapat menyajikan kebijakan, routing, dan alur dukungan secara berbeda antar integrasi.",
+  "Risk & Security": "Risiko & keamanan",
+  "What are the main risks?": "Apa risiko utamanya?",
+  "Market and liquidity risk": "Risiko pasar dan likuiditas",
+  "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.":
+    "Risiko utama adalah pergerakan pasar pada aset dasar, impermanent loss, dan pergeseran range untuk posisi terkonsentrasi.",
+  "Liquidation risk": "Risiko likuidasi",
+  "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.":
+    "Jika buffer health melemah sementara utang masih tertunggak, posisi dapat menjadi dapat dilikuidasi.",
+  "How should I think about security?": "Bagaimana saya harus memikirkan keamanan?",
+  "Protocol guidance": "Panduan protokol",
+  "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.":
+    "Gunakan kehati-hatian yang sama seperti pada posisi LP mana pun dan ikuti panduan risiko protokol dengan cermat.",
+  "Support request": "Permintaan dukungan",
+  "If something looks off, send the details and our team can help you triage the issue.":
+    "Jika sesuatu terlihat tidak beres, kirim detailnya dan tim kami dapat membantu meninjau masalahnya.",
 }
 
 export default dict

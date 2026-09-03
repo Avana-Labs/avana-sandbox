@@ -1568,6 +1568,99 @@ const dict: TranslationDictionary = {
   "Total AVA you've earned across completed quests and staking rewards.":
     "Всего AVA, заработанного за выполненные квесты и награды за стейкинг.",
   "AVA you can claim to your wallet right now.": "AVA, который вы можете получить в свой кошелёк прямо сейчас.",
+  "Core Concepts": "Основные понятия",
+  "What is Avana?": "Что такое Avana?",
+  "Protocol overview": "Обзор протокола",
+  "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.":
+    "Avana — это протокол кредитования под LP-залог, построенный на архитектуре Hub-and-Spoke Aave v4.",
+  "Why it exists": "Зачем он нужен",
+  "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.":
+    "Цель — позволить поставщикам ликвидности брать займы под активные позиции, не закрывая сначала позицию в пуле.",
+  "What does the Borrow Spoke do?": "Что делает Borrow Spoke?",
+  "LP-specific underwriting": "LP-специфичный андеррайтинг",
+  "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.":
+    "Borrow Spokes оценивают поддерживаемые позиции, отслеживают health и управляют ликвидацией LP-залога.",
+  "Shared coordination": "Общая координация",
+  "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.":
+    "Hub координирует общую ликвидность и учёт долга, а spoke обрабатывает LP-специфичную логику.",
+  "Borrowing Capacity & Valuation": "Заёмная ёмкость и оценка",
+  "How is borrowing capacity calculated?": "Как рассчитывается заёмная ёмкость?",
+  "Adjusted collateral value": "Скорректированная стоимость залога",
+  "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.":
+    "Каждая одобренная LP-позиция оценивается отдельно, затем применяются collateral factors и пул-специфичные риск-контроли.",
+  "Aggregated in the spoke": "Агрегация в spoke",
+  "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.":
+    "Spoke агрегирует одобренные позиции в заёмную ёмкость, а Hub применяет результат.",
+  "Why did my capacity change?": "Почему изменилась моя ёмкость?",
+  "Market movement": "Движение рынка",
+  "Capacity can change when the underlying assets move or when recoverable value shifts.":
+    "Ёмкость может меняться при движении базовых активов или изменении возмещаемой стоимости.",
+  "Risk settings": "Настройки риска",
+  "Collateral factors and market-specific risk settings can also change the amount shown in the interface.":
+    "Collateral factors и рыночные настройки риска также могут изменить сумму, показанную в интерфейсе.",
+  "Health & Liquidation": "Health и ликвидация",
+  "What is the health factor?": "Что такое health factor?",
+  "How to read health": "Как читать health",
+  "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.":
+    "Health factor отражает соотношение скорректированной стоимости залога и непогашенного долга внутри одного Borrow Spoke.",
+  "What it means for users": "Что это значит для пользователей",
+  "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
+    "По мере сокращения буфера позиция становится более уязвимой к ликвидации, если рынок идёт против неё.",
+  "When can liquidation happen?": "Когда может произойти ликвидация?",
+  "Triggers": "Триггеры",
+  "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
+    "Если рыночные движения достаточно ослабят health, позиция может стать ликвидируемой по правилам spoke.",
+  "What happens next": "Что происходит дальше",
+  "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.":
+    "Spoke непрерывно отслеживает риск и управляет ликвидацией, а Hub поддерживает координацию резервов.",
+  "Leverage Markets": "Рынки с плечом",
+  "How do leverage markets work?": "Как работают рынки с плечом?",
+  "LP-backed exposure": "Экспозиция под LP",
+  "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.":
+    "Рынки с плечом позволяют Avana поддерживать займы под LP и направленную экспозицию в более специализированном процессе.",
+  "Position stacking": "Стек позиций",
+  "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
+    "Заёмную ёмкость можно агрегировать из нескольких одобренных позиций в одном Borrow Spoke.",
+  "Can one account use multiple LP positions?":
+    "Может ли один аккаунт использовать несколько LP-позиций?",
+  "Multiple positions": "Несколько позиций",
+  "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
+    "Да. Один аккаунт может объединять поддерживаемые LP-позиции, если каждая проходит проверки протокола.",
+  "Per-position risk": "Риск по позиции",
+  "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
+    "Каждая позиция оценивается отдельно, прежде чем попасть в итоговую заёмную ёмкость.",
+  "Fees & Interface Policy": "Комиссии и политика интерфейса",
+  "Are interface fees fixed across all integrations?":
+    "Фиксированы ли комиссии интерфейса во всех интеграциях?",
+  "Operational settings": "Операционные настройки",
+  "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
+    "Точные ставки, исключения и статус запуска — операционные настройки; их нужно проверять в живом интерфейсе.",
+  "Integration differences": "Различия интеграций",
+  "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
+    "Прямые интеграции или сторонние фронтенды могут опираться на другие допущения — всегда проверяйте используемый интерфейс.",
+  "What counts as protocol economics vs interface policy?":
+    "Что относится к экономике протокола, а что к политике интерфейса?",
+  "Protocol layer": "Уровень протокола",
+  "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
+    "Базовая оценка залога, контроль долга и пути ликвидации находятся на уровне протокола.",
+  "Interface layer": "Уровень интерфейса",
+  "The frontend can present policy, routing, and support flows differently from one integration to another.":
+    "Фронтенд может по-разному показывать политику, маршрутизацию и поддержку в разных интеграциях.",
+  "Risk & Security": "Риск и безопасность",
+  "What are the main risks?": "Каковы основные риски?",
+  "Market and liquidity risk": "Рыночный и ликвидный риск",
+  "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.":
+    "Основные риски — движения рынка базовых активов, impermanent loss и дрейф диапазона у концентрированных позиций.",
+  "Liquidation risk": "Риск ликвидации",
+  "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.":
+    "Если буфер health ослабевает при непогашенном долге, позиция может стать ликвидируемой.",
+  "How should I think about security?": "Как думать о безопасности?",
+  "Protocol guidance": "Рекомендации протокола",
+  "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.":
+    "Будьте так же осторожны, как с любой LP-позицией, и внимательно следуйте риск-рекомендациям протокола.",
+  "Support request": "Обращение в поддержку",
+  "If something looks off, send the details and our team can help you triage the issue.":
+    "Если что-то выглядит неверно, пришлите детали — наша команда поможет разобрать проблему.",
 }
 
 export default dict

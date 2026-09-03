@@ -1565,6 +1565,99 @@ const dict: TranslationDictionary = {
   "Total AVA you've earned across completed quests and staking rewards.":
     "Tamamlanan görevler ve stake ödülleri genelinde kazandığınız toplam AVA.",
   "AVA you can claim to your wallet right now.": "Şu anda cüzdanınıza talep edebileceğiniz AVA.",
+  "Core Concepts": "Temel kavramlar",
+  "What is Avana?": "Avana nedir?",
+  "Protocol overview": "Protokol özeti",
+  "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.":
+    "Avana, Aave v4'ün Hub-and-Spoke mimarisi üzerine kurulu bir LP teminatlı borç verme protokolüdür.",
+  "Why it exists": "Neden var",
+  "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.":
+    "Amaç, likidite sağlayıcıların önce havuz pozisyonunu kapatmadan aktif pozisyonlara karşı borç alabilmesidir.",
+  "What does the Borrow Spoke do?": "Borrow Spoke ne yapar?",
+  "LP-specific underwriting": "LP'ye özgü underwriting",
+  "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.":
+    "Borrow Spoke'lar desteklenen pozisyonları değerler, health'i izler ve LP teminatı için tasfiye davranışını yönlendirir.",
+  "Shared coordination": "Paylaşılan koordinasyon",
+  "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.":
+    "Hub paylaşılan likiditeyi ve borç muhasebesini koordine eder; spoke ise LP'ye özgü mantığı yönetir.",
+  "Borrowing Capacity & Valuation": "Borç alma kapasitesi ve değerleme",
+  "How is borrowing capacity calculated?": "Borç alma kapasitesi nasıl hesaplanır?",
+  "Adjusted collateral value": "Ayarlanmış teminat değeri",
+  "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.":
+    "Her onaylı LP pozisyonu bağımsız değerlenir; ardından teminat faktörleri ve havuza özgü risk kontrolleri uygulanır.",
+  "Aggregated in the spoke": "Spoke'ta birleştirilir",
+  "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.":
+    "Spoke onaylı pozisyonları borç alma kapasitesinde birleştirir ve Hub sonucu uygular.",
+  "Why did my capacity change?": "Kapasitem neden değişti?",
+  "Market movement": "Piyasa hareketi",
+  "Capacity can change when the underlying assets move or when recoverable value shifts.":
+    "Kapasite, dayanak varlıklar hareket ettiğinde veya geri kazanılabilir değer değiştiğinde değişebilir.",
+  "Risk settings": "Risk ayarları",
+  "Collateral factors and market-specific risk settings can also change the amount shown in the interface.":
+    "Teminat faktörleri ve piyasaya özgü risk ayarları da arayüzde gösterilen tutarı değiştirebilir.",
+  "Health & Liquidation": "Health ve tasfiye",
+  "What is the health factor?": "Health factor nedir?",
+  "How to read health": "Health nasıl okunur",
+  "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.":
+    "Health factor, bir Borrow Spoke içindeki ayarlanmış teminat değeri ile ödenmemiş borç arasındaki ilişkiyi ifade eder.",
+  "What it means for users": "Kullanıcılar için anlamı",
+  "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
+    "Tampon küçüldükçe, piyasa koşulları aleyhine dönerse pozisyon tasfiyeye daha açık hale gelir.",
+  "When can liquidation happen?": "Tasfiye ne zaman olabilir?",
+  "Triggers": "Tetikleyiciler",
+  "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
+    "Piyasa hareketleri health'i yeterince zayıflatırsa, pozisyon spoke kurallarına göre tasfiye edilebilir hale gelebilir.",
+  "What happens next": "Sonra ne olur",
+  "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.":
+    "Spoke riski sürekli izler ve tasfiye davranışını yönlendirir; Hub ise rezervleri koordineli tutar.",
+  "Leverage Markets": "Kaldıraç piyasaları",
+  "How do leverage markets work?": "Kaldıraç piyasaları nasıl çalışır?",
+  "LP-backed exposure": "LP destekli maruziyet",
+  "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.":
+    "Kaldıraç piyasaları, Avana'nın LP destekli borçlanmayı ve yönlü maruziyeti daha özelleşmiş bir akışta desteklemesini sağlar.",
+  "Position stacking": "Pozisyon yığınlama",
+  "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
+    "Borç alma kapasitesi, aynı Borrow Spoke içindeki birden fazla onaylı pozisyondan birleştirilebilir.",
+  "Can one account use multiple LP positions?":
+    "Bir hesap birden fazla LP pozisyonu kullanabilir mi?",
+  "Multiple positions": "Birden fazla pozisyon",
+  "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
+    "Evet. Tek bir hesap, her pozisyon protokol kontrollerini geçtiği sürece desteklenen LP pozisyonlarını birleştirebilir.",
+  "Per-position risk": "Pozisyon başına risk",
+  "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
+    "Her pozisyon, nihai borç alma kapasitesine eklenmeden önce kendi koşullarına göre değerlendirilir.",
+  "Fees & Interface Policy": "Ücretler ve arayüz politikası",
+  "Are interface fees fixed across all integrations?":
+    "Arayüz ücretleri tüm entegrasyonlarda sabit mi?",
+  "Operational settings": "Operasyonel ayarlar",
+  "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
+    "Kesin ücret oranları, muafiyetler ve yayın durumu operasyonel ayarlardır; canlı arayüzde doğrulanmalıdır.",
+  "Integration differences": "Entegrasyon farkları",
+  "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
+    "Doğrudan entegrasyonlar veya üçüncü taraf frontend'ler farklı varsayımlar izleyebilir; kullandığınız arayüzü her zaman doğrulayın.",
+  "What counts as protocol economics vs interface policy?":
+    "Protokol ekonomisi ile arayüz politikası nedir?",
+  "Protocol layer": "Protokol katmanı",
+  "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
+    "Temel teminat değerlemesi, borç kontrolleri ve tasfiye yolları protokol katmanında yer alır.",
+  "Interface layer": "Arayüz katmanı",
+  "The frontend can present policy, routing, and support flows differently from one integration to another.":
+    "Frontend; politika, yönlendirme ve destek akışlarını entegrasyondan entegrasyona farklı sunabilir.",
+  "Risk & Security": "Risk ve güvenlik",
+  "What are the main risks?": "Ana riskler nelerdir?",
+  "Market and liquidity risk": "Piyasa ve likidite riski",
+  "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.":
+    "Ana riskler dayanak varlıklardaki piyasa hareketleri, impermanent loss ve yoğun pozisyonlarda range kaymasıdır.",
+  "Liquidation risk": "Tasfiye riski",
+  "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.":
+    "Borç devam ederken health tamponu zayıflarsa pozisyon tasfiye edilebilir hale gelebilir.",
+  "How should I think about security?": "Güvenliği nasıl düşünmeliyim?",
+  "Protocol guidance": "Protokol rehberliği",
+  "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.":
+    "Herhangi bir LP pozisyonunda göstereceğiniz aynı ihtiyatı gösterin ve protokolün risk rehberliğini yakından izleyin.",
+  "Support request": "Destek talebi",
+  "If something looks off, send the details and our team can help you triage the issue.":
+    "Bir şey yanlış görünüyorsa ayrıntıları gönderin; ekibimiz sorunu sınıflandırmanıza yardımcı olabilir.",
 }
 
 export default dict

@@ -4,7 +4,7 @@ import { lazy, Suspense, useCallback, useMemo, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
+import { shouldUseMockDataSource } from "@/app/lib/test-mode"
 
 export type SupportSubmitPayload = {
   category: string
@@ -33,212 +33,265 @@ type SupportCategory = {
   topics: SupportTopic[]
 }
 
-const SUPPORT_CATEGORIES: SupportCategory[] = [
-  {
-    value: "core-concepts",
-    label: "Core Concepts",
-    topics: [
-      {
-        value: "what-is-avana",
-        label: "What is Avana?",
-        articles: [
-          {
-            title: "Protocol overview",
-            body: "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.",
-          },
-          {
-            title: "Why it exists",
-            body: "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.",
-          },
-        ],
-      },
-      {
-        value: "what-is-a-borrow-spoke",
-        label: "What does the Borrow Spoke do?",
-        articles: [
-          {
-            title: "LP-specific underwriting",
-            body: "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.",
-          },
-          {
-            title: "Shared coordination",
-            body: "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    value: "borrowing-capacity",
-    label: "Borrowing Capacity & Valuation",
-    topics: [
-      {
-        value: "capacity-calculation",
-        label: "How is borrowing capacity calculated?",
-        articles: [
-          {
-            title: "Adjusted collateral value",
-            body: "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.",
-          },
-          {
-            title: "Aggregated in the spoke",
-            body: "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.",
-          },
-        ],
-      },
-      {
-        value: "capacity-changes",
-        label: "Why did my capacity change?",
-        articles: [
-          {
-            title: "Market movement",
-            body: "Capacity can change when the underlying assets move or when recoverable value shifts.",
-          },
-          {
-            title: "Risk settings",
-            body: "Collateral factors and market-specific risk settings can also change the amount shown in the interface.",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    value: "health-liquidation",
-    label: "Health & Liquidation",
-    topics: [
-      {
-        value: "health-factor",
-        label: "What is the health factor?",
-        articles: [
-          {
-            title: "How to read health",
-            body: "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.",
-          },
-          {
-            title: "What it means for users",
-            body: "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.",
-          },
-        ],
-      },
-      {
-        value: "liquidation-flow",
-        label: "When can liquidation happen?",
-        articles: [
-          {
-            title: "Triggers",
-            body: "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.",
-          },
-          {
-            title: "What happens next",
-            body: "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    value: "leverage-markets",
-    label: "Leverage Markets",
-    topics: [
-      {
-        value: "how-leverage-works",
-        label: "How do leverage markets work?",
-        articles: [
-          {
-            title: "LP-backed exposure",
-            body: "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.",
-          },
-          {
-            title: "Position stacking",
-            body: "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.",
-          },
-        ],
-      },
-      {
-        value: "multiple-positions",
-        label: "Can one account use multiple LP positions?",
-        articles: [
-          {
-            title: "Multiple positions",
-            body: "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.",
-          },
-          {
-            title: "Per-position risk",
-            body: "Each position is evaluated on its own terms before being included in the final borrowing capacity.",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    value: "fees-policy",
-    label: "Fees & Interface Policy",
-    topics: [
-      {
-        value: "interface-fees",
-        label: "Are interface fees fixed across all integrations?",
-        articles: [
-          {
-            title: "Operational settings",
-            body: "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.",
-          },
-          {
-            title: "Integration differences",
-            body: "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.",
-          },
-        ],
-      },
-      {
-        value: "protocol-economics",
-        label: "What counts as protocol economics vs interface policy?",
-        articles: [
-          {
-            title: "Protocol layer",
-            body: "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.",
-          },
-          {
-            title: "Interface layer",
-            body: "The frontend can present policy, routing, and support flows differently from one integration to another.",
-          },
-        ],
-      },
-    ],
-  },
-  {
-    value: "risk-security",
-    label: "Risk & Security",
-    topics: [
-      {
-        value: "main-risks",
-        label: "What are the main risks?",
-        articles: [
-          {
-            title: "Market and liquidity risk",
-            body: "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.",
-          },
-          {
-            title: "Liquidation risk",
-            body: "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.",
-          },
-        ],
-      },
-      {
-        value: "security-guidance",
-        label: "How should I think about security?",
-        articles: [
-          {
-            title: "Protocol guidance",
-            body: "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.",
-          },
-          {
-            title: "Support request",
-            body: "If something looks off, send the details and our team can help you triage the issue.",
-          },
-        ],
-      },
-    ],
-  },
-]
+type Translate = (key: string) => string
+
+/** Built with literal `t("…")` keys so i18n parity extracts every support string. */
+function getSupportCategories(t: Translate): SupportCategory[] {
+  return [
+    {
+      value: "core-concepts",
+      label: t("Core Concepts"),
+      topics: [
+        {
+          value: "what-is-avana",
+          label: t("What is Avana?"),
+          articles: [
+            {
+              title: t("Protocol overview"),
+              body: t(
+                "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.",
+              ),
+            },
+            {
+              title: t("Why it exists"),
+              body: t(
+                "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.",
+              ),
+            },
+          ],
+        },
+        {
+          value: "what-is-a-borrow-spoke",
+          label: t("What does the Borrow Spoke do?"),
+          articles: [
+            {
+              title: t("LP-specific underwriting"),
+              body: t(
+                "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.",
+              ),
+            },
+            {
+              title: t("Shared coordination"),
+              body: t(
+                "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.",
+              ),
+            },
+          ],
+        },
+      ],
+    },
+    {
+      value: "borrowing-capacity",
+      label: t("Borrowing Capacity & Valuation"),
+      topics: [
+        {
+          value: "capacity-calculation",
+          label: t("How is borrowing capacity calculated?"),
+          articles: [
+            {
+              title: t("Adjusted collateral value"),
+              body: t(
+                "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.",
+              ),
+            },
+            {
+              title: t("Aggregated in the spoke"),
+              body: t(
+                "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.",
+              ),
+            },
+          ],
+        },
+        {
+          value: "capacity-changes",
+          label: t("Why did my capacity change?"),
+          articles: [
+            {
+              title: t("Market movement"),
+              body: t(
+                "Capacity can change when the underlying assets move or when recoverable value shifts.",
+              ),
+            },
+            {
+              title: t("Risk settings"),
+              body: t(
+                "Collateral factors and market-specific risk settings can also change the amount shown in the interface.",
+              ),
+            },
+          ],
+        },
+      ],
+    },
+    {
+      value: "health-liquidation",
+      label: t("Health & Liquidation"),
+      topics: [
+        {
+          value: "health-factor",
+          label: t("What is the health factor?"),
+          articles: [
+            {
+              title: t("How to read health"),
+              body: t(
+                "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.",
+              ),
+            },
+            {
+              title: t("What it means for users"),
+              body: t(
+                "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.",
+              ),
+            },
+          ],
+        },
+        {
+          value: "liquidation-flow",
+          label: t("When can liquidation happen?"),
+          articles: [
+            {
+              title: t("Triggers"),
+              body: t(
+                "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.",
+              ),
+            },
+            {
+              title: t("What happens next"),
+              body: t(
+                "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.",
+              ),
+            },
+          ],
+        },
+      ],
+    },
+    {
+      value: "leverage-markets",
+      label: t("Leverage Markets"),
+      topics: [
+        {
+          value: "how-leverage-works",
+          label: t("How do leverage markets work?"),
+          articles: [
+            {
+              title: t("LP-backed exposure"),
+              body: t(
+                "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.",
+              ),
+            },
+            {
+              title: t("Position stacking"),
+              body: t(
+                "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.",
+              ),
+            },
+          ],
+        },
+        {
+          value: "multiple-positions",
+          label: t("Can one account use multiple LP positions?"),
+          articles: [
+            {
+              title: t("Multiple positions"),
+              body: t(
+                "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.",
+              ),
+            },
+            {
+              title: t("Per-position risk"),
+              body: t(
+                "Each position is evaluated on its own terms before being included in the final borrowing capacity.",
+              ),
+            },
+          ],
+        },
+      ],
+    },
+    {
+      value: "fees-policy",
+      label: t("Fees & Interface Policy"),
+      topics: [
+        {
+          value: "interface-fees",
+          label: t("Are interface fees fixed across all integrations?"),
+          articles: [
+            {
+              title: t("Operational settings"),
+              body: t(
+                "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.",
+              ),
+            },
+            {
+              title: t("Integration differences"),
+              body: t(
+                "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.",
+              ),
+            },
+          ],
+        },
+        {
+          value: "protocol-economics",
+          label: t("What counts as protocol economics vs interface policy?"),
+          articles: [
+            {
+              title: t("Protocol layer"),
+              body: t(
+                "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.",
+              ),
+            },
+            {
+              title: t("Interface layer"),
+              body: t(
+                "The frontend can present policy, routing, and support flows differently from one integration to another.",
+              ),
+            },
+          ],
+        },
+      ],
+    },
+    {
+      value: "risk-security",
+      label: t("Risk & Security"),
+      topics: [
+        {
+          value: "main-risks",
+          label: t("What are the main risks?"),
+          articles: [
+            {
+              title: t("Market and liquidity risk"),
+              body: t(
+                "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.",
+              ),
+            },
+            {
+              title: t("Liquidation risk"),
+              body: t(
+                "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.",
+              ),
+            },
+          ],
+        },
+        {
+          value: "security-guidance",
+          label: t("How should I think about security?"),
+          articles: [
+            {
+              title: t("Protocol guidance"),
+              body: t(
+                "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.",
+              ),
+            },
+            {
+              title: t("Support request"),
+              body: t(
+                "If something looks off, send the details and our team can help you triage the issue.",
+              ),
+            },
+          ],
+        },
+      ],
+    },
+  ]
+}
 
 type SendStatus = "idle" | "sending" | "sent" | "error"
 
@@ -251,9 +304,10 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
   const [sendStatus, setSendStatus] = useState<SendStatus>("idle")
   const [sendError, setSendError] = useState<string | null>(null)
 
+  const categories = useMemo(() => getSupportCategories(t), [t])
   const selectedCategory = useMemo(
-    () => SUPPORT_CATEGORIES.find((category) => category.value === categoryValue),
-    [categoryValue],
+    () => categories.find((category) => category.value === categoryValue),
+    [categories, categoryValue],
   )
   const selectedTopic = useMemo(
     () => selectedCategory?.topics.find((topic) => topic.value === topicValue),
@@ -335,7 +389,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
     <main className="min-h-[calc(100vh-56px)] bg-background text-foreground">
       <div className="mx-auto w-full max-w-[960px] px-4 pb-16 pt-8 sm:px-6 sm:pt-12 lg:px-8">
         <header className="border-b border-border pb-6 sm:pb-8">
-          <h1 className="max-w-[12ch] text-[32px] font-medium leading-[1.04] tracking-[-0.04em] sm:text-[48px]">
+          <h1 className="max-w-[20ch] text-[24px] font-medium leading-[1.15] tracking-[-0.03em] sm:text-[28px]">
             {t("How can we help?")}
           </h1>
         </header>
@@ -390,9 +444,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                   </h2>
                   <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
                     {t("Thanks — we’ve logged your message about")}{" "}
-                    <span className="font-medium text-foreground">
-                      {selectedTopic?.label ? t(selectedTopic.label) : selectedTopic?.label}
-                    </span>{" "}
+                    <span className="font-medium text-foreground">{selectedTopic?.label}</span>{" "}
                     {t("and the Avana team will follow up. You can submit another request any time.")}
                   </p>
                   <Button
@@ -428,13 +480,13 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                         <SelectValue placeholder={t("Select...")} />
                       </SelectTrigger>
                       <SelectContent className="max-h-[420px]">
-                        {SUPPORT_CATEGORIES.map((category) => (
+                        {categories.map((category) => (
                           <SelectItem
                             key={category.value}
                             value={category.value}
                             className="py-3 text-[15px] font-normal"
                           >
-                            {t(category.label)}
+                            {category.label}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -456,7 +508,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                         <SelectContent className="max-h-[420px]">
                           {selectedCategory?.topics.map((topic) => (
                             <SelectItem key={topic.value} value={topic.value} className="py-3 text-[15px] font-normal">
-                              {t(topic.label)}
+                              {topic.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -471,9 +523,9 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                     <div className="mt-3 divide-y divide-border">
                       {selectedTopic?.articles.map((article) => (
                         <button key={article.title} type="button" className="block w-full py-3 text-left">
-                          <div className="text-[15px] font-medium text-brand">{t(article.title)}</div>
+                          <div className="text-[15px] font-medium text-brand">{article.title}</div>
                           <p className="mt-1 max-w-[56ch] text-[13px] leading-5 text-muted-foreground">
-                            {t(article.body)}
+                            {article.body}
                           </p>
                         </button>
                       ))}
@@ -489,9 +541,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                   </h2>
                   <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
                     {t("Tell us more about")}{" "}
-                    <span className="font-medium text-foreground">
-                      {selectedTopic?.label ? t(selectedTopic.label) : selectedTopic?.label}
-                    </span>
+                    <span className="font-medium text-foreground">{selectedTopic?.label}</span>
                     .
                   </p>
                 </div>
@@ -499,15 +549,11 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                 <dl className="grid gap-x-6 gap-y-3 text-[13px] sm:grid-cols-2">
                   <div>
                     <dt className="font-medium text-muted-foreground">{t("Category")}</dt>
-                    <dd className="mt-1 text-foreground">
-                      {selectedCategory?.label ? t(selectedCategory.label) : selectedCategory?.label}
-                    </dd>
+                    <dd className="mt-1 text-foreground">{selectedCategory?.label}</dd>
                   </div>
                   <div>
                     <dt className="font-medium text-muted-foreground">{t("Topic")}</dt>
-                    <dd className="mt-1 text-foreground">
-                      {selectedTopic?.label ? t(selectedTopic.label) : selectedTopic?.label}
-                    </dd>
+                    <dd className="mt-1 text-foreground">{selectedTopic?.label}</dd>
                   </div>
                 </dl>
 
@@ -569,9 +615,10 @@ const SupportCenterSubmissionBridge = lazy(async () => ({
 }))
 
 /**
- * Public entry. Uses the Convex-backed submitter when a Convex client is
- * configured; otherwise the form still works (it just can't persist), so the
- * demo never dead-ends if the backend is unavailable.
+ * Public entry. Uses the Convex-backed submitter whenever live Convex is
+ * available (including open-gate, which authenticates as the test wallet).
+ * Only mock/Playwright data mode skips the bridge so the form still works
+ * without a backend.
  */
 export function SupportCenterClient() {
   const submitRef = useRef<SupportSubmit>(async () => {})
@@ -582,7 +629,7 @@ export function SupportCenterClient() {
 
   return (
     <>
-      {!IS_DEV_SHORTCUT_MODE ? (
+      {!shouldUseMockDataSource() ? (
         <Suspense fallback={null}>
           <SupportCenterSubmissionBridge onReady={handleConnectedSubmit} />
         </Suspense>
