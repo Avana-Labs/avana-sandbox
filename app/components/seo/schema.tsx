@@ -17,10 +17,13 @@ export async function SchemaMarkup({ data }: { data: JsonValue | JsonValue[] }) 
   // (production drops script-src 'unsafe-inline').
   const nonce = (await headers()).get("x-nonce") ?? undefined
   return (
+    // suppressHydrationWarning: nonce is server-only (x-nonce header); the client reconciler
+    // has no nonce and would otherwise warn on nonce="" vs nonce="<per-request>".
     <script
       nonce={nonce}
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: escapeJsonLd(JSON.stringify(data)) }}
+      suppressHydrationWarning
     />
   )
 }
