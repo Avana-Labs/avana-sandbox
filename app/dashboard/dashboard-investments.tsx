@@ -140,16 +140,11 @@ export function DashboardInvestments({
   const router = useRouter()
   const { t } = useTranslation()
   const { showDollarAmounts } = useAmountDisplayPreferences()
-  const priceFor = useCanonicalPriceFor()
   const claimableUsd = rewardsSummary?.claimableUsd ?? 0
   const m = (value: string) => (showDollarAmounts ? value : MASK)
-  // Current worth of the deposit = balance × live price, so the USD line tracks the
-  // oracle instead of the frozen supplied value stored at deposit time. Falls back
-  // to the stored suppliedUsd when the token is unpriced.
-  const depositedUsd = (token: PortfolioSupplyPosition) => {
-    const price = priceFor(token.symbol)
-    return price !== undefined ? token.balance * price : token.suppliedUsd
-  }
+  // `suppliedUsd` is already valued at the live oracle price upstream (LendAccountSection),
+  // so the Deposited column, "Total Supplied" and the interest accrual all read the same
+  // number — the table sums exactly to the headline.
 
   return (
     <section className={showHeading ? "mb-8" : undefined}>
@@ -234,7 +229,7 @@ export function DashboardInvestments({
                         </td>
                         <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
                           <div className={TABLE_CELL_NUMERIC}>{m(formatTokenAmount(token.balance, token.symbol))}</div>
-                          <div className={TABLE_CELL_SECONDARY}>{m(formatUsdExact(depositedUsd(token)))}</div>
+                          <div className={TABLE_CELL_SECONDARY}>{m(formatUsdExact(token.suppliedUsd))}</div>
                         </td>
                         <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
                           <div className={TABLE_CELL_NUMERIC}>{token.apyPct.toFixed(2)}%</div>
@@ -323,7 +318,7 @@ export function DashboardInvestments({
                         <span>
                           {m(formatTokenAmount(token.balance, token.symbol))}
                           <MarketMobileSupportingValue>
-                            {m(formatUsdExact(depositedUsd(token)))}
+                            {m(formatUsdExact(token.suppliedUsd))}
                           </MarketMobileSupportingValue>
                         </span>
                       }

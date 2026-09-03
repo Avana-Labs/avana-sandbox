@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { useAvanaIdentity, useLendSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useDashboardLendLive } from "@/app/dashboard/use-dashboard-lend-live"
@@ -8,6 +8,7 @@ import { buildLendBalanceMetrics, buildLendDashboardMetrics } from "@/app/dashbo
 import { DashboardLendPerformanceSection } from "@/app/dashboard/dashboard-metric-section"
 import { DashboardInvestments } from "@/app/dashboard/dashboard-investments"
 import type { PortfolioLendTabData } from "@/app/lib/data/providers/portfolio"
+import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { ProductAvailableCard } from "./account-sections-shared"
 
@@ -22,8 +23,22 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
   const { t } = useTranslation()
   const { walletId } = useAvanaIdentity()
   const lendSession = useLendSessionContext()
+  const priceFor = useCanonicalPriceFor()
   const dashboardLend = useDashboardLendLive(walletId, lendSession)
-  const lendTabData = dashboardLend ?? EMPTY_LEND_TAB
+  // Value every supplied position at the live oracle price so the Deposited column,
+  // "Total Supplied", Net APY weighting and interest accrual all agree to the cent
+  // (financial app — the sum of the table MUST equal the headline). Unpriced tokens
+  // keep their stored supplied value.
+  const lendTabData = useMemo<PortfolioLendTabData>(() => {
+    const base = dashboardLend ?? EMPTY_LEND_TAB
+    return {
+      ...base,
+      investments: base.investments.map((inv) => {
+        const price = priceFor(inv.symbol)
+        return price !== undefined ? { ...inv, suppliedUsd: inv.balance * price } : inv
+      }),
+    }
+  }, [dashboardLend, priceFor])
   const balanceMetrics = buildLendBalanceMetrics(lendTabData)
   // Rewards/claimable stay on the assets Claim path — not on Lend Balance cards.
   const claimMetrics = buildLendDashboardMetrics(lendTabData)
