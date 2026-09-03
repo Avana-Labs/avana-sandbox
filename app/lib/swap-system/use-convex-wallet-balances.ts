@@ -37,6 +37,30 @@ export function useConvexClaimBasis(walletId: string | null | undefined): Record
   }, [state])
 }
 
+/**
+ * Onboarding-derived facts for the Wallet Overview tiles, from the same query as the cost
+ * basis (so the two share one Convex subscription):
+ *   - `sinceMs` — when the wallet came aboard: `onboardedAt` (claim completed) → `createdAt`
+ *     (first touch) fallback. Powers "Member since".
+ *   - `boost` — the per-wallet reward multiplier (`eligibilityTier`, ~0.8–1.2, deterministic
+ *     from the wallet). Powers "Avana Boost".
+ * `undefined` while loading; fields are `null` when the wallet has no profile yet.
+ */
+export function useConvexWalletOnboardingSummary(
+  walletId: string | null | undefined,
+): { sinceMs: number | null; boost: number | null } | undefined {
+  const state = useQuery(api.sandbox.onboarding.getWalletOnboardingState, walletId ? { wallet: walletId } : "skip")
+  return useMemo(() => {
+    if (state === undefined) return undefined
+    const profile = state?.profile
+    if (!profile) return { sinceMs: null, boost: null }
+    return {
+      sinceMs: profile.onboardedAt ?? profile.createdAt ?? null,
+      boost: profile.eligibilityTier ?? null,
+    }
+  }, [state])
+}
+
 export function useConvexWalletBalances(walletId: string | null | undefined): UserAssetBalance[] | undefined {
   const balances = useQuery(api.wallet.balances.listBalances, walletId ? { wallet: walletId } : "skip")
   if (!balances) return balances === undefined ? undefined : []

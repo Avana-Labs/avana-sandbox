@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { ActionIcon } from "@/app/components/action-icon"
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { Button } from "@/components/ui/button"
 import { TokenPairCell } from "@/app/borrow/components/atoms"
 import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
@@ -28,7 +29,11 @@ import {
 import { cn } from "@/lib/utils"
 import { buildDashboardWalletBalanceRows, type DashboardWalletBalanceRow } from "@/app/lib/swap-system"
 import type { UserAssetBalance } from "@/app/lib/swap-system"
-import { useConvexClaimBasis, useConvexProductWalletBalances } from "@/app/lib/swap-system/use-convex-wallet-balances"
+import {
+  useConvexClaimBasis,
+  useConvexProductWalletBalances,
+  useConvexWalletOnboardingSummary,
+} from "@/app/lib/swap-system/use-convex-wallet-balances"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -68,6 +73,36 @@ function tokenPnl(
   if (costBasisUsd <= 0) return null
   const pnlUsd = row.valueUsd - costBasisUsd
   return { pnlUsd, pnlPct: (pnlUsd / costBasisUsd) * 100 }
+}
+
+/**
+ * Wallet-wide unrealized P/L: sum each token's live value − its onboarding cost basis, over
+ * every row that has a recorded basis. LP/swapped rows without a basis contribute nothing. The
+ * aggregate percentage is dollar-weighted (Σ pnl ÷ Σ basis), so it matches the headline figure.
+ * Returns null when no row carries a basis — the tile then shows a dash rather than a fake $0.
+ */
+function sumWalletPnl(
+  rows: ReadonlyArray<DashboardWalletBalanceRow>,
+  basisFor: (assetId: string) => number | undefined,
+): { pnlUsd: number; pnlPct: number } | null {
+  let pnlUsd = 0
+  let basisUsd = 0
+  let hasBasis = false
+  for (const row of rows) {
+    const priceUsdAtClaim = basisFor(row.assetId)
+    const pnl = tokenPnl(row, priceUsdAtClaim)
+    if (!pnl || !priceUsdAtClaim) continue
+    pnlUsd += pnl.pnlUsd
+    basisUsd += row.amount * priceUsdAtClaim
+    hasBasis = true
+  }
+  if (!hasBasis || basisUsd <= 0) return null
+  return { pnlUsd, pnlPct: (pnlUsd / basisUsd) * 100 }
+}
+
+/** "Member since" tile: a compact month-year ("Aug 2026") from the onboarding timestamp. */
+function formatMemberSince(sinceMs: number): string {
+  return new Date(sinceMs).toLocaleDateString(undefined, { month: "short", year: "numeric" })
 }
 
 function poolUiDetail(row: DashboardWalletBalanceRow) {
@@ -137,11 +172,35 @@ function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
   )
 }
 
-function WalletMetric({ label, value }: { label: string; value: string }) {
+function WalletMetric({
+  label,
+  value,
+  description,
+  tone = "neutral",
+}: {
+  label: string
+  value: string
+  description: string
+  tone?: "up" | "down" | "neutral"
+}) {
+  const toneClass =
+    tone === "up"
+      ? "text-emerald-700 dark:text-emerald-400"
+      : tone === "down"
+        ? "text-rose-700 dark:text-rose-400"
+        : "text-foreground"
   return (
     <article className="min-w-0 space-y-1.5">
-      <div className="text-[13px] text-muted-foreground">{label}</div>
-      <div className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-[-0.02em] text-foreground">
+      <div className="flex items-center gap-1.5">
+        <span className="text-[13px] text-muted-foreground">{label}</span>
+        <ActionMetricHelp text={description} topic={label} />
+      </div>
+      <div
+        className={cn(
+          "font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-[-0.02em]",
+          toneClass,
+        )}
+      >
         {value}
       </div>
     </article>
@@ -243,16 +302,50 @@ export function DashboardWalletTab({ walletId, balances }: { walletId: string; b
   const tokens = rows.filter((row) => !row.isLpToken)
   const lps = rows.filter((row) => row.isLpToken)
   const totalWalletUsd = sumWalletValueUsd(rows)
+  const walletPnl = sumWalletPnl(rows, basisFor)
+  const onboarding = useConvexWalletOnboardingSummary(balances === undefined ? walletId : null)
+  const memberSince = typeof onboarding?.sinceMs === "number" ? formatMemberSince(onboarding.sinceMs) : null
+  const boost = typeof onboarding?.boost === "number" ? onboarding.boost : null
   const m = (value: string) => (showDollarAmounts ? value : MASK)
+  // Masking a colored P/L would leak the sign through the tone, so a hidden P/L falls back to neutral.
+  const pnlSign = walletPnl && walletPnl.pnlUsd > 0 ? "+" : walletPnl && walletPnl.pnlUsd < 0 ? "-" : ""
+  const pnlTone: "up" | "down" | "neutral" =
+    !showDollarAmounts || !walletPnl
+      ? "neutral"
+      : walletPnl.pnlUsd > 0
+        ? "up"
+        : walletPnl.pnlUsd < 0
+          ? "down"
+          : "neutral"
 
   return (
     <section id="dashboard-wallet" className={detailSectionStackClass} aria-label={t("Wallet balances")}>
       <section className="space-y-4">
         <h2 className="text-[20px] font-medium tracking-[-0.01em] text-foreground md:text-[20px]">
-          {t("Wallet Balance")}
+          {t("Wallet Overview")}
         </h2>
-        <div className="grid w-full grid-cols-1 gap-5 xl:gap-x-8">
-          <WalletMetric label={t("Wallet Value")} value={m(exact(totalWalletUsd))} />
+        <div className="grid w-full grid-cols-2 gap-x-5 gap-y-6 lg:grid-cols-4 xl:gap-x-8">
+          <WalletMetric
+            label={t("Wallet Value")}
+            value={m(exact(totalWalletUsd))}
+            description="Live value of your free, unallocated wallet funds — everything not committed to Lend, Borrow, or Multiply."
+          />
+          <WalletMetric
+            label={t("Unrealized P/L")}
+            value={walletPnl ? m(`${pnlSign}${exact(Math.abs(walletPnl.pnlUsd))}`) : DASH}
+            tone={pnlTone}
+            description="Change in your wallet tokens' value since onboarding: current live value minus the granted cost basis."
+          />
+          <WalletMetric
+            label={t("Avana Boost")}
+            value={boost != null ? `${boost.toFixed(2)}×` : DASH}
+            description="Your Avana rank — a per-wallet standing that boosts your edge across Lend, Borrow, and Swap. The higher it climbs, the more it unlocks."
+          />
+          <WalletMetric
+            label={t("Member since")}
+            value={memberSince ?? DASH}
+            description="When you completed onboarding and joined Avana."
+          />
         </div>
       </section>
 

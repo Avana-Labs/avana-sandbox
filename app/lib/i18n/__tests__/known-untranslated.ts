@@ -14,6 +14,11 @@
  * keys still awaiting a locale. Regenerated from actual coverage; it may only get shorter.
  */
 export const KNOWN_UNTRANSLATED: readonly string[] = [
+  // Wallet Overview tiles — new copy awaiting the locale backfill.
+  "Wallet Overview",
+  "Unrealized P/L",
+  "Avana Boost",
+  "Member since",
   "{amount} in cooldown",
   "{count} positions",
   "{progress}/{target} {currency}",

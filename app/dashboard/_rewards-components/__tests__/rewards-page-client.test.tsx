@@ -201,6 +201,7 @@ vi.mock("@/app/lib/swap-system/use-convex-wallet-balances", () => ({
   useConvexWalletBalances: () => undefined,
   useConvexProductWalletBalances: () => undefined,
   useConvexClaimBasis: () => undefined,
+  useConvexWalletOnboardingSummary: () => undefined,
 }))
 
 // The "Your Dashboard" stat cards read Net Value / Net APY from Convex via this
@@ -392,7 +393,7 @@ describe("DashboardPageClient", () => {
         name: /Good morning!|Good afternoon!|Good evening!|Welcome back!|Hey!/,
       }),
     ).toBeInTheDocument()
-    expect(screen.getByRole("heading", { name: "Wallet Balance" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Wallet Overview" })).toBeInTheDocument()
   })
 
   it("opens the education flow for primer quests", async () => {

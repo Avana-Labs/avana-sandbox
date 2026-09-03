@@ -19,6 +19,7 @@ vi.mock("@/app/lib/swap-system/use-convex-wallet-balances", () => ({
   useConvexWalletBalances: () => undefined,
   useConvexProductWalletBalances: () => undefined,
   useConvexClaimBasis: () => undefined,
+  useConvexWalletOnboardingSummary: () => undefined,
 }))
 
 function renderWalletTab(node: ReactNode) {
@@ -29,7 +30,7 @@ describe("DashboardWalletTab", () => {
   it("renders wallet tokens and LPs separately", { timeout: 20_000 }, () => {
     renderWalletTab(<DashboardWalletTab walletId="demo-wallet" />)
 
-    expect(screen.getByRole("heading", { name: "Wallet Balance" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Wallet Overview" })).toBeInTheDocument()
     expect(screen.getByText("Wallet Value")).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Tokens" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Pools" })).toBeInTheDocument()
