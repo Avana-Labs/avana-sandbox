@@ -10,17 +10,23 @@ import {
 } from "@/app/lib/multiply-system/leverage-limits"
 
 describe("resolveMultiplyMarketMaxLeverage", () => {
-  it("passes the (uninflated) catalog cap through as the action cap", () => {
+  it("passes the (uninflated) catalog cap through as the public-cap helper", () => {
     expect(resolveMultiplyMarketMaxLeverage(1.8)).toBe(1.8)
   })
 
-  it("never exceeds the global action slider maximum", () => {
+  it("never exceeds the global action ceiling", () => {
     expect(resolveMultiplyMarketMaxLeverage(60)).toBe(MULTIPLY_ACTION_MAX_LEVERAGE)
   })
 
   it("falls back to the global maximum for invalid market caps", () => {
     expect(resolveMultiplyMarketMaxLeverage(undefined)).toBe(MULTIPLY_ACTION_MAX_LEVERAGE)
     expect(resolveMultiplyMarketMaxLeverage(Number.NaN)).toBe(MULTIPLY_ACTION_MAX_LEVERAGE)
+  })
+
+  it("documents that the multiply slider ceiling is global, not per-market public max", () => {
+    // Slider range is always MULTIPLY_ACTION_MIN/MAX; publicMax is a validation hard-block.
+    expect(MULTIPLY_ACTION_MAX_LEVERAGE).toBe(10)
+    expect(resolveMultiplyMarketMaxLeverage(1.8)).toBeLessThan(MULTIPLY_ACTION_MAX_LEVERAGE)
   })
 
   it("defaults deleverage below the current multiplier", () => {

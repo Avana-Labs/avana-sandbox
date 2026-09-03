@@ -28,13 +28,12 @@ import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/act
 import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import {
+  MULTIPLY_ACTION_MAX_LEVERAGE,
   MULTIPLY_ACTION_MIN_LEVERAGE,
   getDeleverageMultiplierMax,
   getDefaultDeleverageMultiplier,
   isDeleverageCloseOnly,
   resolveDefaultMultiplyLeverage,
-  resolveMultiplyMarketMaxLeverage,
-  resolveRecommendedActionLeverage,
   snapMultiplierToStep,
 } from "@/app/lib/multiply-system/leverage-limits"
 import {
@@ -180,11 +179,12 @@ export function MultiplyActionPageClient({
     const effectiveMax =
       kind === "deleverage"
         ? getDeleverageMultiplierMax(position?.multiplier ?? Number.NaN, 0.1)
-        : resolveMultiplyMarketMaxLeverage(market.risk.publicMaxMultiplier)
+        : MULTIPLY_ACTION_MAX_LEVERAGE
     // Snap the canonical multiplier to the SAME 0.1 step grid the ruler thumb uses, and
-    // clamp to [min, max]. Binding the state to the slider's grid keeps the slider label,
-    // the number input and the projection summary on one value instead of drifting apart
-    // (e.g. the number input reading 1.8x while the projection simulated 1.75x). (E6)
+    // clamp to [min, max]. Binding the state to the slider's grid keeps the pill and the
+    // projection summary on one value instead of drifting apart. (E6)
+    // Multiply uses the global 1–10 slider ceiling; per-market publicMax is enforced by
+    // engine validation (hard block), not by clamping the thumb.
     const next = String(snapMultiplierToStep(parsed, multiplierMin, effectiveMax, 0.1))
     if (next !== multiplier) setMultiplier(next)
   }, [kind, market, multiplier, multiplierMin, position?.multiplier])
@@ -638,28 +638,11 @@ export function MultiplyActionPageClient({
   const hideTitle = embedded || stage === "success" || isProcessingStage(stage) || stage === "review"
   const isHomeLayout = embedded && layout === "home"
   const shellDensity = sidebar ? "sidebar" : isHomeLayout ? "home" : "default"
-  // The loop mechanics are documented in the market's "About" section — no inline
-  // explainer filler in the action widget.
-  const loopHint =
-    kind === "multiply" && previewUi?.loopCount != null
-      ? `${previewUi.loopCount} loop${previewUi.loopCount === 1 ? "" : "s"} estimated`
-      : null
+  // Multiply slider is always the global 1–10 ceiling. Per-market publicMax remains an
+  // engine hard-block (CTA disabled) when the user drags past it.
   const effectiveMultiplierMax = isExitKind
     ? getDeleverageMultiplierMax(position?.multiplier ?? Number.NaN, 0.1)
-    : resolveMultiplyMarketMaxLeverage(market.risk.publicMaxMultiplier)
-  // The "Recommended up to Nx" marker must sit on a leverage the slider can actually
-  // land on (0.1 grid) that still clears the market minimum health factor — otherwise a
-  // drag to the marker snapped UP past the safe max and the action came back blocked. (E2)
-  const recommendedActionLeverage =
-    kind === "multiply"
-      ? resolveRecommendedActionLeverage({
-          recommendedMaxMultiplier: market.risk.recommendedMaxMultiplier,
-          liquidationThreshold: market.risk.liquidationThreshold,
-          minHealthFactor: market.risk.minHealthFactor,
-          actionMax: effectiveMultiplierMax,
-          step: 0.1,
-        })
-      : undefined
+    : MULTIPLY_ACTION_MAX_LEVERAGE
   const useWorkspaceFields = embedded && isHomeLayout && isConfigureVisibleStage(stage)
   // Surface the market-liquidity cap as the collateral input balance, with a Max button.
   const showCollateralBalance = kind === "multiply" && maxCollateralAmount != null && maxCollateralAmount > 0
@@ -667,15 +650,7 @@ export function MultiplyActionPageClient({
   const collateralBalanceValue = showCollateralBalance
     ? formatActionAmount(maxCollateralAmount!, market.collateralAsset.symbol, 6)
     : undefined
-  // Position value at 1.0x (multiply: the collateral being supplied; deleverage: the
-  // position's net equity). The ruler scales this by leverage to label its two ends
-  // with the resulting exposure range. Undefined ⇒ ends fall back to leverage bounds.
-  const leverageExposureBaseUsd =
-    kind === "multiply"
-      ? (parsePositiveActionAmount(amount) ?? 0) * collateralPriceUsd
-      : position
-        ? Math.max(0, position.collateralValueUsd - position.debtValueUsd)
-        : undefined
+  const multiplierLabel = kind === "deleverage" ? "Target leverage" : "Multiplier"
   const stackedAmountField = useWorkspaceFields ? (
     <ActionConfigureAmountSection
       verb={descriptor.primaryVerb}
@@ -701,23 +676,18 @@ export function MultiplyActionPageClient({
       balanceValue={collateralBalanceValue}
       amountVariant="raised"
       amountFooter={
-        <>
-          {loopHint ? <p className="mb-3 text-[12px] leading-5 text-muted-foreground">{loopHint}</p> : null}
-          <ActionLeverageRuler
-            variant="embedded"
-            value={multiplier}
-            onChange={(value) => {
-              setHasUserInput(true)
-              setMultiplier(value)
-            }}
-            min={multiplierMin}
-            max={effectiveMultiplierMax}
-            recommendedMax={recommendedActionLeverage}
-            step={0.1}
-            label="Target leverage"
-            exposureBaseUsd={leverageExposureBaseUsd}
-          />
-        </>
+        <ActionLeverageRuler
+          variant="embedded"
+          value={multiplier}
+          onChange={(value) => {
+            setHasUserInput(true)
+            setMultiplier(value)
+          }}
+          min={multiplierMin}
+          max={effectiveMultiplierMax}
+          step={0.1}
+          label={multiplierLabel}
+        />
       }
     />
   ) : null
@@ -775,7 +745,6 @@ export function MultiplyActionPageClient({
             setSelectedMarketId(id)
             setAmount("")
           }}
-          leverageHint={loopHint}
           multiplier={kind === "close" || deleverageCloseOnly ? undefined : multiplier}
           onMultiplierChange={
             kind === "close" || deleverageCloseOnly
@@ -787,9 +756,7 @@ export function MultiplyActionPageClient({
           }
           multiplierMin={multiplierMin}
           multiplierMax={effectiveMultiplierMax}
-          multiplierRecommendedMax={recommendedActionLeverage}
-          multiplierLabel="Target leverage"
-          multiplierExposureBaseUsd={leverageExposureBaseUsd}
+          multiplierLabel={multiplierLabel}
           onPrimary={() => {
             if (deleverageCloseOnly) {
               void handleClose()

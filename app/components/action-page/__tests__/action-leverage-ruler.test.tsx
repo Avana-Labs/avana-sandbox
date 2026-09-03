@@ -5,46 +5,41 @@ import { ActionLeverageRuler } from "@/app/components/action-page/action-leverag
 afterEach(() => cleanup())
 
 describe("ActionLeverageRuler", () => {
-  it("labels the ends with the leverage bounds when no exposure base is given", () => {
-    render(<ActionLeverageRuler value="2" onChange={() => {}} min={1} max={5} />)
+  it("shows Multiplier header, value pill, and five evenly spaced scale ticks", () => {
+    render(<ActionLeverageRuler value="1" onChange={() => {}} min={1} max={10} />)
 
-    expect(screen.getByText("1x")).toBeInTheDocument()
-    expect(screen.getByText("5x")).toBeInTheDocument()
-    // The Min/Max snap buttons were removed in favour of the draggable slider.
-    expect(screen.queryByRole("button", { name: "Min" })).toBeNull()
-    expect(screen.queryByRole("button", { name: "Max" })).toBeNull()
+    expect(screen.getByTestId("action-leverage-ruler")).toHaveTextContent("Multiplier")
+    expect(screen.getByTestId("action-leverage-pill")).toHaveTextContent("1x")
+
+    const ticks = screen.getByTestId("action-leverage-ticks")
+    expect(ticks).toHaveTextContent("1x")
+    expect(ticks).toHaveTextContent("3.25x")
+    expect(ticks).toHaveTextContent("5.5x")
+    expect(ticks).toHaveTextContent("7.75x")
+    expect(ticks).toHaveTextContent("10x")
   })
 
-  it("labels the ends with the exposure range (base × min … base × max)", () => {
-    render(<ActionLeverageRuler value="3" onChange={() => {}} min={1} max={10} exposureBaseUsd={1645} />)
+  it("updates the pill when the slider moves", () => {
+    const onChange = vi.fn()
+    render(<ActionLeverageRuler value="2" onChange={onChange} min={1} max={10} label="Multiplier" />)
 
-    // Left end = base × min (1645 × 1), right end = base × max (1645 × 10).
-    expect(screen.getByText("$1,645 USD")).toBeInTheDocument()
-    expect(screen.getByText("$16,450 USD")).toBeInTheDocument()
+    const slider = screen.getByRole("slider", { name: "Multiplier" })
+    fireEvent.change(slider, { target: { value: "6.7" } })
+
+    expect(onChange).toHaveBeenCalledWith("6.7")
   })
 
   it("exposes the slider with an accessible label", () => {
-    render(<ActionLeverageRuler value="2" onChange={() => {}} min={1} max={5} label="Target leverage" />)
+    render(<ActionLeverageRuler value="2" onChange={() => {}} min={1} max={10} label="Multiplier" />)
 
-    expect(screen.getByRole("slider", { name: "Target leverage multiplier" })).toBeInTheDocument()
+    expect(screen.getByRole("slider", { name: "Multiplier" })).toBeInTheDocument()
   })
 
-  it("accepts a precise custom leverage value", () => {
-    const onChange = vi.fn()
-    render(<ActionLeverageRuler value="2" onChange={onChange} min={1.1} max={5} label="Target leverage" />)
+  it("does not render number input, recommended copy, or USD endpoints", () => {
+    render(<ActionLeverageRuler value="2" onChange={() => {}} min={1} max={10} />)
 
-    const input = screen.getByRole("spinbutton", { name: "Custom Target leverage" })
-    fireEvent.change(input, { target: { value: "2.7" } })
-
-    expect(onChange).toHaveBeenCalledWith("2.7")
-    expect(input).toHaveAttribute("min", "1.1")
-    expect(input).toHaveAttribute("max", "5")
-  })
-
-  it("distinguishes the recommended limit from the protocol maximum", () => {
-    render(<ActionLeverageRuler value="2" onChange={() => {}} min={1.1} max={5} recommendedMax={3.5} />)
-
-    expect(screen.getByText("Recommended up to 3.5x")).toBeInTheDocument()
-    expect(screen.getByText("5x")).toBeInTheDocument()
+    expect(screen.queryByRole("spinbutton")).toBeNull()
+    expect(screen.queryByText(/Recommended up to/i)).toBeNull()
+    expect(screen.queryByText(/USD/)).toBeNull()
   })
 })

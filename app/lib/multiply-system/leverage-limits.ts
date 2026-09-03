@@ -10,8 +10,10 @@ export const MULTIPLY_ACTION_MAX_LEVERAGE = 10
 export const MULTIPLY_DEFAULT_LEVERAGE = 1.1
 
 /**
- * Resolve the per-market public cap into the action slider's max, clamped to the
- * global slider ceiling. (Catalog values are no longer inflated, so this is just a clamp.)
+ * Resolve the per-market public cap clamped to the global action ceiling.
+ * Used for defaults / display helpers — the multiply **slider** itself always
+ * spans `MULTIPLY_ACTION_MIN_LEVERAGE`…`MULTIPLY_ACTION_MAX_LEVERAGE`; per-market
+ * publicMax is enforced as a hard engine validation block, not a thumb clamp.
  */
 export function resolveMultiplyMarketMaxLeverage(publicMaxMultiplier: number | undefined) {
   if (!Number.isFinite(publicMaxMultiplier) || publicMaxMultiplier == null || publicMaxMultiplier < 1) {
@@ -54,8 +56,8 @@ function stepDecimals(step: number) {
 /**
  * Snap a leverage value to the slider's step grid, using the SAME rounding rule the
  * ruler thumb uses (`round((v - min) / step)`), then clamp to [min, max]. Keeping the
- * controlled state on this grid means the slider label, the number input and the
- * projection summary all read one value instead of drifting apart. (E6)
+ * controlled state on this grid means the pill and the projection summary all read
+ * one value instead of drifting apart. (E6)
  */
 export function snapMultiplierToStep(value: number, min: number, max: number, step = 0.1): number {
   if (!Number.isFinite(value)) return min

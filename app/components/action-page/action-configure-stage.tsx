@@ -58,14 +58,8 @@ type ActionConfigureStageProps = {
   onMultiplierChange?: (value: string) => void
   multiplierMin?: number
   multiplierMax?: number
-  multiplierRecommendedMax?: number
   multiplierStep?: number
   multiplierLabel?: string
-  /** USD value of the position at 1.0x, forwarded to the leverage ruler so its ends
-   *  show the exposure range in the active currency. */
-  multiplierExposureBaseUsd?: number
-  /** Short explanation rendered above the standalone leverage ruler. */
-  leverageHint?: ReactNode
   canGoBack?: boolean
   hideAmountInput?: boolean
   amountReadOnly?: boolean
@@ -233,11 +227,8 @@ export function ActionConfigureStage({
   onMultiplierChange,
   multiplierMin = 1,
   multiplierMax = 20,
-  multiplierRecommendedMax,
   multiplierStep = 0.1,
-  multiplierLabel = "Leverage",
-  multiplierExposureBaseUsd,
-  leverageHint,
+  multiplierLabel = "Multiplier",
   canGoBack = false,
   hideAmountInput = false,
   amountReadOnly = false,
@@ -372,18 +363,13 @@ export function ActionConfigureStage({
 
       {showStandaloneLeverage ? (
         <div>
-          {leverageHint ? (
-            <p className="mb-3 text-[12px] leading-5 text-muted-foreground">{t(String(leverageHint))}</p>
-          ) : null}
           <ActionLeverageRuler
             value={multiplier ?? "3"}
             onChange={onMultiplierChange!}
             min={multiplierMin}
             max={multiplierMax}
-            recommendedMax={multiplierRecommendedMax}
             step={multiplierStep}
             label={multiplierLabel}
-            exposureBaseUsd={multiplierExposureBaseUsd}
           />
         </div>
       ) : null}
