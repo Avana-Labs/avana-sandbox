@@ -469,6 +469,18 @@
   font-family: var(--font-diatype-sans), sans-serif;
 }
 
+@layer utilities {
+  /*
+   * ABCDiatype tabular figures give each digit equal width but visually detach
+   * grouping commas and decimal points (e.g. "$299 , 997"). Use proportional
+   * lining figures everywhere Tailwind's tabular-nums is applied so currency and
+   * percentages read as normal "$299,997" / "5.31%".
+   */
+  .tabular-nums {
+    font-variant-numeric: lining-nums proportional-nums;
+  }
+}
+
 /* Cursor-like text hierarchy — size and color only */
 .text-ui-heading {
   /* Canonical detail/action section heading (was ad-hoc text-[21px]/[1.375rem]). */
