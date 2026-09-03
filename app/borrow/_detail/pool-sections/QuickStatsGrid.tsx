@@ -23,6 +23,8 @@ type Props = {
   product?: QuickStatsProduct
   className?: string
   hideRisk?: boolean
+  /** Desktop column count for the main market stats grid (default 3). */
+  columns?: 3 | 4
 }
 
 const RISK_STAT_IDS = new Set(["riskPremium", "maxLtv", "collateralFactor"])
@@ -91,13 +93,18 @@ export function FlatStatsGrid({
   )
 }
 
-function QuickStatsGridView({ detail, className, hideRisk = false }: Omit<Props, "quickStatsPreload" | "product">) {
+function QuickStatsGridView({
+  detail,
+  className,
+  hideRisk = false,
+  columns = 3,
+}: Omit<Props, "quickStatsPreload" | "product">) {
   const { t } = useTranslation()
   const { market, risk } = splitQuickStats(detail.quickStats)
 
   return (
     <div className={cn("space-y-10", className)}>
-      {market.length > 0 ? <StatsGrid stats={market} /> : null}
+      {market.length > 0 ? <StatsGrid stats={market} columns={columns} /> : null}
       {!hideRisk && risk.length > 0 ? (
         <section aria-label={t("Risk exposure")} className="space-y-5">
           <h2 className="text-[22px] font-medium leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
