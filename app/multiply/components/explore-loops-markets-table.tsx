@@ -605,6 +605,11 @@ const LoopTableRow = React.memo(function LoopTableRow({
               size="table"
               variant={hasNegativeApy ? "table-secondary" : "table-primary"}
               className="w-auto"
+              title={
+                hasNegativeApy
+                  ? t("Negative net APY: borrow costs exceed supply yield. Review before opening this loop.")
+                  : undefined
+              }
               onClick={(event) => {
                 event.stopPropagation()
                 const marketId = resolveMarketIdFromHref(row.href)
