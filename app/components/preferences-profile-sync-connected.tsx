@@ -3,52 +3,15 @@
 import { useMutation, useQuery } from "convex/react"
 import { useEffect, useRef } from "react"
 import { api } from "@/convex/_generated/api"
+import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useTheme } from "@/app/components/theme-provider"
 import {
-  CURRENCY_OPTIONS,
-  LANGUAGE_OPTIONS,
-  type CurrencyCode,
-  type LanguageCode,
-  useDisplayPreferences,
-} from "@/app/components/display-preferences"
-import { useTheme, type Theme } from "@/app/components/theme-provider"
-
-type StoredPreferences = {
-  theme?: Theme
-  language?: LanguageCode
-  currency?: CurrencyCode
-  showDollarAmounts?: boolean
-}
-
-function isTheme(value: string | undefined): value is Theme {
-  return value === "light" || value === "dark" || value === "system"
-}
-
-function isLanguage(value: string | undefined): value is LanguageCode {
-  return LANGUAGE_OPTIONS.some((option) => option.code === value)
-}
-
-function isCurrency(value: string | undefined): value is CurrencyCode {
-  return CURRENCY_OPTIONS.some((option) => option.code === value)
-}
-
-function normalizePreferences(preferences: StoredPreferences | null | undefined): StoredPreferences | null {
-  if (!preferences) return null
-  const normalized: StoredPreferences = {}
-  if (isTheme(preferences.theme)) normalized.theme = preferences.theme
-  if (isLanguage(preferences.language)) normalized.language = preferences.language
-  if (isCurrency(preferences.currency)) normalized.currency = preferences.currency
-  if (typeof preferences.showDollarAmounts === "boolean") normalized.showDollarAmounts = preferences.showDollarAmounts
-  return Object.keys(normalized).length > 0 ? normalized : null
-}
-
-function serializePreferences(preferences: StoredPreferences): string {
-  return JSON.stringify({
-    theme: preferences.theme ?? null,
-    language: preferences.language ?? null,
-    currency: preferences.currency ?? null,
-    showDollarAmounts: preferences.showDollarAmounts ?? null,
-  })
-}
+  applyRemotePreferences,
+  normalizePreferences,
+  serializePreferences,
+  snapshotLocalPreferences,
+  type StoredPreferences,
+} from "@/app/components/preferences-sync"
 
 export function PreferencesProfileSyncConnected({ wallet }: { wallet: string }) {
   const { theme, setTheme } = useTheme()
@@ -62,16 +25,13 @@ export function PreferencesProfileSyncConnected({ wallet }: { wallet: string }) 
   useEffect(() => {
     if (profile === undefined || initializedWalletRef.current === wallet) return
     const remote = normalizePreferences(profile?.preferences)
+    const local = { theme, language, currency, showDollarAmounts }
+    const setters = { setTheme, setLanguage, setCurrency, setShowDollarAmounts }
     if (remote) {
       lastSavedKeyRef.current = serializePreferences(remote)
-      if (remote.theme && remote.theme !== theme) setTheme(remote.theme)
-      if (remote.language && remote.language !== language) setLanguage(remote.language)
-      if (remote.currency && remote.currency !== currency) setCurrency(remote.currency)
-      if (typeof remote.showDollarAmounts === "boolean" && remote.showDollarAmounts !== showDollarAmounts) {
-        setShowDollarAmounts(remote.showDollarAmounts)
-      }
+      applyRemotePreferences(remote, local, setters)
     } else {
-      const localPreferences: StoredPreferences = { theme, language, currency, showDollarAmounts }
+      const localPreferences = snapshotLocalPreferences(local)
       lastSavedKeyRef.current = serializePreferences(localPreferences)
       void savePreferences({ preferences: localPreferences }).catch((error: unknown) => {
         lastSavedKeyRef.current = null
@@ -97,7 +57,7 @@ export function PreferencesProfileSyncConnected({ wallet }: { wallet: string }) 
 
   useEffect(() => {
     if (initializedWalletRef.current !== wallet) return
-    const nextPreferences: StoredPreferences = { theme, language, currency, showDollarAmounts }
+    const nextPreferences = snapshotLocalPreferences({ theme, language, currency, showDollarAmounts })
     const nextKey = serializePreferences(nextPreferences)
     if (nextKey === lastSavedKeyRef.current) return
     const timeoutId = window.setTimeout(() => {
