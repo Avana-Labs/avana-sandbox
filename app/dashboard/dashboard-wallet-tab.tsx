@@ -1,5 +1,8 @@
 "use client"
 
+import Link from "next/link"
+import { ActionIcon } from "@/app/components/action-icon"
+import { Button } from "@/components/ui/button"
 import { TokenPairCell } from "@/app/borrow/components/atoms"
 import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
@@ -25,7 +28,7 @@ import {
 import { cn } from "@/lib/utils"
 import { buildDashboardWalletBalanceRows, type DashboardWalletBalanceRow } from "@/app/lib/swap-system"
 import type { UserAssetBalance } from "@/app/lib/swap-system"
-import { useConvexProductWalletBalances } from "@/app/lib/swap-system/use-convex-wallet-balances"
+import { useConvexClaimBasis, useConvexProductWalletBalances } from "@/app/lib/swap-system/use-convex-wallet-balances"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -34,7 +37,7 @@ import type { BorrowAssetVisual } from "@/app/lib/data/borrow-domain"
 const DASH = "\u2014"
 const MASK = "••••"
 
-// Do not invent token P/L or LP fee/status analytics — show dashes until live data exists.
+// Do not invent LP fee/status analytics — show dashes until live data exists.
 const LP_UI_DETAILS: Record<string, { feesUsd: number; status: "inactive"; protocol: string }> = {}
 
 function sectionCount(count: number, singular: string, plural: string) {
@@ -50,9 +53,21 @@ function formatPoolAmount(amount: number) {
   return amount.toLocaleString(undefined, { maximumFractionDigits: 6 })
 }
 
-function tokenPnl(_row: DashboardWalletBalanceRow): { pnlUsd: number; pnlPct: number } | null {
-  // Fabricated wallet P/L removed (P1-04). Keep the column; show dash until live data exists.
-  return null
+/**
+ * Token P/L against the onboarding cost basis. Free starter tokens are granted at
+ * a recorded price (`priceUsdAtClaim`); the dashboard values the balance live, so
+ * P/L = current value − amount × grant price. Null when there's no recorded basis
+ * (e.g. tokens acquired by swap, or still loading) — the cell shows a dash.
+ */
+function tokenPnl(
+  row: DashboardWalletBalanceRow,
+  priceUsdAtClaim: number | undefined,
+): { pnlUsd: number; pnlPct: number } | null {
+  if (!priceUsdAtClaim || priceUsdAtClaim <= 0 || row.amount <= 0) return null
+  const costBasisUsd = row.amount * priceUsdAtClaim
+  if (costBasisUsd <= 0) return null
+  const pnlUsd = row.valueUsd - costBasisUsd
+  return { pnlUsd, pnlPct: (pnlUsd / costBasisUsd) * 100 }
 }
 
 function poolUiDetail(row: DashboardWalletBalanceRow) {
@@ -133,38 +148,70 @@ function WalletMetric({ label, value }: { label: string; value: string }) {
   )
 }
 
-function PnlCell({
+/** Compact P/L line shown directly under the Value figure. */
+function PnlLine({
   row,
+  priceUsdAtClaim,
   exact,
   showBalance,
 }: {
   row: DashboardWalletBalanceRow
+  priceUsdAtClaim: number | undefined
   exact: (usd: number) => string
   showBalance: boolean
 }) {
-  const pnl = tokenPnl(row)
-  if (!pnl) return <span className="text-muted-foreground">{showBalance ? DASH : MASK}</span>
-  if (!showBalance) {
-    return (
-      <div className="text-right">
-        <div className="font-data tabular-nums text-foreground">{MASK}</div>
-        <div className="mt-0.5 text-[13px] text-muted-foreground">{MASK}</div>
-      </div>
-    )
-  }
+  const pnl = tokenPnl(row, priceUsdAtClaim)
+  if (!pnl) return <span className={cn(TABLE_CELL_CAPTION, "text-muted-foreground")}>{showBalance ? DASH : MASK}</span>
+  if (!showBalance) return <span className={cn(TABLE_CELL_CAPTION, "text-muted-foreground")}>{MASK}</span>
 
   const positive = pnl.pnlUsd > 0
   const negative = pnl.pnlUsd < 0
-  const toneClass = positive ? "text-emerald-700" : negative ? "text-rose-700" : "text-foreground"
+  const toneClass = positive
+    ? "text-emerald-700 dark:text-emerald-400"
+    : negative
+      ? "text-rose-700 dark:text-rose-400"
+      : "text-muted-foreground"
   const arrow = positive ? "▲" : negative ? "▼" : "•"
-  const pct = `${Math.abs(pnl.pnlPct).toFixed(2)}%`
-
+  const sign = positive ? "+" : negative ? "-" : ""
   return (
-    <div className="text-right">
-      <div className={cn(TABLE_CELL_NUMERIC, toneClass)}>{exact(pnl.pnlUsd)}</div>
-      <div className={cn(TABLE_CELL_CAPTION, toneClass)}>
-        {arrow} {pct}
-      </div>
+    <span className={cn(TABLE_CELL_CAPTION, "tabular-nums", toneClass)}>
+      {arrow} {sign}
+      {exact(Math.abs(pnl.pnlUsd))} · {Math.abs(pnl.pnlPct).toFixed(2)}%
+    </span>
+  )
+}
+
+/** Value stacked over its P/L — the wallet's own live valuation plus P/L vs grant. */
+function ValueWithPnl({
+  row,
+  priceUsdAtClaim,
+  exact,
+  showBalance,
+}: {
+  row: DashboardWalletBalanceRow
+  priceUsdAtClaim: number | undefined
+  exact: (usd: number) => string
+  showBalance: boolean
+}) {
+  return (
+    <div className="flex flex-col items-end gap-0.5">
+      <span className={TABLE_CELL_NUMERIC}>{showBalance ? exact(row.valueUsd) : MASK}</span>
+      <PnlLine row={row} priceUsdAtClaim={priceUsdAtClaim} exact={exact} showBalance={showBalance} />
+    </div>
+  )
+}
+
+/** Per-row Swap CTA — table-styled button (matches the lend/borrow tables) that
+ *  deep-links to the swap flow with this token preselected. */
+function SwapAction({ assetId, label }: { assetId: string; label: string }) {
+  return (
+    <div className="flex justify-end">
+      <Button asChild size="table" variant="table-secondary" className="w-auto">
+        <Link href={`/swap?from=${encodeURIComponent(assetId)}`} aria-label={label}>
+          <ActionIcon label="swap" />
+          {label}
+        </Link>
+      </Button>
     </div>
   )
 }
@@ -187,6 +234,8 @@ export function DashboardWalletTab({ walletId, balances }: { walletId: string; b
   // is shown on that product's own tab, so it's never double-represented here.
   const convexBalances = useConvexProductWalletBalances(balances === undefined ? walletId : null)
   const effectiveBalances = balances ?? convexBalances ?? undefined
+  const claimBasis = useConvexClaimBasis(balances === undefined ? walletId : null)
+  const basisFor = (assetId: string) => claimBasis?.[assetId.toLowerCase()]
   const priceFor = useCanonicalPriceFor()
   const rows = buildDashboardWalletBalanceRows({ walletId, balances: effectiveBalances, priceFor }).filter(
     (row) => row.sourceType === "wallet",
@@ -207,7 +256,14 @@ export function DashboardWalletTab({ walletId, balances }: { walletId: string; b
         </div>
       </section>
 
-      <WalletBalanceSection title={t("Tokens")} rows={tokens} exact={exact} t={t} showBalance={showDollarAmounts} />
+      <WalletBalanceSection
+        title={t("Tokens")}
+        rows={tokens}
+        exact={exact}
+        t={t}
+        showBalance={showDollarAmounts}
+        basisFor={basisFor}
+      />
       <PoolsBalanceSection title={t("Pools")} rows={lps} exact={exact} t={t} showBalance={showDollarAmounts} />
     </section>
   )
@@ -219,12 +275,14 @@ function WalletBalanceSection({
   exact,
   t,
   showBalance,
+  basisFor,
 }: {
   title: string
   rows: DashboardWalletBalanceRow[]
   exact: (usd: number) => string
   t: (key: string) => string
   showBalance: boolean
+  basisFor: (assetId: string) => number | undefined
 }) {
   const m = (value: string) => (showBalance ? value : MASK)
   return (
@@ -237,19 +295,17 @@ function WalletBalanceSection({
       <DesktopTableSurface className="hidden !rounded-none md:block">
         <table className={`w-full min-w-[640px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
           <colgroup>
-            <col className="w-[29%]" />
-            <col className="w-[13%]" />
-            <col className="w-[21%]" />
-            <col className="w-[17%]" />
+            <col className="w-[27%]" />
             <col className="w-[20%]" />
+            <col className="w-[27%]" />
+            <col className="w-[26%]" />
           </colgroup>
           <thead>
             <tr className={TABLE_HEADER_ROW}>
               <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>{formatTableHeaderLabel(t("Asset"))}</th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{formatTableHeaderLabel(t("Price"))}</th>
               <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{formatTableHeaderLabel(t("Balance"))}</th>
               <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{formatTableHeaderLabel(t("Value"))}</th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>{formatTableHeaderLabel(t("P/L"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")} aria-label={t("Swap")} />
             </tr>
           </thead>
           <tbody className="divide-y divide-border dark:divide-white/6">
@@ -260,29 +316,31 @@ function WalletBalanceSection({
                     <TokenIcon symbol={row.symbol} size="table" />
                     <div className="min-w-0">
                       <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{row.name}</div>
-                      <div className={TABLE_CELL_SECONDARY}>
-                        {row.symbol} · {row.sourceLabel}
+                      <div className={cn(TABLE_CELL_SECONDARY, "tabular-nums")}>
+                        {row.valueUsd > 0 && row.amount > 0 ? m(exact(row.valueUsd / row.amount)) : row.symbol}
                       </div>
                     </div>
                   </div>
                 </td>
                 <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_CELL_NUMERIC, TABLE_ROW_HOVER_BG)}>
-                  {m(row.valueUsd > 0 && row.amount > 0 ? exact(row.valueUsd / row.amount) : DASH)}
-                </td>
-                <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_CELL_NUMERIC, TABLE_ROW_HOVER_BG)}>
                   {m(formatAssetAmount(row.amount, row.symbol))}
                 </td>
-                <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_CELL_NUMERIC, TABLE_ROW_HOVER_BG)}>
-                  {m(exact(row.valueUsd))}
+                <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
+                  <ValueWithPnl
+                    row={row}
+                    priceUsdAtClaim={basisFor(row.assetId)}
+                    exact={exact}
+                    showBalance={showBalance}
+                  />
                 </td>
-                <td className={cn(TABLE_CELL_PADDING_TRAILING, TABLE_ROW_HOVER_RIGHT)}>
-                  <PnlCell row={row} exact={exact} showBalance={showBalance} />
+                <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
+                  <SwapAction assetId={row.assetId} label={t("Swap")} />
                 </td>
               </tr>
             ))}
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-5 py-8 text-center text-[14px] text-muted-foreground">
+                <td colSpan={4} className="px-5 py-8 text-center text-[14px] text-muted-foreground">
                   {t("No wallet balances found.")}
                 </td>
               </tr>
@@ -299,33 +357,23 @@ function WalletBalanceSection({
                 <TokenIcon symbol={row.symbol} size="md" />
                 <div className="min-w-0">
                   <div className="truncate font-medium text-foreground">{row.name}</div>
-                  <div className="text-[13px] text-muted-foreground">
-                    {row.symbol} · {row.sourceLabel}
+                  <div className="font-data text-[13px] tabular-nums text-muted-foreground">
+                    {row.valueUsd > 0 && row.amount > 0 ? m(exact(row.valueUsd / row.amount)) : row.symbol}
                   </div>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="flex flex-col items-end gap-0.5">
                 <div className="font-data text-[15px] font-medium tabular-nums text-foreground">
                   {m(exact(row.valueUsd))}
                 </div>
                 <div className="font-data text-[12px] tabular-nums text-muted-foreground">
                   {m(formatAssetAmount(row.amount, row.symbol))}
                 </div>
+                <PnlLine row={row} priceUsdAtClaim={basisFor(row.assetId)} exact={exact} showBalance={showBalance} />
               </div>
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-3 text-[13px]">
-              <div>
-                <div className="text-muted-foreground">{t("Price")}</div>
-                <div className="mt-1 font-data tabular-nums text-foreground">
-                  {m(row.valueUsd > 0 && row.amount > 0 ? exact(row.valueUsd / row.amount) : DASH)}
-                </div>
-              </div>
-              <div>
-                <div className="text-muted-foreground">{t("P/L")}</div>
-                <div className="mt-1">
-                  <PnlCell row={row} exact={exact} showBalance={showBalance} />
-                </div>
-              </div>
+            <div className="mt-4 flex justify-end">
+              <SwapAction assetId={row.assetId} label={t("Swap")} />
             </div>
           </div>
         ))}

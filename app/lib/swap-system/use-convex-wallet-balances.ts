@@ -11,9 +11,31 @@
  * so this cannot leak another wallet's holdings.
  */
 
+import { useMemo } from "react"
 import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import type { UserAssetBalance } from "./contracts"
+
+/**
+ * Per-token cost basis from onboarding: the USD price each free starter token was
+ * granted at (`sandboxProfiles.basketSnapshot[].priceUsdAtClaim`), keyed by
+ * lowercased assetId. The wallet P/L = current live value − amount × this basis,
+ * so it reflects how much the granted capital has moved since the claim moment.
+ * `undefined` while loading; `{}` when the wallet has no recorded basket.
+ */
+export function useConvexClaimBasis(walletId: string | null | undefined): Record<string, number> | undefined {
+  const state = useQuery(api.sandbox.onboarding.getWalletOnboardingState, walletId ? { wallet: walletId } : "skip")
+  return useMemo(() => {
+    if (state === undefined) return undefined
+    const basket = state?.profile?.basketSnapshot
+    if (!basket) return {}
+    const basis: Record<string, number> = {}
+    for (const leg of basket) {
+      if (leg.priceUsdAtClaim > 0) basis[leg.tokenId.toLowerCase()] = leg.priceUsdAtClaim
+    }
+    return basis
+  }, [state])
+}
 
 export function useConvexWalletBalances(walletId: string | null | undefined): UserAssetBalance[] | undefined {
   const balances = useQuery(api.wallet.balances.listBalances, walletId ? { wallet: walletId } : "skip")

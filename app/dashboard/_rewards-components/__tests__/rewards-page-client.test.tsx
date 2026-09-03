@@ -200,6 +200,7 @@ vi.mock("@/app/dashboard/use-dashboard-page", () => ({
 vi.mock("@/app/lib/swap-system/use-convex-wallet-balances", () => ({
   useConvexWalletBalances: () => undefined,
   useConvexProductWalletBalances: () => undefined,
+  useConvexClaimBasis: () => undefined,
 }))
 
 // The "Your Dashboard" stat cards read Net Value / Net APY from Convex via this
