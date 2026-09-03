@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useMemo } from "react"
-import { ActionCard } from "@/app/components/action-page/action-metrics"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { Slider } from "@/components/ui/slider"
 import { cn } from "@/lib/utils"
@@ -59,7 +58,7 @@ export function ActionLeverageRuler({
   max = 10,
   step = 0.1,
   label = "Multiplier",
-  variant = "card",
+  variant = "embedded",
 }: {
   value: string
   onChange: (value: string) => void
@@ -67,6 +66,7 @@ export function ActionLeverageRuler({
   max?: number
   step?: number
   label?: string
+  /** Spacing only — never wraps in a card. */
   variant?: "card" | "embedded"
 }) {
   const { t } = useTranslation()
@@ -82,7 +82,7 @@ export function ActionLeverageRuler({
     [max, min, onChange, step],
   )
 
-  const ruler = (
+  return (
     <div data-testid="action-leverage-ruler">
       <div className="flex items-center justify-between gap-4">
         <div className="text-[15px] font-semibold tracking-[-0.02em] text-foreground">{t(label)}</div>
@@ -136,8 +136,4 @@ export function ActionLeverageRuler({
       </div>
     </div>
   )
-
-  if (variant === "embedded") return ruler
-
-  return <ActionCard className="p-4">{ruler}</ActionCard>
 }
