@@ -117,13 +117,13 @@ export function DashboardInvestments({
         <>
           <div className="hidden overflow-x-auto md:block">
             <DesktopTableSurface className="!rounded-none">
-              <table className={`w-full min-w-[500px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
+              <table className={`w-full min-w-[640px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
                 <colgroup>
                   {showIndexColumn ? <col className="w-[6%]" /> : null}
                   <col className={showIndexColumn ? "w-[24%]" : "w-[26%]"} />
-                  <col className="w-[18%]" />
+                  <col className="w-[22%]" />
                   <col className="w-[16%]" />
-                  <col className={showIndexColumn ? "w-[36%]" : "w-[40%]"} />
+                  <col className={showIndexColumn ? "w-[32%]" : "w-[36%]"} />
                 </colgroup>
                 <thead>
                   <tr className={TABLE_HEADER_ROW}>

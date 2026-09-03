@@ -112,7 +112,9 @@ export function MarketMobileStatRow({
   return (
     <div className="flex items-center justify-between py-2">
       <dt className="text-muted-foreground">{label}</dt>
-      <dd className={cn("font-data font-normal tabular-nums text-foreground", valueClassName)}>{value}</dd>
+      <dd className={cn("font-data font-normal tabular-nums whitespace-nowrap text-foreground", valueClassName)}>
+        {value}
+      </dd>
     </div>
   )
 }

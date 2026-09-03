@@ -256,7 +256,7 @@ export function RecentActivity({
                   <div className="flex shrink-0 items-center gap-1.5">
                     <span
                       className={cn(
-                        "font-data text-[14px] font-medium tabular-nums tracking-[-0.02em]",
+                        "shrink-0 font-data text-[14px] font-medium tabular-nums tracking-normal",
                         amountToneClass(row),
                       )}
                     >

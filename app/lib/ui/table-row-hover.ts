@@ -29,12 +29,12 @@ export const TABLE_CELL_SECONDARY =
 /** Caption under a stacked metric (per day, liquidation value). */
 export const TABLE_CELL_CAPTION = "mt-0.5 text-[13px] tracking-normal text-muted-foreground dark:text-white/40"
 
-/** Inline numeric metric with tabular alignment. */
-export const TABLE_CELL_NUMERIC = `${TABLE_CELL_PRIMARY} tabular-nums`
+/** Inline numeric metric with tabular alignment. Keep amount + symbol on one line. */
+export const TABLE_CELL_NUMERIC = `${TABLE_CELL_PRIMARY} tabular-nums whitespace-nowrap`
 
 /** Mono numeric metric when font-data is intentional (LTV %, index #). */
 export const TABLE_CELL_NUMERIC_DATA =
-  "font-data text-[15px] font-normal tracking-normal tabular-nums text-foreground dark:text-white"
+  "font-data text-[15px] font-normal tracking-normal tabular-nums whitespace-nowrap text-foreground dark:text-white"
 
 /** Index column (#) in numbered tables. */
 export const TABLE_CELL_INDEX =
