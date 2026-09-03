@@ -14,8 +14,7 @@ import {
   type TransactionPriceContext,
 } from "@/app/lib/detail-page/transaction-display"
 
-const AMOUNT_CLASS =
-  "min-w-0 font-data text-[14px] font-normal tabular-nums tracking-normal text-foreground"
+const AMOUNT_CLASS = "min-w-0 font-data text-[14px] font-normal tabular-nums tracking-normal text-foreground"
 
 function useTransactionPriceContext(context: Record<string, string> = {}): TransactionPriceContext {
   const getLivePriceUsd = useCanonicalPriceFor()

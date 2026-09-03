@@ -196,10 +196,7 @@ export function resolvePoolUsdDisplay(
   return usd == null ? null : formatUsdFromValue(usd)
 }
 
-export function resolveTransactionUsdValue(
-  row: DetailTransactionRow,
-  opts?: TransactionPriceContext,
-): number | null {
+export function resolveTransactionUsdValue(row: DetailTransactionRow, opts?: TransactionPriceContext): number | null {
   const trimmed = row.amountLabel.trim()
   if (trimmed.includes("→") || trimmed.endsWith("x") || trimmed.endsWith("×")) return null
 
@@ -226,10 +223,7 @@ export function resolveTransactionUsdValue(
   return null
 }
 
-export function resolveTransactionUsdDisplay(
-  row: DetailTransactionRow,
-  opts?: TransactionPriceContext,
-): string | null {
+export function resolveTransactionUsdDisplay(row: DetailTransactionRow, opts?: TransactionPriceContext): string | null {
   const usd = resolveTransactionUsdValue(row, opts)
   return usd == null ? null : formatUsdFromValue(usd)
 }

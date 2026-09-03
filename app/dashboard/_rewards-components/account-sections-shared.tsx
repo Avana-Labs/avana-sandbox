@@ -56,7 +56,9 @@ export function ProductAvailableCard({
               <span className="truncate text-[14px] font-medium text-foreground">{row.symbol}</span>
             </span>
             <span className="text-right">
-              <span className="block font-data text-[14px] tabular-nums whitespace-nowrap text-foreground">{m(exact(row.valueUsd))}</span>
+              <span className="block font-data text-[14px] tabular-nums whitespace-nowrap text-foreground">
+                {m(exact(row.valueUsd))}
+              </span>
               <span className="block text-[12px] text-muted-foreground whitespace-nowrap">
                 {showDollarAmounts ? `${row.amount} ${row.symbol}` : MASK}
               </span>
