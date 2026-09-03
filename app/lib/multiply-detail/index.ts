@@ -26,6 +26,7 @@ import {
 } from "@/app/lib/borrow-detail/content-model"
 import { MULTIPLY_MARKET_ROWS, type MultiplyMarketRow } from "@/app/lib/multiply-sim"
 import { getMultiplyMarketById } from "@/app/lib/multiply-system/catalog"
+import { resolveMultiplyMarketDisplayMaxLeverage } from "@/app/lib/multiply-system/leverage-limits"
 import { formatMultiplyLoopPairLabel } from "@/app/lib/multiply-system/market-labels"
 import { catalogMarketToRow } from "@/app/lib/multiply-system/read-model"
 import { buildRiskParameterSet } from "@/app/lib/borrow-detail/risk-parameters"
@@ -65,6 +66,8 @@ export type MultiplyMarketDetail = {
   cashflow: CashflowCard
   transactions: MultiplyTxHistoryRow[]
   quickStats: QuickStat[]
+  /** Rate / leverage params for the Market Rates section (after Key Statistics). */
+  marketRates: QuickStat[]
   risk: RiskAssessment
   about: AboutCard
   faqs: FaqContent[]
@@ -122,22 +125,37 @@ function buildQuickStats(row: MultiplyMarketRow, marketId: string): QuickStat[] 
   const price = record?.collateralAsset.priceUsd ?? 1
   const availableUsd = record?.economics.availableLiquidityUsd
   const available = row.points ?? (availableUsd != null ? formatCompactUsd(availableUsd) : "—")
-  const supplyApyPct = (record?.economics.supplyApy ?? 0) * 100
-  const borrowApyPct = (record?.economics.borrowApy ?? 0) * 100
-  const reserveFactorPct = record?.risk.riskTier === "low" ? 10 : record?.risk.riskTier === "medium" ? 12 : 15
-  // E7: the trending card headlines a leveraged loop APY, so the detail must surface the
-  // same figure — not just the base supply APY. estimatedMaxApy is the single loop-APY
-  // source (calculateMaxLeverageApy at the public max), kept in sync by market-hydration.
-  const loopApyPct = (record?.economics.estimatedMaxApy ?? supplyApyPct / 100) * 100
+  const reserveFactorPct =
+    record?.economics.reserveFactorPct ??
+    (record?.risk.riskTier === "low" ? 10 : record?.risk.riskTier === "medium" ? 12 : 15)
+  // Same leveraged return the landing APY column / Market Rates Net APY use
+  // (estimatedMaxApy via calculateMaxLeverageApy at the public max).
+  const profitabilityPct = (record?.economics.estimatedMaxApy ?? 0) * 100
 
   return [
     { id: "price", label: "Price", value: formatTokenPrice(price), delta: deltaFromPct(0.1) },
     { id: "available", label: "Available Liquidity", value: available, delta: deltaUp(1.4) },
-    { id: "loopApy", label: "Max loop APY", value: formatPct(loopApyPct, 2), delta: deltaUp(1.1) },
-    { id: "supplyApy", label: "Supply APY", value: formatPct(supplyApyPct, 2), delta: deltaFromPct(0.1) },
-    { id: "rewardsApy", label: "Rewards APY", value: "No rewards" },
-    { id: "borrowApy", label: "Borrow APY", value: formatPct(borrowApyPct, 2), delta: deltaFromPct(0.08) },
+    { id: "profitability", label: "Profitability", value: formatPct(profitabilityPct, 2), delta: deltaUp(1.1) },
     { id: "reserveFactor", label: "Reserve Factor", value: formatPct(reserveFactorPct, 0) },
+  ]
+}
+
+function buildMarketRates(row: MultiplyMarketRow, marketId: string): QuickStat[] {
+  const record = getMultiplyMarketById(marketId)
+  const supplyApyPct = (record?.economics.supplyApy ?? 0) * 100
+  const borrowApyPct = (record?.economics.borrowApy ?? 0) * 100
+  const netApyPct = (record?.economics.estimatedMaxApy ?? supplyApyPct / 100) * 100
+  const maxMultiplier = resolveMultiplyMarketDisplayMaxLeverage(record?.risk.publicMaxMultiplier)
+  const collateralFactorPct = Math.round((record?.risk.collateralFactor ?? row.collateralFactor) * 100)
+  const liquidationLtvPct = Math.round((record?.risk.liquidationThreshold ?? row.liquidationThreshold) * 100)
+
+  return [
+    { id: "supplyApy", label: "Supply APY", value: formatPct(supplyApyPct, 2), delta: deltaFromPct(0.1) },
+    { id: "borrowApy", label: "Borrow APY", value: formatPct(borrowApyPct, 2), delta: deltaFromPct(0.08) },
+    { id: "netApy", label: "Net APY", value: formatPct(netApyPct, 2), delta: deltaUp(1.1) },
+    { id: "maxMultiplier", label: "Max Multiplier", value: `${maxMultiplier.toFixed(2)}x` },
+    { id: "collateralFactor", label: "Collateral Factor", value: `${collateralFactorPct}%` },
+    { id: "liquidationLtv", label: "Liquidation LTV", value: `${liquidationLtvPct}%` },
   ]
 }
 
@@ -472,6 +490,7 @@ export function getMultiplyMarketDetail(id: string): MultiplyMarketDetail | null
     cashflow: buildCashflow(`multiply:${row.protocol}-${row.asset}`, liquidityUsd, borrowApy),
     transactions: buildTransactions(row),
     quickStats: buildQuickStats(row, resolvedId),
+    marketRates: buildMarketRates(row, resolvedId),
     risk: buildRisk(row),
     about: buildAbout(row, resolvedId),
     faqs: buildMultiplyFaqs(row.protocol, row.asset),

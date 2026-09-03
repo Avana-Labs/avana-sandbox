@@ -29,21 +29,27 @@ describe("multiply detail about contract", () => {
     expect(detail.about.stats).toEqual([])
   })
 
-  it("uses lend-style key statistics and risk parameters", () => {
+  it("uses slim key statistics, market rates, and risk parameters", () => {
     const detail = getMultiplyMarketDetail("aave-gho")!
     expect(detail.quickStats.map((stat) => stat.label)).toEqual([
       "Price",
       "Available Liquidity",
-      "Max loop APY",
-      "Supply APY",
-      "Rewards APY",
-      "Borrow APY",
+      "Profitability",
       "Reserve Factor",
     ])
-    // E7: the detail surfaces the SAME leveraged loop APY the trending card advertises
+    // Profitability / Net APY are the same leveraged return the landing APY column uses
     // (economics.estimatedMaxApy), not just the base supply APY.
-    const loopStat = detail.quickStats.find((stat) => stat.label === "Max loop APY")!
-    expect(loopStat.value).toBe("10.56%")
+    expect(detail.quickStats.find((stat) => stat.label === "Profitability")!.value).toBe("10.56%")
+    expect(detail.marketRates.map((stat) => stat.label)).toEqual([
+      "Supply APY",
+      "Borrow APY",
+      "Net APY",
+      "Max Multiplier",
+      "Collateral Factor",
+      "Liquidation LTV",
+    ])
+    expect(detail.marketRates.find((stat) => stat.label === "Net APY")!.value).toBe("10.56%")
+    expect(detail.marketRates.find((stat) => stat.label === "Max Multiplier")!.value).toBe("1.80x")
     expect(detail.about.governanceParameters?.parameters.map((parameter) => parameter.label)).toEqual([
       "Collateral factor",
       "Collateral risk",

@@ -216,9 +216,13 @@ export function applyMultiplyPreloadedOverlays(
     overlays.quickStats != null
       ? injectBaselinePrice(mergeConvexQuickStats(detail.quickStats, overlays.quickStats), overlays.baselinePriceSymbol)
       : detail.quickStats
+  // Supply/Borrow APY live on Market Rates now; reuse the same getQuickStats alias map.
+  const marketRates =
+    overlays.quickStats != null ? mergeConvexQuickStats(detail.marketRates, overlays.quickStats) : detail.marketRates
   return {
     ...detail,
     quickStats,
+    marketRates,
     cashflow: overlays.cashflow ?? detail.cashflow,
   }
 }
