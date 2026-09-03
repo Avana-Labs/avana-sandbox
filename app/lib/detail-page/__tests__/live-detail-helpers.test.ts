@@ -37,10 +37,30 @@ describe("applyDetailContentOverlay", () => {
     expect(next.faqs).toEqual(convexContent.faqs)
   })
 
-  it("preserves governanceParameters from the base detail when content has none", () => {
+  it("preserves governanceParameters from the base detail when content has no changelog", () => {
     const next = applyDetailContentOverlay(mockDetail, convexContent)
 
     expect(next.about.governanceParameters).toEqual(mockDetail.about.governanceParameters)
+  })
+
+  it("applies the Convex changelog when content carries one, keeping base parameters", () => {
+    const changelog = [
+      {
+        id: "chg-0",
+        parameter: "Supply cap",
+        previous: "$100M",
+        current: "$120M",
+        date: "2026-05-01",
+        source: "Risk parameter review",
+        executor: "Governance executor",
+        category: "Risk Management",
+      },
+    ]
+    const next = applyDetailContentOverlay(mockDetail, { ...convexContent, changelog })
+
+    expect(next.about.governanceParameters?.changelog).toEqual(changelog)
+    // Base parameters are kept (applyRiskParametersToAbout refreshes them downstream).
+    expect(next.about.governanceParameters?.parameters).toEqual(mockDetail.about.governanceParameters.parameters)
   })
 
   it("returns the base detail unchanged when content is null", () => {
@@ -54,7 +74,9 @@ describe("applyDetailContentOverlay", () => {
     expect(next.about.stats).toEqual([])
     expect(next.about.history).toEqual([])
     expect(next.faqs).toEqual([])
-    expect(next.about.governanceParameters).toEqual(mockDetail.about.governanceParameters)
+    // Fail closed in live: drop the mock changelog, but keep the parameter grid.
+    expect(next.about.governanceParameters?.changelog).toEqual([])
+    expect(next.about.governanceParameters?.parameters).toEqual(mockDetail.about.governanceParameters.parameters)
   })
 })
 

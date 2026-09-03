@@ -268,6 +268,8 @@ export type AboutCard = {
       date: string
       source: string
       executor: string
+      /** Aave-style action group: "Risk Management" | "Domain Admin" | "Listing" | "Emergency". */
+      category?: string
       href?: string
     }>
   }
