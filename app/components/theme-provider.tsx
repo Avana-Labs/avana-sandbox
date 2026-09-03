@@ -96,6 +96,20 @@ export function ThemeProvider({
     window.localStorage.setItem(storageKey, theme)
   }, [hydrated, storageKey, theme])
 
+  // Other tabs write the same localStorage key; the `storage` event only fires in
+  // sibling documents, so this keeps theme in sync without same-tab echo loops.
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== storageKey || event.newValue == null) return
+      if (event.newValue !== "light" && event.newValue !== "dark" && event.newValue !== "system") return
+      const next = event.newValue as Theme
+      setThemeState((current) => (current === next ? current : next))
+    }
+
+    window.addEventListener("storage", handleStorage)
+    return () => window.removeEventListener("storage", handleStorage)
+  }, [storageKey])
+
   useEffect(() => {
     if (typeof window === "undefined") {
       return
