@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import type { PortfolioMultiplyCollateral } from "@/app/lib/data/providers/portfolio"
 import { MultiplyCollateralTable } from "@/app/dashboard/multiply-collateral-table"
+import type { MultiplyPositionLiveApy } from "@/app/dashboard/dashboard-tab-metrics"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 
 const push = vi.fn()
@@ -79,7 +80,7 @@ describe("MultiplyCollateralTable", () => {
     expect(screen.getAllByRole("button", { name: "Manage" })).toHaveLength(2)
   })
 
-  it("shows the projected liquidation price for an active position", () => {
+  it("shows the projected liquidation price, tagged with the collateral token", () => {
     render(
       <DisplayPreferencesProvider>
         <MultiplyCollateralTable rows={rows} />
@@ -87,37 +88,54 @@ describe("MultiplyCollateralTable", () => {
     )
 
     // liquidationPriceUsd (2100) is surfaced exact (once per responsive layout:
-    // desktop table + mobile card) rather than compacted to "$2.1K".
+    // desktop table + mobile card) rather than compacted to "$2.1K", and now names
+    // the collateral asset whose price is being quoted: "Liq. price $2,100 (ETH)".
     expect(screen.getAllByText(/\$2,100/).length).toBeGreaterThan(0)
-    expect(screen.getByRole("columnheader", { name: "RISK" })).toBeTruthy()
+    expect(screen.getAllByText(/Liq\. .*\(ETH\)/).length).toBeGreaterThan(0)
+    expect(screen.getByRole("columnheader", { name: /RISK/i })).toBeTruthy()
   })
 
-  it("renders one compact loop table with one action per position", () => {
+  it("renders one compact Multiply Positions table with one action per position", () => {
     render(
       <DisplayPreferencesProvider>
         <MultiplyCollateralTable rows={rows} />
       </DisplayPreferencesProvider>,
     )
 
-    expect(screen.getByRole("heading", { name: "Loop Positions" })).toBeTruthy()
-    expect(screen.getByText("Exposure, return, and liquidation risk for each active loop")).toBeTruthy()
-    expect(screen.getByRole("columnheader", { name: "LOOP" })).toBeTruthy()
-    expect(screen.getByRole("columnheader", { name: "EQUITY" })).toBeTruthy()
-    expect(screen.getByRole("columnheader", { name: "EXPOSURE" })).toBeTruthy()
-    expect(screen.getByRole("columnheader", { name: "RISK" })).toBeTruthy()
+    expect(screen.getByRole("heading", { name: "Multiply Positions" })).toBeTruthy()
+    // Header subtitle is now a count, mirroring the Lend/Borrow tables ("8 assets").
+    expect(screen.getByText("1 loop")).toBeTruthy()
+    // Columns each carry an (i) help button, so match the header label with a regex.
+    expect(screen.getByRole("columnheader", { name: /LOOP/i })).toBeTruthy()
+    expect(screen.getByRole("columnheader", { name: /VALUE/i })).toBeTruthy()
+    expect(screen.getByRole("columnheader", { name: /APY/i })).toBeTruthy()
+    expect(screen.getByRole("columnheader", { name: /RISK/i })).toBeTruthy()
+    expect(screen.queryByRole("columnheader", { name: /EQUITY/i })).toBeNull()
     expect(screen.getAllByRole("button", { name: "Manage" })).toHaveLength(2)
     expect(screen.queryByRole("button", { name: "Multiply" })).toBeNull()
-    expect(screen.queryByRole("button", { name: "Deleverage" })).toBeNull()
-    expect(screen.queryByRole("button", { name: "Close" })).toBeNull()
-    expect(screen.getAllByText("Supply ETH")).toHaveLength(2)
-    expect(screen.getAllByText("Borrow USDT")).toHaveLength(2)
-    // Position is now two columns: equity over leverage, exposure over borrowed debt
-    // (Net APY is portfolio-level only, not per loop).
-    expect(screen.getAllByText("$3.5K")).toHaveLength(1)
-    expect(screen.getAllByText("2.00× leverage")).toHaveLength(1)
-    expect(screen.getAllByText("$7.0K")).toHaveLength(1)
-    expect(screen.getAllByText("$3.5K debt")).toHaveLength(1)
-    expect(screen.queryByText(/Net APY/)).toBeNull()
+    // Loop identity is now a compact "COLLATERAL / BORROW" pair (desktop + mobile),
+    // with leverage on the caption line below it — no "Supply …"/"Borrow …" verbs.
+    expect(screen.getAllByText("ETH / USDT")).toHaveLength(2)
+    expect(screen.getAllByText(/2\.00× leverage/).length).toBeGreaterThan(0)
+    // Value cell = equity primary + exposure ("Exp.") subtitle; debt is gone.
+    expect(screen.getAllByText("$3.5K").length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/\$7\.0K/).length).toBeGreaterThan(0)
+    expect(screen.queryByText(/\$3\.5K debt/)).toBeNull()
+  })
+
+  it("renders per-loop Net APY and live carry when apy terms are supplied", () => {
+    const netApyByMarket = new Map<string, MultiplyPositionLiveApy>([
+      ["eth-usdt", { netApyPct: 6.2, ratePerYearUsd: 217, baseUsd: 12.5, accrualSinceMs: Date.now() }],
+    ])
+    render(
+      <DisplayPreferencesProvider>
+        <MultiplyCollateralTable rows={rows} netApyByMarket={netApyByMarket} />
+      </DisplayPreferencesProvider>,
+    )
+
+    // Signed net APY (desktop + mobile) and the live carry line ticking up from baseUsd.
+    expect(screen.getAllByText("+6.20%").length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/\$12\.5/).length).toBeGreaterThan(0)
   })
 
   it("renders a dash when a position has no liquidation price (debt-free)", () => {

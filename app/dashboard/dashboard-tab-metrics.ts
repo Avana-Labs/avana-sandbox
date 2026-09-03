@@ -296,6 +296,52 @@ export function buildMultiplyBalanceMetrics(
   }
 }
 
+/** Per-loop Net APY plus the terms that drive its live carry counter. */
+export type MultiplyPositionLiveApy = {
+  netApyPct: number
+  ratePerYearUsd: number
+  baseUsd: number
+  accrualSinceMs: number
+}
+
+/**
+ * Per-market Net APY + live-carry terms, derived from the SAME `state.positions` the Multiply
+ * Balance headline reads, so a per-row figure in the Multiply Positions table can never disagree
+ * with the headline. Keyed by marketId; multiple positions in one market aggregate (equity-weighted
+ * APY, summed carry). `baseUsd` is the carry accrued to `accrualSinceMs` (now); the row's live
+ * counter ticks up from there at `ratePerYearUsd`, exactly as {@link buildMultiplyBalanceMetrics}.
+ */
+export function buildMultiplyPositionLiveApyByMarket(
+  state: MultiplySystemState,
+  walletId: string,
+): Map<string, MultiplyPositionLiveApy> {
+  const now = Date.now()
+  const byMarket = new Map<string, { equityUsd: number; ratePerYearUsd: number; baseUsd: number }>()
+  for (const position of Object.values(state.positions)) {
+    if (position.walletId !== walletId) continue
+    const equityUsd = Math.max(0, position.collateralValueUsd - position.debtValueUsd)
+    if (equityUsd <= 0) continue
+    const ratePerYearUsd = equityUsd * position.netApy
+    const baseUsd = ratePerYearUsd * (Math.max(0, now - position.openedAt) / YEAR_MS)
+    const prev = byMarket.get(position.marketId) ?? { equityUsd: 0, ratePerYearUsd: 0, baseUsd: 0 }
+    byMarket.set(position.marketId, {
+      equityUsd: prev.equityUsd + equityUsd,
+      ratePerYearUsd: prev.ratePerYearUsd + ratePerYearUsd,
+      baseUsd: prev.baseUsd + baseUsd,
+    })
+  }
+  const result = new Map<string, MultiplyPositionLiveApy>()
+  for (const [marketId, agg] of byMarket) {
+    result.set(marketId, {
+      netApyPct: agg.equityUsd > 0 ? (agg.ratePerYearUsd / agg.equityUsd) * 100 : 0,
+      ratePerYearUsd: agg.ratePerYearUsd,
+      baseUsd: agg.baseUsd,
+      accrualSinceMs: now,
+    })
+  }
+  return result
+}
+
 export function buildLendDashboardMetrics(data: PortfolioLendTabData) {
   const balance = buildLendBalanceMetrics(data)
   const investments = data.investments ?? []

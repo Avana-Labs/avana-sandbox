@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import {
   MarketMobileActionFooter,
@@ -14,14 +15,13 @@ import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app
 import { TokenIcon } from "@/app/components/token-icon"
 import { pairedLoopBorrowPx, TOKEN_ICON_TABLE_PAIR_WIDTH_PX, TOKEN_ICON_TABLE_PX } from "@/app/lib/token-icon-sizes"
 import { formatCompactUsd, formatUsdExact } from "@/app/lib/borrow-sim"
+import type { MultiplyPositionLiveApy } from "@/app/dashboard/dashboard-tab-metrics"
+import { LiveInterestEarnedUsd } from "@/app/dashboard/live-accrual"
 import type { PortfolioMultiplyCollateral } from "@/app/lib/data/providers/portfolio"
 import { healthFactorBand } from "@/app/lib/health/health-factor-bands"
-import {
-  translateMultiplyLoopBorrowLabel,
-  translateMultiplyLoopSupplyLabel,
-} from "@/app/lib/multiply-system/market-labels"
 import { formatHealthFactor } from "@/app/lib/home-sim"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { formatSectionCount } from "@/app/lib/ui/section-count"
 import {
   TABLE_BASE,
   TABLE_BODY_ROW,
@@ -35,23 +35,34 @@ import {
   TABLE_ROW_HOVER_BG,
   TABLE_ROW_HOVER_LEFT,
   TABLE_ROW_HOVER_RIGHT,
-  formatTableHeaderLabel,
 } from "@/app/lib/ui/table-row-hover"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 const MASK = "••••"
 
+type NetApyByMarket = Map<string, MultiplyPositionLiveApy>
+
 function positionEquityUsd(row: PortfolioMultiplyCollateral) {
   return Math.max(0, row.collateralUsd - row.debtUsd)
 }
 
+function formatNetApyPct(pct: number) {
+  return `${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%`
+}
+
+function netApyToneClass(pct: number) {
+  return pct < 0 ? "text-danger" : "text-success"
+}
+
 export function MultiplyCollateralTable({
   rows,
+  netApyByMarket,
   returnHref: _returnHref,
   showHeading = true,
 }: {
   rows: PortfolioMultiplyCollateral[]
+  netApyByMarket?: NetApyByMarket
   returnHref?: string
   showHeading?: boolean
 }) {
@@ -61,6 +72,7 @@ export function MultiplyCollateralTable({
   const usd = (value: number) => (showDollarAmounts ? formatCompactUsd(value) : MASK)
   const liqPrice = (value: number | null) => (value == null ? "—" : showDollarAmounts ? formatUsdExact(value) : MASK)
   const activeRows = rows.filter((row) => row.status === "open" && row.collateralUsd > 0)
+  const apyFor = (row: PortfolioMultiplyCollateral) => netApyByMarket?.get(row.marketId)
 
   const openPosition = (row: PortfolioMultiplyCollateral) => router.push(`/multiply/markets/${row.marketId}`)
   const openManage = (event: React.MouseEvent, row: PortfolioMultiplyCollateral) => {
@@ -73,7 +85,7 @@ export function MultiplyCollateralTable({
       <section>
         {showHeading ? (
           <h3 className="mb-4 text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
-            {t("Loop Positions")}
+            {t("Multiply Positions")}
           </h3>
         ) : null}
         <div className="rounded-radius-md border border-dashed border-border px-6 py-10 text-center text-[13px] text-muted-foreground">
@@ -88,30 +100,56 @@ export function MultiplyCollateralTable({
       {showHeading ? (
         <div className="mb-4">
           <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">
-            {t("Loop Positions")}
+            {t("Multiply Positions")}
           </h3>
           <p className="mt-1 text-[13px] text-muted-foreground">
-            {t("Exposure, return, and liquidation risk for each active loop")}
+            {formatSectionCount(activeRows.length, "loop", "loops")}
           </p>
         </div>
       ) : null}
 
       <div className="hidden overflow-x-auto md:block">
         <DesktopTableSurface className="!rounded-none">
-          <table className={`w-full min-w-[720px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
+          <table className={`w-full min-w-[780px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
             <colgroup>
-              <col className="w-[26%]" />
-              <col className="w-[18%]" />
-              <col className="w-[20%]" />
-              <col className="w-[22%]" />
+              <col className="w-[30%]" />
+              <col className="w-[17%]" />
+              <col className="w-[16%]" />
+              <col className="w-[23%]" />
               <col className="w-[14%]" />
             </colgroup>
             <thead>
               <tr className={TABLE_HEADER_ROW}>
-                <th className={cn(TABLE_HEADER_CELL, "px-5")}>{formatTableHeaderLabel(t("Loop"))}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("Equity"))}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("Exposure"))}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("Risk"))}</th>
+                <th className={cn(TABLE_HEADER_CELL, "px-5")}>
+                  <MetricHeader
+                    label={t("Loop")}
+                    help={t("The collateral you supply and the asset you borrow against it to build leverage.")}
+                  />
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                  <MetricHeader
+                    label={t("Value")}
+                    help={t(
+                      "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.",
+                    )}
+                  />
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                  <MetricHeader
+                    label={t("APY")}
+                    help={t(
+                      "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.",
+                    )}
+                  />
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4")}>
+                  <MetricHeader
+                    label={t("Risk")}
+                    help={t(
+                      "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.",
+                    )}
+                  />
+                </th>
                 <SilentActionHeader className="!rounded-none pr-5" />
               </tr>
             </thead>
@@ -123,7 +161,8 @@ export function MultiplyCollateralTable({
                   onClick={() => openPosition(row)}
                 >
                   <LoopCell row={row} />
-                  <PositionCell row={row} usd={usd} />
+                  <ValueCell row={row} usd={usd} />
+                  <NetApyCell apy={apyFor(row)} showDollarAmounts={showDollarAmounts} />
                   <RiskCell row={row} liqPrice={liqPrice} />
                   <td className={cn(TABLE_CELL_PADDING_TRAILING, TABLE_ROW_HOVER_RIGHT)}>
                     <HoverActionGroup>
@@ -146,38 +185,67 @@ export function MultiplyCollateralTable({
       </div>
 
       <div className="space-y-3 md:hidden">
-        {activeRows.map((row) => (
-          <MarketMobileCard key={row.id} clickable className="space-y-3" onClick={() => openPosition(row)}>
-            <MarketMobileCardHeader identity={<LoopIdentity row={row} />} />
-            <MarketMobileStatList>
-              <MarketMobileStatRow
-                label={t("Position")}
-                value={`${usd(positionEquityUsd(row))} · ${row.multiplier.toFixed(2)}×`}
-              />
-              <MarketMobileStatRow
-                label={t("Exposure")}
-                value={`${usd(row.collateralUsd)} · ${usd(row.debtUsd)} ${t("debt")}`}
-              />
-              <MarketMobileStatRow
-                label={t("Risk")}
-                value={`${t("HF")} ${formatHealthFactor(row.healthFactor)} · ${t("Liq.")} ${liqPrice(row.liquidationPriceUsd)}`}
-                valueClassName={healthFactorBand(row.healthFactor).textClass}
-              />
-            </MarketMobileStatList>
-            <MarketMobileActionFooter columns={1}>
-              <Button
-                type="button"
-                variant="brand-secondary"
-                className="h-11 rounded-radius-sm text-[14px] font-normal"
-                onClick={(event) => openManage(event, row)}
-              >
-                {t("Manage")}
-              </Button>
-            </MarketMobileActionFooter>
-          </MarketMobileCard>
-        ))}
+        {activeRows.map((row) => {
+          const apy = apyFor(row)
+          const band = healthFactorBand(row.healthFactor)
+          return (
+            <MarketMobileCard key={row.id} clickable className="space-y-3" onClick={() => openPosition(row)}>
+              <MarketMobileCardHeader identity={<LoopIdentity row={row} />} />
+              <MarketMobileStatList>
+                <MarketMobileStatRow label={t("Value")} value={usd(positionEquityUsd(row))} />
+                <MarketMobileStatRow label={t("Exposure")} value={usd(row.collateralUsd)} />
+                <MarketMobileStatRow
+                  label={t("Net APY")}
+                  value={
+                    apy ? (
+                      <span className={netApyToneClass(apy.netApyPct)}>
+                        {formatNetApyPct(apy.netApyPct)}
+                        {showDollarAmounts ? (
+                          <>
+                            {" · "}
+                            <LiveInterestEarnedUsd
+                              anchorMs={apy.accrualSinceMs}
+                              ratePerYearUsd={apy.ratePerYearUsd}
+                              baseUsd={apy.baseUsd}
+                            />
+                          </>
+                        ) : null}
+                      </span>
+                    ) : (
+                      "—"
+                    )
+                  }
+                />
+                <MarketMobileStatRow
+                  label={t("Risk")}
+                  value={`${t("HF")} ${formatHealthFactor(row.healthFactor)} · ${liqPriceLabel(t, row, liqPrice)}`}
+                  valueClassName={band.textClass}
+                />
+              </MarketMobileStatList>
+              <MarketMobileActionFooter columns={1}>
+                <Button
+                  type="button"
+                  variant="brand-secondary"
+                  className="h-11 rounded-radius-sm text-[14px] font-normal"
+                  onClick={(event) => openManage(event, row)}
+                >
+                  {t("Manage")}
+                </Button>
+              </MarketMobileActionFooter>
+            </MarketMobileCard>
+          )
+        })}
       </div>
     </section>
+  )
+}
+
+function MetricHeader({ label, help, align = "left" }: { label: string; help: string; align?: "left" | "right" }) {
+  return (
+    <span className={cn("inline-flex items-center gap-1", align === "right" && "justify-end")}>
+      {label}
+      <ActionMetricHelp topic={label} text={help} />
+    </span>
   )
 }
 
@@ -206,8 +274,8 @@ function LoopIdentity({ row }: { row: PortfolioMultiplyCollateral }) {
     <div className="flex min-w-0 items-center gap-3">
       <PairedTokenIcons row={row} />
       <MarketMobileIdentityText
-        title={translateMultiplyLoopSupplyLabel(t, row.collateralToken)}
-        subtitle={translateMultiplyLoopBorrowLabel(t, row.borrowableToken)}
+        title={`${row.collateralToken} / ${row.borrowableToken}`}
+        subtitle={`${row.multiplier.toFixed(2)}× ${t("leverage")}`}
       />
     </div>
   )
@@ -221,10 +289,10 @@ function LoopCell({ row }: { row: PortfolioMultiplyCollateral }) {
         <PairedTokenIcons row={row} />
         <span className="min-w-0">
           <span className={cn("block truncate", TABLE_CELL_PRIMARY)}>
-            {translateMultiplyLoopSupplyLabel(t, row.collateralToken)}
+            {row.collateralToken} / {row.borrowableToken}
           </span>
           <span className={cn("block truncate", TABLE_CELL_SECONDARY)}>
-            {translateMultiplyLoopBorrowLabel(t, row.borrowableToken)}
+            {row.multiplier.toFixed(2)}× {t("leverage")}
           </span>
         </span>
       </div>
@@ -232,26 +300,59 @@ function LoopCell({ row }: { row: PortfolioMultiplyCollateral }) {
   )
 }
 
-function PositionCell({ row, usd }: { row: PortfolioMultiplyCollateral; usd: (value: number) => string }) {
+function ValueCell({ row, usd }: { row: PortfolioMultiplyCollateral; usd: (value: number) => string }) {
   const { t } = useTranslation()
   return (
-    <>
-      <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
-        <span className={cn("block", TABLE_CELL_NUMERIC)}>{usd(positionEquityUsd(row))}</span>
-        <span className={cn("block", TABLE_CELL_SECONDARY)}>
-          {row.multiplier.toFixed(2)}× {t("leverage")}
-        </span>
-      </td>
-      <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
-        <span className={cn("block", TABLE_CELL_NUMERIC)}>{usd(row.collateralUsd)}</span>
-        {/* Net APY is a portfolio-level figure (Multiply Balance), not per-loop — show the borrowed
-        portion here instead: equity + this debt = the exposure above. */}
-        <span className={cn("block", TABLE_CELL_SECONDARY)}>
-          {usd(row.debtUsd)} {t("debt")}
-        </span>
-      </td>
-    </>
+    <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+      <span className={cn("block", TABLE_CELL_NUMERIC)}>{usd(positionEquityUsd(row))}</span>
+      <span className={cn("block", TABLE_CELL_SECONDARY)}>
+        {usd(row.collateralUsd)} {t("Exp.")}
+      </span>
+    </td>
   )
+}
+
+function NetApyCell({
+  apy,
+  showDollarAmounts,
+}: {
+  apy: MultiplyPositionLiveApy | undefined
+  showDollarAmounts: boolean
+}) {
+  if (!apy) {
+    return (
+      <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+        <span className={cn("block", TABLE_CELL_NUMERIC)}>—</span>
+      </td>
+    )
+  }
+  return (
+    <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+      <span className={cn("block", TABLE_CELL_NUMERIC, netApyToneClass(apy.netApyPct))}>
+        {formatNetApyPct(apy.netApyPct)}
+      </span>
+      <span className={cn("block", TABLE_CELL_SECONDARY, "text-success")}>
+        {showDollarAmounts ? (
+          <LiveInterestEarnedUsd
+            anchorMs={apy.accrualSinceMs}
+            ratePerYearUsd={apy.ratePerYearUsd}
+            baseUsd={apy.baseUsd}
+          />
+        ) : (
+          MASK
+        )}
+      </span>
+    </td>
+  )
+}
+
+function liqPriceLabel(
+  t: (key: string) => string,
+  row: PortfolioMultiplyCollateral,
+  liqPrice: (value: number | null) => string,
+) {
+  if (row.liquidationPriceUsd == null) return `${t("Liq.")} —`
+  return `${t("Liq.")} ${liqPrice(row.liquidationPriceUsd)} (${row.collateralToken})`
 }
 
 function RiskCell({ row, liqPrice }: { row: PortfolioMultiplyCollateral; liqPrice: (value: number | null) => string }) {
@@ -261,9 +362,7 @@ function RiskCell({ row, liqPrice }: { row: PortfolioMultiplyCollateral; liqPric
       <span className={cn("block", TABLE_CELL_NUMERIC, healthFactorBand(row.healthFactor).textClass)}>
         {t("HF")} {formatHealthFactor(row.healthFactor)}
       </span>
-      <span className={cn("block", TABLE_CELL_SECONDARY)}>
-        {t("Liq. at")} {liqPrice(row.liquidationPriceUsd)}
-      </span>
+      <span className={cn("block", TABLE_CELL_SECONDARY)}>{liqPriceLabel(t, row, liqPrice)}</span>
     </td>
   )
 }
