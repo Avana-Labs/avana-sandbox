@@ -35,7 +35,7 @@ describe("multiply preview mappers", () => {
     ])
 
     expect(ui.marketBreakdown).toBeUndefined()
-    expect(ui.marketValue).toBe("WETH · USDC")
+    expect(ui.marketValue).toBe("")
     expect(ui.rateLabel).toBe("")
     expect(ui.metrics.map((row) => row.label)).toEqual([
       "Collateral",

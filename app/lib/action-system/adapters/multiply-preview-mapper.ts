@@ -146,7 +146,9 @@ export function mapMultiplyPreviewToActionUi(
     rateLabel: "",
     rateValue: "",
     marketLabel: "Market",
-    marketValue: options.marketLabel,
+    // Omit Market row — pair is already in the page chrome; the Supply X · Borrow Y
+    // card was redundant noise next to Network fee.
+    marketValue: "",
     balanceLabel: "Selected leverage",
     balanceValue: `${options.multiplier.toFixed(2)}x`,
     maxAmount: options.multiplier,
@@ -203,7 +205,7 @@ export function mapDeleveragePreviewToActionUi(
     rateLabel: "",
     rateValue: "",
     marketLabel: "Market",
-    marketValue: options.marketLabel,
+    marketValue: "",
     balanceLabel: "Target multiplier",
     balanceValue: `${options.targetMultiplier.toFixed(2)}x`,
     maxAmount: preview.before.multiplier,
