@@ -61,6 +61,7 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
         title={t("Lend Assets")}
         countLabel={t("{count} assets").replace("{count}", String(lendTabData.investments.length))}
         returnHref={returnHref}
+        accrualSinceMs={balanceMetrics.accrualSinceMs}
       />
     </section>
   )

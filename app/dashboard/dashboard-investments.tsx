@@ -19,6 +19,9 @@ import { useAmountDisplayPreferences } from "@/app/components/display-preference
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { TokenIcon } from "@/app/components/token-icon"
 import type { PortfolioLendTabData, PortfolioSupplyPosition } from "@/app/lib/data/providers/portfolio"
+import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
+import { formatTokenPrice } from "@/app/lib/prices/format"
+import { LiveInterestEarnedUsd } from "@/app/dashboard/live-accrual"
 import { formatUsdExact } from "@/app/lib/borrow-sim"
 import { getActiveCurrency } from "@/app/lib/currency/active-rate"
 import {
@@ -51,11 +54,60 @@ function formatClaimableUsd(value: number) {
 }
 
 function formatTokenAmount(value: number, symbol: string) {
-  return `${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${symbol}`
+  // Adaptive precision (matches the wallet Tokens table): more decimals for small
+  // balances so `amount × unit price` reconciles with the USD line instead of losing
+  // a few dollars to a hard 2-decimal round on high-unit-price tokens like weETH.
+  const maximumFractionDigits = value >= 100 ? 2 : value >= 1 ? 4 : 6
+  return `${value.toLocaleString("en-US", { maximumFractionDigits })} ${symbol}`
 }
 
 function resolveMarketId(token: PortfolioSupplyPosition) {
   return token.marketId ?? token.symbol.toLowerCase()
+}
+
+/**
+ * Asset second line: the live unit price, falling back to the symbol when the
+ * oracle has none — identical to the lend markets table (`AssetSubLabel`), so
+ * this dashboard table matches it for ANY onboarded token, priced or not.
+ */
+function AssetPriceSubLabel({ symbol }: { symbol: string }) {
+  const priceFor = useCanonicalPriceFor()
+  const price = priceFor(symbol)
+  return <>{price !== undefined ? formatTokenPrice(price) : symbol}</>
+}
+
+/**
+ * Per-asset interest earned. When `anchorMs` is provided it accrues in real time at
+ * this position's own rate (suppliedUsd × APY) from the supply moment — so the column
+ * ticks live and the rows sum exactly to the "Interest Earned" metric on Lend Balance
+ * (whose rate is totalSupplied × net-APY = Σ suppliedᵢ × apyᵢ). Falls back to the
+ * static ledger value when no anchor is passed (interest excludes protocol rewards).
+ */
+function EarnedCell({
+  token,
+  anchorMs,
+  show,
+  className,
+}: {
+  token: PortfolioSupplyPosition
+  anchorMs: number | null | undefined
+  show: boolean
+  className?: string
+}) {
+  if (!show) return <span className={className}>{MASK}</span>
+  const baseUsd = token.interestUsd ?? token.earnedUsd
+  if (anchorMs === undefined) return <span className={className}>+{formatUsdExact(baseUsd)}</span>
+  return (
+    <span className={className}>
+      +
+      <LiveInterestEarnedUsd
+        anchorMs={anchorMs}
+        ratePerYearUsd={(token.suppliedUsd * token.apyPct) / 100}
+        baseUsd={baseUsd}
+        fractionDigits={4}
+      />
+    </span>
+  )
 }
 
 export function DashboardInvestments({
@@ -68,6 +120,7 @@ export function DashboardInvestments({
   returnHref,
   title = "Assets",
   countLabel,
+  accrualSinceMs,
 }: {
   investments: PortfolioSupplyPosition[]
   rewardsSummary?: PortfolioLendTabData["rewardsSummary"]
@@ -80,12 +133,23 @@ export function DashboardInvestments({
   returnHref?: string
   title?: string
   countLabel?: string
+  // When set, the Earned column accrues live from this supply-start anchor (see
+  // EarnedCell). Omit to keep the static ledger value.
+  accrualSinceMs?: number | null
 }) {
   const router = useRouter()
   const { t } = useTranslation()
   const { showDollarAmounts } = useAmountDisplayPreferences()
+  const priceFor = useCanonicalPriceFor()
   const claimableUsd = rewardsSummary?.claimableUsd ?? 0
   const m = (value: string) => (showDollarAmounts ? value : MASK)
+  // Current worth of the deposit = balance × live price, so the USD line tracks the
+  // oracle instead of the frozen supplied value stored at deposit time. Falls back
+  // to the stored suppliedUsd when the token is unpriced.
+  const depositedUsd = (token: PortfolioSupplyPosition) => {
+    const price = priceFor(token.symbol)
+    return price !== undefined ? token.balance * price : token.suppliedUsd
+  }
 
   return (
     <section className={showHeading ? "mb-8" : undefined}>
@@ -162,17 +226,24 @@ export function DashboardInvestments({
                             <TokenIcon symbol={token.symbol} size="table" />
                             <div className="flex min-w-0 flex-col">
                               <span className={cn("truncate", TABLE_CELL_PRIMARY)}>{token.name}</span>
-                              <span className={TABLE_CELL_SECONDARY}>{token.symbol}</span>
+                              <span className={cn(TABLE_CELL_SECONDARY, "tabular-nums")}>
+                                <AssetPriceSubLabel symbol={token.symbol} />
+                              </span>
                             </div>
                           </div>
                         </td>
                         <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
                           <div className={TABLE_CELL_NUMERIC}>{m(formatTokenAmount(token.balance, token.symbol))}</div>
-                          <div className={TABLE_CELL_SECONDARY}>{m(formatUsdExact(token.suppliedUsd))}</div>
+                          <div className={TABLE_CELL_SECONDARY}>{m(formatUsdExact(depositedUsd(token)))}</div>
                         </td>
                         <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
                           <div className={TABLE_CELL_NUMERIC}>{token.apyPct.toFixed(2)}%</div>
-                          <div className={TABLE_CELL_SECONDARY}>{m(`+${formatUsdExact(token.earnedUsd)}`)}</div>
+                          <EarnedCell
+                            token={token}
+                            anchorMs={accrualSinceMs}
+                            show={showDollarAmounts}
+                            className={cn(TABLE_CELL_SECONDARY, "text-success")}
+                          />
                         </td>
                         <td className={cn(TABLE_CELL_PADDING_TRAILING, TABLE_ROW_HOVER_RIGHT)}>
                           <HoverActionGroup className="justify-end gap-2">
@@ -237,7 +308,10 @@ export function DashboardInvestments({
                     identity={
                       <div className="flex min-w-0 items-center gap-2.5">
                         <TokenIcon symbol={token.symbol} size="table" />
-                        <MarketMobileIdentityText title={token.name} subtitle={token.symbol} />
+                        <MarketMobileIdentityText
+                          title={token.name}
+                          subtitle={<AssetPriceSubLabel symbol={token.symbol} />}
+                        />
                       </div>
                     }
                     metric={<MarketMobileMetric value={`${token.apyPct.toFixed(2)}%`} label="APY" />}
@@ -249,7 +323,7 @@ export function DashboardInvestments({
                         <span>
                           {m(formatTokenAmount(token.balance, token.symbol))}
                           <MarketMobileSupportingValue>
-                            {m(formatUsdExact(token.suppliedUsd))}
+                            {m(formatUsdExact(depositedUsd(token)))}
                           </MarketMobileSupportingValue>
                         </span>
                       }
@@ -258,7 +332,7 @@ export function DashboardInvestments({
                       label={t("Earnings")}
                       value={
                         <span>
-                          {m(`+${formatUsdExact(token.earnedUsd)}`)}
+                          <EarnedCell token={token} anchorMs={accrualSinceMs} show={showDollarAmounts} />
                           <MarketMobileSupportingValue>
                             {m(`${formatUsdExact(token.dailyEarnedUsd)}/day`)}
                           </MarketMobileSupportingValue>
