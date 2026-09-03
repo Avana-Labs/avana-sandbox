@@ -8,6 +8,14 @@ import { Button } from "@/components/ui/button"
 import { TokenIcon } from "@/app/components/token-icon"
 import { DesktopTableSurface } from "@/app/components/market-table-primitives"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
+import {
+  MarketMobileActionFooter,
+  MarketMobileCard,
+  MarketMobileCardHeader,
+  MarketMobileIdentityText,
+  MarketMobileMetric,
+  MARKET_MOBILE_CTA_CLASS,
+} from "@/app/components/market-card-primitives"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { formatTokenPrice } from "@/app/lib/prices/format"
 import { useCurrency } from "@/app/lib/currency/use-currency"
@@ -159,30 +167,53 @@ export function ProductAvailableCard({
 
       <div className="space-y-3 md:hidden">
         {rows.map((row) => (
-          <div key={row.id} className="rounded-radius-lg border border-border bg-card p-4">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-3">
-                <TokenIcon symbol={row.symbol} size="md" />
-                <div className="min-w-0">
-                  <div className="truncate font-medium text-foreground">{row.name}</div>
-                  <div className="font-data text-[13px] tabular-nums text-muted-foreground">
-                    {priceLabel(row.symbol)}
-                  </div>
+          <MarketMobileCard key={row.id} className="space-y-2">
+            <MarketMobileCardHeader
+              identity={
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <TokenIcon symbol={row.symbol} size="table" />
+                  <MarketMobileIdentityText title={row.name} subtitle={priceLabel(row.symbol)} />
                 </div>
-              </div>
-              <div className="text-right">
-                <div className="font-data text-[15px] font-medium tabular-nums text-foreground">
-                  {m(formatAvailableAmount(row.amount, row.symbol))}
-                </div>
-                <div className="font-data text-[12px] tabular-nums text-muted-foreground">{m(exact(row.valueUsd))}</div>
-              </div>
-            </div>
+              }
+              metric={
+                <MarketMobileMetric
+                  value={m(formatAvailableAmount(row.amount, row.symbol))}
+                  label={m(exact(row.valueUsd))}
+                />
+              }
+            />
             {action ? (
-              <div className="mt-4 flex justify-end">
-                <AvailableActionButton href={action.href(row)} label={action.label} icon={action.icon} />
-              </div>
-            ) : null}
-          </div>
+              <MarketMobileActionFooter>
+                <Button asChild variant="brand" className={MARKET_MOBILE_CTA_CLASS}>
+                  <Link href={action.href(row)}>
+                    <ActionIcon label={action.icon} />
+                    {action.label}
+                  </Link>
+                </Button>
+                <Button asChild variant="brand-secondary" className={MARKET_MOBILE_CTA_CLASS}>
+                  <Link href={`/swap?to=${encodeURIComponent(row.assetId)}`}>
+                    <ActionIcon label="swap" />
+                    {t("Buy")}
+                  </Link>
+                </Button>
+              </MarketMobileActionFooter>
+            ) : (
+              <MarketMobileActionFooter>
+                <Button asChild variant="brand" className={MARKET_MOBILE_CTA_CLASS}>
+                  <Link href={`/swap?from=${encodeURIComponent(row.assetId)}`}>
+                    <ActionIcon label="swap" />
+                    {t("Swap")}
+                  </Link>
+                </Button>
+                <Button asChild variant="brand-secondary" className={MARKET_MOBILE_CTA_CLASS}>
+                  <Link href={`/swap?to=${encodeURIComponent(row.assetId)}`}>
+                    <ActionIcon label="swap" />
+                    {t("Buy")}
+                  </Link>
+                </Button>
+              </MarketMobileActionFooter>
+            )}
+          </MarketMobileCard>
         ))}
       </div>
     </section>

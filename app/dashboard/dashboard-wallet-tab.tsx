@@ -7,6 +7,17 @@ import { Button } from "@/components/ui/button"
 import { TokenPairCell } from "@/app/borrow/components/atoms"
 import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
+import {
+  MarketMobileActionFooter,
+  MarketMobileCard,
+  MarketMobileCardHeader,
+  MarketMobileIdentityText,
+  MarketMobileMetric,
+  MarketMobileStatList,
+  MarketMobileStatRow,
+  MarketMobileSupportingValue,
+  MARKET_MOBILE_CTA_CLASS,
+} from "@/app/components/market-card-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
 import { DesktopTableSurface } from "@/app/components/market-table-primitives"
 import { getTokenIconMeta } from "@/app/lib/token-icons"
@@ -201,11 +212,7 @@ function WalletMetric({
   tone?: "up" | "down" | "neutral"
 }) {
   const toneClass =
-    tone === "up"
-      ? "text-emerald-700 dark:text-emerald-400"
-      : tone === "down"
-        ? "text-rose-700 dark:text-rose-400"
-        : "text-foreground"
+    tone === "up" ? "text-success" : tone === "down" ? "text-danger" : "text-foreground"
   return (
     <article className="min-w-0 space-y-1.5">
       <div className="flex items-center gap-1.5">
@@ -224,33 +231,34 @@ function WalletMetric({
   )
 }
 
-/** Compact P/L line shown directly under the Value figure. */
+/** Compact P/L line shown under Value on desktop, or as a full mobile stat value. */
 function PnlLine({
   row,
   priceUsdAtClaim,
   exact,
   showBalance,
+  variant = "caption",
 }: {
   row: DashboardWalletBalanceRow
   priceUsdAtClaim: number | undefined
   exact: (usd: number) => string
   showBalance: boolean
+  /** `value` matches MarketMobileStatRow (15px); `caption` stays under desktop Value. */
+  variant?: "caption" | "value"
 }) {
+  const sizeClass =
+    variant === "value" ? "text-[15px] font-normal tracking-normal" : TABLE_CELL_CAPTION
   const pnl = tokenPnl(row, priceUsdAtClaim)
-  if (!pnl) return <span className={cn(TABLE_CELL_CAPTION, "text-muted-foreground")}>{showBalance ? DASH : MASK}</span>
-  if (!showBalance) return <span className={cn(TABLE_CELL_CAPTION, "text-muted-foreground")}>{MASK}</span>
+  if (!pnl) return <span className={cn(sizeClass, "text-muted-foreground")}>{showBalance ? DASH : MASK}</span>
+  if (!showBalance) return <span className={cn(sizeClass, "text-muted-foreground")}>{MASK}</span>
 
   const positive = pnl.pnlUsd > 0
   const negative = pnl.pnlUsd < 0
-  const toneClass = positive
-    ? "text-emerald-700 dark:text-emerald-400"
-    : negative
-      ? "text-rose-700 dark:text-rose-400"
-      : "text-muted-foreground"
+  const toneClass = positive ? "text-success" : negative ? "text-danger" : "text-muted-foreground"
   const arrow = positive ? "▲" : negative ? "▼" : "•"
   const sign = positive ? "+" : negative ? "-" : ""
   return (
-    <span className={cn(TABLE_CELL_CAPTION, "tabular-nums", toneClass)}>
+    <span className={cn(sizeClass, "tabular-nums", toneClass)}>
       {arrow} {sign}
       {exact(Math.abs(pnl.pnlUsd))} · {Math.abs(pnl.pnlPct).toFixed(2)}%
     </span>
@@ -474,37 +482,59 @@ function WalletBalanceSection({
       </DesktopTableSurface>
 
       <div className="space-y-3 md:hidden">
-        {rows.map((row) => (
-          <div key={row.id} className="rounded-radius-lg border border-border bg-card p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex min-w-0 items-center gap-3">
-                <TokenIcon symbol={row.symbol} size="md" />
-                <div className="min-w-0">
-                  <div className="truncate font-medium text-foreground">{row.name}</div>
-                  <div className="font-data text-[13px] tabular-nums text-muted-foreground">
-                    {row.valueUsd > 0 && row.amount > 0 ? m(exact(row.valueUsd / row.amount)) : row.symbol}
+        {rows.map((row) => {
+          const pnl = tokenPnl(row, basisFor(row.assetId))
+          return (
+            <MarketMobileCard key={row.id} className="space-y-2">
+              <MarketMobileCardHeader
+                identity={
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <TokenIcon symbol={row.symbol} size="table" />
+                    <MarketMobileIdentityText
+                      title={row.name}
+                      subtitle={
+                        row.valueUsd > 0 && row.amount > 0 ? m(exact(row.valueUsd / row.amount)) : row.symbol
+                      }
+                    />
                   </div>
-                </div>
-              </div>
-              <div className="flex flex-col items-end gap-0.5">
-                <div className="font-data text-[15px] font-medium tabular-nums text-foreground">
-                  {m(exact(row.valueUsd))}
-                </div>
-                <div className="font-data text-[12px] tabular-nums text-muted-foreground">
-                  {m(formatAssetAmount(row.amount, row.symbol))}
-                </div>
-                <PnlLine row={row} priceUsdAtClaim={basisFor(row.assetId)} exact={exact} showBalance={showBalance} />
-              </div>
-            </div>
-            <div className="mt-4 flex justify-end">
-              <SwapAction assetId={row.assetId} label={t("Swap")} />
-            </div>
-          </div>
-        ))}
+                }
+                metric={<MarketMobileMetric value={m(exact(row.valueUsd))} label={t("Value")} />}
+              />
+              <MarketMobileStatList>
+                <MarketMobileStatRow
+                  label={t("Balance")}
+                  value={m(formatAssetAmount(row.amount, row.symbol))}
+                />
+                {pnl && showBalance ? (
+                  <MarketMobileStatRow
+                    label={t("P/L")}
+                    value={
+                      <PnlLine
+                        row={row}
+                        priceUsdAtClaim={basisFor(row.assetId)}
+                        exact={exact}
+                        showBalance={showBalance}
+                        variant="value"
+                      />
+                    }
+                  />
+                ) : null}
+              </MarketMobileStatList>
+              <MarketMobileActionFooter columns={1}>
+                <Button asChild variant="brand" className={MARKET_MOBILE_CTA_CLASS}>
+                  <Link href={`/swap?from=${encodeURIComponent(row.assetId)}`}>
+                    <ActionIcon label="swap" />
+                    {t("Swap")}
+                  </Link>
+                </Button>
+              </MarketMobileActionFooter>
+            </MarketMobileCard>
+          )
+        })}
         {rows.length === 0 ? (
-          <div className="rounded-radius-lg border border-border bg-card p-5 text-center text-[14px] text-muted-foreground">
+          <MarketMobileCard className="py-5 text-center text-[14px] text-muted-foreground">
             {t("No wallet balances found.")}
-          </div>
+          </MarketMobileCard>
         ) : null}
       </div>
     </section>
@@ -601,48 +631,42 @@ function PoolsBalanceSection({
       </DesktopTableSurface>
 
       <div className="space-y-3 md:hidden">
-        {rows.map((row) => {
-          return (
-            <div key={row.id} className="rounded-radius-lg border border-border bg-card p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <PoolIdentity row={row} />
+        {rows.map((row) => (
+          <MarketMobileCard key={row.id} className="space-y-2">
+            <MarketMobileCardHeader
+              identity={<PoolIdentity row={row} />}
+              metric={
+                <div className="shrink-0 text-right">
+                  <PoolSourceStatus row={row} />
                 </div>
-                <PoolSourceStatus row={row} />
-              </div>
-              <div className="mt-4 grid grid-cols-2 gap-3 text-[13px]">
-                <div>
-                  <div className="text-muted-foreground">{t("Status")}</div>
-                  <div className="mt-1">
-                    <PoolSourceStatus row={row} />
-                  </div>
-                </div>
-                <div>
-                  <div className="text-muted-foreground">{t("Balance")}</div>
-                  <div className="mt-1 flex flex-col gap-0.5">
-                    <span className="font-data tabular-nums text-foreground">{m(formatPoolAmount(row.amount))}</span>
-                    <span className="text-[13px] text-muted-foreground">{m(exact(row.valueUsd))}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-3 grid grid-cols-1 gap-3 text-[13px]">
-                <div>
-                  <div className="text-muted-foreground">{t("Fees")}</div>
-                  <div className="mt-1 flex flex-col gap-0.5">
-                    <span className="font-data tabular-nums text-foreground">
-                      {m(exact(poolUiDetail(row).feesUsd))}
-                    </span>
-                    <span className="text-[13px] text-muted-foreground">{m(t("Unclaimed fees"))}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )
-        })}
+              }
+            />
+            <MarketMobileStatList>
+              <MarketMobileStatRow
+                label={t("Balance")}
+                value={
+                  <span>
+                    {m(formatPoolAmount(row.amount))}
+                    <MarketMobileSupportingValue>{m(exact(row.valueUsd))}</MarketMobileSupportingValue>
+                  </span>
+                }
+              />
+              <MarketMobileStatRow
+                label={t("Fees")}
+                value={
+                  <span>
+                    {m(exact(poolUiDetail(row).feesUsd))}
+                    <MarketMobileSupportingValue>{m(t("Unclaimed fees"))}</MarketMobileSupportingValue>
+                  </span>
+                }
+              />
+            </MarketMobileStatList>
+          </MarketMobileCard>
+        ))}
         {rows.length === 0 ? (
-          <div className="rounded-radius-lg border border-border bg-card p-5 text-center text-[14px] text-muted-foreground">
+          <MarketMobileCard className="py-5 text-center text-[14px] text-muted-foreground">
             {t("No wallet balances found.")}
-          </div>
+          </MarketMobileCard>
         ) : null}
       </div>
     </section>

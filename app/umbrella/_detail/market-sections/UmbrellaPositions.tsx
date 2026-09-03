@@ -11,6 +11,7 @@ import {
   MarketMobileStatList,
   MarketMobileStatRow,
   MarketMobileSupportingValue,
+  MARKET_MOBILE_CTA_CLASS,
 } from "@/app/components/market-card-primitives"
 import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
@@ -249,14 +250,10 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                   valueClassName="text-success"
                 />
               </MarketMobileStatList>
-              {row.hasClaim ? (
-                <div onClick={(event) => event.stopPropagation()}>
-                  <MarketMobileActionFooter columns={1}>
-                    <Button
-                      asChild
-                      variant="brand"
-                      className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal"
-                    >
+              <div onClick={(event) => event.stopPropagation()}>
+                <MarketMobileActionFooter>
+                  {row.hasClaim ? (
+                    <Button asChild variant="brand" className={MARKET_MOBILE_CTA_CLASS}>
                       <Link
                         href={actionPagePath("umbrella", "claim", {
                           market: row.id,
@@ -267,9 +264,25 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                         {t("Claim")}
                       </Link>
                     </Button>
-                  </MarketMobileActionFooter>
-                </div>
-              ) : null}
+                  ) : (
+                    <Button type="button" variant="brand" className={MARKET_MOBILE_CTA_CLASS} disabled>
+                      <ActionIcon label={t("Claim")} />
+                      {t("Claim")}
+                    </Button>
+                  )}
+                  <Button asChild variant="brand-secondary" className={MARKET_MOBILE_CTA_CLASS}>
+                    <Link
+                      href={actionPagePath("umbrella", "stake", {
+                        market: row.id,
+                        return: "/umbrella",
+                      })}
+                    >
+                      <ActionIcon label={t("Stake")} />
+                      {t("Stake")}
+                    </Link>
+                  </Button>
+                </MarketMobileActionFooter>
+              </div>
             </MarketMobileCard>
           ))
         )}

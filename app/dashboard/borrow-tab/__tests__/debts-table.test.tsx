@@ -112,8 +112,8 @@ describe("DebtsPanel", () => {
     expect(container.textContent).toMatch(/33\.60/)
   })
 
-  it("shows the debt as a token amount over its live USD value, and no Borrow button", () => {
-    const { container, getAllByRole, queryAllByRole } = render(
+  it("shows the debt as a token amount over its live USD value, with Borrow + Repay CTAs", () => {
+    const { container, getAllByRole } = render(
       <DebtsPanel
         rows={[usdtDebt]}
         totals={{
@@ -130,11 +130,11 @@ describe("DebtsPanel", () => {
       />,
     )
 
-    // Borrowed reads token-amount-over-USD (like Lend "Deposited"), and the row only
-    // offers Repay — borrowing again is not a debt-management action.
+    // Borrowed reads token-amount-over-USD (like Lend "Deposited"). Mobile offers
+    // Borrow + Repay as the dual CTA pair (same chrome as Lend Add / Withdraw).
     expect(container.textContent).toMatch(/6200\s+USDT/)
     expect(getAllByRole("button", { name: /Repay/ }).length).toBeGreaterThan(0)
-    expect(queryAllByRole("button", { name: /^Borrow$/ })).toHaveLength(0)
+    expect(getAllByRole("button", { name: /^Borrow$/ }).length).toBeGreaterThan(0)
   })
 
   it("does not render a bare Opened placeholder row", () => {

@@ -20,9 +20,9 @@ import {
   MarketMobileCardHeader,
   MarketMobileIdentityText,
   MarketMobileMetric,
-  MarketMobileSecondaryAction,
   MarketMobileStatList,
   MarketMobileStatRow,
+  MARKET_MOBILE_CTA_CLASS,
 } from "@/app/components/market-card-primitives"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import { liqUtilizationBarClass, liqUtilizationPercentTextClass } from "@/app/lib/borrow-system/liq-utilization-tone"
@@ -284,7 +284,22 @@ export function DebtsPanel({
                     />
                   </MarketMobileStatList>
                   <MarketMobileActionFooter>
-                    <MarketMobileSecondaryAction
+                    <Button
+                      type="button"
+                      variant="brand"
+                      className={MARKET_MOBILE_CTA_CLASS}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        onManage(row)
+                      }}
+                    >
+                      <ActionIcon label="Borrow" />
+                      {t("Borrow")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="brand-secondary"
+                      className={MARKET_MOBILE_CTA_CLASS}
                       onClick={(event) => {
                         event.stopPropagation()
                         onRepay(row)
@@ -292,7 +307,7 @@ export function DebtsPanel({
                     >
                       <ActionIcon label="Repay" />
                       {t("Repay")}
-                    </MarketMobileSecondaryAction>
+                    </Button>
                   </MarketMobileActionFooter>
                 </MarketMobileCard>
               )

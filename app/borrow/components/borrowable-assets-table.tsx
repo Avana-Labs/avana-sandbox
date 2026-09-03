@@ -14,6 +14,7 @@ import {
   MarketMobileIdentityText,
   MarketMobileMetric,
   MarketMobilePrimaryAction,
+  MarketMobileSecondaryAction,
   MarketMobileStatList,
   MarketMobileStatRow,
 } from "@/app/components/market-card-primitives"
@@ -178,8 +179,9 @@ const BorrowableMobileCardRow = memo(function BorrowableMobileCardRow({
           />
         </MarketMobileStatList>
 
-        <MarketMobileActionFooter columns={1}>
+        <MarketMobileActionFooter>
           <MarketMobilePrimaryAction
+            className="mt-0"
             onClick={(event) => {
               event.stopPropagation()
               onBorrow(asset)
@@ -188,6 +190,16 @@ const BorrowableMobileCardRow = memo(function BorrowableMobileCardRow({
             <ActionIcon label="Borrow" />
             {t("Borrow")}
           </MarketMobilePrimaryAction>
+          <MarketMobileSecondaryAction
+            onClick={(event) => {
+              event.stopPropagation()
+              onViewMarket?.(asset)
+              router.push(borrowAssetDetailPath(asset.id))
+            }}
+          >
+            <ActionIcon label="Manage" />
+            {t("Manage")}
+          </MarketMobileSecondaryAction>
         </MarketMobileActionFooter>
       </MarketMobileCard>
     </li>

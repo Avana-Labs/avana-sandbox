@@ -16,12 +16,15 @@ import {
 import { HfNumber, TokenPairCell } from "@/app/borrow/components/atoms"
 import { Button } from "@/components/ui/button"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
+import { ActionIcon } from "@/app/components/action-icon"
 import {
+  MarketMobileActionFooter,
   MarketMobileCard,
   MarketMobileCardHeader,
   MarketMobileMetric,
   MarketMobileStatList,
   MarketMobileStatRow,
+  MARKET_MOBILE_CTA_CLASS,
 } from "@/app/components/market-card-primitives"
 import { HealthFactorPositionBar } from "@/app/components/action-page/action-health-factor-bar"
 import { formatApy } from "@/app/lib/format"
@@ -237,6 +240,32 @@ export function SuppliesPanel({
                     <MarketMobileStatRow label={t("Borrow Power")} value={m(compact(row.remainingBorrowPowerUsd))} />
                     <MarketMobileStatRow label={t("LP APR")} value={formatApy(row.pairApr)} />
                   </MarketMobileStatList>
+                  <MarketMobileActionFooter>
+                    <Button
+                      type="button"
+                      variant="brand"
+                      className={MARKET_MOBILE_CTA_CLASS}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        onBorrowMore(row)
+                      }}
+                    >
+                      <ActionIcon label="Borrow" />
+                      {t("Borrow")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="brand-secondary"
+                      className={MARKET_MOBILE_CTA_CLASS}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        router.push(`/borrow/markets/${row.pool.id}`)
+                      }}
+                    >
+                      <ActionIcon label="Manage" />
+                      {t("Manage")}
+                    </Button>
+                  </MarketMobileActionFooter>
                 </MarketMobileCard>
               )
             })}

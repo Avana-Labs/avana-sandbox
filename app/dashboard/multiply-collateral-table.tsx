@@ -1,6 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
+import { ActionIcon } from "@/app/components/action-icon"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import {
@@ -8,8 +9,10 @@ import {
   MarketMobileCard,
   MarketMobileCardHeader,
   MarketMobileIdentityText,
+  MarketMobileMetric,
   MarketMobileStatList,
   MarketMobileStatRow,
+  MARKET_MOBILE_CTA_CLASS,
 } from "@/app/components/market-card-primitives"
 import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
@@ -20,6 +23,7 @@ import { LiveInterestEarnedUsd } from "@/app/dashboard/live-accrual"
 import type { PortfolioMultiplyCollateral } from "@/app/lib/data/providers/portfolio"
 import { healthFactorBand } from "@/app/lib/health/health-factor-bands"
 import { formatHealthFactor } from "@/app/lib/home-sim"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { formatSectionCount } from "@/app/lib/ui/section-count"
 import {
@@ -189,47 +193,77 @@ export function MultiplyCollateralTable({
           const apy = apyFor(row)
           const band = healthFactorBand(row.healthFactor)
           return (
-            <MarketMobileCard key={row.id} clickable className="space-y-3" onClick={() => openPosition(row)}>
-              <MarketMobileCardHeader identity={<LoopIdentity row={row} />} />
+            <MarketMobileCard key={row.id} clickable className="space-y-2" onClick={() => openPosition(row)}>
+              <MarketMobileCardHeader
+                identity={<LoopIdentity row={row} />}
+                metric={
+                  apy ? (
+                    <MarketMobileMetric
+                      value={formatNetApyPct(apy.netApyPct)}
+                      label={t("Net APY")}
+                      valueClassName={netApyToneClass(apy.netApyPct)}
+                    />
+                  ) : (
+                    <MarketMobileMetric value="—" label={t("Net APY")} />
+                  )
+                }
+              />
               <MarketMobileStatList>
                 <MarketMobileStatRow label={t("Value")} value={usd(positionEquityUsd(row))} />
                 <MarketMobileStatRow label={t("Exposure")} value={usd(row.collateralUsd)} />
-                <MarketMobileStatRow
-                  label={t("Net APY")}
-                  value={
-                    apy ? (
-                      <span className={netApyToneClass(apy.netApyPct)}>
-                        {formatNetApyPct(apy.netApyPct)}
-                        {showDollarAmounts ? (
-                          <>
-                            {" · "}
-                            <LiveInterestEarnedUsd
-                              anchorMs={apy.accrualSinceMs}
-                              ratePerYearUsd={apy.ratePerYearUsd}
-                              baseUsd={apy.baseUsd}
-                            />
-                          </>
-                        ) : null}
-                      </span>
-                    ) : (
-                      "—"
-                    )
-                  }
-                />
+                {apy && showDollarAmounts ? (
+                  <MarketMobileStatRow
+                    label={t("Earned")}
+                    value={
+                      <LiveInterestEarnedUsd
+                        anchorMs={apy.accrualSinceMs}
+                        ratePerYearUsd={apy.ratePerYearUsd}
+                        baseUsd={apy.baseUsd}
+                      />
+                    }
+                    valueClassName="text-success"
+                  />
+                ) : null}
                 <MarketMobileStatRow
                   label={t("Risk")}
                   value={`${t("HF")} ${formatHealthFactor(row.healthFactor)} · ${liqPriceLabel(t, row, liqPrice)}`}
                   valueClassName={band.textClass}
                 />
               </MarketMobileStatList>
-              <MarketMobileActionFooter columns={1}>
+              <MarketMobileActionFooter>
+                <Button
+                  type="button"
+                  variant="brand"
+                  className={MARKET_MOBILE_CTA_CLASS}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    router.push(
+                      actionPagePath("multiply", "multiply", {
+                        market: row.marketId,
+                        return: "/dashboard?tab=multiply",
+                      }),
+                    )
+                  }}
+                >
+                  <ActionIcon label="Multiply" />
+                  {t("Multiply")}
+                </Button>
                 <Button
                   type="button"
                   variant="brand-secondary"
-                  className="h-11 rounded-radius-sm text-[14px] font-normal"
-                  onClick={(event) => openManage(event, row)}
+                  className={MARKET_MOBILE_CTA_CLASS}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    router.push(
+                      actionPagePath("multiply", "deleverage", {
+                        market: row.marketId,
+                        return: "/dashboard?tab=multiply",
+                      }),
+                    )
+                  }}
                 >
-                  {t("Manage")}
+                  <ActionIcon label="Deleverage" />
+                  {t("Deleverage")}
                 </Button>
               </MarketMobileActionFooter>
             </MarketMobileCard>

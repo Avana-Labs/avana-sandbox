@@ -16,6 +16,7 @@ import {
   MarketMobileStatList,
   MarketMobileStatRow,
   MarketMobileSupportingValue,
+  MARKET_MOBILE_CTA_CLASS,
 } from "@/app/components/market-card-primitives"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -335,7 +336,7 @@ function CollateralMobileCard({
         <Button
           type="button"
           variant="brand"
-          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
+          className={MARKET_MOBILE_CTA_CLASS}
           onClick={(event) => {
             event.stopPropagation()
             onDeposit()
@@ -347,7 +348,7 @@ function CollateralMobileCard({
         <Button
           type="button"
           variant="brand-secondary"
-          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
+          className={MARKET_MOBILE_CTA_CLASS}
           onClick={(event) => {
             event.stopPropagation()
             onWithdraw()

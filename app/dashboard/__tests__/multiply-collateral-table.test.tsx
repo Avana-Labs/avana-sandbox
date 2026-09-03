@@ -76,8 +76,10 @@ describe("MultiplyCollateralTable", () => {
       </DisplayPreferencesProvider>,
     )
 
-    // Desktop and mobile each render one Manage action for the single open row.
-    expect(screen.getAllByRole("button", { name: "Manage" })).toHaveLength(2)
+    // Desktop Manage + mobile Multiply / Deleverage for the single open row.
+    expect(screen.getAllByRole("button", { name: "Manage" })).toHaveLength(1)
+    expect(screen.getAllByRole("button", { name: "Multiply" }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole("button", { name: "Deleverage" }).length).toBeGreaterThan(0)
   })
 
   it("shows the projected liquidation price, tagged with the collateral token", () => {
@@ -111,8 +113,9 @@ describe("MultiplyCollateralTable", () => {
     expect(screen.getByRole("columnheader", { name: /APY/i })).toBeTruthy()
     expect(screen.getByRole("columnheader", { name: /RISK/i })).toBeTruthy()
     expect(screen.queryByRole("columnheader", { name: /EQUITY/i })).toBeNull()
-    expect(screen.getAllByRole("button", { name: "Manage" })).toHaveLength(2)
-    expect(screen.queryByRole("button", { name: "Multiply" })).toBeNull()
+    expect(screen.getAllByRole("button", { name: "Manage" })).toHaveLength(1)
+    expect(screen.getAllByRole("button", { name: "Multiply" }).length).toBeGreaterThan(0)
+    expect(screen.getAllByRole("button", { name: "Deleverage" }).length).toBeGreaterThan(0)
     // Loop identity is now a compact "COLLATERAL / BORROW" pair (desktop + mobile),
     // with leverage on the caption line below it — no "Supply …"/"Borrow …" verbs.
     expect(screen.getAllByText("ETH / USDT")).toHaveLength(2)

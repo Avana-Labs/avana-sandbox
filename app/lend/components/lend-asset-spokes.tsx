@@ -17,6 +17,7 @@ import {
   MarketMobileSecondaryAction,
   MarketMobileStatList,
   MarketMobileStatRow,
+  MarketMobileSupportingValue,
 } from "@/app/components/market-card-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
@@ -273,9 +274,9 @@ function AssetCardView({
           value={
             <span>
               {row.totalDepositsLabel ?? row.totalDepositsPrimary}
-              <span className="ml-2 text-[12px] tracking-normal text-muted-foreground">
+              <MarketMobileSupportingValue>
                 {redenominateCompactUsd(row.totalDepositsSecondaryLabel ?? row.totalDepositsSecondary, ctx)}
-              </span>
+              </MarketMobileSupportingValue>
             </span>
           }
         />
@@ -285,9 +286,9 @@ function AssetCardView({
           value={
             <span>
               {row.availableLiquidityLabel ?? row.availableLiquidityPrimary}
-              <span className="ml-2 text-[12px] tracking-normal text-muted-foreground">
+              <MarketMobileSupportingValue>
                 {redenominateCompactUsd(row.availableLiquiditySecondaryLabel ?? row.availableLiquiditySecondary, ctx)}
-              </span>
+              </MarketMobileSupportingValue>
             </span>
           }
         />

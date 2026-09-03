@@ -57,7 +57,7 @@ export function MarketMobileIdentityText({
 }) {
   return (
     <div className={cn("min-w-0", className)}>
-      <div className="truncate text-[15px] font-medium leading-5 tracking-normal text-foreground dark:text-white">
+      <div className="truncate text-[15px] font-normal leading-5 tracking-normal text-foreground dark:text-white">
         {title}
       </div>
       {subtitle ? (
@@ -114,8 +114,8 @@ export function MarketMobileStatRow({
       <dt className="text-[13px] text-muted-foreground">{label}</dt>
       <dd
         className={cn(
-          "font-data text-[15px] font-normal tabular-nums whitespace-nowrap text-foreground",
-          valueClassName,
+          "font-data text-[15px] font-normal tabular-nums whitespace-nowrap",
+          valueClassName ?? "text-foreground",
         )}
       >
         {value}
@@ -130,13 +130,14 @@ export function MarketMobileActionFooter({
   className,
 }: {
   children: ReactNode
+  /** Always prefer 2 equal CTAs so product mobile cards share one chrome. */
   columns?: 1 | 2 | 3
   className?: string
 }) {
   return (
     <div
       className={cn(
-        "mt-4 grid gap-2 [&>*]:min-w-0 [&>button]:mt-0",
+        "mt-4 grid gap-2 [&>*]:min-w-0 [&>a]:mt-0 [&>button]:mt-0",
         columns === 1 ? "grid-cols-1" : columns === 2 ? "grid-cols-2" : "grid-cols-3",
         className,
       )}
@@ -145,6 +146,10 @@ export function MarketMobileActionFooter({
     </div>
   )
 }
+
+/** Shared mobile CTA chrome — matches Lend Add / Withdraw. */
+export const MARKET_MOBILE_CTA_CLASS =
+  "h-11 w-full gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
 
 export function MarketMobilePrimaryAction({
   children,

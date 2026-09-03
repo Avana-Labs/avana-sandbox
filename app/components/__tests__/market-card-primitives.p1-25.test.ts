@@ -24,7 +24,7 @@ describe("MarketMobileCard surfaces", () => {
       source.indexOf("export function MarketMobileSupportingValue"),
     )
 
-    expect(identity).toMatch(/text-\[15px\].*font-medium/)
+    expect(identity).toMatch(/text-\[15px\].*font-normal/)
     expect(identity).toMatch(/text-\[13px\].*font-normal/)
     expect(source).toMatch(/MarketMobileSupportingValue[\s\S]*text-\[13px\]/)
     // Stat rows: labels readable on mobile, values one step larger than labels.

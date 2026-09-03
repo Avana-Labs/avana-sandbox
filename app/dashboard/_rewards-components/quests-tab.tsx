@@ -103,7 +103,7 @@ function AvanaQuestCard({
         >
           {t(quest.title)}
         </h3>
-        <p className={`mt-1 line-clamp-1 text-[11px] leading-4 text-muted-foreground ${isClaimed ? "opacity-55" : ""}`}>
+        <p className={`mt-1 line-clamp-1 text-[13px] leading-4 text-muted-foreground ${isClaimed ? "opacity-55" : ""}`}>
           {t(metaLine)}
         </p>
 
