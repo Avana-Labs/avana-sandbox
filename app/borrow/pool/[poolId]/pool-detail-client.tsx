@@ -155,6 +155,8 @@ export function PoolDetailClient({
                       context={{
                         token0Symbol: detail.hero.visuals[0]?.symbol ?? "",
                         token1Symbol: detail.hero.visuals[1]?.symbol ?? "",
+                        token0Weight: String(detail.row.constituents[0]?.weight ?? 0.5),
+                        token1Weight: String(detail.row.constituents[1]?.weight ?? 0.5),
                       }}
                     />
                     <DetailPageNotice product="borrow" />

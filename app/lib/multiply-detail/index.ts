@@ -1,4 +1,6 @@
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
+import { formatDetailTokenAmount } from "@/app/lib/detail-page/transaction-display"
+import { canonicalPriceUsd } from "@/app/lib/prices/canonical"
 import type { ChartFeed } from "@/app/components/charts"
 import {
   formatBpsAsPct,
@@ -405,7 +407,9 @@ function buildTransactions(row: MultiplyMarketRow): MultiplyTxHistoryRow[] {
       timeLabel: formatRelativeAge(ageMs),
       kind,
       amountLabel: `${prefix}${formatCompactUsd(amount)}`,
-      tokenAmountLabel: formatCompactUsd(amount).replace(/^\$/, ""),
+      tokenAmountLabel: formatDetailTokenAmount(
+        amount / (canonicalPriceUsd(row.protocol) ?? canonicalPriceUsd(row.asset) ?? 1),
+      ),
       tokenSymbol: row.protocol.toUpperCase(),
       tokenSymbolSecondary: row.asset.toUpperCase(),
       counterpartyLabel: kind === "open" ? `${row.protocol} collateral` : undefined,

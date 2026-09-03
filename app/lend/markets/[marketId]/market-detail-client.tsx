@@ -62,8 +62,9 @@ function mapSessionRows(
   history: ReturnType<typeof useLendSessionContext>["transactionHistory"],
   marketId: string,
   assetSymbol: string,
+  priceUsd?: number,
 ) {
-  return mapLendSessionRows(history, marketId, assetSymbol)
+  return mapLendSessionRows(history, marketId, assetSymbol, priceUsd)
 }
 
 export function LendMarketDetailClient({
@@ -76,9 +77,16 @@ export function LendMarketDetailClient({
   const { t } = useTranslation()
   const marketId = detail.row.marketId
 
+  const priceUsd = React.useMemo(() => {
+    const priceStat = detail.quickStats.find((stat) => stat.id === "price")
+    if (!priceStat?.value) return undefined
+    const parsed = Number(priceStat.value.replace(/[^0-9.]/g, ""))
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined
+  }, [detail.quickStats])
+
   const sessionRows = React.useMemo(
-    () => mapSessionRows(session.transactionHistory, marketId, detail.hero.symbol),
-    [detail.hero.symbol, marketId, session.transactionHistory],
+    () => mapSessionRows(session.transactionHistory, marketId, detail.hero.symbol, priceUsd),
+    [detail.hero.symbol, marketId, priceUsd, session.transactionHistory],
   )
   const seedRows = React.useMemo(() => detail.transactions.map(mapBorrowTxRow), [detail.transactions])
 

@@ -24,6 +24,7 @@ import type { LendMarket } from "@/app/lib/lend-engine/types"
 import type { AboutCard, CashflowCard, DeltaStat, QuickStat, TxHistoryRow } from "@/app/lib/borrow-detail"
 import { buildInterestRateModelParameterRows } from "@/app/lib/borrow-detail/protocol-parameters"
 import { buildRiskParameterSet } from "@/app/lib/borrow-detail/risk-parameters"
+import { formatDetailTokenAmount } from "@/app/lib/detail-page/transaction-display"
 import type { LendMarketDetail, LendMarketHero, LendTokenVisual } from "./types"
 
 /** Reference values from a Convex snapshot, threaded into the headline numbers. */
@@ -234,7 +235,7 @@ function buildTransactions(market: LendMarket): TxHistoryRow[] {
       timeLabel: formatRelativeAge(ageMs),
       kind,
       amountLabel: `${kind === "withdraw" ? "-" : "+"}${formatCompactUsd(amount)}`,
-      tokenAmountLabel: formatCompactUsd(amount).replace(/^\$/, ""),
+      tokenAmountLabel: formatDetailTokenAmount(amount / market.assetPriceUsd),
       tokenSymbol: market.asset.symbol,
       walletLabel,
       walletHref: `https://etherscan.io/address/${walletAddress}`,

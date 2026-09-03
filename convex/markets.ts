@@ -650,7 +650,10 @@ const detailTxRowValidator = v.object({
   at: v.string(),
   kind: detailTxKindValidator,
   amountLabel: v.string(),
+  amountUsd: v.optional(v.number()),
   tokenAmountLabel: v.optional(v.string()),
+  token0AmountLabel: v.optional(v.string()),
+  token1AmountLabel: v.optional(v.string()),
   tokenSymbol: v.optional(v.string()),
   tokenSymbolSecondary: v.optional(v.string()),
   walletLabel: v.string(),
@@ -679,20 +682,36 @@ export const getRecentTransactions = query({
       .withIndex("by_market_at", (q) => q.eq("marketSlug", slug))
       .order("desc")
       .take(take * 2)
-    const live = sandboxRows
-      .filter((r) => r.status === "success" && r.marketSlug === slug)
-      .slice(0, take)
-      .map((r) => ({
+    const live: Array<{
+      id: string
+      at: string
+      kind: DetailTxKind
+      amountLabel: string
+      amountUsd: number
+      tokenAmountLabel?: string
+      token0AmountLabel?: string
+      token1AmountLabel?: string
+      tokenSymbol?: string
+      tokenSymbolSecondary?: string
+      walletLabel: string
+      counterpartyLabel?: string
+      txHashShort: string
+      source: "sandbox"
+    }> = []
+    for (const r of sandboxRows.filter((row) => row.status === "success" && row.marketSlug === slug).slice(0, take)) {
+      live.push({
         id: String(r._id),
         at: new Date(r.at).toISOString(),
         kind: mapSandboxTxKind(scope, r.kind),
         amountLabel: formatCompactUsd(r.amountUsd),
-        ...tokenFieldsFromSandboxRow(r),
+        amountUsd: r.amountUsd,
+        ...(await tokenFieldsFromSandboxRow(ctx, r, scope)),
         walletLabel: `${r.wallet.slice(0, 6)}…${r.wallet.slice(-4)}`,
-        counterpartyLabel: undefined as string | undefined,
+        counterpartyLabel: undefined,
         txHashShort: r.syntheticTxHash.slice(0, 10),
-        source: "sandbox" as const,
-      }))
+        source: "sandbox",
+      })
+    }
     if (live.length > 0) return live
 
     const market = await resolveMarket(ctx, scope, slug)
@@ -702,17 +721,37 @@ export const getRecentTransactions = query({
       .withIndex("by_market_at", (q) => q.eq("marketId", market._id))
       .order("desc")
       .take(take)
-    return rows.map((r) => ({
-      id: String(r._id),
-      at: new Date(r.at).toISOString(),
-      kind: mapSeedWalletEventKind(scope, r.kind),
-      amountLabel: formatCompactUsd(r.amountUsd),
-      ...tokenFieldsFromMarketSlug(slug, r.amountUsd),
-      walletLabel: `${r.wallet.slice(0, 6)}…${r.wallet.slice(-4)}`,
-      counterpartyLabel: r.counterparty ? `${r.counterparty.slice(0, 6)}…${r.counterparty.slice(-4)}` : undefined,
-      txHashShort: r.txHash.slice(0, 10),
-      source: "seed" as const,
-    }))
+    const seeded: Array<{
+      id: string
+      at: string
+      kind: DetailTxKind
+      amountLabel: string
+      amountUsd: number
+      tokenAmountLabel?: string
+      token0AmountLabel?: string
+      token1AmountLabel?: string
+      tokenSymbol?: string
+      tokenSymbolSecondary?: string
+      walletLabel: string
+      counterpartyLabel?: string
+      txHashShort: string
+      source: "seed"
+    }> = []
+    for (const r of rows) {
+      seeded.push({
+        id: String(r._id),
+        at: new Date(r.at).toISOString(),
+        kind: mapSeedWalletEventKind(scope, r.kind),
+        amountLabel: formatCompactUsd(r.amountUsd),
+        amountUsd: r.amountUsd,
+        ...(await tokenFieldsFromMarket(ctx, market, scope, r.amountUsd)),
+        walletLabel: `${r.wallet.slice(0, 6)}…${r.wallet.slice(-4)}`,
+        counterpartyLabel: r.counterparty ? `${r.counterparty.slice(0, 6)}…${r.counterparty.slice(-4)}` : undefined,
+        txHashShort: r.txHash.slice(0, 10),
+        source: "seed",
+      })
+    }
+    return seeded
   },
 })
 
@@ -758,20 +797,121 @@ function mapSeedWalletEventKind(scope: MarketScope, kind: string): DetailTxKind 
   return kind as "supply" | "withdraw" | "borrow" | "repay" | "liquidation"
 }
 
-function tokenFieldsFromSandboxRow(row: { assetId?: string; marketSlug?: string; amountUsd: number }) {
-  const tokenSymbol = normalizeTokenSymbol(row.assetId ?? row.marketSlug ?? "eth")
+async function tokenFieldsFromSandboxRow(
+  ctx: QueryCtx,
+  row: { assetId?: string; marketSlug?: string; amountUsd: number },
+  scope: MarketScope,
+) {
+  const market = row.marketSlug
+    ? await ctx.db
+        .query("markets")
+        .withIndex("by_slug", (q) => q.eq("slug", row.marketSlug!))
+        .first()
+    : null
+  if (market) return tokenFieldsFromMarket(ctx, market, scope, row.amountUsd)
+
+  if (scope === "pool") return {}
+
+  const tokenSymbol = normalizeTokenSymbol(row.assetId ?? row.marketSlug ?? "eth").toUpperCase()
+  return tokenFieldsFromPrice(tokenSymbol, row.amountUsd, seedTokenPriceUsd(tokenSymbol))
+}
+
+async function tokenFieldsFromMarket(
+  ctx: QueryCtx,
+  market: {
+    slug: string
+    symbol?: string
+    priceUsd?: number
+    constituents?: Array<{ symbol: string; weight: number }>
+    visuals?: Array<{ symbol: string }>
+  },
+  scope: MarketScope,
+  amountUsd: number,
+) {
+  if (scope === "pool") {
+    const constituents = market.constituents ?? []
+    const visuals = market.visuals ?? []
+    const token0Symbol = (constituents[0]?.symbol ?? visuals[0]?.symbol ?? "ETH").toUpperCase()
+    const token1Symbol = (constituents[1]?.symbol ?? visuals[1]?.symbol ?? "USDC").toUpperCase()
+    const w0 = constituents[0]?.weight ?? 0.5
+    const w1 = constituents[1]?.weight ?? 0.5
+    const price0 = seedTokenPriceUsd(token0Symbol)
+    const price1 = seedTokenPriceUsd(token1Symbol)
+    const usd0 = amountUsd * w0
+    const usd1 = amountUsd * w1
+    const token0AmountLabel = formatDetailTokenAmount(usd0 / price0)
+    const token1AmountLabel = formatDetailTokenAmount(usd1 / price1)
+    return {
+      tokenSymbol: token0Symbol,
+      tokenSymbolSecondary: token1Symbol,
+      token0AmountLabel,
+      token1AmountLabel,
+      tokenAmountLabel: `${token0AmountLabel} / ${token1AmountLabel}`,
+    }
+  }
+
+  const tokenSymbol = (market.symbol ?? normalizeTokenSymbol(market.slug)).toUpperCase()
+  const priceUsd =
+    market.priceUsd && market.priceUsd > 0 ? market.priceUsd : seedTokenPriceUsd(tokenSymbol)
+  return tokenFieldsFromPrice(tokenSymbol, amountUsd, priceUsd)
+}
+
+function tokenFieldsFromPrice(tokenSymbol: string, amountUsd: number, priceUsd: number | null) {
   return {
     tokenSymbol,
-    tokenAmountLabel: formatCompactUsd(row.amountUsd).replace(/^\$/, ""),
+    tokenAmountLabel:
+      priceUsd != null && priceUsd > 0 ? formatDetailTokenAmount(amountUsd / priceUsd) : formatDetailTokenAmount(amountUsd),
   }
 }
 
-function tokenFieldsFromMarketSlug(slug: string, amountUsd: number) {
-  const tokenSymbol = normalizeTokenSymbol(slug)
-  return {
-    tokenSymbol,
-    tokenAmountLabel: formatCompactUsd(amountUsd).replace(/^\$/, ""),
-  }
+/** Frozen seed prices for bootstrapping tx FOR amounts — never the live oracle. */
+const SEED_TOKEN_PRICE_USD: Record<string, number> = {
+  USDC: 1,
+  USDT: 1,
+  DAI: 1,
+  GHO: 1,
+  ETH: 1934,
+  WETH: 1934,
+  WBTC: 65000,
+  BTC: 65000,
+  STETH: 1930,
+  WSTETH: 2100,
+  OP: 1.46,
+  ARB: 0.6,
+  AAVE: 105,
+  UNI: 12,
+  LINK: 18,
+}
+
+function seedTokenPriceUsd(symbol: string): number {
+  return SEED_TOKEN_PRICE_USD[symbol.toUpperCase()] ?? 1
+}
+
+async function lookupTokenPriceUsd(
+  ctx: QueryCtx,
+  tokenSymbol: string,
+  marketSlug?: string,
+): Promise<number | null> {
+  const oracle = await ctx.db
+    .query("tokenPrices")
+    .withIndex("by_symbol", (q) => q.eq("symbol", tokenSymbol.toLowerCase()))
+    .unique()
+  if (oracle?.priceUsd && oracle.priceUsd > 0) return oracle.priceUsd
+
+  const slug = marketSlug ?? tokenSymbol.toLowerCase()
+  const market = await ctx.db
+    .query("markets")
+    .withIndex("by_slug", (q) => q.eq("slug", slug))
+    .first()
+  if (market?.priceUsd && market.priceUsd > 0) return market.priceUsd
+  return null
+}
+
+function formatDetailTokenAmount(value: number): string {
+  if (!Number.isFinite(value)) return "—"
+  const abs = Math.abs(value)
+  const digits = abs >= 1_000 ? 2 : abs >= 1 ? 4 : 6
+  return abs.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: digits })
 }
 
 function normalizeTokenSymbol(raw: string) {

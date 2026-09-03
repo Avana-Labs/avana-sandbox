@@ -1,76 +1,126 @@
 "use client"
 
+import * as React from "react"
 import { TokenIcon } from "@/app/components/token-icon"
 import type { DetailTransactionRow } from "@/app/lib/detail-page/transaction-history"
+import { useCurrency } from "@/app/lib/currency/use-currency"
+import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { cn } from "@/lib/utils"
+import {
+  resolvePoolTokenAmounts,
+  resolvePoolUsdValue,
+  resolveTransactionTokenDisplay,
+  resolveTransactionUsdValue,
+  type TransactionPriceContext,
+} from "@/app/lib/detail-page/transaction-display"
 
-function PairedTokenIcons({
-  primary,
-  secondary,
-  className,
-}: {
-  primary: string
-  secondary: string
-  className?: string
-}) {
+const AMOUNT_CLASS =
+  "min-w-0 font-data text-[14px] font-normal tabular-nums tracking-normal text-foreground"
+
+function useTransactionPriceContext(context: Record<string, string> = {}): TransactionPriceContext {
+  const getLivePriceUsd = useCanonicalPriceFor()
+  const token0Weight = context.token0Weight ? Number(context.token0Weight) : undefined
+  const token1Weight = context.token1Weight ? Number(context.token1Weight) : undefined
+  return React.useMemo(
+    () => ({
+      getLivePriceUsd,
+      token0Weight: Number.isFinite(token0Weight) ? token0Weight : undefined,
+      token1Weight: Number.isFinite(token1Weight) ? token1Weight : undefined,
+    }),
+    [getLivePriceUsd, token0Weight, token1Weight],
+  )
+}
+
+function EmptyAlign() {
   return (
-    <span className={cn("relative inline-flex h-6 w-9 shrink-0", className)}>
-      <TokenIcon symbol={primary} size="sm" className="absolute left-0 top-0" />
-      <TokenIcon symbol={secondary} size="sm" className="absolute left-3 top-0 ring-2 ring-background" />
-    </span>
+    <div className="flex w-full items-center justify-end">
+      <span className={cn(AMOUNT_CLASS, "text-muted-foreground")}>—</span>
+    </div>
+  )
+}
+
+function TokenAmountWithIcon({ symbol, amount }: { symbol: string; amount: string }) {
+  return (
+    <div className="flex w-full items-center justify-end gap-1.5">
+      <TokenIcon symbol={symbol} size="sm" className="size-5 shrink-0" />
+      <span className={AMOUNT_CLASS}>{amount}</span>
+    </div>
   )
 }
 
 export function TransactionTokenCell({
   row,
-  fallback,
-  fallbackSymbol,
-  paired = false,
+  priceContext,
 }: {
   row: DetailTransactionRow
-  fallback?: string
-  fallbackSymbol?: string
-  paired?: boolean
+  priceContext?: TransactionPriceContext
 }) {
-  if (row.tokenSymbol && row.tokenAmountLabel) {
-    return (
-      <div className="flex items-center justify-end gap-2">
-        {paired && row.tokenSymbolSecondary ? (
-          <PairedTokenIcons primary={row.tokenSymbol} secondary={row.tokenSymbolSecondary} />
-        ) : (
-          <TokenIcon symbol={row.tokenSymbol} size="sm" className="shrink-0" />
-        )}
-        <span className="whitespace-nowrap tabular-nums text-[13px] font-normal tracking-normal text-muted-foreground">
-          {row.tokenAmountLabel} {row.tokenSymbol}
-        </span>
-      </div>
-    )
-  }
+  const token = resolveTransactionTokenDisplay(row, priceContext)
+  if (!token) return <EmptyAlign />
 
-  if (fallback) {
-    const symbol = fallbackSymbol ?? row.tokenSymbol
-    return (
-      <div className="flex items-center justify-end gap-2">
-        {symbol ? <TokenIcon symbol={symbol} size="sm" className="shrink-0" /> : null}
-        <span className="inline-block whitespace-nowrap text-[13px] text-muted-foreground">{fallback}</span>
-      </div>
-    )
-  }
-
-  return null
+  return <TokenAmountWithIcon symbol={token.symbol} amount={`${token.amount} ${token.symbol}`} />
 }
 
-export function TransactionAmountCell({ row, paired = false }: { row: DetailTransactionRow; paired?: boolean }) {
+export function TransactionPoolTokenCell({
+  row,
+  leg,
+  token0Symbol,
+  token1Symbol,
+  priceContext,
+}: {
+  row: DetailTransactionRow
+  leg: "token0" | "token1"
+  token0Symbol: string
+  token1Symbol: string
+  priceContext?: TransactionPriceContext
+}) {
+  const { token0Amount, token1Amount } = resolvePoolTokenAmounts(row, token0Symbol, token1Symbol, priceContext)
+  const amount = leg === "token0" ? token0Amount : token1Amount
+  const symbol = leg === "token0" ? token0Symbol : token1Symbol
+
+  if (!amount || amount === "—") return <EmptyAlign />
+  return <TokenAmountWithIcon symbol={symbol} amount={amount} />
+}
+
+export function TransactionUsdCell({
+  row,
+  priceContext,
+  poolSymbols,
+}: {
+  row: DetailTransactionRow
+  priceContext?: TransactionPriceContext
+  poolSymbols?: { token0: string; token1: string }
+}) {
+  const { compact } = useCurrency()
+  const usdValue = poolSymbols
+    ? resolvePoolUsdValue(row, poolSymbols.token0, poolSymbols.token1, priceContext)
+    : resolveTransactionUsdValue(row, priceContext)
+
+  if (usdValue == null) return <EmptyAlign />
+
   return (
-    <div className="flex items-center justify-end gap-2">
-      {paired && row.tokenSymbol && row.tokenSymbolSecondary ? (
-        <PairedTokenIcons primary={row.tokenSymbol} secondary={row.tokenSymbolSecondary} />
-      ) : row.tokenSymbol ? (
-        <TokenIcon symbol={row.tokenSymbol} size="sm" className="shrink-0" />
-      ) : null}
-      <span className="font-data text-[15px] font-normal tabular-nums tracking-normal text-foreground">
-        {row.amountLabel.replace(/^\+/, "")}
-      </span>
+    <div className="flex w-full items-center justify-end">
+      <span className={cn(AMOUNT_CLASS, "text-muted-foreground")}>{compact(usdValue)}</span>
+    </div>
+  )
+}
+
+export function useDetailTransactionPriceContext(context: Record<string, string> = {}) {
+  return useTransactionPriceContext(context)
+}
+
+/** Pool / legacy combined cell — prefer split columns on pool preset. */
+export function TransactionAmountCell({
+  row,
+  priceContext,
+}: {
+  row: DetailTransactionRow
+  priceContext?: TransactionPriceContext
+}) {
+  return (
+    <div className="flex w-full items-center justify-end gap-3">
+      <TransactionTokenCell row={row} priceContext={priceContext} />
+      <TransactionUsdCell row={row} priceContext={priceContext} />
     </div>
   )
 }

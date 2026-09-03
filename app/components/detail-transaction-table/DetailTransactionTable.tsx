@@ -1,13 +1,23 @@
 "use client"
 
-import * as React from "react"
 import type { DetailTransactionRow } from "@/app/lib/detail-page/transaction-history"
 import { formatRelativeTime } from "@/app/lib/detail-page/transaction-history"
+import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
-import { PRESET_COLUMNS, type DetailTransactionPreset, type TransactionKindConfig } from "./kind-configs"
-import { TransactionAmountCell, TransactionTokenCell } from "./transaction-token-cell"
+import {
+  PRESET_COLUMNS,
+  resolveColumnLabel,
+  type DetailTransactionPreset,
+  type TransactionKindConfig,
+} from "./kind-configs"
+import {
+  TransactionPoolTokenCell,
+  TransactionTokenCell,
+  TransactionUsdCell,
+  useDetailTransactionPriceContext,
+} from "./transaction-token-cell"
 
 type Props = {
   transactions: DetailTransactionRow[]
@@ -15,6 +25,11 @@ type Props = {
   kindConfig: TransactionKindConfig
   context?: Record<string, string>
   title?: string
+}
+
+const COLUMN_WIDTHS: Record<DetailTransactionPreset, string[]> = {
+  standard: ["13%", "14%", "28%", "18%", "27%"],
+  pool: ["12%", "12%", "16%", "20%", "20%", "20%"],
 }
 
 export function DetailTransactionTable({
@@ -25,8 +40,13 @@ export function DetailTransactionTable({
   title = "Transactions",
 }: Props) {
   const { t, language } = useTranslation()
+  const { ctx } = useCurrency()
   const columns = PRESET_COLUMNS[preset]
-  const paired = preset === "pool"
+  const priceContext = useDetailTransactionPriceContext(context)
+  const token0Symbol = context.token0Symbol ?? ""
+  const token1Symbol = context.token1Symbol ?? ""
+  const poolSymbols =
+    preset === "pool" && token0Symbol && token1Symbol ? { token0: token0Symbol, token1: token1Symbol } : undefined
 
   return (
     <section className="min-w-0">
@@ -41,30 +61,26 @@ export function DetailTransactionTable({
           {t("No transactions yet")}
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table
-            className={cn(
-              "w-full table-fixed border-separate border-spacing-0 text-[13px]",
-              preset === "standard" ? "min-w-[720px]" : "min-w-[560px]",
-            )}
-          >
+        <div className="overflow-x-auto md:overflow-x-visible">
+          <table className="w-full min-w-[40rem] table-fixed border-separate border-spacing-0 text-[13px] md:min-w-0">
+            <colgroup>
+              {COLUMN_WIDTHS[preset].map((width, index) => (
+                <col key={columns[index]?.id ?? index} style={{ width }} />
+              ))}
+            </colgroup>
             <thead>
               <tr className="text-left text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
                 {columns.map((column, index) => (
                   <th
                     key={column.id}
                     className={cn(
-                      "bg-table-header px-3 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58",
-                      index === 0 && "rounded-l-radius-lg pl-5",
-                      index === columns.length - 1 && "rounded-r-radius-lg pr-5",
+                      "overflow-hidden bg-table-header px-2 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58",
+                      index === 0 && "rounded-l-radius-lg pl-4",
+                      index === columns.length - 1 && "rounded-r-radius-lg pr-4",
                       column.align === "right" && "text-right",
-                      column.id === "time" && "w-[96px]",
-                      column.id === "type" && "w-[118px]",
-                      column.id === "amount" && "w-[140px]",
-                      column.id === "for" && "w-[160px]",
                     )}
                   >
-                    {t(column.label)}
+                    {t(resolveColumnLabel(column, context, ctx.currency))}
                   </th>
                 ))}
               </tr>
@@ -79,16 +95,16 @@ export function DetailTransactionTable({
                         : index === columns.length - 1
                           ? `${TABLE_ROW_HOVER_RIGHT} group-hover:rounded-r-radius-lg`
                           : TABLE_ROW_HOVER_BG
-                    const padX = index === 0 ? "pl-5 pr-3" : index === columns.length - 1 ? "pl-3 pr-5" : "px-3"
+                    const padX = index === 0 ? "pl-4 pr-2" : index === columns.length - 1 ? "pl-2 pr-4" : "px-2"
+                    const cellClass = cn("overflow-hidden py-2.5 align-middle", padX, hoverClass)
 
                     if (column.id === "time") {
                       return (
                         <td
                           key={column.id}
                           className={cn(
-                            "py-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground",
-                            padX,
-                            hoverClass,
+                            cellClass,
+                            "font-data text-[13px] font-medium tabular-nums text-muted-foreground",
                           )}
                         >
                           {row.timeLabel ?? formatRelativeTime(row.at, language)}
@@ -98,10 +114,10 @@ export function DetailTransactionTable({
 
                     if (column.id === "type") {
                       return (
-                        <td key={column.id} className={cn("py-3 align-middle", padX, hoverClass)}>
+                        <td key={column.id} className={cellClass}>
                           <span
                             className={cn(
-                              "inline-block whitespace-nowrap text-[15px] font-medium tracking-normal",
+                              "inline-block whitespace-nowrap text-[14px] font-medium tracking-normal",
                               kindConfig.tones[row.kind],
                             )}
                           >
@@ -111,25 +127,31 @@ export function DetailTransactionTable({
                       )
                     }
 
-                    if (column.id === "amount") {
+                    if (column.id === "for") {
                       return (
-                        <td key={column.id} className={cn("py-3 align-middle text-right", padX, hoverClass)}>
-                          <TransactionAmountCell row={row} paired={paired} />
+                        <td key={column.id} className={cn(cellClass, "text-right")}>
+                          <TransactionTokenCell row={row} priceContext={priceContext} />
                         </td>
                       )
                     }
 
-                    if (column.id === "for") {
-                      const fallback = kindConfig.describeFor?.(row, context)
-                      const fallbackSymbol =
-                        context.assetSymbol ?? context.collateralSymbol ?? row.tokenSymbol ?? undefined
+                    if (column.id === "usd") {
                       return (
-                        <td key={column.id} className={cn("py-3 align-middle text-right", padX, hoverClass)}>
-                          <TransactionTokenCell
+                        <td key={column.id} className={cn(cellClass, "text-right")}>
+                          <TransactionUsdCell row={row} priceContext={priceContext} poolSymbols={poolSymbols} />
+                        </td>
+                      )
+                    }
+
+                    if (column.id === "token0" || column.id === "token1") {
+                      return (
+                        <td key={column.id} className={cn(cellClass, "text-right")}>
+                          <TransactionPoolTokenCell
                             row={row}
-                            fallback={fallback}
-                            fallbackSymbol={fallbackSymbol}
-                            paired={Boolean(row.tokenSymbolSecondary)}
+                            leg={column.id}
+                            token0Symbol={token0Symbol}
+                            token1Symbol={token1Symbol}
+                            priceContext={priceContext}
                           />
                         </td>
                       )
@@ -139,9 +161,8 @@ export function DetailTransactionTable({
                       <td
                         key={column.id}
                         className={cn(
-                          "py-3 align-middle text-right font-data text-[15px] font-normal tabular-nums text-foreground",
-                          padX,
-                          hoverClass,
+                          cellClass,
+                          "text-right font-data text-[13px] font-normal tabular-nums text-foreground",
                         )}
                       >
                         {row.walletHref ? (
@@ -149,12 +170,12 @@ export function DetailTransactionTable({
                             href={row.walletHref}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-block max-w-full truncate whitespace-nowrap text-foreground underline-offset-2 hover:underline"
+                            className="block w-full truncate whitespace-nowrap text-foreground underline-offset-2 hover:underline"
                           >
                             {row.walletLabel ?? row.txHashShort}
                           </a>
                         ) : (
-                          <span className="inline-block max-w-full truncate whitespace-nowrap">
+                          <span className="block w-full truncate whitespace-nowrap">
                             {row.walletLabel ?? row.txHashShort}
                           </span>
                         )}

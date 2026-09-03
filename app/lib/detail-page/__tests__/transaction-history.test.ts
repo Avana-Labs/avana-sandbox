@@ -25,7 +25,7 @@ describe("transaction-history helpers", () => {
     expect(merged[0]?.amountLabel).toBe("$1")
   })
 
-  it("mapLendSessionRows includes token symbol for icons", () => {
+  it("mapLendSessionRows separates USD and token amounts", () => {
     const rows = mapLendSessionRows(
       [
         {
@@ -39,9 +39,11 @@ describe("transaction-history helpers", () => {
       ],
       "gho",
       "GHO",
+      1,
     )
     expect(rows[0]?.tokenSymbol).toBe("GHO")
-    expect(rows[0]?.tokenAmountLabel).toBe("1200.0000")
+    expect(rows[0]?.tokenAmountLabel).toBe("1,200")
+    expect(rows[0]?.amountLabel).toBe("$1.2K")
   })
 
   it("mapBorrowSessionRows maps borrow actions with token symbol", () => {
@@ -68,7 +70,6 @@ describe("transaction-history helpers", () => {
     const row = enrichBorrowRowWithAsset(
       { id: "1", at: "", kind: "supply", amountLabel: "+$1.2K", txHashShort: "0x" },
       "USDC",
-      "supply",
     )
     expect(row.tokenSymbol).toBe("USDC")
   })
@@ -83,15 +84,17 @@ describe("transaction-history helpers", () => {
     )
     expect(row.tokenSymbol).toBe("WETH")
     expect(row.tokenSymbolSecondary).toBe("USDC")
-    expect(row.tokenAmountLabel).toContain("/")
+    expect(row.token0AmountLabel).toBe("12.4")
+    expect(row.token1AmountLabel).toBe("42.8K")
   })
 
-  it("enrichDetailTransactionRow fills token icon fields from convex rows missing symbols", () => {
+  it("enrichDetailTransactionRow derives For amount from USD when convex row only has amountLabel", () => {
     const row = enrichDetailTransactionRow(
-      { id: "1", at: "", kind: "supply", amountLabel: "+$8.00K", txHashShort: "0x" },
-      { assetSymbol: "USDC" },
+      { id: "1", at: "", kind: "supply", amountLabel: "$37.50K", tokenSymbol: "GHO", txHashShort: "0x" },
+      { assetSymbol: "GHO" },
     )
-    expect(row.tokenSymbol).toBe("USDC")
-    expect(row.tokenAmountLabel).toBe("8.00K")
+    expect(row.tokenSymbol).toBe("GHO")
+    expect(row.tokenAmountLabel).toBeTruthy()
+    expect(row.tokenAmountLabel).not.toBe("37.50K")
   })
 })

@@ -99,21 +99,40 @@ export const MULTIPLY_KIND_CONFIG: TransactionKindConfig = {
 
 export type DetailTransactionPreset = "standard" | "pool"
 
-export const PRESET_COLUMNS: Record<
-  DetailTransactionPreset,
-  Array<{ id: "time" | "type" | "amount" | "for" | "wallet"; label: string; align?: "left" | "right" }>
-> = {
+export type DetailTransactionColumnId = "time" | "type" | "for" | "usd" | "token0" | "token1" | "wallet"
+
+export type DetailTransactionColumn = {
+  id: DetailTransactionColumnId
+  label: string
+  align?: "left" | "right"
+}
+
+export const PRESET_COLUMNS: Record<DetailTransactionPreset, DetailTransactionColumn[]> = {
   standard: [
     { id: "time", label: "Time" },
     { id: "type", label: "Type" },
-    { id: "amount", label: "Amount", align: "right" },
     { id: "for", label: "For", align: "right" },
+    { id: "usd", label: "USD", align: "right" },
     { id: "wallet", label: "Wallet", align: "right" },
   ],
+  // Uniswap-style: time, action, fiat, then each leg with its own column header.
   pool: [
     { id: "time", label: "Time" },
     { id: "type", label: "Type" },
-    { id: "amount", label: "USD", align: "right" },
+    { id: "usd", label: "USD", align: "right" },
+    { id: "token0", label: "token0", align: "right" },
+    { id: "token1", label: "token1", align: "right" },
     { id: "wallet", label: "Wallet", align: "right" },
   ],
+}
+
+export function resolveColumnLabel(
+  column: DetailTransactionColumn,
+  context: Record<string, string>,
+  fiatCode: string,
+): string {
+  if (column.id === "usd") return fiatCode
+  if (column.id === "token0") return context.token0Symbol || "Token"
+  if (column.id === "token1") return context.token1Symbol || "Token"
+  return column.label
 }

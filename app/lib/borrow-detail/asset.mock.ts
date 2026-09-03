@@ -10,6 +10,7 @@
 
 import { BORROW_POOL_CATALOG, formatCompactUsd } from "@/app/lib/borrow-sim"
 import { resolveSpokeBorrowable, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
+import { formatDetailTokenAmount } from "@/app/lib/detail-page/transaction-display"
 import { buildSeries, buildSeriesFamily, prngFromString } from "./prng"
 import { SANDBOX_NOW } from "@/app/lib/deterministic"
 import { anchorPriceFamilyToCanonical, buildCuratedPriceFamily } from "./token-price-series"
@@ -610,6 +611,7 @@ function buildAssetAbout(
 function buildTransactions(asset: SpokeBorrowableRecord): TxHistoryRow[] {
   const rand = prngFromString(`${asset.id}:tx`)
   const kinds: TxHistoryRow["kind"][] = ["supply", "borrow", "repay", "withdraw", "rewards", "liquidation"]
+  const priceUsd = canonicalPriceUsd(asset.baseAssetId) ?? 1
   const out: TxHistoryRow[] = []
   const now = Date.now()
   for (let i = 0; i < 12; i++) {
@@ -635,7 +637,7 @@ function buildTransactions(asset: SpokeBorrowableRecord): TxHistoryRow[] {
       timeLabel: formatRelativeAge(ageMs),
       kind,
       amountLabel: `${kind === "withdraw" ? "-" : "+"}${formatCompactUsd(amount)}`,
-      tokenAmountLabel: formatCompactUsd(amount).replace(/^\$/, ""),
+      tokenAmountLabel: formatDetailTokenAmount(amount / priceUsd),
       tokenSymbol: asset.baseAssetId.toUpperCase(),
       counterpartyLabel: kind === "liquidation" ? "Liquidator" : undefined,
       walletLabel,

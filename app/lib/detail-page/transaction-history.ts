@@ -1,5 +1,13 @@
 import { LANGUAGE_HTML_LANG } from "@/app/lib/i18n/language-html-lang"
 import type { LanguageCode } from "@/app/components/display-preferences"
+import { formatCompactUsd } from "@/app/lib/format"
+import {
+  formatDetailTokenAmount,
+  isUsdMirroredTokenLabel,
+  parseCompactUsdLabel,
+  seedPriceUsdForSymbol,
+  tokenAmountFromUsd,
+} from "@/app/lib/detail-page/transaction-display"
 import type { TxHistoryRow } from "@/app/lib/borrow-detail"
 import type { MultiplyTxHistoryRow } from "@/app/lib/multiply-detail"
 import type { LendTransactionHistoryItem } from "@/app/lib/lend-system/contracts"
@@ -13,7 +21,11 @@ export type DetailTransactionRow = {
   timeLabel?: string
   kind: string
   amountLabel: string
+  /** Historical USD at transaction time — used only to bootstrap frozen token qty. */
+  amountUsd?: number
   tokenAmountLabel?: string
+  token0AmountLabel?: string
+  token1AmountLabel?: string
   tokenSymbol?: string
   tokenSymbolSecondary?: string
   counterpartyLabel?: string
@@ -64,13 +76,20 @@ export function mergeTransactionRows(
 }
 
 export function mapBorrowTxRow(row: TxHistoryRow): DetailTransactionRow {
+  const pairedAmount =
+    row.token0AmountLabel && row.token1AmountLabel
+      ? `${row.token0AmountLabel} / ${row.token1AmountLabel}`
+      : undefined
   return {
     id: row.id,
     at: row.at,
     timeLabel: row.timeLabel,
     kind: row.kind,
     amountLabel: row.amountLabel,
-    tokenAmountLabel: row.tokenAmountLabel ?? row.token0AmountLabel ?? row.token1AmountLabel,
+    amountUsd: parseCompactUsdLabel(row.amountLabel.replace(/^\+/, "")) ?? undefined,
+    tokenAmountLabel: row.tokenAmountLabel ?? pairedAmount ?? row.token0AmountLabel ?? row.token1AmountLabel,
+    token0AmountLabel: row.token0AmountLabel,
+    token1AmountLabel: row.token1AmountLabel,
     tokenSymbol: row.tokenSymbol,
     tokenSymbolSecondary: row.tokenSymbolSecondary,
     counterpartyLabel: row.counterpartyLabel,
@@ -101,27 +120,36 @@ export function mapLendSessionRows(
   history: LendTransactionHistoryItem[],
   marketId: string,
   assetSymbol: string,
+  priceUsd?: number,
 ): DetailTransactionRow[] {
   const now = Date.now()
   return history
     .filter((item) => item.marketId === marketId)
-    .map((item) => ({
-      id: item.id,
-      at: new Date(item.timestamp).toISOString(),
-      timeLabel: formatRelativeAge(now - item.timestamp),
-      kind: item.kind === "deposit" ? "supply" : item.kind === "claim" ? "rewards" : "withdraw",
-      amountLabel: `${item.kind === "withdraw" ? "-" : "+"}${item.amount.toFixed(4)} ${assetSymbol}`,
-      tokenAmountLabel: item.amount.toFixed(4),
-      tokenSymbol: assetSymbol,
-      walletLabel: "Sandbox wallet",
-      txHashShort: item.hash.slice(0, 10),
-    }))
+    .map((item) => {
+      const signedUsd =
+        priceUsd != null && priceUsd > 0
+          ? formatCompactUsd(item.amount * priceUsd * (item.kind === "withdraw" ? -1 : 1))
+          : undefined
+      return {
+        id: item.id,
+        at: new Date(item.timestamp).toISOString(),
+        timeLabel: formatRelativeAge(now - item.timestamp),
+        kind: item.kind === "deposit" ? "supply" : item.kind === "claim" ? "rewards" : "withdraw",
+        amountLabel: signedUsd ?? "—",
+        amountUsd: priceUsd != null && priceUsd > 0 ? item.amount * priceUsd : undefined,
+        tokenAmountLabel: formatDetailTokenAmount(item.amount),
+        tokenSymbol: assetSymbol,
+        walletLabel: "Sandbox wallet",
+        txHashShort: item.hash.slice(0, 10),
+      }
+    })
 }
 
 export function mapBorrowSessionRows(
   history: TransactionHistoryItem[],
   marketSlug?: string,
   assetSymbol?: string,
+  priceUsd?: number,
 ): DetailTransactionRow[] {
   const now = Date.now()
   const actionToKind: Record<TransactionHistoryItem["kind"], string> = {
@@ -138,13 +166,16 @@ export function mapBorrowSessionRows(
       const kind = actionToKind[item.kind]
       const usd = Number(item.executedAmountUsd6) / 1_000_000
       const symbol = assetSymbol ?? item.assetId?.split(":").pop()?.toUpperCase() ?? "USD"
+      const seedPrice = seedPriceUsdForSymbol(symbol)
+      const tokenQty = usd / seedPrice
       return {
         id: item.id,
         at: new Date(item.timestamp).toISOString(),
         timeLabel: formatRelativeAge(now - item.timestamp),
         kind,
-        amountLabel: `$${usd.toLocaleString(undefined, { maximumFractionDigits: 0 })}`,
-        tokenAmountLabel: usd >= 1000 ? `${(usd / 1000).toFixed(1)}K` : usd.toFixed(2),
+        amountLabel: formatCompactUsd(usd),
+        amountUsd: usd,
+        tokenAmountLabel: formatDetailTokenAmount(tokenQty),
         tokenSymbol: symbol,
         walletLabel: "Sandbox wallet",
         txHashShort: item.hash.slice(0, 10),
@@ -194,30 +225,44 @@ export function enrichDetailTransactionRow(
   preset: "standard" | "pool" = "standard",
 ): DetailTransactionRow {
   if (preset === "pool" && context.token0Symbol && context.token1Symbol) {
-    if (row.tokenSymbol && row.tokenAmountLabel && row.tokenSymbolSecondary) return row
-    return enrichPoolRowWithPair(row, context.token0Symbol, context.token1Symbol)
+    const w0 = context.token0Weight ? Number(context.token0Weight) : 0.5
+    const w1 = context.token1Weight ? Number(context.token1Weight) : 0.5
+    return enrichPoolRowWithPair(
+      row,
+      context.token0Symbol,
+      context.token1Symbol,
+      row.token0AmountLabel,
+      row.token1AmountLabel,
+      w0,
+      w1,
+    )
   }
 
-  if (row.tokenSymbol && row.tokenAmountLabel) return row
-
-  const symbol = context.assetSymbol ?? context.collateralSymbol
+  const symbol = row.tokenSymbol ?? context.assetSymbol ?? context.collateralSymbol
   if (!symbol) return row
-  return enrichBorrowRowWithAsset(row, symbol, row.kind)
+  return enrichBorrowRowWithAsset(row, symbol)
 }
+
 export function enrichBorrowRowWithAsset(
   row: DetailTransactionRow,
   assetSymbol: string,
-  _kind: string,
 ): DetailTransactionRow {
-  if (row.tokenSymbol) return row
-  const numeric = row.amountLabel
-    .replace(/[^0-9.KMBx+-]/gi, "")
-    .replace(/^[+-]/, "")
-    .trim()
+  const symbol = row.tokenSymbol ?? assetSymbol
+  let tokenAmountLabel = row.tokenAmountLabel
+
+  const usd = row.amountUsd ?? parseCompactUsdLabel(row.amountLabel)
+  const hasValidToken =
+    Boolean(tokenAmountLabel) && !isUsdMirroredTokenLabel({ ...row, tokenSymbol: symbol, tokenAmountLabel })
+
+  if (!hasValidToken && usd != null) {
+    tokenAmountLabel = tokenAmountFromUsd(usd, symbol)
+  }
+
   return {
     ...row,
-    tokenSymbol: assetSymbol,
-    tokenAmountLabel: numeric || row.tokenAmountLabel,
+    tokenSymbol: symbol,
+    tokenAmountLabel,
+    amountUsd: usd ?? undefined,
   }
 }
 
@@ -227,12 +272,34 @@ export function enrichPoolRowWithPair(
   token1Symbol: string,
   token0AmountLabel?: string,
   token1AmountLabel?: string,
+  token0Weight = 0.5,
+  token1Weight = 0.5,
 ): DetailTransactionRow {
+  const token0 = token0AmountLabel ?? row.token0AmountLabel
+  const token1 = token1AmountLabel ?? row.token1AmountLabel
+  let tokenAmountLabel = row.tokenAmountLabel
+
+  if (token0 && token1 && token0 !== "—" && token1 !== "—") {
+    tokenAmountLabel = `${token0} / ${token1}`
+  } else if (!tokenAmountLabel || isUsdMirroredTokenLabel({ ...row, tokenSymbol: token0Symbol, tokenAmountLabel })) {
+    const usd = row.amountUsd ?? parseCompactUsdLabel(row.amountLabel)
+    if (usd != null) {
+      const absUsd = Math.abs(usd)
+      const t0 = tokenAmountFromUsd(absUsd * token0Weight, token0Symbol)
+      const t1 = tokenAmountFromUsd(absUsd * token1Weight, token1Symbol)
+      tokenAmountLabel = `${t0} / ${t1}`
+    }
+  }
+
+  const usd = row.amountUsd ?? parseCompactUsdLabel(row.amountLabel)
+
   return {
     ...row,
     tokenSymbol: row.tokenSymbol ?? token0Symbol,
     tokenSymbolSecondary: row.tokenSymbolSecondary ?? token1Symbol,
-    tokenAmountLabel:
-      token0AmountLabel && token1AmountLabel ? `${token0AmountLabel} / ${token1AmountLabel}` : row.tokenAmountLabel,
+    token0AmountLabel: token0 ?? tokenAmountLabel?.split("/")[0]?.trim(),
+    token1AmountLabel: token1 ?? tokenAmountLabel?.split("/")[1]?.trim(),
+    tokenAmountLabel,
+    amountUsd: usd ?? undefined,
   }
 }
