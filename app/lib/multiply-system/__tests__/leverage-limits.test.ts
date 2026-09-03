@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest"
 import {
   MULTIPLY_ACTION_MAX_LEVERAGE,
+  MULTIPLY_ACTION_SLIDER_MAX,
+  MULTIPLY_ACTION_SLIDER_STEP,
   getDeleverageMultiplierMax,
   getDefaultDeleverageMultiplier,
   resolveDefaultMultiplyLeverage,
@@ -23,10 +25,12 @@ describe("resolveMultiplyMarketMaxLeverage", () => {
     expect(resolveMultiplyMarketMaxLeverage(Number.NaN)).toBe(MULTIPLY_ACTION_MAX_LEVERAGE)
   })
 
-  it("documents that the multiply slider ceiling is global, not per-market public max", () => {
-    // Slider range is always MULTIPLY_ACTION_MIN/MAX; publicMax is a validation hard-block.
+  it("documents that the multiply slider ceiling is 9.99 with 0.01 steps, not per-market public max", () => {
+    // Slider range is MULTIPLY_ACTION_SLIDER_*; publicMax is a validation hard-block.
     expect(MULTIPLY_ACTION_MAX_LEVERAGE).toBe(10)
-    expect(resolveMultiplyMarketMaxLeverage(1.8)).toBeLessThan(MULTIPLY_ACTION_MAX_LEVERAGE)
+    expect(MULTIPLY_ACTION_SLIDER_MAX).toBe(9.99)
+    expect(MULTIPLY_ACTION_SLIDER_STEP).toBe(0.01)
+    expect(resolveMultiplyMarketMaxLeverage(1.8)).toBeLessThan(MULTIPLY_ACTION_SLIDER_MAX)
   })
 
   it("defaults deleverage below the current multiplier", () => {
@@ -54,6 +58,12 @@ describe("snapMultiplierToStep", () => {
     expect(snapMultiplierToStep(1.75, 1, 1.8, 0.1)).toBe(1.8)
     expect(snapMultiplierToStep(1.73, 1, 1.8, 0.1)).toBe(1.7)
     expect(snapMultiplierToStep(1.2, 1, 2, 0.1)).toBe(1.2)
+  })
+
+  it("preserves hundredths on the 0.01 multiply slider grid", () => {
+    expect(snapMultiplierToStep(1.75, 1, 9.99, 0.01)).toBe(1.75)
+    expect(snapMultiplierToStep(6.7, 1, 9.99, 0.01)).toBe(6.7)
+    expect(snapMultiplierToStep(9.99, 1, 9.99, 0.01)).toBe(9.99)
   })
 
   it("clamps to the [min, max] range", () => {

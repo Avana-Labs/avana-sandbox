@@ -28,8 +28,9 @@ import { dashboardHrefForProduct, successDashboardCtaLabel } from "@/app/lib/act
 import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import {
-  MULTIPLY_ACTION_MAX_LEVERAGE,
   MULTIPLY_ACTION_MIN_LEVERAGE,
+  MULTIPLY_ACTION_SLIDER_MAX,
+  MULTIPLY_ACTION_SLIDER_STEP,
   getDeleverageMultiplierMax,
   getDefaultDeleverageMultiplier,
   isDeleverageCloseOnly,
@@ -179,13 +180,14 @@ export function MultiplyActionPageClient({
     const effectiveMax =
       kind === "deleverage"
         ? getDeleverageMultiplierMax(position?.multiplier ?? Number.NaN, 0.1)
-        : MULTIPLY_ACTION_MAX_LEVERAGE
-    // Snap the canonical multiplier to the SAME 0.1 step grid the ruler thumb uses, and
+        : MULTIPLY_ACTION_SLIDER_MAX
+    // Snap the canonical multiplier to the SAME step grid the ruler thumb uses, and
     // clamp to [min, max]. Binding the state to the slider's grid keeps the pill and the
     // projection summary on one value instead of drifting apart. (E6)
-    // Multiply uses the global 1–10 slider ceiling; per-market publicMax is enforced by
+    // Multiply uses the global 1–9.99 / 0.01 slider; per-market publicMax is enforced by
     // engine validation (hard block), not by clamping the thumb.
-    const next = String(snapMultiplierToStep(parsed, multiplierMin, effectiveMax, 0.1))
+    const step = kind === "deleverage" ? 0.1 : MULTIPLY_ACTION_SLIDER_STEP
+    const next = String(snapMultiplierToStep(parsed, multiplierMin, effectiveMax, step))
     if (next !== multiplier) setMultiplier(next)
   }, [kind, market, multiplier, multiplierMin, position?.multiplier])
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
@@ -638,11 +640,12 @@ export function MultiplyActionPageClient({
   const hideTitle = embedded || stage === "success" || isProcessingStage(stage) || stage === "review"
   const isHomeLayout = embedded && layout === "home"
   const shellDensity = sidebar ? "sidebar" : isHomeLayout ? "home" : "default"
-  // Multiply slider is always the global 1–10 ceiling. Per-market publicMax remains an
+  // Multiply slider is always the global 1–9.99 / 0.01 scale. Per-market publicMax remains an
   // engine hard-block (CTA disabled) when the user drags past it.
   const effectiveMultiplierMax = isExitKind
     ? getDeleverageMultiplierMax(position?.multiplier ?? Number.NaN, 0.1)
-    : MULTIPLY_ACTION_MAX_LEVERAGE
+    : MULTIPLY_ACTION_SLIDER_MAX
+  const multiplierStep = isExitKind ? 0.1 : MULTIPLY_ACTION_SLIDER_STEP
   const useWorkspaceFields = embedded && isHomeLayout && isConfigureVisibleStage(stage)
   // Surface the market-liquidity cap as the collateral input balance, with a Max button.
   const showCollateralBalance = kind === "multiply" && maxCollateralAmount != null && maxCollateralAmount > 0
@@ -685,7 +688,7 @@ export function MultiplyActionPageClient({
           }}
           min={multiplierMin}
           max={effectiveMultiplierMax}
-          step={0.1}
+          step={multiplierStep}
           label={multiplierLabel}
         />
       }
@@ -756,6 +759,7 @@ export function MultiplyActionPageClient({
           }
           multiplierMin={multiplierMin}
           multiplierMax={effectiveMultiplierMax}
+          multiplierStep={multiplierStep}
           multiplierLabel={multiplierLabel}
           onPrimary={() => {
             if (deleverageCloseOnly) {

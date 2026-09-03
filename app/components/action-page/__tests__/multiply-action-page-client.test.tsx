@@ -99,17 +99,17 @@ describe("MultiplyActionPageClient", () => {
     expect(screen.getByText("1.1x")).toBeInTheDocument()
   })
 
-  it("keeps an above-public-max multiplier on the global 1–10 slider", async () => {
+  it("keeps an above-public-max multiplier on the global 1–9.99 slider", async () => {
     renderWithProviders(
       <AvanaSessionsProvider>
-        <MultiplyActionPageClient kind="multiply" initialMarketId="aave-gho" initialMultiplier="10" />
+        <MultiplyActionPageClient kind="multiply" initialMarketId="aave-gho" initialMultiplier="9.99" />
       </AvanaSessionsProvider>,
     )
 
     const slider = (await screen.findByRole("slider", { name: "Multiplier" })) as HTMLInputElement
-    await waitFor(() => expect(slider.value).toBe("10"))
-    expect(screen.getByTestId("action-leverage-pill")).toHaveTextContent("10x")
-    expect(screen.getByTestId("action-leverage-ticks")).toHaveTextContent("10x")
+    await waitFor(() => expect(slider.value).toBe("9.99"))
+    expect(screen.getByTestId("action-leverage-pill")).toHaveTextContent("9.99x")
+    expect(screen.getByTestId("action-leverage-ticks")).toHaveTextContent("9.99x")
   })
 
   it("previews a fresh-wallet multiply without merging a ghost position", async () => {
@@ -360,7 +360,7 @@ describe("MultiplyActionPageClient", () => {
     await waitFor(() => expect(screen.queryByRole("button", { name: "Review" })).not.toBeInTheDocument())
   })
 
-  it("E6: dragging the slider snaps to the 0.1 grid and updates the pill", async () => {
+  it("E6: dragging the slider keeps 0.01 precision on the pill", async () => {
     renderWithProviders(
       <AvanaSessionsProvider>
         <MultiplyActionPageClient kind="multiply" initialMarketId="eth-usdt" initialMultiplier="2" />
@@ -368,11 +368,10 @@ describe("MultiplyActionPageClient", () => {
     )
 
     const slider = (await screen.findByRole("slider", { name: "Multiplier" })) as HTMLInputElement
-    // A half-step value the slider grid rounds to 1.8x — pill and projection stay synced.
     fireEvent.change(slider, { target: { value: "1.75" } })
 
-    await waitFor(() => expect(slider.value).toBe("1.8"))
-    expect(screen.getByTestId("action-leverage-pill")).toHaveTextContent("1.8x")
+    await waitFor(() => expect(slider.value).toBe("1.75"))
+    expect(screen.getByTestId("action-leverage-pill")).toHaveTextContent("1.75x")
   })
 
   it("blocks Review when leverage is above the market public maximum", async () => {

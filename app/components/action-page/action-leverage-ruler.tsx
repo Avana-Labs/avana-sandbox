@@ -2,29 +2,31 @@
 
 import { useCallback, useMemo } from "react"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import {
+  MULTIPLY_ACTION_MIN_LEVERAGE,
+  MULTIPLY_ACTION_SLIDER_MAX,
+  MULTIPLY_ACTION_SLIDER_STEP,
+} from "@/app/lib/multiply-system/leverage-limits"
 import { Slider } from "@/components/ui/slider"
 import { cn } from "@/lib/utils"
 
 const SCALE_TICK_COUNT = 5
 
+/** Pill / live value — up to 2 decimals, trim trailing zeros (1x, 6.7x, 9.99x). */
 function formatMultiplier(value: number) {
   if (!Number.isFinite(value)) return "—x"
-  if (Number.isInteger(value)) return `${value}x`
   const rounded = Math.round(value * 100) / 100
   if (Number.isInteger(rounded)) return `${rounded}x`
-  const oneDecimal = Math.round(value * 10) / 10
-  if (Math.abs(oneDecimal - value) < 1e-9 || Math.abs(oneDecimal - rounded) < 1e-9) {
-    return `${oneDecimal.toFixed(1)}x`
-  }
-  return `${rounded.toFixed(2)}x`
+  const fixed = rounded.toFixed(2).replace(/\.?0+$/, "")
+  return `${fixed}x`
 }
 
+/** Scale labels — same rounding as the mock (3.25x, 5.5x, 7.74x, 9.99x). */
 function formatTickLabel(value: number) {
   if (!Number.isFinite(value)) return "—"
-  if (Number.isInteger(value)) return `${value}x`
   const rounded = Math.round(value * 100) / 100
-  // Prefer one decimal when it is exact (3.25 → 3.25, 5.5 → 5.5).
-  const asOne = Number(rounded.toFixed(1))
+  if (Number.isInteger(rounded)) return `${rounded}x`
+  const asOne = Math.round(rounded * 10) / 10
   if (Math.abs(asOne - rounded) < 1e-9) return `${asOne.toFixed(1)}x`
   return `${rounded.toFixed(2)}x`
 }
@@ -48,15 +50,18 @@ function snapToStep(value: number, min: number, max: number, step: number) {
 function buildScaleTicks(min: number, max: number, count = SCALE_TICK_COUNT): number[] {
   if (!(max > min) || count < 2) return [min, max]
   const span = max - min
-  return Array.from({ length: count }, (_, index) => min + (span * index) / (count - 1))
+  return Array.from({ length: count }, (_, index) => {
+    const raw = min + (span * index) / (count - 1)
+    return Math.round(raw * 100) / 100
+  })
 }
 
 export function ActionLeverageRuler({
   value,
   onChange,
-  min = 1,
-  max = 10,
-  step = 0.1,
+  min = MULTIPLY_ACTION_MIN_LEVERAGE,
+  max = MULTIPLY_ACTION_SLIDER_MAX,
+  step = MULTIPLY_ACTION_SLIDER_STEP,
   label = "Multiplier",
   variant = "embedded",
 }: {
