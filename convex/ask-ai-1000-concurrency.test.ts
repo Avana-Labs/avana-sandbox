@@ -10,8 +10,11 @@ import schema from "./schema"
 const modules = import.meta.glob("./**/*.*s")
 const describeConcurrency = process.env.RUN_ASK_AI_1000_CONCURRENCY === "1" ? describe : describe.skip
 
+/** Must match MAX_CONCURRENT_GENERATIONS_GLOBAL in askAI.ts. */
+const MAX_CONCURRENT_GENERATIONS_GLOBAL = 100
+
 describeConcurrency("Ask AI 1,000-user concurrency", () => {
-  test("claims one independent turn per user without a global execution lock", async () => {
+  test("1,000 concurrent claims cannot exceed the global generation cap", async () => {
     const t = convexTest(schema, modules)
     registerAgent(t)
     registerRateLimiter(t)
@@ -48,12 +51,19 @@ describeConcurrency("Ask AI 1,000-user concurrency", () => {
     const startedAt = performance.now()
     const claims = await Promise.all(turnIds.map((turnId) => t.mutation(internal.askAI.claimQueuedTurn, { turnId })))
     const durationMs = performance.now() - startedAt
-    expect(claims.filter(Boolean)).toHaveLength(1_000)
+    const claimed = claims.filter(Boolean)
+    expect(claimed.length).toBeLessThanOrEqual(MAX_CONCURRENT_GENERATIONS_GLOBAL)
+    expect(claimed.length).toBe(MAX_CONCURRENT_GENERATIONS_GLOBAL)
 
-    const duplicateClaims = await Promise.all(
-      turnIds.map((turnId) => t.mutation(internal.askAI.claimQueuedTurn, { turnId })),
-    )
-    expect(duplicateClaims.every((claim) => claim === null)).toBe(true)
+    const stillQueued = await t.run(async (ctx) => {
+      let count = 0
+      for (const turnId of turnIds) {
+        const turn = await ctx.db.get(turnId)
+        if (turn?.status === "queued") count += 1
+      }
+      return count
+    })
+    expect(stillQueued).toBe(1_000 - MAX_CONCURRENT_GENERATIONS_GLOBAL)
     expect(durationMs).toBeLessThan(30_000)
   }, 60_000)
 })

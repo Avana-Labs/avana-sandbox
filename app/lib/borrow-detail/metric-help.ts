@@ -28,6 +28,10 @@ const METRIC_HELP_BY_LABEL: Readonly<Record<string, string>> = {
   "rewards apy": "Additional annualized incentive yield paid on top of base supply interest.",
   "borrow apy": "Annualized rate paid by borrowers before rewards or position-specific effects.",
   "reserve factor": "Share of borrower interest directed to the protocol reserve instead of suppliers.",
+  profitability: "Estimated max return on equity at this market's public max multiplier.",
+  "net apy": "Estimated net APY at this market's public max multiplier.",
+  "max multiplier": "Maximum public leverage this multiply market allows.",
+  "liquidation ltv": "Loan-to-value at which the position becomes eligible for liquidation.",
 }
 
 export function resolveBorrowDetailMetricHelp(label: string): string | undefined {

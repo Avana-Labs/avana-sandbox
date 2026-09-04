@@ -59,6 +59,8 @@ const dict: TranslationDictionary = {
   Share: "シェア",
   Utilization: "利用率",
   "Supply & Borrow": "供給と借入",
+  "Supply {collateral}": "{collateral} を供給",
+  "Borrow {borrow}": "{borrow} を借入",
   Borrowed: "借入額",
   Available: "利用可能",
   "Supply APY": "供給APY",
@@ -147,6 +149,8 @@ const dict: TranslationDictionary = {
   "Join waitlist": "ウェイトリストに参加",
   "Previous page": "前のページ",
   "Next page": "次のページ",
+  "Transactions pagination": "取引のページ送り",
+  "Changelog pagination": "変更履歴のページ送り",
   "{page} of {count}": "{count} 件中 {page} 件",
   "Max APY": "最大 APY",
   "Max Leverage": "最大レバレッジ",
@@ -267,7 +271,6 @@ const dict: TranslationDictionary = {
   "Insufficient balance": "残高が不足しています",
   "Insufficient liquidity": "流動性が不足しています",
   "Insufficient LP": "LP が不足しています",
-  "Deposit collateral first": "先に担保を入金してください",
   "Borrowing unavailable": "借入はできません",
   "Try a smaller amount": "金額を小さくしてください",
   "Supply cap reached": "供給上限に達しました",
@@ -276,6 +279,8 @@ const dict: TranslationDictionary = {
   "Not available here": "ここでは利用できません",
   "Nothing to claim": "受け取るものはありません",
   "Select rewards": "報酬を選択",
+  "No collateral": "担保がありません",
+  "No position": "ポジションがありません",
   "Nothing to withdraw": "引き出すものはありません",
   "and the Avana team will follow up. You can submit another request any time.":
     "Avanaチームが折り返しご連絡します。いつでも別のリクエストを送信できます。",
@@ -390,7 +395,6 @@ const dict: TranslationDictionary = {
   "Daily Interest": "日次利息",
   day: "日",
   "Deposit {symbol}": "{symbol} をデポジット",
-  "Deposit LP collateral before borrowing {symbol}.": "{symbol} を借りる前に LP 担保を入金してください。",
   Done: "完了",
   Expiration: "有効期限",
   Expired: "期限切れ",
@@ -399,7 +403,6 @@ const dict: TranslationDictionary = {
   "Generating link...": "リンクを生成中…",
   "Go back": "戻る",
   GOOD: "良好",
-  "Got it": "了解",
   "Health Factor": "ヘルスファクター",
   "I read it": "読みました",
   "In this sandbox, every transaction is simulated — use previews to learn before sizing up.":
@@ -553,6 +556,10 @@ const dict: TranslationDictionary = {
   "Lend Rewards": "貸出リワード",
   "Multiply Overview": "ループ概要",
   "Multiply Positions": "ループポジション",
+  "Debt & Risk": "債務とリスク",
+  "Position size, multiplier, and current net yield": "ポジション規模、倍率、現在の純利回り",
+  "Borrowed balance, health factor, and liquidation threshold": "借入残高、ヘルスファクター、清算しきい値",
+  "No active Multiply debt": "有効なMultiply債務はありません",
   "Loading your portfolio": "ポートフォリオを読み込んでいます",
   "We couldn't load your portfolio": "ポートフォリオを読み込めませんでした",
   "The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard.":
@@ -1054,6 +1061,7 @@ const dict: TranslationDictionary = {
   "This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.":
     "このリスクのない Avana サンドボックスでは、サンドボックス資金を使って、練習用の LP ポジションを担保にした借り入れ、レンディング、ループ戦略を試せます。実際の資産は使いません。ウォレットの署名も不要です。本番アプリに切り替える前に、Avana の仕組みを手早く理解できます。",
   "Unlimited practice funds": "無制限の練習資金",
+  "No transactions yet": "まだ取引がありません",
   "No transactions to sign": "署名するトランザクションなし",
   "No real assets involved": "実資産は不使用",
   "Connect a wallet.": "ウォレットを接続してください。",
@@ -1179,6 +1187,7 @@ const dict: TranslationDictionary = {
   "We couldn't load this page.": "このページを読み込めませんでした。",
   "Active Deficit": "アクティブ不足額",
   "Active stake": "アクティブなステーク",
+  "Includes active stake and cooldown": "アクティブなステークとクールダウンを含む",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "ユーザーがステークしたカバレッジがさらされる前に、Avana がまずカバーする金額。ステーカーは、実現した不足額がこのオフセットを超えたときにのみ損失を負担します。",
   "Close umbrella actions": "アンブレラのアクションを閉じる",
@@ -1214,9 +1223,11 @@ const dict: TranslationDictionary = {
   "Previous market risk": "前回のマーケットリスク",
   Ready: "準備完了",
   "Removes in": "解除まで",
+  Restart: "再開",
   "Restart cooldown": "クールダウンを再開",
   Stake: "ステーク",
   "Stake in umbrella": "アンブレラにステーク",
+  "Unstake from umbrella": "アンブレラからアンステーク",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "アンブレラセーフティモジュールでステーク、報酬の請求、クールダウン開始、アンステークを行えます。",
   "Stake, claim, cooldown, unstake": "ステーク・請求・クールダウン・アンステーク",
@@ -1224,6 +1235,7 @@ const dict: TranslationDictionary = {
     "引き出す前にクールダウンを開始してください。クールダウン中もポジションはインセンティブを獲得し続け、スラッシングの対象となります。",
   Target: "目標",
   "Total coverage": "総カバレッジ",
+  "Total position value": "ポジション合計価値",
   "Total user-staked capital available to absorb losses for this asset.":
     "このアセットの損失を吸収するために利用可能な、ユーザーがステークした資本の合計。",
   Umbrella: "アンブレラ",
@@ -1327,6 +1339,9 @@ const dict: TranslationDictionary = {
   "In range": "レンジ内",
   "Interest / day": "利息 / 日",
   "Key Statistics": "主要統計",
+  "Market Rates": "マーケットレート",
+  "Utilization Rate": "稼働率",
+  "Borrow amount to reach {value} Util.": "{value}の稼働率に達するための借入額。",
   "Large price difference": "価格差が大きい",
   "Lend Assets": "貸出資産",
   "Lend Balance": "貸出残高",
@@ -1404,6 +1419,8 @@ const dict: TranslationDictionary = {
   "Repay or add collateral to reduce your liquidation risk.":
     "清算リスクを減らすには、返済するか担保を追加してください。",
   "Review risk": "リスクを確認",
+  "Negative net APY: borrow costs exceed supply yield. Review before opening this loop.":
+    "ネット APY がマイナスです。借入コストが供給利回りを上回っています。このループを開く前にご確認ください。",
   "Review swap": "スワップを確認",
   "Rewards Earned": "獲得リワード",
   Sandbox: "サンドボックス",
@@ -1523,6 +1540,155 @@ const dict: TranslationDictionary = {
   "Next rewards": "次のリワード",
   "Open on Launch Date": "ローンチ日に開放",
   "Previous rewards": "前のリワード",
+  "The asset you've borrowed against your collateral.": "担保に対して借り入れている資産。",
+  "Your outstanding loan balance in this asset, valued live.": "ライブ価格で評価した、この資産の未返済ローン残高。",
+  "A token held directly in your connected wallet.": "接続済みのウォレットに直接保有しているトークン。",
+  "The amount of this token in your wallet.": "ウォレット内のこのトークンの数量。",
+  "The token balance valued at its live price.": "ライブ価格で評価したトークン残高。",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.":
+    "DEXに供給したペアトークンで構成される、保有中の流動性プールポジション。",
+  "Whether the position's price range is active and earning fees.":
+    "ポジションの価格レンジがアクティブで、手数料を獲得しているかどうか。",
+  "The current value of your pooled tokens.": "プールしたトークンの現在価値。",
+  "Trading fees this position has earned, claimable to your wallet.":
+    "ウォレットに請求可能な、このポジションが獲得した取引手数料。",
+  "The token you've supplied to earn lending yield.": "レンディング利回りを得るために供給したトークン。",
+  "Your supplied balance in this asset, valued at its live price.": "ライブ価格で評価した、この資産の供給残高。",
+  "Current annual percentage yield on your deposit, before protocol rewards.":
+    "プロトコル報酬適用前の、預け入れ資産の現在の年率。",
+  "The collateral asset backing your borrowing, valued at its live price.":
+    "ライブ価格で評価した、借入を裏付ける担保資産。",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.":
+    "この担保に対してさらに借り入れ可能な残り枠。%は清算限度のうち、すでに使用した割合を示します。",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.":
+    "ヘルスファクターと、このポジションが清算される担保価値。1.0を下回ると清算されます。",
+  "The collateral you supply and the asset you borrow against it to build leverage.":
+    "レバレッジを構築するために供給する担保と、それを担保に借り入れる資産。",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.":
+    "ループにおけるエクイティ（エクスポージャーから負債を差し引いた額）。エクスポージャーは、レバレッジをかけたポジションの合計です。",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.":
+    "エクイティに対する、借入コスト差引後のネット利回り。下の数値はこれまでに獲得した利息で、リアルタイムで増加します。",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.":
+    "ヘルスファクターと、このループが清算される担保価格。1.0を下回ると清算されます。",
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)":
+    "リアルタイムで発生する、Multiplyのループ全体で獲得したネットキャリー（供給利回りから借入コストを差し引いた額）",
+  "Average APY across your staked positions, weighted by value.": "ステークポジション全体の加重平均APY。",
+  "Additional amount you can borrow against your pledged collateral within Avana credit limits":
+    "Avanaの信用枠内で、差し入れた担保に対してさらに借り入れ可能な金額",
+  "Amount an active loan can lose before reaching liquidation; unavailable when you have no debt":
+    "アクティブなローンが清算に達するまでに失いうる金額で、負債がない場合は利用できません",
+  "Combined liquidation value divided by total Multiply debt. Higher is safer; below 1 risks liquidation.":
+    "合算清算価値をMultiplyの総負債で割った値。高いほど安全、1未満は清算リスクがあります。",
+  "Equity-weighted net APY after supply yield and borrow cost":
+    "供給利回りと借入コストを反映した、エクイティ加重ネットAPY",
+  "Exposure, return, and liquidation risk for each active loop":
+    "各アクティブループのエクスポージャー、リターン、清算リスク",
+  "Gross Multiply exposure after looping across all positions":
+    "すべてのポジションでループした後のMultiplyの総エクスポージャー",
+  "Interest earned as a percentage of principal you supplied": "供給した元本に対する割合で示した獲得利息",
+  "Portfolio leverage as position value divided by equity":
+    "ポジション価値をエクイティで割ったポートフォリオレバレッジ",
+  "Projected earnings at current rates": "現在の金利に基づく予想収益",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)":
+    "貸出ポジション全体でリアルタイムに発生する供給利息（プロトコル報酬を除く）",
+  "Wallet-wide liquidation value divided by total borrowed. Higher is safer; below 1 risks liquidation.":
+    "ウォレット全体の清算価値を総借入額で割った値。高いほど安全、1未満は清算リスクがあります。",
+  "Prices may be stale": "価格が古い可能性があります",
+  "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.":
+    "この負債に対する現在の年率の借入金利。下の数値はこれまでに発生した利息で、リアルタイムで増加します。",
+  "Total AVA you've earned across completed quests and staking rewards.":
+    "完了したクエストとステーキング報酬から獲得したAVAの合計。",
+  "AVA you can claim to your wallet right now.": "今すぐウォレットに請求できるAVA。",
+  "Core Concepts": "基本概念",
+  "What is Avana?": "Avanaとは？",
+  "Protocol overview": "プロトコル概要",
+  "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.":
+    "Avanaは、Aave v4のHub-and-Spokeアーキテクチャを基盤とするLP担保のレンディングプロトコルです。",
+  "Why it exists": "存在する理由",
+  "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.":
+    "目的は、流動性プロバイダーがプールポジションを先に解消せずに、アクティブなポジションを担保に借り入れできるようにすることです。",
+  "What does the Borrow Spoke do?": "Borrow Spokeは何をするか？",
+  "LP-specific underwriting": "LP特化の引受け",
+  "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.":
+    "Borrow Spokeは対応ポジションを評価し、健全性を監視し、LP担保の清算挙動を振り分けます。",
+  "Shared coordination": "共有の調整",
+  "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.":
+    "Hubは共有流動性と債務会計を調整し、spokeはLP固有のロジックを処理します。",
+  "Borrowing Capacity & Valuation": "借入能力と評価",
+  "How is borrowing capacity calculated?": "借入能力はどう計算されるか？",
+  "Adjusted collateral value": "調整後担保価値",
+  "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.":
+    "承認された各LPポジションは個別に評価され、その後コラテラルファクターとプール固有のリスク制御が適用されます。",
+  "Aggregated in the spoke": "spokeでの集約",
+  "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.":
+    "spokeは承認済みポジションを借入能力に集約し、Hubがその結果を適用します。",
+  "Why did my capacity change?": "なぜ能力が変わったか？",
+  "Market movement": "市場の動き",
+  "Capacity can change when the underlying assets move or when recoverable value shifts.":
+    "原資産が動いたときや回収可能価値が変化したときに、能力は変わり得ます。",
+  "Risk settings": "リスク設定",
+  "Collateral factors and market-specific risk settings can also change the amount shown in the interface.":
+    "コラテラルファクターや市場固有のリスク設定も、画面に表示される金額を変えることがあります。",
+  "Health & Liquidation": "健全性と清算",
+  "What is the health factor?": "ヘルスファクターとは？",
+  "How to read health": "健全性の読み方",
+  "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.":
+    "ヘルスファクターは、1つのBorrow Spoke内における調整後担保価値と未返済債務の関係を表します。",
+  "What it means for users": "ユーザーにとっての意味",
+  "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
+    "バッファが縮むと、市況が不利に動いた場合にポジションは清算リスクにさらされやすくなります。",
+  "When can liquidation happen?": "いつ清算が起きるか？",
+  Triggers: "トリガー",
+  "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
+    "市場の動きが健全性を十分に弱めると、spokeのルールに基づきポジションは清算可能になります。",
+  "What happens next": "その後の流れ",
+  "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.":
+    "spokeはリスクを継続的に監視して清算挙動を振り分け、Hubは準備金の調整を維持します。",
+  "Leverage Markets": "レバレッジ市場",
+  "How do leverage markets work?": "レバレッジ市場はどう動くか？",
+  "LP-backed exposure": "LP裏付けのエクスポージャー",
+  "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.":
+    "レバレッジ市場により、AvanaはLP裏付けの借入と方向性のあるエクスポージャーをより専門的なフローで支援できます。",
+  "Position stacking": "ポジションの積み上げ",
+  "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
+    "借入能力は、同じBorrow Spoke内の複数の承認済みポジションから集約できます。",
+  "Can one account use multiple LP positions?": "1つのアカウントで複数のLPポジションを使えるか？",
+  "Multiple positions": "複数ポジション",
+  "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
+    "はい。各ポジションがプロトコルのチェックを通過すれば、1つのアカウントで対応LPポジションを組み合わせられます。",
+  "Per-position risk": "ポジションごとのリスク",
+  "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
+    "各ポジションは最終的な借入能力に含まれる前に、個別の条件で評価されます。",
+  "Fees & Interface Policy": "手数料とインターフェース方針",
+  "Are interface fees fixed across all integrations?": "インターフェース手数料はすべての統合で固定か？",
+  "Operational settings": "運用設定",
+  "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
+    "正確な料率、免除、ロールアウト状況は運用設定であり、ライブのインターフェースで確認してください。",
+  "Integration differences": "統合ごとの違い",
+  "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
+    "直接統合や第三者フロントエンドは前提が異なる場合があるため、利用中のインターフェースを必ず確認してください。",
+  "What counts as protocol economics vs interface policy?": "プロトコル経済とインターフェース方針の違いは？",
+  "Protocol layer": "プロトコル層",
+  "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
+    "中核の担保評価、債務制御、清算経路はプロトコル層にあります。",
+  "Interface layer": "インターフェース層",
+  "The frontend can present policy, routing, and support flows differently from one integration to another.":
+    "フロントエンドは、方針・ルーティング・サポートフローを統合ごとに異なる形で提示できます。",
+  "Risk & Security": "リスクとセキュリティ",
+  "What are the main risks?": "主なリスクは何か？",
+  "Market and liquidity risk": "市場と流動性リスク",
+  "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.":
+    "主なリスクは原資産の市場変動、インパーマネントロス、集中ポジションのレンジドリフトです。",
+  "Liquidation risk": "清算リスク",
+  "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.":
+    "債務が残る中で健全性バッファが弱まると、ポジションは清算可能になることがあります。",
+  "How should I think about security?": "セキュリティをどう考えるべきか？",
+  "Protocol guidance": "プロトコルの指針",
+  "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.":
+    "他のLPポジションと同様の注意を払い、プロトコルのリスク指針にしっかり従ってください。",
+  "Support request": "サポート依頼",
+  "If something looks off, send the details and our team can help you triage the issue.":
+    "おかしなものがあれば詳細を送ってください。チームが問題の切り分けをお手伝いします。",
 }
 
 export default dict

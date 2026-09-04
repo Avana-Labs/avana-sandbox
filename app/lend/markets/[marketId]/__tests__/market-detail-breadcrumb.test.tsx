@@ -23,8 +23,9 @@ vi.mock("@/app/borrow/_detail/pool-sections", () => ({
   QuickStatsGrid: () => <div data-testid="quickstats" />,
   RiskSection: () => <div data-testid="risk" />,
 }))
-vi.mock("@/app/borrow/_detail/asset-sections", () => ({
-  TransactionHistoryCard: () => <div data-testid="transactions" />,
+vi.mock("@/app/components/detail-transaction-table/detail-market-transactions", () => ({
+  DetailMarketTransactions: () => <div data-testid="transactions" />,
+  LEND_KIND_CONFIG: {},
 }))
 vi.mock("@/app/lib/lend-system/lend-session-context", () => ({
   useLendSessionContext: () => ({ walletId: "demo-wallet", transactionHistory: [] }),

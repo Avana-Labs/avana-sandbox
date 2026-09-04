@@ -294,23 +294,48 @@ export const getState = query({
  * wallet's `getState` subscription and forced a re-run. Post-onboarding the gate only needs
  * this wallet's own profile/step, which changes only when THIS wallet acts.
  */
+async function walletOnboardingView(ctx: QueryCtx, wallet: string) {
+  const [profile, config] = await Promise.all([profileForWallet(ctx, wallet), ctx.db.query("sandboxConfig").first()])
+  return {
+    onboardingStep: profile?.onboardingStep ?? "wallet",
+    profile: onboardingProfileView(profile),
+    config: config
+      ? {
+          basket: config.basket,
+          tweetTemplate: config.tweetTemplate ?? DEFAULT_CONFIG.tweetTemplate,
+          xHandle: config.xHandle ?? DEFAULT_CONFIG.xHandle,
+          resourcesLinks: config.resourcesLinks ?? DEFAULT_CONFIG.resourcesLinks,
+        }
+      : DEFAULT_CONFIG,
+  }
+}
+
+async function economyStatusView(ctx: QueryCtx) {
+  const [economy, shards] = await Promise.all([
+    ctx.db.query("sandboxEconomy").first(),
+    ctx.db.query("sandboxEconomyShards").collect(),
+  ])
+  const shardedUserCount = shards.reduce((sum, shard) => sum + shard.userCount, 0)
+  return economy
+    ? {
+        status: economy.status,
+        userCount: economy.userCount + shardedUserCount,
+        userCap: economy.userCap,
+        perUserTargetUsd: economy.perUserTargetUsd,
+      }
+    : {
+        status: "open" as const,
+        userCount: shardedUserCount,
+        userCap: DEFAULT_ECONOMY.userCap,
+        perUserTargetUsd: DEFAULT_ECONOMY.perUserTargetUsd,
+      }
+}
+
 export const getWalletOnboardingState = query({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
-    const [profile, config] = await Promise.all([profileForWallet(ctx, wallet), ctx.db.query("sandboxConfig").first()])
-    return {
-      onboardingStep: profile?.onboardingStep ?? "wallet",
-      profile: onboardingProfileView(profile),
-      config: config
-        ? {
-            basket: config.basket,
-            tweetTemplate: config.tweetTemplate ?? DEFAULT_CONFIG.tweetTemplate,
-            xHandle: config.xHandle ?? DEFAULT_CONFIG.xHandle,
-            resourcesLinks: config.resourcesLinks ?? DEFAULT_CONFIG.resourcesLinks,
-          }
-        : DEFAULT_CONFIG,
-    }
+    return await walletOnboardingView(ctx, wallet)
   },
 })
 
@@ -324,24 +349,24 @@ export const getEconomyStatus = query({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
     await requireSandboxWallet(ctx, args.wallet)
-    const [economy, shards] = await Promise.all([
-      ctx.db.query("sandboxEconomy").first(),
-      ctx.db.query("sandboxEconomyShards").collect(),
-    ])
-    const shardedUserCount = shards.reduce((sum, shard) => sum + shard.userCount, 0)
-    return economy
-      ? {
-          status: economy.status,
-          userCount: economy.userCount + shardedUserCount,
-          userCap: economy.userCap,
-          perUserTargetUsd: economy.perUserTargetUsd,
-        }
-      : {
-          status: "open" as const,
-          userCount: shardedUserCount,
-          userCap: DEFAULT_ECONOMY.userCap,
-          perUserTargetUsd: DEFAULT_ECONOMY.perUserTargetUsd,
-        }
+    return await economyStatusView(ctx)
+  },
+})
+
+/**
+ * One round-trip for the signed-in gate: wallet state always, economy ONLY while the
+ * wallet is still onboarding. Once `onboardingStep === "done"` this query does not read
+ * `sandboxEconomyShards`, so other users' claims cannot invalidate a finished wallet.
+ */
+export const getOnboardingGateState = query({
+  args: { wallet: v.string() },
+  handler: async (ctx, args) => {
+    const wallet = await requireSandboxWallet(ctx, args.wallet)
+    const walletView = await walletOnboardingView(ctx, wallet)
+    if (walletView.onboardingStep === "done") {
+      return { ...walletView, economy: null }
+    }
+    return { ...walletView, economy: await economyStatusView(ctx) }
   },
 })
 

@@ -116,13 +116,18 @@ vi.mock("@/app/borrow/components/tabs-bar", () => ({
 
 vi.mock("@/app/borrow/components/collateral-pools-table", () => ({
   CollateralPoolsTable: ({
+    groups,
     onUseAsCollateral,
     onBorrowAssetMobile,
   }: {
+    groups: Array<{ spokes: Array<{ rows: Array<typeof market> }> }>
     onUseAsCollateral: (pool: typeof market) => void
     onBorrowAssetMobile: (asset: typeof asset) => void
   }) => (
     <div>
+      <span data-testid="rendered-market">
+        {groups.flatMap((group) => group.spokes).flatMap((spoke) => spoke.rows)[0]?.name}
+      </span>
       <button type="button" onClick={() => onUseAsCollateral(market)}>
         open-supply
       </button>
@@ -174,6 +179,32 @@ describe("BorrowWorkspace", () => {
     expect(push).toHaveBeenCalledWith(
       "/actions/borrow/borrow?market=uni-v3-bluechip-weth-usdc&asset=uni-v3-bluechip%3Ausdc",
     )
+  })
+
+  it("keeps rendering the server market snapshot when the wallet session differs", () => {
+    render(
+      <BorrowWorkspace
+        pageData={{
+          walletId: "wallet-1",
+          borrowSessionSeed: "{}",
+          poolCatalog: [{ ...market, name: "Server WBTC / USDC" }],
+          borrowableAssets: [asset],
+          pendingRows: [],
+          dexes: [],
+          collateralPools: [],
+          initialDebts: {},
+          borrowSnapshot: {
+            totalBorrowedUsd: 0,
+            availableCreditUsd: 0,
+            totalCollateralUsd: 0,
+            liquidationValueUsd: 0,
+            healthFactor: null,
+          },
+        }}
+      />,
+    )
+
+    expect(screen.getByTestId("rendered-market")).toHaveTextContent("Server WBTC / USDC")
   })
 
   it("falls back to the asset detail page when the mobile borrow asset has no matching collateral spoke", () => {

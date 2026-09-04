@@ -527,11 +527,12 @@ export default defineSchema({
    * same document and made concurrent actions contend under Convex OCC. Appending a
    * fresh row per action removes that hot-write contention.
    *
-   * Scale is handled by COMPACTION, not by changing this write path: a scheduled
-   * `liquidity.compactDeltas` folds the oldest rows into the cumulative
-   * `marketLiquidityBaseline` (one row per market) and deletes them, so this table only
-   * holds a bounded recent window and the fold reads `#markets + #recent rows` instead of
-   * O(#events). Each row is counted exactly once — raw here until folded, then baseline.
+   * Scale is handled by COMPACTION, not by changing this write path: when the
+   * un-compacted row count crosses a dirty threshold, `liquidity.compactDeltas`
+   * folds the oldest rows into the cumulative `marketLiquidityBaseline` (one row
+   * per market) and deletes them, so this table only holds a bounded recent window
+   * and the fold reads `#markets + #recent rows` instead of O(#events). Each row is
+   * counted exactly once — raw here until folded, then baseline.
    */
   marketLiquidityDeltas: defineTable({
     /** Catalog market id — a pool id ("uni-v3-bluechip-weth-usdc") or borrowable asset id ("uni-v2:usdc"). */
@@ -547,9 +548,8 @@ export default defineSchema({
    * Cumulative per-market fold of every COMPACTED `marketLiquidityDeltas` row — the
    * bounded baseline that keeps the fold independent of the total number of actions.
    *
-   * The append-only event table stays the zero-contention hot-write sink (all products
-   * append a fresh row per action — never patch a shared row). A scheduled compaction
-   * (`crons.ts` → `liquidity.compactDeltas`) folds the OLDEST delta rows into these
+   * The append-only event table stays the zero-contention hot-write sink. Threshold-
+   * triggered compaction (`liquidity.compactDeltas`) folds the OLDEST delta rows into these
    * per-market accumulators and DELETES the folded rows, so the raw table only ever holds
    * a bounded recent window. The fold is then `baseline + the few un-compacted deltas`
    * (markets + recent-window rows), not a full-table scan. One row per market slug.
@@ -573,10 +573,9 @@ export default defineSchema({
    * Precomputed fold of `marketLiquidityDeltas` into one net aggregate per market.
    * The app-wide liquidity subscription (`liquidity.listDeltaSnapshot`) reads this
    * single document (O(1)) instead of the append-only event table — so ONE user's
-   * borrow/repay/supply/withdraw no longer invalidates every other subscriber. A
-   * schedule (`crons.ts`) rebuilds it periodically from the bounded fold (the
-   * `marketLiquidityBaseline` plus the un-compacted deltas), bounding cross-user
-   * staleness to the refresh interval.
+   * borrow/repay/supply/withdraw no longer invalidates every other subscriber. The
+   * cache is bumped on each append (and rebuilt after compaction), so idle hours do
+   * not require interval rebuild crons.
    */
   liquidityDeltasCache: defineTable({
     /** Constant discriminator so there is exactly one cache row (`"deltas"`). */
@@ -656,6 +655,20 @@ export default defineSchema({
   })
     .index("by_symbol", ["symbol"])
     .index("by_chain_contract", ["chainId", "contractAddress"]),
+
+  /**
+   * Last successful oracle/FX provider check. Written on every successful refresh even when
+   * quote rows are unchanged, so freshness stays observable without rewriting every quote
+   * (which would invalidate every price subscriber).
+   */
+  oracleProviderHealth: defineTable({
+    kind: v.union(v.literal("prices"), v.literal("fx")),
+    checkedAt: v.number(),
+    sourceUpdatedAt: v.optional(v.number()),
+    quoteCount: v.number(),
+    written: v.number(),
+    unchanged: v.number(),
+  }).index("by_kind", ["kind"]),
 
   /**
    * Historical token prices, one row per (symbol, UTC day) — the daily closing snapshot. Kept
@@ -867,6 +880,33 @@ export default defineSchema({
     history: v.array(v.object({ date: v.string(), title: v.string(), description: v.optional(v.string()) })),
     faqs: v.array(v.object({ question: v.string(), answer: v.string() })),
   }).index("by_slug", ["slug"]),
+
+  /**
+   * Governance "Parameter changelog" — real parameter transitions (previous → current)
+   * for a market, one doc per market holding the ordered list (newest first). Distinct
+   * from the thin `*MarketContent.history` timeline: this carries the full change shape
+   * (source, executor, category) the detail table renders. Product-siloed via `product`;
+   * borrow pool + asset share the `"borrow"` product with disjoint slugs (same as
+   * `borrowMarketContent`).
+   */
+  parameterChanges: defineTable({
+    product: v.union(v.literal("borrow"), v.literal("lend"), v.literal("multiply")),
+    slug: v.string(),
+    changes: v.array(
+      v.object({
+        id: v.string(),
+        parameter: v.string(),
+        previous: v.string(),
+        current: v.string(),
+        date: v.string(),
+        source: v.string(),
+        executor: v.string(),
+        category: v.string(),
+        href: v.optional(v.string()),
+      }),
+    ),
+    updatedAt: v.number(),
+  }).index("by_market", ["product", "slug"]),
 
   /** Multiply Risk Premium / assessment card. Distinct from `multiplyRiskParameters`. */
   multiplyRiskAssessments: defineTable({
@@ -1977,7 +2017,9 @@ export default defineSchema({
   })
     .index("by_owner_request", ["ownerSubject", "clientRequestId"])
     .index("by_prompt_message", ["promptMessageId"])
-    .index("by_thread_status_created", ["threadId", "status", "createdAt"]),
+    .index("by_thread_status_created", ["threadId", "status", "createdAt"])
+    .index("by_status_created", ["status", "createdAt"])
+    .index("by_owner_status_created", ["ownerSubject", "status", "createdAt"]),
 
   askAIFeedback: defineTable({
     ownerSubject: v.string(),

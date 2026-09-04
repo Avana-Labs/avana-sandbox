@@ -218,6 +218,15 @@ export const upsertMultiplyMarketContent = action({
   },
 })
 
+export const upsertParameterChanges = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.parameterChanges.upsertChanges, { rows })
+  },
+})
+
 export const clearWalletEvents = action({
   args: { seedSecret: v.string(), limit: v.optional(v.number()) },
   handler: async (ctx, { seedSecret, limit }): Promise<unknown> => {

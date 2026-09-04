@@ -27,8 +27,18 @@ class TokenPricesErrorBoundary extends React.Component<
 
 function ConvexTokenPricesQuery({ children, seed = {} }: { children: React.ReactNode; seed?: Record<string, number> }) {
   const snapshot = useQuery(api.prices.getPriceSnapshot, {})
+  const providerStatus = useQuery(api.prices.getPriceStatus, {})
   const rows = snapshot?.prices
-  const status = snapshot?.status
+  // Quote map stays on getPriceSnapshot (no health read). Provider checkedAt is a separate
+  // subscription so identical refreshes do not invalidate every price consumer.
+  const status = providerStatus
+    ? {
+        updatedAt: providerStatus.updatedAt,
+        staleAfterMs: providerStatus.staleAfterMs,
+        invalidAfterMs: snapshot?.status.invalidAfterMs,
+        count: providerStatus.count,
+      }
+    : snapshot?.status
   const [validationNow, setValidationNow] = React.useState(() => Date.now())
   React.useEffect(() => {
     if (!rows?.length) return

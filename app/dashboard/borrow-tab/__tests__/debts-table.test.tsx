@@ -87,7 +87,7 @@ describe("DebtsPanel", () => {
     expect(container.textContent).not.toMatch(/6200\s+USDC/)
   })
 
-  it("surfaces the per-position daily borrowing cost as a desktop column", () => {
+  it("surfaces borrow rate over live-accruing interest owed as a desktop column", () => {
     const { container } = render(
       <DebtsPanel
         rows={[usdtDebt]}
@@ -105,9 +105,36 @@ describe("DebtsPanel", () => {
       />,
     )
 
-    // The daily interest (mobile-only before) now has a dedicated desktop column.
-    expect(container.textContent).toMatch(/Interest \/ day/)
-    expect(container.textContent).toMatch(/0\.94/)
+    // The column now mirrors the Lend Assets APY cell: big borrow rate on top, the
+    // interest owed accruing (from the recorded base) beneath it.
+    expect(container.textContent).toMatch(/APY/)
+    expect(container.textContent).toMatch(/5\.50%/)
+    expect(container.textContent).toMatch(/33\.60/)
+  })
+
+  it("shows the debt as a token amount over its live USD value, with Borrow + Repay CTAs", () => {
+    const { container, getAllByRole } = render(
+      <DebtsPanel
+        rows={[usdtDebt]}
+        totals={{
+          totalBorrowed: 6_200,
+          totalCollateral: 10_000,
+          averageHf: 1.8,
+          accruedInterest: 33.6,
+          dailyInterest: 0.94,
+        }}
+        onRepay={vi.fn()}
+        onManage={vi.fn()}
+        showSummary={false}
+        showHeading={false}
+      />,
+    )
+
+    // Borrowed reads token-amount-over-USD (like Lend "Deposited"). Mobile offers
+    // Borrow + Repay as the dual CTA pair (same chrome as Lend Add / Withdraw).
+    expect(container.textContent).toMatch(/6200\s+USDT/)
+    expect(getAllByRole("button", { name: /Repay/ }).length).toBeGreaterThan(0)
+    expect(getAllByRole("button", { name: /^Borrow$/ }).length).toBeGreaterThan(0)
   })
 
   it("does not render a bare Opened placeholder row", () => {

@@ -32,11 +32,12 @@ type MobileMenuView = "root" | "language" | "currency" | "network"
 type MobileMenuProps = {
   actions?: ReactNode
   brand?: ReactNode
+  initialOpen?: boolean
 }
 
-export function MobileMenu({ actions, brand }: MobileMenuProps) {
-  const [open, setOpen] = useState(false)
-  const [renderMenu, setRenderMenu] = useState(false)
+export function MobileMenu({ actions, brand, initialOpen = false }: MobileMenuProps) {
+  const [open, setOpen] = useState(initialOpen)
+  const [renderMenu, setRenderMenu] = useState(initialOpen)
   const [isShown, setIsShown] = useState(false)
   const [settingsIntroActive, setSettingsIntroActive] = useState(false)
   const [view, setView] = useState<MobileMenuView>("root")
@@ -290,7 +291,7 @@ export function MobileMenu({ actions, brand }: MobileMenuProps) {
                   className="flex items-end justify-between gap-5 py-3"
                 >
                   <span
-                    className={`text-[clamp(1.5rem,6.1vw,2.1rem)] font-[560] leading-[1.02] tracking-[-0.04em] ${
+                    className={`text-[clamp(1.5rem,6.1vw,2.1rem)] font-normal leading-[1.04] tracking-[-0.04em] ${
                       isActive ? "text-foreground" : "text-foreground"
                     }`}
                   >

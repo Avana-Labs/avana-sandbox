@@ -65,15 +65,18 @@ describe("HeroAreaChart", () => {
     expect(geometry.xAxisTicks.at(-1)?.label).toBe("Jun 30")
   })
 
-  it("preserves hover selection, tooltip formatting, and pointer exit", () => {
+  it("publishes continuous scrub samples and clears on pointer exit", () => {
+    const onScrubChange = vi.fn()
     const onActiveIndexChange = vi.fn()
     render(
       <HeroAreaChart
         data={points}
         activeRange="1D"
-        formatValue={(value) => `value:${value}`}
+        formatValue={(value) => `value:${value.toFixed(1)}`}
         formatYAxis={(value) => `axis:${Math.round(value)}`}
+        onScrubChange={onScrubChange}
         onActiveIndexChange={onActiveIndexChange}
+        showTooltip
       />,
     )
     const chart = screen.getByTestId("hero-area-chart")
@@ -89,15 +92,26 @@ describe("HeroAreaChart", () => {
       toJSON: () => ({}),
     })
 
-    fireEvent.pointerMove(chart, { clientX: 150 })
-    expect(screen.getAllByText("11:00").length).toBeGreaterThan(0)
-    expect(screen.getByText("value:108")).toBeInTheDocument()
-    expect(screen.getByText("axis:112")).toBeInTheDocument()
-    expect(screen.getAllByText("10:00").length).toBeGreaterThan(0)
-    expect(onActiveIndexChange).toHaveBeenLastCalledWith(1)
+    // Default geometry width is 1000 (pre-ResizeObserver); right gutter 58.
+    // plotWidth = 942. For ratio 0.25 → svgX = 0.25 * 942 = 235.5
+    // shell CSS width is mocked at 300 → clientX = 235.5 * (300/1000) = 70.65
+    fireEvent.pointerMove(chart, { clientX: 70.65 })
+
+    expect(onScrubChange).toHaveBeenCalled()
+    const sample = onScrubChange.mock.calls.at(-1)?.[0] as {
+      indexFloor: number
+      value: number
+      progress: number
+    }
+    expect(sample.indexFloor).toBe(0)
+    expect(sample.progress).toBeCloseTo(0.5, 1)
+    expect(sample.value).toBeCloseTo(104, 0)
+    expect(onActiveIndexChange).toHaveBeenLastCalledWith(0)
+    expect(screen.getByTestId("hero-scrub-y-pill")).toBeInTheDocument()
 
     fireEvent.pointerLeave(chart)
-    expect(screen.queryByText("value:108")).not.toBeInTheDocument()
+    expect(onScrubChange).toHaveBeenLastCalledWith(null)
     expect(onActiveIndexChange).toHaveBeenLastCalledWith(null)
+    expect(screen.queryByTestId("hero-scrub-y-pill")).not.toBeInTheDocument()
   })
 })

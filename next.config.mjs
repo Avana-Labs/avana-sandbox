@@ -50,10 +50,12 @@ const nextConfig = {
   // request and leaves client-only session hydration at its server skeleton.
   allowedDevOrigins: isDev ? ["127.0.0.1"] : undefined,
   experimental: {
-    // Inline the route's critical CSS into the initial document. This removes the
-    // shared stylesheet from the first-paint dependency chain while retaining
-    // cacheable stylesheet chunks for later navigations.
-    inlineCss: true,
+    // NOT inlining CSS: with `inlineCss: true` the ~127KB global stylesheet was embedded
+    // three times in every HTML document (once as <style>, twice inside the RSC payload),
+    // turning a ~20KB page into a 450KB one that the browser must download and parse before
+    // hydration. A single cached <link> stylesheet is cheaper on every visit after the first
+    // and removes ~60KB (gzipped) from the critical path on the first.
+    inlineCss: false,
     // Tree-shake heavy barrel packages so a 2-icon import doesn't pull the whole library.
     // @fluentui/react-icons especially ships thousands of icons behind one barrel.
     optimizePackageImports: ["framer-motion", "@hugeicons/react", "@hugeicons/core-free-icons"],
@@ -84,6 +86,10 @@ const nextConfig = {
     ]
   },
   distDir: process.env.AVANA_NEXT_DIST_DIR || ".next",
+  // Local perf builds (`AVANA_PERF_SOURCEMAPS=1`) emit browser source maps so chunk
+  // fingerprinting names real modules instead of minified guesswork. Production
+  // deploys leave this off (Sentry uploads maps separately).
+  productionBrowserSourceMaps: process.env.AVANA_PERF_SOURCEMAPS === "1",
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "cryptologos.cc" },

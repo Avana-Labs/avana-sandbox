@@ -1,8 +1,9 @@
 "use client"
 
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState, type ReactNode } from "react"
+import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 import { useMediaQuery } from "@/app/lib/use-media-query"
+import { DASHBOARD_SNAPSHOT_SURFACE_CLASS } from "@/app/components/card-surface-tokens"
 
 /**
  * Shared surface styling for the Lend "Featured" and Multiply "Trending"
@@ -10,11 +11,11 @@ import { useMediaQuery } from "@/app/lib/use-media-query"
  * matching the Borrow "Explore" cards. Card dimensions are left to the caller
  * so each surface can size to its own content.
  */
-export const HIGHLIGHT_CARD_CLASS =
-  "relative block shrink-0 overflow-hidden rounded-radius-md border-0 bg-card text-left shadow-none"
+export const HIGHLIGHT_CARD_CLASS = `relative block shrink-0 overflow-hidden text-left ${DASHBOARD_SNAPSHOT_SURFACE_CLASS}`
 
 const DEFAULT_MARQUEE_DURATION_SECONDS = 38
 const STEP_MS = 420
+const carouselPhaseByKey = new Map<string, number>()
 
 function easeOutCubic(t: number) {
   return 1 - (1 - t) ** 3
@@ -38,6 +39,7 @@ type HighlightCarouselProps = {
   leadPadClassName?: string
   durationSeconds?: number
   onHoverChange?: (hovered: boolean) => void
+  syncKey?: string
 }
 
 export const HighlightCarousel = forwardRef<HighlightCarouselHandle, HighlightCarouselProps>(function HighlightCarousel(
@@ -48,6 +50,7 @@ export const HighlightCarousel = forwardRef<HighlightCarouselHandle, HighlightCa
     leadPadClassName = "pl-4 sm:pl-6",
     durationSeconds = DEFAULT_MARQUEE_DURATION_SECONDS,
     onHoverChange,
+    syncKey,
   },
   ref,
 ) {
@@ -65,22 +68,32 @@ export const HighlightCarousel = forwardRef<HighlightCarouselHandle, HighlightCa
   const reduceMotion = useMediaQuery("(prefers-reduced-motion: reduce)")
   const paused = hovered || reduceMotion || !isVisible
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const sequence = sequenceRef.current
     const track = trackRef.current
     if (!sequence || !track) return
 
+    let initialized = false
     const updateWidth = () => {
-      sequenceWidthRef.current = sequence.offsetWidth
-      xRef.current = 0
-      track.style.transform = "translate3d(0px, 0, 0)"
+      const nextWidth = sequence.offsetWidth
+      sequenceWidthRef.current = nextWidth
+
+      if (!initialized && nextWidth > 0) {
+        // Product providers can replace this carousel several times during the
+        // first hydration pass. Seed every replacement from the last rendered
+        // phase, rather than x=0, so the track never snaps between mounts.
+        const phase = syncKey ? (carouselPhaseByKey.get(syncKey) ?? 0) : 0
+        xRef.current = -nextWidth * phase
+        track.style.transform = `translate3d(${xRef.current}px, 0, 0)`
+        initialized = true
+      }
     }
 
     updateWidth()
     const observer = new ResizeObserver(updateWidth)
     observer.observe(sequence)
     return () => observer.disconnect()
-  }, [])
+  }, [durationSeconds, syncKey])
 
   useEffect(() => {
     const viewport = viewportRef.current
@@ -111,11 +124,22 @@ export const HighlightCarousel = forwardRef<HighlightCarouselHandle, HighlightCa
           previousTime = time
         } else if (previousTime !== null) {
           const speed = sequenceWidth / durationSeconds
-          const nextX = xRef.current - speed * ((time - previousTime) / 1000)
-          xRef.current = nextX <= -sequenceWidth ? nextX + sequenceWidth : nextX
+          // Clamp the frame delta. During load/hydration rAF frames get starved, so
+          // an unclamped `time - previousTime` can be hundreds of ms → the track
+          // lurches a big distance in one frame (the "shake"), and repeated stalls
+          // read as "stop, jump, restart". Capping dt keeps motion continuous no
+          // matter how delayed a frame is.
+          const dt = Math.min((time - previousTime) / 1000, 0.05)
+          let nextX = xRef.current - speed * dt
+          // Seamless wrap (while-loop in case a clamp still lands past one sequence).
+          while (nextX <= -sequenceWidth) nextX += sequenceWidth
+          xRef.current = nextX
+          if (syncKey) carouselPhaseByKey.set(syncKey, Math.max(0, Math.min(1, -nextX / sequenceWidth)))
           track.style.transform = `translate3d(${xRef.current}px, 0, 0)`
           previousTime = time
         } else {
+          // First frame after (re)start: seed the clock without moving, so resuming
+          // from a pause continues from the same position instead of jumping.
           previousTime = time
         }
       } else {
@@ -126,7 +150,7 @@ export const HighlightCarousel = forwardRef<HighlightCarouselHandle, HighlightCa
 
     frameId = requestAnimationFrame(animate)
     return () => cancelAnimationFrame(frameId)
-  }, [durationSeconds, paused])
+  }, [durationSeconds, paused, syncKey])
 
   const setHover = (next: boolean) => {
     setHovered(next)
@@ -158,6 +182,9 @@ export const HighlightCarousel = forwardRef<HighlightCarouselHandle, HighlightCa
           steppingRef.current = false
           stepStartTimeRef.current = null
           xRef.current = nextX
+          if (syncKey && sequenceWidth > 0) {
+            carouselPhaseByKey.set(syncKey, Math.max(0, Math.min(1, -nextX / sequenceWidth)))
+          }
           track.style.transform = `translate3d(${nextX}px, 0, 0)`
           return
         }
@@ -168,7 +195,7 @@ export const HighlightCarousel = forwardRef<HighlightCarouselHandle, HighlightCa
         steppingRef.current = true
       },
     }),
-    [reduceMotion],
+    [reduceMotion, syncKey],
   )
 
   return (

@@ -1,18 +1,11 @@
 "use client"
 
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
-import { ActionIcon } from "@/app/components/action-icon"
+import { DASHBOARD_SNAPSHOT_SURFACE_CLASS } from "@/app/components/card-surface-tokens"
 import { useRouter } from "next/navigation"
-import { actionPagePath } from "@/app/lib/action-system/contracts"
-import { Button } from "@/components/ui/button"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import {
-  BORROW_SUPPLY_META,
-  formatHealthFactor,
-  healthFactorToneClass,
-  homeVisualToBorrowVisual,
-} from "@/app/lib/data/borrow-domain"
+import { formatHealthFactor, healthFactorToneClass, homeVisualToBorrowVisual } from "@/app/lib/data/borrow-domain"
 import type { SupplyRowContext } from "@/app/lib/data/borrow-position-types"
 import {
   HF_ZONES,
@@ -21,26 +14,42 @@ import {
   healthFactorStatusLabel,
 } from "@/app/lib/action-system/health-factor-ui"
 import { HfNumber, TokenPairCell } from "@/app/borrow/components/atoms"
+import { Button } from "@/components/ui/button"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
+import { ActionIcon } from "@/app/components/action-icon"
 import {
+  MarketMobileActionFooter,
   MarketMobileCard,
   MarketMobileCardHeader,
   MarketMobileMetric,
-  MarketMobilePrimaryAction,
-  MarketMobileSecondaryAction,
   MarketMobileStatList,
   MarketMobileStatRow,
+  MARKET_MOBILE_CTA_CLASS,
 } from "@/app/components/market-card-primitives"
 import { HealthFactorPositionBar } from "@/app/components/action-page/action-health-factor-bar"
 import { formatApy } from "@/app/lib/format"
+import { liqUtilizationPercentTextClass } from "@/app/lib/borrow-system/liq-utilization-tone"
 import { formatSectionCount } from "@/app/lib/ui/section-count"
 import { cn } from "@/lib/utils"
-import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
+import {
+  TABLE_BASE,
+  TABLE_BODY_ROW,
+  TABLE_CELL_CAPTION,
+  TABLE_CELL_NUMERIC,
+  TABLE_CELL_PADDING,
+  TABLE_CELL_PADDING_TRAILING,
+  TABLE_HEADER_CELL,
+  TABLE_HEADER_ROW,
+  TABLE_ROW_HOVER_BG,
+  TABLE_ROW_HOVER_LEFT,
+  TABLE_ROW_HOVER_RIGHT,
+  formatTableHeaderLabel,
+} from "@/app/lib/ui/table-row-hover"
 
 type SuppliesTableProps = {
   rows: SupplyRowContext[]
   totals: { collateral: number; borrowed: number; available: number; fees: number; averageHf: number | null }
-  onBorrowMore: (context: SupplyRowContext) => void
+  onClaimFees?: (context: SupplyRowContext) => void
   onAddCollateral?: (context: SupplyRowContext) => void
   onRemove?: (context: SupplyRowContext) => void
   showBalance?: boolean
@@ -50,18 +59,34 @@ type SuppliesTableProps = {
 
 const MASK = "••••"
 
+function SuppliesMetricHeader({
+  label,
+  help,
+  align = "left",
+}: {
+  label: string
+  help: string
+  align?: "left" | "right"
+}) {
+  return (
+    <span className={cn("inline-flex items-center gap-1", align === "right" && "justify-end")}>
+      {formatTableHeaderLabel(label)}
+      <ActionMetricHelp topic={label} text={help} />
+    </span>
+  )
+}
+
 export function SuppliesPanel({
   rows,
   totals,
-  onBorrowMore,
-  onAddCollateral,
+  onClaimFees,
   showBalance = true,
   showSummary = true,
   showHeading = true,
 }: SuppliesTableProps) {
   const { t } = useTranslation()
   const router = useRouter()
-  const { compact } = useCurrency()
+  const { compact, exact } = useCurrency()
   const m = (value: string) => (showBalance ? value : MASK)
   return (
     <section className="mb-2">
@@ -85,101 +110,97 @@ export function SuppliesPanel({
           <div className="hidden md:block">
             <DesktopTableSurface className="!rounded-none">
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
+                <table className={`w-full min-w-[560px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
                   <colgroup>
-                    <col className="w-[28%]" />
-                    <col className="w-[16%]" />
-                    <col className="w-[16%]" />
-                    <col className="w-[16%]" />
+                    <col className="w-[36%]" />
+                    <col className="w-[22%]" />
                     <col className="w-[24%]" />
+                    <col className="w-[18%]" />
                   </colgroup>
                   <thead>
-                    <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                      <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                        {t("Pool")}
+                    <tr className={TABLE_HEADER_ROW}>
+                      <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>
+                        <SuppliesMetricHeader
+                          label={t("Collateral")}
+                          help={t("The collateral asset backing your borrowing, valued at its live price.")}
+                        />
                       </th>
-                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                        {t("Collateral")}
+                      <th className={cn(TABLE_HEADER_CELL, "whitespace-nowrap px-4 text-right")}>
+                        <SuppliesMetricHeader
+                          label={t("Borrow Power")}
+                          help={t(
+                            "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.",
+                          )}
+                          align="right"
+                        />
                       </th>
-                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                        {t("Borrow Power")}
+                      <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                        <SuppliesMetricHeader
+                          label={t("Risk")}
+                          help={t(
+                            "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.",
+                          )}
+                          align="right"
+                        />
                       </th>
-                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                        {t("Health")}
-                      </th>
-                      <th className="bg-table-header px-5 pb-2 pt-2.5 pr-6 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+                      <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-left")} />
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="divide-y divide-border dark:divide-white/6">
                     {rows.map((row) => {
                       const visuals = row.pool.visuals.map(homeVisualToBorrowVisual) as [
                         ReturnType<typeof homeVisualToBorrowVisual>,
                         ReturnType<typeof homeVisualToBorrowVisual>,
                       ]
-                      const meta = BORROW_SUPPLY_META[row.pool.id]
                       const hfTone = healthFactorToneClass(row.healthFactor)
                       const detailHref = `/borrow/markets/${row.pool.id}`
+                      // Per-collateral borrow-power utilization, computed the same way as the global
+                      // Borrow Health card (borrowed ÷ liquidation value) and tinted with its palette.
+                      const usedPct =
+                        row.liquidationThresholdUsd > 0
+                          ? Math.min(100, (row.borrowedUsd / row.liquidationThresholdUsd) * 100)
+                          : 0
                       return (
                         <tr
                           key={row.pool.id}
-                          className="group cursor-pointer transition-colors"
+                          className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`}
                           onClick={() => router.push(detailHref)}
                         >
-                          <td className={`py-3 pl-5 ${TABLE_ROW_HOVER_LEFT}`}>
+                          <td className={`${TABLE_CELL_PADDING} pl-5 ${TABLE_ROW_HOVER_LEFT}`}>
+                            {/* Collateral column: the LP pair over its live collateral value (replaces the
+                            venue subtitle and the old standalone Collateral column). */}
                             <TokenPairCell
                               visuals={visuals}
                               name={row.pool.name}
-                              subtitle={meta?.venue ?? row.pool.venue}
+                              subtitle={m(`${t("Value")}: ${compact(row.pool.collateralUsd)}`)}
                               size="md"
                             />
                           </td>
-                          <td
-                            className={`py-3 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}
-                          >
-                            {m(compact(row.pool.collateralUsd))}
+                          <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
+                            <div className={TABLE_CELL_NUMERIC}>{m(compact(row.remainingBorrowPowerUsd))}</div>
+                            <div className={cn(TABLE_CELL_CAPTION, liqUtilizationPercentTextClass(usedPct))}>
+                              {m(`${usedPct.toFixed(0)}% ${t("used")}`)}
+                            </div>
                           </td>
-                          <td
-                            className={`py-3 pl-4 text-right font-data text-[13px] tabular-nums text-foreground ${TABLE_ROW_HOVER_BG}`}
-                          >
-                            {m(compact(row.remainingBorrowPowerUsd))}
+                          <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
+                            <HfNumber size="table" value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
+                            <div className={TABLE_CELL_CAPTION}>
+                              {t("Liq.")} {m(exact(row.liquidationThresholdUsd))}
+                            </div>
                           </td>
-                          <td className={`py-3 text-right ${TABLE_ROW_HOVER_BG}`}>
-                            <HfNumber value={m(formatHealthFactor(row.healthFactor))} tone={hfTone} />
-                          </td>
-                          <td className={`py-3 pl-4 pr-6 text-left ${TABLE_ROW_HOVER_RIGHT}`}>
-                            <HoverActionGroup align="start" className="gap-2">
-                              <Button
-                                type="button"
-                                size="table"
-                                variant="table-primary"
-                                className="w-auto"
-                                onClick={(event) => {
-                                  event.stopPropagation()
-                                  // Route through the parent callback so the close button returns to
-                                  // wherever the panel was launched from (e.g. the dashboard), not the
-                                  // market detail page. Fall back to the detail page if unwired.
-                                  if (onAddCollateral) onAddCollateral(row)
-                                  else
-                                    router.push(
-                                      actionPagePath("borrow", "supply", { market: row.pool.id, return: detailHref }),
-                                    )
-                                }}
-                              >
-                                <ActionIcon label="Pledge" />
-                                {t("Pledge")}
-                              </Button>
+                          <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
+                            <HoverActionGroup>
                               <Button
                                 type="button"
                                 size="table"
                                 variant="table-secondary"
-                                className="w-auto"
+                                className="w-auto min-w-[88px]"
                                 onClick={(event) => {
                                   event.stopPropagation()
-                                  onBorrowMore(row)
+                                  router.push(detailHref)
                                 }}
                               >
-                                <ActionIcon label="Borrow" />
-                                {t("Borrow")}
+                                {t("Manage")}
                               </Button>
                             </HoverActionGroup>
                           </td>
@@ -215,38 +236,37 @@ export function SuppliesPanel({
                   />
                   <MarketMobileStatList className="mt-3">
                     <MarketMobileStatRow label={t("Health")} value={m(hfLabel)} valueClassName={hfTone.text} />
+                    <MarketMobileStatRow label={t("Liq.")} value={m(exact(row.liquidationThresholdUsd))} />
                     <MarketMobileStatRow label={t("Borrowed")} value={m(compact(row.borrowedUsd))} />
                     <MarketMobileStatRow label={t("Borrow Power")} value={m(compact(row.remainingBorrowPowerUsd))} />
                     <MarketMobileStatRow label={t("LP APR")} value={formatApy(row.pairApr)} />
                   </MarketMobileStatList>
-                  <div className="mt-4 flex gap-2">
-                    <MarketMobileSecondaryAction
+                  <MarketMobileActionFooter>
+                    <Button
+                      type="button"
+                      variant="brand"
+                      className={MARKET_MOBILE_CTA_CLASS}
                       onClick={(event) => {
                         event.stopPropagation()
-                        if (onAddCollateral) onAddCollateral(row)
-                        else
-                          router.push(
-                            actionPagePath("borrow", "supply", {
-                              market: row.pool.id,
-                              return: `/borrow/markets/${row.pool.id}`,
-                            }),
-                          )
+                        onClaimFees?.(row)
                       }}
                     >
-                      <ActionIcon label="Pledge" />
-                      {t("Pledge")}
-                    </MarketMobileSecondaryAction>
-                    <MarketMobilePrimaryAction
-                      className="mt-0 flex-1"
+                      <ActionIcon label="Claim" />
+                      {t("Claim")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="brand-secondary"
+                      className={MARKET_MOBILE_CTA_CLASS}
                       onClick={(event) => {
                         event.stopPropagation()
-                        onBorrowMore(row)
+                        router.push(`/borrow/markets/${row.pool.id}`)
                       }}
                     >
-                      <ActionIcon label="Borrow" />
-                      {t("Borrow")}
-                    </MarketMobilePrimaryAction>
-                  </div>
+                      <ActionIcon label="Manage" />
+                      {t("Manage")}
+                    </Button>
+                  </MarketMobileActionFooter>
                 </MarketMobileCard>
               )
             })}
@@ -271,13 +291,13 @@ export function SuppliesHealthFactorCard({
   const activeZoneIdx = activeHealthFactorZoneIndex(averageHealthFactor)
 
   return (
-    <div className="mb-4 rounded-radius-md border border-border bg-card px-5 py-4 shadow-elev-1 md:px-6 md:py-5">
+    <div className={`${DASHBOARD_SNAPSHOT_SURFACE_CLASS} px-5 py-4 md:px-6 md:py-5`}>
       <div className="flex h-6 items-center justify-between gap-3">
         <div className="flex items-baseline gap-2">
-          <span className="font-data text-[20px] font-bold leading-none tracking-tight text-foreground">
+          <span className="font-data text-[20px] font-normal leading-none tracking-tight text-foreground">
             {masked ? "••" : hfLabel}
           </span>
-          <span className="text-[13px] font-semibold text-foreground">{t("Credit Health")}</span>
+          <span className="text-[13px] font-normal text-foreground">{t("Credit Health")}</span>
           <ActionMetricHelp
             topic="Credit Health"
             text={t(
@@ -287,7 +307,7 @@ export function SuppliesHealthFactorCard({
         </div>
         <span
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full bg-table-header px-2.5 py-0.5 text-[10px] font-bold tracking-wide",
+            "inline-flex items-center gap-1.5 rounded-full bg-table-header px-2.5 py-0.5 text-[10px] font-normal tracking-wide",
             status.tone === "positive" && "text-success",
             status.tone === "warning" && "text-amber-600",
             status.tone === "danger" && "text-rose-600",

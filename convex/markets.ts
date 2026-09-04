@@ -19,7 +19,7 @@ import { v } from "convex/values"
 import { internalMutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
 import type { Id } from "./_generated/dataModel"
 import { internal } from "./_generated/api"
-import { foldDeltas } from "./liquidity"
+import { foldDeltas, appendLiquidityDelta } from "./liquidity"
 
 /** Single cache row discriminator (see `marketSnapshotsCache` in schema.ts). */
 const SNAPSHOTS_SINGLETON = "markets"
@@ -495,7 +495,7 @@ export const rollupDailyStats = internalMutation({
       // Rebase the running ledger to zero for this market: the delta is now baked into
       // the persisted daily row, so the accumulator restarts from the fresh snapshot.
       if (d.supplied !== 0 || d.borrowed !== 0) {
-        await ctx.db.insert("marketLiquidityDeltas", {
+        await appendLiquidityDelta(ctx, {
           marketSlug: market.slug,
           borrowedDeltaUsd: -d.borrowed,
           suppliedDeltaUsd: -d.supplied,
@@ -505,9 +505,8 @@ export const rollupDailyStats = internalMutation({
       }
     }
 
-    // Refresh the shared caches so every surface reads the flushed snapshot + zeroed
-    // delta right away instead of waiting for the 5-minute rebuild crons.
-    await ctx.scheduler.runAfter(0, internal.liquidity.rebuildDeltaSnapshot, {})
+    // Aggregate liquidity cache is bumped inside appendLiquidityDelta. Refresh market
+    // snapshot cache so chart surfaces see the flushed daily rows immediately.
     await ctx.scheduler.runAfter(0, internal.markets.rebuildMarketSnapshots, {})
 
     return { day: today, written, rebased }
@@ -631,11 +630,74 @@ export const getMultiplyHeroSeries = query({
   },
 })
 
+const detailTxKindValidator = v.union(
+  v.literal("supply"),
+  v.literal("withdraw"),
+  v.literal("borrow"),
+  v.literal("repay"),
+  v.literal("liquidation"),
+  v.literal("rewards"),
+  v.literal("open"),
+  v.literal("add"),
+  v.literal("reduce"),
+  v.literal("close"),
+  v.literal("interest"),
+  v.literal("rebalance"),
+)
+
+const detailTxRowValidator = v.object({
+  id: v.string(),
+  at: v.string(),
+  kind: detailTxKindValidator,
+  amountLabel: v.string(),
+  amountUsd: v.optional(v.number()),
+  tokenAmountLabel: v.optional(v.string()),
+  token0AmountLabel: v.optional(v.string()),
+  token1AmountLabel: v.optional(v.string()),
+  tokenSymbol: v.optional(v.string()),
+  tokenSymbolSecondary: v.optional(v.string()),
+  walletLabel: v.string(),
+  counterpartyLabel: v.optional(v.string()),
+  txHashShort: v.string(),
+  source: v.union(v.literal("sandbox"), v.literal("seed")),
+})
+
+type DetailSandboxTxRow = {
+  id: string
+  at: string
+  kind: DetailTxKind
+  amountLabel: string
+  amountUsd: number
+  tokenAmountLabel?: string
+  token0AmountLabel?: string
+  token1AmountLabel?: string
+  tokenSymbol?: string
+  tokenSymbolSecondary?: string
+  walletLabel: string
+  counterpartyLabel?: string
+  txHashShort: string
+  source: "sandbox"
+}
+
 /**
- * Recent transactions for a market's detail-page history card.
- * Prefers live sandbox `transactions` for this marketSlug (user activity).
- * Falls back to seeded `walletEvents` when no sandbox rows exist yet.
- * Returns shape: `TxHistoryRow[]` (app/lib/borrow-detail/types.ts).
+ * How many of the most-recent transactions (across every wallet) to scan when
+ * building a market's activity feed. `marketSlug` is stored verbatim and
+ * multiply slugs are normalized only on the client, so we can't rely on an
+ * exact index match — we scan this bounded window newest-first and match in
+ * memory (normalized + scoped-asset aware). Fine at sandbox scale.
+ */
+const DETAIL_TX_SCAN = 400
+
+/**
+ * Recent transactions for one product-market detail page — a community feed of
+ * ALL users' sandbox activity on that market, newest first.
+ *
+ * Lend / borrow / multiply are separate products, so rows are product-scoped
+ * (a borrow row never leaks onto a multiply market that shares a slug). Borrow
+ * asset pages match `assetId` as well as `marketSlug` (`gho` and
+ * `bal-stable:gho` are the same asset).
+ *
+ * Falls back to seeded `walletEvents` only when no sandbox activity exists yet.
  */
 export const getRecentTransactions = query({
   args: {
@@ -643,26 +705,31 @@ export const getRecentTransactions = query({
     slug: v.string(),
     limit: v.optional(v.number()),
   },
+  returns: v.array(detailTxRowValidator),
   handler: async (ctx, { scope, slug, limit }) => {
     const take = limit ?? 12
-    const sandboxRows = await ctx.db
-      .query("transactions")
-      .withIndex("by_market_at", (q) => q.eq("marketSlug", slug))
-      .order("desc")
-      .take(take * 2)
-    const live = sandboxRows
-      .filter((r) => r.status === "success" && r.marketSlug === slug)
-      .slice(0, take)
-      .map((r) => ({
+    const product = productForDetailScope(scope)
+    const recent = await ctx.db.query("transactions").order("desc").take(DETAIL_TX_SCAN)
+    const live: DetailSandboxTxRow[] = []
+    for (const r of recent) {
+      if (live.length >= take) break
+      if (r.status !== "success") continue
+      if (r.product !== product) continue
+      if (!borrowScopeAllowsKind(scope, r.kind)) continue
+      if (!sandboxRowMatchesDetailMarket(r, scope, slug)) continue
+      live.push({
         id: String(r._id),
         at: new Date(r.at).toISOString(),
-        kind: mapSandboxTxKind(r.kind),
+        kind: mapSandboxTxKind(scope, r.kind),
         amountLabel: formatCompactUsd(r.amountUsd),
+        amountUsd: r.amountUsd,
+        ...(await tokenFieldsFromSandboxRow(ctx, r, scope)),
         walletLabel: `${r.wallet.slice(0, 6)}…${r.wallet.slice(-4)}`,
-        counterpartyLabel: undefined as string | undefined,
+        counterpartyLabel: undefined,
         txHashShort: r.syntheticTxHash.slice(0, 10),
-        source: "sandbox" as const,
-      }))
+        source: "sandbox",
+      })
+    }
     if (live.length > 0) return live
 
     const market = await resolveMarket(ctx, scope, slug)
@@ -672,30 +739,237 @@ export const getRecentTransactions = query({
       .withIndex("by_market_at", (q) => q.eq("marketId", market._id))
       .order("desc")
       .take(take)
-    return rows.map((r) => ({
-      id: String(r._id),
-      at: new Date(r.at).toISOString(),
-      kind:
-        r.kind === "rewardsClaim"
-          ? ("rewards" as const)
-          : (r.kind as "supply" | "withdraw" | "borrow" | "repay" | "liquidation"),
-      amountLabel: formatCompactUsd(r.amountUsd),
-      walletLabel: `${r.wallet.slice(0, 6)}…${r.wallet.slice(-4)}`,
-      counterpartyLabel: r.counterparty ? `${r.counterparty.slice(0, 6)}…${r.counterparty.slice(-4)}` : undefined,
-      txHashShort: r.txHash.slice(0, 10),
-      source: "seed" as const,
-    }))
+    const seeded: Array<{
+      id: string
+      at: string
+      kind: DetailTxKind
+      amountLabel: string
+      amountUsd: number
+      tokenAmountLabel?: string
+      token0AmountLabel?: string
+      token1AmountLabel?: string
+      tokenSymbol?: string
+      tokenSymbolSecondary?: string
+      walletLabel: string
+      counterpartyLabel?: string
+      txHashShort: string
+      source: "seed"
+    }> = []
+    for (const r of rows) {
+      if (!borrowScopeAllowsKind(scope, r.kind)) continue
+      seeded.push({
+        id: String(r._id),
+        at: new Date(r.at).toISOString(),
+        kind: mapSeedWalletEventKind(scope, r.kind),
+        amountLabel: formatCompactUsd(r.amountUsd),
+        amountUsd: r.amountUsd,
+        ...(await tokenFieldsFromMarket(ctx, market, scope, r.amountUsd)),
+        walletLabel: `${r.wallet.slice(0, 6)}…${r.wallet.slice(-4)}`,
+        counterpartyLabel: r.counterparty ? `${r.counterparty.slice(0, 6)}…${r.counterparty.slice(-4)}` : undefined,
+        txHashShort: r.txHash.slice(0, 10),
+        source: "seed",
+      })
+    }
+    return seeded
   },
 })
 
-function mapSandboxTxKind(kind: string): "supply" | "withdraw" | "borrow" | "repay" | "liquidation" | "rewards" {
+type DetailTxKind =
+  | "supply"
+  | "withdraw"
+  | "borrow"
+  | "repay"
+  | "liquidation"
+  | "rewards"
+  | "open"
+  | "add"
+  | "reduce"
+  | "close"
+  | "interest"
+  | "rebalance"
+
+function productForDetailScope(scope: MarketScope): "borrow" | "lend" | "multiply" {
+  if (scope === "lend") return "lend"
+  if (scope === "multiply") return "multiply"
+  return "borrow"
+}
+
+/**
+ * Borrow is two page types over the same wallet activity: the pool/market page
+ * shows the COLLATERAL side (pledge, remove, claim fees, liquidation) and the
+ * asset page shows the DEBT side (borrow, repay). A GHO borrow therefore belongs
+ * on the `bal-*:gho` asset page, never on the `bal-*-sdai-usdc` pool page.
+ * Lend/multiply pages have no such split. Accepts raw sandbox kinds
+ * (deposit/withdraw/borrow/repay/claim/liquidate) and seed walletEvents kinds
+ * (supply/withdraw/borrow/repay/liquidation/rewardsClaim).
+ */
+function borrowScopeAllowsKind(scope: MarketScope, kind: string): boolean {
+  if (scope !== "pool" && scope !== "asset") return true
+  const debtSide = kind === "borrow" || kind === "repay"
+  return scope === "asset" ? debtSide : !debtSide
+}
+
+function normalizeDetailMarketKey(value: string): string {
+  return value.trim().toLowerCase().replaceAll("_", "-")
+}
+
+/** `gho` and `bal-stable:gho` are the same asset; `uni-v2:gho` is not. */
+function sandboxKeysMatch(left: string, right: string): boolean {
+  if (!left || !right) return false
+  if (left === right) return true
+  const leftScoped = left.includes(":")
+  const rightScoped = right.includes(":")
+  if (leftScoped === rightScoped) return false
+  const leftToken = left.slice(left.lastIndexOf(":") + 1)
+  const rightToken = right.slice(right.lastIndexOf(":") + 1)
+  return leftToken === rightToken
+}
+
+function sandboxRowMatchesDetailMarket(
+  row: { marketSlug?: string; assetId?: string },
+  scope: MarketScope,
+  slug: string,
+): boolean {
+  const target = normalizeDetailMarketKey(slug)
+  const market = row.marketSlug ? normalizeDetailMarketKey(row.marketSlug) : ""
+  const asset = row.assetId ? normalizeDetailMarketKey(row.assetId) : ""
+  if (sandboxKeysMatch(market, target)) return true
+  if (scope === "asset" && sandboxKeysMatch(asset, target)) return true
+  return false
+}
+
+function mapSandboxTxKind(scope: MarketScope, kind: string): DetailTxKind {
+  if (scope === "multiply") {
+    if (kind === "multiply" || kind === "open") return "open"
+    if (kind === "borrow" || kind === "supply" || kind === "deposit" || kind === "add") return "add"
+    if (kind === "deleverage" || kind === "repay" || kind === "withdraw" || kind === "reduce") return "reduce"
+    if (kind === "close" || kind === "liquidate" || kind === "liquidation") return "close"
+    if (kind === "claim" || kind === "rewards" || kind === "rewardsClaim" || kind === "interest") return "interest"
+    return "rebalance"
+  }
   if (kind === "deposit") return "supply"
   if (kind === "withdraw") return "withdraw"
-  if (kind === "borrow" || kind === "multiply") return "borrow"
-  if (kind === "repay" || kind === "deleverage" || kind === "close") return "repay"
+  if (kind === "borrow") return "borrow"
+  if (kind === "repay") return "repay"
   if (kind === "claim") return "rewards"
   if (kind === "liquidate" || kind === "liquidation") return "liquidation"
   return "supply"
+}
+
+function mapSeedWalletEventKind(scope: MarketScope, kind: string): DetailTxKind {
+  if (scope === "multiply") {
+    if (kind === "supply" || kind === "borrow") return "add"
+    if (kind === "withdraw" || kind === "repay") return "reduce"
+    if (kind === "liquidation") return "close"
+    if (kind === "rewardsClaim") return "interest"
+    return "rebalance"
+  }
+  if (kind === "rewardsClaim") return "rewards"
+  return kind as "supply" | "withdraw" | "borrow" | "repay" | "liquidation"
+}
+
+async function tokenFieldsFromSandboxRow(
+  ctx: QueryCtx,
+  row: { assetId?: string; marketSlug?: string; amountUsd: number },
+  scope: MarketScope,
+) {
+  const market = row.marketSlug
+    ? await ctx.db
+        .query("markets")
+        .withIndex("by_slug", (q) => q.eq("slug", row.marketSlug!))
+        .first()
+    : null
+  if (market) return tokenFieldsFromMarket(ctx, market, scope, row.amountUsd)
+
+  if (scope === "pool") return {}
+
+  const tokenSymbol = normalizeTokenSymbol(row.assetId ?? row.marketSlug ?? "eth").toUpperCase()
+  return tokenFieldsFromPrice(tokenSymbol, row.amountUsd, seedTokenPriceUsd(tokenSymbol))
+}
+
+async function tokenFieldsFromMarket(
+  ctx: QueryCtx,
+  market: {
+    slug: string
+    symbol?: string
+    priceUsd?: number
+    constituents?: Array<{ symbol: string; weight: number }>
+    visuals?: Array<{ symbol: string }>
+  },
+  scope: MarketScope,
+  amountUsd: number,
+) {
+  if (scope === "pool") {
+    const constituents = market.constituents ?? []
+    const visuals = market.visuals ?? []
+    const token0Symbol = (constituents[0]?.symbol ?? visuals[0]?.symbol ?? "ETH").toUpperCase()
+    const token1Symbol = (constituents[1]?.symbol ?? visuals[1]?.symbol ?? "USDC").toUpperCase()
+    const w0 = constituents[0]?.weight ?? 0.5
+    const w1 = constituents[1]?.weight ?? 0.5
+    const price0 = seedTokenPriceUsd(token0Symbol)
+    const price1 = seedTokenPriceUsd(token1Symbol)
+    const usd0 = amountUsd * w0
+    const usd1 = amountUsd * w1
+    const token0AmountLabel = formatDetailTokenAmount(usd0 / price0)
+    const token1AmountLabel = formatDetailTokenAmount(usd1 / price1)
+    return {
+      tokenSymbol: token0Symbol,
+      tokenSymbolSecondary: token1Symbol,
+      token0AmountLabel,
+      token1AmountLabel,
+      tokenAmountLabel: `${token0AmountLabel} / ${token1AmountLabel}`,
+    }
+  }
+
+  const tokenSymbol = (market.symbol ?? normalizeTokenSymbol(market.slug)).toUpperCase()
+  const priceUsd = market.priceUsd && market.priceUsd > 0 ? market.priceUsd : seedTokenPriceUsd(tokenSymbol)
+  return tokenFieldsFromPrice(tokenSymbol, amountUsd, priceUsd)
+}
+
+function tokenFieldsFromPrice(tokenSymbol: string, amountUsd: number, priceUsd: number | null) {
+  return {
+    tokenSymbol,
+    tokenAmountLabel:
+      priceUsd != null && priceUsd > 0
+        ? formatDetailTokenAmount(amountUsd / priceUsd)
+        : formatDetailTokenAmount(amountUsd),
+  }
+}
+
+/** Frozen seed prices for bootstrapping tx FOR amounts — never the live oracle. */
+const SEED_TOKEN_PRICE_USD: Record<string, number> = {
+  USDC: 1,
+  USDT: 1,
+  DAI: 1,
+  GHO: 1,
+  ETH: 1934,
+  WETH: 1934,
+  WBTC: 65000,
+  BTC: 65000,
+  STETH: 1930,
+  WSTETH: 2100,
+  OP: 1.46,
+  ARB: 0.6,
+  AAVE: 105,
+  UNI: 12,
+  LINK: 18,
+}
+
+function seedTokenPriceUsd(symbol: string): number {
+  return SEED_TOKEN_PRICE_USD[symbol.toUpperCase()] ?? 1
+}
+
+function formatDetailTokenAmount(value: number): string {
+  if (!Number.isFinite(value)) return "—"
+  const abs = Math.abs(value)
+  const digits = abs >= 1_000 ? 2 : abs >= 1 ? 4 : 6
+  return abs.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: digits })
+}
+
+function normalizeTokenSymbol(raw: string) {
+  const base = raw.includes(":") ? raw.split(":").pop()! : raw
+  const token = base.split("-").pop() ?? base
+  return token.replace(/[^a-z0-9]/gi, "").toUpperCase() || "ETH"
 }
 
 async function dailyRows(ctx: QueryCtx, marketId: Id<"markets">, range: RangeId): Promise<DailyStatAmounts[]> {

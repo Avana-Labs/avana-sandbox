@@ -46,6 +46,8 @@ export function classifyFxStatus(ageMs: number): "fresh" | "stale" | "invalid" {
 export const getFxRates = query({
   args: {},
   handler: async (ctx) => {
+    // Quote-only read: identical FX refreshes that only patch oracleProviderHealth must not
+    // invalidate this subscription. Provider checkedAt lives on getFxStatus.
     const rows = await ctx.db.query("fxRates").collect()
     const rates = rows.map((r) => ({
       currency: r.currency,
@@ -54,8 +56,30 @@ export const getFxRates = query({
       status: r.status,
       updatedAt: r.updatedAt,
     }))
-    const updatedAt = rows.length === 0 ? null : Math.min(...rows.map((r) => r.updatedAt))
-    return { rates, status: { updatedAt, staleAfterMs: FX_STALE_AFTER_MS, count: rows.length } }
+    const quoteUpdatedAt = rows.length === 0 ? null : Math.min(...rows.map((r) => r.updatedAt))
+    return { rates, status: { updatedAt: quoteUpdatedAt, staleAfterMs: FX_STALE_AFTER_MS, count: rows.length } }
+  },
+})
+
+export const getFxStatus = query({
+  args: {},
+  handler: async (ctx) => {
+    const health = await ctx.db
+      .query("oracleProviderHealth")
+      .withIndex("by_kind", (q) => q.eq("kind", "fx"))
+      .unique()
+    if (health) {
+      return { updatedAt: health.checkedAt, staleAfterMs: FX_STALE_AFTER_MS, count: health.quoteCount }
+    }
+    const rows = await ctx.db.query("fxRates").collect()
+    if (rows.length === 0) {
+      return { updatedAt: null, staleAfterMs: FX_STALE_AFTER_MS, count: 0 }
+    }
+    return {
+      updatedAt: Math.min(...rows.map((r) => r.updatedAt)),
+      staleAfterMs: FX_STALE_AFTER_MS,
+      count: rows.length,
+    }
   },
 })
 
@@ -74,15 +98,48 @@ export const upsertFxRates = internalMutation({
     ),
   },
   handler: async (ctx, { rows }) => {
+    let written = 0
+    let unchanged = 0
+    let checkedAt = 0
+    let sourceUpdatedAt: number | undefined
     for (const row of rows) {
+      checkedAt = Math.max(checkedAt, row.fetchedAt ?? row.updatedAt)
+      if (row.sourceUpdatedAt != null) {
+        sourceUpdatedAt = sourceUpdatedAt == null ? row.sourceUpdatedAt : Math.min(sourceUpdatedAt, row.sourceUpdatedAt)
+      }
       const existing = await ctx.db
         .query("fxRates")
         .withIndex("by_currency", (q) => q.eq("currency", row.currency))
         .unique()
+      if (
+        existing &&
+        existing.usdPerUnit === row.usdPerUnit &&
+        existing.source === row.source &&
+        (existing.status ?? null) === (row.status ?? null)
+      ) {
+        unchanged += 1
+        continue
+      }
       if (existing) await ctx.db.patch(existing._id, row)
       else await ctx.db.insert("fxRates", row)
+      written += 1
     }
-    return { written: rows.length }
+    if (checkedAt === 0) checkedAt = Date.now()
+    const health = await ctx.db
+      .query("oracleProviderHealth")
+      .withIndex("by_kind", (q) => q.eq("kind", "fx"))
+      .unique()
+    const healthDoc = {
+      kind: "fx" as const,
+      checkedAt,
+      sourceUpdatedAt,
+      quoteCount: rows.length,
+      written,
+      unchanged,
+    }
+    if (health) await ctx.db.patch(health._id, healthDoc)
+    else await ctx.db.insert("oracleProviderHealth", healthDoc)
+    return { written, unchanged }
   },
 })
 

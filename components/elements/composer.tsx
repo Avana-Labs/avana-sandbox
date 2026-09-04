@@ -70,7 +70,7 @@ export function ComposerContext({
         )}
       >
         <div className="flex items-baseline justify-between">
-          <p className="text-[13.5px] font-medium">Context</p>
+          <p className="text-[14px] font-normal leading-5">Context</p>
           <p className={cn(mono, "tabular-nums", warn ? "text-red-500 dark:text-red-400" : "text-foreground/35")}>
             {Math.round(fraction * 100)}%
           </p>

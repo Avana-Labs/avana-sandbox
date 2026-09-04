@@ -60,6 +60,8 @@ const dict: TranslationDictionary = {
   Value: "Nilai",
   Utilization: "Utilisasi",
   "Supply & Borrow": "Suplai & Pinjam",
+  "Supply {collateral}": "Pasok {collateral}",
+  "Borrow {borrow}": "Pinjam {borrow}",
   Borrowed: "Dipinjam",
   Available: "Tersedia",
   "Supply APY": "APY Suplai",
@@ -148,6 +150,8 @@ const dict: TranslationDictionary = {
   "Join waitlist": "Gabung daftar tunggu",
   "Previous page": "Halaman sebelumnya",
   "Next page": "Halaman berikutnya",
+  "Transactions pagination": "Penomoran halaman transaksi",
+  "Changelog pagination": "Penomoran halaman log perubahan",
   "{page} of {count}": "{page} dari {count}",
   "Max APY": "APY maks",
   "Max Leverage": "Leverage maks",
@@ -273,7 +277,6 @@ const dict: TranslationDictionary = {
   "Insufficient balance": "Saldo tidak cukup",
   "Insufficient liquidity": "Likuiditas tidak cukup",
   "Insufficient LP": "LP tidak cukup",
-  "Deposit collateral first": "Setor jaminan dulu",
   "Borrowing unavailable": "Peminjaman tidak tersedia",
   "Try a smaller amount": "Coba jumlah lebih kecil",
   "Supply cap reached": "Batas pasokan tercapai",
@@ -282,6 +285,8 @@ const dict: TranslationDictionary = {
   "Not available here": "Tidak tersedia di sini",
   "Nothing to claim": "Tidak ada yang bisa diklaim",
   "Select rewards": "Pilih hadiah",
+  "No collateral": "Tidak ada jaminan",
+  "No position": "Tidak ada posisi",
   "Nothing to withdraw": "Tidak ada yang bisa ditarik",
   "and the Avana team will follow up. You can submit another request any time.":
     "dan tim Avana akan menindaklanjuti. Anda dapat mengirim permintaan lain kapan saja.",
@@ -396,7 +401,6 @@ const dict: TranslationDictionary = {
   "Daily Interest": "Bunga Harian",
   day: "hari",
   "Deposit {symbol}": "Setor {symbol}",
-  "Deposit LP collateral before borrowing {symbol}.": "Setor jaminan LP sebelum meminjam {symbol}.",
   Done: "Selesai",
   Expiration: "Kedaluwarsa",
   Expired: "Kedaluwarsa",
@@ -405,7 +409,6 @@ const dict: TranslationDictionary = {
   "Generating link...": "Membuat tautan...",
   "Go back": "Kembali",
   GOOD: "BAIK",
-  "Got it": "Mengerti",
   "Health Factor": "Health Factor",
   "I read it": "Sudah saya baca",
   "In this sandbox, every transaction is simulated — use previews to learn before sizing up.":
@@ -560,6 +563,11 @@ const dict: TranslationDictionary = {
   "Lend Rewards": "Hadiah Pinjaman",
   "Multiply Overview": "Ikhtisar Multiply",
   "Multiply Positions": "Posisi Multiply",
+  "Debt & Risk": "Utang & Risiko",
+  "Position size, multiplier, and current net yield": "Ukuran posisi, pengali, dan imbal hasil bersih saat ini",
+  "Borrowed balance, health factor, and liquidation threshold":
+    "Saldo pinjaman, faktor kesehatan, dan ambang likuidasi",
+  "No active Multiply debt": "Tidak ada utang Multiply aktif",
   "Loading your portfolio": "Memuat portofolio Anda",
   "We couldn't load your portfolio": "Kami tidak dapat memuat portofolio Anda",
   "The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard.":
@@ -1057,6 +1065,7 @@ const dict: TranslationDictionary = {
   "This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.":
     "Sandbox Avana bebas risiko ini memungkinkan Anda meminjam dengan jaminan posisi LP latihan, memberi pinjaman, dan mengulang strategi menggunakan dana sandbox. Tanpa aset nyata. Tanpa tanda tangan dompet. Sekadar cara cepat memahami cara kerja Avana sebelum beralih ke aplikasi langsung.",
   "Unlimited practice funds": "Dana latihan tanpa batas",
+  "No transactions yet": "Belum ada transaksi",
   "No transactions to sign": "Tidak ada transaksi untuk ditandatangani",
   "No real assets involved": "Tanpa aset nyata",
   "Connect a wallet.": "Hubungkan dompet.",
@@ -1137,6 +1146,7 @@ const dict: TranslationDictionary = {
   "We couldn't load this page.": "Kami tidak dapat memuat halaman ini.",
   "Active Deficit": "Defisit Aktif",
   "Active stake": "Stake aktif",
+  "Includes active stake and cooldown": "Termasuk stake aktif dan cooldown",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "Jumlah yang ditutup Avana terlebih dahulu sebelum cakupan yang di-stake pengguna terekspos. Staker hanya menanggung kerugian setelah defisit riil melebihi offset ini.",
   "Close umbrella actions": "Tutup tindakan Proteksi",
@@ -1172,9 +1182,11 @@ const dict: TranslationDictionary = {
   "Previous market risk": "Risiko pasar sebelumnya",
   Ready: "Siap",
   "Removes in": "Dihapus dalam",
+  Restart: "Mulai ulang",
   "Restart cooldown": "Mulai ulang cooldown",
   Stake: "Stake",
   "Stake in umbrella": "Stake di Proteksi",
+  "Unstake from umbrella": "Unstake dari Proteksi",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "Stake, klaim reward, mulai cooldown, atau unstake dari modul keamanan Proteksi.",
   "Stake, claim, cooldown, unstake": "Stake, klaim, cooldown, unstake",
@@ -1182,6 +1194,7 @@ const dict: TranslationDictionary = {
     "Mulai cooldown sebelum menarik. Selama cooldown, posisi tetap memperoleh insentif dan masih dapat di-slashing.",
   Target: "Target",
   "Total coverage": "Total cakupan",
+  "Total position value": "Nilai posisi total",
   "Total user-staked capital available to absorb losses for this asset.":
     "Total modal yang di-stake pengguna yang tersedia untuk menyerap kerugian aset ini.",
   Umbrella: "Proteksi",
@@ -1284,6 +1297,9 @@ const dict: TranslationDictionary = {
   "In range": "Dalam rentang",
   "Interest / day": "Bunga / hari",
   "Key Statistics": "Statistik Utama",
+  "Market Rates": "Suku bunga pasar",
+  "Utilization Rate": "Tingkat utilisasi",
+  "Borrow amount to reach {value} Util.": "Jumlah pinjaman untuk mencapai utilisasi {value}.",
   "Large price difference": "Perbedaan harga besar",
   "Lend Assets": "Aset Simpanan",
   "Lend Balance": "Saldo Simpanan",
@@ -1362,6 +1378,8 @@ const dict: TranslationDictionary = {
   "Repay or add collateral to reduce your liquidation risk.":
     "Bayar kembali atau tambah jaminan untuk mengurangi risiko likuidasi Anda.",
   "Review risk": "Tinjau risiko",
+  "Negative net APY: borrow costs exceed supply yield. Review before opening this loop.":
+    "APY bersih negatif: biaya pinjaman melebihi hasil supply. Tinjau sebelum membuka loop ini.",
   "Review swap": "Tinjau swap",
   "Rewards Earned": "Imbalan Diperoleh",
   Sandbox: "Sandbox",
@@ -1484,6 +1502,159 @@ const dict: TranslationDictionary = {
   "Next rewards": "Hadiah berikutnya",
   "Open on Launch Date": "Terbuka pada tanggal peluncuran",
   "Previous rewards": "Hadiah sebelumnya",
+  "The asset you've borrowed against your collateral.": "Aset yang Anda pinjam dengan jaminan Anda.",
+  "Your outstanding loan balance in this asset, valued live.":
+    "Saldo pinjaman terutang Anda dalam aset ini, dinilai secara langsung.",
+  "A token held directly in your connected wallet.": "Token yang disimpan langsung di dompet Anda yang terhubung.",
+  "The amount of this token in your wallet.": "Jumlah token ini di dompet Anda.",
+  "The token balance valued at its live price.": "Saldo token ini, dinilai pada harga langsungnya.",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.":
+    "Posisi pool likuiditas yang Anda miliki, token berpasangan yang dipasok ke DEX.",
+  "Whether the position's price range is active and earning fees.":
+    "Apakah rentang harga posisi sedang aktif dan memperoleh biaya.",
+  "The current value of your pooled tokens.": "Nilai token pool Anda saat ini.",
+  "Trading fees this position has earned, claimable to your wallet.":
+    "Biaya trading yang diperoleh posisi ini, dapat diklaim ke dompet Anda.",
+  "The token you've supplied to earn lending yield.": "Token yang Anda pasok untuk memperoleh imbal hasil pinjaman.",
+  "Your supplied balance in this asset, valued at its live price.":
+    "Saldo yang Anda pasok pada aset ini, dinilai pada harga langsungnya.",
+  "Current annual percentage yield on your deposit, before protocol rewards.":
+    "Imbal hasil persentase tahunan saat ini atas setoran Anda, sebelum imbalan protokol.",
+  "The collateral asset backing your borrowing, valued at its live price.":
+    "Aset jaminan yang mendukung pinjaman Anda, dinilai pada harga langsungnya.",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.":
+    "Seberapa banyak lagi yang dapat Anda pinjam dengan jaminan ini; % menunjukkan seberapa besar batas likuidasi Anda yang sudah terpakai.",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.":
+    "Faktor kesehatan, dan nilai jaminan saat posisi ini dilikuidasi. Di bawah 1.0 memicu likuidasi.",
+  "The collateral you supply and the asset you borrow against it to build leverage.":
+    "Jaminan yang Anda pasok dan aset yang Anda pinjam dengannya untuk membangun leverage.",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.":
+    "Modal Anda sendiri dalam loop (eksposur dikurangi utang). Eksposur adalah total posisi leverage Anda.",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.":
+    "Imbal hasil bersih setelah biaya pinjaman, atas modal Anda. Angka di bawah adalah bunga yang diperoleh sejauh ini, terus bertambah secara langsung.",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.":
+    "Faktor kesehatan, dan harga jaminan saat loop ini dilikuidasi. Di bawah 1.0 memicu likuidasi.",
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)":
+    "Carry bersih yang diperoleh di seluruh loop Multiply Anda, terus terakumulasi secara langsung (imbal hasil suplai dikurangi biaya pinjaman)",
+  "Average APY across your staked positions, weighted by value.":
+    "APY rata-rata di seluruh posisi yang di-stake, tertimbang berdasarkan nilai.",
+  "Additional amount you can borrow against your pledged collateral within Avana credit limits":
+    "Jumlah tambahan yang dapat Anda pinjam dengan jaminan yang telah Anda berikan, dalam batas kredit Avana",
+  "Amount an active loan can lose before reaching liquidation; unavailable when you have no debt":
+    "Jumlah yang bisa hilang dari pinjaman aktif sebelum mencapai likuidasi; tidak tersedia jika Anda tidak memiliki utang",
+  "Combined liquidation value divided by total Multiply debt. Higher is safer; below 1 risks liquidation.":
+    "Nilai likuidasi gabungan dibagi total utang Multiply. Semakin tinggi semakin aman; di bawah 1 berisiko likuidasi.",
+  "Equity-weighted net APY after supply yield and borrow cost":
+    "APY bersih tertimbang ekuitas setelah imbal hasil suplai dan biaya pinjaman",
+  "Exposure, return, and liquidation risk for each active loop":
+    "Eksposur, return, dan risiko likuidasi untuk setiap loop aktif",
+  "Gross Multiply exposure after looping across all positions":
+    "Eksposur Multiply kotor setelah melakukan loop di seluruh posisi",
+  "Interest earned as a percentage of principal you supplied":
+    "Bunga yang diperoleh sebagai persentase dari pokok yang Anda pasok",
+  "Portfolio leverage as position value divided by equity": "Leverage portofolio sebagai nilai posisi dibagi ekuitas",
+  "Projected earnings at current rates": "Perkiraan pendapatan pada suku bunga saat ini",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)":
+    "Bunga pasokan yang terus terkumpul secara langsung di seluruh posisi simpanan Anda (tidak termasuk imbalan protokol)",
+  "Wallet-wide liquidation value divided by total borrowed. Higher is safer; below 1 risks liquidation.":
+    "Nilai likuidasi seluruh dompet dibagi total pinjaman. Semakin tinggi semakin aman; di bawah 1 berisiko likuidasi.",
+  "Prices may be stale": "Harga mungkin sudah usang",
+  "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.":
+    "Suku bunga pinjaman tahunan saat ini atas utang ini. Di bawah, bunga yang terkumpul sejauh ini, terus bertambah secara langsung.",
+  "Total AVA you've earned across completed quests and staking rewards.":
+    "Total AVA yang telah Anda peroleh dari misi yang telah diselesaikan dan hadiah staking.",
+  "AVA you can claim to your wallet right now.": "AVA yang dapat Anda klaim ke dompet Anda sekarang juga.",
+  "Core Concepts": "Konsep inti",
+  "What is Avana?": "Apa itu Avana?",
+  "Protocol overview": "Ikhtisar protokol",
+  "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.":
+    "Avana adalah protokol pinjaman dengan agunan LP yang dibangun di atas arsitektur Hub-and-Spoke Aave v4.",
+  "Why it exists": "Mengapa ada",
+  "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.":
+    "Tujuannya agar penyedia likuiditas dapat meminjam terhadap posisi aktif tanpa terlebih dahulu menutup posisi pool.",
+  "What does the Borrow Spoke do?": "Apa yang dilakukan Borrow Spoke?",
+  "LP-specific underwriting": "Underwriting khusus LP",
+  "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.":
+    "Borrow Spoke menilai posisi yang didukung, memantau health, dan mengarahkan perilaku likuidasi untuk agunan LP.",
+  "Shared coordination": "Koordinasi bersama",
+  "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.":
+    "Hub mengoordinasikan likuiditas bersama dan akuntansi utang, sementara spoke menangani logika khusus LP.",
+  "Borrowing Capacity & Valuation": "Kapasitas pinjaman & valuasi",
+  "How is borrowing capacity calculated?": "Bagaimana kapasitas pinjaman dihitung?",
+  "Adjusted collateral value": "Nilai agunan yang disesuaikan",
+  "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.":
+    "Setiap posisi LP yang disetujui dinilai secara independen, lalu faktor agunan dan kontrol risiko khusus pool diterapkan.",
+  "Aggregated in the spoke": "Digabungkan di spoke",
+  "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.":
+    "Spoke menggabungkan posisi yang disetujui menjadi kapasitas pinjaman dan Hub menerapkan hasilnya.",
+  "Why did my capacity change?": "Mengapa kapasitas saya berubah?",
+  "Market movement": "Pergerakan pasar",
+  "Capacity can change when the underlying assets move or when recoverable value shifts.":
+    "Kapasitas dapat berubah saat aset dasar bergerak atau saat nilai yang dapat dipulihkan bergeser.",
+  "Risk settings": "Pengaturan risiko",
+  "Collateral factors and market-specific risk settings can also change the amount shown in the interface.":
+    "Faktor agunan dan pengaturan risiko khusus pasar juga dapat mengubah jumlah yang ditampilkan di antarmuka.",
+  "Health & Liquidation": "Health & likuidasi",
+  "What is the health factor?": "Apa itu health factor?",
+  "How to read health": "Cara membaca health",
+  "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.":
+    "Health factor menyatakan hubungan antara nilai agunan yang disesuaikan dan utang tertunggak di dalam satu Borrow Spoke.",
+  "What it means for users": "Artinya bagi pengguna",
+  "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
+    "Saat buffer menyusut, posisi semakin terpapar likuidasi jika kondisi pasar bergerak melawannya.",
+  "When can liquidation happen?": "Kapan likuidasi dapat terjadi?",
+  Triggers: "Pemicu",
+  "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
+    "Jika pergerakan pasar melemahkan health cukup jauh, posisi dapat menjadi dapat dilikuidasi menurut aturan spoke.",
+  "What happens next": "Apa yang terjadi selanjutnya",
+  "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.":
+    "Spoke memantau risiko secara terus-menerus dan mengarahkan perilaku likuidasi, sementara Hub menjaga cadangan tetap terkoordinasi.",
+  "Leverage Markets": "Pasar leverage",
+  "How do leverage markets work?": "Bagaimana pasar leverage bekerja?",
+  "LP-backed exposure": "Eksposur berbasis LP",
+  "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.":
+    "Pasar leverage memungkinkan Avana mendukung pinjaman berbasis LP dan eksposur arah dalam alur yang lebih khusus.",
+  "Position stacking": "Penumpukan posisi",
+  "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
+    "Kapasitas pinjaman dapat digabungkan dari beberapa posisi yang disetujui di dalam Borrow Spoke yang sama.",
+  "Can one account use multiple LP positions?": "Bisakah satu akun memakai beberapa posisi LP?",
+  "Multiple positions": "Beberapa posisi",
+  "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
+    "Ya. Satu akun dapat menggabungkan posisi LP yang didukung selama setiap posisi lolos pemeriksaan protokol.",
+  "Per-position risk": "Risiko per posisi",
+  "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
+    "Setiap posisi dievaluasi secara terpisah sebelum dimasukkan ke kapasitas pinjaman akhir.",
+  "Fees & Interface Policy": "Biaya & kebijakan antarmuka",
+  "Are interface fees fixed across all integrations?": "Apakah biaya antarmuka tetap di semua integrasi?",
+  "Operational settings": "Pengaturan operasional",
+  "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
+    "Tarif tepat, pengecualian, dan status peluncuran adalah pengaturan operasional dan harus diverifikasi di antarmuka live.",
+  "Integration differences": "Perbedaan integrasi",
+  "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
+    "Integrasi langsung atau frontend pihak ketiga dapat mengikuti asumsi berbeda, jadi selalu verifikasi antarmuka yang Anda gunakan.",
+  "What counts as protocol economics vs interface policy?":
+    "Apa yang termasuk ekonomi protokol vs kebijakan antarmuka?",
+  "Protocol layer": "Lapisan protokol",
+  "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
+    "Valuasi agunan inti, kontrol utang, dan jalur likuidasi berada di lapisan protokol.",
+  "Interface layer": "Lapisan antarmuka",
+  "The frontend can present policy, routing, and support flows differently from one integration to another.":
+    "Frontend dapat menyajikan kebijakan, routing, dan alur dukungan secara berbeda antar integrasi.",
+  "Risk & Security": "Risiko & keamanan",
+  "What are the main risks?": "Apa risiko utamanya?",
+  "Market and liquidity risk": "Risiko pasar dan likuiditas",
+  "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.":
+    "Risiko utama adalah pergerakan pasar pada aset dasar, impermanent loss, dan pergeseran range untuk posisi terkonsentrasi.",
+  "Liquidation risk": "Risiko likuidasi",
+  "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.":
+    "Jika buffer health melemah sementara utang masih tertunggak, posisi dapat menjadi dapat dilikuidasi.",
+  "How should I think about security?": "Bagaimana saya harus memikirkan keamanan?",
+  "Protocol guidance": "Panduan protokol",
+  "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.":
+    "Gunakan kehati-hatian yang sama seperti pada posisi LP mana pun dan ikuti panduan risiko protokol dengan cermat.",
+  "Support request": "Permintaan dukungan",
+  "If something looks off, send the details and our team can help you triage the issue.":
+    "Jika sesuatu terlihat tidak beres, kirim detailnya dan tim kami dapat membantu meninjau masalahnya.",
 }
 
 export default dict

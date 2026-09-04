@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo } from "react"
 import { CarouselArrowButtons, useOverflowCarousel } from "@/app/components/carousel-arrow-buttons"
 import { HowItWorks } from "@/app/components/how-it-works"
 import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
@@ -7,6 +8,8 @@ import { useCurrency } from "@/app/lib/currency/use-currency"
 import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { formatBorrowPairLabel, formatLtvPct } from "@/app/lib/borrow-sim"
 import { formatApy } from "@/app/lib/format"
+import { MOBILE_EDGE_RAIL_CLASS } from "@/app/lib/ui/horizontal-rail"
+import { cn } from "@/lib/utils"
 import { HeroMarketCard } from "./borrow-hero-market-card"
 import { BorrowHeroLiveMetrics } from "./borrow-hero-live-metrics"
 
@@ -77,7 +80,10 @@ function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => stri
 
 export function BorrowPageHero({ pageData }: { pageData: BorrowPageData }) {
   const { compact } = useCurrency()
-  const heroCards = buildHeroCards(pageData, compact)
+  // Memoize so the hero cards keep a stable identity across re-renders; rebuilding
+  // them every render churned the scroller's children and reflowed it (a flicker)
+  // whenever live data swapped in or any parent re-rendered.
+  const heroCards = useMemo(() => buildHeroCards(pageData, compact), [pageData, compact])
   const { scrollerRef, canPrev, canNext, scrollByCard } = useOverflowCarousel()
 
   return (
@@ -102,7 +108,10 @@ export function BorrowPageHero({ pageData }: { pageData: BorrowPageData }) {
 
         <div
           ref={scrollerRef}
-          className="overflow-x-auto scroll-smooth pb-1 [scrollbar-width:none] snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
+          className={cn(
+            "overflow-x-auto scroll-smooth pb-1 [scrollbar-width:none] snap-x snap-mandatory [&::-webkit-scrollbar]:hidden",
+            MOBILE_EDGE_RAIL_CLASS,
+          )}
         >
           <div className="flex min-w-max gap-3">
             {heroCards.map((card) => (

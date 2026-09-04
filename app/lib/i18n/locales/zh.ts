@@ -267,18 +267,16 @@ const dict: TranslationDictionary = {
   "Total value locked": "总锁仓价值",
   "Total borrows": "总借款",
   "Asset actions": "资产操作",
-  "Deposit LP collateral before borrowing {symbol}.": "借入 {symbol} 前请先存入 LP 抵押品。",
-  "Deposit collateral": "存入抵押品",
-  "Deposit collateral first": "请先存入抵押品",
   "You need to deposit an asset before you can borrow.": "你需要先存入资产才能借款。",
   "To borrow {symbol}, deposit LP collateral first.": "要借入 {symbol}，请先存入 LP 抵押品。",
-  "Got it": "知道了",
   "Manage {name}": "管理 {name}",
   Pledge: "质押",
   "Pool actions": "池子操作",
   "Supply & Utilization": "供应与利用率",
   "Deposits, borrows, and utilization over time.": "存入、借出和利用率的时间变化。",
   "Supply & Borrow": "供应与借款",
+  "Supply {collateral}": "存入 {collateral}",
+  "Borrow {borrow}": "借入 {borrow}",
   "Leverage usage across this market over time.": "该市场中的杠杆使用随时间变化。",
   "{view} over time": "{view} 随时间变化",
   "Deposit {symbol}": "存入 {symbol}",
@@ -447,6 +445,8 @@ const dict: TranslationDictionary = {
   "Join waitlist": "加入候补名单",
   "Previous page": "上一页",
   "Next page": "下一页",
+  "Transactions pagination": "交易分页",
+  "Changelog pagination": "变更日志分页",
   "{page} of {count}": "第 {page} 页，共 {count} 页",
   "Max APY": "最高 APY",
   "Max Leverage": "最高杠杆",
@@ -555,6 +555,8 @@ const dict: TranslationDictionary = {
   "Not available here": "此处不可用",
   "Nothing to claim": "暂无可领取",
   "Select rewards": "选择奖励",
+  "No collateral": "无抵押品",
+  "No position": "无仓位",
   "Nothing to withdraw": "暂无可提取",
   "and the Avana team will follow up. You can submit another request any time.":
     "Avana 团队会尽快跟进。您可以随时再次提交请求。",
@@ -666,6 +668,10 @@ const dict: TranslationDictionary = {
   "Lend Rewards": "借出奖励",
   "Multiply Overview": "循环概览",
   "Multiply Positions": "循环头寸",
+  "Debt & Risk": "债务与风险",
+  "Position size, multiplier, and current net yield": "头寸规模、倍数和当前净收益率",
+  "Borrowed balance, health factor, and liquidation threshold": "借款余额、健康系数和清算阈值",
+  "No active Multiply debt": "没有活跃的 Multiply 债务",
   "Loading your portfolio": "正在加载您的投资组合",
   "We couldn't load your portfolio": "无法加载您的投资组合",
   "The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard.":
@@ -1099,6 +1105,7 @@ const dict: TranslationDictionary = {
   "This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.":
     "这个零风险的 Avana 沙盒让你使用沙盒资金，以练习 LP 仓位借款、放贷并循环运用各种策略。不涉及真实资产。无需钱包签名。让你在切换到正式应用前，快速了解 Avana 的运作方式。",
   "Unlimited practice funds": "无限练习资金",
+  "No transactions yet": "暂无交易",
   "No transactions to sign": "无需签署交易",
   "No real assets involved": "不涉及真实资产",
   "By connecting your wallet, you agree to the": "连接钱包即表示你同意",
@@ -1201,6 +1208,7 @@ const dict: TranslationDictionary = {
   "We couldn't load this page.": "我们无法加载此页面。",
   "Active Deficit": "有效缺口",
   "Active stake": "有效质押",
+  "Includes active stake and cooldown": "包含有效质押和冷却中金额",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "在用户质押的保障暴露之前,Avana 优先承担的金额。只有当已实现的缺口超过该抵扣值时,质押者才会承受损失。",
   "Close umbrella actions": "关闭保护操作",
@@ -1234,9 +1242,11 @@ const dict: TranslationDictionary = {
   "Previous market risk": "上次市场风险",
   Ready: "就绪",
   "Removes in": "剩余移除时间",
+  Restart: "重启",
   "Restart cooldown": "重新开始冷却",
   Stake: "质押",
   "Stake in umbrella": "在保护中质押",
+  "Unstake from umbrella": "从保护中解除质押",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "在保护安全模块中进行质押、领取奖励、开启冷却或解除质押。",
   "Stake, claim, cooldown, unstake": "质押、领取、冷却、解除质押",
@@ -1244,6 +1254,7 @@ const dict: TranslationDictionary = {
     "提取前请先开启冷却。冷却期间,仓位继续获得激励,并仍可被罚没。",
   Target: "目标",
   "Total coverage": "总保障",
+  "Total position value": "仓位总价值",
   "Total user-staked capital available to absorb losses for this asset.": "可用于承担该资产损失的用户质押总资本。",
   Umbrella: "保护",
   "Umbrella Cooldown": "保护冷却",
@@ -1337,6 +1348,9 @@ const dict: TranslationDictionary = {
   "In range": "区间内",
   "Interest / day": "利息 / 天",
   "Key Statistics": "关键统计",
+  "Market Rates": "市场利率",
+  "Utilization Rate": "利用率",
+  "Borrow amount to reach {value} Util.": "达到 {value} 利用率所需的借款金额。",
   "Large price difference": "价格差异较大",
   "Lend Assets": "存款资产",
   "Lend Balance": "存款余额",
@@ -1409,6 +1423,8 @@ const dict: TranslationDictionary = {
   refreshing_position: "正在刷新仓位",
   "Repay or add collateral to reduce your liquidation risk.": "还款或添加抵押品以降低清算风险。",
   "Review risk": "查看风险",
+  "Negative net APY: borrow costs exceed supply yield. Review before opening this loop.":
+    "净 APY 为负：借款成本超过供应收益。开仓此循环前请仔细评估。",
   "Review swap": "查看兑换",
   "Rewards Earned": "已赚取奖励",
   Sandbox: "沙盒",
@@ -1519,6 +1535,149 @@ const dict: TranslationDictionary = {
   "Next rewards": "下一批奖励",
   "Open on Launch Date": "在发布日开启",
   "Previous rewards": "上一批奖励",
+  "The asset you've borrowed against your collateral.": "您以抵押品借入的资产。",
+  "Your outstanding loan balance in this asset, valued live.": "您在该资产中的未偿还贷款余额，按实时价格计价。",
+  "A token held directly in your connected wallet.": "您已连接钱包中直接持有的代币。",
+  "The amount of this token in your wallet.": "您钱包中该代币的数量。",
+  "The token balance valued at its live price.": "按实时价格计价的代币余额。",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.":
+    "您持有的流动性池仓位，即向 DEX 提供的一对代币。",
+  "Whether the position's price range is active and earning fees.":
+    "该仓位的价格区间是否处于活跃状态并正在赚取手续费。",
+  "The current value of your pooled tokens.": "您已入池代币的当前价值。",
+  "Trading fees this position has earned, claimable to your wallet.": "该仓位已赚取的交易手续费，可领取至您的钱包。",
+  "The token you've supplied to earn lending yield.": "您存入以赚取借出收益的代币。",
+  "Your supplied balance in this asset, valued at its live price.": "您在该资产中的供应余额，按其实时价格计价。",
+  "Current annual percentage yield on your deposit, before protocol rewards.": "您存款当前的年化收益率，不含协议奖励。",
+  "The collateral asset backing your borrowing, valued at its live price.":
+    "作为您借款担保的抵押资产，按其实时价格计价。",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.":
+    "您基于该抵押品还可借入的金额；该 % 值显示您已使用清算上限的比例。",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.":
+    "健康因子，以及该仓位被清算时的抵押品价值。低于 1.0 即触发清算。",
+  "The collateral you supply and the asset you borrow against it to build leverage.":
+    "您供应的抵押品，以及基于该抵押品借入以构建杠杆的资产。",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.":
+    "您在该循环中的自有资本（敞口减去债务）。敞口是指您的总杠杆仓位。",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.":
+    "扣除借款成本后，您资本的净收益。下方数字为已赚取的利息，实时跳动更新。",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.":
+    "健康因子，以及该循环被清算时的抵押品价格。低于 1.0 即触发清算。",
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)":
+    "在您的 Multiply 循环中赚取的净套利收益，实时累积（供应收益减去借款成本）",
+  "Average APY across your staked positions, weighted by value.": "您质押仓位的平均 APY，按价值加权计算。",
+  "Additional amount you can borrow against your pledged collateral within Avana credit limits":
+    "在 Avana 信用额度内，您可基于已提供的抵押品借入的额外金额",
+  "Amount an active loan can lose before reaching liquidation; unavailable when you have no debt":
+    "活跃借款在触及清算前可承受的损失金额；若您没有债务，则不可用",
+  "Combined liquidation value divided by total Multiply debt. Higher is safer; below 1 risks liquidation.":
+    "合计清算价值除以 Multiply 总债务。数值越高越安全；低于 1 有清算风险。",
+  "Equity-weighted net APY after supply yield and borrow cost": "按权益加权计算的净 APY，即供应收益减去借款成本",
+  "Exposure, return, and liquidation risk for each active loop": "每个活跃循环的敞口、回报和清算风险",
+  "Gross Multiply exposure after looping across all positions": "所有仓位循环后的 Multiply 毛敞口",
+  "Interest earned as a percentage of principal you supplied": "已赚取的利息占您所供应本金的百分比",
+  "Portfolio leverage as position value divided by equity": "投资组合杠杆，即仓位价值除以权益",
+  "Projected earnings at current rates": "按当前利率计算的预计收益",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)":
+    "您所有借出仓位实时累积的供应利息（不含协议奖励）",
+  "Wallet-wide liquidation value divided by total borrowed. Higher is safer; below 1 risks liquidation.":
+    "全钱包清算价值除以总借款额。数值越高越安全；低于 1 有清算风险。",
+  "Prices may be stale": "价格可能已过时",
+  "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.":
+    "该债务当前的年化借款利率。下方为已累计的利息，实时跳动更新。",
+  "Total AVA you've earned across completed quests and staking rewards.":
+    "您通过已完成的任务和质押奖励累计赚取的 AVA 总量。",
+  "AVA you can claim to your wallet right now.": "您现在可领取到钱包的 AVA。",
+  "Core Concepts": "核心概念",
+  "What is Avana?": "什么是 Avana？",
+  "Protocol overview": "协议概览",
+  "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.":
+    "Avana 是基于 Aave v4 Hub-and-Spoke 架构构建的 LP 抵押借贷协议。",
+  "Why it exists": "存在的原因",
+  "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.":
+    "目标是让流动性提供者在无需先解除池仓位的情况下，以活跃仓位作为抵押进行借贷。",
+  "What does the Borrow Spoke do?": "Borrow Spoke 做什么？",
+  "LP-specific underwriting": "LP 专项承保",
+  "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.":
+    "Borrow Spoke 对支持的仓位进行估值、监控健康度，并为 LP 抵押品路由清算行为。",
+  "Shared coordination": "共享协调",
+  "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.":
+    "Hub 协调共享流动性与债务记账，而 spoke 处理 LP 专属逻辑。",
+  "Borrowing Capacity & Valuation": "借款能力与估值",
+  "How is borrowing capacity calculated?": "借款能力如何计算？",
+  "Adjusted collateral value": "调整后抵押价值",
+  "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.":
+    "每个获批的 LP 仓位会独立估值，随后应用抵押因子和池级风险控制。",
+  "Aggregated in the spoke": "在 spoke 中汇总",
+  "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.":
+    "spoke 将获批仓位汇总为借款能力，并由 Hub 执行结果。",
+  "Why did my capacity change?": "为什么我的能力变了？",
+  "Market movement": "市场波动",
+  "Capacity can change when the underlying assets move or when recoverable value shifts.":
+    "当标的资产价格变动或可回收价值变化时，借款能力可能随之改变。",
+  "Risk settings": "风险设置",
+  "Collateral factors and market-specific risk settings can also change the amount shown in the interface.":
+    "抵押因子和特定市场的风险设置也可能改变界面显示的金额。",
+  "Health & Liquidation": "健康度与清算",
+  "What is the health factor?": "什么是健康因子？",
+  "How to read health": "如何解读健康度",
+  "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.":
+    "健康因子表示单个 Borrow Spoke 内调整后抵押价值与未偿债务之间的关系。",
+  "What it means for users": "对用户意味着什么",
+  "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
+    "缓冲收窄时，若市场走势不利，仓位更容易面临清算。",
+  "When can liquidation happen?": "何时可能发生清算？",
+  Triggers: "触发条件",
+  "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
+    "若市场波动足以削弱健康度，仓位可按 spoke 规则变为可清算。",
+  "What happens next": "接下来会发生什么",
+  "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.":
+    "spoke 持续监控风险并路由清算行为，同时 Hub 保持准备金协调。",
+  "Leverage Markets": "杠杆市场",
+  "How do leverage markets work?": "杠杆市场如何运作？",
+  "LP-backed exposure": "LP 支持的敞口",
+  "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.":
+    "杠杆市场让 Avana 能以更专门的流程支持 LP 抵押借贷与方向性敞口。",
+  "Position stacking": "仓位叠加",
+  "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
+    "借款能力可从来自同一 Borrow Spoke 的多个获批仓位汇总。",
+  "Can one account use multiple LP positions?": "一个账户能否使用多个 LP 仓位？",
+  "Multiple positions": "多个仓位",
+  "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
+    "可以。只要每个仓位通过协议检查，单个账户即可合并支持的 LP 仓位。",
+  "Per-position risk": "按仓位风险",
+  "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
+    "每个仓位在纳入最终借款能力前都会按各自条件单独评估。",
+  "Fees & Interface Policy": "费用与界面政策",
+  "Are interface fees fixed across all integrations?": "所有集成的界面费用是否固定？",
+  "Operational settings": "运营设置",
+  "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
+    "确切费率、豁免与上线状态属于运营设置，应在实际界面中核实。",
+  "Integration differences": "集成差异",
+  "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
+    "直接集成或第三方前端可能遵循不同假设，请始终核实您正在使用的界面。",
+  "What counts as protocol economics vs interface policy?": "协议经济与界面政策如何区分？",
+  "Protocol layer": "协议层",
+  "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
+    "核心抵押估值、债务控制与清算路径属于协议层。",
+  "Interface layer": "界面层",
+  "The frontend can present policy, routing, and support flows differently from one integration to another.":
+    "前端可以在不同集成中以不同方式呈现政策、路由与支持流程。",
+  "Risk & Security": "风险与安全",
+  "What are the main risks?": "主要风险有哪些？",
+  "Market and liquidity risk": "市场与流动性风险",
+  "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.":
+    "主要风险包括标的资产的市场波动、无常损失，以及集中仓位的区间漂移。",
+  "Liquidation risk": "清算风险",
+  "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.":
+    "若债务仍在且健康缓冲减弱，仓位可能变为可清算。",
+  "How should I think about security?": "应如何看待安全？",
+  "Protocol guidance": "协议指引",
+  "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.":
+    "请像对待任何 LP 仓位一样谨慎，并严格遵循协议的风险指引。",
+  "Support request": "支持请求",
+  "If something looks off, send the details and our team can help you triage the issue.":
+    "若发现异常，请发送详情，我们的团队可协助排查问题。",
 }
 
 export default dict

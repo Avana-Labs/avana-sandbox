@@ -97,3 +97,69 @@ export function buildBorrowInterestRateCurve(
     yTicks: buildPercentAxisTicks(maxApr),
   }
 }
+
+/**
+ * Extra borrow (positive) or repay (negative) USD needed so utilization equals
+ * `targetUtilizationPct`, holding total supplied liquidity fixed:
+ *   ΔB = S · (U_target / 100) − B
+ */
+export function borrowDeltaUsdToUtilization(
+  targetUtilizationPct: number,
+  borrowedUsd: number,
+  suppliedUsd: number,
+): number {
+  if (!Number.isFinite(suppliedUsd) || suppliedUsd <= 0) return 0
+  const borrowed = Number.isFinite(borrowedUsd) ? Math.max(0, borrowedUsd) : 0
+  const targetBorrowed = suppliedUsd * (clampUtil(targetUtilizationPct) / 100)
+  return targetBorrowed - borrowed
+}
+
+export type InterestRateModelProbe = {
+  utilizationPct: number
+  borrowAprPct: number
+  borrowDeltaUsd: number
+}
+
+/**
+ * Single-source probe for the IRM chart tooltip: APR on the anchored curve plus
+ * the borrow delta to reach that utilization at fixed supply.
+ */
+export function probeInterestRateModel(args: {
+  utilizationPct: number
+  irm: InterestRateModelParams
+  anchor: { utilization: number; apr: number }
+  borrowedUsd: number
+  suppliedUsd: number
+}): InterestRateModelProbe {
+  const utilizationPct = clampUtil(args.utilizationPct)
+  return {
+    utilizationPct,
+    borrowAprPct: borrowAprAtUtilization(utilizationPct, args.irm, args.anchor),
+    borrowDeltaUsd: borrowDeltaUsdToUtilization(utilizationPct, args.borrowedUsd, args.suppliedUsd),
+  }
+}
+
+/**
+ * Normalize liquidity so current utilization is internally consistent:
+ * when only one of borrowed/supplied is known, derive the other from util.
+ */
+export function resolveMarketLiquidityUsd(args: {
+  utilizationPct: number
+  borrowedUsd?: number
+  suppliedUsd?: number
+}): { borrowedUsd: number; suppliedUsd: number } {
+  const util = clampUtil(args.utilizationPct) / 100
+  let borrowedUsd = Number.isFinite(args.borrowedUsd) ? Math.max(0, args.borrowedUsd!) : 0
+  let suppliedUsd = Number.isFinite(args.suppliedUsd) ? Math.max(0, args.suppliedUsd!) : 0
+
+  if (suppliedUsd <= 0 && borrowedUsd > 0 && util > 0) {
+    suppliedUsd = borrowedUsd / util
+  } else if (borrowedUsd <= 0 && suppliedUsd > 0) {
+    borrowedUsd = suppliedUsd * util
+  } else if (suppliedUsd <= 0) {
+    suppliedUsd = 100_000_000
+    borrowedUsd = suppliedUsd * util
+  }
+
+  return { borrowedUsd, suppliedUsd }
+}

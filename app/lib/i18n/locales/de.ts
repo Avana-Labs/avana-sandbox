@@ -69,6 +69,8 @@ const dict: TranslationDictionary = {
   Share: "Anteil",
   Utilization: "Auslastung",
   "Supply & Borrow": "Einzahlung & Kredit",
+  "Supply {collateral}": "{collateral} bereitstellen",
+  "Borrow {borrow}": "{borrow} Leihen",
   Borrowed: "Geliehen",
   Available: "Verfügbar",
   "Supply APY": "Einzahlungs-APY",
@@ -157,6 +159,8 @@ const dict: TranslationDictionary = {
   "Join waitlist": "Warteliste beitreten",
   "Previous page": "Vorherige Seite",
   "Next page": "Nächste Seite",
+  "Transactions pagination": "Seitennummerierung der Transaktionen",
+  "Changelog pagination": "Seitennummerierung des Änderungsverlaufs",
   "{page} of {count}": "{page} von {count}",
   "Max APY": "Max. APY",
   "Max Leverage": "Max. Hebel",
@@ -282,7 +286,6 @@ const dict: TranslationDictionary = {
   "Insufficient balance": "Guthaben nicht ausreichend",
   "Insufficient liquidity": "Liquidität nicht ausreichend",
   "Insufficient LP": "LP nicht ausreichend",
-  "Deposit collateral first": "Zuerst Sicherheit einzahlen",
   "Borrowing unavailable": "Kreditaufnahme nicht verfügbar",
   "Try a smaller amount": "Kleineren Betrag versuchen",
   "Supply cap reached": "Angebotsgrenze erreicht",
@@ -291,6 +294,8 @@ const dict: TranslationDictionary = {
   "Not available here": "Hier nicht verfügbar",
   "Nothing to claim": "Nichts zu beanspruchen",
   "Select rewards": "Belohnungen auswählen",
+  "No collateral": "Keine Sicherheit",
+  "No position": "Keine Position",
   "Nothing to withdraw": "Nichts abzuheben",
   "and the Avana team will follow up. You can submit another request any time.":
     "und das Avana-Team meldet sich bei dir. Du kannst jederzeit eine weitere Anfrage stellen.",
@@ -405,7 +410,6 @@ const dict: TranslationDictionary = {
   "Daily Interest": "Tageszinsen",
   day: "Tag",
   "Deposit {symbol}": "{symbol} einzahlen",
-  "Deposit LP collateral before borrowing {symbol}.": "Hinterlege LP-Sicherheiten, bevor du {symbol} leihst.",
   Done: "Fertig",
   Expiration: "Ablauf",
   Expired: "Abgelaufen",
@@ -414,7 +418,6 @@ const dict: TranslationDictionary = {
   "Generating link...": "Link wird erstellt …",
   "Go back": "Zurück",
   GOOD: "GUT",
-  "Got it": "Verstanden",
   "Health Factor": "Health Factor",
   "I read it": "Gelesen",
   "In this sandbox, every transaction is simulated — use previews to learn before sizing up.":
@@ -570,6 +573,11 @@ const dict: TranslationDictionary = {
   "Lend Rewards": "Verleih-Prämien",
   "Multiply Overview": "Multiply-Übersicht",
   "Multiply Positions": "Multiply-Positionen",
+  "Debt & Risk": "Schulden & Risiko",
+  "Position size, multiplier, and current net yield": "Positionsgröße, Multiplikator und aktuelle Nettorendite",
+  "Borrowed balance, health factor, and liquidation threshold":
+    "Geliehener Saldo, Gesundheitsfaktor und Liquidationsschwelle",
+  "No active Multiply debt": "Keine aktiven Multiply-Schulden",
   "Loading your portfolio": "Dein Portfolio wird geladen",
   "We couldn't load your portfolio": "Wir konnten dein Portfolio nicht laden",
   "The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard.":
@@ -1062,6 +1070,7 @@ const dict: TranslationDictionary = {
   "Welcome to the Avana Sandbox": "Willkommen in der Avana-Sandbox",
   "This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.":
     "In dieser risikofreien Avana-Sandbox kannst du gegen Übungs-LP-Positionen leihen, verleihen und Strategien loopen – mit Sandbox-Guthaben. Keine echten Assets. Keine Wallet-Signaturen. Einfach schnell verstehen, wie Avana funktioniert, bevor du zur Live-App wechselst.",
+  "No transactions yet": "Noch keine Transaktionen",
   "No transactions to sign": "Keine Transaktionen zu signieren",
   "Connect a wallet.": "Verbinde ein Wallet.",
   "We'll set up your sandbox and scope it to your address.":
@@ -1187,6 +1196,7 @@ const dict: TranslationDictionary = {
   "We couldn't load this page.": "Wir konnten diese Seite nicht laden.",
   "Active Deficit": "Aktives Defizit",
   "Active stake": "Aktiver Stake",
+  "Includes active stake and cooldown": "Enthält aktiven Stake und Cooldown",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "Betrag, den Avana zuerst deckt, bevor die von Nutzern gestakte Absicherung exponiert wird. Staker tragen Verluste erst, wenn realisierte Defizite diesen Offset übersteigen.",
   "Close umbrella actions": "Schutz-Aktionen schließen",
@@ -1222,9 +1232,11 @@ const dict: TranslationDictionary = {
   "Previous market risk": "Vorheriges Marktrisiko",
   Ready: "Bereit",
   "Removes in": "Entfällt in",
+  Restart: "Neu starten",
   "Restart cooldown": "Cooldown neu starten",
   Stake: "Stake",
   "Stake in umbrella": "In Schutz staken",
+  "Unstake from umbrella": "Aus Schutz unstaken",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "Staken, Belohnungen einfordern, Cooldown starten oder aus dem Schutz-Sicherheitsmodul unstaken.",
   "Stake, claim, cooldown, unstake": "Staken, einfordern, Cooldown, unstaken",
@@ -1232,6 +1244,7 @@ const dict: TranslationDictionary = {
     "Starte den Cooldown vor der Auszahlung. Während des Cooldowns verdient die Position weiter Anreize und bleibt slashbar.",
   Target: "Ziel",
   "Total coverage": "Gesamte Absicherung",
+  "Total position value": "Gesamter Positionswert",
   "Total user-staked capital available to absorb losses for this asset.":
     "Gesamtes von Nutzern gestaktes Kapital, das Verluste für dieses Asset absorbieren kann.",
   Umbrella: "Schutz",
@@ -1333,6 +1346,9 @@ const dict: TranslationDictionary = {
   "In range": "Im Bereich",
   "Interest / day": "Zinsen / Tag",
   "Key Statistics": "Wichtige Kennzahlen",
+  "Market Rates": "Marktzinsen",
+  "Utilization Rate": "Auslastungsrate",
+  "Borrow amount to reach {value} Util.": "Kreditbetrag, um {value} Auslastung zu erreichen.",
   "Large price difference": "Große Preisdifferenz",
   "Lend Assets": "Assets verleihen",
   "Lend Balance": "Verleih-Saldo",
@@ -1405,6 +1421,8 @@ const dict: TranslationDictionary = {
   "Repay or add collateral to reduce your liquidation risk.":
     "Zahle zurück oder füge Sicherheiten hinzu, um dein Liquidationsrisiko zu senken.",
   "Review risk": "Risiko prüfen",
+  "Negative net APY: borrow costs exceed supply yield. Review before opening this loop.":
+    "Negativer Netto-APY: Die Kreditkosten übersteigen die Supply-Rendite. Vor dem Öffnen dieser Schleife prüfen.",
   "Review swap": "Swap prüfen",
   "Rewards Earned": "Verdiente Belohnungen",
   "Scenario price": "Szenario-Preis",
@@ -1544,6 +1562,161 @@ const dict: TranslationDictionary = {
   "Next rewards": "Nächste Prämien",
   "Open on Launch Date": "Freischaltung zum Launch-Datum",
   "Previous rewards": "Vorherige Prämien",
+  "The asset you've borrowed against your collateral.": "Das Asset, das du gegen deine Sicherheit geliehen hast.",
+  "Your outstanding loan balance in this asset, valued live.":
+    "Dein offener Kreditsaldo in diesem Asset, live bewertet.",
+  "A token held directly in your connected wallet.":
+    "Ein Token, der direkt in deiner verbundenen Wallet gehalten wird.",
+  "The amount of this token in your wallet.": "Die Menge dieses Tokens in deiner Wallet.",
+  "The token balance valued at its live price.": "Das Token-Guthaben, bewertet zum aktuellen Preis.",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.":
+    "Eine LP-Position, die du hältst — gepaarte Tokens, die auf einem DEX bereitgestellt wurden.",
+  "Whether the position's price range is active and earning fees.":
+    "Ob die Preis-Range der Position aktiv ist und Gebühren verdient.",
+  "The current value of your pooled tokens.": "Der aktuelle Wert deiner gepoolten Tokens.",
+  "Trading fees this position has earned, claimable to your wallet.":
+    "Trading-Gebühren, die diese Position verdient hat, beanspruchbar in deine Wallet.",
+  "The token you've supplied to earn lending yield.":
+    "Der Token, den du bereitgestellt hast, um Verleihrendite zu erzielen.",
+  "Your supplied balance in this asset, valued at its live price.":
+    "Dein bereitgestelltes Guthaben in diesem Asset, bewertet zum aktuellen Preis.",
+  "Current annual percentage yield on your deposit, before protocol rewards.":
+    "Aktuelle jährliche Rendite auf deine Einzahlung, vor Protokoll-Belohnungen.",
+  "The collateral asset backing your borrowing, valued at its live price.":
+    "Das Sicherheiten-Asset, das deine Kreditaufnahme absichert, bewertet zum aktuellen Preis.",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.":
+    "Wie viel mehr du gegen diese Sicherheit leihen kannst; der %-Wert zeigt, wie viel von deinem Liquidationslimit bereits ausgeschöpft ist.",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.":
+    "Health Factor und der Sicherheitenwert, bei dem diese Position liquidiert wird. Unter 1.0 erfolgt die Liquidation.",
+  "The collateral you supply and the asset you borrow against it to build leverage.":
+    "Die Sicherheit, die du bereitstellst, und das Asset, das du dagegen leihst, um zu hebeln.",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.":
+    "Dein Eigenkapital im Loop (Exposure abzüglich Schulden). Exposure ist deine gesamte gehebelte Position.",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.":
+    "Nettorendite nach Kreditkosten, bezogen auf dein Kapital. Die Zahl darunter zeigt die bisher verdienten Zinsen, in Echtzeit aktualisiert.",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.":
+    "Health Factor und der Sicherheitenpreis, bei dem dieser Loop liquidiert wird. Unter 1.0 erfolgt die Liquidation.",
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)":
+    "Netto-Carry aus deinen Multiply-Loops, der in Echtzeit aufläuft (Supply-Rendite abzüglich Kreditkosten)",
+  "Average APY across your staked positions, weighted by value.":
+    "Durchschnittlicher APY über deine gestakten Positionen, gewichtet nach Wert.",
+  "Additional amount you can borrow against your pledged collateral within Avana credit limits":
+    "Zusätzlicher Betrag, den du gegen deine verpfändete Sicherheit innerhalb der Avana-Kreditlimits leihen kannst",
+  "Amount an active loan can lose before reaching liquidation; unavailable when you have no debt":
+    "Betrag, den ein aktiver Kredit an Wert verlieren kann, bevor die Liquidation eintritt; nicht verfügbar, wenn du keine Schulden hast",
+  "Combined liquidation value divided by total Multiply debt. Higher is safer; below 1 risks liquidation.":
+    "Kombinierter Liquidationswert geteilt durch die gesamten Multiply-Schulden. Höher ist sicherer; unter 1 droht Liquidation.",
+  "Equity-weighted net APY after supply yield and borrow cost":
+    "Eigenkapitalgewichteter Netto-APY nach Supply-Rendite und Kreditkosten",
+  "Exposure, return, and liquidation risk for each active loop":
+    "Exposure, Rendite und Liquidationsrisiko für jeden aktiven Loop",
+  "Gross Multiply exposure after looping across all positions":
+    "Brutto-Multiply-Exposure nach dem Looping über alle Positionen hinweg",
+  "Interest earned as a percentage of principal you supplied":
+    "Verdiente Zinsen als Prozentsatz des von dir bereitgestellten Kapitals",
+  "Portfolio leverage as position value divided by equity":
+    "Portfolio-Hebel als Positionswert geteilt durch Eigenkapital",
+  "Projected earnings at current rates": "Voraussichtliche Erträge bei aktuellen Zinssätzen",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)":
+    "Angebotszinsen, die in Echtzeit über deine Verleih-Positionen auflaufen (ohne Protokoll-Belohnungen)",
+  "Wallet-wide liquidation value divided by total borrowed. Higher is safer; below 1 risks liquidation.":
+    "Wallet-weiter Liquidationswert geteilt durch gesamte Verschuldung. Höher ist sicherer; unter 1 droht Liquidation.",
+  "Prices may be stale": "Preise können veraltet sein",
+  "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.":
+    "Der aktuelle jährliche Kreditzinssatz auf diese Schuld. Darunter die bisher aufgelaufenen Zinsen, in Echtzeit aktualisiert.",
+  "Total AVA you've earned across completed quests and staking rewards.":
+    "Die gesamte AVA, die du aus abgeschlossenen Quests und Staking-Prämien verdient hast.",
+  "AVA you can claim to your wallet right now.": "AVA, die du dir jetzt in deine Wallet beanspruchen kannst.",
+  "Core Concepts": "Grundkonzepte",
+  "What is Avana?": "Was ist Avana?",
+  "Protocol overview": "Protokollübersicht",
+  "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.":
+    "Avana ist ein Kreditprotokoll mit LP-Sicherheiten, aufgebaut auf der Hub-and-Spoke-Architektur von Aave v4.",
+  "Why it exists": "Warum es existiert",
+  "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.":
+    "Ziel ist es, Liquiditätsanbietern zu ermöglichen, gegen aktive Positionen zu leihen, ohne die Pool-Position zuerst aufzulösen.",
+  "What does the Borrow Spoke do?": "Was macht der Borrow Spoke?",
+  "LP-specific underwriting": "LP-spezifische Risikoprüfung",
+  "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.":
+    "Borrow Spokes bewerten unterstützte Positionen, überwachen die Gesundheit und steuern das Liquidationsverhalten für LP-Sicherheiten.",
+  "Shared coordination": "Gemeinsame Koordination",
+  "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.":
+    "Der Hub koordiniert gemeinsame Liquidität und Schuldenerfassung, während der Spoke die LP-spezifische Logik übernimmt.",
+  "Borrowing Capacity & Valuation": "Kreditkapazität & Bewertung",
+  "How is borrowing capacity calculated?": "Wie wird die Kreditkapazität berechnet?",
+  "Adjusted collateral value": "Angepasster Sicherheitenwert",
+  "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.":
+    "Jede genehmigte LP-Position wird unabhängig bewertet; anschließend werden Sicherheitenfaktoren und poolspezifische Risikokontrollen angewendet.",
+  "Aggregated in the spoke": "Im Spoke aggregiert",
+  "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.":
+    "Der Spoke aggregiert genehmigte Positionen zur Kreditkapazität, und der Hub setzt das Ergebnis durch.",
+  "Why did my capacity change?": "Warum hat sich meine Kapazität geändert?",
+  "Market movement": "Marktbewegung",
+  "Capacity can change when the underlying assets move or when recoverable value shifts.":
+    "Die Kapazität kann sich ändern, wenn sich die zugrunde liegenden Assets bewegen oder sich der realisierbare Wert verschiebt.",
+  "Risk settings": "Risikoeinstellungen",
+  "Collateral factors and market-specific risk settings can also change the amount shown in the interface.":
+    "Sicherheitenfaktoren und marktspezifische Risikoeinstellungen können den in der Oberfläche angezeigten Betrag ebenfalls ändern.",
+  "Health & Liquidation": "Gesundheit & Liquidation",
+  "What is the health factor?": "Was ist der Health Factor?",
+  "How to read health": "Gesundheit lesen",
+  "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.":
+    "Der Health Factor beschreibt das Verhältnis zwischen angepasstem Sicherheitenwert und ausstehender Schuld innerhalb eines Borrow Spoke.",
+  "What it means for users": "Was das für Nutzer bedeutet",
+  "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
+    "Wenn der Puffer schrumpft, ist die Position stärker der Liquidation ausgesetzt, falls sich die Marktbedingungen gegen sie entwickeln.",
+  "When can liquidation happen?": "Wann kann eine Liquidation eintreten?",
+  Triggers: "Auslöser",
+  "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
+    "Wenn Marktbewegungen die Gesundheit ausreichend schwächen, kann die Position nach den Regeln des Spoke liquidierbar werden.",
+  "What happens next": "Was als Nächstes passiert",
+  "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.":
+    "Der Spoke überwacht das Risiko fortlaufend und steuert das Liquidationsverhalten, während der Hub die Reserven koordiniert hält.",
+  "Leverage Markets": "Hebel-Märkte",
+  "How do leverage markets work?": "Wie funktionieren Hebel-Märkte?",
+  "LP-backed exposure": "LP-gesicherte Exposition",
+  "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.":
+    "Hebel-Märkte ermöglichen Avana, LP-gesicherte Kredite und gerichtete Exposition in einem spezialisierteren Ablauf zu unterstützen.",
+  "Position stacking": "Positionsstapelung",
+  "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
+    "Die Kreditkapazität kann aus mehreren genehmigten Positionen innerhalb desselben Borrow Spoke aggregiert werden.",
+  "Can one account use multiple LP positions?": "Kann ein Konto mehrere LP-Positionen nutzen?",
+  "Multiple positions": "Mehrere Positionen",
+  "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
+    "Ja. Ein einzelnes Konto kann unterstützte LP-Positionen kombinieren, solange jede Position die Prüfungen des Protokolls besteht.",
+  "Per-position risk": "Risiko pro Position",
+  "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
+    "Jede Position wird für sich bewertet, bevor sie in die endgültige Kreditkapazität aufgenommen wird.",
+  "Fees & Interface Policy": "Gebühren & Interface-Richtlinie",
+  "Are interface fees fixed across all integrations?": "Sind Interface-Gebühren bei allen Integrationen gleich?",
+  "Operational settings": "Betriebseinstellungen",
+  "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
+    "Genaue Gebührensätze, Ausnahmen und Rollout-Status sind Betriebseinstellungen und sollten in der Live-Oberfläche geprüft werden.",
+  "Integration differences": "Integrationsunterschiede",
+  "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
+    "Direkte Integrationen oder Drittanbieter-Frontends können anderen Annahmen folgen — prüfe daher immer die verwendete Oberfläche.",
+  "What counts as protocol economics vs interface policy?": "Was zählt als Protokollökonomie vs. Interface-Richtlinie?",
+  "Protocol layer": "Protokollebene",
+  "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
+    "Zentrale Sicherheitenbewertung, Schuldenkontrolle und Liquidationspfade liegen auf der Protokollebene.",
+  "Interface layer": "Interface-Ebene",
+  "The frontend can present policy, routing, and support flows differently from one integration to another.":
+    "Das Frontend kann Richtlinien, Routing und Support-Abläufe von Integration zu Integration unterschiedlich darstellen.",
+  "Risk & Security": "Risiko & Sicherheit",
+  "What are the main risks?": "Was sind die wichtigsten Risiken?",
+  "Market and liquidity risk": "Markt- und Liquiditätsrisiko",
+  "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.":
+    "Die wichtigsten Risiken sind Marktbewegungen der Underlying-Assets, Impermanent Loss und Range-Drift bei konzentrierten Positionen.",
+  "Liquidation risk": "Liquidationsrisiko",
+  "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.":
+    "Wenn der Gesundheitspuffer schwächer wird, während noch Schulden ausstehen, kann die Position liquidierbar werden.",
+  "How should I think about security?": "Wie sollte ich über Sicherheit denken?",
+  "Protocol guidance": "Protokoll-Leitlinien",
+  "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.":
+    "Sei genauso vorsichtig wie bei jeder LP-Position und folge den Risikoleitlinien des Protokolls genau.",
+  "Support request": "Support-Anfrage",
+  "If something looks off, send the details and our team can help you triage the issue.":
+    "Wenn etwas nicht stimmt, sende die Details — unser Team hilft dir, das Problem einzuordnen.",
 }
 
 export default dict

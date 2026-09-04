@@ -60,6 +60,8 @@ const dict: TranslationDictionary = {
   Value: "Стоимость",
   Utilization: "Загрузка",
   "Supply & Borrow": "Депозит и заём",
+  "Supply {collateral}": "Внести {collateral}",
+  "Borrow {borrow}": "Занять {borrow}",
   Borrowed: "Заёмные",
   Available: "Доступно",
   "Supply APY": "APY по депозиту",
@@ -148,6 +150,8 @@ const dict: TranslationDictionary = {
   "Join waitlist": "Записаться в лист ожидания",
   "Previous page": "Предыдущая страница",
   "Next page": "Следующая страница",
+  "Transactions pagination": "Постраничная навигация транзакций",
+  "Changelog pagination": "Постраничная навигация журнала изменений",
   "{page} of {count}": "{page} из {count}",
   "Max APY": "Макс. APY",
   "Max Leverage": "Макс. плечо",
@@ -273,7 +277,6 @@ const dict: TranslationDictionary = {
   "Insufficient balance": "Недостаточно средств",
   "Insufficient liquidity": "Недостаточно ликвидности",
   "Insufficient LP": "Недостаточно LP",
-  "Deposit collateral first": "Сначала внесите залог",
   "Borrowing unavailable": "Заём недоступен",
   "Try a smaller amount": "Попробуйте меньшую сумму",
   "Supply cap reached": "Достигнут лимит предложения",
@@ -282,6 +285,8 @@ const dict: TranslationDictionary = {
   "Not available here": "Здесь недоступно",
   "Nothing to claim": "Нечего получать",
   "Select rewards": "Выберите награды",
+  "No collateral": "Нет залога",
+  "No position": "Нет позиции",
   "Nothing to withdraw": "Нечего выводить",
   "and the Avana team will follow up. You can submit another request any time.":
     "а команда Avana свяжется с вами. Вы можете отправить новый запрос в любое время.",
@@ -396,7 +401,6 @@ const dict: TranslationDictionary = {
   "Daily Interest": "Дневной процент",
   day: "день",
   "Deposit {symbol}": "Внести {symbol}",
-  "Deposit LP collateral before borrowing {symbol}.": "Внесите LP-залог перед займом {symbol}.",
   Done: "Готово",
   Expiration: "Истечение",
   Expired: "Истёк",
@@ -405,7 +409,6 @@ const dict: TranslationDictionary = {
   "Generating link...": "Создание ссылки…",
   "Go back": "Назад",
   GOOD: "ХОРОШО",
-  "Got it": "Понятно",
   "Health Factor": "Фактор здоровья",
   "I read it": "Прочитано",
   "In this sandbox, every transaction is simulated — use previews to learn before sizing up.":
@@ -560,6 +563,10 @@ const dict: TranslationDictionary = {
   "Lend Rewards": "Награды по депозитам",
   "Multiply Overview": "Обзор мультипликатора",
   "Multiply Positions": "Позиции мультипликатора",
+  "Debt & Risk": "Долг и риск",
+  "Position size, multiplier, and current net yield": "Размер позиции, мультипликатор и текущая чистая доходность",
+  "Borrowed balance, health factor, and liquidation threshold": "Заёмный баланс, фактор здоровья и порог ликвидации",
+  "No active Multiply debt": "Нет активного долга Multiply",
   "Loading your portfolio": "Загрузка вашего портфеля",
   "We couldn't load your portfolio": "Не удалось загрузить ваш портфель",
   "The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard.":
@@ -1065,6 +1072,7 @@ const dict: TranslationDictionary = {
   "This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.":
     "Безрисковая песочница Avana позволяет брать займы под тренировочные LP-позиции, кредитовать и зацикливать стратегии, используя средства песочницы. Никаких реальных активов. Никаких подписей кошелька. Просто быстрый способ понять, как работает Avana, прежде чем перейти в рабочее приложение.",
   "Unlimited practice funds": "Неограниченные учебные средства",
+  "No transactions yet": "Пока нет транзакций",
   "No transactions to sign": "Никаких транзакций для подписи",
   "No real assets involved": "Без реальных активов",
   "Connect a wallet.": "Подключите кошелёк.",
@@ -1145,6 +1153,7 @@ const dict: TranslationDictionary = {
   "We couldn't load this page.": "Не удалось загрузить эту страницу.",
   "Active Deficit": "Активный дефицит",
   "Active stake": "Активный стейк",
+  "Includes active stake and cooldown": "Включает активный стейк и период ожидания",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "Сумма, которую Avana покрывает первой, прежде чем задействуется застейканное пользователями покрытие. Стейкеры несут убытки, только когда реализованные дефициты превышают этот офсет.",
   "Close umbrella actions": "Закрыть действия Защиты",
@@ -1180,9 +1189,11 @@ const dict: TranslationDictionary = {
   "Previous market risk": "Предыдущий рыночный риск",
   Ready: "Готово",
   "Removes in": "Удалится через",
+  Restart: "Перезапуск",
   "Restart cooldown": "Перезапустить кулдаун",
   Stake: "Стейк",
   "Stake in umbrella": "Стейкать в Защите",
+  "Unstake from umbrella": "Анстейк из Защиты",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "Стейкайте, клеймите награды, запускайте кулдаун или анстейкайте из модуля безопасности Защиты.",
   "Stake, claim, cooldown, unstake": "Стейкать, забирать, кулдаун, выводить",
@@ -1190,6 +1201,7 @@ const dict: TranslationDictionary = {
     "Запустите кулдаун перед выводом. Во время кулдауна позиция продолжает получать поощрения и остаётся подверженной слэшингу.",
   Target: "Цель",
   "Total coverage": "Общее покрытие",
+  "Total position value": "Общая стоимость позиции",
   "Total user-staked capital available to absorb losses for this asset.":
     "Общий капитал, застейканный пользователями и доступный для поглощения убытков этого актива.",
   Umbrella: "Защита",
@@ -1291,6 +1303,9 @@ const dict: TranslationDictionary = {
   "In range": "В диапазоне",
   "Interest / day": "Проценты / день",
   "Key Statistics": "Ключевые показатели",
+  "Market Rates": "Рыночные ставки",
+  "Utilization Rate": "Уровень утилизации",
+  "Borrow amount to reach {value} Util.": "Сумма займа для достижения утилизации {value}.",
   "Large price difference": "Большая разница в цене",
   "Lend Assets": "Активы для депозита",
   "Lend Balance": "Баланс депозита",
@@ -1369,6 +1384,8 @@ const dict: TranslationDictionary = {
   "Repay or add collateral to reduce your liquidation risk.":
     "Погасите долг или добавьте залог, чтобы снизить риск ликвидации.",
   "Review risk": "Оценить риск",
+  "Negative net APY: borrow costs exceed supply yield. Review before opening this loop.":
+    "Отрицательный чистый APY: затраты на займ превышают доходность поставки. Оцените риск перед открытием этого цикла.",
   "Review swap": "Проверить своп",
   "Rewards Earned": "Заработанные награды",
   Sandbox: "Песочница",
@@ -1489,6 +1506,162 @@ const dict: TranslationDictionary = {
   "Next rewards": "Следующие награды",
   "Open on Launch Date": "Откроется в день запуска",
   "Previous rewards": "Предыдущие награды",
+  "The asset you've borrowed against your collateral.": "Актив, который вы заняли под свой залог.",
+  "Your outstanding loan balance in this asset, valued live.":
+    "Остаток непогашенного займа в этом активе, оценённый по текущей цене.",
+  "A token held directly in your connected wallet.":
+    "Токен, который хранится непосредственно в вашем подключённом кошельке.",
+  "The amount of this token in your wallet.": "Количество этого токена в вашем кошельке.",
+  "The token balance valued at its live price.": "Баланс токена, оценённый по его текущей цене.",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.":
+    "LP-позиция, которой вы владеете, — парные токены, предоставленные DEX.",
+  "Whether the position's price range is active and earning fees.":
+    "Активен ли ценовой диапазон позиции и приносит ли он комиссии.",
+  "The current value of your pooled tokens.": "Текущая стоимость ваших токенов в пуле.",
+  "Trading fees this position has earned, claimable to your wallet.":
+    "Торговые комиссии, заработанные этой позицией и доступные к получению в ваш кошелёк.",
+  "The token you've supplied to earn lending yield.":
+    "Токен, который вы предоставили, чтобы получать доходность от кредитования.",
+  "Your supplied balance in this asset, valued at its live price.":
+    "Ваш предоставленный баланс в этом активе, оценённый по его текущей цене.",
+  "Current annual percentage yield on your deposit, before protocol rewards.":
+    "Текущая годовая процентная доходность по вашему депозиту, без учёта наград протокола.",
+  "The collateral asset backing your borrowing, valued at its live price.":
+    "Залоговый актив, обеспечивающий ваш заём, оценённый по его текущей цене.",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.":
+    "Сколько ещё вы можете занять под этот залог; % показывает, какая часть вашего лимита ликвидации уже использована.",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.":
+    "Фактор здоровья и стоимость залога, при которой эта позиция ликвидируется. Ниже 1.0 приводит к ликвидации.",
+  "The collateral you supply and the asset you borrow against it to build leverage.":
+    "Залог, который вы предоставляете, и актив, который вы занимаете под него, чтобы нарастить плечо.",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.":
+    "Ваш собственный капитал в цикле (экспозиция минус долг). Экспозиция — это ваша общая позиция с плечом.",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.":
+    "Чистая доходность на ваш капитал после затрат на займ. Значение ниже показывает проценты, начисленные на данный момент, и обновляется в реальном времени.",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.":
+    "Фактор здоровья и цена залога, при которой этот цикл ликвидируется. Ниже 1.0 приводит к ликвидации.",
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)":
+    "Чистый carry, заработанный по вашим циклам Multiply, начисляемый в реальном времени (доходность поставки минус затраты на займ)",
+  "Average APY across your staked positions, weighted by value.":
+    "Средняя доходность (APY) по вашим позициям в стейкинге, взвешенная по стоимости.",
+  "Additional amount you can borrow against your pledged collateral within Avana credit limits":
+    "Дополнительная сумма, которую вы можете занять под внесённое вами обеспечение в пределах кредитных лимитов Avana",
+  "Amount an active loan can lose before reaching liquidation; unavailable when you have no debt":
+    "Сумма, которую может потерять активный займ, прежде чем наступит ликвидация; недоступно, если у вас нет долга",
+  "Combined liquidation value divided by total Multiply debt. Higher is safer; below 1 risks liquidation.":
+    "Совокупная ликвидационная стоимость, делённая на общий долг Multiply. Чем выше, тем безопаснее; ниже 1 — риск ликвидации.",
+  "Equity-weighted net APY after supply yield and borrow cost":
+    "Чистый APY, взвешенный по собственному капиталу, с учётом доходности поставки и стоимости займа",
+  "Exposure, return, and liquidation risk for each active loop":
+    "Экспозиция, доходность и риск ликвидации по каждому активному циклу",
+  "Gross Multiply exposure after looping across all positions":
+    "Валовая экспозиция Multiply после зацикливания по всем позициям",
+  "Interest earned as a percentage of principal you supplied":
+    "Проценты, заработанные в процентах от основной суммы, которую вы предоставили",
+  "Portfolio leverage as position value divided by equity":
+    "Плечо портфеля — стоимость позиции, делённая на собственный капитал",
+  "Projected earnings at current rates": "Прогнозируемый доход при текущих ставках",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)":
+    "Проценты по депозитам, начисляемые в реальном времени по вашим кредитным позициям (без учёта наград протокола)",
+  "Wallet-wide liquidation value divided by total borrowed. Higher is safer; below 1 risks liquidation.":
+    "Ликвидационная стоимость по всему кошельку, делённая на общий долг. Чем выше, тем безопаснее; ниже 1 — риск ликвидации.",
+  "Prices may be stale": "Цены могут быть устаревшими",
+  "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.":
+    "Текущая годовая ставка займа по этому долгу. Ниже — проценты, начисленные на данный момент, которые обновляются в реальном времени.",
+  "Total AVA you've earned across completed quests and staking rewards.":
+    "Всего AVA, заработанного за выполненные квесты и награды за стейкинг.",
+  "AVA you can claim to your wallet right now.": "AVA, который вы можете получить в свой кошелёк прямо сейчас.",
+  "Core Concepts": "Основные понятия",
+  "What is Avana?": "Что такое Avana?",
+  "Protocol overview": "Обзор протокола",
+  "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.":
+    "Avana — это протокол кредитования под LP-залог, построенный на архитектуре Hub-and-Spoke Aave v4.",
+  "Why it exists": "Зачем он нужен",
+  "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.":
+    "Цель — позволить поставщикам ликвидности брать займы под активные позиции, не закрывая сначала позицию в пуле.",
+  "What does the Borrow Spoke do?": "Что делает Borrow Spoke?",
+  "LP-specific underwriting": "LP-специфичный андеррайтинг",
+  "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.":
+    "Borrow Spokes оценивают поддерживаемые позиции, отслеживают health и управляют ликвидацией LP-залога.",
+  "Shared coordination": "Общая координация",
+  "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.":
+    "Hub координирует общую ликвидность и учёт долга, а spoke обрабатывает LP-специфичную логику.",
+  "Borrowing Capacity & Valuation": "Заёмная ёмкость и оценка",
+  "How is borrowing capacity calculated?": "Как рассчитывается заёмная ёмкость?",
+  "Adjusted collateral value": "Скорректированная стоимость залога",
+  "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.":
+    "Каждая одобренная LP-позиция оценивается отдельно, затем применяются collateral factors и пул-специфичные риск-контроли.",
+  "Aggregated in the spoke": "Агрегация в spoke",
+  "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.":
+    "Spoke агрегирует одобренные позиции в заёмную ёмкость, а Hub применяет результат.",
+  "Why did my capacity change?": "Почему изменилась моя ёмкость?",
+  "Market movement": "Движение рынка",
+  "Capacity can change when the underlying assets move or when recoverable value shifts.":
+    "Ёмкость может меняться при движении базовых активов или изменении возмещаемой стоимости.",
+  "Risk settings": "Настройки риска",
+  "Collateral factors and market-specific risk settings can also change the amount shown in the interface.":
+    "Collateral factors и рыночные настройки риска также могут изменить сумму, показанную в интерфейсе.",
+  "Health & Liquidation": "Health и ликвидация",
+  "What is the health factor?": "Что такое health factor?",
+  "How to read health": "Как читать health",
+  "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.":
+    "Health factor отражает соотношение скорректированной стоимости залога и непогашенного долга внутри одного Borrow Spoke.",
+  "What it means for users": "Что это значит для пользователей",
+  "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
+    "По мере сокращения буфера позиция становится более уязвимой к ликвидации, если рынок идёт против неё.",
+  "When can liquidation happen?": "Когда может произойти ликвидация?",
+  Triggers: "Триггеры",
+  "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
+    "Если рыночные движения достаточно ослабят health, позиция может стать ликвидируемой по правилам spoke.",
+  "What happens next": "Что происходит дальше",
+  "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.":
+    "Spoke непрерывно отслеживает риск и управляет ликвидацией, а Hub поддерживает координацию резервов.",
+  "Leverage Markets": "Рынки с плечом",
+  "How do leverage markets work?": "Как работают рынки с плечом?",
+  "LP-backed exposure": "Экспозиция под LP",
+  "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.":
+    "Рынки с плечом позволяют Avana поддерживать займы под LP и направленную экспозицию в более специализированном процессе.",
+  "Position stacking": "Стек позиций",
+  "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
+    "Заёмную ёмкость можно агрегировать из нескольких одобренных позиций в одном Borrow Spoke.",
+  "Can one account use multiple LP positions?": "Может ли один аккаунт использовать несколько LP-позиций?",
+  "Multiple positions": "Несколько позиций",
+  "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
+    "Да. Один аккаунт может объединять поддерживаемые LP-позиции, если каждая проходит проверки протокола.",
+  "Per-position risk": "Риск по позиции",
+  "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
+    "Каждая позиция оценивается отдельно, прежде чем попасть в итоговую заёмную ёмкость.",
+  "Fees & Interface Policy": "Комиссии и политика интерфейса",
+  "Are interface fees fixed across all integrations?": "Фиксированы ли комиссии интерфейса во всех интеграциях?",
+  "Operational settings": "Операционные настройки",
+  "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
+    "Точные ставки, исключения и статус запуска — операционные настройки; их нужно проверять в живом интерфейсе.",
+  "Integration differences": "Различия интеграций",
+  "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
+    "Прямые интеграции или сторонние фронтенды могут опираться на другие допущения — всегда проверяйте используемый интерфейс.",
+  "What counts as protocol economics vs interface policy?":
+    "Что относится к экономике протокола, а что к политике интерфейса?",
+  "Protocol layer": "Уровень протокола",
+  "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
+    "Базовая оценка залога, контроль долга и пути ликвидации находятся на уровне протокола.",
+  "Interface layer": "Уровень интерфейса",
+  "The frontend can present policy, routing, and support flows differently from one integration to another.":
+    "Фронтенд может по-разному показывать политику, маршрутизацию и поддержку в разных интеграциях.",
+  "Risk & Security": "Риск и безопасность",
+  "What are the main risks?": "Каковы основные риски?",
+  "Market and liquidity risk": "Рыночный и ликвидный риск",
+  "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.":
+    "Основные риски — движения рынка базовых активов, impermanent loss и дрейф диапазона у концентрированных позиций.",
+  "Liquidation risk": "Риск ликвидации",
+  "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.":
+    "Если буфер health ослабевает при непогашенном долге, позиция может стать ликвидируемой.",
+  "How should I think about security?": "Как думать о безопасности?",
+  "Protocol guidance": "Рекомендации протокола",
+  "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.":
+    "Будьте так же осторожны, как с любой LP-позицией, и внимательно следуйте риск-рекомендациям протокола.",
+  "Support request": "Обращение в поддержку",
+  "If something looks off, send the details and our team can help you triage the issue.":
+    "Если что-то выглядит неверно, пришлите детали — наша команда поможет разобрать проблему.",
 }
 
 export default dict

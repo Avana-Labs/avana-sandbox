@@ -81,26 +81,6 @@ export function sliceSnapshotsByRange<Row extends { at: number }>(snapshots: Row
   return filtered.length > 0 ? filtered : snapshots.slice(-1)
 }
 
-function toChartPoints<Row extends { at: number }>(snapshots: Row[], value: (row: Row) => number): ChartPoint[] {
-  return snapshots.map((row, index) => ({
-    time: index,
-    value: value(row),
-    label:
-      index === snapshots.length - 1
-        ? "Now"
-        : new Date(row.at).toLocaleDateString([], { month: "short", day: "numeric" }),
-  }))
-}
-
-function buildRangeData<Row extends { at: number }>(snapshots: Row[], value: (row: Row) => number): ChartRangeData {
-  const chronological = [...snapshots].sort((a, b) => a.at - b.at)
-  const ranges: ChartRangeData = { ...EMPTY_RANGE_DATA }
-  for (const range of Object.keys(EMPTY_RANGE_DATA) as ChartRangeOption[]) {
-    ranges[range] = toChartPoints(sliceSnapshotsByRange(chronological, range), value)
-  }
-  return ranges
-}
-
 function buildFeedFromRangeData(rangeData: ChartRangeData, valueFormat: ChartFeed["valueFormat"]): ChartFeed {
   const primary = rangeData.All
   const first = primary[0]?.value ?? 0
@@ -204,45 +184,4 @@ export function useDashboardMetricFeeds(walletId: string | undefined, live: Live
     const snapshots = (portfolio?.snapshots ?? []) as PortfolioSnapshotRow[]
     return buildRebasedMetricFeeds(snapshots, { netValue, supplied, borrowed, earned, multiplyExposure })
   }, [portfolio?.snapshots, netValue, supplied, borrowed, earned, multiplyExposure])
-}
-
-/** WAD (1e18) → number for the health-factor plot. `null` rows drop out entirely. */
-function wadToNumber(value: string | null): number | null {
-  if (value == null) return null
-  try {
-    const asBig = BigInt(value)
-    return Number(asBig) / 1e18
-  } catch {
-    return null
-  }
-}
-
-/**
- * Build a health-factor time series from `riskSnapshots`. `null` HF rows (no
- * outstanding debt at that moment) are dropped so the plot doesn't dip to zero
- * on a repaid position — that's a debt-free window, not a risk collapse. Values
- * are plain HF ratios (1.60), formatted with the "ratio" chart format.
- */
-export function buildRiskSeriesFeed(rows: ReadonlyArray<{ at: number; healthFactorWad: string | null }>): ChartFeed {
-  const points = rows
-    .map((row) => ({ at: row.at, value: wadToNumber(row.healthFactorWad) }))
-    .filter((entry): entry is { at: number; value: number } => entry.value != null)
-  const rangeData = buildRangeData(points, (row) => row.value)
-  return buildFeedFromRangeData(rangeData, "ratio")
-}
-
-/**
- * Hook feeding the "Health factor over time" chart in the borrow account health
- * section. Reads the getRiskSeries query (E-M2) and maps it to an HF-ratio feed.
- * `pointCount` lets the caller render nothing until there's real risk history.
- */
-export function useHealthFactorHistory(walletId: string | undefined) {
-  const riskSeries = useQuery(api.sandbox.transactions.getRiskSeries, walletId ? { wallet: walletId } : "skip")
-  return useMemo(() => {
-    const rows = riskSeries ?? []
-    return {
-      feed: buildRiskSeriesFeed(rows),
-      pointCount: rows.filter((row) => row.healthFactorWad != null).length,
-    }
-  }, [riskSeries])
 }

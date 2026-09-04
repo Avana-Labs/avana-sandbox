@@ -1,16 +1,13 @@
 export type BlockedCta = {
   /** Short, button-sized label describing why the action can't proceed. */
   label: string
-  /** When true the CTA stays active and should navigate the user somewhere that
-   *  unblocks them (e.g. pledge collateral) instead of sitting disabled. */
-  redirect?: boolean
 }
 
 /**
  * Map a block reason — raw engine text or a humanized string from
  * `humanizeBlockedReason` — to a short primary-button label (Uniswap-style).
- * The gate lives entirely on the CTA: a disabled button that says why, or an
- * active "redirect" button that moves the user forward. No modal, no banner.
+ * The gate lives on the CTA (disabled + short reason) plus an inline
+ * ActionOutcomeBanner. Redirect CTAs for prerequisites were removed.
  *
  * `symbol` is the asset the action spends, used for balance messages.
  */
@@ -18,10 +15,11 @@ export function blockedCtaLabel(reason: string, options?: { symbol?: string }): 
   const r = reason.toLowerCase()
   const symbol = options?.symbol?.trim()
 
-  // The only redirect case: you can't borrow without collateral, so send the
-  // button to the pledge flow instead of dead-ending it.
   if (r.includes("no collateral") || (r.includes("deposit") && (r.includes("before") || r.includes("collateral")))) {
-    return { label: "Deposit collateral first", redirect: true }
+    return { label: "No collateral" }
+  }
+  if (r.includes("no open position") || r.includes("no position to") || r.includes("no position selected")) {
+    return { label: "No position" }
   }
 
   if (r.includes("borrowing unavailable") || (r.includes("borrow") && r.includes("unavailable"))) {

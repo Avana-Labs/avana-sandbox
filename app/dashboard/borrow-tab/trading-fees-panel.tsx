@@ -8,18 +8,31 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
+  MarketMobileActionFooter,
   MarketMobileCardHeader,
+  MarketMobileIdentityText,
   MarketMobileMetric,
   MarketMobileStatList,
   MarketMobileStatRow,
+  MarketMobileSupportingValue,
+  MARKET_MOBILE_CTA_CLASS,
 } from "@/app/components/market-card-primitives"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
+  TABLE_BASE,
+  TABLE_BODY_ROW,
+  TABLE_CELL_NUMERIC,
+  TABLE_CELL_PADDING,
+  TABLE_CELL_PADDING_TRAILING,
+  TABLE_CELL_PRIMARY,
+  TABLE_CELL_SECONDARY,
   TABLE_HEADER_CELL,
+  TABLE_HEADER_ROW,
   TABLE_ROW_HOVER_BG,
   TABLE_ROW_HOVER_LEFT,
   TABLE_ROW_HOVER_RIGHT,
+  formatTableHeaderLabel,
 } from "@/app/lib/ui/table-row-hover"
 import { formatSectionCount } from "@/app/lib/ui/section-count"
 import { cn } from "@/lib/utils"
@@ -99,7 +112,7 @@ export function TradingFeesPanel({
       <div className="hidden md:block">
         <DesktopTableSurface className="!rounded-none">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[680px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className={`w-full min-w-[680px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
               <colgroup>
                 <col className="w-[24%]" />
                 <col className="w-[13%]" />
@@ -109,12 +122,12 @@ export function TradingFeesPanel({
                 <col className="w-[20%]" />
               </colgroup>
               <thead>
-                <tr className="text-left">
-                  <th className={cn(HEADER_CLASS, "pl-5")}>{t("Pools")}</th>
-                  <th className={cn(HEADER_CLASS)}>{t("Status")}</th>
-                  <th className={cn(HEADER_CLASS, "text-right")}>{t("Deposited")}</th>
-                  <th className={cn(HEADER_CLASS, "text-right")}>{t("APY")}</th>
-                  <th className={cn(HEADER_CLASS, "text-right")}>{t("Fees Earned")}</th>
+                <tr className={TABLE_HEADER_ROW}>
+                  <th className={cn(HEADER_CLASS, "pl-5 text-left")}>{formatTableHeaderLabel(t("Pools"))}</th>
+                  <th className={cn(HEADER_CLASS, "text-left")}>{formatTableHeaderLabel(t("Status"))}</th>
+                  <th className={cn(HEADER_CLASS, "text-right")}>{formatTableHeaderLabel(t("Deposited"))}</th>
+                  <th className={cn(HEADER_CLASS, "text-right")}>{formatTableHeaderLabel(t("APY"))}</th>
+                  <th className={cn(HEADER_CLASS, "text-right")}>{formatTableHeaderLabel(t("Fees Earned"))}</th>
                   <th className={cn(HEADER_CLASS, "pr-5")} />
                 </tr>
               </thead>
@@ -122,10 +135,10 @@ export function TradingFeesPanel({
                 {rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="group cursor-pointer transition-colors"
+                    className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`}
                     onClick={() => router.push(detailHref(row.marketId))}
                   >
-                    <td className={cn("py-3.5 pl-5", TABLE_ROW_HOVER_LEFT)}>
+                    <td className={cn(TABLE_CELL_PADDING, "pl-5", TABLE_ROW_HOVER_LEFT)}>
                       <PoolIdentity
                         token0={row.token0}
                         token1={row.token1}
@@ -133,24 +146,19 @@ export function TradingFeesPanel({
                         protocol={row.protocol}
                       />
                     </td>
-                    <td className={cn("py-3.5 pl-4", TABLE_ROW_HOVER_BG)}>
+                    <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
                       <RangeStatus inRange={row.inRange} />
                     </td>
-                    <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
+                    <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
                       <TokenUsdCell token={m(row.depositedToken)} usd={m(exact(row.depositedUsd))} />
                     </td>
-                    <td
-                      className={cn(
-                        "py-3.5 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white",
-                        TABLE_ROW_HOVER_BG,
-                      )}
-                    >
+                    <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_CELL_NUMERIC, TABLE_ROW_HOVER_BG)}>
                       {row.apyPct.toFixed(2)}%
                     </td>
-                    <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
+                    <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
                       <TokenUsdCell token={m(row.feesEarnedToken)} usd={m(exact(row.feesEarnedUsd))} />
                     </td>
-                    <td className={cn("py-3.5 pr-5", TABLE_ROW_HOVER_RIGHT)}>
+                    <td className={cn(TABLE_CELL_PADDING_TRAILING, TABLE_ROW_HOVER_RIGHT)}>
                       <HoverActionGroup className="gap-2">
                         <Button
                           type="button"
@@ -226,10 +234,8 @@ function PoolIdentity({
         </span>
       </span>
       <div className="flex min-w-0 flex-col">
-        <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
-          {label}
-        </span>
-        <span className="text-[11px] text-muted-foreground">{protocol}</span>
+        <span className={cn("truncate", TABLE_CELL_PRIMARY)}>{label}</span>
+        <span className={TABLE_CELL_SECONDARY}>{protocol}</span>
       </div>
     </div>
   )
@@ -252,9 +258,9 @@ function RangeStatus({ inRange }: { inRange: boolean }) {
 
 function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
   return (
-    <div className="flex flex-col items-end pr-4">
-      <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">{token}</span>
-      <span className="text-[13px] text-muted-foreground dark:text-white/40">{usd}</span>
+    <div className="flex flex-col items-end">
+      <span className={TABLE_CELL_NUMERIC}>{token}</span>
+      <span className={TABLE_CELL_SECONDARY}>{usd}</span>
     </div>
   )
 }
@@ -286,12 +292,7 @@ function TradingFeeMobileCard({
                 <TokenIcon symbol={row.token1} size="table" />
               </span>
             </span>
-            <div className="min-w-0">
-              <div className="text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
-                {row.poolLabel}
-              </div>
-              <div className="text-[11px] text-muted-foreground">{row.protocol}</div>
-            </div>
+            <MarketMobileIdentityText title={row.poolLabel} subtitle={row.protocol} />
           </div>
         }
         metric={<MarketMobileMetric value={`${row.apyPct.toFixed(2)}%`} label="APY" />}
@@ -303,7 +304,7 @@ function TradingFeeMobileCard({
           value={
             <span>
               {mask(row.depositedToken)}
-              <span className="ml-2 text-[13px] text-muted-foreground">{mask(exact(row.depositedUsd))}</span>
+              <MarketMobileSupportingValue>{mask(exact(row.depositedUsd))}</MarketMobileSupportingValue>
             </span>
           }
         />
@@ -312,16 +313,16 @@ function TradingFeeMobileCard({
           value={
             <span>
               {mask(row.feesEarnedToken)}
-              <span className="ml-2 text-[13px] text-muted-foreground">{mask(exact(row.feesEarnedUsd))}</span>
+              <MarketMobileSupportingValue>{mask(exact(row.feesEarnedUsd))}</MarketMobileSupportingValue>
             </span>
           }
         />
       </MarketMobileStatList>
-      <div className="grid grid-cols-2 gap-2">
+      <MarketMobileActionFooter>
         <Button
           type="button"
           variant="brand"
-          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+          className={MARKET_MOBILE_CTA_CLASS}
           onClick={(event) => {
             event.stopPropagation()
             onClaim()
@@ -333,7 +334,7 @@ function TradingFeeMobileCard({
         <Button
           type="button"
           variant="brand-secondary"
-          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+          className={MARKET_MOBILE_CTA_CLASS}
           onClick={(event) => {
             event.stopPropagation()
             onRemove()
@@ -342,7 +343,7 @@ function TradingFeeMobileCard({
           <ActionIcon label="Remove" />
           {t("Remove")}
         </Button>
-      </div>
+      </MarketMobileActionFooter>
     </MarketMobileCard>
   )
 }

@@ -24,7 +24,7 @@ const TONE: Record<RiskLevel, { bg: string; text: string; dot: string }> = {
 
 export function RiskLevelPill({ level, className, prefix, withDot = true, size = "sm" }: RiskLevelPillProps) {
   const tone = TONE[level]
-  const sizeCls = size === "md" ? "h-6 text-[11.5px] px-2" : "h-5 text-[10.5px] px-1.5"
+  const sizeCls = size === "md" ? "h-6 text-[12px] px-2" : "h-5 text-[11px] px-1.5"
   return (
     <span
       className={cn("inline-flex items-center gap-1 rounded-xs font-medium", sizeCls, tone.bg, tone.text, className)}

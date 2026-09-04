@@ -8,18 +8,31 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
+  MarketMobileActionFooter,
   MarketMobileCardHeader,
+  MarketMobileIdentityText,
   MarketMobileMetric,
   MarketMobileStatList,
   MarketMobileStatRow,
+  MarketMobileSupportingValue,
+  MARKET_MOBILE_CTA_CLASS,
 } from "@/app/components/market-card-primitives"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
+  TABLE_BASE,
+  TABLE_BODY_ROW,
+  TABLE_CELL_NUMERIC,
+  TABLE_CELL_PADDING,
+  TABLE_CELL_PADDING_TRAILING,
+  TABLE_CELL_PRIMARY,
+  TABLE_CELL_SECONDARY,
   TABLE_HEADER_CELL,
+  TABLE_HEADER_ROW,
   TABLE_ROW_HOVER_BG,
   TABLE_ROW_HOVER_LEFT,
   TABLE_ROW_HOVER_RIGHT,
+  formatTableHeaderLabel,
 } from "@/app/lib/ui/table-row-hover"
 import { formatSectionCount } from "@/app/lib/ui/section-count"
 import { cn } from "@/lib/utils"
@@ -93,7 +106,7 @@ export function DebtPositionsPanel({
       <div className="hidden md:block">
         <DesktopTableSurface className="!rounded-none">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0 text-[13px]">
+            <table className={`w-full min-w-[640px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
               <colgroup>
                 <col className="w-[28%]" />
                 <col className="w-[18%]" />
@@ -102,11 +115,11 @@ export function DebtPositionsPanel({
                 <col className="w-[24%]" />
               </colgroup>
               <thead>
-                <tr className="text-left">
-                  <th className={cn(HEADER_CLASS, "pl-5")}>{t("Asset")}</th>
-                  <th className={cn(HEADER_CLASS, "text-right")}>{t("Borrowed")}</th>
-                  <th className={cn(HEADER_CLASS, "text-right")}>{t("APY")}</th>
-                  <th className={cn(HEADER_CLASS, "text-right")}>{t("Fees Paid")}</th>
+                <tr className={TABLE_HEADER_ROW}>
+                  <th className={cn(HEADER_CLASS, "pl-5 text-left")}>{formatTableHeaderLabel(t("Asset"))}</th>
+                  <th className={cn(HEADER_CLASS, "text-right")}>{formatTableHeaderLabel(t("Borrowed"))}</th>
+                  <th className={cn(HEADER_CLASS, "text-right")}>{formatTableHeaderLabel(t("APY"))}</th>
+                  <th className={cn(HEADER_CLASS, "text-right")}>{formatTableHeaderLabel(t("Fees Paid"))}</th>
                   <th className={cn(HEADER_CLASS, "pr-5")} />
                 </tr>
               </thead>
@@ -114,27 +127,22 @@ export function DebtPositionsPanel({
                 {rows.map((row) => (
                   <tr
                     key={row.id}
-                    className="group cursor-pointer transition-colors"
+                    className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`}
                     onClick={() => router.push(detailHref(row.marketId))}
                   >
-                    <td className={cn("py-3.5 pl-5", TABLE_ROW_HOVER_LEFT)}>
+                    <td className={cn(TABLE_CELL_PADDING, "pl-5", TABLE_ROW_HOVER_LEFT)}>
                       <AssetIdentity symbol={row.symbol} name={row.name} />
                     </td>
-                    <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
+                    <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
                       <TokenUsdCell token={m(row.borrowedToken)} usd={m(exact(row.borrowedUsd))} />
                     </td>
-                    <td
-                      className={cn(
-                        "py-3.5 text-right text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white",
-                        TABLE_ROW_HOVER_BG,
-                      )}
-                    >
+                    <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_CELL_NUMERIC, TABLE_ROW_HOVER_BG)}>
                       {row.apyPct.toFixed(2)}%
                     </td>
-                    <td className={cn("py-3.5 text-right", TABLE_ROW_HOVER_BG)}>
+                    <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
                       <TokenUsdCell token={m(row.feesToken)} usd={m(exact(row.feesUsd))} />
                     </td>
-                    <td className={cn("py-3.5 pr-5", TABLE_ROW_HOVER_RIGHT)}>
+                    <td className={cn(TABLE_CELL_PADDING_TRAILING, TABLE_ROW_HOVER_RIGHT)}>
                       <HoverActionGroup className="gap-2">
                         <Button
                           type="button"
@@ -195,10 +203,8 @@ function AssetIdentity({ symbol, name }: { symbol: string; name: string }) {
     <div className="flex items-center gap-2.5">
       <TokenIcon symbol={symbol} size="table" />
       <div className="flex min-w-0 flex-col">
-        <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
-          {name}
-        </span>
-        <span className="text-[11px] text-muted-foreground">{symbol}</span>
+        <span className={cn("truncate", TABLE_CELL_PRIMARY)}>{name}</span>
+        <span className={TABLE_CELL_SECONDARY}>{symbol}</span>
       </div>
     </div>
   )
@@ -206,9 +212,9 @@ function AssetIdentity({ symbol, name }: { symbol: string; name: string }) {
 
 function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
   return (
-    <div className="flex flex-col items-end pr-4">
-      <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">{token}</span>
-      <span className="text-[13px] text-muted-foreground dark:text-white/40">{usd}</span>
+    <div className="flex flex-col items-end">
+      <span className={TABLE_CELL_NUMERIC}>{token}</span>
+      <span className={TABLE_CELL_SECONDARY}>{usd}</span>
     </div>
   )
 }
@@ -235,12 +241,7 @@ function DebtMobileCard({
         identity={
           <div className="flex min-w-0 items-center gap-2.5">
             <TokenIcon symbol={row.symbol} size="table" />
-            <div className="min-w-0">
-              <div className="text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
-                {row.name}
-              </div>
-              <div className="text-[11px] text-muted-foreground">{row.symbol}</div>
-            </div>
+            <MarketMobileIdentityText title={row.name} subtitle={row.symbol} />
           </div>
         }
         metric={<MarketMobileMetric value={`${row.apyPct.toFixed(2)}%`} label="APY" />}
@@ -251,7 +252,7 @@ function DebtMobileCard({
           value={
             <span>
               {mask(row.borrowedToken)}
-              <span className="ml-2 text-[13px] text-muted-foreground">{mask(exact(row.borrowedUsd))}</span>
+              <MarketMobileSupportingValue>{mask(exact(row.borrowedUsd))}</MarketMobileSupportingValue>
             </span>
           }
         />
@@ -260,16 +261,16 @@ function DebtMobileCard({
           value={
             <span>
               {mask(row.feesToken)}
-              <span className="ml-2 text-[13px] text-muted-foreground">{mask(exact(row.feesUsd))}</span>
+              <MarketMobileSupportingValue>{mask(exact(row.feesUsd))}</MarketMobileSupportingValue>
             </span>
           }
         />
       </MarketMobileStatList>
-      <div className="grid grid-cols-2 gap-2">
+      <MarketMobileActionFooter>
         <Button
           type="button"
           variant="brand"
-          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+          className={MARKET_MOBILE_CTA_CLASS}
           onClick={(event) => {
             event.stopPropagation()
             onBorrow()
@@ -281,7 +282,7 @@ function DebtMobileCard({
         <Button
           type="button"
           variant="brand-secondary"
-          className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+          className={MARKET_MOBILE_CTA_CLASS}
           onClick={(event) => {
             event.stopPropagation()
             onRepay()
@@ -290,7 +291,7 @@ function DebtMobileCard({
           <ActionIcon label="Repay" />
           {t("Repay")}
         </Button>
-      </div>
+      </MarketMobileActionFooter>
     </MarketMobileCard>
   )
 }

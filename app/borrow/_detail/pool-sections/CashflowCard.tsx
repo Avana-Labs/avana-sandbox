@@ -1,11 +1,8 @@
 "use client"
 
-import * as React from "react"
-import { usePreloadedQuery } from "convex/react"
 import { cn } from "@/lib/utils"
 import type { CashflowCard as CashflowCardData } from "@/app/lib/borrow-detail"
 import { formatCompactUsd } from "@/app/lib/borrow-sim"
-import { useConvexLiveSession } from "@/app/lib/convex/use-convex-live-session"
 import type { CashflowPreload } from "@/app/lib/detail-page/cashflow-preload"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { SectionCard } from "../ui"
@@ -37,25 +34,10 @@ function periodValue(reported: string, days: 1 | 30 | 90) {
   return formatCompactUsd((parsed / 90) * days)
 }
 
-/**
- * Live wrapper: hydrates the cashflow breakdown from the server-preloaded token via
- * `usePreloadedQuery` (no client re-fetch) and subscribes for updates, overriding the
- * server-built card. Falls back to the static prop while loading / when empty. Only mounted
- * where a Convex provider exists AND a preload token was supplied — see the chooser below.
- */
-function CashflowCardLive({ preload, detail }: { preload: CashflowPreload; detail: Props["detail"] }) {
-  const live = usePreloadedQuery(preload) as CashflowCardData | null
-  const cashflow = live && live.rows?.length ? live : detail.cashflow
-  return <CashflowCardView detail={{ cashflow }} />
-}
-
-export function CashflowCard({ detail, cashflowPreload }: Props) {
-  const liveSession = useConvexLiveSession()
-  return liveSession && cashflowPreload ? (
-    <CashflowCardLive preload={cashflowPreload} detail={detail} />
-  ) : (
-    <CashflowCardView detail={detail} />
-  )
+export function CashflowCard({ detail }: Props) {
+  // The server has already merged the preload into this card. Keeping that
+  // snapshot avoids replacing every cashflow number after hydration.
+  return <CashflowCardView detail={detail} />
 }
 
 function CashflowCardView({ detail }: { detail: Props["detail"] }) {
@@ -73,7 +55,7 @@ function CashflowCardView({ detail }: { detail: Props["detail"] }) {
             <col className="w-[20%]" />
           </colgroup>
           <thead>
-            <tr className="border-b border-border text-left text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
+            <tr className="border-b border-border text-left text-[11px] font-medium uppercase tracking-[0.06em] text-muted-foreground">
               <th className="pb-2 pt-3">{t("Line")}</th>
               <th className="pb-2 pt-3 text-right">{t("1D")}</th>
               <th className="pb-2 pt-3 text-right">{t("30 Days")}</th>

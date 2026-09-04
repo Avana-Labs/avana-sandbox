@@ -21,6 +21,7 @@
 import { v, type Infer } from "convex/values"
 import type { MutationCtx, QueryCtx } from "../_generated/server"
 import { mutation, query } from "../_generated/server"
+import { appendLiquidityDelta } from "../liquidity"
 import { liquidBalanceView, readWalletLiquidBalance, upsertLiquidWalletBalance } from "../wallet/balances"
 import { requireSandboxWallet } from "./auth"
 import { computeSwapQuoteMath } from "./swapQuoteEngine"
@@ -919,17 +920,8 @@ export async function appendPortfolioSnapshot(ctx: MutationCtx, wallet: string, 
 }
 
 /**
- * Append a delta event to the shared liquidity ledger (`marketLiquidityDeltas`).
- * This is the auth-gated, wallet-attributed write path that unifies every product's
- * supply/borrow movement onto one ledger (mirrors `convex/liquidity.recordDelta`, but
- * reached only from inside an owner-verified mutation).
- *
- * Deliberately still a pure append — a fresh row per action, never a read-modify-write of
- * a shared per-market row — so concurrent writers never contend on the same document under
- * Convex OCC (the property this ledger was designed around). Scale is handled OFF this hot
- * path: `liquidity.compactDeltas` periodically folds old rows into a bounded per-market
- * baseline and deletes them, so the fold (`liquidity.foldDeltas`) reads
- * `#markets + #recent rows` instead of the whole table — without adding any contention here.
+ * Append a delta event to the shared liquidity ledger and bump the aggregate cache.
+ * Auth-gated callers (liquidation) use this instead of the internal `recordDelta` API.
  */
 export async function applyLedgerDelta(
   ctx: MutationCtx,
@@ -938,14 +930,10 @@ export async function applyLedgerDelta(
   suppliedDeltaUsd: number,
   now: number,
 ) {
-  const borrowed = Number.isFinite(borrowedDeltaUsd) ? borrowedDeltaUsd : 0
-  const supplied = Number.isFinite(suppliedDeltaUsd) ? suppliedDeltaUsd : 0
-  if (borrowed === 0 && supplied === 0) return
-
-  await ctx.db.insert("marketLiquidityDeltas", {
+  await appendLiquidityDelta(ctx, {
     marketSlug,
-    borrowedDeltaUsd: borrowed,
-    suppliedDeltaUsd: supplied,
+    borrowedDeltaUsd,
+    suppliedDeltaUsd,
     updatedAt: now,
   })
 }

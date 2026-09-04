@@ -137,9 +137,14 @@ async function main() {
     console.log(`[seed] upserted ${multiplyN} multiply daily stats (--phase-c-only)`)
   }
 
-  const pushSilo = async (label: string, action: typeof api.seedAdmin.upsertBorrowRiskParameters, rows: unknown[]) => {
+  const pushSilo = async (
+    label: string,
+    action: typeof api.seedAdmin.upsertBorrowRiskParameters,
+    rows: unknown[],
+    batchSize: number = BATCH,
+  ) => {
     let written = 0
-    for (const batch of chunk(rows, BATCH)) {
+    for (const batch of chunk(rows, batchSize)) {
       await client.action(action, { seedSecret, rows: batch })
       written += batch.length
       await sleep(throttleMs)
@@ -213,6 +218,9 @@ async function main() {
       api.seedAdmin.upsertMultiplyLiquidationDaily,
       seed.multiplyLiquidationDaily,
     )
+    // Governance parameter changelog — each row holds a whole market's change list, so
+    // use a small batch to stay well under the seed payload cap.
+    await pushSilo("parameter changes", api.seedAdmin.upsertParameterChanges, seed.parameterChanges ?? [], 50)
   } // end !phaseCOnly
 
   // ---------------------------------------------------------------------------

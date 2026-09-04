@@ -2,6 +2,7 @@ import { cleanup, render, screen, within } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
+import { pendingUmbrellaPersistAction } from "@/app/lib/umbrella-system/use-umbrella-session"
 import UmbrellaPage from "@/app/umbrella/page"
 
 function renderUmbrellaPage() {
@@ -22,7 +23,10 @@ describe("Umbrella page", () => {
   it("renders each seeded market with its APY breakdown", () => {
     renderUmbrellaPage()
 
-    expect(screen.getByText("Your Umbrella stake")).toBeInTheDocument()
+    expect(screen.getByText("Total position value")).toBeInTheDocument()
+    // The "Includes active stake and cooldown" explainer now lives under an (i) tooltip
+    // instead of a visible sub-label.
+    expect(screen.getByLabelText("More information about Total position value")).toBeInTheDocument()
     // Canonical compact USD is one decimal ($55.0M), shared with the rest of the app
     // (previously the Umbrella-only formatter emitted two decimals, "$55.00M"). The
     // hero market sub-label was removed, so this now anchors on the Total coverage tile.
@@ -42,18 +46,16 @@ describe("Umbrella page", () => {
     expect(screen.getAllByText("5.05%").length).toBeGreaterThan(0)
   })
 
-  it("only routes Unstake links for positions whose cooldown is ready", () => {
+  it("never renders an Unstake CTA in the positions table (Claim is the only row action)", () => {
     renderUmbrellaPage()
 
-    const unstakeLinks = screen
-      .getAllByRole("link")
-      .filter((link) => link.getAttribute("href")?.startsWith("/actions/umbrella/unstake"))
-    const hrefs = unstakeLinks.map((link) => link.getAttribute("href")).filter(Boolean) as string[]
-
-    // USDT is seeded with cooldownStatus === "ready", so its Unstake CTA renders.
-    expect(hrefs.some((href) => href.includes("market=usdt"))).toBe(true)
-    // Idle positions (GHO, WETH) never render an Unstake row action anymore.
-    expect(hrefs.some((href) => href.includes("market=gho") && !href.includes("cooldown"))).toBe(false)
+    // Scope to the positions table region — unstaking still lives in the sidebar action rail.
+    const positions = within(screen.getByRole("region", { name: "Umbrella positions" }))
+    const links = positions.getAllByRole("link")
+    // No Unstake row action, even for positions whose cooldown is ready (e.g. seeded USDT).
+    expect(links.some((link) => link.getAttribute("href")?.startsWith("/actions/umbrella/unstake"))).toBe(false)
+    // Positions with pending rewards still expose a Claim row action.
+    expect(links.some((link) => link.getAttribute("href")?.startsWith("/actions/umbrella/claim"))).toBe(true)
   })
 
   it("exposes the four action tabs in the sidebar rail", () => {
@@ -63,5 +65,30 @@ describe("Umbrella page", () => {
     for (const label of ["Stake", "Claim", "Cooldown", "Unstake"]) {
       expect(within(tablist).getByRole("tab", { name: label })).toBeInTheDocument()
     }
+  })
+
+  it("shows a loading skeleton (never demo stakes) while the Convex umbrella snapshot is pending", () => {
+    render(
+      <DisplayPreferencesProvider>
+        <AvanaSessionsProvider
+          walletId="umbrella-test-wallet"
+          persistLocalState={false}
+          persistUmbrellaState={false}
+          sessionSource="convex"
+          authoritativeWalletPending
+          persistUmbrellaAction={pendingUmbrellaPersistAction}
+        >
+          <UmbrellaPage />
+        </AvanaSessionsProvider>
+      </DisplayPreferencesProvider>,
+    )
+
+    // Single hydration gate: while the umbrella query is pending we render the
+    // layout-matched skeleton — never the seeded demo stakes, never a flash of $0
+    // tiles or the "no positions" empty state (those are real, hydrated content).
+    expect(screen.getByRole("status", { name: "Loading" })).toBeInTheDocument()
+    expect(screen.queryByText("$38,544")).not.toBeInTheDocument()
+    expect(screen.queryByText("Stake GHO")).not.toBeInTheDocument()
+    expect(screen.queryByText("You have no Umbrella positions yet.")).not.toBeInTheDocument()
   })
 })

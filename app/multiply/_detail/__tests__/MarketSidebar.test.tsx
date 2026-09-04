@@ -50,5 +50,11 @@ describe("MarketSidebar", () => {
     await waitFor(() => {
       expect(screen.getByTestId("responsive-multiply-action")).toHaveTextContent("deleverage:")
     })
+
+    fireEvent.click(screen.getByRole("tab", { name: "Close" }))
+
+    await waitFor(() => {
+      expect(screen.getByTestId("responsive-multiply-action")).toHaveTextContent("close:")
+    })
   })
 })

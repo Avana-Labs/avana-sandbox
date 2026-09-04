@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process"
+import { execSync, spawn } from "node:child_process"
 import fs from "node:fs"
 import path from "node:path"
 import process from "node:process"
@@ -135,6 +135,40 @@ function removePath(relativePath) {
   process.stdout.write(`removed ${relativePath}\n`)
 }
 
+/** Turbopack's persistent cache grows without bound and slows every dev compile once it bloats. */
+const TURBOPACK_CACHE_MAX_KB = 2 * 1024 * 1024 // 2 GiB
+
+function directorySizeKb(absolutePath) {
+  if (!fs.existsSync(absolutePath)) {
+    return 0
+  }
+
+  try {
+    const out = execSync(`du -sk ${JSON.stringify(absolutePath)}`, { encoding: "utf8" })
+    return Number.parseInt(out.split(/\s/)[0] ?? "0", 10)
+  } catch {
+    return 0
+  }
+}
+
+function maybePruneTurbopackCache(distDir) {
+  if (process.env.AVANA_SKIP_TURBOPACK_CACHE_PRUNE === "1") {
+    return
+  }
+
+  const cacheDir = path.join(root, distDir, "dev", "cache", "turbopack")
+  const sizeKb = directorySizeKb(cacheDir)
+  if (sizeKb <= TURBOPACK_CACHE_MAX_KB) {
+    return
+  }
+
+  const sizeGb = (sizeKb / (1024 * 1024)).toFixed(1)
+  process.stdout.write(
+    `Pruning turbopack cache (${sizeGb}GB > 2GB) — the next compile will be slower once, then dev should feel responsive again.\n`,
+  )
+  fs.rmSync(cacheDir, { recursive: true, force: true })
+}
+
 const activeLock = readLock(config.lockFile || config.guardLockFile)
 
 if (activeLock) {
@@ -156,6 +190,10 @@ if (!fs.existsSync(nextBin)) {
 
 for (const target of config.cleanTargets) {
   removePath(target)
+}
+
+if (mode === "dev") {
+  maybePruneTurbopackCache(config.distDir)
 }
 
 let lockPath = null

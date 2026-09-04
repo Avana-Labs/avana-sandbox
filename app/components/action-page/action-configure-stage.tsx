@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState, type ReactNode } from "react"
-import { useRouter } from "next/navigation"
 import type { ActionPreviewUi, ActionStage } from "@/app/lib/action-system/contracts"
 import { ActionAmountCard, ActionFooter, type ActionAssetOption } from "@/app/components/action-page/action-amount-card"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
@@ -22,7 +21,16 @@ import {
   shouldShowWalletToast,
   walletToastMessage,
 } from "@/app/lib/action-system/stage-machine"
-import { blockedCtaLabel } from "@/app/lib/action-system/blocked-ui"
+
+function formatBlockedOutcomeMessage(blockedReason: string, balanceValue?: string | null) {
+  const normalizedBalance = balanceValue?.replace(/[^\d.]/g, "") ?? ""
+  const isZeroBalance = normalizedBalance === "" || normalizedBalance === "0" || /^0\.0+$/.test(normalizedBalance)
+  const isBalanceBlock = /insufficient/i.test(blockedReason) || /balance/i.test(blockedReason.toLowerCase())
+  if (isBalanceBlock && isZeroBalance) {
+    return `${blockedReason} Fund your wallet or switch accounts to continue.`
+  }
+  return blockedReason
+}
 
 type ActionConfigureStageProps = {
   stage: ActionStage
@@ -48,14 +56,8 @@ type ActionConfigureStageProps = {
   onMultiplierChange?: (value: string) => void
   multiplierMin?: number
   multiplierMax?: number
-  multiplierRecommendedMax?: number
   multiplierStep?: number
   multiplierLabel?: string
-  /** USD value of the position at 1.0x, forwarded to the leverage ruler so its ends
-   *  show the exposure range in the active currency. */
-  multiplierExposureBaseUsd?: number
-  /** Short explanation rendered above the standalone leverage ruler. */
-  leverageHint?: ReactNode
   canGoBack?: boolean
   hideAmountInput?: boolean
   amountReadOnly?: boolean
@@ -83,10 +85,6 @@ type ActionConfigureStageProps = {
   assetPickerDisabled?: boolean
   assetPickerHint?: string
   onAssetPickerBlocked?: () => void
-  /** When the current block should route the user elsewhere (e.g. pledge
-   *  collateral before borrowing), the primary CTA stays active and navigates
-   *  here instead of sitting disabled. */
-  blockedRedirectHref?: string | null
   /** Product-specific detail content that replaces the generic rate/market/metrics
    *  block (e.g. the Umbrella market-risk card). The risk banner + network fee row
    *  still render around it. */
@@ -95,6 +93,9 @@ type ActionConfigureStageProps = {
    *  hidden until the user has entered an amount, keeping the empty state clean.
    *  (detailsSlot content is always shown — the slot decides its own reveal.) */
   deferDetailsUntilAmount?: boolean
+  /** Fade/slide-in the details block when the preview mounts. Defaults to true;
+   *  pass false for a static reveal (e.g. the Umbrella market-risk stats). */
+  animateDetails?: boolean
   /** Keep the asset picker interactive even when the amount is read-only (Claim). */
   allowAssetSwitchWhenReadOnly?: boolean
 }
@@ -220,11 +221,8 @@ export function ActionConfigureStage({
   onMultiplierChange,
   multiplierMin = 1,
   multiplierMax = 20,
-  multiplierRecommendedMax,
   multiplierStep = 0.1,
-  multiplierLabel = "Leverage",
-  multiplierExposureBaseUsd,
-  leverageHint,
+  multiplierLabel = "Multiplier",
   canGoBack = false,
   hideAmountInput = false,
   amountReadOnly = false,
@@ -244,31 +242,25 @@ export function ActionConfigureStage({
   assetLabel,
   amountUnitLabel,
   inputLabel,
-  blockedRedirectHref,
   detailsSlot,
   deferDetailsUntilAmount = false,
+  animateDetails = true,
   allowAssetSwitchWhenReadOnly = false,
 }: ActionConfigureStageProps) {
   const { t } = useTranslation()
-  const router = useRouter()
   const configureStage = stage === "error" ? "configure" : stage
   const isValid = Boolean(preview?.allowed)
   // Progressive disclosure (opt-in): keep the risk banner + network-fee row hidden
   // until an amount is entered, so the empty state stays clean.
   const showDeferredDetails = !deferDetailsUntilAmount || parsePositiveActionAmount(amount) != null
   const blockedReason = preview?.blockedReason ?? null
-  // Only reasons the label mapper flags as "redirect" (e.g. no collateral) turn
-  // the CTA into an active navigation; every other block leaves it disabled.
-  const blockedRedirects = blockedReason
-    ? Boolean(blockedCtaLabel(blockedReason, { symbol: assetSymbol }).redirect)
-    : false
-  const isRedirectBlock = Boolean(blockedReason && blockedRedirectHref && blockedRedirects)
+  const amountEntered = parsePositiveActionAmount(amount) != null
   const primaryLabel = primaryCtaLabel({
     stage: configureStage,
     verb,
     blockedReason,
     isValid,
-    amountEntered: parsePositiveActionAmount(amount) != null,
+    amountEntered,
     blockedSymbol: assetSymbol,
   })
   const primaryDisabled = shouldDisablePrimaryCta({
@@ -276,15 +268,8 @@ export function ActionConfigureStage({
     isValid,
     isPending,
     blockedReason,
-    blockedRedirect: isRedirectBlock,
   })
-  // A redirect block (e.g. "Deposit collateral first") sends the tap to the flow
-  // that unblocks the user instead of running the normal submit handler.
   const handlePrimary = () => {
-    if (isRedirectBlock && blockedRedirectHref) {
-      router.push(blockedRedirectHref)
-      return
-    }
     onPrimary?.()
   }
   const secondaryLabel = secondaryCtaLabel(stage, { canGoBack })
@@ -297,6 +282,9 @@ export function ActionConfigureStage({
   // after === before, so showing the metrics would misrepresent a SAFE, unchanged
   // position. Hide the projected metrics and let the block reason speak instead.
   const previewBlocked = Boolean(preview && !preview.allowed && preview.blockedReason)
+  // Match reference UX: keep the amount card clean until the user types, then
+  // surface the inline Action unavailable banner (also show for amount-less actions).
+  const showBlockedBanner = previewBlocked && Boolean(blockedReason) && (hideAmountInput || amountEntered)
   const healthFactorRow = previewBlocked
     ? undefined
     : preview?.metrics.find((row) => isHealthFactorMetric(row.label, row.id))
@@ -358,18 +346,13 @@ export function ActionConfigureStage({
 
       {showStandaloneLeverage ? (
         <div>
-          {leverageHint ? (
-            <p className="mb-3 text-[12px] leading-5 text-muted-foreground">{t(String(leverageHint))}</p>
-          ) : null}
           <ActionLeverageRuler
             value={multiplier ?? "3"}
             onChange={onMultiplierChange!}
             min={multiplierMin}
             max={multiplierMax}
-            recommendedMax={multiplierRecommendedMax}
             step={multiplierStep}
             label={multiplierLabel}
-            exposureBaseUsd={multiplierExposureBaseUsd}
           />
         </div>
       ) : null}
@@ -397,7 +380,7 @@ export function ActionConfigureStage({
       ) : null}
 
       {preview && showHomeDetails ? (
-        <div className={cn(previewMotionClassName, "space-y-3")}>
+        <div className={cn(animateDetails ? previewMotionClassName : undefined, "space-y-3")}>
           {detailsSlot ? (
             detailsSlot
           ) : (
@@ -448,8 +431,12 @@ export function ActionConfigureStage({
 
       {outcome ? <ActionOutcomeBanner tone={outcome.tone} title={outcome.title} message={outcome.message} /> : null}
 
-      {!outcome && previewBlocked && blockedReason ? (
-        <ActionOutcomeBanner tone="error" title="Action unavailable" message={blockedReason} />
+      {!outcome && showBlockedBanner && blockedReason ? (
+        <ActionOutcomeBanner
+          tone="error"
+          title="Action unavailable"
+          message={formatBlockedOutcomeMessage(blockedReason, balanceValue ?? preview?.balanceLabel)}
+        />
       ) : null}
 
       {isConfigureVisibleStage(stage) ? (

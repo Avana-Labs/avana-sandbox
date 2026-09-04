@@ -16,9 +16,9 @@ export function MarketMobileCard({
   return (
     <div
       className={cn(
-        // Mobile cards sit on the hover/active surface by default (never transparent) and have
-        // NO hover state — on touch, :hover sticks after a tap, so it's dropped here.
-        "border-b border-border bg-hover px-4 py-3",
+        // Use the same solid, rounded surface as Dashboard snapshot cards. Keep
+        // touch cards free of a sticky hover state.
+        "rounded-radius-md border-0 bg-card px-4 py-3 shadow-none",
         clickable ? "cursor-pointer" : "",
         className,
       )}
@@ -46,6 +46,33 @@ export function MarketMobileCardHeader({
   )
 }
 
+export function MarketMobileIdentityText({
+  title,
+  subtitle,
+  className,
+}: {
+  title: ReactNode
+  subtitle?: ReactNode
+  className?: string
+}) {
+  return (
+    <div className={cn("min-w-0", className)}>
+      <div className="truncate text-[15px] font-normal leading-5 tracking-normal text-foreground dark:text-white">
+        {title}
+      </div>
+      {subtitle ? (
+        <div className="mt-0.5 truncate text-[13px] font-normal leading-4 tracking-normal text-muted-foreground dark:text-white/48">
+          {subtitle}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+export function MarketMobileSupportingValue({ children }: { children: ReactNode }) {
+  return <span className="ml-2 text-[13px] font-normal tracking-normal text-muted-foreground">{children}</span>
+}
+
 export function MarketMobileMetric({
   value,
   label,
@@ -58,17 +85,17 @@ export function MarketMobileMetric({
   return (
     <>
       <div
-        className={cn("font-data text-[18px] font-medium tabular-nums text-foreground dark:text-white", valueClassName)}
+        className={cn("font-data text-[18px] font-normal tabular-nums text-foreground dark:text-white", valueClassName)}
       >
         {value}
       </div>
-      <div className="mt-0.5 text-[10.5px] font-medium uppercase tracking-[0.06em] text-muted-foreground">{label}</div>
+      <div className="mt-0.5 text-[13px] font-normal leading-4 tracking-normal text-muted-foreground">{label}</div>
     </>
   )
 }
 
 export function MarketMobileStatList({ children, className }: { children: ReactNode; className?: string }) {
-  return <dl className={cn("divide-y divide-border text-[12.5px]", className)}>{children}</dl>
+  return <dl className={cn("divide-y divide-border leading-5", className)}>{children}</dl>
 }
 
 export function MarketMobileStatRow({
@@ -81,12 +108,46 @@ export function MarketMobileStatRow({
   valueClassName?: string
 }) {
   return (
-    <div className="flex items-center justify-between py-2">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className={cn("font-data font-medium tabular-nums text-foreground", valueClassName)}>{value}</dd>
+    <div className="flex items-center justify-between gap-3 py-2.5">
+      <dt className="text-[13px] text-muted-foreground">{label}</dt>
+      <dd
+        className={cn(
+          "font-data text-[15px] font-normal tabular-nums whitespace-nowrap",
+          valueClassName ?? "text-foreground",
+        )}
+      >
+        {value}
+      </dd>
     </div>
   )
 }
+
+export function MarketMobileActionFooter({
+  children,
+  columns = 2,
+  className,
+}: {
+  children: ReactNode
+  /** Always prefer 2 equal CTAs so product mobile cards share one chrome. */
+  columns?: 1 | 2 | 3
+  className?: string
+}) {
+  return (
+    <div
+      className={cn(
+        "mt-4 grid gap-2 [&>*]:min-w-0 [&>a]:mt-0 [&>button]:mt-0",
+        columns === 1 ? "grid-cols-1" : columns === 2 ? "grid-cols-2" : "grid-cols-3",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  )
+}
+
+/** Shared mobile CTA chrome — matches Lend Add / Withdraw. */
+export const MARKET_MOBILE_CTA_CLASS =
+  "h-11 w-full gap-2.5 rounded-radius-sm px-4 text-[14px] font-normal [&_svg]:size-[18px]"
 
 export function MarketMobilePrimaryAction({
   children,
@@ -97,7 +158,7 @@ export function MarketMobilePrimaryAction({
     <button
       type="button"
       className={cn(
-        "mt-4 inline-flex h-11 w-full items-center justify-center gap-2.5 rounded-radius-sm bg-brand px-4 text-center text-[14px] font-bold text-white shadow-elev-1 transition-colors hover:bg-brand/90 active:bg-brand/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-1 disabled:!opacity-100 disabled:bg-brand-soft disabled:text-brand-soft-foreground [&_svg]:size-[18px] [&_svg]:shrink-0",
+        "mt-4 inline-flex h-11 w-full items-center justify-center gap-2.5 rounded-radius-sm bg-brand px-4 text-center text-[14px] font-normal leading-5 text-white shadow-elev-1 transition-colors hover:bg-brand/90 active:bg-brand/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-1 disabled:!opacity-100 disabled:bg-brand-soft disabled:text-brand-soft-foreground [&_svg]:size-[18px] [&_svg]:shrink-0",
         className,
       )}
       {...props}
@@ -116,7 +177,7 @@ export function MarketMobileSecondaryAction({
     <button
       type="button"
       className={cn(
-        "inline-flex h-11 flex-1 items-center justify-center gap-2.5 rounded-radius-sm border border-border bg-surface-raised px-4 text-center text-[14px] font-semibold text-foreground shadow-elev-1 transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-1 [&_svg]:size-[18px] [&_svg]:shrink-0",
+        "inline-flex h-11 flex-1 items-center justify-center gap-2.5 rounded-radius-sm border border-border bg-surface-raised px-4 text-center text-[14px] font-normal leading-5 text-foreground shadow-elev-1 transition-colors hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-1 [&_svg]:size-[18px] [&_svg]:shrink-0",
         className,
       )}
       {...props}

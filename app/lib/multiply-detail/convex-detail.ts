@@ -40,50 +40,8 @@ import type { MultiplyMarketDetail, MultiplyTxHistoryRow } from "./index"
 import type { QuickStat } from "@/app/lib/borrow-detail"
 
 /**
- * Server-only Convex-hydrated multiply detail builder. Overlays seeded/live data onto
- * the deterministic mock detail so the page's numbers come from Convex and match the
- * list/hero:
- *   - HERO chart (TVL)                      ← Convex daily series
- *   - quick stats (available / APYs)        ← Convex snapshot
- *   - cashflow / risk / content            ← Convex queries
- *   - risk parameters / liquidation risk   ← multiply* product silos
- *   - transactions                         ← global walletEvents for this market
- * Each Convex read falls back to the mock value when unreachable, so the page always
- * renders.
+ * Server-only Convex-hydrated multiply detail builder.
  */
-
-/** Map the generic walletEvents kinds onto the multiply history row kinds. */
-const MULTIPLY_TX_KIND: Record<string, MultiplyTxHistoryRow["kind"]> = {
-  supply: "add",
-  borrow: "add",
-  withdraw: "reduce",
-  repay: "reduce",
-  liquidation: "close",
-  rewards: "interest",
-}
-
-function mapConvexTransactions(
-  rows: ReadonlyArray<{
-    id: string
-    at: string
-    kind: string
-    amountLabel: string
-    walletLabel?: string
-    counterpartyLabel?: string
-    txHashShort: string
-  }> | null,
-): MultiplyTxHistoryRow[] | null {
-  if (!rows || rows.length === 0) return null
-  return rows.map((r) => ({
-    id: r.id,
-    at: r.at,
-    kind: MULTIPLY_TX_KIND[r.kind] ?? "rebalance",
-    amountLabel: r.amountLabel,
-    counterpartyLabel: r.counterpartyLabel,
-    walletLabel: r.walletLabel,
-    txHashShort: r.txHashShort,
-  }))
-}
 
 function mergeConvexQuickStats(
   base: QuickStat[],
@@ -197,7 +155,8 @@ async function getMultiplyMarketDetailFromConvexUncached(id: string): Promise<Mu
       cashflow: { bars: [], rows: [], periodLabel: "" },
       // Fail closed in live: empty (not the catalog copy) when Convex has no rows.
       // The client overlays the wallet's own session transactions on top of this.
-      transactions: preferLiveOrNull(mode, mapConvexTransactions(transactions), detail.transactions) ?? [],
+      transactions:
+        preferLiveOrNull(mode, (transactions as MultiplyTxHistoryRow[] | null) ?? null, detail.transactions) ?? [],
       risk: preferLiveOrNull(mode, risk as typeof detail.risk | null, detail.risk) ?? EMPTY_RISK_ASSESSMENT,
       // Fail closed in live: never fabricate liquidation KPIs (see borrow detail).
       liquidationRisk:
@@ -257,9 +216,13 @@ export function applyMultiplyPreloadedOverlays(
     overlays.quickStats != null
       ? injectBaselinePrice(mergeConvexQuickStats(detail.quickStats, overlays.quickStats), overlays.baselinePriceSymbol)
       : detail.quickStats
+  // Supply/Borrow APY live on Market Rates now; reuse the same getQuickStats alias map.
+  const marketRates =
+    overlays.quickStats != null ? mergeConvexQuickStats(detail.marketRates, overlays.quickStats) : detail.marketRates
   return {
     ...detail,
     quickStats,
+    marketRates,
     cashflow: overlays.cashflow ?? detail.cashflow,
   }
 }

@@ -298,10 +298,12 @@ export function AvanaSessionsProvider({
     () => (authoritativeWalletPending ? { ...swap, isHydrated: false } : swap),
     [authoritativeWalletPending, swap],
   )
-  const visibleUmbrella = useMemo(
-    () => (authoritativeWalletPending ? { ...umbrella, isHydrated: false } : umbrella),
-    [authoritativeWalletPending, umbrella],
-  )
+  // Umbrella hydrates on its OWN Convex query (remoteUmbrellaState) and reads no
+  // borrow/lend/multiply/swap balances, so it must NOT wait on wallet-wide hydration
+  // (authoritativeWalletPending) — that only stalled the umbrella page at the skeleton
+  // after its own data had already arrived. Its `isHydrated` re-keys on walletId, so a
+  // wallet switch still re-suspends to the skeleton (no stale/other-wallet flash).
+  const visibleUmbrella = umbrella
   const visibleRewards = useMemo(
     () => (authoritativeWalletPending ? { ...rewards, hasHydratedStorage: false } : rewards),
     [authoritativeWalletPending, rewards],

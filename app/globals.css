@@ -358,7 +358,7 @@
     font-size: 14px;
     font-weight: 400;
     line-height: 1.4;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     /* Render text with grayscale antialiasing instead of the browser default
        (subpixel), which makes white-on-dark text look heavier/bolder than it is.
        This gives the lighter, crisper weight seen in comparable dashboards. */
@@ -469,6 +469,20 @@
   font-family: var(--font-diatype-sans), sans-serif;
 }
 
+@layer utilities {
+  /*
+   * ABCDiatype tabular figures give each digit equal width but visually detach
+   * grouping commas and decimal points (e.g. "$299 , 997"). Use proportional
+   * lining figures everywhere Tailwind's tabular-nums is applied so currency and
+   * percentages read as normal "$299,997" / "5.31%". Keep amount + symbol on one
+   * line (e.g. "378,041.33 OP") — never break at the space before the ticker.
+   */
+  .tabular-nums {
+    font-variant-numeric: lining-nums proportional-nums;
+    white-space: nowrap;
+  }
+}
+
 /* Cursor-like text hierarchy — size and color only */
 .text-ui-heading {
   /* Canonical detail/action section heading (was ad-hoc text-[21px]/[1.375rem]). */
@@ -573,12 +587,6 @@
   }
 }
 
-.asset-swap {
-  animation: asset-swap 720ms cubic-bezier(0.22, 0.8, 0.22, 1) both;
-  transform-origin: center;
-  will-change: transform, opacity;
-}
-
 html[data-lighthouse-audit="true"] *,
 html[data-lighthouse-audit="true"] *::before,
 html[data-lighthouse-audit="true"] *::after {
@@ -589,8 +597,6 @@ html[data-lighthouse-audit="true"] *::after {
   scroll-behavior: auto !important;
 }
 
-html[data-lighthouse-audit="true"] .asset-swap,
-html[data-lighthouse-audit="true"] .skeleton-enter,
 html[data-lighthouse-audit="true"] .reveal-in {
   opacity: 1 !important;
   transform: none !important;
@@ -649,33 +655,40 @@ html[data-lighthouse-audit="true"] .reveal-in {
   }
 }
 
-/* Soft entrance for a whole loading view: fades + lifts in so the skeleton
-   doesn't pop. Honors reduced-motion below. */
-@keyframes skeleton-enter {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.skeleton-shimmer {
+  background-color: hsl(var(--muted));
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 35%,
+    hsl(0 0% 100% / 0.85) 50%,
+    transparent 65%,
+    transparent 100%
+  );
+  background-position: -125% 0;
+  background-repeat: no-repeat;
+  background-size: 55% 100%;
+  will-change: background-position;
 }
 
-.skeleton-enter {
-  animation: skeleton-enter 420ms cubic-bezier(0.22, 0.8, 0.22, 1) both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .skeleton-enter {
-    animation: none;
-  }
+.dark .skeleton-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    transparent 35%,
+    hsl(0 0% 100% / 0.2) 50%,
+    transparent 65%,
+    transparent 100%
+  );
 }
 
 /* Content reveal: the real view fades + lifts in as the client-gated skeleton
    clears, so the placeholder→content swap reads as a smooth reveal instead of a
-   hard pop. Mirrors skeleton-enter's easing. Honors reduced-motion below and is
-   disabled under the lighthouse-audit reset above. */
+   hard pop. Honors reduced-motion below and is disabled under the
+   lighthouse-audit reset above. Skeleton bodies themselves intentionally have no
+   entrance animation because the runtime can remount an identical loading tree
+   several times while providers hydrate; replaying an entrance on every remount
+   flashes the whole page. */
 @keyframes reveal-in {
   from {
     opacity: 0;
@@ -718,28 +731,6 @@ button,
   100% {
     opacity: 1;
     transform: translateX(6px);
-  }
-}
-
-@keyframes asset-swap {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, 20px, 0) scale(0.985);
-  }
-
-  35% {
-    opacity: 0.55;
-    transform: translate3d(0, 8px, 0) scale(0.995);
-  }
-
-  68% {
-    opacity: 1;
-    transform: translate3d(0, -1px, 0) scale(1.002);
-  }
-
-  100% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
@@ -816,4 +807,23 @@ button,
 /* Premium depth: flat cards — tone steps only, no borders/shadows */
 .surface-elevated {
   box-shadow: none;
+}
+
+/* Keep compact display tracking from becoming visually dense on desktop. */
+@media (min-width: 1280px) {
+  [class~="tracking-[-0.06em]"] {
+    letter-spacing: -0.03em;
+  }
+
+  [class~="tracking-[-0.04em]"] {
+    letter-spacing: -0.02em;
+  }
+
+  [class~="tracking-[-0.03em]"] {
+    letter-spacing: -0.015em;
+  }
+
+  [class~="tracking-[-0.02em]"] {
+    letter-spacing: -0.01em;
+  }
 }

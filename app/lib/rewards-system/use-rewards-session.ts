@@ -58,7 +58,10 @@ export function useRewardsSession({
       // forged, or stale claims over the authenticated server snapshot.
       const chosen = remote ?? seededState
       lastRemoteStateRef.current = remoteState
-      if (remoteRevision != null) rewardsRevisionRef.current = remoteRevision
+      // Server treats missing revision as 0 (`existing.revision ?? 0`). Mirror that
+      // whenever a remote row exists so the next saveState includes expectedRevision.
+      // Confirmed-empty remote clears the ref so the next write is a create.
+      rewardsRevisionRef.current = remoteState ? (remoteRevision ?? 0) : undefined
       setState(chosen)
       setHasHydratedStorage(true)
       return
@@ -71,25 +74,32 @@ export function useRewardsSession({
   useEffect(() => {
     if (!hasHydratedStorage) return
     if (!persistState) {
+      // Wait until Convex getState has resolved for this route. Navigating onto a
+      // rewards-scoped page enables persistRemoteState while hasHydratedStorage can
+      // still be true from a prior null-remote (non-rewards) route — saving then
+      // omits expectedRevision and hits REVISION_REQUIRED against the existing row.
+      if (remoteState === undefined || !persistRemoteState) return
+      if (remoteState !== null && rewardsRevisionRef.current == null) return
       const serialized = JSON.stringify(state)
       // Durable write-through: mirror to localStorage so a failed/unreachable Convex
       // save doesn't drop the claim on the next navigation (hydration picks it up).
       writeRewardsSessionState(walletId, state)
-      if (serialized === lastRemoteStateRef.current || !persistRemoteState) return
+      if (serialized === lastRemoteStateRef.current) return
       lastRemoteStateRef.current = serialized
-      void withRewardsPersistenceLock(walletId, () =>
-        persistRemoteState({
+      // Seed revision inside the lock before the next queued write runs. Updating
+      // outside the lock races: create → queued update still sees undefined
+      // expectedRevision → server REVISION_REQUIRED.
+      void withRewardsPersistenceLock(walletId, async () => {
+        const result = await persistRemoteState({
           stateJson: serialized,
           expectedRevision: rewardsRevisionRef.current,
-        }),
-      )
-        .then((result) => {
-          const revision = (result as { revision?: number } | null)?.revision
-          if (revision != null) rewardsRevisionRef.current = revision
         })
-        .catch(() => {
-          lastRemoteStateRef.current = null
-        })
+        const revision = (result as { revision?: number } | null)?.revision
+        if (revision != null) rewardsRevisionRef.current = revision
+        return result
+      }).catch(() => {
+        lastRemoteStateRef.current = null
+      })
       return
     }
     isPersistingRef.current = true
@@ -100,7 +110,7 @@ export function useRewardsSession({
     queueMicrotask(() => {
       isPersistingRef.current = false
     })
-  }, [hasHydratedStorage, persistRemoteState, persistState, walletId, state])
+  }, [hasHydratedStorage, persistRemoteState, persistState, remoteState, walletId, state])
 
   useEffect(() => {
     if (!persistState || typeof window === "undefined") return undefined

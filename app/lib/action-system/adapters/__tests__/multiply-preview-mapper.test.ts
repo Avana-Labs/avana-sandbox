@@ -34,10 +34,8 @@ describe("multiply preview mappers", () => {
       "Loop 2: Resupply collateral",
     ])
 
-    expect(ui.marketBreakdown).toEqual({
-      collateral: { symbol: "WETH", apy: "3.82%" },
-      borrow: { symbol: "USDC", apy: "4.80%" },
-    })
+    expect(ui.marketBreakdown).toBeUndefined()
+    expect(ui.marketValue).toBe("")
     expect(ui.rateLabel).toBe("")
     expect(ui.metrics.map((row) => row.label)).toEqual([
       "Collateral",

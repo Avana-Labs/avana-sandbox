@@ -2,14 +2,10 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import { useQuery } from "convex/react"
-import { api } from "@/convex/_generated/api"
 import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import type { MultiplyMarketRecord } from "@/app/lib/multiply-engine"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { getMultiplyMarketById, MULTIPLY_MARKET_CATALOG } from "@/app/lib/multiply-system/catalog"
-import { buildMultiplyPageData } from "@/app/lib/multiply-system/read-model"
-import { useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { MultiplyHero } from "./components/multiply-hero"
 import { ExploreLoopsMarketsTable } from "./components/explore-loops-markets-table"
 
@@ -27,27 +23,13 @@ export function MultiplyClient({
   initialIsDesktop?: boolean
 }) {
   const router = useRouter()
-  const session = useMultiplySessionContext()
-  const [hasMounted, setHasMounted] = React.useState(false)
-  // Client-side swap for the multiply-sim MULTIPLY_TOKEN_SUPPLY_APYS/BORROW_APYS/LOGOS
-  // constants: read the 16-row multiplyTokenParameters table directly. Only used post-mount
-  // so SSR keeps its static page data (mock constants) — see comment on livePageData.
-  const convexTokens = useQuery(api.multiply.tokenParameters.listTokens, {})
 
-  React.useEffect(() => {
-    setHasMounted(true)
-  }, [])
-
-  // After hydration, render the live session-backed catalog so market liquidity
-  // reflects the wallet's own multiply actions: opening a loop consumes available
-  // liquidity and deleveraging returns it (see applyMultiplyAction). The server and
-  // first client render keep the static page data so static generation is preserved
-  // and there is no hydration mismatch.
-  const livePageData = React.useMemo(
-    () => (hasMounted ? buildMultiplyPageData(session.walletId, session.state, convexTokens ?? undefined) : pageData),
-    [convexTokens, hasMounted, pageData, session.state, session.walletId],
-  )
-
+  // Render the server-provided page data as-is. It already carries live Convex
+  // market snapshots AND live token parameters (see the multiply page source), so
+  // the first paint is real. The list intentionally does NOT rebuild from the
+  // wallet session on mount — that swapped every row + carousel card to a
+  // slightly different (session-derived) dataset, which read as a flicker.
+  // Wallet-specific liquidity is surfaced on the detail/action pages instead.
   const handleOpenMultiply = React.useCallback(
     (marketId: string) => {
       const market = getMultiplyMarketById(marketId.toLowerCase())
@@ -60,13 +42,13 @@ export function MultiplyClient({
   return (
     <main className="container mx-auto px-4 py-8">
       <div className="mx-auto max-w-[1152px]">
-        <MultiplyHero metrics={livePageData.heroMetrics} />
+        <MultiplyHero metrics={pageData.heroMetrics} />
         <ExploreLoopsMarketsTable
           initialIsDesktop={initialIsDesktop}
-          rows={livePageData.lendRows}
-          trendingSnapshots={livePageData.trendingSnapshots}
-          pageSize={livePageData.pageSize}
-          tokenLogos={livePageData.tokenLogos}
+          rows={pageData.lendRows}
+          trendingSnapshots={pageData.trendingSnapshots}
+          pageSize={pageData.pageSize}
+          tokenLogos={pageData.tokenLogos}
           onOpenMultiply={(href) => {
             const market = resolveMarketFromRowHref(href)
             if (market) handleOpenMultiply(market.id)

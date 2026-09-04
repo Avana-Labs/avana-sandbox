@@ -13,6 +13,8 @@ export default tseslint.config(
       ".next-check/**",
       "node_modules/**",
       ".reports/**",
+      "playwright-report/**",
+      "test-results/**",
       ".c?????/**",
       "convex/_generated/**",
       "tailwind.config.js",

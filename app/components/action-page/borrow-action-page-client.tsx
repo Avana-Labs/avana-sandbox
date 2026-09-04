@@ -12,6 +12,8 @@ import {
 } from "@/app/lib/borrow-system/action-preview-runtime"
 import { buildRepayPreviewModel, buildWithdrawPreviewModel } from "@/app/lib/borrow-system/preview-builders"
 import { getBorrowSpoke } from "@/app/lib/borrow-system/registry"
+import { filterPoolsForSpokeAsset } from "@/app/lib/borrow-detail/cross-market"
+import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import type { ActionKind, ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import { getActionDescriptor, actionPagePath } from "@/app/lib/action-system/contracts"
@@ -120,8 +122,15 @@ export function BorrowActionPageClient({
   // $0 unpledged catalog markets that dead-ends at "Available $0.00". A fresh wallet
   // with no positions still falls back to the full catalog so it can pledge.
   const preferPledgedPools = isHomeBorrowZeroState && session.collateralPools.length > 0
-  const collateralPoolOptions =
+  const unscopedCollateralPoolOptions =
     usesAllMarketPools && !preferPledgedPools ? session.availableCollateralPools : session.collateralPools
+  // Asset detail sidebar: only show collateral pools that unlock THIS borrowable
+  // (same spoke / marketIds). Home Express keeps the full catalog for discovery.
+  const scopeCollateralToAsset = Boolean(sidebar && initialAssetId && (kind === "borrow" || kind === "repay"))
+  const collateralPoolOptions = useMemo(() => {
+    if (!scopeCollateralToAsset || !initialAssetId) return unscopedCollateralPoolOptions
+    return filterPoolsForSpokeAsset(initialAssetId, unscopedCollateralPoolOptions)
+  }, [initialAssetId, scopeCollateralToAsset, unscopedCollateralPoolOptions])
   const hasInvalidInitialMarket = Boolean(
     initialMarketId &&
     !initialAssetId &&
@@ -258,10 +267,24 @@ export function BorrowActionPageClient({
 
   const handlePoolChange = useCallback(
     (poolId: string) => {
+      // Asset detail: switching collateral navigates to that pool's market page so
+      // the whole details surface (hero, about, stats) matches the selected collateral.
+      if (scopeCollateralToAsset && poolId && poolId !== activeMarketId) {
+        router.push(borrowMarketDetailPath(poolId))
+        return
+      }
+
       setMarketId(poolId)
       setAmount("")
       setPercent(kind === "remove" ? initialAmount : "25")
       if (kind === "borrow") {
+        // Prefer keeping the same base asset on the new pool's spoke (GHO stays GHO)
+        // instead of blindly taking the market's first borrowable token.
+        const preferred = assetId.trim().length > 0 ? resolveBorrowAssetId(session.state, assetId, poolId) : ""
+        if (preferred) {
+          setAssetId(preferred)
+          return
+        }
         const tokens = selectHomeBorrowTokensForMarket(session.state, walletId, poolId)
         const nextAssetId = tokens[0]?.id ?? ""
         setAssetId(nextAssetId ? resolveBorrowAssetId(session.state, nextAssetId, poolId) : "")
@@ -282,7 +305,17 @@ export function BorrowActionPageClient({
         setClaimPositionId("")
       }
     },
-    [debtPositions, initialAmount, kind, session.state, walletId],
+    [
+      activeMarketId,
+      assetId,
+      debtPositions,
+      initialAmount,
+      kind,
+      router,
+      scopeCollateralToAsset,
+      session.state,
+      walletId,
+    ],
   )
 
   const selectItems = useMemo(() => {
@@ -439,12 +472,24 @@ export function BorrowActionPageClient({
 
   useEffect(() => {
     if (kind !== "borrow" || !activeMarketId || borrowTokens.length === 0) return
-    if (resolvedBorrowAssetId && borrowTokens.some((token) => token.id === resolvedBorrowAssetId)) {
-      if (assetId !== resolvedBorrowAssetId) setAssetId(resolvedBorrowAssetId)
+
+    // Keep a user/route selection that is valid on the active market.
+    const currentResolved = assetId ? resolveBorrowAssetId(session.state, assetId, activeMarketId) : ""
+    if (currentResolved && borrowTokens.some((token) => token.id === currentResolved)) {
+      if (assetId !== currentResolved) setAssetId(currentResolved)
       return
     }
+
+    // Selection missing or off-market (e.g. snapped to another spoke): prefer the
+    // deep-linked asset (bal-stable:gho) before the market's first borrowable.
+    const routeAssetId = initialAssetId ? resolveBorrowAssetId(session.state, initialAssetId, activeMarketId) : ""
+    if (routeAssetId && borrowTokens.some((token) => token.id === routeAssetId)) {
+      if (assetId !== routeAssetId) setAssetId(routeAssetId)
+      return
+    }
+
     setAssetId(borrowTokens[0]!.id)
-  }, [activeMarketId, assetId, borrowTokens, kind, resolvedBorrowAssetId])
+  }, [activeMarketId, assetId, borrowTokens, initialAssetId, kind, session.state])
 
   useEffect(() => {
     if (embedded || !initialMarketId) return
@@ -478,9 +523,13 @@ export function BorrowActionPageClient({
 
   useEffect(() => {
     if (!embedded || usesCollateralContext === false || session.collateralPools.length === 0 || isHomeZeroState) return
+    // Asset-detail sidebar scopes collateral to the borrowable's spoke catalog, which
+    // includes unpledged markets. Do not snap back to the wallet's first pledged pool
+    // (that was replacing Balancer GHO with an unrelated Aerodrome market).
+    if (scopeCollateralToAsset) return
     if (marketId && session.collateralPools.some((pool) => pool.id === marketId)) return
     setMarketId(session.collateralPools[0]!.id)
-  }, [embedded, isHomeZeroState, marketId, session.collateralPools, usesCollateralContext])
+  }, [embedded, isHomeZeroState, marketId, scopeCollateralToAsset, session.collateralPools, usesCollateralContext])
 
   useEffect(() => {
     let cancelled = false
@@ -1032,6 +1081,10 @@ export function BorrowActionPageClient({
         title={descriptor.title}
         subtitle={descriptor.subtitle}
         closeHref={closeHref}
+        mode={embedded ? "embedded" : "page"}
+        density={sidebar ? "sidebar" : "default"}
+        hideTitle={embedded || sidebar}
+        hideClose={embedded}
         flowHeaderStage={!embedded ? stage : undefined}
         simulated
       >
@@ -1050,9 +1103,7 @@ export function BorrowActionPageClient({
             ? "Choose collateral to remove."
             : kind === "supply"
               ? "Choose the LP pool you want to pledge."
-              : kind === "borrow"
-                ? "Pledge LP collateral before you can borrow against this market."
-                : "Choose the asset to borrow."
+              : "Choose the asset to borrow."
       : stage === "success" || isProcessingStage(stage) || stage === "review"
         ? undefined
         : descriptor.subtitle
@@ -1063,12 +1114,6 @@ export function BorrowActionPageClient({
   // list is always scoped to the selected market (wallet-connection gating is
   // already enforced upstream by the sandbox/connect onboarding flow).
   const borrowNeedsCollateral = isHomeLayout && kind === "borrow" && !activeMarketId
-  // A borrow blocked for lack of collateral turns the CTA into a redirect that
-  // sends the user to pledge collateral for this market (no dead-end, no modal).
-  const blockedRedirectHref =
-    kind === "borrow" && previewUi?.blockedReason && !previewUi.allowed
-      ? actionPagePath("borrow", "supply", activeMarketId ? { market: activeMarketId } : {})
-      : null
   const useDialogAssetPicker = kind === "borrow" || kind === "repay"
   const pickerTokens = kind === "borrow" ? borrowTokens : kind === "repay" ? repayTokens : undefined
   const pickerSelectedTokenId =
@@ -1348,7 +1393,6 @@ export function BorrowActionPageClient({
           claimSummary={kind === "claim"}
           assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
           pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
-          blockedRedirectHref={blockedRedirectHref}
         />
       ) : null}
     </ActionPageShell>

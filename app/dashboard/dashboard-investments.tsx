@@ -2,25 +2,66 @@
 
 import { useRouter } from "next/navigation"
 import { ActionIcon } from "@/app/components/action-icon"
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { Button } from "@/components/ui/button"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
+  MarketMobileActionFooter,
   MarketMobileCardHeader,
+  MarketMobileIdentityText,
   MarketMobileMetric,
   MarketMobileStatList,
   MarketMobileStatRow,
+  MarketMobileSupportingValue,
+  MARKET_MOBILE_CTA_CLASS,
 } from "@/app/components/market-card-primitives"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { TokenIcon } from "@/app/components/token-icon"
 import type { PortfolioLendTabData, PortfolioSupplyPosition } from "@/app/lib/data/providers/portfolio"
+import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
+import { formatTokenPrice } from "@/app/lib/prices/format"
+import { LiveInterestEarnedUsd } from "@/app/dashboard/live-accrual"
 import { formatUsdExact } from "@/app/lib/borrow-sim"
 import { getActiveCurrency } from "@/app/lib/currency/active-rate"
-import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
+import {
+  TABLE_BASE,
+  TABLE_CELL_INDEX,
+  TABLE_CELL_NUMERIC,
+  TABLE_CELL_PADDING,
+  TABLE_CELL_PADDING_LEADING,
+  TABLE_CELL_PADDING_TRAILING,
+  TABLE_CELL_PRIMARY,
+  TABLE_CELL_SECONDARY,
+  TABLE_HEADER_CELL,
+  TABLE_HEADER_ROW,
+  TABLE_ROW_HOVER_BG,
+  TABLE_ROW_HOVER_LEFT,
+  TABLE_ROW_HOVER_RIGHT,
+  formatTableHeaderLabel,
+} from "@/app/lib/ui/table-row-hover"
+import { cn } from "@/lib/utils"
 
 const MASK = "••••"
+
+function InvestmentsMetricHeader({
+  label,
+  help,
+  align = "left",
+}: {
+  label: string
+  help: string
+  align?: "left" | "right"
+}) {
+  return (
+    <span className={cn("inline-flex items-center gap-1", align === "right" && "justify-end")}>
+      {formatTableHeaderLabel(label)}
+      <ActionMetricHelp topic={label} text={help} />
+    </span>
+  )
+}
 
 function formatClaimableUsd(value: number) {
   const { rate, symbol, zeroDecimal } = getActiveCurrency()
@@ -32,11 +73,60 @@ function formatClaimableUsd(value: number) {
 }
 
 function formatTokenAmount(value: number, symbol: string) {
-  return `${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${symbol}`
+  // Adaptive precision (matches the wallet Tokens table): more decimals for small
+  // balances so `amount × unit price` reconciles with the USD line instead of losing
+  // a few dollars to a hard 2-decimal round on high-unit-price tokens like weETH.
+  const maximumFractionDigits = value >= 100 ? 2 : value >= 1 ? 4 : 6
+  return `${value.toLocaleString("en-US", { maximumFractionDigits })} ${symbol}`
 }
 
 function resolveMarketId(token: PortfolioSupplyPosition) {
   return token.marketId ?? token.symbol.toLowerCase()
+}
+
+/**
+ * Asset second line: the live unit price, falling back to the symbol when the
+ * oracle has none — identical to the lend markets table (`AssetSubLabel`), so
+ * this dashboard table matches it for ANY onboarded token, priced or not.
+ */
+function AssetPriceSubLabel({ symbol }: { symbol: string }) {
+  const priceFor = useCanonicalPriceFor()
+  const price = priceFor(symbol)
+  return <>{price !== undefined ? formatTokenPrice(price) : symbol}</>
+}
+
+/**
+ * Per-asset interest earned. When `anchorMs` is provided it accrues in real time at
+ * this position's own rate (suppliedUsd × APY) from the supply moment — so the column
+ * ticks live and the rows sum exactly to the "Interest Earned" metric on Lend Balance
+ * (whose rate is totalSupplied × net-APY = Σ suppliedᵢ × apyᵢ). Falls back to the
+ * static ledger value when no anchor is passed (interest excludes protocol rewards).
+ */
+function EarnedCell({
+  token,
+  anchorMs,
+  show,
+  className,
+}: {
+  token: PortfolioSupplyPosition
+  anchorMs: number | null | undefined
+  show: boolean
+  className?: string
+}) {
+  if (!show) return <span className={className}>{MASK}</span>
+  const baseUsd = token.interestUsd ?? token.earnedUsd
+  if (anchorMs === undefined) return <span className={className}>+{formatUsdExact(baseUsd)}</span>
+  return (
+    <span className={className}>
+      +
+      <LiveInterestEarnedUsd
+        anchorMs={anchorMs}
+        ratePerYearUsd={(token.suppliedUsd * token.apyPct) / 100}
+        baseUsd={baseUsd}
+        fractionDigits={4}
+      />
+    </span>
+  )
 }
 
 export function DashboardInvestments({
@@ -49,6 +139,7 @@ export function DashboardInvestments({
   returnHref,
   title = "Assets",
   countLabel,
+  accrualSinceMs,
 }: {
   investments: PortfolioSupplyPosition[]
   rewardsSummary?: PortfolioLendTabData["rewardsSummary"]
@@ -61,12 +152,18 @@ export function DashboardInvestments({
   returnHref?: string
   title?: string
   countLabel?: string
+  // When set, the Earned column accrues live from this supply-start anchor (see
+  // EarnedCell). Omit to keep the static ledger value.
+  accrualSinceMs?: number | null
 }) {
   const router = useRouter()
   const { t } = useTranslation()
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const claimableUsd = rewardsSummary?.claimableUsd ?? 0
   const m = (value: string) => (showDollarAmounts ? value : MASK)
+  // `suppliedUsd` is already valued at the live oracle price upstream (LendAccountSection),
+  // so the Deposited column, "Total Supplied" and the interest accrual all read the same
+  // number — the table sums exactly to the headline.
 
   return (
     <section className={showHeading ? "mb-8" : undefined}>
@@ -98,29 +195,36 @@ export function DashboardInvestments({
         <>
           <div className="hidden overflow-x-auto md:block">
             <DesktopTableSurface className="!rounded-none">
-              <table className="w-full min-w-[500px] table-fixed border-separate border-spacing-0 text-[13px]">
+              <table className={`w-full min-w-[640px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
                 <colgroup>
                   {showIndexColumn ? <col className="w-[6%]" /> : null}
                   <col className={showIndexColumn ? "w-[24%]" : "w-[26%]"} />
-                  <col className="w-[18%]" />
+                  <col className="w-[22%]" />
                   <col className="w-[16%]" />
-                  <col className={showIndexColumn ? "w-[36%]" : "w-[40%]"} />
+                  <col className={showIndexColumn ? "w-[32%]" : "w-[36%]"} />
                 </colgroup>
                 <thead>
-                  <tr className="text-left text-[11.5px] font-medium text-muted-foreground">
-                    {showIndexColumn ? (
-                      <th className="bg-table-header px-4 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                        #
-                      </th>
-                    ) : null}
-                    <th className="bg-table-header px-5 pb-2 pt-2.5 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                      Asset
+                  <tr className={TABLE_HEADER_ROW}>
+                    {showIndexColumn ? <th className={cn(TABLE_HEADER_CELL, "px-4 text-left")}>#</th> : null}
+                    <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>
+                      <InvestmentsMetricHeader
+                        label={t("Asset")}
+                        help={t("The token you've supplied to earn lending yield.")}
+                      />
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                      Deposited
+                    <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                      <InvestmentsMetricHeader
+                        label={t("Deposited")}
+                        help={t("Your supplied balance in this asset, valued at its live price.")}
+                        align="right"
+                      />
                     </th>
-                    <th className="bg-table-header px-4 pb-2 pt-2.5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
-                      APY
+                    <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                      <InvestmentsMetricHeader
+                        label={t("APY")}
+                        help={t("Current annual percentage yield on your deposit, before protocol rewards.")}
+                        align="right"
+                      />
                     </th>
                     <SilentActionHeader className="!rounded-none pr-5" />
                   </tr>
@@ -136,40 +240,41 @@ export function DashboardInvestments({
                         onClick={() => router.push(detailHref)}
                       >
                         {showIndexColumn ? (
-                          <td
-                            className={`py-3.5 pl-4 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
-                          >
+                          <td className={cn(TABLE_CELL_PADDING_LEADING, TABLE_CELL_INDEX, TABLE_ROW_HOVER_LEFT)}>
                             {index + 1}
                           </td>
                         ) : null}
-                        <td className={`py-3.5 pl-5 ${showIndexColumn ? TABLE_ROW_HOVER_BG : TABLE_ROW_HOVER_LEFT}`}>
+                        <td
+                          className={cn(
+                            TABLE_CELL_PADDING,
+                            "pl-5",
+                            showIndexColumn ? TABLE_ROW_HOVER_BG : TABLE_ROW_HOVER_LEFT,
+                          )}
+                        >
                           <div className="flex items-center gap-2.5">
                             <TokenIcon symbol={token.symbol} size="table" />
                             <div className="flex min-w-0 flex-col">
-                              <span className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
-                                {token.name}
+                              <span className={cn("truncate", TABLE_CELL_PRIMARY)}>{token.name}</span>
+                              <span className={cn(TABLE_CELL_SECONDARY, "tabular-nums")}>
+                                <AssetPriceSubLabel symbol={token.symbol} />
                               </span>
-                              <span className="mt-0.5 text-[13px] text-muted-foreground">{token.symbol}</span>
                             </div>
                           </div>
                         </td>
-                        <td className={`py-3.5 text-right ${TABLE_ROW_HOVER_BG}`}>
-                          <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
-                            {m(formatTokenAmount(token.balance, token.symbol))}
-                          </div>
-                          <div className="text-[13px] text-muted-foreground">
-                            {m(formatUsdExact(token.suppliedUsd))}
-                          </div>
+                        <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
+                          <div className={TABLE_CELL_NUMERIC}>{m(formatTokenAmount(token.balance, token.symbol))}</div>
+                          <div className={TABLE_CELL_SECONDARY}>{m(formatUsdExact(token.suppliedUsd))}</div>
                         </td>
-                        <td className={`py-3.5 text-right ${TABLE_ROW_HOVER_BG}`}>
-                          <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
-                            {token.apyPct.toFixed(2)}%
-                          </div>
-                          <div className="text-[13px] text-muted-foreground">
-                            {m(`+${formatUsdExact(token.earnedUsd)}`)}
-                          </div>
+                        <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
+                          <div className={TABLE_CELL_NUMERIC}>{token.apyPct.toFixed(2)}%</div>
+                          <EarnedCell
+                            token={token}
+                            anchorMs={accrualSinceMs}
+                            show={showDollarAmounts}
+                            className={cn(TABLE_CELL_SECONDARY, "text-success")}
+                          />
                         </td>
-                        <td className={`py-3.5 pr-5 ${TABLE_ROW_HOVER_RIGHT}`}>
+                        <td className={cn(TABLE_CELL_PADDING_TRAILING, TABLE_ROW_HOVER_RIGHT)}>
                           <HoverActionGroup className="justify-end gap-2">
                             <Button
                               type="button"
@@ -187,7 +292,7 @@ export function DashboardInvestments({
                               }}
                             >
                               <ActionIcon label="Deposit" />
-                              Deposit
+                              Add
                             </Button>
                             <Button
                               type="button"
@@ -232,10 +337,10 @@ export function DashboardInvestments({
                     identity={
                       <div className="flex min-w-0 items-center gap-2.5">
                         <TokenIcon symbol={token.symbol} size="table" />
-                        <div className="min-w-0">
-                          <div className="text-[13px] font-medium text-foreground">{token.name}</div>
-                          <div className="text-[11px] text-muted-foreground">{token.symbol}</div>
-                        </div>
+                        <MarketMobileIdentityText
+                          title={token.name}
+                          subtitle={<AssetPriceSubLabel symbol={token.symbol} />}
+                        />
                       </div>
                     }
                     metric={<MarketMobileMetric value={`${token.apyPct.toFixed(2)}%`} label="APY" />}
@@ -246,9 +351,9 @@ export function DashboardInvestments({
                       value={
                         <span>
                           {m(formatTokenAmount(token.balance, token.symbol))}
-                          <span className="ml-2 text-[13px] text-muted-foreground">
+                          <MarketMobileSupportingValue>
                             {m(formatUsdExact(token.suppliedUsd))}
-                          </span>
+                          </MarketMobileSupportingValue>
                         </span>
                       }
                     />
@@ -256,19 +361,25 @@ export function DashboardInvestments({
                       label={t("Earnings")}
                       value={
                         <span>
-                          {m(`+${formatUsdExact(token.earnedUsd)}`)}
-                          <span className="ml-2 text-[13px] text-muted-foreground">
+                          <EarnedCell
+                            token={token}
+                            anchorMs={accrualSinceMs}
+                            show={showDollarAmounts}
+                            className="text-success"
+                          />
+                          <MarketMobileSupportingValue>
                             {m(`${formatUsdExact(token.dailyEarnedUsd)}/day`)}
-                          </span>
+                          </MarketMobileSupportingValue>
                         </span>
                       }
+                      valueClassName="text-success"
                     />
                   </MarketMobileStatList>
-                  <div className="grid grid-cols-2 gap-2">
+                  <MarketMobileActionFooter>
                     <Button
                       type="button"
                       variant="brand"
-                      className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+                      className={MARKET_MOBILE_CTA_CLASS}
                       onClick={(event) => {
                         event.stopPropagation()
                         router.push(
@@ -277,12 +388,12 @@ export function DashboardInvestments({
                       }}
                     >
                       <ActionIcon label="Deposit" />
-                      Deposit
+                      Add
                     </Button>
                     <Button
                       type="button"
                       variant="brand-secondary"
-                      className="h-11 gap-2.5 rounded-radius-sm px-4 text-[14px] font-bold [&_svg]:size-[18px]"
+                      className={MARKET_MOBILE_CTA_CLASS}
                       onClick={(event) => {
                         event.stopPropagation()
                         router.push(
@@ -293,7 +404,7 @@ export function DashboardInvestments({
                       <ActionIcon label="Withdraw" />
                       Withdraw
                     </Button>
-                  </div>
+                  </MarketMobileActionFooter>
                 </MarketMobileCard>
               )
             })}

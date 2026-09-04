@@ -1,17 +1,18 @@
 "use client"
 
-import { LazyMotion, useReducedMotion } from "framer-motion"
 import type { ReactNode } from "react"
-import * as m from "framer-motion/m"
 import { cn } from "@/lib/utils"
-
-const loadMotionFeatures = () => import("@/app/lib/framer-dom-animation").then((module) => module.default)
 
 type SharedTabItem<T extends string> = {
   id: T
   label: ReactNode
 }
 
+/**
+ * Pill tabs use CSS for the active-state and press feedback. Framer-motion used to ship
+ * on this path (the home workspace indicator) and pulled ~the motion runtime into the
+ * first-load JS for every `/` visitor — a CSS `active:scale` is enough.
+ */
 export function PillTabStrip<T extends string>({
   items,
   value,
@@ -19,7 +20,6 @@ export function PillTabStrip<T extends string>({
   ariaLabel,
   className,
   tabClassName,
-  cssOnly = false,
 }: {
   items: readonly SharedTabItem<T>[]
   value: T
@@ -27,11 +27,8 @@ export function PillTabStrip<T extends string>({
   ariaLabel: string
   className?: string
   tabClassName?: string
-  cssOnly?: boolean
 }) {
-  const reduceMotion = useReducedMotion()
-
-  const content = (
+  return (
     <div
       role="tablist"
       aria-label={ariaLabel}
@@ -42,54 +39,25 @@ export function PillTabStrip<T extends string>({
     >
       {items.map((item) => {
         const active = item.id === value
-        const buttonClassName = cn(
-          "group shrink-0 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[14px] font-medium leading-none transition-colors sm:px-3 sm:text-[15px]",
-          active ? "bg-field-bottom text-foreground" : "text-muted-foreground hover:text-foreground",
-          tabClassName,
-        )
-
-        if (cssOnly) {
-          return (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              data-state={active ? "active" : "inactive"}
-              onClick={() => onChange(item.id)}
-              className={buttonClassName}
-            >
-              {item.label}
-            </button>
-          )
-        }
-
         return (
-          <m.button
+          <button
             key={item.id}
             type="button"
             role="tab"
             aria-selected={active}
             data-state={active ? "active" : "inactive"}
             onClick={() => onChange(item.id)}
-            whileTap={reduceMotion ? undefined : { scale: 0.96 }}
-            whileHover={reduceMotion ? undefined : { y: -1 }}
-            transition={{ type: "spring", stiffness: 500, damping: 28 }}
-            className={buttonClassName}
+            className={cn(
+              "group shrink-0 whitespace-nowrap rounded-full px-2.5 py-1.5 text-[14px] font-medium leading-none transition-[color,background-color,transform] duration-150 ease-out will-change-transform active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100 sm:px-3 sm:text-[15px]",
+              active ? "bg-field-bottom text-foreground" : "text-muted-foreground hover:text-foreground",
+              tabClassName,
+            )}
           >
             {item.label}
-          </m.button>
+          </button>
         )
       })}
     </div>
-  )
-
-  if (cssOnly) return content
-
-  return (
-    <LazyMotion features={loadMotionFeatures} strict>
-      {content}
-    </LazyMotion>
   )
 }
 

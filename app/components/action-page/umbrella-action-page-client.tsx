@@ -367,6 +367,7 @@ export function UmbrellaActionPageClient({
         closeHref={closeHref}
         mode={embedded ? "embedded" : "page"}
         density={sidebar ? "sidebar" : "default"}
+        hideTitle={embedded || sidebar}
         hideClose={embedded}
         flowHeaderStage={!embedded ? stage : undefined}
         simulated
@@ -450,6 +451,7 @@ export function UmbrellaActionPageClient({
           singlePrimaryCta={sidebar}
           detailsSlot={<UmbrellaMarketRiskMetricsCard market={market} expanded={hasAmountEntered} />}
           deferDetailsUntilAmount
+          animateDetails={false}
           allowAssetSwitchWhenReadOnly
         />
       ) : null}

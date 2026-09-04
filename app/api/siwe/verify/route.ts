@@ -7,7 +7,7 @@ import {
   extractSiweNonce,
   extractSiweUri,
 } from "@/app/lib/siwe/message"
-import { mintSandboxJwt, resolveIssuer } from "@/app/lib/siwe/jwt"
+import { mintSiweSessionJwt, resolveIssuer } from "@/app/lib/siwe/jwt"
 import { verifySiweSignature } from "@/app/lib/siwe/signature"
 import { TARGET_CHAIN_ID } from "@/app/lib/web3/target-chain"
 import { assertSameOrigin, clientKey, rateLimitShared } from "../../_lib/request-guards"
@@ -15,8 +15,8 @@ import { assertSameOrigin, clientKey, rateLimitShared } from "../../_lib/request
 export const dynamic = "force-dynamic"
 
 /**
- * Verify a SIWE signature and mint a sandbox JWT (wallet in `sub`/`wallet`).
- * The token is verified by Convex against convex/auth.config.ts + this app's JWKS.
+ * Verify a SIWE signature and establish a server-owned browser session. The
+ * session JWT has a distinct audience/scope and is never accepted by Convex.
  */
 export async function POST(req: Request) {
   if (!assertSameOrigin(req)) return Response.json({ error: "origin not allowed" }, { status: 403 })
@@ -86,6 +86,13 @@ export async function POST(req: Request) {
   jar.delete("siwe-nonce")
 
   const issuer = resolveIssuer(new URL(req.url).origin)
-  const token = mintSandboxJwt(address, issuer)
-  return Response.json({ token, wallet: address.toLowerCase() })
+  const session = mintSiweSessionJwt(address, issuer)
+  jar.set("avana_siwe", session, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 7 * 24 * 60 * 60,
+  })
+  return Response.json({ wallet: address.toLowerCase() }, { headers: { "cache-control": "no-store" } })
 }

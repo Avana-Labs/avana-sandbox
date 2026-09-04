@@ -38,16 +38,39 @@ export function mergeAliasedQuickStats<T extends DetailQuickStat>(
   })
 }
 
+type ChangelogEntry = {
+  id: string
+  parameter: string
+  previous: string
+  current: string
+  date: string
+  source: string
+  executor: string
+  category?: string
+  href?: string
+}
+
+type GovernanceParameters = {
+  parameters: Array<{ id: string; label: string; value: string; status?: string; description?: string; href?: string }>
+  changelog: ChangelogEntry[]
+}
+
 type AboutContent = {
   description: string
   stats: Array<{ label: string; value: string; href?: string }>
   history: Array<{ date: string; title: string; description?: string }>
+  governanceParameters?: GovernanceParameters
 }
 
 type FaqEntry = { question: string; answer: string }
 
-type DetailContentOverlay = AboutContent & {
+/** Convex editorial content shape (`getContent`): About fields + FAQs + the rich changelog. */
+type DetailContentOverlay = {
+  description: string
+  stats: AboutContent["stats"]
+  history: AboutContent["history"]
   faqs: FaqEntry[]
+  changelog?: ChangelogEntry[]
 }
 
 type DetailWithContent = {
@@ -78,10 +101,14 @@ export function applyDetailContentOverlay<T extends DetailWithContent>(
         description: "",
         stats: [],
         history: [],
+        governanceParameters: detail.about.governanceParameters
+          ? { ...detail.about.governanceParameters, changelog: [] }
+          : detail.about.governanceParameters,
       },
       faqs: [],
     } as T
   }
+  const changelog = content.changelog
   return {
     ...detail,
     about: {
@@ -89,6 +116,12 @@ export function applyDetailContentOverlay<T extends DetailWithContent>(
       description: content.description,
       stats: content.stats,
       history: content.history,
+      // Prefer the Convex-seeded governance changelog when present; keep any base
+      // parameters (applyRiskParametersToAbout, which runs after, refreshes them).
+      governanceParameters:
+        changelog && changelog.length > 0
+          ? { parameters: detail.about.governanceParameters?.parameters ?? [], changelog }
+          : detail.about.governanceParameters,
     },
     faqs: content.faqs,
   } as T

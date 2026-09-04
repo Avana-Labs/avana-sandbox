@@ -187,7 +187,7 @@ jobs:
       # trips Playwright's transform hook) and free of timing/pixel assertions.
       # onboarding.spec.ts stays out (needs real auth + Convex).
       - name: E2E smoke (test-mode routes render)
-        run: npx playwright test --project=chromium tests/e2e/portfolio-routing.spec.ts tests/e2e/borrow-detail-routes.spec.ts tests/e2e/locale-overflow.spec.ts
+        run: npx playwright test --project=chromium tests/e2e/portfolio-routing.spec.ts tests/e2e/borrow-detail-routes.spec.ts tests/e2e/locale-overflow.spec.ts tests/e2e/convex-handshake.spec.ts
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
@@ -197,6 +197,39 @@ jobs:
           path: playwright-report/
           retention-days: 7
           if-no-files-found: ignore
+
+  # Real production build + first-load JS budget for `/`. Catches critical-path
+  # regressions (accidental wagmi/Sentry/framer-motion on the guest `/` chunk group)
+  # without running a flaky full Lighthouse pass. Local real-build Lighthouse is
+  # `npm run lighthouse:build && npm run lighthouse:serve` then `npm run lighthouse:budgets`.
+  perf-budgets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure rolldown Linux binding
+        run: |
+          node -e "require.resolve('@rolldown/binding-linux-x64-gnu')" \
+            || npm install --no-save @rolldown/binding-linux-x64-gnu@$(node -p "require('./package.json').optionalDependencies['@rolldown/binding-linux-x64-gnu'] || require('./package-lock.json').packages['node_modules/@rolldown/binding-linux-x64-gnu'].version")
+
+      - name: Production build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+
+      - name: First-load JS budget for /
+        run: npm run perf:bundle-budget
 
 # NOTE: CI's required gate is `lint` + the sharded `test (N/2)` jobs — format +
 # security + lint + typecheck, plus the full unit/integration suite (vitest,

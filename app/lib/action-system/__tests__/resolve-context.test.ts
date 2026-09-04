@@ -57,6 +57,29 @@ describe("resolveBorrowAssetId", () => {
       marketId: "uni-v3-stable-usdc-usdt",
     })
   })
+
+  it("keeps a venue-scoped asset on its OWN spoke's collateral market by default", () => {
+    const session = {
+      state: buildMockBorrowSystemState("demo-wallet"),
+      marketSummaries: [
+        { id: "uni-v3-bluechip-weth-usdc", name: "WETH / USDC", venue: "Uni v3 Bluechip", feeTier: "0.05%" },
+        { id: "uni-v3-stable-usdc-usdt", name: "USDC / USDT", venue: "Uni v3 Stable", feeTier: "0.01%" },
+      ],
+      // Bluechip sorts first, so the old first-match default re-scoped the debt to it.
+      collateralPools: [{ id: "uni-v3-bluechip-weth-usdc" }, { id: "uni-v3-stable-usdc-usdt" }],
+      getBorrowableAssetsForMarket: () => [],
+      borrowableAssets: [],
+    }
+
+    // No explicit market → stay on the asset's own spoke, not whichever pool sorts first.
+    expect(resolveBorrowMarketForAsset(session as never, "uni-v3-stable:usdc", undefined)).toBe(
+      "uni-v3-stable-usdc-usdt",
+    )
+    // An explicit different-venue choice is still honored (re-scopes on purpose).
+    expect(resolveBorrowMarketForAsset(session as never, "uni-v3-stable:usdc", "uni-v3-bluechip-weth-usdc")).toBe(
+      "uni-v3-bluechip-weth-usdc",
+    )
+  })
 })
 
 describe("claimSelectItemsForWallet", () => {

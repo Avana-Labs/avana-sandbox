@@ -2,14 +2,14 @@
 
 import type { SIWEConfig } from "connectkit"
 import { buildSiweMessage } from "./message"
-import { clearSiweToken, getSiweToken, setSiweToken } from "./auth-store"
+import { clearSiweToken, getSiweSession, setSiweSession } from "./auth-store"
 
 /**
  * ConnectKit SIWE configuration. This unifies wallet connection and Sign-In With
  * Ethereum into a single ConnectKit flow: the modal connects the wallet, prompts the
  * SIWE signature, and only then reports "signed in". It is wired to the app's existing
- * SIWE endpoints (/api/siwe/nonce + /api/siwe/verify) and the shared token store, so
- * Convex auth (useConvexSiweAuth reads the same store) keeps working unchanged.
+ * SIWE endpoints establish an HttpOnly browser session. Convex access tokens are
+ * minted on demand and retained only in memory.
  */
 export const siweConfig: SIWEConfig = {
   getNonce: async () => {
@@ -36,22 +36,25 @@ export const siweConfig: SIWEConfig = {
       body: JSON.stringify({ message, signature }),
     })
     if (!res.ok) return false
-    const { token, wallet } = (await res.json()) as { token: string; wallet: string }
-    // Persist the JWT so Convex (useConvexSiweAuth) authenticates as this wallet.
-    setSiweToken(token, wallet)
+    const { wallet } = (await res.json()) as { wallet: string }
+    setSiweSession(wallet)
     return true
   },
 
-  // ConnectKit polls this to know whether the wallet is already signed in. We back it
-  // with the locally-stored JWT so a signed-in wallet survives reloads.
+  // ConnectKit polls this to know whether the wallet is already signed in. The root
+  // layout hydrates this non-secret wallet metadata from the HttpOnly session.
   getSession: async () => {
-    const token = getSiweToken()
-    if (!token?.wallet) return null
-    return { address: token.wallet as `0x${string}`, chainId: 1 }
+    const session = getSiweSession()
+    if (!session?.wallet) return null
+    return { address: session.wallet as `0x${string}`, chainId: 1 }
   },
 
   signOut: async () => {
-    clearSiweToken()
+    try {
+      await fetch("/api/siwe/logout", { method: "POST" })
+    } finally {
+      clearSiweToken()
+    }
     return true
   },
 }

@@ -659,6 +659,10 @@ function buildCollateralHistory(row: BorrowPoolRow): TxHistoryRow[] {
       amountLabel: `${prefix}${formatCompactUsd(amount)}`,
       token0AmountLabel: kind === "rewards" ? "—" : formatTokenAmount(token0Amount),
       token1AmountLabel: kind === "rewards" ? "—" : formatTokenAmount(token1Amount),
+      tokenSymbol: token0Symbol,
+      tokenSymbolSecondary: token1Symbol,
+      tokenAmountLabel:
+        kind === "rewards" ? undefined : `${formatTokenAmount(token0Amount)} / ${formatTokenAmount(token1Amount)}`,
       counterpartyLabel: undefined,
       walletLabel,
       walletHref: `https://etherscan.io/address/${walletAddress}`,

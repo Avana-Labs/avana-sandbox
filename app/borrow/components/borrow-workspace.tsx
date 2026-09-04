@@ -87,8 +87,8 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
   const [currentTab, setCurrentTab] = useState<BorrowTabId>("all")
   const [search, setSearch] = useState("")
   const marketSpokeById = useMemo(
-    () => new Map(session.marketSummaries.map((market) => [market.id, market.spoke])),
-    [session.marketSummaries],
+    () => new Map(pageData.poolCatalog.map((market) => [market.id, market.spoke])),
+    [pageData.poolCatalog],
   )
 
   // Data for each tab
@@ -97,8 +97,8 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
   }, [pageData.walletId, session.state])
 
   const filteredPools = useMemo(() => {
-    return filterPools([...session.marketSummaries], { text: search })
-  }, [search, session.marketSummaries])
+    return filterPools([...pageData.poolCatalog], { text: search })
+  }, [pageData.poolCatalog, search])
 
   const visiblePools = useMemo(() => {
     if (!isPoolTab(currentTab)) return []
@@ -115,23 +115,27 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
   const revealedPools = useMemo(() => visiblePools.slice(0, visibleCount), [visiblePools, visibleCount])
   const poolGroups = useMemo(() => groupByDex(revealedPools), [revealedPools])
   // The "Borrowable" tab in the UI (labelled "Assets"→"Borrowable") is fed from here:
-  // borrowAssetsBySpoke maps each spoke to its borrowable assets. To change what shows
-  // under "Borrowable", start at session.getBorrowableAssetsForMarket + BorrowableAssetsPanel.
+  // Keep the server-loaded public market snapshot through hydration. Session data
+  // is wallet-specific and can hydrate later with a different mock snapshot; using
+  // it here makes every public market number visibly swap after first paint.
   const borrowAssetsBySpoke = useMemo(() => {
+    const assetsBySpoke = new Map<string, BorrowableAsset[]>()
+    for (const asset of pageData.borrowableAssets) {
+      const spokeId = asset.id.includes(":") ? asset.id.split(":")[0] : ""
+      if (!spokeId) continue
+      const assets = assetsBySpoke.get(spokeId) ?? []
+      assets.push(applyBorrowableAssetDelta(asset, liquidityDeltas))
+      assetsBySpoke.set(spokeId, assets)
+    }
+
     const next: Record<string, BorrowableAsset[]> = {}
     for (const group of poolGroups) {
       for (const entry of group.spokes) {
-        const assets = new Map<string, BorrowableAsset>()
-        for (const row of entry.rows) {
-          for (const asset of session.getBorrowableAssetsForMarket(row.id)) {
-            assets.set(asset.id, applyBorrowableAssetDelta(asset, liquidityDeltas))
-          }
-        }
-        next[entry.spoke.id] = Array.from(assets.values())
+        next[entry.spoke.id] = assetsBySpoke.get(entry.spoke.id) ?? []
       }
     }
     return next
-  }, [poolGroups, session, liquidityDeltas])
+  }, [liquidityDeltas, pageData.borrowableAssets, poolGroups])
 
   useEffect(() => {
     onTabChange?.(currentTab)

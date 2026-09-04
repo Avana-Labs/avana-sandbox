@@ -10,4 +10,10 @@ describe("font-data decimal tracking", () => {
     expect(metrics).toMatch(/tracking-normal tabular-nums/)
     expect(metrics).not.toMatch(/tracking-\[-0\.04em\]/)
   })
+
+  it("P3-08: tabular-nums uses proportional lining figures so commas/decimals stay tight", () => {
+    const globals = readFileSync(resolve(__dirname, "../../../globals.css"), "utf8")
+    expect(globals).toMatch(/\.tabular-nums\s*\{[^}]*font-variant-numeric:\s*lining-nums proportional-nums/s)
+    expect(globals).toMatch(/\.tabular-nums\s*\{[^}]*white-space:\s*nowrap/s)
+  })
 })

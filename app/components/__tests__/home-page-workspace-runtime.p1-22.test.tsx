@@ -34,11 +34,12 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
 
 describe("HomePageWorkspaceRuntime", () => {
   it("P1-22 keeps one homepage shell instead of nesting HomeWorkspaceSkeleton", () => {
-    render(<HomePageWorkspaceRuntime />)
+    const { container } = render(<HomePageWorkspaceRuntime />)
 
     fireEvent.click(screen.getByRole("button", { name: "Borrow" }))
 
     expect(screen.getByTestId("borrow-action")).toBeInTheDocument()
     expect(screen.queryByTestId("home-workspace-loading")).not.toBeInTheDocument()
+    expect(container.querySelector(".reveal-in")).toBeNull()
   })
 })

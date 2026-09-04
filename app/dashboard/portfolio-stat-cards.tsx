@@ -161,7 +161,7 @@ function StatCardView({ card, graphPath }: { card: StatCard; graphPath: string }
       <div className="absolute inset-x-6 top-5 z-10">
         <div className="text-[13px] text-muted-foreground dark:text-white/48">{t(card.label)}</div>
         <div className="mt-2 flex items-center gap-2.5">
-          <span className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-[-0.04em] text-foreground">
+          <span className="font-data text-[clamp(1.35rem,1.8vw,1.95rem)] font-medium leading-none tracking-[-0.02em] text-foreground">
             {value}
           </span>
           {card.deltaPct !== undefined ? (
@@ -252,7 +252,7 @@ export function PortfolioStatCards({ activeTab }: { activeTab?: DashboardQuickAc
     <div>
       <div className="mb-5 flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
-          <h2 className="truncate text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+          <h2 className="truncate text-[22px] font-medium leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
             {greeting}
           </h2>
           <button

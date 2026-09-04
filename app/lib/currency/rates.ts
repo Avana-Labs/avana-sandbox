@@ -65,10 +65,9 @@ export const ZERO_DECIMAL_CURRENCIES: ReadonlySet<CurrencyCode> = new Set<Curren
 ])
 
 /**
- * Live FX overlay: "units of currency per 1 USD" fetched from a live source at
- * runtime. Empty until a live fetch populates it (see
- * `app/lib/currency/exchange-rates`). NEVER mutated on the server, so server
- * renders stay on the baseline and match the first client render.
+ * Live FX overlay: "units of currency per 1 USD". Seeded on the server from the
+ * same source as `/api/fx-rates` (see `app/lib/currency/server-hydrate.ts`) so
+ * SSR and the first client render share one map; the client may refresh later.
  */
 const liveRates: Partial<Record<CurrencyCode, number>> = {}
 

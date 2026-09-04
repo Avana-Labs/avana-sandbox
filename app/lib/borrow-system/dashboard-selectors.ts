@@ -111,6 +111,7 @@ export function selectPortfolioDebtRows(state: BorrowSystemState, walletId: stri
     rows.push({
       id: position.id,
       pool,
+      debtAssetId: position.assetId,
       debtAssetSymbol: asset?.symbol ?? "",
       borrowedUsd,
       liquidationThresholdUsd: pool.liquidationUsd,

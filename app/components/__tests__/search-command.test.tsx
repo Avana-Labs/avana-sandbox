@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react"
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 const push = vi.fn()
 
@@ -20,9 +20,29 @@ vi.mock("@/app/lib/page-loading", () => ({
 import { SearchCommand } from "@/app/components/search-command"
 
 describe("SearchCommand keyboard navigation", () => {
+  beforeEach(() => {
+    class LoadedImage {
+      complete = false
+      onerror: (() => void) | null = null
+      onload: (() => void) | null = null
+
+      decode() {
+        return Promise.resolve()
+      }
+
+      set src(_value: string) {
+        this.complete = true
+        queueMicrotask(() => this.onload?.())
+      }
+    }
+
+    vi.stubGlobal("Image", LoadedImage)
+  })
+
   afterEach(() => {
     cleanup()
     push.mockReset()
+    vi.unstubAllGlobals()
   })
 
   const openAndLoad = async () => {
@@ -32,6 +52,32 @@ describe("SearchCommand keyboard navigation", () => {
     await waitFor(() => expect(screen.getAllByRole("option").length).toBeGreaterThan(0))
     return screen.getByRole("combobox")
   }
+
+  it("opens immediately after an intent-loaded trigger requests the module", () => {
+    render(<SearchCommand initialOpen />)
+    expect(screen.getByRole("dialog")).toBeInTheDocument()
+  })
+
+  it("shows loading state before results arrive, not an empty-results message", async () => {
+    render(<SearchCommand />)
+    fireEvent.click(screen.getByRole("button", { name: "Search Avana" }))
+
+    expect(screen.getByText("Loading results")).toBeInTheDocument()
+    expect(screen.queryByText("No results found")).not.toBeInTheDocument()
+
+    await waitFor(() => expect(screen.getAllByRole("option").length).toBeGreaterThan(0))
+    expect(screen.queryByText("Loading results")).not.toBeInTheDocument()
+  })
+
+  it("publishes result rows with eagerly loaded icons", async () => {
+    await openAndLoad()
+
+    const icon = screen.getAllByRole("option")[0].querySelector("img")
+    expect(icon).not.toBeNull()
+    expect(icon).toHaveAttribute("loading", "eager")
+    expect(icon).toHaveAttribute("decoding", "sync")
+    expect(icon).toHaveAttribute("fetchpriority", "high")
+  })
 
   it("navigates results with ArrowDown/ArrowUp and opens with Enter", async () => {
     const input = await openAndLoad()

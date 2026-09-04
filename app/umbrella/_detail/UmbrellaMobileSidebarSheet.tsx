@@ -15,7 +15,7 @@ export type UmbrellaMobileSheetTrigger = "stake" | "cooldown" | "unstake" | "cla
  * on small screens and falls back to a centered dialog on tablet+.
  *
  * The mobile action bar in /umbrella lifts this to swap between Stake and
- * More; on desktop the sheet never renders because the aside sidebar takes
+ * Unstake; on desktop the sheet never renders because the aside sidebar takes
  * over (lg:block on the parent aside).
  */
 export function UmbrellaMobileSidebarSheet({
@@ -30,9 +30,8 @@ export function UmbrellaMobileSidebarSheet({
   moduleId: UmbrellaMarketId
   onMarketChange?: (marketId: UmbrellaMarketId) => void
   // The trigger the user tapped in the mobile action bar. Threaded into
-  // UmbrellaSidebar as its `initialTab` so the "More" button opens on the tab
-  // most useful for the position state (unstake / cooldown / claim) instead of
-  // always landing on Stake. The sidebar is remounted on every open (see the
+  // UmbrellaSidebar as its `initialTab` so Stake/Unstake open on the matching tab
+  // instead of always landing on Stake. The sidebar is remounted on every open (see the
   // `sessionKey` below), so the new initialTab takes effect each time.
   initialTab?: UmbrellaMobileSheetTrigger
 }) {

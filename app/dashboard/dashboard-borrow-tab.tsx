@@ -67,9 +67,9 @@ export function DashboardBorrowTab({
     return { totalBorrowed, totalCollateral, accruedInterest, averageHf, dailyInterest }
   }, [debtsRows])
 
-  const handleSupplyBorrowMore = useCallback(
+  const handleSupplyClaimFees = useCallback(
     (context: SupplyRowContext) => {
-      router.push(actionPagePath("borrow", "borrow", { market: context.pool.id, ...returnParams }))
+      router.push(actionPagePath("borrow", "claim", { market: context.pool.id, ...returnParams }))
     },
     [returnParams, router],
   )
@@ -131,7 +131,7 @@ export function DashboardBorrowTab({
             <SuppliesPanel
               rows={sortedSupplies}
               totals={supplyTotals}
-              onBorrowMore={handleSupplyBorrowMore}
+              onClaimFees={handleSupplyClaimFees}
               onAddCollateral={handleSupplyAddCollateral}
               onRemove={handleSupplyRemove}
               showBalance={showDollarAmounts}
@@ -145,7 +145,7 @@ export function DashboardBorrowTab({
             <SuppliesPanel
               rows={sortedSupplies}
               totals={supplyTotals}
-              onBorrowMore={handleSupplyBorrowMore}
+              onClaimFees={handleSupplyClaimFees}
               onAddCollateral={handleSupplyAddCollateral}
               onRemove={handleSupplyRemove}
               showBalance={showDollarAmounts}
