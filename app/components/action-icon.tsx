@@ -13,6 +13,7 @@ import {
   Repeat2,
   SquareLock02,
   Unlock,
+  X,
 } from "@/app/components/icons"
 
 const ACTION_ICONS: Record<string, LucideIcon> = {
@@ -24,6 +25,7 @@ const ACTION_ICONS: Record<string, LucideIcon> = {
   withdraw: LeavingGeoFence,
   multiply: ArrowUpRightStack,
   deleverage: ArrowShrink,
+  close: X,
   swap: Repeat2,
   stake: CircleArrowUp,
   claim: Gift,

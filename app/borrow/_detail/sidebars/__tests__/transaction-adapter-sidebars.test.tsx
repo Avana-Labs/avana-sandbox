@@ -254,12 +254,15 @@ describe("detail sidebars", () => {
     expect(screen.getByTestId("action-launch-repay")).toBeInTheDocument()
   })
 
-  it("links pool sidebar pledge and claim tabs to action pages", () => {
+  it("links pool sidebar pledge, remove, and claim tabs to action pages", () => {
     render(<PoolBorrowActions detail={poolDetail} />)
 
-    // A collateral market detail page exposes only Pledge (supply) and Claim (fees).
+    // Collateral market detail: Pledge (supply), Remove (withdraw), Claim (fees).
     expect(screen.getByTestId("action-launch-supply")).toBeInTheDocument()
-    expect(screen.queryByRole("tab", { name: "Remove" })).not.toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: "Remove" })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("tab", { name: "Remove" }))
+    expect(screen.getByTestId("action-launch-remove")).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole("tab", { name: "Claim" }))
     expect(screen.getByTestId("action-launch-claim")).toBeInTheDocument()

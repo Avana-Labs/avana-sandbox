@@ -49,7 +49,7 @@ import {
 type SuppliesTableProps = {
   rows: SupplyRowContext[]
   totals: { collateral: number; borrowed: number; available: number; fees: number; averageHf: number | null }
-  onBorrowMore: (context: SupplyRowContext) => void
+  onClaimFees?: (context: SupplyRowContext) => void
   onAddCollateral?: (context: SupplyRowContext) => void
   onRemove?: (context: SupplyRowContext) => void
   showBalance?: boolean
@@ -79,6 +79,7 @@ function SuppliesMetricHeader({
 export function SuppliesPanel({
   rows,
   totals,
+  onClaimFees,
   showBalance = true,
   showSummary = true,
   showHeading = true,
@@ -247,11 +248,11 @@ export function SuppliesPanel({
                       className={MARKET_MOBILE_CTA_CLASS}
                       onClick={(event) => {
                         event.stopPropagation()
-                        onBorrowMore(row)
+                        onClaimFees?.(row)
                       }}
                     >
-                      <ActionIcon label="Borrow" />
-                      {t("Borrow")}
+                      <ActionIcon label="Claim" />
+                      {t("Claim")}
                     </Button>
                     <Button
                       type="button"

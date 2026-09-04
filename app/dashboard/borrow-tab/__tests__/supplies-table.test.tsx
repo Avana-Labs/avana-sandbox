@@ -47,7 +47,7 @@ describe("SuppliesPanel column scope", () => {
       <SuppliesPanel
         rows={[]}
         totals={{ collateral: 0, borrowed: 0, available: 0, fees: 0, averageHf: null }}
-        onBorrowMore={vi.fn()}
+        onClaimFees={vi.fn()}
         showSummary={false}
       />,
     )
@@ -64,7 +64,7 @@ describe("SuppliesPanel column scope", () => {
       <SuppliesPanel
         rows={[tinyRow]}
         totals={{ collateral: 2, borrowed: 0, available: 3_700, fees: 0, averageHf: 4.57 }}
-        onBorrowMore={vi.fn()}
+        onClaimFees={vi.fn()}
         showSummary={false}
         showHeading={false}
       />,

@@ -1227,6 +1227,7 @@ const dict: TranslationDictionary = {
   "Restart cooldown": "クールダウンを再開",
   Stake: "ステーク",
   "Stake in umbrella": "アンブレラにステーク",
+"Unstake from umbrella": "アンブレラからアンステーク",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "アンブレラセーフティモジュールでステーク、報酬の請求、クールダウン開始、アンステークを行えます。",
   "Stake, claim, cooldown, unstake": "ステーク・請求・クールダウン・アンステーク",

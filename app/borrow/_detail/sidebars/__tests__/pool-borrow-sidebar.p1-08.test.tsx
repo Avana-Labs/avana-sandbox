@@ -29,9 +29,10 @@ const detail = {
 } as never
 
 describe("PoolBorrowSidebar", () => {
-  it("a collateral-pool detail exposes only Pledge and Claim (not Borrow/Repay)", () => {
+  it("a collateral-pool detail exposes Pledge, Remove, and Claim (not Borrow/Repay)", () => {
     render(<PoolBorrowActions detail={detail} />)
     expect(screen.getByRole("tab", { name: "Pledge" })).toBeInTheDocument()
+    expect(screen.getByRole("tab", { name: "Remove" })).toBeInTheDocument()
     expect(screen.getByRole("tab", { name: "Claim" })).toBeInTheDocument()
     expect(screen.queryByRole("tab", { name: "Borrow" })).not.toBeInTheDocument()
     expect(screen.queryByRole("tab", { name: "Repay" })).not.toBeInTheDocument()

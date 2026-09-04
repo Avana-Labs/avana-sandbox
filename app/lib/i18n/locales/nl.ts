@@ -1186,6 +1186,7 @@ const dict: TranslationDictionary = {
   "Restart cooldown": "Cooldown opnieuw starten",
   Stake: "Stake",
   "Stake in umbrella": "Staken in Protectie",
+"Unstake from umbrella": "Unstaken uit Protectie",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "Stake, claim beloningen, start de cooldown of unstake uit de Protectie-veiligheidsmodule.",
   "Stake, claim, cooldown, unstake": "Staken, claimen, cooldown, unstaken",

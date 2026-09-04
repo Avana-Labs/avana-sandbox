@@ -1167,6 +1167,7 @@ const dict: TranslationDictionary = {
   "Restart cooldown": "쿨다운 다시 시작",
   Stake: "스테이크",
   "Stake in umbrella": "보호에 스테이크",
+"Unstake from umbrella": "보호에서 언스테이크",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "보호 안전 모듈에서 스테이크, 보상 수령, 쿨다운 시작 또는 언스테이크를 진행하세요.",
   "Stake, claim, cooldown, unstake": "스테이크, 청구, 쿨다운, 언스테이크",

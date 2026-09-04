@@ -1246,6 +1246,7 @@ const dict: TranslationDictionary = {
   "Restart cooldown": "重新开始冷却",
   Stake: "质押",
   "Stake in umbrella": "在保护中质押",
+"Unstake from umbrella": "从保护中解除质押",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "在保护安全模块中进行质押、领取奖励、开启冷却或解除质押。",
   "Stake, claim, cooldown, unstake": "质押、领取、冷却、解除质押",

@@ -7,11 +7,8 @@ import {
   type UmbrellaMobileSheetTrigger,
 } from "@/app/umbrella/_detail/UmbrellaMobileSidebarSheet"
 
-// H2 regression: /umbrella's "More" button computes an initialTab from the
-// position state (ready→unstake / cooling→cooldown / rewards→claim) and passes
-// it here, but the sheet used to rename it `_initialTab` and drop it, so the
-// sheet always opened on Stake. These assert the passed initialTab actually
-// selects the matching tab on open.
+// Regression: mobile CTAs pass initialTab (Stake / Unstake) into the sheet so
+// the matching tab is selected on open rather than always landing on Stake.
 function renderSheet(initialTab?: UmbrellaMobileSheetTrigger) {
   return render(
     <DisplayPreferencesProvider>

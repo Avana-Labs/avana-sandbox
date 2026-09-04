@@ -1181,6 +1181,7 @@ const dict: TranslationDictionary = {
   "Restart cooldown": "Cooldown'ı yeniden başlat",
   Stake: "Stake",
   "Stake in umbrella": "Koruma'da stake et",
+"Unstake from umbrella": "Koruma'dan unstake et",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "Koruma güvenlik modülünde stake et, ödül al, cooldown başlat veya stake'i geri çek.",
   "Stake, claim, cooldown, unstake": "Stake, al, cooldown, geri çek",

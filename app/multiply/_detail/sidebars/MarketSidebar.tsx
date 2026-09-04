@@ -11,11 +11,12 @@ import { cn } from "@/lib/utils"
 
 type Props = { detail: MultiplyMarketDetail; className?: string; hideActions?: boolean }
 
-type SidebarTab = "multiply" | "deleverage"
+type SidebarTab = "multiply" | "deleverage" | "close"
 
 const MULTIPLY_TAB_ITEMS = [
   { id: "multiply", label: "Multiply" },
   { id: "deleverage", label: "Deleverage" },
+  { id: "close", label: "Close" },
 ] as const
 
 function normalizeMarketId(id: string) {
@@ -84,6 +85,14 @@ function MarketActionRail({ detail, className, embedActions = false }: Props & {
             <ResponsiveMultiplyAction kind="deleverage" market={marketId} closeHref={closeHref} sidebar />
           ) : (
             <ActionPageLaunchCta product="multiply" kind="deleverage" market={marketId} returnTo={closeHref} />
+          )
+        ) : null}
+
+        {tab === "close" ? (
+          embedActions ? (
+            <ResponsiveMultiplyAction kind="close" market={marketId} closeHref={closeHref} sidebar />
+          ) : (
+            <ActionPageLaunchCta product="multiply" kind="close" market={marketId} returnTo={closeHref} />
           )
         ) : null}
       </div>

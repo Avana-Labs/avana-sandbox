@@ -1193,6 +1193,7 @@ const dict: TranslationDictionary = {
   "Restart cooldown": "Перезапустить кулдаун",
   Stake: "Стейк",
   "Stake in umbrella": "Стейкать в Защите",
+"Unstake from umbrella": "Анстейк из Защиты",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "Стейкайте, клеймите награды, запускайте кулдаун или анстейкайте из модуля безопасности Защиты.",
   "Stake, claim, cooldown, unstake": "Стейкать, забирать, кулдаун, выводить",

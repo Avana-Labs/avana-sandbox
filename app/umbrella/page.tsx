@@ -42,17 +42,6 @@ function UmbrellaPageInner() {
   })
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false)
   const [mobileSheetInitialTab, setMobileSheetInitialTab] = useState<UmbrellaMobileSheetTrigger>("stake")
-  const position = umbrella.positions[selectedMarket]
-  // "More" button jumps straight to whichever tab is most useful given wallet state:
-  // ready-to-withdraw > cooling > has-rewards > cooldown-entry.
-  const moreDefaultTab: UmbrellaMobileSheetTrigger =
-    position?.cooldownStatus === "ready"
-      ? "unstake"
-      : position?.cooldownStatus === "cooling"
-        ? "cooldown"
-        : (position?.pendingRewardsUsd ?? 0) > 0
-          ? "claim"
-          : "cooldown"
 
   const openSheet = (tab: UmbrellaMobileSheetTrigger) => {
     setMobileSheetInitialTab(tab)
@@ -87,12 +76,12 @@ function UmbrellaPageInner() {
           <MobileDetailActionBar className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              onClick={() => openSheet(moreDefaultTab)}
-              aria-label={t("More umbrella actions")}
+              onClick={() => openSheet("unstake")}
+              aria-label={t("Unstake from umbrella")}
               className={secondaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
             >
-              <ActionIcon label={t("More")} />
-              {t("More")}
+              <ActionIcon label={t("Unstake")} />
+              {t("Unstake")}
             </button>
             <button
               type="button"
