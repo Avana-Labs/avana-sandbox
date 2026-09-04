@@ -56,10 +56,7 @@ export function interestRateModelFromAssetDetail(detail: AssetDetail): Omit<Prop
 
   const fromSeriesBorrowed = seriesEndValue(detail.supplyBorrow.borrowed)
   const fromSeriesSupplied = seriesEndValue(detail.supplyBorrow.supplied)
-  const borrowedUsd =
-    fromSeriesBorrowed > 0
-      ? fromSeriesBorrowed
-      : detail.row.totalBorrowedUsd
+  const borrowedUsd = fromSeriesBorrowed > 0 ? fromSeriesBorrowed : detail.row.totalBorrowedUsd
   const suppliedUsd =
     fromSeriesSupplied > 0
       ? fromSeriesSupplied

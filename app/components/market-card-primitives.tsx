@@ -89,9 +89,7 @@ export function MarketMobileMetric({
       >
         {value}
       </div>
-      <div className="mt-0.5 text-[13px] font-normal leading-4 tracking-normal text-muted-foreground">
-        {label}
-      </div>
+      <div className="mt-0.5 text-[13px] font-normal leading-4 tracking-normal text-muted-foreground">{label}</div>
     </>
   )
 }

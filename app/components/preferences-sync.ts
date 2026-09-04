@@ -41,9 +41,7 @@ export function isCurrency(value: string | undefined): value is CurrencyCode {
 }
 
 /** Drop unknown / malformed fields from a Convex (or local) preferences blob. */
-export function normalizePreferences(
-  preferences: StoredPreferences | null | undefined,
-): StoredPreferences | null {
+export function normalizePreferences(preferences: StoredPreferences | null | undefined): StoredPreferences | null {
   if (!preferences) return null
   const normalized: StoredPreferences = {}
   if (isTheme(preferences.theme)) normalized.theme = preferences.theme

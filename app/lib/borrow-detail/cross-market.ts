@@ -7,7 +7,11 @@
  */
 
 import { BORROW_POOL_CATALOG, type BorrowAssetVisual, type BorrowPoolRow } from "@/app/lib/borrow-sim"
-import { listSpokeBorrowables, resolveSpokeBorrowable, type SpokeBorrowableRecord } from "@/app/lib/borrow-system/registry"
+import {
+  listSpokeBorrowables,
+  resolveSpokeBorrowable,
+  type SpokeBorrowableRecord,
+} from "@/app/lib/borrow-system/registry"
 import { borrowAssetDetailPath, borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 
 export type BorrowableAssetRef = {

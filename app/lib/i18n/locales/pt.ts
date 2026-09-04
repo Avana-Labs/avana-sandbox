@@ -1237,7 +1237,7 @@ const dict: TranslationDictionary = {
   "Restart cooldown": "Reiniciar cooldown",
   Stake: "Stake",
   "Stake in umbrella": "Fazer stake em Proteção",
-"Unstake from umbrella": "Remover stake de Proteção",
+  "Unstake from umbrella": "Remover stake de Proteção",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "Faça stake, resgate recompensas, inicie o cooldown ou retire o stake do módulo de segurança da Proteção.",
   "Stake, claim, cooldown, unstake": "Stake, resgate, cooldown, unstake",
@@ -1345,6 +1345,9 @@ const dict: TranslationDictionary = {
   "In range": "Na faixa",
   "Interest / day": "Juros / dia",
   "Key Statistics": "Estatísticas principais",
+  "Market Rates": "Taxas de mercado",
+  "Utilization Rate": "Taxa de utilização",
+  "Borrow amount to reach {value} Util.": "Valor a tomar emprestado para atingir {value} de utilização.",
   "Large price difference": "Grande diferença de preço",
   "Lend Assets": "Emprestar ativos",
   "Lend Balance": "Saldo de empréstimo",
@@ -1653,7 +1656,7 @@ const dict: TranslationDictionary = {
   "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
     "À medida que a margem diminui, a posição fica mais exposta à liquidação se as condições de mercado forem contra ela.",
   "When can liquidation happen?": "Quando a liquidação pode acontecer?",
-  "Triggers": "Gatilhos",
+  Triggers: "Gatilhos",
   "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
     "Se movimentos de mercado enfraquecerem a saúde o suficiente, a posição pode se tornar liquidável pelas regras do spoke.",
   "What happens next": "O que acontece em seguida",
@@ -1675,8 +1678,7 @@ const dict: TranslationDictionary = {
   "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
     "Cada posição é avaliada por conta própria antes de ser incluída na capacidade de empréstimo final.",
   "Fees & Interface Policy": "Taxas e política de interface",
-  "Are interface fees fixed across all integrations?":
-    "As taxas de interface são fixas em todas as integrações?",
+  "Are interface fees fixed across all integrations?": "As taxas de interface são fixas em todas as integrações?",
   "Operational settings": "Configurações operacionais",
   "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
     "Taxas exatas, isenções e status de lançamento são configurações operacionais e devem ser verificados na interface ao vivo.",

@@ -229,11 +229,7 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
               <MarketMobileStatList>
                 <MarketMobileStatRow label={t("Active stake")} value={row.activeStakeLabel} />
                 {row.coolingUsd > 0 ? (
-                  <MarketMobileStatRow
-                    label={t("Cooling")}
-                    value={row.coolingLabel}
-                    valueClassName="text-warning"
-                  />
+                  <MarketMobileStatRow label={t("Cooling")} value={row.coolingLabel} valueClassName="text-warning" />
                 ) : null}
                 <MarketMobileStatRow
                   label={t("Rewards")}

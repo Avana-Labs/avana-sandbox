@@ -1227,7 +1227,7 @@ const dict: TranslationDictionary = {
   "Restart cooldown": "クールダウンを再開",
   Stake: "ステーク",
   "Stake in umbrella": "アンブレラにステーク",
-"Unstake from umbrella": "アンブレラからアンステーク",
+  "Unstake from umbrella": "アンブレラからアンステーク",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "アンブレラセーフティモジュールでステーク、報酬の請求、クールダウン開始、アンステークを行えます。",
   "Stake, claim, cooldown, unstake": "ステーク・請求・クールダウン・アンステーク",
@@ -1339,6 +1339,9 @@ const dict: TranslationDictionary = {
   "In range": "レンジ内",
   "Interest / day": "利息 / 日",
   "Key Statistics": "主要統計",
+  "Market Rates": "マーケットレート",
+  "Utilization Rate": "稼働率",
+  "Borrow amount to reach {value} Util.": "{value}の稼働率に達するための借入額。",
   "Large price difference": "価格差が大きい",
   "Lend Assets": "貸出資産",
   "Lend Balance": "貸出残高",
@@ -1635,7 +1638,7 @@ const dict: TranslationDictionary = {
   "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
     "バッファが縮むと、市況が不利に動いた場合にポジションは清算リスクにさらされやすくなります。",
   "When can liquidation happen?": "いつ清算が起きるか？",
-  "Triggers": "トリガー",
+  Triggers: "トリガー",
   "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
     "市場の動きが健全性を十分に弱めると、spokeのルールに基づきポジションは清算可能になります。",
   "What happens next": "その後の流れ",

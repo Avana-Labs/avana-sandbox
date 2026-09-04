@@ -390,7 +390,11 @@ function buildAbout(row: MultiplyMarketRow, marketId: string): AboutCard {
         title: "Deployed",
         description: "Market contracts deployed.",
       },
-      { date: "2025-08-12", title: "Market listed", description: `${formatMultiplyLoopPairLabel(row.protocol, row.asset)} added to Multiply.` },
+      {
+        date: "2025-08-12",
+        title: "Market listed",
+        description: `${formatMultiplyLoopPairLabel(row.protocol, row.asset)} added to Multiply.`,
+      },
       {
         date: "2026-01-18",
         title: "Risk limits refreshed",

@@ -135,7 +135,7 @@ export function MarketHeroChart({
       <HeroBalanceDisplay
         value={hideValue ? "••••••••" : valueText}
         delta={deltaText}
-        deltaTone={tone === "neutral" ? "positive" : tone}
+        deltaTone={tone}
         meta={meta}
         hidden={hideValue}
         variant={balanceVariant}

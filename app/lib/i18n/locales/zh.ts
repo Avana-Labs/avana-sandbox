@@ -1246,7 +1246,7 @@ const dict: TranslationDictionary = {
   "Restart cooldown": "重新开始冷却",
   Stake: "质押",
   "Stake in umbrella": "在保护中质押",
-"Unstake from umbrella": "从保护中解除质押",
+  "Unstake from umbrella": "从保护中解除质押",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "在保护安全模块中进行质押、领取奖励、开启冷却或解除质押。",
   "Stake, claim, cooldown, unstake": "质押、领取、冷却、解除质押",
@@ -1348,6 +1348,9 @@ const dict: TranslationDictionary = {
   "In range": "区间内",
   "Interest / day": "利息 / 天",
   "Key Statistics": "关键统计",
+  "Market Rates": "市场利率",
+  "Utilization Rate": "利用率",
+  "Borrow amount to reach {value} Util.": "达到 {value} 利用率所需的借款金额。",
   "Large price difference": "价格差异较大",
   "Lend Assets": "存款资产",
   "Lend Balance": "存款余额",
@@ -1624,7 +1627,7 @@ const dict: TranslationDictionary = {
   "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
     "缓冲收窄时，若市场走势不利，仓位更容易面临清算。",
   "When can liquidation happen?": "何时可能发生清算？",
-  "Triggers": "触发条件",
+  Triggers: "触发条件",
   "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
     "若市场波动足以削弱健康度，仓位可按 spoke 规则变为可清算。",
   "What happens next": "接下来会发生什么",

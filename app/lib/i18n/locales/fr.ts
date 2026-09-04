@@ -1237,7 +1237,7 @@ const dict: TranslationDictionary = {
   "Restart cooldown": "Redémarrer le cooldown",
   Stake: "Stake",
   "Stake in umbrella": "Staker dans Protection",
-"Unstake from umbrella": "Unstaker de Protection",
+  "Unstake from umbrella": "Unstaker de Protection",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "Stakez, réclamez des récompenses, démarrez un cooldown ou retirez votre stake du module de sécurité Protection.",
   "Stake, claim, cooldown, unstake": "Staker, réclamer, cooldown, retirer",
@@ -1343,6 +1343,9 @@ const dict: TranslationDictionary = {
   "In range": "Dans la plage",
   "Interest / day": "Intérêts / jour",
   "Key Statistics": "Statistiques clés",
+  "Market Rates": "Taux du marché",
+  "Utilization Rate": "Taux d'utilisation",
+  "Borrow amount to reach {value} Util.": "Montant à emprunter pour atteindre {value} d'utilisation.",
   "Large price difference": "Écart de prix important",
   "Lend Assets": "Prêter des actifs",
   "Lend Balance": "Solde de prêt",
@@ -1654,7 +1657,7 @@ const dict: TranslationDictionary = {
   "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
     "À mesure que la marge se réduit, la position devient plus exposée à la liquidation si les conditions de marché lui deviennent défavorables.",
   "When can liquidation happen?": "Quand la liquidation peut-elle se produire ?",
-  "Triggers": "Déclencheurs",
+  Triggers: "Déclencheurs",
   "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
     "Si les mouvements de marché affaiblissent suffisamment la santé, la position peut devenir liquidable selon les règles du spoke.",
   "What happens next": "Que se passe-t-il ensuite",
@@ -1668,8 +1671,7 @@ const dict: TranslationDictionary = {
   "Position stacking": "Empilement de positions",
   "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
     "La capacité d'emprunt peut être agrégée à partir de plusieurs positions approuvées au sein du même Borrow Spoke.",
-  "Can one account use multiple LP positions?":
-    "Un compte peut-il utiliser plusieurs positions LP ?",
+  "Can one account use multiple LP positions?": "Un compte peut-il utiliser plusieurs positions LP ?",
   "Multiple positions": "Plusieurs positions",
   "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
     "Oui. Un seul compte peut combiner des positions LP prises en charge tant que chaque position passe les contrôles du protocole.",

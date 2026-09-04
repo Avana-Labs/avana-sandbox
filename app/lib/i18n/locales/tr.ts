@@ -1181,7 +1181,7 @@ const dict: TranslationDictionary = {
   "Restart cooldown": "Cooldown'ı yeniden başlat",
   Stake: "Stake",
   "Stake in umbrella": "Koruma'da stake et",
-"Unstake from umbrella": "Koruma'dan unstake et",
+  "Unstake from umbrella": "Koruma'dan unstake et",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "Koruma güvenlik modülünde stake et, ödül al, cooldown başlat veya stake'i geri çek.",
   "Stake, claim, cooldown, unstake": "Stake, al, cooldown, geri çek",
@@ -1295,6 +1295,9 @@ const dict: TranslationDictionary = {
   "In range": "Aralıkta",
   "Interest / day": "Faiz / gün",
   "Key Statistics": "Temel İstatistikler",
+  "Market Rates": "Piyasa oranları",
+  "Utilization Rate": "Kullanım oranı",
+  "Borrow amount to reach {value} Util.": "{value} kullanıma ulaşmak için borç tutarı.",
   "Large price difference": "Büyük fiyat farkı",
   "Lend Assets": "Ödünç Verme Varlıkları",
   "Lend Balance": "Ödünç Verme Bakiyesi",
@@ -1604,7 +1607,7 @@ const dict: TranslationDictionary = {
   "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
     "Tampon küçüldükçe, piyasa koşulları aleyhine dönerse pozisyon tasfiyeye daha açık hale gelir.",
   "When can liquidation happen?": "Tasfiye ne zaman olabilir?",
-  "Triggers": "Tetikleyiciler",
+  Triggers: "Tetikleyiciler",
   "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
     "Piyasa hareketleri health'i yeterince zayıflatırsa, pozisyon spoke kurallarına göre tasfiye edilebilir hale gelebilir.",
   "What happens next": "Sonra ne olur",
@@ -1618,8 +1621,7 @@ const dict: TranslationDictionary = {
   "Position stacking": "Pozisyon yığınlama",
   "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
     "Borç alma kapasitesi, aynı Borrow Spoke içindeki birden fazla onaylı pozisyondan birleştirilebilir.",
-  "Can one account use multiple LP positions?":
-    "Bir hesap birden fazla LP pozisyonu kullanabilir mi?",
+  "Can one account use multiple LP positions?": "Bir hesap birden fazla LP pozisyonu kullanabilir mi?",
   "Multiple positions": "Birden fazla pozisyon",
   "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
     "Evet. Tek bir hesap, her pozisyon protokol kontrollerini geçtiği sürece desteklenen LP pozisyonlarını birleştirebilir.",
@@ -1627,16 +1629,14 @@ const dict: TranslationDictionary = {
   "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
     "Her pozisyon, nihai borç alma kapasitesine eklenmeden önce kendi koşullarına göre değerlendirilir.",
   "Fees & Interface Policy": "Ücretler ve arayüz politikası",
-  "Are interface fees fixed across all integrations?":
-    "Arayüz ücretleri tüm entegrasyonlarda sabit mi?",
+  "Are interface fees fixed across all integrations?": "Arayüz ücretleri tüm entegrasyonlarda sabit mi?",
   "Operational settings": "Operasyonel ayarlar",
   "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
     "Kesin ücret oranları, muafiyetler ve yayın durumu operasyonel ayarlardır; canlı arayüzde doğrulanmalıdır.",
   "Integration differences": "Entegrasyon farkları",
   "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
     "Doğrudan entegrasyonlar veya üçüncü taraf frontend'ler farklı varsayımlar izleyebilir; kullandığınız arayüzü her zaman doğrulayın.",
-  "What counts as protocol economics vs interface policy?":
-    "Protokol ekonomisi ile arayüz politikası nedir?",
+  "What counts as protocol economics vs interface policy?": "Protokol ekonomisi ile arayüz politikası nedir?",
   "Protocol layer": "Protokol katmanı",
   "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
     "Temel teminat değerlemesi, borç kontrolleri ve tasfiye yolları protokol katmanında yer alır.",

@@ -1186,7 +1186,7 @@ const dict: TranslationDictionary = {
   "Restart cooldown": "Mulai ulang cooldown",
   Stake: "Stake",
   "Stake in umbrella": "Stake di Proteksi",
-"Unstake from umbrella": "Unstake dari Proteksi",
+  "Unstake from umbrella": "Unstake dari Proteksi",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "Stake, klaim reward, mulai cooldown, atau unstake dari modul keamanan Proteksi.",
   "Stake, claim, cooldown, unstake": "Stake, klaim, cooldown, unstake",
@@ -1297,6 +1297,9 @@ const dict: TranslationDictionary = {
   "In range": "Dalam rentang",
   "Interest / day": "Bunga / hari",
   "Key Statistics": "Statistik Utama",
+  "Market Rates": "Suku bunga pasar",
+  "Utilization Rate": "Tingkat utilisasi",
+  "Borrow amount to reach {value} Util.": "Jumlah pinjaman untuk mencapai utilisasi {value}.",
   "Large price difference": "Perbedaan harga besar",
   "Lend Assets": "Aset Simpanan",
   "Lend Balance": "Saldo Simpanan",
@@ -1600,7 +1603,7 @@ const dict: TranslationDictionary = {
   "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
     "Saat buffer menyusut, posisi semakin terpapar likuidasi jika kondisi pasar bergerak melawannya.",
   "When can liquidation happen?": "Kapan likuidasi dapat terjadi?",
-  "Triggers": "Pemicu",
+  Triggers: "Pemicu",
   "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
     "Jika pergerakan pasar melemahkan health cukup jauh, posisi dapat menjadi dapat dilikuidasi menurut aturan spoke.",
   "What happens next": "Apa yang terjadi selanjutnya",
@@ -1622,8 +1625,7 @@ const dict: TranslationDictionary = {
   "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
     "Setiap posisi dievaluasi secara terpisah sebelum dimasukkan ke kapasitas pinjaman akhir.",
   "Fees & Interface Policy": "Biaya & kebijakan antarmuka",
-  "Are interface fees fixed across all integrations?":
-    "Apakah biaya antarmuka tetap di semua integrasi?",
+  "Are interface fees fixed across all integrations?": "Apakah biaya antarmuka tetap di semua integrasi?",
   "Operational settings": "Pengaturan operasional",
   "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
     "Tarif tepat, pengecualian, dan status peluncuran adalah pengaturan operasional dan harus diverifikasi di antarmuka live.",

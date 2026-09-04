@@ -1186,7 +1186,7 @@ const dict: TranslationDictionary = {
   "Restart cooldown": "Cooldown opnieuw starten",
   Stake: "Stake",
   "Stake in umbrella": "Staken in Protectie",
-"Unstake from umbrella": "Unstaken uit Protectie",
+  "Unstake from umbrella": "Unstaken uit Protectie",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "Stake, claim beloningen, start de cooldown of unstake uit de Protectie-veiligheidsmodule.",
   "Stake, claim, cooldown, unstake": "Staken, claimen, cooldown, unstaken",
@@ -1295,6 +1295,9 @@ const dict: TranslationDictionary = {
   "In range": "Binnen bereik",
   "Interest / day": "Rente / dag",
   "Key Statistics": "Belangrijkste statistieken",
+  "Market Rates": "Marktrentes",
+  "Utilization Rate": "Benuttingsgraad",
+  "Borrow amount to reach {value} Util.": "Leenbedrag om {value} benutting te bereiken.",
   "Large price difference": "Groot prijsverschil",
   "Lend Assets": "Activa uitlenen",
   "Lend Balance": "Uitleensaldo",
@@ -1604,7 +1607,7 @@ const dict: TranslationDictionary = {
   "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
     "Naarmate de buffer krimpt, wordt de positie meer blootgesteld aan liquidatie als marktomstandigheden tegenwerken.",
   "When can liquidation happen?": "Wanneer kan liquidatie plaatsvinden?",
-  "Triggers": "Uitlokkers",
+  Triggers: "Uitlokkers",
   "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
     "Als marktbewegingen de health genoeg verzwakken, kan de positie liquideerbaar worden volgens de regels van de spoke.",
   "What happens next": "Wat er daarna gebeurt",
@@ -1626,16 +1629,14 @@ const dict: TranslationDictionary = {
   "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
     "Elke positie wordt op eigen voorwaarden beoordeeld voordat deze in de uiteindelijke leencapaciteit wordt opgenomen.",
   "Fees & Interface Policy": "Kosten & interfacebeleid",
-  "Are interface fees fixed across all integrations?":
-    "Zijn interfacekosten vast voor alle integraties?",
+  "Are interface fees fixed across all integrations?": "Zijn interfacekosten vast voor alle integraties?",
   "Operational settings": "Operationele instellingen",
   "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
     "Exacte tarieven, vrijstellingen en rollout-status zijn operationele instellingen en moeten in de live interface worden gecontroleerd.",
   "Integration differences": "Integratieverschillen",
   "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
     "Directe integraties of third-party frontends kunnen andere aannames volgen, dus controleer altijd de interface die je gebruikt.",
-  "What counts as protocol economics vs interface policy?":
-    "Wat telt als protocoleconomie vs. interfacebeleid?",
+  "What counts as protocol economics vs interface policy?": "Wat telt als protocoleconomie vs. interfacebeleid?",
   "Protocol layer": "Protocollaag",
   "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
     "Kernwaardering van onderpand, schuldcontroles en liquidatiepaden zitten op de protocollaag.",

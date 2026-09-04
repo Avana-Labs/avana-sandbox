@@ -48,9 +48,7 @@ function getSupportCategories(t: Translate): SupportCategory[] {
           articles: [
             {
               title: t("Protocol overview"),
-              body: t(
-                "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.",
-              ),
+              body: t("Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture."),
             },
             {
               title: t("Why it exists"),
@@ -108,9 +106,7 @@ function getSupportCategories(t: Translate): SupportCategory[] {
           articles: [
             {
               title: t("Market movement"),
-              body: t(
-                "Capacity can change when the underlying assets move or when recoverable value shifts.",
-              ),
+              body: t("Capacity can change when the underlying assets move or when recoverable value shifts."),
             },
             {
               title: t("Risk settings"),
@@ -234,9 +230,7 @@ function getSupportCategories(t: Translate): SupportCategory[] {
           articles: [
             {
               title: t("Protocol layer"),
-              body: t(
-                "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.",
-              ),
+              body: t("Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer."),
             },
             {
               title: t("Interface layer"),
@@ -282,9 +276,7 @@ function getSupportCategories(t: Translate): SupportCategory[] {
             },
             {
               title: t("Support request"),
-              body: t(
-                "If something looks off, send the details and our team can help you triage the issue.",
-              ),
+              body: t("If something looks off, send the details and our team can help you triage the issue."),
             },
           ],
         },
@@ -541,8 +533,7 @@ export function SupportCenterForm({ submit }: { submit: SupportSubmit }) {
                   </h2>
                   <p className="mt-2 text-[15px] leading-6 text-muted-foreground">
                     {t("Tell us more about")}{" "}
-                    <span className="font-medium text-foreground">{selectedTopic?.label}</span>
-                    .
+                    <span className="font-medium text-foreground">{selectedTopic?.label}</span>.
                   </p>
                 </div>
 

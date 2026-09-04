@@ -1193,7 +1193,7 @@ const dict: TranslationDictionary = {
   "Restart cooldown": "Перезапустить кулдаун",
   Stake: "Стейк",
   "Stake in umbrella": "Стейкать в Защите",
-"Unstake from umbrella": "Анстейк из Защиты",
+  "Unstake from umbrella": "Анстейк из Защиты",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "Стейкайте, клеймите награды, запускайте кулдаун или анстейкайте из модуля безопасности Защиты.",
   "Stake, claim, cooldown, unstake": "Стейкать, забирать, кулдаун, выводить",
@@ -1303,6 +1303,9 @@ const dict: TranslationDictionary = {
   "In range": "В диапазоне",
   "Interest / day": "Проценты / день",
   "Key Statistics": "Ключевые показатели",
+  "Market Rates": "Рыночные ставки",
+  "Utilization Rate": "Уровень утилизации",
+  "Borrow amount to reach {value} Util.": "Сумма займа для достижения утилизации {value}.",
   "Large price difference": "Большая разница в цене",
   "Lend Assets": "Активы для депозита",
   "Lend Balance": "Баланс депозита",
@@ -1607,7 +1610,7 @@ const dict: TranslationDictionary = {
   "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
     "По мере сокращения буфера позиция становится более уязвимой к ликвидации, если рынок идёт против неё.",
   "When can liquidation happen?": "Когда может произойти ликвидация?",
-  "Triggers": "Триггеры",
+  Triggers: "Триггеры",
   "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
     "Если рыночные движения достаточно ослабят health, позиция может стать ликвидируемой по правилам spoke.",
   "What happens next": "Что происходит дальше",
@@ -1621,8 +1624,7 @@ const dict: TranslationDictionary = {
   "Position stacking": "Стек позиций",
   "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
     "Заёмную ёмкость можно агрегировать из нескольких одобренных позиций в одном Borrow Spoke.",
-  "Can one account use multiple LP positions?":
-    "Может ли один аккаунт использовать несколько LP-позиций?",
+  "Can one account use multiple LP positions?": "Может ли один аккаунт использовать несколько LP-позиций?",
   "Multiple positions": "Несколько позиций",
   "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
     "Да. Один аккаунт может объединять поддерживаемые LP-позиции, если каждая проходит проверки протокола.",
@@ -1630,8 +1632,7 @@ const dict: TranslationDictionary = {
   "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
     "Каждая позиция оценивается отдельно, прежде чем попасть в итоговую заёмную ёмкость.",
   "Fees & Interface Policy": "Комиссии и политика интерфейса",
-  "Are interface fees fixed across all integrations?":
-    "Фиксированы ли комиссии интерфейса во всех интеграциях?",
+  "Are interface fees fixed across all integrations?": "Фиксированы ли комиссии интерфейса во всех интеграциях?",
   "Operational settings": "Операционные настройки",
   "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
     "Точные ставки, исключения и статус запуска — операционные настройки; их нужно проверять в живом интерфейсе.",

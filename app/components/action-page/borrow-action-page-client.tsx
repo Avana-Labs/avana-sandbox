@@ -280,8 +280,7 @@ export function BorrowActionPageClient({
       if (kind === "borrow") {
         // Prefer keeping the same base asset on the new pool's spoke (GHO stays GHO)
         // instead of blindly taking the market's first borrowable token.
-        const preferred =
-          assetId.trim().length > 0 ? resolveBorrowAssetId(session.state, assetId, poolId) : ""
+        const preferred = assetId.trim().length > 0 ? resolveBorrowAssetId(session.state, assetId, poolId) : ""
         if (preferred) {
           setAssetId(preferred)
           return
@@ -483,9 +482,7 @@ export function BorrowActionPageClient({
 
     // Selection missing or off-market (e.g. snapped to another spoke): prefer the
     // deep-linked asset (bal-stable:gho) before the market's first borrowable.
-    const routeAssetId = initialAssetId
-      ? resolveBorrowAssetId(session.state, initialAssetId, activeMarketId)
-      : ""
+    const routeAssetId = initialAssetId ? resolveBorrowAssetId(session.state, initialAssetId, activeMarketId) : ""
     if (routeAssetId && borrowTokens.some((token) => token.id === routeAssetId)) {
       if (assetId !== routeAssetId) setAssetId(routeAssetId)
       return
@@ -532,14 +529,7 @@ export function BorrowActionPageClient({
     if (scopeCollateralToAsset) return
     if (marketId && session.collateralPools.some((pool) => pool.id === marketId)) return
     setMarketId(session.collateralPools[0]!.id)
-  }, [
-    embedded,
-    isHomeZeroState,
-    marketId,
-    scopeCollateralToAsset,
-    session.collateralPools,
-    usesCollateralContext,
-  ])
+  }, [embedded, isHomeZeroState, marketId, scopeCollateralToAsset, session.collateralPools, usesCollateralContext])
 
   useEffect(() => {
     let cancelled = false

@@ -22,7 +22,17 @@ describe("InterestRateModelCard interaction", () => {
     const plot = chart.firstElementChild as HTMLElement
     // Fake a mid-plot hover; jsdom has no layout so we stub geometry.
     Object.defineProperty(plot, "getBoundingClientRect", {
-      value: () => ({ left: 0, width: 640, top: 0, height: 300, right: 640, bottom: 300, x: 0, y: 0, toJSON: () => ({}) }),
+      value: () => ({
+        left: 0,
+        width: 640,
+        top: 0,
+        height: 300,
+        right: 640,
+        bottom: 300,
+        x: 0,
+        y: 0,
+        toJSON: () => ({}),
+      }),
     })
     fireEvent.pointerMove(plot, { clientX: 320, clientY: 150 })
 

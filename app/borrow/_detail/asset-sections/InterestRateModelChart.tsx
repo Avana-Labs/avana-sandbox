@@ -48,13 +48,7 @@ type Props = {
   className?: string
 }
 
-export function InterestRateModelChart({
-  curve,
-  currentUtilization,
-  probe,
-  onProbeUtilization,
-  className,
-}: Props) {
+export function InterestRateModelChart({ curve, currentUtilization, probe, onProbeUtilization, className }: Props) {
   const { t } = useTranslation()
   const shellRef = React.useRef<HTMLDivElement | null>(null)
 
@@ -200,12 +194,7 @@ export function InterestRateModelChart({
             </>
           ) : null}
 
-          <text
-            x={optimalX}
-            y={PLOT_TOP}
-            textAnchor="middle"
-            className="fill-muted-foreground text-[12px] font-medium"
-          >
+          <text x={optimalX} y={PLOT_TOP} textAnchor="middle" className="fill-muted-foreground text-[12px] font-medium">
             {t("Optimal")}
           </text>
           <text
@@ -236,10 +225,7 @@ export function InterestRateModelChart({
               {formatPct(probe.borrowAprPct)}
             </div>
             <div className="mt-2 text-[11px] leading-snug text-muted-foreground">
-              {t("Borrow amount to reach {value} Util.").replace(
-                "{value}",
-                formatPct(probe.utilizationPct, 1),
-              )}
+              {t("Borrow amount to reach {value} Util.").replace("{value}", formatPct(probe.utilizationPct, 1))}
             </div>
             <div className="mt-0.5 font-data text-[13px] font-medium tabular-nums text-foreground">
               {formatCompactUsd(probe.borrowDeltaUsd)}

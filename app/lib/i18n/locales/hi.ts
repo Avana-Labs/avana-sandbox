@@ -1177,7 +1177,7 @@ const dict: TranslationDictionary = {
   "Restart cooldown": "कूलडाउन दोबारा शुरू करें",
   Stake: "स्टेक",
   "Stake in umbrella": "सुरक्षा में स्टेक करें",
-"Unstake from umbrella": "सुरक्षा से अनस्टेक करें",
+  "Unstake from umbrella": "सुरक्षा से अनस्टेक करें",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "सुरक्षा मॉड्यूल में स्टेक करें, रिवॉर्ड क्लेम करें, कूलडाउन शुरू करें, या अनस्टेक करें।",
   "Stake, claim, cooldown, unstake": "स्टेक, क्लेम, कूलडाउन, अनस्टेक",
@@ -1291,6 +1291,9 @@ const dict: TranslationDictionary = {
   "In range": "रेंज में",
   "Interest / day": "ब्याज / दिन",
   "Key Statistics": "मुख्य आँकड़े",
+  "Market Rates": "बाज़ार दरें",
+  "Utilization Rate": "उपयोग दर",
+  "Borrow amount to reach {value} Util.": "{value} उपयोग तक पहुँचने के लिए उधार राशि।",
   "Large price difference": "बड़ा मूल्य अंतर",
   "Lend Assets": "लेंड एसेट",
   "Lend Balance": "लेंड बैलेंस",
@@ -1598,7 +1601,7 @@ const dict: TranslationDictionary = {
   "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
     "जैसे-जैसे बफ़र सिकुड़ता है, बाज़ार की स्थितियाँ प्रतिकूल होने पर पोजीशन लिक्विडेशन के प्रति अधिक उजागर हो जाती है।",
   "When can liquidation happen?": "लिक्विडेशन कब हो सकता है?",
-  "Triggers": "ट्रिगर",
+  Triggers: "ट्रिगर",
   "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
     "यदि बाज़ार की चालें स्वास्थ्य को पर्याप्त रूप से कमज़ोर कर दें, तो spoke के नियमों के तहत पोजीशन लिक्विडेटेबल हो सकती है।",
   "What happens next": "इसके बाद क्या होता है",
@@ -1620,8 +1623,7 @@ const dict: TranslationDictionary = {
   "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
     "अंतिम उधार क्षमता में शामिल होने से पहले प्रत्येक पोजीशन का अपने मानदंडों पर मूल्यांकन होता है।",
   "Fees & Interface Policy": "शुल्क और इंटरफ़ेस नीति",
-  "Are interface fees fixed across all integrations?":
-    "क्या सभी इंटीग्रेशन में इंटरफ़ेस शुल्क निश्चित हैं?",
+  "Are interface fees fixed across all integrations?": "क्या सभी इंटीग्रेशन में इंटरफ़ेस शुल्क निश्चित हैं?",
   "Operational settings": "ऑपरेशनल सेटिंग्स",
   "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
     "सटीक शुल्क दरें, छूट और रोलआउट स्थिति ऑपरेशनल सेटिंग्स हैं और लाइव इंटरफ़ेस में सत्यापित की जानी चाहिए।",

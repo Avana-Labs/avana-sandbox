@@ -1,11 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
 import { listSpokeBorrowables } from "@/app/lib/borrow-system/registry"
-import {
-  filterPoolsForSpokeAsset,
-  resolveBorrowablesForPool,
-  resolveCollateralForAsset,
-} from "../cross-market"
+import { filterPoolsForSpokeAsset, resolveBorrowablesForPool, resolveCollateralForAsset } from "../cross-market"
 
 describe("cross-market reference lists", () => {
   it("resolves spoke-matched borrowables for every collateral market", () => {
@@ -36,9 +32,9 @@ describe("cross-market reference lists", () => {
     const markets = resolveCollateralForAsset(asset!)
     expect(markets.length).toBeGreaterThan(0)
     expect(markets.every((market) => market.id.startsWith("bal-stable"))).toBe(true)
-    expect(markets.some((market) => market.id.includes("uni-v3") || market.venue.toLowerCase().includes("uniswap"))).toBe(
-      false,
-    )
+    expect(
+      markets.some((market) => market.id.includes("uni-v3") || market.venue.toLowerCase().includes("uniswap")),
+    ).toBe(false)
 
     const leaked = filterPoolsForSpokeAsset(
       "bal-stable:gho",

@@ -113,9 +113,6 @@ test.describe("details buttons — mobile 390", () => {
     await expect(section.getByRole("button", { name: /^Borrow$/ })).toHaveCount(0)
 
     await claim.scrollIntoViewIfNeeded()
-    await Promise.all([
-      page.waitForURL(/\/actions\/borrow\/claim/, { timeout: 15_000 }),
-      claim.click(),
-    ])
+    await Promise.all([page.waitForURL(/\/actions\/borrow\/claim/, { timeout: 15_000 }), claim.click()])
   })
 })

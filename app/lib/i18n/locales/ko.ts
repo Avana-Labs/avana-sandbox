@@ -1167,7 +1167,7 @@ const dict: TranslationDictionary = {
   "Restart cooldown": "쿨다운 다시 시작",
   Stake: "스테이크",
   "Stake in umbrella": "보호에 스테이크",
-"Unstake from umbrella": "보호에서 언스테이크",
+  "Unstake from umbrella": "보호에서 언스테이크",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "보호 안전 모듈에서 스테이크, 보상 수령, 쿨다운 시작 또는 언스테이크를 진행하세요.",
   "Stake, claim, cooldown, unstake": "스테이크, 청구, 쿨다운, 언스테이크",
@@ -1278,6 +1278,9 @@ const dict: TranslationDictionary = {
   "In range": "범위 내",
   "Interest / day": "이자 / 일",
   "Key Statistics": "주요 통계",
+  "Market Rates": "시장 금리",
+  "Utilization Rate": "이용률",
+  "Borrow amount to reach {value} Util.": "{value} 이용률에 도달하기 위한 대출 금액.",
   "Large price difference": "큰 가격 차이",
   "Lend Assets": "예치 자산",
   "Lend Balance": "예치 잔액",
@@ -1566,7 +1569,7 @@ const dict: TranslationDictionary = {
   "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
     "버퍼가 줄어들면 시장 상황이 불리해질 때 포지션이 청산에 더 노출됩니다.",
   "When can liquidation happen?": "청산은 언제 발생할 수 있나요?",
-  "Triggers": "트리거",
+  Triggers: "트리거",
   "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
     "시장 움직임이 health를 충분히 약화시키면 spoke 규칙에 따라 포지션이 청산 가능해질 수 있습니다.",
   "What happens next": "이후 과정",

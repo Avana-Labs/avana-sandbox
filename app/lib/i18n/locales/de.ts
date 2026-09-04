@@ -1236,7 +1236,7 @@ const dict: TranslationDictionary = {
   "Restart cooldown": "Cooldown neu starten",
   Stake: "Stake",
   "Stake in umbrella": "In Schutz staken",
-"Unstake from umbrella": "Aus Schutz unstaken",
+  "Unstake from umbrella": "Aus Schutz unstaken",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "Staken, Belohnungen einfordern, Cooldown starten oder aus dem Schutz-Sicherheitsmodul unstaken.",
   "Stake, claim, cooldown, unstake": "Staken, einfordern, Cooldown, unstaken",
@@ -1346,6 +1346,9 @@ const dict: TranslationDictionary = {
   "In range": "Im Bereich",
   "Interest / day": "Zinsen / Tag",
   "Key Statistics": "Wichtige Kennzahlen",
+  "Market Rates": "Marktzinsen",
+  "Utilization Rate": "Auslastungsrate",
+  "Borrow amount to reach {value} Util.": "Kreditbetrag, um {value} Auslastung zu erreichen.",
   "Large price difference": "Große Preisdifferenz",
   "Lend Assets": "Assets verleihen",
   "Lend Balance": "Verleih-Saldo",
@@ -1663,7 +1666,7 @@ const dict: TranslationDictionary = {
   "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
     "Wenn der Puffer schrumpft, ist die Position stärker der Liquidation ausgesetzt, falls sich die Marktbedingungen gegen sie entwickeln.",
   "When can liquidation happen?": "Wann kann eine Liquidation eintreten?",
-  "Triggers": "Auslöser",
+  Triggers: "Auslöser",
   "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
     "Wenn Marktbewegungen die Gesundheit ausreichend schwächen, kann die Position nach den Regeln des Spoke liquidierbar werden.",
   "What happens next": "Was als Nächstes passiert",
@@ -1685,16 +1688,14 @@ const dict: TranslationDictionary = {
   "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
     "Jede Position wird für sich bewertet, bevor sie in die endgültige Kreditkapazität aufgenommen wird.",
   "Fees & Interface Policy": "Gebühren & Interface-Richtlinie",
-  "Are interface fees fixed across all integrations?":
-    "Sind Interface-Gebühren bei allen Integrationen gleich?",
+  "Are interface fees fixed across all integrations?": "Sind Interface-Gebühren bei allen Integrationen gleich?",
   "Operational settings": "Betriebseinstellungen",
   "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
     "Genaue Gebührensätze, Ausnahmen und Rollout-Status sind Betriebseinstellungen und sollten in der Live-Oberfläche geprüft werden.",
   "Integration differences": "Integrationsunterschiede",
   "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
     "Direkte Integrationen oder Drittanbieter-Frontends können anderen Annahmen folgen — prüfe daher immer die verwendete Oberfläche.",
-  "What counts as protocol economics vs interface policy?":
-    "Was zählt als Protokollökonomie vs. Interface-Richtlinie?",
+  "What counts as protocol economics vs interface policy?": "Was zählt als Protokollökonomie vs. Interface-Richtlinie?",
   "Protocol layer": "Protokollebene",
   "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
     "Zentrale Sicherheitenbewertung, Schuldenkontrolle und Liquidationspfade liegen auf der Protokollebene.",

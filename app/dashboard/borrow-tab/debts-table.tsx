@@ -100,6 +100,7 @@ export function DebtsPanel({
   rows,
   totals,
   onRepay,
+  onManage,
   showBalance = true,
   showSummary = true,
   showHeading = true,

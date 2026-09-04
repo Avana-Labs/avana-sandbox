@@ -1305,7 +1305,7 @@ const dict: TranslationDictionary = {
   "Restart cooldown": "Reiniciar enfriamiento",
   Stake: "Stake",
   "Stake in umbrella": "Hacer stake en Protección",
-"Unstake from umbrella": "Retirar stake de Protección",
+  "Unstake from umbrella": "Retirar stake de Protección",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "Haz stake, reclama recompensas, inicia el cooldown o retira del módulo de seguridad Protección.",
   "Stake, claim, cooldown, unstake": "Stake, reclamar, enfriamiento, retirar",
@@ -1411,6 +1411,9 @@ const dict: TranslationDictionary = {
   "In range": "En rango",
   "Interest / day": "Interés / día",
   "Key Statistics": "Estadísticas clave",
+  "Market Rates": "Tasas del mercado",
+  "Utilization Rate": "Tasa de utilización",
+  "Borrow amount to reach {value} Util.": "Importe a pedir prestado para alcanzar {value} de utilización.",
   "Large price difference": "Gran diferencia de precio",
   "Lend Assets": "Prestar activos",
   "Lend Balance": "Saldo de préstamo",
@@ -1715,7 +1718,7 @@ const dict: TranslationDictionary = {
   "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
     "A medida que se reduce el margen, la posición queda más expuesta a la liquidación si las condiciones del mercado se vuelven en su contra.",
   "When can liquidation happen?": "¿Cuándo puede ocurrir la liquidación?",
-  "Triggers": "Disparadores",
+  Triggers: "Disparadores",
   "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
     "Si los movimientos del mercado debilitan lo suficiente la salud, la posición puede volverse liquidable según las reglas del spoke.",
   "What happens next": "Qué ocurre después",

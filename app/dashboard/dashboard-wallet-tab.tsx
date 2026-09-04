@@ -211,8 +211,7 @@ function WalletMetric({
   description: string
   tone?: "up" | "down" | "neutral"
 }) {
-  const toneClass =
-    tone === "up" ? "text-success" : tone === "down" ? "text-danger" : "text-foreground"
+  const toneClass = tone === "up" ? "text-success" : tone === "down" ? "text-danger" : "text-foreground"
   return (
     <article className="min-w-0 space-y-1.5">
       <div className="flex items-center gap-1.5">
@@ -246,8 +245,7 @@ function PnlLine({
   /** `value` matches MarketMobileStatRow (15px); `caption` stays under desktop Value. */
   variant?: "caption" | "value"
 }) {
-  const sizeClass =
-    variant === "value" ? "text-[15px] font-normal tracking-normal" : TABLE_CELL_CAPTION
+  const sizeClass = variant === "value" ? "text-[15px] font-normal tracking-normal" : TABLE_CELL_CAPTION
   const pnl = tokenPnl(row, priceUsdAtClaim)
   if (!pnl) return <span className={cn(sizeClass, "text-muted-foreground")}>{showBalance ? DASH : MASK}</span>
   if (!showBalance) return <span className={cn(sizeClass, "text-muted-foreground")}>{MASK}</span>
@@ -492,19 +490,14 @@ function WalletBalanceSection({
                     <TokenIcon symbol={row.symbol} size="table" />
                     <MarketMobileIdentityText
                       title={row.name}
-                      subtitle={
-                        row.valueUsd > 0 && row.amount > 0 ? m(exact(row.valueUsd / row.amount)) : row.symbol
-                      }
+                      subtitle={row.valueUsd > 0 && row.amount > 0 ? m(exact(row.valueUsd / row.amount)) : row.symbol}
                     />
                   </div>
                 }
                 metric={<MarketMobileMetric value={m(exact(row.valueUsd))} label={t("Value")} />}
               />
               <MarketMobileStatList>
-                <MarketMobileStatRow
-                  label={t("Balance")}
-                  value={m(formatAssetAmount(row.amount, row.symbol))}
-                />
+                <MarketMobileStatRow label={t("Balance")} value={m(formatAssetAmount(row.amount, row.symbol))} />
                 {pnl && showBalance ? (
                   <MarketMobileStatRow
                     label={t("P/L")}

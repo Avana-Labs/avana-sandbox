@@ -1160,7 +1160,7 @@ const dict: TranslationDictionary = {
   "Restart cooldown": "إعادة تشغيل التبريد",
   Stake: "Stake",
   "Stake in umbrella": "إيداع في الحماية",
-"Unstake from umbrella": "السحب من الحماية",
+  "Unstake from umbrella": "السحب من الحماية",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "أودِع، استلم المكافآت، ابدأ الانتظار، أو اسحب من وحدة أمان الحماية.",
   "Stake, claim, cooldown, unstake": "إيداع، مطالبة، تبريد، سحب",
@@ -1275,6 +1275,9 @@ const dict: TranslationDictionary = {
   "In range": "ضمن النطاق",
   "Interest / day": "الفائدة / يوم",
   "Key Statistics": "الإحصائيات الرئيسية",
+  "Market Rates": "معدلات السوق",
+  "Utilization Rate": "معدل الاستخدام",
+  "Borrow amount to reach {value} Util.": "مبلغ الاقتراض للوصول إلى استخدام {value}.",
   "Large price difference": "فرق سعري كبير",
   "Lend Assets": "أصول الإقراض",
   "Lend Balance": "رصيد الإقراض",
@@ -1571,7 +1574,7 @@ const dict: TranslationDictionary = {
   "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
     "مع تقلّص الهامش، يصبح المركز أكثر عرضة للتصفية إذا تحركت ظروف السوق ضده.",
   "When can liquidation happen?": "متى يمكن أن تحدث التصفية؟",
-  "Triggers": "المحفّزات",
+  Triggers: "المحفّزات",
   "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
     "إذا أضعفت تحركات السوق الصحة بما يكفي، يمكن أن يصبح المركز قابلاً للتصفية وفق قواعد الـ spoke.",
   "What happens next": "ماذا يحدث بعد ذلك",
@@ -1600,8 +1603,7 @@ const dict: TranslationDictionary = {
   "Integration differences": "اختلافات التكامل",
   "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
     "قد تتبع التكاملات المباشرة أو الواجهات الأمامية من طرف ثالث افتراضات مختلفة، لذا تحقق دائماً من الواجهة التي تستخدمها.",
-  "What counts as protocol economics vs interface policy?":
-    "ما الذي يُعد اقتصاد البروتوكول مقابل سياسة الواجهة؟",
+  "What counts as protocol economics vs interface policy?": "ما الذي يُعد اقتصاد البروتوكول مقابل سياسة الواجهة؟",
   "Protocol layer": "طبقة البروتوكول",
   "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
     "تقييم الضمان الأساسي وضوابط الدين ومسارات التصفية موجودة في طبقة البروتوكول.",
