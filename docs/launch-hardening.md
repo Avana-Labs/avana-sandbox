@@ -13,3 +13,7 @@ The remaining low/moderate dependency findings include the wallet connector chai
 Production rejects E2E session minting even with a secret/test flag. Staging requires an explicit deployment marker, distinct production/staging URLs and issuers, and its own private JWK. JWT publication/minting/verification use that staging key consistently. Eight JWT/policy/endpoint tests passed, including cross-key session rejection. Set the documented staging variables only on staging; provision keys outside source control.
 
 The first webpack production build reached Node's default heap limit; final integration must rerun with a bounded larger heap. No production build pass is claimed yet.
+
+## S3 — Development and seed target safety
+
+Dev startup reads the same env files as Next, rejects production/unverified live targets, and isolates mock runs with empty backend credentials and an ephemeral signing key. Set `AVANA_DEPLOYMENT_ENV` and `AVANA_DEVELOPMENT_CONVEX_URL` for real development. Public seed administration is disabled unless the deployment itself is marked development/staging; production maintenance must use reviewed internal functions. Target and seed authorization tests passed; no real credentials were changed and no seed command was run.

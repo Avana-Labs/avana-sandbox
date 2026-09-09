@@ -2,6 +2,9 @@ import { execSync, spawn } from "node:child_process"
 import fs from "node:fs"
 import path from "node:path"
 import process from "node:process"
+import crypto from "node:crypto"
+import nextEnv from "@next/env"
+import { assertNonProductionTarget } from "../lib/deployment-safety.mjs"
 
 const root = process.cwd()
 const [mode = "dev", ...forwardArgs] = process.argv.slice(2)
@@ -12,12 +15,34 @@ if (!supportedModes.has(mode)) {
   process.exit(1)
 }
 
+// Load the same local configuration Next will use before checking its target.
+nextEnv.loadEnvConfig(root, mode === "dev", { info() {}, error() {} })
+if (mode === "dev") {
+  if (process.env.AVANA_DATA_SOURCE === "mock") {
+    for (const name of [
+      "CONVEX_DEPLOY_KEY",
+      "NEXT_PUBLIC_CONVEX_URL",
+      "NEXT_PUBLIC_CONVEX_SITE_URL",
+      "CONVEX_URL",
+      "CONVEX_SEED_SECRET",
+      "CONVEX_RATE_LIMIT_SECRET",
+      "AVANA_E2E_STAGING",
+    ])
+      process.env[name] = ""
+    process.env.SIWE_JWT_PRIVATE_JWK = JSON.stringify({
+      ...crypto.generateKeyPairSync("rsa", { modulusLength: 2048 }).privateKey.export({ format: "jwk" }),
+      kid: "local-only",
+    })
+    process.env.NEXT_PUBLIC_SIWE_ISSUER = `http://127.0.0.1:${process.env.PORT || 3000}`
+  } else {
+    assertNonProductionTarget(process.env)
+  }
+}
 if (
   (process.env.VERCEL_ENV === "production" || process.env.AVANA_DEPLOYMENT_ENV === "production") &&
   ["AVANA_E2E_SESSION_SECRET", "AVANA_E2E_PRIVATE_JWK", "AVANA_E2E_STAGING"].some((key) => process.env[key])
-) {
+)
   throw new Error("E2E credentials are forbidden on the production deployment")
-}
 
 // Deploy hygiene: never bake the open-gate test mode into a production build.
 // A `build` with NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1 inlines IS_OPEN_GATE_TEST_MODE=true

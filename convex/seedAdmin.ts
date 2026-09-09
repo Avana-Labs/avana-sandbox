@@ -1,3 +1,4 @@
+import { assertSeedDeployment } from "../lib/deployment-safety.mjs"
 import { v } from "convex/values"
 import { action } from "./_generated/server"
 import { internal } from "./_generated/api"
@@ -19,6 +20,7 @@ function requireSeedSecret(seedSecret: string) {
   if (!expected || !safeEqual(seedSecret, expected)) {
     throw new Error("Unauthorized seed write")
   }
+  assertSeedDeployment()
 }
 
 function requireSafeSeedRows(rows: unknown[]) {
