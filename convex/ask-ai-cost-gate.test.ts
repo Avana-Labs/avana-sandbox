@@ -215,7 +215,7 @@ describe("token reservations", () => {
 test("capacity retries coalesce duplicate wakeups without losing queued work", async () => {
   const t = askAITest()
   const owner = t.withIdentity({ subject: "ask-guest:backoff" })
-  const turns = []
+  const turns: Array<{ turnId: import("./_generated/dataModel").Id<"askAITurns"> }> = []
   for (let index = 0; index < 3; index++) {
     const thread = await owner.mutation(api.askAI.create, {})
     turns.push(

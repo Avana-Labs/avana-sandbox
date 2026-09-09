@@ -52,4 +52,8 @@ Routine PR/push CI no longer invokes a paid model. The separate manual workflow 
 
 ## M1 — Remove unused dashboard panels
 
-Deleted the unused collateral, debt, and trading-fee panel implementations (about 1,000 lines). The dashboard uses the existing supplies/debts tables. Retired source-string assertions against the deleted panels while retaining rendered quick-action routing and active table tests. Focused dashboard tests and TypeScript passed.
+Deleted the unused collateral, debt, and trading-fee panel implementations (about 1,000 lines). The dashboard uses the existing supplies/debts tables. Retired source-string assertions against the deleted panels while retaining rendered quick-action routing and active table tests. All 17 focused dashboard tests passed. The interim TypeScript run caught an implicit array type in the new queue test; this was corrected before the integrated checks.
+
+## M2 — Remove obsolete hooks and make unused-file review explicit
+
+Removed four hooks with no runtime consumers, their tests, and the empty legacy dashboard position data/shared presentation files, plus an unused chart-color helper and Framer animation shim. Production transaction/read adapters remain because they define the future chain/indexer boundary and are covered by contract tests. `scripts/unused-app-files.cjs` now understands Next entry conventions, scans tracked and untracked source, and fails on unreviewed test-only consumers; `config/unused-app-files.json` records the intentional adapter/runtime exceptions. The scanner reported 13 reviewed candidates and zero unexpected files. 286 focused tests and TypeScript passed.

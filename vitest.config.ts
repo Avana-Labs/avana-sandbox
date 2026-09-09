@@ -17,7 +17,6 @@ const sharedExclude = [
 // `node` environment; only `.tsx` render tests and these files pay for jsdom.
 // If a node-project spec ever needs the DOM, it fails loudly — move it here.
 const DOM_TS_TESTS = [
-  "app/dashboard/__tests__/use-dashboard-history-feeds.test.ts",
   "app/lib/borrow-system/__tests__/storage.test.ts",
   "app/lib/currency/__tests__/exchange-rates.test.ts",
   "app/lib/siwe/__tests__/auth-store-cross-tab.test.ts",
