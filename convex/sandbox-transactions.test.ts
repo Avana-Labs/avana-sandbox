@@ -1208,3 +1208,24 @@ describe("portfolioCurrent duplicate tolerance (regression: .unique() bricked th
     })
   })
 })
+
+describe("split session subscriptions", () => {
+  test("preserves the combined session contract and rejects foreign wallets", async () => {
+    const t = convexTest(schema, modules)
+    const user = t.withIdentity({ subject: WALLET })
+    await seedBorrowCollateral(t)
+    await user.mutation(api.sandbox.transactions.recordTransaction, borrowIntent("split-session"))
+    const args = { wallet: WALLET }
+    const balances = await user.query(api.sandbox.transactions.getSessionBalances, args)
+    const transactions = await user.query(api.sandbox.transactions.getSessionTransactions, args)
+    expect({ ...balances, transactions }).toEqual(await user.query(api.sandbox.transactions.getSessionState, args))
+    expect(transactions).toHaveLength(1)
+    expect(balances).not.toHaveProperty("transactions")
+    for (const query of [
+      api.sandbox.transactions.getSessionBalances,
+      api.sandbox.transactions.getSessionTransactions,
+    ]) {
+      await expect(user.query(query, { wallet: OTHER })).rejects.toThrow()
+    }
+  })
+})

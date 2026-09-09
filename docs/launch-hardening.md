@@ -29,3 +29,7 @@ Mock catalog reads no longer invoke the snapshot fetcher. Live sources still req
 ## C2 — Public metadata cache and read deadlines
 
 Editorial content and contract addresses use a bounded 60-second warm-instance cache, deduplicating concurrent reads. Deployment URL and `AVANA_PUBLIC_METADATA_VERSION` isolate cache keys; changing that revision invalidates entries. Risk, wallet, and execution data remain live. Convex server reads cancel their transport after eight seconds. Four tests passed, including 100 concurrent reads producing one fetch, expiry, eviction, failure retry, and caller cancellation. Savings depend on warm-instance reuse; this is not a fleet-wide cache.
+
+## C3 — Separate reactive wallet reads
+
+Balances/positions and the existing 500-row transaction history now subscribe independently, so balance changes do not reread or retransmit history. The combined query remains compatible, wallet authorization applies to both reads, and hydration retains the intent reconciliation guard. All 72 transaction/session tests passed, including combined-versus-split equality and foreign-wallet rejection. History is still bounded to the existing 500 rows; an older-history pagination UI remains follow-up work.

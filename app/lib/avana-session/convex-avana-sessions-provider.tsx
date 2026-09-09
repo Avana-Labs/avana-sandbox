@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { usePathname } from "next/navigation"
 import { useConvex, useMutation, useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
@@ -120,7 +120,14 @@ function ConvexWalletHydrators({
   const ensurePortfolioSnapshot = useMutation(api.sandbox.transactions.ensurePortfolioSnapshot)
   const ensureUmbrellaFixtures = useMutation(api.sandbox.umbrella.ensureTestWalletFixtures)
   const walletArgs = scope.walletSession ? { wallet: walletId } : "skip"
-  const session = useQuery(api.sandbox.transactions.getSessionState, walletArgs)
+  const balances = useQuery(api.sandbox.transactions.getSessionBalances, walletArgs)
+  const transactions = useQuery(api.sandbox.transactions.getSessionTransactions, walletArgs)
+  // Convex batches subscriptions to a consistent database snapshot. Preserve the
+  // full history contract and optimistic intent guard while separating read dependencies.
+  const session = useMemo(
+    () => (balances && transactions ? { ...balances, transactions } : undefined),
+    [balances, transactions],
+  )
   const productBalances = useQuery(api.wallet.productBalances.listForWallet, walletArgs)
   const historiesRef = useRef({
     borrow: borrow.transactionHistory,

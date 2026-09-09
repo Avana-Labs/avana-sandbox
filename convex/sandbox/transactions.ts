@@ -1950,60 +1950,81 @@ export const getPositions = query({
   },
 })
 
-/** Complete reactive session payload for an authenticated wallet. */
+/** Balance/position subscription does not depend on the transaction history table. */
+async function readSessionBalances(ctx: QueryCtx, wallet: string) {
+  const [positions, balances, starterAllocation, rewardClaims] = await Promise.all([
+    ctx.db
+      .query("positions")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("walletLiquidBalances")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+    ctx.db
+      .query("starterAllocations")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .unique(),
+    ctx.db
+      .query("sandboxRewardClaims")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect(),
+  ])
+  // Hydrate collateral/debt in parallel (was a sequential per-position await loop).
+  const hydratedPositions = await Promise.all(
+    positions.map(async (position) => {
+      const [collateral, debt] = await Promise.all([
+        ctx.db
+          .query("positionCollateral")
+          .withIndex("by_position", (q) => q.eq("positionId", position._id))
+          .collect(),
+        ctx.db
+          .query("positionDebt")
+          .withIndex("by_position", (q) => q.eq("positionId", position._id))
+          .collect(),
+      ])
+      return { ...position, collateral, debt }
+    }),
+  )
+  return {
+    positions: hydratedPositions,
+    balances: balances.map(liquidBalanceView),
+    starterAllocation,
+    rewardClaims: rewardClaims.map((row) => ({
+      rewardPositionId: row.rewardPositionId,
+      remainingUsd6: row.remainingUsd6,
+    })),
+  }
+}
+
+async function readSessionTransactions(ctx: QueryCtx, wallet: string) {
+  return ctx.db
+    .query("transactions")
+    .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
+    .order("desc")
+    .take(500)
+}
+
+export const getSessionBalances = query({
+  args: { wallet: v.string() },
+  handler: async (ctx, args) => readSessionBalances(ctx, await requireSandboxWallet(ctx, args.wallet)),
+})
+
+export const getSessionTransactions = query({
+  args: { wallet: v.string() },
+  handler: async (ctx, args) => readSessionTransactions(ctx, await requireSandboxWallet(ctx, args.wallet)),
+})
+
+/** Compatibility read for callers that need the complete atomic payload. */
 export const getSessionState = query({
   args: { wallet: v.string() },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
-    const [positions, transactions, balances, starterAllocation, rewardClaims] = await Promise.all([
-      ctx.db
-        .query("positions")
-        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-        .collect(),
-      ctx.db
-        .query("transactions")
-        .withIndex("by_wallet_at", (q) => q.eq("wallet", wallet))
-        .order("desc")
-        .take(500),
-      ctx.db
-        .query("walletLiquidBalances")
-        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-        .collect(),
-      ctx.db
-        .query("starterAllocations")
-        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-        .unique(),
-      ctx.db
-        .query("sandboxRewardClaims")
-        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-        .collect(),
+    const [balances, transactions] = await Promise.all([
+      readSessionBalances(ctx, wallet),
+      readSessionTransactions(ctx, wallet),
     ])
-    // Hydrate collateral/debt in parallel (was a sequential per-position await loop).
-    const hydratedPositions = await Promise.all(
-      positions.map(async (position) => {
-        const [collateral, debt] = await Promise.all([
-          ctx.db
-            .query("positionCollateral")
-            .withIndex("by_position", (q) => q.eq("positionId", position._id))
-            .collect(),
-          ctx.db
-            .query("positionDebt")
-            .withIndex("by_position", (q) => q.eq("positionId", position._id))
-            .collect(),
-        ])
-        return { ...position, collateral, debt }
-      }),
-    )
-    return {
-      positions: hydratedPositions,
-      transactions,
-      balances: balances.map(liquidBalanceView),
-      starterAllocation,
-      rewardClaims: rewardClaims.map((row) => ({
-        rewardPositionId: row.rewardPositionId,
-        remainingUsd6: row.remainingUsd6,
-      })),
-    }
+    return { ...balances, transactions }
   },
 })
 
