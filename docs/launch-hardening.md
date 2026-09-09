@@ -17,3 +17,7 @@ The first webpack production build reached Node's default heap limit; final inte
 ## S3 — Development and seed target safety
 
 Dev startup reads the same env files as Next, rejects production/unverified live targets, and isolates mock runs with empty backend credentials and an ephemeral signing key. Set `AVANA_DEPLOYMENT_ENV` and `AVANA_DEVELOPMENT_CONVEX_URL` for real development. Public seed administration is disabled unless the deployment itself is marked development/staging; production maintenance must use reviewed internal functions. Target and seed authorization tests passed; no real credentials were changed and no seed command was run.
+
+## S4 — Dependency baseline gate
+
+A full production-dependency audit runs on every PR, main push, weekly schedule, and manual dispatch. High/critical advisories fail even without dependency changes. Exceptions must identify a package/advisory, justification, and expiry; the checked-in list is empty. Two gate tests and the live baseline passed. Registry failures fail closed.
