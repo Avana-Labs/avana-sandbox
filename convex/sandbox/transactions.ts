@@ -40,7 +40,7 @@ import {
   requireBoundedIdentifier,
   requireUnsignedInteger,
   usd6Number,
-} from "./transaction-invariants"
+} from "./transactionInvariants"
 
 type ProductBalanceTable =
   "walletLendBalances" | "walletBorrowBalances" | "walletMultiplyBalances" | "walletLiquidBalances"

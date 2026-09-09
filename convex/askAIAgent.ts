@@ -213,7 +213,7 @@ For public market questions, no user portfolio was read. Never claim whether the
 ${JSON.stringify(data.modelContext)}`
 }
 
-// Financial tool -> persisted richParts kind (docs/ask-ai-lane-contracts.md §1).
+// Financial tool -> persisted richParts kind.
 const FINANCIAL_TOOL_KINDS = {
   search_markets: "market",
   read_pool_metrics: "pool",

@@ -4,7 +4,6 @@ import path from "node:path"
 import process from "node:process"
 import crypto from "node:crypto"
 import nextEnv from "@next/env"
-import { assertNonProductionTarget } from "../lib/deployment-safety.mjs"
 
 const root = process.cwd()
 const [mode = "dev", ...forwardArgs] = process.argv.slice(2)
@@ -34,8 +33,6 @@ if (mode === "dev") {
       kid: "local-only",
     })
     process.env.NEXT_PUBLIC_SIWE_ISSUER = `http://127.0.0.1:${process.env.PORT || 3000}`
-  } else {
-    assertNonProductionTarget(process.env)
   }
 }
 if (

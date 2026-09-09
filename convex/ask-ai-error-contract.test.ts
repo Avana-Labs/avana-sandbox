@@ -35,7 +35,7 @@ async function exhaustDailyTokenBudget(t: ReturnType<typeof askAITest>, ownerSub
   })
 }
 
-// The client-facing error contract (docs/ask-ai-lane-contracts.md §2): the turn
+// The client-facing error contract: the turn
 // entry points throw a ConvexError carrying a user-safe `{ code, message }`
 // payload — never a raw Error — so Convex's production redaction preserves the
 // friendly message and the UI can key copy off `code`. `error.data` is the

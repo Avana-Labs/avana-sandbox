@@ -35,6 +35,7 @@ import {
   TABLE_CELL_PADDING_TRAILING,
   TABLE_CELL_PRIMARY,
   TABLE_CELL_SECONDARY,
+  TABLE_CELL_SECONDARY_UNCOLORED,
   TABLE_HEADER_CELL,
   TABLE_HEADER_ROW,
   TABLE_ROW_HOVER_BG,
@@ -271,7 +272,7 @@ export function DashboardInvestments({
                             token={token}
                             anchorMs={accrualSinceMs}
                             show={showDollarAmounts}
-                            className={cn(TABLE_CELL_SECONDARY, "text-success")}
+                            className={cn(TABLE_CELL_SECONDARY_UNCOLORED, "text-success")}
                           />
                         </td>
                         <td className={cn(TABLE_CELL_PADDING_TRAILING, TABLE_ROW_HOVER_RIGHT)}>

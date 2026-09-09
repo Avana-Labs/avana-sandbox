@@ -24,7 +24,7 @@ import { getTokenIconMeta } from "@/app/lib/token-icons"
 import {
   TABLE_BASE,
   TABLE_BODY_ROW,
-  TABLE_CELL_CAPTION,
+  TABLE_CELL_CAPTION_UNCOLORED,
   TABLE_CELL_NUMERIC,
   TABLE_CELL_PADDING,
   TABLE_CELL_PADDING_TRAILING,
@@ -245,7 +245,7 @@ function PnlLine({
   /** `value` matches MarketMobileStatRow (15px); `caption` stays under desktop Value. */
   variant?: "caption" | "value"
 }) {
-  const sizeClass = variant === "value" ? "text-[15px] font-normal tracking-normal" : TABLE_CELL_CAPTION
+  const sizeClass = variant === "value" ? "text-[15px] font-normal tracking-normal" : TABLE_CELL_CAPTION_UNCOLORED
   const pnl = tokenPnl(row, priceUsdAtClaim)
   if (!pnl) return <span className={cn(sizeClass, "text-muted-foreground")}>{showBalance ? DASH : MASK}</span>
   if (!showBalance) return <span className={cn(sizeClass, "text-muted-foreground")}>{MASK}</span>

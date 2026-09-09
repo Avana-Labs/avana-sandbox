@@ -5,7 +5,7 @@ import {
   numberToUsd6,
   ratioToWad,
   requireUnsignedInteger,
-} from "./transaction-invariants"
+} from "./transactionInvariants"
 
 describe("sandbox transaction invariants", () => {
   it("keeps fixed-point conversions and liquidation policy stable", () => {

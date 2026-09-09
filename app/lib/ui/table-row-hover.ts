@@ -22,12 +22,21 @@ export const TABLE_BODY_ROW = "h-[72px]"
 export const TABLE_CELL_PRIMARY =
   "text-[15px] font-normal tracking-normal text-foreground dark:text-white md:text-[15px]"
 
+/**
+ * Geometry only (no color) for secondary/caption sub-lines that carry a semantic
+ * tone (text-success / text-danger). The color-bearing variants below bake in a
+ * `dark:text-white/XX` override — a two-class selector that outranks a single-class
+ * tone and would grey the tone out in dark mode. Use these when the sub-line is
+ * semantically colored, then add the tone class.
+ */
+export const TABLE_CELL_SECONDARY_UNCOLORED = "mt-0.5 text-[13px] font-normal tracking-normal md:text-[13px]"
+export const TABLE_CELL_CAPTION_UNCOLORED = "mt-0.5 text-[13px] tracking-normal"
+
 /** Secondary line under a primary value (symbol, venue, USD sub-line). */
-export const TABLE_CELL_SECONDARY =
-  "mt-0.5 text-[13px] font-normal tracking-normal text-muted-foreground md:text-[13px] dark:text-white/38"
+export const TABLE_CELL_SECONDARY = `${TABLE_CELL_SECONDARY_UNCOLORED} text-muted-foreground dark:text-white/38`
 
 /** Caption under a stacked metric (per day, liquidation value). */
-export const TABLE_CELL_CAPTION = "mt-0.5 text-[13px] tracking-normal text-muted-foreground dark:text-white/40"
+export const TABLE_CELL_CAPTION = `${TABLE_CELL_CAPTION_UNCOLORED} text-muted-foreground dark:text-white/40`
 
 /** Inline numeric metric with tabular alignment. Keep amount + symbol on one line. */
 export const TABLE_CELL_NUMERIC = `${TABLE_CELL_PRIMARY} tabular-nums whitespace-nowrap`
