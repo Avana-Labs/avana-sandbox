@@ -34,7 +34,7 @@ function main() {
     raw = execFileSync("npm", ["audit", "--omit=dev", "--json"], { encoding: "utf8", timeout: 60_000 })
   } catch (error) {
     if (error.status !== 1 || !error.stdout)
-      throw new Error("Dependency audit unavailable; refusing an unchecked baseline")
+      throw new Error("Dependency audit unavailable; refusing an unchecked baseline", { cause: error })
     raw = error.stdout
   }
   const failures = baselineFailures(

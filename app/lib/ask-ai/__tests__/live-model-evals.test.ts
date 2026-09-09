@@ -38,7 +38,7 @@ const fixtures = [
 ] as const
 
 live("Ask AI live Luna evaluations", () => {
-  afterAll(() => console.info("Ask AI evaluation usage", JSON.stringify(usageReport)))
+  afterAll(() => console.warn("Ask AI evaluation usage", JSON.stringify(usageReport)))
   it.each(fixtures)(
     "answers $prompt with the expected grounded behavior",
     async ({ prompt, expectedTool, required }) => {

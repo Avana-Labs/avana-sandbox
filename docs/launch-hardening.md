@@ -57,3 +57,11 @@ Deleted the unused collateral, debt, and trading-fee panel implementations (abou
 ## M2 — Remove obsolete hooks and make unused-file review explicit
 
 Removed four hooks with no runtime consumers, their tests, and the empty legacy dashboard position data/shared presentation files, plus an unused chart-color helper and Framer animation shim. Production transaction/read adapters remain because they define the future chain/indexer boundary and are covered by contract tests. `scripts/unused-app-files.cjs` now understands Next entry conventions, scans tracked and untracked source, and fails on unreviewed test-only consumers; `config/unused-app-files.json` records the intentional adapter/runtime exceptions. The scanner reported 13 reviewed candidates and zero unexpected files. 286 focused tests and TypeScript passed.
+
+## M3 — Split transaction invariants and action selection
+
+Extracted fixed-point validation, identifier bounds, ratio serialization, and liquidation-threshold helpers into `convex/sandbox/transaction-invariants.ts`. Extracted borrow claim-position selection into `borrow-action-selection.ts`, and moved guest-session utilities out of the Next route module so the route exports only supported HTTP/config handlers. Transaction mutations still own authorization, ledger writes, idempotency, and atomic persistence; the action client keeps the same props, stage flow, and submit runtime. Thirty-seven focused transaction/action tests, ten guest-session tests, TypeScript, and the production build passed.
+
+## Integrated verification
+
+The final local gate passed format, ESLint, TypeScript, security checks, the network-enabled dependency baseline, and the full Vitest suite: 535 files passed, 4 skipped; 2,399 tests passed, 8 skipped. The webpack production build passed with Next 16.3.4 using the mock backend and a bounded 6 GB heap. It emitted existing wallet dependency warnings for optional MetaMask React Native storage and dynamic Tempo imports; these do not fail the build and are outside the 14-item scope. No production Convex writes, seeds, deploys, or paid OpenAI evaluations were run.

@@ -55,29 +55,7 @@ import {
 } from "@/app/lib/action-system/resolve-borrow-context"
 import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/app/lib/action-system/stage-machine"
 import { parseActionPercentBps, parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
-
-function resolveClaimPositions(
-  session: ReturnType<typeof useBorrowSessionContext>,
-  walletId: string,
-  marketId: string,
-  claimPositionId?: string,
-) {
-  const positions = session.state.accounts[walletId]?.rewardPositions ?? []
-  if (claimPositionId) {
-    const selected = positions.find((position) => position.id === claimPositionId)
-    if (selected) return [selected]
-  }
-  if (!marketId) return positions
-  return positions.filter((position) => position.marketId === marketId)
-}
-
-function selectionsFromPositions(positions: ReadonlyArray<{ id: string }>) {
-  const selections: Record<string, boolean> = {}
-  for (const position of positions) {
-    selections[position.id] = true
-  }
-  return selections
-}
+import { resolveClaimPositions, selectionsFromPositions } from "./borrow-action-selection"
 
 export function BorrowActionPageClient({
   kind,

@@ -29,6 +29,18 @@ import { tokenNotionalToUsd } from "./collateralUsd"
 import { deriveClaimAmountUsd } from "./rewards_catalog"
 import type { Doc } from "../_generated/dataModel"
 import { validatedTokenPriceUsd } from "./oraclePrice"
+import {
+  assertClose,
+  BORROW_FALLBACK_LIQUIDATION_PCT,
+  liquidationThresholdFromMaxLtv,
+  MAX_MULTIPLIER,
+  MAX_POSITION_LEGS,
+  numberToUsd6,
+  ratioToWad,
+  requireBoundedIdentifier,
+  requireUnsignedInteger,
+  usd6Number,
+} from "./transaction-invariants"
 
 type ProductBalanceTable =
   "walletLendBalances" | "walletBorrowBalances" | "walletMultiplyBalances" | "walletLiquidBalances"
@@ -281,11 +293,9 @@ const MAX_PORTFOLIO_HISTORY_ROWS = 365
 const MAX_RISK_HISTORY_ROWS = 365
 
 /** Global multiply leverage ceiling, mirrors MULTIPLY_ACTION_MAX_LEVERAGE (client slider). */
-const MAX_MULTIPLIER = 10
 
 /** Liquidation threshold (%) assumed when a pledged pool has none recorded AND no maxLtv to
  *  derive one from. Conservative. */
-const BORROW_FALLBACK_LIQUIDATION_PCT = 85
 
 /**
  * Derive a liquidation threshold from a pool's max-LTV / collateral factor when the pool has
@@ -296,12 +306,6 @@ const BORROW_FALLBACK_LIQUIDATION_PCT = 85
  * liquidation value and rejected borrows the client preview had shown as solvent (HF ≥ 1),
  * breaking confirm==persist parity. (#12)
  */
-const LIQUIDATION_THRESHOLD_SPREAD_PCT = 10
-const LIQUIDATION_THRESHOLD_CAP_PCT = 95
-function liquidationThresholdFromMaxLtv(maxLtvPct: number) {
-  return Math.min(maxLtvPct + LIQUIDATION_THRESHOLD_SPREAD_PCT, LIQUIDATION_THRESHOLD_CAP_PCT)
-}
-
 /** Optional position upsert payload carried by a transaction. */
 const positionPayload = v.object({
   status: v.union(v.literal("open"), v.literal("closed")),
@@ -348,22 +352,6 @@ const positionPayload = v.object({
   ),
 })
 
-const MAX_FIXED_POINT_DIGITS = 80
-const MAX_POSITION_LEGS = 32
-const MAX_IDENTIFIER_LENGTH = 200
-
-function requireBoundedIdentifier(value: string, field: string) {
-  if (value.length === 0 || value.length > MAX_IDENTIFIER_LENGTH) {
-    throw new Error(`INVALID_INPUT: ${field} must contain 1 to ${MAX_IDENTIFIER_LENGTH} characters.`)
-  }
-}
-
-function requireUnsignedInteger(value: string, field: string) {
-  if (value.length === 0 || value.length > MAX_FIXED_POINT_DIGITS || !/^\d+$/.test(value)) {
-    throw new Error(`INVALID_POSITION: ${field} must be an unsigned integer string.`)
-  }
-}
-
 function validatePositionPayload(position: Infer<typeof positionPayload>) {
   if ((position.collateral?.length ?? 0) > MAX_POSITION_LEGS || (position.debt?.length ?? 0) > MAX_POSITION_LEGS) {
     throw new Error(`INVALID_POSITION: a position may contain at most ${MAX_POSITION_LEGS} collateral and debt legs.`)
@@ -388,16 +376,6 @@ function validatePositionPayload(position: Infer<typeof positionPayload>) {
     requireUnsignedInteger(debt.debtIndexRay, "debtIndexRay")
     requireUnsignedInteger(debt.borrowRateWad, "borrowRateWad")
     requireUnsignedInteger(debt.principalBorrowedUsd6, "principalBorrowedUsd6")
-  }
-}
-
-function usd6Number(value?: string) {
-  return Number(BigInt(value ?? "0")) / 1_000_000
-}
-
-function assertClose(actual: number, expected: number, field: string, tolerance = 0.02) {
-  if (!Number.isFinite(actual) || Math.abs(actual - expected) > tolerance) {
-    throw new Error(`INVALID_TRANSITION: ${field} does not match the server recomputation.`)
   }
 }
 
@@ -554,15 +532,6 @@ async function assertBorrowSolvent(
   if (debtUsd > liquidationValueUsd + 0.01) {
     throw new Error("INVALID_TRANSITION: borrow position would be undercollateralized (health factor < 1).")
   }
-}
-
-function numberToUsd6(value: number) {
-  return Math.max(0, Math.round(value * 1_000_000)).toString()
-}
-
-function ratioToWad(value: number | null) {
-  if (value === null || !Number.isFinite(value)) return null
-  return Math.max(0, Math.round(value * 1_000_000_000) * 1_000_000_000).toString()
 }
 
 /** Derive risk history from persisted positions and server market parameters. */
