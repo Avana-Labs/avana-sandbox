@@ -34,6 +34,7 @@ import {
   TABLE_CELL_PADDING_TRAILING,
   TABLE_CELL_PRIMARY,
   TABLE_CELL_SECONDARY,
+  TABLE_CELL_SECONDARY_UNCOLORED,
   TABLE_HEADER_CELL,
   TABLE_HEADER_ROW,
   TABLE_ROW_HOVER_BG,
@@ -365,7 +366,7 @@ function NetApyCell({
       <span className={cn("block", TABLE_CELL_NUMERIC, netApyToneClass(apy.netApyPct))}>
         {formatNetApyPct(apy.netApyPct)}
       </span>
-      <span className={cn("block", TABLE_CELL_SECONDARY, "text-success")}>
+      <span className={cn("block", TABLE_CELL_SECONDARY_UNCOLORED, "text-success")}>
         {showDollarAmounts ? (
           <LiveInterestEarnedUsd
             anchorMs={apy.accrualSinceMs}
