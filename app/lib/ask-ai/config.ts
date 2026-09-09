@@ -6,7 +6,7 @@ export const ASK_AI_CONFIG = {
   agentName: "avana-ask-ai",
   defaultModel: "gpt-5.6-luna",
   fastModel: "gpt-5.6-luna",
-  openAIServiceTier: "fast",
+  openAIServiceTier: "default",
   contextWindowTokens: 1_050_000,
   maxInputCharacters: 2_000,
   maxOutputTokens: 900,

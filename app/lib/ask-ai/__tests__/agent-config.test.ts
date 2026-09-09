@@ -20,8 +20,8 @@ describe("Ask AI Agent configuration", () => {
     expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("uncertain scenarios")
   })
 
-  test("uses one full Avana persona with the quality transport profile", () => {
-    expect(ASK_AI_CONFIG.openAIServiceTier).toBe("fast")
+  test("uses one full Avana persona with bounded output and standard transport", () => {
+    expect(ASK_AI_CONFIG.openAIServiceTier).toBe("default")
     expect(ASK_AI_CONFIG.maxOutputTokens).toBe(900)
     expect(ASK_AI_CONFIG.topP).toBe(0.98)
     expect(ASK_AI_CONFIG.reasoningEffort).toBe("medium")

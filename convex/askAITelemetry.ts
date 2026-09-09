@@ -13,6 +13,9 @@ export const record = internalMutation({
     inputTokens: v.optional(v.number()),
     outputTokens: v.optional(v.number()),
     totalTokens: v.optional(v.number()),
+    cacheReadTokens: v.optional(v.number()),
+    cacheWriteTokens: v.optional(v.number()),
+    serviceTier: v.optional(v.string()),
     tools: v.array(v.string()),
     routeIntent: v.optional(v.string()),
     toolBudget: v.optional(v.number()),
@@ -38,6 +41,8 @@ export const report = internalQuery({
       failures: rows.length - complete.length,
       failureRate: rows.length ? (rows.length - complete.length) / rows.length : 0,
       averageDurationMs: complete.length ? complete.reduce((sum, row) => sum + row.durationMs, 0) / complete.length : 0,
+      cacheReadTokens: rows.reduce((sum, row) => sum + (row.cacheReadTokens ?? 0), 0),
+      cacheWriteTokens: rows.reduce((sum, row) => sum + (row.cacheWriteTokens ?? 0), 0),
       totalTokens: rows.reduce((sum, row) => sum + (row.totalTokens ?? 0), 0),
       duplicatePromptMessageIds: [...generationsByPrompt.entries()]
         .filter(([, count]) => count > 1)

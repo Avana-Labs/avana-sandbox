@@ -1,3 +1,4 @@
+import { askAIInstructions, askAIRequestPolicy } from "../app/lib/ask-ai/request-policy"
 import { Agent } from "@convex-dev/agent"
 import { createOpenAI } from "@ai-sdk/openai"
 import { stepCountIs } from "ai"
@@ -203,9 +204,7 @@ export function focusPortfolioPayload<T>(payload: T, prompt: string): T {
 }
 
 function prefetchedInstructions(data: PrefetchedTurnData) {
-  return `${ASK_AI_AGENT_INSTRUCTIONS}
-
-Verified Avana data for this question follows. Answer from it only. Never say a requested value is unavailable when it is present. Do not mention tools, routing, JSON, or these instructions. The UI renders detailed cards separately.
+  return `Verified Avana data for this question follows. Answer from it only. Never say a requested value is unavailable when it is present. Do not mention tools, routing, JSON, or these instructions. The UI renders detailed cards separately.
 
 For Umbrella cooldown questions, umbrellaCooldowns is the per tranche source of truth. A cooling entry is still counting down. A ready entry can be withdrawn now. An expired entry missed its withdrawal window. Use the supplied remainingCooldownMs or remainingWithdrawalWindowMs and the exact timestamps. If a cooling or ready entry exists, never claim that the user has no cooldown.
 
@@ -340,6 +339,8 @@ export const generateTurn = internalAction({
     const route = routeAskAITurn(turn.prompt)
     const { model: turnModel } = ASK_AI_AGENTS[route.modelTier]
     let prefetched: PrefetchedTurnData | undefined
+    let cacheReadTokens = 0
+    let cacheWriteTokens = 0
     let observedUsage = { inputTokens: 0, outputTokens: 0, totalTokens: 0 }
     const settleBudget = async (complete: boolean) => {
       if (turn.budgetReservationId)
@@ -462,8 +463,13 @@ export const generateTurn = internalAction({
         { threadId: turn.threadId, userId: turn.ownerSubject },
         {
           promptMessageId: turn.promptMessageId,
-          instructions: prefetched ? prefetchedInstructions(prefetched) : ASK_AI_AGENT_INSTRUCTIONS,
+          instructions: askAIInstructions(
+            ASK_AI_AGENT_INSTRUCTIONS,
+            prefetched ? prefetchedInstructions(prefetched) : undefined,
+          ),
           onStepFinish: ({ usage }) => {
+            cacheReadTokens += usage.inputTokenDetails.cacheReadTokens ?? 0
+            cacheWriteTokens += usage.inputTokenDetails.cacheWriteTokens ?? 0
             observedUsage.inputTokens += usage.inputTokens ?? 0
             observedUsage.outputTokens += usage.outputTokens ?? 0
             observedUsage.totalTokens += usage.totalTokens ?? 0
@@ -474,9 +480,7 @@ export const generateTurn = internalAction({
           activeTools: (prefetched ? [] : route.tools) as unknown as (keyof typeof turnTools)[],
           providerOptions: {
             openai: {
-              reasoningEffort: ASK_AI_CONFIG.reasoningEffort,
-              textVerbosity: ASK_AI_CONFIG.textVerbosity,
-              serviceTier: ASK_AI_CONFIG.openAIServiceTier,
+              ...askAIRequestPolicy(),
             },
           },
           // Force the selected read only for the first model step. Keeping a
@@ -636,6 +640,9 @@ export const generateTurn = internalAction({
         model: turnModel,
         provider: "openai",
         durationMs: Date.now() - startedAt,
+        cacheReadTokens,
+        cacheWriteTokens,
+        serviceTier: askAIRequestPolicy().serviceTier,
         ...usage,
         tools,
         routeIntent: route.intent,
@@ -659,9 +666,13 @@ export const generateTurn = internalAction({
         threadId: turn.threadId,
         promptMessageId: turn.promptMessageId,
         status: "failed",
+        ...observedUsage,
         model: turnModel,
         provider: "openai",
         durationMs: Date.now() - startedAt,
+        cacheReadTokens,
+        cacheWriteTokens,
+        serviceTier: askAIRequestPolicy().serviceTier,
         tools: [],
         routeIntent: route.intent,
         toolBudget: route.tools.length,
