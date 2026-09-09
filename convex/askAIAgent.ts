@@ -67,6 +67,7 @@ const ASK_AI_AGENTS: Record<AskAIModelTier, { agent: Agent; model: string }> = {
 }
 
 type PreparedTurn = {
+  budgetReservationId?: import("./_generated/dataModel").Id<"askAIBudgetReservations">
   turnId: import("./_generated/dataModel").Id<"askAITurns">
   threadId: string
   ownerSubject: string
@@ -339,6 +340,17 @@ export const generateTurn = internalAction({
     const route = routeAskAITurn(turn.prompt)
     const { model: turnModel } = ASK_AI_AGENTS[route.modelTier]
     let prefetched: PrefetchedTurnData | undefined
+    let observedUsage = { inputTokens: 0, outputTokens: 0, totalTokens: 0 }
+    const settleBudget = async (complete: boolean) => {
+      if (turn.budgetReservationId)
+        await ctx.runMutation(internal.askAI.settleBudgetReservation, {
+          reservationId: turn.budgetReservationId,
+          threadId: turn.threadId,
+          model: turnModel,
+          complete,
+          usage: observedUsage,
+        })
+    }
     const turnTools = {
       web_search: ASK_AI_TOOLS.web_search,
       search_avana_knowledge: ASK_AI_TOOLS.search_avana_knowledge,
@@ -451,6 +463,11 @@ export const generateTurn = internalAction({
         {
           promptMessageId: turn.promptMessageId,
           instructions: prefetched ? prefetchedInstructions(prefetched) : ASK_AI_AGENT_INSTRUCTIONS,
+          onStepFinish: ({ usage }) => {
+            observedUsage.inputTokens += usage.inputTokens ?? 0
+            observedUsage.outputTokens += usage.outputTokens ?? 0
+            observedUsage.totalTokens += usage.totalTokens ?? 0
+          },
           maxOutputTokens: ASK_AI_CONFIG.maxOutputTokens,
           topP: ASK_AI_CONFIG.topP,
           stopWhen: stepCountIs(prefetched ? 1 : route.maxSteps),
@@ -491,6 +508,8 @@ export const generateTurn = internalAction({
         outputTokens: providerUsage.outputTokens ?? 0,
         totalTokens: providerUsage.totalTokens ?? 0,
       }
+      observedUsage = usage
+      await settleBudget(providerUsage.totalTokens !== undefined)
       const steps = await result.steps
       const tools = [
         ...new Set([
@@ -598,6 +617,7 @@ export const generateTurn = internalAction({
       await ctx.runMutation(internal.askAI.completeGeneratedTurn, {
         turnId: turn.turnId,
         assistantMessageId: assistantMessage._id,
+        budgetReservationId: turn.budgetReservationId,
         model: turnModel,
         usage,
         richParts: {
@@ -628,8 +648,10 @@ export const generateTurn = internalAction({
         usage,
       }
     } catch (error) {
+      await settleBudget(false)
       await ctx.runMutation(internal.askAI.failTurn, {
         turnId: turn.turnId,
+        budgetReservationId: turn.budgetReservationId,
       })
       // Keep the raw error in telemetry (detailed text, never client-visible)...
       await ctx.runMutation(internal.askAITelemetry.record, {

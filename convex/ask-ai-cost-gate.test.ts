@@ -152,3 +152,62 @@ describe("Ask AI atomic cost gate", () => {
     ).rejects.toMatchObject({ data: { code: "ASK_AI_RATE_LIMITED" } })
   })
 })
+
+describe("token reservations", () => {
+  test("reserves before generation and releases only an unstarted cancellation", async () => {
+    const t = askAITest()
+    const owner = t.withIdentity({ subject: "ask-guest:reservation" })
+    const thread = await owner.mutation(api.askAI.create, {})
+    const turn = await owner.mutation(api.askAI.enqueueTurn, {
+      threadId: thread.threadId,
+      prompt: "Hello",
+      clientRequestId: "reserve",
+    })
+    expect((await owner.query(api.askAI.quota, {})).tokensUsed).toBe(ASK_AI_CONFIG.limits.reservedTokensPerTurn)
+    await owner.mutation(api.askAI.cancelQueuedTurn, { turnId: turn.turnId })
+    expect((await owner.query(api.askAI.quota, {})).tokensUsed).toBe(0)
+  })
+  test("settles each attempt once and retains unknown failed-stream costs", async () => {
+    const t = askAITest()
+    const owner = t.withIdentity({ subject: "ask-guest:settlement" })
+    const thread = await owner.mutation(api.askAI.create, {})
+    const turn = await owner.mutation(api.askAI.enqueueTurn, {
+      threadId: thread.threadId,
+      prompt: "Hello",
+      clientRequestId: "settle",
+    })
+    const claimed = await t.mutation(internal.askAI.claimQueuedTurn, { turnId: turn.turnId })
+    const args = {
+      reservationId: claimed!.budgetReservationId!,
+      threadId: thread.threadId,
+      model: "test",
+      complete: false,
+      usage: { inputTokens: 80, outputTokens: 20, totalTokens: 100 },
+    }
+    await t.mutation(internal.askAI.settleBudgetReservation, args)
+    await t.mutation(internal.askAI.settleBudgetReservation, args)
+    expect((await owner.query(api.askAI.quota, {})).tokensUsed).toBe(ASK_AI_CONFIG.limits.reservedTokensPerTurn)
+    expect(await t.run((ctx) => ctx.db.query("askAIUsage").collect())).toHaveLength(1)
+  })
+  test("settles a cancelled running attempt to observed complete usage", async () => {
+    const t = askAITest()
+    const owner = t.withIdentity({ subject: "ask-guest:cancel-settle" })
+    const thread = await owner.mutation(api.askAI.create, {})
+    const turn = await owner.mutation(api.askAI.enqueueTurn, {
+      threadId: thread.threadId,
+      prompt: "Hello",
+      clientRequestId: "cancel-settle",
+    })
+    const claimed = await t.mutation(internal.askAI.claimQueuedTurn, { turnId: turn.turnId })
+    await owner.mutation(api.askAI.cancelRunningTurn, { threadId: thread.threadId })
+    await t.mutation(internal.askAI.settleBudgetReservation, {
+      reservationId: claimed!.budgetReservationId!,
+      threadId: thread.threadId,
+      model: "test",
+      complete: true,
+      usage: { inputTokens: 80, outputTokens: 20, totalTokens: 100 },
+    })
+    expect((await owner.query(api.askAI.quota, {})).tokensUsed).toBe(100)
+    expect((await t.run((ctx) => ctx.db.get(turn.turnId)))?.status).toBe("cancelled")
+  })
+})

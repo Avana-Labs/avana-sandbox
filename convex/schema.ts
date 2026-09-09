@@ -1998,7 +1998,15 @@ export default defineSchema({
     .index("by_thread", ["threadId"])
     .index("by_message", ["messageId"]),
 
+  askAIBudgetReservations: defineTable({
+    ownerSubject: v.string(),
+    tokens: v.number(),
+    settled: v.boolean(),
+    createdAt: v.number(),
+  }).index("by_owner_created", ["ownerSubject", "createdAt"]),
+
   askAITurns: defineTable({
+    budgetReservationId: v.optional(v.id("askAIBudgetReservations")),
     threadId: v.string(),
     ownerSubject: v.string(),
     clientRequestId: v.optional(v.string()),

@@ -33,3 +33,7 @@ Editorial content and contract addresses use a bounded 60-second warm-instance c
 ## C3 — Separate reactive wallet reads
 
 Balances/positions and the existing 500-row transaction history now subscribe independently, so balance changes do not reread or retransmit history. The combined query remains compatible, wallet authorization applies to both reads, and hydration retains the intent reconciliation guard. All 72 transaction/session tests passed, including combined-versus-split equality and foreign-wallet rejection. History is still bounded to the existing 500 rows; an older-history pagination UI remains follow-up work.
+
+## C4 — Reserve and settle AI usage
+
+Every submission/retry atomically reserves 25,000 tokens before persistence, alongside existing message limits and a global daily allocation ceiling. Completed generations settle to provider usage once; failed streams persist observed usage and retain the unknown portion. Queued cancellations release their reservation, running cancellations/timeouts retain it, and attempt IDs prevent stale completions/failures from changing a retry. Legacy immediate retries now require failed status and pass the same gate. All 31 cost-gate/agent/error tests passed. Reservations are estimates, not provider-dollar limits; configure provider spending limits separately and calibrate allocations using real usage.

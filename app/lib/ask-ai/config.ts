@@ -24,6 +24,8 @@ export const ASK_AI_CONFIG = {
     // can spend several thousand tokens, so 20 msgs/day needs generous headroom (30k blocked
     // usage after ~3 questions and surfaced as a confusing "limit reached" error).
     dailyTokenBudget: 500_000,
+    reservedTokensPerTurn: 25_000,
+    globalReservedTokensPerDay: 100_000_000,
     globalMessagesPerDay: 20_000,
   },
   freshness: {
