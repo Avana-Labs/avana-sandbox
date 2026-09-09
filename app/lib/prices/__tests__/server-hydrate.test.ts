@@ -11,14 +11,28 @@ vi.mock("@/app/lib/borrow-system/market-hydration-server", () => ({ fetchTokenPr
 // same value, so the behavior asserted here is unchanged.
 vi.mock("next/cache", () => ({ unstable_cache: (fn: (...args: never[]) => unknown) => fn }))
 
-import { hydrateCanonicalPricesFromConvex } from "@/app/lib/prices/server-hydrate"
+import { hydrateCanonicalPricesFromConvex, loadServerTokenPrices } from "@/app/lib/prices/server-hydrate"
+import { SERVER_SEED_WAIT_MS } from "@/app/lib/performance/server-seed"
 
 afterEach(() => {
   resetCanonicalPrices()
   fetchTokenPrices.mockReset()
+  vi.useRealTimers()
 })
 
 describe("hydrateCanonicalPricesFromConvex", () => {
+  it("releases SSR after the deadline without applying late oracle prices", async () => {
+    vi.useFakeTimers()
+    let resolve!: (prices: Record<string, number>) => void
+    fetchTokenPrices.mockImplementation(() => new Promise((done) => (resolve = done)))
+    const seed = loadServerTokenPrices()
+    await vi.advanceTimersByTimeAsync(SERVER_SEED_WAIT_MS)
+    await expect(seed).resolves.toEqual({})
+    resolve({ aave: 88.25 })
+    await vi.advanceTimersByTimeAsync(0)
+    expect(canonicalPriceUsd("AAVE")).toBe(105)
+  })
+
   it("overlays live oracle prices onto the canonical store (fixture -> live)", async () => {
     // Sanity: before hydrate the store is the deterministic fixture.
     expect(canonicalPriceUsd("AAVE")).toBe(105)

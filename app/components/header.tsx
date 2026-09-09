@@ -27,8 +27,8 @@ export function Header() {
   const pathname = usePathname()
   const { t } = useTranslation()
   // Guests can't reach product routes (SandboxGate routes them to onboarding), so don't prefetch
-  // those routes for them — the default viewport prefetch fires wasted RSC requests (the aborted
-  // rows in the network tab) for routes a guest can't use. Signed-in users keep prefetch for fast nav.
+  // those routes for them. Signed-in users prefetch the full dynamic page payload;
+  // automatic prefetch does not reliably warm these routes without loading boundaries.
   const { isSignedIn } = useSiweAuth()
   const desktopLinks = personalDesktopHeaderLinks
   const [mounted, setMounted] = useState(false)
@@ -112,7 +112,7 @@ export function Header() {
         <Link
           key={link.href}
           href={link.href}
-          prefetch={isSignedIn ? undefined : false}
+          prefetch={isSignedIn}
           aria-label={t(link.label)}
           title={t(link.label)}
           className={`inline-flex shrink-0 items-center rounded-full font-sans text-[15px] font-normal leading-5 transition-colors ${
@@ -138,7 +138,7 @@ export function Header() {
         <Link
           key={link.href}
           href={link.href}
-          prefetch={isSignedIn ? undefined : false}
+          prefetch={isSignedIn}
           aria-label={t(link.label)}
           title={t(link.label)}
           className={`group inline-flex shrink-0 items-center rounded-full font-sans text-[15px] font-normal leading-5 transition-colors ${

@@ -1,16 +1,24 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import dynamic from "next/dynamic"
 import type { HomeMode } from "@/app/lib/home-sim"
 import { HomeWorkspaceCard } from "@/app/components/home/home-workspace-card"
 import { HomeSwapAction } from "@/app/components/home/home-swap-action"
-import { BorrowActionPageClient } from "@/app/components/action-page/borrow-action-page-client"
+import { ActionSessionLoading } from "@/app/components/action-page/action-session-loading"
 import { HomeWorkspaceSkeleton } from "@/app/components/loading-states"
 import {
   AvanaSessionsProvider,
   useBorrowSessionContext,
   useRewardsSessionContext,
 } from "@/app/lib/avana-session/avana-sessions-provider"
+
+// Swap is the initial mode. Fetch the other action forms only when selected,
+// keeping their configuration/picker graph off the initial workspace load.
+const BorrowActionPageClient = dynamic(
+  () => import("@/app/components/action-page/borrow-action-page-client").then((mod) => mod.BorrowActionPageClient),
+  { loading: ActionSessionLoading },
+)
 
 export function HomePageWorkspaceRuntime({ walletId }: { walletId?: string }) {
   if (walletId) {

@@ -2,6 +2,7 @@ import "server-only"
 import { unstable_cache } from "next/cache"
 import { fetchTokenPrices } from "@/app/lib/borrow-system/market-hydration-server"
 import { setCanonicalPrices } from "./canonical"
+import { waitForServerSeed } from "@/app/lib/performance/server-seed"
 
 /**
  * Cross-request cache for the oracle round-trip. The root layout awaits the price seed on every
@@ -45,7 +46,7 @@ export async function hydrateCanonicalPricesFromConvex(): Promise<void> {
  */
 export async function loadServerTokenPrices(): Promise<Record<string, number>> {
   try {
-    const prices = await getCachedTokenPrices()
+    const prices = await waitForServerSeed(getCachedTokenPrices(), null)
     if (prices) {
       setCanonicalPrices(prices)
       return prices

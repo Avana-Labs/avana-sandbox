@@ -135,7 +135,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // store (server-computed price surfaces render live) AND yields the seed handed to the client
   // TokenPricesContext, so CLIENT-rendered prices (lend list, borrow table, action pages) are
   // live from SSR without depending on the realtime subscription (which only mounts on
-  // authenticated product routes). Fail-open: returns {} and never blocks render.
+  // authenticated product routes). Each seed falls back after an 800ms cold-cache wait;
+  // slow optional data must not hold up the entire document indefinitely.
   const [initialTokenPrices, initialFxRates] = await Promise.all([loadServerTokenPrices(), loadServerFxRates()])
   // Per-request CSP nonce (set by middleware) for the inline theme-bootstrap script below.
   const nonce = (await headers()).get("x-nonce") ?? undefined

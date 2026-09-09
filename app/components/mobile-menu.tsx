@@ -18,6 +18,7 @@ import type { ReactNode } from "react"
 import { useEffect, useRef, useState } from "react"
 import { Switch } from "@/components/ui/switch"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { CurrencyFlag } from "./currency-flag"
 import { CURRENCY_OPTIONS, LANGUAGE_OPTIONS, useLocaleDisplayPreferences } from "./display-preferences"
 import { AVANA_EXTERNAL_LINKS } from "./external-links"
@@ -36,6 +37,7 @@ type MobileMenuProps = {
 }
 
 export function MobileMenu({ actions, brand, initialOpen = false }: MobileMenuProps) {
+  const { isSignedIn } = useSiweAuth()
   const [open, setOpen] = useState(initialOpen)
   const [renderMenu, setRenderMenu] = useState(initialOpen)
   const [isShown, setIsShown] = useState(false)
@@ -56,6 +58,7 @@ export function MobileMenu({ actions, brand, initialOpen = false }: MobileMenuPr
     moved: boolean
   } | null>(null)
   const pathname = usePathname()
+  const previousPathnameRef = useRef(pathname)
   const { resolvedTheme, setTheme } = useTheme()
   const { language, setLanguage, currency, setCurrency } = useLocaleDisplayPreferences()
   const { t } = useTranslation()
@@ -66,6 +69,10 @@ export function MobileMenu({ actions, brand, initialOpen = false }: MobileMenuPr
   }, [])
 
   useEffect(() => {
+    // The lazy trigger mounts this component with initialOpen on the first tap.
+    // Close only on an actual navigation, not on that initial mount.
+    if (previousPathnameRef.current === pathname) return
+    previousPathnameRef.current = pathname
     setOpen(false)
     setRenderMenu(false)
     setIsShown(false)
@@ -286,7 +293,7 @@ export function MobileMenu({ actions, brand, initialOpen = false }: MobileMenuPr
               >
                 <Link
                   href={link.href}
-                  prefetch={false}
+                  prefetch={isSignedIn}
                   onClick={onClose}
                   className="flex items-end justify-between gap-5 py-3"
                 >

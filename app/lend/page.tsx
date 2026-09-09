@@ -29,8 +29,11 @@ export default async function LendPage() {
     )
   }
 
-  const [pageData, requestHeaders] = await Promise.all([fetchLendPage(), headers()])
-  const { LendClient } = await import("./lend-client")
+  const [pageData, requestHeaders, { LendClient }] = await Promise.all([
+    fetchLendPage(),
+    headers(),
+    import("./lend-client"),
+  ])
   const userAgent = requestHeaders.get("user-agent") ?? ""
   const initialIsDesktop = !/Android|iPhone|iPad|iPod|Mobile/i.test(userAgent)
 

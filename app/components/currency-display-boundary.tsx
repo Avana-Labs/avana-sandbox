@@ -2,6 +2,7 @@
 
 import { Fragment, type ReactNode } from "react"
 import { useLocaleDisplayPreferences } from "@/app/components/display-preferences"
+import { exchangeRateFor } from "@/app/lib/currency/rates"
 
 /**
  * Shared market formatters read the active FX rate from a module. Recreate only
@@ -9,9 +10,10 @@ import { useLocaleDisplayPreferences } from "@/app/components/display-preference
  * while the wallet and product sessions above this boundary remain intact.
  */
 export function CurrencyDisplayBoundary({ children }: { children: ReactNode }) {
-  const { currency, ratesVersion } = useLocaleDisplayPreferences()
+  const { currency } = useLocaleDisplayPreferences()
 
-  // Remount on a currency switch OR when live FX rates are (re)applied, so tables
-  // and detail surfaces that read the module-level rate recalculate either way.
-  return <Fragment key={`${currency}:${ratesVersion}`}>{children}</Fragment>
+  // Context updates still re-render this boundary when ratesVersion changes.
+  // Only an effective conversion change needs to rebuild module-based tables:
+  // repeated rates, other currencies, and all USD updates must preserve the page.
+  return <Fragment key={`${currency}:${exchangeRateFor(currency)}`}>{children}</Fragment>
 }

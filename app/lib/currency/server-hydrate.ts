@@ -3,16 +3,22 @@ import { unstable_cache } from "next/cache"
 import { applyLiveRates } from "@/app/lib/currency/rates"
 import { pickSupportedFxRates } from "@/app/lib/currency/exchange-rates"
 import type { CurrencyCode } from "@/app/components/display-preferences"
+import { waitForServerSeed } from "@/app/lib/performance/server-seed"
 
 const ENDPOINT = "https://open.er-api.com/v6/latest/USD"
 const REVALIDATE_SECONDS = 6 * 60 * 60
 
 const getCachedFxRates = unstable_cache(
   async (): Promise<Partial<Record<CurrencyCode, number>>> => {
-    const res = await fetch(ENDPOINT, { next: { revalidate: REVALIDATE_SECONDS } })
-    if (!res.ok) return {}
+    const res = await fetch(ENDPOINT, {
+      next: { revalidate: REVALIDATE_SECONDS },
+      signal: AbortSignal.timeout(5_000),
+    })
+    // Throw inside the cache so failed revalidation keeps the previous good rates.
+    // Returning {} here would cache an outage for six hours.
+    if (!res.ok) throw new Error(`FX request failed: ${res.status}`)
     const data = (await res.json()) as { result?: string; rates?: Record<string, number> }
-    if (data.result !== "success" || !data.rates) return {}
+    if (data.result !== "success" || !data.rates) throw new Error("Invalid FX response")
     return pickSupportedFxRates(data.rates)
   },
   ["server-fx-rates"],
@@ -26,7 +32,7 @@ const getCachedFxRates = unstable_cache(
  */
 export async function loadServerFxRates(): Promise<Partial<Record<CurrencyCode, number>>> {
   try {
-    const rates = await getCachedFxRates()
+    const rates = await waitForServerSeed(getCachedFxRates(), {})
     if (Object.keys(rates).length > 0) {
       applyLiveRates(rates)
       return rates

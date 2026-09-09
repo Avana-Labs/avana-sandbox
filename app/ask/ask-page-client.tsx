@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { useCallback, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { BrandIcon, BrandLogo } from "@/app/components/brand-logo"
@@ -8,9 +9,11 @@ import { X } from "@/app/components/icons"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { resolveAskAICloseHref } from "@/app/lib/ask-ai/navigation"
 import { useHydrated } from "@/app/lib/siwe/use-siwe-auth"
-import { AskAIPageClient } from "./ask-ai-page-client"
 import { AskAIHeaderTitleSkeleton, AskAILoadingBody } from "./components/ask-ai-skeleton"
 import { AskAIConvexBoundary } from "./ask-ai-convex-boundary"
+
+const loadAskAIPage = () => import("./ask-ai-page-client").then((mod) => mod.AskAIPageClient)
+const AskAIPageClient = dynamic(loadAskAIPage, { ssr: false, loading: AskAILoadingBody })
 
 /** The original focused `/ask` chrome, now containing the assistant-ui runtime. */
 export function AskPageClient() {
@@ -24,6 +27,12 @@ export function AskPageClient() {
   // mismatch. Gate it on the hydration flag so the server and first client render agree (no thread),
   // then mount it after hydration.
   const hydrated = useHydrated()
+
+  // Load the assistant runtime alongside guest authentication, rather than
+  // parsing it in the entry bundle before the auth boundary can even mount.
+  useEffect(() => {
+    void loadAskAIPage().catch(() => undefined)
+  }, [])
 
   const handleClose = useCallback(() => {
     const returnHref = resolveAskAICloseHref(searchParams.get("return"))
