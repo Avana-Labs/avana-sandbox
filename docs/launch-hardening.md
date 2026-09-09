@@ -41,3 +41,7 @@ Every submission/retry atomically reserves 25,000 tokens before persistence, alo
 ## C5 — Request policy and cache accounting
 
 OpenAI requests use standard service by default; `ASK_AI_SERVICE_TIER=fast` explicitly restores the former latency profile. Model, reasoning effort, and financial tool routing remain unchanged. Shared instructions now have an explicit cache breakpoint before per-turn data. Telemetry records cache reads, cache writes, and requested service tier, including observed failed-step usage. Eighteen policy/grounding/telemetry tests and TypeScript passed. No paid evaluations were run and no dollar savings or latency equivalence are claimed. Cache writes also cost tokens; assess read/write metrics after staging validation. Reference: [OpenAI prompt caching](https://developers.openai.com/api/docs/guides/prompt-caching).
+
+## C6 — Stream and queue write frequency
+
+Stream persistence batches at 250 ms instead of 100 ms. Capacity retries back off from roughly 2.5 seconds to at most 30 seconds, with per-turn jitter and duplicate-wakeup suppression. Queue tests verify blocked work remains queued and starts after capacity returns. This reduces the configured maximum flush frequency from 10 to 4 per second; actual write savings and perceived streaming latency still need staging measurement.

@@ -16,7 +16,7 @@ export const ASK_AI_CONFIG = {
   maxToolSteps: 5,
   recentMessageLimit: 8,
   ragResultLimit: 6,
-  streamThrottleMs: 100,
+  streamThrottleMs: 250,
   limits: {
     messagesPerDay: 20,
     minimumMessageIntervalMs: 5_000,

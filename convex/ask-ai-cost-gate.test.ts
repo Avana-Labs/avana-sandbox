@@ -211,3 +211,29 @@ describe("token reservations", () => {
     expect((await t.run((ctx) => ctx.db.get(turn.turnId)))?.status).toBe("cancelled")
   })
 })
+
+test("capacity retries coalesce duplicate wakeups without losing queued work", async () => {
+  const t = askAITest()
+  const owner = t.withIdentity({ subject: "ask-guest:backoff" })
+  const turns = []
+  for (let index = 0; index < 3; index++) {
+    const thread = await owner.mutation(api.askAI.create, {})
+    turns.push(
+      await owner.mutation(api.askAI.enqueueTurn, {
+        threadId: thread.threadId,
+        prompt: "Hello",
+        clientRequestId: `backoff-${index}`,
+      }),
+    )
+  }
+  for (const turn of turns.slice(0, 2)) await t.mutation(internal.askAI.claimQueuedTurn, { turnId: turn.turnId })
+  const args = { turnId: turns[2].turnId }
+  expect(await t.mutation(internal.askAI.claimQueuedTurn, args)).toBeNull()
+  expect(await t.mutation(internal.askAI.claimQueuedTurn, args)).toBeNull()
+  expect(await t.run((ctx) => ctx.db.get(args.turnId))).toMatchObject({ status: "queued", capacityAttempts: 1 })
+  await t.run(async (ctx) => {
+    await ctx.db.patch(turns[0].turnId, { status: "complete" })
+    await ctx.db.patch(args.turnId, { nextCapacityRetryAt: 0 })
+  })
+  expect(await t.mutation(internal.askAI.claimQueuedTurn, args)).not.toBeNull()
+})

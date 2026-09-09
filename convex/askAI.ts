@@ -1,3 +1,4 @@
+import { queueRetryDelay } from "../app/lib/ask-ai/queue-backoff"
 import {
   abortStream,
   createThread,
@@ -495,6 +496,7 @@ export const claimQueuedTurn = internalMutation({
   handler: async (ctx, { turnId }) => {
     const turn = await ctx.db.get(turnId)
     if (!turn || turn.status !== "queued") return null
+    if (turn.nextCapacityRetryAt && turn.nextCapacityRetryAt > Date.now()) return null
     const running = await ctx.db
       .query("askAITurns")
       .withIndex("by_thread_status_created", (q) => q.eq("threadId", turn.threadId).eq("status", "running"))
@@ -517,12 +519,18 @@ export const claimQueuedTurn = internalMutation({
     try {
       await assertConcurrentGenerationCapacity(ctx, turn.ownerSubject)
     } catch {
-      // At capacity: leave queued and retry shortly so other subjects' turns
-      // still drain when a running generation completes elsewhere.
-      await ctx.scheduler.runAfter(2_500, internal.askAIAgent.generateTurn, { turnId })
+      const attempt = turn.capacityAttempts ?? 0
+      const delay = queueRetryDelay(attempt, String(turnId))
+      await ctx.db.patch(turnId, { capacityAttempts: attempt + 1, nextCapacityRetryAt: Date.now() + delay })
+      await ctx.scheduler.runAfter(delay, internal.askAIAgent.generateTurn, { turnId })
       return null
     }
-    await ctx.db.patch(turnId, { status: "running", updatedAt: Date.now() })
+    await ctx.db.patch(turnId, {
+      status: "running",
+      capacityAttempts: 0,
+      nextCapacityRetryAt: undefined,
+      updatedAt: Date.now(),
+    })
     await ctx.scheduler.runAfter(ASK_AI_RUNNING_TIMEOUT_MS, internal.askAI.timeoutRunningTurn, { turnId })
     return {
       turnId: turn._id,

@@ -27,7 +27,7 @@ describe("Ask AI Agent configuration", () => {
     expect(ASK_AI_CONFIG.reasoningEffort).toBe("medium")
     expect(ASK_AI_CONFIG.textVerbosity).toBe("medium")
     expect(ASK_AI_CONFIG.recentMessageLimit).toBeLessThanOrEqual(8)
-    expect(ASK_AI_CONFIG.streamThrottleMs).toBeLessThanOrEqual(100)
+    expect(ASK_AI_CONFIG.streamThrottleMs).toBeLessThanOrEqual(250)
     expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("Talk like a real person who genuinely cares")
     expect(ASK_AI_AGENT_INSTRUCTIONS).toContain("turn it into a fun next step")
   })

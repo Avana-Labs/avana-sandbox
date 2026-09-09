@@ -2006,6 +2006,8 @@ export default defineSchema({
   }).index("by_owner_created", ["ownerSubject", "createdAt"]),
 
   askAITurns: defineTable({
+    capacityAttempts: v.optional(v.number()),
+    nextCapacityRetryAt: v.optional(v.number()),
     budgetReservationId: v.optional(v.id("askAIBudgetReservations")),
     threadId: v.string(),
     ownerSubject: v.string(),
