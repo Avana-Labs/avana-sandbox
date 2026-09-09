@@ -21,3 +21,7 @@ Dev startup reads the same env files as Next, rejects production/unverified live
 ## S4 — Dependency baseline gate
 
 A full production-dependency audit runs on every PR, main push, weekly schedule, and manual dispatch. High/critical advisories fail even without dependency changes. Exceptions must identify a package/advisory, justification, and expiry; the checked-in list is empty. Two gate tests and the live baseline passed. Registry failures fail closed.
+
+## C1 — Offline mock catalogs
+
+Mock catalog reads no longer invoke the snapshot fetcher. Live sources still require and merge real snapshots. All 22 provider tests passed, including 100 mock requests with zero external snapshot calls and explicit live-provider failures.

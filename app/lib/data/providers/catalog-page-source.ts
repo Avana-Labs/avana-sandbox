@@ -47,7 +47,7 @@ export function createCatalogPageSources<State, Snapshot, PageData>({
   })
 
   async function buildPageData(walletId: string, requireSnapshots: boolean): Promise<DataSourceResponse<PageData>> {
-    const snapshots = await fetchSnapshots()
+    const snapshots = requireSnapshots ? await fetchSnapshots() : []
     if (requireSnapshots && snapshots.length === 0) {
       throw new DataSourceError({
         code: "unavailable",
