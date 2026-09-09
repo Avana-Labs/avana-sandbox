@@ -35,8 +35,8 @@ type PendingTurn = {
   error?: FriendlyAskAIError
 }
 
-// Mirrors docs/ask-ai-lane-contracts.md §1. Lane B persists these; Lane C only
-// reads them and never fabricates fields that are absent.
+// Lane B persists these; Lane C only reads them and never fabricates fields
+// that are absent.
 type PersistedRichParts = {
   tool?: { name: string; query: string; request: string; result: string }
   retrievalChunks?: Array<{ title: string; locator: string; text: string; score?: number }>
@@ -122,8 +122,8 @@ function toFinancialResultCard(payload: unknown): AskAIFinancialResult | null {
   }
 }
 
-// Reshape a verbatim financial tool result (docs/ask-ai-lane-contracts.md §1) into the display
-// card, per tool kind. Returns null (card hidden) when the figures are absent — never invents them.
+// Reshape a verbatim financial tool result into the display card, per tool kind.
+// Returns null (card hidden) when the figures are absent — never invents them.
 function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFinancialResult | null {
   const shaped = toFinancialResultCard(payload)
   if (shaped) return shaped

@@ -51,7 +51,7 @@ const askAIRateLimiter = new RateLimiter(components.rateLimiter, {
 
 // User-facing throws use ConvexError so the friendly message survives Convex's
 // production error redaction and Lane C can render error.data.message with a
-// code -> copy fallback map. See docs/ask-ai-lane-contracts.md §2.
+// code -> copy fallback map.
 type AskAIErrorCode = "ASK_AI_GENERATION_FAILED" | "ASK_AI_RATE_LIMITED" | "ASK_AI_UNAVAILABLE"
 
 const ASK_AI_RUNNING_TIMEOUT_MS = 90_000
@@ -659,8 +659,8 @@ export const completeGeneratedTurn = internalMutation({
     budgetReservationId: v.optional(v.id("askAIBudgetReservations")),
     model: v.string(),
     usage: v.object({ inputTokens: v.number(), outputTokens: v.number(), totalTokens: v.number() }),
-    // Explicit shape (was v.any()) per docs/ask-ai-lane-contracts.md §1 so the
-    // rich parts the UI renders are validated at the trust boundary.
+    // Explicit shape (was v.any()) so the rich parts the UI renders are
+    // validated at the trust boundary.
     richParts: v.optional(
       v.object({
         sources: v.optional(
@@ -767,7 +767,6 @@ export const completeGeneratedTurn = internalMutation({
 // complete answer — so Lane C would show Copy / feedback controls beside an
 // error card. Remove any assistant message for this thread that never settled
 // (status !== "success") or has no visible text. Robust when none exists.
-// See docs/ask-ai-lane-contracts.md §3.
 async function discardStrayAssistantMessage(ctx: MutationCtx, threadId: string) {
   const { page } = await listMessages(ctx, components.agent, {
     threadId,
