@@ -45,3 +45,7 @@ OpenAI requests use standard service by default; `ASK_AI_SERVICE_TIER=fast` expl
 ## C6 — Stream and queue write frequency
 
 Stream persistence batches at 250 ms instead of 100 ms. Capacity retries back off from roughly 2.5 seconds to at most 30 seconds, with per-turn jitter and duplicate-wakeup suppression. Queue tests verify blocked work remains queued and starts after capacity returns. This reduces the configured maximum flush frequency from 10 to 4 per second; actual write savings and perceived streaming latency still need staging measurement.
+
+## C7 — Explicit paid evaluation runs
+
+Routine PR/push CI no longer invokes a paid model. The separate manual workflow requires an API key, uses a single worker, standard service, no automatic SDK retries, a 60-second request deadline, and 900 output tokens per step (up to four steps across five fixtures). It archives usage/latency evidence. Ten deterministic evaluations passed and all five paid fixtures skipped locally; workflow parsing confirmed manual-only execution. No OpenAI credits were spent on these checks.
