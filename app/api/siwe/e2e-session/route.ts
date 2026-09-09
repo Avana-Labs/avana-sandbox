@@ -1,5 +1,5 @@
 import { mintSiweSessionJwt, resolveIssuer, verifySandboxJwt, verifySiweSessionJwt } from "@/app/lib/siwe/jwt"
-import { isPlaywrightTestMode } from "@/app/lib/test-mode"
+import { allowsLocalE2E, isIsolatedE2EStaging } from "@/app/lib/siwe/e2e-policy"
 import { cookies } from "next/headers"
 import { assertSameOrigin, clientKey, rateLimitShared } from "../../_lib/request-guards"
 
@@ -18,8 +18,8 @@ export const dynamic = "force-dynamic"
 export async function POST(req: Request) {
   const secret = process.env.AVANA_E2E_SESSION_SECRET?.trim()
   const provided = req.headers.get("x-avana-e2e-secret")?.trim()
-  const secretOk = Boolean(secret && provided && secret === provided)
-  if (!isPlaywrightTestMode() && !secretOk) {
+  const secretOk = Boolean(isIsolatedE2EStaging() && secret && provided && secret === provided)
+  if (!allowsLocalE2E() && !secretOk) {
     return Response.json({ error: "e2e session unavailable" }, { status: 404 })
   }
   // Fail closed without Origin unless an e2e secret authorized the mint (Playwright API

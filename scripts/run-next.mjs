@@ -12,6 +12,13 @@ if (!supportedModes.has(mode)) {
   process.exit(1)
 }
 
+if (
+  (process.env.VERCEL_ENV === "production" || process.env.AVANA_DEPLOYMENT_ENV === "production") &&
+  ["AVANA_E2E_SESSION_SECRET", "AVANA_E2E_PRIVATE_JWK", "AVANA_E2E_STAGING"].some((key) => process.env[key])
+) {
+  throw new Error("E2E credentials are forbidden on the production deployment")
+}
+
 // Deploy hygiene: never bake the open-gate test mode into a production build.
 // A `build` with NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1 inlines IS_OPEN_GATE_TEST_MODE=true
 // — a full SIWE/onboarding bypass authenticating every visitor as the test wallet.

@@ -1,5 +1,6 @@
 import "server-only"
 import crypto from "node:crypto"
+import { isIsolatedE2EStaging } from "./e2e-policy"
 
 /**
  * Minimal RS256 JWT mint + JWK publication for the SIWE → JWT bridge, using Node's
@@ -24,7 +25,10 @@ function b64url(input: Buffer | string): string {
 }
 
 function privateJwk(): Jwk {
-  const raw = process.env.SIWE_JWT_PRIVATE_JWK
+  if (process.env.AVANA_E2E_STAGING === "1" && !isIsolatedE2EStaging()) {
+    throw new Error("Invalid isolated E2E signing configuration")
+  }
+  const raw = isIsolatedE2EStaging() ? process.env.AVANA_E2E_PRIVATE_JWK : process.env.SIWE_JWT_PRIVATE_JWK
   if (!raw) throw new Error("SIWE_JWT_PRIVATE_JWK is not set (see .env.local).")
   return JSON.parse(raw) as Jwk
 }
