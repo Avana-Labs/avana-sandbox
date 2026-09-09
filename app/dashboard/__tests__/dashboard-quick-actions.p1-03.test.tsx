@@ -1,6 +1,4 @@
 import { render, screen } from "@testing-library/react"
-import { readFileSync } from "node:fs"
-import { resolve } from "node:path"
 import { describe, expect, it, vi } from "vitest"
 import { DashboardQuickActions } from "@/app/dashboard/dashboard-quick-actions"
 
@@ -14,14 +12,5 @@ describe("P1-03: borrow tab deposit and withdraw routing", () => {
 
     expect(screen.getByRole("link", { name: "Pledge" }).getAttribute("href")).toContain("/actions/borrow/supply")
     expect(screen.getByRole("link", { name: "Remove" }).getAttribute("href")).toContain("/actions/borrow/remove")
-  })
-
-  it("routes collateral position panel Deposit and Withdraw to borrow pledge/remove", () => {
-    const source = readFileSync(resolve(__dirname, "../borrow-tab/collateral-positions-panel.tsx"), "utf8")
-
-    expect(source).toContain('actionPagePath("borrow", "supply"')
-    expect(source).toContain('actionPagePath("borrow", "remove"')
-    expect(source).not.toContain('actionPagePath("lend", "deposit"')
-    expect(source).not.toContain('actionPagePath("lend", "withdraw"')
   })
 })

@@ -49,3 +49,7 @@ Stream persistence batches at 250 ms instead of 100 ms. Capacity retries back of
 ## C7 — Explicit paid evaluation runs
 
 Routine PR/push CI no longer invokes a paid model. The separate manual workflow requires an API key, uses a single worker, standard service, no automatic SDK retries, a 60-second request deadline, and 900 output tokens per step (up to four steps across five fixtures). It archives usage/latency evidence. Ten deterministic evaluations passed and all five paid fixtures skipped locally; workflow parsing confirmed manual-only execution. No OpenAI credits were spent on these checks.
+
+## M1 — Remove unused dashboard panels
+
+Deleted the unused collateral, debt, and trading-fee panel implementations (about 1,000 lines). The dashboard uses the existing supplies/debts tables. Retired source-string assertions against the deleted panels while retaining rendered quick-action routing and active table tests. Focused dashboard tests and TypeScript passed.
