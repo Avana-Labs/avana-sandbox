@@ -1,4 +1,9 @@
 import "server-only"
+import {
+  publicMetadataCache,
+  publicMetadataKey,
+  fetchWithReadDeadline,
+} from "@/app/lib/detail-page/public-metadata-cache"
 import { ConvexHttpClient } from "convex/browser"
 import { api } from "@/convex/_generated/api"
 import { validatedConvexPriceMap } from "@/app/lib/prices/validated-convex-price"
@@ -15,7 +20,7 @@ const convexClient = requestCache((): ConvexHttpClient | null => {
   const url = process.env.NEXT_PUBLIC_CONVEX_URL
   if (!url || !/^https?:\/\//.test(url)) return null
   try {
-    return new ConvexHttpClient(url)
+    return new ConvexHttpClient(url, { fetch: fetchWithReadDeadline })
   } catch {
     return null
   }
@@ -69,12 +74,13 @@ export type ConvexContractAddressRow = {
 }
 
 async function fetchContractAddressRows(
+  key: string,
   runQuery: (client: ConvexHttpClient) => Promise<unknown>,
 ): Promise<ConvexContractAddressRow[]> {
   const client = convexClient()
   if (!client) return []
   try {
-    const rows = (await runQuery(client)) as ConvexContractAddressRow[] | null
+    const rows = (await publicMetadataCache.get(key, () => runQuery(client))) as ConvexContractAddressRow[] | null
     return rows ?? []
   } catch {
     return []
@@ -83,17 +89,23 @@ async function fetchContractAddressRows(
 
 /** Pool contract-address rows for detail.about.stats. Empty when Convex is unreachable. */
 export async function fetchPoolContractAddresses(poolSlug: string): Promise<ConvexContractAddressRow[]> {
-  return fetchContractAddressRows((client) => client.query(api.contractAddresses.listPoolAddresses, { poolSlug }))
+  return fetchContractAddressRows(publicMetadataKey("pool-addresses", poolSlug), (client) =>
+    client.query(api.contractAddresses.listPoolAddresses, { poolSlug }),
+  )
 }
 
 /** Asset contract-address rows for detail.about.stats. */
 export async function fetchAssetContractAddresses(assetSlug: string): Promise<ConvexContractAddressRow[]> {
-  return fetchContractAddressRows((client) => client.query(api.contractAddresses.listAssetAddresses, { assetSlug }))
+  return fetchContractAddressRows(publicMetadataKey("asset-addresses", assetSlug), (client) =>
+    client.query(api.contractAddresses.listAssetAddresses, { assetSlug }),
+  )
 }
 
 /** Multiply-market contract-address rows for detail.about.stats. */
 export async function fetchMultiplyContractAddresses(marketSlug: string): Promise<ConvexContractAddressRow[]> {
-  return fetchContractAddressRows((client) => client.query(api.contractAddresses.listMultiplyAddresses, { marketSlug }))
+  return fetchContractAddressRows(publicMetadataKey("multiply-addresses", marketSlug), (client) =>
+    client.query(api.contractAddresses.listMultiplyAddresses, { marketSlug }),
+  )
 }
 
 /** Pool hero series = TVL (total supplied) over the full window. */
@@ -291,7 +303,9 @@ export async function fetchContent(_scope: "pool" | "asset", slug: string) {
   const client = convexClient()
   if (!client) return null
   try {
-    return await client.query(api.borrow.content.getContent, { slug })
+    return await publicMetadataCache.get(publicMetadataKey("borrow-content", slug), () =>
+      client.query(api.borrow.content.getContent, { slug }),
+    )
   } catch {
     return null
   }

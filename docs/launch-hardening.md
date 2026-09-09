@@ -25,3 +25,7 @@ A full production-dependency audit runs on every PR, main push, weekly schedule,
 ## C1 — Offline mock catalogs
 
 Mock catalog reads no longer invoke the snapshot fetcher. Live sources still require and merge real snapshots. All 22 provider tests passed, including 100 mock requests with zero external snapshot calls and explicit live-provider failures.
+
+## C2 — Public metadata cache and read deadlines
+
+Editorial content and contract addresses use a bounded 60-second warm-instance cache, deduplicating concurrent reads. Deployment URL and `AVANA_PUBLIC_METADATA_VERSION` isolate cache keys; changing that revision invalidates entries. Risk, wallet, and execution data remain live. Convex server reads cancel their transport after eight seconds. Four tests passed, including 100 concurrent reads producing one fetch, expiry, eviction, failure retry, and caller cancellation. Savings depend on warm-instance reuse; this is not a fleet-wide cache.
