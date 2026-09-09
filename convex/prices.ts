@@ -9,7 +9,7 @@
  */
 
 import { v } from "convex/values"
-import { internalAction, internalMutation, query } from "./_generated/server"
+import { internalAction, internalMutation, query, type MutationCtx, type QueryCtx } from "./_generated/server"
 import { internal } from "./_generated/api"
 
 /**
@@ -126,10 +126,71 @@ export const getPrices = query({
   },
 })
 
+async function readProviderHealth(ctx: { db: QueryCtx["db"] }, kind: "prices" | "fx") {
+  return ctx.db
+    .query("oracleProviderHealth")
+    .withIndex("by_kind", (q) => q.eq("kind", kind))
+    .unique()
+}
+
+async function writeProviderHealth(
+  ctx: MutationCtx,
+  args: {
+    kind: "prices" | "fx"
+    checkedAt: number
+    sourceUpdatedAt?: number
+    quoteCount: number
+    written: number
+    unchanged: number
+  },
+) {
+  const existing = await readProviderHealth(ctx, args.kind)
+  if (existing) {
+    await ctx.db.patch(existing._id, {
+      checkedAt: args.checkedAt,
+      sourceUpdatedAt: args.sourceUpdatedAt,
+      quoteCount: args.quoteCount,
+      written: args.written,
+      unchanged: args.unchanged,
+    })
+  } else {
+    await ctx.db.insert("oracleProviderHealth", args)
+  }
+}
+
+function quoteUnchanged(
+  existing: {
+    priceUsd: number
+    confidence?: number
+    source: string
+    status?: string
+    llamaId: string
+  },
+  row: {
+    priceUsd: number
+    confidence?: number
+    source: string
+    status?: string
+    llamaId: string
+  },
+) {
+  return (
+    existing.priceUsd === row.priceUsd &&
+    (existing.confidence ?? null) === (row.confidence ?? null) &&
+    existing.source === row.source &&
+    (existing.status ?? null) === (row.status ?? null) &&
+    existing.llamaId === row.llamaId
+  )
+}
+
 /**
  * Price freshness signal for the UI. If the refresh cron fails, `getPrices` keeps serving
  * the last-known values silently; this exposes the OLDEST row's last-refresh time so the UI
  * can warn ("prices may be stale") instead of presenting stale numbers as live.
+ *
+ * Provider health (`oracleProviderHealth`) advances on successful refreshes even when quote
+ * rows are unchanged, so identical provider responses stay observable without rewriting
+ * every tokenPrices document.
  *
  * IMPORTANT: this returns only the raw `updatedAt` — it does NOT compute ageMs/stale from
  * Date.now(). A Convex query result is cached and only recomputed when a document it read
@@ -141,18 +202,31 @@ export const getPrices = query({
 export const getPriceStatus = query({
   args: {},
   handler: async (ctx) => {
+    const health = await readProviderHealth(ctx, "prices")
+    if (health) {
+      return {
+        updatedAt: health.checkedAt,
+        staleAfterMs: PRICE_STALE_AFTER_MS,
+        count: health.quoteCount,
+      }
+    }
     const rows = await ctx.db.query("tokenPrices").collect()
     if (rows.length === 0) {
-      // Never refreshed yet (fresh deploy, or the cron has never succeeded).
       return { updatedAt: null, staleAfterMs: PRICE_STALE_AFTER_MS, count: 0 }
     }
-    // OLDEST row's timestamp: a partially-failed refresh is only as fresh as its stalest token.
-    const updatedAt = Math.min(...rows.map((r) => r.updatedAt))
-    return { updatedAt, staleAfterMs: PRICE_STALE_AFTER_MS, count: rows.length }
+    return {
+      updatedAt: Math.min(...rows.map((r) => r.updatedAt)),
+      staleAfterMs: PRICE_STALE_AFTER_MS,
+      count: rows.length,
+    }
   },
 })
 
-/** Prices and freshness from one reactive table read for client-wide consumers. */
+/**
+ * Live price map for clients. Reads ONLY `tokenPrices` so an identical provider refresh
+ * that advances `oracleProviderHealth` does not invalidate this subscription.
+ * Freshness/`checkedAt` comes from `getPriceStatus`.
+ */
 export const getPriceSnapshot = query({
   args: {},
   handler: async (ctx) => {
@@ -165,11 +239,11 @@ export const getPriceSnapshot = query({
       status: r.status,
       updatedAt: r.updatedAt,
     }))
-    const updatedAt = rows.length === 0 ? null : Math.min(...rows.map((r) => r.updatedAt))
+    const quoteUpdatedAt = rows.length === 0 ? null : Math.min(...rows.map((r) => r.updatedAt))
     return {
       prices,
       status: {
-        updatedAt,
+        updatedAt: quoteUpdatedAt,
         staleAfterMs: PRICE_STALE_AFTER_MS,
         invalidAfterMs: PRICE_INVALID_AFTER_MS,
         count: rows.length,
@@ -178,7 +252,7 @@ export const getPriceSnapshot = query({
   },
 })
 
-/** Upsert price rows by symbol. Called by the refresh action; not a public write. */
+/** Upsert price rows by symbol. Identical provider quotes write zero quote rows. */
 export const upsertPrices = internalMutation({
   args: {
     rows: v.array(
@@ -200,15 +274,37 @@ export const upsertPrices = internalMutation({
     ),
   },
   handler: async (ctx, { rows }) => {
+    let written = 0
+    let unchanged = 0
+    let checkedAt = 0
+    let sourceUpdatedAt: number | undefined
     for (const row of rows) {
+      checkedAt = Math.max(checkedAt, row.fetchedAt ?? row.updatedAt)
+      if (row.sourceUpdatedAt != null) {
+        sourceUpdatedAt = sourceUpdatedAt == null ? row.sourceUpdatedAt : Math.min(sourceUpdatedAt, row.sourceUpdatedAt)
+      }
       const existing = await ctx.db
         .query("tokenPrices")
         .withIndex("by_symbol", (q) => q.eq("symbol", row.symbol))
         .unique()
+      if (existing && quoteUnchanged(existing, row)) {
+        unchanged += 1
+        continue
+      }
       if (existing) await ctx.db.patch(existing._id, row)
       else await ctx.db.insert("tokenPrices", row)
+      written += 1
     }
-    return { written: rows.length }
+    if (checkedAt === 0) checkedAt = Date.now()
+    await writeProviderHealth(ctx, {
+      kind: "prices",
+      checkedAt,
+      sourceUpdatedAt,
+      quoteCount: rows.length,
+      written,
+      unchanged,
+    })
+    return { written, unchanged }
   },
 })
 

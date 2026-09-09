@@ -70,6 +70,8 @@ const dict: TranslationDictionary = {
   Value: "Değer",
   Utilization: "Kullanım oranı",
   "Supply & Borrow": "Arz ve Borç",
+  "Supply {collateral}": "{collateral} teminat ver",
+  "Borrow {borrow}": "{borrow} borç al",
   Borrowed: "Borç alınan",
   Available: "Kullanılabilir",
   "Supply APY": "Arz APY",
@@ -159,6 +161,8 @@ const dict: TranslationDictionary = {
   "Join waitlist": "Bekleme listesine katıl",
   "Previous page": "Önceki sayfa",
   "Next page": "Sonraki sayfa",
+  "Transactions pagination": "İşlem sayfalandırması",
+  "Changelog pagination": "Değişiklik günlüğü sayfalandırması",
   "{page} of {count}": "{count} sayfadan {page}",
   "Max APY": "Maks. APY",
   "Max Leverage": "Maks. kaldıraç",
@@ -280,7 +284,6 @@ const dict: TranslationDictionary = {
   "Insufficient balance": "Yetersiz bakiye",
   "Insufficient liquidity": "Yetersiz likidite",
   "Insufficient LP": "Yetersiz LP",
-  "Deposit collateral first": "Önce teminat yatırın",
   "Borrowing unavailable": "Borçlanma kullanılamıyor",
   "Try a smaller amount": "Daha küçük bir tutar deneyin",
   "Supply cap reached": "Arz limitine ulaşıldı",
@@ -289,6 +292,8 @@ const dict: TranslationDictionary = {
   "Not available here": "Burada kullanılamıyor",
   "Nothing to claim": "Talep edilecek bir şey yok",
   "Select rewards": "Ödülleri seçin",
+  "No collateral": "Teminat yok",
+  "No position": "Pozisyon yok",
   "Nothing to withdraw": "Çekilecek bir şey yok",
   "and the Avana team will follow up. You can submit another request any time.":
     "Avana ekibi sizinle iletişime geçecek. İstediğiniz zaman yeni bir talep gönderebilirsiniz.",
@@ -404,7 +409,6 @@ const dict: TranslationDictionary = {
   "Daily Interest": "Günlük Faiz",
   day: "gün",
   "Deposit {symbol}": "{symbol} yatır",
-  "Deposit LP collateral before borrowing {symbol}.": "{symbol} ödünç almadan önce LP teminatı yatırın.",
   Done: "Tamam",
   Expiration: "Sona erme",
   Expired: "Süresi doldu",
@@ -413,7 +417,6 @@ const dict: TranslationDictionary = {
   "Generating link...": "Bağlantı oluşturuluyor...",
   "Go back": "Geri dön",
   GOOD: "İYİ",
-  "Got it": "Anladım",
   "Health Factor": "Sağlık Faktörü",
   "I read it": "Okudum",
   "In this sandbox, every transaction is simulated — use previews to learn before sizing up.":
@@ -568,6 +571,10 @@ const dict: TranslationDictionary = {
   "Lend Rewards": "Borç Verme Ödülleri",
   "Multiply Overview": "Multiply Genel Bakışı",
   "Multiply Positions": "Multiply Pozisyonları",
+  "Debt & Risk": "Borç ve Risk",
+  "Position size, multiplier, and current net yield": "Pozisyon büyüklüğü, çarpan ve mevcut net getiri",
+  "Borrowed balance, health factor, and liquidation threshold": "Borç bakiyesi, sağlık faktörü ve likidasyon eşiği",
+  "No active Multiply debt": "Aktif Multiply borcu yok",
   "Loading your portfolio": "Portföyünüz yükleniyor",
   "We couldn't load your portfolio": "Portföyünüzü yükleyemedik",
   "The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard.":
@@ -1054,6 +1061,7 @@ const dict: TranslationDictionary = {
   "Welcome to the Avana Sandbox": "Avana Test Ortamına Hoş Geldiniz",
   "This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.":
     "Bu risksiz Avana Test Ortamı, test fonlarını kullanarak alıştırma LP pozisyonları karşılığında borç almanıza, borç vermenize ve stratejileri döngüye almanıza olanak tanır. Gerçek varlık yok. Cüzdan imzası yok. Sadece canlı uygulamaya geçmeden önce Avana'nın nasıl çalıştığını anlamanın hızlı bir yolu.",
+  "No transactions yet": "Henüz işlem yok",
   "No transactions to sign": "İmzalanacak işlem yok",
   "Connect a wallet.": "Bir cüzdan bağlayın.",
   "We'll set up your sandbox and scope it to your address.": "Test ortamınızı kurup adresinize özel hale getireceğiz.",
@@ -1133,6 +1141,7 @@ const dict: TranslationDictionary = {
   "We couldn't load this page.": "Bu sayfayı yükleyemedik.",
   "Active Deficit": "Aktif açık",
   "Active stake": "Aktif stake",
+  "Includes active stake and cooldown": "Aktif stake ve cooldown dahildir",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "Kullanıcıların stake ettiği teminatın açığa çıkmasından önce Avana'nın öncelikle karşıladığı tutar. Stake sahipleri, yalnızca gerçekleşen açık bu ofseti aştığında zarar yazar.",
   "Close umbrella actions": "Koruma işlemlerini kapat",
@@ -1168,9 +1177,11 @@ const dict: TranslationDictionary = {
   "Previous market risk": "Önceki piyasa riski",
   Ready: "Hazır",
   "Removes in": "Kaldırılma süresi",
+  Restart: "Yeniden başlat",
   "Restart cooldown": "Cooldown'ı yeniden başlat",
   Stake: "Stake",
   "Stake in umbrella": "Koruma'da stake et",
+  "Unstake from umbrella": "Koruma'dan unstake et",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "Koruma güvenlik modülünde stake et, ödül al, cooldown başlat veya stake'i geri çek.",
   "Stake, claim, cooldown, unstake": "Stake, al, cooldown, geri çek",
@@ -1178,6 +1189,7 @@ const dict: TranslationDictionary = {
     "Çekimden önce cooldown'ı başlat. Cooldown sırasında pozisyon teşvik kazanmaya devam eder ve slashing'e açık kalır.",
   Target: "Hedef",
   "Total coverage": "Toplam teminat",
+  "Total position value": "Toplam pozisyon değeri",
   "Total user-staked capital available to absorb losses for this asset.":
     "Bu varlığın zararını karşılamak üzere kullanılabilir toplam kullanıcı stake sermayesi.",
   Umbrella: "Koruma",
@@ -1283,6 +1295,9 @@ const dict: TranslationDictionary = {
   "In range": "Aralıkta",
   "Interest / day": "Faiz / gün",
   "Key Statistics": "Temel İstatistikler",
+  "Market Rates": "Piyasa oranları",
+  "Utilization Rate": "Kullanım oranı",
+  "Borrow amount to reach {value} Util.": "{value} kullanıma ulaşmak için borç tutarı.",
   "Large price difference": "Büyük fiyat farkı",
   "Lend Assets": "Ödünç Verme Varlıkları",
   "Lend Balance": "Ödünç Verme Bakiyesi",
@@ -1364,6 +1379,8 @@ const dict: TranslationDictionary = {
   "Repay or add collateral to reduce your liquidation risk.":
     "Likidasyon riskinizi azaltmak için geri ödeyin veya teminat ekleyin.",
   "Review risk": "Riski incele",
+  "Negative net APY: borrow costs exceed supply yield. Review before opening this loop.":
+    "Negatif net getiri: borç maliyetleri tedarik getirisini aşıyor. Bu döngüyü açmadan önce inceleyin.",
   "Review swap": "Takası incele",
   "Rewards Earned": "Kazanılan Ödüller",
   Sandbox: "Sandbox",
@@ -1489,6 +1506,158 @@ const dict: TranslationDictionary = {
   "Next rewards": "Sonraki ödüller",
   "Open on Launch Date": "Lansman tarihinde açılır",
   "Previous rewards": "Önceki ödüller",
+  "The asset you've borrowed against your collateral.": "Teminatınıza karşılık borç aldığınız varlık.",
+  "Your outstanding loan balance in this asset, valued live.":
+    "Bu varlıktaki ödenmemiş kredi bakiyeniz, canlı olarak değerlenir.",
+  "A token held directly in your connected wallet.": "Bağlı cüzdanınızda doğrudan tutulan bir token.",
+  "The amount of this token in your wallet.": "Bu tokenin cüzdanınızdaki miktarı.",
+  "The token balance valued at its live price.": "Token bakiyesi, canlı fiyatından değerlenir.",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.":
+    "Elinizde tuttuğunuz bir LP pozisyonu, bir DEX'e sağlanan eşleştirilmiş tokenlar.",
+  "Whether the position's price range is active and earning fees.":
+    "Pozisyonun fiyat aralığının aktif olup olmadığı ve ücret kazanıp kazanmadığı.",
+  "The current value of your pooled tokens.": "Havuzdaki tokenlarınızın güncel değeri.",
+  "Trading fees this position has earned, claimable to your wallet.":
+    "Bu pozisyonun kazandığı, cüzdanınıza talep edilebilir işlem ücretleri.",
+  "The token you've supplied to earn lending yield.": "Borç verme getirisi kazanmak için sağladığınız token.",
+  "Your supplied balance in this asset, valued at its live price.":
+    "Bu varlıkta sağladığınız bakiye, canlı fiyatından değerlenir.",
+  "Current annual percentage yield on your deposit, before protocol rewards.":
+    "Yatırdığınız tutar üzerinden güncel yıllık yüzde getirisi, protokol ödülleri hariç.",
+  "The collateral asset backing your borrowing, valued at its live price.":
+    "Borçlanmanızı güvence altına alan teminat varlığı, canlı fiyatından değerlenir.",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.":
+    "Bu teminata karşılık ne kadar daha borç alabileceğiniz; %, likidasyon limitinizin halihazırda ne kadarının kullanıldığını gösterir.",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.":
+    "Sağlık faktörü ve bu pozisyonun likide edildiği teminat değeri. 1.0'ın altı likidasyonu tetikler.",
+  "The collateral you supply and the asset you borrow against it to build leverage.":
+    "Sağladığınız teminat ve bu teminat karşılığında kaldıraç oluşturmak için borç aldığınız varlık.",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.":
+    "Döngüdeki kendi sermayeniz (maruziyet eksi borç). Maruziyet, toplam kaldıraçlı pozisyonunuzdur.",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.":
+    "Sermayeniz üzerinden, borç maliyetlerinden sonraki net getiri. Aşağıdaki rakam, şimdiye kadar kazanılan ve canlı olarak artan faizdir.",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.":
+    "Sağlık faktörü ve bu döngünün likide edildiği teminat fiyatı. 1.0'ın altı likidasyonu tetikler.",
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)":
+    "Multiply döngüleriniz genelinde kazanılan, canlı olarak biriken net taşıma getirisi (tedarik getirisi eksi borçlanma maliyeti)",
+  "Average APY across your staked positions, weighted by value.":
+    "Stake edilen pozisyonlarınızın değere göre ağırlıklı ortalama APY'si.",
+  "Additional amount you can borrow against your pledged collateral within Avana credit limits":
+    "Avana kredi limitleri dahilinde, teminat olarak verdiğiniz varlığa karşılık borç alabileceğiniz ek tutar",
+  "Amount an active loan can lose before reaching liquidation; unavailable when you have no debt":
+    "Aktif bir kredinin tasfiyeye ulaşmadan önce kaybedebileceği tutar; borcunuz olmadığında kullanılamaz",
+  "Combined liquidation value divided by total Multiply debt. Higher is safer; below 1 risks liquidation.":
+    "Toplam likidasyon değerinin toplam Multiply borcuna bölümü. Ne kadar yüksekse o kadar güvenlidir; 1'in altında likidasyon riski vardır.",
+  "Equity-weighted net APY after supply yield and borrow cost":
+    "Tedarik getirisi ve borçlanma maliyeti sonrası öz sermaye ağırlıklı net APY",
+  "Exposure, return, and liquidation risk for each active loop":
+    "Her aktif döngü için maruziyet, getiri ve likidasyon riski",
+  "Gross Multiply exposure after looping across all positions":
+    "Tüm pozisyonlarda döngü yaptıktan sonraki brüt Multiply maruziyeti",
+  "Interest earned as a percentage of principal you supplied": "Sağladığınız anaparanın yüzdesi olarak kazanılan faiz",
+  "Portfolio leverage as position value divided by equity":
+    "Pozisyon değerinin öz sermayeye bölümü olarak portföy kaldıracı",
+  "Projected earnings at current rates": "Mevcut oranlarla tahmini kazanç",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)":
+    "Ödünç verme pozisyonlarınız genelinde canlı olarak biriken tedarik faizi (protokol ödülleri hariç)",
+  "Wallet-wide liquidation value divided by total borrowed. Higher is safer; below 1 risks liquidation.":
+    "Cüzdan genelinde likidasyon değerinin toplam borca bölümü. Ne kadar yüksekse o kadar güvenlidir; 1'in altında likidasyon riski vardır.",
+  "Prices may be stale": "Fiyatlar güncel olmayabilir",
+  "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.":
+    "Bu borç üzerindeki güncel yıllık borçlanma oranı. Aşağıda, şimdiye kadar biriken ve canlı olarak artan faiz.",
+  "Total AVA you've earned across completed quests and staking rewards.":
+    "Tamamlanan görevler ve stake ödülleri genelinde kazandığınız toplam AVA.",
+  "AVA you can claim to your wallet right now.": "Şu anda cüzdanınıza talep edebileceğiniz AVA.",
+  "Core Concepts": "Temel kavramlar",
+  "What is Avana?": "Avana nedir?",
+  "Protocol overview": "Protokol özeti",
+  "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.":
+    "Avana, Aave v4'ün Hub-and-Spoke mimarisi üzerine kurulu bir LP teminatlı borç verme protokolüdür.",
+  "Why it exists": "Neden var",
+  "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.":
+    "Amaç, likidite sağlayıcıların önce havuz pozisyonunu kapatmadan aktif pozisyonlara karşı borç alabilmesidir.",
+  "What does the Borrow Spoke do?": "Borrow Spoke ne yapar?",
+  "LP-specific underwriting": "LP'ye özgü underwriting",
+  "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.":
+    "Borrow Spoke'lar desteklenen pozisyonları değerler, health'i izler ve LP teminatı için tasfiye davranışını yönlendirir.",
+  "Shared coordination": "Paylaşılan koordinasyon",
+  "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.":
+    "Hub paylaşılan likiditeyi ve borç muhasebesini koordine eder; spoke ise LP'ye özgü mantığı yönetir.",
+  "Borrowing Capacity & Valuation": "Borç alma kapasitesi ve değerleme",
+  "How is borrowing capacity calculated?": "Borç alma kapasitesi nasıl hesaplanır?",
+  "Adjusted collateral value": "Ayarlanmış teminat değeri",
+  "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.":
+    "Her onaylı LP pozisyonu bağımsız değerlenir; ardından teminat faktörleri ve havuza özgü risk kontrolleri uygulanır.",
+  "Aggregated in the spoke": "Spoke'ta birleştirilir",
+  "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.":
+    "Spoke onaylı pozisyonları borç alma kapasitesinde birleştirir ve Hub sonucu uygular.",
+  "Why did my capacity change?": "Kapasitem neden değişti?",
+  "Market movement": "Piyasa hareketi",
+  "Capacity can change when the underlying assets move or when recoverable value shifts.":
+    "Kapasite, dayanak varlıklar hareket ettiğinde veya geri kazanılabilir değer değiştiğinde değişebilir.",
+  "Risk settings": "Risk ayarları",
+  "Collateral factors and market-specific risk settings can also change the amount shown in the interface.":
+    "Teminat faktörleri ve piyasaya özgü risk ayarları da arayüzde gösterilen tutarı değiştirebilir.",
+  "Health & Liquidation": "Health ve tasfiye",
+  "What is the health factor?": "Health factor nedir?",
+  "How to read health": "Health nasıl okunur",
+  "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.":
+    "Health factor, bir Borrow Spoke içindeki ayarlanmış teminat değeri ile ödenmemiş borç arasındaki ilişkiyi ifade eder.",
+  "What it means for users": "Kullanıcılar için anlamı",
+  "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
+    "Tampon küçüldükçe, piyasa koşulları aleyhine dönerse pozisyon tasfiyeye daha açık hale gelir.",
+  "When can liquidation happen?": "Tasfiye ne zaman olabilir?",
+  Triggers: "Tetikleyiciler",
+  "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
+    "Piyasa hareketleri health'i yeterince zayıflatırsa, pozisyon spoke kurallarına göre tasfiye edilebilir hale gelebilir.",
+  "What happens next": "Sonra ne olur",
+  "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.":
+    "Spoke riski sürekli izler ve tasfiye davranışını yönlendirir; Hub ise rezervleri koordineli tutar.",
+  "Leverage Markets": "Kaldıraç piyasaları",
+  "How do leverage markets work?": "Kaldıraç piyasaları nasıl çalışır?",
+  "LP-backed exposure": "LP destekli maruziyet",
+  "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.":
+    "Kaldıraç piyasaları, Avana'nın LP destekli borçlanmayı ve yönlü maruziyeti daha özelleşmiş bir akışta desteklemesini sağlar.",
+  "Position stacking": "Pozisyon yığınlama",
+  "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
+    "Borç alma kapasitesi, aynı Borrow Spoke içindeki birden fazla onaylı pozisyondan birleştirilebilir.",
+  "Can one account use multiple LP positions?": "Bir hesap birden fazla LP pozisyonu kullanabilir mi?",
+  "Multiple positions": "Birden fazla pozisyon",
+  "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
+    "Evet. Tek bir hesap, her pozisyon protokol kontrollerini geçtiği sürece desteklenen LP pozisyonlarını birleştirebilir.",
+  "Per-position risk": "Pozisyon başına risk",
+  "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
+    "Her pozisyon, nihai borç alma kapasitesine eklenmeden önce kendi koşullarına göre değerlendirilir.",
+  "Fees & Interface Policy": "Ücretler ve arayüz politikası",
+  "Are interface fees fixed across all integrations?": "Arayüz ücretleri tüm entegrasyonlarda sabit mi?",
+  "Operational settings": "Operasyonel ayarlar",
+  "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
+    "Kesin ücret oranları, muafiyetler ve yayın durumu operasyonel ayarlardır; canlı arayüzde doğrulanmalıdır.",
+  "Integration differences": "Entegrasyon farkları",
+  "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
+    "Doğrudan entegrasyonlar veya üçüncü taraf frontend'ler farklı varsayımlar izleyebilir; kullandığınız arayüzü her zaman doğrulayın.",
+  "What counts as protocol economics vs interface policy?": "Protokol ekonomisi ile arayüz politikası nedir?",
+  "Protocol layer": "Protokol katmanı",
+  "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
+    "Temel teminat değerlemesi, borç kontrolleri ve tasfiye yolları protokol katmanında yer alır.",
+  "Interface layer": "Arayüz katmanı",
+  "The frontend can present policy, routing, and support flows differently from one integration to another.":
+    "Frontend; politika, yönlendirme ve destek akışlarını entegrasyondan entegrasyona farklı sunabilir.",
+  "Risk & Security": "Risk ve güvenlik",
+  "What are the main risks?": "Ana riskler nelerdir?",
+  "Market and liquidity risk": "Piyasa ve likidite riski",
+  "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.":
+    "Ana riskler dayanak varlıklardaki piyasa hareketleri, impermanent loss ve yoğun pozisyonlarda range kaymasıdır.",
+  "Liquidation risk": "Tasfiye riski",
+  "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.":
+    "Borç devam ederken health tamponu zayıflarsa pozisyon tasfiye edilebilir hale gelebilir.",
+  "How should I think about security?": "Güvenliği nasıl düşünmeliyim?",
+  "Protocol guidance": "Protokol rehberliği",
+  "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.":
+    "Herhangi bir LP pozisyonunda göstereceğiniz aynı ihtiyatı gösterin ve protokolün risk rehberliğini yakından izleyin.",
+  "Support request": "Destek talebi",
+  "If something looks off, send the details and our team can help you triage the issue.":
+    "Bir şey yanlış görünüyorsa ayrıntıları gönderin; ekibimiz sorunu sınıflandırmanıza yardımcı olabilir.",
 }
 
 export default dict

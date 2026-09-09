@@ -7,7 +7,7 @@ import {
   readAskGuestId,
   readClientIp,
   resetGuestMintThrottle,
-} from "../route"
+} from "../route-utils"
 
 describe("Ask AI durable guest identity", () => {
   it("reuses a valid durable guest cookie", () => {

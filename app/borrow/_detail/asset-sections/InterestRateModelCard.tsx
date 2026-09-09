@@ -2,8 +2,13 @@
 
 import * as React from "react"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
+import { InterestRateModelChart } from "@/app/borrow/_detail/asset-sections/InterestRateModelChart"
 import type { AssetDetail } from "@/app/lib/borrow-detail"
-import { buildBorrowInterestRateCurve } from "@/app/lib/borrow-detail/interest-rate-curve"
+import {
+  buildBorrowInterestRateCurve,
+  probeInterestRateModel,
+  resolveMarketLiquidityUsd,
+} from "@/app/lib/borrow-detail/interest-rate-curve"
 import { resolveBorrowDetailMetricHelp } from "@/app/lib/borrow-detail/metric-help"
 import { resolveInterestRateModelParams, type ProtocolParameterRow } from "@/app/lib/borrow-detail/protocol-parameters"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -13,16 +18,12 @@ type Props = {
   utilizationPct: number
   borrowAprPct: number
   protocolParameters: ProtocolParameterRow[]
+  /** Outstanding borrows (USD). Used for “borrow amount to reach” on hover. */
+  borrowedUsd?: number
+  /** Total supplied liquidity (USD). Defaults are derived from utilization when omitted. */
+  suppliedUsd?: number
   className?: string
 }
-
-const X_TICKS = [0, 25, 50, 75, 100]
-const VIEW_W = 640
-const VIEW_H = 300
-const PLOT_LEFT = 52
-const PLOT_RIGHT = 624
-const PLOT_TOP = 40
-const PLOT_BOTTOM = 264
 
 function formatPct(value: number, digits = 2) {
   return `${value.toFixed(digits)}%`
@@ -38,20 +39,35 @@ function readQuickStatPercent(
   return Number.isFinite(numeric) ? numeric : fallback
 }
 
-function plotX(utilization: number) {
-  return PLOT_LEFT + (utilization / 100) * (PLOT_RIGHT - PLOT_LEFT)
-}
-
-function plotY(apr: number, maxApr: number) {
-  return PLOT_BOTTOM - (apr / maxApr) * (PLOT_BOTTOM - PLOT_TOP)
+function seriesEndValue(series: { points: ReadonlyArray<{ v: number }>; aggregate?: number }): number {
+  if (typeof series.aggregate === "number" && Number.isFinite(series.aggregate)) return series.aggregate
+  const last = series.points.at(-1)
+  return last && Number.isFinite(last.v) ? last.v : 0
 }
 
 /** Map a borrowable asset detail into InterestRateModelCard props. */
 export function interestRateModelFromAssetDetail(detail: AssetDetail): Omit<Props, "className"> {
+  const utilizationPct = detail.interestRateModel
+    ? detail.interestRateModel.utilizationPct
+    : readQuickStatPercent(detail.quickStats, "utilization", detail.row.utilization)
+  const borrowAprPct = detail.interestRateModel
+    ? detail.interestRateModel.borrowAprPct
+    : readQuickStatPercent(detail.quickStats, "borrowApy", detail.row.borrowApr)
+
+  const fromSeriesBorrowed = seriesEndValue(detail.supplyBorrow.borrowed)
+  const fromSeriesSupplied = seriesEndValue(detail.supplyBorrow.supplied)
+  const borrowedUsd = fromSeriesBorrowed > 0 ? fromSeriesBorrowed : detail.row.totalBorrowedUsd
+  const suppliedUsd =
+    fromSeriesSupplied > 0
+      ? fromSeriesSupplied
+      : Math.max(detail.row.totalBorrowedUsd + detail.row.availableUsd, detail.row.totalBorrowedUsd, 1)
+
   if (detail.interestRateModel) {
     return {
-      utilizationPct: detail.interestRateModel.utilizationPct,
-      borrowAprPct: detail.interestRateModel.borrowAprPct,
+      utilizationPct,
+      borrowAprPct,
+      borrowedUsd,
+      suppliedUsd,
       protocolParameters: [
         {
           id: "optimalUtilization",
@@ -76,25 +92,62 @@ export function interestRateModelFromAssetDetail(detail: AssetDetail): Omit<Prop
       ],
     }
   }
+
   return {
-    utilizationPct: readQuickStatPercent(detail.quickStats, "utilization", detail.row.utilization),
-    borrowAprPct: readQuickStatPercent(detail.quickStats, "borrowApy", detail.row.borrowApr),
+    utilizationPct,
+    borrowAprPct,
+    borrowedUsd,
+    suppliedUsd,
     protocolParameters: detail.protocolParameters,
   }
 }
 
-export function InterestRateModelCard({ utilizationPct, borrowAprPct, protocolParameters, className }: Props) {
+export function InterestRateModelCard({
+  utilizationPct,
+  borrowAprPct,
+  protocolParameters,
+  borrowedUsd,
+  suppliedUsd,
+  className,
+}: Props) {
   const { t } = useTranslation()
   const currentUtilization = Number.isFinite(utilizationPct) ? utilizationPct : 0
   const currentBorrowApr = Number.isFinite(borrowAprPct) ? borrowAprPct : 4
   const irm = React.useMemo(() => resolveInterestRateModelParams(protocolParameters), [protocolParameters])
+  const [hoverUtilization, setHoverUtilization] = React.useState<number | null>(null)
 
   const helpText = t("Borrow APR rises as utilization increases and steepens past the optimal threshold.")
+
+  const liquidity = React.useMemo(
+    () =>
+      resolveMarketLiquidityUsd({
+        utilizationPct: currentUtilization,
+        borrowedUsd,
+        suppliedUsd,
+      }),
+    [borrowedUsd, currentUtilization, suppliedUsd],
+  )
 
   const curve = React.useMemo(
     () => buildBorrowInterestRateCurve(currentUtilization, currentBorrowApr, irm),
     [currentUtilization, currentBorrowApr, irm],
   )
+
+  const anchor = React.useMemo(
+    () => ({ utilization: currentUtilization, apr: Math.max(0, currentBorrowApr) }),
+    [currentBorrowApr, currentUtilization],
+  )
+
+  const probe = React.useMemo(() => {
+    if (hoverUtilization == null) return null
+    return probeInterestRateModel({
+      utilizationPct: hoverUtilization,
+      irm,
+      anchor,
+      borrowedUsd: liquidity.borrowedUsd,
+      suppliedUsd: liquidity.suppliedUsd,
+    })
+  }, [anchor, hoverUtilization, irm, liquidity.borrowedUsd, liquidity.suppliedUsd])
 
   const paramRows = [
     {
@@ -122,127 +175,24 @@ export function InterestRateModelCard({ utilizationPct, borrowAprPct, protocolPa
     },
   ] as const
 
-  const pathD = React.useMemo(
-    () =>
-      curve.points
-        .map((point, index) => {
-          const x = plotX(point.utilization)
-          const y = plotY(point.apr, curve.maxApr)
-          return `${index === 0 ? "M" : "L"}${x.toFixed(2)} ${y.toFixed(2)}`
-        })
-        .join(" "),
-    [curve],
-  )
-
-  const currentX = plotX(curve.currentUtilization)
-  const optimalX = plotX(curve.optimalUtilization)
   const utilizationHelp = resolveBorrowDetailMetricHelp("Utilisation rate")
 
   return (
     <section className={cn("min-w-0", className)} aria-label={t("Interest rate model")}>
       <div className="flex items-center gap-1.5">
-        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+        <h2 className="text-[22px] font-medium leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
           {t("Interest rate model")}
         </h2>
         <ActionMetricHelp text={helpText} topic="Interest rate model" />
       </div>
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(240px,0.85fr)] lg:items-stretch lg:gap-10">
-        <div className="relative min-w-0 rounded-radius-md bg-muted/30 dark:bg-white/[0.03]">
-          <div className="relative h-[260px] w-full sm:h-[300px] lg:h-full lg:min-h-[300px]">
-            <svg
-              viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
-              className="absolute inset-0 h-full w-full select-none"
-              role="img"
-              aria-label={t("Borrow APR versus utilization")}
-            >
-              {curve.yTicks.map((tick) => {
-                const y = plotY(tick, curve.maxApr)
-                return (
-                  <g key={`y-${tick}`}>
-                    <line
-                      x1={PLOT_LEFT}
-                      x2={PLOT_RIGHT}
-                      y1={y}
-                      y2={y}
-                      stroke="currentColor"
-                      strokeOpacity={0.12}
-                      strokeDasharray="1 5"
-                      className="text-foreground"
-                    />
-                    <text
-                      x={PLOT_LEFT - 10}
-                      y={y}
-                      textAnchor="end"
-                      dominantBaseline="middle"
-                      className="fill-muted-foreground text-[11px]"
-                    >
-                      {tick}%
-                    </text>
-                  </g>
-                )
-              })}
-
-              {X_TICKS.map((tick) => (
-                <text
-                  key={`x-${tick}`}
-                  x={plotX(tick)}
-                  y={VIEW_H - 12}
-                  textAnchor="middle"
-                  className="fill-muted-foreground text-[11px]"
-                >
-                  {tick}%
-                </text>
-              ))}
-
-              <path
-                d={pathD}
-                fill="none"
-                className="text-[hsl(var(--brand))]"
-                stroke="currentColor"
-                strokeWidth={3.5}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-
-              <line
-                x1={optimalX}
-                x2={optimalX}
-                y1={PLOT_TOP + 10}
-                y2={PLOT_BOTTOM}
-                stroke="rgba(1, 170, 207, 0.9)"
-                strokeWidth={1.5}
-                strokeDasharray="5 5"
-              />
-              <line
-                x1={currentX}
-                x2={currentX}
-                y1={PLOT_TOP + 24}
-                y2={PLOT_BOTTOM}
-                stroke="rgba(1, 170, 207, 0.9)"
-                strokeWidth={1.5}
-                strokeDasharray="5 5"
-              />
-
-              <text
-                x={optimalX}
-                y={PLOT_TOP}
-                textAnchor="middle"
-                className="fill-muted-foreground text-[12px] font-medium"
-              >
-                {t("Optimal")}
-              </text>
-              <text
-                x={currentX}
-                y={PLOT_TOP + 16}
-                textAnchor="middle"
-                className="fill-muted-foreground text-[12px] font-medium"
-              >
-                {t("Current {value}%").replace("{value}", currentUtilization.toFixed(1))}
-              </text>
-            </svg>
-          </div>
-        </div>
+        <InterestRateModelChart
+          curve={curve}
+          currentUtilization={currentUtilization}
+          probe={probe}
+          onProbeUtilization={setHoverUtilization}
+        />
 
         <aside className="flex min-w-0 flex-col justify-center lg:pl-2">
           <div>
@@ -252,7 +202,7 @@ export function InterestRateModelCard({ utilizationPct, borrowAprPct, protocolPa
               </span>
               {utilizationHelp ? <ActionMetricHelp text={utilizationHelp} topic="Utilization rate" /> : null}
             </div>
-            <div className="mt-2 font-data text-[28px] font-semibold leading-none tracking-[-0.03em] text-foreground md:text-[32px]">
+            <div className="mt-2 font-data text-[28px] font-normal leading-none tracking-[-0.01em] text-foreground md:text-[32px]">
               {formatPct(currentUtilization)}
             </div>
           </div>

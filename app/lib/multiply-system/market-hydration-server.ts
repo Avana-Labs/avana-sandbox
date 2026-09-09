@@ -3,6 +3,7 @@ import { ConvexHttpClient } from "convex/browser"
 import { api } from "@/convex/_generated/api"
 import { type ConvexSeriesPoint } from "@/app/lib/borrow-system/market-hydration-server"
 import type { MultiplyConvexSnapshot } from "@/app/lib/multiply-system/market-hydration"
+import type { MultiplyTokenParameterRow } from "@/app/lib/multiply-system/read-model"
 import { requestCache } from "@/app/lib/detail-page/request-cache"
 
 /**
@@ -77,6 +78,23 @@ export async function fetchMultiplyMarketSnapshots(): Promise<MultiplyConvexSnap
       supplyApyPct: row.supplyApyPct,
       borrowAprPct: row.borrowAprPct,
     }))
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Live token parameters (per-asset supply/borrow APY, logos, CF/LT) for SSR — the
+ * same rows the client reads via `useQuery(api.multiply.tokenParameters.listTokens)`.
+ * Fetching these server-side lets the first paint carry real APYs/logos instead of
+ * the bundled static constants (no mock-then-live swap). [] when unreachable.
+ */
+export async function fetchMultiplyTokenParameters(): Promise<MultiplyTokenParameterRow[]> {
+  const client = convexClient()
+  if (!client) return []
+  try {
+    const rows = await client.query(api.multiply.tokenParameters.listTokens, {})
+    return (rows ?? []) as MultiplyTokenParameterRow[]
   } catch {
     return []
   }

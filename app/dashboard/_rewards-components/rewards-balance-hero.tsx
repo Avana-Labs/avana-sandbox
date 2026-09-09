@@ -3,7 +3,8 @@
 import type { ReactNode } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { CircleDollarSign, Info } from "@/app/components/icons"
+import { CircleDollarSign } from "@/app/components/icons"
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { Button } from "@/components/ui/button"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -38,23 +39,25 @@ function FeeCard({
   label,
   value,
   hidden,
+  help,
   action,
 }: {
   label: string
   value: string
   hidden: boolean
+  help: string
   action?: ReactNode
 }) {
   return (
     <div className="rounded-radius-md border-0 bg-card px-4 py-4 dark:bg-white/[0.04]">
       <div className="flex items-center gap-1.5 text-[13px] text-muted-foreground">
         {label}
-        <Info className="h-3 w-3" />
+        <ActionMetricHelp text={help} topic={label} />
       </div>
       <div className="mt-3 flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-2.5">
           <AvanaCoin />
-          <span className="truncate text-[24px] font-normal leading-none tracking-[-0.03em] text-foreground sm:text-[26px]">
+          <span className="truncate text-[24px] font-normal leading-none tracking-[-0.01em] text-foreground sm:text-[26px]">
             {hidden ? "••••" : value}
           </span>
         </div>
@@ -98,21 +101,27 @@ export function PortfolioRewardsCards({
         </div>
       ) : null}
       <div className="space-y-3">
-        <FeeCard label={t("Total Rewards earned")} value={formatAva(earnedAmount)} hidden={!showDollarAmounts} />
+        <FeeCard
+          label={t("Total Rewards earned")}
+          value={formatAva(earnedAmount)}
+          hidden={!showDollarAmounts}
+          help={t("Total AVA you've earned across completed quests and staking rewards.")}
+        />
         <FeeCard
           label={t("Claimable Rewards")}
           value={formatAva(claimableAmount)}
           hidden={!showDollarAmounts}
+          help={t("AVA you can claim to your wallet right now.")}
           action={
             claimHref ? (
-              <Button asChild size="sm" className="shrink-0 gap-2 font-bold [&_svg]:size-4">
+              <Button asChild size="sm" className="shrink-0 gap-2 font-normal [&_svg]:size-4">
                 <Link href={claimHref}>
                   <CircleDollarSign className="size-4" />
                   {t("Claim Rewards")}
                 </Link>
               </Button>
             ) : (
-              <Button type="button" size="sm" disabled className="shrink-0 gap-2 font-bold [&_svg]:size-4">
+              <Button type="button" size="sm" disabled className="shrink-0 gap-2 font-normal [&_svg]:size-4">
                 <CircleDollarSign className="size-4" />
                 {t("Claim Rewards")}
               </Button>

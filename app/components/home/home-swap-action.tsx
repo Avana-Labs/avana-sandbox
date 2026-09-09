@@ -1,13 +1,13 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import dynamic from "next/dynamic"
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
 import { primaryCtaClass } from "@/app/components/action-page/action-cta"
 import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
 import { ActionReviewStage } from "@/app/components/action-page/action-review-stage"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
-import { SwapAssetPickerDialog } from "@/app/swap/swap-asset-picker-dialog"
 import { useSwapSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -15,6 +15,10 @@ import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runti
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
 import { SWAP_ASSETS, SWAP_CHAIN_ID, validateSwapInputAmount, type SwapQuote } from "@/app/lib/swap-system"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
+
+const SwapAssetPickerDialog = dynamic(() =>
+  import("@/app/swap/swap-asset-picker-dialog").then((mod) => mod.SwapAssetPickerDialog),
+)
 
 function formatAmount(value: number) {
   if (!Number.isFinite(value)) return "0"
@@ -376,7 +380,7 @@ export function HomeSwapAction() {
         </>
       ) : null}
 
-      {(stage === "configure" || stage === "error") && (
+      {(stage === "configure" || stage === "error") && pickerSide !== null && (
         <SwapAssetPickerDialog
           open={pickerSide !== null}
           onOpenChange={(open) => {
@@ -440,7 +444,7 @@ function HomeSwapAssetField({
             // h-[1em] makes the <input> size to its line box exactly like the borrow tab's
             // amount <div>, so the Sell/Buy cards are the SAME height as the borrow cards and
             // there's no card-size shift when toggling Express tabs. (#9)
-            className={`h-[1em] w-full min-w-0 border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] outline-none placeholder:text-muted-foreground/60 ${
+            className={`h-[1em] w-full min-w-0 border-0 bg-transparent p-0 text-[clamp(1.5rem,4vw,2rem)] font-normal leading-none tracking-[-0.02em] outline-none placeholder:text-muted-foreground/60 ${
               amount && amount !== "0" ? "text-foreground" : "text-muted-foreground/60"
             }`}
             placeholder="0"
@@ -451,7 +455,7 @@ function HomeSwapAssetField({
           type="button"
           onClick={onOpenAssetPicker}
           aria-label={`${label} asset`}
-          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground hover:bg-surface-hover max-[360px]:self-end"
+          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-normal leading-5 text-foreground hover:bg-surface-hover max-[360px]:self-end"
         >
           {asset ? (
             <>
@@ -469,7 +473,7 @@ function HomeSwapAssetField({
           </span>
         </button>
       </div>
-      <div className="mt-1 flex items-center justify-between gap-3 text-[14px]">
+      <div className="mt-1 flex items-center justify-between gap-3 text-[14px] leading-5">
         <span className="min-w-0 truncate text-foreground/60">{fiatLabel}</span>
         {balanceLabel ? (
           <button

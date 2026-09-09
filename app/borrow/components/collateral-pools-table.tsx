@@ -8,6 +8,7 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
+  MarketMobileActionFooter,
   MarketMobileCardHeader,
   MarketMobileMetric,
   MarketMobilePrimaryAction,
@@ -36,7 +37,13 @@ import { formatPairRate } from "@/app/lib/borrow-detail/formatters"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
-import { TABLE_ROW_HOVER_BG, TABLE_ROW_HOVER_LEFT, TABLE_ROW_HOVER_RIGHT } from "@/app/lib/ui/table-row-hover"
+import {
+  TABLE_BODY_ROW,
+  TABLE_HEADER_ROW,
+  TABLE_ROW_HOVER_BG,
+  TABLE_ROW_HOVER_LEFT,
+  TABLE_ROW_HOVER_RIGHT,
+} from "@/app/lib/ui/table-row-hover"
 
 function EventTagList({ events }: { events?: BorrowPoolEvent[] }) {
   if (!events || events.length === 0) return null
@@ -102,7 +109,7 @@ function SectionTabs({
           type="button"
           onClick={() => onTabChange(tab.id as SectionTabId)}
           className={[
-            "border-b-2 pb-2 text-left text-[15px] font-normal tracking-[-0.03em] transition-colors md:text-[17px]",
+            "border-b-2 pb-2 text-left text-[15px] font-normal tracking-normal transition-colors md:text-[17px]",
             activeTab === tab.id
               ? "border-foreground text-foreground"
               : "border-transparent text-muted-foreground hover:text-foreground",
@@ -155,10 +162,10 @@ function CollateralAssetCell({ pool }: { pool: BorrowPoolRow }) {
         </span>
       </div>
       <div className="min-w-0">
-        <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+        <div className="truncate text-[15px] font-normal tracking-normal text-foreground dark:text-white">
           {formatBorrowPairLabel(pool)}
         </div>
-        <div className="mt-1 truncate text-[13px] font-normal tracking-[-0.03em] text-muted-foreground dark:text-white/38">
+        <div className="mt-1 truncate text-[13px] font-normal tracking-normal text-muted-foreground dark:text-white/38">
           {subtitle}
         </div>
       </div>
@@ -192,11 +199,7 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
   const { compact } = useCurrency()
   const { t } = useTranslation()
   return (
-    <tr
-      className="asset-swap group cursor-pointer transition-colors"
-      onClick={() => onViewMarket(pool)}
-      style={{ animationDelay: `${index * 40}ms` }}
-    >
+    <tr className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`} onClick={() => onViewMarket(pool)}>
       <td
         className={`py-2.5 pl-6 pr-3 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 ${TABLE_ROW_HOVER_LEFT}`}
       >
@@ -206,17 +209,17 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
         <CollateralAssetCell pool={pool} />
       </td>
       <td
-        className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+        className={`py-2.5 px-4 text-[15px] font-normal tracking-normal text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
       >
         <span className="tabular-nums">{formatApy((pool.aprMin + pool.aprMax) / 2)}</span>
       </td>
       <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+        <div className="text-[15px] font-normal tracking-normal text-foreground dark:text-white">
           <span className="tabular-nums">{compact(pool.tvlUsd)}</span>
         </div>
       </td>
       <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white">
+        <div className="font-data text-[15px] font-normal tracking-normal tabular-nums text-foreground dark:text-white">
           {formatLtvPct(pool.ltv)}
         </div>
         <div className="mt-0.5 font-data text-[12px] tabular-nums text-muted-foreground">
@@ -224,12 +227,12 @@ const CollateralPoolRow = memo(function CollateralPoolRow({
         </div>
       </td>
       <td
-        className={`py-2.5 px-4 text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
+        className={`py-2.5 px-4 text-[15px] font-normal tracking-normal text-foreground dark:text-white ${TABLE_ROW_HOVER_BG}`}
       >
         <span className="tabular-nums">{formatRiskPremium(pool.riskPremiumBps)}</span>
       </td>
       <td className={`py-2.5 px-4 ${TABLE_ROW_HOVER_BG}`}>
-        <div className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
+        <div className="text-[15px] font-normal tracking-normal text-foreground dark:text-white">
           <span className="tabular-nums">{compact(pool.availableUsd)}</span>
         </div>
       </td>
@@ -331,11 +334,11 @@ function CollateralDesktopTable({
     <div className="overflow-x-auto">
       <table className="w-full min-w-[1120px] text-[12px]">
         <thead>
-          <tr className="bg-table-header text-left text-muted-foreground">
-            <th className="pb-2 pt-2.5 pl-6 pr-3 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+          <tr className={TABLE_HEADER_ROW}>
+            <th className="pb-2 pt-2.5 pl-6 pr-3 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               #
             </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("asset")}
@@ -350,7 +353,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("apy")}
@@ -363,7 +366,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("deposits")}
@@ -378,7 +381,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("cf")}
@@ -391,7 +394,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("risk")}
@@ -406,7 +409,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 pr-6 text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
+            <th className="pb-2 pt-2.5 px-4 pr-6 text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58">
               <button
                 type="button"
                 onClick={() => toggleSort("supplied")}
@@ -421,7 +424,7 @@ function CollateralDesktopTable({
                 <SortIcon />
               </button>
             </th>
-            <th className="pb-2 pt-2.5 px-4 pr-5 text-right text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
+            <th className="pb-2 pt-2.5 px-4 pr-5 text-right text-[11px] font-normal uppercase tracking-[0.08em] text-muted-foreground dark:text-white/58" />
           </tr>
         </thead>
         <tbody key={`collateral-${sortKey}-${sortDirection}-${sortedRows.length}`}>
@@ -541,7 +544,7 @@ function SpokeDesktopSection({
               setActiveTab(tab)
             }}
           />
-          <h3 className="text-[22px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[24px]">
+          <h3 className="text-[22px] font-normal tracking-[-0.01em] text-foreground dark:text-white md:text-[24px]">
             {spoke.label}
           </h3>
         </div>
@@ -705,7 +708,7 @@ function SpokeMobileSection({
                       <MarketMobileStatRow label={t("Max LTV")} value={formatLtvPct(pool.ltv)} />
                       <MarketMobileStatRow label={t("Premium")} value={formatRiskPremium(pool.riskPremiumBps)} />
                     </MarketMobileStatList>
-                    <div className="mt-4 flex gap-2">
+                    <MarketMobileActionFooter>
                       <MarketMobilePrimaryAction
                         className="mt-0 flex-1"
                         onClick={(event) => {
@@ -730,7 +733,7 @@ function SpokeMobileSection({
                         <ActionIcon label="Borrow" />
                         {t("Borrow")}
                       </MarketMobileSecondaryAction>
-                    </div>
+                    </MarketMobileActionFooter>
                   </MarketMobileCard>
                 </li>
               ))}

@@ -1,26 +1,8 @@
 import { expect, test } from "@playwright/test"
+import { installSiweSession, walletFromAuthToken } from "./helpers/siwe-auth"
 
 const AUTH_TOKEN = process.env.AVANA_E2E_AUTH_TOKEN
 const SECOND_AUTH_TOKEN = process.env.AVANA_E2E_SECOND_AUTH_TOKEN
-
-function walletFromToken(token: string) {
-  const payload = JSON.parse(Buffer.from(token.split(".")[1] ?? "", "base64url").toString()) as {
-    wallet?: string
-    sub?: string
-  }
-  return (payload.wallet ?? payload.sub ?? "").toLowerCase()
-}
-
-async function installAuthToken(page: import("@playwright/test").Page, token: string) {
-  const wallet = walletFromToken(token)
-  await page.addInitScript(
-    ({ jwt, address }) => {
-      window.sessionStorage.setItem("avana.siwe.token.v1", JSON.stringify({ jwt, wallet: address }))
-    },
-    { jwt: token, address: wallet },
-  )
-  return wallet
-}
 
 async function attachStateScreenshot(locator: import("@playwright/test").Locator, name: string) {
   await expect(locator).toBeVisible()
@@ -71,7 +53,7 @@ test.describe("sandbox onboarding", () => {
 
   test("authenticated wallet analyzes, claims, reloads, and rehydrates", async ({ page }) => {
     test.skip(!AUTH_TOKEN, "Set AVANA_E2E_AUTH_TOKEN to run authenticated Convex onboarding.")
-    await installAuthToken(page, AUTH_TOKEN!)
+    await installSiweSession(page, AUTH_TOKEN!)
     await page.goto("/onboarding")
     const canvas = page.getByTestId("onboarding-canvas")
 
@@ -106,17 +88,12 @@ test.describe("sandbox onboarding", () => {
 
   test("switching wallets never exposes the previous wallet state", async ({ page }) => {
     test.skip(!AUTH_TOKEN || !SECOND_AUTH_TOKEN, "Set both authenticated wallet tokens to run isolation coverage.")
-    const firstWallet = await installAuthToken(page, AUTH_TOKEN!)
+    const firstWallet = await installSiweSession(page, AUTH_TOKEN!)
     await page.goto("/onboarding")
     await expect(page.getByText(firstWallet.slice(0, 6), { exact: false })).toBeVisible()
 
-    const secondWallet = walletFromToken(SECOND_AUTH_TOKEN!)
-    await page.evaluate(
-      ({ jwt, wallet }) => {
-        window.sessionStorage.setItem("avana.siwe.token.v1", JSON.stringify({ jwt, wallet }))
-      },
-      { jwt: SECOND_AUTH_TOKEN!, wallet: secondWallet },
-    )
+    const secondWallet = walletFromAuthToken(SECOND_AUTH_TOKEN!)
+    await installSiweSession(page, SECOND_AUTH_TOKEN!)
     await page.reload()
     await expect(page.getByText(secondWallet.slice(0, 6), { exact: false })).toBeVisible()
     await expect(page.getByText(firstWallet.slice(0, 6), { exact: false })).toHaveCount(0)

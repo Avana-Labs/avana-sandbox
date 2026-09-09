@@ -68,33 +68,41 @@ describe("risk parameter normalization", () => {
     ])
   })
 
-  it("prefers Convex about.history for the parameter changelog when present", () => {
+  it("prefers the rich governance changelog over the thin history, uncapped", () => {
+    const changelog = Array.from({ length: 14 }, (_, i) => ({
+      id: `chg-${i}`,
+      parameter: "Supply cap",
+      previous: "$100M",
+      current: "$120M",
+      date: `2026-0${(i % 9) + 1}-01`,
+      source: "Risk parameter review",
+      executor: "Governance executor",
+      category: "Risk Management",
+    }))
     const about = normalizeGovernanceParameters({
       description: "x",
       stats: [],
       history: [{ date: "2026-03-01", title: "Raised LTV", description: "68% → 75%" }],
       governanceParameters: {
-        parameters: [
-          { id: "collateralFactor", label: "Collateral factor", value: "75.00%" },
-          { id: "collateralRisk", label: "Collateral risk", value: "5.00%" },
-          { id: "depositCapacity", label: "Deposit capacity", value: "$25.0M" },
-          { id: "liquidationPenalty", label: "Liquidation penalty", value: "5.00% - 5.55%" },
-          { id: "borrowCapacity", label: "Borrow capacity", value: "$10.0M" },
-          { id: "targetHealthFactor", label: "Target health factor", value: "1.25" },
-          { id: "liquidationThreshold", label: "Liquidation threshold", value: "80.00%" },
-          { id: "oracle", label: "Oracle source", value: "Chainlink" },
-        ],
-        changelog: [
-          {
-            id: "mock-1",
-            parameter: "Mock param",
-            previous: "1%",
-            current: "2%",
-            date: "2024-01-01",
-            source: "Mock",
-            executor: "Mock",
-          },
-        ],
+        parameters: [{ id: "collateralFactor", label: "Collateral factor", value: "75.00%" }],
+        changelog,
+      },
+    })
+
+    // Rich changelog wins over about.history, and is not capped at 3.
+    expect(about.changelog).toHaveLength(14)
+    expect(about.changelog[0]?.parameter).toBe("Supply cap")
+    expect(about.changelog[0]?.category).toBe("Risk Management")
+  })
+
+  it("falls back to about.history when no rich changelog was seeded", () => {
+    const about = normalizeGovernanceParameters({
+      description: "x",
+      stats: [],
+      history: [{ date: "2026-03-01", title: "Raised LTV", description: "68% → 75%" }],
+      governanceParameters: {
+        parameters: [{ id: "collateralFactor", label: "Collateral factor", value: "75.00%" }],
+        changelog: [],
       },
     })
 

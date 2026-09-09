@@ -119,6 +119,35 @@ export function resolveBorrowMarketForAsset(
   assetId: string,
   preferredMarketId?: string,
 ) {
+  const scopedAsset = session.state.assets[assetId]
+  // The base token (`usdc`) re-scopes cleanly into any market's spoke; the full
+  // scoped id (`uni-v3-stable:usdc`) does not, so match the explicit choice on it.
+  const baseToken = scopedAsset?.baseAssetId ?? assetId
+
+  // Honor an explicit, valid market choice first (e.g. the user picked a
+  // collateral pool). Re-scoping the debt to that market's spoke is intentional
+  // when the user changes venue.
+  if (preferredMarketId && resolveBorrowSelectionInMarket(session, baseToken, preferredMarketId)) {
+    return preferredMarketId
+  }
+
+  // Otherwise keep a venue-scoped asset on its OWN venue. Borrowing
+  // `uni-v3-stable:usdt` must default to a uni-v3-stable collateral market — not
+  // whatever `:usdt` pool happens to sort first (which would silently re-scope
+  // the debt to e.g. `curve-stable:usdt` and surface it on the wrong asset page).
+  if (scopedAsset) {
+    for (const marketId of borrowMarketCandidates(session, preferredMarketId)) {
+      const market = session.state.markets[marketId]
+      if (
+        market &&
+        market.spokeId === scopedAsset.spokeId &&
+        market.relations.supportedBorrowAssetIds.includes(assetId)
+      ) {
+        return marketId
+      }
+    }
+  }
+
   for (const marketId of borrowMarketCandidates(session, preferredMarketId)) {
     if (resolveBorrowSelectionInMarket(session, assetId, marketId)) {
       return marketId

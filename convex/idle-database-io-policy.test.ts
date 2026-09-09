@@ -13,22 +13,20 @@ describe("idle database I/O policy", () => {
     const crons = readFileSync(resolve("convex/crons.ts"), "utf8")
     expect(crons).toContain('"refresh token prices", { minutes: 10 }')
     expect(crons).toContain('"refresh fx rates", { hours: 1 }')
-    expect(crons).toContain('"compact liquidity deltas", { minutes: 5 }')
-    expect(crons).toContain('"rebuild liquidity snapshot", { minutes: 5 }')
+    expect(crons).not.toContain('"compact liquidity deltas"')
+    expect(crons).not.toContain('"rebuild liquidity snapshot"')
     expect(crons).toContain('"ask ai ingest defillama pools", "3 * * * *"')
     expect(crons).toContain('"ask ai ingest aave markets", "9,39 * * * *"')
 
     const directScheduledExecutionsPerDay =
       144 + // token prices every 10 minutes
       24 + // FX hourly
-      288 + // liquidity compaction every 5 minutes
-      288 + // liquidity snapshot every 5 minutes
       24 + // DefiLlama pools hourly
       48 + // Aave markets every 30 minutes
       1 + // daily token-price history
       1 // daily market rollup
 
-    expect(directScheduledExecutionsPerDay).toBe(818)
+    expect(directScheduledExecutionsPerDay).toBe(242)
     expect(24 + 48).toBeLessThanOrEqual(72)
   })
 

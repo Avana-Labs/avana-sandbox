@@ -28,6 +28,16 @@ describe("InterestRateModelCard market params", () => {
     expect(source).toMatch(/slopeBelowOptimalPct/)
     expect(source).toMatch(/slopeAboveOptimalPct/)
     expect(source).toMatch(/buildBorrowInterestRateCurve/)
+    expect(source).toMatch(/probeInterestRateModel/)
+    expect(source).toMatch(/InterestRateModelChart/)
+  })
+
+  it("InterestRateModelChart exposes pointer probe and synced current label", () => {
+    const source = readFileSync(resolve(__dirname, "../InterestRateModelChart.tsx"), "utf8")
+    expect(source).toMatch(/onPointerMove/)
+    expect(source).toMatch(/interest-rate-model-tooltip/)
+    expect(source).toMatch(/formatPct\(currentUtilization, 2\)/)
+    expect(source).toMatch(/Borrow APY/)
   })
 
   it("p1-20: seeded market params vary by asset id", () => {

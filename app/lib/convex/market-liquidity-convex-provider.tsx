@@ -1,18 +1,15 @@
 "use client"
 
 import { Component, useMemo, type ReactNode } from "react"
-import { ConvexProviderWithAuth, ConvexReactClient, useQuery } from "convex/react"
+import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
-import { useConvexSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import {
   MarketLiquidityContext,
   type MarketLiquidityDelta,
   type MarketLiquidityValue,
   type RecordDeltaInput,
 } from "./market-liquidity-provider"
-
-const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL
-const convexClient = convexUrl && /^https?:\/\//.test(convexUrl) ? new ConvexReactClient(convexUrl) : null
+import { getSiweConvexClient, SiweConvexProvider } from "./siwe-convex-provider"
 
 function MarketLiquidityBridge({
   localDeltas,
@@ -79,16 +76,17 @@ export default function ConvexMarketLiquidityProvider({
   fallbackValue: MarketLiquidityValue
   children: ReactNode
 }) {
-  if (!convexClient) {
+  if (!getSiweConvexClient()) {
     return <MarketLiquidityContext.Provider value={fallbackValue}>{children}</MarketLiquidityContext.Provider>
   }
+  // Reuses the gate's provider when mounted beneath it (single socket / single auth).
   return (
-    <ConvexProviderWithAuth client={convexClient} useAuth={useConvexSiweAuth}>
+    <SiweConvexProvider>
       <MarketLiquidityErrorBoundary fallbackChildren={children} fallbackValue={fallbackValue}>
         <MarketLiquidityBridge localDeltas={localDeltas} recordLocal={recordLocal}>
           {children}
         </MarketLiquidityBridge>
       </MarketLiquidityErrorBoundary>
-    </ConvexProviderWithAuth>
+    </SiweConvexProvider>
   )
 }

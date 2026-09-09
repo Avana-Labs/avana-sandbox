@@ -15,10 +15,11 @@ type Props = {
   className?: string
 }
 
-type SidebarTab = "pledge" | "claim"
+type SidebarTab = "pledge" | "remove" | "claim"
 
 const POOL_TAB_ITEMS = [
   { id: "pledge", label: "Pledge" },
+  { id: "remove", label: "Remove" },
   { id: "claim", label: "Claim" },
 ] as const
 
@@ -66,6 +67,14 @@ function PoolActionRail({ detail, className, embedActions = false }: Props & { e
             <ResponsiveBorrowAction kind="supply" market={pool.id} closeHref={closeHref} sidebar />
           ) : (
             <ActionPageLaunchCta product="borrow" kind="supply" market={pool.id} returnTo={closeHref} />
+          )
+        ) : null}
+
+        {tab === "remove" ? (
+          embedActions ? (
+            <ResponsiveBorrowAction kind="remove" market={pool.id} closeHref={closeHref} sidebar />
+          ) : (
+            <ActionPageLaunchCta product="borrow" kind="remove" market={pool.id} returnTo={closeHref} />
           )
         ) : null}
 

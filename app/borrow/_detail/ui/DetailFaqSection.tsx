@@ -21,7 +21,7 @@ export function DetailFaqSection({ title, items, className, id }: DetailFaqSecti
 
   return (
     <section id={id} className={cn("min-w-0 space-y-2.5", className)}>
-      <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+      <h2 className="text-[22px] font-medium leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
         {title}
       </h2>
 

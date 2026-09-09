@@ -46,16 +46,18 @@ describe("scheduleIdle", () => {
     delete window.requestIdleCallback
 
     const run = vi.fn()
-    const stop = scheduleIdle(run)
+    const stop = scheduleIdle(run, 4000)
+    expect(run).not.toHaveBeenCalled()
+    vi.advanceTimersByTime(3999)
     expect(run).not.toHaveBeenCalled()
     vi.advanceTimersByTime(1)
     expect(run).toHaveBeenCalledTimes(1)
 
     // cancel after fire is a no-op; cancel before fire prevents it.
     const run2 = vi.fn()
-    const stop2 = scheduleIdle(run2)
+    const stop2 = scheduleIdle(run2, 8000)
     stop2()
-    vi.advanceTimersByTime(5)
+    vi.advanceTimersByTime(8000)
     expect(run2).not.toHaveBeenCalled()
 
     stop()

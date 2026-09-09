@@ -29,8 +29,11 @@ export default async function BorrowPage() {
     )
   }
 
-  const [pageData, requestHeaders] = await Promise.all([fetchBorrowPage(), headers()])
-  const { BorrowPageClient } = await import("./borrow-page-client")
+  const [pageData, requestHeaders, { BorrowPageClient }] = await Promise.all([
+    fetchBorrowPage(),
+    headers(),
+    import("./borrow-page-client"),
+  ])
   const userAgent = requestHeaders.get("user-agent") ?? ""
   const initialIsDesktop = !/Android|iPhone|iPad|iPod|Mobile/i.test(userAgent)
 

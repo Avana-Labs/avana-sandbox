@@ -13,6 +13,10 @@ export default tseslint.config(
       ".next-check/**",
       "node_modules/**",
       ".reports/**",
+      ".artifacts/**",
+      "**/.artifacts/**",
+      "playwright-report/**",
+      "test-results/**",
       ".c?????/**",
       "convex/_generated/**",
       "tailwind.config.js",
@@ -46,6 +50,10 @@ export default tseslint.config(
     },
   },
   {
+    files: ["lib/deployment-safety.mjs"],
+    languageOptions: { globals: { ...globals.node } },
+  },
+  {
     // CLI/seed scripts legitimately print progress to stdout and use runtime
     // globals (fetch, URL, process) — `.mjs`/`.cjs` scripts miss the main block's
     // globals otherwise, tripping no-undef.
@@ -58,6 +66,7 @@ export default tseslint.config(
     },
     rules: {
       "no-console": "off",
+      "@typescript-eslint/no-require-imports": "off",
     },
   },
   {

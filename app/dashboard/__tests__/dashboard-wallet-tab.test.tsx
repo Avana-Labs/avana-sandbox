@@ -18,6 +18,8 @@ vi.mock("@/app/lib/currency/use-currency", () => ({
 vi.mock("@/app/lib/swap-system/use-convex-wallet-balances", () => ({
   useConvexWalletBalances: () => undefined,
   useConvexProductWalletBalances: () => undefined,
+  useConvexClaimBasis: () => undefined,
+  useConvexWalletOnboardingSummary: () => undefined,
 }))
 
 function renderWalletTab(node: ReactNode) {
@@ -28,7 +30,7 @@ describe("DashboardWalletTab", () => {
   it("renders wallet tokens and LPs separately", { timeout: 20_000 }, () => {
     renderWalletTab(<DashboardWalletTab walletId="demo-wallet" />)
 
-    expect(screen.getByRole("heading", { name: "Wallet Balance" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Wallet Overview" })).toBeInTheDocument()
     expect(screen.getByText("Wallet Value")).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Tokens" })).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: "Pools" })).toBeInTheDocument()
@@ -36,10 +38,12 @@ describe("DashboardWalletTab", () => {
     expect(screen.getAllByText("ETH / USDC LP").length).toBeGreaterThan(0)
   })
 
-  it("renders wallet balances without row-level swap actions", { timeout: 20_000 }, () => {
+  it("renders a per-row Swap action that deep-links to the swap flow", { timeout: 20_000 }, () => {
     renderWalletTab(<DashboardWalletTab walletId="demo-wallet" />)
 
-    expect(screen.queryByRole("link", { name: "Swap" })).toBeNull()
+    const swapLinks = screen.getAllByRole("link", { name: "Swap" })
+    expect(swapLinks.length).toBeGreaterThan(0)
+    expect(swapLinks.some((link) => link.getAttribute("href")?.startsWith("/swap?from="))).toBe(true)
   })
 
   it("shows pool status without row-level pool action buttons", { timeout: 20_000 }, () => {

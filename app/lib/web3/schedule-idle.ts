@@ -1,5 +1,5 @@
 /**
- * Run a callback during browser idle time, falling back to a near-immediate timeout on
+ * Run a callback during browser idle time, falling back to the same deadline on
  * engines without `requestIdleCallback` (Safari). Returns a cancel function.
  *
  * Used to defer the ~1MB wallet SDK mount for returning signed-in users off the
@@ -15,7 +15,8 @@ export function scheduleIdle(callback: () => void, timeoutMs = 2000): () => void
     return () => window.cancelIdleCallback?.(id)
   }
 
-  // Fallback: schedule for the next tick so it still yields to first paint.
-  const id = window.setTimeout(callback, 1)
+  // Safari has no requestIdleCallback. Preserve the caller's deferral contract;
+  // a next-tick fallback puts large SDKs straight back on the critical path.
+  const id = window.setTimeout(callback, timeoutMs)
   return () => window.clearTimeout(id)
 }

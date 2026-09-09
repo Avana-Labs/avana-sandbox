@@ -86,7 +86,7 @@ export function RiskGauge({ score, level, label, size = 220, ticks = 44, classNa
           x={cx}
           y={cy - 18}
           textAnchor="middle"
-          className="fill-foreground font-data font-bold tabular-nums"
+          className="fill-foreground font-data font-normal tabular-nums"
           style={{ fontSize: 34, letterSpacing: "-0.02em" }}
         >
           {clamped}

@@ -41,10 +41,11 @@ vi.mock("@/app/borrow/_detail/pool-sections/CashflowCard", () => ({
 vi.mock("@/app/borrow/_detail/pool-sections/RiskSection", () => ({
   RiskSection: () => <div data-testid="risk" />,
 }))
-vi.mock("@/app/borrow/_detail/asset-sections/TransactionHistoryCard", () => ({
-  TransactionHistoryCard: ({ transactions, assetSymbol }: { transactions: unknown[]; assetSymbol: string }) => (
-    <div data-testid="transactions">{`${assetSymbol}:${transactions.length}`}</div>
+vi.mock("@/app/components/detail-transaction-table/detail-market-transactions", () => ({
+  DetailMarketTransactions: ({ seedRows, context }: { seedRows: unknown[]; context?: { assetSymbol?: string } }) => (
+    <div data-testid="transactions">{`${context?.assetSymbol ?? "?"}:${seedRows.length}`}</div>
   ),
+  LEND_KIND_CONFIG: {},
 }))
 vi.mock("@/app/lib/lend-system/lend-session-context", () => ({
   useLendSessionContext: () => ({ walletId: "demo-wallet", transactionHistory: [] }),

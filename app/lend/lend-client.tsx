@@ -6,7 +6,6 @@ import type { LendPageData } from "@/app/lib/data/providers/lend"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
 import { LendHero } from "./components/lend-hero"
-import { useLendPageLive } from "./use-lend-page-live"
 import { HotMarkets } from "./components/hot-markets"
 import { LendAssetSpokes } from "./components/lend-asset-spokes"
 
@@ -19,8 +18,9 @@ export function LendClient({
 }) {
   const router = useRouter()
   const lendSession = useLendSessionContext()
-  const livePageData = useLendPageLive(lendSession.walletId, lendSession)
-  const resolvedPageData = useMemo(() => livePageData ?? pageData, [livePageData, pageData])
+  // Render the server-provided (live Convex) page data directly — no client-side
+  // re-derivation that swaps it after mount (that was the flicker). Only the
+  // withdraw flags come from the session, which is stable/persistent across nav.
   const withdrawableMarketIds = useMemo(
     () =>
       new Set(
@@ -35,7 +35,7 @@ export function LendClient({
       ),
     [lendSession.state.positions, lendSession.walletId],
   )
-  const { markets, featuredAssets, featuredSequence, featuredSnapshots, assetGroups } = resolvedPageData
+  const { markets, featuredAssets, featuredSequence, featuredSnapshots, assetGroups } = pageData
 
   // Token prices come from the global TokenPricesProvider in ProductRuntimeProviders (seeded
   // with the live oracle on the server). A local provider here would shadow that seed with an

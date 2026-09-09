@@ -87,6 +87,9 @@ describe("buildMultiplyBalanceMetrics — wallet aggregate formulas", () => {
       healthFactor: null,
       liquidationBufferUsd: 0,
       riskPremiumPct: 0,
+      interestEarnedUsd: 0,
+      interestPerYearUsd: 0,
+      accrualSinceMs: expect.any(Number),
     })
   })
 

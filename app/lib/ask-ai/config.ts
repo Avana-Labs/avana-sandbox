@@ -6,7 +6,7 @@ export const ASK_AI_CONFIG = {
   agentName: "avana-ask-ai",
   defaultModel: "gpt-5.6-luna",
   fastModel: "gpt-5.6-luna",
-  openAIServiceTier: "fast",
+  openAIServiceTier: "default",
   contextWindowTokens: 1_050_000,
   maxInputCharacters: 2_000,
   maxOutputTokens: 900,
@@ -16,7 +16,7 @@ export const ASK_AI_CONFIG = {
   maxToolSteps: 5,
   recentMessageLimit: 8,
   ragResultLimit: 6,
-  streamThrottleMs: 100,
+  streamThrottleMs: 250,
   limits: {
     messagesPerDay: 20,
     minimumMessageIntervalMs: 5_000,
@@ -24,6 +24,8 @@ export const ASK_AI_CONFIG = {
     // can spend several thousand tokens, so 20 msgs/day needs generous headroom (30k blocked
     // usage after ~3 questions and surfaced as a confusing "limit reached" error).
     dailyTokenBudget: 500_000,
+    reservedTokensPerTurn: 25_000,
+    globalReservedTokensPerDay: 100_000_000,
     globalMessagesPerDay: 20_000,
   },
   freshness: {

@@ -29,8 +29,11 @@ export default async function MultiplyPage() {
     )
   }
 
-  const [pageData, requestHeaders] = await Promise.all([fetchMultiplyPage(), headers()])
-  const { MultiplyClient } = await import("./multiply-client")
+  const [pageData, requestHeaders, { MultiplyClient }] = await Promise.all([
+    fetchMultiplyPage(),
+    headers(),
+    import("./multiply-client"),
+  ])
   const userAgent = requestHeaders.get("user-agent") ?? ""
   const initialIsDesktop = !/Android|iPhone|iPad|iPod|Mobile/i.test(userAgent)
 

@@ -28,6 +28,8 @@ export type DashboardQuickActionsTab = "wallet" | "lend" | "borrow" | "multiply"
  */
 export function DashboardQuickActions({ activeTab }: { activeTab?: DashboardQuickActionsTab }) {
   const { t } = useTranslation()
+  const depositLabel = activeTab === "borrow" ? t("Pledge") : t("Deposit")
+  const withdrawLabel = activeTab === "borrow" ? t("Remove") : t("Withdraw")
   const depositHref = activeTab === "borrow" ? actionPagePath("borrow", "supply") : actionPagePath("lend", "deposit")
   const withdrawHref = activeTab === "borrow" ? actionPagePath("borrow", "remove") : actionPagePath("lend", "withdraw")
 
@@ -46,13 +48,13 @@ export function DashboardQuickActions({ activeTab }: { activeTab?: DashboardQuic
     },
     {
       id: "deposit",
-      label: t("Deposit"),
+      label: depositLabel,
       icon: EnteringGeoFence,
       href: withReturn(depositHref),
     },
     {
       id: "withdraw",
-      label: t("Withdraw"),
+      label: withdrawLabel,
       icon: LeavingGeoFence,
       href: withReturn(withdrawHref),
     },

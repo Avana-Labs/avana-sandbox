@@ -69,6 +69,8 @@ const dict: TranslationDictionary = {
   Value: "मूल्य",
   Utilization: "उपयोग दर",
   "Supply & Borrow": "सप्लाई और उधार",
+  "Supply {collateral}": "{collateral} आपूर्ति करें",
+  "Borrow {borrow}": "{borrow} उधार लें",
   Borrowed: "उधार लिया",
   Available: "उपलब्ध",
   "Supply APY": "सप्लाई APY",
@@ -157,6 +159,8 @@ const dict: TranslationDictionary = {
   "Join waitlist": "वेटलिस्ट में शामिल हों",
   "Previous page": "पिछला पृष्ठ",
   "Next page": "अगला पृष्ठ",
+  "Transactions pagination": "लेनदेन पृष्ठ क्रमांकन",
+  "Changelog pagination": "परिवर्तन लॉग पृष्ठ क्रमांकन",
   "{page} of {count}": "{count} में से {page}",
   "Max APY": "अधिकतम APY",
   "Max Leverage": "अधिकतम लीवरेज",
@@ -279,7 +283,6 @@ const dict: TranslationDictionary = {
   "Insufficient balance": "अपर्याप्त शेष",
   "Insufficient liquidity": "अपर्याप्त लिक्विडिटी",
   "Insufficient LP": "अपर्याप्त LP",
-  "Deposit collateral first": "पहले संपार्श्विक जमा करें",
   "Borrowing unavailable": "उधार उपलब्ध नहीं",
   "Try a smaller amount": "छोटी राशि आज़माएँ",
   "Supply cap reached": "सप्लाई सीमा पूरी",
@@ -288,6 +291,8 @@ const dict: TranslationDictionary = {
   "Not available here": "यहाँ उपलब्ध नहीं",
   "Nothing to claim": "दावा करने को कुछ नहीं",
   "Select rewards": "रिवॉर्ड चुनें",
+  "No collateral": "कोई कोलैटरल नहीं",
+  "No position": "कोई पोज़िशन नहीं",
   "Nothing to withdraw": "निकालने को कुछ नहीं",
   "and the Avana team will follow up. You can submit another request any time.":
     "और Avana टीम आगे संपर्क करेगी। आप कभी भी दूसरा अनुरोध भेज सकते हैं।",
@@ -402,7 +407,6 @@ const dict: TranslationDictionary = {
   "Daily Interest": "दैनिक ब्याज",
   day: "दिन",
   "Deposit {symbol}": "{symbol} जमा करें",
-  "Deposit LP collateral before borrowing {symbol}.": "{symbol} उधार लेने से पहले LP कोलैटरल जमा करें।",
   Done: "हो गया",
   Expiration: "समाप्ति",
   Expired: "समाप्त",
@@ -411,7 +415,6 @@ const dict: TranslationDictionary = {
   "Generating link...": "लिंक बन रहा है...",
   "Go back": "वापस जाएँ",
   GOOD: "अच्छा",
-  "Got it": "समझ गया",
   "Health Factor": "हेल्थ फैक्टर",
   "I read it": "मैंने पढ़ा",
   "In this sandbox, every transaction is simulated — use previews to learn before sizing up.":
@@ -565,6 +568,10 @@ const dict: TranslationDictionary = {
   "Lend Rewards": "लेंडिंग रिवॉर्ड्स",
   "Multiply Overview": "लूपिंग अवलोकन",
   "Multiply Positions": "लूपिंग पोज़िशन",
+  "Debt & Risk": "ऋण और जोखिम",
+  "Position size, multiplier, and current net yield": "पोज़िशन का आकार, गुणक और मौजूदा शुद्ध यील्ड",
+  "Borrowed balance, health factor, and liquidation threshold": "उधार शेष, हेल्थ फैक्टर और लिक्विडेशन सीमा",
+  "No active Multiply debt": "कोई सक्रिय Multiply ऋण नहीं",
   "Loading your portfolio": "आपका पोर्टफोलियो लोड हो रहा है",
   "We couldn't load your portfolio": "हम आपका पोर्टफोलियो लोड नहीं कर सके",
   "The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard.":
@@ -1050,6 +1057,7 @@ const dict: TranslationDictionary = {
   "Welcome to the Avana Sandbox": "Avana सैंडबॉक्स में आपका स्वागत है",
   "This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.":
     "यह जोखिम-मुक्त Avana सैंडबॉक्स आपको सैंडबॉक्स फंड का उपयोग करके अभ्यास LP पोज़िशन के बदले उधार लेने, लेंड करने और स्ट्रैटेजी लूप करने देता है। कोई वास्तविक एसेट नहीं। कोई वॉलेट सिग्नेचर नहीं। बस लाइव ऐप पर जाने से पहले यह समझने का एक तेज़ तरीका कि Avana कैसे काम करता है।",
+  "No transactions yet": "अभी तक कोई लेनदेन नहीं",
   "No transactions to sign": "साइन करने के लिए कोई ट्रांज़ैक्शन नहीं",
   "Connect a wallet.": "एक वॉलेट कनेक्ट करें।",
   "We'll set up your sandbox and scope it to your address.":
@@ -1130,6 +1138,7 @@ const dict: TranslationDictionary = {
   "We couldn't load this page.": "हम यह पेज लोड नहीं कर सके।",
   "Active Deficit": "सक्रिय घाटा",
   "Active stake": "सक्रिय स्टेक",
+  "Includes active stake and cooldown": "सक्रिय स्टेक और कूलडाउन शामिल है",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "वह राशि जिसे Avana पहले कवर करती है, इससे पहले कि उपयोगकर्ता-स्टेक्ड कवरेज उजागर हो। स्टेकर तभी नुकसान उठाते हैं जब वास्तविक घाटा इस ऑफ़सेट से अधिक हो जाए।",
   "Close umbrella actions": "सुरक्षा क्रियाएँ बंद करें",
@@ -1164,9 +1173,11 @@ const dict: TranslationDictionary = {
   "Previous market risk": "पिछला मार्केट जोखिम",
   Ready: "तैयार",
   "Removes in": "में हटाया जाएगा",
+  Restart: "पुनः प्रारंभ",
   "Restart cooldown": "कूलडाउन दोबारा शुरू करें",
   Stake: "स्टेक",
   "Stake in umbrella": "सुरक्षा में स्टेक करें",
+  "Unstake from umbrella": "सुरक्षा से अनस्टेक करें",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "सुरक्षा मॉड्यूल में स्टेक करें, रिवॉर्ड क्लेम करें, कूलडाउन शुरू करें, या अनस्टेक करें।",
   "Stake, claim, cooldown, unstake": "स्टेक, क्लेम, कूलडाउन, अनस्टेक",
@@ -1174,6 +1185,7 @@ const dict: TranslationDictionary = {
     "विदड्रॉ करने से पहले कूलडाउन शुरू करें। कूलडाउन के दौरान पोज़िशन प्रोत्साहन कमाना जारी रखती है और स्लैश की जा सकती है।",
   Target: "लक्ष्य",
   "Total coverage": "कुल कवरेज",
+  "Total position value": "कुल पोज़िशन मूल्य",
   "Total user-staked capital available to absorb losses for this asset.":
     "इस एसेट के नुकसान अवशोषित करने के लिए उपलब्ध कुल उपयोगकर्ता-स्टेक्ड पूंजी।",
   Umbrella: "सुरक्षा",
@@ -1279,6 +1291,9 @@ const dict: TranslationDictionary = {
   "In range": "रेंज में",
   "Interest / day": "ब्याज / दिन",
   "Key Statistics": "मुख्य आँकड़े",
+  "Market Rates": "बाज़ार दरें",
+  "Utilization Rate": "उपयोग दर",
+  "Borrow amount to reach {value} Util.": "{value} उपयोग तक पहुँचने के लिए उधार राशि।",
   "Large price difference": "बड़ा मूल्य अंतर",
   "Lend Assets": "लेंड एसेट",
   "Lend Balance": "लेंड बैलेंस",
@@ -1358,6 +1373,8 @@ const dict: TranslationDictionary = {
   "Repay or add collateral to reduce your liquidation risk.":
     "अपने लिक्विडेशन जोखिम को कम करने के लिए चुकाएँ या कोलैटरल जोड़ें।",
   "Review risk": "जोखिम की समीक्षा करें",
+  "Negative net APY: borrow costs exceed supply yield. Review before opening this loop.":
+    "नकारात्मक नेट APY: उधार लागत आपूर्ति यील्ड से अधिक है। यह लूप खोलने से पहले समीक्षा करें।",
   "Review swap": "स्वैप की समीक्षा करें",
   "Rewards Earned": "अर्जित रिवॉर्ड्स",
   Sandbox: "सैंडबॉक्स",
@@ -1482,6 +1499,160 @@ const dict: TranslationDictionary = {
   "Next rewards": "अगले पुरस्कार",
   "Open on Launch Date": "लॉन्च तिथि पर खुलेगा",
   "Previous rewards": "पिछले पुरस्कार",
+  "The asset you've borrowed against your collateral.": "वह एसेट जो आपने अपने कोलैटरल के विरुद्ध उधार ली है।",
+  "Your outstanding loan balance in this asset, valued live.": "इस एसेट में आपका बकाया ऋण शेष, लाइव मूल्य पर आंका गया।",
+  "A token held directly in your connected wallet.": "एक टोकन जो सीधे आपके कनेक्टेड वॉलेट में रखा गया है।",
+  "The amount of this token in your wallet.": "आपके वॉलेट में इस टोकन की मात्रा।",
+  "The token balance valued at its live price.": "टोकन शेष, इसकी लाइव कीमत पर आंका गया।",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.":
+    "एक तरलता-पूल पोज़िशन जो आप रखते हैं, DEX को आपूर्ति किए गए जोड़ीदार टोकन।",
+  "Whether the position's price range is active and earning fees.":
+    "क्या पोज़िशन की मूल्य रेंज सक्रिय है और शुल्क अर्जित कर रही है।",
+  "The current value of your pooled tokens.": "आपके पूल किए गए टोकन का मौजूदा मूल्य।",
+  "Trading fees this position has earned, claimable to your wallet.":
+    "इस पोज़िशन द्वारा अर्जित ट्रेडिंग शुल्क, जो आपके वॉलेट में दावा योग्य है।",
+  "The token you've supplied to earn lending yield.":
+    "वह टोकन जो आपने लेंडिंग यील्ड अर्जित करने के लिए आपूर्ति किया है।",
+  "Your supplied balance in this asset, valued at its live price.":
+    "इस एसेट में आपकी आपूर्ति की गई शेष राशि, इसकी लाइव कीमत पर आंकी गई।",
+  "Current annual percentage yield on your deposit, before protocol rewards.":
+    "आपकी जमा राशि पर मौजूदा वार्षिक प्रतिशत प्रतिफल, प्रोटोकॉल रिवॉर्ड्स से पहले।",
+  "The collateral asset backing your borrowing, valued at its live price.":
+    "आपके उधार को समर्थन देने वाला कोलैटरल एसेट, इसकी लाइव कीमत पर आंका गया।",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.":
+    "आप इस कोलैटरल के विरुद्ध और कितना उधार ले सकते हैं; % दिखाता है कि आपकी लिक्विडेशन सीमा का कितना हिस्सा पहले से उपयोग हो चुका है।",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.":
+    "हेल्थ फैक्टर, और वह कोलैटरल मूल्य जिस पर यह पोज़िशन लिक्विडेट हो जाती है। 1.0 से नीचे जाने पर लिक्विडेशन शुरू हो जाता है।",
+  "The collateral you supply and the asset you borrow against it to build leverage.":
+    "वह कोलैटरल जो आप आपूर्ति करते हैं और वह एसेट जिसे आप लीवरेज बनाने के लिए इसके विरुद्ध उधार लेते हैं।",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.":
+    "लूप में आपकी अपनी पूंजी (एक्सपोज़र घटाकर ऋण)। एक्सपोज़र आपकी कुल लीवरेज्ड पोज़िशन है।",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.":
+    "आपकी पूंजी पर, उधार लागत के बाद शुद्ध यील्ड। नीचे दिया गया आंकड़ा अब तक अर्जित ब्याज है, जो लाइव अपडेट होता रहता है।",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.":
+    "हेल्थ फैक्टर, और वह कोलैटरल कीमत जिस पर यह लूप लिक्विडेट हो जाता है। 1.0 से नीचे जाने पर लिक्विडेशन शुरू हो जाता है।",
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)":
+    "आपके Multiply लूप में अर्जित शुद्ध कैरी, जो वास्तविक समय में संचित होती है (आपूर्ति यील्ड घटाकर उधार लागत)",
+  "Average APY across your staked positions, weighted by value.":
+    "आपकी स्टेक्ड पोज़िशनों में औसत APY, मूल्य के अनुसार भारित।",
+  "Additional amount you can borrow against your pledged collateral within Avana credit limits":
+    "Avana क्रेडिट सीमा के भीतर, आपके गिरवी रखे गए कोलैटरल के विरुद्ध आप जितनी अतिरिक्त राशि उधार ले सकते हैं",
+  "Amount an active loan can lose before reaching liquidation; unavailable when you have no debt":
+    "सक्रिय ऋण के लिक्विडेशन तक पहुंचने से पहले वह जितनी राशि गंवा सकता है; कोई ऋण न होने पर अनुपलब्ध",
+  "Combined liquidation value divided by total Multiply debt. Higher is safer; below 1 risks liquidation.":
+    "संयुक्त लिक्विडेशन मूल्य को कुल Multiply ऋण से भाग देकर। अधिक होना सुरक्षित है; 1 से नीचे लिक्विडेशन का जोखिम है।",
+  "Equity-weighted net APY after supply yield and borrow cost":
+    "आपूर्ति यील्ड और उधार लागत के बाद इक्विटी-भारित शुद्ध APY",
+  "Exposure, return, and liquidation risk for each active loop":
+    "प्रत्येक सक्रिय लूप के लिए एक्सपोज़र, रिटर्न और लिक्विडेशन जोखिम",
+  "Gross Multiply exposure after looping across all positions":
+    "सभी पोज़िशनों में लूपिंग के बाद सकल Multiply एक्सपोज़र",
+  "Interest earned as a percentage of principal you supplied":
+    "आपके द्वारा आपूर्ति किए गए मूलधन के प्रतिशत के रूप में अर्जित ब्याज",
+  "Portfolio leverage as position value divided by equity":
+    "पोज़िशन मूल्य को इक्विटी से भाग देकर प्राप्त पोर्टफोलियो लीवरेज",
+  "Projected earnings at current rates": "मौजूदा दरों पर अनुमानित आय",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)":
+    "आपकी लेंडिंग पोज़िशनों में वास्तविक समय में संचित हो रहा सप्लाई ब्याज (प्रोटोकॉल रिवॉर्ड्स को छोड़कर)",
+  "Wallet-wide liquidation value divided by total borrowed. Higher is safer; below 1 risks liquidation.":
+    "वॉलेट-व्यापी लिक्विडेशन मूल्य को कुल उधार से भाग देकर। अधिक होना सुरक्षित है; 1 से नीचे लिक्विडेशन का जोखिम है।",
+  "Prices may be stale": "कीमतें पुरानी हो सकती हैं",
+  "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.":
+    "इस ऋण पर मौजूदा वार्षिक उधार दर। नीचे, अब तक संचित ब्याज दिखाया गया है, जो लाइव अपडेट होता रहता है।",
+  "Total AVA you've earned across completed quests and staking rewards.":
+    "पूर्ण किए गए क्वेस्ट और स्टेकिंग रिवॉर्ड्स से आपके द्वारा अर्जित कुल AVA।",
+  "AVA you can claim to your wallet right now.": "AVA जिसे आप अभी अपने वॉलेट में क्लेम कर सकते हैं।",
+  "Core Concepts": "मुख्य अवधारणाएँ",
+  "What is Avana?": "Avana क्या है?",
+  "Protocol overview": "प्रोटोकॉल अवलोकन",
+  "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.":
+    "Avana एक LP-कोलैटरल लेंडिंग प्रोटोकॉल है, जो Aave v4 की Hub-and-Spoke आर्किटेक्चर पर बना है।",
+  "Why it exists": "यह क्यों मौजूद है",
+  "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.":
+    "लक्ष्य यह है कि लिक्विडिटी प्रोवाइडर्स पहले पूल पोजीशन को बंद किए बिना सक्रिय पोजीशन के विरुद्ध उधार ले सकें।",
+  "What does the Borrow Spoke do?": "Borrow Spoke क्या करता है?",
+  "LP-specific underwriting": "LP-विशिष्ट अंडरराइटिंग",
+  "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.":
+    "Borrow Spokes समर्थित पोजीशन का मूल्यांकन करते हैं, स्वास्थ्य की निगरानी करते हैं, और LP कोलैटरल के लिए लिक्विडेशन व्यवहार को रूट करते हैं।",
+  "Shared coordination": "साझा समन्वय",
+  "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.":
+    "Hub साझा लिक्विडिटी और ऋण लेखांकन का समन्वय करता है, जबकि spoke LP-विशिष्ट लॉजिक संभालता है।",
+  "Borrowing Capacity & Valuation": "उधार क्षमता और मूल्यांकन",
+  "How is borrowing capacity calculated?": "उधार क्षमता की गणना कैसे होती है?",
+  "Adjusted collateral value": "समायोजित कोलैटरल मूल्य",
+  "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.":
+    "प्रत्येक स्वीकृत LP पोजीशन का स्वतंत्र रूप से मूल्यांकन होता है, फिर कोलैटरल फैक्टर और पूल-विशिष्ट जोखिम नियंत्रण लागू होते हैं।",
+  "Aggregated in the spoke": "spoke में एकत्रित",
+  "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.":
+    "spoke स्वीकृत पोजीशन को उधार क्षमता में एकत्रित करता है और Hub परिणाम लागू करता है।",
+  "Why did my capacity change?": "मेरी क्षमता क्यों बदल गई?",
+  "Market movement": "बाजार आंदोलन",
+  "Capacity can change when the underlying assets move or when recoverable value shifts.":
+    "जब अंतर्निहित परिसंपत्तियाँ चलती हैं या वसूली योग्य मूल्य बदलता है, तो क्षमता बदल सकती है।",
+  "Risk settings": "जोखिम सेटिंग्स",
+  "Collateral factors and market-specific risk settings can also change the amount shown in the interface.":
+    "कोलैटरल फैक्टर और बाजार-विशिष्ट जोखिम सेटिंग्स भी इंटरफ़ेस में दिखाए गए राशि को बदल सकती हैं।",
+  "Health & Liquidation": "स्वास्थ्य और लिक्विडेशन",
+  "What is the health factor?": "हेल्थ फैक्टर क्या है?",
+  "How to read health": "स्वास्थ्य कैसे पढ़ें",
+  "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.":
+    "हेल्थ फैक्टर एक Borrow Spoke के अंदर समायोजित कोलैटरल मूल्य और बकाया ऋण के संबंध को दर्शाता है।",
+  "What it means for users": "उपयोगकर्ताओं के लिए इसका अर्थ",
+  "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
+    "जैसे-जैसे बफ़र सिकुड़ता है, बाज़ार की स्थितियाँ प्रतिकूल होने पर पोजीशन लिक्विडेशन के प्रति अधिक उजागर हो जाती है।",
+  "When can liquidation happen?": "लिक्विडेशन कब हो सकता है?",
+  Triggers: "ट्रिगर",
+  "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
+    "यदि बाज़ार की चालें स्वास्थ्य को पर्याप्त रूप से कमज़ोर कर दें, तो spoke के नियमों के तहत पोजीशन लिक्विडेटेबल हो सकती है।",
+  "What happens next": "इसके बाद क्या होता है",
+  "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.":
+    "spoke लगातार जोखिम की निगरानी करता है और लिक्विडेशन व्यवहार को रूट करता है, जबकि Hub रिज़र्व को समन्वित रखता है।",
+  "Leverage Markets": "लेवरेज मार्केट",
+  "How do leverage markets work?": "लेवरेज मार्केट कैसे काम करते हैं?",
+  "LP-backed exposure": "LP-समर्थित एक्सपोज़र",
+  "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.":
+    "लेवरेज मार्केट Avana को अधिक विशिष्ट वर्कफ़्लो में LP-समर्थित उधार और दिशात्मक एक्सपोज़र का समर्थन करने देते हैं।",
+  "Position stacking": "पोजीशन स्टैकिंग",
+  "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
+    "उधार क्षमता को उसी Borrow Spoke के अंदर कई स्वीकृत पोजीशन से एकत्रित किया जा सकता है।",
+  "Can one account use multiple LP positions?": "क्या एक खाता कई LP पोजीशन उपयोग कर सकता है?",
+  "Multiple positions": "कई पोजीशन",
+  "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
+    "हाँ। एक ही खाता समर्थित LP पोजीशन को जोड़ सकता है, जब तक प्रत्येक पोजीशन प्रोटोकॉल की जाँच पास करे।",
+  "Per-position risk": "प्रति-पोजीशन जोखिम",
+  "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
+    "अंतिम उधार क्षमता में शामिल होने से पहले प्रत्येक पोजीशन का अपने मानदंडों पर मूल्यांकन होता है।",
+  "Fees & Interface Policy": "शुल्क और इंटरफ़ेस नीति",
+  "Are interface fees fixed across all integrations?": "क्या सभी इंटीग्रेशन में इंटरफ़ेस शुल्क निश्चित हैं?",
+  "Operational settings": "ऑपरेशनल सेटिंग्स",
+  "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
+    "सटीक शुल्क दरें, छूट और रोलआउट स्थिति ऑपरेशनल सेटिंग्स हैं और लाइव इंटरफ़ेस में सत्यापित की जानी चाहिए।",
+  "Integration differences": "इंटीग्रेशन अंतर",
+  "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
+    "प्रत्यक्ष इंटीग्रेशन या थर्ड-पार्टी फ्रंटएंड अलग धारणाएँ अपना सकते हैं, इसलिए आप जिस इंटरफ़ेस का उपयोग कर रहे हैं उसे हमेशा सत्यापित करें।",
+  "What counts as protocol economics vs interface policy?":
+    "प्रोटोकॉल इकोनॉमिक्स बनाम इंटरफ़ेस नीति क्या गिना जाता है?",
+  "Protocol layer": "प्रोटोकॉल परत",
+  "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
+    "मुख्य कोलैटरल मूल्यांकन, ऋण नियंत्रण और लिक्विडेशन मार्ग प्रोटोकॉल परत पर रहते हैं।",
+  "Interface layer": "इंटरफ़ेस परत",
+  "The frontend can present policy, routing, and support flows differently from one integration to another.":
+    "फ्रंटएंड एक इंटीग्रेशन से दूसरे में नीति, रूटिंग और सपोर्ट फ्लो अलग तरीके से दिखा सकता है।",
+  "Risk & Security": "जोखिम और सुरक्षा",
+  "What are the main risks?": "मुख्य जोखिम क्या हैं?",
+  "Market and liquidity risk": "बाजार और लिक्विडिटी जोखिम",
+  "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.":
+    "मुख्य जोखिम अंतर्निहित परिसंपत्तियों में बाज़ार चालें, अस्थायी हानि (impermanent loss), और केंद्रित पोजीशन के लिए रेंज ड्रिफ्ट हैं।",
+  "Liquidation risk": "लिक्विडेशन जोखिम",
+  "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.":
+    "यदि ऋण बकाया रहने के दौरान स्वास्थ्य बफ़र कमज़ोर हो जाए, तो पोजीशन लिक्विडेटेबल हो सकती है।",
+  "How should I think about security?": "सुरक्षा के बारे में कैसे सोचें?",
+  "Protocol guidance": "प्रोटोकॉल मार्गदर्शन",
+  "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.":
+    "किसी भी LP पोजीशन जितनी सावधानी बरतें और प्रोटोकॉल के जोखिम मार्गदर्शन का ध्यानपूर्वक पालन करें।",
+  "Support request": "सहायता अनुरोध",
+  "If something looks off, send the details and our team can help you triage the issue.":
+    "यदि कुछ गलत लगे, तो विवरण भेजें और हमारी टीम समस्या को वर्गीकृत करने में मदद कर सकती है।",
 }
 
 export default dict

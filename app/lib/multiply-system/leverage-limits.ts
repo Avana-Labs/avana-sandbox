@@ -6,12 +6,22 @@ export const MULTIPLY_CATALOG_LEVERAGE_SCALE = 1
 
 /** Multiply action modal slider range (independent of per-market public caps). */
 export const MULTIPLY_ACTION_MIN_LEVERAGE = 1
+/** Engine / validation hard ceiling. */
 export const MULTIPLY_ACTION_MAX_LEVERAGE = 10
+/**
+ * Global multiply **slider** right end (mock scale). Slightly under the engine
+ * ceiling so ticks land on 1 / 3.25 / 5.5 / 7.74 / 9.99 with step 0.01.
+ */
+export const MULTIPLY_ACTION_SLIDER_MAX = 9.99
+export const MULTIPLY_ACTION_SLIDER_STEP = 0.01
 export const MULTIPLY_DEFAULT_LEVERAGE = 1.1
 
 /**
- * Resolve the per-market public cap into the action slider's max, clamped to the
- * global slider ceiling. (Catalog values are no longer inflated, so this is just a clamp.)
+ * Resolve the per-market public cap clamped to the global action ceiling.
+ * Used for defaults / display helpers — the multiply **slider** itself always
+ * spans `MULTIPLY_ACTION_MIN_LEVERAGE`…`MULTIPLY_ACTION_SLIDER_MAX` at
+ * `MULTIPLY_ACTION_SLIDER_STEP`; per-market publicMax is enforced as a hard
+ * engine validation block, not a thumb clamp.
  */
 export function resolveMultiplyMarketMaxLeverage(publicMaxMultiplier: number | undefined) {
   if (!Number.isFinite(publicMaxMultiplier) || publicMaxMultiplier == null || publicMaxMultiplier < 1) {
@@ -54,10 +64,10 @@ function stepDecimals(step: number) {
 /**
  * Snap a leverage value to the slider's step grid, using the SAME rounding rule the
  * ruler thumb uses (`round((v - min) / step)`), then clamp to [min, max]. Keeping the
- * controlled state on this grid means the slider label, the number input and the
- * projection summary all read one value instead of drifting apart. (E6)
+ * controlled state on this grid means the pill and the projection summary all read
+ * one value instead of drifting apart. (E6)
  */
-export function snapMultiplierToStep(value: number, min: number, max: number, step = 0.1): number {
+export function snapMultiplierToStep(value: number, min: number, max: number, step = 0.01): number {
   if (!Number.isFinite(value)) return min
   const safeStep = Number.isFinite(step) && step > 0 ? step : 0.1
   const steps = Math.round((value - min) / safeStep)

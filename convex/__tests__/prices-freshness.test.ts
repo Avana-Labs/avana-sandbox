@@ -42,8 +42,8 @@ describe("getPriceStatus surfaces price freshness", () => {
     const snapshot = await t.query(api.prices.getPriceSnapshot, {})
     expect(snapshot.prices).toHaveLength(1)
     expect(snapshot.prices[0]).toMatchObject({ symbol: "eth", priceUsd: 3200 })
-    expect(snapshot.status).toEqual({
-      updatedAt,
+    expect(snapshot.status.updatedAt).toBe(updatedAt)
+    expect(snapshot.status).toMatchObject({
       staleAfterMs: PRICE_STALE_AFTER_MS,
       invalidAfterMs: PRICE_INVALID_AFTER_MS,
       count: 1,

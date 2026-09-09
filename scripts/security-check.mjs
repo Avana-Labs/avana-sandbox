@@ -59,6 +59,12 @@ for (const file of files) {
   }
 }
 
+if (process.env.VERCEL_ENV === "production" || process.env.AVANA_DEPLOYMENT_ENV === "production") {
+  for (const key of ["AVANA_E2E_SESSION_SECRET", "AVANA_E2E_PRIVATE_JWK", "AVANA_E2E_STAGING"]) {
+    if (process.env[key]) fail(`${key} must not be configured on production`)
+  }
+}
+
 const publicBypassFlags = [
   "NEXT_PUBLIC_DEV_OPEN_GATE",
   "NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE",

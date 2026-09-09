@@ -216,7 +216,7 @@ export function SyntheticTransactionClient({ hash }: { hash: string }) {
             {t("This receipt is taking too long to load. It may not be available in this environment.")}
           </p>
         ) : (
-          <Skeleton className="skeleton-enter h-32 rounded-3xl" />
+          <Skeleton className="h-32 rounded-3xl" />
         )
       ) : receipt === null ? (
         <p className="text-muted-foreground">{t("This receipt does not exist for the authenticated wallet.")}</p>

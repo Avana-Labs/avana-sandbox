@@ -21,6 +21,7 @@ vi.mock("convex/react", () => ({
   ConvexReactClient: class {
     constructor() {}
   },
+  useConvex: () => undefined,
   ConvexProviderWithAuth: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
@@ -37,6 +38,11 @@ vi.mock("@/app/lib/test-mode", () => ({
   isPlaywrightTestMode: () => mocks.playwright,
   shouldUseOpenGateSession: () => mocks.openGate,
   TEST_MODE_WALLET_ADDRESS: "0x2222222222222222222222222222222222222222",
+}))
+
+vi.mock("@/app/lib/convex/siwe-convex-provider", () => ({
+  getSiweConvexClient: () => null,
+  SiweConvexProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }))
 
 vi.mock("@/app/lib/convex/market-liquidity-provider", () => ({

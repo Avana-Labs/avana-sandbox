@@ -24,8 +24,7 @@ export function UmbrellaSidebar({
   onMarketChange?: (marketId: UmbrellaMarketId) => void
   // Which tab to land on for this mount. The mobile sheet remounts the sidebar
   // on every open (via a changing `key`), so this initializer runs afresh each
-  // time the sheet is opened — letting the "More" button jump straight to the
-  // tab most useful for the position state (unstake / cooldown / claim).
+  // time the sheet is opened — Stake and Unstake mobile CTAs pass their tab here.
   initialTab?: UmbrellaActionTab
 }) {
   const { t } = useTranslation()

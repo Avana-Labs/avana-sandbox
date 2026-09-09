@@ -1,13 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { useAvanaIdentity, useLendSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useDashboardLendLive } from "@/app/dashboard/use-dashboard-lend-live"
 import { buildLendBalanceMetrics, buildLendDashboardMetrics } from "@/app/dashboard/dashboard-tab-metrics"
 import { DashboardLendPerformanceSection } from "@/app/dashboard/dashboard-metric-section"
 import { DashboardInvestments } from "@/app/dashboard/dashboard-investments"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
 import type { PortfolioLendTabData } from "@/app/lib/data/providers/portfolio"
+import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { ProductAvailableCard } from "./account-sections-shared"
 
@@ -22,8 +24,22 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
   const { t } = useTranslation()
   const { walletId } = useAvanaIdentity()
   const lendSession = useLendSessionContext()
+  const priceFor = useCanonicalPriceFor()
   const dashboardLend = useDashboardLendLive(walletId, lendSession)
-  const lendTabData = dashboardLend ?? EMPTY_LEND_TAB
+  // Value every supplied position at the live oracle price so the Deposited column,
+  // "Total Supplied", Net APY weighting and interest accrual all agree to the cent
+  // (financial app — the sum of the table MUST equal the headline). Unpriced tokens
+  // keep their stored supplied value.
+  const lendTabData = useMemo<PortfolioLendTabData>(() => {
+    const base = dashboardLend ?? EMPTY_LEND_TAB
+    return {
+      ...base,
+      investments: base.investments.map((inv) => {
+        const price = priceFor(inv.symbol)
+        return price !== undefined ? { ...inv, suppliedUsd: inv.balance * price } : inv
+      }),
+    }
+  }, [dashboardLend, priceFor])
   const balanceMetrics = buildLendBalanceMetrics(lendTabData)
   // Rewards/claimable stay on the assets Claim path — not on Lend Balance cards.
   const claimMetrics = buildLendDashboardMetrics(lendTabData)
@@ -42,11 +58,6 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
   return (
     <section id="dashboard-lend-account" className={`scroll-mt-24 ${detailSectionStackClass}`}>
       <DashboardLendPerformanceSection title={t("Lend Balance")} metrics={balanceMetrics} />
-      <ProductAvailableCard
-        walletId={walletId ?? ""}
-        sourceTypes={["lend_available"]}
-        title={t("Available to deposit")}
-      />
       <DashboardInvestments
         investments={lendTabData.investments}
         rewardsSummary={
@@ -61,6 +72,17 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
         title={t("Lend Assets")}
         countLabel={t("{count} assets").replace("{count}", String(lendTabData.investments.length))}
         returnHref={returnHref}
+        accrualSinceMs={balanceMetrics.accrualSinceMs}
+      />
+      <ProductAvailableCard
+        walletId={walletId ?? ""}
+        sourceTypes={["lend_available"]}
+        title={t("Available to deposit")}
+        action={{
+          icon: "deposit",
+          label: t("Deposit"),
+          href: (row) => actionPagePath("lend", "deposit", { market: row.symbol.toLowerCase(), return: returnHref }),
+        }}
       />
     </section>
   )

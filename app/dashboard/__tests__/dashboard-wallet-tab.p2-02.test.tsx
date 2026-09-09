@@ -8,8 +8,11 @@ describe("DashboardWalletTab pool mobile cells", () => {
     const mobilePools = source.slice(
       source.indexOf('<div className="space-y-3 md:hidden">', source.indexOf("PoolsBalanceSection")),
     )
-    expect(mobilePools).toMatch(/flex flex-col gap-0\.5[\s\S]{0,200}formatPoolAmount/)
-    expect(mobilePools).toMatch(/flex flex-col gap-0\.5[\s\S]{0,350}Unclaimed fees/)
+    // Shared mobile card hierarchy: Balance / Fees as labeled stat rows with
+    // amount + supporting USD (or "Unclaimed fees") — not a cramped inline pair.
+    expect(mobilePools).toMatch(/MarketMobileStatRow[\s\S]{0,120}Balance[\s\S]{0,200}formatPoolAmount/)
+    expect(mobilePools).toMatch(/MarketMobileSupportingValue[\s\S]{0,80}exact\(row\.valueUsd\)/)
+    expect(mobilePools).toMatch(/MarketMobileStatRow[\s\S]{0,120}Fees[\s\S]{0,250}Unclaimed fees/)
     expect(mobilePools).not.toMatch(/formatPoolAmount\(row\.amount\)\)\}<\/span>\s*<span className="ml-2/)
   })
 })

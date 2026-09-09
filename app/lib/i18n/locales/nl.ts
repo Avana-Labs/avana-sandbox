@@ -60,6 +60,8 @@ const dict: TranslationDictionary = {
   Value: "Waarde",
   Utilization: "Benutting",
   "Supply & Borrow": "Storting & Lenen",
+  "Supply {collateral}": "{collateral} aanbieden",
+  "Borrow {borrow}": "{borrow} Lenen",
   Borrowed: "Geleend",
   Available: "Beschikbaar",
   "Supply APY": "Storting-APY",
@@ -148,6 +150,8 @@ const dict: TranslationDictionary = {
   "Join waitlist": "Aanmelden voor wachtlijst",
   "Previous page": "Vorige pagina",
   "Next page": "Volgende pagina",
+  "Transactions pagination": "Paginering van transacties",
+  "Changelog pagination": "Paginering van wijzigingslogboek",
   "{page} of {count}": "{page} van {count}",
   "Max APY": "Max. APY",
   "Max Leverage": "Max. hefboom",
@@ -270,7 +274,6 @@ const dict: TranslationDictionary = {
   "Insufficient balance": "Onvoldoende saldo",
   "Insufficient liquidity": "Onvoldoende liquiditeit",
   "Insufficient LP": "Onvoldoende LP",
-  "Deposit collateral first": "Stort eerst onderpand",
   "Borrowing unavailable": "Lenen niet beschikbaar",
   "Try a smaller amount": "Probeer een kleiner bedrag",
   "Supply cap reached": "Aanbodlimiet bereikt",
@@ -279,6 +282,8 @@ const dict: TranslationDictionary = {
   "Not available here": "Hier niet beschikbaar",
   "Nothing to claim": "Niets te claimen",
   "Select rewards": "Beloningen selecteren",
+  "No collateral": "Geen onderpand",
+  "No position": "Geen positie",
   "Nothing to withdraw": "Niets op te nemen",
   "and the Avana team will follow up. You can submit another request any time.":
     "en het Avana-team neemt contact met je op. Je kunt op elk moment een nieuw verzoek indienen.",
@@ -394,7 +399,6 @@ const dict: TranslationDictionary = {
   "Daily Interest": "Dagelijkse rente",
   day: "dag",
   "Deposit {symbol}": "Storten {symbol}",
-  "Deposit LP collateral before borrowing {symbol}.": "Stort LP-onderpand voordat je {symbol} leent.",
   Done: "Klaar",
   Expiration: "Vervaldatum",
   Expired: "Verlopen",
@@ -403,7 +407,6 @@ const dict: TranslationDictionary = {
   "Generating link...": "Link genereren...",
   "Go back": "Terug",
   GOOD: "GOED",
-  "Got it": "Begrepen",
   "Health Factor": "Health Factor",
   "I read it": "Ik heb het gelezen",
   "In this sandbox, every transaction is simulated — use previews to learn before sizing up.":
@@ -558,6 +561,10 @@ const dict: TranslationDictionary = {
   "Lend Rewards": "Uitleenbeloningen",
   "Multiply Overview": "Multiply-overzicht",
   "Multiply Positions": "Multiply-posities",
+  "Debt & Risk": "Schuld en risico",
+  "Position size, multiplier, and current net yield": "Positiegrootte, multiplier en huidig nettorendement",
+  "Borrowed balance, health factor, and liquidation threshold": "Geleend saldo, gezondheidsfactor en liquidatiedrempel",
+  "No active Multiply debt": "Geen actieve Multiply-schuld",
   "Loading your portfolio": "Je portfolio laden",
   "We couldn't load your portfolio": "We konden je portfolio niet laden",
   "The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard.":
@@ -1060,6 +1067,7 @@ const dict: TranslationDictionary = {
   "This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.":
     "In deze risicovrije Avana-sandbox kun je lenen tegen oefen-LP-posities, uitlenen en strategieën loopen met sandboxgeld. Geen echte assets. Geen wallet-handtekeningen. Gewoon een snelle manier om te begrijpen hoe Avana werkt voordat je naar de live app overschakelt.",
   "Unlimited practice funds": "Onbeperkt oefengeld",
+  "No transactions yet": "Nog geen transacties",
   "No transactions to sign": "Geen transacties om te ondertekenen",
   "No real assets involved": "Geen echte activa",
   "Connect a wallet.": "Verbind een wallet.",
@@ -1138,6 +1146,7 @@ const dict: TranslationDictionary = {
   "We couldn't load this page.": "We konden deze pagina niet laden.",
   "Active Deficit": "Actief tekort",
   "Active stake": "Actieve stake",
+  "Includes active stake and cooldown": "Inclusief actieve stake en cooldown",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "Bedrag dat Avana eerst dekt voordat door gebruikers gestakete dekking wordt blootgesteld. Stakers dragen pas verlies wanneer gerealiseerde tekorten deze offset overschrijden.",
   "Close umbrella actions": "Protectie-acties sluiten",
@@ -1173,9 +1182,11 @@ const dict: TranslationDictionary = {
   "Previous market risk": "Vorig marktrisico",
   Ready: "Klaar",
   "Removes in": "Verwijderd over",
+  Restart: "Opnieuw",
   "Restart cooldown": "Cooldown opnieuw starten",
   Stake: "Stake",
   "Stake in umbrella": "Staken in Protectie",
+  "Unstake from umbrella": "Unstaken uit Protectie",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "Stake, claim beloningen, start de cooldown of unstake uit de Protectie-veiligheidsmodule.",
   "Stake, claim, cooldown, unstake": "Staken, claimen, cooldown, unstaken",
@@ -1183,6 +1194,7 @@ const dict: TranslationDictionary = {
     "Start de cooldown voordat je opneemt. Tijdens de cooldown blijft de positie incentives verdienen en blijft ze onderworpen aan slashing.",
   Target: "Doel",
   "Total coverage": "Totale dekking",
+  "Total position value": "Totale positiewaarde",
   "Total user-staked capital available to absorb losses for this asset.":
     "Totaal door gebruikers gestaket kapitaal beschikbaar om verliezen op dit asset op te vangen.",
   Umbrella: "Protectie",
@@ -1283,6 +1295,9 @@ const dict: TranslationDictionary = {
   "In range": "Binnen bereik",
   "Interest / day": "Rente / dag",
   "Key Statistics": "Belangrijkste statistieken",
+  "Market Rates": "Marktrentes",
+  "Utilization Rate": "Benuttingsgraad",
+  "Borrow amount to reach {value} Util.": "Leenbedrag om {value} benutting te bereiken.",
   "Large price difference": "Groot prijsverschil",
   "Lend Assets": "Activa uitlenen",
   "Lend Balance": "Uitleensaldo",
@@ -1353,6 +1368,8 @@ const dict: TranslationDictionary = {
   "Repay or add collateral to reduce your liquidation risk.":
     "Betaal af of voeg onderpand toe om je liquidatierisico te verlagen.",
   "Review risk": "Risico bekijken",
+  "Negative net APY: borrow costs exceed supply yield. Review before opening this loop.":
+    "Negatieve netto-APY: leenkosten overschrijden supply-rendement. Beoordeel voordat u deze loop opent.",
   "Review swap": "Swap controleren",
   "Rewards Earned": "Verdiende beloningen",
   "Scenario price": "Scenarioprijs",
@@ -1486,6 +1503,161 @@ const dict: TranslationDictionary = {
   "Next rewards": "Volgende beloningen",
   "Open on Launch Date": "Opent op de lanceringsdatum",
   "Previous rewards": "Vorige beloningen",
+  "The asset you've borrowed against your collateral.": "Het asset dat je hebt geleend tegen je onderpand.",
+  "Your outstanding loan balance in this asset, valued live.":
+    "Je uitstaande leningsaldo in dit asset, live gewaardeerd.",
+  "A token held directly in your connected wallet.":
+    "Een token dat rechtstreeks in je verbonden wallet wordt aangehouden.",
+  "The amount of this token in your wallet.": "De hoeveelheid van dit token in je wallet.",
+  "The token balance valued at its live price.": "Het tokensaldo, gewaardeerd tegen de live prijs.",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.":
+    "Een liquiditeitspoolpositie die je aanhoudt, gekoppelde tokens verstrekt aan een DEX.",
+  "Whether the position's price range is active and earning fees.":
+    "Of het prijsbereik van de positie actief is en vergoedingen verdient.",
+  "The current value of your pooled tokens.": "De huidige waarde van je gepoolde tokens.",
+  "Trading fees this position has earned, claimable to your wallet.":
+    "Handelskosten die deze positie heeft verdiend, claimbaar naar je wallet.",
+  "The token you've supplied to earn lending yield.":
+    "Het token dat je hebt verstrekt om uitleenrendement te verdienen.",
+  "Your supplied balance in this asset, valued at its live price.":
+    "Je verstrekte saldo in dit asset, gewaardeerd tegen de live prijs.",
+  "Current annual percentage yield on your deposit, before protocol rewards.":
+    "Huidig jaarlijks rendementspercentage op je storting, vóór protocolbeloningen.",
+  "The collateral asset backing your borrowing, valued at its live price.":
+    "Het onderpandasset dat je lening dekt, gewaardeerd tegen de live prijs.",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.":
+    "Hoeveel je nog kunt lenen tegen dit onderpand; het % toont hoeveel van je liquidatielimiet al is gebruikt.",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.":
+    "Gezondheidsfactor, en de onderpandwaarde waarbij deze positie wordt geliquideerd. Onder 1.0 volgt liquidatie.",
+  "The collateral you supply and the asset you borrow against it to build leverage.":
+    "Het onderpand dat je verstrekt en het asset dat je ertegen leent om hefboom op te bouwen.",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.":
+    "Je eigen kapitaal in de loop (blootstelling minus schuld). Blootstelling is je totale hefboompositie.",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.":
+    "Nettorendement na leenkosten, op je kapitaal. Het cijfer hieronder is de tot nu toe verdiende rente, die live oploopt.",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.":
+    "Gezondheidsfactor, en de onderpandprijs waarbij deze loop wordt geliquideerd. Onder 1.0 volgt liquidatie.",
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)":
+    "Netto carry verdiend over je Multiply-loops, die in real time oploopt (supply-rendement minus leenkosten)",
+  "Average APY across your staked positions, weighted by value.":
+    "Gemiddelde APY over je gestakete posities, gewogen naar waarde.",
+  "Additional amount you can borrow against your pledged collateral within Avana credit limits":
+    "Extra bedrag dat je kunt lenen tegen je verpande onderpand binnen de Avana-kredietlimieten",
+  "Amount an active loan can lose before reaching liquidation; unavailable when you have no debt":
+    "Bedrag dat een actieve lening kan verliezen voordat liquidatie volgt; niet beschikbaar als je geen schuld hebt",
+  "Combined liquidation value divided by total Multiply debt. Higher is safer; below 1 risks liquidation.":
+    "Gecombineerde liquidatiewaarde gedeeld door totale Multiply-schuld. Hoger is veiliger; onder 1 is er risico op liquidatie.",
+  "Equity-weighted net APY after supply yield and borrow cost":
+    "Netto-APY gewogen naar eigen vermogen, na supply-rendement en leenkosten",
+  "Exposure, return, and liquidation risk for each active loop":
+    "Blootstelling, rendement en liquidatierisico voor elke actieve loop",
+  "Gross Multiply exposure after looping across all positions":
+    "Bruto Multiply-blootstelling na looping over alle posities",
+  "Interest earned as a percentage of principal you supplied":
+    "Rente verdiend als percentage van de hoofdsom die je hebt verstrekt",
+  "Portfolio leverage as position value divided by equity":
+    "Portefeuillehefboom als positiewaarde gedeeld door eigen vermogen",
+  "Projected earnings at current rates": "Geprojecteerde opbrengsten tegen de huidige rentes",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)":
+    "Supply-rente die in real time oploopt over je uitleenposities (exclusief protocolbeloningen)",
+  "Wallet-wide liquidation value divided by total borrowed. Higher is safer; below 1 risks liquidation.":
+    "Wallet-brede liquidatiewaarde gedeeld door totaal geleend. Hoger is veiliger; onder 1 is er risico op liquidatie.",
+  "Prices may be stale": "Prijzen kunnen verouderd zijn",
+  "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.":
+    "De huidige jaarlijkse leenrente op deze schuld. Hieronder de tot nu toe opgebouwde rente, die live oploopt.",
+  "Total AVA you've earned across completed quests and staking rewards.":
+    "Totale AVA die je hebt verdiend uit voltooide quests en staking-beloningen.",
+  "AVA you can claim to your wallet right now.": "AVA die je op dit moment naar je wallet kunt claimen.",
+  "Core Concepts": "Kernconcepten",
+  "What is Avana?": "Wat is Avana?",
+  "Protocol overview": "Protocoloverzicht",
+  "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.":
+    "Avana is een leenprotocol met LP-onderpand, gebouwd rond de Hub-and-Spoke-architectuur van Aave v4.",
+  "Why it exists": "Waarom het bestaat",
+  "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.":
+    "Het doel is liquiditeitsverschaffers te laten lenen tegen actieve posities zonder eerst de poolpositie af te wikkelen.",
+  "What does the Borrow Spoke do?": "Wat doet de Borrow Spoke?",
+  "LP-specific underwriting": "LP-specifieke underwriting",
+  "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.":
+    "Borrow Spokes waarderen ondersteunde posities, bewaken de health en sturen het liquidatiegedrag voor LP-onderpand.",
+  "Shared coordination": "Gedeelde coördinatie",
+  "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.":
+    "De Hub coördineert gedeelde liquiditeit en schuldadministratie, terwijl de spoke de LP-specifieke logica afhandelt.",
+  "Borrowing Capacity & Valuation": "Leencapaciteit & waardering",
+  "How is borrowing capacity calculated?": "Hoe wordt leencapaciteit berekend?",
+  "Adjusted collateral value": "Aangepaste onderpandwaarde",
+  "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.":
+    "Elke goedgekeurde LP-positie wordt onafhankelijk gewaardeerd; daarna worden collateral factors en poolspecifieke risicocontroles toegepast.",
+  "Aggregated in the spoke": "Geaggregeerd in de spoke",
+  "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.":
+    "De spoke aggregeert goedgekeurde posities tot leencapaciteit en de Hub handhaaft het resultaat.",
+  "Why did my capacity change?": "Waarom is mijn capaciteit veranderd?",
+  "Market movement": "Marktbeweging",
+  "Capacity can change when the underlying assets move or when recoverable value shifts.":
+    "Capaciteit kan veranderen wanneer de onderliggende assets bewegen of wanneer de terugvorderbare waarde verschuift.",
+  "Risk settings": "Risico-instellingen",
+  "Collateral factors and market-specific risk settings can also change the amount shown in the interface.":
+    "Collateral factors en marktspecifieke risico-instellingen kunnen ook het bedrag in de interface wijzigen.",
+  "Health & Liquidation": "Health & liquidatie",
+  "What is the health factor?": "Wat is de health factor?",
+  "How to read health": "Health aflezen",
+  "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.":
+    "De health factor drukt de relatie uit tussen aangepaste onderpandwaarde en uitstaande schuld binnen één Borrow Spoke.",
+  "What it means for users": "Wat het betekent voor gebruikers",
+  "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
+    "Naarmate de buffer krimpt, wordt de positie meer blootgesteld aan liquidatie als marktomstandigheden tegenwerken.",
+  "When can liquidation happen?": "Wanneer kan liquidatie plaatsvinden?",
+  Triggers: "Uitlokkers",
+  "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
+    "Als marktbewegingen de health genoeg verzwakken, kan de positie liquideerbaar worden volgens de regels van de spoke.",
+  "What happens next": "Wat er daarna gebeurt",
+  "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.":
+    "De spoke bewaakt risico continu en stuurt liquidatiegedrag, terwijl de Hub de reserves gecoördineerd houdt.",
+  "Leverage Markets": "Hefboommarkten",
+  "How do leverage markets work?": "Hoe werken hefboommarkten?",
+  "LP-backed exposure": "LP-gedekte exposure",
+  "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.":
+    "Hefboommarkten laten Avana LP-gedekt lenen en directionele exposure ondersteunen in een meer gespecialiseerde workflow.",
+  "Position stacking": "Positiestapeling",
+  "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
+    "Leencapaciteit kan worden geaggregeerd uit meerdere goedgekeurde posities binnen dezelfde Borrow Spoke.",
+  "Can one account use multiple LP positions?": "Kan één account meerdere LP-posities gebruiken?",
+  "Multiple positions": "Meerdere posities",
+  "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
+    "Ja. Eén account kan ondersteunde LP-posities combineren zolang elke positie de controles van het protocol doorstaat.",
+  "Per-position risk": "Risico per positie",
+  "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
+    "Elke positie wordt op eigen voorwaarden beoordeeld voordat deze in de uiteindelijke leencapaciteit wordt opgenomen.",
+  "Fees & Interface Policy": "Kosten & interfacebeleid",
+  "Are interface fees fixed across all integrations?": "Zijn interfacekosten vast voor alle integraties?",
+  "Operational settings": "Operationele instellingen",
+  "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
+    "Exacte tarieven, vrijstellingen en rollout-status zijn operationele instellingen en moeten in de live interface worden gecontroleerd.",
+  "Integration differences": "Integratieverschillen",
+  "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
+    "Directe integraties of third-party frontends kunnen andere aannames volgen, dus controleer altijd de interface die je gebruikt.",
+  "What counts as protocol economics vs interface policy?": "Wat telt als protocoleconomie vs. interfacebeleid?",
+  "Protocol layer": "Protocollaag",
+  "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
+    "Kernwaardering van onderpand, schuldcontroles en liquidatiepaden zitten op de protocollaag.",
+  "Interface layer": "Interfacelaag",
+  "The frontend can present policy, routing, and support flows differently from one integration to another.":
+    "De frontend kan beleid, routing en supportflows per integratie anders presenteren.",
+  "Risk & Security": "Risico & beveiliging",
+  "What are the main risks?": "Wat zijn de belangrijkste risico's?",
+  "Market and liquidity risk": "Markt- en liquiditeitsrisico",
+  "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.":
+    "De belangrijkste risico's zijn marktbewegingen in onderliggende assets, impermanent loss en range-drift bij geconcentreerde posities.",
+  "Liquidation risk": "Liquidatierisico",
+  "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.":
+    "Als de health-buffer verzwakt terwijl er nog schuld openstaat, kan de positie liquideerbaar worden.",
+  "How should I think about security?": "Hoe moet ik over beveiliging denken?",
+  "Protocol guidance": "Protocolrichtlijnen",
+  "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.":
+    "Wees even voorzichtig als bij elke LP-positie en volg de risicorichtlijnen van het protocol nauwgezet.",
+  "Support request": "Supportverzoek",
+  "If something looks off, send the details and our team can help you triage the issue.":
+    "Als iets er niet klopt, stuur de details — ons team helpt je het probleem te beoordelen.",
 }
 
 export default dict

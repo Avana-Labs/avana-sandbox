@@ -75,7 +75,7 @@ export function buildMultiplyOverCapPreviewUi(options: {
     rateLabel: "",
     rateValue: "",
     marketLabel: "Market",
-    marketValue: options.marketLabel,
+    marketValue: "",
     balanceLabel: "Balance",
     balanceValue: formatActionAmount(options.maxCollateralAmount, options.collateralSymbol, 6),
     maxAmount: options.maxCollateralAmount,

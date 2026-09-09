@@ -15,8 +15,7 @@ import { useTheme } from "./theme-provider"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useEffect, useState } from "react"
 
-const triggerClassName =
-  "inline-flex size-10 items-center justify-center rounded-full border border-border bg-background text-muted-foreground outline-none transition-colors hover:bg-hover hover:text-foreground focus:outline-none focus-visible:outline-none dark:bg-[#181818] dark:text-white/72 dark:hover:bg-surface-hover dark:hover:text-white [-webkit-tap-highlight-color:transparent]"
+import { preferencesTriggerClassName } from "./desktop-preference-trigger"
 
 type PreferencesView = "root" | "language" | "currency" | "network"
 
@@ -29,12 +28,12 @@ const NETWORK_OPTIONS = [
   { code: "Robinhood", label: "Robinhood", unavailable: true },
 ] as const
 
-export function DesktopPreferenceControls() {
+export function DesktopPreferenceMenu({ initialOpen = false }: { initialOpen?: boolean }) {
   const { currency, language, setCurrency, setLanguage } = useLocaleDisplayPreferences()
   const { resolvedTheme, setTheme } = useTheme()
   const { t } = useTranslation()
   const [mounted, setMounted] = useState(false)
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(initialOpen)
   const [view, setView] = useState<PreferencesView>("root")
 
   useEffect(() => {
@@ -47,6 +46,7 @@ export function DesktopPreferenceControls() {
 
   return (
     <DropdownMenu
+      modal={false}
       open={open}
       onOpenChange={(nextOpen) => {
         setOpen(nextOpen)
@@ -54,7 +54,12 @@ export function DesktopPreferenceControls() {
       }}
     >
       <DropdownMenuTrigger asChild>
-        <button type="button" aria-label={t("Open preferences")} title={t("Preferences")} className={triggerClassName}>
+        <button
+          type="button"
+          aria-label={t("Open preferences")}
+          title={t("Preferences")}
+          className={preferencesTriggerClassName}
+        >
           <MoreHorizontal className="size-5" strokeWidth={2.35} />
         </button>
       </DropdownMenuTrigger>

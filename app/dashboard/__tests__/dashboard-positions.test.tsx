@@ -55,18 +55,18 @@ vi.mock("@/app/dashboard/borrow-tab/supplies-table", () => ({
   SuppliesHealthFactorCard: () => null,
   SuppliesPanel: ({
     rows,
-    onBorrowMore,
+    onClaimFees,
     onAddCollateral,
     onRemove,
   }: {
     rows: Array<typeof supplyRow>
-    onBorrowMore: (row: typeof supplyRow) => void
+    onClaimFees: (row: typeof supplyRow) => void
     onAddCollateral: (row: typeof supplyRow) => void
     onRemove: (row: typeof supplyRow) => void
   }) => (
     <div>
-      <button type="button" onClick={() => onBorrowMore(rows[0]!)}>
-        open-borrow
+      <button type="button" onClick={() => onClaimFees(rows[0]!)}>
+        open-claim
       </button>
       <button type="button" onClick={() => onAddCollateral(rows[0]!)}>
         open-supply
@@ -108,8 +108,8 @@ describe("DashboardBorrowTab", () => {
   it("routes dashboard supply actions to shared action pages", () => {
     render(<DashboardBorrowTab section="supplies" collateralPositions={[supplyRow] as never} returnHref="/dashboard" />)
 
-    fireEvent.click(screen.getByText("open-borrow"))
-    expect(push).toHaveBeenCalledWith("/actions/borrow/borrow?market=uni-v3-bluechip-weth-usdc&return=%2Fdashboard")
+    fireEvent.click(screen.getByText("open-claim"))
+    expect(push).toHaveBeenCalledWith("/actions/borrow/claim?market=uni-v3-bluechip-weth-usdc&return=%2Fdashboard")
 
     fireEvent.click(screen.getByText("open-supply"))
     expect(push).toHaveBeenCalledWith("/actions/borrow/supply?market=uni-v3-bluechip-weth-usdc&return=%2Fdashboard")

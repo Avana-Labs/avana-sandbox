@@ -97,12 +97,12 @@ function MerklMysteryCard({ amount }: { amount: number }) {
 
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <AvaCoin size={22} />
-          <span className="font-data text-[22px] font-bold leading-none tracking-tight text-foreground">
+          <span className="font-data text-[22px] font-normal leading-none tracking-tight text-foreground">
             {formatAvaAmount(amount)}
           </span>
         </div>
 
-        <div className="mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-radius-sm bg-muted/60 px-3 text-[13px] font-bold text-muted-foreground [&_svg]:size-4">
+        <div className="mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-radius-sm bg-muted/60 px-3 text-[13px] font-normal text-muted-foreground [&_svg]:size-4">
           <LockKeyhole />
           {t("Locked")}
         </div>

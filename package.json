@@ -13,8 +13,9 @@
     "uuid": "^11.1.1",
     "axios": "^1.18.0",
     "nanoid": "^3.3.18",
-    "sharp": "^0.35.3",
-    "socket.io-parser": "^4.2.7"
+    "sharp": "^0.35.4",
+    "socket.io-parser": "^4.2.7",
+    "browserslist": "^4.28.9"
   },
   "optionalDependencies": {
     "@rolldown/binding-linux-x64-gnu": "1.2.1"
@@ -59,11 +60,13 @@
     "test:stress:ask-ai": "RUN_ASK_AI_1000_CONCURRENCY=1 vitest run convex/ask-ai-1000-concurrency.test.ts",
     "start": "node scripts/run-next.mjs start",
     "lighthouse:budgets": "node scripts/lighthouse-budgets.mjs",
-    "lighthouse:build": "AVANA_NEXT_DIST_DIR=.next-lighthouse NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE=1 NEXT_PUBLIC_LIGHTHOUSE_AUDIT_ARTIFACT=1 npm run build",
+    "lighthouse:build": "AVANA_PERF_SOURCEMAPS=1 AVANA_NEXT_DIST_DIR=.next-lighthouse NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE=1 NEXT_PUBLIC_LIGHTHOUSE_AUDIT_ARTIFACT=1 npm run build",
+    "perf:bundle-budget": "node scripts/check-home-bundle-budget.mjs",
     "lighthouse:serve": "AVANA_NEXT_DIST_DIR=.next-lighthouse NEXT_PUBLIC_LIGHTHOUSE_AUDIT_MODE=1 NEXT_PUBLIC_LIGHTHOUSE_AUDIT_ARTIFACT=1 npm run start -- --port 3001",
     "lighthouse:gpu": "LH_ENABLE_GPU=1 LH_OUTPUT_DIR=.artifacts/lighthouse-gpu npm run lighthouse:budgets",
     "lighthouse:analyze": "node scripts/analyze-lighthouse-bundles.mjs",
-    "perf:instant-paint-baseline": "node scripts/instant-paint-baseline.mjs"
+    "perf:instant-paint-baseline": "node scripts/instant-paint-baseline.mjs",
+    "security:dependencies": "node scripts/dependency-baseline.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.44",
@@ -94,7 +97,7 @@
     "convex-helpers": "^0.1.103",
     "framer-motion": "^12.43.0",
     "lucide-react": "^1.33.0",
-    "next": "^16.2.12",
+    "next": "^16.3.3",
     "radix-ui": "^1.6.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -110,8 +113,8 @@
   "devDependencies": {
     "@edge-runtime/vm": "^5.0.0",
     "@eslint/js": "^10.0.1",
-    "@next/bundle-analyzer": "^16.3.1",
-    "@next/eslint-plugin-next": "^16.2.12",
+    "@next/bundle-analyzer": "^16.3.3",
+    "@next/eslint-plugin-next": "^16.3.3",
     "@playwright/test": "^1.62.1",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",

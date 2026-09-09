@@ -114,14 +114,11 @@ export function shouldDisablePrimaryCta(options: {
   isValid: boolean
   isPending: boolean
   blockedReason?: string | null
-  /** When the block routes the user elsewhere (e.g. pledge collateral) the CTA
-   *  stays active so the tap can navigate — don't disable it. */
-  blockedRedirect?: boolean
 }) {
   if (options.isPending) return true
   if (isProcessingStage(options.stage)) return true
   if (options.stage === "wallet_sign" || options.stage === "approve_allowance") return true
-  if (options.blockedReason && !options.blockedRedirect) return true
+  if (options.blockedReason) return true
   if (options.stage === "configure" && !options.isValid) return true
   if (options.stage === "review" && !options.isValid) return true
   return false

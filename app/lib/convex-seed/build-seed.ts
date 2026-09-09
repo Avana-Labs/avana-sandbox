@@ -21,6 +21,7 @@ import { computeAssetAllocationRows } from "@/app/lib/borrow-detail/allocation"
 import { resolveBorrowablesForPool } from "@/app/lib/borrow-detail/cross-market"
 import { buildInterestRateModelParams } from "@/app/lib/borrow-detail/protocol-parameters"
 import { buildRiskParameterSet } from "@/app/lib/borrow-detail/risk-parameters"
+import { buildParameterChangeRows, type SeedParameterChangeRow } from "./build-parameter-changes"
 import {
   buildAssetRiskAssessment,
   buildLendRiskAssessment,
@@ -258,6 +259,7 @@ export type SeedData = {
   lendInterestRateModels: SeedInterestRateModelRow[]
   multiplyRiskParameters: SeedRiskParameterRow[]
   multiplyLiquidationDaily: SeedLiquidationDailyRow[]
+  parameterChanges: SeedParameterChangeRow[]
 
   // ---------------------------------------------------------------------------
   // Phase C additions — one field per new Convex table. All optional so the
@@ -1261,6 +1263,16 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
     multiplyLiquidationDaily.push(...liquidationDailyForSlug(market.id, asOf))
   }
 
+  // Governance "Parameter changelog" — generated from each market's FINAL risk parameters
+  // (borrow caps are resynced to calibrated tips above), so the newest change of every
+  // parameter reconciles with the Risk Parameters grid the detail page renders.
+  const parameterChanges = buildParameterChangeRows({
+    borrow: borrowRiskParameters,
+    lend: lendRiskParameters,
+    multiply: multiplyRiskParameters,
+    updatedAt: asOf,
+  })
+
   return {
     markets,
     borrowMarkets: markets
@@ -1294,6 +1306,7 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
     lendInterestRateModels,
     multiplyRiskParameters,
     multiplyLiquidationDaily,
+    parameterChanges,
 
     // Phase C additions — pre-derived arrays imported from convex-seed/inputs/.
     // These are pure data (byte-for-byte parity with the mock) and don't

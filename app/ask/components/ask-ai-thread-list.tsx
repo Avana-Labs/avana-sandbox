@@ -101,7 +101,7 @@ export function AskAIThreadList({
         </div>
 
         <div className="mt-6 min-h-0 flex-1 overflow-y-auto">
-          <p className="px-2.5 text-xs font-medium text-muted-foreground">Today</p>
+          <p className="px-2.5 text-[12px] font-normal leading-4 text-muted-foreground">Today</p>
           {threads.length === 0 ? (
             <p className="mt-1 px-2.5 text-sm text-muted-foreground">No threads yet</p>
           ) : (
@@ -198,7 +198,7 @@ export function AskAIThreadList({
                 type="button"
                 aria-expanded={showArchived}
                 onClick={() => setShowArchived((current) => !current)}
-                className="px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                className="px-2.5 text-[12px] font-normal leading-4 text-muted-foreground hover:text-foreground"
               >
                 Archived ({archivedThreads.length})
               </button>

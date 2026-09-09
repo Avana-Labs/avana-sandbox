@@ -1,8 +1,8 @@
 import { ConvexHttpClient } from "convex/browser"
 import { DataSourceError } from "@/app/lib/data/core/source-runtime"
-import { getSiweToken } from "@/app/lib/siwe/auth-store"
+import { fetchSiweAccessToken, getSiweSession } from "@/app/lib/siwe/auth-store"
 
-export function getAuthenticatedConvexClient(sourceId: string, operation: string) {
+export function getAuthenticatedWallet(sourceId: string, operation: string) {
   if (typeof window === "undefined") {
     throw new DataSourceError({
       code: "auth",
@@ -21,8 +21,22 @@ export function getAuthenticatedConvexClient(sourceId: string, operation: string
       retryable: true,
     })
   }
-  const token = getSiweToken()
-  if (!token?.jwt || !token.wallet) {
+  const session = getSiweSession()
+  if (!session?.wallet) {
+    throw new DataSourceError({
+      code: "auth",
+      sourceId,
+      operation,
+      message: "Sign in with Ethereum to load wallet data.",
+    })
+  }
+  return { url, wallet: session.wallet.toLowerCase() }
+}
+
+export async function getAuthenticatedConvexClient(sourceId: string, operation: string) {
+  const { url, wallet } = getAuthenticatedWallet(sourceId, operation)
+  const token = await fetchSiweAccessToken()
+  if (!token) {
     throw new DataSourceError({
       code: "auth",
       sourceId,
@@ -31,6 +45,6 @@ export function getAuthenticatedConvexClient(sourceId: string, operation: string
     })
   }
   const client = new ConvexHttpClient(url)
-  client.setAuth(token.jwt)
-  return { client, wallet: token.wallet.toLowerCase() }
+  client.setAuth(token)
+  return { client, wallet }
 }

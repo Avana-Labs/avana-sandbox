@@ -9,6 +9,7 @@ import { MULTIPLY_TOKEN_LOGOS } from "@/app/lib/multiply-sim"
 import { resolveMultiplyTokenLogo } from "@/lib/multiply-token-logo"
 import type { MultiplyMarketRow } from "@/app/lib/multiply-sim"
 import { MULTIPLY_MARKET_CATALOG } from "./catalog"
+import { formatMultiplyLoopPairLabel } from "./market-labels"
 import type { MultiplyTransactionHistoryItem, MultiplyTransactionResult, MultiplyWalletReadSnapshot } from "./contracts"
 import { buildMockMultiplyRiskSnapshots } from "./mock"
 
@@ -258,7 +259,7 @@ export function buildPortfolioMultiplyData(
       return {
         id: position.id,
         marketId: position.marketId,
-        label: `${market.collateralAsset.symbol}/${market.borrowAsset.symbol}`,
+        label: formatMultiplyLoopPairLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
         collateralToken: market.collateralAsset.symbol,
         borrowableToken: market.borrowAsset.symbol,
         multiplier: position.multiplier,
@@ -286,7 +287,7 @@ export function buildPortfolioMultiplyData(
       return {
         id: position.id,
         symbol: market.collateralAsset.symbol,
-        label: `${market.collateralAsset.symbol}/${market.borrowAsset.symbol}`,
+        label: formatMultiplyLoopPairLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
         side: "long" as const,
         leverage: position.multiplier,
         collateralUsd: position.collateralValueUsd,

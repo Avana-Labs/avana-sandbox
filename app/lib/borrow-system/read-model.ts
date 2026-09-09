@@ -111,10 +111,23 @@ export function mapTransactionHistoryToActivityRows(history: TransactionHistoryI
         ? -Math.abs(amountUsd)
         : Math.abs(amountUsd)
 
-    // Prefer the market's friendly pair label (e.g. "WETH / USDC") over the raw
-    // market id, falling back to a readable action label when the catalog is absent.
+    // Debt actions (borrow/repay) are about the BORROWED asset (e.g. GHO), while
+    // collateral actions (pledge/withdraw/claim/liquidate) are about the collateral
+    // pool — the same split the detail transaction tables use. Labelling every row with
+    // the pool made a GHO borrow read as "sDAI / USDC" with a USDC icon on the dashboard.
+    const isDebtAction = item.kind === "borrow" || item.kind === "repay"
     const market = item.marketId && markets ? markets[item.marketId] : undefined
-    const primaryLabel = market ? formatBorrowLpSymbolLabel(market) : (BORROW_KIND_LABEL[item.kind] ?? "Borrow")
+    const poolLabel = market ? formatBorrowLpSymbolLabel(market) : undefined
+    const debtAsset = isDebtAction && item.assetId ? resolveAsset(item.assetId) : null
+
+    const fallbackLabel = BORROW_KIND_LABEL[item.kind] ?? "Borrow"
+    const primaryLabel = isDebtAction
+      ? (debtAsset?.symbol ?? item.assetId?.toUpperCase() ?? fallbackLabel)
+      : (poolLabel ?? fallbackLabel)
+
+    const txContext = item.simulated ? "Simulated transaction" : "On-chain transaction"
+    // Surface the collateral pool as context on debt rows ("… · via sDAI / USDC").
+    const secondaryLabel = isDebtAction && poolLabel ? `${txContext} · via ${poolLabel}` : txContext
 
     return {
       id: item.id,
@@ -129,7 +142,9 @@ export function mapTransactionHistoryToActivityRows(history: TransactionHistoryI
             : ("pending" as const),
       amountUsd: signedAmount,
       primaryLabel,
-      secondaryLabel: item.simulated ? "Simulated transaction" : "On-chain transaction",
+      secondaryLabel,
+      // Icon source: the borrowed asset for debt actions, the collateral pool otherwise.
+      marketId: isDebtAction ? (item.assetId ?? undefined) : (item.marketId ?? undefined),
       txHash: item.hash,
     }
   })

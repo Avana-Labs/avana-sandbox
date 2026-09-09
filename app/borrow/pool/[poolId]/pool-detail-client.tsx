@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { ActionIcon } from "@/app/components/action-icon"
@@ -17,6 +18,9 @@ import { withGovernanceParameterView } from "@/app/borrow/_detail/lib/governance
 import { PoolHero, PoolHeroIdentity, QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
 import { PoolBorrowSidebar } from "@/app/borrow/_detail/sidebars"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { BORROW_POOL_KIND_CONFIG } from "@/app/components/detail-transaction-table/detail-market-transactions"
+import { mapBorrowSessionRows, mapBorrowTxRow } from "@/app/lib/detail-page/transaction-history"
 import {
   DeferredDetailContent,
   detailAnalyticsSectionClass,
@@ -34,8 +38,11 @@ const RiskSection = dynamic(
   () => import("@/app/borrow/_detail/pool-sections/RiskSection").then((mod) => mod.RiskSection),
   { ssr: false },
 )
-const CollateralHistoryCard = dynamic(
-  () => import("@/app/borrow/_detail/pool-sections/CollateralHistoryCard").then((mod) => mod.CollateralHistoryCard),
+const DetailMarketTransactionsDeferred = dynamic(
+  () =>
+    import("@/app/components/detail-transaction-table/detail-market-transactions").then(
+      (mod) => mod.DetailMarketTransactions,
+    ),
   { ssr: false },
 )
 const DetailFaqSection = dynamic(
@@ -64,7 +71,13 @@ export function PoolDetailClient({
   cashflowPreload = null,
 }: Props) {
   const { t } = useTranslation()
+  const session = useBorrowSessionContext()
   const about = withGovernanceParameterView(detail.about, detail.protocolParameters)
+  const seedRows = React.useMemo(() => detail.transactions.map(mapBorrowTxRow), [detail.transactions])
+  const sessionRows = React.useMemo(
+    () => mapBorrowSessionRows(session.transactionHistory, detail.row.id, undefined, "pool"),
+    [detail.row.id, session.transactionHistory],
+  )
 
   return (
     <div className="bg-background">
@@ -128,11 +141,24 @@ export function PoolDetailClient({
                     {detail.liquidationRisk && detail.liquidationRisk.length > 0 ? (
                       <LiquidationRiskSection stats={detail.liquidationRisk} />
                     ) : null}
+                    <DetailMarketTransactionsDeferred
+                      scope="pool"
+                      slug={detail.row.id}
+                      seedRows={seedRows}
+                      sessionRows={sessionRows}
+                      preset="pool"
+                      kindConfig={BORROW_POOL_KIND_CONFIG}
+                      context={{
+                        token0Symbol: detail.hero.visuals[0]?.symbol ?? "",
+                        token1Symbol: detail.hero.visuals[1]?.symbol ?? "",
+                        token0Weight: String(detail.row.constituents[0]?.weight ?? 0.5),
+                        token1Weight: String(detail.row.constituents[1]?.weight ?? 0.5),
+                      }}
+                    />
                     <DetailFaqSection
                       title={t("General FAQs")}
                       items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
                     />
-                    <CollateralHistoryCard transactions={detail.transactions} />
                     <DetailPageNotice product="borrow" />
                   </DeferredDetailContent>
                 </section>

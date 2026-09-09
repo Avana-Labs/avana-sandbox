@@ -49,6 +49,7 @@ export const UMBRELLA_TRANSLATION_KEYS: readonly string[] = [
   "Ready",
   "Remove",
   "Removes in",
+  "Restart",
   "Restart cooldown",
   "Rewards",
   "Sandbox wallet",
@@ -68,6 +69,7 @@ export const UMBRELLA_TRANSLATION_KEYS: readonly string[] = [
   "Umbrella positions are split by asset and network, so each stake token has its own risk and reward profile.",
   "Umbrella positions",
   "Unstake",
+  "Unstake from umbrella",
   "Unstake window",
   "Weighted APY",
   "Withdrawal ready",
@@ -91,7 +93,6 @@ export const UMBRELLA_TRANSLATION_KEYS: readonly string[] = [
   "{pct}% of target",
   "{pct}% of target coverage.",
   "{staked} staked · {target} target",
-  "{symbols} expired — restart cooldown",
   "{time} left",
   "{value} total",
 ]

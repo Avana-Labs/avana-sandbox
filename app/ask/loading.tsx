@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { BrandIcon, BrandLogo } from "@/app/components/brand-logo"
 import { X } from "@/app/components/icons"
-import { AskAILoadingBody } from "./components/ask-ai-skeleton"
+import { AskAIHeaderTitleSkeleton, AskAILoadingBody } from "./components/ask-ai-skeleton"
 
 // Mirror the real /ask chrome (sticky header + full-height body) so the route-level
 // loading state doesn't jump to a different layout when the page hydrates.
@@ -13,7 +13,9 @@ export default function AskAILoading() {
           <BrandIcon className="xl:hidden" />
           <BrandLogo className="hidden xl:inline-flex" />
         </Link>
-        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-lg font-medium">Ask AI</div>
+        <div className="pointer-events-none absolute left-1/2 -translate-x-1/2">
+          <AskAIHeaderTitleSkeleton />
+        </div>
         <Link
           href="/"
           aria-label="Close"

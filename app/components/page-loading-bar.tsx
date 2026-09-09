@@ -5,7 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { PAGE_LOADING_EVENT, triggerPageLoading } from "@/app/lib/page-loading"
 
-const MIN_VISIBLE_MS = 420
+const SHOW_DELAY_MS = 120
 const SAFETY_RESET_MS = 15000
 const INITIAL_PROGRESS = 8
 const MAX_TRICKLE_PROGRESS = 88
@@ -31,13 +31,19 @@ export function PageLoadingBar() {
   const lastRouteKeyRef = useRef(routeKey)
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const rafRef = useRef<number | null>(null)
-  const startedAtRef = useRef<number | null>(null)
+  const showTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const visibleRef = useRef(false)
   const progressRef = useRef(0)
   const progressElementRef = useRef<HTMLDivElement | null>(null)
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
     const stopTimers = () => {
+      if (showTimerRef.current) clearTimeout(showTimerRef.current)
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+      showTimerRef.current = null
+      hideTimerRef.current = null
       if (resetTimerRef.current) {
         clearTimeout(resetTimerRef.current)
         resetTimerRef.current = null
@@ -68,16 +74,24 @@ export function PageLoadingBar() {
     const startLoading = () => {
       stopTimers()
 
-      startedAtRef.current = Date.now()
       writeProgress(INITIAL_PROGRESS)
-      setVisible(true)
-      rafRef.current = requestAnimationFrame(animateProgress)
+      // Cached navigations finish without flashing a loader. Keep an already
+      // visible bar alive when another navigation interrupts the first one.
+      showTimerRef.current = setTimeout(
+        () => {
+          showTimerRef.current = null
+          visibleRef.current = true
+          setVisible(true)
+          rafRef.current = requestAnimationFrame(animateProgress)
+        },
+        visibleRef.current ? 0 : SHOW_DELAY_MS,
+      )
 
       resetTimerRef.current = setTimeout(() => {
         stopTimers()
         setVisible(false)
+        visibleRef.current = false
         writeProgress(0)
-        startedAtRef.current = null
       }, SAFETY_RESET_MS)
     }
 
@@ -124,27 +138,23 @@ export function PageLoadingBar() {
       rafRef.current = null
     }
 
-    const elapsed = startedAtRef.current ? Date.now() - startedAtRef.current : MIN_VISIBLE_MS
-    const remaining = Math.max(0, MIN_VISIBLE_MS - elapsed)
+    if (showTimerRef.current) clearTimeout(showTimerRef.current)
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
+    showTimerRef.current = null
+    hideTimerRef.current = null
+    if (!visibleRef.current) return
 
-    const completeTimer = setTimeout(() => {
-      progressRef.current = 100
-      if (progressElementRef.current) {
-        progressElementRef.current.style.transform = "scaleX(1)"
-      }
-      setTimeout(() => {
-        setVisible(false)
-        progressRef.current = 0
-        if (progressElementRef.current) {
-          progressElementRef.current.style.transform = "scaleX(0)"
-        }
-      }, 180)
-      startedAtRef.current = null
-    }, remaining)
-
-    return () => {
-      clearTimeout(completeTimer)
+    progressRef.current = 100
+    if (progressElementRef.current) {
+      progressElementRef.current.style.transform = "scaleX(1)"
     }
+    hideTimerRef.current = setTimeout(() => {
+      hideTimerRef.current = null
+      visibleRef.current = false
+      setVisible(false)
+      progressRef.current = 0
+      if (progressElementRef.current) progressElementRef.current.style.transform = "scaleX(0)"
+    }, 180)
   }, [routeKey])
 
   return (

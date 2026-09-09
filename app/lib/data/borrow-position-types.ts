@@ -3,6 +3,8 @@ import type { HomeCollateralPool } from "@/app/lib/data/borrow-domain"
 export type DebtRowContext = {
   id?: string
   pool: HomeCollateralPool
+  /** Venue-scoped borrow asset id (e.g. `bal-stable:gho`) — links the row to its asset detail page. */
+  debtAssetId?: string
   debtAssetSymbol: string
   borrowedUsd: number
   liquidationThresholdUsd: number

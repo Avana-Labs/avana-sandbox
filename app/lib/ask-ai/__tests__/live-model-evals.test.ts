@@ -1,6 +1,6 @@
 import { createOpenAI } from "@ai-sdk/openai"
 import { generateText, stepCountIs, tool } from "ai"
-import { describe, expect, it } from "vitest"
+import { afterAll, describe, expect, it } from "vitest"
 import { z } from "zod"
 import { ASK_AI_AGENT_INSTRUCTIONS } from "@/convex/askAIAgent"
 import { ASK_AI_CONFIG } from "../config"
@@ -8,6 +8,14 @@ import { ASK_AI_CONFIG } from "../config"
 const enabled = process.env.RUN_ASK_AI_LIVE_EVALS === "1" && Boolean(process.env.OPENAI_API_KEY)
 const live = enabled ? describe : describe.skip
 const openai = createOpenAI({ apiKey: process.env.OPENAI_API_KEY })
+
+const usageReport: Array<{
+  prompt: string
+  tokens: number
+  cacheRead: number
+  cacheWrite: number
+  durationMs: number
+}> = []
 
 const fixtures = [
   { prompt: "sup", expectedTool: null, required: /(?:hey|hi|help|what)/i },
@@ -30,15 +38,21 @@ const fixtures = [
 ] as const
 
 live("Ask AI live Luna evaluations", () => {
+  afterAll(() => console.warn("Ask AI evaluation usage", JSON.stringify(usageReport)))
   it.each(fixtures)(
     "answers $prompt with the expected grounded behavior",
     async ({ prompt, expectedTool, required }) => {
+      const startedAt = Date.now()
       const calls: string[] = []
       const result = await generateText({
         model: openai(process.env.ASK_AI_MODEL?.trim() || ASK_AI_CONFIG.defaultModel),
         system: ASK_AI_AGENT_INSTRUCTIONS,
         prompt,
         stopWhen: stepCountIs(4),
+        maxOutputTokens: ASK_AI_CONFIG.maxOutputTokens,
+        maxRetries: 0,
+        abortSignal: AbortSignal.timeout(60_000),
+        providerOptions: { openai: { serviceTier: "default", reasoningEffort: ASK_AI_CONFIG.reasoningEffort } },
         tools: {
           read_portfolio: tool({
             description: "Read authoritative wallet balances",
@@ -77,6 +91,13 @@ live("Ask AI live Luna evaluations", () => {
         },
       })
 
+      usageReport.push({
+        prompt,
+        tokens: result.usage.totalTokens ?? 0,
+        cacheRead: result.usage.inputTokenDetails.cacheReadTokens ?? 0,
+        cacheWrite: result.usage.inputTokenDetails.cacheWriteTokens ?? 0,
+        durationMs: Date.now() - startedAt,
+      })
       if (expectedTool) expect(calls).toContain(expectedTool)
       else expect(calls).toHaveLength(0)
       expect(result.text).toMatch(required)

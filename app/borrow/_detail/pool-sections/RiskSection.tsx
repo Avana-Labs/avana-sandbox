@@ -4,7 +4,14 @@ import * as React from "react"
 import type { RiskAssessment } from "@/app/lib/borrow-detail"
 import { formatBpsAsPct, riskLevelLabel } from "@/app/lib/borrow-detail"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { RiskGauge, RiskLevelPill, SectionCard } from "../ui"
+import {
+  RiskGauge,
+  RiskLevelPill,
+  SectionCard,
+  SectionCardCopy,
+  SectionCardPrimaryMetric,
+  SectionCardSupportingLabel,
+} from "../ui"
 import { DeltaPill } from "@/app/components/ui/live/delta-pill"
 import { cn } from "@/lib/utils"
 
@@ -39,10 +46,8 @@ export function RiskSection({ detail }: Props) {
         <div className="flex flex-wrap items-center justify-between gap-6">
           <div className="min-w-0">
             <div className="flex items-baseline gap-2">
-              <span className="font-data text-[26px] font-medium tabular-nums text-foreground md:text-[30px]">
-                {formatBpsAsPct(risk.premiumBps)}
-              </span>
-              <span className="text-[12px] text-muted-foreground">({risk.premiumBps} bps)</span>
+              <SectionCardPrimaryMetric>{formatBpsAsPct(risk.premiumBps)}</SectionCardPrimaryMetric>
+              <SectionCardSupportingLabel>({risk.premiumBps} bps)</SectionCardSupportingLabel>
             </div>
           </div>
           <div className="flex flex-col items-center">
@@ -53,9 +58,9 @@ export function RiskSection({ detail }: Props) {
               size={140}
             />
             {risk.lastReviewed ? (
-              <p className="mt-1 text-[10.5px] text-muted-foreground">
+              <SectionCardSupportingLabel className="mt-1 text-[11px]">
                 {t("Last reviewed {date}").replace("{date}", risk.lastReviewed)}
-              </p>
+              </SectionCardSupportingLabel>
             ) : null}
           </div>
         </div>
@@ -89,14 +94,14 @@ export function RiskSection({ detail }: Props) {
                         <RiskLevelPill level={item.level} size="sm" />
                       </div>
                       {open ? (
-                        <p className="mt-2 max-w-[560px] text-[13px] leading-5 text-muted-foreground">
+                        <SectionCardCopy className="mt-2 max-w-[560px] text-[13px] leading-5">
                           {t(item.description)}
-                        </p>
+                        </SectionCardCopy>
                       ) : null}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                       {relatedMetric ? (
-                        <span className="hidden font-data text-[11.5px] tabular-nums text-muted-foreground sm:inline">
+                        <span className="hidden font-data text-[12px] tabular-nums text-muted-foreground sm:inline">
                           {relatedMetric}
                         </span>
                       ) : null}

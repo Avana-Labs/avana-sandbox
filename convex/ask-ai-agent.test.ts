@@ -129,6 +129,7 @@ describe("Ask AI generated-turn lifecycle", () => {
     const turn = await owner.mutation(api.askAI.beginTurn, {
       threadId: thread.threadId,
       prompt: "What is my liquidation risk?",
+      clientRequestId: "no-canned-answer",
     })
 
     expect(turn).not.toHaveProperty("fallbackResponse")
@@ -182,10 +183,18 @@ describe("Ask AI generated-turn lifecycle", () => {
     const t = askAITest()
     const owner = t.withIdentity({ subject: "ask-guest:burst" })
     const thread = await owner.mutation(api.askAI.create, {})
-    await owner.mutation(api.askAI.beginTurn, { threadId: thread.threadId, prompt: "First question" })
+    await owner.mutation(api.askAI.beginTurn, {
+      threadId: thread.threadId,
+      prompt: "First question",
+      clientRequestId: "burst-first",
+    })
 
     await expect(
-      owner.mutation(api.askAI.beginTurn, { threadId: thread.threadId, prompt: "Second question" }),
+      owner.mutation(api.askAI.beginTurn, {
+        threadId: thread.threadId,
+        prompt: "Second question",
+        clientRequestId: "burst-second",
+      }),
     ).rejects.toMatchObject({ data: { code: "ASK_AI_RATE_LIMITED" } })
   })
 

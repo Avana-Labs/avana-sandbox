@@ -52,6 +52,7 @@ import type * as multiply_markets from "../multiply/markets.js";
 import type * as multiply_riskAssessment from "../multiply/riskAssessment.js";
 import type * as multiply_riskParameters from "../multiply/riskParameters.js";
 import type * as multiply_tokenParameters from "../multiply/tokenParameters.js";
+import type * as parameterChanges from "../parameterChanges.js";
 import type * as prices from "../prices.js";
 import type * as rateLimits from "../rateLimits.js";
 import type * as sandbox_auth from "../sandbox/auth.js";
@@ -133,6 +134,7 @@ declare const fullApi: ApiFromModules<{
   "multiply/riskAssessment": typeof multiply_riskAssessment;
   "multiply/riskParameters": typeof multiply_riskParameters;
   "multiply/tokenParameters": typeof multiply_tokenParameters;
+  parameterChanges: typeof parameterChanges;
   prices: typeof prices;
   rateLimits: typeof rateLimits;
   "sandbox/auth": typeof sandbox_auth;

@@ -6,6 +6,7 @@ import { ActionIcon } from "@/app/components/action-icon"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import { detailSectionStackClass, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { UmbrellaPageSkeleton } from "@/app/components/loading-states"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { UmbrellaMarketId } from "@/app/lib/umbrella-system/use-umbrella-session"
 import { cn } from "@/lib/utils"
@@ -41,17 +42,6 @@ function UmbrellaPageInner() {
   })
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false)
   const [mobileSheetInitialTab, setMobileSheetInitialTab] = useState<UmbrellaMobileSheetTrigger>("stake")
-  const position = umbrella.positions[selectedMarket]
-  // "More" button jumps straight to whichever tab is most useful given wallet state:
-  // ready-to-withdraw > cooling > has-rewards > cooldown-entry.
-  const moreDefaultTab: UmbrellaMobileSheetTrigger =
-    position?.cooldownStatus === "ready"
-      ? "unstake"
-      : position?.cooldownStatus === "cooling"
-        ? "cooldown"
-        : (position?.pendingRewardsUsd ?? 0) > 0
-          ? "claim"
-          : "cooldown"
 
   const openSheet = (tab: UmbrellaMobileSheetTrigger) => {
     setMobileSheetInitialTab(tab)
@@ -86,12 +76,12 @@ function UmbrellaPageInner() {
           <MobileDetailActionBar className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              onClick={() => openSheet(moreDefaultTab)}
-              aria-label={t("More umbrella actions")}
+              onClick={() => openSheet("unstake")}
+              aria-label={t("Unstake from umbrella")}
               className={secondaryCtaClass({ size: "compact", className: "gap-2.5 font-bold [&_svg]:size-5" })}
             >
-              <ActionIcon label={t("More")} />
-              {t("More")}
+              <ActionIcon label={t("Unstake")} />
+              {t("Unstake")}
             </button>
             <button
               type="button"
@@ -117,13 +107,25 @@ function UmbrellaPageInner() {
   )
 }
 
+/**
+ * Single hydration gate (mirrors the dashboard): show ONE layout-matched skeleton
+ * until the umbrella session's own Convex data is ready, then render the real page
+ * in one pass. No per-tile `$0` placeholder flash, and mounting `UmbrellaPageInner`
+ * only after hydration lets its default-market seed read the real positions.
+ */
+function UmbrellaPageGate() {
+  const umbrella = useUmbrellaSessionContext()
+  if (!umbrella.isHydrated) return <UmbrellaPageSkeleton />
+  return <UmbrellaPageInner />
+}
+
 export default function UmbrellaPage() {
   // useSearchParams() requires a Suspense boundary so the page can be statically
   // prerendered (Next.js CSR bailout); without it the production/static-export
   // build fails to prerender /umbrella.
   return (
-    <Suspense fallback={null}>
-      <UmbrellaPageInner />
+    <Suspense fallback={<UmbrellaPageSkeleton />}>
+      <UmbrellaPageGate />
     </Suspense>
   )
 }

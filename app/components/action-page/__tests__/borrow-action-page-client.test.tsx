@@ -4,6 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
 import { BorrowActionPageClient } from "@/app/components/action-page/borrow-action-page-client"
+import { listSpokeBorrowables } from "@/app/lib/borrow-system/registry"
+
+const push = vi.fn()
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push, replace: vi.fn(), back: vi.fn() }),
+}))
 
 // The action client now consults wagmi (via useWrongNetwork) to gate submission. These unit
 // tests render it without a WagmiProvider, so stub the two hooks the guard uses; "disconnected"
@@ -18,6 +25,7 @@ const renderWithProviders = (ui: ReactNode) => render(<DisplayPreferencesProvide
 describe("BorrowActionPageClient", () => {
   beforeEach(() => {
     window.localStorage.clear()
+    push.mockClear()
   })
 
   afterEach(() => {
@@ -154,5 +162,78 @@ describe("BorrowActionPageClient", () => {
     expect(screen.queryByText(/\$4,2\d\d/)).not.toBeInTheDocument()
     expect(screen.queryByText(/health factor/i)).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Review" })).not.toBeInTheDocument()
+  })
+
+  it("scopes asset-detail collateral picker to the spoke and navigates on switch", async () => {
+    const gho = listSpokeBorrowables().find((asset) => asset.id === "bal-stable:gho")
+    expect(gho).toBeTruthy()
+    const initialMarketId = gho!.marketIds[0]
+    expect(initialMarketId).toBeTruthy()
+    expect(gho!.marketIds.length).toBeGreaterThan(1)
+
+    renderWithProviders(
+      <AvanaSessionsProvider>
+        <BorrowActionPageClient
+          kind="borrow"
+          embedded
+          sidebar
+          closeHref="/borrow/assets/bal-stable%3Agho"
+          initialMarketId={initialMarketId}
+          initialAssetId="bal-stable:gho"
+        />
+      </AvanaSessionsProvider>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Change asset, current GHO" })).toBeInTheDocument()
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId("action-context-selector-card")).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByTestId("action-context-selector-card"))
+
+    const dialog = await screen.findByRole("dialog", { name: /Choose collateral/i })
+    const poolButtons = within(dialog)
+      .getAllByRole("button")
+      .filter((button) => /Balancer/i.test(button.textContent ?? ""))
+    expect(poolButtons.length).toBeGreaterThan(1)
+    expect(poolButtons.every((button) => !/Uniswap/i.test(button.textContent ?? ""))).toBe(true)
+
+    // Navigate the whole details page to another Balancer Stable collateral.
+    fireEvent.click(poolButtons[1]!)
+
+    await waitFor(() => {
+      expect(push).toHaveBeenCalled()
+    })
+    const href = String(push.mock.calls.at(-1)?.[0] ?? "")
+    expect(href).toMatch(/^\/borrow\/markets\/bal-stable/)
+    expect(href).not.toBe(`/borrow/markets/${initialMarketId}`)
+  })
+
+  it("keeps GHO selected on asset detail even when the wallet's first pledged pool is another spoke", async () => {
+    const gho = listSpokeBorrowables().find((asset) => asset.id === "bal-stable:gho")
+    expect(gho).toBeTruthy()
+    const initialMarketId = gho!.marketIds.find((id) => id.includes("usdc-dai-usdt")) ?? gho!.marketIds[0]
+    expect(initialMarketId).toBeTruthy()
+
+    renderWithProviders(
+      <AvanaSessionsProvider walletId="demo-wallet">
+        <BorrowActionPageClient
+          kind="borrow"
+          embedded
+          sidebar
+          closeHref="/borrow/assets/bal-stable%3Agho"
+          initialMarketId={initialMarketId}
+          initialAssetId="bal-stable:gho"
+        />
+      </AvanaSessionsProvider>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Change asset, current GHO" })).toBeInTheDocument()
+    })
+    expect(screen.queryByRole("button", { name: /Change asset, current USDC/i })).not.toBeInTheDocument()
   })
 })

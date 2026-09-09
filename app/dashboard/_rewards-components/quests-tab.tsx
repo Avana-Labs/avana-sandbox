@@ -99,18 +99,18 @@ function AvanaQuestCard({
 
       <Card className="flex flex-1 flex-col items-center rounded-radius-md border border-border/60 bg-card p-3 text-center shadow-none">
         <h3
-          className={`line-clamp-2 text-[13px] font-semibold leading-4 tracking-[-0.02em] text-foreground ${isClaimed ? "opacity-55" : ""}`}
+          className={`line-clamp-2 text-[13px] font-normal leading-4 tracking-[-0.02em] text-foreground ${isClaimed ? "opacity-55" : ""}`}
         >
           {t(quest.title)}
         </h3>
-        <p className={`mt-1 line-clamp-1 text-[11px] leading-4 text-muted-foreground ${isClaimed ? "opacity-55" : ""}`}>
+        <p className={`mt-1 line-clamp-1 text-[13px] leading-4 text-muted-foreground ${isClaimed ? "opacity-55" : ""}`}>
           {t(metaLine)}
         </p>
 
         {/* The prize — coin + amount, the hero of the card. */}
         <div className={`mt-2.5 flex items-center justify-center gap-1.5 ${isClaimed ? "opacity-55" : ""}`}>
           <AvaCoin size={22} />
-          <span className="font-data text-[22px] font-bold leading-none tracking-tight text-foreground">
+          <span className="font-data text-[22px] font-normal leading-none tracking-tight text-foreground">
             {rewardValue}
           </span>
         </div>
@@ -123,7 +123,7 @@ function AvanaQuestCard({
             }
           }}
           disabled={isDisabled}
-          className={`mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-radius-sm px-3 text-[13px] font-bold transition-colors [&_svg]:size-4 ${
+          className={`mt-3 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-radius-sm px-3 text-[13px] font-normal transition-colors [&_svg]:size-4 ${
             isClaimable
               ? "bg-brand text-white shadow-sm hover:bg-brand/90"
               : isDisabled

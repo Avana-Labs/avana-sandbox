@@ -12,6 +12,7 @@ import {
   useSwapSessionContext,
   useUmbrellaSessionContext,
 } from "@/app/lib/avana-session/avana-sessions-provider"
+import { pendingUmbrellaPersistAction } from "@/app/lib/umbrella-system/use-umbrella-session"
 
 // Performance fix A1: each product session hook returned a bare object literal with no
 // useMemo, so every AvanaSessionsProvider re-render minted new identities for all six
@@ -96,6 +97,11 @@ describe("session render isolation (perf A1)", () => {
           persistUmbrellaState={false}
           sessionSource="convex"
           authoritativeWalletPending
+          // Umbrella is decoupled from authoritativeWalletPending — it gates on its
+          // OWN Convex query instead. Production always supplies a persist action, so
+          // pass one here: with no remote snapshot yet, umbrella reads as unhydrated
+          // (skeleton), matching the other sessions' pending state.
+          persistUmbrellaAction={pendingUmbrellaPersistAction}
         >
           <Consumers />
         </AvanaSessionsProvider>,

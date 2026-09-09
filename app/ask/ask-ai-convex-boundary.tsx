@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from "react"
 import { ConvexProviderWithAuth, ConvexReactClient } from "convex/react"
-import { getSiweToken } from "@/app/lib/siwe/auth-store"
-import { isJwtExpired } from "@/app/lib/siwe/token-expiry"
+import { fetchSiweAccessToken, getSiweSession } from "@/app/lib/siwe/auth-store"
 import { useLiveSiweToken } from "@/app/lib/siwe/use-siwe-auth"
 import {
   getAskAIGuestToken,
@@ -24,25 +23,24 @@ function useAskAIAuth() {
   // error. Reading the stores here (rather than closing over a snapshot) keeps it current, and
   // re-minting on refresh is what stops a guest session from silently dropping at the 1h TTL.
   const fetchAccessToken = useCallback(async ({ forceRefreshToken }: { forceRefreshToken: boolean }) => {
-    const siweToken = getSiweToken()
-    if (siweToken && !isJwtExpired(siweToken.jwt)) return siweToken.jwt
+    if (getSiweSession()) return fetchSiweAccessToken(forceRefreshToken)
     const current = getAskAIGuestToken()
     if (current && !forceRefreshToken) return current.jwt
     return (await refreshAskAIGuestToken()) ?? current?.jwt ?? null
   }, [])
-  const isAuthenticated = (siwe != null && !isJwtExpired(siwe.jwt)) || guest != null
+  const isAuthenticated = siwe != null || guest != null
   return { isLoading: false, isAuthenticated, fetchAccessToken }
 }
 
 export function AskAIConvexBoundary({ children }: { children: ReactNode }) {
   const guest = useAskAIGuestToken()
   const siwe = useLiveSiweToken()
-  const hasValidSiwe = Boolean(siwe && !isJwtExpired(siwe.jwt))
-  const [loading, setLoading] = useState(() => Boolean(askAIConvexClient && !getSiweToken() && !guest))
+  const hasValidSiwe = Boolean(siwe)
+  const [loading, setLoading] = useState(() => Boolean(askAIConvexClient && !getSiweSession() && !guest))
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!askAIConvexClient || getSiweToken() || getAskAIGuestToken()) {
+    if (!askAIConvexClient || getSiweSession() || getAskAIGuestToken()) {
       setLoading(false)
       return
     }

@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
-import { getSiweToken, subscribeSiwe } from "@/app/lib/siwe/auth-store"
+import { getSiweSession, subscribeSiwe } from "@/app/lib/siwe/auth-store"
 import { IS_DEV_SHORTCUT_MODE } from "@/app/lib/test-mode"
 import { scheduleIdle } from "./schedule-idle"
 
@@ -33,13 +33,14 @@ const WalletGateContext = createContext<WalletGate | null>(null)
 // Module-scoped so repeated activations share ONE import (and the boundary's dynamic()
 // import dedupes against it). We flip `active` only AFTER the module resolves, so the app
 // stays painted while the chunk downloads instead of flashing a blank.
-let web3ModulePromise: Promise<unknown> | null = null
-function preloadWeb3(): Promise<unknown> {
+let web3ModulePromise: Promise<typeof import("@/app/lib/web3/web3-provider")> | null = null
+export function loadWeb3Module() {
   if (!web3ModulePromise) {
     web3ModulePromise = import("@/app/lib/web3/web3-provider")
   }
   return web3ModulePromise
 }
+const preloadWeb3 = loadWeb3Module
 
 export function WalletGateProvider({ children }: { children: ReactNode }) {
   const [active, setActive] = useState(false)
@@ -71,13 +72,23 @@ export function WalletGateProvider({ children }: { children: ReactNode }) {
   // (no token) never trip this. Dev open-gate/test mode has no real wallet, so it never mounts.
   useEffect(() => {
     if (IS_DEV_SHORTCUT_MODE) return
-    const cancelIdle = getSiweToken() != null ? scheduleIdle(activate) : () => {}
+    // Wait for `load` first: the ~500KB (gzipped) SDK otherwise starts downloading during
+    // hydration and starves the session/Convex chunks and the Convex WebSocket handshake on
+    // slow links (measured: +3s to first content for returning users on a throttled mobile).
+    let cancelIdle = () => {}
+    const startWhenSettled = () => {
+      cancelIdle = scheduleIdle(activate, 8000)
+    }
+    const hasToken = getSiweSession() != null
+    if (hasToken && document.readyState === "complete") startWhenSettled()
+    else if (hasToken) window.addEventListener("load", startWhenSettled, { once: true })
     // A token can also appear later — e.g. sign-in completing in another tab. That is a direct
     // response to user intent, so mount immediately rather than waiting for idle.
     const unsubscribe = subscribeSiwe(() => {
-      if (getSiweToken() != null) activate()
+      if (getSiweSession() != null) activate()
     })
     return () => {
+      window.removeEventListener("load", startWhenSettled)
       cancelIdle()
       unsubscribe()
     }

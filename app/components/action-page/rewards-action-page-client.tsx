@@ -193,6 +193,7 @@ export function RewardsActionPageClient({
         density={sidebar ? "sidebar" : "default"}
         title={descriptor.title}
         subtitle={embedded ? undefined : descriptor.subtitle}
+        hideTitle={embedded || sidebar}
         hideClose={embedded}
         closeHref={closeHref}
         simulated={rewards.readAdapter.mode === "sandbox"}

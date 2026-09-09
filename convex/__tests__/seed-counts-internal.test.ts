@@ -28,6 +28,8 @@ describe("seed.getCounts is internal-only and bounded", () => {
 
   test("counts stay correct: exact for small tables, seeded-signal for large ones", async () => {
     vi.stubEnv("CONVEX_SEED_SECRET", "s3cret")
+    vi.stubEnv("AVANA_DEPLOYMENT_ENV", "development")
+    vi.stubEnv("VERCEL_ENV", "development")
     const t = convexTest(schema, modules)
 
     // Empty database → zero counts, nothing seeded.

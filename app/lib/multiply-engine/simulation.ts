@@ -49,6 +49,16 @@ export function revalueMultiplyPosition(
     collateralAmount: position.collateralAmount,
     liquidationThreshold: market.risk.liquidationThreshold,
   })
+  // Recompute Net APY from the market's live economics with the same formula the multiply
+  // page/detail/action use — never trust the persisted `position.netApy`, which the sandbox
+  // seeds to 0 and never refreshes (that stale 0 is what left the dashboard reading 0.00%).
+  const netApy = calculateNetApy({
+    supplyApy: market.economics.supplyApy,
+    borrowApy: market.economics.borrowApy,
+    finalCollateralValueUsd: collateralValueUsd,
+    debtValueUsd,
+    initialCollateralValueUsd: Math.max(1, collateralValueUsd - debtValueUsd),
+  })
 
   return {
     ...position,
@@ -56,6 +66,7 @@ export function revalueMultiplyPosition(
     ltv,
     healthFactor,
     liquidationPrice,
+    netApy,
   }
 }
 

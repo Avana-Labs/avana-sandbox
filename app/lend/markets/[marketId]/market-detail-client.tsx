@@ -15,7 +15,8 @@ import type { LendMarketDetail } from "@/app/lib/lend-detail"
 import type { LendHeroPreloads } from "@/app/lib/lend-detail/hero-preload"
 import type { QuickStatsPreload } from "@/app/lib/detail-page/quick-stats-preload"
 import type { CashflowPreload } from "@/app/lib/detail-page/cashflow-preload"
-import type { TxHistoryRow } from "@/app/lib/borrow-detail"
+import { LEND_KIND_CONFIG } from "@/app/components/detail-transaction-table/detail-market-transactions"
+import { mapBorrowTxRow, mapLendSessionRows } from "@/app/lib/detail-page/transaction-history"
 import {
   DeferredDetailContent,
   detailAnalyticsSectionClass,
@@ -41,8 +42,11 @@ const DetailFaqSection = dynamic(
   () => import("@/app/borrow/_detail/ui/DetailFaqSection").then((mod) => mod.DetailFaqSection),
   { ssr: false },
 )
-const TransactionHistoryCard = dynamic(
-  () => import("@/app/borrow/_detail/asset-sections/TransactionHistoryCard").then((mod) => mod.TransactionHistoryCard),
+const DetailMarketTransactionsDeferred = dynamic(
+  () =>
+    import("@/app/components/detail-transaction-table/detail-market-transactions").then(
+      (mod) => mod.DetailMarketTransactions,
+    ),
   { ssr: false },
 )
 
@@ -53,34 +57,14 @@ type Props = {
   cashflowPreload?: CashflowPreload | null
 }
 
-/** Map a wallet's own sandbox lend actions into the shared TxHistoryRow shape. */
+/** Map a wallet's own sandbox lend actions into detail transaction rows. */
 function mapSessionRows(
   history: ReturnType<typeof useLendSessionContext>["transactionHistory"],
   marketId: string,
   assetSymbol: string,
-): TxHistoryRow[] {
-  const now = Date.now()
-  return history
-    .filter((item) => item.marketId === marketId)
-    .map((item) => ({
-      id: item.id,
-      at: new Date(item.timestamp).toISOString(),
-      timeLabel: formatAge(now - item.timestamp),
-      kind: item.kind === "deposit" ? "supply" : item.kind === "claim" ? "rewards" : "withdraw",
-      amountLabel: `${item.kind === "withdraw" ? "-" : "+"}${item.amount.toFixed(4)} ${assetSymbol}`,
-      walletLabel: "Sandbox wallet",
-      txHashShort: item.hash.slice(0, 10),
-    }))
-}
-
-function formatAge(elapsedMs: number) {
-  const s = Math.max(1, Math.floor(elapsedMs / 1000))
-  if (s < 60) return `${s}s`
-  const m = Math.floor(s / 60)
-  if (m < 60) return `${m}m`
-  const h = Math.floor(m / 60)
-  if (h < 24) return `${h}h`
-  return `${Math.floor(h / 24)}d`
+  priceUsd?: number,
+) {
+  return mapLendSessionRows(history, marketId, assetSymbol, priceUsd)
 }
 
 export function LendMarketDetailClient({
@@ -93,10 +77,18 @@ export function LendMarketDetailClient({
   const { t } = useTranslation()
   const marketId = detail.row.marketId
 
-  const transactions = React.useMemo(() => {
-    const sessionRows = mapSessionRows(session.transactionHistory, marketId, detail.hero.symbol)
-    return sessionRows.length > 0 ? sessionRows : detail.transactions
-  }, [detail.hero.symbol, detail.transactions, marketId, session.transactionHistory])
+  const priceUsd = React.useMemo(() => {
+    const priceStat = detail.quickStats.find((stat) => stat.id === "price")
+    if (!priceStat?.value) return undefined
+    const parsed = Number(priceStat.value.replace(/[^0-9.]/g, ""))
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined
+  }, [detail.quickStats])
+
+  const sessionRows = React.useMemo(
+    () => mapSessionRows(session.transactionHistory, marketId, detail.hero.symbol, priceUsd),
+    [detail.hero.symbol, marketId, priceUsd, session.transactionHistory],
+  )
+  const seedRows = React.useMemo(() => detail.transactions.map(mapBorrowTxRow), [detail.transactions])
 
   return (
     <div className="bg-background">
@@ -134,7 +126,7 @@ export function LendMarketDetailClient({
                   afterAbout={
                     <>
                       <section aria-label={t("Key Statistics")} className="space-y-6">
-                        <h2 className="text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+                        <h2 className="text-[22px] font-normal leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
                           Key Statistics
                         </h2>
                         <QuickStatsGrid detail={detail} quickStatsPreload={quickStatsPreload} product="lend" />
@@ -151,16 +143,25 @@ export function LendMarketDetailClient({
                       utilizationPct={detail.utilizationPct}
                       borrowAprPct={detail.borrowAprPct}
                       protocolParameters={detail.protocolParameters}
+                      borrowedUsd={
+                        detail.supplyBorrow.borrowed.aggregate ?? detail.supplyBorrow.borrowed.points.at(-1)?.v
+                      }
+                      suppliedUsd={
+                        detail.supplyBorrow.supplied.aggregate ?? detail.supplyBorrow.supplied.points.at(-1)?.v
+                      }
                     />
                     <CashflowCard detail={detail} cashflowPreload={cashflowPreload} />
+                    <DetailMarketTransactionsDeferred
+                      scope="lend"
+                      slug={marketId}
+                      seedRows={seedRows}
+                      sessionRows={sessionRows}
+                      kindConfig={LEND_KIND_CONFIG}
+                      context={{ assetSymbol: detail.hero.symbol }}
+                    />
                     <DetailFaqSection
                       title={t("General FAQs")}
                       items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
-                    />
-                    <TransactionHistoryCard
-                      transactions={transactions}
-                      assetSymbol={detail.hero.symbol}
-                      kindLabelMap={{ supply: "Supply", withdraw: "Withdraw", rewards: "Rewards" }}
                     />
                     <DetailPageNotice product="lend" />
                   </DeferredDetailContent>

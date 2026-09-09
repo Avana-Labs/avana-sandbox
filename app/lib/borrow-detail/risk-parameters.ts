@@ -191,7 +191,14 @@ export function normalizeGovernanceParameters(about: AboutCard): GovernanceParam
     }
   }
 
-  const fromHistory = about.history.slice(0, 3).map((entry, index) => ({
+  // The rich governance changelog (Convex `parameterChanges`, or the mock fallback):
+  // real previous → current transitions with source/executor/category. This is the
+  // authoritative changelog and drives the paginated detail table.
+  const fromGovernance = about.governanceParameters?.changelog.filter((entry) => !isIrmLabel(entry.parameter)) ?? []
+
+  // Last-resort fallback: the thin `about.history` timeline (title + description only,
+  // no real transitions). Used when no rich changelog was seeded.
+  const fromHistory = about.history.map((entry, index) => ({
     id: `${entry.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${index}`,
     parameter: entry.title,
     previous: "—",
@@ -201,13 +208,9 @@ export function normalizeGovernanceParameters(about: AboutCard): GovernanceParam
     executor: entry.title.toLowerCase().includes("deploy") ? "Deployment executor" : "Governance executor",
   }))
 
-  const fromGovernance =
-    about.governanceParameters?.changelog.filter((entry) => !isIrmLabel(entry.parameter)).slice(0, 3) ?? []
-
   return {
     parameters,
-    // Prefer Convex product-siloed market content history when present; fall back to mock changelog.
-    changelog: fromHistory.length > 0 ? fromHistory : fromGovernance,
+    changelog: fromGovernance.length > 0 ? fromGovernance : fromHistory,
   }
 }
 

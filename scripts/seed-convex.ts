@@ -5,10 +5,10 @@
  *   npx tsx scripts/seed-convex.ts               # push to NEXT_PUBLIC_CONVEX_URL (idempotent)
  *   npx tsx scripts/seed-convex.ts --days 90     # shorter daily window (fewer rows)
  *
- * Requires the Convex functions to be deployed first (`npx convex deploy`). All
- * writes are idempotent upserts, so re-running is safe.
+ * Requires the Convex functions to be deployed first (`npx convex deploy`). Some operations replace history. Production maintenance must use reviewed internal functions.
  */
 
+import { assertNonProductionTarget } from "../lib/deployment-safety.mjs"
 import { ConvexHttpClient } from "convex/browser"
 import { api } from "../convex/_generated/api"
 import type { Id } from "../convex/_generated/dataModel"
@@ -44,6 +44,7 @@ const throttleMs = Number(arg("throttle") ?? 70)
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 async function main() {
+  if (!dryRun) assertNonProductionTarget(process.env)
   const seed = buildBorrowSeed({ days })
   console.log(
     `[seed] built ${seed.markets.length} markets · ${seed.dailyStats.length} daily stats · ${seed.borrowRevenueDaily.length + seed.lendRevenueDaily.length + seed.multiplyRevenueDaily.length} product revenue · ${seed.borrowRiskAssessments.length + seed.lendRiskAssessments.length + seed.multiplyRiskAssessments.length} product risk (days=${days})`,
@@ -137,9 +138,14 @@ async function main() {
     console.log(`[seed] upserted ${multiplyN} multiply daily stats (--phase-c-only)`)
   }
 
-  const pushSilo = async (label: string, action: typeof api.seedAdmin.upsertBorrowRiskParameters, rows: unknown[]) => {
+  const pushSilo = async (
+    label: string,
+    action: typeof api.seedAdmin.upsertBorrowRiskParameters,
+    rows: unknown[],
+    batchSize: number = BATCH,
+  ) => {
     let written = 0
-    for (const batch of chunk(rows, BATCH)) {
+    for (const batch of chunk(rows, batchSize)) {
       await client.action(action, { seedSecret, rows: batch })
       written += batch.length
       await sleep(throttleMs)
@@ -213,6 +219,9 @@ async function main() {
       api.seedAdmin.upsertMultiplyLiquidationDaily,
       seed.multiplyLiquidationDaily,
     )
+    // Governance parameter changelog — each row holds a whole market's change list, so
+    // use a small batch to stay well under the seed payload cap.
+    await pushSilo("parameter changes", api.seedAdmin.upsertParameterChanges, seed.parameterChanges ?? [], 50)
   } // end !phaseCOnly
 
   // ---------------------------------------------------------------------------

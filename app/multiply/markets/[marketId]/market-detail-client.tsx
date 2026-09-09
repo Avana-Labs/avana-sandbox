@@ -7,8 +7,9 @@ import { ActionIcon } from "@/app/components/action-icon"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
-import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
-import { mapMultiplyHistoryToDetailRows } from "@/app/lib/multiply-system/read-model"
+import { FlatStatsGrid, QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
+import { mapMultiplySessionRows, mapMultiplyTxRow } from "@/app/lib/detail-page/transaction-history"
+import { MULTIPLY_KIND_CONFIG } from "@/app/components/detail-transaction-table/detail-market-transactions"
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
@@ -45,8 +46,11 @@ const DetailFaqSection = dynamic(
   () => import("@/app/borrow/_detail/ui/DetailFaqSection").then((mod) => mod.DetailFaqSection),
   { ssr: false },
 )
-const TransactionHistoryCard = dynamic(
-  () => import("@/app/multiply/_detail/pool-sections/TransactionHistoryCard").then((mod) => mod.TransactionHistoryCard),
+const DetailMarketTransactionsDeferred = dynamic(
+  () =>
+    import("@/app/components/detail-transaction-table/detail-market-transactions").then(
+      (mod) => mod.DetailMarketTransactions,
+    ),
   { ssr: false },
 )
 
@@ -60,14 +64,11 @@ export function MarketDetailClient({
   const { t } = useTranslation()
   const marketId = detail.id.toLowerCase().replaceAll("_", "-")
 
-  const transactions = React.useMemo(() => {
-    const sessionRows = mapMultiplyHistoryToDetailRows(
-      session.transactionHistory.filter((item) => item.marketId === marketId),
-      detail.row.protocol,
-      detail.row.asset,
-    )
-    return sessionRows.length > 0 ? sessionRows : detail.transactions
-  }, [detail.row.asset, detail.row.protocol, detail.transactions, marketId, session.transactionHistory])
+  const sessionRows = React.useMemo(
+    () => mapMultiplySessionRows(session.transactionHistory, marketId, detail.row.protocol, detail.row.asset),
+    [detail.row.asset, detail.row.protocol, marketId, session.transactionHistory],
+  )
+  const seedRows = React.useMemo(() => detail.transactions.map(mapMultiplyTxRow), [detail.transactions])
 
   return (
     <div className="bg-background">
@@ -105,10 +106,21 @@ export function MarketDetailClient({
                   afterAbout={
                     <>
                       <section aria-label={t("Key Statistics")} className="space-y-6">
-                        <h2 className="text-[22px] font-normal leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+                        <h2 className="text-[22px] font-normal leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
                           Key Statistics
                         </h2>
-                        <QuickStatsGrid detail={detail} quickStatsPreload={quickStatsPreload} product="multiply" />
+                        <QuickStatsGrid
+                          detail={detail}
+                          quickStatsPreload={quickStatsPreload}
+                          product="multiply"
+                          columns={4}
+                        />
+                      </section>
+                      <section aria-label={t("Market Rates")} className="space-y-6">
+                        <h2 className="text-[22px] font-normal leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
+                          Market Rates
+                        </h2>
+                        <FlatStatsGrid stats={detail.marketRates} />
                       </section>
                       <RiskSection detail={detail} />
                     </>
@@ -122,14 +134,20 @@ export function MarketDetailClient({
                     {detail.liquidationRisk && detail.liquidationRisk.length > 0 ? (
                       <LiquidationRiskSection stats={detail.liquidationRisk} />
                     ) : null}
+                    <DetailMarketTransactionsDeferred
+                      scope="multiply"
+                      slug={marketId}
+                      seedRows={seedRows}
+                      sessionRows={sessionRows}
+                      kindConfig={MULTIPLY_KIND_CONFIG}
+                      context={{
+                        collateralSymbol: detail.row.protocol,
+                        borrowableSymbol: detail.row.asset,
+                      }}
+                    />
                     <DetailFaqSection
                       title={t("Multiply FAQs")}
                       items={detail.faqs.map((faq) => ({ question: faq.question, answer: <p>{faq.answer}</p> }))}
-                    />
-                    <TransactionHistoryCard
-                      transactions={transactions}
-                      collateralSymbol={detail.row.protocol}
-                      borrowableSymbol={detail.row.asset}
                     />
                     <DetailPageNotice product="multiply" />
                   </DeferredDetailContent>

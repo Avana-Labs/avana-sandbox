@@ -9,10 +9,10 @@ import { useEffect } from "react"
  * never touches the critical path.
  *
  * - Dev: logs each new worst interaction to the console (interact with the app and read it).
- * - Prod: beacons the same payload to /api/vitals (visible in Vercel function logs), so real
- *   field culprits get recorded without a third-party service.
+ * - Prod (only when `enableBeacon`): beacons to /api/vitals. Never beacon when reporting is
+ *   disabled — the API 204 still costs a Vercel invocation if the request reaches it.
  */
-export function InpReporter() {
+export function InpReporter({ enableBeacon = false }: { enableBeacon?: boolean }) {
   useEffect(() => {
     let cancelled = false
     const isDev = process.env.NODE_ENV !== "production"
@@ -45,6 +45,7 @@ export function InpReporter() {
               )
             }
 
+            if (!enableBeacon) return
             try {
               // sendBeacon survives page unload; same-origin so it passes connect-src 'self'.
               navigator.sendBeacon?.("/api/vitals", JSON.stringify(payload))
@@ -64,7 +65,7 @@ export function InpReporter() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [enableBeacon])
 
   return null
 }

@@ -268,6 +268,8 @@ export type AboutCard = {
       date: string
       source: string
       executor: string
+      /** Aave-style action group: "Risk Management" | "Domain Admin" | "Listing" | "Emergency". */
+      category?: string
       href?: string
     }>
   }
@@ -365,6 +367,9 @@ export type TxHistoryRow = {
   timeLabel?: string
   kind: "supply" | "withdraw" | "borrow" | "repay" | "liquidation" | "rewards" | "cooldown"
   amountLabel: string
+  tokenAmountLabel?: string
+  tokenSymbol?: string
+  tokenSymbolSecondary?: string
   token0AmountLabel?: string
   token1AmountLabel?: string
   counterpartyLabel?: string

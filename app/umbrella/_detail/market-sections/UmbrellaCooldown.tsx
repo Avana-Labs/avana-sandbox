@@ -50,13 +50,12 @@ function CooldownCardView({ card }: { card: CooldownCard }) {
         ? t("{time} left").replace("{time}", withdrawal.remainingLabel)
         : card.removesInFallback
       : card.cooldownStatus === "expired"
-        ? t("Restart cooldown")
+        ? t("Restart")
         : card.cooldownEndsAt
           ? cooldown.remainingLabel
           : card.removesInFallback
 
-  const removesTone =
-    card.cooldownStatus === "ready" ? "text-success" : card.cooldownStatus === "expired" ? "text-danger" : undefined
+  const removesTone = card.cooldownStatus === "ready" ? "text-success" : undefined
 
   const statusTone =
     card.cooldownStatus === "expired"

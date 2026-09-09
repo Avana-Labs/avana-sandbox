@@ -1,3 +1,4 @@
+import { assertSeedDeployment } from "../lib/deployment-safety.mjs"
 import { v } from "convex/values"
 import { action } from "./_generated/server"
 import { internal } from "./_generated/api"
@@ -19,6 +20,7 @@ function requireSeedSecret(seedSecret: string) {
   if (!expected || !safeEqual(seedSecret, expected)) {
     throw new Error("Unauthorized seed write")
   }
+  assertSeedDeployment()
 }
 
 function requireSafeSeedRows(rows: unknown[]) {
@@ -215,6 +217,15 @@ export const upsertMultiplyMarketContent = action({
     requireSeedSecret(seedSecret)
     requireSafeSeedRows(rows)
     return ctx.runMutation(internal.multiply.content.upsertContent, { rows })
+  },
+})
+
+export const upsertParameterChanges = action({
+  args: rowsArgs,
+  handler: async (ctx, { seedSecret, rows }): Promise<unknown> => {
+    requireSeedSecret(seedSecret)
+    requireSafeSeedRows(rows)
+    return ctx.runMutation(internal.parameterChanges.upsertChanges, { rows })
   },
 })
 

@@ -396,6 +396,10 @@ export function LendActionPageClient({
         title={descriptor.title}
         subtitle={descriptor.subtitle}
         closeHref={closeHref}
+        mode={embedded ? "embedded" : "page"}
+        density={sidebar ? "sidebar" : "default"}
+        hideTitle={embedded || sidebar}
+        hideClose={embedded}
         flowHeaderStage={!embedded ? stage : undefined}
         simulated
       >

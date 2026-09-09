@@ -2,23 +2,24 @@
 
 import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react"
 import { CHART_RANGE_LABELS, getChartTickIndexes } from "./chart-data"
+import { interpolateScrubSample, scrubRatioFromPointer, type HeroScrubSample } from "./hero-scrub"
 import type { ChartPoint, ChartRangeOption } from "./types"
 
 const TONE_COLORS = {
   positive: {
     stroke: "#01AACF",
     fill: "#01AACF",
-    cursor: "rgba(1, 170, 207, 0.2)",
+    cursor: "rgba(1, 170, 207, 0.35)",
   },
   negative: {
     stroke: "#F0444C",
     fill: "#F0444C",
-    cursor: "rgba(240, 68, 76, 0.2)",
+    cursor: "rgba(240, 68, 76, 0.35)",
   },
   neutral: {
     stroke: "hsl(var(--foreground))",
     fill: "hsl(var(--foreground))",
-    cursor: "hsl(var(--foreground) / 0.18)",
+    cursor: "hsl(var(--foreground) / 0.28)",
   },
 } as const
 
@@ -31,12 +32,27 @@ type HeroAreaChartProps = {
   gradientId?: string
   className?: string
   tone?: "positive" | "negative" | "neutral"
+  /** Continuous scrub sample (interpolated along the path). Prefer over index snap. */
+  onScrubChange?: (sample: HeroScrubSample | null) => void
+  /**
+   * @deprecated Prefer `onScrubChange`. Still fired with the nearest index for
+   * older callers; floor index while scrubbing.
+   */
   onActiveIndexChange?: (index: number | null) => void
   /** Horizontal threshold lines (e.g. health-factor = 1). Drawn over the series. */
   referenceLines?: Array<{ value: number; label?: string; color?: string }>
   /** Explicit y-axis domain. Overrides the default padded auto-domain per bound. */
   domainMin?: number
   domainMax?: number
+  /**
+   * Floating value bubble near the cursor. Off by default — Uniswap-style heroes
+   * put the live value in the headline + Y-axis pill instead.
+   */
+  showTooltip?: boolean
+  /** Y-axis scrub price pill (Uniswap-style). Defaults on. */
+  showYAxisPill?: boolean
+  /** Fade the series to the right of the scrub cursor. Defaults on. */
+  fadeAfterScrub?: boolean
 }
 
 type PlotPoint = ChartPoint & { x: number; y: number }
@@ -170,14 +186,18 @@ export function HeroAreaChart({
   gradientId = "heroAreaChartFill",
   className,
   tone,
+  onScrubChange,
   onActiveIndexChange,
   referenceLines,
   domainMin,
   domainMax,
+  showTooltip = false,
+  showYAxisPill = true,
+  fadeAfterScrub = true,
 }: HeroAreaChartProps) {
   const shellRef = useRef<HTMLDivElement | null>(null)
   const [dimensions, setDimensions] = useState({ width: 1_000, height })
-  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const [scrub, setScrub] = useState<HeroScrubSample | null>(null)
   const [isVisible, setIsVisible] = useState(true)
 
   useEffect(() => {
@@ -212,7 +232,6 @@ export function HeroAreaChart({
     [activeRange, data, dimensions, formatYAxis, domainMin, domainMax],
   )
   const cursorBottom = geometry.bottom || 34
-  const activePoint = activeIndex == null ? null : geometry.points[activeIndex]
   const lastPoint = geometry.points[geometry.points.length - 1]
   const chartShellClassName =
     className ??
@@ -223,28 +242,41 @@ export function HeroAreaChart({
       .filter(Boolean)
       .join(" ")
 
-  const setPointerIndex = (event: PointerEvent<HTMLDivElement>) => {
-    if (data.length === 0) return
+  const publishScrub = (sample: HeroScrubSample | null) => {
+    setScrub(sample)
+    onScrubChange?.(sample)
+    onActiveIndexChange?.(sample == null ? null : sample.indexFloor)
+  }
+
+  const setPointerScrub = (event: PointerEvent<HTMLDivElement>) => {
+    if (data.length === 0 || geometry.points.length === 0) return
     const rect = event.currentTarget.getBoundingClientRect()
-    const plotLeft = geometry.left
-    const plotWidth = Math.max(1, rect.width - geometry.left - geometry.right)
-    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left - plotLeft) / plotWidth))
-    const index = Math.round(ratio * (data.length - 1))
-    setActiveIndex(index)
-    onActiveIndexChange?.(index)
+    // Map CSS pixels → SVG viewBox X so scrub stays aligned when the initial
+    // ResizeObserver width differs from the laid-out shell (tests + first paint).
+    const scaleX = dimensions.width / Math.max(1, rect.width)
+    const svgX = (event.clientX - rect.left) * scaleX
+    const plotWidth = Math.max(1, dimensions.width - geometry.left - geometry.right)
+    const ratio = scrubRatioFromPointer(svgX, 0, geometry.left, plotWidth)
+    const sample = interpolateScrubSample(geometry.points, ratio)
+    if (!sample) return
+    publishScrub(sample)
   }
 
   const clearPointer = () => {
-    setActiveIndex(null)
-    onActiveIndexChange?.(null)
+    publishScrub(null)
   }
+
+  const scrubMaskId = `${gradientId}-scrubMask`
+  const leftFadeMaskId = `${gradientId}-leftMask`
+  const plotRight = dimensions.width - geometry.right
+  const scrubX = scrub?.x ?? plotRight
 
   return (
     <div
       ref={shellRef}
       className={chartShellClassName}
       style={{ height }}
-      onPointerMove={setPointerIndex}
+      onPointerMove={setPointerScrub}
       onPointerLeave={clearPointer}
       data-testid="hero-area-chart"
     >
@@ -264,7 +296,7 @@ export function HeroAreaChart({
             <stop offset="10%" stopColor="#fff" stopOpacity="1" />
           </linearGradient>
           <mask
-            id={`${gradientId}-leftMask`}
+            id={leftFadeMaskId}
             maskUnits="userSpaceOnUse"
             x="0"
             y="0"
@@ -273,6 +305,19 @@ export function HeroAreaChart({
           >
             <rect width={dimensions.width} height={dimensions.height} fill={`url(#${gradientId}-leftFade)`} />
           </mask>
+          {fadeAfterScrub ? (
+            <mask
+              id={scrubMaskId}
+              maskUnits="userSpaceOnUse"
+              x="0"
+              y="0"
+              width={dimensions.width}
+              height={dimensions.height}
+            >
+              <rect width={dimensions.width} height={dimensions.height} fill="white" fillOpacity="0.28" />
+              <rect x="0" y="0" width={Math.max(0, scrubX)} height={dimensions.height} fill="white" />
+            </mask>
+          ) : null}
         </defs>
         {geometry.axisTicks.length > 0 ? (
           <g aria-hidden="true">
@@ -291,30 +336,45 @@ export function HeroAreaChart({
             ))}
           </g>
         ) : null}
-        <g mask={`url(#${gradientId}-leftMask)`}>
-          {geometry.areaPath ? <path d={geometry.areaPath} fill={`url(#${gradientId})`} /> : null}
-          {geometry.linePath ? (
-            <path
-              d={geometry.linePath}
-              fill="none"
-              stroke={color.stroke}
-              strokeWidth="2.5"
-              vectorEffect="non-scaling-stroke"
-            />
-          ) : null}
-          {activePoint ? (
+        <g mask={`url(#${leftFadeMaskId})`}>
+          <g mask={fadeAfterScrub && scrub ? `url(#${scrubMaskId})` : undefined}>
+            {geometry.areaPath ? <path d={geometry.areaPath} fill={`url(#${gradientId})`} /> : null}
+            {geometry.linePath ? (
+              <path
+                d={geometry.linePath}
+                fill="none"
+                stroke={color.stroke}
+                strokeWidth="2.5"
+                vectorEffect="non-scaling-stroke"
+              />
+            ) : null}
+          </g>
+          {scrub ? (
             <>
               <line
-                x1={activePoint.x}
-                x2={activePoint.x}
+                x1={scrub.x}
+                x2={scrub.x}
                 y1={4}
                 y2={dimensions.height - cursorBottom}
                 stroke={color.cursor}
+                strokeWidth="1.25"
+                strokeDasharray="3.5 4"
+                vectorEffect="non-scaling-stroke"
+              />
+              <line
+                x1={scrub.x}
+                x2={dimensions.width - 2}
+                y1={scrub.y}
+                y2={scrub.y}
+                stroke="hsl(var(--muted-foreground))"
+                strokeOpacity="0.35"
+                strokeWidth="1"
+                strokeDasharray="2 5"
                 vectorEffect="non-scaling-stroke"
               />
               <circle
-                cx={activePoint.x}
-                cy={activePoint.y}
+                cx={scrub.x}
+                cy={scrub.y}
                 r="5"
                 fill={color.stroke}
                 stroke="hsl(var(--background))"
@@ -361,7 +421,7 @@ export function HeroAreaChart({
                     vectorEffect="non-scaling-stroke"
                   />
                   {line.label ? (
-                    <text x={4} y={y - 5} className="font-data text-[11px] font-semibold" fill={stroke}>
+                    <text x={4} y={y - 5} className="font-data text-[11px] font-normal" fill={stroke}>
                       {line.label}
                     </text>
                   ) : null}
@@ -379,7 +439,7 @@ export function HeroAreaChart({
                   y={tick.y}
                   dominantBaseline="middle"
                   textAnchor="end"
-                  className="fill-muted-foreground font-data text-[12.5px] font-medium"
+                  className="fill-muted-foreground font-data text-[12px] font-normal"
                 >
                   {tick.label}
                 </text>
@@ -395,7 +455,7 @@ export function HeroAreaChart({
                 x={tick.x}
                 y={dimensions.height - 8}
                 textAnchor={tick.anchor}
-                className="fill-muted-foreground font-data text-[12px] font-medium"
+                className="fill-muted-foreground font-data text-[12px] font-normal"
               >
                 {tick.label}
               </text>
@@ -404,16 +464,24 @@ export function HeroAreaChart({
         ) : null}
       </svg>
 
-      {activePoint ? (
+      {scrub && showYAxisPill ? (
+        <div
+          className="pointer-events-none absolute z-10 -translate-y-1/2 rounded-md bg-muted px-1.5 py-0.5 font-data text-[11px] font-medium text-foreground shadow-sm"
+          style={{ right: 2, top: scrub.y }}
+          data-testid="hero-scrub-y-pill"
+        >
+          {formatValue(scrub.value)}
+        </div>
+      ) : null}
+
+      {scrub && showTooltip ? (
         <div
           className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-[calc(100%+8px)] rounded-xs border border-border bg-popover px-2.5 py-1.5 shadow-elev-2"
-          style={{ left: activePoint.x, top: activePoint.y }}
+          style={{ left: scrub.x, top: scrub.y }}
         >
           <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] font-medium text-muted-foreground">{activePoint.label}</span>
-            <span className="font-data text-[12.5px] font-medium text-foreground">
-              {formatValue(activePoint.value)}
-            </span>
+            <span className="text-[10px] font-medium text-muted-foreground">{scrub.label}</span>
+            <span className="font-data text-[12px] font-normal text-foreground">{formatValue(scrub.value)}</span>
           </div>
         </div>
       ) : null}

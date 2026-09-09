@@ -18,6 +18,7 @@ describe("clearPortfolioSnapshots — clear-limit bound (P3-8)", () => {
 
   test("rejects an out-of-range limit", async () => {
     vi.stubEnv("CONVEX_SEED_SECRET", SECRET)
+    vi.stubEnv("AVANA_DEPLOYMENT_ENV", "development")
     const t = convexTest(schema, modules)
     await expect(
       t.action(api.seedAdmin.clearPortfolioSnapshots, { seedSecret: SECRET, limit: 10_001 }),
@@ -26,6 +27,7 @@ describe("clearPortfolioSnapshots — clear-limit bound (P3-8)", () => {
 
   test("rejects a non-positive / non-integer limit", async () => {
     vi.stubEnv("CONVEX_SEED_SECRET", SECRET)
+    vi.stubEnv("AVANA_DEPLOYMENT_ENV", "development")
     const t = convexTest(schema, modules)
     await expect(t.action(api.seedAdmin.clearPortfolioSnapshots, { seedSecret: SECRET, limit: -5 })).rejects.toThrow(
       /Invalid clear limit/,
@@ -37,6 +39,7 @@ describe("clearPortfolioSnapshots — clear-limit bound (P3-8)", () => {
 
   test("still requires the deployment secret", async () => {
     vi.stubEnv("CONVEX_SEED_SECRET", SECRET)
+    vi.stubEnv("AVANA_DEPLOYMENT_ENV", "development")
     const t = convexTest(schema, modules)
     await expect(t.action(api.seedAdmin.clearPortfolioSnapshots, { seedSecret: "wrong", limit: 100 })).rejects.toThrow(
       /Unauthorized seed write/,

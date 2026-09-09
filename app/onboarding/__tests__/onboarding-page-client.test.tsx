@@ -6,17 +6,13 @@ import type { OnboardingGateState } from "@/app/components/sandbox/onboarding-fl
 // "requires a Convex connection" placeholder.
 vi.mock("@/app/lib/convex/market-liquidity-provider", () => ({ hasConvexClient: true }))
 
-// Route each useQuery(...) call by the mocked query identity so the split
-// getWalletOnboardingState / getEconomyStatus subscriptions each get their own value.
-const walletStateMock = vi.fn()
-const economyMock = vi.fn()
+const gateMock = vi.fn()
 const noopMutation = vi.fn().mockResolvedValue(undefined)
 vi.mock("convex/react", () => ({
   useQuery: (query: { name?: string } | undefined, args: unknown) => {
     if (args === "skip") return undefined
-    if (query?.name === "getEconomyStatus") return economyMock()
     if (query?.name === "getMine") return null
-    return walletStateMock()
+    return gateMock()
   },
   useMutation: () => noopMutation,
 }))
@@ -26,6 +22,7 @@ vi.mock("@/convex/_generated/api", () => ({
     sandbox: {
       onboarding: {
         getState: { name: "getState" },
+        getOnboardingGateState: { name: "getOnboardingGateState" },
         getWalletOnboardingState: { name: "getWalletOnboardingState" },
         getEconomyStatus: { name: "getEconomyStatus" },
         beginAnalysis: {},
@@ -70,7 +67,7 @@ const ECONOMY: OnboardingGateState["economy"] = {
 }
 
 beforeEach(() => {
-  economyMock.mockReturnValue(ECONOMY)
+  gateMock.mockReturnValue(undefined)
 })
 
 afterEach(() => {
@@ -80,7 +77,7 @@ afterEach(() => {
 
 describe("OnboardingPageClient — already-onboarded wallet (issue #140)", () => {
   it("redirects an already-onboarded wallet into the app (never re-shows onboarding)", () => {
-    walletStateMock.mockReturnValue(walletState("done"))
+    gateMock.mockReturnValue({ ...walletState("done"), economy: null })
     render(<OnboardingPageConnected wallet={WALLET} />)
 
     // A completed wallet is sent straight to the portfolio, not shown any onboarding UI.
@@ -90,7 +87,7 @@ describe("OnboardingPageClient — already-onboarded wallet (issue #140)", () =>
   })
 
   it("still renders the active onboarding flow for a wallet that has NOT onboarded", () => {
-    walletStateMock.mockReturnValue(walletState("wallet"))
+    gateMock.mockReturnValue({ ...walletState("wallet"), economy: ECONOMY })
     render(<OnboardingPageConnected wallet={WALLET} />)
 
     // A fresh wallet now lands on the personalize step first (name/language/currency/theme),

@@ -112,7 +112,7 @@ const CATALOG_SEEDS: CatalogSeed[] = [
     rank: 5,
     collateral: "CRV",
     collateralName: "Curve DAO Token",
-    borrow: "CRVUSD",
+    borrow: "crvUSD",
     borrowName: "crvUSD",
     supplyApy: 0.0545,
     borrowApy: 0.044,
@@ -130,7 +130,7 @@ const CATALOG_SEEDS: CatalogSeed[] = [
   {
     id: "crvusd-usdt",
     rank: 6,
-    collateral: "CRVUSD",
+    collateral: "crvUSD",
     collateralName: "crvUSD",
     borrow: "USDT",
     borrowName: "Tether",

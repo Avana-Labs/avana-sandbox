@@ -3,84 +3,69 @@
 import { useMutation, useQuery } from "convex/react"
 import { useEffect, useRef } from "react"
 import { api } from "@/convex/_generated/api"
+import { useDisplayPreferences } from "@/app/components/display-preferences"
+import { useTheme } from "@/app/components/theme-provider"
 import {
-  CURRENCY_OPTIONS,
-  LANGUAGE_OPTIONS,
-  type CurrencyCode,
-  type LanguageCode,
-  useDisplayPreferences,
-} from "@/app/components/display-preferences"
-import { useTheme, type Theme } from "@/app/components/theme-provider"
+  applyRemotePreferences,
+  normalizePreferences,
+  serializePreferences,
+  snapshotLocalPreferences,
+  type StoredPreferences,
+} from "@/app/components/preferences-sync"
 
-type StoredPreferences = {
-  theme?: Theme
-  language?: LanguageCode
-  currency?: CurrencyCode
-  showDollarAmounts?: boolean
-}
-
-function isTheme(value: string | undefined): value is Theme {
-  return value === "light" || value === "dark" || value === "system"
-}
-
-function isLanguage(value: string | undefined): value is LanguageCode {
-  return LANGUAGE_OPTIONS.some((option) => option.code === value)
-}
-
-function isCurrency(value: string | undefined): value is CurrencyCode {
-  return CURRENCY_OPTIONS.some((option) => option.code === value)
-}
-
-function normalizePreferences(preferences: StoredPreferences | null | undefined): StoredPreferences | null {
-  if (!preferences) return null
-  const normalized: StoredPreferences = {}
-  if (isTheme(preferences.theme)) normalized.theme = preferences.theme
-  if (isLanguage(preferences.language)) normalized.language = preferences.language
-  if (isCurrency(preferences.currency)) normalized.currency = preferences.currency
-  if (typeof preferences.showDollarAmounts === "boolean") normalized.showDollarAmounts = preferences.showDollarAmounts
-  return Object.keys(normalized).length > 0 ? normalized : null
-}
-
-function serializePreferences(preferences: StoredPreferences): string {
-  return JSON.stringify({
-    theme: preferences.theme ?? null,
-    language: preferences.language ?? null,
-    currency: preferences.currency ?? null,
-    showDollarAmounts: preferences.showDollarAmounts ?? null,
-  })
-}
-
+/**
+ * Keeps signed-in display preferences (theme / language / currency / show-$) aligned
+ * with the Convex wallet profile across devices.
+ *
+ * - Bootstrap once per wallet: pull remote if present, otherwise seed from local.
+ * - After bootstrap: apply any later remote preference updates (other device / tab via Convex).
+ * - Local changes debounce-push to Convex; lastSavedKeyRef prevents echo loops.
+ * - Applying remote updates local React state → localStorage → same-browser tab sync.
+ */
 export function PreferencesProfileSyncConnected({ wallet }: { wallet: string }) {
   const { theme, setTheme } = useTheme()
   const { language, setLanguage, currency, setCurrency, showDollarAmounts, setShowDollarAmounts } =
     useDisplayPreferences()
   const profile = useQuery(api.wallet.profiles.getMine, {}) as { preferences?: StoredPreferences } | null | undefined
   const savePreferences = useMutation(api.wallet.profiles.savePreferences)
-  const initializedWalletRef = useRef<string | null>(null)
+  const bootstrappedWalletRef = useRef<string | null>(null)
   const lastSavedKeyRef = useRef<string | null>(null)
 
+  // Pull: bootstrap + live remote updates for the active wallet.
   useEffect(() => {
-    if (profile === undefined || initializedWalletRef.current === wallet) return
+    if (profile === undefined) return
+
+    const local = { theme, language, currency, showDollarAmounts }
+    const setters = { setTheme, setLanguage, setCurrency, setShowDollarAmounts }
     const remote = normalizePreferences(profile?.preferences)
-    if (remote) {
-      lastSavedKeyRef.current = serializePreferences(remote)
-      if (remote.theme && remote.theme !== theme) setTheme(remote.theme)
-      if (remote.language && remote.language !== language) setLanguage(remote.language)
-      if (remote.currency && remote.currency !== currency) setCurrency(remote.currency)
-      if (typeof remote.showDollarAmounts === "boolean" && remote.showDollarAmounts !== showDollarAmounts) {
-        setShowDollarAmounts(remote.showDollarAmounts)
+    const isBootstrap = bootstrappedWalletRef.current !== wallet
+
+    if (isBootstrap) {
+      if (remote) {
+        const remoteKey = serializePreferences(remote)
+        lastSavedKeyRef.current = remoteKey
+        applyRemotePreferences(remote, local, setters)
+      } else {
+        const localPreferences = snapshotLocalPreferences(local)
+        lastSavedKeyRef.current = serializePreferences(localPreferences)
+        void savePreferences({ preferences: localPreferences }).catch((error: unknown) => {
+          lastSavedKeyRef.current = null
+          if (process.env.NODE_ENV !== "production") {
+            console.warn("[preferences-sync] failed to persist initial preferences to Convex:", error)
+          }
+        })
       }
-    } else {
-      const localPreferences: StoredPreferences = { theme, language, currency, showDollarAmounts }
-      lastSavedKeyRef.current = serializePreferences(localPreferences)
-      void savePreferences({ preferences: localPreferences }).catch((error: unknown) => {
-        lastSavedKeyRef.current = null
-        if (process.env.NODE_ENV !== "production") {
-          console.warn("[preferences-sync] failed to persist initial preferences to Convex:", error)
-        }
-      })
+      bootstrappedWalletRef.current = wallet
+      return
     }
-    initializedWalletRef.current = wallet
+
+    // Live multi-device: another client wrote preferences; apply if they differ from our echo key.
+    if (!remote) return
+    const remoteKey = serializePreferences(remote)
+    if (remoteKey === lastSavedKeyRef.current) return
+
+    lastSavedKeyRef.current = remoteKey
+    applyRemotePreferences(remote, local, setters)
   }, [
     currency,
     language,
@@ -95,9 +80,10 @@ export function PreferencesProfileSyncConnected({ wallet }: { wallet: string }) 
     wallet,
   ])
 
+  // Push: local UI changes → Convex (skipped when key matches what we last pulled/pushed).
   useEffect(() => {
-    if (initializedWalletRef.current !== wallet) return
-    const nextPreferences: StoredPreferences = { theme, language, currency, showDollarAmounts }
+    if (bootstrappedWalletRef.current !== wallet) return
+    const nextPreferences = snapshotLocalPreferences({ theme, language, currency, showDollarAmounts })
     const nextKey = serializePreferences(nextPreferences)
     if (nextKey === lastSavedKeyRef.current) return
     const timeoutId = window.setTimeout(() => {

@@ -99,16 +99,17 @@ describe("MultiplyActionPageClient", () => {
     expect(screen.getByText("1.1x")).toBeInTheDocument()
   })
 
-  it("clamps the leverage multiplier to the selected market public maximum", async () => {
+  it("keeps an above-public-max multiplier on the global 1–9.99 slider", async () => {
     renderWithProviders(
       <AvanaSessionsProvider>
-        <MultiplyActionPageClient kind="multiply" initialMarketId="aave-gho" initialMultiplier="10" />
+        <MultiplyActionPageClient kind="multiply" initialMarketId="aave-gho" initialMultiplier="9.99" />
       </AvanaSessionsProvider>,
     )
 
-    await waitFor(() => {
-      expect(screen.getByText("1.8x")).toBeInTheDocument()
-    })
+    const slider = (await screen.findByRole("slider", { name: "Multiplier" })) as HTMLInputElement
+    await waitFor(() => expect(slider.value).toBe("9.99"))
+    expect(screen.getByTestId("action-leverage-pill")).toHaveTextContent("9.99x")
+    expect(screen.getByTestId("action-leverage-ticks")).toHaveTextContent("9.99x")
   })
 
   it("previews a fresh-wallet multiply without merging a ghost position", async () => {
@@ -122,7 +123,9 @@ describe("MultiplyActionPageClient", () => {
 
     await waitFor(() => expect(screen.getByTestId("action-metrics-block")).toBeInTheDocument())
     expect(screen.getByLabelText("Collateral amount")).toHaveValue("0.01")
-    expect(screen.getByTestId("action-leverage-ruler")).toHaveTextContent("Target leverage")
+    expect(screen.getByTestId("action-leverage-ruler")).toHaveTextContent("Multiplier")
+    expect(screen.queryByText(/loop.*estimated/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Recommended up to/i)).not.toBeInTheDocument()
     expect(screen.getByTestId("action-metrics-block")).toHaveTextContent("Collateral")
     expect(screen.getByTestId("action-metrics-block")).toHaveTextContent("Target leverage")
     expect(screen.getByTestId("action-metrics-block")).toHaveTextContent("Looped exposure")
@@ -211,10 +214,10 @@ describe("MultiplyActionPageClient", () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByRole("slider", { name: "Target leverage multiplier" })).toBeInTheDocument()
+      expect(screen.getByRole("slider", { name: "Target leverage" })).toBeInTheDocument()
     })
 
-    expect(screen.getByRole("slider", { name: "Target leverage multiplier" })).toBeInTheDocument()
+    expect(screen.getByRole("slider", { name: "Target leverage" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Enter an amount" })).toBeDisabled()
     expect(screen.queryByTestId("action-metrics-block")).not.toBeInTheDocument()
     expect(screen.queryByTestId("action-risk-banner")).not.toBeInTheDocument()
@@ -229,7 +232,7 @@ describe("MultiplyActionPageClient", () => {
     )
 
     await waitFor(() => {
-      expect(screen.getByRole("slider", { name: "Target leverage multiplier" })).toBeInTheDocument()
+      expect(screen.getByRole("slider", { name: "Target leverage" })).toBeInTheDocument()
     })
 
     expect(screen.getByTestId("action-leverage-ruler")).toBeInTheDocument()
@@ -249,7 +252,7 @@ describe("MultiplyActionPageClient", () => {
     await screen.findByTestId("action-leverage-ruler")
     // Assert the controlled slider's own value (the state that drives the preview and
     // submission) rather than the animated headline text, which lags during transitions.
-    const slider = screen.getByRole("slider", { name: "Target leverage multiplier" }) as HTMLInputElement
+    const slider = screen.getByRole("slider", { name: "Target leverage" }) as HTMLInputElement
     // The 2.0x seed position defaults the target to max(1, 2 - 0.5) = 1.5x once.
     await waitFor(() => expect(slider.value).toBe("1.5"))
 
@@ -276,7 +279,7 @@ describe("MultiplyActionPageClient", () => {
 
     // Drag the ruler to its max reachable target (just below the 2.0x seed) to
     // produce a valid deleverage preview.
-    const slider = await screen.findByRole("slider", { name: "Target leverage multiplier" })
+    const slider = await screen.findByRole("slider", { name: "Target leverage" })
     fireEvent.change(slider, { target: { value: "1.9" } })
 
     await waitFor(() => {
@@ -326,7 +329,7 @@ describe("MultiplyActionPageClient", () => {
     })
   })
 
-  it("E2: dragging to the recommended max is a valid, non-blocked action", async () => {
+  it("E2: opening at a safe recommended leverage remains allowed", async () => {
     renderWithProviders(
       <AvanaSessionsProvider>
         <MultiplyActionPageClient kind="multiply" initialMarketId="aave-gho" initialMultiplier="1.7" />
@@ -336,10 +339,8 @@ describe("MultiplyActionPageClient", () => {
     const input = await screen.findByLabelText("Collateral amount")
     fireEvent.change(input, { target: { value: "5" } })
 
-    // The recommended marker sits on a reachable step (1.7x), NOT rounded up to 1.8x.
-    await waitFor(() => expect(screen.getByText("Recommended up to 1.7x")).toBeInTheDocument())
-
-    // At the recommended max the action is allowed (Review is offered, not blocked).
+    expect(screen.queryByText(/Recommended up to/i)).not.toBeInTheDocument()
+    // At a safe recommended leverage the action is allowed (Review is offered, not blocked).
     await waitFor(() => expect(screen.getByRole("button", { name: "Review" })).toBeInTheDocument())
     expect(screen.getByRole("button", { name: "Review" })).not.toBeDisabled()
     expect(screen.queryByText(/health factor is below the market minimum/i)).not.toBeInTheDocument()
@@ -359,26 +360,38 @@ describe("MultiplyActionPageClient", () => {
     await waitFor(() => expect(screen.queryByRole("button", { name: "Review" })).not.toBeInTheDocument())
   })
 
-  it("E6: setting leverage via the number input keeps slider, number and summary on one value", async () => {
+  it("E6: dragging the slider keeps 0.01 precision on the pill", async () => {
     renderWithProviders(
       <AvanaSessionsProvider>
         <MultiplyActionPageClient kind="multiply" initialMarketId="eth-usdt" initialMultiplier="2" />
       </AvanaSessionsProvider>,
     )
 
-    const numberInput = (await screen.findByLabelText("Custom Target leverage")) as HTMLInputElement
-    // A half-step value the slider grid rounds to 1.8x — the state must follow the grid
-    // so the number input, the slider and the projection do not desync.
-    fireEvent.change(numberInput, { target: { value: "1.75" } })
+    const slider = (await screen.findByRole("slider", { name: "Multiplier" })) as HTMLInputElement
+    fireEvent.change(slider, { target: { value: "1.75" } })
 
-    const slider = screen.getByRole("slider", { name: "Target leverage multiplier" }) as HTMLInputElement
-    await waitFor(() => expect(slider.value).toBe("1.8"))
-    expect(numberInput.value).toBe("1.8")
+    await waitFor(() => expect(slider.value).toBe("1.75"))
+    expect(screen.getByTestId("action-leverage-pill")).toHaveTextContent("1.75x")
   })
 
-  it("E4: the displayed Collateral APY matches the supply APY used in Net APY", async () => {
+  it("blocks Review when leverage is above the market public maximum", async () => {
+    renderWithProviders(
+      <AvanaSessionsProvider>
+        <MultiplyActionPageClient kind="multiply" initialMarketId="aave-gho" initialMultiplier="5" />
+      </AvanaSessionsProvider>,
+    )
+
+    const input = await screen.findByLabelText("Collateral amount")
+    fireEvent.change(input, { target: { value: "5" } })
+
+    // aave-gho publicMax is 1.8x — 5x is on the global slider but hard-blocked by validation.
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Review" })).not.toBeInTheDocument())
+    expect(screen.getByRole("slider", { name: "Multiplier" })).toHaveValue("5")
+  })
+
+  it("E4: Net APY uses live supply APY and the Collateral/Borrow APY card is gone", async () => {
     // Diverge the live supply APY from the seed collateralAsset.apy (the post-Convex-
-    // hydration case) so the test fails if the panel shows the stale collateral apy.
+    // hydration case) so Net APY must read economics.supplyApy, not the stale seed.
     const state = buildMockMultiplySystemState(DEMO_WALLET_ID)
     state.walletBalancesUsd[DEMO_WALLET_ID] = { "aave-gho": 12_500 }
     const aave = state.markets["aave-gho"]!
@@ -398,8 +411,11 @@ describe("MultiplyActionPageClient", () => {
     const input = await screen.findByLabelText("Collateral amount")
     fireEvent.change(input, { target: { value: "5" } })
 
-    // The Collateral APY row must read 7.94% (the value fed into Net APY), not 7.60%.
-    await waitFor(() => expect(screen.getByText(/AAVE · 7\.94%/)).toBeInTheDocument())
+    // Rates moved to Market Rates on the detail page — action no longer shows this card.
+    await waitFor(() => expect(screen.getByText("Net APY")).toBeInTheDocument())
+    expect(screen.queryByText("Collateral APY")).not.toBeInTheDocument()
+    expect(screen.queryByText("Borrow APY")).not.toBeInTheDocument()
+    expect(screen.queryByText(/AAVE · 7\.94%/)).not.toBeInTheDocument()
     expect(screen.queryByText(/AAVE · 7\.60%/)).not.toBeInTheDocument()
   })
 

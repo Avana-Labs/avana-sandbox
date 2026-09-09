@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import Image from "next/image"
 import { ArrowUpRight, BadgeDollarSign, Layers3, Search, Sparkles } from "@/app/components/icons"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { SearchTrigger } from "./search-trigger"
@@ -39,6 +38,68 @@ const TABS: Array<{ id: SearchTab; label: string }> = [
   { id: "borrow", label: "Borrow" },
   { id: "lend", label: "Lend" },
 ]
+
+const searchIconPreloads = new Map<string, Promise<void>>()
+
+function preloadSearchIcon(src: string) {
+  const existing = searchIconPreloads.get(src)
+  if (existing) return existing
+
+  const preload = new Promise<void>((resolve) => {
+    const image = new window.Image()
+    let settled = false
+    const finish = () => {
+      if (settled) return
+      settled = true
+      resolve()
+    }
+    image.onerror = finish
+    image.onload = () => {
+      if (typeof image.decode === "function") {
+        void image
+          .decode()
+          .catch(() => undefined)
+          .finally(finish)
+      } else {
+        finish()
+      }
+    }
+    image.src = src
+    if (image.complete) image.onload?.(new Event("load"))
+  })
+
+  searchIconPreloads.set(src, preload)
+  return preload
+}
+
+async function preloadSearchResultIcons(results: SearchResult[]) {
+  if (typeof window === "undefined") return
+  const urls = new Set<string>()
+  for (const result of results) {
+    const visuals = Array.isArray(result.visual) ? result.visual : [result.visual]
+    for (const visual of visuals) {
+      if (visual.iconUrl) urls.add(visual.iconUrl)
+    }
+  }
+  await Promise.all(Array.from(urls, preloadSearchIcon))
+}
+
+function SearchResultImage({ src }: { src: string }) {
+  return (
+    // These small local icons are decoded before result rows are published.
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt=""
+      width={TOKEN_ICON_TABLE_PX}
+      height={TOKEN_ICON_TABLE_PX}
+      loading="eager"
+      decoding="sync"
+      fetchPriority="high"
+      className="size-full object-contain"
+    />
+  )
+}
 
 async function getSearchResults(
   formatCompactCurrency: (usd: number) => string,
@@ -111,19 +172,7 @@ function TokenAvatar({ visual }: { visual: BorrowAssetVisual }) {
         visual.iconUrl ? undefined : cn("overflow-hidden rounded-full", visual.bgClass, visual.textClass),
       )}
     >
-      {visual.iconUrl ? (
-        <Image
-          src={visual.iconUrl}
-          alt=""
-          width={TOKEN_ICON_TABLE_PX}
-          height={TOKEN_ICON_TABLE_PX}
-          className="size-full object-contain"
-          loading="eager"
-          unoptimized
-        />
-      ) : (
-        visual.shortLabel
-      )}
+      {visual.iconUrl ? <SearchResultImage src={visual.iconUrl} /> : visual.shortLabel}
     </span>
   )
 }
@@ -140,15 +189,7 @@ function PoolAvatar({ visuals }: { visuals: [BorrowAssetVisual, BorrowAssetVisua
         )}
       >
         {visuals[0].iconUrl ? (
-          <Image
-            src={visuals[0].iconUrl}
-            alt=""
-            width={TOKEN_ICON_TABLE_PX}
-            height={TOKEN_ICON_TABLE_PX}
-            className="size-full object-contain"
-            loading="eager"
-            unoptimized
-          />
+          <SearchResultImage src={visuals[0].iconUrl} />
         ) : (
           <span className="text-[9px] font-medium">{visuals[0].shortLabel}</span>
         )}
@@ -162,15 +203,7 @@ function PoolAvatar({ visuals }: { visuals: [BorrowAssetVisual, BorrowAssetVisua
         )}
       >
         {visuals[1].iconUrl ? (
-          <Image
-            src={visuals[1].iconUrl}
-            alt=""
-            width={TOKEN_ICON_TABLE_PX}
-            height={TOKEN_ICON_TABLE_PX}
-            className="size-full object-contain"
-            loading="eager"
-            unoptimized
-          />
+          <SearchResultImage src={visuals[1].iconUrl} />
         ) : (
           <span className="text-[9px] font-medium">{visuals[1].shortLabel}</span>
         )}
@@ -232,12 +265,16 @@ function registerSlashShortcut(open: () => void) {
   }
 }
 
-export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: boolean; tone?: "nav" | "brand" } = {}) {
+export function SearchCommand({
+  iconOnly = false,
+  tone = "nav",
+  initialOpen = false,
+}: { iconOnly?: boolean; tone?: "nav" | "brand"; initialOpen?: boolean } = {}) {
   const router = useRouter()
   const { t } = useTranslation()
   const { compact } = useCurrency()
   const borrowSession = useBorrowSessionContextOptional()
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(initialOpen)
   const [query, setQuery] = useState("")
   const [activeTab, setActiveTab] = useState<SearchTab>("all")
   const [results, setResults] = useState<SearchResult[] | null>(null)
@@ -263,7 +300,9 @@ export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: b
         if (hydratedPools.length === 0) hydratedPools = BORROW_POOL_CATALOG
         if (hydratedAssets.length === 0) hydratedAssets = BORROWABLE_ASSETS
       }
-      setResults(await getSearchResults(compact, t, hydratedPools, hydratedAssets))
+      const nextResults = await getSearchResults(compact, t, hydratedPools, hydratedAssets)
+      await preloadSearchResultIcons(nextResults)
+      setResults(nextResults)
     } finally {
       setLoadingResults(false)
     }
@@ -290,6 +329,7 @@ export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: b
 
   const normalizedQuery = query.trim().toLowerCase()
   const resolvedResults = results ?? []
+  const resultsPending = results === null
 
   const groupedResults = useMemo<Array<[SearchResult["tab"], SearchResult[]]>>(() => {
     const tabScoped = resolvedResults.filter((result) => activeTab === "all" || result.tab === activeTab)
@@ -418,13 +458,19 @@ export function SearchCommand({ iconOnly = false, tone = "nav" }: { iconOnly?: b
             })}
           </div>
 
-          <div id="search-command-results" role="listbox" className="max-h-[430px] overflow-y-auto px-2 py-2.5">
-            {loadingResults && results == null ? (
-              <div className="px-5 py-12 text-center">
-                <p className="text-[15px] font-medium text-foreground">{t("Loading results")}</p>
-                <p className="mt-1 text-[13px] text-muted-foreground">
-                  {t("Preparing pools, borrow assets, and lend assets.")}
-                </p>
+          <div
+            id="search-command-results"
+            role="listbox"
+            className="min-h-[430px] max-h-[430px] overflow-y-auto px-2 py-2.5"
+          >
+            {resultsPending ? (
+              <div className="flex min-h-[400px] items-center justify-center px-5 py-12 text-center">
+                <div>
+                  <p className="text-[15px] font-medium text-foreground">{t("Loading results")}</p>
+                  <p className="mt-1 text-[13px] text-muted-foreground">
+                    {t("Preparing pools, borrow assets, and lend assets.")}
+                  </p>
+                </div>
               </div>
             ) : groupedResults.length > 0 ? (
               groupedResults.map(([tab, group]) => (

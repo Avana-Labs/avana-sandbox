@@ -1,16 +1,9 @@
 import { expect, test } from "@playwright/test"
+import { installSiweSession, walletFromAuthToken } from "./helpers/siwe-auth"
 
 const AUTH_TOKEN = process.env.AVANA_E2E_AUTH_TOKEN
 const RUN_STAGING_E2E =
   process.env.RUN_ACTION_CONVEX_E2E === "1" && process.env.AVANA_E2E_STAGING === "1" && Boolean(AUTH_TOKEN)
-
-function walletFromToken(token: string) {
-  const payload = JSON.parse(Buffer.from(token.split(".")[1] ?? "", "base64url").toString()) as {
-    wallet?: string
-    sub?: string
-  }
-  return (payload.wallet ?? payload.sub ?? "").toLowerCase()
-}
 
 const lifecycles = [
   {
@@ -44,14 +37,14 @@ test.skip(
 for (const lifecycle of lifecycles) {
   test(`${lifecycle.name} completes configure, review, success, and dashboard reconciliation`, async ({ page }) => {
     test.skip(!lifecycle.path, `Set the staging fixture route for ${lifecycle.name}.`)
-    test.setTimeout(60_000)
-    const wallet = walletFromToken(AUTH_TOKEN!)
-    await page.addInitScript(
-      ({ jwt, address }) => {
-        window.sessionStorage.setItem("avana.siwe.token.v1", JSON.stringify({ jwt, wallet: address }))
-      },
-      { jwt: AUTH_TOKEN!, address: wallet },
+    test.skip(
+      !process.env.AVANA_E2E_SESSION_SECRET,
+      "Set AVANA_E2E_SESSION_SECRET so Playwright can mint an HttpOnly avana_siwe session on staging.",
     )
+    test.setTimeout(60_000)
+    const wallet = walletFromAuthToken(AUTH_TOKEN!)
+    await installSiweSession(page, AUTH_TOKEN!)
+    expect(wallet).toMatch(/^0x[0-9a-f]{40}$/)
     await page.goto(lifecycle.path!, { waitUntil: "commit" })
 
     const configurePrimary = page.getByTestId("action-footer").locator("button").last()

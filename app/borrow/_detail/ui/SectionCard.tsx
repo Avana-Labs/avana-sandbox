@@ -17,6 +17,32 @@ type SectionCardProps = {
   id?: string
 }
 
+export function SectionCardPrimaryMetric({ className, ...props }: React.ComponentPropsWithoutRef<"span">) {
+  return (
+    <span
+      className={cn(
+        "font-data text-[26px] font-medium leading-none tabular-nums text-foreground md:text-[30px]",
+        className,
+      )}
+      {...props}
+    />
+  )
+}
+
+export function SectionCardSupportingLabel({ className, ...props }: React.ComponentPropsWithoutRef<"span">) {
+  return <span className={cn("text-[12px] font-normal leading-4 text-muted-foreground", className)} {...props} />
+}
+
+export function SectionCardCopy({ className, ...props }: React.ComponentPropsWithoutRef<"p">) {
+  return <p className={cn("text-[15px] leading-[1.6] text-muted-foreground md:text-[16px]", className)} {...props} />
+}
+
+export function SectionCardActions({ className, ...props }: React.ComponentPropsWithoutRef<"div">) {
+  return (
+    <div className={cn("mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4", className)} {...props} />
+  )
+}
+
 /**
  * Canonical section shell used across `/multiply`, `/lend`, and now the borrow
  * detail pages. Title sits OUTSIDE the Card (matches `HotMarkets`,
@@ -42,11 +68,11 @@ export function SectionCard({
         <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
           <div className="min-w-0">
             {title ? (
-              <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+              <h2 className="text-[22px] font-medium leading-none tracking-[-0.01em] text-foreground md:text-[24px]">
                 {title}
               </h2>
             ) : null}
-            {subtitle ? <p className="mt-0.5 text-[11.5px] text-muted-foreground">{subtitle}</p> : null}
+            {subtitle ? <p className="mt-0.5 text-[12px] text-muted-foreground">{subtitle}</p> : null}
           </div>
           {rightSlot ? <div className="flex shrink-0 items-center gap-2">{rightSlot}</div> : null}
         </div>

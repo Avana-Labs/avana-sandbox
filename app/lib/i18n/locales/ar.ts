@@ -69,6 +69,8 @@ const dict: TranslationDictionary = {
   Value: "القيمة",
   Utilization: "معدل الاستخدام",
   "Supply & Borrow": "الإيداع والاقتراض",
+  "Supply {collateral}": "إيداع {collateral}",
+  "Borrow {borrow}": "اقتراض {borrow}",
   Borrowed: "المُقترَض",
   Available: "متاح",
   "Supply APY": "عائد الإيداع السنوي",
@@ -155,6 +157,8 @@ const dict: TranslationDictionary = {
   "Join waitlist": "الانضمام إلى قائمة الانتظار",
   "Previous page": "الصفحة السابقة",
   "Next page": "الصفحة التالية",
+  "Transactions pagination": "ترقيم صفحات المعاملات",
+  "Changelog pagination": "ترقيم صفحات سجل التغييرات",
   "{page} of {count}": "{page} من {count}",
   "Max APY": "أقصى عائد سنوي",
   "Max Leverage": "أقصى رافعة",
@@ -274,7 +278,6 @@ const dict: TranslationDictionary = {
   "Insufficient balance": "الرصيد غير كافٍ",
   "Insufficient liquidity": "السيولة غير كافية",
   "Insufficient LP": "رصيد LP غير كافٍ",
-  "Deposit collateral first": "أودع الضمان أولاً",
   "Borrowing unavailable": "الاقتراض غير متاح",
   "Try a smaller amount": "جرّب مبلغًا أصغر",
   "Supply cap reached": "تم بلوغ حد التوريد",
@@ -283,6 +286,8 @@ const dict: TranslationDictionary = {
   "Not available here": "غير متاح هنا",
   "Nothing to claim": "لا شيء للمطالبة",
   "Select rewards": "اختر المكافآت",
+  "No collateral": "لا يوجد ضمان",
+  "No position": "لا يوجد مركز",
   "Nothing to withdraw": "لا شيء للسحب",
   "and the Avana team will follow up. You can submit another request any time.":
     "وسيتابع فريق Avana معك. يمكنك إرسال طلب آخر في أي وقت.",
@@ -397,7 +402,6 @@ const dict: TranslationDictionary = {
   "Daily Interest": "الفائدة اليومية",
   day: "يوم",
   "Deposit {symbol}": "إيداع {symbol}",
-  "Deposit LP collateral before borrowing {symbol}.": "أودِع ضمان LP قبل اقتراض {symbol}.",
   Done: "تم",
   Expiration: "انتهاء الصلاحية",
   Expired: "منتهي الصلاحية",
@@ -406,7 +410,6 @@ const dict: TranslationDictionary = {
   "Generating link...": "جارٍ إنشاء الرابط...",
   "Go back": "رجوع",
   GOOD: "جيد",
-  "Got it": "حسنًا",
   "Health Factor": "عامل السلامة",
   "I read it": "قرأتُه",
   "In this sandbox, every transaction is simulated — use previews to learn before sizing up.":
@@ -560,6 +563,10 @@ const dict: TranslationDictionary = {
   "Lend Rewards": "مكافآت الإقراض",
   "Multiply Overview": "نظرة عامة على المضاعفة",
   "Multiply Positions": "مراكز المضاعفة",
+  "Debt & Risk": "الديون والمخاطر",
+  "Position size, multiplier, and current net yield": "حجم المركز والمضاعف وصافي العائد الحالي",
+  "Borrowed balance, health factor, and liquidation threshold": "الرصيد المقترض وعامل الصحة وحد التصفية",
+  "No active Multiply debt": "لا توجد ديون Multiply نشطة",
   "Loading your portfolio": "جارٍ تحميل محفظتك",
   "We couldn't load your portfolio": "تعذّر علينا تحميل محفظتك",
   "The live portfolio fetch kept failing. Try again to re-run the client fetch without leaving the dashboard.":
@@ -1035,6 +1042,7 @@ const dict: TranslationDictionary = {
   "Welcome to the Avana Sandbox": "مرحبًا بك في بيئة Avana التجريبية",
   "This risk-free Avana Sandbox lets you borrow against practice LP positions, lend, and loop strategies using sandbox funds. No real assets. No wallet signatures. Just a fast way to understand how Avana works before switching to the live app.":
     "تتيح لك بيئة Avana التجريبية الخالية من المخاطر الاقتراض مقابل مراكز LP التدريبية والإقراض وتكرار الاستراتيجيات باستخدام أموال تجريبية. لا أصول حقيقية. لا توقيعات محفظة. مجرد طريقة سريعة لفهم كيفية عمل Avana قبل الانتقال إلى التطبيق الفعلي.",
+  "No transactions yet": "لا توجد معاملات بعد",
   "No transactions to sign": "لا معاملات للتوقيع عليها",
   "Connect a wallet.": "اربط محفظة.",
   "We'll set up your sandbox and scope it to your address.": "سنُعدّ بيئتك التجريبية ونربطها بعنوانك.",
@@ -1112,6 +1120,7 @@ const dict: TranslationDictionary = {
   "We couldn't load this page.": "تعذّر علينا تحميل هذه الصفحة.",
   "Active Deficit": "العجز النشط",
   "Active stake": "الحصة النشطة",
+  "Includes active stake and cooldown": "يتضمن الحصة النشطة وفترة الانتظار",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.":
     "المبلغ الذي تغطيه Avana أولاً قبل تعريض التغطية المُودعة من المستخدمين. لا يتحمّل المودعون خسائر إلا عندما تتجاوز العجوزات المحقّقة هذا الإزاحة.",
   "Close umbrella actions": "إغلاق إجراءات الحماية",
@@ -1147,9 +1156,11 @@ const dict: TranslationDictionary = {
   "Previous market risk": "مخاطر السوق السابقة",
   Ready: "جاهز",
   "Removes in": "يُزال خلال",
+  Restart: "إعادة التشغيل",
   "Restart cooldown": "إعادة تشغيل التبريد",
   Stake: "Stake",
   "Stake in umbrella": "إيداع في الحماية",
+  "Unstake from umbrella": "السحب من الحماية",
   "Stake, claim rewards, start cooldown, or unstake from the umbrella safety module.":
     "أودِع، استلم المكافآت، ابدأ الانتظار، أو اسحب من وحدة أمان الحماية.",
   "Stake, claim, cooldown, unstake": "إيداع، مطالبة، تبريد، سحب",
@@ -1157,6 +1168,7 @@ const dict: TranslationDictionary = {
     "ابدأ التبريد قبل السحب. خلال التبريد يستمر المركز في كسب الحوافز ويبقى عرضة للخصم.",
   Target: "هدف",
   "Total coverage": "إجمالي التغطية",
+  "Total position value": "إجمالي قيمة المركز",
   "Total user-staked capital available to absorb losses for this asset.":
     "إجمالي رأس المال المُودَع من المستخدمين والمتاح لاستيعاب خسائر هذا الأصل.",
   Umbrella: "حماية",
@@ -1263,6 +1275,9 @@ const dict: TranslationDictionary = {
   "In range": "ضمن النطاق",
   "Interest / day": "الفائدة / يوم",
   "Key Statistics": "الإحصائيات الرئيسية",
+  "Market Rates": "معدلات السوق",
+  "Utilization Rate": "معدل الاستخدام",
+  "Borrow amount to reach {value} Util.": "مبلغ الاقتراض للوصول إلى استخدام {value}.",
   "Large price difference": "فرق سعري كبير",
   "Lend Assets": "أصول الإقراض",
   "Lend Balance": "رصيد الإقراض",
@@ -1341,6 +1356,8 @@ const dict: TranslationDictionary = {
   refreshing_position: "جارٍ تحديث المركز",
   "Repay or add collateral to reduce your liquidation risk.": "سدّد أو أضف ضمانًا لتقليل مخاطر التصفية.",
   "Review risk": "مراجعة المخاطر",
+  "Negative net APY: borrow costs exceed supply yield. Review before opening this loop.":
+    "صافي العائد السنوي سلبي: تكاليف الاقتراض تتجاوز عائد التوريد. راجع قبل فتح هذه الحلقة.",
   "Review swap": "مراجعة المبادلة",
   "Rewards Earned": "المكافآت المكتسبة",
   Sandbox: "البيئة التجريبية",
@@ -1461,6 +1478,153 @@ const dict: TranslationDictionary = {
   "Next rewards": "المكافآت التالية",
   "Open on Launch Date": "تُفتح في تاريخ الإطلاق",
   "Previous rewards": "المكافآت السابقة",
+  "The asset you've borrowed against your collateral.": "الأصل الذي اقترضته مقابل ضمانك.",
+  "Your outstanding loan balance in this asset, valued live.": "رصيد قرضك القائم بهذا الأصل، بتقييمه الحي.",
+  "A token held directly in your connected wallet.": "رمز محتفَظ به مباشرة في محفظتك المتصلة.",
+  "The amount of this token in your wallet.": "كمية هذا الرمز في محفظتك.",
+  "The token balance valued at its live price.": "رصيد الرمز مُقيَّمًا بسعره الحي.",
+  "A liquidity-pool position you hold, paired tokens supplied to a DEX.":
+    "مركز تحتفظ به في مجمّع سيولة، وهو عبارة عن زوج رموز مُودَع في DEX.",
+  "Whether the position's price range is active and earning fees.": "ما إذا كان نطاق سعر المركز نشطًا ويحقق رسومًا.",
+  "The current value of your pooled tokens.": "القيمة الحالية لرموزك المجمّعة.",
+  "Trading fees this position has earned, claimable to your wallet.":
+    "رسوم التداول التي حقّقها هذا المركز، وهي قابلة للمطالبة إلى محفظتك.",
+  "The token you've supplied to earn lending yield.": "الرمز الذي أودعته لتحقيق عائد الإقراض.",
+  "Your supplied balance in this asset, valued at its live price.": "رصيدك المودَع بهذا الأصل، مُقيَّمًا بسعره الحي.",
+  "Current annual percentage yield on your deposit, before protocol rewards.":
+    "العائد السنوي الحالي على إيداعك، قبل مكافآت البروتوكول.",
+  "The collateral asset backing your borrowing, valued at its live price.":
+    "أصل الضمان الذي يدعم اقتراضك، مُقيَّمًا بسعره الحي.",
+  "How much more you can borrow against this collateral; the % shows how much of your liquidation limit is already used.":
+    "المبلغ الإضافي الذي يمكنك اقتراضه مقابل هذا الضمان؛ وتُظهر % مقدار ما استُخدم بالفعل من حد التصفية لديك.",
+  "Health factor, and the collateral value at which this position is liquidated. Below 1.0 triggers liquidation.":
+    "عامل السلامة، وقيمة الضمان التي يتم عندها تصفية هذا المركز. أقل من 1.0 يؤدي إلى التصفية.",
+  "The collateral you supply and the asset you borrow against it to build leverage.":
+    "الضمان الذي تودعه والأصل الذي تقترضه مقابله لبناء الرافعة.",
+  "Your own capital in the loop (exposure minus debt). Exposure is your total leveraged position.":
+    "رأس مالك الخاص في الحلقة (الانكشاف ناقص الدين). الانكشاف هو إجمالي مركزك برافعة مالية.",
+  "Net yield after borrow costs, on your capital. The figure below is interest earned so far, ticking live.":
+    "صافي العائد بعد تكاليف الاقتراض، على رأس مالك. الرقم أدناه هو الفائدة المكتسبة حتى الآن، وهي تتزايد بشكل حي.",
+  "Health factor, and the collateral price at which this loop is liquidated. Below 1.0 triggers liquidation.":
+    "عامل السلامة، وسعر الضمان الذي تتم عنده تصفية هذه الحلقة. أقل من 1.0 يؤدي إلى التصفية.",
+  "Net carry earned across your Multiply loops, accruing in real time (supply yield minus borrow cost)":
+    "صافي العائد المكتسب عبر حلقات Multiply الخاصة بك، ويتراكم في الوقت الفعلي (عائد التوريد ناقص تكلفة الاقتراض)",
+  "Average APY across your staked positions, weighted by value.": "APY المتوسط عبر مراكزك المرهونة، مرجّحًا بالقيمة.",
+  "Additional amount you can borrow against your pledged collateral within Avana credit limits":
+    "المبلغ الإضافي الذي يمكنك اقتراضه مقابل ضمانك المرهون ضمن حدود ائتمان Avana",
+  "Amount an active loan can lose before reaching liquidation; unavailable when you have no debt":
+    "المقدار الذي يمكن أن يخسره القرض النشط قبل الوصول إلى التصفية؛ غير متاح إذا لم يكن عليك أي دين",
+  "Combined liquidation value divided by total Multiply debt. Higher is safer; below 1 risks liquidation.":
+    "قيمة التصفية الإجمالية مقسومة على إجمالي دين Multiply. الأعلى أكثر أمانًا؛ وأقل من 1 يُعرّض للتصفية.",
+  "Equity-weighted net APY after supply yield and borrow cost":
+    "APY الصافي المرجّح بحقوق الملكية بعد عائد التوريد وتكلفة الاقتراض",
+  "Exposure, return, and liquidation risk for each active loop": "الانكشاف والعائد ومخاطر التصفية لكل حلقة نشطة",
+  "Gross Multiply exposure after looping across all positions":
+    "إجمالي انكشاف Multiply الناتج عن الحلقات عبر جميع المراكز",
+  "Interest earned as a percentage of principal you supplied":
+    "الفائدة المكتسبة كنسبة مئوية من المبلغ الأصلي الذي أودعته",
+  "Portfolio leverage as position value divided by equity": "رافعة المحفظة كقيمة المركز مقسومة على حقوق الملكية",
+  "Projected earnings at current rates": "الأرباح المتوقعة بالمعدلات الحالية",
+  "Supply interest accruing in real time across your lending positions (excludes protocol rewards)":
+    "فوائد التوريد المتراكمة في الوقت الفعلي عبر مراكز الإقراض الخاصة بك (لا تشمل مكافآت البروتوكول)",
+  "Wallet-wide liquidation value divided by total borrowed. Higher is safer; below 1 risks liquidation.":
+    "قيمة التصفية الإجمالية على مستوى المحفظة مقسومة على إجمالي المُقترَض. الأعلى أكثر أمانًا؛ وأقل من 1 يُعرّض للتصفية.",
+  "Prices may be stale": "قد تكون الأسعار غير محدَّثة",
+  "The current annual borrow rate on this debt. Below, the interest accrued so far, ticking live.":
+    "سعر الاقتراض السنوي الحالي على هذا الدين. وأدناه، الفائدة المتراكمة حتى الآن، تتزايد بشكل حي.",
+  "Total AVA you've earned across completed quests and staking rewards.":
+    "إجمالي AVA الذي كسبته عبر المهام المكتملة ومكافآت الرهن.",
+  "AVA you can claim to your wallet right now.": "AVA الذي يمكنك المطالبة به إلى محفظتك الآن.",
+  "Core Concepts": "المفاهيم الأساسية",
+  "What is Avana?": "ما هو Avana؟",
+  "Protocol overview": "نظرة عامة على البروتوكول",
+  "Avana is an LP-collateral lending protocol built around Aave v4's Hub-and-Spoke architecture.":
+    "Avana هو بروتوكول إقراض بضمان LP مبني حول بنية Hub-and-Spoke في Aave v4.",
+  "Why it exists": "لماذا يوجد",
+  "The goal is to let liquidity providers borrow against active positions without unwinding the pool position first.":
+    "الهدف هو تمكين مزودي السيولة من الاقتراض مقابل مراكز نشطة دون إغلاق مركز المجمع أولاً.",
+  "What does the Borrow Spoke do?": "ماذا يفعل Borrow Spoke؟",
+  "LP-specific underwriting": "اكتتاب خاص بـ LP",
+  "Borrow Spokes value supported positions, monitor health, and route liquidation behavior for LP collateral.":
+    "تقوم Borrow Spokes بتقييم المراكز المدعومة ومراقبة الصحة وتوجيه سلوك التصفية لضمان LP.",
+  "Shared coordination": "التنسيق المشترك",
+  "The Hub coordinates shared liquidity and debt accounting while the spoke handles the LP-specific logic.":
+    "ينسّق Hub السيولة المشتركة ومحاسبة الدين، بينما يتولى الـ spoke المنطق الخاص بـ LP.",
+  "Borrowing Capacity & Valuation": "قدرة الاقتراض والتقييم",
+  "How is borrowing capacity calculated?": "كيف تُحسب قدرة الاقتراض؟",
+  "Adjusted collateral value": "قيمة الضمان المعدَّلة",
+  "Each approved LP position is valued independently, then collateral factors and pool-specific risk controls are applied.":
+    "يُقيَّم كل مركز LP معتمد بشكل مستقل، ثم تُطبَّق عوامل الضمان وضوابط المخاطر الخاصة بالمجمع.",
+  "Aggregated in the spoke": "مجمّع في الـ spoke",
+  "The spoke aggregates approved positions into borrowing capacity and the Hub enforces the result.":
+    "يجمّع الـ spoke المراكز المعتمدة في قدرة اقتراض، ويطبّق Hub النتيجة.",
+  "Why did my capacity change?": "لماذا تغيّرت قدرتي؟",
+  "Market movement": "حركة السوق",
+  "Capacity can change when the underlying assets move or when recoverable value shifts.":
+    "قد تتغيّر القدرة عندما تتحرك الأصول الأساسية أو عندما تتغيّر القيمة القابلة للاسترداد.",
+  "Risk settings": "إعدادات المخاطر",
+  "Collateral factors and market-specific risk settings can also change the amount shown in the interface.":
+    "يمكن لعوامل الضمان وإعدادات المخاطر الخاصة بالسوق أيضاً أن تغيّر المبلغ الظاهر في الواجهة.",
+  "Health & Liquidation": "الصحة والتصفية",
+  "What is the health factor?": "ما هو عامل الصحة؟",
+  "How to read health": "كيف تقرأ الصحة",
+  "Health factor expresses the relationship between adjusted collateral value and outstanding debt inside one Borrow Spoke.":
+    "يعبّر عامل الصحة عن العلاقة بين قيمة الضمان المعدَّلة والدين المستحق داخل Borrow Spoke واحد.",
+  "What it means for users": "ماذا يعني للمستخدمين",
+  "As the buffer shrinks, the position becomes more exposed to liquidation if market conditions move against it.":
+    "مع تقلّص الهامش، يصبح المركز أكثر عرضة للتصفية إذا تحركت ظروف السوق ضده.",
+  "When can liquidation happen?": "متى يمكن أن تحدث التصفية؟",
+  Triggers: "المحفّزات",
+  "If market moves weaken health enough, the position can become liquidatable under the spoke's rules.":
+    "إذا أضعفت تحركات السوق الصحة بما يكفي، يمكن أن يصبح المركز قابلاً للتصفية وفق قواعد الـ spoke.",
+  "What happens next": "ماذا يحدث بعد ذلك",
+  "The spoke monitors risk continuously and routes liquidation behavior while the Hub keeps reserves coordinated.":
+    "يراقب الـ spoke المخاطر باستمرار ويوجّه سلوك التصفية، بينما يحافظ Hub على تنسيق الاحتياطيات.",
+  "Leverage Markets": "أسواق الرافعة",
+  "How do leverage markets work?": "كيف تعمل أسواق الرافعة؟",
+  "LP-backed exposure": "تعرض مدعوم بـ LP",
+  "Leverage markets let Avana support LP-backed borrowing and directional exposure in a more specialized workflow.":
+    "تتيح أسواق الرافعة لـ Avana دعم الاقتراض المدعوم بـ LP والتعرض الاتجاهي ضمن سير عمل أكثر تخصصاً.",
+  "Position stacking": "تكديس المراكز",
+  "Borrowing capacity can be aggregated from multiple approved positions inside the same Borrow Spoke.":
+    "يمكن تجميع قدرة الاقتراض من عدة مراكز معتمدة داخل نفس Borrow Spoke.",
+  "Can one account use multiple LP positions?": "هل يمكن لحساب واحد استخدام عدة مراكز LP؟",
+  "Multiple positions": "مراكز متعددة",
+  "Yes. A single account can combine supported LP positions so long as each position passes the protocol's checks.":
+    "نعم. يمكن لحساب واحد دمج مراكز LP المدعومة طالما اجتاز كل مركز فحوصات البروتوكول.",
+  "Per-position risk": "المخاطر لكل مركز",
+  "Each position is evaluated on its own terms before being included in the final borrowing capacity.":
+    "يُقيَّم كل مركز وفق شروطه الخاصة قبل إدراجه في قدرة الاقتراض النهائية.",
+  "Fees & Interface Policy": "الرسوم وسياسة الواجهة",
+  "Are interface fees fixed across all integrations?": "هل رسوم الواجهة ثابتة عبر كل التكاملات؟",
+  "Operational settings": "إعدادات تشغيلية",
+  "Exact fee rates, exemptions, and rollout status are operational settings and should be verified in the live interface.":
+    "المعدلات الدقيقة والإعفاءات وحالة الطرح إعدادات تشغيلية ويجب التحقق منها في الواجهة الحية.",
+  "Integration differences": "اختلافات التكامل",
+  "Direct integrations or third-party frontends may follow different assumptions, so always verify the interface you are using.":
+    "قد تتبع التكاملات المباشرة أو الواجهات الأمامية من طرف ثالث افتراضات مختلفة، لذا تحقق دائماً من الواجهة التي تستخدمها.",
+  "What counts as protocol economics vs interface policy?": "ما الذي يُعد اقتصاد البروتوكول مقابل سياسة الواجهة؟",
+  "Protocol layer": "طبقة البروتوكول",
+  "Core collateral valuation, debt controls, and liquidation pathways live at the protocol layer.":
+    "تقييم الضمان الأساسي وضوابط الدين ومسارات التصفية موجودة في طبقة البروتوكول.",
+  "Interface layer": "طبقة الواجهة",
+  "The frontend can present policy, routing, and support flows differently from one integration to another.":
+    "يمكن للواجهة الأمامية عرض السياسة والتوجيه وتدفقات الدعم بشكل مختلف من تكامل لآخر.",
+  "Risk & Security": "المخاطر والأمان",
+  "What are the main risks?": "ما المخاطر الرئيسية؟",
+  "Market and liquidity risk": "مخاطر السوق والسيولة",
+  "The main risks are market moves in the underlying assets, impermanent loss, and range drift for concentrated positions.":
+    "المخاطر الرئيسية هي تحركات السوق في الأصول الأساسية، والخسارة غير الدائمة، وانحراف النطاق للمراكز المركّزة.",
+  "Liquidation risk": "مخاطر التصفية",
+  "If the health buffer weakens while debt remains outstanding, the position can become liquidatable.":
+    "إذا ضعف هامش الصحة مع بقاء دين مستحق، يمكن أن يصبح المركز قابلاً للتصفية.",
+  "How should I think about security?": "كيف أفكر في الأمان؟",
+  "Protocol guidance": "إرشادات البروتوكول",
+  "Use the same caution you would for any LP position and follow the protocol's risk guidance closely.":
+    "استخدم نفس الحذر الذي تستخدمه مع أي مركز LP واتبع إرشادات مخاطر البروتوكول بدقة.",
+  "Support request": "طلب دعم",
+  "If something looks off, send the details and our team can help you triage the issue.":
+    "إذا بدا شيء غير صحيح، أرسل التفاصيل ويمكن لفريقنا مساعدتك في فرز المشكلة.",
 }
 
 export default dict

@@ -139,7 +139,7 @@ export function AllocationBreakdownCard({ detail, id }: Props) {
   return (
     <section id={id} aria-label={t("Supported Collateral")} className="space-y-5">
       <div className="flex items-center gap-1.5">
-        <h2 className="text-[22px] font-medium tracking-[-0.03em] text-foreground dark:text-white md:text-[24px]">
+        <h2 className="text-[22px] font-medium tracking-[-0.01em] text-foreground dark:text-white md:text-[24px]">
           {t("Supported Collateral")}
         </h2>
         <ActionMetricHelp text={helpText} topic="Supported Collateral" />
@@ -200,9 +200,8 @@ export function AllocationBreakdownCard({ detail, id }: Props) {
                 {rows.map((row, index) => (
                   <tr
                     key={row.id}
-                    className="asset-swap group cursor-pointer transition-colors"
+                    className="group cursor-pointer transition-colors"
                     onClick={() => router.push(row.href)}
-                    style={{ animationDelay: `${index * 40}ms` }}
                   >
                     <td
                       className={`py-2.5 pl-4 pr-2 align-middle font-data text-[14px] font-medium tabular-nums text-muted-foreground dark:text-white/52 sm:pl-6 ${TABLE_ROW_HOVER_LEFT}`}
@@ -220,10 +219,10 @@ export function AllocationBreakdownCard({ detail, id }: Props) {
                           </span>
                         </div>
                         <div className="min-w-0">
-                          <div className="truncate text-[15px] font-medium tracking-[-0.03em] text-foreground dark:text-white">
+                          <div className="truncate text-[15px] font-medium tracking-normal text-foreground dark:text-white">
                             {row.poolName}
                           </div>
-                          <div className="mt-1 truncate text-[13px] font-normal tracking-[-0.03em] tabular-nums text-muted-foreground dark:text-white/38">
+                          <div className="mt-1 truncate text-[13px] font-normal tracking-normal tabular-nums text-muted-foreground dark:text-white/38">
                             {row.feeTier ? `${row.feeTier} · ` : ""}
                             {row.tvlUsd !== undefined ? `${compact(row.tvlUsd)} ${t("TVL")}` : ""}
                           </div>
@@ -231,12 +230,12 @@ export function AllocationBreakdownCard({ detail, id }: Props) {
                       </div>
                     </td>
                     <td
-                      className={`py-2.5 px-2 font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white sm:px-4 ${TABLE_ROW_HOVER_BG}`}
+                      className={`py-2.5 px-2 font-data text-[15px] font-normal tracking-normal tabular-nums text-foreground dark:text-white sm:px-4 ${TABLE_ROW_HOVER_BG}`}
                     >
                       {Math.round(row.collateralFactorPct)}%
                     </td>
                     <td
-                      className={`py-2.5 px-2 font-data text-[15px] font-normal tracking-[-0.03em] tabular-nums text-foreground dark:text-white sm:px-4 ${TABLE_ROW_HOVER_BG}`}
+                      className={`py-2.5 px-2 font-data text-[15px] font-normal tracking-normal tabular-nums text-foreground dark:text-white sm:px-4 ${TABLE_ROW_HOVER_BG}`}
                     >
                       {row.sharePct.toFixed(2)}%
                     </td>

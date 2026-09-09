@@ -1,7 +1,7 @@
 "use client"
 
-import * as Sentry from "@sentry/nextjs"
 import { useEffect } from "react"
+import { captureException } from "@/app/lib/monitoring/sentry-client"
 
 /**
  * Global error boundary — the last line of defence. It replaces the root layout
@@ -25,7 +25,7 @@ export default function GlobalError({ error, reset }: { error: Error & { digest?
     // Always surface the error — production included — so incidents aren't invisible. In a
     // production build Next strips the message from the client error object but preserves
     // `error.digest`, which correlates to the server-side log entry (Vercel / Convex).
-    Sentry.captureException(error)
+    captureException(error)
     console.error("[global-error]", error, error.digest ? `digest=${error.digest}` : "")
   }, [error])
 

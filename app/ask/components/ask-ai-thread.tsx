@@ -126,8 +126,8 @@ function DirectUserMessage({ message }: { message: ThreadMessage }) {
     .map((part) => part.text)
     .join("\n")
   return (
-    <div className="group/msg relative mx-auto flex w-full max-w-[var(--thread-max-width)] flex-col px-2 py-2">
-      <div className="ml-auto max-w-[min(80%,32rem)] break-words rounded-3xl bg-muted px-5 py-2.5 leading-relaxed text-foreground [&_p]:mb-0">
+    <div className="group/msg relative mx-auto flex w-full max-w-[var(--thread-max-width)] flex-col px-2 py-2 text-[15px] leading-6 tracking-normal">
+      <div className="ml-auto max-w-[min(80%,32rem)] break-words rounded-3xl bg-muted px-5 py-2.5 text-foreground [&_p]:mb-0">
         {text}
       </div>
       <DirectMessageTimestamp createdAt={message.createdAt} align="right" />
@@ -202,7 +202,7 @@ function DirectAssistantMessage({
   const persisted = !message.id.endsWith("-assistant")
   const renderableContent = message.content.filter(isRenderableAssistantPart)
   return (
-    <div className="group/msg px-2 text-foreground">
+    <div className="group/msg px-2 text-[15px] leading-6 tracking-normal text-foreground">
       <div className="flex flex-col gap-3" aria-live="polite" aria-atomic="false">
         {renderableContent.length === 0 && !failed ? (
           // An assistant bubble with no content and no error is always still
@@ -307,7 +307,7 @@ export function QuotaNudge({ remaining }: { remaining: number }) {
       <span>That&apos;s all your chats for today. The Avana team can keep helping in the Support Center.</span>
       <Link
         href="/support-center"
-        className="inline-flex items-center rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition hover:opacity-90"
+        className="inline-flex items-center rounded-full bg-foreground px-4 py-1.5 text-[14px] font-normal leading-5 text-background transition hover:opacity-90"
       >
         Open Support Center
       </Link>
@@ -528,7 +528,7 @@ export function AskAIThread({
               <>
                 {isEmpty ? (
                   <div className="mb-6 flex flex-col items-center px-4 text-center">
-                    <h1 className="text-2xl font-medium tracking-tight">{greeting}</h1>
+                    <h1 className="text-[24px] font-normal leading-[30px] tracking-[-0.02em]">{greeting}</h1>
                   </div>
                 ) : null}
 
@@ -617,7 +617,7 @@ export function AskAIThread({
                         setHoveredPrompt(null)
                         setDraft("")
                       }}
-                      className="flex h-auto items-center gap-1.5 whitespace-nowrap rounded-full border border-border/60 px-3.5 py-1.5 text-sm font-normal text-foreground transition-colors hover:bg-muted"
+                      className="flex h-auto items-center gap-1.5 whitespace-nowrap rounded-full border border-border/60 px-3.5 py-1.5 text-[14px] font-normal leading-5 text-foreground transition-colors hover:bg-muted"
                     >
                       <Icon className="size-4" aria-hidden />
                       {label}

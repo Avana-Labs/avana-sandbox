@@ -200,6 +200,8 @@ vi.mock("@/app/dashboard/use-dashboard-page", () => ({
 vi.mock("@/app/lib/swap-system/use-convex-wallet-balances", () => ({
   useConvexWalletBalances: () => undefined,
   useConvexProductWalletBalances: () => undefined,
+  useConvexClaimBasis: () => undefined,
+  useConvexWalletOnboardingSummary: () => undefined,
 }))
 
 // The "Your Dashboard" stat cards read Net Value / Net APY from Convex via this
@@ -207,36 +209,6 @@ vi.mock("@/app/lib/swap-system/use-convex-wallet-balances", () => ({
 vi.mock("@/app/dashboard/use-dashboard-portfolio-summary", () => ({
   useDashboardPortfolioSummary: () => ({ netValueUsd: 0, netApyPct: 0, walletBalanceUsd: 0 }),
 }))
-
-// The hero's metric toggle reads getPortfolio via Convex. This bare-render test
-// doesn't wrap a ConvexProvider, so stub the hook with static per-metric feeds.
-vi.mock("@/app/dashboard/use-dashboard-history-feeds", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@/app/dashboard/use-dashboard-history-feeds")>()
-  const flat = {
-    headlineValue: "$0",
-    headlineDelta: "$0 (0.00%)",
-    deltaTone: "positive" as const,
-    rangeData: {
-      "1D": [{ time: 0, value: 0, label: "Now" }],
-      "1W": [{ time: 0, value: 0, label: "Now" }],
-      "1M": [{ time: 0, value: 0, label: "Now" }],
-      "3M": [{ time: 0, value: 0, label: "Now" }],
-      "1Y": [{ time: 0, value: 0, label: "Now" }],
-      All: [{ time: 0, value: 0, label: "Now" }],
-    },
-    valueFormat: "usdCompact" as const,
-  }
-  return {
-    ...actual,
-    useDashboardMetricFeeds: () => ({
-      netValue: flat,
-      supplied: flat,
-      borrowed: flat,
-      earned: flat,
-      multiplyExposure: flat,
-    }),
-  }
-})
 
 // Inspect the raw rows fed into the combined activity table.
 vi.mock("@/app/dashboard/recent-activity", () => ({
@@ -391,7 +363,7 @@ describe("DashboardPageClient", () => {
         name: /Good morning!|Good afternoon!|Good evening!|Welcome back!|Hey!/,
       }),
     ).toBeInTheDocument()
-    expect(screen.getByRole("heading", { name: "Wallet Balance" })).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Wallet Overview" })).toBeInTheDocument()
   })
 
   it("opens the education flow for primer quests", async () => {

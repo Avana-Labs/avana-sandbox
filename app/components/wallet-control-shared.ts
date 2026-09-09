@@ -26,8 +26,8 @@ export function truncateAddress(address: string): string {
 export function walletButtonClasses(size: WalletControlSize) {
   const base =
     size === "mobile"
-      ? "inline-flex h-9 w-[124px] items-center justify-center truncate rounded-full px-3 text-[14px] font-medium transition-colors sm:w-[136px] sm:px-4"
-      : "inline-flex h-10 w-[152px] items-center justify-center truncate rounded-full px-4 font-sans text-[15px] font-medium transition-colors"
+      ? "inline-flex h-9 w-[124px] items-center justify-center truncate rounded-full px-3 text-[14px] font-normal transition-colors sm:w-[136px] sm:px-4"
+      : "inline-flex h-10 w-[152px] items-center justify-center truncate rounded-full px-4 font-sans text-[15px] font-normal transition-colors"
   return {
     base,
     brand: cn(base, "bg-brand text-brand-foreground hover:bg-brand/90"),

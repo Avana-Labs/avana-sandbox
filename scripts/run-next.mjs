@@ -1,7 +1,10 @@
-import { spawn } from "node:child_process"
+import { execSync, spawn } from "node:child_process"
 import fs from "node:fs"
 import path from "node:path"
 import process from "node:process"
+import crypto from "node:crypto"
+import nextEnv from "@next/env"
+import { assertNonProductionTarget } from "../lib/deployment-safety.mjs"
 
 const root = process.cwd()
 const [mode = "dev", ...forwardArgs] = process.argv.slice(2)
@@ -11,6 +14,35 @@ if (!supportedModes.has(mode)) {
   process.stderr.write(`Unsupported next mode: ${mode}\n`)
   process.exit(1)
 }
+
+// Load the same local configuration Next will use before checking its target.
+nextEnv.loadEnvConfig(root, mode === "dev", { info() {}, error() {} })
+if (mode === "dev") {
+  if (process.env.AVANA_DATA_SOURCE === "mock") {
+    for (const name of [
+      "CONVEX_DEPLOY_KEY",
+      "NEXT_PUBLIC_CONVEX_URL",
+      "NEXT_PUBLIC_CONVEX_SITE_URL",
+      "CONVEX_URL",
+      "CONVEX_SEED_SECRET",
+      "CONVEX_RATE_LIMIT_SECRET",
+      "AVANA_E2E_STAGING",
+    ])
+      process.env[name] = ""
+    process.env.SIWE_JWT_PRIVATE_JWK = JSON.stringify({
+      ...crypto.generateKeyPairSync("rsa", { modulusLength: 2048 }).privateKey.export({ format: "jwk" }),
+      kid: "local-only",
+    })
+    process.env.NEXT_PUBLIC_SIWE_ISSUER = `http://127.0.0.1:${process.env.PORT || 3000}`
+  } else {
+    assertNonProductionTarget(process.env)
+  }
+}
+if (
+  (process.env.VERCEL_ENV === "production" || process.env.AVANA_DEPLOYMENT_ENV === "production") &&
+  ["AVANA_E2E_SESSION_SECRET", "AVANA_E2E_PRIVATE_JWK", "AVANA_E2E_STAGING"].some((key) => process.env[key])
+)
+  throw new Error("E2E credentials are forbidden on the production deployment")
 
 // Deploy hygiene: never bake the open-gate test mode into a production build.
 // A `build` with NEXT_PUBLIC_PLAYWRIGHT_TEST_MODE=1 inlines IS_OPEN_GATE_TEST_MODE=true
@@ -135,6 +167,40 @@ function removePath(relativePath) {
   process.stdout.write(`removed ${relativePath}\n`)
 }
 
+/** Turbopack's persistent cache grows without bound and slows every dev compile once it bloats. */
+const TURBOPACK_CACHE_MAX_KB = 2 * 1024 * 1024 // 2 GiB
+
+function directorySizeKb(absolutePath) {
+  if (!fs.existsSync(absolutePath)) {
+    return 0
+  }
+
+  try {
+    const out = execSync(`du -sk ${JSON.stringify(absolutePath)}`, { encoding: "utf8" })
+    return Number.parseInt(out.split(/\s/)[0] ?? "0", 10)
+  } catch {
+    return 0
+  }
+}
+
+function maybePruneTurbopackCache(distDir) {
+  if (process.env.AVANA_SKIP_TURBOPACK_CACHE_PRUNE === "1") {
+    return
+  }
+
+  const cacheDir = path.join(root, distDir, "dev", "cache", "turbopack")
+  const sizeKb = directorySizeKb(cacheDir)
+  if (sizeKb <= TURBOPACK_CACHE_MAX_KB) {
+    return
+  }
+
+  const sizeGb = (sizeKb / (1024 * 1024)).toFixed(1)
+  process.stdout.write(
+    `Pruning turbopack cache (${sizeGb}GB > 2GB) — the next compile will be slower once, then dev should feel responsive again.\n`,
+  )
+  fs.rmSync(cacheDir, { recursive: true, force: true })
+}
+
 const activeLock = readLock(config.lockFile || config.guardLockFile)
 
 if (activeLock) {
@@ -156,6 +222,10 @@ if (!fs.existsSync(nextBin)) {
 
 for (const target of config.cleanTargets) {
   removePath(target)
+}
+
+if (mode === "dev") {
+  maybePruneTurbopackCache(config.distDir)
 }
 
 let lockPath = null

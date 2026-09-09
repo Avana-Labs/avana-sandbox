@@ -17,10 +17,7 @@ describe("buildBorrowBalanceMetrics — wallet aggregate formulas", () => {
 
     const metrics = calculateCreditMetrics(accrueBorrowSystemState(state, state.now), walletId)
     expect(balance.netValueUsd).toBeCloseTo(
-      usd6ToNumber(metrics.netAccountValueUsd6) +
-        usd6ToNumber(
-          Object.values(state.accounts[walletId]!.walletReturnedLpBalancesUsd6 ?? {}).reduce((s, v) => s + v, 0n),
-        ),
+      usd6ToNumber(metrics.poolCollateralValueUsd6 - metrics.totalBorrowedUsd6),
       6,
     )
     expect(balance.collateralValueUsd).toBeCloseTo(usd6ToNumber(metrics.poolCollateralValueUsd6), 6)
@@ -32,7 +29,12 @@ describe("buildBorrowBalanceMetrics — wallet aggregate formulas", () => {
       usd6ToNumber(metrics.liquidationBufferUsd6 > 0n ? metrics.liquidationBufferUsd6 : 0n),
       6,
     )
-    expect(balance.netApyPct).toBeCloseTo((Number(metrics.netApyWad) / 1e18) * 100, 6)
+    expect(balance.netApyPct).toBeCloseTo(
+      (Number(metrics.annualYieldEarnedUsd6 - metrics.annualBorrowCostUsd6) /
+        Number(metrics.poolCollateralValueUsd6 - metrics.totalBorrowedUsd6)) *
+        100,
+      6,
+    )
     expect(balance.interestOwedUsd).toBeCloseTo(usd6ToNumber(metrics.interestOwedUsd6), 6)
   })
 
@@ -43,7 +45,24 @@ describe("buildBorrowBalanceMetrics — wallet aggregate formulas", () => {
     expect(balance.collateralValueUsd).toBe(0)
     expect(balance.availableToBorrowUsd).toBe(0)
     expect(balance.healthFactor).toBeNull()
+    expect(balance.liquidationBufferUsd).toBeNull()
     expect(balance.interestOwedUsd).toBe(0)
+  })
+
+  it("does not count onboarding wallet cash or show liquidation risk before the first loan", () => {
+    const state = makeExampleBorrowSystemState()
+    const account = state.accounts["wallet-1"]!
+    account.debtPositions = []
+    account.walletBalanceUsd6 = 100_000_000_000n
+    account.walletReturnedLpBalancesUsd6 = { "unused-lp": 25_000_000_000n }
+
+    const balance = buildBorrowBalanceMetrics(state, "wallet-1", state.now)
+
+    expect(balance.collateralValueUsd).toBeGreaterThan(0)
+    expect(balance.netValueUsd).toBeCloseTo(balance.collateralValueUsd, 6)
+    expect(balance.totalBorrowedUsd).toBe(0)
+    expect(balance.healthFactor).toBeNull()
+    expect(balance.liquidationBufferUsd).toBeNull()
   })
 
   it("available credit equals creditLimit − debt (never liquidation-threshold based)", () => {

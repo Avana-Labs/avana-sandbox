@@ -10,7 +10,7 @@ import {
   mapDeleveragePreviewToActionUi,
   mapMultiplyPreviewToActionUi,
 } from "@/app/lib/action-system/adapters/multiply-preview-mapper"
-import { formatMultiplyLoopMarketLabel } from "@/app/lib/multiply-system/market-labels"
+import { translateMultiplyLoopMarketLabel } from "@/app/lib/multiply-system/market-labels"
 import { mapBorrowSuccessToActionUi } from "@/app/lib/action-system/adapters/borrow-preview-mapper"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionConfigureStage, ActionConfigureAmountSection } from "@/app/components/action-page/action-configure-stage"
@@ -29,12 +29,12 @@ import { isConfigureVisibleStage, isProcessingStage, reviewStageTitle } from "@/
 import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import {
   MULTIPLY_ACTION_MIN_LEVERAGE,
+  MULTIPLY_ACTION_SLIDER_MAX,
+  MULTIPLY_ACTION_SLIDER_STEP,
   getDeleverageMultiplierMax,
   getDefaultDeleverageMultiplier,
   isDeleverageCloseOnly,
   resolveDefaultMultiplyLeverage,
-  resolveMultiplyMarketMaxLeverage,
-  resolveRecommendedActionLeverage,
   snapMultiplierToStep,
 } from "@/app/lib/multiply-system/leverage-limits"
 import {
@@ -99,7 +99,7 @@ export function MultiplyActionPageClient({
     if (kind !== "multiply") return undefined
     const options = Object.values(session.state.markets).map((entry) => ({
       id: entry.id,
-      label: formatMultiplyLoopMarketLabel(entry.collateralAsset.symbol, entry.borrowAsset.symbol),
+      label: translateMultiplyLoopMarketLabel(t, entry.collateralAsset.symbol, entry.borrowAsset.symbol),
       symbol: entry.collateralAsset.symbol,
       borrowSymbol: entry.borrowAsset.symbol,
     }))
@@ -180,12 +180,14 @@ export function MultiplyActionPageClient({
     const effectiveMax =
       kind === "deleverage"
         ? getDeleverageMultiplierMax(position?.multiplier ?? Number.NaN, 0.1)
-        : resolveMultiplyMarketMaxLeverage(market.risk.publicMaxMultiplier)
-    // Snap the canonical multiplier to the SAME 0.1 step grid the ruler thumb uses, and
-    // clamp to [min, max]. Binding the state to the slider's grid keeps the slider label,
-    // the number input and the projection summary on one value instead of drifting apart
-    // (e.g. the number input reading 1.8x while the projection simulated 1.75x). (E6)
-    const next = String(snapMultiplierToStep(parsed, multiplierMin, effectiveMax, 0.1))
+        : MULTIPLY_ACTION_SLIDER_MAX
+    // Snap the canonical multiplier to the SAME step grid the ruler thumb uses, and
+    // clamp to [min, max]. Binding the state to the slider's grid keeps the pill and the
+    // projection summary on one value instead of drifting apart. (E6)
+    // Multiply uses the global 1–9.99 / 0.01 slider; per-market publicMax is enforced by
+    // engine validation (hard block), not by clamping the thumb.
+    const step = kind === "deleverage" ? 0.1 : MULTIPLY_ACTION_SLIDER_STEP
+    const next = String(snapMultiplierToStep(parsed, multiplierMin, effectiveMax, step))
     if (next !== multiplier) setMultiplier(next)
   }, [kind, market, multiplier, multiplierMin, position?.multiplier])
   const [previewUi, setPreviewUi] = useState<ActionPreviewUi | null>(null)
@@ -213,7 +215,11 @@ export function MultiplyActionPageClient({
           if (cancelled) return
           setPreviewUi(
             mapClosePreviewToActionUi(preview, {
-              marketLabel: formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
+              marketLabel: translateMultiplyLoopMarketLabel(
+                t,
+                market.collateralAsset.symbol,
+                market.borrowAsset.symbol,
+              ),
               collateralSymbol: market.collateralAsset.symbol,
             }),
           )
@@ -233,7 +239,24 @@ export function MultiplyActionPageClient({
     }
 
     if (kind === "deleverage" && !position) {
-      setPreviewUi(null)
+      setPreviewUi({
+        allowed: false,
+        amountLabel: "0",
+        amountUsdLabel: "$0",
+        rateLabel: "Net APY",
+        rateValue: "—",
+        marketLabel: translateMultiplyLoopMarketLabel(t, market.collateralAsset.symbol, market.borrowAsset.symbol),
+        marketValue: market.id,
+        balanceLabel: "Position",
+        balanceValue: "None",
+        maxAmount: null,
+        metrics: [],
+        networkFeeLabel: "—",
+        risk: null,
+        blockedReason: "No open position to deleverage in this market.",
+        validationErrors: ["No open position to deleverage in this market."],
+        warnings: [],
+      })
       return
     }
 
@@ -256,7 +279,7 @@ export function MultiplyActionPageClient({
             borrowSymbol: market.borrowAsset.symbol,
             collateralAmount: multiplyCollateralAmount,
             collateralPriceUsd,
-            marketLabel: formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
+            marketLabel: translateMultiplyLoopMarketLabel(t, market.collateralAsset.symbol, market.borrowAsset.symbol),
             multiplier: parsedMultiplier,
             maxCollateralAmount: maxCollateralAmount!,
           }),
@@ -290,11 +313,13 @@ export function MultiplyActionPageClient({
               // priced — no further display rescale (scale === 1). This keeps the preview
               // exactly equal to the persisted/dashboard position.
               catalogCollateralPriceUsd: collateralPriceUsd,
-              marketLabel: formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
-              // Display the SAME supply APY the engine feeds into Net APY. After a Convex
-              // snapshot updates economics.supplyApy but leaves the seed collateralAsset.apy
-              // untouched, the two diverge — showing "Collateral APY 7.60%" while Net APY
-              // reconciles with 7.94%. Single-source it from economics.supplyApy. (E4)
+              marketLabel: translateMultiplyLoopMarketLabel(
+                t,
+                market.collateralAsset.symbol,
+                market.borrowAsset.symbol,
+              ),
+              // Feed economics.supplyApy into the preview engine (not seed collateralAsset.apy)
+              // so Net APY stays aligned after Convex hydration updates rates. (E4)
               collateralApy: market.economics.supplyApy,
               borrowApy: market.borrowAsset.borrowApy,
               multiplier: parsedMultiplier,
@@ -328,7 +353,7 @@ export function MultiplyActionPageClient({
         if (cancelled) return
         setPreviewUi(
           mapDeleveragePreviewToActionUi(preview, {
-            marketLabel: formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
+            marketLabel: translateMultiplyLoopMarketLabel(t, market.collateralAsset.symbol, market.borrowAsset.symbol),
             targetMultiplier: parsedMultiplier,
             collateralSymbol: market.collateralAsset.symbol,
           }),
@@ -443,7 +468,7 @@ export function MultiplyActionPageClient({
       const intent = session.createIntent(action)
       const preview = await session.previewTransaction(intent)
       if (!preview.allowed) throw new Error(preview.validationErrors[0] ?? "Action unavailable")
-      const marketLabel = formatMultiplyLoopMarketLabel(market.collateralAsset.symbol, market.borrowAsset.symbol)
+      const marketLabel = translateMultiplyLoopMarketLabel(t, market.collateralAsset.symbol, market.borrowAsset.symbol)
       const executionPreviewUi =
         kind === "multiply"
           ? mapMultiplyPreviewToActionUi(preview, {
@@ -454,7 +479,7 @@ export function MultiplyActionPageClient({
               collateralPriceUsd,
               catalogCollateralPriceUsd: collateralPriceUsd,
               multiplier: parsedMultiplier!,
-              // Same source as Net APY — see the configure-preview note above. (E4)
+              // Same supply APY source as configure preview — see note above. (E4)
               collateralApy: market.economics.supplyApy,
               borrowApy: market.borrowAsset.borrowApy,
               maxLtv: market.risk.maxLtv,
@@ -607,6 +632,10 @@ export function MultiplyActionPageClient({
         title={descriptor.title}
         subtitle={descriptor.subtitle}
         closeHref={closeHref}
+        mode={embedded ? "embedded" : "page"}
+        density={sidebar ? "sidebar" : "default"}
+        hideTitle={embedded || sidebar}
+        hideClose={embedded}
         flowHeaderStage={!embedded ? stage : undefined}
         simulated
       >
@@ -628,28 +657,12 @@ export function MultiplyActionPageClient({
   const hideTitle = embedded || stage === "success" || isProcessingStage(stage) || stage === "review"
   const isHomeLayout = embedded && layout === "home"
   const shellDensity = sidebar ? "sidebar" : isHomeLayout ? "home" : "default"
-  // The loop mechanics are documented in the market's "About" section — no inline
-  // explainer filler in the action widget.
-  const loopHint =
-    kind === "multiply" && previewUi?.loopCount != null
-      ? `${previewUi.loopCount} loop${previewUi.loopCount === 1 ? "" : "s"} estimated`
-      : null
+  // Multiply slider is always the global 1–9.99 / 0.01 scale. Per-market publicMax remains an
+  // engine hard-block (CTA disabled) when the user drags past it.
   const effectiveMultiplierMax = isExitKind
     ? getDeleverageMultiplierMax(position?.multiplier ?? Number.NaN, 0.1)
-    : resolveMultiplyMarketMaxLeverage(market.risk.publicMaxMultiplier)
-  // The "Recommended up to Nx" marker must sit on a leverage the slider can actually
-  // land on (0.1 grid) that still clears the market minimum health factor — otherwise a
-  // drag to the marker snapped UP past the safe max and the action came back blocked. (E2)
-  const recommendedActionLeverage =
-    kind === "multiply"
-      ? resolveRecommendedActionLeverage({
-          recommendedMaxMultiplier: market.risk.recommendedMaxMultiplier,
-          liquidationThreshold: market.risk.liquidationThreshold,
-          minHealthFactor: market.risk.minHealthFactor,
-          actionMax: effectiveMultiplierMax,
-          step: 0.1,
-        })
-      : undefined
+    : MULTIPLY_ACTION_SLIDER_MAX
+  const multiplierStep = isExitKind ? 0.1 : MULTIPLY_ACTION_SLIDER_STEP
   const useWorkspaceFields = embedded && isHomeLayout && isConfigureVisibleStage(stage)
   // Surface the market-liquidity cap as the collateral input balance, with a Max button.
   const showCollateralBalance = kind === "multiply" && maxCollateralAmount != null && maxCollateralAmount > 0
@@ -657,15 +670,7 @@ export function MultiplyActionPageClient({
   const collateralBalanceValue = showCollateralBalance
     ? formatActionAmount(maxCollateralAmount!, market.collateralAsset.symbol, 6)
     : undefined
-  // Position value at 1.0x (multiply: the collateral being supplied; deleverage: the
-  // position's net equity). The ruler scales this by leverage to label its two ends
-  // with the resulting exposure range. Undefined ⇒ ends fall back to leverage bounds.
-  const leverageExposureBaseUsd =
-    kind === "multiply"
-      ? (parsePositiveActionAmount(amount) ?? 0) * collateralPriceUsd
-      : position
-        ? Math.max(0, position.collateralValueUsd - position.debtValueUsd)
-        : undefined
+  const multiplierLabel = kind === "deleverage" ? "Target leverage" : "Multiplier"
   const stackedAmountField = useWorkspaceFields ? (
     <ActionConfigureAmountSection
       verb={descriptor.primaryVerb}
@@ -691,23 +696,18 @@ export function MultiplyActionPageClient({
       balanceValue={collateralBalanceValue}
       amountVariant="raised"
       amountFooter={
-        <>
-          {loopHint ? <p className="mb-3 text-[12px] leading-5 text-muted-foreground">{loopHint}</p> : null}
-          <ActionLeverageRuler
-            variant="embedded"
-            value={multiplier}
-            onChange={(value) => {
-              setHasUserInput(true)
-              setMultiplier(value)
-            }}
-            min={multiplierMin}
-            max={effectiveMultiplierMax}
-            recommendedMax={recommendedActionLeverage}
-            step={0.1}
-            label="Target leverage"
-            exposureBaseUsd={leverageExposureBaseUsd}
-          />
-        </>
+        <ActionLeverageRuler
+          variant="embedded"
+          value={multiplier}
+          onChange={(value) => {
+            setHasUserInput(true)
+            setMultiplier(value)
+          }}
+          min={multiplierMin}
+          max={effectiveMultiplierMax}
+          step={multiplierStep}
+          label={multiplierLabel}
+        />
       }
     />
   ) : null
@@ -765,7 +765,6 @@ export function MultiplyActionPageClient({
             setSelectedMarketId(id)
             setAmount("")
           }}
-          leverageHint={loopHint}
           multiplier={kind === "close" || deleverageCloseOnly ? undefined : multiplier}
           onMultiplierChange={
             kind === "close" || deleverageCloseOnly
@@ -777,9 +776,8 @@ export function MultiplyActionPageClient({
           }
           multiplierMin={multiplierMin}
           multiplierMax={effectiveMultiplierMax}
-          multiplierRecommendedMax={recommendedActionLeverage}
-          multiplierLabel="Target leverage"
-          multiplierExposureBaseUsd={leverageExposureBaseUsd}
+          multiplierStep={multiplierStep}
+          multiplierLabel={multiplierLabel}
           onPrimary={() => {
             if (deleverageCloseOnly) {
               void handleClose()

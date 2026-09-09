@@ -19,10 +19,6 @@ vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
   }),
 }))
 
-vi.mock("@/app/borrow/use-borrow-page-live", () => ({
-  useBorrowPageLive: () => null,
-}))
-
 vi.mock("@/app/borrow/borrow-workspace-shell", () => ({
   BorrowWorkspaceShell: () => <div data-testid="borrow-workspace-shell" />,
 }))

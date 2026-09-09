@@ -5,6 +5,7 @@
 
 import { v } from "convex/values"
 import { internalMutation, query } from "../_generated/server"
+import { readChangelog } from "../parameterChanges"
 
 const contentFields = {
   description: v.string(),
@@ -26,6 +27,7 @@ export const getContent = query({
       stats: row.stats,
       history: row.history,
       faqs: row.faqs,
+      changelog: await readChangelog(ctx, "multiply", slug),
     }
   },
 })

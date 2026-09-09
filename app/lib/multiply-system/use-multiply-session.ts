@@ -287,7 +287,7 @@ export function useMultiplySession({
             id: String(transaction._id),
             intentId: transaction.intentId ?? String(transaction._id),
             walletId,
-            marketId: transaction.marketSlug,
+            marketId: transaction.marketSlug ?? position?.marketId,
             positionId: position?.id,
             kind: transaction.kind as MultiplyTransactionHistoryItem["kind"],
             status: transaction.status,
