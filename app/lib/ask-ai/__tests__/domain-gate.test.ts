@@ -176,6 +176,23 @@ describe("routeAskAITurn (per-turn tool + cost routing)", () => {
     expect(toolChoiceForAskAIStep(route, 1)).toBe("auto")
   })
 
+  // "portfolio" and "net value" are the words the product itself uses, but they
+  // were missing from POSITION_PATTERNS, so these fell through to `unsupported`
+  // with an empty tool list — the model then answered with no tools and no data
+  // ("I don't have a portfolio balance available in this chat").
+  it.each([
+    "how much in my portfolio?",
+    "How much is in my portfolio?",
+    "what's in my portfolio?",
+    "my portfolio",
+    "my net value",
+    "what is my net worth?",
+  ])("routes %j to the portfolio read", (prompt) => {
+    const route = routeAskAITurn(prompt)
+    expect(route.intent).toBe("position")
+    expect(route.tools).toEqual(["read_portfolio"])
+  })
+
   it.each([
     "How long is my cooldown until I withdraw?",
     "Do I have any Umbrella on cooldown?",

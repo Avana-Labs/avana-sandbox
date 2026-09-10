@@ -34,7 +34,11 @@ export type DomainResult = {
 }
 
 const POSITION_PATTERNS = [
-  /\b(my|our)\b.{0,40}\b(position|positions|wallet|balances?|holdings?|funds|assets?|collateral|debt|borrow|health factor|ltv|liquidat|umbrella|stake|staked|cooldown|withdraw|unstake)/i,
+  // "portfolio" and "net value/worth" are the words the UI itself uses (the
+  // read_portfolio tool, the dashboard's "Net Value" headline), so a question
+  // phrased with them must reach the portfolio read rather than falling through
+  // to `unsupported`, which leaves the model with no tools and no data.
+  /\b(my|our)\b.{0,40}\b(portfolio|position|positions|wallet|balances?|holdings?|funds|assets?|collateral|debt|borrow|health factor|ltv|liquidat|umbrella|stake|staked|cooldown|withdraw|unstake|net (?:value|worth))/i,
   /\bwhat(?:'s| is) in (?:my|our) wallet\b/i,
   /\b(show|analy[sz]e|compare)\b.{0,20}\b(my|our)\b/i,
   /\bhow much can i borrow\b/i,
