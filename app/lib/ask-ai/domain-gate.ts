@@ -84,6 +84,13 @@ const POSITION_PATTERNS = [
   /\bhow (?:am|are) (?:i|we) doing\b/i,
   /\b(?:am|are) (?:i|we) (?:up|down|profitable|in profit|in the green|in the red|losing|winning|even|break ?even)\b/i,
   /\b(?:did|have|has)\s+(?:i|we)\s+(?:make|made|lose|lost|earn|earned|gain|gained)\b/i,
+  // A POSSESSED rate is the user's own blended rate, not a market lookup. "apy"
+  // is kept out of HOLDINGS_WORDS so market questions keep their intent, so
+  // these first-person forms are matched explicitly instead.
+  /\b(?:my|our)\s+(?:net\s+|blended\s+|current\s+|effective\s+)?(?:apy|apr|yield|rate|return)s?\b/i,
+  /\bwhat\s+(?:apy|apr|yield|rate)\s+(?:am|are)\s+(?:i|we)\b/i,
+  /\b(?:apy|apr|yield|rate)\s+(?:am|are)\s+(?:i|we)\s+(?:getting|earning|paying|on)\b/i,
+  /\bhow much\s+(?:interest|apy|yield)\s+(?:am|are)\s+(?:i|we)\s+(?:paying|earning|getting)\b/i,
 ]
 
 const RISK_PATTERNS = [

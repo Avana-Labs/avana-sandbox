@@ -1023,11 +1023,26 @@ export const searchMarkets = query({
       ]),
     )
 
+    // 90 days of history are fetched above and then stripped from the model
+    // context (convex/askAIAgent.ts compacts provider rows), which left
+    // "is ETH up today?" and "how much has it moved this week?" unanswerable.
+    // Derive the moves here instead of shipping the raw series.
+    const priceChangePct = (history: ReadonlyArray<{ priceUsd: number }>, daysBack: number, current: number) => {
+      if (!Number.isFinite(current) || current <= 0 || history.length === 0) return undefined
+      const past = history[history.length - 1 - daysBack]?.priceUsd
+      return typeof past === "number" && past > 0 ? ((current - past) / past) * 100 : undefined
+    }
     const scoredPrices = tokenPrices
       .filter((price) => price.status !== "invalid")
       .map((price) => {
         const haystack = price.symbol.toLowerCase()
         const matched = searchTerms.filter((term) => haystack.includes(term)).length
+        const history = historyBySymbol.get(price.symbol) ?? []
+        const changes = {
+          change24hPct: priceChangePct(history, 1, price.priceUsd),
+          change7dPct: priceChangePct(history, 7, price.priceUsd),
+          change30dPct: priceChangePct(history, 30, price.priceUsd),
+        }
         return {
           matched,
           exact: searchTerms.includes(haystack) ? 1 : 0,
@@ -1037,13 +1052,16 @@ export const searchMarkets = query({
             source: "defillama" as const,
             kind: "token_price" as const,
             key: price.symbol,
-            data: compactMarketData("token_price", {
-              symbol: price.symbol,
-              priceUsd: price.priceUsd,
-              confidence: price.confidence,
-              status: price.status,
-            }),
-            history: historyBySymbol.get(price.symbol) ?? [],
+            data: {
+              ...compactMarketData("token_price", {
+                symbol: price.symbol,
+                priceUsd: price.priceUsd,
+                confidence: price.confidence,
+                status: price.status,
+              }),
+              ...Object.fromEntries(Object.entries(changes).filter(([, value]) => value !== undefined)),
+            },
+            history,
             asOf: price.sourceUpdatedAt ?? price.updatedAt,
             freshness: price.status === "fresh" ? ("fresh" as const) : ("stale" as const),
           },

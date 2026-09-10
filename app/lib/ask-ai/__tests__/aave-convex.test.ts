@@ -179,6 +179,39 @@ describe("Aave Convex integration", () => {
     })
   })
 
+  it("derives price moves instead of shipping raw history", async () => {
+    const t = setup()
+    const now = Date.now()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("tokenPrices", {
+        symbol: "weth",
+        llamaId: "coingecko:ethereum",
+        priceUsd: 110,
+        status: "fresh",
+        source: "defillama",
+        updatedAt: now,
+        sourceUpdatedAt: now,
+      })
+      // Ascending days; index from the end is what the change window uses.
+      const series = [
+        ["2026-08-10", 50], // 30 days back
+        ...Array.from({ length: 22 }, (_, i) => [`2026-08-${String(11 + i).padStart(2, "0")}`, 80] as const),
+        ["2026-09-02", 100], // 7 days back
+        ...Array.from({ length: 6 }, (_, i) => [`2026-09-0${3 + i}`, 100] as const),
+        ["2026-09-09", 100], // yesterday
+        ["2026-09-10", 110], // latest
+      ] as ReadonlyArray<readonly [string, number]>
+      for (const [day, priceUsd] of series)
+        await ctx.db.insert("tokenPricesHistory", { symbol: "weth", day, priceUsd, updatedAt: now })
+    })
+    const result = await t.query(api.askAITools.searchMarkets, { query: "what's the WETH price?" })
+    const price = result.providerData.find((row) => row.kind === "token_price")
+    // 110 vs 100 a day back = +10%; the raw 90-point series never has to reach
+    // the model for "is it up today?" to be answerable.
+    expect(price?.data).toMatchObject({ symbol: "weth", priceUsd: 110, change24hPct: 10 })
+    expect(typeof (price?.data as Record<string, unknown>).change7dPct).toBe("number")
+  })
+
   it("persists APY timestamps and the new Aave financial kinds, then reloads them", async () => {
     const t = setup()
     const owner = t.withIdentity({ subject: "ask-guest:aave-chart" })

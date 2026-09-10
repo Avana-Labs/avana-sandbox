@@ -288,6 +288,32 @@ describe("routeAskAITurn (per-turn tool + cost routing)", () => {
     "worst case for me",
   ])("treats %j as a stress test", (prompt) => expect(routeAskAITurn(prompt).intent).toBe("stress_test"))
 
+  // A POSSESSED rate is the user's own blended rate. These used to hit
+  // search_markets, because the market-signal branch fires on "apy" before the
+  // personal safety net, so the reply quoted market rates for "my net APY".
+  it.each([
+    "what's my net APY?",
+    "my apy",
+    "what apy am I getting?",
+    "what rate am I paying?",
+    "how much interest am I paying?",
+    "my blended yield",
+    "my effective rate",
+  ])("routes %j to the portfolio, not market rates", (prompt) => {
+    const route = routeAskAITurn(prompt)
+    expect(route.tools).toContain("read_portfolio")
+    expect(route.tools).not.toContain("search_markets")
+  })
+
+  it.each(["what's the APY on DAI?", "USDC supply rate", "best stablecoin yields", "highest yields right now"])(
+    "keeps %j on market rates",
+    (prompt) => {
+      const route = routeAskAITurn(prompt)
+      expect(route.tools).toContain("search_markets")
+      expect(route.tools).not.toContain("read_portfolio")
+    },
+  )
+
   // The broadened crypto vocabulary must not swallow market, pool or
   // educational questions into a personal read.
   it.each([
