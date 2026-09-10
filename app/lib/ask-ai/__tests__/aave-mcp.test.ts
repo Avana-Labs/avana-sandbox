@@ -300,4 +300,29 @@ describe("Aave deterministic routing", () => {
     ["Aave proposal #516 votes", ["get_proposal_votes"]],
     ["Show Aave v4 hubs", ["get_hubs"]],
   ])("%s", (prompt, tools) => expect(routeAskAITurn(prompt as string).tools).toEqual(tools))
+
+  // Aave V4 risk-configuration vocabulary (hub/spoke, caps, liquidation and
+  // reserve parameters) must reach a live parameter read, and must carry a real
+  // intent rather than inheriting the generic classifier's "unsupported".
+  it.each([
+    ["Aave USDC supply cap", "get_reserve_details"],
+    ["Aave USDC borrow cap", "get_reserve_details"],
+    ["Aave USDC liquidation bonus", "get_reserve_details"],
+    ["Aave USDC close factor", "get_reserve_details"],
+    ["Aave USDC reserve factor", "get_reserve_details"],
+    ["Aave USDC collateral risk", "get_reserve_details"],
+    ["Aave USDC kink", "get_reserve_details"],
+    ["Aave debt ceiling for GHO", "get_reserve_details"],
+    ["Aave isolation mode assets", "get_reserve_details"],
+    ["is Aave USDC frozen?", "get_reserve_details"],
+    ["is Aave USDC borrowable?", "get_reserve_details"],
+    ["Aave risk premium threshold", "get_reserve_details"],
+    ["Aave e-mode categories", "get_emode_categories"],
+    ["show Aave v4 hubs", "get_hubs"],
+    ["Aave v4 spoke caps", "get_hubs"],
+  ])("%s routes to %s with a real intent", (prompt, tool) => {
+    const route = routeAskAITurn(prompt)
+    expect(route.tools).toEqual([tool])
+    expect(route.intent).not.toBe("unsupported")
+  })
 })

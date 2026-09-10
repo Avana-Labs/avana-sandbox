@@ -38,14 +38,18 @@ export function routeAaveTool(prompt: string): AaveModelTool | undefined {
   )
     return "get_apy_history"
   if (
-    /\b(hubs?|hub assets|protocol history)\b/i.test(prompt) &&
-    /\b(v4|liquidity|assets|history|show|list)\b/i.test(prompt)
+    /\b(hubs?|hub assets|spokes?|spoke assets|protocol history)\b/i.test(prompt) &&
+    /\b(v4|liquidity|assets|history|show|list|caps?)\b/i.test(prompt)
   )
     return "get_hubs"
   if (/\b(e.?mode)\b/i.test(prompt) && /\b(categories|parameters|reserves|assets|list)\b/i.test(prompt))
     return "get_emode_categories"
+  // Aave V4 risk-configuration vocabulary: a question naming any concrete
+  // reserve parameter is a live parameter read, not an explanation.
   if (
-    /\b(ltv|liquidation threshold|caps?|reserve factor|decimals|risk parameters|reserve details)\b/i.test(prompt) &&
+    /\b(ltv|liquidation (?:threshold|bonus|penalty|fee|config)|close factor|caps?|supply cap|borrow cap|debt ceiling|reserve factor|risk premium|collateral risk|price source|interest rate (?:strategy|data|model)|kink|isolation mode|e-?mode|decimals|risk parameters|reserve details|reserve config|borrowable|frozen|paused|halted)\b/i.test(
+      prompt,
+    ) &&
     !/\b(what is|explain|how does)\b/i.test(prompt)
   )
     return "get_reserve_details"

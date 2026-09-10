@@ -176,21 +176,145 @@ describe("routeAskAITurn (per-turn tool + cost routing)", () => {
     expect(toolChoiceForAskAIStep(route, 1)).toBe("auto")
   })
 
-  // "portfolio" and "net value" are the words the product itself uses, but they
-  // were missing from POSITION_PATTERNS, so these fell through to `unsupported`
-  // with an empty tool list — the model then answered with no tools and no data
-  // ("I don't have a portfolio balance available in this chat").
+  // A first-person money question must never reach `unsupported`, which plans
+  // ZERO tools — the model then answers from nothing. That is how "how much in
+  // my portfolio?" returned "I don't have a portfolio balance available in this
+  // chat" for a funded wallet, with no tool call in the OpenAI trace at all.
+  const PERSONAL_DATA_TOOLS = [
+    "read_portfolio",
+    "read_position_risk",
+    "read_borrow_capacity",
+    "simulate_borrow",
+    "stress_position",
+  ]
   it.each([
+    // value / totals, in the words the UI itself uses
     "how much in my portfolio?",
-    "How much is in my portfolio?",
-    "what's in my portfolio?",
     "my portfolio",
+    "dashboard",
+    "open my dashboard",
     "my net value",
-    "what is my net worth?",
-  ])("routes %j to the portfolio read", (prompt) => {
+    "my net worth",
+    "total value of my account",
+    // holdings
+    "how much money do I have?",
+    "how much have I got?",
+    "what's my balance?",
+    "my holdings",
+    "my funds",
+    "my assets",
+    "my wallet",
+    "what's in my wallet?",
+    "my bags",
+    "my stack",
+    // lending / borrowing
+    "my collateral",
+    "my debt",
+    "how much do I owe?",
+    "my loans",
+    "what have I borrowed?",
+    "what have I supplied?",
+    "what have I lent?",
+    "my supply balance",
+    "my borrow power",
+    // staking / umbrella
+    "my staked amount",
+    "my staking rewards",
+    "my umbrella position",
+    "my cooldown",
+    "when can I withdraw?",
+    "can I unstake?",
+    // performance
+    "how's my portfolio?",
+    "how am I doing?",
+    "am I up?",
+    "am I profitable?",
+    "am I in the green?",
+    "did I make money?",
+    "how much interest have I earned?",
+    "my pnl",
+    "what's my p&l?",
+    "my returns",
+    "my roi",
+    "my claimable rewards",
+    "my points",
+    // multiply / loop
+    "my leverage",
+    "my loop",
+    "how's my loop doing?",
+    "the debt on my loop",
+    "my multiply position",
+    "my ltv",
+    // risk framing
+    "Will I make it with this loop?",
+    "am I safe?",
+    "am I underwater?",
+    "am I going to be ok?",
+    "is my position gonna blow up?",
+    "will I get liquidated?",
+    "how risky is my portfolio?",
+    "am I going to get rekt?",
+    "how exposed am I?",
+    "my health factor",
+    // scenarios and borrow capacity
+    "what if ETH drops 30%?",
+    "what happens if the market crashes?",
+    "simulate a 50% drop",
+    "worst case for my loop?",
+    "how much can I borrow?",
+    "can I borrow more?",
+    "how much more can I draw?",
+    "top up my loan",
+  ])("gives %j a personal-data tool instead of nothing", (prompt) => {
     const route = routeAskAITurn(prompt)
-    expect(route.intent).toBe("position")
-    expect(route.tools).toEqual(["read_portfolio"])
+    expect(route.intent).not.toBe("unsupported")
+    expect(route.tools.length).toBeGreaterThan(0)
+    expect(route.tools.some((tool) => PERSONAL_DATA_TOOLS.includes(tool))).toBe(true)
+  })
+
+  it.each([
+    "Will I make it with this loop?",
+    "is my loop safe?",
+    "am I safe?",
+    "am I underwater?",
+    "how risky is my portfolio?",
+    "will my position hold up?",
+  ])("treats %j as a risk question", (prompt) => expect(routeAskAITurn(prompt).intent).toBe("risk"))
+
+  it.each([
+    "what if ETH drops 30%?",
+    "what happens if the market crashes?",
+    "simulate a 50% drop",
+    "worst case for me",
+  ])("treats %j as a stress test", (prompt) => expect(routeAskAITurn(prompt).intent).toBe("stress_test"))
+
+  // The broadened crypto vocabulary must not swallow market, pool or
+  // educational questions into a personal read.
+  it.each([
+    "what's the ETH price?",
+    "price of SOL",
+    "how much is AVAX worth?",
+    "USDC supply rate",
+    "morpho rates",
+    "sUSDe apy",
+    "best USDC pools right now",
+    "curve pool liquidity",
+    "aerodrome lp yields",
+    "impermanent loss on my pair",
+    "what is APY?",
+    "what is a health factor?",
+    "explain restaking",
+    "what is an LST?",
+    "how do flash loans work?",
+    "what does e-mode mean?",
+    "how does Avana value LP collateral?",
+    "who created aave",
+    "save the file exactly there",
+    "the shadow of the curve",
+  ])("keeps %j off the personal-data tools", (prompt) => {
+    const route = routeAskAITurn(prompt)
+    expect(route.tools).not.toContain("read_portfolio")
+    expect(route.tools).not.toContain("read_position_risk")
   })
 
   it.each([
