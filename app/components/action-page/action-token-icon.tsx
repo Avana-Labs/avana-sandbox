@@ -6,6 +6,9 @@ import { cn } from "@/lib/utils"
 
 const ICON_SIZES = {
   sm: { box: "size-7", text: "text-[9px]", px: 28, container: "h-7 w-[46px]", offset: "left-[18px]" },
+  // Asset-selector pill icon: 32px single / overlapping pair. Sits inside the
+  // fixed-height pill without driving its height.
+  pill: { box: "size-8", text: "text-[10px]", px: 32, container: "h-8 w-[52px]", offset: "left-5" },
   md: { box: "size-12", text: "text-[12px]", px: TOKEN_ICON_TABLE_PX, container: "h-12 w-[72px]", offset: "left-6" },
 } as const
 
@@ -54,8 +57,16 @@ function ActionTokenIconBase({
   )
 }
 
-export function ActionTokenIcon({ symbol, className }: { symbol: string; className?: string }) {
-  return <ActionTokenIconBase symbol={symbol} size="md" className={className} />
+export function ActionTokenIcon({
+  symbol,
+  size = "md",
+  className,
+}: {
+  symbol: string
+  size?: keyof typeof ICON_SIZES
+  className?: string
+}) {
+  return <ActionTokenIconBase symbol={symbol} size={size} className={className} />
 }
 
 export function ActionTokenPairIcon({

@@ -476,11 +476,13 @@ function SwapAssetField({
           type="button"
           onClick={onOpenAssetPicker}
           aria-label={`${label} asset`}
-          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-medium text-foreground hover:bg-surface-hover max-[360px]:self-end"
+          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-medium text-foreground hover:bg-surface-hover max-[360px]:self-end"
         >
-          <SwapAssetIcon asset={asset} className="size-8" />
-          <span>{asset.symbol}</span>
-          <span aria-hidden className="text-muted-foreground">
+          <span className="inline-flex min-w-0 items-center gap-2">
+            <SwapAssetIcon asset={asset} size="pill" />
+            <span className="truncate">{asset.symbol}</span>
+          </span>
+          <span aria-hidden className="shrink-0 text-muted-foreground">
             ▾
           </span>
         </button>

@@ -25,7 +25,7 @@ export function SwapStyleField({
     <div
       className={cn(
         ACTION_FIELD_SURFACE_CLASS,
-        "transition-[border-color,box-shadow,transform] duration-200 motion-safe:active:scale-[0.985]",
+        "transition-[border-color,box-shadow] duration-200",
         tone === "raised" &&
           "border border-border bg-field-top text-card-foreground shadow-[0_1px_0_rgba(255,255,255,0.04)_inset] focus-within:border-brand/35 focus-within:shadow-[0_0_0_1px_hsl(var(--brand)/0.18),0_12px_32px_-20px_hsl(var(--brand)/0.22)] dark:shadow-none",
         tone === "inset" &&
@@ -36,8 +36,16 @@ export function SwapStyleField({
       data-tone={tone}
       {...props}
     >
-      <div className="text-[15px] font-normal leading-5 text-foreground/70">{label}</div>
-      {children}
+      {/* Press feedback lives on the INNER content only, so a click bounces the
+          label/amount/pill — never the card surface or its border. The back-out
+          timing function overshoots on release for a noticeable spring. */}
+      <div
+        className="origin-center transition-transform duration-200 motion-safe:active:scale-[0.96]"
+        style={{ transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
+      >
+        <div className="text-[15px] font-normal leading-5 text-foreground/70">{label}</div>
+        {children}
+      </div>
     </div>
   )
 }

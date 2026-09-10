@@ -23,6 +23,15 @@ import type { HomeBorrowToken } from "@/app/lib/borrow-system/home-contracts"
 const MAX_AMOUNT_FONT_PX = 32
 const MIN_AMOUNT_FONT_PX = 15
 
+// Fixed-HEIGHT asset-selector pill: a size-8 icon fits inside the stable h-11
+// box rather than driving its height, so the pill no longer grows tall when an
+// asset is picked. Width hugs the content (no min-width / justify-between) so
+// short tickers don't leave a large gap before the chevron. Shared by every
+// variant in the selector slot — and mirrored in home-swap-action.tsx — so the
+// box is consistent across the homepage, action pages, and detail pages.
+const ASSET_PILL_CLASS =
+  "inline-flex h-11 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-medium text-foreground"
+
 function useFitAmountFontSize(text: string) {
   const containerRef = useRef<HTMLDivElement & HTMLLabelElement>(null)
   const mirrorRef = useRef<HTMLSpanElement>(null)
@@ -305,7 +314,7 @@ export function ActionAmountCard({
       {!hideAssetSelector ? (
         <div className="relative shrink-0 max-[360px]:self-end" ref={switchable ? menuRef : undefined}>
           {unitLabel ? (
-            <div className="inline-flex cursor-default items-center rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground">
+            <div className={cn(ASSET_PILL_CLASS, "cursor-default")}>
               <span>{unitLabel}</span>
             </div>
           ) : switchable || gated ? (
@@ -328,28 +337,31 @@ export function ActionAmountCard({
               aria-label={t("Change asset, current {asset}").replace("{asset}", assetLabel)}
               disabled={(readOnly && !allowAssetSwitchWhenReadOnly) || (gated && !gatedClickable)}
               className={cn(
-                "inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground hover:bg-surface-hover",
+                ASSET_PILL_CLASS,
+                "hover:bg-surface-hover",
                 gated ? (gatedClickable ? "opacity-60" : "cursor-default opacity-60") : "cursor-pointer",
               )}
             >
-              {borrowSymbol ? (
-                <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
-              ) : isAssetPlaceholder ? null : (
-                <ActionTokenIcon symbol={symbol} />
-              )}
-              {showAssetLabel ? <span>{displayAssetLabel}</span> : null}
-              <span className="text-muted-foreground" aria-hidden>
+              <span className="inline-flex min-w-0 items-center gap-2">
+                {borrowSymbol ? (
+                  <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="pill" />
+                ) : isAssetPlaceholder ? null : (
+                  <ActionTokenIcon symbol={symbol} size="pill" />
+                )}
+                {showAssetLabel ? <span className="truncate">{displayAssetLabel}</span> : null}
+              </span>
+              <span className="shrink-0 text-muted-foreground" aria-hidden>
                 ▾
               </span>
             </button>
           ) : (
-            <div className="inline-flex cursor-default items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-medium text-foreground">
+            <div className={cn(ASSET_PILL_CLASS, "cursor-default")}>
               {borrowSymbol ? (
-                <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="md" />
+                <ActionTokenPairIcon collateralSymbol={symbol} borrowSymbol={borrowSymbol} size="pill" />
               ) : isAssetPlaceholder ? null : (
-                <ActionTokenIcon symbol={symbol} />
+                <ActionTokenIcon symbol={symbol} size="pill" />
               )}
-              {showAssetLabel ? <span>{displayAssetLabel}</span> : null}
+              {showAssetLabel ? <span className="truncate">{displayAssetLabel}</span> : null}
             </div>
           )}
           {switchable && !gated && !useDialogPicker && menuOpen && !useMenuSheet ? (

@@ -38,11 +38,11 @@ export function ActionContextSelectorCard({
             <div className="min-w-0 flex-1 break-words text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground min-[361px]:truncate">
               {value}
             </div>
-            <div className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-background px-2.5 py-2 text-[14px] font-medium dark:bg-card max-[360px]:self-end">
+            <div className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-[14px] font-medium dark:bg-card max-[360px]:self-end">
               {borrowSymbol ? (
-                <ActionTokenPairIcon collateralSymbol={collateralSymbol} borrowSymbol={borrowSymbol} size="md" />
+                <ActionTokenPairIcon collateralSymbol={collateralSymbol} borrowSymbol={borrowSymbol} size="pill" />
               ) : (
-                <ActionTokenIcon symbol={collateralSymbol} />
+                <ActionTokenIcon symbol={collateralSymbol} size="pill" />
               )}
               <span className="text-muted-foreground" aria-hidden>
                 ▾
