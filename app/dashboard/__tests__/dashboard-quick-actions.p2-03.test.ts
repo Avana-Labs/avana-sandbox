@@ -14,7 +14,7 @@ describe("Dashboard quick-action placement", () => {
 
     const actionsSource = readFileSync(resolve(__dirname, "../dashboard-quick-actions.tsx"), "utf8")
     expect(actionsSource).toMatch(/grid w-full grid-cols-2 gap-2 lg:flex/)
-    expect(actionsSource).toMatch(/variant="dashboard-action"/)
+    expect(actionsSource).toMatch(/variant="outline"/)
     expect(actionsSource).not.toMatch(/DashboardHeroActions/)
     expect(actionsSource).not.toMatch(/min-h-\[94px\]/)
   })

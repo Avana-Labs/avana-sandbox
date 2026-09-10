@@ -51,11 +51,15 @@ export function DashboardQuickActions(_: { activeTab?: DashboardQuickActionsTab 
       {actions.map((action) => {
         const Icon = action.icon
         return (
-          <Button key={action.id} asChild variant="dashboard-action" size="dashboard-action">
+          <Button
+            key={action.id}
+            asChild
+            variant="outline"
+            size="sm"
+            className="w-full gap-2 [&_svg]:size-4 lg:w-auto"
+          >
             <Link href={action.href} aria-label={action.label}>
-              <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full border border-muted-foreground/50 text-muted-foreground">
-                <Icon data-icon="inline-start" aria-hidden />
-              </span>
+              <Icon aria-hidden />
               <span>{action.label}</span>
             </Link>
           </Button>
