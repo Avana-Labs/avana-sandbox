@@ -118,15 +118,10 @@ export function ActionPageShell({
           </div>
         ) : null}
 
-        <div
-          className={cn(
-            "flex min-h-0 flex-1 flex-col",
-            mode === "embedded" && density === "sidebar" ? "gap-4" : "gap-4",
-            mode === "embedded" && density === "home" && "gap-2",
-          )}
-        >
-          {children}
-        </div>
+        {/* One consistent gap between the stacked cards on every surface — the tight
+            homepage rhythm (gap-2), not the roomier gap-4 the sidebar/full action
+            pages used before. */}
+        <div className={cn("flex min-h-0 flex-1 flex-col gap-2")}>{children}</div>
 
         {footer ? <div className="mt-4">{footer}</div> : null}
       </div>

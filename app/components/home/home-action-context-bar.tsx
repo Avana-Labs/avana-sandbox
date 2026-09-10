@@ -79,17 +79,18 @@ export function HomeActionContextBar({
     )
   }
 
+  // No wrapper margin: the card stack (ActionPageShell) already spaces this card
+  // from the next with gap-2. A stray mb-3 here made the collateral→amount gap
+  // bigger than every other card gap.
   return (
-    <div className={workspace ? undefined : "mb-3"}>
-      <ActionContextSelectorCard
-        label={t(label)}
-        value={valueLabel}
-        approxUsdLabel={approxUsdLabel}
-        collateralSymbol={collateralSymbol ?? "LP"}
-        borrowSymbol={borrowSymbol}
-        onClick={onOpenPool}
-        workspace={workspace}
-      />
-    </div>
+    <ActionContextSelectorCard
+      label={t(label)}
+      value={valueLabel}
+      approxUsdLabel={approxUsdLabel}
+      collateralSymbol={collateralSymbol ?? "LP"}
+      borrowSymbol={borrowSymbol}
+      onClick={onOpenPool}
+      workspace={workspace}
+    />
   )
 }
