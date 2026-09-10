@@ -31,6 +31,8 @@ const buttonVariants = cva(
         // brand cyan with white text on row/button hover, focus, or active press.
         "table-primary":
           "w-auto bg-brand text-white hover:bg-brand/90 active:bg-brand/80 focus-visible:ring-brand/40 md:bg-muted md:text-foreground md:hover:!bg-brand/90 md:hover:!text-white md:active:!bg-brand/80 md:active:!text-white md:group-hover:!bg-brand md:group-hover:!text-white md:group-focus-within:!bg-brand md:group-focus-within:!text-white disabled:!opacity-100 disabled:!bg-brand-soft disabled:!text-brand-soft-foreground md:disabled:!bg-muted md:disabled:!text-muted-foreground",
+        "dashboard-action":
+          "border border-border bg-surface-inset text-foreground shadow-sm hover:bg-surface-hover active:bg-muted",
       },
       size: {
         default: "h-9 px-3",
@@ -41,6 +43,8 @@ const buttonVariants = cva(
         cta: "h-14 rounded-radius-xl px-4 text-[16px]",
         compact: "h-12 rounded-radius-xl px-4 text-[15px]",
         table: "h-auto gap-2 rounded-full px-3.5 py-2 text-[14px] [&_svg]:size-4",
+        "dashboard-action":
+          "h-12 w-full gap-2.5 rounded-full px-4 text-[15px] font-medium lg:w-auto lg:min-w-[118px] lg:px-5 [&_svg]:size-5",
       },
     },
     defaultVariants: {
