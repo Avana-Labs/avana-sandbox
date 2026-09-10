@@ -3,6 +3,13 @@
 import type { TranslationDictionary } from "../types"
 
 const dict: TranslationDictionary = {
+  "Coinbase & Robinhood Stocks": "Coinbase & Robinhood 주식",
+  "Tokenized equities — deposit stock tokens to earn lending yield":
+    "토큰화된 주식 — 주식 토큰을 예치하여 예치 수익을 얻으세요",
+  "Tokenized-equity concentrated LP positions": "토큰화된 주식의 집중 LP 포지션",
+  "Paxos USD stablecoin": "Paxos USD 스테이블코인",
+  "{name} is a tokenized-equity LP position posted as collateral inside the {spoke} spoke on Avana. It pairs {stableLeg} with tokenized {stockName} ({stockSymbol}) exposure, so collateral value tracks the {stockName} share price alongside the pool's depth and fee tier. Avana anchors borrow power to the spoke's max LTV, keeping credit tied to how sharply tokenized-equity collateral can move. This page is the single source of truth for what the pool is, how much capital it can safely support, and the downside the protocol underwrites.":
+    "{name}은(는) Avana의 {spoke} 스포크에 담보로 예치된 토큰화 주식 LP 포지션입니다. {stableLeg}과(와) 토큰화된 {stockName}({stockSymbol}) 익스포저를 페어링하므로, 담보 가치는 풀의 깊이 및 수수료 티어와 함께 {stockName} 주가를 추종합니다. Avana는 차입 능력을 스포크의 최대 LTV에 고정하여, 토큰화 주식 담보가 얼마나 급격히 움직일 수 있는지에 신용을 연동합니다. 이 페이지는 풀이 무엇인지, 안전하게 지원할 수 있는 자본 규모, 프로토콜이 부담하는 하방 리스크에 대한 단일 정보원입니다.",
   "Enter an amount": "금액 입력",
   "Stake more": "추가 스테이크",
   Markets: "마켓",

@@ -3,6 +3,13 @@
 import type { TranslationDictionary } from "../types"
 
 const dict: TranslationDictionary = {
+  "Coinbase & Robinhood Stocks": "أسهم Coinbase و Robinhood",
+  "Tokenized equities — deposit stock tokens to earn lending yield":
+    "أسهم مُرمّزة — أودِع رموز الأسهم لكسب عائد الإقراض",
+  "Tokenized-equity concentrated LP positions": "مراكز LP مركّزة للأسهم المُرمّزة",
+  "Paxos USD stablecoin": "عملة Paxos USD المستقرة",
+  "{name} is a tokenized-equity LP position posted as collateral inside the {spoke} spoke on Avana. It pairs {stableLeg} with tokenized {stockName} ({stockSymbol}) exposure, so collateral value tracks the {stockName} share price alongside the pool's depth and fee tier. Avana anchors borrow power to the spoke's max LTV, keeping credit tied to how sharply tokenized-equity collateral can move. This page is the single source of truth for what the pool is, how much capital it can safely support, and the downside the protocol underwrites.":
+    "{name} هو مركز LP لأسهم مُرمّزة مُودَع كضمان داخل سبووك {spoke} على Avana. يقرن {stableLeg} بتعرّض مُرمّز لـ {stockName} ({stockSymbol})، لذا تتبع قيمة الضمان سعر سهم {stockName} إلى جانب عمق المجمّع ومستوى الرسوم. تربط Avana القدرة على الاقتراض بأقصى نسبة LTV للسبووك، بحيث يرتبط الائتمان بمدى حدّة تحرّك ضمان الأسهم المُرمّزة. هذه الصفحة هي المصدر الموحّد للحقيقة حول ماهية المجمّع، ومقدار رأس المال الذي يمكنه دعمه بأمان، ومخاطر الهبوط التي يتحمّلها البروتوكول.",
   "Stake more": "ستيك إضافي",
   "Enter an amount": "أدخل مبلغًا",
   Home: "الرئيسية",

@@ -3,6 +3,12 @@
 import type { TranslationDictionary } from "../types"
 
 const dict: TranslationDictionary = {
+  "Coinbase & Robinhood Stocks": "Coinbase 与 Robinhood 股票",
+  "Tokenized equities — deposit stock tokens to earn lending yield": "代币化股票 — 存入股票代币以赚取借贷收益",
+  "Tokenized-equity concentrated LP positions": "代币化股票的集中流动性 LP 仓位",
+  "Paxos USD stablecoin": "Paxos USD 稳定币",
+  "{name} is a tokenized-equity LP position posted as collateral inside the {spoke} spoke on Avana. It pairs {stableLeg} with tokenized {stockName} ({stockSymbol}) exposure, so collateral value tracks the {stockName} share price alongside the pool's depth and fee tier. Avana anchors borrow power to the spoke's max LTV, keeping credit tied to how sharply tokenized-equity collateral can move. This page is the single source of truth for what the pool is, how much capital it can safely support, and the downside the protocol underwrites.":
+    "{name} 是存入 Avana {spoke} 分支作为抵押品的代币化股票 LP 仓位。它将 {stableLeg} 与代币化的 {stockName}（{stockSymbol}）敞口配对，因此抵押品价值会随 {stockName} 股价以及资金池的深度和费率层级而变动。Avana 将借贷能力锚定到该分支的最高 LTV，使信贷与代币化股票抵押品的波动幅度挂钩。本页面是了解该资金池本质、可安全支持的资金规模以及协议所承担下行风险的唯一可信来源。",
   "Enter an amount": "输入金额",
   "Stake more": "继续质押",
   Home: "首页",
