@@ -22,36 +22,23 @@ function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => stri
   // rather than the pre-sliced 3-item explore lists. Extra cards are filled from
   // leftover pools so the desktop carousel has enough unique markets to scroll.
   const catalog = pageData.poolCatalog
-  // Tokenized-stock spokes get bespoke treatment: feature the Uniswap Robinhood
-  // (USDG-quoted) pools in their own card, and keep the Aerodrome "…c" stocks out of
-  // the auto-ranked cards so their high fee number doesn't crowd out the blue chips.
-  const isRobinhoodStock = (p: ExplorePool) => p.spoke === "uni-robinhood-stocks"
-  const isAeroStock = (p: ExplorePool) => p.spoke === "aero-concentrated-stocks"
-  const rankable = catalog.filter((p) => !isRobinhoodStock(p) && !isAeroStock(p))
-  const byAvailable = [...rankable].sort((a, b) => b.availableUsd - a.availableUsd)
-  const byTvl = [...rankable].sort((a, b) => b.tvlUsd - a.tvlUsd)
-  const byApr = [...rankable].sort((a, b) => averageApr(b) - averageApr(a))
-  // Lead the stocks card with a familiar ticker (TSLA), then fill by TVL.
-  const robinhoodStocks = catalog
-    .filter(isRobinhoodStock)
-    .sort((a, b) => Number(/TSLA/i.test(b.name)) - Number(/TSLA/i.test(a.name)) || b.tvlUsd - a.tvlUsd)
+  const byTvl = [...catalog].sort((a, b) => b.tvlUsd - a.tvlUsd)
 
   const used = new Set<string>()
-  const pick = (ranked: ReadonlyArray<ExplorePool>, count: number) => {
-    const chosen: ExplorePool[] = []
-    const take = (list: ReadonlyArray<ExplorePool>) => {
-      for (const pool of list) {
-        if (chosen.length === count) break
-        if (used.has(pool.name)) continue
-        used.add(pool.name)
-        chosen.push(pool)
-      }
+  const take = (pool: ExplorePool | null | undefined): ExplorePool | null => {
+    if (!pool || used.has(pool.name)) return null
+    used.add(pool.name)
+    return pool
+  }
+  const norm = (s: string) => s.toUpperCase()
+  // Resolve a curated pick by its two token symbols, preferring the named venue but
+  // falling back to any spoke so it still resolves if the pool lives on a different one.
+  const findPool = (spoke: string, a: string, b: string): ExplorePool | null => {
+    const matches = (p: ExplorePool) => {
+      const syms = p.visuals.map((v) => norm(v.symbol))
+      return syms.includes(norm(a)) && syms.includes(norm(b))
     }
-    take(ranked)
-    // Fallback so every card fills to `count` even if this ranking's leaders were
-    // already claimed by an earlier card.
-    if (chosen.length < count) take(byTvl)
-    return chosen
+    return catalog.find((p) => p.spoke === spoke && matches(p)) ?? catalog.find(matches) ?? null
   }
 
   const toRows = (pools: ReadonlyArray<ExplorePool>, prefix: string) =>
@@ -71,18 +58,42 @@ function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => stri
       deltaClassName: "text-apy-positive",
     }))
 
-  const cards = [
-    { id: "trending", rows: toRows(pick(byAvailable, 2), "trending") },
-    { id: "top", rows: toRows(pick(byTvl, 2), "top") },
-    // Featured tokenized-stocks card (Uniswap Robinhood, USDG-quoted).
-    ...(robinhoodStocks.length >= 2 ? [{ id: "stocks", rows: toRows(robinhoodStocks.slice(0, 2), "stocks") }] : []),
-    { id: "apy", rows: toRows(pick(byApr, 2), "apy") },
+  // Hand-curated Explore carousel: these exact markets, in this order, two per card.
+  // Each entry is [preferred venue spoke, tokenA, tokenB]; findPool falls back to any
+  // spoke. Card 5 auto-fills from the highest-TVL pools not already featured.
+  const CURATED_CARDS: ReadonlyArray<ReadonlyArray<readonly [string, string, string]>> = [
+    [
+      ["bal-stable", "GHO", "USDC"],
+      ["uni-v3-bluechip", "WBTC", "USDC"],
+    ],
+    [
+      ["aero-concentrated-stocks", "USDC", "GOOGLc"],
+      ["uni-v3-bluechip", "WETH", "USDC"],
+    ],
+    [
+      ["uni-robinhood-stocks", "TSLA", "USDG"],
+      ["aero-concentrated-stocks", "USDC", "AAPLc"],
+    ],
+    [
+      ["uni-v3-bluechip", "cbBTC", "WETH"],
+      ["uni-v3-stable", "crvUSD", "USDC"],
+    ],
   ]
 
-  // Cap the carousel at 5 cards — enough to scroll a little without an endless rail.
+  const cards = CURATED_CARDS.map((pairs, ci) => {
+    const rows = pairs.map(([spoke, a, b]) => take(findPool(spoke, a, b))).filter((p): p is ExplorePool => p !== null)
+    return { id: `curated-${ci}`, rows: toRows(rows, `curated-${ci}`) }
+  }).filter((card) => card.rows.length > 0)
+
+  // Cap the carousel at 5 cards; fill any remaining with top-TVL leftovers.
   let extra = 0
   while (cards.length < 5) {
-    const next = pick(byTvl, 2)
+    const next: ExplorePool[] = []
+    for (const pool of byTvl) {
+      if (next.length === 2) break
+      const chosen = take(pool)
+      if (chosen) next.push(chosen)
+    }
     if (next.length < 2) break
     cards.push({ id: `more-${extra}`, rows: toRows(next, `more-${extra}`) })
     extra += 1
