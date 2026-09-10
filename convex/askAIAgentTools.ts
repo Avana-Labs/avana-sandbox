@@ -83,11 +83,13 @@ export function createAskAITurnTools(turnId: Id<"askAITurns">, prompt: string) {
         ctx.runQuery(internal.askAITools.positionRiskForTurn, { turnId, ...input }),
     }),
     simulate_borrow: createTool({
-      description: "Run Avana's deterministic read-only borrow simulation for an open position.",
+      description:
+        "Run Avana's deterministic read-only borrow simulation for an open position. Returns the projected health factor and risk level, plus the interest the resulting debt accrues over projectionDays (default 365).",
       inputSchema: z.object({
         positionId: z.string().min(1),
         additionalBorrowAmount: z.number().positive().max(1_000_000_000),
         borrowAsset: z.string().min(1).max(32),
+        projectionDays: z.number().int().positive().max(3_650).optional(),
       }),
       execute: (ctx, input): Promise<unknown> =>
         ctx.runQuery(internal.askAITools.simulateBorrowForTurn, { turnId, ...input }),

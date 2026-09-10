@@ -160,6 +160,9 @@ function compactPortfolioContext(payload: unknown) {
             assetId,
             suppliedUsd,
             cooldownUsd,
+            earnedUsd,
+            slashedUsd,
+            supplyApyPct,
             cooldownStartedAt,
             cooldownEndsAt,
             withdrawalWindowEndsAt,
@@ -172,6 +175,11 @@ function compactPortfolioContext(payload: unknown) {
             assetId,
             suppliedUsd,
             cooldownUsd,
+            // Dropping these made "how much have I earned staking?" and
+            // "have I been slashed?" unanswerable from the model context.
+            earnedUsd,
+            slashedUsd,
+            supplyApyPct,
             cooldownStartedAt,
             cooldownEndsAt,
             withdrawalWindowEndsAt,
@@ -198,7 +206,16 @@ export function focusPortfolioPayload<T>(payload: T, prompt: string): T {
     dataProvenance: record.dataProvenance,
     wallet: record.wallet,
     focus: "umbrella",
-    totals: { umbrellaUsd: totals.umbrellaUsd },
+    // Keep the portfolio-wide figures: a staking question is still often
+    // "how much do I have in total, including staking", and dropping
+    // netValueUsd here left that unanswerable.
+    totals: {
+      umbrellaUsd: totals.umbrellaUsd,
+      umbrellaEarnedUsd: totals.umbrellaEarnedUsd,
+      umbrellaSlashedUsd: totals.umbrellaSlashedUsd,
+      netValueUsd: totals.netValueUsd,
+      totalEarnedUsd: totals.totalEarnedUsd,
+    },
     umbrella: record.umbrella,
     umbrellaCooldowns: record.umbrellaCooldowns,
     umbrellaCooldownSummary: record.umbrellaCooldownSummary,

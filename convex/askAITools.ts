@@ -8,9 +8,14 @@ import {
   calculateMultiplyStress,
   decodeBorrowRiskSnapshot,
   deriveAskAIUmbrellaStatus,
+  askAIHealthFactorValue,
+  askAIRiskLevel,
+  calculateBorrowProjection,
 } from "../app/lib/ask-ai/engine-calculations"
 import { internalQuery, query, type MutationCtx, type QueryCtx } from "./_generated/server"
+import { calculatePriceDropToLiquidationPct } from "../app/lib/multiply-engine/formulas"
 import { getAuthedWallet } from "./sandbox/auth"
+import { computePortfolioNetApyPct } from "./sandbox/transactions"
 import type { Id } from "./_generated/dataModel"
 
 type PortfolioReadCtx = Pick<QueryCtx | MutationCtx, "auth" | "db">
@@ -66,32 +71,45 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
   const wallet = await getAuthedWallet(ctx)
   if (!wallet) return { walletRequired: true as const, message: ASK_AI_WALLET_REQUIRED }
 
-  const [lend, borrow, multiply, liquid, umbrella, umbrellaTranches] = await Promise.all([
-    ctx.db
-      .query("walletLendBalances")
-      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-      .collect(),
-    ctx.db
-      .query("walletBorrowBalances")
-      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-      .collect(),
-    ctx.db
-      .query("walletMultiplyBalances")
-      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-      .collect(),
-    ctx.db
-      .query("walletLiquidBalances")
-      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-      .collect(),
-    ctx.db
-      .query("positions")
-      .withIndex("by_wallet_product", (q) => q.eq("wallet", wallet).eq("product", "umbrella"))
-      .collect(),
-    ctx.db
-      .query("umbrellaCooldownTranches")
-      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
-      .collect(),
-  ])
+  const [lend, borrow, multiply, liquid, allPositions, umbrellaTranches, current, walletCollateral] = await Promise.all(
+    [
+      ctx.db
+        .query("walletLendBalances")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect(),
+      ctx.db
+        .query("walletBorrowBalances")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect(),
+      ctx.db
+        .query("walletMultiplyBalances")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect(),
+      ctx.db
+        .query("walletLiquidBalances")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect(),
+      ctx.db
+        .query("positions")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect(),
+      ctx.db
+        .query("umbrellaCooldownTranches")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect(),
+      // Carries the wallet's cumulative earnings, which no per-row balance does.
+      ctx.db
+        .query("portfolioCurrent")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .unique(),
+      // Needed by the shared Net APY calculation.
+      ctx.db
+        .query("walletCollateralPositions")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect(),
+    ],
+  )
+  const umbrella = allPositions.filter((position) => position.product === "umbrella")
 
   const sumUsd = (rows: readonly { valueUsd: number }[]) => rows.reduce((sum, row) => sum + row.valueUsd, 0)
   // These tables store debt with a POSITIVE valueUsd and mark it only with
@@ -100,11 +118,36 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
   // net must subtract those rows.
   const netUsd = (rows: readonly { valueUsd: number; state?: string }[]) =>
     rows.reduce((sum, row) => sum + (row.state === "debt" ? -row.valueUsd : row.valueUsd), 0)
+  // walletMultiplyBalances records the SAME collateral twice, once as
+  // `state:"position"` and once as `state:"collateral"` (convex/sandbox/
+  // transactions.ts), so any sum over the raw rows counts it twice. The
+  // dashboard drops the duplicate (`if (row.state === "collateral") continue`
+  // in app/lib/swap-system/use-convex-wallet-balances.ts); mirror that here.
+  const multiplyRows = multiply.filter((row) => row.state !== "collateral")
+  const sumState = (rows: readonly { valueUsd: number; state: string }[], ...states: string[]) =>
+    sumUsd(rows.filter((row) => states.includes(row.state)))
+  // "What is my biggest position?" — debt rows are obligations, not holdings.
+  const largest = [
+    ...lend.map((row) => ({ label: `Lend ${row.symbol}`, valueUsd: row.valueUsd, state: row.state as string })),
+    ...borrow.map((row) => ({ label: `Borrow ${row.symbol}`, valueUsd: row.valueUsd, state: row.state as string })),
+    ...multiplyRows.map((row) => ({
+      label: `Multiply ${row.symbol}`,
+      valueUsd: row.valueUsd,
+      state: row.state as string,
+    })),
+    ...liquid.map((row) => ({ label: `Liquid ${row.symbol}`, valueUsd: row.valueUsd, state: row.state as string })),
+  ]
+    .filter((row) => row.state !== "debt")
+    .sort((a, b) => b.valueUsd - a.valueUsd)[0]
   const now = Date.now()
   const umbrellaPositions = umbrella.map((position) => ({
     ...position,
     suppliedUsd: Number(position.suppliedUsd6 ?? "0") / 1_000_000,
     cooldownUsd: Number(position.cooldownAmountUsd6 ?? "0") / 1_000_000,
+    // "How much have I earned staking?" and "have I been slashed?" — decoded
+    // here because the raw doc carries these only as usd6 strings.
+    earnedUsd: Number(position.earnedUsd6 ?? "0") / 1_000_000,
+    slashedUsd: Number(position.slashedAmountUsd6 ?? "0") / 1_000_000,
     lifecycleStatus: deriveAskAIUmbrellaStatus({ ...position, now }),
     remainingCooldownMs: Math.max(0, (position.cooldownEndsAt ?? 0) - now),
     remainingWithdrawalWindowMs: Math.max(0, (position.withdrawalWindowEndsAt ?? 0) - now),
@@ -145,13 +188,13 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
       // want position size rather than equity.
       lendUsd: sumUsd(lend),
       borrowUsd: sumUsd(borrow),
-      multiplyUsd: sumUsd(multiply),
+      multiplyUsd: sumUsd(multiplyRows),
       liquidUsd: sumUsd(liquid),
       umbrellaUsd: umbrellaSuppliedUsd,
       // Equity per product: the same rows with debt subtracted.
       lendNetUsd: netUsd(lend),
       borrowNetUsd: netUsd(borrow),
-      multiplyNetUsd: netUsd(multiply),
+      multiplyNetUsd: netUsd(multiplyRows),
       liquidNetUsd: netUsd(liquid),
       // Canonical Net Value, following the dashboard hero
       // (app/dashboard/use-dashboard-portfolio-summary.ts aggregateNetValueUsd):
@@ -159,7 +202,28 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
       // Umbrella is excluded there by construction — it is not part of
       // productBalances and lives on its own page — so it is excluded here too
       // and reported separately as umbrellaUsd.
-      netValueUsd: netUsd(liquid) + netUsd(lend) + netUsd(borrow) + netUsd(multiply),
+      netValueUsd: netUsd(liquid) + netUsd(lend) + netUsd(borrow) + netUsd(multiplyRows),
+      // "How much have I earned?" — cumulative, not derivable from balances.
+      totalEarnedUsd: current?.totalEarnedUsd ?? 0,
+      // State-resolved answers. The gross totals above deliberately mix states
+      // (walletLendBalances holds undeposited "available" next to "deposited";
+      // walletBorrowBalances holds pledged collateral, debt and claimable fees),
+      // so each of these questions needs its own figure rather than the model
+      // filtering rows and adding money itself.
+      suppliedUsd: sumState(lend, "deposited"),
+      idleLendUsd: sumState(lend, "available"),
+      debtUsd: sumState(borrow, "debt") + sumState(multiplyRows, "debt"),
+      collateralUsd: sumState(borrow, "collateral") + sumState(multiplyRows, "position"),
+      unpledgedCollateralUsd: sumState(borrow, "poolAvailable"),
+      claimableUsd: sumState(borrow, "claimableFees"),
+      // Blended Net APY from the same helper the dashboard uses, so the two
+      // surfaces cannot drift. Umbrella is excluded there as it is here.
+      netApyPct: await computePortfolioNetApyPct(ctx, allPositions, walletCollateral),
+      openPositionCount: allPositions.filter((position) => position.status === "open").length,
+      umbrellaEarnedUsd: umbrellaPositions.reduce((sum, position) => sum + position.earnedUsd, 0),
+      umbrellaSlashedUsd: umbrellaPositions.reduce((sum, position) => sum + position.slashedUsd, 0),
+      largestPositionUsd: largest?.valueUsd ?? 0,
+      largestPositionLabel: largest?.label ?? null,
     },
     lend,
     borrow,
@@ -224,10 +288,105 @@ export async function readAskAIEngineSnapshot(
   const lendDays = Math.min(Math.max(lendProjectionDays ?? 30, 1), 365)
   const shockPct = Math.min(Math.max(multiplyShockPct ?? -20, -95), 100)
 
+  const lendPositions = positions
+    .filter((position) => position.product === "lend" && position.status === "open")
+    .map((position) => {
+      const principalUsd = Number(position.suppliedUsd6 ?? "0") / 1_000_000
+      return {
+        engine: "lend-engine" as const,
+        marketSlug: position.marketSlug,
+        principalUsd,
+        earnedUsd: Number(position.earnedUsd6 ?? "0") / 1_000_000,
+        projection: calculateLendProjection({
+          principalUsd,
+          supplyApyPct: position.supplyApyPct ?? 0,
+          days: lendDays,
+        }),
+      }
+    })
+  const multiplyPositions = positions
+    .filter((position) => position.product === "multiply" && position.status === "open")
+    .map((position) => {
+      const parameters = parameterBySymbol.get((position.assetId ?? "").toLowerCase())
+      const collateralValueUsd = position.collateralValueUsd ?? 0
+      const collateralAmount = position.collateralAmount ?? 0
+      return {
+        engine: "multiply-engine" as const,
+        marketSlug: position.marketSlug,
+        collateralValueUsd,
+        debtValueUsd: position.debtValueUsd ?? 0,
+        equityUsd: collateralValueUsd - (position.debtValueUsd ?? 0),
+        // "What's my leverage?", "what's my loop's net APY?", "what's my
+        // liquidation price?", "how far can it fall?" — all were on the doc and
+        // none reached the model.
+        multiplier: position.multiplier ?? null,
+        netApyPct: position.netApyPct ?? null,
+        liquidationPrice: position.liquidationPrice ?? null,
+        priceDropToLiquidationPct: calculatePriceDropToLiquidationPct(
+          position.liquidationPrice ?? null,
+          collateralAmount > 0 ? collateralValueUsd / collateralAmount : 0,
+        ),
+        ...askAIHealthFactorValue(position.healthFactor),
+        persistedHealthFactor: position.healthFactor ?? null,
+        stress: parameters
+          ? calculateMultiplyStress({
+              collateralValueUsd: position.collateralValueUsd ?? 0,
+              debtValueUsd: position.debtValueUsd ?? 0,
+              liquidationThresholdPct: parameters.liquidationThresholdPct,
+              collateralPriceShockPct: shockPct,
+            })
+          : null,
+        stressUnavailableReason: parameters ? null : "Missing multiply token risk parameters",
+      }
+    })
+  const umbrellaEnginePositions = positions
+    .filter((position) => position.product === "umbrella")
+    .map((position) => ({
+      engine: "umbrella-system" as const,
+      marketSlug: position.marketSlug,
+      suppliedUsd: Number(position.suppliedUsd6 ?? "0") / 1_000_000,
+      earnedUsd: Number(position.earnedUsd6 ?? "0") / 1_000_000,
+      cooldownUsd: Number(position.cooldownAmountUsd6 ?? "0") / 1_000_000,
+      slashedUsd: Number(position.slashedAmountUsd6 ?? "0") / 1_000_000,
+      status: deriveAskAIUmbrellaStatus({ ...position, now }),
+    }))
+  const total = (values: readonly number[]) => values.reduce((sum, value) => sum + value, 0)
+  // Health factors across several positions have no meaningful average; the
+  // honest single answer to "am I safe?" is the weakest one.
+  const multiplyHealthFactors = multiplyPositions
+    .map((position) => position.persistedHealthFactor)
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value))
+  const stressedHealthFactors = multiplyPositions
+    .map((position) => position.stress?.healthFactor)
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value))
+
   return {
     walletRequired: false as const,
     dataProvenance: ASK_AI_DATA_PROVENANCE,
     wallet,
+    // One scalar per question, computed here so the model never does money
+    // arithmetic itself. Health factors report the weakest position, not a mean.
+    summary: {
+      lendPositionCount: lendPositions.length,
+      lendPrincipalUsd: total(lendPositions.map((position) => position.principalUsd)),
+      lendEarnedUsd: total(lendPositions.map((position) => position.earnedUsd)),
+      lendProjectedYieldUsd: total(lendPositions.map((position) => position.projection.projectedYieldUsd)),
+      lendProjectionDays: lendDays,
+      multiplyPositionCount: multiplyPositions.length,
+      multiplyCollateralUsd: total(multiplyPositions.map((position) => position.collateralValueUsd)),
+      multiplyDebtUsd: total(multiplyPositions.map((position) => position.debtValueUsd)),
+      multiplyEquityUsd: total(
+        multiplyPositions.map((position) => position.collateralValueUsd - position.debtValueUsd),
+      ),
+      multiplyWeakestHealthFactor: multiplyHealthFactors.length ? Math.min(...multiplyHealthFactors) : null,
+      multiplyShockPct: shockPct,
+      multiplyWeakestHealthFactorAfterShock: stressedHealthFactors.length ? Math.min(...stressedHealthFactors) : null,
+      multiplyLiquidatableAfterShock: stressedHealthFactors.some((value) => value <= 1),
+      umbrellaPositionCount: umbrellaEnginePositions.length,
+      umbrellaSuppliedUsd: total(umbrellaEnginePositions.map((position) => position.suppliedUsd)),
+      umbrellaEarnedUsd: total(umbrellaEnginePositions.map((position) => position.earnedUsd)),
+      umbrellaSlashedUsd: total(umbrellaEnginePositions.map((position) => position.slashedUsd)),
+    },
     borrow: borrowRisk
       ? {
           engine: "credit-engine" as const,
@@ -243,54 +402,9 @@ export async function readAskAIEngineSnapshot(
           })),
         }
       : null,
-    lend: positions
-      .filter((position) => position.product === "lend" && position.status === "open")
-      .map((position) => {
-        const principalUsd = Number(position.suppliedUsd6 ?? "0") / 1_000_000
-        return {
-          engine: "lend-engine" as const,
-          marketSlug: position.marketSlug,
-          principalUsd,
-          earnedUsd: Number(position.earnedUsd6 ?? "0") / 1_000_000,
-          projection: calculateLendProjection({
-            principalUsd,
-            supplyApyPct: position.supplyApyPct ?? 0,
-            days: lendDays,
-          }),
-        }
-      }),
-    multiply: positions
-      .filter((position) => position.product === "multiply" && position.status === "open")
-      .map((position) => {
-        const parameters = parameterBySymbol.get((position.assetId ?? "").toLowerCase())
-        return {
-          engine: "multiply-engine" as const,
-          marketSlug: position.marketSlug,
-          collateralValueUsd: position.collateralValueUsd ?? 0,
-          debtValueUsd: position.debtValueUsd ?? 0,
-          persistedHealthFactor: position.healthFactor ?? null,
-          stress: parameters
-            ? calculateMultiplyStress({
-                collateralValueUsd: position.collateralValueUsd ?? 0,
-                debtValueUsd: position.debtValueUsd ?? 0,
-                liquidationThresholdPct: parameters.liquidationThresholdPct,
-                collateralPriceShockPct: shockPct,
-              })
-            : null,
-          stressUnavailableReason: parameters ? null : "Missing multiply token risk parameters",
-        }
-      }),
-    umbrella: positions
-      .filter((position) => position.product === "umbrella")
-      .map((position) => ({
-        engine: "umbrella-system" as const,
-        marketSlug: position.marketSlug,
-        suppliedUsd: Number(position.suppliedUsd6 ?? "0") / 1_000_000,
-        earnedUsd: Number(position.earnedUsd6 ?? "0") / 1_000_000,
-        cooldownUsd: Number(position.cooldownAmountUsd6 ?? "0") / 1_000_000,
-        slashedUsd: Number(position.slashedAmountUsd6 ?? "0") / 1_000_000,
-        status: deriveAskAIUmbrellaStatus({ ...position, now }),
-      })),
+    lend: lendPositions,
+    multiply: multiplyPositions,
+    umbrella: umbrellaEnginePositions,
     asOf: Math.max(0, borrowRisk?.at ?? 0, ...positions.map((position) => position.lastUpdatedAt)),
   }
 }
@@ -324,12 +438,33 @@ export async function readAskAIBorrowCapacity(ctx: PortfolioReadCtx) {
           source: "portfolio_current" as const,
         }
       : null
+  // The raw spoke rows are usd6 strings and a wad health factor. Handing those
+  // to the model made it divide by 1e6/1e18 next to already-decoded numbers in
+  // the same payload, so decode them here.
+  const spokes = (snapshot?.spokes ?? []).map((spoke) => ({
+    spokeId: spoke.spokeId,
+    availableCreditUsd: Number(spoke.availableCreditUsd6) / 1_000_000,
+    totalBorrowedUsd: Number(spoke.totalBorrowedUsd6) / 1_000_000,
+    liquidationBufferUsd: Number(spoke.liquidationBufferUsd6) / 1_000_000,
+    ...askAIHealthFactorValue(
+      spoke.healthFactorWad === null ? null : Number(spoke.healthFactorWad) / 1_000_000_000_000_000_000,
+    ),
+  }))
+  const capacityHealthFactor = capacity && "healthFactor" in capacity ? capacity.healthFactor : null
   return {
     walletRequired: false as const,
     dataProvenance: ASK_AI_DATA_PROVENANCE,
     wallet,
-    capacity,
-    spokes: snapshot?.spokes ?? [],
+    capacity: capacity
+      ? {
+          ...capacity,
+          // "How much buffer do I have?" / "am I safe?" — the tool description
+          // already promised a liquidation buffer, but only raw spokes had it.
+          liquidationBufferUsd: spokes.reduce((sum, spoke) => sum + spoke.liquidationBufferUsd, 0),
+          ...askAIHealthFactorValue(capacityHealthFactor),
+        }
+      : null,
+    spokes,
     asOf: snapshot?.at ?? portfolio?.at ?? 0,
   }
 }
@@ -353,11 +488,59 @@ export async function readAskAIPositionRisk(ctx: PortfolioReadCtx, positionId?: 
   if (positionId && !selected) throw new Error("Position not found")
   const relevant = selected ? [selected] : positions.filter((position) => position.status === "open")
   const engine = await readAskAIEngineSnapshot(ctx, { multiplyShockPct: -20 })
+  // Raw position docs carry usd6 STRINGS and a health factor that can be the
+  // literal "infinity", sitting beside already-decoded numbers in `engine`.
+  // Decode here so the model never converts money units itself.
+  const decoded = relevant.map((position) => {
+    const usd6 = (value: string | undefined) => Number(value ?? "0") / 1_000_000
+    const collateralValueUsd = position.collateralValueUsd ?? usd6(position.collateralValueUsd6)
+    const collateralAmount = position.collateralAmount ?? 0
+    const liquidationPrice = position.liquidationPrice ?? null
+    const collateralPriceUsd = collateralAmount > 0 ? collateralValueUsd / collateralAmount : 0
+    return {
+      positionId: position._id,
+      product: position.product,
+      marketSlug: position.marketSlug,
+      assetId: position.assetId ?? null,
+      status: position.status,
+      collateralValueUsd,
+      debtValueUsd: position.debtValueUsd ?? usd6(position.debtValueUsd6),
+      suppliedUsd: usd6(position.suppliedUsd6),
+      earnedUsd: usd6(position.earnedUsd6),
+      ltv: position.ltv ?? null,
+      multiplier: position.multiplier ?? null,
+      netApyPct: position.netApyPct ?? null,
+      supplyApyPct: position.supplyApyPct ?? null,
+      liquidationPrice,
+      // "How far can ETH fall before I'm liquidated?" as a fraction of price.
+      priceDropToLiquidationPct: calculatePriceDropToLiquidationPct(liquidationPrice, collateralPriceUsd),
+      ...askAIHealthFactorValue(position.healthFactor),
+      openedAt: position.openedAt,
+      lastUpdatedAt: position.lastUpdatedAt,
+    }
+  })
+  const headrooms = decoded
+    .map((position) => position.healthFactorHeadroom)
+    .filter((value): value is number => typeof value === "number")
   return {
     walletRequired: false as const,
     dataProvenance: ASK_AI_DATA_PROVENANCE,
     wallet,
-    positions: relevant,
+    // One answer for "am I safe?" across everything the wallet holds.
+    riskSummary: {
+      positionCount: decoded.length,
+      weakestHealthFactor: headrooms.length ? Math.min(...headrooms) + 1 : null,
+      weakestHeadroom: headrooms.length ? Math.min(...headrooms) : null,
+      riskLevel: askAIRiskLevel(headrooms.length ? Math.min(...headrooms) + 1 : null),
+      liquidatableNow: decoded.some((position) => position.riskLevel === "critical"),
+      smallestPriceDropToLiquidationPct: (() => {
+        const drops = decoded
+          .map((position) => position.priceDropToLiquidationPct)
+          .filter((value): value is number => typeof value === "number" && value >= 0)
+        return drops.length ? Math.min(...drops) : null
+      })(),
+    },
+    positions: decoded,
     engine,
     asOf: engine.asOf,
   }
@@ -378,6 +561,8 @@ const simulateBorrowArgs = {
   positionId: v.string(),
   additionalBorrowAmount: v.number(),
   borrowAsset: v.string(),
+  /** Window for the interest projection ("what will this cost me over a year"). */
+  projectionDays: v.optional(v.number()),
 }
 
 async function readAskAISimulateBorrow(
@@ -386,10 +571,12 @@ async function readAskAISimulateBorrow(
     positionId,
     additionalBorrowAmount,
     borrowAsset,
+    projectionDays,
   }: {
     positionId: string
     additionalBorrowAmount: number
     borrowAsset: string
+    projectionDays?: number
   },
 ) {
   if (!Number.isFinite(additionalBorrowAmount) || additionalBorrowAmount <= 0 || additionalBorrowAmount > 1_000_000_000)
@@ -409,18 +596,39 @@ async function readAskAISimulateBorrow(
   if (!market?.maxLtvPct) throw new Error("Position risk parameters are unavailable")
   const collateralValueUsd = position.collateralValueUsd ?? Number(position.collateralValueUsd6 ?? "0") / 1_000_000
   const debtValueUsd = position.debtValueUsd ?? Number(position.debtValueUsd6 ?? "0") / 1_000_000
+  // The borrow rate lives on the pool, not on borrowMarkets.
+  const pool = await ctx.db
+    .query("pools")
+    .withIndex("by_slug", (q) => q.eq("slug", position.marketSlug))
+    .unique()
+  const simulation = calculateAskAIBorrowSimulation({
+    collateralValueUsd,
+    debtValueUsd,
+    additionalBorrowAmountUsd: additionalBorrowAmount,
+    maxLtvPct: market.maxLtvPct,
+  })
+  const days = Math.min(Math.max(projectionDays ?? 365, 1), 3_650)
   return {
     walletRequired: false as const,
     dataProvenance: ASK_AI_DATA_PROVENANCE,
     positionId,
     borrowAsset: borrowAsset.trim().toUpperCase(),
     additionalBorrowAmount,
-    simulation: calculateAskAIBorrowSimulation({
-      collateralValueUsd,
-      debtValueUsd,
-      additionalBorrowAmountUsd: additionalBorrowAmount,
-      maxLtvPct: market.maxLtvPct,
-    }),
+    simulation,
+    // "What will this borrow cost me over time?" — projected on the debt the
+    // position would carry AFTER the new borrow, so the figure answers the
+    // question that was actually asked.
+    interestProjection:
+      typeof pool?.pairAprPct === "number"
+        ? {
+            ...calculateBorrowProjection({
+              debtUsd: simulation.projected.debtValueUsd,
+              borrowAprPct: pool.pairAprPct,
+              days,
+            }),
+            onDebtUsd: simulation.projected.debtValueUsd,
+          }
+        : { unavailableReason: "No borrow rate is published for this market", days },
     asOf: position.lastUpdatedAt,
   }
 }

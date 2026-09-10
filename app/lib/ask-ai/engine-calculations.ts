@@ -24,6 +24,52 @@ export function decodeBorrowRiskSnapshot(snapshot: {
   }
 }
 
+/** A health factor as it is actually stored: a number, the literal string
+ * "infinity" when there is no debt (multiply-engine/formulas.ts), or absent. */
+export type AskAIHealthFactor = number | "infinity" | null | undefined
+
+/** One shared wording for "am I safe?", so every surface agrees. */
+export function askAIRiskLevel(healthFactor: AskAIHealthFactor): "low" | "elevated" | "critical" | "none" {
+  // No debt means nothing to liquidate, which is the safest state, not unknown.
+  if (healthFactor === "infinity" || healthFactor === Number.POSITIVE_INFINITY) return "low"
+  if (healthFactor === null || healthFactor === undefined || !Number.isFinite(healthFactor)) return "none"
+  if (healthFactor <= 1) return "critical"
+  if (healthFactor < 1.5) return "elevated"
+  return "low"
+}
+
+/** How far above liquidation the position sits. HF 1.0 is the liquidation line.
+ * Null when there is no debt or no health factor, since "infinite headroom" is
+ * not a number the model should try to render. */
+export function askAIHealthFactorHeadroom(healthFactor: AskAIHealthFactor): number | null {
+  return typeof healthFactor === "number" && Number.isFinite(healthFactor) ? healthFactor - 1 : null
+}
+
+/** Normalise a stored health factor for the model: a finite number or null,
+ * never the bare string "infinity". `noDebt` distinguishes the two cases. */
+export function askAIHealthFactorValue(healthFactor: AskAIHealthFactor) {
+  const noDebt = healthFactor === "infinity" || healthFactor === Number.POSITIVE_INFINITY
+  return {
+    healthFactor: typeof healthFactor === "number" && Number.isFinite(healthFactor) ? healthFactor : null,
+    noDebt,
+    riskLevel: askAIRiskLevel(healthFactor),
+    healthFactorHeadroom: askAIHealthFactorHeadroom(healthFactor),
+  }
+}
+
+/**
+ * Interest a borrow accrues over a window, mirroring calculateLendProjection so
+ * "how much interest will I pay?" has a figure instead of model arithmetic.
+ */
+export function calculateBorrowProjection(params: { debtUsd: number; borrowAprPct: number; days: number }) {
+  const days = Math.max(0, params.days)
+  return {
+    borrowAprPct: params.borrowAprPct,
+    projectedInterestUsd: calculateSimpleInterestAccrued(params.debtUsd, params.borrowAprPct / 100, days / 365),
+    days,
+  }
+}
+
 export function calculateLendProjection(params: {
   principalUsd: number
   supplyApyPct: number
@@ -52,6 +98,10 @@ export function calculateMultiplyStress(params: {
     shockedCollateralValueUsd,
     ltv: calculateMultiplyLtv(params.debtValueUsd, shockedCollateralValueUsd),
     healthFactor: calculateMultiplyHealthFactor(shockedCollateralValueUsd, params.debtValueUsd, liquidationThreshold),
+    collateralLossUsd: Math.max(0, params.collateralValueUsd - shockedCollateralValueUsd),
+    riskLevel: askAIRiskLevel(
+      calculateMultiplyHealthFactor(shockedCollateralValueUsd, params.debtValueUsd, liquidationThreshold),
+    ),
   }
 }
 
@@ -100,6 +150,11 @@ export function calculateAskAICollateralStress(params: {
     },
     liquidationThresholdPct: params.liquidationThresholdPct,
     liquidatable: projectedHealthFactor !== null && projectedHealthFactor <= 1,
+    // "How much would I lose in a 30% drop?" — the dollar figure, so the model
+    // never subtracts two collateral values itself.
+    collateralLossUsd: Math.max(0, params.collateralValueUsd - shockedCollateralValueUsd),
+    riskLevel: askAIRiskLevel(projectedHealthFactor),
+    healthFactorHeadroom: askAIHealthFactorHeadroom(projectedHealthFactor),
   }
 }
 
@@ -136,14 +191,8 @@ export function calculateAskAIBorrowSimulation(params: {
     remainingBorrowCapacityUsd: Math.max(0, maxDebtUsd - projectedDebtValueUsd),
     overMaxBorrowLtv: projectedDebtValueUsd > maxDebtUsd,
     liquidatable: projectedHealthFactor !== null && projectedHealthFactor <= 1,
-    riskLevel:
-      projectedHealthFactor === null
-        ? ("low" as const)
-        : projectedHealthFactor <= 1
-          ? ("critical" as const)
-          : projectedHealthFactor < 1.5
-            ? ("elevated" as const)
-            : ("low" as const),
+    riskLevel: projectedHealthFactor === null ? ("low" as const) : askAIRiskLevel(projectedHealthFactor),
+    healthFactorHeadroom: askAIHealthFactorHeadroom(projectedHealthFactor),
   }
 }
 

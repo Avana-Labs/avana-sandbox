@@ -59,7 +59,18 @@ describe("Aave Convex integration", () => {
     const owner = t.withIdentity({ subject: wallet, wallet })
     const now = Date.now()
     await t.run(async (ctx) => {
-      // These tables store debt as a POSITIVE valueUsd tagged `state: "debt"`.
+      // These tables store debt as a POSITIVE valueUsd tagged `state: "debt"`,
+      // and record multiply collateral TWICE (as "position" and "collateral"),
+      // exactly as convex/sandbox/transactions.ts writes it.
+      await ctx.db.insert("walletMultiplyBalances", {
+        wallet,
+        assetId: "weth",
+        symbol: "WETH",
+        amount: 1,
+        valueUsd: 1_000,
+        state: "position",
+        updatedAt: now,
+      })
       await ctx.db.insert("walletMultiplyBalances", {
         wallet,
         assetId: "weth",
@@ -99,7 +110,8 @@ describe("Aave Convex integration", () => {
     })
     const portfolio = await owner.query(api.askAITools.portfolio, {})
     if (portfolio.walletRequired) throw new Error("expected an authenticated portfolio read")
-    // Gross exposure still counts the debt row, for callers that want size.
+    // The duplicated collateral row is counted once, not twice (1000, not 2000),
+    // and gross still includes the debt row for callers that want size.
     expect(portfolio.totals.multiplyUsd).toBe(1_600)
     // Equity subtracts it.
     expect(portfolio.totals.multiplyNetUsd).toBe(400)
@@ -107,6 +119,64 @@ describe("Aave Convex integration", () => {
     // NOT absorb the $5,000 Umbrella deposit.
     expect(portfolio.totals.netValueUsd).toBe(650)
     expect(portfolio.totals.umbrellaUsd).toBe(5_000)
+  })
+
+  it("summarises engine positions into one scalar per question", async () => {
+    const t = setup()
+    const wallet = "0x4444444444444444444444444444444444444444"
+    const owner = t.withIdentity({ subject: wallet, wallet })
+    const now = Date.now()
+    await t.run(async (ctx) => {
+      const position = (extra: Record<string, unknown>) => ({
+        wallet,
+        status: "open" as const,
+        openedAt: now,
+        lastUpdatedAt: now,
+        ...extra,
+      })
+      await ctx.db.insert(
+        "positions",
+        position({ product: "lend", marketSlug: "lend-a", suppliedUsd6: "1000000000", earnedUsd6: "40000000" }),
+      )
+      await ctx.db.insert(
+        "positions",
+        position({ product: "lend", marketSlug: "lend-b", suppliedUsd6: "500000000", earnedUsd6: "10000000" }),
+      )
+      // Two loops with very different health; the honest answer is the weakest.
+      await ctx.db.insert(
+        "positions",
+        position({
+          product: "multiply",
+          marketSlug: "loop-safe",
+          collateralValueUsd: 1_000,
+          debtValueUsd: 400,
+          healthFactor: 2.4,
+        }),
+      )
+      await ctx.db.insert(
+        "positions",
+        position({
+          product: "multiply",
+          marketSlug: "loop-thin",
+          collateralValueUsd: 800,
+          debtValueUsd: 700,
+          healthFactor: 1.05,
+        }),
+      )
+    })
+    const snapshot = await owner.query(api.askAITools.engineSnapshot, {})
+    if (snapshot.walletRequired) throw new Error("expected an authenticated engine read")
+    expect(snapshot.summary).toMatchObject({
+      lendPositionCount: 2,
+      lendPrincipalUsd: 1_500,
+      lendEarnedUsd: 50,
+      multiplyPositionCount: 2,
+      multiplyCollateralUsd: 1_800,
+      multiplyDebtUsd: 1_100,
+      multiplyEquityUsd: 700,
+      // The weakest position, never an average of 2.4 and 1.05.
+      multiplyWeakestHealthFactor: 1.05,
+    })
   })
 
   it("persists APY timestamps and the new Aave financial kinds, then reloads them", async () => {
