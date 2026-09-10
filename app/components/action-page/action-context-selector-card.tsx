@@ -34,8 +34,15 @@ export function ActionContextSelectorCard({
       >
         <div className={workspace ? undefined : "px-4 pb-4 pt-4"}>
           <div className="text-[13px] font-medium text-muted-foreground">{t(label)}</div>
-          <div className="mt-3 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start">
-            <div className="min-w-0 flex-1 break-words text-[clamp(1.5rem,4vw,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground min-[361px]:truncate">
+          {/* container-type set inline (Tailwind here doesn't emit @container) so the pair
+              name below can size off the CARD width via cqi — shrinking to fit the narrow
+              detail-page sidebar instead of truncating, while staying large on the
+              full-width action page. */}
+          <div
+            style={{ containerType: "inline-size" }}
+            className="mt-3 flex items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-start"
+          >
+            <div className="min-w-0 flex-1 break-words text-[clamp(0.95rem,7cqi,2rem)] font-medium leading-none tracking-[-0.04em] text-foreground min-[361px]:truncate">
               {value}
             </div>
             <div className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-full border border-border bg-background px-3 text-[14px] font-medium dark:bg-card max-[360px]:self-end">

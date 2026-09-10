@@ -39,11 +39,13 @@ export function HomeActionContextBar({
           type="button"
           onClick={switchable ? onOpenPool : undefined}
           disabled={!switchable}
+          style={{ containerType: "inline-size" }}
           className="mt-1.5 flex w-full items-center justify-between gap-3 text-left disabled:cursor-default max-[360px]:flex-col max-[360px]:items-start"
         >
+          {/* Size off the card width (cqi) so long pair names fit narrow layouts. */}
           <div
             className={cn(
-              "min-w-0 flex-1 break-words text-[clamp(1.5rem,4vw,2rem)] font-normal leading-none tracking-[-0.02em] min-[361px]:truncate",
+              "min-w-0 flex-1 break-words text-[clamp(0.95rem,7cqi,2rem)] font-normal leading-none tracking-[-0.02em] min-[361px]:truncate",
               pool ? "text-foreground" : "text-muted-foreground/60",
             )}
           >
