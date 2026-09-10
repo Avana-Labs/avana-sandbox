@@ -1128,7 +1128,7 @@ export function BorrowActionPageClient({
         verb={descriptor.primaryVerb}
         amount={kind === "remove" ? percent : amount}
         onAmountChange={kind === "remove" ? setPercent : setAmount}
-        inputLabel={kind === "remove" ? "Percent of position" : undefined}
+        inputLabel={kind === "remove" ? "Percentage to remove" : undefined}
         preview={previewUi}
         assetSymbol={assetSymbol}
         borrowSymbol={undefined}
@@ -1315,7 +1315,7 @@ export function BorrowActionPageClient({
           verb={descriptor.primaryVerb}
           amount={kind === "remove" ? percent : amount}
           onAmountChange={kind === "remove" ? setPercent : setAmount}
-          inputLabel={kind === "remove" ? "Percent of position" : undefined}
+          inputLabel={kind === "remove" ? "Percentage to remove" : undefined}
           preview={previewUi}
           // Pass the base COLLATERAL symbol (visuals[0]) for the ICON — not the pool display
           // name ("WETH / USDC"), which made the left bubble render pair-initials ("WU") instead
