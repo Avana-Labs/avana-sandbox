@@ -56,7 +56,7 @@ export function DashboardQuickActions(_: { activeTab?: DashboardQuickActionsTab 
             asChild
             variant="outline"
             size="sm"
-            className="w-full gap-2 [&_svg]:size-4 lg:w-auto"
+            className="w-full gap-2 !rounded-full [&_svg]:size-4 lg:w-auto"
           >
             <Link href={action.href} aria-label={action.label}>
               <Icon aria-hidden />
