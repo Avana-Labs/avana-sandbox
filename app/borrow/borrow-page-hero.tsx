@@ -67,8 +67,9 @@ function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => stri
     { id: "apy", rows: toRows(pick(byApr, 2), "apy") },
   ]
 
+  // Cap the carousel at 5 cards — enough to scroll a little without an endless rail.
   let extra = 0
-  while (cards.length < 8) {
+  while (cards.length < 5) {
     const next = pick(byTvl, 2)
     if (next.length < 2) break
     cards.push({ id: `more-${extra}`, rows: toRows(next, `more-${extra}`) })
