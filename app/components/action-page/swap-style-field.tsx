@@ -37,10 +37,13 @@ export function SwapStyleField({
       {...props}
     >
       {/* Press feedback lives on the INNER content only, so a click bounces the
-          label/amount/pill — never the card surface or its border. The back-out
-          timing function overshoots on release for a noticeable spring. */}
+          label/amount — never the card surface or its border. The back-out timing
+          function overshoots on release for a noticeable spring. Suppressed while an
+          interactive control (the asset pill, the Max/Balance button) is pressed:
+          scaling the wrapper would shift that control out from under the cursor
+          mid-press and drop the click. */}
       <div
-        className="origin-center transition-transform duration-200 motion-safe:active:scale-[0.96]"
+        className="origin-center transition-transform duration-200 motion-safe:active:scale-[0.96] [&:has(:is(button,a):active)]:!scale-100"
         style={{ transitionTimingFunction: "cubic-bezier(0.34, 1.56, 0.64, 1)" }}
       >
         <div className="text-[15px] font-normal leading-5 text-foreground/70">{label}</div>
