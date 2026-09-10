@@ -26,7 +26,7 @@ export function HeroMarketCard({ title, subtitle, hideTitleOnMobile = false, cla
     <section
       data-carousel-card
       className={cn(
-        "min-w-[19rem] max-w-[19rem] shrink-0 rounded-radius-md border-0 bg-card p-3.5 shadow-none md:min-w-[20rem] md:max-w-[20rem] md:p-4",
+        "min-w-[18.5rem] max-w-[18.5rem] shrink-0 rounded-radius-md border-0 bg-card p-3.5 shadow-none md:p-4",
         className,
       )}
     >
@@ -52,8 +52,8 @@ export function HeroMarketCard({ title, subtitle, hideTitleOnMobile = false, cla
             className="flex items-center gap-3 rounded-xs px-1 py-1 transition-colors hover:bg-hover"
           >
             <div className="flex shrink-0 items-center">
-              <TokenBubble visual={row.pool.visuals[0]} size="table" />
-              <TokenBubble visual={row.pool.visuals[1]} size="table" className="-ml-2.5" />
+              <TokenBubble visual={row.pool.visuals[0]} size="lg" />
+              <TokenBubble visual={row.pool.visuals[1]} size="lg" className="-ml-2.5" />
             </div>
 
             {/* Metrics sit BELOW the pair name (not in a right-hand column) so long
