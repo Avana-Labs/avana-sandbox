@@ -226,6 +226,14 @@
   }
 }
 
+/* Apple's mark is solid black, so it vanishes on a dark background. Invert it to white in
+   dark mode wherever the tokenized-stock icon renders — borrow/lend/multiply cards, tables,
+   the carousel, and search — not just the action pages. The selector matches both the raw
+   path and the Next-optimized URL (both contain "apple.png"). */
+.dark img[src*="apple.png"] {
+  filter: invert(1);
+}
+
 /* ConnectKit renders its overlay in a portal outside the modal root, so these theme
    vars must be set globally to take effect. Keep the overlay blur disabled entirely:
    the modal already animates between screens, and live backdrop filtering behind those
