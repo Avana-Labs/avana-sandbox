@@ -79,6 +79,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
   )
   const approvalRequired = validation.valid && swap.requiresApproval(inputAsset.id, validation.amount)
   const getQuote = swap.getQuote
+  const getIndicativeQuote = swap.getIndicativeQuote
 
   useEffect(() => {
     if (!validation.valid) {
@@ -88,18 +89,27 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
     }
 
     let cancelled = false
+    const request = {
+      chainId: SWAP_CHAIN_ID,
+      inputAssetId,
+      outputAssetId,
+      inputAmount: validation.amount,
+      slippageBps,
+    }
+    setQuote(null)
     setQuoteState("loading")
+
+    // Keep the Buy amount responsive while the authoritative Convex quote is in flight.
+    // Review remains disabled until the server quote replaces this indicative estimate.
+    void getIndicativeQuote(request).then((indicativeQuote) => {
+      if (!cancelled && indicativeQuote.status === "valid") setQuote(indicativeQuote)
+    })
+
     const timeout = window.setTimeout(() => {
-      void getQuote({
-        chainId: SWAP_CHAIN_ID,
-        inputAssetId,
-        outputAssetId,
-        inputAmount: validation.amount,
-        slippageBps,
-      })
+      void getQuote(request)
         .then((nextQuote) => {
           if (cancelled) return
-          setQuote(nextQuote.status === "valid" ? nextQuote : null)
+          if (nextQuote.status === "valid") setQuote(nextQuote)
           setQuoteState(nextQuote.status === "valid" ? "valid" : "error")
         })
         .catch(() => {
@@ -111,7 +121,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
       cancelled = true
       window.clearTimeout(timeout)
     }
-  }, [getQuote, inputAssetId, outputAssetId, quoteRetry, slippageBps, validation])
+  }, [getIndicativeQuote, getQuote, inputAssetId, outputAssetId, quoteRetry, slippageBps, validation])
 
   useEffect(() => {
     setOutcome(null)

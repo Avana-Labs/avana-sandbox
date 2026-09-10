@@ -1,8 +1,9 @@
 import { lazy, Suspense, type ComponentType } from "react"
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { afterEach, expect, it, vi } from "vitest"
 import { HomeSwapAction } from "../home-swap-action"
 import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
+import { MockSwapProvider } from "@/app/lib/swap-system"
 
 const { loadPicker } = vi.hoisted(() => ({ loadPicker: vi.fn() }))
 vi.mock("next/dynamic", () => ({
@@ -47,4 +48,52 @@ it("loads the asset picker on demand and preserves sell/buy selection across ope
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
   expect(screen.getByRole("button", { name: "Buy asset" })).toHaveTextContent("USDC")
   expect(loadPicker).toHaveBeenCalledTimes(1)
+})
+
+it("updates the Buy amount while the authoritative server quote is still pending", async () => {
+  const serverGetSwapQuote = vi.fn(() => new Promise<never>(() => undefined))
+  render(
+    <AvanaSessionsProvider
+      walletId="demo-wallet"
+      persistLocalState={false}
+      serverGetSwapQuote={serverGetSwapQuote}
+    >
+      <HomeSwapAction />
+    </AvanaSessionsProvider>,
+  )
+
+  fireEvent.click(screen.getByRole("button", { name: "Sell asset" }))
+  fireEvent.click(within(await screen.findByRole("dialog")).getByRole("option", { name: "Ether (ETH)" }))
+  fireEvent.click(screen.getByRole("button", { name: "Buy asset" }))
+  fireEvent.click(within(await screen.findByRole("dialog")).getByRole("option", { name: "USD Coin (USDC)" }))
+  fireEvent.change(screen.getByRole("textbox", { name: "Sell" }), { target: { value: "0.001" } })
+
+  await waitFor(() => expect(screen.getByRole("textbox", { name: "Buy" })).not.toHaveValue("0"))
+  expect(screen.getByRole("button", { name: "Loading quote" })).toBeDisabled()
+})
+
+it("keeps the indicative Buy amount visible when the server quote fails", async () => {
+  const provider = new MockSwapProvider()
+  const serverGetSwapQuote = vi.fn(async (request) => ({
+    ...(await provider.getQuote(request)),
+    status: "error" as const,
+  }))
+  render(
+    <AvanaSessionsProvider
+      walletId="demo-wallet"
+      persistLocalState={false}
+      serverGetSwapQuote={serverGetSwapQuote}
+    >
+      <HomeSwapAction />
+    </AvanaSessionsProvider>,
+  )
+
+  fireEvent.click(screen.getByRole("button", { name: "Sell asset" }))
+  fireEvent.click(within(await screen.findByRole("dialog")).getByRole("option", { name: "Ether (ETH)" }))
+  fireEvent.click(screen.getByRole("button", { name: "Buy asset" }))
+  fireEvent.click(within(await screen.findByRole("dialog")).getByRole("option", { name: "USD Coin (USDC)" }))
+  fireEvent.change(screen.getByRole("textbox", { name: "Sell" }), { target: { value: "0.001" } })
+
+  await screen.findByRole("button", { name: "Refresh quote" })
+  expect(screen.getByRole("textbox", { name: "Buy" })).not.toHaveValue("0")
 })

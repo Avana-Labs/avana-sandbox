@@ -1,5 +1,11 @@
 import { getSwapAsset, getSwapPair } from "./catalog"
 import type { SwapRestrictionReason } from "./contracts"
+import {
+  SWAP_NETWORK_FEE_USD,
+  SWAP_PROVIDER,
+  SWAP_QUOTE_TTL_MS,
+  computeSwapQuoteMath,
+} from "@/convex/sandbox/swapQuoteEngine"
 
 export type SwapQuoteStatus = "idle" | "loading" | "valid" | "stale" | "expired" | "unsupported" | "error"
 
@@ -49,17 +55,8 @@ export type MockSwapProviderOptions = {
 // A 30s TTL expired mid-review — before the user finished reading the multi-step
 // transacting summary — forcing a re-quote and amount flicker. 2 minutes comfortably
 // covers review + confirmation; submit still auto-refreshes a stale quote. (#32)
-const DEFAULT_QUOTE_TTL_MS = 120_000
-
 function quoteId(request: SwapQuoteRequest, createdAt: number) {
   return `quote-${request.walletId}-${request.inputAssetId}-${request.outputAssetId}-${request.inputAmount}-${request.slippageBps}-${createdAt}`
-}
-
-function priceImpactPct(inputUsd: number, multiplier: number) {
-  if (inputUsd <= 100) return 0.08 * multiplier
-  if (inputUsd <= 1_000) return 0.35 * multiplier
-  if (inputUsd <= 10_000) return 1.5 * multiplier
-  return 5 * multiplier
 }
 
 export function getQuoteStatus(quote: SwapQuote, now = Date.now()) {
@@ -84,8 +81,8 @@ export class MockSwapProvider implements SwapProvider {
 
   constructor(options: MockSwapProviderOptions = {}) {
     this.now = options.now ?? Date.now
-    this.quoteTtlMs = options.quoteTtlMs ?? DEFAULT_QUOTE_TTL_MS
-    this.networkFeeUsd = options.networkFeeUsd ?? 0.24
+    this.quoteTtlMs = options.quoteTtlMs ?? SWAP_QUOTE_TTL_MS
+    this.networkFeeUsd = options.networkFeeUsd ?? SWAP_NETWORK_FEE_USD
     this.priceImpactMultiplier = options.priceImpactMultiplier ?? 1
   }
 
@@ -99,7 +96,7 @@ export class MockSwapProvider implements SwapProvider {
       return {
         id: quoteId(request, createdAt),
         status: "unsupported",
-        provider: pair?.provider ?? "Avana mock router",
+        provider: pair?.provider ?? SWAP_PROVIDER,
         chainId: request.chainId,
         inputAssetId: request.inputAssetId,
         outputAssetId: request.outputAssetId,
@@ -119,12 +116,15 @@ export class MockSwapProvider implements SwapProvider {
       }
     }
 
-    const grossOutputAmount = (request.inputAmount * inputAsset.priceUsd) / outputAsset.priceUsd
-    const feeAmount = grossOutputAmount * (pair.feeBps / 10_000)
-    const impact = priceImpactPct(request.inputAmount * inputAsset.priceUsd, this.priceImpactMultiplier)
-    const impactAmount = grossOutputAmount * (impact / 100)
-    const estimatedOutputAmount = Math.max(0, grossOutputAmount - feeAmount - impactAmount)
-    const minimumOutputAmount = estimatedOutputAmount * (1 - request.slippageBps / 10_000)
+    const math = computeSwapQuoteMath({
+      inputAmount: request.inputAmount,
+      inputPriceUsd: inputAsset.priceUsd,
+      outputPriceUsd: outputAsset.priceUsd,
+      slippageBps: request.slippageBps,
+      feeBps: pair.feeBps,
+      networkFeeUsd: this.networkFeeUsd,
+      priceImpactMultiplier: this.priceImpactMultiplier,
+    })
 
     return {
       id: quoteId(request, createdAt),
@@ -134,14 +134,14 @@ export class MockSwapProvider implements SwapProvider {
       inputAssetId: request.inputAssetId,
       outputAssetId: request.outputAssetId,
       inputAmount: request.inputAmount,
-      estimatedOutputAmount,
-      minimumOutputAmount,
-      exchangeRate: estimatedOutputAmount / request.inputAmount,
-      feeAmount,
-      feeBps: pair.feeBps,
-      priceImpactPct: impact,
+      estimatedOutputAmount: math.estimatedOutputAmount,
+      minimumOutputAmount: math.minimumOutputAmount,
+      exchangeRate: math.exchangeRate,
+      feeAmount: math.feeAmount,
+      feeBps: math.feeBps,
+      priceImpactPct: math.priceImpactPct,
       slippageBps: request.slippageBps,
-      networkFeeUsd: this.networkFeeUsd,
+      networkFeeUsd: math.networkFeeUsd,
       expiresAt: createdAt + this.quoteTtlMs,
       createdAt,
       route: [inputAsset.symbol, outputAsset.symbol],

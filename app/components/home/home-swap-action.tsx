@@ -66,6 +66,7 @@ export function HomeSwapAction() {
     [amount, inputAsset, inputBalance, outputAsset, outputAssetId],
   )
   const getQuote = swap.getQuote
+  const getIndicativeQuote = swap.getIndicativeQuote
 
   useEffect(() => {
     // A fresh quote invalidates any prior high-impact acknowledgement.
@@ -77,18 +78,27 @@ export function HomeSwapAction() {
     }
 
     let cancelled = false
+    const request = {
+      chainId: SWAP_CHAIN_ID,
+      inputAssetId,
+      outputAssetId,
+      inputAmount: validation.amount,
+      slippageBps,
+    }
+    setQuote(null)
     setQuoteState("loading")
+
+    // Update the Buy card from the local shared swap engine immediately. Convex remains
+    // authoritative: review stays disabled until the server quote replaces this estimate.
+    void getIndicativeQuote(request).then((indicativeQuote) => {
+      if (!cancelled && indicativeQuote.status === "valid") setQuote(indicativeQuote)
+    })
+
     const timeout = window.setTimeout(() => {
-      void getQuote({
-        chainId: SWAP_CHAIN_ID,
-        inputAssetId,
-        outputAssetId,
-        inputAmount: validation.amount,
-        slippageBps,
-      })
+      void getQuote(request)
         .then((nextQuote) => {
           if (cancelled) return
-          setQuote(nextQuote.status === "valid" ? nextQuote : null)
+          if (nextQuote.status === "valid") setQuote(nextQuote)
           setQuoteState(nextQuote.status === "valid" ? "valid" : "error")
         })
         .catch(() => {
@@ -100,7 +110,17 @@ export function HomeSwapAction() {
       cancelled = true
       window.clearTimeout(timeout)
     }
-  }, [getQuote, inputAsset, inputAssetId, outputAsset, outputAssetId, quoteRetry, slippageBps, validation])
+  }, [
+    getIndicativeQuote,
+    getQuote,
+    inputAsset,
+    inputAssetId,
+    outputAsset,
+    outputAssetId,
+    quoteRetry,
+    slippageBps,
+    validation,
+  ])
 
   useEffect(() => {
     setOutcome(null)

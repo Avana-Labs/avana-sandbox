@@ -12,6 +12,22 @@ import {
 import type { UserAssetBalance } from "./contracts"
 import { readSwapSessionState, swapSessionStorageKey, writeSwapSessionState } from "./storage"
 
+const SERVER_QUOTE_TIMEOUT_MS = 4_000
+
+async function withServerQuoteTimeout(quotePromise: Promise<SwapQuote>): Promise<SwapQuote> {
+  let timeout: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await Promise.race([
+      quotePromise,
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(() => reject(new Error("Swap quote request timed out.")), SERVER_QUOTE_TIMEOUT_MS)
+      }),
+    ])
+  } finally {
+    if (timeout) clearTimeout(timeout)
+  }
+}
+
 /** A swap read back from Convex (`getWalletSwapTransactions`). Durable, cross-device. */
 export type DurableSwapTransaction = {
   id: string
@@ -143,9 +159,13 @@ export function useSwapSession({
       const full = { ...request, walletId }
       // Server engine (Convex) is authoritative when available; the local provider is the
       // demo-mode fallback (same engine math, static catalog prices).
-      return serverGetQuote ? serverGetQuote(full) : adapter.provider.getQuote(full)
+      return serverGetQuote ? withServerQuoteTimeout(serverGetQuote(full)) : adapter.provider.getQuote(full)
     },
     [adapter, serverGetQuote, walletId],
+  )
+  const getIndicativeQuote = useCallback(
+    (request: Omit<SwapQuoteRequest, "walletId">) => adapter.provider.getQuote({ ...request, walletId }),
+    [adapter, walletId],
   )
   const requiresApproval = useCallback(
     (assetId: string, amount: number) => adapter.requiresApproval(walletId, assetId, amount),
@@ -200,6 +220,7 @@ export function useSwapSession({
       transactionHistory,
       durableTransactions,
       getQuote,
+      getIndicativeQuote,
       requiresApproval,
       approve,
       executeSwap,
@@ -213,6 +234,7 @@ export function useSwapSession({
       transactionHistory,
       durableTransactions,
       getQuote,
+      getIndicativeQuote,
       requiresApproval,
       approve,
       executeSwap,
