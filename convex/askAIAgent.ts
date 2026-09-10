@@ -1,6 +1,7 @@
 import { safeAskAIUrl } from "../app/lib/ask-ai/sources"
 import { AaveMcpClient, sanitizeAaveData } from "../app/lib/ask-ai/aave-mcp"
 import { createAaveModelTools, isAaveModelTool } from "../app/lib/ask-ai/aave-tools"
+import { aaveToolArgsFromPrompt, type AaveModelTool } from "../app/lib/ask-ai/aave-routing"
 import { askAIInstructions, askAIRequestPolicy } from "../app/lib/ask-ai/request-policy"
 import { Agent } from "@convex-dev/agent"
 import { createOpenAI } from "@ai-sdk/openai"
@@ -80,9 +81,8 @@ type PreparedTurn = {
 }
 
 type PrefetchedTurnData = {
-  toolName:
-    "search_markets" | "read_portfolio" | "read_borrow_capacity" | "read_position_risk" | "search_avana_knowledge"
-  financialKind?: "market" | "pool" | "portfolio" | "borrow_capacity" | "position_risk"
+  toolName: FinancialToolName | AaveModelTool | "search_avana_knowledge"
+  financialKind?: (typeof FINANCIAL_TOOL_KINDS)[FinancialToolName]
   payload: unknown
   modelContext: unknown
   dataProvenance?: DataProvenance
@@ -391,8 +391,41 @@ export const generateTurn = internalAction({
     })
     try {
       if (aaveTool) {
-        // Live reads execute once through the route-selected wrapper. No Avana
-        // prefetch may override a personal Aave or protocol-specific question.
+        // Resolve the routed read's arguments from the prompt and execute it
+        // here, so the turn answers in ONE model call like every other data
+        // intent (see the borrow_simulation note below). Without this the model
+        // spends a step choosing arguments and a second step writing the answer,
+        // and it is the model that sends unusable values such as a chain name as
+        // `marketName`. Falls back to the model when arguments can't be resolved.
+        const aaveArgs = aaveToolArgsFromPrompt(aaveTool, turn.prompt)
+        if (aaveArgs) {
+          const aaveRead = turnTools[aaveTool] as unknown as {
+            execute: (input: unknown, options: { toolCallId: string; messages: [] }) => Promise<unknown>
+          }
+          const payload = await aaveRead.execute(aaveArgs, {
+            toolCallId: `prefetch-${aaveTool}`,
+            messages: [],
+          })
+          // The chart's raw points stay out of the model context; the envelope
+          // already carries first/last/min/max for the sentence it writes.
+          const { visual: _visual, ...modelContext } = (payload ?? {}) as Record<string, unknown>
+          const provenance = (payload as { dataProvenance?: unknown } | null)?.dataProvenance
+          prefetched = {
+            toolName: aaveTool,
+            ...((FINANCIAL_TOOL_KINDS as Record<string, PrefetchedTurnData["financialKind"]>)[aaveTool]
+              ? {
+                  financialKind: (FINANCIAL_TOOL_KINDS as Record<string, PrefetchedTurnData["financialKind"]>)[
+                    aaveTool
+                  ],
+                }
+              : {}),
+            payload,
+            modelContext,
+            ...(provenance === "sandbox" || provenance === "connected_wallet" || provenance === "onchain"
+              ? { dataProvenance: provenance }
+              : {}),
+          }
+        }
       } else if (
         route.tools.includes("search_markets") &&
         (route.intent === "market" || route.intent === "pool" || route.intent === "comparison")
@@ -631,13 +664,18 @@ export const generateTurn = internalAction({
         /\b(price|prices|worth|cost|value|quote|chart|charts|graph|graphs|trend|trends|history|historical|over time|performance|movement|1d|24h|7d|30d)\b/i.test(
           turn.prompt,
         )
-      const aaveVisual = steps.flatMap((step) =>
-        step.toolResults.flatMap((result) => {
-          if (result.toolName !== "get_apy_history" || !result.output || typeof result.output !== "object") return []
-          const visual = (result.output as { visual?: import("../app/lib/ask-ai/aave-mcp").AaveApyVisual }).visual
-          return visual ? [visual] : []
-        }),
-      )[0]
+      const aaveVisual =
+        // A prefetched chart read leaves no tool-result step to harvest.
+        (prefetched?.toolName === "get_apy_history"
+          ? (prefetched.payload as { visual?: import("../app/lib/ask-ai/aave-mcp").AaveApyVisual } | null)?.visual
+          : undefined) ??
+        steps.flatMap((step) =>
+          step.toolResults.flatMap((result) => {
+            if (result.toolName !== "get_apy_history" || !result.output || typeof result.output !== "object") return []
+            const visual = (result.output as { visual?: import("../app/lib/ask-ai/aave-mcp").AaveApyVisual }).visual
+            return visual ? [visual] : []
+          }),
+        )[0]
       const visual =
         aaveVisual ??
         (!wantsPriceVisual ? [] : financialResults).flatMap(({ kind, payload }) => {

@@ -26,12 +26,31 @@ describe("Aave Convex integration", () => {
       prompt: "My Aave positions for 0x2222222222222222222222222222222222222222",
       clientRequestId: "aave-wallet",
     })
-    await expect(t.query(internal.askAITools.aaveWalletForTurn, { turnId: turn.turnId })).rejects.toThrow("not running")
-    // enqueueTurn stamps the wallet from the authed identity. Drive the running
-    // state directly instead of claimQueuedTurn so the read doesn't race the
-    // scheduled generateTurn (which would claim and fail the turn under test).
-    await t.run((ctx) => ctx.db.patch(turn.turnId, { status: "running" }))
-    expect(await t.query(internal.askAITools.aaveWalletForTurn, { turnId: turn.turnId })).toBe(wallet)
+    // enqueueTurn stamps the wallet from the authenticated identity, never from
+    // the address in the prompt. Read the row rather than querying through the
+    // status gate, which the scheduled generateTurn is concurrently advancing.
+    expect(await t.run((ctx) => ctx.db.get(turn.turnId))).toMatchObject({ wallet })
+
+    // Assert the status gate on rows this test owns, so no scheduled work can
+    // move a turn between the patch and the read.
+    const gateTurn = (status: "queued" | "running") =>
+      t.run((ctx) =>
+        ctx.db.insert("askAITurns", {
+          threadId: thread.threadId,
+          ownerSubject: wallet,
+          clientRequestId: `gate-${status}`,
+          promptMessageId: `gate-message-${status}`,
+          prompt: "My Aave positions",
+          wallet,
+          status,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        }),
+      )
+    await expect(t.query(internal.askAITools.aaveWalletForTurn, { turnId: await gateTurn("queued") })).rejects.toThrow(
+      "not running",
+    )
+    expect(await t.query(internal.askAITools.aaveWalletForTurn, { turnId: await gateTurn("running") })).toBe(wallet)
   })
 
   it("persists APY timestamps and the new Aave financial kinds, then reloads them", async () => {
