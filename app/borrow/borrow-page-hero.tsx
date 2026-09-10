@@ -4,7 +4,6 @@ import { useMemo } from "react"
 import { CarouselArrowButtons, useOverflowCarousel } from "@/app/components/carousel-arrow-buttons"
 import { HowItWorks } from "@/app/components/how-it-works"
 import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
-import { useCurrency } from "@/app/lib/currency/use-currency"
 import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { formatBorrowPairLabel, formatLtvPct } from "@/app/lib/borrow-sim"
 import { formatApy } from "@/app/lib/format"
@@ -17,7 +16,7 @@ type ExplorePool = BorrowPageData["poolCatalog"][number]
 
 const averageApr = (pool: ExplorePool) => (pool.aprMin + pool.aprMax) / 2
 
-function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => string) {
+function buildHeroCards(pageData: BorrowPageData) {
   // Draw each card's two markets from the FULL pool catalog (re-sorted per ranking)
   // rather than the pre-sliced 3-item explore lists. Extra cards are filled from
   // leftover pools so the desktop carousel has enough unique markets to scroll.
@@ -47,10 +46,6 @@ function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => stri
       href: borrowMarketDetailPath(pool.id),
       pool,
       title: formatBorrowPairLabel(pool),
-      // Lead the subtitle with the DEX/tier (venue) so two pools that share a pair
-      // label (e.g. WBTC/USDC on Uniswap v2 vs v3 Blue-Chip) are distinguishable —
-      // the same context the global search palette shows.
-      subtitle: `${pool.venue} · ${compact(pool.tvlUsd)} TVL`,
       // LTV is the headline (more important than availability); the line below is the
       // pool's own trading-fee APR — label it "Fees", not "APY" (it isn't our yield).
       value: `${formatLtvPct(pool.ltv)} LTV`,
@@ -103,11 +98,10 @@ function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => stri
 }
 
 export function BorrowPageHero({ pageData }: { pageData: BorrowPageData }) {
-  const { compact } = useCurrency()
   // Memoize so the hero cards keep a stable identity across re-renders; rebuilding
   // them every render churned the scroller's children and reflowed it (a flicker)
   // whenever live data swapped in or any parent re-rendered.
-  const heroCards = useMemo(() => buildHeroCards(pageData, compact), [pageData, compact])
+  const heroCards = useMemo(() => buildHeroCards(pageData), [pageData])
   const { scrollerRef, canPrev, canNext, scrollByCard } = useOverflowCarousel()
 
   return (
