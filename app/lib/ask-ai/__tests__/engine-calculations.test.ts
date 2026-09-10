@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest"
 import {
+  askAIHealthFactorValue,
+  askAIRiskLevel,
   calculateAskAIBorrowSimulation,
   calculateAskAICollateralStress,
+  calculateBorrowProjection,
   calculateLendProjection,
   calculateMultiplyStress,
   decodeBorrowRiskSnapshot,
@@ -83,7 +86,16 @@ describe("Ask AI engine calculations", () => {
         liquidationThresholdPct: 80,
         collateralPriceShockPct: -20,
       }),
-    ).toEqual({ collateralPriceShockPct: -20, shockedCollateralValueUsd: 1_600, ltv: 0.625, healthFactor: 1.28 })
+    ).toEqual({
+      collateralPriceShockPct: -20,
+      shockedCollateralValueUsd: 1_600,
+      ltv: 0.625,
+      healthFactor: 1.28,
+      // The loss in dollars and the risk wording are returned so the model
+      // never subtracts collateral values or invents a severity itself.
+      collateralLossUsd: 400,
+      riskLevel: "elevated",
+    })
   })
 
   it("derives Umbrella lifecycle state from persisted cooldown fields", () => {
@@ -96,5 +108,29 @@ describe("Ask AI engine calculations", () => {
         now: 1_000,
       }),
     ).toBe("partiallyCooling")
+  })
+})
+
+describe("Ask AI answer scalars", () => {
+  it("treats no debt as safe and never leaks the string health factor", () => {
+    expect(askAIRiskLevel("infinity")).toBe("low")
+    expect(askAIRiskLevel(null)).toBe("none")
+    expect(askAIRiskLevel(0.9)).toBe("critical")
+    expect(askAIRiskLevel(1.2)).toBe("elevated")
+    expect(askAIRiskLevel(3)).toBe("low")
+    expect(askAIHealthFactorValue("infinity")).toMatchObject({ healthFactor: null, noDebt: true, riskLevel: "low" })
+    expect(askAIHealthFactorValue(1.25)).toMatchObject({
+      healthFactor: 1.25,
+      noDebt: false,
+      healthFactorHeadroom: 0.25,
+    })
+  })
+
+  it("projects borrow interest over a window", () => {
+    expect(calculateBorrowProjection({ debtUsd: 10_000, borrowAprPct: 5, days: 365 })).toMatchObject({
+      projectedInterestUsd: 500,
+      days: 365,
+    })
+    expect(calculateBorrowProjection({ debtUsd: 10_000, borrowAprPct: 5, days: 0 }).projectedInterestUsd).toBe(0)
   })
 })

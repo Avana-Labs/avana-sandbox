@@ -23,7 +23,6 @@ describe("Ask AI Agent configuration", () => {
   test("uses one full Avana persona with bounded output and standard transport", () => {
     expect(ASK_AI_CONFIG.openAIServiceTier).toBe("default")
     expect(ASK_AI_CONFIG.maxOutputTokens).toBe(900)
-    expect(ASK_AI_CONFIG.topP).toBe(0.98)
     expect(ASK_AI_CONFIG.reasoningEffort).toBe("medium")
     expect(ASK_AI_CONFIG.textVerbosity).toBe("medium")
     expect(ASK_AI_CONFIG.recentMessageLimit).toBeLessThanOrEqual(8)

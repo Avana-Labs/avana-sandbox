@@ -11,6 +11,16 @@ export const readPortfolioTool: Tool = createTool({
   execute: (ctx): Promise<unknown> => ctx.runQuery(api.askAITools.portfolio, {}),
 })
 
+export const readEngineSnapshotTool: Tool = createTool({
+  description:
+    "Read Avana's deterministic engine state across every product: per-product totals, projected lend yield, per-loop leverage and distance to liquidation, and the weakest health factor.",
+  inputSchema: z.object({
+    multiplyShockPct: z.number().min(-95).max(100).optional(),
+    lendProjectionDays: z.number().int().positive().max(365).optional(),
+  }),
+  execute: (ctx, input): Promise<unknown> => ctx.runQuery(api.askAITools.engineSnapshot, input),
+})
+
 export const readBorrowCapacityTool: Tool = createTool({
   description:
     "Read the user's authoritative Credit Engine borrowing capacity, debt, health factor, and liquidation buffer.",
@@ -70,6 +80,16 @@ export function createAskAITurnTools(turnId: Id<"askAITurns">, prompt: string) {
       inputSchema: z.object({}),
       execute: (ctx): Promise<unknown> => ctx.runQuery(internal.askAITools.portfolioForTurn, { turnId }),
     }),
+    read_engine_snapshot: createTool({
+      description:
+        "Read Avana's deterministic engine state across every product at once: per-product totals, lend yield projected over lendProjectionDays, each loop's leverage, net APY, liquidation price and distance to liquidation, umbrella earnings, and the WEAKEST health factor rather than an average. Use for earnings projections and cross-product 'how are my positions doing' questions.",
+      inputSchema: z.object({
+        multiplyShockPct: z.number().min(-95).max(100).optional(),
+        lendProjectionDays: z.number().int().positive().max(365).optional(),
+      }),
+      execute: (ctx, input): Promise<unknown> =>
+        ctx.runQuery(internal.askAITools.engineSnapshotForTurn, { turnId, ...input }),
+    }),
     read_borrow_capacity: createTool({
       description:
         "Read the user's authoritative Credit Engine borrowing capacity, debt, health factor, and liquidation buffer.",
@@ -83,11 +103,13 @@ export function createAskAITurnTools(turnId: Id<"askAITurns">, prompt: string) {
         ctx.runQuery(internal.askAITools.positionRiskForTurn, { turnId, ...input }),
     }),
     simulate_borrow: createTool({
-      description: "Run Avana's deterministic read-only borrow simulation for an open position.",
+      description:
+        "Run Avana's deterministic read-only borrow simulation for an open position. Returns the projected health factor and risk level, plus the interest the resulting debt accrues over projectionDays (default 365).",
       inputSchema: z.object({
         positionId: z.string().min(1),
         additionalBorrowAmount: z.number().positive().max(1_000_000_000),
         borrowAsset: z.string().min(1).max(32),
+        projectionDays: z.number().int().positive().max(3_650).optional(),
       }),
       execute: (ctx, input): Promise<unknown> =>
         ctx.runQuery(internal.askAITools.simulateBorrowForTurn, { turnId, ...input }),

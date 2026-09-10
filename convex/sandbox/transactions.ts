@@ -2179,8 +2179,10 @@ export const getPortfolio = query({
  * row is folded in on the same basis. UMBRELLA IS EXCLUDED (own page, not a dashboard
  * figure). Computed read-time, so it always reflects current rates without a stored field.
  */
-async function computePortfolioNetApyPct(
-  ctx: QueryCtx,
+export async function computePortfolioNetApyPct(
+  // Only reads `ctx.db`, so it accepts any read context (Ask AI passes a
+  // turn-scoped one).
+  ctx: Pick<QueryCtx, "db">,
   positions: Array<Doc<"positions">>,
   walletCollateral: Array<Doc<"walletCollateralPositions">>,
 ): Promise<number> {

@@ -2134,6 +2134,8 @@ export default defineSchema({
     updated: v.number(),
     unchanged: v.number(),
     error: v.optional(v.string()),
+    httpStatus: v.optional(v.number()),
+    retryAt: v.optional(v.number()),
     startedAt: v.number(),
     completedAt: v.number(),
     lastCheckedAt: v.number(),
