@@ -94,6 +94,12 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
   ])
 
   const sumUsd = (rows: readonly { valueUsd: number }[]) => rows.reduce((sum, row) => sum + row.valueUsd, 0)
+  // These tables store debt with a POSITIVE valueUsd and mark it only with
+  // `state: "debt"` (convex/sandbox/onboarding.ts, transactions.ts), so a plain
+  // sum counts borrowed value as if it were an asset. Anything presented as a
+  // net must subtract those rows.
+  const netUsd = (rows: readonly { valueUsd: number; state?: string }[]) =>
+    rows.reduce((sum, row) => sum + (row.state === "debt" ? -row.valueUsd : row.valueUsd), 0)
   const now = Date.now()
   const umbrellaPositions = umbrella.map((position) => ({
     ...position,
@@ -135,11 +141,25 @@ export async function readAskAIPortfolio(ctx: PortfolioReadCtx) {
     dataProvenance: ASK_AI_DATA_PROVENANCE,
     wallet,
     totals: {
+      // Gross exposure per product (collateral + debt), kept for callers that
+      // want position size rather than equity.
       lendUsd: sumUsd(lend),
       borrowUsd: sumUsd(borrow),
       multiplyUsd: sumUsd(multiply),
       liquidUsd: sumUsd(liquid),
       umbrellaUsd: umbrellaSuppliedUsd,
+      // Equity per product: the same rows with debt subtracted.
+      lendNetUsd: netUsd(lend),
+      borrowNetUsd: netUsd(borrow),
+      multiplyNetUsd: netUsd(multiply),
+      liquidNetUsd: netUsd(liquid),
+      // Canonical Net Value, following the dashboard hero
+      // (app/dashboard/use-dashboard-portfolio-summary.ts aggregateNetValueUsd):
+      // the signed sum of liquid + lend + borrow + multiply with debt negative.
+      // Umbrella is excluded there by construction — it is not part of
+      // productBalances and lives on its own page — so it is excluded here too
+      // and reported separately as umbrellaUsd.
+      netValueUsd: netUsd(liquid) + netUsd(lend) + netUsd(borrow) + netUsd(multiply),
     },
     lend,
     borrow,

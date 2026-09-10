@@ -53,6 +53,62 @@ describe("Aave Convex integration", () => {
     expect(await t.query(internal.askAITools.aaveWalletForTurn, { turnId: await gateTurn("running") })).toBe(wallet)
   })
 
+  it("nets debt out of portfolio value and leaves Umbrella out of Net Value", async () => {
+    const t = setup()
+    const wallet = "0x3333333333333333333333333333333333333333"
+    const owner = t.withIdentity({ subject: wallet, wallet })
+    const now = Date.now()
+    await t.run(async (ctx) => {
+      // These tables store debt as a POSITIVE valueUsd tagged `state: "debt"`.
+      await ctx.db.insert("walletMultiplyBalances", {
+        wallet,
+        assetId: "weth",
+        symbol: "WETH",
+        amount: 1,
+        valueUsd: 1_000,
+        state: "collateral",
+        updatedAt: now,
+      })
+      await ctx.db.insert("walletMultiplyBalances", {
+        wallet,
+        assetId: "usdc",
+        symbol: "USDC",
+        amount: 600,
+        valueUsd: 600,
+        state: "debt",
+        updatedAt: now,
+      })
+      await ctx.db.insert("walletLiquidBalances", {
+        wallet,
+        assetId: "usdc",
+        symbol: "USDC",
+        amount: 250,
+        valueUsd: 250,
+        state: "available",
+        updatedAt: now,
+      })
+      await ctx.db.insert("positions", {
+        wallet,
+        product: "umbrella",
+        marketSlug: "umbrella-gho",
+        status: "open",
+        suppliedUsd6: "5000000000",
+        openedAt: now,
+        lastUpdatedAt: now,
+      })
+    })
+    const portfolio = await owner.query(api.askAITools.portfolio, {})
+    if (portfolio.walletRequired) throw new Error("expected an authenticated portfolio read")
+    // Gross exposure still counts the debt row, for callers that want size.
+    expect(portfolio.totals.multiplyUsd).toBe(1_600)
+    // Equity subtracts it.
+    expect(portfolio.totals.multiplyNetUsd).toBe(400)
+    // Net Value = liquid + lend + borrow + multiply, debt negative, and it must
+    // NOT absorb the $5,000 Umbrella deposit.
+    expect(portfolio.totals.netValueUsd).toBe(650)
+    expect(portfolio.totals.umbrellaUsd).toBe(5_000)
+  })
+
   it("persists APY timestamps and the new Aave financial kinds, then reloads them", async () => {
     const t = setup()
     const owner = t.withIdentity({ subject: "ask-guest:aave-chart" })

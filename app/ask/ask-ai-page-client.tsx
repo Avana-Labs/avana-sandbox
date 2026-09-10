@@ -155,10 +155,13 @@ function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFi
         umbrellaFocused
           ? []
           : [
-              ["Lend", usd(t.lendUsd)],
-              ["Borrow", usd(t.borrowUsd)],
-              ["Multiply", usd(t.multiplyUsd)],
-              ["Liquid", usd(t.liquidUsd)],
+              // Equity, not gross exposure, so these rows add up to the Net
+              // value headline. `*Usd` counts debt as an asset (see the
+              // netUsd note in convex/askAITools.ts).
+              ["Lend", usd(t.lendNetUsd ?? t.lendUsd)],
+              ["Borrow", usd(t.borrowNetUsd ?? t.borrowUsd)],
+              ["Multiply", usd(t.multiplyNetUsd ?? t.multiplyUsd)],
+              ["Liquid", usd(t.liquidNetUsd ?? t.liquidUsd)],
             ]
       ).flatMap(([product, value], index) =>
         value ? [{ id: `product-${index}`, cells: [product ?? "", "All positions", value, "", ""] }] : [],
@@ -201,15 +204,17 @@ function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFi
           ? ["Position", "Value", "Cooldown", "Status"]
           : ["Product", "Position", "Value", "Cooldown", "Status"],
         [...productRows, ...umbrellaRows],
-        [
-          metricOf("Total Umbrella", usd(t.umbrellaUsd)),
-          ...(umbrellaFocused
-            ? [
-                metricOf("On cooldown", usd(asObject(p.umbrellaCooldownSummary).coolingUsd)),
-                metricOf("Ready to unstake", usd(asObject(p.umbrellaCooldownSummary).readyUsd)),
-              ]
-            : []),
-        ].filter((metric): metric is AskAIMetric => metric !== null),
+        (umbrellaFocused
+          ? [
+              metricOf("Total Umbrella", usd(t.umbrellaUsd)),
+              metricOf("On cooldown", usd(asObject(p.umbrellaCooldownSummary).coolingUsd)),
+              metricOf("Ready to unstake", usd(asObject(p.umbrellaCooldownSummary).readyUsd)),
+            ]
+          : // Lead with the figure the question actually asks for. Umbrella is
+            // excluded from Net Value (it is not part of productBalances), so it
+            // stays a separate metric rather than the headline.
+            [metricOf("Net value", usd(t.netValueUsd)), metricOf("Umbrella", usd(t.umbrellaUsd))]
+        ).filter((metric): metric is AskAIMetric => metric !== null),
       )
     }
     case "borrow_capacity": {
