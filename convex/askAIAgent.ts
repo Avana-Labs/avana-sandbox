@@ -536,7 +536,6 @@ export const generateTurn = internalAction({
             observedUsage.totalTokens += usage.totalTokens ?? 0
           },
           maxOutputTokens: ASK_AI_CONFIG.maxOutputTokens,
-          topP: ASK_AI_CONFIG.topP,
           stopWhen: stepCountIs(prefetched ? 1 : route.maxSteps),
           activeTools: (prefetched ? [] : route.tools) as unknown as (keyof typeof turnTools)[],
           providerOptions: {
