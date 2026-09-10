@@ -149,6 +149,40 @@ describe("Aave read-only MCP boundary", () => {
     expect(calls().some((call) => call.name === "get_apy_history")).toBe(false)
   })
 
+  it("resolves the reserve when the model passes a chain name as marketName", async () => {
+    // Models routinely send the chain ("Ethereum") in marketName; an exact-match
+    // filter used to zero out the real reserve and answer "unavailable".
+    const { tools } = setup("get_apy_history", "Chart Aave v3 USDC supply APY on Ethereum")
+    const output = await tools.get_apy_history.execute!(
+      { symbol: "USDC", version: "v3", chainId: 1, marketName: "Ethereum", side: "supply", window: "week" },
+      options,
+    )
+    expect(output).toMatchObject({ visual: { kind: "aave_apy" } })
+    expect(output).not.toMatchObject({ status: "unavailable" })
+  })
+
+  it("never forwards an empty governance search string the endpoint rejects", async () => {
+    const fetcher = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      const { name, arguments: args } = JSON.parse(String(init?.body)).params
+      if (name === "search_governance_proposals") {
+        expect(args).not.toHaveProperty("search")
+        expect(args).toMatchObject({ state: "queued" })
+        return response({ proposals: [{ proposalId: "516" }] })
+      }
+      return response({ proposalId: "516", state: "queued" })
+    })
+    const tools = createAaveModelTools({
+      client: new AaveMcpClient(fetcher),
+      allowedTool: "search_governance_proposals",
+      prompt: "Aave governance proposals",
+      wallet: async () => undefined,
+      avanaPortfolio: async () => ({}),
+      knowledge: async () => ({ text: "" }),
+    })
+    const output = await tools.search_governance_proposals.execute!({ search: "", state: "queued" }, options)
+    expect(JSON.stringify(output)).toContain("516")
+  })
+
   it("labels hostile text, drops tx/link/address payloads, and prevents another model tool call", async () => {
     const { tools, fetcher } = setup("get_aave_guide", "Explain Aave")
     const result = await tools.get_aave_guide.execute!({ topic: "overview" }, options)

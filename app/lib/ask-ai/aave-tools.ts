@@ -88,19 +88,31 @@ export function createAaveModelTools(deps: Dependencies) {
       symbols: [input.symbol],
       ...(input.chainId ? { chainId: input.chainId } : {}),
     })
-    let matches = normalizeAaveMarkets(data, chainNames).filter(
+    const norm = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, "")
+    const base = normalizeAaveMarkets(data, chainNames).filter(
       (row) =>
         row.symbol.toLowerCase() === input.symbol.toLowerCase() &&
         (!input.version || row.version === input.version) &&
-        (!input.chainId || row.chainId === input.chainId) &&
-        (!input.marketName || row.market.toLowerCase() === input.marketName.toLowerCase()),
+        (!input.chainId || row.chainId === input.chainId),
     )
-    // Main v3 market is a documented default only when a chain and v3 are explicit.
-    if (matches.length > 1 && input.version === "v3" && input.chainId && !input.marketName) {
-      const main = matches.filter(
-        (row) =>
-          row.market.toLowerCase() === `aavev3${chainNames.get(input.chainId!)?.replace(/\s/g, "").toLowerCase()}`,
-      )
+    // marketName is a soft hint. Models routinely pass a chain name ("Ethereum")
+    // or a partial label, so match it fuzzily and — crucially — fall back to the
+    // full set when the hint matches nothing, rather than returning no reserve.
+    let matches = base
+    if (input.marketName) {
+      const wanted = norm(input.marketName)
+      const refined = base.filter((row) => {
+        const label = norm(row.market)
+        return label.includes(wanted) || wanted.includes(label)
+      })
+      if (refined.length) matches = refined
+    }
+    // Prefer the main v3 market whenever a chain + v3 still leave several
+    // candidates (Lido/EtherFi/Horizon spokes, or a chain-name hint that matched
+    // them all). This is the documented default reserve for that chain.
+    if (matches.length > 1 && input.version === "v3" && input.chainId) {
+      const mainKey = `aavev3${norm(chainNames.get(input.chainId) ?? "")}`
+      const main = matches.filter((row) => norm(row.market) === mainKey)
       if (main.length === 1) matches = main
     }
     if (matches.length !== 1)
@@ -268,8 +280,15 @@ export function createAaveModelTools(deps: Dependencies) {
         .strict(),
       execute: (input) =>
         run("search_governance_proposals", async () => {
+          // The endpoint 502s on an empty `search` string, so only forward it when
+          // the model actually supplied a query; `state` is a validated enum.
           const result = aaveObject(
-            await client.call("search_governance_proposals", { ...input, limit: 3, includeSummaries: true }),
+            await client.call("search_governance_proposals", {
+              limit: 3,
+              includeSummaries: true,
+              ...(input.search?.trim() ? { search: input.search.trim() } : {}),
+              ...(input.state ? { state: input.state } : {}),
+            }),
           )
           const proposals = []
           for (const proposal of aaveRows(result.proposals).slice(0, 3)) {
