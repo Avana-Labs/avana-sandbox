@@ -219,35 +219,38 @@ function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFi
     }
     case "borrow_capacity": {
       const c = asObject(p.capacity)
+      // Answer first: "how much can I borrow" is `Available`, not collateral.
       return compact("borrow_capacity", "Borrow capacity", [
-        metricOf("Collateral", usd(c.collateralValueUsd)),
-        metricOf("Borrow capacity", usd(c.borrowCapacityUsd)),
-        metricOf("Available", usd(c.availableBorrowCapacityUsd)),
-        metricOf("Borrowed", usd(c.totalBorrowedUsd)),
-        metricOf("Current LTV", pct(c.currentLtv)),
+        metricOf("Available to borrow", usd(c.availableBorrowCapacityUsd)),
         metricOf("Health factor", healthFactor(c.healthFactor)),
+        metricOf("Borrowed", usd(c.totalBorrowedUsd)),
+        metricOf("Total capacity", usd(c.borrowCapacityUsd)),
+        metricOf("Collateral", usd(c.collateralValueUsd)),
+        metricOf("Current LTV", pct(c.currentLtv)),
       ])
     }
     case "position_risk": {
       const b = asObject(asObject(p.engine).borrow)
+      // A risk question is answered by the health factor, not the collateral.
       return compact("position_risk", "Position risk", [
+        metricOf("Health factor", healthFactor(b.healthFactor)),
+        metricOf("Current LTV", pct(b.currentLtv)),
         metricOf("Collateral", usd(b.collateralValueUsd)),
         metricOf("Borrowed", usd(b.totalBorrowedUsd)),
-        metricOf("Available", usd(b.availableBorrowCapacityUsd)),
-        metricOf("Current LTV", pct(b.currentLtv)),
-        metricOf("Health factor", healthFactor(b.healthFactor)),
+        metricOf("Available to borrow", usd(b.availableBorrowCapacityUsd)),
       ])
     }
     case "simulate_borrow": {
       const s = asObject(p.simulation)
       const cur = asObject(s.current)
       const proj = asObject(s.projected)
+      // Lead with the outcome, not the amount the user already named.
       return compact("position_risk", "Borrow simulation", [
-        metricOf("Additional borrow", usd(p.additionalBorrowAmount)),
-        metricOf("LTV", pct(cur.ltv), pct(proj.ltv)),
         metricOf("Health factor", healthFactor(cur.healthFactor), healthFactor(proj.healthFactor)),
-        metricOf("Remaining capacity", usd(s.remainingBorrowCapacityUsd)),
         metricOf("Risk level", typeof s.riskLevel === "string" ? s.riskLevel : null),
+        metricOf("LTV", pct(cur.ltv), pct(proj.ltv)),
+        metricOf("Remaining capacity", usd(s.remainingBorrowCapacityUsd)),
+        metricOf("Additional borrow", usd(p.additionalBorrowAmount)),
       ])
     }
     case "stress_position": {
@@ -255,12 +258,13 @@ function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFi
       const cur = asObject(s.current)
       const proj = asObject(s.projected)
       const liquidatable = s.liquidatable
+      // "Would I get liquidated?" is the question; the scenario is the input.
       return compact("position_risk", "Stress test", [
-        metricOf("Scenario change", pct(s.weightedCollateralChange)),
-        metricOf("Collateral", usd(cur.collateralValueUsd), usd(proj.collateralValueUsd)),
-        metricOf("LTV", pct(cur.ltv), pct(proj.ltv)),
-        metricOf("Health factor", healthFactor(cur.healthFactor), healthFactor(proj.healthFactor)),
         metricOf("Liquidatable", liquidatable === true ? "Yes" : liquidatable === false ? "No" : null),
+        metricOf("Health factor", healthFactor(cur.healthFactor), healthFactor(proj.healthFactor)),
+        metricOf("LTV", pct(cur.ltv), pct(proj.ltv)),
+        metricOf("Collateral", usd(cur.collateralValueUsd), usd(proj.collateralValueUsd)),
+        metricOf("Scenario change", pct(s.weightedCollateralChange)),
       ])
     }
     case "market": {

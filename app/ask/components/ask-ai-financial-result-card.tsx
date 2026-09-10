@@ -47,10 +47,24 @@ export function AskAIFinancialResultCard({ result }: { result: AskAIFinancialRes
         </div>
       ) : null}
       <dl className="mt-3 grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2">
-        {result.metrics.map((metric) => (
-          <div key={metric.label} className="min-w-0 border-t border-border/50 pt-2">
+        {result.metrics.map((metric, index) => (
+          <div
+            key={metric.label}
+            className={cn(
+              "min-w-0 border-t border-border/50 pt-2",
+              // Metric 0 is the figure the question actually asked for. Give it
+              // the full width and a larger value so the answer reads as the
+              // answer instead of sitting flat among its own inputs.
+              index === 0 && result.metrics.length > 1 && "sm:col-span-2",
+            )}
+          >
             <dt className="truncate text-xs text-muted-foreground">{metric.label}</dt>
-            <dd className="mt-1 flex flex-wrap items-baseline gap-2 font-medium tabular-nums text-foreground">
+            <dd
+              className={cn(
+                "mt-1 flex flex-wrap items-baseline gap-2 font-medium tabular-nums text-foreground",
+                index === 0 && "text-xl",
+              )}
+            >
               <span>{metric.value}</span>
               {metric.after ? <span className="text-muted-foreground">→ {metric.after}</span> : null}
             </dd>
