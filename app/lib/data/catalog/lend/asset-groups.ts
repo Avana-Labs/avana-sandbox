@@ -413,7 +413,6 @@ export const LEND_ASSET_GROUPS: LendAssetGroup[] = [
   },
   {
     title: "Coinbase & Robinhood Stocks",
-    subtitle: "Tokenized equities — deposit stock tokens to earn lending yield",
     rows: [
       {
         symbol: "NVDA",

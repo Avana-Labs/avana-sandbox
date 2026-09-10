@@ -4,9 +4,9 @@ export function isIlliquidLendMarket(tvlUsd: number) {
   return tvlUsd < MIN_RELIABLE_LEND_TVL_USD
 }
 
-export function formatReliableLendApyLabel(apy: number, tvlUsd: number, formatter: (value: number) => string) {
-  if (isIlliquidLendMarket(tvlUsd)) {
-    return "Illiquid · APY unreliable"
-  }
+// Always show the real APY. Low-TVL markets used to read "Illiquid · APY unreliable",
+// which disagreed with the detail page (it shows the number) and buried the rate — the
+// low TVL is already visible in the row, so let users judge liquidity themselves.
+export function formatReliableLendApyLabel(apy: number, _tvlUsd: number, formatter: (value: number) => string) {
   return formatter(apy)
 }
