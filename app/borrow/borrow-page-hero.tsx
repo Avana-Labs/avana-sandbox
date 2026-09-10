@@ -22,9 +22,19 @@ function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => stri
   // rather than the pre-sliced 3-item explore lists. Extra cards are filled from
   // leftover pools so the desktop carousel has enough unique markets to scroll.
   const catalog = pageData.poolCatalog
-  const byAvailable = [...catalog].sort((a, b) => b.availableUsd - a.availableUsd)
-  const byTvl = [...catalog].sort((a, b) => b.tvlUsd - a.tvlUsd)
-  const byApr = [...catalog].sort((a, b) => averageApr(b) - averageApr(a))
+  // Tokenized-stock spokes get bespoke treatment: feature the Uniswap Robinhood
+  // (USDG-quoted) pools in their own card, and keep the Aerodrome "…c" stocks out of
+  // the auto-ranked cards so their high fee number doesn't crowd out the blue chips.
+  const isRobinhoodStock = (p: ExplorePool) => p.spoke === "uni-robinhood-stocks"
+  const isAeroStock = (p: ExplorePool) => p.spoke === "aero-concentrated-stocks"
+  const rankable = catalog.filter((p) => !isRobinhoodStock(p) && !isAeroStock(p))
+  const byAvailable = [...rankable].sort((a, b) => b.availableUsd - a.availableUsd)
+  const byTvl = [...rankable].sort((a, b) => b.tvlUsd - a.tvlUsd)
+  const byApr = [...rankable].sort((a, b) => averageApr(b) - averageApr(a))
+  // Lead the stocks card with a familiar ticker (TSLA), then fill by TVL.
+  const robinhoodStocks = catalog
+    .filter(isRobinhoodStock)
+    .sort((a, b) => Number(/TSLA/i.test(b.name)) - Number(/TSLA/i.test(a.name)) || b.tvlUsd - a.tvlUsd)
 
   const used = new Set<string>()
   const pick = (ranked: ReadonlyArray<ExplorePool>, count: number) => {
@@ -64,6 +74,8 @@ function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => stri
   const cards = [
     { id: "trending", rows: toRows(pick(byAvailable, 2), "trending") },
     { id: "top", rows: toRows(pick(byTvl, 2), "top") },
+    // Featured tokenized-stocks card (Uniswap Robinhood, USDG-quoted).
+    ...(robinhoodStocks.length >= 2 ? [{ id: "stocks", rows: toRows(robinhoodStocks.slice(0, 2), "stocks") }] : []),
     { id: "apy", rows: toRows(pick(byApr, 2), "apy") },
   ]
 

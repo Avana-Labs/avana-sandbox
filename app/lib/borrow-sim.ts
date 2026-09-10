@@ -670,6 +670,24 @@ export const BORROW_SPOKES: BorrowSpoke[] = [
     pillTextClass: "text-amber-700",
     liquidationUsdApprox: 1_200,
   },
+  // Tokenized stocks (Uniswap Robinhood, USDG-quoted). Grouped with the other
+  // Uniswap spokes so it surfaces in the catalog with them, not buried on the last page.
+  {
+    id: "uni-robinhood-stocks",
+    dex: "uniswap",
+    label: "Uniswap Robinhood Stocks",
+    description: "Tokenized-equity concentrated LP positions",
+    eMode: false,
+    borrowableTokens: [v("USDG"), v("GHO"), v("USDC"), v("USDT")],
+    maxLtv: 55,
+    aprApprox: 12,
+    riskPremiumBps: 180,
+    liquidityUsd: 30_000_000,
+    dotClass: "bg-pink-500",
+    pillBgClass: "bg-pink-50",
+    pillTextClass: "text-pink-700",
+    liquidationUsdApprox: 1_100,
+  },
 
   // -------- Curve --------
   {
@@ -870,22 +888,6 @@ export const BORROW_SPOKES: BorrowSpoke[] = [
     pillBgClass: "bg-blue-50",
     pillTextClass: "text-blue-700",
     liquidationUsdApprox: 900,
-  },
-  {
-    id: "uni-robinhood-stocks",
-    dex: "uniswap",
-    label: "Uniswap Robinhood Stocks",
-    description: "Tokenized-equity concentrated LP positions",
-    eMode: false,
-    borrowableTokens: [v("USDG"), v("GHO"), v("USDC"), v("USDT")],
-    maxLtv: 55,
-    aprApprox: 12,
-    riskPremiumBps: 180,
-    liquidityUsd: 30_000_000,
-    dotClass: "bg-pink-500",
-    pillBgClass: "bg-pink-50",
-    pillTextClass: "text-pink-700",
-    liquidationUsdApprox: 1_100,
   },
 ]
 
