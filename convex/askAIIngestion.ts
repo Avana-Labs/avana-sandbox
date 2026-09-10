@@ -1,11 +1,22 @@
+import { AaveMcpError } from "../app/lib/ask-ai/aave-mcp"
 import { makeFunctionReference } from "convex/server"
 import { v } from "convex/values"
 import { createAskAIProviders } from "../app/lib/ask-ai/providers/registry"
-import type { AskAIMarketRecord } from "../app/lib/ask-ai/providers/contracts"
+import type { ActiveAskAIMarketSource, AskAIMarketRecord } from "../app/lib/ask-ai/providers/contracts"
 import { internal } from "./_generated/api"
 import { internalAction, internalMutation, internalQuery } from "./_generated/server"
 
 type UpsertResult = { inserted: number; updated: number; unchanged: number }
+
+// Explicit shape so `ingest`'s handler carries an annotated return type. Its body
+// calls sibling functions through `internal.askAIIngestion.*`, which includes
+// `ingest` itself — without this annotation TypeScript infers the type through
+// that cycle, falls back to `any`, and the `any` cascades across every module
+// that reads the generated `internal`/`api` types.
+type IngestProviderResult =
+  | { source: ActiveAskAIMarketSource; status: "deferred"; records: number; retryAt: number }
+  | ({ source: ActiveAskAIMarketSource; status: "success"; records: number } & UpsertResult)
+  | { source: ActiveAskAIMarketSource; status: "failed"; records: number; error: string }
 
 const upsertRecords = makeFunctionReference<"mutation", { records: AskAIMarketRecord[] }, UpsertResult>(
   "askAIIngestion:upsertRecordsMutation",
@@ -21,10 +32,17 @@ const UPSERT_CHUNK_SIZE = 100
 
 export const ingest = internalAction({
   args: { source: v.optional(activeSourceValidator) },
-  handler: async (ctx, { source }) => {
+  handler: async (ctx, { source }): Promise<{ providers: IngestProviderResult[] }> => {
     const providers = createAskAIProviders().filter((provider) => !source || provider.source === source)
     const results = []
     for (const provider of providers) {
+      const retryAt: number | null = await ctx.runQuery(internal.askAIIngestion.providerCooldown, {
+        source: provider.source,
+      })
+      if (retryAt && retryAt > Date.now()) {
+        results.push({ source: provider.source, status: "deferred" as const, records: 0, retryAt })
+        continue
+      }
       const startedAt = Date.now()
       try {
         const records = await provider.fetch()
@@ -55,6 +73,9 @@ export const ingest = internalAction({
           updated: 0,
           unchanged: 0,
           error: message,
+          ...(error instanceof AaveMcpError
+            ? { httpStatus: error.status, retryAt: Date.now() + error.retryAfterMs }
+            : {}),
           startedAt,
           completedAt: Date.now(),
         })
@@ -62,6 +83,17 @@ export const ingest = internalAction({
       }
     }
     return { providers: results }
+  },
+})
+
+export const providerCooldown = internalQuery({
+  args: { source: activeSourceValidator },
+  handler: async (ctx, { source }) => {
+    const state = await ctx.db
+      .query("askAIMarketProviderState")
+      .withIndex("by_source", (q) => q.eq("source", source))
+      .unique()
+    return state?.retryAt ?? null
   },
 })
 
@@ -132,6 +164,8 @@ export const providerHealth = internalQuery({
           lastCompletedAt: latest?.completedAt ?? null,
           ageMs: latest ? now - latest.completedAt : null,
           lastError: latest?.error ?? null,
+          httpStatus: latest?.httpStatus ?? null,
+          retryAt: latest?.retryAt ?? null,
           inserted: latest?.inserted ?? 0,
           updated: latest?.updated ?? 0,
           unchanged: latest?.unchanged ?? 0,
@@ -152,6 +186,8 @@ export const recordProviderRun = internalMutation({
     updated: v.number(),
     unchanged: v.number(),
     error: v.optional(v.string()),
+    httpStatus: v.optional(v.number()),
+    retryAt: v.optional(v.number()),
     startedAt: v.number(),
     completedAt: v.number(),
   },

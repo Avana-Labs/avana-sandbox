@@ -1,3 +1,4 @@
+import { AaveMcpClient, aaveObject, aaveRows, aaveNumber, aavePlainText, normalizeAaveMarkets } from "../aave-mcp"
 import type { ActiveAskAIMarketSource, AskAIFetch, AskAIMarketProvider, AskAIMarketRecord } from "./contracts"
 
 type ProviderOptions = { env: NodeJS.ProcessEnv; fetcher: AskAIFetch }
@@ -10,13 +11,6 @@ function finiteNumber(value: unknown): number | undefined {
 function readInt(value: unknown, fallback: number): number {
   const parsed = finiteNumber(value)
   return parsed === undefined ? fallback : Math.trunc(parsed)
-}
-
-// Aave PercentValue/apy fields are decimal fractions (0.03 = 3%); surface them as percentages.
-function percent(node: unknown): number | undefined {
-  const value = node && typeof node === "object" ? (node as Record<string, unknown>).value : undefined
-  const parsed = finiteNumber(value)
-  return parsed === undefined ? undefined : parsed * 100
 }
 
 async function requestJson(fetcher: AskAIFetch, url: string, init?: RequestInit): Promise<unknown> {
@@ -82,65 +76,35 @@ export class DefiLlamaProvider extends LiveProvider {
   }
 }
 
-abstract class GraphProvider extends LiveProvider {
-  protected async query(url: string, query: string): Promise<Record<string, unknown>> {
-    const data = await requestJson(this.options.fetcher, url, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ query }),
-    })
-    if (!data || typeof data !== "object" || Array.isArray(data)) return {}
-    const payload = data as Record<string, unknown>
-    if (Array.isArray(payload.errors) && payload.errors.length > 0)
-      throw new Error(`${this.source} GraphQL request failed`)
-    return payload.data && typeof payload.data === "object" ? (payload.data as Record<string, unknown>) : {}
-  }
-}
-
-// Aave v3's public GraphQL API — no key/auth required. Override with ASK_AI_AAVE_GRAPH_URL.
-const AAVE_V3_API_URL = "https://api.v3.aave.com/graphql"
-
-export class AaveProvider extends GraphProvider {
+export class AaveProvider extends LiveProvider {
   readonly source = "aave" as const
 
   async fetch(): Promise<AskAIMarketRecord[]> {
-    const endpoint = this.options.env.ASK_AI_AAVE_GRAPH_URL ?? AAVE_V3_API_URL
-    const data = await this.query(
-      endpoint,
-      `{ markets(request: { chainIds: [1] }) { name reserves { underlyingToken { symbol name address } size { usd } supplyInfo { apy { value } } borrowInfo { apy { value } utilizationRate { value } availableLiquidity { usd } } } } }`,
-    )
-    const markets = Array.isArray(data.markets) ? data.markets : []
-    return markets.flatMap((rawMarket) => {
-      if (!rawMarket || typeof rawMarket !== "object" || Array.isArray(rawMarket)) return []
-      const market = rawMarket as Record<string, unknown>
-      const marketName = typeof market.name === "string" ? market.name : "aave"
-      const reserves = Array.isArray(market.reserves) ? market.reserves : []
-      return reserves.flatMap((rawReserve) => {
-        if (!rawReserve || typeof rawReserve !== "object" || Array.isArray(rawReserve)) return []
-        const reserve = rawReserve as Record<string, unknown>
-        const token = (reserve.underlyingToken ?? {}) as Record<string, unknown>
-        const address = typeof token.address === "string" ? token.address : undefined
-        const symbol = typeof token.symbol === "string" ? token.symbol : undefined
-        if (!address || !symbol) return []
-        const size = (reserve.size ?? {}) as Record<string, unknown>
-        const borrow = (reserve.borrowInfo ?? {}) as Record<string, unknown>
-        const availableLiquidity = borrow.availableLiquidity as Record<string, unknown> | undefined
-        return [
-          this.record("lending_market", `${marketName}:${address}`, {
-            market: marketName,
-            symbol,
-            address,
-            name: typeof token.name === "string" ? token.name : symbol,
-            sizeUsd: finiteNumber(size.usd),
-            // Percentage-named keys so the cached-market formatter renders them as rates.
-            supplyApyPct: percent((reserve.supplyInfo as Record<string, unknown> | undefined)?.apy),
-            variableBorrowRate: percent(borrow.apy),
-            utilizationRate: percent(borrow.utilizationRate),
-            availableLiquidity: finiteNumber(availableLiquidity?.usd),
-          }),
-        ]
-      })
-    })
+    const client = new AaveMcpClient(this.options.fetcher, 64, 180_000)
+    const chainData = aaveObject(await client.call("get_chains", { version: "all" }))
+    const chains = new Map<number, string>()
+    for (const chain of [...aaveRows(chainData.v3), ...aaveRows(chainData.v4)]) {
+      const id = aaveNumber(chain.chainId)
+      if (id && !chain.notServed && !chain.isTestnet && !chain.isFork) chains.set(id, aavePlainText(chain.name, 60))
+    }
+    if (!chains.size) throw new Error("Aave MCP returned no supported chains")
+    const records: AskAIMarketRecord[] = []
+    // Serial, bounded reads; a 401/429 stops this run and retains the previous cache.
+    for (const [chainId] of chains) {
+      const data = await client.call("get_markets", { version: "all", chainId })
+      for (const reserve of normalizeAaveMarkets(data, chains)) {
+        const selector = reserve.selector
+        records.push(
+          this.record(
+            "lending_market",
+            `${reserve.version}:${chainId}:${selector.reserveId ?? `${selector.market}:${selector.token}`}`,
+            reserve.payload,
+          ),
+        )
+      }
+    }
+    if (!records.length) throw new Error("Aave MCP returned no reserves")
+    return records
   }
 }
 

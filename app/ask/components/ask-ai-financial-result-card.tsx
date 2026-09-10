@@ -1,5 +1,6 @@
 "use client"
 
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
 export type AskAIFinancialResult = {
@@ -8,6 +9,7 @@ export type AskAIFinancialResult = {
   asOf?: number
   freshness?: "fresh" | "stale" | "unavailable"
   metrics: Array<{ label: string; value: string; after?: string }>
+  badges?: string[]
   columns?: string[]
   rows?: Array<{ id: string; cells: string[] }>
 }
@@ -35,6 +37,15 @@ export function AskAIFinancialResultCard({ result }: { result: AskAIFinancialRes
           </span>
         ) : null}
       </div>
+      {result.badges?.length ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {result.badges.map((label) => (
+            <Badge key={label} variant="secondary">
+              {label}
+            </Badge>
+          ))}
+        </div>
+      ) : null}
       <dl className="mt-3 grid grid-cols-1 gap-x-5 gap-y-3 sm:grid-cols-2">
         {result.metrics.map((metric) => (
           <div key={metric.label} className="min-w-0 border-t border-border/50 pt-2">

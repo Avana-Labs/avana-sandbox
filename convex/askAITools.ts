@@ -34,6 +34,13 @@ async function readRunningTurnWallet(ctx: Pick<QueryCtx, "db">, turnId: Id<"askA
   return turn.wallet
 }
 
+// Scheduled actions have no client auth. The queue stamped this wallet from the
+// authenticated identity; a model can only supply the running turn ID internally.
+export const aaveWalletForTurn = internalQuery({
+  args: { turnId: v.id("askAITurns") },
+  handler: async (ctx, { turnId }) => (await readRunningTurnWallet(ctx, turnId)) ?? null,
+})
+
 /**
  * Provenance of the financial figures every Ask AI portfolio/risk tool returns.
  * Lane B passes this straight through into `richParts.financialResults[].dataProvenance`.
@@ -691,6 +698,19 @@ function compactMarketData(kind: "token_price" | "dex_pool" | "lending_market", 
           }
         : {
             market: row.market,
+            chainId: row.chainId,
+            version: row.version,
+            maxLtvPct: finiteMarketNumber(row.maxLtvPct),
+            liquidationThresholdPct: finiteMarketNumber(row.liquidationThresholdPct),
+            supplyCap: finiteMarketNumber(row.supplyCap),
+            borrowCap: finiteMarketNumber(row.borrowCap),
+            eModes: row.eModes,
+            canSupply: row.canSupply,
+            canBorrow: row.canBorrow,
+            isFrozen: row.isFrozen,
+            isPaused: row.isPaused,
+            supplyCapReached: row.supplyCapReached,
+            borrowCapReached: row.borrowCapReached,
             symbol: row.symbol,
             name: row.name,
             sizeUsd: finiteMarketNumber(row.sizeUsd),
@@ -724,7 +744,9 @@ export const searchMarkets = query({
     const wantsPrice = /\b(price|prices|worth|cost|value|quote)\b/.test(queryText)
     const wantsAaveProtocol =
       /\b(?:on|from|at)\s+aave\b/.test(queryText) ||
-      /\baave(?:\s+v3)?\s+(?:lend|lending|market|markets|pool|pools|apy|apr|rate|rates)\b/.test(queryText)
+      /\baave(?:\s+v[34])?\s+(?:lend|lending|market|markets|pool|pools|apy|apr|rate|rates)\b/.test(queryText)
+    const wantsAvanaOnly = /\bavana\b/.test(queryText) && !/\b(aave|compare|versus|vs)\b/.test(queryText)
+    const wantsAaveOnly = /\baave\b/.test(queryText) && !wantsPrice && !/\b(avana|compare|versus|vs)\b/.test(queryText)
     const minimumYieldMatch = queryText.match(
       /\b(?:at least|above|over|more than|minimum(?: of)?)\s+(\d+(?:\.\d+)?)\s*%/,
     )
@@ -816,17 +838,22 @@ export const searchMarkets = query({
         .query("marketSnapshotsCache")
         .withIndex("by_singleton", (q) => q.eq("singleton", "markets"))
         .first(),
-      wantsPools && !wantsYield
+      wantsAaveOnly
         ? ctx.db
             .query("askAIMarketSnapshots")
-            .withIndex("by_source_kind_key", (q) => q.eq("source", "defillama").eq("kind", "dex_pool"))
-            .take(250)
-        : ctx.db.query("askAIMarketSnapshots").withIndex("by_fetched_at").order("desc").take(250),
+            .withIndex("by_source_kind_key", (q) => q.eq("source", "aave"))
+            .take(1500)
+        : wantsPools && !wantsYield
+          ? ctx.db
+              .query("askAIMarketSnapshots")
+              .withIndex("by_source_kind_key", (q) => q.eq("source", "defillama").eq("kind", "dex_pool"))
+              .take(250)
+          : ctx.db.query("askAIMarketSnapshots").withIndex("by_fetched_at").order("desc").take(250),
     ])
     // Tests and a brand-new deployment can briefly precede the scheduled cache
     // build. Keep a bounded cold fallback, while production reads one singleton.
     const markets = marketCache?.rows ?? (await ctx.db.query("markets").take(200))
-    const matchingMarkets = (wantsAaveProtocol ? [] : markets)
+    const matchingMarkets = (wantsAaveProtocol || wantsAaveOnly ? [] : markets)
       .filter((market) => {
         const haystack = `${market.slug} ${market.name} ${market.symbol} ${market.venueLabel ?? ""}`.toLowerCase()
         return searchTerms.some((term) => haystack.includes(term))
@@ -835,7 +862,7 @@ export const searchMarkets = query({
 
     // Score canonical prices and cached snapshots on the SAME scale, then rank the
     // combined list — otherwise token prices (added first) crowd out deep pools.
-    const scoredSnapshots = snapshots
+    const scoredSnapshots = (wantsAvanaOnly ? [] : snapshots)
       .filter((snapshot) => marketFreshness(snapshot.kind, snapshot.sourceUpdatedAt ?? snapshot.fetchedAt) === "fresh")
       .map((snapshot) => {
         const haystack = askAISnapshotHaystack(snapshot)

@@ -23,6 +23,7 @@ import {
 } from "./components/ask-ai-thread"
 import { AskAIThreadList } from "./components/ask-ai-thread-list"
 import { AskAILoadingBody } from "./components/ask-ai-skeleton"
+import { buildAaveCard } from "./components/ask-ai-aave-card"
 import type { AskAIFinancialResult } from "./components/ask-ai-financial-result-card"
 import { AskAIMessagePartsSubscriber, type AskAIMessagePartsRow } from "./message-parts-subscriber"
 
@@ -41,7 +42,7 @@ type PersistedRichParts = {
   tool?: { name: string; query: string; request: string; result: string }
   retrievalChunks?: Array<{ title: string; locator: string; text: string; score?: number }>
   sources?: unknown[]
-  visual?: { label: string; value: string; points: number[]; delta?: string }
+  visual?: { kind?: "aave_apy"; label: string; value: string; points: number[]; delta?: string }
   financialResults?: Array<{ kind?: string; dataProvenance?: string; payload: unknown }>
   usage?: AskAIUsage
 }
@@ -125,6 +126,7 @@ function toFinancialResultCard(payload: unknown): AskAIFinancialResult | null {
 // Reshape a verbatim financial tool result into the display card, per tool kind.
 // Returns null (card hidden) when the figures are absent — never invents them.
 function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFinancialResult | null {
+  if (kind?.startsWith("aave_")) return buildAaveCard(kind, payload)
   const shaped = toFinancialResultCard(payload)
   if (shaped) return shaped
   const p = asObject(payload)
@@ -271,6 +273,27 @@ function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFi
       // bare token-price row (price only, redundant with the chart).
       type MarketRow = { symbol: string; score: number; isPrice: boolean; id: string; cells: string[] }
       const candidates: MarketRow[] = []
+      const showRisk = providerData.some((entry) => {
+        const data = asObject(asObject(entry).data)
+        return [data.maxLtvPct, data.liquidationThresholdPct, data.supplyCap, data.borrowCap].some(
+          (value) => typeof value === "number",
+        )
+      })
+      const riskCells = (data: Record<string, unknown>) =>
+        showRisk
+          ? [
+              pctApy(data.maxLtvPct, "") ?? "Unavailable",
+              pctApy(data.liquidationThresholdPct, "") ?? "Unavailable",
+              typeof data.supplyCap === "number" ? data.supplyCap.toLocaleString("en-US") : "Unavailable",
+              typeof data.borrowCap === "number" ? data.borrowCap.toLocaleString("en-US") : "Unavailable",
+              Array.isArray(data.eModes)
+                ? data.eModes
+                    .map((mode) => String(asObject(mode).label ?? ""))
+                    .filter(Boolean)
+                    .join(", ") || "Unavailable"
+                : "Unavailable",
+            ]
+          : []
       markets.forEach((entry, index) => {
         const m = asObject(entry)
         const label = String(m.symbol ?? m.name ?? m.slug ?? "Market")
@@ -284,7 +307,7 @@ function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFi
           isPrice: false,
           score: 2 + (rate === "Unavailable" ? 0 : 1),
           id: `market-mkt-${index}`,
-          cells: [label, rate, usd(m.tvlUsd) ?? "Unavailable", String(m.venueLabel ?? "Avana")],
+          cells: [label, rate, usd(m.tvlUsd) ?? "Unavailable", String(m.venueLabel ?? "Avana"), ...riskCells(m)],
         })
       })
       providerData.forEach((entry, index) => {
@@ -296,11 +319,17 @@ function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFi
           usd(data.priceUsd) ?? pctApy(data.apyPct, "APY") ?? pctApy(data.supplyApyPct, "supply") ?? "Unavailable"
         const size = usd(data.tvlUsd) ?? usd(data.sizeUsd) ?? usd(data.availableLiquidityUsd) ?? "Unavailable"
         candidates.push({
-          symbol: label.toLowerCase(),
+          symbol: result.kind === "lending_market" ? String(result.key) : label.toLowerCase(),
           isPrice,
           score: (isPrice ? 0 : 2) + (rate === "Unavailable" ? 0 : 1),
           id: `market-pd-${index}-${String(result.key ?? label)}`,
-          cells: [label, rate, size, String(result.source ?? "Convex")],
+          cells: [
+            result.source === "aave" ? `${label} · ${String(data.market ?? "Aave")}` : label,
+            rate,
+            size,
+            result.source === "aave" ? "Aave (cached)" : String(result.source ?? "Convex"),
+            ...riskCells(data),
+          ],
         })
       })
       // One row per symbol, keeping the highest-scored (Map preserves insertion
@@ -318,7 +347,13 @@ function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFi
       return table(
         "market",
         "Market results",
-        ["Market", "Price or rate", "TVL or size", "Source"],
+        [
+          "Market",
+          "Price or rate",
+          "TVL or size",
+          "Source",
+          ...(showRisk ? ["Max LTV", "Liq. threshold", "Supply cap (tokens)", "Borrow cap (tokens)", "eMode"] : []),
+        ],
         rows.map((row) => ({ id: row.id, cells: row.cells })),
       )
     }
@@ -372,7 +407,8 @@ function persistedAssistantParts(messageId: string, text: string, rich?: Persist
     })
   }
   if (rich?.sources?.length) parts.push({ type: "data", name: "sources", data: rich.sources })
-  if (rich?.visual) parts.push({ type: "data", name: "chart", data: rich.visual })
+  if (rich?.visual)
+    parts.push({ type: "data", name: rich.visual.kind === "aave_apy" ? "aave-apy" : "chart", data: rich.visual })
   for (const entry of rich?.financialResults ?? []) {
     const payload = asObject(entry.payload)
     const providerData = Array.isArray(payload.providerData) ? payload.providerData : []

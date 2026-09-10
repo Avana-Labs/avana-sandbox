@@ -1,3 +1,4 @@
+import { routeAaveTool, AAVE_MODEL_TOOLS, type AaveModelTool } from "./aave-routing"
 export const ASK_AI_DOMAIN_CATEGORIES = [
   "avana",
   "lp_collateral",
@@ -208,6 +209,7 @@ export function classifyAskAIDomain(message: string): DomainResult {
  * portfolio/risk tools and a personal question never loads web search.
  */
 export type AskAIToolName =
+  | AaveModelTool
   | "web_search"
   | "search_avana_knowledge"
   | "read_portfolio"
@@ -236,6 +238,7 @@ export type AskAITurnRoute = {
 
 export function toolChoiceForAskAIStep(route: AskAITurnRoute, stepNumber: number): AskAITurnRoute["toolChoice"] {
   if (stepNumber === 0) return route.toolChoice
+  if (route.tools.some((tool) => (AAVE_MODEL_TOOLS as readonly string[]).includes(tool))) return "none"
   return route.tools.length > 0 ? "auto" : "none"
 }
 
@@ -272,6 +275,13 @@ export function routeAskAITurn(message: string): AskAITurnRoute {
 
   // Greetings and bare clarifications need no tools at all — answer in one step.
   if (isAskAIGreeting(normalized) || isAskAIClarificationPrompt(normalized)) return plan([], 1, "fast")
+  const aaveTool = routeAaveTool(normalized)
+  if (aaveTool) return plan([aaveTool], 2, aaveTool === "read_aave_preview" ? "reasoning" : "fast")
+  if (
+    /\baave\b/i.test(normalized) &&
+    /\b(markets?|pools?|rates?|apy|apr|yields?|liquidity|tvl|prices?)\b/i.test(normalized)
+  )
+    return { ...plan(["search_markets"], 2, "fast"), intent: "market" }
   // Only open-ended current-events asks reach web search. Anything Convex can
   // answer (prices, pools, the user's positions, risk, Avana how-to) keeps its
   // own tools even when phrased with a "latest"/"right now" recency cue.

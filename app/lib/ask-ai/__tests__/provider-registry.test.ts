@@ -47,48 +47,59 @@ describe("Ask AI provider registry", () => {
     expect(records.every((record) => record.kind === "dex_pool")).toBe(true)
   })
 
-  it("reads Aave reserves from the public v3 API without a key", async () => {
-    const fetcher = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          data: {
-            markets: [
-              {
-                name: "AaveV3Ethereum",
-                reserves: [
+  it("reads multi-chain Aave MCP reserves, preserving percentage and USD units", async () => {
+    const fetcher = vi.fn(async (_url, init) => {
+      const { params } = JSON.parse(String(init?.body))
+      const data =
+        params.name === "get_chains"
+          ? {
+              v3: [
+                { chainId: 1, name: "Ethereum" },
+                { chainId: 42161, name: "Arbitrum" },
+              ],
+              v4: [{ chainId: 10, notServed: true }],
+            }
+          : {
+              v3: {
+                markets: [
                   {
-                    underlyingToken: { symbol: "USDC", name: "USD Coin", address: "0xusdc" },
-                    size: { usd: "1000000" },
-                    supplyInfo: { apy: { value: "0.03" } },
-                    borrowInfo: {
-                      apy: { value: "0.05" },
-                      utilizationRate: { value: "0.8" },
-                      availableLiquidity: { usd: "500000" },
-                    },
+                    chainId: params.arguments.chainId,
+                    name: "Main",
+                    market: "0xpool",
+                    reserves: [
+                      {
+                        symbol: "USDC",
+                        underlyingToken: "0xusdc",
+                        supplyApyPct: "3.25",
+                        borrowApyPct: "5.1",
+                        totalSuppliedUsd: "1000000",
+                        availableLiquidity: { value: "500001", usd: "500000" },
+                      },
+                    ],
                   },
                 ],
               },
-            ],
-          },
-        }),
-        { status: 200 },
-      ),
-    )
-    const providers = createAskAIProviders({}, fetcher as unknown as typeof fetch)
-    const records = await providers.find((provider) => provider.source === "aave")?.fetch()
-    expect(fetcher).toHaveBeenCalledWith("https://api.v3.aave.com/graphql", expect.objectContaining({ method: "POST" }))
-    expect(records?.[0]).toMatchObject({
-      source: "aave",
-      kind: "lending_market",
-      key: "AaveV3Ethereum:0xusdc",
-      payload: expect.objectContaining({
-        symbol: "USDC",
-        sizeUsd: 1_000_000,
-        supplyApyPct: 3,
-        variableBorrowRate: 5,
-        utilizationRate: 80,
-        availableLiquidity: 500_000,
-      }),
+              v4: { markets: [] },
+            }
+      return new Response(JSON.stringify({ result: { structuredContent: { data } } }), {
+        headers: { "content-type": "application/json" },
+      })
     })
+    const records = await createAskAIProviders({}, fetcher as typeof fetch)
+      .find((provider) => provider.source === "aave")!
+      .fetch()
+    expect(fetcher).toHaveBeenCalledTimes(3)
+    expect(fetcher).toHaveBeenCalledWith("https://mcp.aave.com", expect.objectContaining({ method: "POST" }))
+    expect(records).toHaveLength(2)
+    expect(records[0].payload).toMatchObject({
+      symbol: "USDC",
+      sizeUsd: 1000000,
+      supplyApyPct: 3.25,
+      variableBorrowRate: 5.1,
+      availableLiquidity: 500000,
+    })
+    expect(records[0].payload.market).toContain("Ethereum")
+    expect(records[1].payload.market).toContain("Arbitrum")
+    expect(records[0].key).not.toBe(records[1].key)
   })
 })

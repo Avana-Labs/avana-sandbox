@@ -324,3 +324,55 @@ describe("AskAIPageClient rich parts", () => {
     expect(screen.getByText("Thinking…")).toBeInTheDocument()
   })
 })
+
+it("reloads a persisted Aave APY chart and keeps same-symbol reserves on different chains", () => {
+  messagesMock.mockReturnValue({
+    status: "Exhausted",
+    loadMore: vi.fn(),
+    results: [{ id: "aave-1", role: "assistant", text: "These are Aave rates.", _creationTime: 2, status: "success" }],
+  })
+  partsMock.mockReturnValue([
+    {
+      messageId: "aave-1",
+      parts: {
+        visual: {
+          kind: "aave_apy",
+          label: "Aave USDC supply APY",
+          value: "4.00%",
+          delta: "+1.00 pp",
+          points: [3, 4],
+          timestamps: [1788912000000, 1788998400000],
+          side: "supply",
+          window: "week",
+        },
+        financialResults: [
+          {
+            kind: "market",
+            payload: {
+              markets: [],
+              providerData: [
+                {
+                  source: "aave",
+                  kind: "lending_market",
+                  key: "v3:1:usdc",
+                  data: { symbol: "USDC", market: "Aave v3 Ethereum", supplyApyPct: 4 },
+                },
+                {
+                  source: "aave",
+                  kind: "lending_market",
+                  key: "v3:42161:usdc",
+                  data: { symbol: "USDC", market: "Aave v3 Arbitrum", supplyApyPct: 3 },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+  ])
+  render(<AskAIPageClient />)
+  expect(screen.getByRole("img", { name: "Aave USDC supply APY: 4.00%" })).toBeInTheDocument()
+  expect(screen.getByText("USDC · Aave v3 Ethereum")).toBeInTheDocument()
+  expect(screen.getByText("USDC · Aave v3 Arbitrum")).toBeInTheDocument()
+  expect(screen.getAllByText("Aave (cached)")).toHaveLength(2)
+})
