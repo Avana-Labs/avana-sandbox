@@ -471,6 +471,16 @@ export async function readAskAIBorrowCapacity(ctx: PortfolioReadCtx) {
 
 export const borrowCapacity = query({ args: {}, handler: readAskAIBorrowCapacity })
 
+export const engineSnapshotForTurn = internalQuery({
+  args: {
+    turnId: v.id("askAITurns"),
+    multiplyShockPct: v.optional(v.number()),
+    lendProjectionDays: v.optional(v.number()),
+  },
+  handler: async (ctx, { turnId, ...args }) =>
+    readAskAIEngineSnapshot(withTurnWallet(ctx, await readRunningTurnWallet(ctx, turnId)), args),
+})
+
 export const borrowCapacityForTurn = internalQuery({
   args: { turnId: v.id("askAITurns") },
   handler: async (ctx, { turnId }) =>

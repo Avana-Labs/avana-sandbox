@@ -18,6 +18,7 @@ import {
   readPoolMetricsTool,
   readPortfolioTool,
   readPositionRiskTool,
+  readEngineSnapshotTool,
   searchMarketsTool,
   simulateBorrowTool,
   stressPositionTool,
@@ -44,6 +45,7 @@ const ASK_AI_TOOLS = {
   read_portfolio: readPortfolioTool,
   read_borrow_capacity: readBorrowCapacityTool,
   read_position_risk: readPositionRiskTool,
+  read_engine_snapshot: readEngineSnapshotTool,
   simulate_borrow: simulateBorrowTool,
   stress_position: stressPositionTool,
   search_markets: searchMarketsTool,
@@ -242,6 +244,7 @@ const FINANCIAL_TOOL_KINDS = {
   read_portfolio: "portfolio",
   read_borrow_capacity: "borrow_capacity",
   read_position_risk: "position_risk",
+  read_engine_snapshot: "engine_snapshot",
   simulate_borrow: "simulate_borrow",
   stress_position: "stress_position",
   get_reserve_details: "aave_reserve",
@@ -454,6 +457,26 @@ export const generateTurn = internalAction({
           financialKind: route.intent === "pool" && !/\baave\b/i.test(turn.prompt) ? "pool" : "market",
           payload,
           modelContext: compactMarketContext(payload),
+        }
+      } else if (route.tools.includes("read_engine_snapshot")) {
+        // Keep the single-call shape: resolve the projection window from the
+        // prompt rather than spending a model step on it.
+        const lendProjectionDays = /\bweek\b/i.test(turn.prompt) ? 7 : /\bmonth\b/i.test(turn.prompt) ? 30 : 365
+        const payload = await ctx.runQuery(internal.askAITools.engineSnapshotForTurn, {
+          turnId: turn.turnId,
+          lendProjectionDays,
+        })
+        prefetched = {
+          toolName: "read_engine_snapshot",
+          financialKind: "engine_snapshot",
+          payload,
+          modelContext: payload,
+          dataProvenance:
+            payload.dataProvenance === "sandbox" ||
+            payload.dataProvenance === "connected_wallet" ||
+            payload.dataProvenance === "onchain"
+              ? payload.dataProvenance
+              : undefined,
         }
       } else if (route.intent === "position") {
         const portfolio = await ctx.runQuery(internal.askAITools.portfolioForTurn, { turnId: turn.turnId })

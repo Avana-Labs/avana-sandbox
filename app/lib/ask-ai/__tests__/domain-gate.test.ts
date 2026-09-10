@@ -314,6 +314,24 @@ describe("routeAskAITurn (per-turn tool + cost routing)", () => {
     },
   )
 
+  // Forward-looking earnings need the engine snapshot: it is the only read that
+  // projects yield and reports per-loop leverage and net APY.
+  it.each([
+    "how much will I earn in a year?",
+    "what will I make over a year?",
+    "how much am I going to earn?",
+    "projected yield on my positions",
+    "what will I earn next month?",
+  ])("routes %j to the engine snapshot", (prompt) => {
+    const route = routeAskAITurn(prompt)
+    expect(route.tools).toEqual(["read_engine_snapshot"])
+  })
+
+  it.each(["how much in my portfolio?", "what's my balance?", "my holdings"])(
+    "keeps the plain balance question %j on read_portfolio",
+    (prompt) => expect(routeAskAITurn(prompt).tools).toEqual(["read_portfolio"]),
+  )
+
   // The broadened crypto vocabulary must not swallow market, pool or
   // educational questions into a personal read.
   it.each([

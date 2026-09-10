@@ -51,6 +51,15 @@ describe("Aave Convex integration", () => {
       "not running",
     )
     expect(await t.query(internal.askAITools.aaveWalletForTurn, { turnId: await gateTurn("running") })).toBe(wallet)
+
+    // Every turn-scoped read shares the same gate, including the newly exposed
+    // engine snapshot.
+    await expect(
+      t.query(internal.askAITools.engineSnapshotForTurn, { turnId: await gateTurn("queued") }),
+    ).rejects.toThrow("not running")
+    expect(
+      await t.query(internal.askAITools.engineSnapshotForTurn, { turnId: await gateTurn("running") }),
+    ).toMatchObject({ wallet })
   })
 
   it("nets debt out of portfolio value and leaves Umbrella out of Net Value", async () => {

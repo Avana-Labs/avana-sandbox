@@ -685,6 +685,7 @@ export const completeGeneratedTurn = internalMutation({
                 v.literal("pool"),
                 v.literal("borrow_capacity"),
                 v.literal("position_risk"),
+                v.literal("engine_snapshot"),
                 v.literal("simulate_borrow"),
                 v.literal("stress_position"),
                 v.literal("aave_reserve"),

@@ -103,6 +103,11 @@ const RISK_PATTERNS = [
   /\bhow (?:risky|safe|exposed|healthy)\b.{0,24}\b(?:is|am|are)?\s*(?:my|our|i|we)\b/i,
 ]
 
+/** Forward-looking earnings language: answered by the engine snapshot's
+ * projections, not by a balance read. */
+const PROJECTION_PATTERN =
+  /\b(?:will (?:i|we) (?:earn|make|get)|going to (?:earn|make)|projected|projection|forecast|over (?:a|the) (?:year|month|week)|in (?:a|one) year|per year|annually|next (?:year|month|week)|by (?:year|month) end|compounded?|over time)\b/i
+
 const STRESS_PATTERNS = [
   /\bwhat (?:happens|if)\b/i,
   /\b(stress|shock|drops?|dropped|falls?|fell|crash(?:es|ed)?|dumps?|dumped|tanks?|depeg\w*|price change|downside|worst ?case|black ?swan|bear ?case|scenario|simulate|sensitivity|-\d+ ?%|\d+ ?% ?(?:drop|down|crash|decline))\b/i,
@@ -307,7 +312,8 @@ export function classifyAskAIDomain(message: string): DomainResult {
   // answers from nothing. That is how "how much in my portfolio?" produced
   // "I don't have a portfolio balance available" for a funded wallet.
   if (
-    (PERSONAL_SUBJECT_PATTERN.test(normalized) && HOLDINGS_TOPIC_PATTERN.test(normalized)) ||
+    (PERSONAL_SUBJECT_PATTERN.test(normalized) &&
+      (HOLDINGS_TOPIC_PATTERN.test(normalized) || PROJECTION_PATTERN.test(normalized))) ||
     SELF_NOUN_PATTERN.test(normalized)
   ) {
     const risky = RISK_TOPIC_PATTERN.test(normalized)
@@ -334,6 +340,7 @@ export type AskAIToolName =
   | "read_portfolio"
   | "read_borrow_capacity"
   | "read_position_risk"
+  | "read_engine_snapshot"
   | "simulate_borrow"
   | "stress_position"
   | "search_markets"
@@ -425,6 +432,10 @@ export function routeAskAITurn(message: string): AskAITurnRoute {
 
   switch (intent) {
     case "position":
+      // A projection ("what will I earn in a year", "how are my positions
+      // doing over time") needs the engine snapshot, which is the only read
+      // that projects yield and reports per-loop leverage and net APY.
+      if (PROJECTION_PATTERN.test(normalized)) return plan(["read_engine_snapshot"], 2, "fast")
       // A balance/holdings question needs only the portfolio read.
       return plan(["read_portfolio"], 2, "fast")
     case "risk":

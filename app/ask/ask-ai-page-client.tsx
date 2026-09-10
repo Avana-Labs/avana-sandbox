@@ -217,6 +217,19 @@ function buildFinancialCard(kind: string | undefined, payload: unknown): AskAIFi
         ).filter((metric): metric is AskAIMetric => metric !== null),
       )
     }
+    case "engine_snapshot": {
+      const sum = asObject(p.summary)
+      const days = typeof sum.lendProjectionDays === "number" ? sum.lendProjectionDays : null
+      // Answer first: a projection question wants the projected figure.
+      return compact("position_risk", "Engine projection", [
+        metricOf(days ? `Projected yield (${days}d)` : "Projected yield", usd(sum.lendProjectedYieldUsd)),
+        metricOf("Earned so far", usd(sum.lendEarnedUsd)),
+        metricOf("Weakest health factor", healthFactor(sum.multiplyWeakestHealthFactor)),
+        metricOf("Lend principal", usd(sum.lendPrincipalUsd)),
+        metricOf("Multiply equity", usd(sum.multiplyEquityUsd)),
+        metricOf("Umbrella earned", usd(sum.umbrellaEarnedUsd)),
+      ])
+    }
     case "borrow_capacity": {
       const c = asObject(p.capacity)
       // Answer first: "how much can I borrow" is `Available`, not collateral.

@@ -11,6 +11,16 @@ export const readPortfolioTool: Tool = createTool({
   execute: (ctx): Promise<unknown> => ctx.runQuery(api.askAITools.portfolio, {}),
 })
 
+export const readEngineSnapshotTool: Tool = createTool({
+  description:
+    "Read Avana's deterministic engine state across every product: per-product totals, projected lend yield, per-loop leverage and distance to liquidation, and the weakest health factor.",
+  inputSchema: z.object({
+    multiplyShockPct: z.number().min(-95).max(100).optional(),
+    lendProjectionDays: z.number().int().positive().max(365).optional(),
+  }),
+  execute: (ctx, input): Promise<unknown> => ctx.runQuery(api.askAITools.engineSnapshot, input),
+})
+
 export const readBorrowCapacityTool: Tool = createTool({
   description:
     "Read the user's authoritative Credit Engine borrowing capacity, debt, health factor, and liquidation buffer.",
@@ -69,6 +79,16 @@ export function createAskAITurnTools(turnId: Id<"askAITurns">, prompt: string) {
         "Read the signed-in user's authoritative Avana balances and positions. Use for wallet, balance, holdings, or portfolio questions.",
       inputSchema: z.object({}),
       execute: (ctx): Promise<unknown> => ctx.runQuery(internal.askAITools.portfolioForTurn, { turnId }),
+    }),
+    read_engine_snapshot: createTool({
+      description:
+        "Read Avana's deterministic engine state across every product at once: per-product totals, lend yield projected over lendProjectionDays, each loop's leverage, net APY, liquidation price and distance to liquidation, umbrella earnings, and the WEAKEST health factor rather than an average. Use for earnings projections and cross-product 'how are my positions doing' questions.",
+      inputSchema: z.object({
+        multiplyShockPct: z.number().min(-95).max(100).optional(),
+        lendProjectionDays: z.number().int().positive().max(365).optional(),
+      }),
+      execute: (ctx, input): Promise<unknown> =>
+        ctx.runQuery(internal.askAITools.engineSnapshotForTurn, { turnId, ...input }),
     }),
     read_borrow_capacity: createTool({
       description:
