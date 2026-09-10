@@ -22,6 +22,8 @@ export type BorrowSpokeId =
   | "aero-basic-stable"
   | "aero-basic-volatile"
   | "aero-slipstream-bluechip"
+  | "aero-concentrated-stocks"
+  | "uni-robinhood-stocks"
 
 export type BorrowAssetVisual = {
   symbol: string
@@ -432,6 +434,128 @@ const VISUALS = {
     textClass: "text-rose-600",
     iconUrl: getTokenIconMeta("OP").iconUrl,
   },
+  // ----- Tokenized stocks + USDG -----
+  // Aerodrome "…c" collateral variants + Uniswap plain tickers. Icons/prices resolve through the
+  // token registry (app/lib/tokens/registry.ts) via getTokenIconMeta; USDG uses its asset-icons file.
+  USDG: {
+    symbol: "USDG",
+    shortLabel: "G$",
+    bgClass: "bg-teal-100",
+    textClass: "text-teal-700",
+    iconUrl: getTokenIconMeta("USDG").iconUrl,
+  },
+  NVDA: {
+    symbol: "NVDA",
+    shortLabel: "Nv",
+    bgClass: "bg-slate-100",
+    textClass: "text-slate-700",
+    iconUrl: getTokenIconMeta("NVDA").iconUrl,
+  },
+  NVDAc: {
+    symbol: "NVDAc",
+    shortLabel: "Nv",
+    bgClass: "bg-slate-100",
+    textClass: "text-slate-700",
+    iconUrl: getTokenIconMeta("NVDAc").iconUrl,
+  },
+  AAPL: {
+    symbol: "AAPL",
+    shortLabel: "Ap",
+    bgClass: "bg-slate-100",
+    textClass: "text-slate-700",
+    iconUrl: getTokenIconMeta("AAPL").iconUrl,
+  },
+  AAPLc: {
+    symbol: "AAPLc",
+    shortLabel: "Ap",
+    bgClass: "bg-slate-100",
+    textClass: "text-slate-700",
+    iconUrl: getTokenIconMeta("AAPLc").iconUrl,
+  },
+  GOOGL: {
+    symbol: "GOOGL",
+    shortLabel: "Go",
+    bgClass: "bg-slate-100",
+    textClass: "text-slate-700",
+    iconUrl: getTokenIconMeta("GOOGL").iconUrl,
+  },
+  GOOGLc: {
+    symbol: "GOOGLc",
+    shortLabel: "Go",
+    bgClass: "bg-slate-100",
+    textClass: "text-slate-700",
+    iconUrl: getTokenIconMeta("GOOGLc").iconUrl,
+  },
+  META: {
+    symbol: "META",
+    shortLabel: "Me",
+    bgClass: "bg-slate-100",
+    textClass: "text-slate-700",
+    iconUrl: getTokenIconMeta("META").iconUrl,
+  },
+  METAc: {
+    symbol: "METAc",
+    shortLabel: "Me",
+    bgClass: "bg-slate-100",
+    textClass: "text-slate-700",
+    iconUrl: getTokenIconMeta("METAc").iconUrl,
+  },
+  AMZNc: {
+    symbol: "AMZNc",
+    shortLabel: "Az",
+    bgClass: "bg-slate-100",
+    textClass: "text-slate-700",
+    iconUrl: getTokenIconMeta("AMZNc").iconUrl,
+  },
+  MSFTc: {
+    symbol: "MSFTc",
+    shortLabel: "Ms",
+    bgClass: "bg-slate-100",
+    textClass: "text-slate-700",
+    iconUrl: getTokenIconMeta("MSFTc").iconUrl,
+  },
+  TSLA: {
+    symbol: "TSLA",
+    shortLabel: "Ts",
+    bgClass: "bg-slate-100",
+    textClass: "text-slate-700",
+    iconUrl: getTokenIconMeta("TSLA").iconUrl,
+  },
+  TSLAc: {
+    symbol: "TSLAc",
+    shortLabel: "Ts",
+    bgClass: "bg-slate-100",
+    textClass: "text-slate-700",
+    iconUrl: getTokenIconMeta("TSLAc").iconUrl,
+  },
+  SPCX: {
+    symbol: "SPCX",
+    shortLabel: "Sx",
+    bgClass: "bg-slate-100",
+    textClass: "text-slate-700",
+    iconUrl: getTokenIconMeta("SPCX").iconUrl,
+  },
+  SPCXc: {
+    symbol: "SPCXc",
+    shortLabel: "Sx",
+    bgClass: "bg-slate-100",
+    textClass: "text-slate-700",
+    iconUrl: getTokenIconMeta("SPCXc").iconUrl,
+  },
+  AMC: {
+    symbol: "AMC",
+    shortLabel: "Am",
+    bgClass: "bg-slate-100",
+    textClass: "text-slate-700",
+    iconUrl: getTokenIconMeta("AMC").iconUrl,
+  },
+  MU: {
+    symbol: "MU",
+    shortLabel: "Mu",
+    bgClass: "bg-slate-100",
+    textClass: "text-slate-700",
+    iconUrl: getTokenIconMeta("MU").iconUrl,
+  },
 } satisfies Record<string, BorrowAssetVisual>
 
 function v(symbol: keyof typeof VISUALS): BorrowAssetVisual {
@@ -728,6 +852,41 @@ export const BORROW_SPOKES: BorrowSpoke[] = [
     pillTextClass: "text-blue-700",
     liquidationUsdApprox: 2_500,
   },
+
+  // -------- Tokenized stocks --------
+  {
+    id: "aero-concentrated-stocks",
+    dex: "aerodrome",
+    label: "Aerodrome Concentrated 10",
+    description: "Tokenized-equity concentrated LP positions",
+    eMode: false,
+    borrowableTokens: [v("USDC"), v("GHO"), v("USDT")],
+    maxLtv: 55,
+    aprApprox: 40,
+    riskPremiumBps: 180,
+    // Real Aerodrome stock pools total ~$10M TVL (USDC/NVDAc $2.29M … USDC/TSLAc $0.70M).
+    liquidityUsd: 10_000_000,
+    dotClass: "bg-blue-500",
+    pillBgClass: "bg-blue-50",
+    pillTextClass: "text-blue-700",
+    liquidationUsdApprox: 900,
+  },
+  {
+    id: "uni-robinhood-stocks",
+    dex: "uniswap",
+    label: "Uniswap Robinhood Stocks",
+    description: "Tokenized-equity concentrated LP positions",
+    eMode: false,
+    borrowableTokens: [v("USDG"), v("GHO"), v("USDC"), v("USDT")],
+    maxLtv: 55,
+    aprApprox: 12,
+    riskPremiumBps: 180,
+    liquidityUsd: 30_000_000,
+    dotClass: "bg-pink-500",
+    pillBgClass: "bg-pink-50",
+    pillTextClass: "text-pink-700",
+    liquidationUsdApprox: 1_100,
+  },
 ]
 
 const SPOKE_BY_ID = {} as Record<BorrowSpokeId, BorrowSpoke>
@@ -769,6 +928,8 @@ const SPOKE_DEFAULT_FEE_TIER: Record<BorrowSpokeId, string> = {
   "aero-basic-stable": "0.05%",
   "aero-basic-volatile": "0.30%",
   "aero-slipstream-bluechip": "0.05%",
+  "aero-concentrated-stocks": "0.05%",
+  "uni-robinhood-stocks": "0.30%",
 }
 
 const POOL_SEEDS: Record<BorrowSpokeId, PoolSeed[]> = {
@@ -934,6 +1095,28 @@ const POOL_SEEDS: Record<BorrowSpokeId, PoolSeed[]> = {
     { pair: ["cbETH", "WETH"], trendUp: true },
     { pair: ["WETH", "cbBTC"], trendUp: true },
     { pair: ["cbBTC", "USDC"], trendUp: false },
+  ],
+  // Aerodrome tokenized-stock pools (USDC-quoted "…c" variants), ordered by real TVL.
+  "aero-concentrated-stocks": [
+    { pair: ["USDC", "NVDAc"], trendUp: true },
+    { pair: ["USDC", "GOOGLc"], trendUp: true },
+    { pair: ["USDC", "AAPLc"], trendUp: true },
+    { pair: ["USDC", "METAc"], trendUp: true },
+    { pair: ["USDC", "AMZNc"], trendUp: false },
+    { pair: ["USDC", "MSFTc"], trendUp: true },
+    { pair: ["USDC", "SPCXc"], trendUp: true },
+    { pair: ["USDC", "TSLAc"], trendUp: false },
+  ],
+  // Uniswap Robinhood tokenized-stock pools (USDG-quoted).
+  "uni-robinhood-stocks": [
+    { pair: ["NVDA", "USDG"], trendUp: true },
+    { pair: ["SPCX", "USDG"], trendUp: true },
+    { pair: ["AAPL", "USDG"], trendUp: true },
+    { pair: ["GOOGL", "USDG"], trendUp: true },
+    { pair: ["TSLA", "USDG"], trendUp: false },
+    { pair: ["META", "USDG"], trendUp: true },
+    { pair: ["AMC", "USDG"], trendUp: false },
+    { pair: ["MU", "USDG"], trendUp: true },
   ],
 }
 
@@ -1136,6 +1319,21 @@ export const BORROWABLE_ASSETS: BorrowableAsset[] = [
     walletBalanceLabel: "0 GHO",
     hasWalletBalance: false,
     visual: v("GHO"),
+    trendUp: true,
+    category: "stable",
+  },
+  {
+    id: "usdg",
+    symbol: "USDG",
+    name: "Global Dollar",
+    subtitle: "Paxos USD stablecoin",
+    borrowApr: 4.6,
+    totalBorrowedUsd: 5_400_000,
+    utilization: 44,
+    availableUsd: 6_800_000,
+    walletBalanceLabel: "0 USDG",
+    hasWalletBalance: false,
+    visual: v("USDG"),
     trendUp: true,
     category: "stable",
   },

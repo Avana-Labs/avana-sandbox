@@ -14,6 +14,8 @@ export type BorrowSpokeId =
   | "aero-basic-stable"
   | "aero-basic-volatile"
   | "aero-slipstream-bluechip"
+  | "aero-concentrated-stocks"
+  | "uni-robinhood-stocks"
 
 export type BorrowVisual = {
   symbol: string

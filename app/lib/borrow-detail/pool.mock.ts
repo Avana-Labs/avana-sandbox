@@ -26,6 +26,7 @@ import { formatPairRate } from "./formatters"
 import { sandboxBaselinePriceUsd } from "@/app/lib/prices/sandbox-baseline-prices"
 import { buildPoolRiskAssessment } from "./risk-model"
 import { buildPoolFaqs } from "./content-model"
+import { getRegistryToken } from "@/app/lib/tokens/registry"
 import { buildPoolProtocolParameters } from "./protocol-parameters"
 import { buildRiskParameterSet } from "./risk-parameters"
 import { resolveHeroContractAddress } from "@/app/borrow/_detail/lib/hero-chart-feeds"
@@ -593,13 +594,43 @@ function buildPoolGovernanceParameters(row: BorrowPoolRow): NonNullable<AboutCar
   }
 }
 
+const STOCK_SPOKE_IDS = new Set<string>(["aero-concentrated-stocks", "uni-robinhood-stocks"])
+
+/** The tokenized-equity leg of a stock pool (e.g. NVDAc), with its underlying company name. */
+function stockLegOf(row: BorrowPoolRow): { symbol: string; name: string } | null {
+  for (const visual of row.visuals) {
+    const token = getRegistryToken(visual.symbol)
+    if (token && (token.priceSource === "stock" || token.priceSource === "fixture")) {
+      return { symbol: token.displaySymbol ?? token.symbol, name: token.name }
+    }
+  }
+  return null
+}
+
+/** About copy: a tokenized-equity variant for the stock spokes, else the generic LP-collateral copy. */
+function describePool(row: BorrowPoolRow, spoke: ReturnType<typeof getSpokeById>): string {
+  const venueLabel = getDexById(row.dexes[0]?.id as Parameters<typeof getDexById>[0])?.label ?? row.venue
+  const stock = STOCK_SPOKE_IDS.has(row.spoke) ? stockLegOf(row) : null
+  if (stock) {
+    const stableLeg = row.visuals.map((visual) => visual.symbol).find((symbol) => symbol !== stock.symbol) ?? "USDC"
+    return (
+      `${row.name} is a tokenized-equity LP position posted as collateral inside the ${spoke.label} spoke on Avana. ` +
+      `It pairs ${stableLeg} with tokenized ${stock.name} (${stock.symbol}) exposure, so collateral value tracks the ${stock.name} share price alongside the pool's depth and fee tier. ` +
+      `Avana anchors borrow power to the spoke's max LTV, keeping credit tied to how sharply tokenized-equity collateral can move. ` +
+      `This page is the single source of truth for what the pool is, how much capital it can safely support, and the downside the protocol underwrites.`
+    )
+  }
+  return (
+    `${row.name} on ${venueLabel} is treated as LP collateral inside the ${spoke.label}. ` +
+    `The pool's depth, fee tier, and pair composition determine how much it can support, while the spoke's max LTV keeps the borrow power anchored to the market's actual risk. ` +
+    `That gives this page a single source of truth for how the pool should be understood: what it is, how much capital it can safely support, and what kind of downside the protocol is underwriting.`
+  )
+}
+
 function buildAbout(row: BorrowPoolRow, fixture: FixtureOverride | undefined): AboutCard {
   const spoke = getSpokeById(row.spoke)
   const about = fixture?.about ?? {
-    description:
-      `${row.name} on ${getDexById(row.dexes[0]?.id as Parameters<typeof getDexById>[0])?.label ?? row.venue} is treated as LP collateral inside the ${spoke.label}. ` +
-      `The pool's depth, fee tier, and pair composition determine how much it can support, while the spoke's max LTV keeps the borrow power anchored to the market's actual risk. ` +
-      `That gives this page a single source of truth for how the pool should be understood: what it is, how much capital it can safely support, and what kind of downside the protocol is underwriting.`,
+    description: describePool(row, spoke),
     stats: [],
     history: [
       { date: "2025-01-14", title: "Onboarded", description: `Added to the ${spoke.label}.` },

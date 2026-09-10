@@ -34,8 +34,8 @@ function shortAddress(address: string): string {
 const DETAIL_SALTS = [...ABOUT_CONTRACT_ADDRESS_SALTS]
 
 describe("POOL_CONTRACT_SEED_ROWS parity", () => {
-  it("has 256 rows (64 pools × 4 salts)", () => {
-    expect(POOL_CONTRACT_SEED_ROWS.length).toBe(256)
+  it("has 320 rows (80 pools × 4 salts)", () => {
+    expect(POOL_CONTRACT_SEED_ROWS.length).toBe(320)
   })
 
   it("emits exactly the pool salt set per unique slug", () => {
@@ -45,8 +45,8 @@ describe("POOL_CONTRACT_SEED_ROWS parity", () => {
       salts.push(row.salt)
       bySlug.set(row.slug, salts)
     }
-    // 64 distinct pool slugs, each with the exact 4-salt set.
-    expect(bySlug.size).toBe(64)
+    // 80 distinct pool slugs, each with the exact 4-salt set.
+    expect(bySlug.size).toBe(80)
     for (const [slug, salts] of bySlug.entries()) {
       expect(salts, `slug ${slug} salt set`).toEqual(DETAIL_SALTS)
     }
@@ -54,8 +54,8 @@ describe("POOL_CONTRACT_SEED_ROWS parity", () => {
 })
 
 describe("ASSET_CONTRACT_SEED_ROWS parity", () => {
-  it("has 256 rows (64 assets × 4 salts)", () => {
-    expect(ASSET_CONTRACT_SEED_ROWS.length).toBe(256)
+  it("has 284 rows (71 assets × 4 salts)", () => {
+    expect(ASSET_CONTRACT_SEED_ROWS.length).toBe(284)
   })
 
   it("emits exactly the asset salt set per unique slug", () => {
@@ -65,7 +65,7 @@ describe("ASSET_CONTRACT_SEED_ROWS parity", () => {
       salts.push(row.salt)
       bySlug.set(row.slug, salts)
     }
-    expect(bySlug.size).toBe(64)
+    expect(bySlug.size).toBe(71)
     for (const [slug, salts] of bySlug.entries()) {
       expect(salts, `slug ${slug} salt set`).toEqual(DETAIL_SALTS)
     }
@@ -92,8 +92,8 @@ describe("MULTIPLY_CONTRACT_SEED_ROWS parity", () => {
 })
 
 describe("LEND_CONTRACT_SEED_ROWS parity", () => {
-  it("has 100 rows (25 markets × 4 salts)", () => {
-    expect(LEND_CONTRACT_SEED_ROWS.length).toBe(100)
+  it("has 124 rows (31 markets × 4 salts)", () => {
+    expect(LEND_CONTRACT_SEED_ROWS.length).toBe(124)
   })
 
   it("emits exactly the lend salt set per unique slug", () => {
@@ -103,7 +103,7 @@ describe("LEND_CONTRACT_SEED_ROWS parity", () => {
       salts.push(row.salt)
       bySlug.set(row.slug, salts)
     }
-    expect(bySlug.size).toBe(25)
+    expect(bySlug.size).toBe(31)
     for (const [slug, salts] of bySlug.entries()) {
       expect(salts, `slug ${slug} salt set`).toEqual(DETAIL_SALTS)
     }

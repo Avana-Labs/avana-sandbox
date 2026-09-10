@@ -129,6 +129,13 @@ const V = {
     bgClass: "bg-blue-100",
     textClass: "text-blue-600",
   },
+  USDG: {
+    symbol: "USDG",
+    iconUrl: getLocalAssetIcon("USDG"),
+    shortLabel: "G$",
+    bgClass: "bg-teal-100",
+    textClass: "text-teal-700",
+  },
 }
 
 // -----------------------------------------------------------------------------
@@ -387,6 +394,40 @@ export const SPOKES_SEED_ROWS: SeedSpokeRow[] = [
     textClass: "text-blue-700",
     borrowableTokens: [V.USDC, V.DAI, V.WETH, V.cbBTC],
     isSmartSpoke: true,
+  },
+
+  // -------- Tokenized stocks --------
+  {
+    id: "aero-concentrated-stocks",
+    slug: "aerodrome-concentrated-10",
+    dex: "aerodrome",
+    label: "Aerodrome Concentrated 10",
+    description: "Tokenized-equity concentrated LP positions",
+    maxLtvPct: 55,
+    aprApproxPct: 40,
+    riskPremiumBps: 180,
+    liquidityUsd: 10_000_000,
+    liquidationUsdApprox: 900,
+    bgClass: "bg-blue-50",
+    textClass: "text-blue-700",
+    borrowableTokens: [V.USDC, V.GHO, V.USDT],
+    isSmartSpoke: false,
+  },
+  {
+    id: "uni-robinhood-stocks",
+    slug: "uniswap-robinhood-stocks",
+    dex: "uniswap",
+    label: "Uniswap Robinhood Stocks",
+    description: "Tokenized-equity concentrated LP positions",
+    maxLtvPct: 55,
+    aprApproxPct: 12,
+    riskPremiumBps: 180,
+    liquidityUsd: 30_000_000,
+    liquidationUsdApprox: 1_100,
+    bgClass: "bg-pink-50",
+    textClass: "text-pink-700",
+    borrowableTokens: [V.USDG, V.GHO, V.USDC, V.USDT],
+    isSmartSpoke: false,
   },
 ]
 

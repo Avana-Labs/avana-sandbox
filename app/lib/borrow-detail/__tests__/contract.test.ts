@@ -64,7 +64,7 @@ describe("borrow detail contract", () => {
     expect(curveUsdc?.id).toBe("curve-stable:usdc")
     expect(uniUsdc?.hero.subtitle).not.toBe(curveUsdc?.hero.subtitle)
     expect(uniUsdc?.row.id).not.toBe(curveUsdc?.row.id)
-    expect(listAllAssetDetails().length).toBe(64)
+    expect(listAllAssetDetails().length).toBe(71)
   })
 
   it("resolves URL-encoded spoke asset route params", () => {
