@@ -145,7 +145,12 @@ export function ActionAmountCard({
   // No asset picked yet: the default label is the literal word "Asset". Show a clear
   // "Select Asset" call-to-action (and drop the neutral "?" glyph) instead.
   const isAssetPlaceholder = /^asset$/i.test(assetLabel.trim())
-  const displayAssetLabel = isAssetPlaceholder ? t("Select Asset") : assetLabel
+  // LP collateral is labeled with its pair name ("WETH / USDC"); shorten it to a
+  // uniform "LP" so every collateral selector reads the same as the context pill
+  // (ActionContextSelectorCard / HomeActionContextBar). Single-asset labels — a
+  // ticker like "USDC", or a leveraged collateral like "WSTETH" — are left as-is.
+  const isLpPair = assetLabel.includes("/")
+  const displayAssetLabel = isAssetPlaceholder ? t("Select Asset") : isLpPair ? "LP" : assetLabel
   const useDialogPicker = assetPickerVariant === "dialog" && Boolean(pickerTokens && pickerTokens.length > 1)
   const switchable = Boolean(
     !hideAssetSelector &&
