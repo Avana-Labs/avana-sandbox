@@ -1,3 +1,5 @@
+import { registryIconPath } from "@/app/lib/tokens/registry"
+
 const LOCAL_ASSET_ICON_SLUGS: Record<string, string> = {
   AVA: "ava",
   USDC: "usdc",
@@ -63,6 +65,9 @@ export const LOCAL_ASSET_ICON_FALLBACK = "/asset-icons/placeholder.png"
 
 export function getLocalAssetIcon(key: string) {
   const normalized = key.trim().toUpperCase()
+  // New tokens (stocks, …) declare a full icon path in the token registry — prefer it.
+  const registryIcon = registryIconPath(normalized)
+  if (registryIcon) return registryIcon
   const slug = LOCAL_ASSET_ICON_SLUGS[normalized]
   // Always resolve to a real local file so an unmapped symbol shows a neutral
   // token placeholder instead of triggering a 404 for the missing icon.

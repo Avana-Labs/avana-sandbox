@@ -1,4 +1,5 @@
 import { getLocalAssetIcon, LOCAL_ASSET_ICON_FALLBACK } from "@/app/lib/local-asset-icons"
+import { getRegistryToken, registryDisplaySymbol } from "@/app/lib/tokens/registry"
 
 export type TokenIconMeta = {
   symbol: string
@@ -265,6 +266,9 @@ export function formatTokenDisplaySymbol(symbol: string): string {
   const aliased = DISPLAY_SYMBOL_ALIASES[upper]
   if (aliased) return aliased
 
+  const registryDisplay = registryDisplaySymbol(upper)
+  if (registryDisplay) return registryDisplay
+
   const mapped = TOKEN_MAP[trimmed] ?? TOKEN_MAP[upper]
   if (mapped) return mapped.symbol
 
@@ -284,10 +288,11 @@ export function getTokenIconMeta(symbol: string): TokenIconMeta {
   // a text glyph. getLocalAssetIcon returns the neutral placeholder for a truly
   // unknown symbol — treat that as "no icon" so the colored-letter fallback renders.
   const localIcon = getLocalAssetIcon(symbol)
+  const registryToken = getRegistryToken(symbol)
   return {
     symbol: formatTokenDisplaySymbol(symbol),
     iconUrl: localIcon === LOCAL_ASSET_ICON_FALLBACK ? undefined : localIcon,
-    bgClass: "bg-muted",
-    textClass: "text-foreground",
+    bgClass: registryToken?.bgClass ?? "bg-muted",
+    textClass: registryToken?.textClass ?? "text-foreground",
   }
 }
