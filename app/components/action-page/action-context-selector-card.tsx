@@ -44,6 +44,10 @@ export function ActionContextSelectorCard({
               ) : (
                 <ActionTokenIcon symbol={collateralSymbol} size="pill" />
               )}
+              {/* Label so the chevron hugs text like every other selector pill
+                  (icon + label + chevron). LP pairs read "LP"; a single-asset
+                  collateral shows its ticker. */}
+              <span>{borrowSymbol ? "LP" : collateralSymbol}</span>
               <span className="text-muted-foreground" aria-hidden>
                 ▾
               </span>
