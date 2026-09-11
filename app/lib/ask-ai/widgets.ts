@@ -56,6 +56,19 @@ export type AskAiWidget =
 
 export type AskAiWidgetType = AskAiWidget["type"]
 
+/** Every known widget discriminant. The `satisfies` keeps it in sync with the union. */
+export const ASK_AI_WIDGET_TYPES = [
+  "risk_summary",
+  "borrow_capacity",
+  "collateral_breakdown",
+  "liquidation_boundary",
+  "carry_summary",
+  "fee_vs_interest",
+  "stress_tiles",
+  "comparable_lp",
+  "assumptions",
+] as const satisfies readonly AskAiWidgetType[]
+
 export type AskAiActionKind = "repay" | "add_collateral" | "borrow" | "reduce_leverage" | "review"
 export type AskAiAction = {
   id: string
