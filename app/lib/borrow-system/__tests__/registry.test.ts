@@ -8,9 +8,9 @@ import {
 
 describe("borrow system registry", () => {
   it("builds the canonical spoke-bound borrow catalog counts", () => {
-    expect(listBorrowSpokes()).toHaveLength(15)
-    expect(listBorrowMarkets()).toHaveLength(64)
-    expect(listSpokeBorrowables()).toHaveLength(64)
+    expect(listBorrowSpokes()).toHaveLength(17)
+    expect(listBorrowMarkets()).toHaveLength(80)
+    expect(listSpokeBorrowables()).toHaveLength(71)
   })
 
   it("binds every collateral market and borrowable to exactly one spoke", () => {
@@ -18,8 +18,8 @@ describe("borrow system registry", () => {
     const markets = listBorrowMarkets()
     const borrowables = listSpokeBorrowables()
 
-    expect(new Set(markets.map((market) => market.id)).size).toBe(64)
-    expect(new Set(borrowables.map((borrowable) => borrowable.id)).size).toBe(64)
+    expect(new Set(markets.map((market) => market.id)).size).toBe(80)
+    expect(new Set(borrowables.map((borrowable) => borrowable.id)).size).toBe(71)
 
     for (const market of markets) {
       const owners = spokes.filter((spoke) => spoke.collateralMarketIds.includes(market.id))

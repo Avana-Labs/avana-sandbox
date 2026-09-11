@@ -31,8 +31,8 @@ describe("market categorization", () => {
 
   it("exposes the user's chip labels per product with All first", () => {
     expect(CATEGORY_CHIPS.lend[0]).toEqual({ id: "all", label: "All" })
-    expect(CATEGORY_CHIPS.lend.map((c) => c.label)).toContain("Smart Pools")
-    expect(CATEGORY_CHIPS.borrow.map((c) => c.label)).toContain("Smart Lend")
+    expect(CATEGORY_CHIPS.lend.map((c) => c.label)).toContain("Smart Lend")
+    expect(CATEGORY_CHIPS.borrow.map((c) => c.label)).toContain("Smart Pools")
     expect(CATEGORY_CHIPS.multiply.map((c) => c.label)).toContain("Smart Loops")
   })
 })

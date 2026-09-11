@@ -94,8 +94,14 @@ export function mapBorrowTransactionPreviewToActionUi(
     creditScopeLabel?: string
     liquidationThresholdPct?: number
     maxBorrowUsd?: number
+    /** Live oracle price of the borrow asset. The amount the user types is a TOKEN
+     *  quantity, so the pill/review label and the Max amount are in tokens while the
+     *  engine (and amountUsd) stay in USD. Omitted → falls back to USD-denominated. */
+    priceUsd?: number
   },
 ): ActionPreviewUi {
+  const price = options.priceUsd && options.priceUsd > 0 ? options.priceUsd : null
+  const amountTokens = price ? options.amountUsd / price : options.amountUsd
   const beforeCollateral = fixedToNumber(preview.before.collateralValueUsd6, 6)
   const afterCollateral = fixedToNumber(preview.after.collateralValueUsd6, 6)
   const healthBefore = hfToNumber(preview.before.healthFactorWad)
@@ -121,7 +127,7 @@ export function mapBorrowTransactionPreviewToActionUi(
   return {
     quoteId: preview.intent.id,
     allowed: preview.allowed,
-    amountLabel: formatActionAmount(options.amountUsd, options.symbol, 2),
+    amountLabel: formatActionAmount(amountTokens, options.symbol),
     amountUsd: options.amountUsd,
     amountUsdLabel: formatActionApproxUsd(options.amountUsd),
     rateLabel: options.rateLabel ?? "Borrow APY",
@@ -130,7 +136,8 @@ export function mapBorrowTransactionPreviewToActionUi(
     marketValue: options.marketLabel,
     balanceLabel: options.balanceLabel,
     balanceValue: formatActionUsd(options.balanceUsd),
-    maxAmount: maxBorrowUsd,
+    // Max is the borrow capacity expressed in the same TOKEN unit the user types.
+    maxAmount: price ? maxBorrowUsd / price : maxBorrowUsd,
     metrics: [
       ...creditScopeMetric(options.creditScopeLabel),
       {

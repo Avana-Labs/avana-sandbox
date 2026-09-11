@@ -88,19 +88,19 @@ export type CategoryChip = { id: "all" | MarketCategory; label: string }
 export const CATEGORY_CHIPS: Record<"lend" | "borrow" | "multiply", CategoryChip[]> = {
   lend: [
     { id: "all", label: "All" },
-    { id: "btc", label: "BTC Pools" },
-    { id: "eth", label: "ETH Pools" },
-    { id: "forex", label: "Forex Pools" },
-    { id: "utility", label: "Utility Pools" },
-    { id: "smart", label: "Smart Pools" },
-  ],
-  borrow: [
-    { id: "all", label: "All" },
     { id: "btc", label: "BTC Based" },
     { id: "eth", label: "ETH Based" },
     { id: "forex", label: "Forex Based" },
     { id: "utility", label: "Utility Based" },
     { id: "smart", label: "Smart Lend" },
+  ],
+  borrow: [
+    { id: "all", label: "All" },
+    { id: "btc", label: "BTC Pools" },
+    { id: "eth", label: "ETH Pools" },
+    { id: "forex", label: "Forex Pools" },
+    { id: "utility", label: "Utility Pools" },
+    { id: "smart", label: "Smart Pools" },
   ],
   multiply: [
     { id: "all", label: "All" },

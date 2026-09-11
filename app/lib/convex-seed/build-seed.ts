@@ -1277,7 +1277,10 @@ export function buildBorrowSeed(options: BuildSeedOptions = {}): SeedData {
     markets,
     borrowMarkets: markets
       .filter((m): m is SeedMarketRow & { scope: "pool" | "asset" } => m.scope === "pool" || m.scope === "asset")
-      .map(({ scope, ...rest }) => ({ ...rest, kind: scope })),
+      // Drop `constituents`: pool rows carry it for the live LP-price recompute on the `markets`
+      // table, but the borrowMarkets identity table (and its upsert validator) don't accept it —
+      // an extra field there fails the seed insert.
+      .map(({ scope, constituents: _constituents, ...rest }) => ({ ...rest, kind: scope })),
     lendMarkets: markets.filter((m) => m.scope === "lend").map(({ scope: _scope, ...rest }) => rest),
     multiplyMarkets: markets.filter((m) => m.scope === "multiply").map(({ scope: _scope, ...rest }) => rest),
     dailyStats,

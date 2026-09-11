@@ -3,6 +3,13 @@
 import type { TranslationDictionary } from "../types"
 
 const dict: TranslationDictionary = {
+  "Coinbase & Robinhood Stocks": "Saham Coinbase & Robinhood",
+  "Tokenized equities — deposit stock tokens to earn lending yield":
+    "Saham tertokenisasi — setor token saham untuk memperoleh imbal hasil pinjaman",
+  "Tokenized-equity concentrated LP positions": "Posisi LP terkonsentrasi dari saham tertokenisasi",
+  "Paxos USD stablecoin": "Stablecoin USD Paxos",
+  "{name} is a tokenized-equity LP position posted as collateral inside the {spoke} spoke on Avana. It pairs {stableLeg} with tokenized {stockName} ({stockSymbol}) exposure, so collateral value tracks the {stockName} share price alongside the pool's depth and fee tier. Avana anchors borrow power to the spoke's max LTV, keeping credit tied to how sharply tokenized-equity collateral can move. This page is the single source of truth for what the pool is, how much capital it can safely support, and the downside the protocol underwrites.":
+    "{name} adalah posisi LP saham tertokenisasi yang disetor sebagai jaminan di spoke {spoke} pada Avana. Posisi ini memasangkan {stableLeg} dengan eksposur {stockName} ({stockSymbol}) tertokenisasi, sehingga nilai jaminan mengikuti harga saham {stockName} bersama kedalaman dan tingkat biaya pool. Avana menambatkan daya pinjam ke LTV maksimum spoke, mengaitkan kredit dengan seberapa tajam jaminan saham tertokenisasi dapat bergerak. Halaman ini adalah sumber kebenaran tunggal tentang apa itu pool, berapa banyak modal yang dapat didukungnya dengan aman, dan risiko penurunan yang ditanggung protokol.",
   "Enter an amount": "Masukkan jumlah",
   "Stake more": "Stake lagi",
   Markets: "Pasar",

@@ -4,7 +4,6 @@ import { useMemo } from "react"
 import { CarouselArrowButtons, useOverflowCarousel } from "@/app/components/carousel-arrow-buttons"
 import { HowItWorks } from "@/app/components/how-it-works"
 import type { BorrowPageData } from "@/app/lib/data/providers/borrow"
-import { useCurrency } from "@/app/lib/currency/use-currency"
 import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { formatBorrowPairLabel, formatLtvPct } from "@/app/lib/borrow-sim"
 import { formatApy } from "@/app/lib/format"
@@ -17,31 +16,28 @@ type ExplorePool = BorrowPageData["poolCatalog"][number]
 
 const averageApr = (pool: ExplorePool) => (pool.aprMin + pool.aprMax) / 2
 
-function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => string) {
+function buildHeroCards(pageData: BorrowPageData) {
   // Draw each card's two markets from the FULL pool catalog (re-sorted per ranking)
   // rather than the pre-sliced 3-item explore lists. Extra cards are filled from
   // leftover pools so the desktop carousel has enough unique markets to scroll.
   const catalog = pageData.poolCatalog
-  const byAvailable = [...catalog].sort((a, b) => b.availableUsd - a.availableUsd)
   const byTvl = [...catalog].sort((a, b) => b.tvlUsd - a.tvlUsd)
-  const byApr = [...catalog].sort((a, b) => averageApr(b) - averageApr(a))
 
   const used = new Set<string>()
-  const pick = (ranked: ReadonlyArray<ExplorePool>, count: number) => {
-    const chosen: ExplorePool[] = []
-    const take = (list: ReadonlyArray<ExplorePool>) => {
-      for (const pool of list) {
-        if (chosen.length === count) break
-        if (used.has(pool.name)) continue
-        used.add(pool.name)
-        chosen.push(pool)
-      }
+  const take = (pool: ExplorePool | null | undefined): ExplorePool | null => {
+    if (!pool || used.has(pool.name)) return null
+    used.add(pool.name)
+    return pool
+  }
+  const norm = (s: string) => s.toUpperCase()
+  // Resolve a curated pick by its two token symbols, preferring the named venue but
+  // falling back to any spoke so it still resolves if the pool lives on a different one.
+  const findPool = (spoke: string, a: string, b: string): ExplorePool | null => {
+    const matches = (p: ExplorePool) => {
+      const syms = p.visuals.map((v) => norm(v.symbol))
+      return syms.includes(norm(a)) && syms.includes(norm(b))
     }
-    take(ranked)
-    // Fallback so every card fills to `count` even if this ranking's leaders were
-    // already claimed by an earlier card.
-    if (chosen.length < count) take(byTvl)
-    return chosen
+    return catalog.find((p) => p.spoke === spoke && matches(p)) ?? catalog.find(matches) ?? null
   }
 
   const toRows = (pools: ReadonlyArray<ExplorePool>, prefix: string) =>
@@ -50,10 +46,9 @@ function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => stri
       href: borrowMarketDetailPath(pool.id),
       pool,
       title: formatBorrowPairLabel(pool),
-      // Lead the subtitle with the DEX/tier (venue) so two pools that share a pair
-      // label (e.g. WBTC/USDC on Uniswap v2 vs v3 Blue-Chip) are distinguishable —
-      // the same context the global search palette shows.
-      subtitle: `${pool.venue} · ${compact(pool.tvlUsd)} TVL`,
+      // Venue (DEX/tier) as a subtitle so two cards sharing a pair — e.g. WBTC/USDC on
+      // Uniswap vs Balancer — stay distinguishable, without lengthening the name itself.
+      venue: pool.venue,
       // LTV is the headline (more important than availability); the line below is the
       // pool's own trading-fee APR — label it "Fees", not "APY" (it isn't our yield).
       value: `${formatLtvPct(pool.ltv)} LTV`,
@@ -61,15 +56,42 @@ function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => stri
       deltaClassName: "text-apy-positive",
     }))
 
-  const cards = [
-    { id: "trending", rows: toRows(pick(byAvailable, 2), "trending") },
-    { id: "top", rows: toRows(pick(byTvl, 2), "top") },
-    { id: "apy", rows: toRows(pick(byApr, 2), "apy") },
+  // Hand-curated Explore carousel: these exact markets, in this order, two per card.
+  // Each entry is [preferred venue spoke, tokenA, tokenB]; findPool falls back to any
+  // spoke. Card 5 auto-fills from the highest-TVL pools not already featured.
+  const CURATED_CARDS: ReadonlyArray<ReadonlyArray<readonly [string, string, string]>> = [
+    [
+      ["bal-stable", "GHO", "USDC"],
+      ["uni-v3-bluechip", "WBTC", "USDC"],
+    ],
+    [
+      ["aero-concentrated-stocks", "USDC", "GOOGLc"],
+      ["uni-v3-bluechip", "WETH", "USDC"],
+    ],
+    [
+      ["uni-robinhood-stocks", "TSLA", "USDG"],
+      ["aero-concentrated-stocks", "USDC", "AAPLc"],
+    ],
+    [
+      ["uni-v3-bluechip", "cbBTC", "WETH"],
+      ["uni-v3-stable", "crvUSD", "USDC"],
+    ],
   ]
 
+  const cards = CURATED_CARDS.map((pairs, ci) => {
+    const rows = pairs.map(([spoke, a, b]) => take(findPool(spoke, a, b))).filter((p): p is ExplorePool => p !== null)
+    return { id: `curated-${ci}`, rows: toRows(rows, `curated-${ci}`) }
+  }).filter((card) => card.rows.length > 0)
+
+  // Cap the carousel at 5 cards; fill any remaining with top-TVL leftovers.
   let extra = 0
-  while (cards.length < 8) {
-    const next = pick(byTvl, 2)
+  while (cards.length < 5) {
+    const next: ExplorePool[] = []
+    for (const pool of byTvl) {
+      if (next.length === 2) break
+      const chosen = take(pool)
+      if (chosen) next.push(chosen)
+    }
     if (next.length < 2) break
     cards.push({ id: `more-${extra}`, rows: toRows(next, `more-${extra}`) })
     extra += 1
@@ -79,11 +101,10 @@ function buildHeroCards(pageData: BorrowPageData, compact: (usd: number) => stri
 }
 
 export function BorrowPageHero({ pageData }: { pageData: BorrowPageData }) {
-  const { compact } = useCurrency()
   // Memoize so the hero cards keep a stable identity across re-renders; rebuilding
   // them every render churned the scroller's children and reflowed it (a flicker)
   // whenever live data swapped in or any parent re-rendered.
-  const heroCards = useMemo(() => buildHeroCards(pageData, compact), [pageData, compact])
+  const heroCards = useMemo(() => buildHeroCards(pageData), [pageData])
   const { scrollerRef, canPrev, canNext, scrollByCard } = useOverflowCarousel()
 
   return (

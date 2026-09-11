@@ -97,14 +97,14 @@ export function DetailPageNotice({
   product?: DetailPageNoticeProduct
 }) {
   return (
-    <section
-      role="note"
-      className={cn(
-        "mt-12 rounded-radius-md border border-border bg-surface-raised/60 px-4 py-4 text-sm leading-6 text-muted-foreground md:px-5 md:py-5",
-        className,
-      )}
-    >
-      {DETAIL_PAGE_NOTICES[product]}
+    <section role="note" aria-labelledby="risk-disclosures-heading" className={cn("mt-12", className)}>
+      <h2
+        id="risk-disclosures-heading"
+        className="text-[18px] font-medium tracking-[-0.02em] text-foreground md:text-[20px]"
+      >
+        Risk Disclosures
+      </h2>
+      <p className="mt-3 text-sm leading-6 text-muted-foreground">{DETAIL_PAGE_NOTICES[product]}</p>
     </section>
   )
 }

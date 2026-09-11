@@ -2082,6 +2082,34 @@ export default defineSchema({
     .index("by_status_created", ["status", "createdAt"])
     .index("by_owner_created", ["ownerSubject", "createdAt"]),
 
+  /**
+   * Phase 2 mode-run record: one row per deterministic Ask AI mode-run.
+   *
+   * Unlike askAIMessageParts.parts (v.any() scattered across assistant messages), a run
+   * is a dedicated, typed unit — mode + the single snapshot it was computed on + the
+   * typed widgets and actions. Top-level fields are validated here; `widgets`/`actions`
+   * are the TS-typed AskAiWidget[]/AskAiAction[] produced by the engine builders and
+   * stored structurally (the write path type-checks them, and convex/askAiRuns.ts also
+   * guards the widget discriminant at write time). Nothing writes here yet.
+   */
+  askAiRuns: defineTable({
+    ownerSubject: v.string(),
+    threadId: v.optional(v.string()),
+    messageId: v.optional(v.string()),
+    mode: v.union(v.literal("risk"), v.literal("returns"), v.literal("stress")),
+    queryText: v.string(),
+    snapshotId: v.string(),
+    asOf: v.number(),
+    narrative: v.string(),
+    widgets: v.array(v.any()),
+    actions: v.array(v.any()),
+    provenance: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_owner_created", ["ownerSubject", "createdAt"])
+    .index("by_thread", ["threadId"])
+    .index("by_snapshot", ["snapshotId"]),
+
   /** Normalized cache populated only by external market-provider ingestion. */
   askAIMarketSnapshots: defineTable({
     // Only coingecko/defillama/aave are writable by current ingestion. These legacy

@@ -7,9 +7,9 @@ const registryById = new Map(registryRows.map((row) => [row.id, row]))
 const seedById = new Map(BORROW_ASSETS_SEED_ROWS.map((row) => [row.id, row]))
 
 describe("borrow assets seed parity", () => {
-  it("has one seed row per spoke-borrowable in the registry (64 rows)", () => {
+  it("has one seed row per spoke-borrowable in the registry (71 rows)", () => {
     expect(BORROW_ASSETS_SEED_ROWS.length).toBe(registryRows.length)
-    expect(BORROW_ASSETS_SEED_ROWS.length).toBe(64)
+    expect(BORROW_ASSETS_SEED_ROWS.length).toBe(71)
     // No duplicate ids on either side.
     expect(seedById.size).toBe(BORROW_ASSETS_SEED_ROWS.length)
     expect(registryById.size).toBe(registryRows.length)

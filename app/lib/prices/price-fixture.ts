@@ -1,3 +1,5 @@
+import { registryBaselinePrices } from "@/app/lib/tokens/registry"
+
 /**
  * Deterministic token USD price fixture — the SINGLE seed/fallback for the canonical price store
  * (see canonical.ts). It exists so tests, local dev, SSR, and offline renders have stable,
@@ -10,6 +12,9 @@
  * symbols. Do NOT add live-moving values here — real prices come from the oracle.
  */
 export const PRICE_FIXTURE: Record<string, number> = {
+  // New tokens (tokenized stocks, …) are declared once in the token registry and spread in here;
+  // any hand-set fixture below wins on a key collision.
+  ...registryBaselinePrices(),
   // Stablecoins
   USDC: 1,
   USDT: 1,

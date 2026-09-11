@@ -79,6 +79,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
   )
   const approvalRequired = validation.valid && swap.requiresApproval(inputAsset.id, validation.amount)
   const getQuote = swap.getQuote
+  const getIndicativeQuote = swap.getIndicativeQuote
 
   useEffect(() => {
     if (!validation.valid) {
@@ -88,18 +89,27 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
     }
 
     let cancelled = false
+    const request = {
+      chainId: SWAP_CHAIN_ID,
+      inputAssetId,
+      outputAssetId,
+      inputAmount: validation.amount,
+      slippageBps,
+    }
+    setQuote(null)
     setQuoteState("loading")
+
+    // Keep the Buy amount responsive while the authoritative Convex quote is in flight.
+    // Review remains disabled until the server quote replaces this indicative estimate.
+    void getIndicativeQuote(request).then((indicativeQuote) => {
+      if (!cancelled && indicativeQuote.status === "valid") setQuote(indicativeQuote)
+    })
+
     const timeout = window.setTimeout(() => {
-      void getQuote({
-        chainId: SWAP_CHAIN_ID,
-        inputAssetId,
-        outputAssetId,
-        inputAmount: validation.amount,
-        slippageBps,
-      })
+      void getQuote(request)
         .then((nextQuote) => {
           if (cancelled) return
-          setQuote(nextQuote.status === "valid" ? nextQuote : null)
+          if (nextQuote.status === "valid") setQuote(nextQuote)
           setQuoteState(nextQuote.status === "valid" ? "valid" : "error")
         })
         .catch(() => {
@@ -111,7 +121,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
       cancelled = true
       window.clearTimeout(timeout)
     }
-  }, [getQuote, inputAssetId, outputAssetId, quoteRetry, slippageBps, validation])
+  }, [getIndicativeQuote, getQuote, inputAssetId, outputAssetId, quoteRetry, slippageBps, validation])
 
   useEffect(() => {
     setOutcome(null)
@@ -476,11 +486,13 @@ function SwapAssetField({
           type="button"
           onClick={onOpenAssetPicker}
           aria-label={`${label} asset`}
-          className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-medium text-foreground hover:bg-surface-hover max-[360px]:self-end"
+          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-medium text-foreground hover:bg-surface-hover max-[360px]:self-end"
         >
-          <SwapAssetIcon asset={asset} className="size-8" />
-          <span>{asset.symbol}</span>
-          <span aria-hidden className="text-muted-foreground">
+          <span className="inline-flex min-w-0 items-center gap-2">
+            <SwapAssetIcon asset={asset} size="pill" />
+            <span className="truncate">{asset.symbol}</span>
+          </span>
+          <span aria-hidden className="shrink-0 text-muted-foreground">
             ▾
           </span>
         </button>

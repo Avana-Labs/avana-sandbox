@@ -16,6 +16,8 @@ import type * as askAIIngestion from "../askAIIngestion.js";
 import type * as askAIRag from "../askAIRag.js";
 import type * as askAITelemetry from "../askAITelemetry.js";
 import type * as askAITools from "../askAITools.js";
+import type * as askAiModeRun from "../askAiModeRun.js";
+import type * as askAiRuns from "../askAiRuns.js";
 import type * as borrow_assets from "../borrow/assets.js";
 import type * as borrow_cashflow from "../borrow/cashflow.js";
 import type * as borrow_content from "../borrow/content.js";
@@ -99,6 +101,8 @@ declare const fullApi: ApiFromModules<{
   askAIRag: typeof askAIRag;
   askAITelemetry: typeof askAITelemetry;
   askAITools: typeof askAITools;
+  askAiModeRun: typeof askAiModeRun;
+  askAiRuns: typeof askAiRuns;
   "borrow/assets": typeof borrow_assets;
   "borrow/cashflow": typeof borrow_cashflow;
   "borrow/content": typeof borrow_content;

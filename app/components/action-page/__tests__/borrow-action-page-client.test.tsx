@@ -39,8 +39,8 @@ describe("BorrowActionPageClient", () => {
       </AvanaSessionsProvider>,
     )
 
-    expect(await screen.findByText("Percent of position")).toBeInTheDocument()
-    expect(screen.getByLabelText("Percent of position amount")).toHaveValue("25")
+    expect(await screen.findByText("Percentage to remove")).toBeInTheDocument()
+    expect(screen.getByLabelText("Percentage to remove amount")).toHaveValue("25")
     expect(screen.getByText("%")).toBeInTheDocument()
   })
 

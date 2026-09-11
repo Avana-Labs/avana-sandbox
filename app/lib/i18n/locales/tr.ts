@@ -3,6 +3,13 @@
 import type { TranslationDictionary } from "../types"
 
 const dict: TranslationDictionary = {
+  "Coinbase & Robinhood Stocks": "Coinbase & Robinhood Hisseleri",
+  "Tokenized equities — deposit stock tokens to earn lending yield":
+    "Tokenlaştırılmış hisse senetleri — borç verme getirisi kazanmak için hisse tokenları yatırın",
+  "Tokenized-equity concentrated LP positions": "Tokenlaştırılmış hisse senetlerinden yoğunlaştırılmış LP pozisyonları",
+  "Paxos USD stablecoin": "Paxos USD stablecoin",
+  "{name} is a tokenized-equity LP position posted as collateral inside the {spoke} spoke on Avana. It pairs {stableLeg} with tokenized {stockName} ({stockSymbol}) exposure, so collateral value tracks the {stockName} share price alongside the pool's depth and fee tier. Avana anchors borrow power to the spoke's max LTV, keeping credit tied to how sharply tokenized-equity collateral can move. This page is the single source of truth for what the pool is, how much capital it can safely support, and the downside the protocol underwrites.":
+    "{name}, Avana'daki {spoke} spoke'una teminat olarak yatırılan tokenlaştırılmış hisse senedi LP pozisyonudur. {stableLeg} ile tokenlaştırılmış {stockName} ({stockSymbol}) pozisyonunu eşleştirir; böylece teminat değeri, havuzun derinliği ve ücret kademesiyle birlikte {stockName} hisse fiyatını takip eder. Avana, borçlanma gücünü spoke'un maksimum LTV'sine sabitleyerek krediyi tokenlaştırılmış hisse teminatının ne kadar sert hareket edebileceğine bağlar. Bu sayfa; havuzun ne olduğu, güvenle destekleyebileceği sermaye miktarı ve protokolün üstlendiği düşüş riski hakkında tek doğruluk kaynağıdır.",
   "Enter an amount": "Tutar girin",
   "Stake more": "Daha stake",
   Markets: "Piyasalar",

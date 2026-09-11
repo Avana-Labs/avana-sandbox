@@ -515,10 +515,15 @@ export function BorrowActionPageClient({
 
     if (kind === "borrow") {
       const resolvedAssetId = resolvedBorrowAssetId
-      if (!resolvedAssetId || !session.state.assets[resolvedAssetId] || safeAmount <= 0) {
+      const borrowAsset = resolvedAssetId ? session.state.assets[resolvedAssetId] : undefined
+      const priceUsd = borrowAsset ? usd6ToNumber(borrowAsset.snapshot.priceUsd6) : 0
+      if (!resolvedAssetId || !borrowAsset || priceUsd <= 0 || safeAmount <= 0) {
         setPreviewUi(null)
         return undefined
       }
+      // The typed amount is a TOKEN quantity; the credit engine denominates debt in
+      // USD, so price it with the live oracle before previewing/executing.
+      const usdValue = safeAmount * priceUsd
       void session
         .previewTransaction(
           session.createIntent({
@@ -526,7 +531,7 @@ export function BorrowActionPageClient({
             walletId,
             marketId: activeMarketId,
             assetId: resolvedAssetId,
-            amountUsd6: parseFixed(safeAmount.toFixed(6), 6),
+            amountUsd6: parseFixed(usdValue.toFixed(6), 6),
           }),
         )
         .then((preview) => {
@@ -544,7 +549,8 @@ export function BorrowActionPageClient({
           setPreviewUi(
             mapBorrowTransactionPreviewToActionUi(preview, {
               symbol: token?.symbol ?? "Asset",
-              amountUsd: safeAmount,
+              amountUsd: usdValue,
+              priceUsd,
               marketLabel,
               ratePct: token?.borrowApr ?? 0,
               balanceLabel: "Available to borrow",
@@ -872,12 +878,15 @@ export function BorrowActionPageClient({
 
       if (kind === "borrow") {
         if (!resolvedBorrowAssetId) throw new Error("Select a borrow asset")
+        const borrowPriceUsd = usd6ToNumber(session.state.assets[resolvedBorrowAssetId]?.snapshot.priceUsd6 ?? 0n)
+        if (borrowPriceUsd <= 0) throw new Error("Missing borrow-asset price")
+        // Typed amount is a token quantity; the engine borrows a USD value.
         intent = session.createIntent({
           type: "borrow",
           walletId,
           marketId: activeMarketId,
           assetId: resolvedBorrowAssetId,
-          amountUsd6: parseFixed(safeAmount.toFixed(6), 6),
+          amountUsd6: parseFixed((safeAmount * borrowPriceUsd).toFixed(6), 6),
         })
       } else if (kind === "supply") {
         intent = session.createIntent({
@@ -924,9 +933,11 @@ export function BorrowActionPageClient({
           .find((entry) => entry.id === resolvedBorrowAssetId)
         const borrowMarket = session.state.markets[activeMarketId]
         const maxBorrowUsd = usd6ToNumber(preview.before.availableBorrowCapacityUsd6)
+        const priceUsd = usd6ToNumber(session.state.assets[resolvedBorrowAssetId ?? ""]?.snapshot.priceUsd6 ?? 0n)
         executionPreviewUi = mapBorrowTransactionPreviewToActionUi(preview, {
           symbol: token?.symbol ?? "Asset",
-          amountUsd: safeAmount,
+          amountUsd: priceUsd > 0 ? safeAmount * priceUsd : safeAmount,
+          priceUsd,
           marketLabel,
           ratePct: token?.borrowApr ?? 0,
           balanceLabel: "Available to borrow",
@@ -1050,7 +1061,10 @@ export function BorrowActionPageClient({
   const showActionMax = kind === "borrow" || kind === "repay"
   const handleActionMax = useCallback(() => {
     if (previewUi?.maxAmount == null || previewUi.maxAmount <= 0) return
-    setAmount(String(Number(previewUi.maxAmount.toFixed(kind === "repay" ? 6 : 2))))
+    // Borrow's max is now a TOKEN quantity (capacity ÷ price); floor to 6 dp so it
+    // never rounds above the available capacity. Repay stays an exact 6-dp fill.
+    const next = kind === "repay" ? Number(previewUi.maxAmount.toFixed(6)) : Math.floor(previewUi.maxAmount * 1e6) / 1e6
+    setAmount(String(next))
   }, [kind, previewUi?.maxAmount])
 
   if (shouldShowActionSessionLoading(session.isHydrated)) {
@@ -1114,7 +1128,7 @@ export function BorrowActionPageClient({
         verb={descriptor.primaryVerb}
         amount={kind === "remove" ? percent : amount}
         onAmountChange={kind === "remove" ? setPercent : setAmount}
-        inputLabel={kind === "remove" ? "Percent of position" : undefined}
+        inputLabel={kind === "remove" ? "Percentage to remove" : undefined}
         preview={previewUi}
         assetSymbol={assetSymbol}
         borrowSymbol={undefined}
@@ -1301,7 +1315,7 @@ export function BorrowActionPageClient({
           verb={descriptor.primaryVerb}
           amount={kind === "remove" ? percent : amount}
           onAmountChange={kind === "remove" ? setPercent : setAmount}
-          inputLabel={kind === "remove" ? "Percent of position" : undefined}
+          inputLabel={kind === "remove" ? "Percentage to remove" : undefined}
           preview={previewUi}
           // Pass the base COLLATERAL symbol (visuals[0]) for the ICON — not the pool display
           // name ("WETH / USDC"), which made the left bubble render pair-initials ("WU") instead

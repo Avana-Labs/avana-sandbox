@@ -1,16 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import {
-  ArrowShrink,
-  ArrowUpRightStack,
-  CircleArrowOutDownRight,
-  CircleArrowOutUpLeft,
-  EnteringGeoFence,
-  LeavingGeoFence,
-} from "@/app/components/icons"
+import { ArrowUpRightStack, CircleArrowOutDownRight, EnteringGeoFence, Repeat2 } from "@/app/components/icons"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { Button } from "@/components/ui/button"
 
 const RETURN_HREF = "/dashboard"
 
@@ -20,43 +14,23 @@ function withReturn(href: string) {
 
 export type DashboardQuickActionsTab = "wallet" | "lend" | "borrow" | "multiply" | "rewards"
 
-/**
- * Compact icon quick-action rail used across the dashboard hero — a bare row
- * of six circular icon buttons. The heading is intentionally omitted; the
- * buttons themselves communicate the affordance in every position they're
- * slotted (desktop stat-cards header, mobile rewards summary).
- */
-export function DashboardQuickActions({ activeTab }: { activeTab?: DashboardQuickActionsTab }) {
+/** Primary dashboard entry actions. Position-management actions such as Repay,
+ * Withdraw, and Deleverage stay contextual to their position rows. */
+export function DashboardQuickActions(_: { activeTab?: DashboardQuickActionsTab }) {
   const { t } = useTranslation()
-  const depositLabel = activeTab === "borrow" ? t("Pledge") : t("Deposit")
-  const withdrawLabel = activeTab === "borrow" ? t("Remove") : t("Withdraw")
-  const depositHref = activeTab === "borrow" ? actionPagePath("borrow", "supply") : actionPagePath("lend", "deposit")
-  const withdrawHref = activeTab === "borrow" ? actionPagePath("borrow", "remove") : actionPagePath("lend", "withdraw")
 
   const actions = [
+    {
+      id: "deposit",
+      label: t("Deposit"),
+      icon: EnteringGeoFence,
+      href: withReturn(actionPagePath("lend", "deposit")),
+    },
     {
       id: "borrow",
       label: t("Borrow"),
       icon: CircleArrowOutDownRight,
       href: withReturn(actionPagePath("borrow", "borrow")),
-    },
-    {
-      id: "repay",
-      label: t("Repay"),
-      icon: CircleArrowOutUpLeft,
-      href: withReturn(actionPagePath("borrow", "repay")),
-    },
-    {
-      id: "deposit",
-      label: depositLabel,
-      icon: EnteringGeoFence,
-      href: withReturn(depositHref),
-    },
-    {
-      id: "withdraw",
-      label: withdrawLabel,
-      icon: LeavingGeoFence,
-      href: withReturn(withdrawHref),
     },
     {
       id: "multiply",
@@ -65,27 +39,30 @@ export function DashboardQuickActions({ activeTab }: { activeTab?: DashboardQuic
       href: withReturn(actionPagePath("multiply", "multiply")),
     },
     {
-      id: "deleverage",
-      label: t("Deleverage"),
-      icon: ArrowShrink,
-      href: withReturn(actionPagePath("multiply", "deleverage")),
+      id: "swap",
+      label: t("Swap"),
+      icon: Repeat2,
+      href: withReturn("/swap"),
     },
   ]
 
   return (
-    <div aria-label={t("Quick actions")} role="group" className="flex flex-wrap gap-2">
+    <div aria-label={t("Quick actions")} role="group" className="grid w-full grid-cols-2 gap-2 lg:flex lg:w-auto">
       {actions.map((action) => {
         const Icon = action.icon
         return (
-          <Link
+          <Button
             key={action.id}
-            href={action.href}
-            aria-label={action.label}
-            title={action.label}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-field-bottom text-foreground shadow-sm transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 active:scale-[0.98] dark:bg-field-bottom dark:text-white dark:hover:bg-hover"
+            asChild
+            variant="outline"
+            size="sm"
+            className="w-full gap-2 !rounded-full [&_svg]:size-4 lg:w-auto"
           >
-            <Icon className="size-4 shrink-0" aria-hidden />
-          </Link>
+            <Link href={action.href} aria-label={action.label}>
+              <Icon aria-hidden />
+              <span>{action.label}</span>
+            </Link>
+          </Button>
         )
       })}
     </div>

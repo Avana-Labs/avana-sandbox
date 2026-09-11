@@ -6,38 +6,42 @@ import {
   POOL_TVL_TARGET_USD,
 } from "@/app/lib/convex-seed/build-seed"
 import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
+import { listSpokeBorrowables } from "@/app/lib/borrow-system/registry"
 import { LEND_MARKET_CATALOG } from "@/app/lib/lend-system/catalog"
 import { MULTIPLY_MARKET_CATALOG } from "@/app/lib/multiply-system/catalog"
 
 const ASOF = Date.UTC(2026, 5, 19) // fixed for reproducibility
+// Derived from the catalogs so adding spokes/pools/assets doesn't require touching these pins.
+const POOL_COUNT = BORROW_POOL_CATALOG.length // collateral pools
+const ASSET_COUNT = listSpokeBorrowables().length // spoke-borrowable assets
 const LEND_COUNT = LEND_MARKET_CATALOG.length
 const MULTIPLY_COUNT = MULTIPLY_MARKET_CATALOG.length
-const TOTAL_MARKETS = 128 + LEND_COUNT + MULTIPLY_COUNT // 64 pools + 64 assets + lend + multiply markets
+const TOTAL_MARKETS = POOL_COUNT + ASSET_COUNT + LEND_COUNT + MULTIPLY_COUNT // pools + assets + lend + multiply
 
 describe("buildBorrowSeed", () => {
   it("seeds product-siloed borrow/lend/multiply detail param tables", () => {
     const seed = buildBorrowSeed({ days: 1, asOf: ASOF })
-    expect(seed.borrowRiskParameters.length).toBe(64 + 64) // pools + assets
-    expect(seed.borrowInterestRateModels.length).toBe(64) // assets only
-    expect(seed.borrowLiquidationDaily.length).toBe(64 * 2) // 2 days per pool
+    expect(seed.borrowRiskParameters.length).toBe(POOL_COUNT + ASSET_COUNT) // pools + assets
+    expect(seed.borrowInterestRateModels.length).toBe(ASSET_COUNT) // assets only
+    expect(seed.borrowLiquidationDaily.length).toBe(POOL_COUNT * 2) // 2 days per pool
     expect(seed.borrowPoolBorrowables.length).toBeGreaterThan(0)
     expect(seed.lendRiskParameters.length).toBe(LEND_COUNT)
     expect(seed.lendInterestRateModels.length).toBe(LEND_COUNT)
     expect(seed.multiplyRiskParameters.length).toBe(MULTIPLY_COUNT)
     expect(seed.multiplyLiquidationDaily.length).toBe(MULTIPLY_COUNT * 2)
-    expect(seed.borrowMarketContent.length).toBe(64 + 64)
+    expect(seed.borrowMarketContent.length).toBe(POOL_COUNT + ASSET_COUNT)
     expect(seed.lendMarketContent.length).toBe(LEND_COUNT)
     expect(seed.multiplyMarketContent.length).toBe(MULTIPLY_COUNT)
-    expect(seed.borrowRiskAssessments.length).toBe(64 + 64)
+    expect(seed.borrowRiskAssessments.length).toBe(POOL_COUNT + ASSET_COUNT)
     expect(seed.lendRiskAssessments.length).toBe(LEND_COUNT)
     expect(seed.multiplyRiskAssessments.length).toBe(MULTIPLY_COUNT)
-    expect(seed.borrowRevenueDaily.length).toBe(128) // 64 pools + 64 assets, days=1
+    expect(seed.borrowRevenueDaily.length).toBe(POOL_COUNT + ASSET_COUNT) // pools + assets, days=1
     expect(seed.lendRevenueDaily.length).toBe(LEND_COUNT)
     expect(seed.multiplyRevenueDaily.length).toBe(MULTIPLY_COUNT)
-    expect(seed.borrowDailyStats.length).toBe(128)
+    expect(seed.borrowDailyStats.length).toBe(POOL_COUNT + ASSET_COUNT)
     expect(seed.lendDailyStats.length).toBe(LEND_COUNT)
     expect(seed.multiplyDailyStats.length).toBe(MULTIPLY_COUNT)
-    expect(seed.borrowMarkets.length).toBe(128)
+    expect(seed.borrowMarkets.length).toBe(POOL_COUNT + ASSET_COUNT)
     expect(seed.lendMarkets.length).toBe(LEND_COUNT)
     expect(seed.multiplyMarkets.length).toBe(MULTIPLY_COUNT)
     expect(seed.borrowMarkets.every((m) => typeof m.reserveFactorPct === "number")).toBe(true)

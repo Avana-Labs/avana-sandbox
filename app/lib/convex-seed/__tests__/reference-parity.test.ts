@@ -14,8 +14,8 @@ import { DEXES_SEED_ROWS, SPOKES_SEED_ROWS } from "../inputs/reference-seed"
  */
 
 describe("spokes seed matches BORROW_SPOKES", () => {
-  it("has the same row count (15)", () => {
-    expect(SPOKES_SEED_ROWS.length).toBe(15)
+  it("has the same row count (17)", () => {
+    expect(SPOKES_SEED_ROWS.length).toBe(17)
     expect(SPOKES_SEED_ROWS.length).toBe(BORROW_SPOKES.length)
   })
 

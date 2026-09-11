@@ -3,6 +3,13 @@
 import type { TranslationDictionary } from "../types"
 
 const dict: TranslationDictionary = {
+  "Coinbase & Robinhood Stocks": "Coinbase और Robinhood स्टॉक्स",
+  "Tokenized equities — deposit stock tokens to earn lending yield":
+    "टोकनयुक्त इक्विटी — उधार प्रतिफल कमाने के लिए स्टॉक टोकन जमा करें",
+  "Tokenized-equity concentrated LP positions": "टोकनयुक्त इक्विटी की संकेंद्रित LP पोज़िशन",
+  "Paxos USD stablecoin": "Paxos USD स्टेबलकॉइन",
+  "{name} is a tokenized-equity LP position posted as collateral inside the {spoke} spoke on Avana. It pairs {stableLeg} with tokenized {stockName} ({stockSymbol}) exposure, so collateral value tracks the {stockName} share price alongside the pool's depth and fee tier. Avana anchors borrow power to the spoke's max LTV, keeping credit tied to how sharply tokenized-equity collateral can move. This page is the single source of truth for what the pool is, how much capital it can safely support, and the downside the protocol underwrites.":
+    "{name} एक टोकनयुक्त-इक्विटी LP पोज़िशन है जिसे Avana पर {spoke} स्पोक के भीतर संपार्श्विक के रूप में जमा किया गया है। यह {stableLeg} को टोकनयुक्त {stockName} ({stockSymbol}) एक्सपोज़र के साथ जोड़ती है, इसलिए संपार्श्विक मूल्य पूल की गहराई और शुल्क स्तर के साथ-साथ {stockName} के शेयर मूल्य का अनुसरण करता है। Avana उधार क्षमता को स्पोक के अधिकतम LTV से जोड़ता है, जिससे क्रेडिट इस बात से बंधा रहता है कि टोकनयुक्त इक्विटी संपार्श्विक कितनी तेज़ी से बदल सकता है। यह पृष्ठ इस बारे में एकमात्र विश्वसनीय स्रोत है कि पूल क्या है, यह सुरक्षित रूप से कितनी पूँजी का समर्थन कर सकता है, और प्रोटोकॉल किस गिरावट जोखिम को वहन करता है।",
   "Stake more": "और स्टेक",
   "Enter an amount": "राशि दर्ज करें",
   Home: "होम",

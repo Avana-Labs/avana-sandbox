@@ -26,6 +26,8 @@ import { AskAILoadingBody } from "./components/ask-ai-skeleton"
 import { buildAaveCard } from "./components/ask-ai-aave-card"
 import type { AskAIFinancialResult } from "./components/ask-ai-financial-result-card"
 import { AskAIMessagePartsSubscriber, type AskAIMessagePartsRow } from "./message-parts-subscriber"
+import { askAiModeRunsEnabled } from "@/app/lib/ask-ai/config"
+import type { AskAiRun } from "@/app/lib/ask-ai/mode-run"
 
 type PendingTurn = {
   id: string
@@ -44,6 +46,7 @@ type PersistedRichParts = {
   sources?: unknown[]
   visual?: { kind?: "aave_apy"; label: string; value: string; points: number[]; delta?: string }
   financialResults?: Array<{ kind?: string; dataProvenance?: string; payload: unknown }>
+  modeRun?: AskAiRun
   usage?: AskAIUsage
 }
 
@@ -440,6 +443,9 @@ function persistedAssistantParts(messageId: string, text: string, rich?: Persist
     const card = buildFinancialCard(entry.kind, entry.payload)
     if (card) parts.push({ type: "data", name: "financial-result", data: card })
   }
+  // Deterministic mode-run cards render only when the flag is on, so a stray persisted
+  // run can never surface in the default experience.
+  if (rich?.modeRun && askAiModeRunsEnabled()) parts.push({ type: "data", name: "mode-run", data: rich.modeRun })
   return parts
 }
 

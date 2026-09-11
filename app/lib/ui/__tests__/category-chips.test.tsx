@@ -21,10 +21,10 @@ describe("CategoryChips (shared category filter, #103)", () => {
     const onChange = vi.fn()
     const { getByRole } = render(<CategoryChips chips={CATEGORY_CHIPS.borrow} value="all" onChange={onChange} />)
 
-    fireEvent.click(getByRole("tab", { name: "Utility Based" }))
+    fireEvent.click(getByRole("tab", { name: "Utility Pools" }))
     expect(onChange).toHaveBeenCalledWith("utility")
 
-    fireEvent.click(getByRole("tab", { name: "Smart Lend" }))
+    fireEvent.click(getByRole("tab", { name: "Smart Pools" }))
     expect(onChange).toHaveBeenCalledWith("smart")
   })
 

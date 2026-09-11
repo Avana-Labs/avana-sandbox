@@ -32,6 +32,8 @@ import type { AskAIUsage } from "@/app/lib/ask-ai/chat-protocol"
 import { formatAskAIMessageTimestamp } from "@/app/lib/ask-ai/message-timestamp"
 import { formatAskAIGreeting } from "@/app/lib/ask-ai/greeting"
 import { AskAIFinancialResultCard, type AskAIFinancialResult } from "./ask-ai-financial-result-card"
+import { AskAiRunCards } from "./ask-ai-run-cards"
+import type { AskAiRun } from "@/app/lib/ask-ai/mode-run"
 
 const FEEDBACK_REASONS = ["Incorrect", "Outdated data", "Not helpful", "Missing context", "Unsafe", "Other"]
 
@@ -150,6 +152,7 @@ function DirectAssistantPart({ part }: { part: ThreadMessage["content"][number] 
   if (part.type === "text") return <AskAIMarkdown text={part.text} />
   if (part.type !== "data") return null
   if (part.name === "financial-result") return <AskAIFinancialResultCard result={part.data as AskAIFinancialResult} />
+  if (part.name === "mode-run") return <AskAiRunCards run={part.data as AskAiRun} />
   if (part.name === "aave-apy") return <AskAIAaveChart visual={part.data as AaveApyVisual} />
   if (part.name === "chart") {
     const data = part.data as { label: string; value: string; points: number[]; delta?: string }
@@ -174,7 +177,7 @@ function DirectAssistantPart({ part }: { part: ThreadMessage["content"][number] 
 function isRenderableAssistantPart(part: ThreadMessage["content"][number]) {
   if (part.type === "text") return part.text.trim().length > 0
   if (part.type !== "data") return false
-  return ["financial-result", "chart", "aave-apy", "sources", "retrieval"].includes(part.name)
+  return ["financial-result", "mode-run", "chart", "aave-apy", "sources", "retrieval"].includes(part.name)
 }
 
 function DirectAssistantMessage({

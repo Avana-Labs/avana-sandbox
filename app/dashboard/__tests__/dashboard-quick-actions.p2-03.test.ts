@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 
 describe("Dashboard quick-action placement", () => {
-  it("P2-03: quick actions sit under claim cards in the hero as an icon rail", () => {
+  it("P2-03: quick actions sit under claim cards on mobile and in the stat header on desktop", () => {
     const heroSource = readFileSync(resolve(__dirname, "../_rewards-components/rewards-balance-hero.tsx"), "utf8")
     expect(heroSource).toMatch(/showQuickActions/)
     expect(heroSource).toMatch(/DashboardQuickActions/)
@@ -13,7 +13,8 @@ describe("Dashboard quick-action placement", () => {
     expect(pageSource).not.toMatch(/<DashboardQuickActions/)
 
     const actionsSource = readFileSync(resolve(__dirname, "../dashboard-quick-actions.tsx"), "utf8")
-    expect(actionsSource).toMatch(/rounded-full bg-field-bottom/)
+    expect(actionsSource).toMatch(/grid w-full grid-cols-2 gap-2 lg:flex/)
+    expect(actionsSource).toMatch(/variant="outline"/)
     expect(actionsSource).not.toMatch(/DashboardHeroActions/)
     expect(actionsSource).not.toMatch(/min-h-\[94px\]/)
   })

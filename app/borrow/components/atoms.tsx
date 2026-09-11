@@ -34,6 +34,10 @@ export function TokenBubble({
   const { box, text, px } = BUBBLE_DIMENSIONS[size]
   const [imgFailed, setImgFailed] = useState(false)
   const showIcon = Boolean(visual.iconUrl) && !imgFailed
+  // Stock brand icons are exported edge-to-edge (100% of the frame), while the crypto
+  // coin PNGs carry ~9% transparent margin — so an unscaled stock icon reads ~10% larger
+  // beside them. Inset the stock icons to match the coins' visible size.
+  const isStockIcon = typeof visual.iconUrl === "string" && visual.iconUrl.includes("/stock-Icons/")
 
   return (
     <span
@@ -60,7 +64,7 @@ export function TokenBubble({
           alt={visual.symbol}
           width={px}
           height={px}
-          className="h-full w-full object-contain"
+          className={cn("h-full w-full object-contain", isStockIcon && "scale-[0.91]")}
           // Logos are local SVGs (see getLocalAssetIcon). Lazy-load + async-decode so a
           // long market list doesn't decode every off-screen icon up front, and fall back
           // to the token's colored initials if an icon is ever missing.

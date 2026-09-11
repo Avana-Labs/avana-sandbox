@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from "@testing-library/react"
 import { act } from "react"
-import { beforeEach, describe, expect, it } from "vitest"
+import { beforeEach, describe, expect, it, vi } from "vitest"
 import { useSwapSession } from "@/app/lib/swap-system"
 
 describe("useSwapSession", () => {
@@ -50,6 +50,31 @@ describe("useSwapSession", () => {
       expect(result.current.transactionHistory[0]).toMatchObject({ status: "confirmed" })
     })
     expect(result.current.requiresApproval("usdc", 100)).toBe(false)
+  })
+
+  it("returns an immediate indicative quote while the server quote is pending", async () => {
+    const serverGetQuote = vi.fn(() => new Promise<never>(() => undefined))
+    const { result } = renderHook(() =>
+      useSwapSession({ walletId: "demo-wallet", persistState: false, serverGetQuote }),
+    )
+    const request = {
+      chainId: 1,
+      inputAssetId: "eth",
+      outputAssetId: "usdc",
+      inputAmount: 0.001,
+      slippageBps: 50,
+    }
+
+    const indicativeQuote = await result.current.getIndicativeQuote(request)
+
+    expect(indicativeQuote).toMatchObject({
+      status: "valid",
+      inputAmount: request.inputAmount,
+      inputAssetId: request.inputAssetId,
+      outputAssetId: request.outputAssetId,
+    })
+    expect(indicativeQuote.estimatedOutputAmount).toBeGreaterThan(0)
+    expect(serverGetQuote).not.toHaveBeenCalled()
   })
 
   it("rehydrates wallet balances and transaction history", async () => {

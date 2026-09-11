@@ -3,6 +3,13 @@
 import type { TranslationDictionary } from "../types"
 
 const dict: TranslationDictionary = {
+  "Coinbase & Robinhood Stocks": "Акции Coinbase и Robinhood",
+  "Tokenized equities — deposit stock tokens to earn lending yield":
+    "Токенизированные акции — вносите токены акций, чтобы получать доход от кредитования",
+  "Tokenized-equity concentrated LP positions": "Концентрированные LP-позиции токенизированных акций",
+  "Paxos USD stablecoin": "Стейблкоин Paxos USD",
+  "{name} is a tokenized-equity LP position posted as collateral inside the {spoke} spoke on Avana. It pairs {stableLeg} with tokenized {stockName} ({stockSymbol}) exposure, so collateral value tracks the {stockName} share price alongside the pool's depth and fee tier. Avana anchors borrow power to the spoke's max LTV, keeping credit tied to how sharply tokenized-equity collateral can move. This page is the single source of truth for what the pool is, how much capital it can safely support, and the downside the protocol underwrites.":
+    "{name} — это LP-позиция токенизированных акций, размещённая в качестве обеспечения в споуке {spoke} на Avana. Она сочетает {stableLeg} с токенизированной экспозицией {stockName} ({stockSymbol}), поэтому стоимость обеспечения отслеживает цену акции {stockName} наряду с глубиной пула и уровнем комиссий. Avana привязывает кредитную способность к максимальному LTV споука, увязывая кредит с тем, насколько резко может двигаться обеспечение в токенизированных акциях. Эта страница — единый источник истины о том, что представляет собой пул, какой капитал он может безопасно поддерживать и какой риск убытков берёт на себя протокол.",
   "Enter an amount": "Введите сумму",
   "Stake more": "Ещё стейк",
   Markets: "Рынки",

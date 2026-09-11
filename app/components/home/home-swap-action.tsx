@@ -66,6 +66,7 @@ export function HomeSwapAction() {
     [amount, inputAsset, inputBalance, outputAsset, outputAssetId],
   )
   const getQuote = swap.getQuote
+  const getIndicativeQuote = swap.getIndicativeQuote
 
   useEffect(() => {
     // A fresh quote invalidates any prior high-impact acknowledgement.
@@ -77,18 +78,27 @@ export function HomeSwapAction() {
     }
 
     let cancelled = false
+    const request = {
+      chainId: SWAP_CHAIN_ID,
+      inputAssetId,
+      outputAssetId,
+      inputAmount: validation.amount,
+      slippageBps,
+    }
+    setQuote(null)
     setQuoteState("loading")
+
+    // Update the Buy card from the local shared swap engine immediately. Convex remains
+    // authoritative: review stays disabled until the server quote replaces this estimate.
+    void getIndicativeQuote(request).then((indicativeQuote) => {
+      if (!cancelled && indicativeQuote.status === "valid") setQuote(indicativeQuote)
+    })
+
     const timeout = window.setTimeout(() => {
-      void getQuote({
-        chainId: SWAP_CHAIN_ID,
-        inputAssetId,
-        outputAssetId,
-        inputAmount: validation.amount,
-        slippageBps,
-      })
+      void getQuote(request)
         .then((nextQuote) => {
           if (cancelled) return
-          setQuote(nextQuote.status === "valid" ? nextQuote : null)
+          if (nextQuote.status === "valid") setQuote(nextQuote)
           setQuoteState(nextQuote.status === "valid" ? "valid" : "error")
         })
         .catch(() => {
@@ -100,7 +110,17 @@ export function HomeSwapAction() {
       cancelled = true
       window.clearTimeout(timeout)
     }
-  }, [getQuote, inputAsset, inputAssetId, outputAsset, outputAssetId, quoteRetry, slippageBps, validation])
+  }, [
+    getIndicativeQuote,
+    getQuote,
+    inputAsset,
+    inputAssetId,
+    outputAsset,
+    outputAssetId,
+    quoteRetry,
+    slippageBps,
+    validation,
+  ])
 
   useEffect(() => {
     setOutcome(null)
@@ -455,20 +475,23 @@ function HomeSwapAssetField({
           type="button"
           onClick={onOpenAssetPicker}
           aria-label={`${label} asset`}
-          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 text-[14px] font-normal leading-5 text-foreground hover:bg-surface-hover max-[360px]:self-end"
+          className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-medium leading-5 text-foreground hover:bg-surface-hover max-[360px]:self-end"
         >
-          {asset ? (
-            <>
-              {/* Match the shared ActionAmountCard pill (borrow/repay/claim/remove) + multiply:
-                  a big size-12 token icon on reveal, not the old size-8, so the Express tabs
-                  present the selected asset consistently. (#9) */}
-              <ActionTokenIcon symbol={asset.symbol} />
-              <span>{asset.symbol}</span>
-            </>
-          ) : (
-            <span>{t("Select Asset")}</span>
-          )}
-          <span aria-hidden className="text-muted-foreground">
+          {/* Fixed-geometry pill: a size-7 token icon fits inside the stable box so
+              it never resizes between "Select Asset" and a picked asset. Mirrors the
+              shared ActionAmountCard pill (ASSET_PILL_CLASS) so the box is identical
+              across the homepage, action pages, and detail pages. */}
+          <span className="inline-flex min-w-0 items-center gap-2">
+            {asset ? (
+              <>
+                <ActionTokenIcon symbol={asset.symbol} size="pill" />
+                <span className="truncate">{asset.symbol}</span>
+              </>
+            ) : (
+              <span>{t("Select Asset")}</span>
+            )}
+          </span>
+          <span aria-hidden className="shrink-0 text-muted-foreground">
             ▾
           </span>
         </button>

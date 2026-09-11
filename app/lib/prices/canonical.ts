@@ -14,8 +14,19 @@ import { PRICE_FIXTURE } from "./price-fixture"
  * in NEITHER resolves to `undefined` (unavailable), never a fabricated number.
  */
 
-/** UPPERCASE symbol → USD price. Seeded with the fixture; overlaid by the live oracle. */
+// Two INDEPENDENT live overlays sit on top of the deterministic fixture: the crypto oracle
+// (Convex/DefiLlama, via setCanonicalPrices) and the stock feed (client route, via setStockPrices).
+// They are kept as separate layers so a refresh of one never clobbers the other's quotes — both are
+// re-applied on every recompute, with the stock layer winning any (non-existent) key overlap.
+let oracleLayer: Record<string, number> = {}
+let stockLayer: Record<string, number> = {}
+
+/** UPPERCASE symbol → USD price. Fixture, overlaid by the oracle then the stock layer. */
 let priceStore: Record<string, number> = { ...PRICE_FIXTURE }
+
+function recompute(): void {
+  priceStore = { ...PRICE_FIXTURE, ...oracleLayer, ...stockLayer }
+}
 
 function normalizePrices(next: Record<string, number>): Record<string, number> {
   const out: Record<string, number> = {}
@@ -26,17 +37,36 @@ function normalizePrices(next: Record<string, number>): Record<string, number> {
 }
 
 /**
- * Overlay live oracle prices onto the canonical store (client-only). Kept on TOP of the fixture so
- * a partial oracle response (missing an exotic token) still resolves the covered majors instead of
- * going unavailable. Non-finite/non-positive quotes are dropped.
+ * Overlay live oracle (crypto) prices onto the canonical store (client-only). Kept on TOP of the
+ * fixture so a partial oracle response (missing an exotic token) still resolves the covered majors
+ * instead of going unavailable. Non-finite/non-positive quotes are dropped.
  */
 export function setCanonicalPrices(next: Record<string, number>): void {
-  priceStore = { ...PRICE_FIXTURE, ...normalizePrices(next) }
+  oracleLayer = normalizePrices(next)
+  recompute()
+}
+
+/**
+ * Overlay live tokenized-stock prices (client-side stock-price route) onto the canonical store.
+ * Independent of the crypto oracle layer so neither feed's refresh drops the other's quotes.
+ */
+export function setStockPrices(next: Record<string, number>): void {
+  stockLayer = normalizePrices(next)
+  recompute()
+}
+
+/** The live stock layer keyed by `priceKey` (lowercased), for merging into the reactive context. */
+export function stockPriceMap(): Record<string, number> {
+  const map: Record<string, number> = {}
+  for (const [symbol, priceUsd] of Object.entries(stockLayer)) map[priceKey(symbol)] = priceUsd
+  return map
 }
 
 /** Reset the store to the deterministic fixture (used by test setup to prevent cross-test leakage). */
 export function resetCanonicalPrices(): void {
-  priceStore = { ...PRICE_FIXTURE }
+  oracleLayer = {}
+  stockLayer = {}
+  recompute()
 }
 
 export type CanonicalPrice = {

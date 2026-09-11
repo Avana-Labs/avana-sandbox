@@ -5,6 +5,13 @@ import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 import { priceKey } from "./format"
 import { PRICE_FIXTURE } from "./price-fixture"
+import { stockPriceMap } from "./canonical"
+import {
+  applyCachedStockPrices,
+  fetchStockPrices,
+  STOCK_PRICE_REFRESH_MS,
+  STOCK_PRICES_UPDATED_EVENT,
+} from "./stock-prices"
 
 /**
  * Live token prices (base symbol → USD) from the Convex oracle, provided once and
@@ -95,6 +102,37 @@ export function usePriceFreshness(): PriceFreshness {
  */
 const EMPTY_PRICES: Record<string, number> = {}
 
+/**
+ * Client bridge for live tokenized-stock prices. Fetches them (currency-style, Convex-independent),
+ * overlays them on the module canonical store for the engine (via setStockPrices inside
+ * fetchStockPrices), and merges them into the reactive TokenPricesContext for the list/detail cells.
+ * Reads the PARENT context so it composes on top of whatever map is already provided (the server
+ * seed, or the Convex realtime map). Skips the network under the Lighthouse audit for determinism.
+ */
+function StockPriceOverlay({ children }: { children: React.ReactNode }) {
+  const parent = React.useContext(TokenPricesContext)
+  const [overlay, setOverlay] = React.useState<Record<string, number>>(() => stockPriceMap())
+  React.useEffect(() => {
+    if (isLighthouseAuditMode()) return
+    const sync = () => setOverlay(stockPriceMap())
+    window.addEventListener(STOCK_PRICES_UPDATED_EVENT, sync)
+    // Cached quotes first (instant), then a refresh; both dispatch the event → sync.
+    applyCachedStockPrices()
+    void fetchStockPrices()
+    const id = window.setInterval(() => void fetchStockPrices(), STOCK_PRICE_REFRESH_MS)
+    sync()
+    return () => {
+      window.clearInterval(id)
+      window.removeEventListener(STOCK_PRICES_UPDATED_EVENT, sync)
+    }
+  }, [])
+  const merged = React.useMemo(
+    () => (Object.keys(overlay).length === 0 ? parent : { ...parent, ...overlay }),
+    [parent, overlay],
+  )
+  return <TokenPricesContext.Provider value={merged}>{children}</TokenPricesContext.Provider>
+}
+
 export function TokenPricesProvider({
   children,
   initialPrices,
@@ -117,12 +155,18 @@ export function TokenPricesProvider({
   // the lend detail). The subscription also calls setCanonicalPrices, so the module store the
   // detail pages / Lend / Borrow / Multiply tabs read stays in lockstep with the wallet card.
   if (!realtime || !hasConvexClient || isLighthouseAuditMode()) {
-    return <TokenPricesContext.Provider value={seed}>{children}</TokenPricesContext.Provider>
+    return (
+      <TokenPricesContext.Provider value={seed}>
+        <StockPriceOverlay>{children}</StockPriceOverlay>
+      </TokenPricesContext.Provider>
+    )
   }
   return (
     <TokenPricesContext.Provider value={seed}>
       <React.Suspense fallback={children}>
-        <ConvexTokenPrices seed={seed}>{children}</ConvexTokenPrices>
+        <ConvexTokenPrices seed={seed}>
+          <StockPriceOverlay>{children}</StockPriceOverlay>
+        </ConvexTokenPrices>
       </React.Suspense>
     </TokenPricesContext.Provider>
   )

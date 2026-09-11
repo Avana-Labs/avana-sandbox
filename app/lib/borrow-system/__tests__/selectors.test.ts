@@ -33,7 +33,7 @@ describe("borrow system selectors", () => {
     const snapshot = selectWalletBorrowSnapshot(state, "demo-wallet")
 
     expect(markets.length).toBeGreaterThan(5)
-    expect(allAssets).toHaveLength(64)
+    expect(allAssets).toHaveLength(71)
     expect(assets.length).toBeGreaterThan(1)
     expect(assets.every((asset) => asset.id.startsWith("uni-v3-bluechip:"))).toBe(true)
     expect(assets.map((asset) => asset.id)).toContain("uni-v3-bluechip:usdc")

@@ -57,6 +57,8 @@ export const SPOKE_SLUGS: Record<BorrowSpokeId, string> = {
   "aero-basic-stable": "aerodrome-stable",
   "aero-basic-volatile": "aerodrome-volatile",
   "aero-slipstream-bluechip": "aerodrome-bluechip",
+  "aero-concentrated-stocks": "aerodrome-concentrated-10",
+  "uni-robinhood-stocks": "uniswap-robinhood-stocks",
 }
 
 function seededUnit(input: string) {

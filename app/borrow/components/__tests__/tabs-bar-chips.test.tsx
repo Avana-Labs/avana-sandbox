@@ -31,10 +31,10 @@ describe("Borrow TabsBar uses the shared category chips (#103)", () => {
     const { onTabChange, getAllByRole } = renderTabsBar()
     const tablists = getAllByRole("tablist", { name: "Filter by category" })
 
-    fireEvent.click(within(tablists[0]).getByRole("tab", { name: "ETH Based" }))
+    fireEvent.click(within(tablists[0]).getByRole("tab", { name: "ETH Pools" }))
     expect(onTabChange).toHaveBeenCalledWith("eth")
 
-    fireEvent.click(within(tablists[0]).getByRole("tab", { name: "Smart Lend" }))
+    fireEvent.click(within(tablists[0]).getByRole("tab", { name: "Smart Pools" }))
     expect(onTabChange).toHaveBeenCalledWith("smart")
   })
 })
