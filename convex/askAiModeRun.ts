@@ -1,6 +1,7 @@
 import { v } from "convex/values"
-import { query, type MutationCtx, type QueryCtx } from "./_generated/server"
-import { ASK_AI_WALLET_REQUIRED } from "../app/lib/ask-ai/config"
+import { internalQuery, query, type MutationCtx, type QueryCtx } from "./_generated/server"
+import type { Doc } from "./_generated/dataModel"
+import { ASK_AI_WALLET_REQUIRED, askAiModeRunsEnabled } from "../app/lib/ask-ai/config"
 import { getAuthedWallet } from "./sandbox/auth"
 import { buildPositionContext } from "../app/lib/ask-ai/position-context"
 import { positionInputFromRows } from "../app/lib/ask-ai/position-context-adapter"
@@ -8,18 +9,19 @@ import {
   buildReturnsRun,
   buildRiskRun,
   buildStressRun,
+  classifyAskAiMode,
   routeAskAiMode,
   type AskAiMode,
   type AskAiRun,
 } from "../app/lib/ask-ai/mode-run"
 
 /**
- * Live read path for an Ask AI mode-run (Phase 3 backend).
+ * Live read path for an Ask AI mode-run.
  *
- * Reads the owner's position rows once, maps them through the pure adapter into a
- * single immutable PositionContext, and hands that snapshot to the deterministic mode
- * assembler. Read-only: it returns the typed run; persistence (askAiRuns.record) and
- * rendering are separate steps. Nothing calls this yet.
+ * `buildModeRun` (public) resolves one position → immutable PositionContext → the
+ * deterministic mode assembler and returns the typed run. `buildModeRunForTurn`
+ * (internal, flag-gated) is what the agent calls per turn: it classifies the prompt
+ * into a mode and attaches a run to the answer's rich parts. Both share `assembleRun`.
  */
 
 // Same rationale as convex/askAITools.ts ASK_AI_DATA_PROVENANCE: this is a sandbox-first
@@ -28,6 +30,37 @@ import {
 const PROVENANCE = "sandbox"
 
 type ReadCtx = Pick<QueryCtx | MutationCtx, "auth" | "db">
+
+async function assembleRun(
+  ctx: Pick<QueryCtx | MutationCtx, "db">,
+  position: Doc<"positions">,
+  mode: AskAiMode,
+  queryText: string,
+): Promise<{ rerouted: boolean; run: AskAiRun }> {
+  const market = await ctx.db
+    .query("markets")
+    .withIndex("by_slug", (q) => q.eq("slug", position.marketSlug))
+    .first()
+  const assetId = position.assetId
+  const parameter = assetId
+    ? await ctx.db
+        .query("multiplyTokenParameters")
+        .withIndex("by_symbol", (q) => q.eq("symbol", assetId))
+        .unique()
+    : null
+
+  const asOf = Date.now()
+  const snapshot = buildPositionContext(positionInputFromRows({ position, market, parameter, asOf }), asOf)
+  const route = routeAskAiMode(queryText, mode)
+  const options = { queryText, provenance: PROVENANCE }
+  const run =
+    route.mode === "risk"
+      ? buildRiskRun(snapshot, options)
+      : route.mode === "stress"
+        ? buildStressRun(snapshot, options)
+        : buildReturnsRun(snapshot, options)
+  return { rerouted: route.rerouted, run }
+}
 
 type ModeRunResult =
   { walletRequired: true; message: string } | { walletRequired: false; rerouted: boolean; run: AskAiRun }
@@ -46,31 +79,7 @@ async function readModeRun(
   const position = positions.find((row) => row._id === args.positionId && row.status === "open")
   if (!position) throw new Error("Position not found")
 
-  const market = await ctx.db
-    .query("markets")
-    .withIndex("by_slug", (q) => q.eq("slug", position.marketSlug))
-    .first()
-  const assetId = position.assetId
-  const parameter = assetId
-    ? await ctx.db
-        .query("multiplyTokenParameters")
-        .withIndex("by_symbol", (q) => q.eq("symbol", assetId))
-        .unique()
-    : null
-
-  const asOf = Date.now()
-  const snapshot = buildPositionContext(positionInputFromRows({ position, market, parameter, asOf }), asOf)
-
-  const route = routeAskAiMode(args.queryText, args.mode)
-  const options = { queryText: args.queryText, provenance: PROVENANCE }
-  const run =
-    route.mode === "risk"
-      ? buildRiskRun(snapshot, options)
-      : route.mode === "stress"
-        ? buildStressRun(snapshot, options)
-        : buildReturnsRun(snapshot, options)
-
-  return { walletRequired: false, rerouted: route.rerouted, run }
+  return { walletRequired: false, ...(await assembleRun(ctx, position, args.mode, args.queryText)) }
 }
 
 export const buildModeRun = query({
@@ -80,4 +89,39 @@ export const buildModeRun = query({
     positionId: v.string(),
   },
   handler: readModeRun,
+})
+
+/** The position a mode-run defaults to for a chat turn: the wallet's first open borrow/multiply position. */
+function pickPrimaryPosition(positions: Doc<"positions">[]): Doc<"positions"> | null {
+  return positions.find((p) => p.status === "open" && (p.product === "borrow" || p.product === "multiply")) ?? null
+}
+
+/**
+ * Per-turn mode-run for the agent. Returns null (never throws) whenever the feature is
+ * off, the prompt isn't a mode question, the turn has no wallet, or no position/params
+ * are available — so a turn without a clear mode simply falls through to the chat answer.
+ */
+export const buildModeRunForTurn = internalQuery({
+  args: { turnId: v.id("askAITurns"), prompt: v.string() },
+  handler: async (ctx, { turnId, prompt }): Promise<AskAiRun | null> => {
+    if (!askAiModeRunsEnabled()) return null
+    const mode = classifyAskAiMode(prompt)
+    if (!mode) return null
+    const turn = await ctx.db.get(turnId)
+    const wallet = turn?.wallet
+    if (!wallet) return null
+    const positions = await ctx.db
+      .query("positions")
+      .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+      .collect()
+    const position = pickPrimaryPosition(positions)
+    if (!position) return null
+    // Guard the arithmetic/read path so a malformed row never fails the turn.
+    try {
+      const { run } = await assembleRun(ctx, position, mode, prompt)
+      return run
+    } catch {
+      return null
+    }
+  },
 })

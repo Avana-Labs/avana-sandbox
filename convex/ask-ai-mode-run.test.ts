@@ -1,7 +1,8 @@
 // @vitest-environment edge-runtime
 import { convexTest } from "convex-test"
 import { describe, expect, test } from "vitest"
-import { api } from "./_generated/api"
+import { afterEach } from "vitest"
+import { api, internal } from "./_generated/api"
 import schema from "./schema"
 
 const modules = import.meta.glob("./**/*.*s")
@@ -91,5 +92,60 @@ describe("buildModeRun", () => {
         .withIdentity({ subject: WALLET_B })
         .query(api.askAiModeRun.buildModeRun, { mode: "risk", queryText: "hi", positionId }),
     ).rejects.toThrow("Position not found")
+  })
+})
+
+async function seedTurn(t: ReturnType<typeof convexTest>, wallet: string, prompt: string) {
+  return t.run(async (ctx) =>
+    ctx.db.insert("askAITurns", {
+      threadId: "thread-1",
+      ownerSubject: wallet,
+      wallet,
+      promptMessageId: "pm-1",
+      prompt,
+      status: "running",
+      createdAt: 1,
+      updatedAt: 1,
+    }),
+  )
+}
+
+describe("buildModeRunForTurn (flag-gated per-turn trigger)", () => {
+  afterEach(() => {
+    delete process.env.NEXT_PUBLIC_ASK_AI_MODE_RUNS
+  })
+
+  test("classifies a mode prompt and builds a run for the wallet's primary position when enabled", async () => {
+    process.env.NEXT_PUBLIC_ASK_AI_MODE_RUNS = "1"
+    const t = convexTest(schema, modules)
+    await seed(t, WALLET_A)
+    const turnId = await seedTurn(t, WALLET_A, "am I safe?")
+    const run = await t.query(internal.askAiModeRun.buildModeRunForTurn, { turnId, prompt: "am I safe?" })
+    expect(run?.mode).toBe("risk")
+    expect(run?.widgets.map((w) => w.type)).toContain("risk_summary")
+  })
+
+  test("returns null when the feature flag is off (default)", async () => {
+    const t = convexTest(schema, modules)
+    await seed(t, WALLET_A)
+    const turnId = await seedTurn(t, WALLET_A, "am I safe?")
+    expect(await t.query(internal.askAiModeRun.buildModeRunForTurn, { turnId, prompt: "am I safe?" })).toBeNull()
+  })
+
+  test("returns null when the prompt is not a mode question", async () => {
+    process.env.NEXT_PUBLIC_ASK_AI_MODE_RUNS = "1"
+    const t = convexTest(schema, modules)
+    await seed(t, WALLET_A)
+    const turnId = await seedTurn(t, WALLET_A, "what markets do you support?")
+    expect(
+      await t.query(internal.askAiModeRun.buildModeRunForTurn, { turnId, prompt: "what markets do you support?" }),
+    ).toBeNull()
+  })
+
+  test("returns null when the wallet has no position", async () => {
+    process.env.NEXT_PUBLIC_ASK_AI_MODE_RUNS = "1"
+    const t = convexTest(schema, modules)
+    const turnId = await seedTurn(t, WALLET_A, "am I safe?")
+    expect(await t.query(internal.askAiModeRun.buildModeRunForTurn, { turnId, prompt: "am I safe?" })).toBeNull()
   })
 })

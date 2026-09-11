@@ -167,3 +167,21 @@ export function routeAskAiMode(queryText: string, requestedMode: AskAiMode): Mod
   if (requestedMode === "returns" && LEVERAGE_PATTERN.test(queryText)) return { mode: "risk", rerouted: true }
   return { mode: requestedMode, rerouted: false }
 }
+
+const STRESS_PATTERN =
+  /\b(stress|crash\w*|scenario|what if|drops?|dropped|falls?|fell|plunges?|dumps?|down\s*\d|[-–]\s*\d+\s*%)\b/i
+const RISK_PATTERN =
+  /\b(risk|risky|safe|safety|unsafe|liquidat\w*|health\s*factor|underwater|buffer|margin\s*call|how\s*(safe|risky))\b/i
+const RETURNS_PATTERN = /\b(returns?|carry|yield|apr|apy|profit|earn\w*|income|fees?)\b/i
+
+/**
+ * Classify a free-text query into a deterministic mode, or null when no mode clearly
+ * applies (the turn then falls through to the normal chat answer). Stress wins over Risk
+ * when a scenario is described ("what if ETH falls 20%"), and Risk over Returns.
+ */
+export function classifyAskAiMode(queryText: string): AskAiMode | null {
+  if (STRESS_PATTERN.test(queryText)) return "stress"
+  if (RISK_PATTERN.test(queryText)) return "risk"
+  if (RETURNS_PATTERN.test(queryText)) return "returns"
+  return null
+}

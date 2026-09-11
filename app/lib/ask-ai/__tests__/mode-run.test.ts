@@ -5,7 +5,7 @@ import {
   repayToReachHealthFactor,
   type PositionSnapshotInput,
 } from "../position-context"
-import { buildReturnsRun, buildRiskRun, buildStressRun, routeAskAiMode } from "../mode-run"
+import { buildReturnsRun, buildRiskRun, buildStressRun, classifyAskAiMode, routeAskAiMode } from "../mode-run"
 
 const base: PositionSnapshotInput = {
   positionId: "pos_1",
@@ -97,6 +97,30 @@ describe("buildReturnsRun", () => {
       "assumptions",
     ])
     expect(withComparables.actions).toEqual([])
+  })
+})
+
+describe("classifyAskAiMode", () => {
+  it("classifies scenario questions as stress (winning over risk)", () => {
+    expect(classifyAskAiMode("what if ETH falls 20%?")).toBe("stress")
+    expect(classifyAskAiMode("stress test my position")).toBe("stress")
+    expect(classifyAskAiMode("is my collateral safe if the market crashes?")).toBe("stress")
+  })
+
+  it("classifies safety/liquidation questions as risk", () => {
+    expect(classifyAskAiMode("am I safe?")).toBe("risk")
+    expect(classifyAskAiMode("what is my health factor?")).toBe("risk")
+    expect(classifyAskAiMode("how close am I to liquidation?")).toBe("risk")
+  })
+
+  it("classifies yield/carry questions as returns", () => {
+    expect(classifyAskAiMode("what's my net carry?")).toBe("returns")
+    expect(classifyAskAiMode("how much yield am I earning?")).toBe("returns")
+  })
+
+  it("returns null when no mode clearly applies", () => {
+    expect(classifyAskAiMode("what markets do you support?")).toBeNull()
+    expect(classifyAskAiMode("hello")).toBeNull()
   })
 })
 

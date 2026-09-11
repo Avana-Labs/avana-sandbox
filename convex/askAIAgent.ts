@@ -3,9 +3,10 @@ import { Agent } from "@convex-dev/agent"
 import { createOpenAI } from "@ai-sdk/openai"
 import { stepCountIs } from "ai"
 import { ConvexError, v } from "convex/values"
-import { ASK_AI_CONFIG } from "../app/lib/ask-ai/config"
+import { ASK_AI_CONFIG, askAiModeRunsEnabled } from "../app/lib/ask-ai/config"
 import { ASK_AI_AGENT_INSTRUCTIONS } from "../app/lib/ask-ai/agent-instructions"
 import { routeAskAITurn, toolChoiceForAskAIStep, type AskAIModelTier } from "../app/lib/ask-ai/domain-gate"
+import type { AskAiRun } from "../app/lib/ask-ai/mode-run"
 import { api, components, internal } from "./_generated/api"
 import { internalAction } from "./_generated/server"
 import { searchAvanaKnowledge, searchAvanaKnowledgeTool } from "./askAIRag"
@@ -618,6 +619,20 @@ export const generateTurn = internalAction({
           },
         ]
       })[0]
+      // Deterministic mode-run (flag-gated). buildModeRunForTurn returns null on any miss
+      // (feature off, no mode intent, no wallet/position); the try/catch guarantees a
+      // mode-run can never break the chat answer.
+      let modeRun: AskAiRun | null = null
+      if (askAiModeRunsEnabled()) {
+        try {
+          modeRun = await ctx.runQuery(internal.askAiModeRun.buildModeRunForTurn, {
+            turnId: turn.turnId,
+            prompt: turn.prompt,
+          })
+        } catch {
+          modeRun = null
+        }
+      }
       await ctx.runMutation(internal.askAI.completeGeneratedTurn, {
         turnId: turn.turnId,
         assistantMessageId: assistantMessage._id,
@@ -630,6 +645,7 @@ export const generateTurn = internalAction({
           ...(financialResults.length > 0 ? { financialResults } : {}),
           ...(retrievalChunks.length > 0 ? { retrievalChunks } : {}),
           ...(visual ? { visual } : {}),
+          ...(modeRun ? { modeRun } : {}),
         },
       })
       await ctx.runMutation(internal.askAITelemetry.record, {
