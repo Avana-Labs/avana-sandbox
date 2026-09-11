@@ -20,6 +20,7 @@
 /.next-dev-real/
 /.next-prod/
 /.next-check/
+/.next-mock/
 /.next-dev.lock.json
 /.next-prod.lock.json
 /out/
