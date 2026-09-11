@@ -715,6 +715,10 @@ export const completeGeneratedTurn = internalMutation({
             points: v.array(v.number()),
           }),
         ),
+        // Deterministic mode-run (Risk / Stress / Returns). Stored structurally like
+        // financialResults.payload; the typed AskAiRun is produced by the engine builders
+        // and rendered by AskAiRunCards. Only written when the mode-runs flag is on.
+        modeRun: v.optional(v.any()),
       }),
     ),
   },
