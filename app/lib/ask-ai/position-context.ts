@@ -199,6 +199,20 @@ export function computeLiquidationBuffer(ctx: PositionContext): LiquidationBuffe
   }
 }
 
+/** Debt to repay to lift the health factor to `targetHealthFactor`. 0 when already at or above it. */
+export function repayToReachHealthFactor(ctx: PositionContext, targetHealthFactor: number): number {
+  if (ctx.debtValueUsd <= 0 || targetHealthFactor <= 0) return 0
+  const targetDebtUsd = (ctx.collateralValueUsd * (ctx.liquidationThresholdPct / 100)) / targetHealthFactor
+  return Math.max(0, ctx.debtValueUsd - targetDebtUsd)
+}
+
+/** Collateral to add to lift the health factor to `targetHealthFactor`. 0 when already at or above it. */
+export function addCollateralToReachHealthFactor(ctx: PositionContext, targetHealthFactor: number): number {
+  if (ctx.debtValueUsd <= 0 || targetHealthFactor <= 0) return 0
+  const targetCollateralUsd = (targetHealthFactor * ctx.debtValueUsd) / (ctx.liquidationThresholdPct / 100)
+  return Math.max(0, targetCollateralUsd - ctx.collateralValueUsd)
+}
+
 export type InterestPerDay = {
   debtUsd: number
   borrowApyPct: number | null
