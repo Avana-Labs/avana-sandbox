@@ -10,7 +10,10 @@ export const ASK_AI_CONFIG = {
   contextWindowTokens: 1_050_000,
   maxInputCharacters: 2_000,
   maxOutputTokens: 900,
-  topP: 0.98,
+  // No topP: both tiers are reasoning models, and @ai-sdk/openai's responses
+  // model sets `top_p: undefined` for a reasoning model whose effort is not
+  // "none" (openai-responses-language-model.ts), so it never reached OpenAI —
+  // it only produced an "unsupported feature" warning on every turn.
   reasoningEffort: "medium",
   textVerbosity: "medium",
   maxToolSteps: 5,

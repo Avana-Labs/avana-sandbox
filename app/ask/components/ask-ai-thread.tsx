@@ -23,7 +23,10 @@ import { AskAIThreadSkeleton } from "./ask-ai-skeleton"
 import { MessageQueue } from "@/components/elements/message-queue"
 import { RetrievalChunks, type RetrievalChunk } from "@/components/elements/retrieval-chunks"
 import { Sources, type Source } from "@/components/elements/sources"
-import { MarkdownTextContent } from "@/components/assistant-ui/markdown-text"
+import { AskAIMarkdown } from "./ask-ai-markdown"
+import { AskAIAaveChart } from "./ask-ai-aave-chart"
+import type { AaveApyVisual } from "@/app/lib/ask-ai/aave-mcp"
+import { sanitizeAskAISources } from "@/app/lib/ask-ai/sources"
 import { api } from "@/convex/_generated/api"
 import type { AskAIUsage } from "@/app/lib/ask-ai/chat-protocol"
 import { formatAskAIMessageTimestamp } from "@/app/lib/ask-ai/message-timestamp"
@@ -142,14 +145,15 @@ function DirectUserMessage({ message }: { message: ThreadMessage }) {
 // no-op onOpenChange, which left the pill permanently shut and its links unreachable.
 function SourcesPart({ sources }: { sources: Source[] }) {
   const [open, setOpen] = useState(false)
-  return <Sources sources={sources} open={open} onOpenChange={setOpen} className="max-w-none" />
+  return <Sources sources={sanitizeAskAISources(sources)} open={open} onOpenChange={setOpen} className="max-w-none" />
 }
 
 function DirectAssistantPart({ part }: { part: ThreadMessage["content"][number] }) {
-  if (part.type === "text") return <MarkdownTextContent text={part.text} />
+  if (part.type === "text") return <AskAIMarkdown text={part.text} />
   if (part.type !== "data") return null
   if (part.name === "financial-result") return <AskAIFinancialResultCard result={part.data as AskAIFinancialResult} />
   if (part.name === "mode-run") return <AskAiRunCards run={part.data as AskAiRun} />
+  if (part.name === "aave-apy") return <AskAIAaveChart visual={part.data as AaveApyVisual} />
   if (part.name === "chart") {
     const data = part.data as { label: string; value: string; points: number[]; delta?: string }
     return <Chart {...data} visibleCount={data.points.length} variant="line" className="max-w-md" />
@@ -173,7 +177,7 @@ function DirectAssistantPart({ part }: { part: ThreadMessage["content"][number] 
 function isRenderableAssistantPart(part: ThreadMessage["content"][number]) {
   if (part.type === "text") return part.text.trim().length > 0
   if (part.type !== "data") return false
-  return ["financial-result", "mode-run", "chart", "sources", "retrieval"].includes(part.name)
+  return ["financial-result", "mode-run", "chart", "aave-apy", "sources", "retrieval"].includes(part.name)
 }
 
 function DirectAssistantMessage({

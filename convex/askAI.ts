@@ -685,8 +685,16 @@ export const completeGeneratedTurn = internalMutation({
                 v.literal("pool"),
                 v.literal("borrow_capacity"),
                 v.literal("position_risk"),
+                v.literal("engine_snapshot"),
                 v.literal("simulate_borrow"),
                 v.literal("stress_position"),
+                v.literal("aave_reserve"),
+                v.literal("aave_emode"),
+                v.literal("aave_positions"),
+                v.literal("aave_rewards"),
+                v.literal("aave_preview"),
+                v.literal("aave_governance"),
+                v.literal("aave_hubs"),
               ),
               // Supplied by Lane D on the tool result; optional until it ships.
               dataProvenance: v.optional(
@@ -713,6 +721,11 @@ export const completeGeneratedTurn = internalMutation({
             value: v.string(),
             delta: v.optional(v.string()),
             points: v.array(v.number()),
+            kind: v.optional(v.literal("aave_apy")),
+            timestamps: v.optional(v.array(v.number())),
+            side: v.optional(v.union(v.literal("supply"), v.literal("borrow"))),
+            window: v.optional(v.string()),
+            asOf: v.optional(v.number()),
           }),
         ),
         // Deterministic mode-run (Risk / Stress / Returns). Stored structurally like
