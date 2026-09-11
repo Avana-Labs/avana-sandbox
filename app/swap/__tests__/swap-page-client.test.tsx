@@ -42,7 +42,12 @@ describe("SwapPageClient", () => {
     await waitFor(() => {
       expect(screen.getByLabelText("Buy")).toHaveValue("1.926651")
     })
-    expect(screen.getByRole("button", { name: "Review swap" })).toBeEnabled()
+    // The Buy amount fills from the fast indicative quote, but "Review swap" stays
+    // gated until the authoritative server quote lands (server-authoritative design) —
+    // so await the button flipping to enabled rather than checking it synchronously.
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Review swap" })).toBeEnabled()
+    })
   })
 
   it("searches supported assets in the receive picker", () => {
