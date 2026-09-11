@@ -53,11 +53,7 @@ it("loads the asset picker on demand and preserves sell/buy selection across ope
 it("updates the Buy amount while the authoritative server quote is still pending", async () => {
   const serverGetSwapQuote = vi.fn(() => new Promise<never>(() => undefined))
   render(
-    <AvanaSessionsProvider
-      walletId="demo-wallet"
-      persistLocalState={false}
-      serverGetSwapQuote={serverGetSwapQuote}
-    >
+    <AvanaSessionsProvider walletId="demo-wallet" persistLocalState={false} serverGetSwapQuote={serverGetSwapQuote}>
       <HomeSwapAction />
     </AvanaSessionsProvider>,
   )
@@ -79,11 +75,7 @@ it("keeps the indicative Buy amount visible when the server quote fails", async 
     status: "error" as const,
   }))
   render(
-    <AvanaSessionsProvider
-      walletId="demo-wallet"
-      persistLocalState={false}
-      serverGetSwapQuote={serverGetSwapQuote}
-    >
+    <AvanaSessionsProvider walletId="demo-wallet" persistLocalState={false} serverGetSwapQuote={serverGetSwapQuote}>
       <HomeSwapAction />
     </AvanaSessionsProvider>,
   )

@@ -14,9 +14,7 @@ describe("Dashboard primary quick actions", () => {
     expect(screen.getAllByRole("link")).toHaveLength(4)
     expect(screen.getByRole("link", { name: "Deposit" }).getAttribute("href")).toContain("/actions/lend/deposit")
     expect(screen.getByRole("link", { name: "Borrow" }).getAttribute("href")).toContain("/actions/borrow/borrow")
-    expect(screen.getByRole("link", { name: "Multiply" }).getAttribute("href")).toContain(
-      "/actions/multiply/multiply",
-    )
+    expect(screen.getByRole("link", { name: "Multiply" }).getAttribute("href")).toContain("/actions/multiply/multiply")
     expect(screen.getByRole("link", { name: "Swap" }).getAttribute("href")).toContain("/swap")
     expect(quickActions).not.toHaveTextContent("Repay")
     expect(quickActions).not.toHaveTextContent("Withdraw")
