@@ -15,6 +15,7 @@ export type HeroMarketCardProps = {
     href: string
     pool: BorrowPoolRow
     title: string
+    venue?: string
     value: string
     delta: string
     deltaClassName: string
@@ -58,12 +59,15 @@ export function HeroMarketCard({ title, subtitle, hideTitleOnMobile = false, cla
 
             {/* Metrics sit BELOW the pair name (not in a right-hand column) so long
              * market names like "Fix USDC / GOOGLc" get the full row width and no
-             * longer wrap to three lines. The venue subtitle is dropped for the
-             * same reason. */}
+             * longer wrap to three lines. The venue is a short subtitle under the name
+             * so same-pair pools (e.g. WBTC/USDC on Uniswap vs Balancer) stay distinct. */}
             <div className="min-w-0 flex-1">
               <div className="text-[15px] font-normal leading-tight tracking-normal text-foreground dark:text-white">
                 {row.title}
               </div>
+              {row.venue ? (
+                <div className="mt-0.5 truncate text-[11.5px] leading-4 text-muted-foreground">{row.venue}</div>
+              ) : null}
               <div className="mt-1 flex items-center gap-x-1.5 font-data text-[12px] font-medium leading-tight">
                 <span className="tabular-nums text-foreground">{row.value}</span>
                 <span className="text-muted-foreground">·</span>

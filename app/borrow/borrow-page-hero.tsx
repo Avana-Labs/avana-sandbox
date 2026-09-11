@@ -45,9 +45,10 @@ function buildHeroCards(pageData: BorrowPageData) {
       id: `${prefix}-${pool.id}`,
       href: borrowMarketDetailPath(pool.id),
       pool,
-      // Lead with the pair, then the venue (DEX/tier) so two cards that share a pair
-      // — e.g. WBTC/USDC on Uniswap vs Balancer — stay distinguishable on the name line.
-      title: `${formatBorrowPairLabel(pool)} · ${pool.venue}`,
+      title: formatBorrowPairLabel(pool),
+      // Venue (DEX/tier) as a subtitle so two cards sharing a pair — e.g. WBTC/USDC on
+      // Uniswap vs Balancer — stay distinguishable, without lengthening the name itself.
+      venue: pool.venue,
       // LTV is the headline (more important than availability); the line below is the
       // pool's own trading-fee APR — label it "Fees", not "APY" (it isn't our yield).
       value: `${formatLtvPct(pool.ltv)} LTV`,
