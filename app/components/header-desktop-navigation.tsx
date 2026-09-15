@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import {
   desktopPrimaryLinks,
@@ -38,6 +38,8 @@ export default function HeaderDesktopNavigation({
 }) {
   const { t } = useTranslation()
   const pathname = usePathname() || "/"
+  const searchParams = useSearchParams()
+  const searchParamsKey = searchParams?.toString() ?? ""
   const [desktopMenuOpen, setDesktopMenuOpen] = useState<DesktopMenuId | null>(null)
   const [desktopMenuRendered, setDesktopMenuRendered] = useState<DesktopMenuId | null>(null)
   const [desktopMenuAnimationCycle, setDesktopMenuAnimationCycle] = useState(0)
@@ -83,6 +85,12 @@ export default function HeaderDesktopNavigation({
     onOpenChange?.(desktopMenuOpen !== null)
   }, [desktopMenuOpen, onOpenChange])
 
+  // Close the panel when the route or its query changes — the persistent header must not keep a
+  // panel open after a trigger link, a market row, or "View all" navigates.
+  useEffect(() => {
+    setDesktopMenuOpen(null)
+  }, [pathname, searchParamsKey])
+
   useEffect(() => {
     if (!desktopMenuOpen) return
     const panelId = `desktop-menu-${desktopMenuOpen}`
@@ -125,9 +133,10 @@ export default function HeaderDesktopNavigation({
             const isOpen = desktopMenuOpen === menuId
             const isHighlighted = isOpen || isSection
             return (
-              <button
+              <Link
                 key={link.href}
-                type="button"
+                href={link.href}
+                prefetch={isSignedIn}
                 aria-haspopup="true"
                 aria-expanded={isOpen}
                 aria-controls={`desktop-menu-${menuId}`}
@@ -136,10 +145,6 @@ export default function HeaderDesktopNavigation({
                   openDesktopMenu(menuId)
                 }}
                 onFocus={warmDesktopMenuPanel}
-                onClick={() => {
-                  setFocusPanel(true)
-                  openDesktopMenu(menuId)
-                }}
                 onKeyDown={(event) => {
                   if (event.key !== "ArrowDown") return
                   event.preventDefault()
@@ -149,7 +154,7 @@ export default function HeaderDesktopNavigation({
                 className={`${PILL_CLASS} ${isHighlighted ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
                 <span className="whitespace-nowrap">{t(link.label)}</span>
-              </button>
+              </Link>
             )
           }
 

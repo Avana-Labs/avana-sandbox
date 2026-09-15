@@ -7,7 +7,7 @@ import { MobileMenu } from "../mobile-menu"
 const session = vi.hoisted(() => ({ isSignedIn: false }))
 const route = vi.hoisted(() => ({ pathname: "/" }))
 vi.mock("@/app/lib/siwe/use-siwe-auth", () => ({ useSiweAuth: () => session }))
-vi.mock("next/navigation", () => ({ usePathname: () => route.pathname }))
+vi.mock("next/navigation", () => ({ usePathname: () => route.pathname, useSearchParams: () => new URLSearchParams() }))
 vi.mock("next/link", () => ({
   default: ({ prefetch, ...props }: AnchorHTMLAttributes<HTMLAnchorElement> & { prefetch?: boolean }) => (
     <a {...props} data-prefetch={String(prefetch)} />
