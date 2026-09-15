@@ -11,6 +11,7 @@ import { buildSeoMetadata } from "@/app/lib/seo-metadata"
 import robots from "@/app/robots"
 import sitemap from "@/app/sitemap"
 import { buildOrganizationSchema, buildWebPageSchema, buildWebSiteSchema } from "@/app/components/seo/schema"
+import { metadata as askMetadata } from "@/app/ask/page"
 
 // The marketing host 308-redirects the app's route paths, so no app-served discoverability
 // signal may point at it.
@@ -55,5 +56,13 @@ describe("SEO canonical host", () => {
     expect(org.logo).toBe(`${SITE_URL}/Avana%20Favicon.png`)
     expect(String(org.logo)).not.toContain(" ")
     expect(page.isPartOf.url).toBe(SITE_URL)
+  })
+})
+
+describe("Ask AI metadata", () => {
+  it("self-canonicalizes to /ask instead of inheriting the homepage canonical", () => {
+    expect(askMetadata.alternates?.canonical).toBe("/ask")
+    expect(askMetadata.openGraph?.url).toBe(`${SITE_URL}/ask`)
+    expect(JSON.stringify(askMetadata)).not.toContain(MARKETING_HOST)
   })
 })
