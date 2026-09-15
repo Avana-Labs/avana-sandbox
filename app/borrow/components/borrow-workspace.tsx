@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { filterPools, groupByDex, type BorrowPoolRow, type BorrowableAsset } from "@/app/lib/data/borrow-domain"
 import type { BorrowWorkspaceData } from "@/app/lib/data/providers/borrow"
 import type { SupplyRowContext } from "@/app/lib/data/borrow-position-types"
@@ -84,7 +84,12 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
   const { pendingRows } = pageData
   const session = useBorrowSessionContext()
   const { deltas: liquidityDeltas } = useMarketLiquidity()
-  const [currentTab, setCurrentTab] = useState<BorrowTabId>("all")
+  const searchParams = useSearchParams()
+  // Deep links (e.g. the header mega-menu's "View all") can preselect a category via ?category=.
+  const [currentTab, setCurrentTab] = useState<BorrowTabId>(() => {
+    const param = searchParams?.get("category") ?? ""
+    return isPoolTab(param as BorrowTabId) ? (param as BorrowTabId) : "all"
+  })
   const [search, setSearch] = useState("")
   const marketSpokeById = useMemo(
     () => new Map(pageData.poolCatalog.map((market) => [market.id, market.spoke])),

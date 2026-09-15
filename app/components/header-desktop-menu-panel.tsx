@@ -6,6 +6,8 @@ import { TokenIcon } from "@/app/components/token-icon"
 import type { DesktopMenuId } from "@/app/components/header-desktop-menu-data"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
 import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
+import { BORROWABLE_ASSETS, BORROWABLE_CATEGORIES } from "@/app/lib/data/borrow-domain"
+import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
 import { categorizeMarket } from "@/app/lib/markets/category"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
@@ -70,6 +72,26 @@ function lendColumns(): PanelColumn[] {
   })
 }
 
+// Group borrowable (debt) assets by their catalog category; show the populated buckets.
+function borrowColumns(): PanelColumn[] {
+  const categories = BORROWABLE_CATEGORIES.filter((category) =>
+    BORROWABLE_ASSETS.some((asset) => asset.category === category.id),
+  ).slice(0, 3)
+  return categories.map((category) => {
+    const rows = BORROWABLE_ASSETS.filter((asset) => asset.category === category.id).slice(0, 3)
+    return {
+      title: category.label,
+      viewAllHref: categoryHref("/borrow", rows[0]?.symbol ?? ""),
+      rows: rows.map((asset) => ({
+        symbol: asset.symbol,
+        name: asset.name,
+        metric: `${asset.borrowApr.toFixed(2)}%`,
+        href: borrowAssetDetailPath(asset.id),
+      })),
+    }
+  })
+}
+
 function usePanelConfig(menuId: DesktopMenuId): PanelConfig | null {
   const { t } = useTranslation()
   if (menuId === "lend") {
@@ -82,7 +104,19 @@ function usePanelConfig(menuId: DesktopMenuId): PanelConfig | null {
       columns: lendColumns(),
     }
   }
-  // Borrow and Multiply panels ship next; their triggers stay plain links until then.
+  if (menuId === "borrow") {
+    return {
+      eyebrow: t("Borrow"),
+      tagline: t(
+        "Turn your liquidity pool positions into collateral and borrow against them here without leaving the pool.",
+      ),
+      browseHref: "/borrow",
+      browseLabel: t("Browse Borrow Page"),
+      metricLabel: t("APR"),
+      columns: borrowColumns(),
+    }
+  }
+  // The Multiply panel ships next; its trigger stays a plain link until then.
   return null
 }
 

@@ -3,6 +3,9 @@
 import type { TranslationDictionary } from "../types"
 
 const dict: TranslationDictionary = {
+  "Turn your liquidity pool positions into collateral and borrow against them here without leaving the pool.":
+    "Zet je liquiditeitspool-posities om in onderpand en leen hier tegen ze, zonder de pool te verlaten.",
+  "Browse Borrow Page": "Naar de pagina Lenen",
   "Supply capital into Hub-connected lending markets and earn from LP-backed borrower demand.":
     "Lever kapitaal aan Hub-verbonden leenmarkten en verdien aan de door LP gedekte vraag van leners.",
   "Browse Lend Page": "Naar de pagina Uitlenen",
