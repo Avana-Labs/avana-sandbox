@@ -15,7 +15,7 @@ import { applyBorrowableAssetDelta } from "@/app/lib/market-liquidity/apply"
 import { TabsBar, isPoolTab, type BorrowTabId, type PoolTabId } from "./tabs-bar"
 import { CollateralPoolsList, CollateralPoolsTable } from "./collateral-pools-table"
 import { useMediaQuery } from "@/app/lib/use-media-query"
-import { categorizeMarket, type MarketCategory } from "@/app/lib/markets/category"
+import { categorizeMarket, CATEGORY_CHIPS, type MarketCategory } from "@/app/lib/markets/category"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { RevealSentinel, useProgressiveReveal } from "@/app/lib/ui/use-progressive-reveal"
 
@@ -87,8 +87,8 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
   const searchParams = useSearchParams()
   // Deep links (e.g. the header mega-menu's "View all") can preselect a category via ?category=.
   const [currentTab, setCurrentTab] = useState<BorrowTabId>(() => {
-    const param = searchParams?.get("category") ?? ""
-    return isPoolTab(param as BorrowTabId) ? (param as BorrowTabId) : "all"
+    const param = searchParams?.get("category")
+    return param && CATEGORY_CHIPS.borrow.some((chip) => chip.id === param) ? (param as BorrowTabId) : "all"
   })
   const [search, setSearch] = useState("")
   const marketSpokeById = useMemo(
