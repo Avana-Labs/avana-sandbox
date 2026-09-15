@@ -6,10 +6,11 @@ import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surfac
 import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 
 export const metadata: Metadata = buildSeoMetadata({
-  title: "Avana",
+  title: "Borrow Against LP Positions on Aave v4",
   description: "Borrow against LP positions on Aave v4, lend, and multiply liquidity.",
   path: "/",
   keywords: ["Avana", "borrow LP tokens", "DeFi lending", "Aave v4"],
+  index: true,
 })
 
 export default async function HomePage() {
@@ -24,10 +25,7 @@ export default async function HomePage() {
     )
   }
 
-  return (
-    <>
-      <SchemaMarkup data={[buildWebSiteSchema(), buildOrganizationSchema()]} />
-      <HomePageClient />
-    </>
-  )
+  // Site-wide WebSite + Organization JSON-LD now renders once in the root layout <head>
+  // (in the served shell). The home page just renders its content.
+  return <HomePageClient />
 }

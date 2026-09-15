@@ -16,13 +16,14 @@ import { verifySiweSessionJwt } from "./lib/siwe/jwt"
 import { Web3ProviderBoundary } from "./lib/web3/web3-provider-boundary"
 import { PageLoadingBar } from "./components/page-loading-bar"
 import { ScrollResetOnNavigate } from "./components/scroll-reset-on-navigate"
-import { DeferredGlobalChrome } from "./components/deferred-global-chrome"
 import { ConditionalSiteChrome } from "./components/conditional-site-chrome"
 import { SandboxGate } from "./components/sandbox/sandbox-gate"
 import { ONBOARDED_COOKIE } from "./components/sandbox/onboarded-cookie"
 import { CurrencyDisplayBoundary } from "./components/currency-display-boundary"
 import { ProductRuntimeProviders } from "./components/product-runtime-providers"
 import { isLighthouseAuditMode } from "./lib/test-mode"
+import { SITE_URL } from "./lib/site-url"
+import { SchemaMarkup, buildOrganizationSchema, buildWebSiteSchema } from "./components/seo/schema"
 import { loadServerTokenPrices } from "./lib/prices/server-hydrate"
 import { loadServerFxRates } from "./lib/currency/server-hydrate"
 // Only load Vercel Analytics / Speed Insights when actually running on Vercel — their
@@ -58,7 +59,7 @@ const diatypeSans = localFont({
 const themeBootstrapScript = `(()=>{const storageKey="avana-theme";const root=document.documentElement;const storedTheme=window.localStorage.getItem(storageKey);const theme=storedTheme==="light"||storedTheme==="dark"||storedTheme==="system"?storedTheme:"light";const systemTheme=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";const resolvedTheme=theme==="system"?systemTheme:theme;root.classList.toggle("dark",resolvedTheme==="dark");root.style.colorScheme=resolvedTheme})()`
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://avana.cc"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Avana - Borrow Against LP Positions on Aave v4",
     template: "%s | Avana",
@@ -86,9 +87,13 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
+  // Default every app route to noindex: the wallet gate serves crawlers the onboarding shell, and
+  // the marketing host (www.avana.cc) owns brand SEO. Routes with real public content opt back in
+  // via buildSeoMetadata({ index: true }) — currently only / and /ask.
+  robots: { index: false, follow: true },
   openGraph: {
     type: "website",
-    url: "https://avana.cc",
+    url: SITE_URL,
     siteName: "Avana",
     title: "Avana - Borrow Against LP Positions on Aave v4",
     description: "Unlock liquidity from your LP tokens while continuing to earn trading fees.",
@@ -171,6 +176,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* Inline so theme/color-scheme apply before first paint — external src added a
             network hop and could shift scrollbar-gutter when overlays open. */}
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} suppressHydrationWarning />
+        {/* Site-wide JSON-LD in <head> so it lands in the served HTML shell (static/AI crawlers
+            read it) on every route, independent of the wallet gate that intercepts page bodies. */}
+        <SchemaMarkup data={[buildWebSiteSchema(), buildOrganizationSchema()]} />
       </head>
       <body className="min-h-screen bg-background">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
@@ -189,10 +197,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     <ScrollResetOnNavigate />
                     <SandboxGate onboardedWallet={onboardedWallet}>
                       <ProductRuntimeProviders initialTokenPrices={initialTokenPrices}>
-                        <CurrencyDisplayBoundary>
-                          {children}
-                          <DeferredGlobalChrome />
-                        </CurrencyDisplayBoundary>
+                        <CurrencyDisplayBoundary>{children}</CurrencyDisplayBoundary>
                       </ProductRuntimeProviders>
                     </SandboxGate>
                   </ConditionalSiteChrome>

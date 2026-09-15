@@ -41,6 +41,7 @@ export function MultiplyClient({
 
   return (
     <main className="container mx-auto px-4 py-8">
+      <h1 className="sr-only">Multiply markets</h1>
       <div className="mx-auto max-w-[1152px]">
         <MultiplyHero metrics={pageData.heroMetrics} />
         <ExploreLoopsMarketsTable

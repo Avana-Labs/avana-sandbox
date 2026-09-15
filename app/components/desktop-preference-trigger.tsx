@@ -6,7 +6,7 @@ import { MoreHorizontal } from "@/app/components/icons"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 export const preferencesTriggerClassName =
-  "inline-flex size-10 items-center justify-center rounded-full border border-border bg-background text-muted-foreground outline-none transition-colors hover:bg-hover hover:text-foreground focus:outline-none focus-visible:outline-none dark:bg-[#181818] dark:text-white/72 dark:hover:bg-surface-hover dark:hover:text-white [-webkit-tap-highlight-color:transparent]"
+  "inline-flex size-10 items-center justify-center rounded-full border border-border bg-background text-muted-foreground outline-none transition-colors hover:bg-hover hover:text-foreground focus:outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background dark:bg-[#181818] dark:text-white/72 dark:hover:bg-surface-hover dark:hover:text-white [-webkit-tap-highlight-color:transparent]"
 
 const loadMenu = () => import("./desktop-preference-controls").then((mod) => mod.DesktopPreferenceMenu)
 const DesktopPreferenceMenu = dynamic(loadMenu, {

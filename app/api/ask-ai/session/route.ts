@@ -1,6 +1,6 @@
 import crypto from "node:crypto"
 import { mintAskGuestJwt, resolveIssuer } from "@/app/lib/siwe/jwt"
-import { ASK_AI_GUEST_COOKIE, isGuestMintAllowed, readAskGuestId, readClientIp } from "./route-utils"
+import { ASK_AI_GUEST_COOKIE, isGuestMintAllowed, readAskGuestId, readClientIp, signGuestId } from "./route-utils"
 
 export const runtime = "nodejs"
 
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   if (!existingGuestId) {
     response.headers.append(
       "Set-Cookie",
-      `${ASK_AI_GUEST_COOKIE}=${guestId}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax${
+      `${ASK_AI_GUEST_COOKIE}=${signGuestId(guestId)}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax${
         process.env.NODE_ENV === "production" ? "; Secure" : ""
       }`,
     )

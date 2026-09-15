@@ -3,6 +3,7 @@ import { headers } from "next/headers"
 import { SchemaMarkup, buildWebPageSchema } from "@/app/components/seo/schema"
 import { fetchMultiplyPage } from "@/app/lib/data/providers/multiply"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
+import { SITE_URL } from "@/app/lib/site-url"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
 import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 
@@ -21,7 +22,7 @@ export default async function MultiplyPage() {
           data={buildWebPageSchema({
             name: "Multiply",
             description: "Multiply LP-backed positions.",
-            url: "https://avana.cc/multiply",
+            url: `${SITE_URL}/multiply`,
           })}
         />
         <LighthouseAuditSurface title="Multiply TVL">Multiply LP-backed positions.</LighthouseAuditSurface>
@@ -43,7 +44,7 @@ export default async function MultiplyPage() {
         data={buildWebPageSchema({
           name: "Multiply",
           description: "Multiply LP-backed positions.",
-          url: "https://avana.cc/multiply",
+          url: `${SITE_URL}/multiply`,
         })}
       />
       <MultiplyClient pageData={pageData} initialIsDesktop={initialIsDesktop} />

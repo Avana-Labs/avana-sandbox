@@ -75,10 +75,13 @@ describe("all borrow discovery surfaces route LTV through formatLtvPct (G2)", ()
   })
 })
 
-describe("Explore cards carry DEX/tier context (G1)", () => {
-  it("hero card subtitle includes the pool venue so identical pairs are disambiguated", () => {
+describe("Explore cards lead with the pair label (G1)", () => {
+  it("hero card title is the plain pair label, with no venue folded in or shown as a subtitle", () => {
     const source = readSource("app/borrow/borrow-page-hero.tsx")
-    expect(source).toContain("pool.venue")
+    expect(source).toContain("title: formatBorrowPairLabel(pool)")
+    // The curated Explore carousel dedupes by pool name, so it never features two
+    // exact same-pair pools that would need a venue label to tell them apart.
+    expect(source).not.toContain("pool.venue")
   })
 })
 

@@ -43,6 +43,7 @@ export function LendClient({
   return (
     <div className="bg-background">
       <main className="py-8">
+        <h1 className="sr-only">Lend markets</h1>
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-[1152px]">
             <LendHero markets={markets} />

@@ -1,11 +1,26 @@
 "use client"
 
-import { Check, ChevronLeft, ChevronRight, MoonStar, MoreHorizontal, SunMedium } from "@/app/components/icons"
+import Link from "next/link"
+import {
+  ArrowUpRight,
+  BookOpen,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  LifeBuoy,
+  Mail,
+  MoonStar,
+  MoreHorizontal,
+  ShieldCheck,
+  SunMedium,
+} from "@/app/components/icons"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { PriceFreshnessNotice } from "./prices/price-freshness-notice"
@@ -15,6 +30,7 @@ import { useTheme } from "./theme-provider"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useEffect, useState } from "react"
 
+import { AVANA_EXTERNAL_LINKS } from "./external-links"
 import { preferencesTriggerClassName } from "./desktop-preference-trigger"
 
 type PreferencesView = "root" | "language" | "currency" | "network"
@@ -26,6 +42,14 @@ const NETWORK_OPTIONS = [
   { code: "Base", label: "Base", unavailable: true },
   { code: "Arbitrum", label: "Arbitrum", unavailable: true },
   { code: "Robinhood", label: "Robinhood", unavailable: true },
+] as const
+
+const HELP_LINKS = [
+  { href: AVANA_EXTERNAL_LINKS.terms, label: "Terms of Service", icon: FileText, external: true },
+  { href: AVANA_EXTERNAL_LINKS.privacy, label: "Privacy policy", icon: ShieldCheck, external: true },
+  { href: "mailto:support@avana.cc?subject=Avana%20Support", label: "Contact us", icon: Mail, external: true },
+  { href: "/support-center", label: "Support center", icon: LifeBuoy, external: false },
+  { href: AVANA_EXTERNAL_LINKS.developers, label: "Docs", icon: BookOpen, external: true },
 ] as const
 
 export function DesktopPreferenceMenu({ initialOpen = false }: { initialOpen?: boolean }) {
@@ -142,6 +166,36 @@ export function DesktopPreferenceMenu({ initialOpen = false }: { initialOpen?: b
                 <ChevronRight className="h-4 w-4 text-muted-foreground dark:text-white/52" />
               </span>
             </DropdownMenuItem>
+
+            <DropdownMenuSeparator className="mx-1 my-1.5 bg-border dark:bg-white/10" />
+            {HELP_LINKS.map(({ href, label, icon: Icon, external }) =>
+              external ? (
+                <DropdownMenuItem
+                  key={label}
+                  asChild
+                  className="cursor-pointer rounded-[16px] px-3 py-2.5 text-[14px] text-foreground outline-none hover:bg-hover focus:bg-hover dark:text-white"
+                >
+                  <a href={href} target="_blank" rel="noreferrer" className="flex items-center justify-between gap-3">
+                    <span className="flex items-center gap-2.5">
+                      <Icon className="h-4 w-4 text-muted-foreground dark:text-white/64" strokeWidth={1.8} />
+                      <span>{t(label)}</span>
+                    </span>
+                    <ArrowUpRight className="h-3.5 w-3.5 text-muted-foreground/70" aria-hidden />
+                  </a>
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem
+                  key={label}
+                  asChild
+                  className="cursor-pointer rounded-[16px] px-3 py-2.5 text-[14px] text-foreground outline-none hover:bg-hover focus:bg-hover dark:text-white"
+                >
+                  <Link href={href} className="flex items-center gap-2.5">
+                    <Icon className="h-4 w-4 text-muted-foreground dark:text-white/64" strokeWidth={1.8} />
+                    <span>{t(label)}</span>
+                  </Link>
+                </DropdownMenuItem>
+              ),
+            )}
           </>
         ) : null}
 
