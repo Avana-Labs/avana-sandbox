@@ -16,7 +16,6 @@ import { verifySiweSessionJwt } from "./lib/siwe/jwt"
 import { Web3ProviderBoundary } from "./lib/web3/web3-provider-boundary"
 import { PageLoadingBar } from "./components/page-loading-bar"
 import { ScrollResetOnNavigate } from "./components/scroll-reset-on-navigate"
-import { DeferredGlobalChrome } from "./components/deferred-global-chrome"
 import { ConditionalSiteChrome } from "./components/conditional-site-chrome"
 import { SandboxGate } from "./components/sandbox/sandbox-gate"
 import { ONBOARDED_COOKIE } from "./components/sandbox/onboarded-cookie"
@@ -198,10 +197,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     <ScrollResetOnNavigate />
                     <SandboxGate onboardedWallet={onboardedWallet}>
                       <ProductRuntimeProviders initialTokenPrices={initialTokenPrices}>
-                        <CurrencyDisplayBoundary>
-                          {children}
-                          <DeferredGlobalChrome />
-                        </CurrencyDisplayBoundary>
+                        <CurrencyDisplayBoundary>{children}</CurrencyDisplayBoundary>
                       </ProductRuntimeProviders>
                     </SandboxGate>
                   </ConditionalSiteChrome>
