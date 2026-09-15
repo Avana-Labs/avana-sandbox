@@ -6,15 +6,20 @@ type SeoMetadataInput = {
   description: string
   path: string
   keywords?: string[]
+  // Opt a route back into indexing. The root layout defaults every app route to noindex (the wallet
+  // gate serves crawlers the onboarding shell, and the marketing host owns brand SEO); only the
+  // routes with genuinely public content (/, /ask) pass index: true.
+  index?: boolean
 }
 
-export function buildSeoMetadata({ title, description, path, keywords }: SeoMetadataInput): Metadata {
+export function buildSeoMetadata({ title, description, path, keywords, index }: SeoMetadataInput): Metadata {
   const url = `${SITE_URL}${path}`
 
   return {
     title,
     description,
     keywords,
+    ...(index ? { robots: { index: true, follow: true } } : {}),
     alternates: {
       canonical: path,
     },

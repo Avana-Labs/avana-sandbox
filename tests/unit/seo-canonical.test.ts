@@ -76,3 +76,27 @@ describe("Homepage metadata", () => {
     expect(homeMetadata.alternates?.canonical).toBe("/")
   })
 })
+
+describe("noindex strategy (marketing owns SEO)", () => {
+  it("defaults routes to noindex and opts specific ones back in via index: true", () => {
+    // A gated route sets no robots override, so it inherits the layout's noindex default.
+    expect(buildSeoMetadata({ title: "t", description: "d", path: "/borrow" }).robots).toBeUndefined()
+    expect(buildSeoMetadata({ title: "t", description: "d", path: "/", index: true }).robots).toEqual({
+      index: true,
+      follow: true,
+    })
+  })
+
+  it("keeps / and /ask indexable", () => {
+    expect((homeMetadata.robots as { index?: boolean } | undefined)?.index).toBe(true)
+    expect((askMetadata.robots as { index?: boolean } | undefined)?.index).toBe(true)
+  })
+
+  it("sitemap lists only indexable routes (/ and /ask), not the gated ones", async () => {
+    const urls = (await sitemap()).map((entry) => entry.url)
+    expect(urls).toContain(SITE_URL)
+    expect(urls).toContain(`${SITE_URL}/ask`)
+    expect(urls.some((url) => url.includes("/borrow"))).toBe(false)
+    expect(urls.some((url) => url.includes("/dashboard"))).toBe(false)
+  })
+})

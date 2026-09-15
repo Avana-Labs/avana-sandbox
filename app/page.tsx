@@ -10,6 +10,7 @@ export const metadata: Metadata = buildSeoMetadata({
   description: "Borrow against LP positions on Aave v4, lend, and multiply liquidity.",
   path: "/",
   keywords: ["Avana", "borrow LP tokens", "DeFi lending", "Aave v4"],
+  index: true,
 })
 
 export default async function HomePage() {

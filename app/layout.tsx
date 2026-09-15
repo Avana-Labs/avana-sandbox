@@ -88,6 +88,10 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/",
   },
+  // Default every app route to noindex: the wallet gate serves crawlers the onboarding shell, and
+  // the marketing host (www.avana.cc) owns brand SEO. Routes with real public content opt back in
+  // via buildSeoMetadata({ index: true }) — currently only / and /ask.
+  robots: { index: false, follow: true },
   openGraph: {
     type: "website",
     url: SITE_URL,
