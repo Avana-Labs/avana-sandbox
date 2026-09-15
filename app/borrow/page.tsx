@@ -49,6 +49,7 @@ export default async function BorrowPage() {
       />
       <div className="bg-background">
         <main className="container mx-auto px-4 py-8">
+          <h1 className="sr-only">Borrow markets</h1>
           <div className="mx-auto max-w-[1152px]">
             <BorrowPageClient pageData={pageData} initialIsDesktop={initialIsDesktop} />
           </div>

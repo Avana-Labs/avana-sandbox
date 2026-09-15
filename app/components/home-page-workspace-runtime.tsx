@@ -55,7 +55,8 @@ function HomePageWorkspace() {
   }
 
   return (
-    <div className="bg-background">
+    <main className="bg-background">
+      <h1 className="sr-only">Avana workspace</h1>
       <HomeWorkspaceCard mode={mode} onModeChange={setMode}>
         {mode === "borrow" ? <BorrowActionPageClient kind="borrow" embedded layout="home" closeHref="/" /> : null}
         {mode === "swap" ? <HomeSwapAction /> : null}
@@ -63,6 +64,6 @@ function HomePageWorkspace() {
         {mode === "claim" ? <BorrowActionPageClient kind="claim" embedded layout="home" closeHref="/" /> : null}
         {mode === "remove" ? <BorrowActionPageClient kind="remove" embedded layout="home" closeHref="/" /> : null}
       </HomeWorkspaceCard>
-    </div>
+    </main>
   )
 }

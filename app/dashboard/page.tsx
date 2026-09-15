@@ -39,6 +39,7 @@ export default async function DashboardPage() {
         <SchemaMarkup data={DASHBOARD_SCHEMA} />
         <div className="bg-background">
           <main className="container mx-auto px-3 py-6 sm:px-4 md:py-10">
+            <h1 className="sr-only">Dashboard</h1>
             <div className="mx-auto max-w-[1152px]">
               <DashboardPageClient />
             </div>
