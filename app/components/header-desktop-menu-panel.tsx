@@ -22,6 +22,8 @@ interface PanelRow {
   label?: string
   name?: string
   metric: string
+  /** Colours the metric green (positive) / red (negative) for signed returns; neutral if unset. */
+  metricTone?: "positive" | "negative"
   /** Per-market detail page. */
   href: string
 }
@@ -70,12 +72,13 @@ function lendColumns(): PanelColumn[] {
       .sort((a, b) => Number(LEND_DEMOTE.has(a.symbol)) - Number(LEND_DEMOTE.has(b.symbol)))
       .slice(0, 3)
     return {
-      title: group.title,
+      title: group.title === "Coinbase & Robinhood Stocks" ? "Stocks" : group.title,
       viewAllHref: categoryHref("/lend", rows[0]?.symbol ?? ""),
       rows: rows.map((row) => ({
         symbol: row.symbol,
         name: row.name,
         metric: row.apy,
+        metricTone: "positive" as const,
         href: `/lend/markets/${resolveLendMarketId(row.symbol)}`,
       })),
     }
@@ -188,6 +191,7 @@ function multiplyColumns(): PanelColumn[] {
         symbol2: row.asset,
         label: `${row.protocol}/${row.asset}`,
         metric: row.apy,
+        metricTone: row.apy.trim().startsWith("-") ? ("negative" as const) : ("positive" as const),
         href: row.href,
       })),
     }))
@@ -362,7 +366,15 @@ export default function HeaderDesktopMenuPanel({
                                 <span className="truncate text-[12px] text-muted-foreground">{row.name}</span>
                               ) : null}
                             </span>
-                            <span className="shrink-0 text-[13px] font-medium tabular-nums text-foreground">
+                            <span
+                              className={`shrink-0 text-[13px] font-medium tabular-nums ${
+                                row.metricTone === "negative"
+                                  ? "text-rose-500"
+                                  : row.metricTone === "positive"
+                                    ? "text-emerald-500"
+                                    : "text-foreground"
+                              }`}
+                            >
                               {row.metric}
                             </span>
                           </Link>
