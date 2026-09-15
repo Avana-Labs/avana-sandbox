@@ -226,11 +226,12 @@
   }
 }
 
-/* Apple's mark is solid black, so it vanishes on a dark background. Invert it to white in
-   dark mode wherever the tokenized-stock icon renders — borrow/lend/multiply cards, tables,
-   the carousel, and search — not just the action pages. The selector matches both the raw
-   path and the Next-optimized URL (both contain "apple.png"). */
-.dark img[src*="apple.png"] {
+/* Some tokenized-stock marks (Apple, Micron) are solid black, so they vanish on a dark
+   background. Invert them to white in dark mode wherever the icon renders — borrow/lend/multiply
+   cards, tables, the carousel, and search — not just the action pages. The selector matches both
+   the raw path and the Next-optimized URL (both contain the file name). */
+.dark img[src*="apple.png"],
+.dark img[src*="micron.png"] {
   filter: invert(1);
 }
 
