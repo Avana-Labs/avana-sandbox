@@ -119,11 +119,18 @@ function StockPriceOverlay({ children }: { children: React.ReactNode }) {
     // Cached quotes first (instant), then a refresh; both dispatch the event → sync.
     applyCachedStockPrices()
     void fetchStockPrices()
-    const id = window.setInterval(() => void fetchStockPrices(), STOCK_PRICE_REFRESH_MS)
+    // Only poll while the tab is visible — a backgrounded tab shouldn't keep hitting the network —
+    // and refresh once on return so a long-hidden tab isn't left stale.
+    const refreshIfVisible = () => {
+      if (document.visibilityState === "visible") void fetchStockPrices()
+    }
+    const id = window.setInterval(refreshIfVisible, STOCK_PRICE_REFRESH_MS)
+    document.addEventListener("visibilitychange", refreshIfVisible)
     sync()
     return () => {
       window.clearInterval(id)
       window.removeEventListener(STOCK_PRICES_UPDATED_EVENT, sync)
+      document.removeEventListener("visibilitychange", refreshIfVisible)
     }
   }, [])
   const merged = React.useMemo(
@@ -155,11 +162,9 @@ export function TokenPricesProvider({
   // the lend detail). The subscription also calls setCanonicalPrices, so the module store the
   // detail pages / Lend / Borrow / Multiply tabs read stays in lockstep with the wallet card.
   if (!realtime || !hasConvexClient || isLighthouseAuditMode()) {
-    return (
-      <TokenPricesContext.Provider value={seed}>
-        <StockPriceOverlay>{children}</StockPriceOverlay>
-      </TokenPricesContext.Provider>
-    )
+    // Guests / no-Convex / audit never render stock cells (product routes are wallet-gated), so
+    // skip the stock-price overlay entirely — no unused fetch or polling timer on the guest path.
+    return <TokenPricesContext.Provider value={seed}>{children}</TokenPricesContext.Provider>
   }
   return (
     <TokenPricesContext.Provider value={seed}>
