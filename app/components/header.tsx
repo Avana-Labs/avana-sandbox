@@ -7,6 +7,7 @@ import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { useSiweAuth } from "@/app/lib/siwe/use-siwe-auth"
 import { AskAssistantTrigger } from "./ask-assistant-trigger"
 import { BrandIcon, BrandLogo } from "./brand-logo"
+import HeaderDesktopNavigation from "./header-desktop-navigation"
 import { LazyMobileMenu } from "./lazy-mobile-menu"
 import { LazySearchCommand, LazySearchCommandIconOnly } from "./lazy-search-command"
 import { personalDesktopHeaderLinks } from "./site-nav"
@@ -33,6 +34,7 @@ export function Header() {
   const desktopLinks = personalDesktopHeaderLinks
   const [mounted, setMounted] = useState(false)
   const [showDivider, setShowDivider] = useState(false)
+  const [megaMenuOpen, setMegaMenuOpen] = useState(false)
   const headerRef = useRef<HTMLElement | null>(null)
   const renderMobileBrand = () => <BrandIcon />
   const renderMobileActions = () => (
@@ -168,7 +170,7 @@ export function Header() {
       ref={headerRef}
       className={cn(
         "sticky top-0 z-40 flex h-14 items-center border-b bg-background text-foreground transition-[border-color] duration-200",
-        mounted && showDivider ? "border-border" : "border-transparent",
+        mounted && (showDivider || megaMenuOpen) ? "border-border" : "border-transparent",
       )}
     >
       {/* Full desktop: sides hug content so long locales can't clip labels; search flexes. */}
@@ -184,9 +186,7 @@ export function Header() {
               <HeaderBrand />
             </Link>
 
-            <nav aria-label={t("Primary")} className="flex items-center gap-0.5 whitespace-nowrap">
-              {renderPrimaryLinks(false)}
-            </nav>
+            <HeaderDesktopNavigation isSignedIn={isSignedIn} onOpenChange={setMegaMenuOpen} />
           </div>
 
           <div className="flex min-w-0 justify-center px-1">

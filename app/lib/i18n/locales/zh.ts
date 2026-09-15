@@ -3,6 +3,7 @@
 import type { TranslationDictionary } from "../types"
 
 const dict: TranslationDictionary = {
+  "Earn a live APY on supplied assets": "在存入的资产上赚取实时 APY",
   "Coinbase & Robinhood Stocks": "Coinbase 与 Robinhood 股票",
   "Tokenized equities — deposit stock tokens to earn lending yield": "代币化股票 — 存入股票代币以赚取借贷收益",
   "Tokenized-equity concentrated LP positions": "代币化股票的集中流动性 LP 仓位",

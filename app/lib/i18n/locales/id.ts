@@ -3,6 +3,7 @@
 import type { TranslationDictionary } from "../types"
 
 const dict: TranslationDictionary = {
+  "Earn a live APY on supplied assets": "Dapatkan APY real-time atas aset yang disetorkan",
   "Coinbase & Robinhood Stocks": "Saham Coinbase & Robinhood",
   "Tokenized equities — deposit stock tokens to earn lending yield":
     "Saham tertokenisasi — setor token saham untuk memperoleh imbal hasil pinjaman",

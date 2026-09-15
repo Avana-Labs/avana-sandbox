@@ -3,6 +3,7 @@
 import type { TranslationDictionary } from "../types"
 
 const dict: TranslationDictionary = {
+  "Earn a live APY on supplied assets": "Gagnez un APY en temps réel sur les actifs déposés",
   "Coinbase & Robinhood Stocks": "Actions Coinbase & Robinhood",
   "Tokenized equities — deposit stock tokens to earn lending yield":
     "Actions tokenisées — déposez des tokens d'actions pour générer un rendement de prêt",
