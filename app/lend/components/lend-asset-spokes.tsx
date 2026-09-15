@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { ActionIcon } from "@/app/components/action-icon"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { Button } from "@/components/ui/button"
@@ -593,8 +593,13 @@ export function LendAssetSpokes({
   initialIsDesktop?: boolean
 }) {
   const { t } = useTranslation()
+  const searchParams = useSearchParams()
   const [search, setSearch] = useState("")
-  const [currentTab, setCurrentTab] = useState<CategoryChip["id"]>("all")
+  // Deep links (e.g. the header mega-menu's "View all") can preselect a category via ?category=.
+  const [currentTab, setCurrentTab] = useState<CategoryChip["id"]>(() => {
+    const param = searchParams?.get("category")
+    return param && CATEGORY_CHIPS.lend.some((chip) => chip.id === param) ? (param as CategoryChip["id"]) : "all"
+  })
 
   const filteredGroups = useMemo(() => {
     const query = search.trim().toLowerCase()

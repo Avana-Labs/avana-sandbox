@@ -5,18 +5,23 @@ import { useEffect, useRef } from "react"
 import { TokenIcon } from "@/app/components/token-icon"
 import type { DesktopMenuId } from "@/app/components/header-desktop-menu-data"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
+import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
+import { categorizeMarket } from "@/app/lib/markets/category"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 interface PanelRow {
   symbol: string
   name: string
   metric: string
+  /** Per-market detail page. */
+  href: string
 }
 
 interface PanelColumn {
   title: string
+  /** Product page with this column's category chip preselected. */
+  viewAllHref: string
   rows: PanelRow[]
-  href: string
 }
 
 interface PanelConfig {
@@ -24,16 +29,22 @@ interface PanelConfig {
   eyebrow: string
   /** One-line intro shown under the eyebrow. */
   tagline: string
-  /** Where the intro CTA and per-column "View all" links point. */
-  href: string
-  /** Right-aligned metric label for each column (e.g. APY). */
+  /** The intro CTA target (the product landing page) and its label. */
+  browseHref: string
+  browseLabel: string
+  /** Right-aligned metric label for each column (e.g. APY / APR / Net APY). */
   metricLabel: string
   columns: PanelColumn[]
 }
 
-// Pull three lend category groups for the columns, preferring a stablecoin / ETH / stocks
-// spread so the panel mirrors the reference (crypto + stocks) rather than three near-identical
-// stablecoin columns.
+// Deep-link a column's "View all" to the product page with the matching category chip
+// preselected (?category=). Stablecoins → forex, ETH family → eth, stocks/curated → smart.
+function categoryHref(base: string, symbol: string): string {
+  return `${base}?category=${categorizeMarket(symbol)}`
+}
+
+// Prefer a stablecoin / ETH / stocks spread so the panel mirrors the reference (crypto +
+// stocks) rather than three near-identical stablecoin columns.
 function lendColumns(): PanelColumn[] {
   const preferred = ["Stablecoins", "Ethereum-Based", "Coinbase & Robinhood Stocks"]
   const byTitle = new Map(LEND_ASSET_GROUPS.map((group) => [group.title, group]))
@@ -44,15 +55,19 @@ function lendColumns(): PanelColumn[] {
     if (chosen.length >= 3) break
     if (!chosen.includes(group)) chosen.push(group)
   }
-  return chosen.slice(0, 3).map((group) => ({
-    title: group.title,
-    href: "/lend",
-    rows: group.rows.slice(0, 3).map((row) => ({
-      symbol: row.symbol,
-      name: row.name,
-      metric: row.apy,
-    })),
-  }))
+  return chosen.slice(0, 3).map((group) => {
+    const rows = group.rows.slice(0, 3)
+    return {
+      title: group.title,
+      viewAllHref: categoryHref("/lend", rows[0]?.symbol ?? ""),
+      rows: rows.map((row) => ({
+        symbol: row.symbol,
+        name: row.name,
+        metric: row.apy,
+        href: `/lend/markets/${resolveLendMarketId(row.symbol)}`,
+      })),
+    }
+  })
 }
 
 function usePanelConfig(menuId: DesktopMenuId): PanelConfig | null {
@@ -60,8 +75,9 @@ function usePanelConfig(menuId: DesktopMenuId): PanelConfig | null {
   if (menuId === "lend") {
     return {
       eyebrow: t("Lend"),
-      tagline: t("Earn a live APY on supplied assets"),
-      href: "/lend",
+      tagline: t("Supply capital into Hub-connected lending markets and earn from LP-backed borrower demand."),
+      browseHref: "/lend",
+      browseLabel: t("Browse Lend Page"),
       metricLabel: t("APY"),
       columns: lendColumns(),
     }
@@ -139,15 +155,15 @@ export default function HeaderDesktopMenuPanel({
                 <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                   {config.eyebrow}
                 </p>
-                <p className="max-w-[13rem] text-[15px] font-medium leading-[1.35] tracking-[-0.01em] text-foreground">
+                <p className="max-w-[15rem] text-[15px] font-medium leading-[1.4] tracking-[-0.01em] text-foreground">
                   {config.tagline}
                 </p>
                 <Link
-                  href={config.href}
+                  href={config.browseHref}
                   suppressHydrationWarning
                   className="group inline-flex items-center gap-1 text-[13px] font-medium text-brand transition-colors hover:text-foreground"
                 >
-                  {t("View all")}
+                  {config.browseLabel}
                   <span aria-hidden="true" className="transition-transform duration-200 group-hover:translate-x-0.5">
                     →
                   </span>
@@ -176,7 +192,7 @@ export default function HeaderDesktopMenuPanel({
                       {column.rows.map((row) => (
                         <Link
                           key={row.symbol}
-                          href={column.href}
+                          href={row.href}
                           suppressHydrationWarning
                           className="group -mx-2 flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-accent"
                         >
@@ -192,7 +208,7 @@ export default function HeaderDesktopMenuPanel({
                       ))}
                     </div>
                     <Link
-                      href={column.href}
+                      href={column.viewAllHref}
                       suppressHydrationWarning
                       className="group inline-flex items-center gap-1 px-2 text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground"
                     >

@@ -3,7 +3,9 @@
 import type { TranslationDictionary } from "../types"
 
 const dict: TranslationDictionary = {
-  "Earn a live APY on supplied assets": "जमा की गई संपत्तियों पर लाइव APY कमाएँ",
+  "Supply capital into Hub-connected lending markets and earn from LP-backed borrower demand.":
+    "Hub से जुड़े लेंडिंग मार्केट में पूंजी सप्लाई करें और LP-समर्थित उधारकर्ता मांग से कमाएँ।",
+  "Browse Lend Page": "उधार दें पेज देखें",
   "Coinbase & Robinhood Stocks": "Coinbase और Robinhood स्टॉक्स",
   "Tokenized equities — deposit stock tokens to earn lending yield":
     "टोकनयुक्त इक्विटी — उधार प्रतिफल कमाने के लिए स्टॉक टोकन जमा करें",

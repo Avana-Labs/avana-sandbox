@@ -3,7 +3,9 @@
 import type { TranslationDictionary } from "../types"
 
 const dict: TranslationDictionary = {
-  "Earn a live APY on supplied assets": "預け入れた資産でリアルタイムのAPYを獲得",
+  "Supply capital into Hub-connected lending markets and earn from LP-backed borrower demand.":
+    "Hub に接続された貸付マーケットに資金を供給し、LP に裏付けられた借り手需要から収益を得られます。",
+  "Browse Lend Page": "貸すページを見る",
   "Coinbase & Robinhood Stocks": "Coinbase・Robinhood 株式",
   "Tokenized equities — deposit stock tokens to earn lending yield":
     "トークン化株式 — 株式トークンを預け入れてレンディング利回りを獲得",

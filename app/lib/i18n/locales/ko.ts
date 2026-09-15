@@ -3,7 +3,9 @@
 import type { TranslationDictionary } from "../types"
 
 const dict: TranslationDictionary = {
-  "Earn a live APY on supplied assets": "예치한 자산에 실시간 APY를 받으세요",
+  "Supply capital into Hub-connected lending markets and earn from LP-backed borrower demand.":
+    "Hub에 연결된 대출 마켓에 자본을 공급하고 LP로 뒷받침되는 차입 수요에서 수익을 얻으세요.",
+  "Browse Lend Page": "예치 페이지 보기",
   "Coinbase & Robinhood Stocks": "Coinbase & Robinhood 주식",
   "Tokenized equities — deposit stock tokens to earn lending yield":
     "토큰화된 주식 — 주식 토큰을 예치하여 예치 수익을 얻으세요",
