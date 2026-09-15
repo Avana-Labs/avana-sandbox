@@ -47,7 +47,7 @@ interface PanelConfig {
 // Deep-link a column's "View all" to the product page with the matching category chip
 // preselected (?category=). Stablecoins → forex, ETH family → eth, stocks/curated → smart.
 function categoryHref(base: string, symbol: string): string {
-  return `${base}?category=${categorizeMarket(symbol)}`
+  return `${base}?category=${categorizeMarket(symbol)}#markets`
 }
 
 // Niche stablecoins pushed below the majors so the Stablecoins column leads with USDC/USDT/GHO.
@@ -156,7 +156,7 @@ function borrowColumns(): PanelColumn[] {
   ].slice(0, 3)
   return dexes.map((dex) => ({
     title: dex,
-    viewAllHref: `/borrow?q=${encodeURIComponent(dex)}`,
+    viewAllHref: `/borrow?q=${encodeURIComponent(dex)}#markets`,
     rows: pickDiversePools(byDex.get(dex) ?? [], 3).map((pool) => ({
       symbol: pool.visuals[0].symbol,
       symbol2: pool.visuals[1].symbol,
@@ -182,7 +182,7 @@ function multiplyColumns(): PanelColumn[] {
     .slice(0, 3)
     .map((category) => ({
       title: CATEGORY_TITLE[category],
-      viewAllHref: `/multiply?category=${category}`,
+      viewAllHref: `/multiply?category=${category}#markets`,
       rows: (byCategory.get(category) ?? []).slice(0, 3).map((row) => ({
         symbol: row.protocol,
         symbol2: row.asset,

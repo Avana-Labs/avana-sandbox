@@ -91,6 +91,18 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
     return param && CATEGORY_CHIPS.borrow.some((chip) => chip.id === param) ? (param as BorrowTabId) : "all"
   })
   const [search, setSearch] = useState(() => searchParams?.get("q") ?? "")
+
+  // Keep the filter in sync with the URL when a header mega-menu "View all" changes the query on
+  // this same page; the #markets hash on the link handles scrolling to this list.
+  const categoryParam = searchParams?.get("category")
+  const queryParam = searchParams?.get("q")
+  useEffect(() => {
+    if (categoryParam && CATEGORY_CHIPS.borrow.some((chip) => chip.id === categoryParam)) {
+      setCurrentTab(categoryParam as BorrowTabId)
+    }
+    if (queryParam) setSearch(queryParam)
+  }, [categoryParam, queryParam])
+
   const marketSpokeById = useMemo(
     () => new Map(pageData.poolCatalog.map((market) => [market.id, market.spoke])),
     [pageData.poolCatalog],
@@ -206,7 +218,7 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
   )
 
   return (
-    <section className="pb-16">
+    <section id="markets" className="scroll-mt-24 pb-16">
       <TabsBar
         currentTab={currentTab}
         onTabChange={(tab) => setCurrentTab(tab)}
