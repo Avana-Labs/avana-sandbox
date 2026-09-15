@@ -6,7 +6,7 @@ import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surfac
 import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 
 export const metadata: Metadata = buildSeoMetadata({
-  title: "Avana",
+  title: "Borrow Against LP Positions on Aave v4",
   description: "Borrow against LP positions on Aave v4, lend, and multiply liquidity.",
   path: "/",
   keywords: ["Avana", "borrow LP tokens", "DeFi lending", "Aave v4"],

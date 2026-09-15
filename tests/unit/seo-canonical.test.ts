@@ -12,6 +12,7 @@ import robots from "@/app/robots"
 import sitemap from "@/app/sitemap"
 import { buildOrganizationSchema, buildWebPageSchema, buildWebSiteSchema } from "@/app/components/seo/schema"
 import { metadata as askMetadata } from "@/app/ask/page"
+import { metadata as homeMetadata } from "@/app/page"
 
 // The marketing host 308-redirects the app's route paths, so no app-served discoverability
 // signal may point at it.
@@ -64,5 +65,14 @@ describe("Ask AI metadata", () => {
     expect(askMetadata.alternates?.canonical).toBe("/ask")
     expect(askMetadata.openGraph?.url).toBe(`${SITE_URL}/ask`)
     expect(JSON.stringify(askMetadata)).not.toContain(MARKETING_HOST)
+  })
+})
+
+describe("Homepage metadata", () => {
+  it("uses a descriptive title, avoiding the 'Avana | Avana' template duplication", () => {
+    // Root template is "%s | Avana"; a title of "Avana" renders "Avana | Avana".
+    expect(homeMetadata.title).not.toBe("Avana")
+    expect(typeof homeMetadata.title).toBe("string")
+    expect(homeMetadata.alternates?.canonical).toBe("/")
   })
 })
