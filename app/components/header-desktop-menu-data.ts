@@ -13,7 +13,7 @@ const PRODUCT_HREFS: Record<string, DesktopMenuId> = {
 
 // Which product links are upgraded to hover/focus mega-menu triggers. Any product link not
 // listed here renders as an ordinary pill link, so panels can ship one at a time.
-export const desktopMenusWithPanel: readonly DesktopMenuId[] = ["lend", "borrow"]
+export const desktopMenusWithPanel: readonly DesktopMenuId[] = ["lend", "borrow", "multiply"]
 
 // The primary desktop nav mirrors the existing header links (Express + the three products);
 // utility links (Dashboard, Umbrella) stay on the right and are handled by the header itself.

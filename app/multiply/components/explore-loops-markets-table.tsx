@@ -3,7 +3,7 @@
 import * as React from "react"
 import { ActionIcon } from "@/app/components/action-icon"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
@@ -175,7 +175,12 @@ export function ExploreLoopsMarketsTable({
   tokenLogos: _tokenLogos,
 }: ExploreLoopsMarketsTableProps) {
   const { t } = useTranslation()
-  const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all")
+  const searchParams = useSearchParams()
+  // Deep links (e.g. the header mega-menu's "View all") can preselect a category via ?category=.
+  const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>(() => {
+    const param = searchParams?.get("category")
+    return param && CATEGORY_CHIPS.multiply.some((chip) => chip.id === param) ? (param as MultiplyCategoryTabId) : "all"
+  })
   const [search, setSearch] = React.useState("")
   const searchQuery = search.trim().toLowerCase()
 

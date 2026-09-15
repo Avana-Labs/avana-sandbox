@@ -3,6 +3,9 @@
 import type { TranslationDictionary } from "../types"
 
 const dict: TranslationDictionary = {
+  "Supply collateral, borrow against it, resupply the borrowed capital, and repeat until your risk limit.":
+    "存入抵押品，以其借款，再将借得的资金重新存入，如此循环直至达到你的风险上限。",
+  "Browse Multiply Page": "浏览倍增页面",
   "Turn your liquidity pool positions into collateral and borrow against them here without leaving the pool.":
     "将你的流动性池头寸转化为抵押品，无需退出资金池即可在此借款。",
   "Browse Borrow Page": "浏览借款页面",

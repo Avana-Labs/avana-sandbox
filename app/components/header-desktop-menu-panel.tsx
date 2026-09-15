@@ -8,12 +8,16 @@ import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
 import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import { BORROWABLE_ASSETS, BORROWABLE_CATEGORIES } from "@/app/lib/data/borrow-domain"
 import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
-import { categorizeMarket } from "@/app/lib/markets/category"
+import { MULTIPLY_MARKET_ROWS } from "@/app/lib/data/catalog/multiply"
+import { categorizeMarket, type MarketCategory } from "@/app/lib/markets/category"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 interface PanelRow {
+  /** Symbol used for the token icon. */
   symbol: string
-  name: string
+  /** Bold display label; defaults to `symbol` (loop markets show a collateral/asset pair). */
+  label?: string
+  name?: string
   metric: string
   /** Per-market detail page. */
   href: string
@@ -92,6 +96,39 @@ function borrowColumns(): PanelColumn[] {
   })
 }
 
+const CATEGORY_TITLE: Record<MarketCategory, string> = {
+  eth: "ETH",
+  btc: "BTC",
+  forex: "Stablecoins",
+  utility: "Utility",
+  smart: "Smart",
+}
+
+// Group loop markets by their collateral's family; show a few of the populated buckets.
+function multiplyColumns(): PanelColumn[] {
+  const order: MarketCategory[] = ["eth", "btc", "forex", "utility", "smart"]
+  const byCategory = new Map<MarketCategory, Array<(typeof MULTIPLY_MARKET_ROWS)[number]>>()
+  for (const row of MULTIPLY_MARKET_ROWS) {
+    const category = categorizeMarket(row.protocol)
+    const bucket = byCategory.get(category) ?? []
+    bucket.push(row)
+    byCategory.set(category, bucket)
+  }
+  return order
+    .filter((category) => (byCategory.get(category)?.length ?? 0) > 0)
+    .slice(0, 3)
+    .map((category) => ({
+      title: CATEGORY_TITLE[category],
+      viewAllHref: `/multiply?category=${category}`,
+      rows: (byCategory.get(category) ?? []).slice(0, 3).map((row) => ({
+        symbol: row.protocol,
+        label: `${row.protocol}/${row.asset}`,
+        metric: row.apy,
+        href: row.href,
+      })),
+    }))
+}
+
 function usePanelConfig(menuId: DesktopMenuId): PanelConfig | null {
   const { t } = useTranslation()
   if (menuId === "lend") {
@@ -116,7 +153,18 @@ function usePanelConfig(menuId: DesktopMenuId): PanelConfig | null {
       columns: borrowColumns(),
     }
   }
-  // The Multiply panel ships next; its trigger stays a plain link until then.
+  if (menuId === "multiply") {
+    return {
+      eyebrow: t("Multiply"),
+      tagline: t(
+        "Supply collateral, borrow against it, resupply the borrowed capital, and repeat until your risk limit.",
+      ),
+      browseHref: "/multiply",
+      browseLabel: t("Browse Multiply Page"),
+      metricLabel: t("Net APY"),
+      columns: multiplyColumns(),
+    }
+  }
   return null
 }
 
@@ -225,15 +273,19 @@ export default function HeaderDesktopMenuPanel({
                     <div className="space-y-0.5">
                       {column.rows.map((row) => (
                         <Link
-                          key={row.symbol}
+                          key={row.href}
                           href={row.href}
                           suppressHydrationWarning
                           className="group -mx-2 flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-accent"
                         >
                           <TokenIcon symbol={row.symbol} size="sm" />
                           <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
-                            <span className="shrink-0 text-[13px] font-semibold text-foreground">{row.symbol}</span>
-                            <span className="truncate text-[12px] text-muted-foreground">{row.name}</span>
+                            <span className="shrink-0 text-[13px] font-semibold text-foreground">
+                              {row.label ?? row.symbol}
+                            </span>
+                            {row.name ? (
+                              <span className="truncate text-[12px] text-muted-foreground">{row.name}</span>
+                            ) : null}
                           </span>
                           <span className="shrink-0 text-[13px] font-medium tabular-nums text-foreground">
                             {row.metric}
