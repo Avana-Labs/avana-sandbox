@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { TokenIcon } from "@/app/components/token-icon"
 import type { DesktopMenuId } from "@/app/components/header-desktop-menu-data"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
@@ -251,12 +251,37 @@ export default function HeaderDesktopMenuPanel({
   const { t } = useTranslation()
   const panelRef = useRef<HTMLDivElement>(null)
   const config = usePanelConfig(menuId)
+  const [isShown, setIsShown] = useState(false)
+
+  // Double requestAnimationFrame gate: render in the closed state first, then flip to shown so
+  // the browser has a real starting frame to transition from (otherwise it snaps open).
+  useEffect(() => {
+    if (!isOpen) {
+      setIsShown(false)
+      return
+    }
+    setIsShown(false)
+    let raf2 = 0
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => setIsShown(true))
+    })
+    return () => {
+      cancelAnimationFrame(raf1)
+      cancelAnimationFrame(raf2)
+    }
+  }, [isOpen, menuId, animationCycle])
 
   useEffect(() => {
-    if (isOpen && focusOnOpen) panelRef.current?.querySelector<HTMLElement>("a")?.focus()
-  }, [isOpen, focusOnOpen, menuId, animationCycle])
+    if (isShown && focusOnOpen) panelRef.current?.querySelector<HTMLElement>("a")?.focus()
+  }, [isShown, focusOnOpen])
 
   if (!config) return null
+
+  const numColumns = config.columns.length
+  const itemClass = `transition-[opacity,transform] duration-300 ease-out ${
+    isShown ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+  }`
+  const itemDelay = (delay: number) => ({ transitionDelay: isShown ? `${delay}ms` : "0ms" })
 
   return (
     <>
@@ -264,37 +289,29 @@ export default function HeaderDesktopMenuPanel({
       <div
         aria-hidden="true"
         onMouseEnter={onClose}
-        className={`fixed inset-x-0 bottom-0 top-14 z-20 hidden bg-black/25 backdrop-blur-sm transition-opacity duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] min-[1440px]:block ${
-          isOpen ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+        className={`fixed inset-x-0 bottom-0 top-14 z-20 hidden bg-black/25 backdrop-blur-sm transition-opacity duration-300 ease-out min-[1440px]:block ${
+          isShown ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         }`}
       />
       <div
         id={`desktop-menu-${menuId}`}
         ref={panelRef}
-        inert={!isOpen}
-        aria-hidden={!isOpen}
+        inert={!isShown}
+        aria-hidden={!isShown}
         onMouseEnter={onOpen}
         onMouseLeave={onClose}
         onTransitionEnd={(event) => {
           if (!isOpen && event.target === event.currentTarget) onExited()
         }}
-        className={`fixed inset-x-0 top-14 z-30 hidden transform-gpu transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] min-[1440px]:block ${
-          isOpen ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none -translate-y-3 opacity-0"
+        className={`fixed inset-x-0 top-14 z-30 hidden transform-gpu transition-[opacity,transform] duration-300 ease-out min-[1440px]:block ${
+          isShown ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
         }`}
       >
         <div className="border-b border-border bg-background">
           <div className="mx-auto w-full max-w-[1320px] px-6 py-7 2xl:px-8">
-            <div
-              key={`${menuId}-${animationCycle}`}
-              className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]"
-            >
+            <div className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
               {/* Intro rail */}
-              <div
-                className={`space-y-3 pt-9 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                  isOpen ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
-                }`}
-                style={{ transitionDelay: isOpen ? "60ms" : "0ms" }}
-              >
+              <div className={`space-y-3 pt-9 ${itemClass}`} style={itemDelay(120)}>
                 <p className="max-w-[15rem] text-[15px] font-medium leading-[1.4] tracking-[-0.01em] text-foreground">
                   {config.tagline}
                 </p>
@@ -312,15 +329,9 @@ export default function HeaderDesktopMenuPanel({
 
               {/* Market columns */}
               <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
-                {config.columns.map((column, index) => (
-                  <div
-                    key={column.title}
-                    className={`space-y-1.5 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-                      isOpen ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
-                    }`}
-                    style={{ transitionDelay: isOpen ? `${140 + index * 60}ms` : "0ms" }}
-                  >
-                    <div className="flex items-baseline justify-between pb-0.5">
+                {config.columns.map((column, columnIndex) => (
+                  <div key={column.title} className="space-y-1.5">
+                    <div className={`flex items-baseline justify-between pb-0.5 ${itemClass}`} style={itemDelay(120)}>
                       <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                         {column.title}
                       </p>
@@ -329,44 +340,51 @@ export default function HeaderDesktopMenuPanel({
                       </p>
                     </div>
                     <div className="space-y-0.5">
-                      {column.rows.map((row) => (
-                        <Link
+                      {column.rows.map((row, rowIndex) => (
+                        <div
                           key={row.href}
-                          href={row.href}
-                          suppressHydrationWarning
-                          className="group -mx-2 flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-accent"
+                          className={itemClass}
+                          style={itemDelay(155 + (rowIndex * numColumns + columnIndex) * 35)}
                         >
-                          <span className="flex shrink-0 items-center">
-                            <TokenIcon symbol={row.symbol} size="sm" />
-                            {row.symbol2 ? <TokenIcon symbol={row.symbol2} size="sm" className="-ml-2" /> : null}
-                          </span>
-                          <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
-                            <span className="shrink-0 text-[13px] font-semibold text-foreground">
-                              {row.label ?? row.symbol}
+                          <Link
+                            href={row.href}
+                            suppressHydrationWarning
+                            className="group -mx-2 flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-accent"
+                          >
+                            <span className="flex shrink-0 items-center">
+                              <TokenIcon symbol={row.symbol} size="sm" />
+                              {row.symbol2 ? <TokenIcon symbol={row.symbol2} size="sm" className="-ml-2" /> : null}
                             </span>
-                            {row.name ? (
-                              <span className="truncate text-[12px] text-muted-foreground">{row.name}</span>
-                            ) : null}
-                          </span>
-                          <span className="shrink-0 text-[13px] font-medium tabular-nums text-foreground">
-                            {row.metric}
-                          </span>
-                        </Link>
+                            <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
+                              <span className="shrink-0 text-[13px] font-semibold text-foreground">
+                                {row.label ?? row.symbol}
+                              </span>
+                              {row.name ? (
+                                <span className="truncate text-[12px] text-muted-foreground">{row.name}</span>
+                              ) : null}
+                            </span>
+                            <span className="shrink-0 text-[13px] font-medium tabular-nums text-foreground">
+                              {row.metric}
+                            </span>
+                          </Link>
+                        </div>
                       ))}
                     </div>
-                    <Link
-                      href={column.viewAllHref}
-                      suppressHydrationWarning
-                      className="group inline-flex items-center gap-1 px-2 text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground"
-                    >
-                      {t("View all")}
-                      <span
-                        aria-hidden="true"
-                        className="transition-transform duration-200 group-hover:translate-x-0.5"
+                    <div className={itemClass} style={itemDelay(155 + (3 * numColumns + columnIndex) * 35)}>
+                      <Link
+                        href={column.viewAllHref}
+                        suppressHydrationWarning
+                        className="group inline-flex items-center gap-1 px-2 text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground"
                       >
-                        →
-                      </span>
-                    </Link>
+                        {t("View all")}
+                        <span
+                          aria-hidden="true"
+                          className="transition-transform duration-200 group-hover:translate-x-0.5"
+                        >
+                          →
+                        </span>
+                      </Link>
+                    </div>
                   </div>
                 ))}
               </div>
