@@ -542,7 +542,7 @@ export function MobileMenu({ actions, brand, initialOpen = false }: MobileMenuPr
       <button
         ref={menuButtonRef}
         type="button"
-        className="inline-flex h-10 w-10 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent] xl:hidden"
+        className="inline-flex h-10 w-10 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-95 [-webkit-tap-highlight-color:transparent] xl:hidden"
         aria-label={t("Toggle menu")}
         aria-expanded={open}
         aria-controls="mobile-site-nav"
@@ -582,7 +582,7 @@ export function MobileMenu({ actions, brand, initialOpen = false }: MobileMenuPr
               <button
                 ref={closeButtonRef}
                 type="button"
-                className="inline-flex h-11 w-11 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent]"
+                className="inline-flex h-11 w-11 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-95 [-webkit-tap-highlight-color:transparent]"
                 aria-label={t("Close menu")}
                 onClick={onClose}
               >

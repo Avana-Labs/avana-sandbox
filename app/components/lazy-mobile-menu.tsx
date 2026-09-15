@@ -22,7 +22,7 @@ function MobileMenuTrigger({ onIntent, onOpen }: { onIntent: () => void; onOpen:
       onFocus={onIntent}
       onTouchStart={onIntent}
       onClick={onOpen}
-      className="inline-flex h-10 w-10 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-0 active:scale-95 [-webkit-tap-highlight-color:transparent] xl:hidden"
+      className="inline-flex h-10 w-10 items-center justify-center text-[#01AACF] transition hover:text-[#01AACF]/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-95 [-webkit-tap-highlight-color:transparent] xl:hidden"
     >
       <Menu className="h-7 w-7" strokeWidth={1.8} />
     </button>
