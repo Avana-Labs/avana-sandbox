@@ -90,7 +90,7 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
     const param = searchParams?.get("category")
     return param && CATEGORY_CHIPS.borrow.some((chip) => chip.id === param) ? (param as BorrowTabId) : "all"
   })
-  const [search, setSearch] = useState("")
+  const [search, setSearch] = useState(() => searchParams?.get("q") ?? "")
   const marketSpokeById = useMemo(
     () => new Map(pageData.poolCatalog.map((market) => [market.id, market.spoke])),
     [pageData.poolCatalog],

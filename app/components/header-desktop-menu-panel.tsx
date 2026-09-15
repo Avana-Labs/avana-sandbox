@@ -7,6 +7,7 @@ import type { DesktopMenuId } from "@/app/components/header-desktop-menu-data"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
 import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import { BORROW_POOL_CATALOG, type BorrowPoolRow } from "@/app/lib/data/borrow-domain"
+import { formatLtvPct } from "@/app/lib/borrow-sim"
 import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { MULTIPLY_MARKET_ROWS } from "@/app/lib/data/catalog/multiply"
 import { categorizeMarket, type MarketCategory } from "@/app/lib/markets/category"
@@ -33,9 +34,7 @@ interface PanelColumn {
 }
 
 interface PanelConfig {
-  /** Small uppercase eyebrow — a translated product label. */
-  eyebrow: string
-  /** One-line intro shown under the eyebrow. */
+  /** One-line intro shown at the top of the rail. */
   tagline: string
   /** The intro CTA target (the product landing page) and its label. */
   browseHref: string
@@ -51,10 +50,13 @@ function categoryHref(base: string, symbol: string): string {
   return `${base}?category=${categorizeMarket(symbol)}`
 }
 
-// Prefer a stablecoin / ETH / stocks spread so the panel mirrors the reference (crypto +
-// stocks) rather than three near-identical stablecoin columns.
+// Niche stablecoins pushed below the majors so the Stablecoins column leads with USDC/USDT/GHO.
+const LEND_DEMOTE = new Set(["EURC", "frxUSD"])
+
+// Prefer a stablecoin / BTC / stocks spread so the columns span colours rather than reading as
+// three near-identical blue columns.
 function lendColumns(): PanelColumn[] {
-  const preferred = ["Stablecoins", "Ethereum-Based", "Coinbase & Robinhood Stocks"]
+  const preferred = ["Stablecoins", "Bitcoin Based", "Coinbase & Robinhood Stocks"]
   const byTitle = new Map(LEND_ASSET_GROUPS.map((group) => [group.title, group]))
   const chosen = preferred
     .map((title) => byTitle.get(title))
@@ -64,7 +66,9 @@ function lendColumns(): PanelColumn[] {
     if (!chosen.includes(group)) chosen.push(group)
   }
   return chosen.slice(0, 3).map((group) => {
-    const rows = group.rows.slice(0, 3)
+    const rows = [...group.rows]
+      .sort((a, b) => Number(LEND_DEMOTE.has(a.symbol)) - Number(LEND_DEMOTE.has(b.symbol)))
+      .slice(0, 3)
     return {
       title: group.title,
       viewAllHref: categoryHref("/lend", rows[0]?.symbol ?? ""),
@@ -86,41 +90,81 @@ const CATEGORY_TITLE: Record<MarketCategory, string> = {
   smart: "Smart",
 }
 
-// Categorise a collateral pool by its legs, mirroring the borrow page's pool filters
-// (all-stable → forex, otherwise the first crypto family present).
-function poolCategory(pool: BorrowPoolRow): MarketCategory {
+// A pool's signature family for colour spread: its first non-stable leg, else stable.
+function poolFamily(pool: BorrowPoolRow): MarketCategory {
   const cats = pool.visuals.map((visual) => categorizeMarket(visual.symbol))
-  if (cats.every((category) => category === "forex")) return "forex"
-  if (cats.includes("eth")) return "eth"
-  if (cats.includes("btc")) return "btc"
-  if (cats.includes("utility")) return "utility"
-  return "smart"
+  return cats.find((category) => category !== "forex") ?? "forex"
 }
 
-// Group collateral (LP) pools by family; show a few of the populated buckets as pairs.
-function borrowColumns(): PanelColumn[] {
-  const order: MarketCategory[] = ["forex", "eth", "btc", "utility", "smart"]
-  const byCategory = new Map<MarketCategory, BorrowPoolRow[]>()
-  for (const pool of BORROW_POOL_CATALOG) {
-    const category = poolCategory(pool)
-    const bucket = byCategory.get(category) ?? []
-    bucket.push(pool)
-    byCategory.set(category, bucket)
+// Greedily pick up to `count` pools that maximise variety: each step takes the unused,
+// unique-pair pool that introduces the most new tokens (tie-broken by a new token family), so a
+// column doesn't lean on one token (e.g. USDC) in every row.
+function pickDiversePools(pools: BorrowPoolRow[], count: number): BorrowPoolRow[] {
+  const chosen: BorrowPoolRow[] = []
+  const seenPairs = new Set<string>()
+  const seenTokens = new Set<string>()
+  const seenFamilies = new Set<MarketCategory>()
+  const pairKey = (pool: BorrowPoolRow) =>
+    [pool.visuals[0].symbol, pool.visuals[1].symbol]
+      .map((symbol) => symbol.toUpperCase())
+      .sort()
+      .join("/")
+  while (chosen.length < count) {
+    let best: BorrowPoolRow | null = null
+    let bestScore = -1
+    for (const pool of pools) {
+      if (seenPairs.has(pairKey(pool))) continue
+      const newTokens = pool.visuals.filter((visual) => !seenTokens.has(visual.symbol.toUpperCase())).length
+      const score = newTokens * 2 + (seenFamilies.has(poolFamily(pool)) ? 0 : 1)
+      if (score > bestScore) {
+        bestScore = score
+        best = pool
+      }
+    }
+    if (!best) break
+    chosen.push(best)
+    seenPairs.add(pairKey(best))
+    seenFamilies.add(poolFamily(best))
+    for (const visual of best.visuals) seenTokens.add(visual.symbol.toUpperCase())
   }
-  return order
-    .filter((category) => (byCategory.get(category)?.length ?? 0) > 0)
-    .slice(0, 3)
-    .map((category) => ({
-      title: CATEGORY_TITLE[category],
-      viewAllHref: `/borrow?category=${category}`,
-      rows: (byCategory.get(category) ?? []).slice(0, 3).map((pool) => ({
-        symbol: pool.visuals[0].symbol,
-        symbol2: pool.visuals[1].symbol,
-        label: `${pool.visuals[0].symbol}/${pool.visuals[1].symbol}`,
-        metric: `${pool.aprMin}–${pool.aprMax}%`,
-        href: borrowMarketDetailPath(pool.id),
-      })),
-    }))
+  return chosen
+}
+
+function poolDex(pool: BorrowPoolRow): string {
+  const spoke = pool.spoke
+  if (spoke.startsWith("uni")) return "Uniswap"
+  if (spoke.startsWith("aero")) return "Aerodrome"
+  if (spoke.startsWith("curve")) return "Curve"
+  if (spoke.startsWith("bal")) return "Balancer"
+  return pool.dexes[0]?.label ?? pool.venue
+}
+
+// Group collateral (LP) pools by venue (Uniswap / Aerodrome / Curve …); one column per DEX,
+// deep-linking "View all" to the borrow page's search pre-filled with that venue.
+function borrowColumns(): PanelColumn[] {
+  const preferred = ["Uniswap", "Aerodrome", "Curve"]
+  const byDex = new Map<string, BorrowPoolRow[]>()
+  for (const pool of BORROW_POOL_CATALOG) {
+    const dex = poolDex(pool)
+    const bucket = byDex.get(dex) ?? []
+    bucket.push(pool)
+    byDex.set(dex, bucket)
+  }
+  const dexes = [
+    ...preferred.filter((dex) => byDex.has(dex)),
+    ...[...byDex.keys()].filter((dex) => !preferred.includes(dex)),
+  ].slice(0, 3)
+  return dexes.map((dex) => ({
+    title: dex,
+    viewAllHref: `/borrow?q=${encodeURIComponent(dex)}`,
+    rows: pickDiversePools(byDex.get(dex) ?? [], 3).map((pool) => ({
+      symbol: pool.visuals[0].symbol,
+      symbol2: pool.visuals[1].symbol,
+      label: `${pool.visuals[0].symbol}/${pool.visuals[1].symbol}`,
+      metric: formatLtvPct(pool.ltv),
+      href: borrowMarketDetailPath(pool.id),
+    })),
+  }))
 }
 
 // Group loop markets by their collateral's family; show a few of the populated buckets.
@@ -153,7 +197,6 @@ function usePanelConfig(menuId: DesktopMenuId): PanelConfig | null {
   const { t } = useTranslation()
   if (menuId === "lend") {
     return {
-      eyebrow: t("Lend"),
       tagline: t("Supply capital into Hub-connected lending markets and earn from LP-backed borrower demand."),
       browseHref: "/lend",
       browseLabel: t("Browse Lend Page"),
@@ -163,19 +206,17 @@ function usePanelConfig(menuId: DesktopMenuId): PanelConfig | null {
   }
   if (menuId === "borrow") {
     return {
-      eyebrow: t("Borrow"),
       tagline: t(
         "Turn your liquidity pool positions into collateral and borrow against them here without leaving the pool.",
       ),
       browseHref: "/borrow",
       browseLabel: t("Browse Borrow Page"),
-      metricLabel: t("APR"),
+      metricLabel: t("LTV"),
       columns: borrowColumns(),
     }
   }
   if (menuId === "multiply") {
     return {
-      eyebrow: t("Multiply"),
       tagline: t(
         "Supply collateral, borrow against it, resupply the borrowed capital, and repeat until your risk limit.",
       ),
@@ -249,14 +290,11 @@ export default function HeaderDesktopMenuPanel({
             >
               {/* Intro rail */}
               <div
-                className={`space-y-3 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                className={`space-y-3 pt-9 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                   isOpen ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
                 }`}
                 style={{ transitionDelay: isOpen ? "60ms" : "0ms" }}
               >
-                <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                  {config.eyebrow}
-                </p>
                 <p className="max-w-[15rem] text-[15px] font-medium leading-[1.4] tracking-[-0.01em] text-foreground">
                   {config.tagline}
                 </p>
@@ -277,12 +315,12 @@ export default function HeaderDesktopMenuPanel({
                 {config.columns.map((column, index) => (
                   <div
                     key={column.title}
-                    className={`space-y-2.5 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                    className={`space-y-1.5 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                       isOpen ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0"
                     }`}
                     style={{ transitionDelay: isOpen ? `${140 + index * 60}ms` : "0ms" }}
                   >
-                    <div className="flex items-baseline justify-between pb-1.5">
+                    <div className="flex items-baseline justify-between pb-0.5">
                       <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
                         {column.title}
                       </p>

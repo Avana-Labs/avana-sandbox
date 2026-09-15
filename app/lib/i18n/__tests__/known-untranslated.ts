@@ -42,7 +42,6 @@ export const KNOWN_UNTRANSLATED: readonly string[] = [
   "Action",
   "Activity",
   "ALLOCATION",
-  "APR",
   "APY",
   "Asset",
   "ASSET",
