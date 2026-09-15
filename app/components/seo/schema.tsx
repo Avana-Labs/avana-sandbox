@@ -1,4 +1,3 @@
-import { headers } from "next/headers"
 import { SITE_URL } from "@/app/lib/site-url"
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
@@ -13,20 +12,12 @@ function escapeJsonLd(json: string): string {
   return json.replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026")
 }
 
-export async function SchemaMarkup({ data }: { data: JsonValue | JsonValue[] }) {
-  // Carry the per-request CSP nonce so this inline JSON-LD script runs under the nonce policy
-  // (production drops script-src 'unsafe-inline').
-  const nonce = (await headers()).get("x-nonce") ?? undefined
-  return (
-    // suppressHydrationWarning: nonce is server-only (x-nonce header); the client reconciler
-    // has no nonce and would otherwise warn on nonce="" vs nonce="<per-request>".
-    <script
-      nonce={nonce}
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: escapeJsonLd(JSON.stringify(data)) }}
-      suppressHydrationWarning
-    />
-  )
+export function SchemaMarkup({ data }: { data: JsonValue | JsonValue[] }) {
+  // Synchronous on purpose: JSON-LD is a non-executable data block, so CSP script-src does not
+  // gate it and no per-request nonce is needed. Staying sync (no `await headers()`) renders the
+  // tag into the initial HTML shell that static/AI crawlers read, instead of only the streamed
+  // RSC flight payload.
+  return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: escapeJsonLd(JSON.stringify(data)) }} />
 }
 
 export function buildWebPageSchema(input: { name: string; description: string; url: string }) {

@@ -24,6 +24,7 @@ import { CurrencyDisplayBoundary } from "./components/currency-display-boundary"
 import { ProductRuntimeProviders } from "./components/product-runtime-providers"
 import { isLighthouseAuditMode } from "./lib/test-mode"
 import { SITE_URL } from "./lib/site-url"
+import { SchemaMarkup, buildOrganizationSchema, buildWebSiteSchema } from "./components/seo/schema"
 import { loadServerTokenPrices } from "./lib/prices/server-hydrate"
 import { loadServerFxRates } from "./lib/currency/server-hydrate"
 // Only load Vercel Analytics / Speed Insights when actually running on Vercel — their
@@ -172,6 +173,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* Inline so theme/color-scheme apply before first paint — external src added a
             network hop and could shift scrollbar-gutter when overlays open. */}
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} suppressHydrationWarning />
+        {/* Site-wide JSON-LD in <head> so it lands in the served HTML shell (static/AI crawlers
+            read it) on every route, independent of the wallet gate that intercepts page bodies. */}
+        <SchemaMarkup data={[buildWebSiteSchema(), buildOrganizationSchema()]} />
       </head>
       <body className="min-h-screen bg-background">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>

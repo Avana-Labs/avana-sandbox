@@ -24,10 +24,7 @@ export default async function HomePage() {
     )
   }
 
-  return (
-    <>
-      <SchemaMarkup data={[buildWebSiteSchema(), buildOrganizationSchema()]} />
-      <HomePageClient />
-    </>
-  )
+  // Site-wide WebSite + Organization JSON-LD now renders once in the root layout <head>
+  // (in the served shell). The home page just renders its content.
+  return <HomePageClient />
 }
