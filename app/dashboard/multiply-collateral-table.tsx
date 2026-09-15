@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { ActionIcon } from "@/app/components/action-icon"
+import { ChevronRight } from "@/app/components/icons"
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import {
@@ -115,13 +116,13 @@ export function MultiplyCollateralTable({
 
       <div className="hidden overflow-x-auto md:block">
         <DesktopTableSurface className="!rounded-none">
-          <table className={`w-full min-w-[780px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
+          <table className={`w-full min-w-[640px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
             <colgroup>
-              <col className="w-[30%]" />
+              <col className="w-[31%]" />
+              <col className="w-[18%]" />
               <col className="w-[17%]" />
-              <col className="w-[16%]" />
-              <col className="w-[23%]" />
-              <col className="w-[14%]" />
+              <col className="w-[25%]" />
+              <col className="w-[9%]" />
             </colgroup>
             <thead>
               <tr className={TABLE_HEADER_ROW}>
@@ -171,14 +172,19 @@ export function MultiplyCollateralTable({
                   <RiskCell row={row} liqPrice={liqPrice} />
                   <td className={cn(TABLE_CELL_PADDING_TRAILING, TABLE_ROW_HOVER_RIGHT)}>
                     <HoverActionGroup>
+                      {/* Icon-only on desktop: the full "Manage" pill was wide enough to clip
+                       * against the right edge in this fixed-width table. The round chevron opens
+                       * the same /multiply/markets/{id} detail page the row click does. */}
                       <Button
                         type="button"
                         size="table"
                         variant="table-secondary"
-                        className="w-auto min-w-[88px]"
+                        aria-label={t("Manage")}
+                        title={t("Manage")}
+                        className="size-9 px-0 py-0"
                         onClick={(event) => openManage(event, row)}
                       >
-                        {t("Manage")}
+                        <ChevronRight />
                       </Button>
                     </HoverActionGroup>
                   </td>
