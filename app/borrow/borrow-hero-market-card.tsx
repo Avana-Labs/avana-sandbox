@@ -15,7 +15,6 @@ export type HeroMarketCardProps = {
     href: string
     pool: BorrowPoolRow
     title: string
-    venue?: string
     value: string
     delta: string
     deltaClassName: string
@@ -53,21 +52,17 @@ export function HeroMarketCard({ title, subtitle, hideTitleOnMobile = false, cla
             className="flex items-center gap-3 rounded-xs px-1 py-1 transition-colors hover:bg-hover"
           >
             <div className="flex shrink-0 items-center">
-              <TokenBubble visual={row.pool.visuals[0]} size="lg" />
-              <TokenBubble visual={row.pool.visuals[1]} size="lg" className="-ml-2.5" />
+              <TokenBubble visual={row.pool.visuals[0]} size="table" />
+              <TokenBubble visual={row.pool.visuals[1]} size="table" className="-ml-2.5" />
             </div>
 
             {/* Metrics sit BELOW the pair name (not in a right-hand column) so long
              * market names like "Fix USDC / GOOGLc" get the full row width and no
-             * longer wrap to three lines. The venue is a short subtitle under the name
-             * so same-pair pools (e.g. WBTC/USDC on Uniswap vs Balancer) stay distinct. */}
+             * longer wrap to three lines. */}
             <div className="min-w-0 flex-1">
               <div className="text-[15px] font-normal leading-tight tracking-normal text-foreground dark:text-white">
                 {row.title}
               </div>
-              {row.venue ? (
-                <div className="mt-0.5 truncate text-[11.5px] leading-4 text-muted-foreground">{row.venue}</div>
-              ) : null}
               <div className="mt-1 flex items-center gap-x-1.5 font-data text-[12px] font-medium leading-tight">
                 <span className="tabular-nums text-foreground">{row.value}</span>
                 <span className="text-muted-foreground">·</span>
