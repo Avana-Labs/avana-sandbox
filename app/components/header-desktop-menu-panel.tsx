@@ -6,15 +6,17 @@ import { TokenIcon } from "@/app/components/token-icon"
 import type { DesktopMenuId } from "@/app/components/header-desktop-menu-data"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
 import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
-import { BORROWABLE_ASSETS, BORROWABLE_CATEGORIES } from "@/app/lib/data/borrow-domain"
-import { borrowAssetDetailPath } from "@/app/lib/borrow-routes"
+import { BORROW_POOL_CATALOG, type BorrowPoolRow } from "@/app/lib/data/borrow-domain"
+import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { MULTIPLY_MARKET_ROWS } from "@/app/lib/data/catalog/multiply"
 import { categorizeMarket, type MarketCategory } from "@/app/lib/markets/category"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 interface PanelRow {
-  /** Symbol used for the token icon. */
+  /** Symbol used for the (primary) token icon. */
   symbol: string
+  /** Second symbol — renders an overlapping pair (pool / loop markets). */
+  symbol2?: string
   /** Bold display label; defaults to `symbol` (loop markets show a collateral/asset pair). */
   label?: string
   name?: string
@@ -76,32 +78,49 @@ function lendColumns(): PanelColumn[] {
   })
 }
 
-// Group borrowable (debt) assets by their catalog category; show the populated buckets.
-function borrowColumns(): PanelColumn[] {
-  const categories = BORROWABLE_CATEGORIES.filter((category) =>
-    BORROWABLE_ASSETS.some((asset) => asset.category === category.id),
-  ).slice(0, 3)
-  return categories.map((category) => {
-    const rows = BORROWABLE_ASSETS.filter((asset) => asset.category === category.id).slice(0, 3)
-    return {
-      title: category.label,
-      viewAllHref: categoryHref("/borrow", rows[0]?.symbol ?? ""),
-      rows: rows.map((asset) => ({
-        symbol: asset.symbol,
-        name: asset.name,
-        metric: `${asset.borrowApr.toFixed(2)}%`,
-        href: borrowAssetDetailPath(asset.id),
-      })),
-    }
-  })
-}
-
 const CATEGORY_TITLE: Record<MarketCategory, string> = {
   eth: "ETH",
   btc: "BTC",
   forex: "Stablecoins",
   utility: "Utility",
   smart: "Smart",
+}
+
+// Categorise a collateral pool by its legs, mirroring the borrow page's pool filters
+// (all-stable → forex, otherwise the first crypto family present).
+function poolCategory(pool: BorrowPoolRow): MarketCategory {
+  const cats = pool.visuals.map((visual) => categorizeMarket(visual.symbol))
+  if (cats.every((category) => category === "forex")) return "forex"
+  if (cats.includes("eth")) return "eth"
+  if (cats.includes("btc")) return "btc"
+  if (cats.includes("utility")) return "utility"
+  return "smart"
+}
+
+// Group collateral (LP) pools by family; show a few of the populated buckets as pairs.
+function borrowColumns(): PanelColumn[] {
+  const order: MarketCategory[] = ["forex", "eth", "btc", "utility", "smart"]
+  const byCategory = new Map<MarketCategory, BorrowPoolRow[]>()
+  for (const pool of BORROW_POOL_CATALOG) {
+    const category = poolCategory(pool)
+    const bucket = byCategory.get(category) ?? []
+    bucket.push(pool)
+    byCategory.set(category, bucket)
+  }
+  return order
+    .filter((category) => (byCategory.get(category)?.length ?? 0) > 0)
+    .slice(0, 3)
+    .map((category) => ({
+      title: CATEGORY_TITLE[category],
+      viewAllHref: `/borrow?category=${category}`,
+      rows: (byCategory.get(category) ?? []).slice(0, 3).map((pool) => ({
+        symbol: pool.visuals[0].symbol,
+        symbol2: pool.visuals[1].symbol,
+        label: `${pool.visuals[0].symbol}/${pool.visuals[1].symbol}`,
+        metric: `${pool.aprMin}–${pool.aprMax}%`,
+        href: borrowMarketDetailPath(pool.id),
+      })),
+    }))
 }
 
 // Group loop markets by their collateral's family; show a few of the populated buckets.
@@ -122,6 +141,7 @@ function multiplyColumns(): PanelColumn[] {
       viewAllHref: `/multiply?category=${category}`,
       rows: (byCategory.get(category) ?? []).slice(0, 3).map((row) => ({
         symbol: row.protocol,
+        symbol2: row.asset,
         label: `${row.protocol}/${row.asset}`,
         metric: row.apy,
         href: row.href,
@@ -278,7 +298,10 @@ export default function HeaderDesktopMenuPanel({
                           suppressHydrationWarning
                           className="group -mx-2 flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-accent"
                         >
-                          <TokenIcon symbol={row.symbol} size="sm" />
+                          <span className="flex shrink-0 items-center">
+                            <TokenIcon symbol={row.symbol} size="sm" />
+                            {row.symbol2 ? <TokenIcon symbol={row.symbol2} size="sm" className="-ml-2" /> : null}
+                          </span>
                           <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
                             <span className="shrink-0 text-[13px] font-semibold text-foreground">
                               {row.label ?? row.symbol}

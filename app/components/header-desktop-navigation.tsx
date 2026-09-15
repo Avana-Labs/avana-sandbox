@@ -55,6 +55,9 @@ export default function HeaderDesktopNavigation({
   const openDesktopMenu = (menuId: DesktopMenuId) => {
     warmDesktopMenuPanel()
     clearDesktopCloseTimeout()
+    // Dismiss any other open header layer (e.g. the Global preferences popover). Dispatching
+    // inside the nav closes radix's dismissable layer while our own outside-close ignores it.
+    navigationRef.current?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }))
     setDesktopMenuRendered(menuId)
     setDesktopMenuOpen(menuId)
     setDesktopMenuAnimationCycle((current) => current + 1)
