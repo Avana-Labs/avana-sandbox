@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { SchemaMarkup, buildWebPageSchema } from "@/app/components/seo/schema"
 import { OnboardingPageClient } from "./onboarding-page-client"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
+import { SITE_URL } from "@/app/lib/site-url"
 
 export const metadata: Metadata = buildSeoMetadata({
   title: "Onboarding",
@@ -27,7 +28,7 @@ export default function OnboardingPage() {
         data={buildWebPageSchema({
           name: "Onboarding",
           description: "Connect a wallet and claim your simulated Avana sandbox allocation.",
-          url: "https://avana.cc/onboarding",
+          url: `${SITE_URL}/onboarding`,
         })}
       />
       <OnboardingPageClient />

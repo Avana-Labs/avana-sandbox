@@ -13,6 +13,7 @@ import { readPreloadedCashflow, readPreloadedQuickStats } from "@/app/lib/detail
 import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { MultiplyMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
+import { SITE_URL } from "@/app/lib/site-url"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
 import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 
@@ -67,7 +68,7 @@ export default async function MarketDetailPage({ params }: PageProps) {
   })
   const { preloads: heroPreloads, feeds } = heroBundle
   const detailWithFeeds = { ...detail, ...feeds }
-  const canonicalUrl = `https://avana.cc/multiply/markets/${marketId}`
+  const canonicalUrl = `${SITE_URL}/multiply/markets/${marketId}`
   return (
     <>
       <SchemaMarkup
@@ -78,8 +79,8 @@ export default async function MarketDetailPage({ params }: PageProps) {
             url: canonicalUrl,
           }),
           buildBreadcrumbSchema([
-            { name: "Home", url: "https://avana.cc" },
-            { name: "Multiply", url: "https://avana.cc/multiply" },
+            { name: "Home", url: SITE_URL },
+            { name: "Multiply", url: `${SITE_URL}/multiply` },
             { name: detail.hero.name, url: canonicalUrl },
           ]),
           buildFaqSchema(detail.faqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),

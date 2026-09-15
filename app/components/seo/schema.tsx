@@ -1,4 +1,5 @@
 import { headers } from "next/headers"
+import { SITE_URL } from "@/app/lib/site-url"
 
 type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
 
@@ -38,7 +39,7 @@ export function buildWebPageSchema(input: { name: string; description: string; u
     isPartOf: {
       "@type": "WebSite",
       name: "Avana",
-      url: "https://avana.cc",
+      url: SITE_URL,
     },
   }
 }
@@ -61,13 +62,8 @@ export function buildWebSiteSchema() {
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "Avana",
-    url: "https://avana.cc",
+    url: SITE_URL,
     description: "Borrow against LP positions, lend, and multiply liquidity on Avana.",
-    potentialAction: {
-      "@type": "SearchAction",
-      target: "https://avana.cc/search?q={search_term_string}",
-      "query-input": "required name=search_term_string",
-    },
   }
 }
 
@@ -76,8 +72,8 @@ export function buildOrganizationSchema() {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "Avana",
-    url: "https://avana.cc",
-    logo: "https://avana.cc/Avana Favicon.png",
+    url: SITE_URL,
+    logo: `${SITE_URL}/Avana%20Favicon.png`,
     sameAs: ["https://x.com/avana", "https://github.com/Avana-Labs"],
   }
 }

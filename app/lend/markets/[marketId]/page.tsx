@@ -10,6 +10,7 @@ import { readPreloadedCashflow, readPreloadedQuickStats } from "@/app/lib/detail
 import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { LendMarketDetailClientShell } from "./page-client-shell"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
+import { SITE_URL } from "@/app/lib/site-url"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
 import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 
@@ -64,7 +65,7 @@ export default async function LendMarketDetailPage({ params }: PageProps) {
   })
   const { preloads: heroPreloads, feeds } = heroBundle
   const detailWithFeeds = { ...detail, ...feeds }
-  const canonicalUrl = `https://avana.cc/lend/markets/${marketId}`
+  const canonicalUrl = `${SITE_URL}/lend/markets/${marketId}`
   return (
     <>
       <SchemaMarkup
@@ -75,8 +76,8 @@ export default async function LendMarketDetailPage({ params }: PageProps) {
             url: canonicalUrl,
           }),
           buildBreadcrumbSchema([
-            { name: "Home", url: "https://avana.cc" },
-            { name: "Lend", url: "https://avana.cc/lend" },
+            { name: "Home", url: SITE_URL },
+            { name: "Lend", url: `${SITE_URL}/lend` },
             { name: detail.hero.name, url: canonicalUrl },
           ]),
           buildFaqSchema(detail.faqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),

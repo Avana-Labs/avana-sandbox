@@ -12,6 +12,7 @@ import { readPreloadedCashflow, readPreloadedQuickStats } from "@/app/lib/detail
 import { preferLive } from "@/app/lib/data/providers/prefer-live"
 import { AssetDetailClient } from "@/app/borrow/assets/[assetId]/asset-detail-client"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
+import { SITE_URL } from "@/app/lib/site-url"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
 import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 
@@ -72,7 +73,7 @@ export default async function BorrowAssetPage({ params }: PageProps) {
   })
   const { preloads: heroPreloads, feeds } = heroBundle
   const detailWithFeeds = { ...detail, ...feeds }
-  const canonicalUrl = `https://avana.cc/borrow/assets/${assetId}`
+  const canonicalUrl = `${SITE_URL}/borrow/assets/${assetId}`
   return (
     <>
       <SchemaMarkup
@@ -83,8 +84,8 @@ export default async function BorrowAssetPage({ params }: PageProps) {
             url: canonicalUrl,
           }),
           buildBreadcrumbSchema([
-            { name: "Home", url: "https://avana.cc" },
-            { name: "Borrow", url: "https://avana.cc/borrow" },
+            { name: "Home", url: SITE_URL },
+            { name: "Borrow", url: `${SITE_URL}/borrow` },
             { name: detail.hero.symbol, url: canonicalUrl },
           ]),
           buildFaqSchema(detail.faqs.map((faq) => ({ question: faq.question, answer: faq.answer }))),

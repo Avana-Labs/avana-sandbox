@@ -4,6 +4,7 @@ import { fetchRewardsPage } from "@/app/lib/data/providers/rewards"
 import { resolvePortfolioWalletProfileId } from "@/app/lib/data/providers/portfolio"
 import { resolveDataSourceMode } from "@/app/lib/data/providers/source-mode"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
+import { SITE_URL } from "@/app/lib/site-url"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
 import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 
@@ -17,7 +18,7 @@ export const metadata: Metadata = buildSeoMetadata({
 const DASHBOARD_SCHEMA = buildWebPageSchema({
   name: "Dashboard",
   description: "Track your accounts, positions, quest progress, and activity across Avana.",
-  url: "https://avana.cc/dashboard",
+  url: `${SITE_URL}/dashboard`,
 })
 
 export default async function DashboardPage() {

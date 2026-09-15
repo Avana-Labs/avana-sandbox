@@ -3,6 +3,7 @@ import { headers } from "next/headers"
 import { SchemaMarkup, buildWebPageSchema } from "@/app/components/seo/schema"
 import { fetchLendPage } from "@/app/lib/data/providers/lend"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
+import { SITE_URL } from "@/app/lib/site-url"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
 import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 
@@ -21,7 +22,7 @@ export default async function LendPage() {
           data={buildWebPageSchema({
             name: "Lend",
             description: "Supply assets to the protocol and earn yield.",
-            url: "https://avana.cc/lend",
+            url: `${SITE_URL}/lend`,
           })}
         />
         <LighthouseAuditSurface title="Lend TVL">Lend assets and supply markets.</LighthouseAuditSurface>
@@ -43,7 +44,7 @@ export default async function LendPage() {
         data={buildWebPageSchema({
           name: "Lend",
           description: "Supply assets to the protocol and earn yield.",
-          url: "https://avana.cc/lend",
+          url: `${SITE_URL}/lend`,
         })}
       />
       <LendClient pageData={pageData} initialIsDesktop={initialIsDesktop} />

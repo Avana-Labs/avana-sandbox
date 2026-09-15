@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { SITE_URL } from "./site-url"
 
 type SeoMetadataInput = {
   title: string
@@ -8,7 +9,7 @@ type SeoMetadataInput = {
 }
 
 export function buildSeoMetadata({ title, description, path, keywords }: SeoMetadataInput): Metadata {
-  const url = `https://avana.cc${path}`
+  const url = `${SITE_URL}${path}`
 
   return {
     title,

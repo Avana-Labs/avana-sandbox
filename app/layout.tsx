@@ -23,6 +23,7 @@ import { ONBOARDED_COOKIE } from "./components/sandbox/onboarded-cookie"
 import { CurrencyDisplayBoundary } from "./components/currency-display-boundary"
 import { ProductRuntimeProviders } from "./components/product-runtime-providers"
 import { isLighthouseAuditMode } from "./lib/test-mode"
+import { SITE_URL } from "./lib/site-url"
 import { loadServerTokenPrices } from "./lib/prices/server-hydrate"
 import { loadServerFxRates } from "./lib/currency/server-hydrate"
 // Only load Vercel Analytics / Speed Insights when actually running on Vercel — their
@@ -58,7 +59,7 @@ const diatypeSans = localFont({
 const themeBootstrapScript = `(()=>{const storageKey="avana-theme";const root=document.documentElement;const storedTheme=window.localStorage.getItem(storageKey);const theme=storedTheme==="light"||storedTheme==="dark"||storedTheme==="system"?storedTheme:"light";const systemTheme=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";const resolvedTheme=theme==="system"?systemTheme:theme;root.classList.toggle("dark",resolvedTheme==="dark");root.style.colorScheme=resolvedTheme})()`
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://avana.cc"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "Avana - Borrow Against LP Positions on Aave v4",
     template: "%s | Avana",
@@ -88,7 +89,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    url: "https://avana.cc",
+    url: SITE_URL,
     siteName: "Avana",
     title: "Avana - Borrow Against LP Positions on Aave v4",
     description: "Unlock liquidity from your LP tokens while continuing to earn trading fees.",

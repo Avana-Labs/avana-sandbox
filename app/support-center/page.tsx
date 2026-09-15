@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { SchemaMarkup, buildWebPageSchema } from "@/app/components/seo/schema"
 import { buildSeoMetadata } from "@/app/lib/seo-metadata"
+import { SITE_URL } from "@/app/lib/site-url"
 import { LighthouseAuditSurface } from "@/app/components/lighthouse-audit-surface"
 import { isLighthouseAuditMode } from "@/app/lib/test-mode"
 
@@ -19,7 +20,7 @@ export default async function SupportCenterPage() {
           data={buildWebPageSchema({
             name: "Support Center",
             description: "Select a support topic, review helpful articles, and draft a message to the Avana team.",
-            url: "https://avana.cc/support-center",
+            url: `${SITE_URL}/support-center`,
           })}
         />
         <LighthouseAuditSurface title="Support Center">How can we help?</LighthouseAuditSurface>
@@ -35,7 +36,7 @@ export default async function SupportCenterPage() {
         data={buildWebPageSchema({
           name: "Support Center",
           description: "Select a support topic, review helpful articles, and draft a message to the Avana team.",
-          url: "https://avana.cc/support-center",
+          url: `${SITE_URL}/support-center`,
         })}
       />
       <SupportCenterClient />
