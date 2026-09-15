@@ -42,7 +42,6 @@ export default function HeaderDesktopNavigation({
   const searchParamsKey = searchParams?.toString() ?? ""
   const [desktopMenuOpen, setDesktopMenuOpen] = useState<DesktopMenuId | null>(null)
   const [desktopMenuRendered, setDesktopMenuRendered] = useState<DesktopMenuId | null>(null)
-  const [desktopMenuAnimationCycle, setDesktopMenuAnimationCycle] = useState(0)
   const [focusPanel, setFocusPanel] = useState(false)
   const desktopCloseTimeoutRef = useRef<number | null>(null)
   const navigationRef = useRef<HTMLElement>(null)
@@ -62,7 +61,6 @@ export default function HeaderDesktopNavigation({
     navigationRef.current?.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }))
     setDesktopMenuRendered(menuId)
     setDesktopMenuOpen(menuId)
-    setDesktopMenuAnimationCycle((current) => current + 1)
   }
 
   const scheduleDesktopMenuClose = () => {
@@ -180,7 +178,6 @@ export default function HeaderDesktopNavigation({
           onOpen={clearDesktopCloseTimeout}
           onClose={scheduleDesktopMenuClose}
           onExited={() => setDesktopMenuRendered(null)}
-          animationCycle={desktopMenuAnimationCycle}
           focusOnOpen={focusPanel}
         />
       ) : null}

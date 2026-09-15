@@ -235,7 +235,6 @@ interface HeaderDesktopMenuPanelProps {
   onOpen: () => void
   onClose: () => void
   onExited: () => void
-  animationCycle: number
   focusOnOpen: boolean
 }
 
@@ -245,7 +244,6 @@ export default function HeaderDesktopMenuPanel({
   onOpen,
   onClose,
   onExited,
-  animationCycle,
   focusOnOpen,
 }: HeaderDesktopMenuPanelProps) {
   const { t } = useTranslation()
@@ -253,14 +251,15 @@ export default function HeaderDesktopMenuPanel({
   const config = usePanelConfig(menuId)
   const [isShown, setIsShown] = useState(false)
 
-  // Double requestAnimationFrame gate: render in the closed state first, then flip to shown so
-  // the browser has a real starting frame to transition from (otherwise it snaps open).
+  // Double requestAnimationFrame gate: mount in the closed state, then flip to shown so the
+  // browser has a real starting frame to transition from (otherwise it snaps open). Runs only on
+  // open/close — switching between product menus keeps the panel shown, so the content swaps
+  // without blanking and re-fading.
   useEffect(() => {
     if (!isOpen) {
       setIsShown(false)
       return
     }
-    setIsShown(false)
     let raf2 = 0
     const raf1 = requestAnimationFrame(() => {
       raf2 = requestAnimationFrame(() => setIsShown(true))
@@ -269,7 +268,7 @@ export default function HeaderDesktopMenuPanel({
       cancelAnimationFrame(raf1)
       cancelAnimationFrame(raf2)
     }
-  }, [isOpen, menuId, animationCycle])
+  }, [isOpen])
 
   useEffect(() => {
     if (isShown && focusOnOpen) panelRef.current?.querySelector<HTMLElement>("a")?.focus()
@@ -303,8 +302,8 @@ export default function HeaderDesktopMenuPanel({
         onTransitionEnd={(event) => {
           if (!isOpen && event.target === event.currentTarget) onExited()
         }}
-        className={`fixed inset-x-0 top-14 z-30 hidden transform-gpu transition-[opacity,transform] duration-300 ease-out min-[1440px]:block ${
-          isShown ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
+        className={`fixed inset-x-0 top-14 z-30 hidden transform-gpu transition-opacity duration-300 ease-out min-[1440px]:block ${
+          isShown ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
         <div className="border-b border-border bg-background">
