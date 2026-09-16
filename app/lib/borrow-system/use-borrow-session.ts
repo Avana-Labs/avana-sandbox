@@ -327,6 +327,24 @@ export function useBorrowSession({
         // interest before applying the user's request, so the preview and persisted position
         // disagree after a refresh.
         const hydrationNow = Date.now()
+        // Each debt's own open time, from the durable ledger: the earliest borrow on its market,
+        // else the wallet's earliest transaction (onboarding time for a seeded debt). Lets the
+        // Interest Owed display accrue from when a loan was actually taken — the way Lend/Multiply
+        // accrue from openedAt — instead of the account-wide engine clock any action resets.
+        const earliestBorrowAtByMarket = new Map<string, number>()
+        let walletEarliestTxAt: number | undefined
+        for (const transaction of data.transactions ?? []) {
+          if (typeof transaction.at === "number") {
+            if (walletEarliestTxAt === undefined || transaction.at < walletEarliestTxAt)
+              walletEarliestTxAt = transaction.at
+          }
+          if (transaction.product !== "borrow" || transaction.kind !== "borrow" || !transaction.marketSlug) continue
+          const prev = earliestBorrowAtByMarket.get(transaction.marketSlug)
+          if (prev === undefined || transaction.at < prev)
+            earliestBorrowAtByMarket.set(transaction.marketSlug, transaction.at)
+        }
+        const debtOpenedAt = (marketSlug: string | undefined): number =>
+          (marketSlug ? earliestBorrowAtByMarket.get(marketSlug) : undefined) ?? walletEarliestTxAt ?? hydrationNow
         const collateralPositions = []
         const debtPositions = []
         for (const position of borrowPositions) {
@@ -373,6 +391,7 @@ export function useBorrowSession({
               debtIndexRay,
               borrowRateWad: BigInt(debt.borrowRateWad),
               principalBorrowedUsd6: reconciledPrincipal ?? BigInt(debt.principalBorrowedUsd6),
+              openedAt: debtOpenedAt(debt.marketSlug),
             })
           }
         }
@@ -417,6 +436,7 @@ export function useBorrowSession({
             debtIndexRay: RAY,
             borrowRateWad: asset.borrowConfig.baseBorrowAprWad,
             principalBorrowedUsd6: amountUsd6,
+            openedAt: debtOpenedAt(row.marketId),
           })
         }
         // Anchor the engine clock to the last PERSISTED moment rather than jumping it to

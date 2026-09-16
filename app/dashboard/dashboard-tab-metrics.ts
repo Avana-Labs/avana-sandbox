@@ -170,6 +170,22 @@ export function buildBorrowBalanceMetrics(
       ? ((metrics.annualYieldEarnedUsd6 - metrics.annualBorrowCostUsd6) * WAD) / netPositionValueUsd6
       : 0n
 
+  // Interest Owed as a per-position display, accrued from each debt's own `openedAt` (the way
+  // Multiply's Interest Earned works), NOT the engine index. The index only advances while the app
+  // computes on read and shares one account clock, so any action reset every loan's interest to ~0.
+  // Debt × its borrow rate × (now − openedAt). The engine's index-based debt VALUE (health factor,
+  // borrow power) is deliberately left untouched — this is the display/ticker figure only.
+  const debtPositions = accrued.accounts[walletId]?.debtPositions ?? []
+  let interestOwedUsd = 0
+  let interestOwedPerYearUsd = 0
+  for (const debt of debtPositions) {
+    const principalUsd = usd6ToNumber(debt.principalBorrowedUsd6)
+    const ratePerYear = Number(debt.borrowRateWad) / Number(WAD)
+    const perYearUsd = principalUsd * ratePerYear
+    interestOwedPerYearUsd += perYearUsd
+    interestOwedUsd += perYearUsd * (Math.max(0, now - (debt.openedAt ?? now)) / YEAR_MS)
+  }
+
   return {
     // Borrow Balance is protocol-position equity. The account's liquid wallet balance
     // is shown separately on the dashboard and must not be counted again here.
@@ -183,10 +199,9 @@ export function buildBorrowBalanceMetrics(
         ? usd6ToNumber(metrics.liquidationBufferUsd6 > 0n ? metrics.liquidationBufferUsd6 : 0n)
         : null,
     netApyPct: wadToPct(clampNetApyWad(rawNetApyWad)),
-    interestOwedUsd: usd6ToNumber(metrics.interestOwedUsd6),
-    // Live Interest Owed ticks up from the current amount: base is accrued to `now`, so the
-    // counter anchors at `now` and adds debt × borrow rate from there (no double-count).
-    interestOwedPerYearUsd: usd6ToNumber(metrics.annualBorrowCostUsd6),
+    interestOwedUsd,
+    // Live Interest Owed ticks up from `interestOwedUsd` (accrued to `now`) at this per-year rate.
+    interestOwedPerYearUsd,
     accrualSinceMs: now,
   }
 }

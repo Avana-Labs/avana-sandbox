@@ -172,6 +172,13 @@ export type UserDebtPosition = {
    * Optional: legacy positions without it reprice as a no-op (value stays fixed-USD).
    */
   priceAtBorrowUsd6?: bigint
+  /**
+   * Epoch ms this debt was first borrowed (from the durable transaction ledger). Powers the
+   * per-position "Interest Owed" display (debt × rate × elapsed-since-open), the way Lend/Multiply
+   * accrue from `openedAt` — so a loan's interest reflects its OWN age, not the account-wide engine
+   * clock that any action resets. Optional: a debt with no ledgered open time shows no interest.
+   */
+  openedAt?: number
 }
 
 export type UserRewardPosition = {
