@@ -42,12 +42,20 @@ describe("SwapPageClient", () => {
     await waitFor(() => {
       expect(screen.getByLabelText("Buy")).toHaveValue("1.926651")
     })
-    // The Buy amount fills from the fast indicative quote, but "Review swap" stays
-    // gated until the authoritative server quote lands (server-authoritative design) —
-    // so await the button flipping to enabled rather than checking it synchronously.
+    // Review stays gated until the authoritative quote lands; the UI does not show a
+    // static-price indicative amount that could contradict the server quote.
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Review swap" })).toBeEnabled()
     })
+  })
+
+  it("explains a below-minimum swap instead of only saying unavailable", async () => {
+    renderSwap()
+
+    fireEvent.change(screen.getAllByLabelText("Sell")[0]!, { target: { value: "0.000001" } })
+
+    expect(await screen.findByTestId("swap-validation-message")).toHaveTextContent("Minimum swap is 0.00001 ETH.")
+    expect(screen.getByRole("button", { name: "Swap unavailable" })).toBeDisabled()
   })
 
   it("searches supported assets in the receive picker", () => {
@@ -68,6 +76,7 @@ describe("SwapPageClient", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Review swap" }))
     expect(screen.getByRole("heading", { name: "Review swap" })).toBeInTheDocument()
+    expect(screen.getByTestId("action-review-stage")).toHaveTextContent("$1.93")
 
     fireEvent.click(screen.getByRole("button", { name: "Swap" }))
     await waitFor(() => {
