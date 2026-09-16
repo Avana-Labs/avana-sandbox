@@ -1,38 +1,38 @@
 "use client"
 
-import { Circle, CircleArrowUp, Coins, ShieldCheck, Umbrella, Unlock } from "@/app/components/icons"
+import { Circle, Coins, ShieldCheck, Target, Umbrella, Unlock } from "@/app/components/icons"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 
 const learnCards = [
   {
-    title: "Isolated slashing",
-    body: "Each Umbrella stake token covers deficits for its matching borrowed asset on the same network.",
+    title: "Hub + reserve coverage",
+    body: "Coverage is defined for a specific Hub reserve and covers eligible deficits from every Spoke borrowing that reserve, including credit-line draws.",
     icon: ShieldCheck,
   },
   {
+    title: "First-loss protection",
+    body: "The Deficit Offset absorbs the first layer of loss. Only the residual deficit beyond that offset can reach staked Umbrella coverage.",
+    icon: Umbrella,
+  },
+  {
+    title: "Independent underwriting",
+    body: "Target liquidity and reward emissions reflect reserve risk, economics, opportunity cost, and the slashing and lockup risk accepted by coverage providers.",
+    icon: Target,
+  },
+  {
     title: "Dynamic rewards",
-    body: "Emissions adjust against target liquidity, and each staked asset can earn multiple reward tokens.",
+    body: "Your APY combines base supply yield and reward emissions for keeping capital available as coverage while the position stays active.",
     icon: Coins,
   },
   {
     title: "Cooldown",
-    body: "Start cooldown before withdrawing. During cooldown, the position keeps earning incentives and remains slashable.",
+    body: "Start a 20-day cooldown before withdrawing. During cooldown, the position keeps earning and remains slashable.",
     icon: Circle,
   },
   {
     title: "Withdrawal window",
-    body: "After cooldown completes, there is a short window to unstake. If it expires, cooldown must be started again.",
+    body: "When cooldown ends, a 2-day withdrawal window opens. Unstake within it, or restart cooldown before exiting.",
     icon: Unlock,
-  },
-  {
-    title: "Unstake window",
-    body: "Once cooldown finishes, users can unstake during the withdrawal window before cooldown has to be restarted.",
-    icon: CircleArrowUp,
-  },
-  {
-    title: "Module assets",
-    body: "Umbrella positions are split by asset and network, so each stake token has its own risk and reward profile.",
-    icon: Umbrella,
   },
 ]
 

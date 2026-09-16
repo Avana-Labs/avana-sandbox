@@ -25,27 +25,31 @@ const HOW_IT_WORKS: Record<HowItWorksTopic, HowItWorksContent> = {
   umbrella: {
     title: "How Umbrella works",
     intro:
-      "Umbrella is Avana's safety module. You stake an asset to backstop its lending market — if that market ever takes a loss, your stake helps cover it, and you earn rewards for providing that coverage.",
+      "Umbrella is Avana's safety module for Aave v4-style markets. You stake coverage for a specific Hub reserve. If borrowing from that reserve leaves a deficit after liquidation, Umbrella coverage can absorb the residual loss, and you earn rewards for keeping capital available.",
     sections: [
       {
-        heading: "Coverage, per asset",
-        body: "Each market (GHO, USDC, USDT, WETH…) has its own Umbrella stake token and its own target coverage. Your stake adds to that asset's coverage only — risk and rewards are isolated per asset, so a problem in one market never touches stakers of another.",
+        heading: "Hub + reserve coverage",
+        body: "Aave v4 separates liquidity (Hubs) from debt origination (Spokes). Umbrella coverage is scoped to a Hub + reserve and covers eligible deficits from every Spoke borrowing that reserve, including credit-line draws. Coverage committed to one Hub reserve cannot clear a deficit in another.",
+      },
+      {
+        heading: "First-loss protection",
+        body: "The Deficit Offset is the first-loss layer before Umbrella coverage. Avana absorbs losses up to that offset; only the residual shortfall beyond it can be covered by slashing staked coverage. This keeps protection proportional to the reserve's risk and economics.",
       },
       {
         heading: "How you earn",
-        body: "Stakers receive a staking yield (a base rate plus reward incentives) for keeping capital available as coverage. The APY shown is what your stake earns while it stays active.",
+        body: "Your APY combines the base supply yield and reward emissions for keeping capital available. Target coverage, reserve economics, opportunity cost, slashing risk, and lockup duration all inform the return needed to attract independent coverage capital.",
       },
       {
-        heading: "Slashing & the deficit offset",
-        body: "If a market accrues bad debt (a deficit), Avana absorbs the first losses up to a deficit offset. Only shortfalls beyond that offset are covered by slashing staked coverage. Your stake is slashable while it is active and throughout cooldown.",
+        heading: "Slashing stays live",
+        body: "Your stake remains slashable while active and throughout cooldown. If a covered reserve records a deficit beyond its Deficit Offset, Umbrella capital is the protection layer exposed to that residual loss.",
       },
       {
         heading: "Cooldown & withdrawal window",
-        body: "To unstake you first start a 20-day cooldown. During cooldown your position keeps earning and stays slashable. When cooldown ends, a short withdrawal window opens — unstake within it, or the cooldown must be restarted.",
+        body: "To unstake, first start a 20-day cooldown. During cooldown your position keeps earning and stays slashable. When cooldown ends, a 2-day withdrawal window opens — unstake within it, or restart cooldown before exiting.",
       },
     ],
     footnote:
-      "Umbrella is modeled on Aave's Umbrella safety module. Only stake coverage you're comfortable keeping deployed through market stress.",
+      "Umbrella mirrors the Aave v4 coverage model. Coverage decisions consider loan size, collateral quality, borrower equity, liquidation capacity, reserve economics, and independent supplier depth. Only stake capital you're comfortable keeping deployed through market stress.",
   },
   lend: {
     title: "How Lending works",

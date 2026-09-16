@@ -75,6 +75,11 @@ describe("Umbrella page", () => {
     expect(screen.getByLabelText("More information about DAO first-loss offset")).toBeInTheDocument()
     expect(screen.getByLabelText("More information about Hub tail target")).toBeInTheDocument()
     expect(screen.getByLabelText("More information about Cooldown queue")).toBeInTheDocument()
+
+    expect(screen.getByText("Hub + reserve coverage")).toBeInTheDocument()
+    expect(screen.getByText("First-loss protection")).toBeInTheDocument()
+    expect(screen.getByText("Independent underwriting")).toBeInTheDocument()
+    expect(screen.getByText(/The Deficit Offset absorbs the first layer of loss/)).toBeInTheDocument()
   })
 
   it("shows the 20-day cooldown and 2-day unstake window", () => {
