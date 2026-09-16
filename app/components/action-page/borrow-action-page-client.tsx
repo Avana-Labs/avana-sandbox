@@ -616,18 +616,20 @@ export function BorrowActionPageClient({
     }
 
     if (kind === "repay") {
-      if (safeAmount <= 0 || !debtPosition) {
+      const repayPriceUsd = debtPosition ? usd6ToNumber(session.state.assets[debtPosition.assetId]?.snapshot.priceUsd6 ?? 0n) : 0
+      if (safeAmount <= 0 || !debtPosition || repayPriceUsd <= 0) {
         setPreviewUi(null)
         return undefined
       }
-      const repayPreview = buildRepayPreviewModel(session.state, walletId, debtPosition.id, safeAmount)
+      const repayAmountUsd = safeAmount * repayPriceUsd
+      const repayPreview = buildRepayPreviewModel(session.state, walletId, debtPosition.id, repayAmountUsd)
       void session
         .previewTransaction(
           session.createIntent({
             type: "repay",
             walletId,
             debtPositionId: debtPosition.id,
-            amountUsd6: parseFixed(safeAmount.toFixed(6), 6),
+            amountUsd6: parseFixed(repayAmountUsd.toFixed(6), 6),
           }),
         )
         .then((preview) => {
@@ -636,7 +638,8 @@ export function BorrowActionPageClient({
           setPreviewUi(
             mapBorrowRepayPreviewToActionUi(preview, {
               symbol: token?.symbol ?? "Asset",
-              amountUsd: safeAmount,
+              amountUsd: repayAmountUsd,
+              priceUsd: repayPriceUsd,
               marketLabel,
               remainingDebtUsd: repayPreview.remainingDebtUsd,
               yearlyInterestSavedUsd: repayPreview.yearlyInterestSavedUsd,
@@ -969,10 +972,14 @@ export function BorrowActionPageClient({
           walletBalanceUsd,
         })
       } else if (kind === "repay" && debtPosition) {
-        const repayModel = buildRepayPreviewModel(session.state, walletId, debtPosition.id, safeAmount)
+        const repayPriceUsd = usd6ToNumber(session.state.assets[debtPosition.assetId]?.snapshot.priceUsd6 ?? 0n)
+        if (repayPriceUsd <= 0) throw new Error("Missing repay-asset price")
+        const repayAmountUsd = safeAmount * repayPriceUsd
+        const repayModel = buildRepayPreviewModel(session.state, walletId, debtPosition.id, repayAmountUsd)
         executionPreviewUi = mapBorrowRepayPreviewToActionUi(preview, {
           symbol: session.state.assets[debtPosition.assetId]?.symbol ?? "Asset",
-          amountUsd: safeAmount,
+          amountUsd: repayAmountUsd,
+          priceUsd: repayPriceUsd,
           marketLabel,
           remainingDebtUsd: repayModel.remainingDebtUsd,
           yearlyInterestSavedUsd: repayModel.yearlyInterestSavedUsd,

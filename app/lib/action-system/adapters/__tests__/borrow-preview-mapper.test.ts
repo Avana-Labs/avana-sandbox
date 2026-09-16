@@ -77,6 +77,21 @@ describe("borrow preview mappers", () => {
     ])
   })
 
+  it("expresses volatile-asset repayment in token units while keeping debt math in USD", () => {
+    const ui = mapBorrowRepayPreviewToActionUi(preview, {
+      symbol: "ETH",
+      amountUsd: 500,
+      priceUsd: 2_000,
+      marketLabel: "ETH · Core",
+      remainingDebtUsd: 2000,
+      yearlyInterestSavedUsd: 42,
+    })
+
+    expect(ui.amountLabel).toBe("0.25 ETH")
+    expect(ui.amountUsdLabel).toBe("$500")
+    expect(ui.maxAmount).toBe(1.25)
+  })
+
   it("blocks an over-repay (amount greater than outstanding debt)", () => {
     const ui = mapBorrowRepayPreviewToActionUi(preview, {
       symbol: "USDC",

@@ -86,6 +86,8 @@ export function mapBorrowTransactionPreviewToActionUi(
   options: {
     symbol: string
     amountUsd: number
+    /** Token price used to express the repay input and Max in asset units. */
+    priceUsd?: number
     marketLabel: string
     ratePct: number
     balanceLabel: string
@@ -222,11 +224,13 @@ export function mapBorrowRepayPreviewToActionUi(
   // the CTA and get persisted as the "processed" amount. Block it here.
   const exceedsDebt = options.exceedsDebt ?? false
   const allowed = preview.allowed && !exceedsDebt
+  const price = options.priceUsd && options.priceUsd > 0 ? options.priceUsd : null
+  const amountTokens = price ? options.amountUsd / price : options.amountUsd
 
   return {
     quoteId: preview.intent.id,
     allowed,
-    amountLabel: formatActionAmount(options.amountUsd, options.symbol, 2),
+    amountLabel: formatActionAmount(amountTokens, options.symbol),
     amountUsd: options.amountUsd,
     amountUsdLabel: formatActionApproxUsd(options.amountUsd),
     rateLabel: "Repay amount",
@@ -235,7 +239,7 @@ export function mapBorrowRepayPreviewToActionUi(
     marketValue: options.marketLabel,
     balanceLabel: "Outstanding debt",
     balanceValue: formatActionUsd(beforeDebt, { exact: true }),
-    maxAmount: beforeDebt,
+    maxAmount: price ? beforeDebt / price : beforeDebt,
     metrics: [
       ...creditScopeMetric(options.creditScopeLabel),
       {
