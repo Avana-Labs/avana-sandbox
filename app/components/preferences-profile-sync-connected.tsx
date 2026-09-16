@@ -1,6 +1,6 @@
 "use client"
 
-import { useMutation, useQuery } from "convex/react"
+import { useConvexAuth, useMutation, useQuery } from "convex/react"
 import { useEffect, useRef } from "react"
 import { api } from "@/convex/_generated/api"
 import { useDisplayPreferences } from "@/app/components/display-preferences"
@@ -23,17 +23,19 @@ import {
  * - Applying remote updates local React state → localStorage → same-browser tab sync.
  */
 export function PreferencesProfileSyncConnected({ wallet }: { wallet: string }) {
+  const { isAuthenticated } = useConvexAuth()
   const { theme, setTheme } = useTheme()
   const { language, setLanguage, currency, setCurrency, showDollarAmounts, setShowDollarAmounts } =
     useDisplayPreferences()
-  const profile = useQuery(api.wallet.profiles.getMine, {}) as { preferences?: StoredPreferences } | null | undefined
+  const profile = useQuery(api.wallet.profiles.getMine, isAuthenticated ? {} : "skip") as
+    { preferences?: StoredPreferences } | null | undefined
   const savePreferences = useMutation(api.wallet.profiles.savePreferences)
   const bootstrappedWalletRef = useRef<string | null>(null)
   const lastSavedKeyRef = useRef<string | null>(null)
 
   // Pull: bootstrap + live remote updates for the active wallet.
   useEffect(() => {
-    if (profile === undefined) return
+    if (!isAuthenticated || profile === undefined) return
 
     const local = { theme, language, currency, showDollarAmounts }
     const setters = { setTheme, setLanguage, setCurrency, setShowDollarAmounts }
@@ -68,6 +70,7 @@ export function PreferencesProfileSyncConnected({ wallet }: { wallet: string }) 
     applyRemotePreferences(remote, local, setters)
   }, [
     currency,
+    isAuthenticated,
     language,
     savePreferences,
     setCurrency,
@@ -82,7 +85,7 @@ export function PreferencesProfileSyncConnected({ wallet }: { wallet: string }) 
 
   // Push: local UI changes → Convex (skipped when key matches what we last pulled/pushed).
   useEffect(() => {
-    if (bootstrappedWalletRef.current !== wallet) return
+    if (!isAuthenticated || bootstrappedWalletRef.current !== wallet) return
     const nextPreferences = snapshotLocalPreferences({ theme, language, currency, showDollarAmounts })
     const nextKey = serializePreferences(nextPreferences)
     if (nextKey === lastSavedKeyRef.current) return
@@ -96,7 +99,7 @@ export function PreferencesProfileSyncConnected({ wallet }: { wallet: string }) 
       })
     }, 250)
     return () => window.clearTimeout(timeoutId)
-  }, [currency, language, savePreferences, showDollarAmounts, theme, wallet])
+  }, [currency, isAuthenticated, language, savePreferences, showDollarAmounts, theme, wallet])
 
   return null
 }
