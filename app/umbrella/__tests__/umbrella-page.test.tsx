@@ -45,8 +45,8 @@ describe("Umbrella page", () => {
     expect(screen.getAllByText("Stake USDC").length).toBeGreaterThan(0)
     expect(screen.getAllByText("Stake USDT").length).toBeGreaterThan(0)
     expect(screen.getAllByText("Stake WETH").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("Stable Hub").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("Correlated Hub").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("Stable Hub Deficits").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("Correlated Hub Deficits").length).toBeGreaterThan(0)
 
     const positions = within(screen.getByRole("region", { name: "Umbrella positions" }))
     expect(positions.getAllByText("Covered reserve").length).toBeGreaterThan(0)

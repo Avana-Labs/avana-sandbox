@@ -50,10 +50,10 @@ type PositionRow = {
 }
 
 const COVERED_RESERVE_LABELS: Record<UmbrellaMarketId, string> = {
-  gho: "Stable Hub",
-  usdc: "Stable Hub",
-  usdt: "Correlated Hub",
-  weth: "Correlated Hub",
+  gho: "Stable Hub Deficits",
+  usdc: "Stable Hub Deficits",
+  usdt: "Correlated Hub Deficits",
+  weth: "Correlated Hub Deficits",
 }
 
 export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (marketId: UmbrellaMarketId) => void }) {
