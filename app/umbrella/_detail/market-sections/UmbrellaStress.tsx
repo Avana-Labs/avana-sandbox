@@ -420,20 +420,22 @@ export function UmbrellaStress() {
                 formatPct(targetCoverageUsd > 0 ? (totalStakedUsd / targetCoverageUsd) * 100 : 0),
               )}
             </div>
-            <div className="mt-2 text-[14px] font-medium text-muted-foreground">
+            <div className="mt-2 whitespace-pre-line text-[14px] font-medium leading-5 text-muted-foreground">
               {t("{staked} staked · {target} target")
                 .replace("{staked}", formatCompactUsd(totalStakedUsd))
-                .replace("{target}", formatCompactUsd(targetCoverageUsd))}
+                .replace("{target}", formatCompactUsd(targetCoverageUsd))
+                .replace(" · ", "\n")}
             </div>
           </div>
           <div className="text-left sm:text-right">
             <div className="text-[18px] font-semibold tracking-[-0.04em] text-warning">
               {t("{amount} in cooldown").replace("{amount}", formatCompactUsd(cooldownUsd))}
             </div>
-            <div className="mt-2 text-[14px] font-medium text-muted-foreground">
+            <div className="mt-2 whitespace-pre-line text-[14px] font-medium leading-5 text-muted-foreground">
               {t("{pct}% of coverage cooling · {deficits} deficits absorbed")
                 .replace("{pct}", formatPct(totalStakedUsd > 0 ? (cooldownUsd / totalStakedUsd) * 100 : 0))
-                .replace("{deficits}", formatCompactUsd(activeDeficitsUsd))}
+                .replace("{deficits}", formatCompactUsd(activeDeficitsUsd))
+                .replace(" · ", "\n")}
             </div>
           </div>
         </div>
