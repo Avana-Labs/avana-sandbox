@@ -9,11 +9,13 @@ import type { UmbrellaMarket, UmbrellaMarketId } from "@/app/lib/umbrella-system
 import { formatCompactUsd, formatPct } from "../format"
 import type { ReactNode } from "react"
 
-type MetricLabelProps = { label: string; tooltip: string }
+type MetricLabelProps = { label: string; tooltip: string; dense?: boolean }
 
-function MetricLabel({ label, tooltip }: MetricLabelProps) {
+function MetricLabel({ label, tooltip, dense = false }: MetricLabelProps) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-[14px] text-muted-foreground">
+    <span
+      className={`inline-flex items-center gap-1.5 text-muted-foreground ${dense ? "text-[13px] leading-snug" : "text-[14px]"}`}
+    >
       {label}
       <ActionMetricHelp text={tooltip} topic={label} />
     </span>
@@ -26,17 +28,21 @@ function SurfaceMetricRow({
   tooltip,
   valueClassName,
   animateValue = false,
+  dense = false,
 }: {
   label: string
   value: ReactNode
   tooltip: string
   valueClassName?: string
   animateValue?: boolean
+  dense?: boolean
 }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <MetricLabel label={label} tooltip={tooltip} />
-      <span className={`text-[15px] font-semibold tabular-nums ${valueClassName ?? ""}`}>
+    <div className={dense ? "flex items-start justify-between gap-4" : "flex items-center justify-between gap-3"}>
+      <MetricLabel label={label} tooltip={tooltip} dense={dense} />
+      <span
+        className={`${dense ? "shrink-0 font-data text-[14px] font-medium" : "text-[15px] font-semibold"} tabular-nums ${valueClassName ?? ""}`}
+      >
         {animateValue && typeof value === "string" ? <AnimatedTextValue text={value} animateOnMount /> : value}
       </span>
     </div>
@@ -171,73 +177,76 @@ function UmbrellaSurfaceDetailsRows({ market }: { market: UmbrellaMarket }) {
   const coverageRatioPct = market.targetCoverageUsd > 0 ? (market.totalStakedUsd / market.targetCoverageUsd) * 100 : 0
 
   return (
-    <div className="space-y-3">
-      <SurfaceMetricRow
-        label={t("Local deductible")}
-        value={formatCompactUsd(market.localDeductibleUsd)}
-        tooltip={explain(
-          "The amount of loss this Spoke is expected to absorb before DAO-level or Umbrella coverage is used for the {surface} surface. Why it matters: it keeps the first layer of risk local instead of immediately passing losses to the Hub or Umbrella stakers.",
-        )}
-      />
-      <SurfaceMetricRow
-        label={t("DAO first-loss offset")}
-        value={formatCompactUsd(market.deficitOffsetUsd)}
-        valueClassName="text-brand"
-        tooltip={explain(
-          "The amount the DAO is prepared to absorb after the local deductible is exhausted and before Umbrella stakers are slashed for the {surface} surface. Why it matters: it creates a visible protection layer ahead of stakers and aligns protocol economics with the risk being covered.",
-        )}
-      />
-      <SurfaceMetricRow
-        label={t("Hub tail target")}
-        value={formatCompactUsd(market.hubTailTargetUsd)}
-        tooltip={explain(
-          "The maximum amount of catastrophic residual loss this Hub is designed to support for the {surface} surface after the local deductible and DAO first-loss layers are exhausted. Why it matters: it caps how much risk can flow back to the Hub and helps prevent one Spoke from consuming unlimited shared protection.",
-        )}
-      />
-      <SurfaceMetricRow
-        label={t("Active staker capital")}
-        value={formatCompactUsd(market.totalStakedUsd)}
-        tooltip={explain(
-          "The amount of Umbrella capital currently staked and available to absorb eligible deficits for the {surface} surface. Why it matters: this is the actual slashable capital standing behind the surface after earlier protection layers are exhausted.",
-        )}
-      />
-      <SurfaceMetricRow
-        label={t("Target coverage")}
-        value={formatCompactUsd(market.targetCoverageUsd)}
-        tooltip={explain(
-          "The target amount of active Umbrella capital for the {surface} surface. Why it matters: it provides the funding benchmark used to judge whether the surface is adequately protected.",
-        )}
-      />
-      <SurfaceMetricRow
-        label={t("Coverage ratio")}
-        value={`${formatPct(coverageRatioPct)}%`}
-        tooltip={explain(
-          "The ratio between active Umbrella capital and the target coverage amount for the {surface} surface. Why it matters: above 100% means the surface is funded above target; below 100% means coverage is under target and may require higher incentives or tighter limits.",
-        )}
-      />
-      <SurfaceMetricRow
-        label={t("APY")}
-        value={`${formatPct(market.apy)}%`}
-        tooltip={explain(
-          "The current estimated annual yield for staking into the {surface} surface. APY can vary by Hub, Spoke, reserve, coverage utilization, incentives, and risk. Why it matters: higher-risk or under-covered surfaces may need higher APY to attract enough protection capital.",
-        )}
-      />
-      <SurfaceMetricRow
-        label={t("Cooldown queue")}
-        value={formatCompactUsd(market.amountInCooldownUsd)}
-        valueClassName="text-warning"
-        tooltip={explain(
-          "The amount of staked capital that has entered cooldown and is preparing to exit the {surface} surface. Why it matters: a large cooldown queue can reduce future available protection, so coverage can weaken quickly during periods of stress.",
-        )}
-      />
-      <SurfaceMetricRow
-        label={t("Coverage mode")}
-        value={market.coverageMode}
-        valueClassName="rounded-full bg-brand/10 px-2 py-0.5 text-[12px] text-brand"
-        tooltip={explain(
-          "Shows how the {surface} surface is currently protected and whether Umbrella is fully live. Live Umbrella means full Umbrella coverage is active. Why it matters: the mode tells users which protection layer is expected to absorb losses first.",
-        )}
-      />
+    <div>
+      <h3 className="text-[15px] font-semibold tracking-[-0.03em] text-foreground">Risk Parameters</h3>
+      <div className="mt-5 grid gap-x-8 gap-y-4 sm:grid-cols-2">
+        <SurfaceMetricRow
+          label={t("Local deductible")}
+          value={formatCompactUsd(market.localDeductibleUsd)}
+          dense
+          tooltip={explain(
+            "The amount of loss this Spoke is expected to absorb before DAO-level or Umbrella coverage is used for the {surface} surface. Why it matters: it keeps the first layer of risk local instead of immediately passing losses to the Hub or Umbrella stakers.",
+          )}
+        />
+        <SurfaceMetricRow
+          label={t("DAO first-loss offset")}
+          value={formatCompactUsd(market.deficitOffsetUsd)}
+          valueClassName="text-brand"
+          dense
+          tooltip={explain(
+            "The amount the DAO is prepared to absorb after the local deductible is exhausted and before Umbrella stakers are slashed for the {surface} surface. Why it matters: it creates a visible protection layer ahead of stakers and aligns protocol economics with the risk being covered.",
+          )}
+        />
+        <SurfaceMetricRow
+          label={t("Hub tail target")}
+          value={formatCompactUsd(market.hubTailTargetUsd)}
+          dense
+          tooltip={explain(
+            "The maximum amount of catastrophic residual loss this Hub is designed to support for the {surface} surface after the local deductible and DAO first-loss layers are exhausted. Why it matters: it caps how much risk can flow back to the Hub and helps prevent one Spoke from consuming unlimited shared protection.",
+          )}
+        />
+        <SurfaceMetricRow
+          label={t("Active staker capital")}
+          value={formatCompactUsd(market.totalStakedUsd)}
+          dense
+          tooltip={explain(
+            "The amount of Umbrella capital currently staked and available to absorb eligible deficits for the {surface} surface. Why it matters: this is the actual slashable capital standing behind the surface after earlier protection layers are exhausted.",
+          )}
+        />
+        <SurfaceMetricRow
+          label={t("Target coverage")}
+          value={formatCompactUsd(market.targetCoverageUsd)}
+          dense
+          tooltip={explain(
+            "The target amount of active Umbrella capital for the {surface} surface. Why it matters: it provides the funding benchmark used to judge whether the surface is adequately protected.",
+          )}
+        />
+        <SurfaceMetricRow
+          label={t("Coverage ratio")}
+          value={`${formatPct(coverageRatioPct)}%`}
+          dense
+          tooltip={explain(
+            "The ratio between active Umbrella capital and the target coverage amount for the {surface} surface. Why it matters: above 100% means the surface is funded above target; below 100% means coverage is under target and may require higher incentives or tighter limits.",
+          )}
+        />
+        <SurfaceMetricRow
+          label={t("APY")}
+          value={`${formatPct(market.apy)}%`}
+          dense
+          tooltip={explain(
+            "The current estimated annual yield for staking into the {surface} surface. APY can vary by Hub, Spoke, reserve, coverage utilization, incentives, and risk. Why it matters: higher-risk or under-covered surfaces may need higher APY to attract enough protection capital.",
+          )}
+        />
+        <SurfaceMetricRow
+          label={t("Cooldown queue")}
+          value={formatCompactUsd(market.amountInCooldownUsd)}
+          valueClassName="text-warning"
+          dense
+          tooltip={explain(
+            "The amount of staked capital that has entered cooldown and is preparing to exit the {surface} surface. Why it matters: a large cooldown queue can reduce future available protection, so coverage can weaken quickly during periods of stress.",
+          )}
+        />
+      </div>
     </div>
   )
 }

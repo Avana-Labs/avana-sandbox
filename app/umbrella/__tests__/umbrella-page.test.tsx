@@ -66,6 +66,8 @@ describe("Umbrella page", () => {
         "This covers deficits impacting Stable LP Hub USDC suppliers, including deficits originated by All Spokes borrowing the USDC reserve.",
       ),
     ).toBeInTheDocument()
+    expect(screen.getByText("Risk Parameters")).toBeInTheDocument()
+    expect(screen.queryByText("Coverage mode")).not.toBeInTheDocument()
     expect(screen.getByText("Active staker capital")).toBeInTheDocument()
     await waitFor(() => {
       expect(screen.getAllByText("$12.0M").length).toBeGreaterThanOrEqual(2)
