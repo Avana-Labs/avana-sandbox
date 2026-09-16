@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
-import { useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import {
   desktopPrimaryLinks,
   hasPanel,
@@ -25,6 +25,9 @@ function warmDesktopMenuPanel() {
 const PILL_CLASS =
   "site-header-nav-pill inline-flex shrink-0 items-center rounded-full font-sans text-[15px] font-normal leading-5 transition-colors px-3 py-2 outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 
+const DESKTOP_MENU_OPEN_DELAY_MS = 90
+const DESKTOP_MENU_CLOSE_DELAY_MS = 180
+
 function isActiveHref(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`)
 }
@@ -43,8 +46,17 @@ export default function HeaderDesktopNavigation({
   const [desktopMenuOpen, setDesktopMenuOpen] = useState<DesktopMenuId | null>(null)
   const [desktopMenuRendered, setDesktopMenuRendered] = useState<DesktopMenuId | null>(null)
   const [focusPanel, setFocusPanel] = useState(false)
+  const desktopOpenTimeoutRef = useRef<number | null>(null)
   const desktopCloseTimeoutRef = useRef<number | null>(null)
   const navigationRef = useRef<HTMLElement>(null)
+  const handleDesktopMenuExited = useCallback(() => setDesktopMenuRendered(null), [])
+
+  const clearDesktopOpenTimeout = () => {
+    if (desktopOpenTimeoutRef.current !== null) {
+      window.clearTimeout(desktopOpenTimeoutRef.current)
+      desktopOpenTimeoutRef.current = null
+    }
+  }
 
   const clearDesktopCloseTimeout = () => {
     if (desktopCloseTimeoutRef.current !== null) {
@@ -55,6 +67,7 @@ export default function HeaderDesktopNavigation({
 
   const openDesktopMenu = (menuId: DesktopMenuId) => {
     warmDesktopMenuPanel()
+    clearDesktopOpenTimeout()
     clearDesktopCloseTimeout()
     // Dismiss any other open header layer (e.g. the Global preferences popover). Dispatching
     // inside the nav closes radix's dismissable layer while our own outside-close ignores it.
@@ -63,20 +76,38 @@ export default function HeaderDesktopNavigation({
     setDesktopMenuOpen(menuId)
   }
 
+  const scheduleDesktopMenuOpen = (menuId: DesktopMenuId) => {
+    warmDesktopMenuPanel()
+    clearDesktopOpenTimeout()
+    clearDesktopCloseTimeout()
+    desktopOpenTimeoutRef.current = window.setTimeout(() => {
+      openDesktopMenu(menuId)
+      desktopOpenTimeoutRef.current = null
+    }, DESKTOP_MENU_OPEN_DELAY_MS)
+  }
+
   const scheduleDesktopMenuClose = () => {
+    clearDesktopOpenTimeout()
     clearDesktopCloseTimeout()
     desktopCloseTimeoutRef.current = window.setTimeout(() => {
       setDesktopMenuOpen(null)
       desktopCloseTimeoutRef.current = null
-    }, 110)
+    }, DESKTOP_MENU_CLOSE_DELAY_MS)
   }
 
   const closeDesktopMenu = () => {
+    clearDesktopOpenTimeout()
     clearDesktopCloseTimeout()
     setDesktopMenuOpen(null)
   }
 
-  useEffect(() => () => clearDesktopCloseTimeout(), [])
+  useEffect(
+    () => () => {
+      clearDesktopOpenTimeout()
+      clearDesktopCloseTimeout()
+    },
+    [],
+  )
 
   // Surface the open state so the header can show its divider line while a panel is open.
   useEffect(() => {
@@ -140,7 +171,7 @@ export default function HeaderDesktopNavigation({
                 aria-controls={`desktop-menu-${menuId}`}
                 onMouseEnter={() => {
                   setFocusPanel(false)
-                  openDesktopMenu(menuId)
+                  scheduleDesktopMenuOpen(menuId)
                 }}
                 onFocus={warmDesktopMenuPanel}
                 onKeyDown={(event) => {
@@ -177,7 +208,7 @@ export default function HeaderDesktopNavigation({
           isOpen={desktopMenuOpen !== null}
           onOpen={clearDesktopCloseTimeout}
           onClose={scheduleDesktopMenuClose}
-          onExited={() => setDesktopMenuRendered(null)}
+          onExited={handleDesktopMenuExited}
           focusOnOpen={focusPanel}
         />
       ) : null}

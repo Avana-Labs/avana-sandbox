@@ -245,6 +245,8 @@ interface HeaderDesktopMenuPanelProps {
   focusOnOpen: boolean
 }
 
+const DESKTOP_MENU_TRANSITION_MS = 300
+
 // Small colour sparkline before the metric — the same deterministic mock the Featured cards use.
 function RowSparkline({ seed, isPositive }: { seed: string; isPositive: boolean }) {
   const total = 40
@@ -304,7 +306,8 @@ export default function HeaderDesktopMenuPanel({
   useEffect(() => {
     if (!isOpen) {
       setIsShown(false)
-      return
+      const exitTimeout = window.setTimeout(onExited, DESKTOP_MENU_TRANSITION_MS + 20)
+      return () => window.clearTimeout(exitTimeout)
     }
     let raf2 = 0
     const raf1 = requestAnimationFrame(() => {
@@ -314,7 +317,7 @@ export default function HeaderDesktopMenuPanel({
       cancelAnimationFrame(raf1)
       cancelAnimationFrame(raf2)
     }
-  }, [isOpen])
+  }, [isOpen, onExited])
 
   useEffect(() => {
     if (isShown && focusOnOpen) panelRef.current?.querySelector<HTMLElement>("a")?.focus()
@@ -324,7 +327,7 @@ export default function HeaderDesktopMenuPanel({
 
   const numColumns = config.columns.length
   const itemClass = `transition-[opacity,transform] duration-300 ease-out ${
-    isShown ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+    isShown ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
   }`
   const itemDelay = (delay: number) => ({ transitionDelay: isShown ? `${delay}ms` : "0ms" })
 
@@ -345,11 +348,10 @@ export default function HeaderDesktopMenuPanel({
         aria-hidden={!isShown}
         onMouseEnter={onOpen}
         onMouseLeave={onClose}
-        onTransitionEnd={(event) => {
-          if (!isOpen && event.target === event.currentTarget) onExited()
-        }}
-        className={`fixed inset-x-0 top-14 z-30 hidden transform-gpu transition-opacity duration-300 ease-out min-[1440px]:block ${
-          isShown ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+        className={`fixed inset-x-0 top-14 z-30 hidden origin-top transform-gpu transition-[opacity,transform] duration-300 ease-out min-[1440px]:block ${
+          isShown
+            ? "pointer-events-auto translate-y-0 scale-y-100 opacity-100"
+            : "pointer-events-none -translate-y-2 scale-y-[0.98] opacity-0"
         }`}
       >
         <div className="border-b border-border bg-background">
