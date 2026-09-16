@@ -80,7 +80,7 @@ function formatValue(value: number, format: ValueFormat): string {
 
 /**
  * The three "Your Dashboard" cards from useDashboardPortfolioSummary:
- *  - Wallet Balance — unallocated wallet funds only (sourceType "wallet").
+ *  - Wallet Balance — wallet-accessible funds (liquid wallet rows plus returned available product balances).
  *  - Net Value — live-priced productBalances aggregate (wallet + lend + borrow + multiply; umbrella excluded).
  *  - Net APY — equity-weighted blend of live Lend / Borrow / Multiply session Net APYs.
  * No fabricated deltas: a card shows a delta only when a real basis exists (none yet).

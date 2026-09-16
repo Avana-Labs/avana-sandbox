@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { buildDashboardWalletBalanceRows, getUserSwapBalances, type UserAssetBalance } from "@/app/lib/swap-system"
+import {
+  buildDashboardWalletBalanceRows,
+  getUserSwapBalances,
+  selectDashboardWalletValueRows,
+  type UserAssetBalance,
+} from "@/app/lib/swap-system"
 
 const balances: UserAssetBalance[] = [
   { id: "wallet-eth", walletId: "w1", assetId: "eth", amount: 2, sourceType: "wallet" },
@@ -139,5 +144,39 @@ describe("swap wallet balance classification", () => {
     })
 
     expect(rows.map((row) => row.id).sort()).toEqual(["lend-usdc", "liquid-usdc"])
+  })
+
+  it("keeps Wallet Balance aligned with returned wallet-accessible product rows", () => {
+    const rows = buildDashboardWalletBalanceRows({
+      walletId: "w1",
+      balances: [
+        {
+          id: "liquid-usdc",
+          walletId: "w1",
+          assetId: "usdc",
+          amount: 109_812,
+          valueUsd: 109_812,
+          sourceType: "wallet",
+        },
+        {
+          id: "returned-pool-a",
+          walletId: "w1",
+          assetId: "aura-weth-lp",
+          amount: 1,
+          valueUsd: 43_750,
+          sourceType: "borrow_collateral_unpledged",
+        },
+        {
+          id: "returned-pool-b",
+          walletId: "w1",
+          assetId: "wbtc-eth-lp",
+          amount: 1,
+          valueUsd: 43_750,
+          sourceType: "borrow_collateral_unpledged",
+        },
+      ],
+    })
+
+    expect(selectDashboardWalletValueRows(rows).reduce((sum, row) => sum + row.valueUsd, 0)).toBe(197_312)
   })
 })

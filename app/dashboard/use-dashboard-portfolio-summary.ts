@@ -5,7 +5,7 @@ import { useQuery } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { getSwapAsset } from "@/app/lib/swap-system/catalog"
 import type { UserAssetBalance } from "@/app/lib/swap-system"
-import { buildDashboardWalletBalanceRows } from "@/app/lib/swap-system"
+import { buildDashboardWalletBalanceRows, selectDashboardWalletValueRows } from "@/app/lib/swap-system"
 import { useConvexProductWalletBalances } from "@/app/lib/swap-system/use-convex-wallet-balances"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import {
@@ -29,7 +29,7 @@ export type DashboardPortfolioSummary = {
   netValueUsd: number
   /** Value-weighted blended Net APY. Umbrella excluded. */
   netApyPct: number
-  /** Unallocated wallet funds only (same scope as the Wallet tab). */
+  /** Wallet-accessible funds, including returned available product balances (same scope as the Wallet tab). */
   walletBalanceUsd: number
 }
 
@@ -75,7 +75,7 @@ export function aggregateNetValueUsd(
 }
 
 /**
- * Your Dashboard headlines: Wallet Balance (liquid), Net Value (all products),
+ * Your Dashboard headlines: Wallet Balance (wallet-accessible), Net Value (all products),
  * and Net APY (equity-weighted blend of Lend / Borrow / Multiply session metrics).
  */
 export function useDashboardPortfolioSummary(walletId: string | undefined): DashboardPortfolioSummary {
@@ -87,11 +87,13 @@ export function useDashboardPortfolioSummary(walletId: string | undefined): Dash
   const lendSession = useLendSessionContext()
   const multiplySession = useMultiplySessionContext()
 
-  const walletRows = buildDashboardWalletBalanceRows({
-    walletId: walletId ?? "",
-    balances: balances ?? undefined,
-    priceFor,
-  }).filter((row) => row.sourceType === "wallet")
+  const walletRows = selectDashboardWalletValueRows(
+    buildDashboardWalletBalanceRows({
+      walletId: walletId ?? "",
+      balances: balances ?? undefined,
+      priceFor,
+    }),
+  )
   const walletBalanceUsd = sumWalletValueUsd(walletRows)
 
   const productNetValueUsd = aggregateNetValueUsd(balances ?? [], priceFor)

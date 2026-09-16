@@ -39,7 +39,11 @@ import {
   formatTableHeaderLabel,
 } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
-import { buildDashboardWalletBalanceRows, type DashboardWalletBalanceRow } from "@/app/lib/swap-system"
+import {
+  buildDashboardWalletBalanceRows,
+  selectDashboardWalletValueRows,
+  type DashboardWalletBalanceRow,
+} from "@/app/lib/swap-system"
 import type { UserAssetBalance } from "@/app/lib/swap-system"
 import {
   useConvexClaimBasis,
@@ -310,9 +314,8 @@ function SwapAction({ assetId, label }: { assetId: string; label: string }) {
 }
 
 /**
- * "Wallet Value" = the value of the wallet's UNALLOCATED funds only. Callers pass rows
- * already filtered to sourceType "wallet" (product-committed buckets live on their own
- * tabs), so this is a plain sum of the free/liquid holdings.
+ * "Wallet Value" = the value of funds currently available to the wallet owner. Callers pass rows
+ * already filtered to wallet-accessible balances, so this is a plain sum of those holdings.
  */
 export function sumWalletValueUsd(rows: ReadonlyArray<{ valueUsd: number; sourceLabel: string }>): number {
   return rows.reduce((total, row) => total + row.valueUsd, 0)
@@ -330,16 +333,9 @@ export function DashboardWalletTab({ walletId, balances }: { walletId: string; b
   const claimBasis = useConvexClaimBasis(balances === undefined ? walletId : null)
   const basisFor = (assetId: string) => claimBasis?.[assetId.toLowerCase()]
   const priceFor = useCanonicalPriceFor()
-  const candidateRows = buildDashboardWalletBalanceRows({ walletId, balances: effectiveBalances, priceFor }).filter(
-    (row) =>
-      row.sourceType === "wallet" ||
-      row.sourceType === "lend_available" ||
-      row.sourceType === "borrow_collateral_unpledged",
+  const rows = selectDashboardWalletValueRows(
+    buildDashboardWalletBalanceRows({ walletId, balances: effectiveBalances, priceFor }),
   )
-  const canonicalWalletAssetIds = new Set(
-    candidateRows.filter((row) => row.sourceType === "wallet").map((row) => row.assetId),
-  )
-  const rows = candidateRows.filter((row) => row.sourceType === "wallet" || !canonicalWalletAssetIds.has(row.assetId))
   const tokens = rows.filter((row) => !row.isLpToken)
   const lps = rows.filter((row) => row.isLpToken)
   const totalWalletUsd = sumWalletValueUsd(rows)

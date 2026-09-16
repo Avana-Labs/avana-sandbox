@@ -101,6 +101,22 @@ export function getUserSwapBalances(walletId: string, balances: UserAssetBalance
   return balances.filter((balance) => balance.walletId === walletId)
 }
 
+/**
+ * Rows currently available to the wallet owner. Returned product balances are included, while
+ * deposited, pledged, and active positions remain on their product tab. A canonical liquid token
+ * row wins over an available product mirror so the dashboard cannot double-count it.
+ */
+export function selectDashboardWalletValueRows(rows: DashboardWalletBalanceRow[]): DashboardWalletBalanceRow[] {
+  const candidates = rows.filter(
+    (row) =>
+      row.sourceType === "wallet" ||
+      row.sourceType === "lend_available" ||
+      row.sourceType === "borrow_collateral_unpledged",
+  )
+  const liquidAssetIds = new Set(candidates.filter((row) => row.sourceType === "wallet").map((row) => row.assetId))
+  return candidates.filter((row) => row.sourceType === "wallet" || !liquidAssetIds.has(row.assetId))
+}
+
 export function buildDashboardWalletBalanceRows({
   walletId,
   balances = DEMO_SWAP_BALANCES,
