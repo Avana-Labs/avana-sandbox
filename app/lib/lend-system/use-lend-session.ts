@@ -15,6 +15,7 @@ import type {
 import { SandboxLendReadAdapter } from "./sandbox-read-adapter"
 import { SandboxLendTransactionAdapter } from "./sandbox-transaction-adapter"
 import { mergeConvexLendSnapshots, type LendConvexSnapshot } from "./market-hydration"
+import { resolveLendMarketId } from "./catalog"
 import {
   clearLendSessionState,
   readLendSessionMetadata,
@@ -55,6 +56,12 @@ function mergeReceipts(nextReceipt: LendTransactionResult, receipts: LendTransac
 }
 
 export type ConvexLendWalletData = {
+  /** Canonical unallocated wallet holdings from wallet.productBalances.listForWallet. */
+  balances?: Array<{
+    assetId: string
+    amount: number
+    valueUsd: number
+  }>
   lendBalances?: Array<{
     marketId: string
     assetId: string
@@ -362,9 +369,17 @@ export function useLendSession({
           }
         })
       const walletBalances: LendSystemState["walletBalances"] = { [walletId]: {} }
+      for (const row of data.balances ?? []) {
+        const marketId = resolveLendMarketId(row.assetId)
+        if (stateRef.current.markets[marketId]) {
+          walletBalances[walletId]![marketId] = row.amount
+        }
+      }
       for (const row of data.lendBalances ?? []) {
         if (row.state !== "available") continue
-        walletBalances[walletId]![row.marketId] = row.amount
+        if (walletBalances[walletId]![row.marketId] === undefined) {
+          walletBalances[walletId]![row.marketId] = row.amount
+        }
       }
       setState((current) => ({ ...current, positions, walletBalances }))
       setTransactionHistory(history)

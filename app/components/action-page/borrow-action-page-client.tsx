@@ -28,6 +28,7 @@ import { mapBorrowRewardsClaimPreviewToActionUi } from "@/app/lib/action-system/
 import { ActionBorrowContextBar } from "@/app/components/action-page/action-borrow-context-bar"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionConfigureStage, ActionConfigureAmountSection } from "@/app/components/action-page/action-configure-stage"
+import { ActionLeverageRuler } from "@/app/components/action-page/action-leverage-ruler"
 import { ActionSelectStage } from "@/app/components/action-page/action-select-stage"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
@@ -510,6 +511,10 @@ export function BorrowActionPageClient({
   }, [embedded, isHomeZeroState, marketId, scopeCollateralToAsset, session.collateralPools, usesCollateralContext])
 
   useEffect(() => {
+    // executeTransaction updates the shared session during reconciliation. Keep the reviewed
+    // preview stable across the submit lifecycle; rerunning here clears it and makes the
+    // health-factor bar visibly jump.
+    if (stage !== "configure" && stage !== "review" && stage !== "error") return undefined
     let cancelled = false
     const safeAmount = parsePositiveActionAmount(deferredAmount) ?? 0
 
@@ -616,18 +621,23 @@ export function BorrowActionPageClient({
     }
 
     if (kind === "repay") {
-      if (safeAmount <= 0 || !debtPosition) {
+      const repayPriceUsd = debtPosition
+        ? usd6ToNumber(session.state.assets[debtPosition.assetId]?.snapshot.priceUsd6 ?? 0n)
+        : 0
+      if (safeAmount <= 0 || !debtPosition || repayPriceUsd <= 0) {
         setPreviewUi(null)
         return undefined
       }
-      const repayPreview = buildRepayPreviewModel(session.state, walletId, debtPosition.id, safeAmount)
+      const repayAmountUsd = safeAmount * repayPriceUsd
+      const repayPreview = buildRepayPreviewModel(session.state, walletId, debtPosition.id, repayAmountUsd)
       void session
         .previewTransaction(
           session.createIntent({
             type: "repay",
             walletId,
             debtPositionId: debtPosition.id,
-            amountUsd6: parseFixed(safeAmount.toFixed(6), 6),
+            assetId: debtPosition.assetId,
+            amountUsd6: parseFixed(repayAmountUsd.toFixed(6), 6),
           }),
         )
         .then((preview) => {
@@ -636,7 +646,8 @@ export function BorrowActionPageClient({
           setPreviewUi(
             mapBorrowRepayPreviewToActionUi(preview, {
               symbol: token?.symbol ?? "Asset",
-              amountUsd: safeAmount,
+              amountUsd: repayAmountUsd,
+              priceUsd: repayPriceUsd,
               marketLabel,
               remainingDebtUsd: repayPreview.remainingDebtUsd,
               yearlyInterestSavedUsd: repayPreview.yearlyInterestSavedUsd,
@@ -730,6 +741,7 @@ export function BorrowActionPageClient({
     deferredPercent,
     resolvedBorrowAssetId,
     session,
+    stage,
     walletId,
   ])
 
@@ -901,6 +913,7 @@ export function BorrowActionPageClient({
           type: "repay",
           walletId,
           debtPositionId: debtPosition.id,
+          assetId: debtPosition.assetId,
           amountUsd6: parseFixed(safeAmount.toFixed(6), 6),
         })
       } else if (kind === "claim") {
@@ -969,10 +982,14 @@ export function BorrowActionPageClient({
           walletBalanceUsd,
         })
       } else if (kind === "repay" && debtPosition) {
-        const repayModel = buildRepayPreviewModel(session.state, walletId, debtPosition.id, safeAmount)
+        const repayPriceUsd = usd6ToNumber(session.state.assets[debtPosition.assetId]?.snapshot.priceUsd6 ?? 0n)
+        if (repayPriceUsd <= 0) throw new Error("Missing repay-asset price")
+        const repayAmountUsd = safeAmount * repayPriceUsd
+        const repayModel = buildRepayPreviewModel(session.state, walletId, debtPosition.id, repayAmountUsd)
         executionPreviewUi = mapBorrowRepayPreviewToActionUi(preview, {
           symbol: session.state.assets[debtPosition.assetId]?.symbol ?? "Asset",
-          amountUsd: safeAmount,
+          amountUsd: repayAmountUsd,
+          priceUsd: repayPriceUsd,
           marketLabel,
           remainingDebtUsd: repayModel.remainingDebtUsd,
           yearlyInterestSavedUsd: repayModel.yearlyInterestSavedUsd,
@@ -1078,7 +1095,6 @@ export function BorrowActionPageClient({
         hideTitle={embedded || sidebar}
         hideClose={embedded}
         flowHeaderStage={!embedded ? stage : undefined}
-        simulated
       >
         <ActionSessionLoading />
       </ActionPageShell>
@@ -1124,42 +1140,54 @@ export function BorrowActionPageClient({
     embedded && isHomeLayout && (showCollateralContextBar || (kind === "supply" && activePool != null))
   const stackedAmountField =
     useWorkspaceFields && isConfigureVisibleStage(stage) && kind !== "claim" ? (
-      <ActionConfigureAmountSection
-        verb={descriptor.primaryVerb}
-        amount={kind === "remove" ? percent : amount}
-        onAmountChange={kind === "remove" ? setPercent : setAmount}
-        inputLabel={kind === "remove" ? "Percentage to remove" : undefined}
-        preview={previewUi}
-        assetSymbol={assetSymbol}
-        borrowSymbol={undefined}
-        assetOptions={kind === "borrow" ? borrowAssetOptions : kind === "repay" ? repayAssetOptions : undefined}
-        selectedAssetId={pickerSelectedTokenId}
-        onAssetSelect={(id) => {
-          if (kind === "repay") {
-            const position =
-              debtPositions.find((entry) => entry.id === id) ??
-              debtPositions.find((entry) => entry.assetId === id && entry.marketId === marketId)
-            if (!position) return
-            setDebtPositionId(position.id)
-            if (position.marketId) setMarketId(position.marketId)
+      kind === "remove" ? (
+        <ActionLeverageRuler
+          value={percent}
+          onChange={setPercent}
+          min={0}
+          max={100}
+          step={1}
+          label="Percentage to remove"
+          valueSuffix="%"
+          subvalue={previewUi ? `Estimated removal · ${previewUi.amountUsdLabel}` : undefined}
+          variant="embedded"
+        />
+      ) : (
+        <ActionConfigureAmountSection
+          verb={descriptor.primaryVerb}
+          amount={amount}
+          onAmountChange={setAmount}
+          preview={previewUi}
+          assetSymbol={assetSymbol}
+          borrowSymbol={undefined}
+          assetOptions={kind === "borrow" ? borrowAssetOptions : kind === "repay" ? repayAssetOptions : undefined}
+          selectedAssetId={pickerSelectedTokenId}
+          onAssetSelect={(id) => {
+            if (kind === "repay") {
+              const position =
+                debtPositions.find((entry) => entry.id === id) ??
+                debtPositions.find((entry) => entry.assetId === id && entry.marketId === marketId)
+              if (!position) return
+              setDebtPositionId(position.id)
+              if (position.marketId) setMarketId(position.marketId)
+              setAmount("")
+              return
+            }
+            const selection = resolveBorrowTokenSelection(session, id, selectMarketId)
+            if (!selection) return
+            setAssetId(selection.assetId)
+            setMarketId(selection.marketId)
             setAmount("")
-            return
-          }
-          const selection = resolveBorrowTokenSelection(session, id, selectMarketId)
-          if (!selection) return
-          setAssetId(selection.assetId)
-          setMarketId(selection.marketId)
-          setAmount("")
-        }}
-        amountVariant="inset"
-        amountUnitLabel={kind === "remove" ? "%" : undefined}
-        hideAssetSelector={kind === "supply"}
-        assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
-        pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
-        assetPickerDisabled={borrowNeedsCollateral}
-        showBalance={showActionMax}
-        onMax={showActionMax ? handleActionMax : undefined}
-      />
+          }}
+          amountVariant="inset"
+          hideAssetSelector={kind === "supply"}
+          assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
+          pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
+          assetPickerDisabled={borrowNeedsCollateral}
+          showBalance={showActionMax}
+          onMax={showActionMax ? handleActionMax : undefined}
+        />
+      )
     ) : null
 
   return (
@@ -1172,7 +1200,6 @@ export function BorrowActionPageClient({
       hideClose={embedded}
       closeHref={closeHref}
       flowHeaderStage={!embedded ? stage : undefined}
-      simulated={session.readAdapter.mode === "sandbox"}
     >
       {useSupplyWorkspace && activePool ? (
         <ActionBorrowContextBar
@@ -1228,7 +1255,7 @@ export function BorrowActionPageClient({
                 : kind === "remove"
                   ? "Pledge collateral before trying to remove it."
                   : kind === "supply"
-                    ? "Try adjusting your search — every market is available to pledge in the sandbox."
+                    ? "No unpledged LP collateral is available in this wallet."
                     : "Try adjusting your search"
           }
           onSelect={(id) => {
@@ -1374,9 +1401,19 @@ export function BorrowActionPageClient({
           canGoBack={canGoBackToSelect}
           isPending={isPending}
           outcome={outcome}
-          hideAmountInput={kind === "claim" || Boolean(useWorkspaceFields)}
+          hideAmountInput={kind === "claim" || kind === "remove" || Boolean(useWorkspaceFields)}
           amountVariant="card"
           amountPlacement={useWorkspaceFields ? "stacked" : "inline"}
+          multiplier={kind === "remove" ? percent : undefined}
+          onMultiplierChange={kind === "remove" ? setPercent : undefined}
+          multiplierMin={kind === "remove" ? 0 : undefined}
+          multiplierMax={kind === "remove" ? 100 : undefined}
+          multiplierStep={kind === "remove" ? 1 : undefined}
+          multiplierLabel={kind === "remove" ? "Percentage to remove" : undefined}
+          multiplierValueSuffix={kind === "remove" ? "%" : undefined}
+          multiplierSubvalue={
+            kind === "remove" && previewUi ? `Estimated removal · ${previewUi.amountUsdLabel}` : undefined
+          }
           showBalance={showActionMax}
           onMax={showActionMax ? handleActionMax : undefined}
           amountUnitLabel={kind === "remove" ? "%" : undefined}

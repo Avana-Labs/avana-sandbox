@@ -158,6 +158,16 @@ function ConvexWalletHydrators({
     }
     const productSession = {
       ...session,
+      // Product balances are the canonical wallet source for all action surfaces.
+      // The legacy sandbox session balance query can contain only a partial starter
+      // basket, which caused Dashboard to show eight assets while Lend Deposit showed
+      // only the stale GHO row.
+      balances: productBalances.liquid.map((row) => ({
+        assetId: row.assetId,
+        symbol: row.symbol,
+        amount: row.amount,
+        valueUsd: row.valueUsd,
+      })),
       positions: session.positions.filter((position) => position.product !== "umbrella") as HydratablePosition[],
       transactions: session.transactions.filter(
         (transaction) => transaction.product !== "umbrella",

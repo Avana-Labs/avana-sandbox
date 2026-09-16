@@ -9,12 +9,13 @@
  */
 
 import { useMemo, useState, type PointerEvent } from "react"
-import { useQuery } from "convex/react"
+import { useConvexAuth, useQuery } from "convex/react"
 import { cn } from "@/lib/utils"
 import { CarouselArrowButtons, useOverflowCarousel } from "@/app/components/carousel-arrow-buttons"
 import { Eye, EyeOff } from "@/app/components/icons"
 import { HIGHLIGHT_CARD_CLASS } from "@/app/components/highlight-carousel"
 import { LEND_FEATURED_ASSETS } from "@/app/lib/data/catalog/lend/featured-assets"
+import { hasConvexClient } from "@/app/lib/convex/market-liquidity-provider"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useAvanaIdentity } from "@/app/lib/avana-session/avana-sessions-provider"
 import { formatAskAIGreeting } from "@/app/lib/ask-ai/greeting"
@@ -79,7 +80,7 @@ function formatValue(value: number, format: ValueFormat): string {
 
 /**
  * The three "Your Dashboard" cards from useDashboardPortfolioSummary:
- *  - Wallet Balance — unallocated wallet funds only (sourceType "wallet").
+ *  - Wallet Balance — wallet-accessible funds (liquid wallet rows plus returned available product balances).
  *  - Net Value — live-priced productBalances aggregate (wallet + lend + borrow + multiply; umbrella excluded).
  *  - Net APY — equity-weighted blend of live Lend / Borrow / Multiply session Net APYs.
  * No fabricated deltas: a card shows a delta only when a real basis exists (none yet).
@@ -234,13 +235,34 @@ function StatCardView({ card, graphPath }: { card: StatCard; graphPath: string }
   )
 }
 
-export function PortfolioStatCards({ activeTab }: { activeTab?: DashboardQuickActionsTab }) {
+type PortfolioStatCardsProps = { activeTab?: DashboardQuickActionsTab }
+
+export function PortfolioStatCards(props: PortfolioStatCardsProps) {
+  // The local fallback session is intentionally rendered while Convex authenticates. Keep
+  // auth-required profile queries out of that fallback tree; Convex treats them as real
+  // requests and surfaces UNAUTHENTICATED as a runtime error.
+  if (!hasConvexClient) return <PortfolioStatCardsView {...props} walletProfile={null} />
+  return <PortfolioStatCardsWithConvex {...props} />
+}
+
+function PortfolioStatCardsWithConvex({ activeTab }: PortfolioStatCardsProps) {
+  const { isAuthenticated } = useConvexAuth()
+  const { walletId } = useAvanaIdentity()
+  const walletProfile = useQuery(api.wallet.profiles.getMine, isAuthenticated && walletId ? {} : "skip") as
+    { preferences?: { name?: string } } | null | undefined
+
+  return <PortfolioStatCardsView activeTab={activeTab} walletProfile={walletProfile} />
+}
+
+function PortfolioStatCardsView({
+  activeTab,
+  walletProfile,
+}: PortfolioStatCardsProps & {
+  walletProfile: { preferences?: { name?: string } } | null | undefined
+}) {
   const { t } = useTranslation()
   const { showDollarAmounts, setShowDollarAmounts } = useAmountDisplayPreferences()
   const { scrollerRef, canPrev, canNext, scrollByCard } = useOverflowCarousel()
-  const { walletId } = useAvanaIdentity()
-  const walletProfile = useQuery(api.wallet.profiles.getMine, walletId ? {} : "skip") as
-    { preferences?: { name?: string } } | null | undefined
   const displayName = walletProfile?.preferences?.name ?? null
   // Freeze the clock on mount; recompute only when the display name arrives from Convex.
   const [greetingNow] = useState(() => new Date())

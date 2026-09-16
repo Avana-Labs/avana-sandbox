@@ -209,7 +209,7 @@ describe("MultiplyActionPageClient", () => {
     seedExistingMultiplyPosition()
     renderWithProviders(
       <AvanaSessionsProvider>
-        <MultiplyActionPageClient kind="deleverage" />
+        <MultiplyActionPageClient kind="deleverage" initialMarketId="eth-usdt" />
       </AvanaSessionsProvider>,
     )
 
@@ -221,6 +221,31 @@ describe("MultiplyActionPageClient", () => {
     expect(screen.getByRole("button", { name: "Enter an amount" })).toBeDisabled()
     expect(screen.queryByTestId("action-metrics-block")).not.toBeInTheDocument()
     expect(screen.queryByTestId("action-risk-banner")).not.toBeInTheDocument()
+  })
+
+  it("shows a disabled 1x target and no-position CTA without an active position", async () => {
+    renderWithProviders(
+      <AvanaSessionsProvider>
+        <MultiplyActionPageClient kind="deleverage" />
+      </AvanaSessionsProvider>,
+    )
+
+    await waitFor(() => expect(screen.getByRole("slider", { name: "Target leverage" })).toBeInTheDocument())
+    expect(screen.getByRole("slider", { name: "Target leverage" })).toHaveValue("1")
+    expect(screen.getByRole("button", { name: "No position" })).toBeDisabled()
+  })
+
+  it("shows an explicit no-position state on the direct close route", async () => {
+    renderWithProviders(
+      <AvanaSessionsProvider>
+        <MultiplyActionPageClient kind="close" initialMarketId="eth-usdt" />
+      </AvanaSessionsProvider>,
+    )
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "No position" })).toBeInTheDocument())
+    expect(screen.getByText("No open position to close in this market.")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Enter an amount" })).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "No position" })).toBeDisabled()
   })
 
   it("keeps embedded deleverage preview blank while showing the default target multiplier", async () => {
@@ -236,7 +261,7 @@ describe("MultiplyActionPageClient", () => {
     })
 
     expect(screen.getByTestId("action-leverage-ruler")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Enter an amount" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "No position" })).toBeDisabled()
     expect(screen.queryByTestId("action-health-factor-card")).not.toBeInTheDocument()
     expect(screen.queryByTestId("action-metrics-block")).not.toBeInTheDocument()
   })
@@ -245,7 +270,7 @@ describe("MultiplyActionPageClient", () => {
     seedExistingMultiplyPosition()
     renderWithProviders(
       <AvanaSessionsProvider>
-        <MultiplyActionPageClient kind="deleverage" />
+        <MultiplyActionPageClient kind="deleverage" initialMarketId="eth-usdt" />
       </AvanaSessionsProvider>,
     )
 
@@ -273,7 +298,7 @@ describe("MultiplyActionPageClient", () => {
     seedExistingMultiplyPosition()
     renderWithProviders(
       <AvanaSessionsProvider>
-        <MultiplyActionPageClient kind="deleverage" />
+        <MultiplyActionPageClient kind="deleverage" initialMarketId="eth-usdt" />
       </AvanaSessionsProvider>,
     )
 
@@ -302,7 +327,7 @@ describe("MultiplyActionPageClient", () => {
     seedExistingMultiplyPosition()
     renderWithProviders(
       <AvanaSessionsProvider>
-        <MultiplyActionPageClient kind="deleverage" />
+        <MultiplyActionPageClient kind="deleverage" initialMarketId="eth-usdt" />
       </AvanaSessionsProvider>,
     )
 

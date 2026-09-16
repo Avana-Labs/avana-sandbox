@@ -70,6 +70,7 @@ const unsupportedAsset = {
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push }),
+  useSearchParams: () => new URLSearchParams(),
 }))
 
 vi.mock("@/app/lib/page-loading", () => ({

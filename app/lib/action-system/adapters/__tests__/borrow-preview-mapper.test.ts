@@ -77,6 +77,21 @@ describe("borrow preview mappers", () => {
     ])
   })
 
+  it("expresses volatile-asset repayment in token units while keeping debt math in USD", () => {
+    const ui = mapBorrowRepayPreviewToActionUi(preview, {
+      symbol: "ETH",
+      amountUsd: 500,
+      priceUsd: 2_000,
+      marketLabel: "ETH · Core",
+      remainingDebtUsd: 2000,
+      yearlyInterestSavedUsd: 42,
+    })
+
+    expect(ui.amountLabel).toBe("0.25 ETH")
+    expect(ui.amountUsdLabel).toBe("$500")
+    expect(ui.maxAmount).toBe(1.25)
+  })
+
   it("blocks an over-repay (amount greater than outstanding debt)", () => {
     const ui = mapBorrowRepayPreviewToActionUi(preview, {
       symbol: "USDC",
@@ -242,5 +257,26 @@ describe("borrow preview mappers", () => {
     expect(ui.amountUsdLabel).toBe("$2,500.00")
     expect(ui.balanceValue).toBe("$2,500.00")
     expect(ui.maxAmount).toBe(60)
+  })
+
+  it("keeps the requested removal amount visible when the engine blocks the action", () => {
+    const blockedPreview = {
+      ...preview,
+      allowed: false,
+      after: { ...preview.after, collateralValueUsd6: preview.before.collateralValueUsd6 },
+      validationErrors: ["Removal would make the position unsafe."],
+    }
+    const ui = mapBorrowRemovePreviewToActionUi(blockedPreview, {
+      percent: 100,
+      safePercent: 76,
+      removeUsd: 43_596,
+      marketLabel: "cbBTC / USDC",
+      positionApyPct: 2.85,
+    })
+
+    expect(ui.amountUsd).toBe(43_596)
+    expect(ui.amountUsdLabel).toBe("$43,596.00")
+    expect(ui.balanceValue).toBe("$43,596.00")
+    expect(ui.allowed).toBe(false)
   })
 })

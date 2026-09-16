@@ -8,6 +8,7 @@ import type { PortfolioLendTabData, PortfolioStrategyBucket } from "@/app/lib/da
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend/asset-groups"
 import { LEND_FEATURED_ASSETS, LEND_FEATURED_SEQUENCE } from "@/app/lib/data/catalog/lend/featured-assets"
 import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
+import { formatWalletLabel } from "@/app/lib/detail-page/transaction-history"
 import { LEND_MARKET_CATALOG } from "./catalog"
 import { formatReliableLendApyLabel } from "./illiquid-apy"
 import type { LendTransactionHistoryItem, LendWalletReadSnapshot, LendYieldSnapshot } from "./contracts"
@@ -381,15 +382,11 @@ export function buildLendActivityHistory(
       status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
       amountUsd:
         item.kind === "claim" ? item.amount : item.amount * (state?.markets[item.marketId]?.assetPriceUsd ?? 0),
-      primaryLabel:
-        item.kind === "deposit"
-          ? "Simulated deposit"
-          : item.kind === "withdraw"
-            ? "Simulated withdraw"
-            : "Simulated rewards claim",
+      primaryLabel: item.asset,
       secondaryLabel:
         item.kind === "claim" ? `${item.amount.toFixed(2)} USD rewards` : `${item.amount.toFixed(4)} ${item.asset}`,
       txHash: item.hash,
+      marketId: item.marketId,
     }))
 }
 
@@ -471,7 +468,11 @@ function buildRangePoints(params: {
 
 export { buildLendRangeData }
 
-export function mapLendHistoryToDetailRows(history: LendTransactionHistoryItem[], assetSymbol: string) {
+export function mapLendHistoryToDetailRows(
+  history: LendTransactionHistoryItem[],
+  assetSymbol: string,
+  walletAddress?: string,
+) {
   const now = Date.now()
   return history.map((item) => ({
     id: item.id,
@@ -480,7 +481,7 @@ export function mapLendHistoryToDetailRows(history: LendTransactionHistoryItem[]
     kind: item.kind,
     amountLabel: `${item.amount.toFixed(4)} ${assetSymbol}`,
     counterpartyLabel: assetSymbol,
-    walletLabel: "Sandbox wallet",
+    walletLabel: formatWalletLabel(walletAddress),
     txHashShort: item.hash.slice(0, 10),
   }))
 }

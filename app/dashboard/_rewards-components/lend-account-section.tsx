@@ -11,9 +11,11 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import type { PortfolioLendTabData } from "@/app/lib/data/providers/portfolio"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { LEND_MARKET_CATALOG } from "@/app/lib/lend-system/catalog"
 import { ProductAvailableCard } from "./account-sections-shared"
 
 const EMPTY_LEND_TAB: PortfolioLendTabData = { investments: [], positions: [], strategyBuckets: [], history: [] }
+const LEND_MARKET_IDS = new Set(LEND_MARKET_CATALOG.map((market) => market.marketId))
 
 /**
  * The lend account overview (performance metrics + supplied-asset table) that used
@@ -76,7 +78,8 @@ export function LendAccountSection({ returnHref = "/dashboard" }: { returnHref?:
       />
       <ProductAvailableCard
         walletId={walletId ?? ""}
-        sourceTypes={["lend_available"]}
+        sourceTypes={["wallet", "lend_available"]}
+        allowedAssetIds={LEND_MARKET_IDS}
         title={t("Available to deposit")}
         action={{
           icon: "deposit",

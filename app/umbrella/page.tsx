@@ -14,7 +14,7 @@ import { UmbrellaCooldown } from "./_detail/market-sections/UmbrellaCooldown"
 import { UmbrellaHero } from "./_detail/market-sections/UmbrellaHero"
 import { UmbrellaLearn } from "./_detail/market-sections/UmbrellaLearn"
 import { UmbrellaPositions } from "./_detail/market-sections/UmbrellaPositions"
-import { UmbrellaStress } from "./_detail/market-sections/UmbrellaStress"
+import { UmbrellaStress, UmbrellaSurfaceDetails } from "./_detail/market-sections/UmbrellaStress"
 import { UmbrellaMobileSidebarSheet, type UmbrellaMobileSheetTrigger } from "./_detail/UmbrellaMobileSidebarSheet"
 import { UmbrellaSidebar } from "./_detail/sidebars/UmbrellaSidebar"
 
@@ -22,6 +22,18 @@ const VALID_MARKETS: readonly UmbrellaMarketId[] = ["gho", "usdc", "usdt", "weth
 
 function isUmbrellaMarketId(value: string | null): value is UmbrellaMarketId {
   return value != null && (VALID_MARKETS as readonly string[]).includes(value)
+}
+
+function defaultUmbrellaMarket(
+  umbrella: ReturnType<typeof useUmbrellaSessionContext>,
+  marketParam: string | null,
+): UmbrellaMarketId {
+  if (isUmbrellaMarketId(marketParam)) return marketParam
+  const withValue = umbrella.marketOrder
+    .map((id) => ({ id, value: umbrella.positions[id]?.valueUsd ?? 0 }))
+    .sort((a, b) => b.value - a.value)
+  if (withValue.length > 0 && withValue[0].value > 0) return withValue[0].id
+  return "usdc"
 }
 
 function UmbrellaPageInner() {
@@ -32,14 +44,9 @@ function UmbrellaPageInner() {
   // Fallback: if the URL didn't pick a market, choose the one this wallet actually holds
   // most of. Empty state → "usdc". Lazy state initializer runs once on mount so the
   // seed doesn't fight later user selections when positions refresh.
-  const [selectedMarket, setSelectedMarket] = useState<UmbrellaMarketId>(() => {
-    if (isUmbrellaMarketId(marketParam)) return marketParam
-    const withValue = umbrella.marketOrder
-      .map((id) => ({ id, value: umbrella.positions[id]?.valueUsd ?? 0 }))
-      .sort((a, b) => b.value - a.value)
-    if (withValue.length > 0 && withValue[0].value > 0) return withValue[0].id
-    return "usdc"
-  })
+  const initialMarket = defaultUmbrellaMarket(umbrella, marketParam)
+  const [selectedMarket, setSelectedMarket] = useState<UmbrellaMarketId>(initialMarket)
+  const [selectedSurfaceMarket, setSelectedSurfaceMarket] = useState<UmbrellaMarketId>("gho")
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false)
   const [mobileSheetInitialTab, setMobileSheetInitialTab] = useState<UmbrellaMobileSheetTrigger>("stake")
 
@@ -54,15 +61,15 @@ function UmbrellaPageInner() {
         <div className="mx-auto max-w-[1152px]">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
             <div className={cn(detailSectionStackClass, "min-w-0")}>
-              {/* Hero + positions share one block so no divider falls between them
-                  (the section dividers resume from Cooldown down), but keep a
-                  comfortable gap so the two aren't cramped together. */}
+              {/* Hero + positions share one block so no divider falls between them;
+                  the cooldown queue follows immediately after positions. */}
               <div className="space-y-10">
                 <UmbrellaHero />
                 <UmbrellaPositions onSelectMarket={setSelectedMarket} />
               </div>
               <UmbrellaCooldown />
               <UmbrellaStress />
+              <UmbrellaSurfaceDetails marketId={selectedSurfaceMarket} onMarketChange={setSelectedSurfaceMarket} />
               <UmbrellaLearn />
             </div>
 

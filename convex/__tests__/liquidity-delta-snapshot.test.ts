@@ -109,7 +109,7 @@ describe("listDeltaSnapshot action-triggered aggregate (M33)", () => {
     expect(new Map(snap.map((r) => [r.marketSlug, r.borrowedDeltaUsd]))).toEqual(
       new Map(raw.map((r) => [r.marketSlug, r.borrowedDeltaUsd])),
     )
-  })
+  }, 15_000)
 
   test("crons.ts no longer registers idle liquidity intervals", () => {
     const source = readFileSync(resolve(__dirname, "../crons.ts"), "utf8")

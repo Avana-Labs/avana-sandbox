@@ -3,7 +3,7 @@
 import * as React from "react"
 import { ActionIcon } from "@/app/components/action-icon"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import {
   MarketMobileCard,
@@ -175,9 +175,23 @@ export function ExploreLoopsMarketsTable({
   tokenLogos: _tokenLogos,
 }: ExploreLoopsMarketsTableProps) {
   const { t } = useTranslation()
-  const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>("all")
+  const searchParams = useSearchParams()
+  // Deep links (e.g. the header mega-menu's "View all") can preselect a category via ?category=.
+  const [currentTab, setCurrentTab] = React.useState<MultiplyCategoryTabId>(() => {
+    const param = searchParams?.get("category")
+    return param && CATEGORY_CHIPS.multiply.some((chip) => chip.id === param) ? (param as MultiplyCategoryTabId) : "all"
+  })
   const [search, setSearch] = React.useState("")
   const searchQuery = search.trim().toLowerCase()
+
+  // Keep the chip in sync with the URL when a header mega-menu "View all" changes the category on
+  // this same page; the #markets hash on the link handles scrolling to this table.
+  const categoryParam = searchParams?.get("category")
+  React.useEffect(() => {
+    if (categoryParam && CATEGORY_CHIPS.multiply.some((chip) => chip.id === categoryParam)) {
+      setCurrentTab(categoryParam as MultiplyCategoryTabId)
+    }
+  }, [categoryParam])
 
   // Compute each row's searchable text ONCE per `rows` change (keyed by row identity),
   // instead of rebuilding it for every row on every keystroke.
@@ -247,7 +261,7 @@ export function ExploreLoopsMarketsTable({
   const carouselRef = React.useRef<HighlightCarouselHandle>(null)
 
   return (
-    <section className="mt-7">
+    <section id="markets" className="mt-7 scroll-mt-24">
       <div className="flex items-center justify-between gap-3">
         <h2 className="mt-1 text-[22px] font-normal tracking-[-0.01em] text-foreground md:text-[24px]">
           {t("Trending")}

@@ -18,12 +18,14 @@ const ConvexSessionProvider = lazy(async () => ({
 // Module-scope Convex client for the dev open-gate path. Mounted synchronously so the
 // provider tree always has a Convex client before wallet queries fire.
 //
-// When NEXT_PUBLIC_CONVEX_URL is absent (Playwright CI / Lighthouse without backend),
-// point at an unreachable local port so useQuery resolves to undefined (loading) instead
-// of throwing "Could not find Convex client".
+// Reuse the shared SIWE client whenever a real NEXT_PUBLIC_CONVEX_URL is configured —
+// including local open-gate/test-mode dev, which does have a backend. Only when the URL
+// is genuinely absent (Playwright CI / Lighthouse without backend) do we fall back to an
+// unreachable local port so useQuery resolves to undefined (loading) instead of throwing
+// "Could not find Convex client". Pointing at the dead port when a real URL exists just
+// spammed the console with failed ws://127.0.0.1:0 handshakes (unsuppressible browser logs).
 const OFFLINE_CONVEX_URL = "http://127.0.0.1:0"
-const openGateConvexClient =
-  (isPlaywrightTestMode() ? null : getSiweConvexClient()) ?? new ConvexReactClient(OFFLINE_CONVEX_URL)
+const openGateConvexClient = getSiweConvexClient() ?? new ConvexReactClient(OFFLINE_CONVEX_URL)
 
 function OpenGateConvexProvider({ children }: { children: ReactNode }) {
   return (

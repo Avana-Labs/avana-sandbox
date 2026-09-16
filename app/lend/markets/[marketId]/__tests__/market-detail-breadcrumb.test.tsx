@@ -30,6 +30,9 @@ vi.mock("@/app/components/detail-transaction-table/detail-market-transactions", 
 vi.mock("@/app/lib/lend-system/lend-session-context", () => ({
   useLendSessionContext: () => ({ walletId: "demo-wallet", transactionHistory: [] }),
 }))
+vi.mock("@/app/lib/avana-session/avana-sessions-provider", () => ({
+  useAvanaIdentity: () => ({ walletAddress: "0x0000000000000000000000000000000000000001" }),
+}))
 
 describe("LendMarketDetailClient breadcrumb", () => {
   afterEach(cleanup)

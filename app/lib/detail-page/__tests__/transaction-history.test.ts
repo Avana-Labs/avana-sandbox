@@ -3,6 +3,7 @@ import {
   enrichBorrowRowWithAsset,
   enrichDetailTransactionRow,
   enrichPoolRowWithPair,
+  formatWalletLabel,
   formatRelativeTime,
   mapBorrowSessionRows,
   mapLendSessionRows,
@@ -17,6 +18,11 @@ import {
 } from "@/app/components/detail-transaction-table/kind-configs"
 
 describe("transaction-history helpers", () => {
+  it("formats the canonical wallet address", () => {
+    expect(formatWalletLabel("0x1234567890abcdef1234567890abcdef12345678")).toBe("0x1234…5678")
+    expect(formatWalletLabel()).toBeUndefined()
+  })
+
   it("formatRelativeTime returns compact labels", () => {
     const now = Date.now()
     expect(formatRelativeTime(new Date(now - 32_000).toISOString())).toMatch(/32s|32 sec/)
@@ -47,10 +53,12 @@ describe("transaction-history helpers", () => {
       "gho",
       "GHO",
       1,
+      "0x1234567890abcdef1234567890abcdef12345678",
     )
     expect(rows[0]?.tokenSymbol).toBe("GHO")
     expect(rows[0]?.tokenAmountLabel).toBe("1,200")
     expect(rows[0]?.amountLabel).toBe("$1.2K")
+    expect(rows[0]?.walletLabel).toBe("0x1234…5678")
   })
 
   it("mapBorrowSessionRows maps borrow actions with token symbol", () => {
@@ -68,9 +76,12 @@ describe("transaction-history helpers", () => {
       ],
       "uni-v2:usdc",
       "USDC",
+      undefined,
+      "0x1234567890abcdef1234567890abcdef12345678",
     )
     expect(rows[0]?.kind).toBe("borrow")
     expect(rows[0]?.tokenSymbol).toBe("USDC")
+    expect(rows[0]?.walletLabel).toBe("0x1234…5678")
   })
 
   it("mapBorrowSessionRows splits sides: pool hides borrow/repay, asset keeps them", () => {

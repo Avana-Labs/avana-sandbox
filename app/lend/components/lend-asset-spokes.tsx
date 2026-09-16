@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { ActionIcon } from "@/app/components/action-icon"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { Button } from "@/components/ui/button"
@@ -593,8 +593,22 @@ export function LendAssetSpokes({
   initialIsDesktop?: boolean
 }) {
   const { t } = useTranslation()
+  const searchParams = useSearchParams()
   const [search, setSearch] = useState("")
-  const [currentTab, setCurrentTab] = useState<CategoryChip["id"]>("all")
+  // Deep links (e.g. the header mega-menu's "View all") can preselect a category via ?category=.
+  const [currentTab, setCurrentTab] = useState<CategoryChip["id"]>(() => {
+    const param = searchParams?.get("category")
+    return param && CATEGORY_CHIPS.lend.some((chip) => chip.id === param) ? (param as CategoryChip["id"]) : "all"
+  })
+
+  // Deep links from the header mega-menu ("View all") keep the chip in sync when the query
+  // changes on this same page; the #markets hash on the link handles scrolling here.
+  const categoryParam = searchParams?.get("category")
+  useEffect(() => {
+    if (categoryParam && CATEGORY_CHIPS.lend.some((chip) => chip.id === categoryParam)) {
+      setCurrentTab(categoryParam as CategoryChip["id"])
+    }
+  }, [categoryParam])
 
   const filteredGroups = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -627,7 +641,11 @@ export function LendAssetSpokes({
   )
 
   return (
-    <section className="mt-6 space-y-8 sm:mt-[38px] sm:space-y-[58px]" style={{ overflowAnchor: "none" }}>
+    <section
+      id="markets"
+      className="mt-6 scroll-mt-24 space-y-8 sm:mt-[38px] sm:space-y-[58px]"
+      style={{ overflowAnchor: "none" }}
+    >
       <div className="py-2.5">
         <MarketFilterBar
           chips={CATEGORY_CHIPS.lend}

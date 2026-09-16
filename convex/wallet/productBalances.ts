@@ -127,7 +127,7 @@ export const listForWallet = query({
   args: { wallet: v.string() },
   handler: async (ctx, { wallet }) => {
     const authed = await requireSandboxWallet(ctx, wallet)
-    const [lend, rawBorrow, multiply, liquid, borrowPositions] = await Promise.all([
+    const [lend, rawBorrow, rawMultiply, liquid, borrowPositions] = await Promise.all([
       ctx.db
         .query("walletLendBalances")
         .withIndex("by_wallet", (q) => q.eq("wallet", authed))
@@ -149,6 +149,34 @@ export const listForWallet = query({
         .withIndex("by_wallet_product", (q) => q.eq("wallet", authed).eq("product", "borrow"))
         .collect(),
     ])
+
+    const multiplySlugs = [
+      ...new Set(rawMultiply.map((row) => row.marketId).filter((slug): slug is string => Boolean(slug))),
+    ]
+    const multiplyMarkets = await Promise.all(
+      multiplySlugs.map((slug) =>
+        ctx.db
+          .query("markets")
+          .withIndex("by_scope_slug", (q) => q.eq("scope", "multiply").eq("slug", slug))
+          .unique(),
+      ),
+    )
+    const multiplyPriceBySlug = new Map(
+      multiplyMarkets
+        .filter((market): market is NonNullable<typeof market> => market !== null)
+        .filter(
+          (market) => typeof market.priceUsd === "number" && Number.isFinite(market.priceUsd) && market.priceUsd > 0,
+        )
+        .map((market) => [market.slug, market.priceUsd!] as const),
+    )
+    // Available Multiply buckets are USD ledgers plus a display token quantity. Normalize
+    // the quantity at read time as well as at write time so legacy rows created with the
+    // old $1/token fallback cannot inflate the dashboard or action pages after reload.
+    const multiply = rawMultiply.map((row) => {
+      if (row.state !== "available" || !row.marketId) return row
+      const priceUsd = multiplyPriceBySlug.get(row.marketId)
+      return priceUsd ? { ...row, amount: row.valueUsd / priceUsd } : row
+    })
 
     const pledgedByMarket = new Map<string, { valueUsd: number; updatedAt: number }>()
     for (const position of borrowPositions) {
@@ -191,10 +219,32 @@ export const listForWallet = query({
           .unique(),
       ),
     )
+    const collateralPools = await Promise.all(
+      poolSlugs.map((slug) =>
+        ctx.db
+          .query("pools")
+          .withIndex("by_slug", (q) => q.eq("slug", slug))
+          .unique(),
+      ),
+    )
     const liveLpBySlug = new Map<string, number>()
+    const ltvPctBySlug = new Map<string, number>()
     for (const market of poolMarkets) {
       if (market && typeof market.priceUsd === "number" && Number.isFinite(market.priceUsd) && market.priceUsd > 0) {
         liveLpBySlug.set(market.slug, market.priceUsd)
+      }
+      if (market && typeof market.maxLtvPct === "number" && Number.isFinite(market.maxLtvPct)) {
+        ltvPctBySlug.set(market.slug, market.maxLtvPct)
+      }
+    }
+    for (const pool of collateralPools) {
+      if (
+        pool &&
+        !ltvPctBySlug.has(pool.slug) &&
+        typeof pool.maxLtvPct === "number" &&
+        Number.isFinite(pool.maxLtvPct)
+      ) {
+        ltvPctBySlug.set(pool.slug, pool.maxLtvPct)
       }
     }
     const claimLpBySlug = new Map<string, number>()
@@ -204,7 +254,9 @@ export const listForWallet = query({
     }
 
     const borrow = rawBorrow.map((row) => {
-      if (!row.marketId || (row.state !== "poolAvailable" && row.state !== "collateral")) return row
+      if (!row.marketId || (row.state !== "poolAvailable" && row.state !== "collateral")) {
+        return { ...row, ltvPct: row.marketId ? ltvPctBySlug.get(row.marketId) : undefined }
+      }
       const pledgedUsd = Math.min(poolTotals.get(row.marketId) ?? 0, pledgedByMarket.get(row.marketId)?.valueUsd ?? 0)
       const frozenValueUsd =
         row.state === "collateral" ? pledgedUsd : Math.max(0, (poolTotals.get(row.marketId) ?? 0) - pledgedUsd)
@@ -215,9 +267,20 @@ export const listForWallet = query({
       const scale = resolveCollateralRepriceScale(liveLp, claimLp)
       if (scale !== undefined && liveLp !== undefined) {
         const valueUsd = frozenValueUsd * scale
-        return { ...row, valueUsd, amount: valueUsd / liveLp }
+        return {
+          ...row,
+          valueUsd,
+          amount: valueUsd / liveLp,
+          unitPriceUsd: liveLp,
+          ltvPct: ltvPctBySlug.get(row.marketId),
+        }
       }
-      return { ...row, valueUsd: frozenValueUsd, amount: claimPrice > 0 ? frozenValueUsd / claimPrice : frozenValueUsd }
+      return {
+        ...row,
+        valueUsd: frozenValueUsd,
+        amount: claimPrice > 0 ? frozenValueUsd / claimPrice : frozenValueUsd,
+        ltvPct: ltvPctBySlug.get(row.marketId),
+      }
     })
 
     return {

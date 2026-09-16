@@ -65,6 +65,14 @@ export type UserAssetBalance = {
   valueUsd?: number
   sourceType: SwapBalanceSource
   sourcePositionId?: string
+  /** Product-backed rows can carry their server-resolved display metadata. */
+  symbol?: string
+  name?: string
+  isLpToken?: boolean
+  /** Live LP unit price when the server could resolve a trustworthy token basis. */
+  unitPriceUsd?: number
+  /** Pool maximum loan-to-value percentage from the canonical market risk config. */
+  ltvPct?: number
 }
 
 export type SwapContext = {

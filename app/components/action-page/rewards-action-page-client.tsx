@@ -196,7 +196,6 @@ export function RewardsActionPageClient({
         hideTitle={embedded || sidebar}
         hideClose={embedded}
         closeHref={closeHref}
-        simulated={rewards.readAdapter.mode === "sandbox"}
       >
         <ActionSessionLoading />
       </ActionPageShell>
@@ -215,7 +214,6 @@ export function RewardsActionPageClient({
       hideClose={embedded}
       closeHref={closeHref}
       flowHeaderStage={!embedded ? stage : undefined}
-      simulated={rewards.readAdapter.mode === "sandbox"}
     >
       {isProcessingStage(stage) ? (
         <ActionProcessingStage

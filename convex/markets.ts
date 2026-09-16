@@ -697,7 +697,8 @@ const DETAIL_TX_SCAN = 400
  * asset pages match `assetId` as well as `marketSlug` (`gho` and
  * `bal-stable:gho` are the same asset).
  *
- * Falls back to seeded `walletEvents` only when no sandbox activity exists yet.
+ * Combines live sandbox activity with seeded `walletEvents` so a single live action
+ * never hides the market's historical activity feed.
  */
 export const getRecentTransactions = query({
   args: {
@@ -730,10 +731,8 @@ export const getRecentTransactions = query({
         source: "sandbox",
       })
     }
-    if (live.length > 0) return live
-
     const market = await resolveMarket(ctx, scope, slug)
-    if (!market) return []
+    if (!market) return live
     const rows = await ctx.db
       .query("walletEvents")
       .withIndex("by_market_at", (q) => q.eq("marketId", market._id))
@@ -770,7 +769,7 @@ export const getRecentTransactions = query({
         source: "seed",
       })
     }
-    return seeded
+    return [...live, ...seeded].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()).slice(0, take)
   },
 })
 

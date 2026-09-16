@@ -1,5 +1,7 @@
 import { SWAP_CHAIN_ID, getSwapAsset } from "./catalog"
 import { getSwapEligibility } from "./eligibility"
+import { formatTokenDisplaySymbol } from "@/app/lib/token-icons"
+import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
 import type { SwapContext, SwapRestrictionReason, UserAssetBalance } from "./contracts"
 
 export type DashboardWalletBalanceRow = {
@@ -15,6 +17,9 @@ export type DashboardWalletBalanceRow = {
   isWalletHeld: boolean
   swappable: boolean
   restrictionReason: SwapRestrictionReason | null
+  sourcePositionId?: string
+  unitPriceUsd?: number
+  ltvPct?: number
 }
 
 export const DEMO_SWAP_BALANCES: UserAssetBalance[] = [
@@ -44,6 +49,7 @@ export const DEMO_SWAP_BALANCES: UserAssetBalance[] = [
     walletId: "demo-wallet",
     assetId: "eth-usdc-lp",
     amount: 6.4,
+    ltvPct: 76.5,
     sourceType: "wallet",
   },
   {
@@ -95,6 +101,22 @@ export function getUserSwapBalances(walletId: string, balances: UserAssetBalance
   return balances.filter((balance) => balance.walletId === walletId)
 }
 
+/**
+ * Rows currently available to the wallet owner. Returned product balances are included, while
+ * deposited, pledged, and active positions remain on their product tab. A canonical liquid token
+ * row wins over an available product mirror so the dashboard cannot double-count it.
+ */
+export function selectDashboardWalletValueRows(rows: DashboardWalletBalanceRow[]): DashboardWalletBalanceRow[] {
+  const candidates = rows.filter(
+    (row) =>
+      row.sourceType === "wallet" ||
+      row.sourceType === "lend_available" ||
+      row.sourceType === "borrow_collateral_unpledged",
+  )
+  const liquidAssetIds = new Set(candidates.filter((row) => row.sourceType === "wallet").map((row) => row.assetId))
+  return candidates.filter((row) => row.sourceType === "wallet" || !liquidAssetIds.has(row.assetId))
+}
+
 export function buildDashboardWalletBalanceRows({
   walletId,
   balances = DEMO_SWAP_BALANCES,
@@ -118,7 +140,8 @@ export function buildDashboardWalletBalanceRows({
     const valueUsd = balance.valueUsd ?? balance.amount * (getSwapAsset(balance.assetId)?.priceUsd ?? 0)
     if (balance.amount <= 0 && valueUsd <= 0) continue
     const asset = getSwapAsset(balance.assetId)
-    const key = asset?.isLpToken ? `${balance.assetId}:${balance.sourceType}` : balance.id
+    const isLpToken = balance.isLpToken ?? asset?.isLpToken ?? false
+    const key = isLpToken ? `${balance.assetId}:${balance.sourceType}` : balance.id
     const existing = merged.get(key)
     if (!existing) {
       merged.set(key, { ...balance, valueUsd })
@@ -138,22 +161,34 @@ export function buildDashboardWalletBalanceRows({
       const storedValueUsd = balance.valueUsd ?? balance.amount * (asset?.priceUsd ?? 0)
       // Reprice NON-LP tokens off the live oracle when available so the wallet is reactive
       // and never pinned to a frozen stored value. LP rows keep the canonical stored basis.
-      const isLpToken = asset?.isLpToken ?? false
+      const isLpToken = balance.isLpToken ?? asset?.isLpToken ?? false
       const livePrice = !isLpToken ? priceFor?.(asset?.symbol ?? balance.assetId) : undefined
-      const valueUsd = livePrice != null && Number.isFinite(livePrice) ? balance.amount * livePrice : storedValueUsd
+      // Multiply available buckets are USD ledgers. Their token amount may be a
+      // legacy USD-denominated value, so never revalue them as `amount × price`.
+      // Derive the display quantity from the canonical stored USD value instead.
+      const isMultiplyAvailable = balance.sourceType === "multiply_available"
+      const hasLivePrice = livePrice != null && Number.isFinite(livePrice) && livePrice > 0
+      const valueUsd = isMultiplyAvailable ? storedValueUsd : hasLivePrice ? balance.amount * livePrice : storedValueUsd
+      const amount = isMultiplyAvailable && hasLivePrice ? valueUsd / livePrice : balance.amount
+      const catalogPool = balance.sourcePositionId
+        ? BORROW_POOL_CATALOG.find((pool) => pool.id === balance.sourcePositionId)
+        : undefined
       return {
         id: balance.id,
         assetId: balance.assetId,
-        symbol: asset?.symbol ?? balance.assetId.toUpperCase(),
-        name: asset?.name ?? "Unsupported asset",
-        amount: balance.amount,
+        symbol: asset?.symbol ?? balance.symbol ?? formatTokenDisplaySymbol(balance.assetId),
+        name: asset?.name ?? balance.name ?? balance.symbol ?? formatTokenDisplaySymbol(balance.assetId),
+        amount,
         valueUsd,
         sourceType: balance.sourceType,
         sourceLabel: sourceLabel(balance.sourceType),
-        isLpToken: asset?.isLpToken ?? false,
+        isLpToken,
         isWalletHeld: balance.sourceType === "wallet",
+        unitPriceUsd: balance.unitPriceUsd,
+        ltvPct: balance.ltvPct ?? catalogPool?.ltv,
         swappable: eligibility.eligible,
         restrictionReason: eligibility.eligible ? null : eligibility.reason,
+        sourcePositionId: balance.sourcePositionId,
       }
     })
     .sort((left, right) => right.valueUsd - left.valueUsd)

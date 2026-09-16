@@ -51,15 +51,15 @@ function asWallet(t: ReturnType<typeof convexTest>, wallet = WALLET) {
   return t.withIdentity({ subject: wallet })
 }
 
-describe("getRecentTransactions prefers sandbox activity", () => {
-  test("shows sandbox activity for the market instead of seed theater", async () => {
+describe("getRecentTransactions merges sandbox activity with seed history", () => {
+  test("keeps seeded market history visible beside sandbox activity", async () => {
     const t = convexTest(schema, modules)
     await t.run(async (ctx: any) => {
       const marketId = await insertMarket(ctx, "pool", POOL_SLUG)
       await ctx.db.insert("walletEvents", {
         marketId,
         wallet: "0xseed000000000000000000000000000000000001",
-        kind: "borrow",
+        kind: "supply",
         amountUsd: 99_000,
         at: Date.now() - 86_400_000 * 50,
         txHash: "0xseedhash00000000000000000000000000000001",
@@ -73,11 +73,12 @@ describe("getRecentTransactions prefers sandbox activity", () => {
       slug: POOL_SLUG,
       limit: 12,
     })
-    expect(rows.length).toBeGreaterThanOrEqual(1)
+    expect(rows).toHaveLength(2)
     expect(rows[0]?.source).toBe("sandbox")
     expect(rows[0]?.kind).toBe("supply")
     expect(rows[0]?.amountLabel).toContain("1")
-    expect(rows.every((r) => r.source === "sandbox")).toBe(true)
+    expect(rows[1]?.source).toBe("seed")
+    expect(rows[1]?.kind).toBe("supply")
   })
 
   test("signed-out visitors see the sandbox activity too (community feed)", async () => {
@@ -87,7 +88,7 @@ describe("getRecentTransactions prefers sandbox activity", () => {
       await ctx.db.insert("walletEvents", {
         marketId,
         wallet: "0xseed000000000000000000000000000000000001",
-        kind: "borrow",
+        kind: "supply",
         amountUsd: 37_380,
         at: Date.now() - 86_400_000 * 53,
         txHash: "0xseedhash00000000000000000000000000000002",
@@ -100,9 +101,10 @@ describe("getRecentTransactions prefers sandbox activity", () => {
       scope: "pool",
       slug: POOL_SLUG,
     })
-    expect(rows).toHaveLength(1)
+    expect(rows).toHaveLength(2)
     expect(rows[0]?.source).toBe("sandbox")
     expect(rows[0]?.kind).toBe("supply")
+    expect(rows[1]?.source).toBe("seed")
   })
 
   test("falls back to seeded walletEvents when no sandbox activity exists", async () => {

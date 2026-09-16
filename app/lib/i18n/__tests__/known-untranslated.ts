@@ -33,15 +33,13 @@ export const KNOWN_UNTRANSLATED: readonly string[] = [
   "Exp.",
   // Multiply Balance — Interest Earned tile help text.
   // Umbrella hero — Weighted APY tile (i) help text.
-  "{amount} in cooldown",
-  "{count} positions",
-  "{progress}/{target} {currency}",
   "1 Day",
   "1D",
   "6 Months",
   "Action",
   "Activity",
   "ALLOCATION",
+  "APR",
   "APY",
   "Asset",
   "ASSET",

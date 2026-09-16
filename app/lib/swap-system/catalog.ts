@@ -138,6 +138,22 @@ export const SWAP_ASSETS: SwapAsset[] = [
     maximumSwapAmount: 0,
   },
   {
+    // Multiply collateral surfaced by the wallet/product balance feed. Metadata-only so it
+    // resolves correctly in shared dashboard tables without making WSTETH a swap route.
+    id: "wsteth",
+    chainId: SWAP_CHAIN_ID,
+    symbol: "WSTETH",
+    name: "Wrapped stETH",
+    decimals: 18,
+    assetType: "erc20",
+    isNative: false,
+    isLpToken: false,
+    isSwapEnabled: false,
+    priceUsd: sandboxBaselinePriceUsd("WSTETH"),
+    minimumSwapAmount: 0,
+    maximumSwapAmount: 0,
+  },
+  {
     id: "eth-usdc-lp",
     chainId: SWAP_CHAIN_ID,
     symbol: "ETH/USDC LP",
@@ -169,7 +185,8 @@ export const SWAP_PAIRS: SwapPair[] = ROUTED_ASSET_IDS.flatMap((inputAssetId) =>
 )
 
 export function getSwapAsset(assetId: string) {
-  return SWAP_ASSETS.find((asset) => asset.id === assetId)
+  const normalized = assetId.trim().toLowerCase()
+  return SWAP_ASSETS.find((asset) => asset.id.toLowerCase() === normalized)
 }
 
 export function getSwapPair(inputAssetId: string, outputAssetId: string, chainId = SWAP_CHAIN_ID) {

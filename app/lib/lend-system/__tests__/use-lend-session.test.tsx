@@ -99,6 +99,45 @@ describe("useLendSession", () => {
     expect(result.current.state.walletBalances[walletId]?.eth).toBeCloseTo(beforeBalance - 0.5, 6)
   })
 
+  it("hydrates depositable wallet assets from the canonical liquid balance rows", () => {
+    const walletId = "convex-wallet"
+    const sessionSeed = buildLendSessionSeed(walletId)
+    const { result } = renderHook(() =>
+      useLendSession({
+        walletId,
+        sessionSeed,
+      }),
+    )
+
+    act(() => {
+      result.current.hydrateWalletData({
+        balances: [
+          { assetId: "eth", amount: 6.463, valueUsd: 15_556.86 },
+          { assetId: "usdc", amount: 12_500, valueUsd: 12_496.29 },
+          { assetId: "gho", amount: 12_513, valueUsd: 12_494.52 },
+        ],
+        lendBalances: [
+          {
+            marketId: "gho",
+            assetId: "gho",
+            symbol: "GHO",
+            amount: 2.996,
+            valueUsd: 2.99,
+            state: "available",
+          },
+        ],
+        positions: [],
+        transactions: [],
+      })
+    })
+
+    expect(result.current.state.walletBalances[walletId]).toMatchObject({
+      eth: 6.463,
+      usdc: 12_500,
+      gho: 12_513,
+    })
+  })
+
   it("disables sandbox persistence automatically for injected production adapters", async () => {
     const walletId = "demo-wallet"
     const state = buildMockLendSystemStateWithSeedPosition(walletId)

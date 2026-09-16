@@ -3,7 +3,7 @@ import { parseFixed } from "@/app/lib/credit-engine"
 import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 
 describe("mapTransactionHistoryToActivityRows", () => {
-  it("maps borrow history into portfolio activity rows with simulated labels", () => {
+  it("maps borrow history into portfolio activity rows without internal simulation labels", () => {
     const rows = mapTransactionHistoryToActivityRows([
       {
         id: "history-1",
@@ -24,7 +24,7 @@ describe("mapTransactionHistoryToActivityRows", () => {
     expect(rows).toHaveLength(1)
     expect(rows[0]?.kind).toBe("borrow")
     expect(rows[0]?.txHash).toBe("sim_abc123")
-    expect(rows[0]?.secondaryLabel).toContain("Simulated")
+    expect(rows[0]?.secondaryLabel).toBe("")
     expect(rows[0]?.amountUsd).toBeLessThan(0)
   })
 
@@ -55,7 +55,7 @@ describe("mapTransactionHistoryToActivityRows", () => {
     // Title + icon source are the borrowed asset, not the "WETH / USDC" collateral pool.
     expect(row?.primaryLabel).toBe("USDC")
     expect(row?.marketId).toBe("uni-v3-bluechip:usdc")
-    expect(row?.secondaryLabel).toContain("via WETH / USDC")
+    expect(row?.secondaryLabel).toBe("via WETH / USDC")
   })
 
   it("keeps the collateral pool label + id for collateral actions (withdraw)", () => {

@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { ActionIcon } from "@/app/components/action-icon"
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import {
   MarketMobileActionFooter,
   MarketMobileCard,
@@ -18,16 +19,23 @@ import { TokenIcon } from "@/app/components/token-icon"
 import { Button } from "@/components/ui/button"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useOptionalDisplayPreferences } from "@/app/components/display-preferences"
+import { LiveInterestEarnedUsd } from "@/app/dashboard/live-accrual"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { UmbrellaMarketId } from "@/app/lib/umbrella-system/use-umbrella-session"
 import {
+  TABLE_CELL_NUMERIC,
+  TABLE_CELL_SECONDARY,
+  TABLE_CELL_SECONDARY_UNCOLORED,
   TABLE_HEADER_CELL,
   TABLE_ROW_HOVER_BG,
   TABLE_ROW_HOVER_LEFT,
   TABLE_ROW_HOVER_RIGHT,
 } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
-import { formatPct, formatUsd } from "../format"
+import { formatPct, formatUnits, formatUsd } from "../format"
+
+const MASK = "••••"
 
 type PositionRow = {
   id: UmbrellaMarketId
@@ -36,40 +44,62 @@ type PositionRow = {
   coverage: string
   activeStakeUsd: number
   coolingUsd: number
-  activeStakeLabel: string
+  activeStakeAmountLabel: string
+  activeStakeUsdLabel: string
   coolingLabel: string
   apyTotal: string
-  apyBase: string
   apyReward: string
+  rewardApyPct: number
+  rewardAnchorMs: number
+  rewardPrincipalUsd: number
   pendingRewards: number
-  pendingRewardsLabel: string
   claimedRewardsUsd: number
   claimedRewardsLabel: string
   cooldownStatus: "idle" | "cooling" | "ready" | "expired"
   hasClaim: boolean
 }
 
+function PositionHeader({ label, tooltip }: { label: string; tooltip: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      {label}
+      <ActionMetricHelp text={tooltip} topic={label} />
+    </span>
+  )
+}
+
+const COVERED_RESERVE_LABELS: Record<UmbrellaMarketId, string> = {
+  gho: "Stable Hub Deficits",
+  usdc: "Stable Hub Deficits",
+  usdt: "Correlated Hub Deficits",
+  weth: "Correlated Hub Deficits",
+}
+
 export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (marketId: UmbrellaMarketId) => void }) {
   const { t } = useTranslation()
   const umbrella = useUmbrellaSessionContext()
+  const showDollarAmounts = useOptionalDisplayPreferences()?.showDollarAmounts ?? true
   const rows: PositionRow[] = umbrella.marketOrder.map((id) => {
     const market = umbrella.markets[id]
     const position = umbrella.positions[id]
+    const activeStake = Math.max(position.amount - position.cooldownAmount, 0)
     const activeStakeUsd = Math.max(position.valueUsd - position.cooldownValueUsd, 0)
     return {
       id,
       asset: market.asset,
       symbol: market.symbol,
-      coverage: market.coverage,
+      coverage: COVERED_RESERVE_LABELS[id],
       activeStakeUsd,
       coolingUsd: position.cooldownValueUsd,
-      activeStakeLabel: formatUsd(activeStakeUsd),
+      activeStakeAmountLabel: `${formatUnits(activeStake)} ${market.symbol}`,
+      activeStakeUsdLabel: formatUsd(activeStakeUsd),
       coolingLabel: formatUsd(position.cooldownValueUsd),
       apyTotal: `${formatPct(market.apy)}%`,
-      apyBase: `${formatPct(market.baseApy)}%`,
       apyReward: `${formatPct(market.rewardApy)}%`,
+      rewardApyPct: market.rewardApy,
+      rewardAnchorMs: position.updatedAt,
+      rewardPrincipalUsd: position.valueUsd,
       pendingRewards: position.pendingRewardsUsd,
-      pendingRewardsLabel: formatUsd(position.pendingRewardsUsd),
       claimedRewardsUsd: position.claimedRewardsUsd,
       claimedRewardsLabel: formatUsd(position.claimedRewardsUsd),
       cooldownStatus: position.cooldownStatus,
@@ -78,7 +108,7 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
   })
 
   const idleRow = (row: PositionRow) => row.activeStakeUsd === 0 && row.coolingUsd === 0 && row.pendingRewards === 0
-  const nonIdle = rows.filter((row) => !idleRow(row))
+  const nonIdle = rows.filter((row) => !idleRow(row) || umbrella.walletBalances[row.id] > 0)
   const showEmptyState = nonIdle.length === 0
   const visible = showEmptyState ? [] : nonIdle
 
@@ -106,10 +136,38 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
             </colgroup>
             <thead>
               <tr className="text-left">
-                <th className={cn(TABLE_HEADER_CELL, "pl-5")}>{t("Asset")}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("Active stake")}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("APY")}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("Rewards")}</th>
+                <th className={cn(TABLE_HEADER_CELL, "pl-5")}>
+                  <PositionHeader
+                    label={t("Covered reserve")}
+                    tooltip={t(
+                      "The Hub asset this Umbrella market protects. Deficits from any eligible Spoke borrowing this reserve can be covered by this market.",
+                    )}
+                  />
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                  <PositionHeader
+                    label={t("Deposited")}
+                    tooltip={t(
+                      "The amount of Umbrella capital currently deposited and available to absorb deficits for this covered reserve. Capital in cooldown is no longer counted as fully available protection.",
+                    )}
+                  />
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                  <PositionHeader
+                    label={t("Cooling")}
+                    tooltip={t(
+                      "The amount of staked capital currently in the cooldown period before it can be withdrawn. A larger cooling balance means less protection may remain available if those funds exit.",
+                    )}
+                  />
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                  <PositionHeader
+                    label={t("Rewards")}
+                    tooltip={t(
+                      "The staking rewards you have earned for providing Umbrella coverage. Rewards may include protocol incentives and other compensation for taking slashing and lockup risk.",
+                    )}
+                  />
+                </th>
                 <SilentActionHeader className="!rounded-none pr-5" />
               </tr>
             </thead>
@@ -150,30 +208,43 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                     </td>
                     <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
                       <div className="flex flex-col items-end">
-                        <span className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white">
-                          {row.activeStakeLabel}
+                        <span className={cn(TABLE_CELL_NUMERIC, "tracking-[-0.03em]")}>
+                          {showDollarAmounts ? row.activeStakeAmountLabel : MASK}
+                        </span>
+                        <span className={TABLE_CELL_SECONDARY}>
+                          {showDollarAmounts ? row.activeStakeUsdLabel : MASK}
+                        </span>
+                      </div>
+                    </td>
+                    <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
+                      <div className="flex flex-col items-end">
+                        <span className={cn(TABLE_CELL_NUMERIC, row.coolingUsd > 0 && "text-warning")}>
+                          {showDollarAmounts ? row.coolingLabel : MASK}
                         </span>
                         {row.coolingUsd > 0 ? (
-                          <span className="mt-0.5 text-[12px] text-warning">
-                            {t("{amount} cooling").replace("{amount}", row.coolingLabel)}
-                          </span>
+                          <span className="mt-0.5 text-[12px] text-warning">{t("In cooldown")}</span>
                         ) : null}
                       </div>
                     </td>
                     <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
-                      <span
-                        className="text-[15px] font-normal tracking-[-0.03em] text-foreground dark:text-white"
-                        title={t("base {base} + reward {reward}")
-                          .replace("{base}", row.apyBase)
-                          .replace("{reward}", row.apyReward)}
-                      >
-                        {row.apyTotal}
-                      </span>
-                    </td>
-                    <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
-                      <span className="text-[15px] font-normal tracking-[-0.03em] text-success">
-                        {row.pendingRewardsLabel}
-                      </span>
+                      <div className="flex flex-col items-end">
+                        <span className={TABLE_CELL_NUMERIC}>{showDollarAmounts ? row.apyReward : MASK}</span>
+                        <span className={cn(TABLE_CELL_SECONDARY_UNCOLORED, "text-success")}>
+                          {showDollarAmounts ? (
+                            <>
+                              +
+                              <LiveInterestEarnedUsd
+                                anchorMs={row.rewardAnchorMs}
+                                ratePerYearUsd={(row.rewardPrincipalUsd * row.rewardApyPct) / 100}
+                                baseUsd={row.pendingRewards}
+                                fractionDigits={4}
+                              />
+                            </>
+                          ) : (
+                            MASK
+                          )}
+                        </span>
+                      </div>
                     </td>
                     <td
                       className={cn("py-3.5 pr-5", TABLE_ROW_HOVER_RIGHT)}
@@ -224,24 +295,53 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                     <MarketMobileIdentityText title={row.asset} subtitle={row.coverage} />
                   </div>
                 }
-                metric={<MarketMobileMetric value={row.apyTotal} label={t("APY")} />}
+                metric={<MarketMobileMetric value={showDollarAmounts ? row.apyTotal : MASK} label={t("APY")} />}
               />
               <MarketMobileStatList>
-                <MarketMobileStatRow label={t("Active stake")} value={row.activeStakeLabel} />
+                <MarketMobileStatRow
+                  label={t("Deposited")}
+                  value={
+                    <div className="flex flex-col items-end">
+                      <span>{showDollarAmounts ? row.activeStakeAmountLabel : MASK}</span>
+                      <MarketMobileSupportingValue>
+                        {showDollarAmounts ? row.activeStakeUsdLabel : MASK}
+                      </MarketMobileSupportingValue>
+                    </div>
+                  }
+                />
                 {row.coolingUsd > 0 ? (
-                  <MarketMobileStatRow label={t("Cooling")} value={row.coolingLabel} valueClassName="text-warning" />
+                  <MarketMobileStatRow
+                    label={t("Cooling")}
+                    value={showDollarAmounts ? row.coolingLabel : MASK}
+                    valueClassName="text-warning"
+                  />
                 ) : null}
                 <MarketMobileStatRow
                   label={t("Rewards")}
                   value={
-                    <span>
-                      {row.pendingRewardsLabel}
+                    <div className="flex flex-col items-end">
+                      <span>{showDollarAmounts ? row.apyReward : MASK}</span>
+                      <MarketMobileSupportingValue>
+                        {showDollarAmounts ? (
+                          <>
+                            +
+                            <LiveInterestEarnedUsd
+                              anchorMs={row.rewardAnchorMs}
+                              ratePerYearUsd={(row.rewardPrincipalUsd * row.rewardApyPct) / 100}
+                              baseUsd={row.pendingRewards}
+                              fractionDigits={4}
+                            />
+                          </>
+                        ) : (
+                          MASK
+                        )}
+                      </MarketMobileSupportingValue>
                       {row.claimedRewardsUsd > 0 ? (
                         <MarketMobileSupportingValue>
                           {t("{amount} claimed").replace("{amount}", row.claimedRewardsLabel)}
                         </MarketMobileSupportingValue>
                       ) : null}
-                    </span>
+                    </div>
                   }
                   valueClassName="text-success"
                 />

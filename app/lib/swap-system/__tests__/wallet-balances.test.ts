@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { buildDashboardWalletBalanceRows, getUserSwapBalances, type UserAssetBalance } from "@/app/lib/swap-system"
+import {
+  buildDashboardWalletBalanceRows,
+  getUserSwapBalances,
+  selectDashboardWalletValueRows,
+  type UserAssetBalance,
+} from "@/app/lib/swap-system"
 
 const balances: UserAssetBalance[] = [
   { id: "wallet-eth", walletId: "w1", assetId: "eth", amount: 2, sourceType: "wallet" },
@@ -36,6 +41,39 @@ describe("swap wallet balance classification", () => {
       swappable: false,
       restrictionReason: "ineligible_lp_token",
     })
+  })
+
+  it("resolves Multiply collateral metadata instead of exposing an unsupported-asset label", () => {
+    const [row] = buildDashboardWalletBalanceRows({
+      walletId: "w1",
+      balances: [
+        { id: "multiply-wsteth", walletId: "w1", assetId: "wsteth", amount: 2, sourceType: "multiply_available" },
+      ],
+    })
+
+    expect(row).toMatchObject({ symbol: "WSTETH", name: "Wrapped stETH", isLpToken: false })
+    expect(row?.name).not.toBe("Unsupported asset")
+  })
+
+  it("keeps legacy Multiply available buckets in USD instead of inflating token quantity", () => {
+    const [row] = buildDashboardWalletBalanceRows({
+      walletId: "w1",
+      balances: [
+        {
+          id: "multiply-wsteth-legacy",
+          walletId: "w1",
+          assetId: "wsteth",
+          amount: 41_666.67,
+          valueUsd: 41_666.67,
+          sourceType: "multiply_available",
+        },
+      ],
+      priceFor: () => 2_982.18,
+    })
+
+    expect(row?.amount).toBeCloseTo(41_666.67 / 2_982.18, 6)
+    expect(row?.valueUsd).toBeCloseTo(41_666.67, 6)
+    expect(row?.amount).toBeLessThan(20)
   })
 
   it("keeps regular wallet tokens swappable while product-held rows stay restricted", () => {
@@ -106,5 +144,39 @@ describe("swap wallet balance classification", () => {
     })
 
     expect(rows.map((row) => row.id).sort()).toEqual(["lend-usdc", "liquid-usdc"])
+  })
+
+  it("keeps Wallet Balance aligned with returned wallet-accessible product rows", () => {
+    const rows = buildDashboardWalletBalanceRows({
+      walletId: "w1",
+      balances: [
+        {
+          id: "liquid-usdc",
+          walletId: "w1",
+          assetId: "usdc",
+          amount: 109_812,
+          valueUsd: 109_812,
+          sourceType: "wallet",
+        },
+        {
+          id: "returned-pool-a",
+          walletId: "w1",
+          assetId: "aura-weth-lp",
+          amount: 1,
+          valueUsd: 43_750,
+          sourceType: "borrow_collateral_unpledged",
+        },
+        {
+          id: "returned-pool-b",
+          walletId: "w1",
+          assetId: "wbtc-eth-lp",
+          amount: 1,
+          valueUsd: 43_750,
+          sourceType: "borrow_collateral_unpledged",
+        },
+      ],
+    })
+
+    expect(selectDashboardWalletValueRows(rows).reduce((sum, row) => sum + row.valueUsd, 0)).toBe(197_312)
   })
 })

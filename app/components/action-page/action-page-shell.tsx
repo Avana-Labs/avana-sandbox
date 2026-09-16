@@ -13,7 +13,6 @@ type ActionPageShellProps = {
   density?: "default" | "sidebar" | "home"
   title: string
   subtitle?: string
-  simulated?: boolean
   hideTitle?: boolean
   hideClose?: boolean
   flowHeaderStage?: ActionStage

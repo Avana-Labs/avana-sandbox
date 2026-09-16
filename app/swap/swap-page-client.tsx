@@ -9,12 +9,20 @@ import { ActionSuccessStage } from "@/app/components/action-page/action-success-
 import { SwapStyleField } from "@/app/components/action-page/swap-style-field"
 import { SwapAssetPickerDialog } from "./swap-asset-picker-dialog"
 import { ActionFooter } from "@/app/components/action-page/action-amount-card"
-import { SWAP_ASSETS, SWAP_CHAIN_ID, getMaxSwapInputAmount, validateSwapInputAmount } from "@/app/lib/swap-system"
+import {
+  NATIVE_GAS_RESERVE_ETH,
+  SWAP_ASSETS,
+  SWAP_CHAIN_ID,
+  getMaxSwapInputAmount,
+  validateSwapInputAmount,
+  type SwapRestrictionReason,
+} from "@/app/lib/swap-system"
 import { useSwapSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { runActionSubmitFlow } from "@/app/lib/action-system/action-submit-runtime"
 import { useActionNetworkGuard } from "@/app/lib/web3/use-action-network-guard"
+import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import type { ActionPreviewUi, ActionStage, ActionSuccessUi } from "@/app/lib/action-system/contracts"
 import type { SwapQuote } from "@/app/lib/swap-system"
 
@@ -36,15 +44,46 @@ function formatAmount(value: number) {
   return value.toLocaleString(undefined, { maximumFractionDigits: 6 })
 }
 
+function swapValidationMessage(reason: SwapRestrictionReason, asset: (typeof SWAP_ASSETS)[number]) {
+  switch (reason) {
+    case "invalid_amount":
+      return `Enter a valid ${asset.symbol} amount.`
+    case "below_minimum":
+      return `Minimum swap is ${asset.minimumSwapAmount.toLocaleString(undefined, { maximumFractionDigits: 8 })} ${asset.symbol}.`
+    case "above_maximum":
+      return `Maximum swap is ${formatAmount(asset.maximumSwapAmount)} ${asset.symbol}.`
+    case "insufficient_native_gas":
+      return `Keep at least ${formatAmount(NATIVE_GAS_RESERVE_ETH)} ETH for network fees.`
+    case "insufficient_balance":
+      return `Insufficient ${asset.symbol} balance.`
+    case "same_asset":
+      return "Choose a different asset to buy."
+    case "unsupported_pair":
+      return "This asset pair is not available. Choose a different asset."
+    case "ineligible_deposited":
+      return `${asset.symbol} is deposited in Lend and cannot be swapped from this wallet flow.`
+    case "ineligible_pledged":
+      return `${asset.symbol} is pledged as collateral and cannot be swapped from this wallet flow.`
+    case "ineligible_active_loop":
+      return `${asset.symbol} is part of an active Multiply position and cannot be swapped here.`
+    case "ineligible_protocol_locked":
+      return `${asset.symbol} is locked by the protocol and cannot be swapped here.`
+    case "ineligible_lp_token":
+    case "unsupported_asset":
+      return `${asset.symbol} is not available for swapping.`
+  }
+}
+
 export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", returnHref = "/" }: SwapPageClientProps) {
   const { t } = useTranslation()
   const { exact } = useCurrency()
   const swap = useSwapSessionContext()
   const networkGuard = useActionNetworkGuard()
+  const canonicalPriceFor = useCanonicalPriceFor()
   const swappableAssets = SWAP_ASSETS.filter((asset) => asset.isSwapEnabled && !asset.isLpToken)
-  const [inputAssetId, setInputAssetId] = useState(initialFrom ?? "eth")
+  const [inputAssetId, setInputAssetId] = useState(initialFrom ?? "")
   const [outputAssetId, setOutputAssetId] = useState(
-    initialTo && initialTo !== inputAssetId ? initialTo : fallbackOutput(inputAssetId),
+    initialTo && initialTo !== initialFrom ? initialTo : initialFrom ? fallbackOutput(initialFrom) : "",
   )
   const [amount, setAmount] = useState("")
   const slippageBps = 50
@@ -58,11 +97,13 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
   const [acceptedPriceImpact, setAcceptedPriceImpact] = useState(false)
   const [outcome, setOutcome] = useState<{ tone: "success" | "error"; message: string } | null>(null)
 
-  const inputAsset = SWAP_ASSETS.find((asset) => asset.id === inputAssetId) ?? swappableAssets[0]!
-  const outputAsset = SWAP_ASSETS.find((asset) => asset.id === outputAssetId) ?? swappableAssets[1]!
-  const inputBalance = swap.walletBalances.find(
-    (balance) => balance.assetId === inputAsset.id && balance.sourceType === "wallet",
-  )
+  const inputAsset = SWAP_ASSETS.find((asset) => asset.id === inputAssetId)
+  const outputAsset = SWAP_ASSETS.find((asset) => asset.id === outputAssetId)
+  const inputPriceUsd = inputAsset ? (canonicalPriceFor(inputAsset.symbol) ?? inputAsset.priceUsd) : 0
+  const outputPriceUsd = outputAsset ? (canonicalPriceFor(outputAsset.symbol) ?? outputAsset.priceUsd) : 0
+  const inputBalance = inputAsset
+    ? swap.walletBalances.find((balance) => balance.assetId === inputAsset.id && balance.sourceType === "wallet")
+    : undefined
   const maxAmount = inputBalance
     ? getMaxSwapInputAmount(inputBalance, { originProduct: "wallet", chainId: SWAP_CHAIN_ID, outputAssetId })
     : 0
@@ -77,12 +118,11 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
         : ({ valid: false, reason: "insufficient_balance", amount: null, maxAmount: 0 } as const),
     [amount, inputBalance, outputAssetId],
   )
-  const approvalRequired = validation.valid && swap.requiresApproval(inputAsset.id, validation.amount)
+  const approvalRequired =
+    validation.valid && inputAsset ? swap.requiresApproval(inputAsset.id, validation.amount) : false
   const getQuote = swap.getQuote
-  const getIndicativeQuote = swap.getIndicativeQuote
-
   useEffect(() => {
-    if (!validation.valid) {
+    if (!inputAssetId || !outputAssetId || !validation.valid) {
       setQuote(null)
       setQuoteState("idle")
       return
@@ -98,12 +138,6 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
     }
     setQuote(null)
     setQuoteState("loading")
-
-    // Keep the Buy amount responsive while the authoritative Convex quote is in flight.
-    // Review remains disabled until the server quote replaces this indicative estimate.
-    void getIndicativeQuote(request).then((indicativeQuote) => {
-      if (!cancelled && indicativeQuote.status === "valid") setQuote(indicativeQuote)
-    })
 
     const timeout = window.setTimeout(() => {
       void getQuote(request)
@@ -121,7 +155,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
       cancelled = true
       window.clearTimeout(timeout)
     }
-  }, [getIndicativeQuote, getQuote, inputAssetId, outputAssetId, quoteRetry, slippageBps, validation])
+  }, [getQuote, inputAssetId, outputAssetId, quoteRetry, slippageBps, validation])
 
   useEffect(() => {
     setOutcome(null)
@@ -130,7 +164,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
   }, [amount, inputAssetId, outputAssetId, slippageBps])
 
   const previewUi = useMemo<ActionPreviewUi | null>(() => {
-    if (!quote || !validation.valid) return null
+    if (!quote || !validation.valid || !inputAsset || !outputAsset) return null
     const receiveLabel = `${formatAmount(quote.estimatedOutputAmount)} ${outputAsset.symbol}`
     return {
       allowed: true,
@@ -140,9 +174,10 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
       amountValue: amount,
       assetLabel: inputAsset.symbol,
       assetSymbol: inputAsset.symbol,
-      // Sell USD must match the post-fee/impact FX (quote.exchangeRate), not raw catalog spot.
-      amountUsd: quote.estimatedOutputAmount * outputAsset.priceUsd,
-      amountUsdLabel: exact(quote.estimatedOutputAmount * outputAsset.priceUsd),
+      // Review's Sell notional is the gross input value. Fees and price impact are
+      // represented by the separate received/minimum-received quote values.
+      amountUsd: validation.amount * inputPriceUsd,
+      amountUsdLabel: exact(validation.amount * inputPriceUsd),
       rateLabel: t("Rate"),
       rateValue: `1 ${inputAsset.symbol} = ${formatAmount(quote.exchangeRate)} ${outputAsset.symbol}`,
       marketLabel: t("Buy"),
@@ -193,13 +228,14 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
     maxAmount,
     networkGuard.blockedReason,
     outputAsset,
+    outputPriceUsd,
     quote,
     t,
     validation,
   ])
 
   const submitSwap = useCallback(async () => {
-    if (!quote || !previewUi || !validation.valid || isPending) return
+    if (!quote || !previewUi || !validation.valid || !inputAsset || !outputAsset || isPending) return
     if (networkGuard.isWrongNetwork) return
     if (quote.priceImpactPct >= 3 && !acceptedPriceImpact) return
     setIsPending(true)
@@ -261,7 +297,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
         secondaryCtaLabel: t("Swap again"),
         receiptContext: {
           verb: t("Sold"),
-          amountUsd: validation.amount * inputAsset.priceUsd,
+          amountUsd: validation.amount * inputPriceUsd,
           amountLabel: `${amount} ${inputAsset.symbol}`,
           rateLabel: t("Received"),
           rateValue: `${formatAmount(executionQuote.estimatedOutputAmount)} ${outputAsset.symbol}`,
@@ -285,6 +321,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
     getQuote,
     inputAsset,
     inputAssetId,
+    inputPriceUsd,
     isPending,
     outputAsset,
     outputAssetId,
@@ -305,17 +342,20 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
     setStage("configure")
   }, [])
 
-  const primaryLabel = !inputBalance
-    ? "Insufficient balance"
-    : !validation.valid
-      ? validation.reason === "invalid_amount"
-        ? "Enter an amount"
-        : "Swap unavailable"
-      : quoteState === "loading"
-        ? "Loading quote"
-        : quoteState === "error"
-          ? "Refresh quote"
-          : "Review swap"
+  const primaryLabel =
+    !inputAsset || !outputAsset
+      ? "Select assets"
+      : !inputBalance
+        ? "Insufficient balance"
+        : !validation.valid
+          ? validation.reason === "invalid_amount"
+            ? "Enter an amount"
+            : "Swap unavailable"
+          : quoteState === "loading"
+            ? "Loading quote"
+            : quoteState === "error"
+              ? "Refresh quote"
+              : "Review swap"
 
   const isTransactionStage = [
     "approve_allowance",
@@ -373,7 +413,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
               onAmountChange={setAmount}
               assetId={inputAssetId}
               onOpenAssetPicker={() => setPickerSide("input")}
-              fiatLabel={exact((Number(amount) || 0) * inputAsset.priceUsd)}
+              fiatLabel={exact((Number(amount) || 0) * inputPriceUsd)}
               balanceLabel={formatAmount(maxAmount)}
               onBalanceClick={() => setAmount(String(Number(maxAmount.toFixed(6))))}
               tone="raised"
@@ -385,10 +425,19 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
               readOnly
               assetId={outputAssetId}
               onOpenAssetPicker={() => setPickerSide("output")}
-              fiatLabel={quote ? exact(quote.estimatedOutputAmount * outputAsset.priceUsd) : exact(0)}
+              fiatLabel={quote ? exact(quote.estimatedOutputAmount * outputPriceUsd) : exact(0)}
               tone="inset"
             />
           </div>
+
+          {amount.trim() && inputAsset && !validation.valid && validation.reason ? (
+            <div
+              className="rounded-radius-lg border border-danger/30 bg-danger/10 px-4 py-3 text-[14px] text-foreground"
+              data-testid="swap-validation-message"
+            >
+              {swapValidationMessage(validation.reason, inputAsset)}
+            </div>
+          ) : null}
 
           {outcome ? (
             <div
@@ -457,7 +506,7 @@ function SwapAssetField({
   label: string
   amount: string
   onAmountChange?: (value: string) => void
-  assetId: string
+  assetId?: string
   onOpenAssetPicker: () => void
   balanceLabel?: string
   onBalanceClick?: () => void
@@ -465,7 +514,7 @@ function SwapAssetField({
   tone: "raised" | "inset"
   readOnly?: boolean
 }) {
-  const asset = SWAP_ASSETS.find((item) => item.id === assetId)!
+  const asset = SWAP_ASSETS.find((item) => item.id === assetId)
   return (
     <SwapStyleField label={label} tone={tone} className="py-3">
       <div className="mt-1.5 flex min-h-10 items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-stretch">
@@ -488,10 +537,14 @@ function SwapAssetField({
           aria-label={`${label} asset`}
           className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-medium text-foreground hover:bg-surface-hover max-[360px]:self-end"
         >
-          <span className="inline-flex min-w-0 items-center gap-2">
-            <SwapAssetIcon asset={asset} size="pill" />
-            <span className="truncate">{asset.symbol}</span>
-          </span>
+          {asset ? (
+            <span className="inline-flex min-w-0 items-center gap-2">
+              <SwapAssetIcon asset={asset} size="pill" />
+              <span className="truncate">{asset.symbol}</span>
+            </span>
+          ) : (
+            <span className="truncate text-muted-foreground">Select asset</span>
+          )}
           <span aria-hidden className="shrink-0 text-muted-foreground">
             ▾
           </span>

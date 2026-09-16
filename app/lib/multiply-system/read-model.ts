@@ -7,9 +7,10 @@ import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import type { PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
 import { MULTIPLY_TOKEN_LOGOS } from "@/app/lib/multiply-sim"
 import { resolveMultiplyTokenLogo } from "@/lib/multiply-token-logo"
+import { formatWalletLabel } from "@/app/lib/detail-page/transaction-history"
 import type { MultiplyMarketRow } from "@/app/lib/multiply-sim"
 import { MULTIPLY_MARKET_CATALOG } from "./catalog"
-import { formatMultiplyLoopPairLabel } from "./market-labels"
+import { formatMultiplyActivityMarketLabel, formatMultiplyLoopPairLabel } from "./market-labels"
 import type { MultiplyTransactionHistoryItem, MultiplyTransactionResult, MultiplyWalletReadSnapshot } from "./contracts"
 import { buildMockMultiplyRiskSnapshots } from "./mock"
 
@@ -383,12 +384,12 @@ export function buildMultiplyActivityHistory(
         kind: item.kind === "multiply" ? ("open" as const) : isClose ? ("close" as const) : ("reduce" as const),
         status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
         amountUsd: item.amountUsd,
-        primaryLabel:
-          item.kind === "multiply" ? "Simulated multiply" : isClose ? "Simulated close" : "Simulated deleverage",
+        primaryLabel: item.kind === "multiply" ? "Multiply" : isClose ? "Close position" : "Deleverage",
         secondaryLabel: isClose
-          ? "Position closed"
-          : `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
+          ? `${formatMultiplyActivityMarketLabel(item.marketId)} · Position closed`
+          : `${formatMultiplyActivityMarketLabel(item.marketId)} · ${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
         txHash: item.hash,
+        marketId: item.marketId,
       }
     })
 }
@@ -407,6 +408,7 @@ export function mapMultiplyHistoryToDetailRows(
   history: MultiplyTransactionHistoryItem[],
   collateralSymbol: string,
   borrowableSymbol: string,
+  walletAddress?: string,
 ) {
   const now = Date.now()
   return history.map((item) => ({
@@ -416,7 +418,7 @@ export function mapMultiplyHistoryToDetailRows(
     kind: item.kind === "multiply" ? ("open" as const) : ("reduce" as const),
     amountLabel: `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
     counterpartyLabel: `${collateralSymbol}/${borrowableSymbol}`,
-    walletLabel: "Sandbox wallet",
+    walletLabel: formatWalletLabel(walletAddress),
     txHashShort: item.hash.slice(0, 10),
   }))
 }

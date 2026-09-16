@@ -125,6 +125,18 @@ describe("sandbox transaction adapter", () => {
     expect(result.state.transactions.at(-1)?.kind).toBe("repay")
   })
 
+  it("carries the selected debt asset into repayment history", () => {
+    const harness = createHarness()
+    const intent = harness.adapter.createIntent({
+      type: "repay",
+      walletId: "wallet-1",
+      debtPositionId: EXAMPLE_WALLET_1_DEBT_ID,
+      amountUsd6: parseFixed("100", 6),
+    })
+
+    expect(intent.assetId).toBe(EXAMPLE_UNI_USDC_ASSET_ID)
+  })
+
   it("claim satisfies the sandbox action contract", async () => {
     const harness = createHarness()
     const beforeBalance = harness.getState().accounts["wallet-1"]!.walletBalanceUsd6

@@ -37,6 +37,19 @@ describe("aggregateNetValueUsd", () => {
     expect(aggregateNetValueUsd(rows, priceFor)).toBeCloseTo(60000, 6)
   })
 
+  it("does not multiply a Multiply available USD budget by its token price", () => {
+    const rows = [
+      row({
+        assetId: "wsteth",
+        amount: 41_666.67,
+        valueUsd: 41_666.67,
+        sourceType: "multiply_available",
+      }),
+    ]
+
+    expect(aggregateNetValueUsd(rows, () => 2_982.18)).toBeCloseTo(41_666.67, 6)
+  })
+
   it("is empty-safe", () => {
     expect(aggregateNetValueUsd([], priceFor)).toBe(0)
   })

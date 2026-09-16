@@ -1,5 +1,6 @@
 import type { PortfolioActivityRow } from "@/app/lib/data/providers/portfolio"
 import type { PortfolioActivityKind, PortfolioActivityProduct } from "@/app/lib/data/providers/portfolio/records"
+import { formatMultiplyActivityMarketLabel } from "@/app/lib/multiply-system/market-labels"
 
 const PRODUCTS = new Set<PortfolioActivityProduct>([
   "borrow",
@@ -77,22 +78,32 @@ export function mapConvexActivityItemsToRows(items: ConvexActivityItem[]): Portf
     const isOnboardingClaim = item.product === "onboarding" && item.kind === "onboardingClaim"
     const product = legacyUmbrellaKind ? "umbrella" : mapProduct(item.product)
     const kind = isStarterAssetGrant || isOnboardingClaim ? "claim" : mapKind(legacyUmbrellaKind ?? item.kind)
+    const multiplyMarketLabel =
+      product === "multiply" ? formatMultiplyActivityMarketLabel(item.marketSlug ?? undefined) : null
     const primaryLabel = isOnboardingClaim
       ? "Sandbox portfolio funded"
       : isStarterAssetGrant
         ? item.marketSlug
           ? `${item.marketSlug.toUpperCase()} sandbox funds`
           : "Sandbox asset grant"
-        : item.marketSlug
-          ? item.marketSlug
-          : product === "rewards"
-            ? "Avana rewards"
-            : titleCase(legacyUmbrellaKind ?? item.kind)
+        : product === "multiply"
+          ? kind === "open"
+            ? "Multiply"
+            : kind === "close"
+              ? "Close position"
+              : "Deleverage"
+          : item.marketSlug
+            ? item.marketSlug
+            : product === "rewards"
+              ? "Avana rewards"
+              : titleCase(legacyUmbrellaKind ?? item.kind)
     const secondaryLabel = isOnboardingClaim
       ? "Onboarding grant"
       : isStarterAssetGrant
         ? "Sandbox funds received"
-        : titleCase(legacyUmbrellaKind ?? item.kind)
+        : product === "multiply"
+          ? (multiplyMarketLabel ?? "Multiply")
+          : titleCase(legacyUmbrellaKind ?? item.kind)
     return {
       id: item.id,
       at: new Date(item.at).toISOString(),

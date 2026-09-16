@@ -77,7 +77,10 @@ export function MultiplyActionPageClient({
   const isExitKind = kind === "deleverage" || kind === "close"
   const priceFor = useCanonicalPriceFor()
   const walletPositions = useMemo(
-    () => Object.values(session.state.positions).filter((entry) => entry.walletId === walletId),
+    () =>
+      Object.values(session.state.positions).filter(
+        (entry) => entry.walletId === walletId && (entry.collateralValueUsd > 0 || entry.debtValueUsd > 0),
+      ),
     [session.state.positions, walletId],
   )
   // Only honor an initial market id that actually exists in the catalog. An unknown
@@ -114,7 +117,7 @@ export function MultiplyActionPageClient({
   const collateralPriceUsd = market
     ? resolveMultiplyCollateralPriceUsd(priceFor(market.collateralAsset.symbol), market.collateralAsset.priceUsd)
     : 0
-  const walletCollateralBudgetUsd = market ? (session.state.walletBalancesUsd[walletId]?.[market.id] ?? 0) : 0
+  const walletCollateralBudgetUsd = market ? (session.state.walletBalancesUsd?.[walletId]?.[market.id] ?? 0) : 0
   // Cap a multiply position at the wallet's spendable balance (not the pool's
   // multi-million liquidity), still bounded by what the market can absorb. This
   // keeps Max affordable and rejects absurd inputs before the simulation engine.
@@ -129,13 +132,12 @@ export function MultiplyActionPageClient({
 
   const multiplierMin = MULTIPLY_ACTION_MIN_LEVERAGE
   const position = useMemo(() => {
-    if (!market) return null
-    return (
-      session.state.positions[`${walletId}:${market.id}`] ??
-      walletPositions.find((entry) => entry.marketId === market.id) ??
-      null
-    )
-  }, [market, session.state.positions, walletId, walletPositions])
+    // The standalone exit routes are intentionally unbound until a market is supplied.
+    // Detail-page sidebars pass `initialMarketId`, so they still resolve their active
+    // position while `/actions/multiply/deleverage` and `/close` show the safe empty state.
+    if (!market || (isExitKind && !validInitialMarketId)) return null
+    return walletPositions.find((entry) => entry.marketId === market.id) ?? null
+  }, [isExitKind, market, validInitialMarketId, walletPositions])
   const defaultMultiplyMultiplier = useMemo(() => {
     if (kind !== "multiply") return ""
     const safeDefault = market
@@ -152,6 +154,7 @@ export function MultiplyActionPageClient({
   const [multiplier, setMultiplier] = useState(() =>
     kind === "close" ? "1" : (initialMultiplier ?? (kind === "deleverage" ? "" : defaultMultiplyMultiplier)),
   )
+  const displayMultiplier = kind === "deleverage" && parsePositiveActionAmount(multiplier) == null ? "1" : multiplier
   const [hasUserInput, setHasUserInput] = useState(() => Boolean(initialAmount || initialMultiplier))
 
   useEffect(() => {
@@ -174,6 +177,10 @@ export function MultiplyActionPageClient({
   }, [initialAmount, initialMultiplier, kind, market?.id])
 
   useEffect(() => {
+    // executeTransaction updates the shared session while the action is processing. Do not
+    // clear/recompute the preview during that lifecycle; it makes the health-factor bar
+    // oscillate and makes the action look like it refreshed underneath the user.
+    if (stage !== "configure" && stage !== "review" && stage !== "error") return undefined
     if (!market) return
     const parsed = parsePositiveActionAmount(multiplier)
     if (parsed == null) return
@@ -205,7 +212,26 @@ export function MultiplyActionPageClient({
 
     if (kind === "close") {
       if (!position) {
-        setPreviewUi(null)
+        const noPositionReason = "No open position to close in this market."
+        setPreviewUi({
+          allowed: false,
+          amountLabel: "Full close",
+          amountValue: "Full close",
+          amountUsdLabel: "$0",
+          rateLabel: "Final withdrawal",
+          rateValue: "—",
+          marketLabel: translateMultiplyLoopMarketLabel(t, market.collateralAsset.symbol, market.borrowAsset.symbol),
+          marketValue: market.id,
+          balanceLabel: "Position",
+          balanceValue: "None",
+          maxAmount: null,
+          metrics: [],
+          networkFeeLabel: "—",
+          risk: null,
+          blockedReason: noPositionReason,
+          validationErrors: [noPositionReason],
+          warnings: [],
+        })
         return
       }
       const intent = session.createIntent({ type: "close", walletId, positionId: position.id })
@@ -232,7 +258,9 @@ export function MultiplyActionPageClient({
       }
     }
     const parsedAmount = parsePositiveActionAmount(deferredAmount)
-    const parsedMultiplier = parsePositiveActionAmount(multiplier)
+    const parsedMultiplier = parsePositiveActionAmount(
+      kind === "deleverage" && parsePositiveActionAmount(multiplier) == null ? "1" : multiplier,
+    )
     if (parsedMultiplier == null) {
       setPreviewUi(null)
       return
@@ -375,6 +403,7 @@ export function MultiplyActionPageClient({
     multiplier,
     position,
     session,
+    stage,
     walletId,
   ])
 
@@ -434,11 +463,7 @@ export function MultiplyActionPageClient({
       if ((kind === "multiply" && parsedAmount == null) || (kind !== "close" && parsedMultiplier == null)) {
         throw new Error("Enter a valid amount")
       }
-      const position =
-        session.state.positions[`${walletId}:${market.id}`] ??
-        Object.values(session.state.positions).find(
-          (entry) => entry.walletId === walletId && entry.marketId === market.id,
-        )
+      const position = walletPositions.find((entry) => entry.marketId === market.id)
       if (isExitKind && !position) throw new Error("No position selected")
 
       const action =
@@ -553,15 +578,12 @@ export function MultiplyActionPageClient({
     successUi,
     walletId,
     position,
+    walletPositions,
   ])
 
   const handleClose = useCallback(async () => {
     if (!market || isPending) return
-    const closingPosition =
-      session.state.positions[`${walletId}:${market.id}`] ??
-      Object.values(session.state.positions).find(
-        (entry) => entry.walletId === walletId && entry.marketId === market.id,
-      )
+    const closingPosition = walletPositions.find((entry) => entry.marketId === market.id)
     if (!closingPosition) return
     if (networkGuardRef.current.isWrongNetwork) {
       setOutcome({
@@ -624,7 +646,7 @@ export function MultiplyActionPageClient({
     } finally {
       setIsPending(false)
     }
-  }, [isPending, market, previewUi, session, walletId])
+  }, [isPending, market, previewUi, session, walletId, walletPositions])
 
   if (shouldShowActionSessionLoading(session.isHydrated)) {
     return (
@@ -637,7 +659,6 @@ export function MultiplyActionPageClient({
         hideTitle={embedded || sidebar}
         hideClose={embedded}
         flowHeaderStage={!embedded ? stage : undefined}
-        simulated
       >
         <ActionSessionLoading />
       </ActionPageShell>
@@ -698,7 +719,7 @@ export function MultiplyActionPageClient({
       amountFooter={
         <ActionLeverageRuler
           variant="embedded"
-          value={multiplier}
+          value={displayMultiplier}
           onChange={(value) => {
             setHasUserInput(true)
             setMultiplier(value)
@@ -722,7 +743,6 @@ export function MultiplyActionPageClient({
       hideClose={embedded}
       closeHref={closeHref}
       flowHeaderStage={!embedded ? stage : undefined}
-      simulated={session.readAdapter.mode === "sandbox"}
     >
       {useWorkspaceFields ? stackedAmountField : null}
 
@@ -765,7 +785,7 @@ export function MultiplyActionPageClient({
             setSelectedMarketId(id)
             setAmount("")
           }}
-          multiplier={kind === "close" || deleverageCloseOnly ? undefined : multiplier}
+          multiplier={kind === "close" || deleverageCloseOnly ? undefined : displayMultiplier}
           onMultiplierChange={
             kind === "close" || deleverageCloseOnly
               ? undefined

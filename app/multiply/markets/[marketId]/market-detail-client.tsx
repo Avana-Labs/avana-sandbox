@@ -8,6 +8,7 @@ import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { primaryCtaClass, secondaryCtaClass } from "@/app/components/action-page/action-cta"
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { FlatStatsGrid, QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
+import { useAvanaIdentity } from "@/app/lib/avana-session/avana-sessions-provider"
 import { mapMultiplySessionRows, mapMultiplyTxRow } from "@/app/lib/detail-page/transaction-history"
 import { MULTIPLY_KIND_CONFIG } from "@/app/components/detail-transaction-table/detail-market-transactions"
 import { useMultiplySessionContext } from "@/app/lib/multiply-system/multiply-session-context"
@@ -61,12 +62,20 @@ export function MarketDetailClient({
   cashflowPreload = null,
 }: Props) {
   const session = useMultiplySessionContext()
+  const { walletAddress } = useAvanaIdentity()
   const { t } = useTranslation()
   const marketId = detail.id.toLowerCase().replaceAll("_", "-")
 
   const sessionRows = React.useMemo(
-    () => mapMultiplySessionRows(session.transactionHistory, marketId, detail.row.protocol, detail.row.asset),
-    [detail.row.asset, detail.row.protocol, marketId, session.transactionHistory],
+    () =>
+      mapMultiplySessionRows(
+        session.transactionHistory,
+        marketId,
+        detail.row.protocol,
+        detail.row.asset,
+        walletAddress,
+      ),
+    [detail.row.asset, detail.row.protocol, marketId, session.transactionHistory, walletAddress],
   )
   const seedRows = React.useMemo(() => detail.transactions.map(mapMultiplyTxRow), [detail.transactions])
 

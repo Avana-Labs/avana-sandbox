@@ -24,7 +24,7 @@ import { withGovernanceParameterView } from "@/app/borrow/_detail/lib/governance
 import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { AssetTokenSidebar } from "@/app/borrow/_detail/sidebars"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { BORROW_ASSET_KIND_CONFIG } from "@/app/components/detail-transaction-table/detail-market-transactions"
 import { mapBorrowSessionRows, mapBorrowTxRow } from "@/app/lib/detail-page/transaction-history"
 import { cn } from "@/lib/utils"
@@ -74,13 +74,14 @@ export function AssetDetailClient({
   cashflowPreload = null,
 }: Props) {
   const { t } = useTranslation()
+  const { walletAddress } = useAvanaIdentity()
   const session = useBorrowSessionContext()
   const closeHref = `/borrow/assets/${detail.row.id}`
   const about = withGovernanceParameterView(detail.about, detail.protocolParameters)
   const seedRows = React.useMemo(() => detail.transactions.map(mapBorrowTxRow), [detail.transactions])
   const sessionRows = React.useMemo(
-    () => mapBorrowSessionRows(session.transactionHistory, detail.row.id, detail.hero.symbol, "asset"),
-    [detail.hero.symbol, detail.row.id, session.transactionHistory],
+    () => mapBorrowSessionRows(session.transactionHistory, detail.row.id, detail.hero.symbol, "asset", walletAddress),
+    [detail.hero.symbol, detail.row.id, session.transactionHistory, walletAddress],
   )
   return (
     <div className="min-h-screen bg-background text-foreground">

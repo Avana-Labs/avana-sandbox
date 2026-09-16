@@ -48,6 +48,26 @@ describe("mapConvexActivityItemsToRows", () => {
     expect(rows.map((row) => row.kind)).toEqual(["supply", "open", "reduce"])
   })
 
+  it("labels Multiply activity with its market and collateral asset", () => {
+    const [row] = mapConvexActivityItemsToRows([
+      makeConvex({
+        id: "multiply-close",
+        hash: "sim-multiply-close",
+        product: "multiply",
+        kind: "close",
+        marketSlug: "wsteth-eth",
+      }),
+    ])
+
+    expect(row).toMatchObject({
+      product: "multiply",
+      kind: "close",
+      primaryLabel: "Close position",
+      secondaryLabel: "wstETH / ETH",
+      marketId: "wsteth-eth",
+    })
+  })
+
   it("maps persisted onboarding grants to received sandbox funds", () => {
     const rows = mapConvexActivityItemsToRows([
       makeConvex({

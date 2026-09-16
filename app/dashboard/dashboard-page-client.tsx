@@ -39,6 +39,7 @@ import {
 } from "@/app/dashboard/swap-activity"
 import { mapTransactionHistoryToActivityRows } from "@/app/lib/borrow-system/read-model"
 import { buildLendActivityHistory } from "@/app/lib/lend-system/read-model"
+import { formatMultiplyActivityMarketLabel } from "@/app/lib/multiply-system/market-labels"
 import { useDashboardPage } from "@/app/dashboard/use-dashboard-page"
 import { ActionIcon } from "@/app/components/action-icon"
 import { detailSectionStackClass, MobileDetailActionBar } from "@/app/components/detail-page-primitives"
@@ -562,14 +563,10 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
         item.kind === "multiply" ? ("open" as const) : item.kind === "close" ? ("close" as const) : ("reduce" as const),
       status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
       amountUsd: item.kind === "multiply" ? item.amountUsd : -item.amountUsd,
-      primaryLabel:
-        item.kind === "multiply"
-          ? "Simulated multiply"
-          : item.kind === "close"
-            ? "Simulated close"
-            : "Simulated deleverage",
-      secondaryLabel: `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
+      primaryLabel: item.kind === "multiply" ? "Multiply" : item.kind === "close" ? "Close position" : "Deleverage",
+      secondaryLabel: `${formatMultiplyActivityMarketLabel(item.marketId)} · ${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
       txHash: item.hash,
+      marketId: item.marketId,
     })),
     ...buildLendActivityHistory(avana.lend.walletId, avana.lend.transactionHistory, avana.lend.state),
     ...swapActivityRows,

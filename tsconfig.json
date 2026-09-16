@@ -33,7 +33,9 @@
     ".next-prod/dev/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     ".next-check/types/**/*.ts",
-    ".next-check/dev/types/**/*.ts"
+    ".next-check/dev/types/**/*.ts",
+    ".next-mock/types/**/*.ts",
+    ".next-mock/dev/types/**/*.ts"
   ],
   "exclude": ["node_modules", "vitest.config.ts", "vitest.setup.ts", "**/__tests__/**", "tests/**"]
 }

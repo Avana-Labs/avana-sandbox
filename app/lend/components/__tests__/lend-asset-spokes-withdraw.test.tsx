@@ -3,7 +3,10 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { LendAssetSpokes, paginateLendAssetGroups } from "@/app/lend/components/lend-asset-spokes"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }))
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}))
 vi.mock("@/app/lib/prices/token-prices-context", () => ({
   usePriceFor: () => () => undefined,
   useCanonicalPriceFor: () => () => undefined,

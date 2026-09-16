@@ -95,8 +95,8 @@ export function mapBorrowTransactionPreviewToActionUi(
     liquidationThresholdPct?: number
     maxBorrowUsd?: number
     /** Live oracle price of the borrow asset. The amount the user types is a TOKEN
-     *  quantity, so the pill/review label and the Max amount are in tokens while the
-     *  engine (and amountUsd) stay in USD. Omitted → falls back to USD-denominated. */
+     * quantity, so the pill/review label and the Max amount are in tokens while the
+     * engine (and amountUsd) stay in USD. Omitted -> falls back to USD-denominated. */
     priceUsd?: number
   },
 ): ActionPreviewUi {
@@ -207,6 +207,8 @@ export function mapBorrowRepayPreviewToActionUi(
     symbol: string
     amountUsd: number
     marketLabel: string
+    /** Token price used to express the repay input and Max in asset units. */
+    priceUsd?: number
     remainingDebtUsd: number
     yearlyInterestSavedUsd: number
     creditScopeLabel?: string
@@ -222,11 +224,13 @@ export function mapBorrowRepayPreviewToActionUi(
   // the CTA and get persisted as the "processed" amount. Block it here.
   const exceedsDebt = options.exceedsDebt ?? false
   const allowed = preview.allowed && !exceedsDebt
+  const price = options.priceUsd && options.priceUsd > 0 ? options.priceUsd : null
+  const amountTokens = price ? options.amountUsd / price : options.amountUsd
 
   return {
     quoteId: preview.intent.id,
     allowed,
-    amountLabel: formatActionAmount(options.amountUsd, options.symbol, 2),
+    amountLabel: formatActionAmount(amountTokens, options.symbol),
     amountUsd: options.amountUsd,
     amountUsdLabel: formatActionApproxUsd(options.amountUsd),
     rateLabel: "Repay amount",
@@ -235,7 +239,7 @@ export function mapBorrowRepayPreviewToActionUi(
     marketValue: options.marketLabel,
     balanceLabel: "Outstanding debt",
     balanceValue: formatActionUsd(beforeDebt, { exact: true }),
-    maxAmount: beforeDebt,
+    maxAmount: price ? beforeDebt / price : beforeDebt,
     metrics: [
       ...creditScopeMetric(options.creditScopeLabel),
       {
@@ -376,7 +380,13 @@ export function mapBorrowRemovePreviewToActionUi(
 ): ActionPreviewUi {
   const beforeCollateral = fixedToNumber(preview.before.collateralValueUsd6, 6)
   const afterCollateral = fixedToNumber(preview.after.collateralValueUsd6, 6)
-  const removeUsd = Math.max(0, beforeCollateral - afterCollateral)
+  // Blocked simulations intentionally keep `after` equal to `before`. In that
+  // case, deriving the amount from the state delta renders an unsafe request as
+  // $0.00, which hides the actual amount the user entered. Use the canonical
+  // requested amount for blocked previews and the simulated delta only after a
+  // removal is allowed.
+  const simulatedRemoveUsd = Math.max(0, beforeCollateral - afterCollateral)
+  const removeUsd = preview.allowed ? simulatedRemoveUsd : Math.max(0, options.removeUsd)
   const annualBefore = (beforeCollateral * options.positionApyPct) / 100
   const annualAfter = (afterCollateral * options.positionApyPct) / 100
   const healthBefore = hfToNumber(preview.before.healthFactorWad)

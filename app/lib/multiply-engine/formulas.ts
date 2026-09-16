@@ -180,12 +180,27 @@ export function simulateDeleverageToTarget(params: {
   }
 
   const equity = collateral - debt
-  if (equity <= 0 || targetMultiplier <= 1) {
+  if (targetMultiplier <= 1) {
+    // A full deleverage repays debt by selling collateral. Leaving collateral unchanged
+    // while setting debt to zero falsely increases equity by the debt amount; the Convex
+    // ledger then (correctly) interprets that as a new wallet-funded Multiply deposit and
+    // rejects the write when no extra wallet balance exists.
+    const repayUsd = Math.min(debt, collateral * Math.max(swapEfficiency, 0.0001))
+    const collateralUnwoundUsd = repayUsd / Math.max(swapEfficiency, 0.0001)
+    return {
+      collateralUsd: Math.max(0, collateral - collateralUnwoundUsd),
+      debtUsd: Math.max(0, debt - repayUsd),
+      debtRepaidUsd: repayUsd,
+      collateralUnwoundUsd,
+    }
+  }
+
+  if (equity <= 0) {
     return {
       collateralUsd: collateral,
-      debtUsd: 0,
-      debtRepaidUsd: debt,
-      collateralUnwoundUsd: collateral - equity,
+      debtUsd: debt,
+      debtRepaidUsd: 0,
+      collateralUnwoundUsd: 0,
     }
   }
 

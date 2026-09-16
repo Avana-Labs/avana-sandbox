@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import type { SwapAsset, UserAssetBalance } from "@/app/lib/swap-system"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 
 export function SwapAssetPickerDialog({
   open,
@@ -29,6 +30,7 @@ export function SwapAssetPickerDialog({
 }) {
   const { t } = useTranslation()
   const { exact } = useCurrency()
+  const canonicalPriceFor = useCanonicalPriceFor()
   const [query, setQuery] = useState("")
   const filteredAssets = useMemo(() => {
     const normalized = query.trim().toLowerCase()
@@ -99,7 +101,7 @@ export function SwapAssetPickerDialog({
                     {amount.toLocaleString(undefined, { maximumFractionDigits: 6 })} {asset.symbol}
                   </span>
                   <span className="block font-data text-[12px] text-muted-foreground">
-                    {exact(amount * asset.priceUsd)}
+                    {exact(amount * (canonicalPriceFor(asset.symbol) ?? asset.priceUsd))}
                   </span>
                 </span>
                 {asset.id === selectedAssetId ? <span className="sr-only">{t("Selected")}</span> : null}

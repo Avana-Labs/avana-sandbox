@@ -94,4 +94,26 @@ describe("multiply engine simulation", () => {
       expect(simulation.after.healthFactor).toBeGreaterThanOrEqual(simulation.before.healthFactor)
     }
   })
+
+  it("fully deleverages by selling collateral instead of minting equity", () => {
+    const state = makeExampleMultiplySystemState()
+    const position = Object.values(state.positions)[0]!
+    const market = state.markets[position.marketId]!
+
+    const simulation = simulateDeleverage({
+      market,
+      position,
+      targetMultiplier: 1,
+    })
+
+    expect(simulation.validation.allowed).toBe(true)
+    expect(simulation.after.debtValueUsd).toBe(0)
+    expect(simulation.after.collateralValueUsd).toBeLessThan(simulation.before.collateralValueUsd)
+    expect(simulation.after.multiplier).toBe(1)
+    expect(simulation.after.ltv).toBe(0)
+    // Full deleverage cannot increase user equity: collateral is sold at swap efficiency.
+    expect(simulation.after.collateralValueUsd).toBeLessThanOrEqual(
+      simulation.before.collateralValueUsd - simulation.before.debtValueUsd,
+    )
+  })
 })

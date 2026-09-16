@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { filterPools, groupByDex, type BorrowPoolRow, type BorrowableAsset } from "@/app/lib/data/borrow-domain"
 import type { BorrowWorkspaceData } from "@/app/lib/data/providers/borrow"
 import type { SupplyRowContext } from "@/app/lib/data/borrow-position-types"
@@ -15,7 +15,7 @@ import { applyBorrowableAssetDelta } from "@/app/lib/market-liquidity/apply"
 import { TabsBar, isPoolTab, type BorrowTabId, type PoolTabId } from "./tabs-bar"
 import { CollateralPoolsList, CollateralPoolsTable } from "./collateral-pools-table"
 import { useMediaQuery } from "@/app/lib/use-media-query"
-import { categorizeMarket, type MarketCategory } from "@/app/lib/markets/category"
+import { categorizeMarket, CATEGORY_CHIPS, type MarketCategory } from "@/app/lib/markets/category"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { RevealSentinel, useProgressiveReveal } from "@/app/lib/ui/use-progressive-reveal"
 
@@ -84,8 +84,25 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
   const { pendingRows } = pageData
   const session = useBorrowSessionContext()
   const { deltas: liquidityDeltas } = useMarketLiquidity()
-  const [currentTab, setCurrentTab] = useState<BorrowTabId>("all")
-  const [search, setSearch] = useState("")
+  const searchParams = useSearchParams()
+  // Deep links (e.g. the header mega-menu's "View all") can preselect a category via ?category=.
+  const [currentTab, setCurrentTab] = useState<BorrowTabId>(() => {
+    const param = searchParams?.get("category")
+    return param && CATEGORY_CHIPS.borrow.some((chip) => chip.id === param) ? (param as BorrowTabId) : "all"
+  })
+  const [search, setSearch] = useState(() => searchParams?.get("q") ?? "")
+
+  // Keep the filter in sync with the URL when a header mega-menu "View all" changes the query on
+  // this same page; the #markets hash on the link handles scrolling to this list.
+  const categoryParam = searchParams?.get("category")
+  const queryParam = searchParams?.get("q")
+  useEffect(() => {
+    if (categoryParam && CATEGORY_CHIPS.borrow.some((chip) => chip.id === categoryParam)) {
+      setCurrentTab(categoryParam as BorrowTabId)
+    }
+    if (queryParam) setSearch(queryParam)
+  }, [categoryParam, queryParam])
+
   const marketSpokeById = useMemo(
     () => new Map(pageData.poolCatalog.map((market) => [market.id, market.spoke])),
     [pageData.poolCatalog],
@@ -201,7 +218,7 @@ export function BorrowWorkspace({ pageData, onTabChange, initialIsDesktop = true
   )
 
   return (
-    <section className="pb-16">
+    <section id="markets" className="scroll-mt-24 pb-16">
       <TabsBar
         currentTab={currentTab}
         onTabChange={(tab) => setCurrentTab(tab)}

@@ -10,6 +10,7 @@ import { AboutNewsSection } from "@/app/borrow/_detail/ui"
 import { QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
 import { LendHero, LendHeroIdentity, LendSidebar } from "@/app/lend/_detail"
 import { useLendSessionContext } from "@/app/lib/lend-system/lend-session-context"
+import { useAvanaIdentity } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { LendMarketDetail } from "@/app/lib/lend-detail"
 import type { LendHeroPreloads } from "@/app/lib/lend-detail/hero-preload"
@@ -63,8 +64,9 @@ function mapSessionRows(
   marketId: string,
   assetSymbol: string,
   priceUsd?: number,
+  walletAddress?: string,
 ) {
-  return mapLendSessionRows(history, marketId, assetSymbol, priceUsd)
+  return mapLendSessionRows(history, marketId, assetSymbol, priceUsd, walletAddress)
 }
 
 export function LendMarketDetailClient({
@@ -74,6 +76,7 @@ export function LendMarketDetailClient({
   cashflowPreload = null,
 }: Props) {
   const session = useLendSessionContext()
+  const { walletAddress } = useAvanaIdentity()
   const { t } = useTranslation()
   const marketId = detail.row.marketId
 
@@ -85,8 +88,8 @@ export function LendMarketDetailClient({
   }, [detail.quickStats])
 
   const sessionRows = React.useMemo(
-    () => mapSessionRows(session.transactionHistory, marketId, detail.hero.symbol, priceUsd),
-    [detail.hero.symbol, marketId, priceUsd, session.transactionHistory],
+    () => mapSessionRows(session.transactionHistory, marketId, detail.hero.symbol, priceUsd, walletAddress),
+    [detail.hero.symbol, marketId, priceUsd, session.transactionHistory, walletAddress],
   )
   const seedRows = React.useMemo(() => detail.transactions.map(mapBorrowTxRow), [detail.transactions])
 

@@ -40,7 +40,10 @@ const asset = {
   visual: { symbol: "USDC", shortLabel: "USDC", bgClass: "bg-blue-500", textClass: "text-white" },
 }
 
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }))
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}))
 vi.mock("@/app/lib/page-loading", () => ({ triggerPageLoading: vi.fn() }))
 vi.mock("@/app/lib/use-media-query", () => ({ useMediaQuery: () => true }))
 

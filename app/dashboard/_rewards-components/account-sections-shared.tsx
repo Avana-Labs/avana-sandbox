@@ -1,12 +1,14 @@
 "use client"
 
-import { Suspense, type ReactNode } from "react"
+import { Suspense, useMemo, type ReactNode } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ActionIcon } from "@/app/components/action-icon"
+import { ChevronRight } from "@/app/components/icons"
 import { Button } from "@/components/ui/button"
 import { TokenIcon } from "@/app/components/token-icon"
-import { DesktopTableSurface } from "@/app/components/market-table-primitives"
+import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import {
   MarketMobileActionFooter,
@@ -14,6 +16,8 @@ import {
   MarketMobileCardHeader,
   MarketMobileIdentityText,
   MarketMobileMetric,
+  MarketMobileStatList,
+  MarketMobileStatRow,
   MARKET_MOBILE_CTA_CLASS,
 } from "@/app/components/market-card-primitives"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
@@ -22,6 +26,9 @@ import { useCurrency } from "@/app/lib/currency/use-currency"
 import { buildDashboardWalletBalanceRows } from "@/app/lib/swap-system"
 import { useConvexProductWalletBalances } from "@/app/lib/swap-system/use-convex-wallet-balances"
 import type { UserAssetBalance } from "@/app/lib/swap-system"
+import type { MultiplyMarketRecord } from "@/app/lib/multiply-engine"
+import { actionPagePath } from "@/app/lib/action-system/contracts"
+import { resolveMultiplyMarketDisplayMaxLeverage } from "@/app/lib/multiply-system/leverage-limits"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
   TABLE_BASE,
@@ -79,11 +86,14 @@ const MASK = "••••"
 export function ProductAvailableCard({
   walletId,
   sourceTypes,
+  allowedAssetIds,
   title,
   action,
 }: {
   walletId: string
   sourceTypes: ReadonlyArray<UserAssetBalance["sourceType"]>
+  /** Optional product catalog filter for shared wallet rows. */
+  allowedAssetIds?: ReadonlySet<string>
   /** Already-translated heading (translate at the call site so i18n parity can see the key). */
   title: string
   /** Optional per-row CTA (e.g. Deposit / Multiply). */
@@ -94,10 +104,18 @@ export function ProductAvailableCard({
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const priceFor = useCanonicalPriceFor()
   const balances = useConvexProductWalletBalances(walletId)
+  // Do not invoke buildDashboardWalletBalanceRows without an explicit result: its
+  // default is a test fixture, and a loading Convex query must never render demo money.
+  if (balances === undefined) return null
   const allow = new Set(sourceTypes)
-  const rows = buildDashboardWalletBalanceRows({ walletId, balances: balances ?? undefined, priceFor }).filter((row) =>
-    allow.has(row.sourceType),
+  const matchingRows = buildDashboardWalletBalanceRows({ walletId, balances, priceFor }).filter(
+    (row) => allow.has(row.sourceType) && (!allowedAssetIds || allowedAssetIds.has(row.assetId)),
   )
+  // Prefer canonical unallocated wallet rows when a legacy product-available row for
+  // the same asset still exists. This prevents one balance from appearing twice and
+  // prevents stale product buckets from masking the real wallet amount.
+  const canonicalAssetIds = new Set(matchingRows.filter((row) => row.sourceType === "wallet").map((row) => row.assetId))
+  const rows = matchingRows.filter((row) => row.sourceType === "wallet" || !canonicalAssetIds.has(row.assetId))
   if (rows.length === 0) return null
   const total = rows.reduce((sum, row) => sum + row.valueUsd, 0)
   const m = (value: string) => (showDollarAmounts ? value : MASK)
@@ -213,6 +231,250 @@ export function ProductAvailableCard({
                 </Button>
               </MarketMobileActionFooter>
             )}
+          </MarketMobileCard>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+export type MultiplyAvailableMarketRow = {
+  market: MultiplyMarketRecord
+  amount: number
+  valueUsd: number
+}
+
+/**
+ * Maps explicit Convex Multiply-available buckets to actual catalog markets.
+ * This keeps the dashboard's Multiply tab market-scoped: a WSTETH balance is
+ * shown as the WSTETH/ETH loop it can open, never as an orphan token row.
+ */
+export function buildMultiplyAvailableMarketRows({
+  balances,
+  markets,
+  priceFor,
+}: {
+  balances: readonly UserAssetBalance[]
+  markets: Readonly<Record<string, MultiplyMarketRecord>>
+  priceFor?: (symbol: string) => number | undefined
+}): MultiplyAvailableMarketRow[] {
+  const marketList = Object.values(markets).sort((left, right) => left.rank - right.rank)
+  const byId = new Map(marketList.map((market) => [market.id.toLowerCase(), market]))
+  const grouped = new Map<string, MultiplyAvailableMarketRow>()
+
+  for (const balance of balances) {
+    if (balance.sourceType !== "multiply_available") continue
+    const explicitMarket = balance.sourcePositionId ? byId.get(balance.sourcePositionId.toLowerCase()) : undefined
+    const market =
+      explicitMarket ??
+      marketList.find(
+        (candidate) => candidate.collateralAsset.symbol.toLowerCase() === balance.assetId.trim().toLowerCase(),
+      )
+    if (!market) continue
+
+    const livePrice = priceFor?.(market.collateralAsset.symbol)
+    const priceUsd =
+      livePrice !== undefined && Number.isFinite(livePrice) && livePrice > 0
+        ? livePrice
+        : market.collateralAsset.priceUsd
+    const storedValueUsd = balance.valueUsd
+    const hasStoredValue = typeof storedValueUsd === "number" && Number.isFinite(storedValueUsd) && storedValueUsd > 0
+    const valueUsd = hasStoredValue ? storedValueUsd : Math.max(0, balance.amount * priceUsd)
+    const amount = priceUsd > 0 ? valueUsd / priceUsd : balance.amount
+    if (!(valueUsd > 0)) continue
+
+    const existing = grouped.get(market.id)
+    grouped.set(market.id, {
+      market,
+      amount: (existing?.amount ?? 0) + amount,
+      valueUsd: (existing?.valueUsd ?? 0) + valueUsd,
+    })
+  }
+
+  return [...grouped.values()].sort((left, right) => left.market.rank - right.market.rank)
+}
+
+/** Market-scoped version of ProductAvailableCard for the Multiply dashboard tab. */
+export function MultiplyAvailableMarketsCard({
+  walletId,
+  markets,
+  title,
+}: {
+  walletId: string
+  markets: Readonly<Record<string, MultiplyMarketRecord>>
+  title: string
+}) {
+  const { t } = useTranslation()
+  const router = useRouter()
+  const { exact } = useCurrency()
+  const { showDollarAmounts } = useAmountDisplayPreferences()
+  const priceFor = useCanonicalPriceFor()
+  const balances = useConvexProductWalletBalances(walletId)
+  const rows = useMemo(
+    () => (balances ? buildMultiplyAvailableMarketRows({ balances, markets, priceFor }) : []),
+    [balances, markets, priceFor],
+  )
+
+  if (balances === undefined || rows.length === 0) return null
+
+  const total = rows.reduce((sum, row) => sum + row.valueUsd, 0)
+  const m = (value: string) => (showDollarAmounts ? value : MASK)
+
+  return (
+    <section className="min-w-0 space-y-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <h3 className="text-[18px] font-medium tracking-tight text-foreground md:text-[20px]">{title}</h3>
+        <span className="font-data text-[15px] tabular-nums text-foreground">{m(exact(total))}</span>
+      </div>
+
+      <DesktopTableSurface className="hidden !rounded-none md:block">
+        <table className={`w-full min-w-[700px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
+          <colgroup>
+            <col className="w-[28%]" />
+            <col className="w-[25%]" />
+            <col className="w-[18%]" />
+            <col className="w-[20%]" />
+            <col className="w-[9%]" />
+          </colgroup>
+          <thead>
+            <tr className={TABLE_HEADER_ROW}>
+              <th className={cn(TABLE_HEADER_CELL, "px-5")}>{formatTableHeaderLabel(t("Supply"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{formatTableHeaderLabel(t("Available"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("Loop"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("APY"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")} aria-label={t("Multiply")} />
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border dark:divide-white/6">
+            {rows.map((row) => (
+              <tr
+                key={row.market.id}
+                className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`}
+                role="link"
+                tabIndex={0}
+                aria-label={`${t("Open market")}: ${row.market.collateralAsset.symbol} / ${row.market.borrowAsset.symbol}`}
+                onClick={() => router.push(`/multiply/markets/${row.market.id}`)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault()
+                    router.push(`/multiply/markets/${row.market.id}`)
+                  }
+                }}
+              >
+                <td className={cn(TABLE_CELL_PADDING, "pl-5", TABLE_ROW_HOVER_LEFT)}>
+                  <div className="flex min-w-0 items-center gap-3">
+                    <TokenIcon symbol={row.market.collateralAsset.symbol} size="table" />
+                    <div className="min-w-0">
+                      <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{row.market.collateralAsset.name}</div>
+                      <div className={cn(TABLE_CELL_SECONDARY, "truncate")}>
+                        {formatTokenPrice(
+                          priceFor?.(row.market.collateralAsset.symbol) ?? row.market.collateralAsset.priceUsd,
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
+                  <div className={TABLE_CELL_NUMERIC}>
+                    {m(formatAvailableAmount(row.amount, row.market.collateralAsset.symbol))}
+                  </div>
+                  <div className={TABLE_CELL_SECONDARY}>{m(exact(row.valueUsd))}</div>
+                </td>
+                <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+                  <div className={TABLE_CELL_PRIMARY}>{t("Borrow")}</div>
+                  <div className="mt-0.5 flex items-center gap-2">
+                    <TokenIcon symbol={row.market.borrowAsset.symbol} size="sm" />
+                    <span className={TABLE_CELL_SECONDARY}>{row.market.borrowAsset.symbol}</span>
+                  </div>
+                </td>
+                <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+                  <div className={cn(TABLE_CELL_NUMERIC, "tabular-nums")}>
+                    {(row.market.economics.estimatedMaxApy * 100).toFixed(2)}%
+                  </div>
+                  <div className={TABLE_CELL_SECONDARY}>
+                    Max {resolveMultiplyMarketDisplayMaxLeverage(row.market.risk.publicMaxMultiplier).toFixed(2)}x
+                  </div>
+                </td>
+                <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
+                  <HoverActionGroup>
+                    <Button
+                      asChild
+                      type="button"
+                      size="table"
+                      variant="table-secondary"
+                      aria-label={t("Multiply")}
+                      title={t("Multiply")}
+                      className="size-9 px-0 py-0"
+                    >
+                      <Link
+                        href={actionPagePath("multiply", "multiply", { market: row.market.id })}
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <ChevronRight />
+                      </Link>
+                    </Button>
+                  </HoverActionGroup>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </DesktopTableSurface>
+
+      <div className="space-y-3 md:hidden">
+        {rows.map((row) => (
+          <MarketMobileCard
+            key={row.market.id}
+            clickable
+            className="space-y-2"
+            onClick={() => router.push(`/multiply/markets/${row.market.id}`)}
+          >
+            <MarketMobileCardHeader
+              identity={
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <TokenIcon symbol={row.market.collateralAsset.symbol} size="table" />
+                  <MarketMobileIdentityText
+                    title={row.market.collateralAsset.name}
+                    subtitle={formatTokenPrice(
+                      priceFor?.(row.market.collateralAsset.symbol) ?? row.market.collateralAsset.priceUsd,
+                    )}
+                  />
+                </div>
+              }
+              metric={
+                <MarketMobileMetric
+                  value={m(formatAvailableAmount(row.amount, row.market.collateralAsset.symbol))}
+                  label={m(exact(row.valueUsd))}
+                />
+              }
+            />
+            <MarketMobileStatList>
+              <MarketMobileStatRow
+                label={t("Loop")}
+                value={
+                  <span className="inline-flex items-center gap-2">
+                    <span>{t("Borrow")}</span>
+                    <TokenIcon symbol={row.market.borrowAsset.symbol} size="sm" />
+                    <span>{row.market.borrowAsset.symbol}</span>
+                  </span>
+                }
+              />
+              <MarketMobileStatRow
+                label={t("APY")}
+                value={`${(row.market.economics.estimatedMaxApy * 100).toFixed(2)}% · Max ${resolveMultiplyMarketDisplayMaxLeverage(row.market.risk.publicMaxMultiplier).toFixed(2)}x`}
+              />
+            </MarketMobileStatList>
+            <MarketMobileActionFooter>
+              <Button asChild variant="brand" className={MARKET_MOBILE_CTA_CLASS}>
+                <Link
+                  href={actionPagePath("multiply", "multiply", { market: row.market.id })}
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <ActionIcon label="multiply" />
+                  {t("Multiply")}
+                </Link>
+              </Button>
+            </MarketMobileActionFooter>
           </MarketMobileCard>
         ))}
       </div>

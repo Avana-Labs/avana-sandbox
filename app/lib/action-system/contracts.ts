@@ -26,6 +26,13 @@ export type ActionStage =
 
 export type ActionMetricTone = "default" | "positive" | "warning" | "danger"
 
+export type ActionMetricLiveUsd = {
+  anchorMs: number | null
+  before: { baseUsd: number; ratePerYearUsd: number }
+  after: { baseUsd: number; ratePerYearUsd: number }
+  fractionDigits?: number
+}
+
 export type ActionMetricRow = {
   id: string
   label: string
@@ -35,6 +42,7 @@ export type ActionMetricRow = {
   tone?: ActionMetricTone
   tooltip?: string
   tokenSymbols?: string[]
+  liveUsd?: ActionMetricLiveUsd
 }
 
 export type ActionRiskLevel = "safe" | "warning" | "danger"

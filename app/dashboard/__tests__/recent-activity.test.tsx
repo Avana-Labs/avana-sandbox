@@ -1,6 +1,11 @@
 import { fireEvent, render, within } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
-import { AMOUNT_SIGN_BY_KIND, inferActivityTokenSymbol, RecentActivity } from "@/app/dashboard/recent-activity"
+import {
+  AMOUNT_SIGN_BY_KIND,
+  inferActivityTokenSymbol,
+  inferActivityTokenSymbols,
+  RecentActivity,
+} from "@/app/dashboard/recent-activity"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import type { PortfolioActivityRow } from "@/app/lib/data/providers/portfolio"
 
@@ -169,6 +174,48 @@ describe("RecentActivity whole-row navigation", () => {
         }),
       ),
     ).toBe("AVA")
+    expect(
+      inferActivityTokenSymbol(
+        makeRow({
+          id: "3",
+          txHash: "sim-3",
+          product: "borrow",
+          kind: "repay",
+          marketId: "aero-slipstream-bluechip:usdc",
+          primaryLabel: "USDC",
+          secondaryLabel: "via cbBTC / USDC",
+        }),
+      ),
+    ).toBe("USDC")
+    expect(
+      inferActivityTokenSymbol(
+        makeRow({
+          id: "4",
+          txHash: "sim-4",
+          product: "multiply",
+          kind: "close",
+          marketId: "wsteth-eth",
+          primaryLabel: "Close position",
+          secondaryLabel: "2.00x → 1.00x",
+        }),
+      ),
+    ).toBe("wstETH")
+  })
+
+  it("infers both constituent icons for pool collateral activity", () => {
+    expect(
+      inferActivityTokenSymbols(
+        makeRow({
+          id: "pool-withdraw",
+          txHash: "sim-pool-withdraw",
+          product: "pool",
+          kind: "withdraw",
+          marketId: "BAL-WEIGHTED-80-20-AURA-WETH",
+          primaryLabel: "AURA / WETH",
+          secondaryLabel: "Withdraw",
+        }),
+      ),
+    ).toEqual(["AURA", "WETH"])
   })
 })
 

@@ -15,6 +15,7 @@ const profileState: { current: { preferences?: Record<string, unknown> } | null 
 const savePreferences = vi.fn(async () => "updated" as const)
 
 vi.mock("convex/react", () => ({
+  useConvexAuth: () => ({ isAuthenticated: true }),
   useQuery: () => profileState.current,
   useMutation: () => savePreferences,
 }))

@@ -370,7 +370,6 @@ export function UmbrellaActionPageClient({
         hideTitle={embedded || sidebar}
         hideClose={embedded}
         flowHeaderStage={!embedded ? stage : undefined}
-        simulated
       >
         <ActionSessionLoading />
       </ActionPageShell>
@@ -382,14 +381,17 @@ export function UmbrellaActionPageClient({
   // read correctly for top-ups.
   const dynamicVerb = kind === "stake" && position.amount > 0 ? "Stake more" : descriptor.primaryVerb
 
-  // Immediate (non-deferred) amount the configure stage sees. Drives both the
-  // stage's deferred-details gating and the risk card's `expanded` reveal so the
-  // waterfall, risk banner, and network fee appear/disappear together.
+  // Immediate (non-deferred) amount the configure stage sees. Drives the
+  // configure stage's deferred risk-banner and network-fee gating.
   // Claim amount is the fixed pending-rewards total (read-only). Round to 4dp and
   // drop trailing zeros so it reads cleanly (e.g. "20.6007", not "20.6006661022")
   // while staying comma-free so the configure stage can still parse it.
   const stageAmount = kind === "claim" ? String(Number(position.pendingRewardsUsd.toFixed(4))) : amount
-  const hasAmountEntered = parsePositiveActionAmount(stageAmount) != null
+  const enteredAmount = parsePositiveActionAmount(stageAmount)
+  const hasAmountEntered = enteredAmount != null
+  const estimatedAnnualRewardsUsd =
+    kind === "stake" && enteredAmount != null ? enteredAmount * livePriceUsd * (market.apy / 100) : undefined
+  const earnedRewardsUsd = kind === "stake" ? undefined : position.pendingRewardsUsd
 
   return (
     <ActionPageShell
@@ -401,7 +403,6 @@ export function UmbrellaActionPageClient({
       density={sidebar ? "sidebar" : "default"}
       hideClose={embedded}
       flowHeaderStage={!embedded ? stage : undefined}
-      simulated
     >
       {isProcessingStage(stage) ? (
         <ActionProcessingStage verb={dynamicVerb} preview={preview} closeHref={closeHref} stage={stage} />
@@ -449,7 +450,14 @@ export function UmbrellaActionPageClient({
             if (preview.maxAmount != null) setAmount(String(preview.maxAmount))
           }}
           singlePrimaryCta={sidebar}
-          detailsSlot={<UmbrellaMarketRiskMetricsCard market={market} expanded={hasAmountEntered} />}
+          detailsSlot={
+            <UmbrellaMarketRiskMetricsCard
+              market={market}
+              showExpandedDetails={hasAmountEntered}
+              estimatedAnnualRewardsUsd={estimatedAnnualRewardsUsd}
+              earnedRewardsUsd={earnedRewardsUsd}
+            />
+          }
           deferDetailsUntilAmount
           animateDetails={false}
           allowAssetSwitchWhenReadOnly

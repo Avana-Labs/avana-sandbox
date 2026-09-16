@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { Heart } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
@@ -27,24 +27,13 @@ export function HealthFactorPositionBar({
   heightClassName?: string
 }) {
   const [displayValue, setDisplayValue] = useState<number | null>(() =>
-    value == null || Number.isNaN(value) ? null : 0,
+    value == null || Number.isNaN(value) ? null : value,
   )
-  const firstPaintRef = useRef(true)
 
   useEffect(() => {
     if (value == null || Number.isNaN(value)) {
-      firstPaintRef.current = true
       setDisplayValue(value)
       return undefined
-    }
-
-    if (firstPaintRef.current) {
-      firstPaintRef.current = false
-      setDisplayValue(0)
-      const frame = window.requestAnimationFrame(() => {
-        setDisplayValue(value)
-      })
-      return () => window.cancelAnimationFrame(frame)
     }
 
     setDisplayValue(value)
