@@ -114,7 +114,7 @@ export function MultiplyActionPageClient({
   const collateralPriceUsd = market
     ? resolveMultiplyCollateralPriceUsd(priceFor(market.collateralAsset.symbol), market.collateralAsset.priceUsd)
     : 0
-  const walletCollateralBudgetUsd = market ? (session.state.walletBalancesUsd[walletId]?.[market.id] ?? 0) : 0
+  const walletCollateralBudgetUsd = market ? (session.state.walletBalancesUsd?.[walletId]?.[market.id] ?? 0) : 0
   // Cap a multiply position at the wallet's spendable balance (not the pool's
   // multi-million liquidity), still bounded by what the market can absorb. This
   // keeps Max affordable and rejects absurd inputs before the simulation engine.
