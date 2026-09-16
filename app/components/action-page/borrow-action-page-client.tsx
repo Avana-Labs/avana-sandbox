@@ -617,7 +617,9 @@ export function BorrowActionPageClient({
     }
 
     if (kind === "repay") {
-      const repayPriceUsd = debtPosition ? usd6ToNumber(session.state.assets[debtPosition.assetId]?.snapshot.priceUsd6 ?? 0n) : 0
+      const repayPriceUsd = debtPosition
+        ? usd6ToNumber(session.state.assets[debtPosition.assetId]?.snapshot.priceUsd6 ?? 0n)
+        : 0
       if (safeAmount <= 0 || !debtPosition || repayPriceUsd <= 0) {
         setPreviewUi(null)
         return undefined
@@ -1134,42 +1136,54 @@ export function BorrowActionPageClient({
     embedded && isHomeLayout && (showCollateralContextBar || (kind === "supply" && activePool != null))
   const stackedAmountField =
     useWorkspaceFields && isConfigureVisibleStage(stage) && kind !== "claim" ? (
-      <ActionConfigureAmountSection
-        verb={descriptor.primaryVerb}
-        amount={kind === "remove" ? percent : amount}
-        onAmountChange={kind === "remove" ? setPercent : setAmount}
-        inputLabel={kind === "remove" ? "Percentage to remove" : undefined}
-        preview={previewUi}
-        assetSymbol={assetSymbol}
-        borrowSymbol={undefined}
-        assetOptions={kind === "borrow" ? borrowAssetOptions : kind === "repay" ? repayAssetOptions : undefined}
-        selectedAssetId={pickerSelectedTokenId}
-        onAssetSelect={(id) => {
-          if (kind === "repay") {
-            const position =
-              debtPositions.find((entry) => entry.id === id) ??
-              debtPositions.find((entry) => entry.assetId === id && entry.marketId === marketId)
-            if (!position) return
-            setDebtPositionId(position.id)
-            if (position.marketId) setMarketId(position.marketId)
+      kind === "remove" ? (
+        <ActionLeverageRuler
+          value={percent}
+          onChange={setPercent}
+          min={0}
+          max={100}
+          step={1}
+          label="Percentage to remove"
+          valueSuffix="%"
+          subvalue={previewUi ? `Estimated removal · ${previewUi.amountUsdLabel}` : undefined}
+          variant="embedded"
+        />
+      ) : (
+        <ActionConfigureAmountSection
+          verb={descriptor.primaryVerb}
+          amount={amount}
+          onAmountChange={setAmount}
+          preview={previewUi}
+          assetSymbol={assetSymbol}
+          borrowSymbol={undefined}
+          assetOptions={kind === "borrow" ? borrowAssetOptions : kind === "repay" ? repayAssetOptions : undefined}
+          selectedAssetId={pickerSelectedTokenId}
+          onAssetSelect={(id) => {
+            if (kind === "repay") {
+              const position =
+                debtPositions.find((entry) => entry.id === id) ??
+                debtPositions.find((entry) => entry.assetId === id && entry.marketId === marketId)
+              if (!position) return
+              setDebtPositionId(position.id)
+              if (position.marketId) setMarketId(position.marketId)
+              setAmount("")
+              return
+            }
+            const selection = resolveBorrowTokenSelection(session, id, selectMarketId)
+            if (!selection) return
+            setAssetId(selection.assetId)
+            setMarketId(selection.marketId)
             setAmount("")
-            return
-          }
-          const selection = resolveBorrowTokenSelection(session, id, selectMarketId)
-          if (!selection) return
-          setAssetId(selection.assetId)
-          setMarketId(selection.marketId)
-          setAmount("")
-        }}
-        amountVariant="inset"
-        amountUnitLabel={kind === "remove" ? "%" : undefined}
-        hideAssetSelector={kind === "supply"}
-        assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
-        pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
-        assetPickerDisabled={borrowNeedsCollateral}
-        showBalance={showActionMax}
-        onMax={showActionMax ? handleActionMax : undefined}
-      />
+          }}
+          amountVariant="inset"
+          hideAssetSelector={kind === "supply"}
+          assetPickerVariant={useDialogAssetPicker ? "dialog" : "menu"}
+          pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
+          assetPickerDisabled={borrowNeedsCollateral}
+          showBalance={showActionMax}
+          onMax={showActionMax ? handleActionMax : undefined}
+        />
+      )
     ) : null
 
   return (
@@ -1236,7 +1250,7 @@ export function BorrowActionPageClient({
                 ? "You have no claimable rewards right now. Supply collateral and earn fees before claiming."
                 : kind === "remove"
                   ? "Pledge collateral before trying to remove it."
-                : kind === "supply"
+                  : kind === "supply"
                     ? "No unpledged LP collateral is available in this wallet."
                     : "Try adjusting your search"
           }
@@ -1383,22 +1397,18 @@ export function BorrowActionPageClient({
           canGoBack={canGoBackToSelect}
           isPending={isPending}
           outcome={outcome}
-          hideAmountInput={kind === "claim" || Boolean(useWorkspaceFields)}
-          amountReadOnly={kind === "remove"}
+          hideAmountInput={kind === "claim" || kind === "remove" || Boolean(useWorkspaceFields)}
           amountVariant="card"
           amountPlacement={useWorkspaceFields ? "stacked" : "inline"}
-          amountFooter={
-            kind === "remove" ? (
-              <ActionLeverageRuler
-                value={percent}
-                onChange={setPercent}
-                min={0}
-                max={100}
-                step={1}
-                label="Percentage to remove"
-                valueSuffix="%"
-              />
-            ) : undefined
+          multiplier={kind === "remove" ? percent : undefined}
+          onMultiplierChange={kind === "remove" ? setPercent : undefined}
+          multiplierMin={kind === "remove" ? 0 : undefined}
+          multiplierMax={kind === "remove" ? 100 : undefined}
+          multiplierStep={kind === "remove" ? 1 : undefined}
+          multiplierLabel={kind === "remove" ? "Percentage to remove" : undefined}
+          multiplierValueSuffix={kind === "remove" ? "%" : undefined}
+          multiplierSubvalue={
+            kind === "remove" && previewUi ? `Estimated removal · ${previewUi.amountUsdLabel}` : undefined
           }
           showBalance={showActionMax}
           onMax={showActionMax ? handleActionMax : undefined}

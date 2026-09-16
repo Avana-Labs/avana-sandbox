@@ -82,6 +82,7 @@ export function ActionLeverageRuler({
   step = MULTIPLY_ACTION_SLIDER_STEP,
   label = "Multiplier",
   valueSuffix,
+  subvalue,
   variant = "embedded",
 }: {
   value: string
@@ -91,6 +92,7 @@ export function ActionLeverageRuler({
   step?: number
   label?: string
   valueSuffix?: string
+  subvalue?: string
   /** Spacing only — never wraps in a card. */
   variant?: "card" | "embedded"
 }) {
@@ -159,6 +161,12 @@ export function ActionLeverageRuler({
           </span>
         ))}
       </div>
+
+      {subvalue ? (
+        <div className="mt-4 text-right text-[14px] tabular-nums text-muted-foreground" aria-live="polite">
+          {subvalue}
+        </div>
+      ) : null}
     </div>
   )
 }

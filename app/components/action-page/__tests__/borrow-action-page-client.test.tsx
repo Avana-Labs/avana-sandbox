@@ -39,11 +39,23 @@ describe("BorrowActionPageClient", () => {
       </AvanaSessionsProvider>,
     )
 
-    expect((await screen.findAllByText("Percentage to remove")).length).toBe(2)
+    expect((await screen.findAllByText("Percentage to remove")).length).toBe(1)
     expect(screen.getByRole("slider", { name: "Percentage to remove" })).toHaveValue("25")
     expect(screen.getByTestId("action-leverage-pill")).toHaveTextContent("25%")
     expect(screen.queryByLabelText("Percentage to remove amount")).not.toBeInTheDocument()
-    expect(screen.getByText("%")).toBeInTheDocument()
+    expect(screen.getByText(/Estimated removal · \$/)).toBeInTheDocument()
+  })
+
+  it("uses the same single percentage slider in the homepage workspace", async () => {
+    renderWithProviders(
+      <AvanaSessionsProvider>
+        <BorrowActionPageClient kind="remove" embedded layout="home" />
+      </AvanaSessionsProvider>,
+    )
+
+    expect(await screen.findByRole("slider", { name: "Percentage to remove" })).toBeInTheDocument()
+    expect(screen.queryByLabelText("Percentage to remove amount")).not.toBeInTheDocument()
+    expect(screen.getByTestId("action-leverage-pill")).toHaveTextContent("0%")
   })
 
   it("shows the executed USD amount after a collateral removal", async () => {

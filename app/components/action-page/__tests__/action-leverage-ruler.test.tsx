@@ -36,7 +36,18 @@ describe("ActionLeverageRuler", () => {
   })
 
   it("supports percentage formatting for bounded action controls", () => {
-    render(<ActionLeverageRuler value="25" onChange={() => {}} label="Percentage to remove" valueSuffix="%" min={0} max={100} step={1} />)
+    render(
+      <ActionLeverageRuler
+        value="25"
+        onChange={() => {}}
+        label="Percentage to remove"
+        valueSuffix="%"
+        subvalue="Estimated removal · $10,903.25"
+        min={0}
+        max={100}
+        step={1}
+      />,
+    )
 
     expect(screen.getByTestId("action-leverage-pill")).toHaveTextContent("25%")
     expect(screen.getByTestId("action-leverage-ticks")).toHaveTextContent("0%")
@@ -44,6 +55,7 @@ describe("ActionLeverageRuler", () => {
     expect(screen.getByTestId("action-leverage-ticks")).toHaveTextContent("50%")
     expect(screen.getByTestId("action-leverage-ticks")).toHaveTextContent("75%")
     expect(screen.getByTestId("action-leverage-ticks")).toHaveTextContent("100%")
+    expect(screen.getByText("Estimated removal · $10,903.25")).toBeInTheDocument()
   })
 
   it("does not render number input, recommended copy, or USD endpoints", () => {

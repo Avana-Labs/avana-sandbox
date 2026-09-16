@@ -58,6 +58,8 @@ type ActionConfigureStageProps = {
   multiplierMax?: number
   multiplierStep?: number
   multiplierLabel?: string
+  multiplierValueSuffix?: string
+  multiplierSubvalue?: string
   canGoBack?: boolean
   hideAmountInput?: boolean
   amountReadOnly?: boolean
@@ -223,6 +225,8 @@ export function ActionConfigureStage({
   multiplierMax = 20,
   multiplierStep = 0.1,
   multiplierLabel = "Multiplier",
+  multiplierValueSuffix,
+  multiplierSubvalue,
   canGoBack = false,
   hideAmountInput = false,
   amountReadOnly = false,
@@ -353,6 +357,8 @@ export function ActionConfigureStage({
             max={multiplierMax}
             step={multiplierStep}
             label={multiplierLabel}
+            valueSuffix={multiplierValueSuffix}
+            subvalue={multiplierSubvalue}
           />
         </div>
       ) : null}
