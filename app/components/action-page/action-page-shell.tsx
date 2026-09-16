@@ -30,6 +30,7 @@ export function ActionPageShell({
   density = "default",
   title,
   subtitle,
+  simulated = false,
   hideTitle = false,
   hideClose = false,
   flowHeaderStage,
@@ -82,6 +83,16 @@ export function ActionPageShell({
     >
       {showFlowHeader ? (
         <ActionFlowHeader stage={flowHeaderStage} onClose={handleClose} mobileOnly={flowHeaderMobileOnly} />
+      ) : null}
+
+      {simulated ? (
+        <div
+          role="status"
+          data-testid="action-simulation-banner"
+          className="border-b border-warning/30 bg-warning/10 px-4 py-2 text-center text-xs font-medium text-warning-foreground sm:px-6"
+        >
+          {t("Simulated transaction — no real funds move")}
+        </div>
       ) : null}
 
       {showChrome && !hideClose && !showFlowHeader ? (
