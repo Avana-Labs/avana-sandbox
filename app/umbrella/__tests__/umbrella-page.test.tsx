@@ -52,13 +52,15 @@ describe("Umbrella page", () => {
 
     // The selected USDC surface exposes its protection layers and APY sources
     // in the sidebar before the aggregate Market Level Risk section.
-    expect(screen.getByText("Surface details")).toBeInTheDocument()
+    expect(screen.getAllByText("Surface details")).toHaveLength(1)
     expect(screen.getByText("Stable Hub → USDC Spoke → USDC Reserve")).toBeInTheDocument()
     expect(screen.getByText("Active staker capital")).toBeInTheDocument()
-    expect(screen.getByText("$12.0M")).toBeInTheDocument()
+    expect(screen.getAllByText("$12.0M").length).toBeGreaterThanOrEqual(2)
     expect(screen.getByText("Coverage ratio")).toBeInTheDocument()
     expect(screen.getByText("120%")).toBeInTheDocument()
-    expect(screen.getByText("APY breakdown")).toBeInTheDocument()
+    // APY breakdown belongs to the action page's dedicated APY box, not the
+    // large main-page Surface details section.
+    expect(screen.getAllByText("APY breakdown")).toHaveLength(1)
     expect(screen.getByLabelText("More information about Local deductible")).toBeInTheDocument()
     expect(screen.getByLabelText("More information about DAO first-loss offset")).toBeInTheDocument()
     expect(screen.getByLabelText("More information about Hub tail target")).toBeInTheDocument()

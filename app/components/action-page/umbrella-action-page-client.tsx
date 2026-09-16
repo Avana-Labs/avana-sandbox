@@ -382,14 +382,12 @@ export function UmbrellaActionPageClient({
   // read correctly for top-ups.
   const dynamicVerb = kind === "stake" && position.amount > 0 ? "Stake more" : descriptor.primaryVerb
 
-  // Immediate (non-deferred) amount the configure stage sees. Drives both the
-  // stage's deferred-details gating and the risk card's `expanded` reveal so the
-  // waterfall, risk banner, and network fee appear/disappear together.
+  // Immediate (non-deferred) amount the configure stage sees. Drives the
+  // configure stage's deferred risk-banner and network-fee gating.
   // Claim amount is the fixed pending-rewards total (read-only). Round to 4dp and
   // drop trailing zeros so it reads cleanly (e.g. "20.6007", not "20.6006661022")
   // while staying comma-free so the configure stage can still parse it.
   const stageAmount = kind === "claim" ? String(Number(position.pendingRewardsUsd.toFixed(4))) : amount
-  const hasAmountEntered = parsePositiveActionAmount(stageAmount) != null
 
   return (
     <ActionPageShell
@@ -449,8 +447,7 @@ export function UmbrellaActionPageClient({
             if (preview.maxAmount != null) setAmount(String(preview.maxAmount))
           }}
           singlePrimaryCta={sidebar}
-          detailsSlot={<UmbrellaMarketRiskMetricsCard market={market} expanded={hasAmountEntered} />}
-          deferDetailsUntilAmount
+          detailsSlot={<UmbrellaMarketRiskMetricsCard market={market} />}
           animateDetails={false}
           allowAssetSwitchWhenReadOnly
         />

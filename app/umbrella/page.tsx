@@ -14,7 +14,7 @@ import { UmbrellaCooldown } from "./_detail/market-sections/UmbrellaCooldown"
 import { UmbrellaHero } from "./_detail/market-sections/UmbrellaHero"
 import { UmbrellaLearn } from "./_detail/market-sections/UmbrellaLearn"
 import { UmbrellaPositions } from "./_detail/market-sections/UmbrellaPositions"
-import { UmbrellaStress } from "./_detail/market-sections/UmbrellaStress"
+import { UmbrellaStress, UmbrellaSurfaceDetails } from "./_detail/market-sections/UmbrellaStress"
 import { UmbrellaMobileSidebarSheet, type UmbrellaMobileSheetTrigger } from "./_detail/UmbrellaMobileSidebarSheet"
 import { UmbrellaSidebar } from "./_detail/sidebars/UmbrellaSidebar"
 
@@ -61,8 +61,9 @@ function UmbrellaPageInner() {
                 <UmbrellaHero />
                 <UmbrellaPositions onSelectMarket={setSelectedMarket} />
               </div>
-              <UmbrellaCooldown />
               <UmbrellaStress />
+              <UmbrellaSurfaceDetails market={umbrella.markets[selectedMarket]} />
+              <UmbrellaCooldown />
               <UmbrellaLearn />
             </div>
 
