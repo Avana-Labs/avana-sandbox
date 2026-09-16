@@ -388,7 +388,10 @@ export function UmbrellaActionPageClient({
   // drop trailing zeros so it reads cleanly (e.g. "20.6007", not "20.6006661022")
   // while staying comma-free so the configure stage can still parse it.
   const stageAmount = kind === "claim" ? String(Number(position.pendingRewardsUsd.toFixed(4))) : amount
-  const hasAmountEntered = parsePositiveActionAmount(stageAmount) != null
+  const enteredAmount = parsePositiveActionAmount(stageAmount)
+  const hasAmountEntered = enteredAmount != null
+  const estimatedAnnualRewardsUsd =
+    kind === "stake" && enteredAmount != null ? enteredAmount * livePriceUsd * (market.apy / 100) : undefined
 
   return (
     <ActionPageShell
@@ -448,7 +451,13 @@ export function UmbrellaActionPageClient({
             if (preview.maxAmount != null) setAmount(String(preview.maxAmount))
           }}
           singlePrimaryCta={sidebar}
-          detailsSlot={<UmbrellaMarketRiskMetricsCard market={market} showExpandedDetails={hasAmountEntered} />}
+          detailsSlot={
+            <UmbrellaMarketRiskMetricsCard
+              market={market}
+              showExpandedDetails={hasAmountEntered}
+              estimatedAnnualRewardsUsd={estimatedAnnualRewardsUsd}
+            />
+          }
           deferDetailsUntilAmount
           animateDetails={false}
           allowAssetSwitchWhenReadOnly

@@ -51,12 +51,21 @@ describe("Umbrella page", () => {
     const positions = within(screen.getByRole("region", { name: "Umbrella positions" }))
     expect(positions.getAllByText("Covered reserve").length).toBeGreaterThan(0)
 
-    // APY column renders the total percent (the base + reward split moved to a tooltip
-    // to declutter the table).
-    expect(screen.getAllByText("6.4%").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("4.84%").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("4.19%").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("5.05%").length).toBeGreaterThan(0)
+    expect(positions.getByRole("columnheader", { name: "Cooling" })).toBeInTheDocument()
+    expect(positions.queryByRole("columnheader", { name: "APY" })).not.toBeInTheDocument()
+    const positionRows = positions.getAllByRole("row").slice(1)
+    expect(positionRows.length).toBeGreaterThan(0)
+    for (const row of positionRows) {
+      const cells = within(row).getAllByRole("cell")
+      expect(cells).toHaveLength(5)
+      expect(cells[1]).not.toHaveTextContent(/cooling/i)
+      expect(cells[2]).toHaveTextContent(/\$/)
+    }
+    // Rewards shows the reward APY over the live accrued rewards counter.
+    expect(positions.getAllByText("6.4%").length).toBeGreaterThan(0)
+    expect(positions.getAllByText("3.12%").length).toBeGreaterThan(0)
+    expect(positions.getAllByText("2.85%").length).toBeGreaterThan(0)
+    expect(positions.getAllByText("2.4%").length).toBeGreaterThan(0)
 
     // The selected USDC surface exposes its protection layers and APY sources
     // in the sidebar before the aggregate Market Level Risk section.
@@ -66,7 +75,7 @@ describe("Umbrella page", () => {
         "This covers deficits impacting Stable LP Hub USDC suppliers, including deficits originated by All Spokes borrowing the USDC reserve.",
       ),
     ).toBeInTheDocument()
-    expect(screen.getByText("Risk Parameters")).toBeInTheDocument()
+    expect(screen.queryByText("Risk Parameters")).not.toBeInTheDocument()
     expect(screen.queryByText("Coverage mode")).not.toBeInTheDocument()
     expect(screen.getByText("Active staker capital")).toBeInTheDocument()
     await waitFor(() => {
@@ -104,6 +113,8 @@ describe("Umbrella page", () => {
     fireEvent.change(screen.getByRole("textbox", { name: /amount/i }), { target: { value: "1000" } })
 
     expect(screen.getByText("APY breakdown")).toBeInTheDocument()
+    expect(screen.getByText("Est. annual rewards")).toBeInTheDocument()
+    expect(screen.getByText("Based on amount entered")).toBeInTheDocument()
     expect(screen.getByText("Slashable stake")).toBeInTheDocument()
     expect(screen.getByText("Network fee")).toBeInTheDocument()
   })

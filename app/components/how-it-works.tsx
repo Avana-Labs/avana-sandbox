@@ -25,7 +25,7 @@ const HOW_IT_WORKS: Record<HowItWorksTopic, HowItWorksContent> = {
   umbrella: {
     title: "How Umbrella works",
     intro:
-      "Umbrella is Avana's safety module for Aave v4-style markets. You stake coverage for a specific Hub reserve. If borrowing from that reserve leaves a deficit after liquidation, Umbrella coverage can absorb the residual loss, and you earn rewards for keeping capital available.",
+      "Umbrella is Avana's safety module for every Avana Hub and supported asset. You stake coverage for a specific Hub reserve. If borrowing from that reserve leaves a deficit after liquidation, Umbrella coverage can absorb the residual loss, and you earn rewards for keeping capital available.",
     sections: [
       {
         heading: "Hub + reserve coverage",
