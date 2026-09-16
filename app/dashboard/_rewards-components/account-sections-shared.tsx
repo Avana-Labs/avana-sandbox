@@ -328,10 +328,10 @@ export function MultiplyAvailableMarketsCard({
       <DesktopTableSurface className="hidden !rounded-none md:block">
         <table className={`w-full min-w-[700px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
           <colgroup>
-            <col className="w-[31%]" />
-            <col className="w-[24%]" />
-            <col className="w-[17%]" />
-            <col className="w-[19%]" />
+            <col className="w-[28%]" />
+            <col className="w-[25%]" />
+            <col className="w-[18%]" />
+            <col className="w-[20%]" />
             <col className="w-[9%]" />
           </colgroup>
           <thead>
