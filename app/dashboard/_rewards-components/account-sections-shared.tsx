@@ -4,7 +4,6 @@ import { Suspense, useMemo, type ReactNode } from "react"
 import Link from "next/link"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ActionIcon } from "@/app/components/action-icon"
-import { ActionTokenPairIcon } from "@/app/components/action-page/action-token-icon"
 import { Button } from "@/components/ui/button"
 import { TokenIcon } from "@/app/components/token-icon"
 import { DesktopTableSurface } from "@/app/components/market-table-primitives"
@@ -15,6 +14,8 @@ import {
   MarketMobileCardHeader,
   MarketMobileIdentityText,
   MarketMobileMetric,
+  MarketMobileStatList,
+  MarketMobileStatRow,
   MARKET_MOBILE_CTA_CLASS,
 } from "@/app/components/market-card-primitives"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
@@ -25,7 +26,6 @@ import { useConvexProductWalletBalances } from "@/app/lib/swap-system/use-convex
 import type { UserAssetBalance } from "@/app/lib/swap-system"
 import type { MultiplyMarketRecord } from "@/app/lib/multiply-engine"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
-import { formatMultiplyLoopMarketLabel } from "@/app/lib/multiply-system/market-labels"
 import { resolveMultiplyMarketDisplayMaxLeverage } from "@/app/lib/multiply-system/leverage-limits"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import {
@@ -325,16 +325,20 @@ export function MultiplyAvailableMarketsCard({
       </div>
 
       <DesktopTableSurface className="hidden !rounded-none md:block">
-        <table className={`w-full min-w-[620px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
+        <table className={`w-full min-w-[760px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
           <colgroup>
-            <col className="w-[46%]" />
-            <col className="w-[30%]" />
+            <col className="w-[25%]" />
             <col className="w-[24%]" />
+            <col className="w-[18%]" />
+            <col className="w-[24%]" />
+            <col className="w-[9%]" />
           </colgroup>
           <thead>
             <tr className={TABLE_HEADER_ROW}>
-              <th className={cn(TABLE_HEADER_CELL, "px-5 text-left")}>{formatTableHeaderLabel(t("Market"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-5")}>{formatTableHeaderLabel(t("Supply"))}</th>
               <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{formatTableHeaderLabel(t("Available"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("You can loop"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("APY"))}</th>
               <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")} aria-label={t("Multiply")} />
             </tr>
           </thead>
@@ -343,22 +347,12 @@ export function MultiplyAvailableMarketsCard({
               <tr key={row.market.id} className={`${TABLE_BODY_ROW} group`}>
                 <td className={cn(TABLE_CELL_PADDING, "pl-5", TABLE_ROW_HOVER_LEFT)}>
                   <Link href={`/multiply/markets/${row.market.id}`} className="flex min-w-0 items-center gap-3">
-                    <ActionTokenPairIcon
-                      collateralSymbol={row.market.collateralAsset.symbol}
-                      borrowSymbol={row.market.borrowAsset.symbol}
-                      size="sm"
-                    />
+                    <TokenIcon symbol={row.market.collateralAsset.symbol} size="sm" />
                     <div className="min-w-0">
                       <div className={cn("truncate", TABLE_CELL_PRIMARY)}>
-                        {formatMultiplyLoopMarketLabel(
-                          row.market.collateralAsset.symbol,
-                          row.market.borrowAsset.symbol,
-                        )}
+                        Supply {row.market.collateralAsset.symbol}
                       </div>
-                      <div className={cn(TABLE_CELL_SECONDARY, "tabular-nums")}>
-                        Max APY {(row.market.economics.estimatedMaxApy * 100).toFixed(2)}% · Max{" "}
-                        {resolveMultiplyMarketDisplayMaxLeverage(row.market.risk.publicMaxMultiplier).toFixed(2)}x
-                      </div>
+                      <div className={cn(TABLE_CELL_SECONDARY, "truncate")}>{row.market.collateralAsset.name}</div>
                     </div>
                   </Link>
                 </td>
@@ -367,6 +361,17 @@ export function MultiplyAvailableMarketsCard({
                     {m(formatAvailableAmount(row.amount, row.market.collateralAsset.symbol))}
                   </div>
                   <div className={TABLE_CELL_SECONDARY}>{m(exact(row.valueUsd))}</div>
+                </td>
+                <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+                  <div className={TABLE_CELL_PRIMARY}>Borrow {row.market.borrowAsset.symbol}</div>
+                </td>
+                <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
+                  <div className={cn(TABLE_CELL_NUMERIC, "tabular-nums")}>
+                    {(row.market.economics.estimatedMaxApy * 100).toFixed(2)}%
+                  </div>
+                  <div className={TABLE_CELL_SECONDARY}>
+                    Max {resolveMultiplyMarketDisplayMaxLeverage(row.market.risk.publicMaxMultiplier).toFixed(2)}x
+                  </div>
                 </td>
                 <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
                   <AvailableActionButton
@@ -387,17 +392,10 @@ export function MultiplyAvailableMarketsCard({
             <MarketMobileCardHeader
               identity={
                 <Link href={`/multiply/markets/${row.market.id}`} className="flex min-w-0 items-center gap-2.5">
-                  <ActionTokenPairIcon
-                    collateralSymbol={row.market.collateralAsset.symbol}
-                    borrowSymbol={row.market.borrowAsset.symbol}
-                    size="sm"
-                  />
+                  <TokenIcon symbol={row.market.collateralAsset.symbol} size="sm" />
                   <MarketMobileIdentityText
-                    title={formatMultiplyLoopMarketLabel(
-                      row.market.collateralAsset.symbol,
-                      row.market.borrowAsset.symbol,
-                    )}
-                    subtitle={`Max APY ${(row.market.economics.estimatedMaxApy * 100).toFixed(2)}%`}
+                    title={`Supply ${row.market.collateralAsset.symbol}`}
+                    subtitle={row.market.collateralAsset.name}
                   />
                 </Link>
               }
@@ -408,6 +406,13 @@ export function MultiplyAvailableMarketsCard({
                 />
               }
             />
+            <MarketMobileStatList>
+              <MarketMobileStatRow label={t("You can loop")} value={`Borrow ${row.market.borrowAsset.symbol}`} />
+              <MarketMobileStatRow
+                label={t("APY")}
+                value={`${(row.market.economics.estimatedMaxApy * 100).toFixed(2)}% · Max ${resolveMultiplyMarketDisplayMaxLeverage(row.market.risk.publicMaxMultiplier).toFixed(2)}x`}
+              />
+            </MarketMobileStatList>
             <MarketMobileActionFooter>
               <Button asChild variant="brand" className={MARKET_MOBILE_CTA_CLASS}>
                 <Link href={actionPagePath("multiply", "multiply", { market: row.market.id })}>
