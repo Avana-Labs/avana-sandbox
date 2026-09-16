@@ -61,7 +61,11 @@ describe("Umbrella page", () => {
     // The selected USDC surface exposes its protection layers and APY sources
     // in the sidebar before the aggregate Market Level Risk section.
     expect(screen.getAllByText("Surface details")).toHaveLength(1)
-    expect(screen.getByText("Stable Hub → USDC Spoke → USDC Reserve")).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        "This covers deficits impacting Stable LP Hub USDC suppliers, including deficits originated by All Spokes borrowing the USDC reserve.",
+      ),
+    ).toBeInTheDocument()
     expect(screen.getByText("Active staker capital")).toBeInTheDocument()
     await waitFor(() => {
       expect(screen.getAllByText("$12.0M").length).toBeGreaterThanOrEqual(2)
@@ -126,7 +130,11 @@ describe("Umbrella page", () => {
 
     fireEvent.click(within(surfaceTabs).getByRole("tab", { name: "View WETH surface details" }))
 
-    expect(screen.getByText("Correlated Hub → WETH Spoke → WETH Reserve")).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        "This covers deficits impacting Correlated LP Hub WETH suppliers, including deficits originated by All Spokes borrowing the WETH reserve.",
+      ),
+    ).toBeInTheDocument()
     expect(within(surfaceTabs).getByRole("tab", { name: "View WETH surface details" })).toHaveAttribute(
       "aria-selected",
       "true",

@@ -47,6 +47,11 @@ function surfaceLabel(market: UmbrellaMarket) {
   return `${market.hubLabel} → ${market.symbol} Spoke → ${market.symbol} Reserve`
 }
 
+function surfaceDescription(market: UmbrellaMarket) {
+  const hubName = market.hubLabel.replace(/\s+Hub$/, "")
+  return `This covers deficits impacting ${hubName} LP Hub ${market.symbol} suppliers, including deficits originated by All Spokes borrowing the ${market.symbol} reserve.`
+}
+
 function explainSurface(t: (key: string) => string, market: UmbrellaMarket, text: string) {
   return t(text).replace("{surface}", surfaceLabel(market))
 }
@@ -250,34 +255,32 @@ export function UmbrellaSurfaceDetails({
 
   return (
     <section>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
-            {t("Surface details")}
-          </h2>
-          <p className="mt-2 text-[13px] text-muted-foreground">{surfaceLabel(market)}</p>
-          <div className="mt-4 flex items-center gap-2" role="tablist" aria-label={t("Umbrella surface details")}>
-            {umbrella.marketOrder.map((id) => {
-              const tabMarket = umbrella.markets[id]
-              const active = id === marketId
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  aria-label={t("View {symbol} surface details").replace("{symbol}", tabMarket.symbol)}
-                  title={tabMarket.symbol}
-                  onClick={() => onMarketChange(id)}
-                  className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-background transition-colors hover:border-foreground/40 hover:bg-hover aria-selected:border-brand aria-selected:bg-brand/10 aria-selected:ring-2 aria-selected:ring-brand/20"
-                >
-                  <TokenIcon symbol={tabMarket.symbol} size="sm" />
-                </button>
-              )
-            })}
-          </div>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+          {t("Surface details")}
+        </h2>
+        <div className="flex shrink-0 items-center gap-2" role="tablist" aria-label={t("Umbrella surface details")}>
+          {umbrella.marketOrder.map((id) => {
+            const tabMarket = umbrella.markets[id]
+            const active = id === marketId
+            return (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                aria-label={t("View {symbol} surface details").replace("{symbol}", tabMarket.symbol)}
+                title={tabMarket.symbol}
+                onClick={() => onMarketChange(id)}
+                className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-background transition-colors hover:border-foreground/40 hover:bg-hover aria-selected:border-brand aria-selected:bg-brand/10 aria-selected:ring-2 aria-selected:ring-brand/20"
+              >
+                <TokenIcon symbol={tabMarket.symbol} size="sm" />
+              </button>
+            )
+          })}
         </div>
       </div>
+      <p className="-mt-2 mb-6 max-w-3xl text-[13px] leading-5 text-muted-foreground">{surfaceDescription(market)}</p>
 
       <div className="rounded-radius-md bg-card px-4 py-5 md:px-5">
         <UmbrellaSurfaceDetailsRows market={market} />
