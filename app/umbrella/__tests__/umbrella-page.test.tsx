@@ -67,14 +67,20 @@ describe("Umbrella page", () => {
     expect(positions.getAllByText("2.85%").length).toBeGreaterThan(0)
     expect(positions.getAllByText("2.4%").length).toBeGreaterThan(0)
 
-    // The selected USDC surface exposes its protection layers and APY sources
-    // in the sidebar before the aggregate Umbrella Overview section.
-    expect(screen.getAllByText("Surface details")).toHaveLength(1)
-    expect(
-      screen.getByText(
-        "This covers deficits impacting Stable LP Hub USDC suppliers, including deficits originated by All Spokes borrowing the USDC reserve.",
-      ),
-    ).toBeInTheDocument()
+    // Surface details is independent from the action market and starts on the first icon.
+    expect(screen.getByRole("heading", { name: "GHO Stable Hub Reserve" })).toBeInTheDocument()
+    expect(screen.getByLabelText("More information about GHO Stable Hub Reserve")).toBeInTheDocument()
+    const surfaceTabs = screen.getByRole("tablist", { name: "Umbrella surface details" })
+    expect(within(surfaceTabs).getByRole("tab", { name: "View GHO surface details" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    )
+    fireEvent.click(within(surfaceTabs).getByRole("tab", { name: "View USDC surface details" }))
+    expect(screen.getByRole("heading", { name: "USDC Stable Hub Reserve" })).toBeInTheDocument()
+    fireEvent.click(screen.getByLabelText("More information about USDC Stable Hub Reserve"))
+    expect(screen.getByRole("tooltip")).toHaveTextContent(
+      "This covers deficits impacting Stable LP Hub USDC suppliers, including deficits originated by All Spokes borrowing the USDC reserve.",
+    )
     expect(screen.queryByText("Risk Parameters")).not.toBeInTheDocument()
     expect(screen.queryByText("Coverage mode")).not.toBeInTheDocument()
     expect(screen.getByText("Active staker capital")).toBeInTheDocument()
@@ -138,18 +144,15 @@ describe("Umbrella page", () => {
 
     const surfaceTabs = screen.getByRole("tablist", { name: "Umbrella surface details" })
     expect(within(surfaceTabs).getAllByRole("tab")).toHaveLength(4)
-    expect(within(surfaceTabs).getByRole("tab", { name: "View USDC surface details" })).toHaveAttribute(
+    expect(within(surfaceTabs).getByRole("tab", { name: "View GHO surface details" })).toHaveAttribute(
       "aria-selected",
       "true",
     )
 
     fireEvent.click(within(surfaceTabs).getByRole("tab", { name: "View WETH surface details" }))
 
-    expect(
-      screen.getByText(
-        "This covers deficits impacting Correlated LP Hub WETH suppliers, including deficits originated by All Spokes borrowing the WETH reserve.",
-      ),
-    ).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "WETH Correlated Hub Reserve" })).toBeInTheDocument()
+    expect(screen.getByLabelText("More information about WETH Correlated Hub Reserve")).toBeInTheDocument()
     expect(within(surfaceTabs).getByRole("tab", { name: "View WETH surface details" })).toHaveAttribute(
       "aria-selected",
       "true",

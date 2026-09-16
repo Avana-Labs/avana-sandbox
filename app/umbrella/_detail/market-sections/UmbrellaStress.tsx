@@ -64,6 +64,10 @@ function surfaceLabel(market: UmbrellaMarket) {
   return `${market.hubLabel} → ${market.symbol} Spoke → ${market.symbol} Reserve`
 }
 
+function surfaceHeading(market: UmbrellaMarket) {
+  return `${market.symbol} ${market.hubLabel} Reserve`
+}
+
 function surfaceDescription(market: UmbrellaMarket) {
   const hubName = market.hubLabel.replace(/\s+Hub$/, "")
   return `This covers deficits impacting ${hubName} LP Hub ${market.symbol} suppliers, including deficits originated by All Spokes borrowing the ${market.symbol} reserve.`
@@ -337,8 +341,9 @@ export function UmbrellaSurfaceDetails({
   return (
     <section>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
-          {t("Surface details")}
+        <h2 className="flex items-center gap-1.5 text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+          {surfaceHeading(market)}
+          <ActionMetricHelp text={surfaceDescription(market)} topic={surfaceHeading(market)} />
         </h2>
         <div className="flex shrink-0 items-center gap-2" role="tablist" aria-label={t("Umbrella surface details")}>
           {umbrella.marketOrder.map((id) => {
@@ -361,7 +366,6 @@ export function UmbrellaSurfaceDetails({
           })}
         </div>
       </div>
-      <p className="-mt-2 mb-6 max-w-3xl text-[13px] leading-5 text-muted-foreground">{surfaceDescription(market)}</p>
 
       <UmbrellaSurfaceDetailsRows market={market} />
     </section>

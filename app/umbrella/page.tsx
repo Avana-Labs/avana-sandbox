@@ -46,7 +46,7 @@ function UmbrellaPageInner() {
   // seed doesn't fight later user selections when positions refresh.
   const initialMarket = defaultUmbrellaMarket(umbrella, marketParam)
   const [selectedMarket, setSelectedMarket] = useState<UmbrellaMarketId>(initialMarket)
-  const [selectedSurfaceMarket, setSelectedSurfaceMarket] = useState<UmbrellaMarketId>(initialMarket)
+  const [selectedSurfaceMarket, setSelectedSurfaceMarket] = useState<UmbrellaMarketId>("gho")
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false)
   const [mobileSheetInitialTab, setMobileSheetInitialTab] = useState<UmbrellaMobileSheetTrigger>("stake")
 
