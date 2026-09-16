@@ -1227,7 +1227,7 @@ const dict: TranslationDictionary = {
   "In cooldown": "クールダウン中",
   "Isolated slashing": "分離型スラッシング",
   "Learn Umbrella": "アンブレラについて学ぶ",
-  "Market Level Risk": "マーケットレベルのリスク",
+  "Umbrella Overview": "Umbrellaの概要",
   "Module assets": "モジュールアセット",
   More: "その他",
   "More umbrella actions": "その他のアンブレラアクション",

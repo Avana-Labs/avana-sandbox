@@ -1160,7 +1160,7 @@ const dict: TranslationDictionary = {
   "In cooldown": "في فترة التبريد",
   "Isolated slashing": "خصم معزول",
   "Learn Umbrella": "تعرّف على الحماية",
-  "Market Level Risk": "مخاطر على مستوى السوق",
+  "Umbrella Overview": "نظرة عامة على Umbrella",
   "Module assets": "أصول الوحدة",
   More: "المزيد",
   "More umbrella actions": "المزيد من إجراءات الحماية",

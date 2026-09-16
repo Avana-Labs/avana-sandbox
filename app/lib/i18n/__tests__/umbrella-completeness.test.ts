@@ -37,7 +37,7 @@ export const UMBRELLA_TRANSLATION_KEYS: readonly string[] = [
   "In cooldown",
   "Isolated slashing",
   "Learn Umbrella",
-  "Market Level Risk",
+  "Umbrella Overview",
   "Module assets",
   "More",
   "More umbrella actions",

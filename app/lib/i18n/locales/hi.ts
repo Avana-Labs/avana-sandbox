@@ -1177,7 +1177,7 @@ const dict: TranslationDictionary = {
   "In cooldown": "कूलडाउन में",
   "Isolated slashing": "पृथक स्लैशिंग",
   "Learn Umbrella": "सुरक्षा के बारे में जानें",
-  "Market Level Risk": "मार्केट-स्तरीय जोखिम",
+  "Umbrella Overview": "Umbrella अवलोकन",
   "Module assets": "मॉड्यूल एसेट्स",
   More: "और",
   "More umbrella actions": "और सुरक्षा क्रियाएँ",

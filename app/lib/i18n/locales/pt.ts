@@ -1237,7 +1237,7 @@ const dict: TranslationDictionary = {
   "In cooldown": "Em cooldown",
   "Isolated slashing": "Slashing isolado",
   "Learn Umbrella": "Saiba mais sobre Proteção",
-  "Market Level Risk": "Risco em nível de mercado",
+  "Umbrella Overview": "Visão geral do Umbrella",
   "Module assets": "Ativos do módulo",
   More: "Mais",
   "More umbrella actions": "Mais ações de Proteção",

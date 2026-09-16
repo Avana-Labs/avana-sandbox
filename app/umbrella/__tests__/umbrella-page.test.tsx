@@ -68,7 +68,7 @@ describe("Umbrella page", () => {
     expect(positions.getAllByText("2.4%").length).toBeGreaterThan(0)
 
     // The selected USDC surface exposes its protection layers and APY sources
-    // in the sidebar before the aggregate Market Level Risk section.
+    // in the sidebar before the aggregate Umbrella Overview section.
     expect(screen.getAllByText("Surface details")).toHaveLength(1)
     expect(
       screen.getByText(
@@ -127,7 +127,7 @@ describe("Umbrella page", () => {
     const headings = screen.getAllByRole("heading").map((heading) => heading.textContent)
     const positionsIndex = headings.indexOf("Umbrella positions")
     const cooldownIndex = headings.indexOf("Umbrella Cooldown")
-    const marketRiskIndex = headings.indexOf("Market Level Risk")
+    const marketRiskIndex = headings.indexOf("Umbrella Overview")
 
     expect(cooldownIndex).toBe(positionsIndex + 1)
     expect(marketRiskIndex).toBe(cooldownIndex + 1)

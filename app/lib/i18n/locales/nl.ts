@@ -1186,7 +1186,7 @@ const dict: TranslationDictionary = {
   "In cooldown": "In cooldown",
   "Isolated slashing": "Geïsoleerde slashing",
   "Learn Umbrella": "Meer over Protectie",
-  "Market Level Risk": "Marktniveau-risico",
+  "Umbrella Overview": "Umbrella-overzicht",
   "Module assets": "Module-assets",
   More: "Meer",
   "More umbrella actions": "Meer Protectie-acties",

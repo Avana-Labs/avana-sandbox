@@ -1245,7 +1245,7 @@ const dict: TranslationDictionary = {
   "In cooldown": "冷却中",
   "Isolated slashing": "隔离式罚没",
   "Learn Umbrella": "了解保护",
-  "Market Level Risk": "市场级风险",
+  "Umbrella Overview": "Umbrella 概览",
   "Module assets": "模块资产",
   More: "更多",
   "More umbrella actions": "更多保护操作",

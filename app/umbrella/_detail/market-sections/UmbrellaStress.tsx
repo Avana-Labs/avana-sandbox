@@ -383,7 +383,7 @@ export function UmbrellaStress() {
     <section>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
-          {t("Market Level Risk")}
+          {t("Umbrella Overview")}
         </h2>
       </div>
 

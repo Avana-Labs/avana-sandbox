@@ -1167,7 +1167,7 @@ const dict: TranslationDictionary = {
   "In cooldown": "쿨다운 중",
   "Isolated slashing": "격리된 슬래싱",
   "Learn Umbrella": "보호 알아보기",
-  "Market Level Risk": "마켓 수준 리스크",
+  "Umbrella Overview": "Umbrella 개요",
   "Module assets": "모듈 자산",
   More: "더 보기",
   "More umbrella actions": "추가 보호 작업",

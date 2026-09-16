@@ -1186,7 +1186,7 @@ const dict: TranslationDictionary = {
   "In cooldown": "Sedang cooldown",
   "Isolated slashing": "Slashing terisolasi",
   "Learn Umbrella": "Pelajari Proteksi",
-  "Market Level Risk": "Risiko level pasar",
+  "Umbrella Overview": "Ikhtisar Umbrella",
   "Module assets": "Aset modul",
   More: "Lainnya",
   "More umbrella actions": "Tindakan Proteksi lainnya",

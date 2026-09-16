@@ -1181,7 +1181,7 @@ const dict: TranslationDictionary = {
   "In cooldown": "Cooldown'da",
   "Isolated slashing": "İzole slashing",
   "Learn Umbrella": "Koruma hakkında",
-  "Market Level Risk": "Piyasa düzeyi riski",
+  "Umbrella Overview": "Umbrella Genel Bakış",
   "Module assets": "Modül varlıkları",
   More: "Daha fazla",
   "More umbrella actions": "Daha fazla Koruma işlemi",
