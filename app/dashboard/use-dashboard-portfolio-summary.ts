@@ -98,10 +98,18 @@ export function useDashboardPortfolioSummary(walletId: string | undefined): Dash
 
   const productNetValueUsd = aggregateNetValueUsd(balances ?? [], priceFor)
 
-  const clientNetApyPct = useMemo(() => {
-    if (!hasMounted || !walletId) return null
+  const clientMetrics = useMemo(() => {
+    if (!hasMounted || !walletId) return { netApyPct: null as number | null, netAccruedInterestUsd: 0 }
 
     const legs: Array<{ equityUsd: number; netApyPct: number }> = []
+    // Interest each product has earned (+) or owes (−) since its positions opened. The
+    // productBalances aggregate values every position at its PRINCIPAL basis (seed USD, or
+    // amount × live price for repriced legs) and never folds in the accrued yield/cost, so the
+    // headline sat below the tabs by exactly this net carry — Lend "Interest Earned", Multiply's
+    // net loop carry, minus Borrow "Interest Owed". These are the same figures the tabs already
+    // compute from each position's openedAt; crediting them on read (never a stored rate, matching
+    // every other dashboard metric) makes Net Value reflect earnings instead of frozen principal.
+    let netAccruedInterestUsd = 0
 
     try {
       const lendTab = buildPortfolioLendData(walletId, lendSession.state)
@@ -109,6 +117,7 @@ export function useDashboardPortfolioSummary(walletId: string | undefined): Dash
       if (lendMetrics.totalSuppliedUsd > 0) {
         legs.push({ equityUsd: lendMetrics.totalSuppliedUsd, netApyPct: lendMetrics.netApyPct })
       }
+      netAccruedInterestUsd += lendMetrics.interestEarnedUsd
     } catch {
       // Session may not be hydrated yet.
     }
@@ -119,6 +128,8 @@ export function useDashboardPortfolioSummary(walletId: string | undefined): Dash
         if (borrow.netValueUsd > 0) {
           legs.push({ equityUsd: borrow.netValueUsd, netApyPct: borrow.netApyPct })
         }
+        // Accrued debt interest is a cost — it grows what the wallet owes, so it reduces net value.
+        netAccruedInterestUsd -= borrow.interestOwedUsd
       }
     } catch {
       // ignore
@@ -130,18 +141,21 @@ export function useDashboardPortfolioSummary(walletId: string | undefined): Dash
       if (multiply.netValueUsd > 0) {
         legs.push({ equityUsd: multiply.netValueUsd, netApyPct: multiply.netApyPct })
       }
+      // Already the NET loop carry (supply yield − borrow cost); can be negative.
+      netAccruedInterestUsd += multiply.interestEarnedUsd
     } catch {
       // ignore
     }
 
-    return blendEquityWeightedNetApyPct(legs)
+    return { netApyPct: blendEquityWeightedNetApyPct(legs), netAccruedInterestUsd }
   }, [borrowSession.state, hasMounted, lendSession.state, multiplySession.state, priceFor, walletId])
 
   return {
     walletBalanceUsd,
-    // Canonical Net Value remains the live-priced productBalances aggregate so we do not
-    // double-count wallet cash that the borrow credit-engine net already includes.
-    netValueUsd: productNetValueUsd,
-    netApyPct: resolveDashboardNetApyPct(clientNetApyPct, portfolio?.netApyPct),
+    // Live-priced productBalances aggregate (principal basis) PLUS the net interest accrued across
+    // products, so the headline reflects earned yield rather than frozen principal. The aggregate
+    // never carries that interest, so there is no double-count with the credit-engine net.
+    netValueUsd: productNetValueUsd + clientMetrics.netAccruedInterestUsd,
+    netApyPct: resolveDashboardNetApyPct(clientMetrics.netApyPct, portfolio?.netApyPct),
   }
 }
