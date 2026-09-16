@@ -1,5 +1,6 @@
 import { SWAP_CHAIN_ID, getSwapAsset } from "./catalog"
 import { getSwapEligibility } from "./eligibility"
+import { formatTokenDisplaySymbol } from "@/app/lib/token-icons"
 import type { SwapContext, SwapRestrictionReason, UserAssetBalance } from "./contracts"
 
 export type DashboardWalletBalanceRow = {
@@ -15,6 +16,7 @@ export type DashboardWalletBalanceRow = {
   isWalletHeld: boolean
   swappable: boolean
   restrictionReason: SwapRestrictionReason | null
+  sourcePositionId?: string
 }
 
 export const DEMO_SWAP_BALANCES: UserAssetBalance[] = [
@@ -144,8 +146,8 @@ export function buildDashboardWalletBalanceRows({
       return {
         id: balance.id,
         assetId: balance.assetId,
-        symbol: asset?.symbol ?? balance.assetId.toUpperCase(),
-        name: asset?.name ?? "Unsupported asset",
+        symbol: asset?.symbol ?? formatTokenDisplaySymbol(balance.assetId),
+        name: asset?.name ?? formatTokenDisplaySymbol(balance.assetId),
         amount: balance.amount,
         valueUsd,
         sourceType: balance.sourceType,
@@ -154,6 +156,7 @@ export function buildDashboardWalletBalanceRows({
         isWalletHeld: balance.sourceType === "wallet",
         swappable: eligibility.eligible,
         restrictionReason: eligibility.eligible ? null : eligibility.reason,
+        sourcePositionId: balance.sourcePositionId,
       }
     })
     .sort((left, right) => right.valueUsd - left.valueUsd)

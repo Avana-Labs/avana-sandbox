@@ -98,6 +98,7 @@ export function useConvexProductWalletBalances(walletId: string | null | undefin
       amount: row.amount,
       valueUsd: row.valueUsd,
       sourceType: row.state === "available" ? "lend_available" : "lend_deposited",
+      sourcePositionId: row.marketId,
     })
   }
   for (const row of buckets.borrow) {
@@ -115,6 +116,7 @@ export function useConvexProductWalletBalances(walletId: string | null | undefin
             : row.state === "debt"
               ? "borrow_debt"
               : "borrow_claimable",
+      sourcePositionId: row.marketId,
     })
   }
   for (const row of buckets.multiply) {
@@ -127,6 +129,7 @@ export function useConvexProductWalletBalances(walletId: string | null | undefin
       valueUsd: row.state === "debt" ? -row.valueUsd : row.valueUsd,
       sourceType:
         row.state === "available" ? "multiply_available" : row.state === "debt" ? "multiply_debt" : "multiply_active",
+      sourcePositionId: row.marketId,
     })
   }
   return rows

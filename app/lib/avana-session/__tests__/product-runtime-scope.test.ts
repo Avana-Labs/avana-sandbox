@@ -33,13 +33,14 @@ describe("resolveProductRuntimeScope", () => {
     })
   })
 
-  it("loads consolidated dashboard remotes without swap history or market catalogs", () => {
+  it("loads the Multiply market catalog needed by the consolidated dashboard", () => {
     expect(resolveProductRuntimeScope("/dashboard")).toMatchObject({
       walletSession: true,
       rewards: true,
       umbrella: true,
       swapTransactions: false,
-      marketSnapshots: false,
+      marketSnapshots: true,
+      hydrateMultiplyMarkets: true,
     })
   })
 

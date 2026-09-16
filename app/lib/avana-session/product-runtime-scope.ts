@@ -83,11 +83,14 @@ export function resolveProductRuntimeScope(pathname: string | null | undefined):
   }
 
   if (pathPrefix(pathname, "/dashboard")) {
-    // Consolidated portfolio surface: hydrate B/L/M sessions + rewards/umbrella remotes
-    // that the dashboard still reads. Skip swap history and public market snapshots.
+    // Consolidated portfolio surface: hydrate B/L/M sessions + the Multiply market
+    // snapshots used by the market-scoped Available card, plus rewards/umbrella remotes.
+    // Swap history remains off here.
     return {
       ...IDLE,
       walletSession: true,
+      marketSnapshots: true,
+      hydrateMultiplyMarkets: true,
       rewards: true,
       umbrella: true,
       ensureUmbrellaFixtures: true,

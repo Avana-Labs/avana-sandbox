@@ -38,6 +38,18 @@ describe("swap wallet balance classification", () => {
     })
   })
 
+  it("resolves Multiply collateral metadata instead of exposing an unsupported-asset label", () => {
+    const [row] = buildDashboardWalletBalanceRows({
+      walletId: "w1",
+      balances: [
+        { id: "multiply-wsteth", walletId: "w1", assetId: "wsteth", amount: 2, sourceType: "multiply_available" },
+      ],
+    })
+
+    expect(row).toMatchObject({ symbol: "WSTETH", name: "Wrapped stETH", isLpToken: false })
+    expect(row?.name).not.toBe("Unsupported asset")
+  })
+
   it("keeps regular wallet tokens swappable while product-held rows stay restricted", () => {
     const rows = buildDashboardWalletBalanceRows({ walletId: "w1", balances })
     const walletEth = rows.find((row) => row.id === "wallet-eth")

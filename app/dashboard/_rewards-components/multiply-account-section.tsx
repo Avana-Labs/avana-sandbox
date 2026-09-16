@@ -18,7 +18,7 @@ import { useAmountDisplayPreferences } from "@/app/components/display-preference
 import { useHasMounted } from "@/app/lib/ui/use-has-mounted"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { HealthRiskBanner } from "@/app/dashboard/health-risk-banner"
-import { AccountModuleBoundary, ProductAvailableCard } from "./account-sections-shared"
+import { AccountModuleBoundary, MultiplyAvailableMarketsCard } from "./account-sections-shared"
 
 const MultiplyCollateralTable = lazy(async () => ({
   default: (await import("@/app/dashboard/multiply-collateral-table")).MultiplyCollateralTable,
@@ -108,15 +108,10 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
           returnHref={returnHref}
         />
       </AccountModuleBoundary>
-      <ProductAvailableCard
+      <MultiplyAvailableMarketsCard
         walletId={walletId ?? ""}
-        sourceTypes={["multiply_available"]}
+        markets={multiplySession.state.markets}
         title={t("Available to use")}
-        action={{
-          icon: "multiply",
-          label: t("Multiply"),
-          href: () => "/multiply",
-        }}
       />
     </section>
   )
