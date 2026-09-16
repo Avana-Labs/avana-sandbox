@@ -338,7 +338,7 @@ export function MultiplyAvailableMarketsCard({
             <tr className={TABLE_HEADER_ROW}>
               <th className={cn(TABLE_HEADER_CELL, "px-5")}>{formatTableHeaderLabel(t("Supply"))}</th>
               <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{formatTableHeaderLabel(t("Available"))}</th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("You can loop"))}</th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("Loop"))}</th>
               <th className={cn(TABLE_HEADER_CELL, "px-4")}>{formatTableHeaderLabel(t("APY"))}</th>
               <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")} aria-label={t("Multiply")} />
             </tr>
@@ -348,12 +348,14 @@ export function MultiplyAvailableMarketsCard({
               <tr key={row.market.id} className={`${TABLE_BODY_ROW} group`}>
                 <td className={cn(TABLE_CELL_PADDING, "pl-5", TABLE_ROW_HOVER_LEFT)}>
                   <Link href={`/multiply/markets/${row.market.id}`} className="flex min-w-0 items-center gap-3">
-                    <TokenIcon symbol={row.market.collateralAsset.symbol} size="sm" />
+                    <TokenIcon symbol={row.market.collateralAsset.symbol} size="table" />
                     <div className="min-w-0">
-                      <div className={cn("truncate", TABLE_CELL_PRIMARY)}>
-                        Supply {row.market.collateralAsset.symbol}
+                      <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{row.market.collateralAsset.name}</div>
+                      <div className={cn(TABLE_CELL_SECONDARY, "truncate")}>
+                        {formatTokenPrice(
+                          priceFor?.(row.market.collateralAsset.symbol) ?? row.market.collateralAsset.priceUsd,
+                        )}
                       </div>
-                      <div className={cn(TABLE_CELL_SECONDARY, "truncate")}>{row.market.collateralAsset.name}</div>
                     </div>
                   </Link>
                 </td>
@@ -364,7 +366,11 @@ export function MultiplyAvailableMarketsCard({
                   <div className={TABLE_CELL_SECONDARY}>{m(exact(row.valueUsd))}</div>
                 </td>
                 <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
-                  <div className={TABLE_CELL_PRIMARY}>Borrow {row.market.borrowAsset.symbol}</div>
+                  <div className={TABLE_CELL_PRIMARY}>{t("Borrow")}</div>
+                  <div className="mt-0.5 flex items-center gap-2">
+                    <TokenIcon symbol={row.market.borrowAsset.symbol} size="sm" />
+                    <span className={TABLE_CELL_SECONDARY}>{row.market.borrowAsset.symbol}</span>
+                  </div>
                 </td>
                 <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
                   <div className={cn(TABLE_CELL_NUMERIC, "tabular-nums")}>
@@ -403,10 +409,12 @@ export function MultiplyAvailableMarketsCard({
             <MarketMobileCardHeader
               identity={
                 <Link href={`/multiply/markets/${row.market.id}`} className="flex min-w-0 items-center gap-2.5">
-                  <TokenIcon symbol={row.market.collateralAsset.symbol} size="sm" />
+                  <TokenIcon symbol={row.market.collateralAsset.symbol} size="table" />
                   <MarketMobileIdentityText
-                    title={`Supply ${row.market.collateralAsset.symbol}`}
-                    subtitle={row.market.collateralAsset.name}
+                    title={row.market.collateralAsset.name}
+                    subtitle={formatTokenPrice(
+                      priceFor?.(row.market.collateralAsset.symbol) ?? row.market.collateralAsset.priceUsd,
+                    )}
                   />
                 </Link>
               }
@@ -418,7 +426,16 @@ export function MultiplyAvailableMarketsCard({
               }
             />
             <MarketMobileStatList>
-              <MarketMobileStatRow label={t("You can loop")} value={`Borrow ${row.market.borrowAsset.symbol}`} />
+              <MarketMobileStatRow
+                label={t("Loop")}
+                value={
+                  <span className="inline-flex items-center gap-2">
+                    <span>{t("Borrow")}</span>
+                    <TokenIcon symbol={row.market.borrowAsset.symbol} size="sm" />
+                    <span>{row.market.borrowAsset.symbol}</span>
+                  </span>
+                }
+              />
               <MarketMobileStatRow
                 label={t("APY")}
                 value={`${(row.market.economics.estimatedMaxApy * 100).toFixed(2)}% · Max ${resolveMultiplyMarketDisplayMaxLeverage(row.market.risk.publicMaxMultiplier).toFixed(2)}x`}
