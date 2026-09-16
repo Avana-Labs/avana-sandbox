@@ -4,11 +4,28 @@ import { parseFixed } from "@/app/lib/credit-engine"
 import { buildBorrowSessionSeed } from "@/app/lib/borrow-system/demo-session"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import { writeBorrowSessionMetadata, writeBorrowSessionState } from "@/app/lib/borrow-system/storage"
-import { useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
+import { inferPersistedDebtAssetId, useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
 
 describe("useBorrowSession", () => {
   beforeEach(() => {
     window.localStorage.clear()
+  })
+
+  it("recovers the debt asset for legacy repayment rows", () => {
+    expect(
+      inferPersistedDebtAssetId(
+        {
+          marketSlug: "aero-slipstream-bluechip-cbbtc-usdc",
+          kind: "repay",
+        } as never,
+        [
+          {
+            marketSlug: "aero-slipstream-bluechip-cbbtc-usdc",
+            debt: [{ assetId: "aero-slipstream-bluechip:usdc", baseAssetId: "usdc" }],
+          },
+        ] as never,
+      ),
+    ).toBe("aero-slipstream-bluechip:usdc")
   })
 
   it("hydrates from the canonical seed and persists adapter-driven deposit updates", async () => {

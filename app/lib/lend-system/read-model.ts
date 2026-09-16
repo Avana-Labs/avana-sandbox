@@ -8,6 +8,7 @@ import type { PortfolioLendTabData, PortfolioStrategyBucket } from "@/app/lib/da
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend/asset-groups"
 import { LEND_FEATURED_ASSETS, LEND_FEATURED_SEQUENCE } from "@/app/lib/data/catalog/lend/featured-assets"
 import { getLocalAssetIcon } from "@/app/lib/local-asset-icons"
+import { formatWalletLabel } from "@/app/lib/detail-page/transaction-history"
 import { LEND_MARKET_CATALOG } from "./catalog"
 import { formatReliableLendApyLabel } from "./illiquid-apy"
 import type { LendTransactionHistoryItem, LendWalletReadSnapshot, LendYieldSnapshot } from "./contracts"
@@ -471,7 +472,11 @@ function buildRangePoints(params: {
 
 export { buildLendRangeData }
 
-export function mapLendHistoryToDetailRows(history: LendTransactionHistoryItem[], assetSymbol: string) {
+export function mapLendHistoryToDetailRows(
+  history: LendTransactionHistoryItem[],
+  assetSymbol: string,
+  walletAddress?: string,
+) {
   const now = Date.now()
   return history.map((item) => ({
     id: item.id,
@@ -480,7 +485,7 @@ export function mapLendHistoryToDetailRows(history: LendTransactionHistoryItem[]
     kind: item.kind,
     amountLabel: `${item.amount.toFixed(4)} ${assetSymbol}`,
     counterpartyLabel: assetSymbol,
-    walletLabel: "Sandbox wallet",
+    walletLabel: formatWalletLabel(walletAddress),
     txHashShort: item.hash.slice(0, 10),
   }))
 }

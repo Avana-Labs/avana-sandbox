@@ -7,6 +7,7 @@ import type { MultiplyPageData } from "@/app/lib/data/providers/multiply"
 import type { PortfolioMultiplyTabData } from "@/app/lib/data/providers/portfolio"
 import { MULTIPLY_TOKEN_LOGOS } from "@/app/lib/multiply-sim"
 import { resolveMultiplyTokenLogo } from "@/lib/multiply-token-logo"
+import { formatWalletLabel } from "@/app/lib/detail-page/transaction-history"
 import type { MultiplyMarketRow } from "@/app/lib/multiply-sim"
 import { MULTIPLY_MARKET_CATALOG } from "./catalog"
 import { formatMultiplyLoopPairLabel } from "./market-labels"
@@ -407,6 +408,7 @@ export function mapMultiplyHistoryToDetailRows(
   history: MultiplyTransactionHistoryItem[],
   collateralSymbol: string,
   borrowableSymbol: string,
+  walletAddress?: string,
 ) {
   const now = Date.now()
   return history.map((item) => ({
@@ -416,7 +418,7 @@ export function mapMultiplyHistoryToDetailRows(
     kind: item.kind === "multiply" ? ("open" as const) : ("reduce" as const),
     amountLabel: `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
     counterpartyLabel: `${collateralSymbol}/${borrowableSymbol}`,
-    walletLabel: "Sandbox wallet",
+    walletLabel: formatWalletLabel(walletAddress),
     txHashShort: item.hash.slice(0, 10),
   }))
 }

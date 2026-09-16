@@ -34,6 +34,13 @@ export type DetailTransactionRow = {
   txHashShort: string
 }
 
+export function formatWalletLabel(walletAddress?: string): string | undefined {
+  const normalized = walletAddress?.trim()
+  if (!normalized) return undefined
+  if (normalized.length <= 12) return normalized
+  return `${normalized.slice(0, 6)}…${normalized.slice(-4)}`
+}
+
 export function normalizeDetailMarketKey(value: string): string {
   return value.trim().toLowerCase().replaceAll("_", "-")
 }
@@ -147,6 +154,7 @@ export function mapLendSessionRows(
   marketId: string,
   assetSymbol: string,
   priceUsd?: number,
+  walletAddress?: string,
 ): DetailTransactionRow[] {
   const now = Date.now()
   return history
@@ -165,7 +173,7 @@ export function mapLendSessionRows(
         amountUsd: priceUsd != null && priceUsd > 0 ? item.amount * priceUsd : undefined,
         tokenAmountLabel: formatDetailTokenAmount(item.amount),
         tokenSymbol: assetSymbol,
-        walletLabel: "Sandbox wallet",
+        walletLabel: formatWalletLabel(walletAddress),
         txHashShort: item.hash.slice(0, 10),
       }
     })
@@ -182,6 +190,7 @@ export function mapBorrowSessionRows(
   marketSlug?: string,
   assetSymbol?: string,
   scope?: "pool" | "asset",
+  walletAddress?: string,
 ): DetailTransactionRow[] {
   const now = Date.now()
   const actionToKind: Record<TransactionHistoryItem["kind"], string> = {
@@ -220,7 +229,7 @@ export function mapBorrowSessionRows(
         amountUsd: usd,
         tokenAmountLabel: formatDetailTokenAmount(tokenQty),
         tokenSymbol: symbol,
-        walletLabel: "Sandbox wallet",
+        walletLabel: formatWalletLabel(walletAddress),
         txHashShort: item.hash.slice(0, 10),
       }
     })
@@ -231,6 +240,7 @@ export function mapMultiplySessionRows(
   marketId: string,
   collateralSymbol: string,
   borrowableSymbol: string,
+  walletAddress?: string,
 ): DetailTransactionRow[] {
   const now = Date.now()
   return history
@@ -249,7 +259,7 @@ export function mapMultiplySessionRows(
         tokenSymbol: collateralSymbol,
         tokenSymbolSecondary: borrowableSymbol,
         counterpartyLabel: `${collateralSymbol}/${borrowableSymbol}`,
-        walletLabel: "Sandbox wallet",
+        walletLabel: formatWalletLabel(walletAddress),
         txHashShort: item.hash.slice(0, 10),
       }
     })

@@ -286,6 +286,17 @@ function liquidAssetIdFromArgs(assetId?: string, marketSlug?: string): string {
   return "usdc"
 }
 
+function inferDebtAssetIdFromMarketSlug(
+  marketSlug: string | undefined,
+  debtRows: Array<{ assetId: string; baseAssetId: string }>,
+) {
+  const marketToken = marketSlug?.split("-").at(-1)?.toLowerCase()
+  if (!marketToken) return undefined
+  return debtRows.find(
+    (debt) => debt.baseAssetId.toLowerCase() === marketToken || debt.assetId.toLowerCase().endsWith(`:${marketToken}`),
+  )?.assetId
+}
+
 /** Hourly per-wallet transaction cap (anti-abuse). Exported for tests. */
 export const MAX_TX_PER_HOUR = 200
 const PORTFOLIO_HISTORY_INTERVAL_MS = 60 * 60 * 1000
@@ -1883,7 +1894,22 @@ export const getTransactionByHash = query({
       .query("transactions")
       .withIndex("by_wallet_hash", (q) => q.eq("wallet", wallet).eq("syntheticTxHash", args.hash))
       .first()
-    if (transaction) return transaction
+    if (transaction) {
+      if (
+        transaction.product === "borrow" &&
+        (transaction.kind === "borrow" || transaction.kind === "repay") &&
+        !transaction.assetId &&
+        transaction.positionId
+      ) {
+        const debtRows = await ctx.db
+          .query("positionDebt")
+          .withIndex("by_position", (q) => q.eq("positionId", transaction.positionId!))
+          .collect()
+        const assetId = inferDebtAssetIdFromMarketSlug(transaction.marketSlug, debtRows)
+        if (assetId) return { ...transaction, assetId }
+      }
+      return transaction
+    }
 
     return ctx.db
       .query("sandboxActivity")

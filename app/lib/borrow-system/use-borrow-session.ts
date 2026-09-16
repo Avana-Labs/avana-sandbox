@@ -116,6 +116,21 @@ function usd6FromNumber(value: number): bigint {
   return parseFixed(value.toFixed(6), 6)
 }
 
+export function inferPersistedDebtAssetId(
+  transaction: ConvexBorrowWalletData["transactions"][number],
+  positions: ConvexBorrowWalletData["positions"],
+) {
+  if (transaction.assetId || (transaction.kind !== "borrow" && transaction.kind !== "repay")) {
+    return transaction.assetId
+  }
+  const marketToken = transaction.marketSlug?.split("-").at(-1)?.toLowerCase()
+  if (!marketToken) return undefined
+  const position = positions.find((entry) => entry.marketSlug === transaction.marketSlug)
+  return position?.debt.find(
+    (debt) => debt.baseAssetId.toLowerCase() === marketToken || debt.assetId.toLowerCase().endsWith(`:${marketToken}`),
+  )?.assetId
+}
+
 export function useBorrowSession({
   walletId,
   sessionSeed,
@@ -269,7 +284,10 @@ export function useBorrowSession({
           intentId: transaction.intentId ?? String(transaction._id),
           walletId,
           marketId: transaction.marketSlug,
-          assetId: transaction.assetId,
+          // Older Convex rows were written before repayment intents carried the debt asset.
+          // Recover that identity from the persisted debt leg so asset detail pages can still
+          // render the historical repayment under the correct asset.
+          assetId: inferPersistedDebtAssetId(transaction, borrowPositions),
           kind: transaction.kind as TransactionHistoryItem["kind"],
           status: transaction.status,
           requestedAmountUsd6: BigInt(transaction.requestedAmountUsd6),

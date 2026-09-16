@@ -18,7 +18,7 @@ import { withGovernanceParameterView } from "@/app/borrow/_detail/lib/governance
 import { PoolHero, PoolHeroIdentity, QuickStatsGrid } from "@/app/borrow/_detail/pool-sections"
 import { PoolBorrowSidebar } from "@/app/borrow/_detail/sidebars"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import { useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useAvanaIdentity, useBorrowSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { BORROW_POOL_KIND_CONFIG } from "@/app/components/detail-transaction-table/detail-market-transactions"
 import { mapBorrowSessionRows, mapBorrowTxRow } from "@/app/lib/detail-page/transaction-history"
 import {
@@ -71,12 +71,13 @@ export function PoolDetailClient({
   cashflowPreload = null,
 }: Props) {
   const { t } = useTranslation()
+  const { walletAddress } = useAvanaIdentity()
   const session = useBorrowSessionContext()
   const about = withGovernanceParameterView(detail.about, detail.protocolParameters)
   const seedRows = React.useMemo(() => detail.transactions.map(mapBorrowTxRow), [detail.transactions])
   const sessionRows = React.useMemo(
-    () => mapBorrowSessionRows(session.transactionHistory, detail.row.id, undefined, "pool"),
-    [detail.row.id, session.transactionHistory],
+    () => mapBorrowSessionRows(session.transactionHistory, detail.row.id, undefined, "pool", walletAddress),
+    [detail.row.id, session.transactionHistory, walletAddress],
   )
 
   return (
