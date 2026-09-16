@@ -4,7 +4,11 @@ import { parseFixed } from "@/app/lib/credit-engine"
 import { buildBorrowSessionSeed } from "@/app/lib/borrow-system/demo-session"
 import { buildMockBorrowSystemState } from "@/app/lib/borrow-system/mock"
 import { writeBorrowSessionMetadata, writeBorrowSessionState } from "@/app/lib/borrow-system/storage"
-import { inferPersistedDebtAssetId, useBorrowSession } from "@/app/lib/borrow-system/use-borrow-session"
+import {
+  inferPersistedDebtAssetId,
+  reconcileLegacyRepayPrincipal,
+  useBorrowSession,
+} from "@/app/lib/borrow-system/use-borrow-session"
 
 describe("useBorrowSession", () => {
   beforeEach(() => {
@@ -26,6 +30,20 @@ describe("useBorrowSession", () => {
         ] as never,
       ),
     ).toBe("aero-slipstream-bluechip:usdc")
+  })
+
+  it("rebuilds a legacy repay principal from the durable borrow and repay ledger", () => {
+    const position = { marketSlug: "aero-slipstream-bluechip-cbbtc-usdc" } as never
+    const debt = { assetId: "aero-slipstream-bluechip:usdc", baseAssetId: "usdc" } as never
+    const principal = reconcileLegacyRepayPrincipal(
+      position,
+      debt,
+      [
+        { product: "borrow", kind: "borrow", marketSlug: position.marketSlug, assetId: debt.assetId, executedAmountUsd6: "1000000000" },
+        { product: "borrow", kind: "repay", marketSlug: position.marketSlug, executedAmountUsd6: "100000000" },
+      ] as never,
+    )
+    expect(principal).toBe(900_000_000n)
   })
 
   it("hydrates from the canonical seed and persists adapter-driven deposit updates", async () => {

@@ -564,12 +564,13 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
       amountUsd: item.kind === "multiply" ? item.amountUsd : -item.amountUsd,
       primaryLabel:
         item.kind === "multiply"
-          ? "Simulated multiply"
+          ? "Multiply"
           : item.kind === "close"
-            ? "Simulated close"
-            : "Simulated deleverage",
+            ? "Close position"
+            : "Deleverage",
       secondaryLabel: `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
       txHash: item.hash,
+      marketId: item.marketId,
     })),
     ...buildLendActivityHistory(avana.lend.walletId, avana.lend.transactionHistory, avana.lend.state),
     ...swapActivityRows,

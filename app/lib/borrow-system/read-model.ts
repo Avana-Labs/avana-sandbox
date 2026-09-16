@@ -125,9 +125,8 @@ export function mapTransactionHistoryToActivityRows(history: TransactionHistoryI
       ? (debtAsset?.symbol ?? item.assetId?.toUpperCase() ?? fallbackLabel)
       : (poolLabel ?? fallbackLabel)
 
-    const txContext = item.simulated ? "Simulated transaction" : "On-chain transaction"
     // Surface the collateral pool as context on debt rows ("… · via sDAI / USDC").
-    const secondaryLabel = isDebtAction && poolLabel ? `${txContext} · via ${poolLabel}` : txContext
+    const secondaryLabel = isDebtAction && poolLabel ? `via ${poolLabel}` : ""
 
     return {
       id: item.id,

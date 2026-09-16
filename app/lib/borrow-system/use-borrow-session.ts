@@ -131,6 +131,28 @@ export function inferPersistedDebtAssetId(
   )?.assetId
 }
 
+export function reconcileLegacyRepayPrincipal(
+  position: ConvexBorrowWalletData["positions"][number],
+  debt: ConvexBorrowWalletData["positions"][number]["debt"][number],
+  transactions: ConvexBorrowWalletData["transactions"],
+) {
+  const related = transactions.filter((transaction) => {
+    if (transaction.product !== "borrow" || (transaction.kind !== "borrow" && transaction.kind !== "repay")) {
+      return false
+    }
+    if (transaction.marketSlug !== position.marketSlug) return false
+    if (!transaction.assetId) return transaction.kind === "repay"
+    return transaction.assetId === debt.assetId || transaction.assetId === debt.baseAssetId
+  })
+  if (!related.some((transaction) => transaction.kind === "repay" && !transaction.assetId)) return undefined
+
+  const principal = related.reduce((total, transaction) => {
+    const amount = BigInt(transaction.executedAmountUsd6)
+    return total + (transaction.kind === "borrow" ? amount : -amount)
+  }, 0n)
+  return principal > 0n ? principal : 0n
+}
+
 export function useBorrowSession({
   walletId,
   sessionSeed,
@@ -332,16 +354,23 @@ export function useBorrowSession({
             })
           }
           for (const debt of position.debt) {
+            const reconciledPrincipal = reconcileLegacyRepayPrincipal(position, debt, data.transactions)
+            const debtIndexRay = BigInt(debt.debtIndexRay)
             debtPositions.push({
               id: String(debt._id),
               assetId: debt.assetId,
               baseAssetId: debt.baseAssetId,
               spokeId: debt.spokeId as import("@/app/lib/credit-engine").BorrowSpokeId,
               marketId: debt.marketSlug,
-              debtSharesUsd6: BigInt(debt.debtSharesUsd6),
-              debtIndexRay: BigInt(debt.debtIndexRay),
+              // Legacy repayment rows were written before the debt asset was persisted. If
+              // that row was also processed while the client clock was stale, the old action
+              // accrued phantom interest before subtracting the repayment. Rebuild only that
+              // legacy path from the durable borrow/repay ledger; current rows remain untouched.
+              debtSharesUsd6:
+                reconciledPrincipal === undefined ? BigInt(debt.debtSharesUsd6) : assetsToShares(reconciledPrincipal, debtIndexRay),
+              debtIndexRay,
               borrowRateWad: BigInt(debt.borrowRateWad),
-              principalBorrowedUsd6: BigInt(debt.principalBorrowedUsd6),
+              principalBorrowedUsd6: reconciledPrincipal ?? BigInt(debt.principalBorrowedUsd6),
             })
           }
         }

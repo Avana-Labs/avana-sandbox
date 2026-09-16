@@ -382,15 +382,11 @@ export function buildLendActivityHistory(
       status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
       amountUsd:
         item.kind === "claim" ? item.amount : item.amount * (state?.markets[item.marketId]?.assetPriceUsd ?? 0),
-      primaryLabel:
-        item.kind === "deposit"
-          ? "Simulated deposit"
-          : item.kind === "withdraw"
-            ? "Simulated withdraw"
-            : "Simulated rewards claim",
+      primaryLabel: item.asset,
       secondaryLabel:
         item.kind === "claim" ? `${item.amount.toFixed(2)} USD rewards` : `${item.amount.toFixed(4)} ${item.asset}`,
       txHash: item.hash,
+      marketId: item.marketId,
     }))
 }
 

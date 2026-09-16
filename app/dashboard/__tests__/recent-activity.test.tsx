@@ -169,6 +169,19 @@ describe("RecentActivity whole-row navigation", () => {
         }),
       ),
     ).toBe("AVA")
+    expect(
+      inferActivityTokenSymbol(
+        makeRow({
+          id: "3",
+          txHash: "sim-3",
+          product: "borrow",
+          kind: "repay",
+          marketId: "aero-slipstream-bluechip:usdc",
+          primaryLabel: "USDC",
+          secondaryLabel: "via cbBTC / USDC",
+        }),
+      ),
+    ).toBe("USDC")
   })
 })
 

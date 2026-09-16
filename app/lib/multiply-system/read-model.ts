@@ -384,12 +384,12 @@ export function buildMultiplyActivityHistory(
         kind: item.kind === "multiply" ? ("open" as const) : isClose ? ("close" as const) : ("reduce" as const),
         status: item.status === "success" ? ("confirmed" as const) : ("failed" as const),
         amountUsd: item.amountUsd,
-        primaryLabel:
-          item.kind === "multiply" ? "Simulated multiply" : isClose ? "Simulated close" : "Simulated deleverage",
+        primaryLabel: item.kind === "multiply" ? "Multiply" : isClose ? "Close position" : "Deleverage",
         secondaryLabel: isClose
           ? "Position closed"
           : `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
         txHash: item.hash,
+        marketId: item.marketId,
       }
     })
 }

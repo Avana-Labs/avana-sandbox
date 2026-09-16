@@ -47,6 +47,13 @@ function resolvesToLogo(symbol: string | undefined): symbol is string {
   return Boolean(symbol && getTokenIconMeta(symbol).iconUrl)
 }
 
+function firstLogoCandidate(candidates: Array<string | undefined>) {
+  for (const candidate of candidates) {
+    if (resolvesToLogo(candidate)) return getTokenIconMeta(candidate).symbol
+  }
+  return undefined
+}
+
 /**
  * Resolve the row's token symbol for the icon. Rewards → AVA. Otherwise we prefer the
  * row's real market/asset data (`marketId`, which encodes the underlying token — "gho",
@@ -58,15 +65,20 @@ export function inferActivityTokenSymbol(row: PortfolioActivityRow): string {
   if (row.product === "rewards") return "AVA"
 
   const secondary = row.secondaryLabel.replace(/\s+claimed$/i, "").trim()
+  const marketId = row.marketId?.trim()
+  const scopedAsset = marketId?.includes(":") ? marketId.split(":").at(-1) : undefined
   const candidates = [
-    row.marketId,
-    ...(row.marketId ? row.marketId.split(/[-_:]/) : []),
+    // A scoped asset id (`aero-slipstream-bluechip:usdc`) identifies the traded
+    // token exactly. Checking the whole slug first used to select AERO from the
+    // venue prefix, so USDC debt rows rendered with the Aerodrome logo.
+    scopedAsset,
+    marketId,
+    ...(marketId ? marketId.split(/[-_:]/).reverse() : []),
     secondary.split(/\s+/).at(-1),
     row.primaryLabel.trim().split(/\s+/).at(-1),
   ]
-  for (const candidate of candidates) {
-    if (resolvesToLogo(candidate)) return candidate
-  }
+  const resolved = firstLogoCandidate(candidates)
+  if (resolved) return resolved
   return "ETH"
 }
 
