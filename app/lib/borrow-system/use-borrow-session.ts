@@ -419,9 +419,17 @@ export function useBorrowSession({
             principalBorrowedUsd6: amountUsd6,
           })
         }
+        // Anchor the engine clock to the last PERSISTED moment rather than jumping it to
+        // `hydrationNow`. The read model calls accrueBorrowSystemState(state, Date.now()), which
+        // advances supply/debt indices by (now - state.now). Jumping the clock here made that span
+        // zero on every hydration, so `debtIndexRay` never moved and Interest Owed was pinned at
+        // ~$0 no matter how long a loan had been open (a 14-day-old GHO debt still read $0.0000).
+        // Accruing from the last real activity restores interest across the offline gap.
+        const persistedMoment = Math.max(account.lastUpdatedAt, ...nextHistory.map((item) => item.timestamp), 0)
+        const accrualAnchor = persistedMoment > 0 ? Math.min(persistedMoment, hydrationNow) : hydrationNow
         return {
           ...current,
-          now: Math.max(current.now, hydrationNow),
+          now: accrualAnchor,
           accounts: {
             ...current.accounts,
             [walletId]: {
