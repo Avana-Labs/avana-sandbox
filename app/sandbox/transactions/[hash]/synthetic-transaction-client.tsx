@@ -30,6 +30,12 @@ function prettyKind(kind: string) {
   return KIND_VERB[kind] ?? `${kind.charAt(0).toUpperCase()}${kind.slice(1)}`
 }
 
+export function inferLegacyDebtAssetId(receipt: { product?: string; kind?: string; marketSlug?: string | null }) {
+  if (receipt.product !== "borrow" || (receipt.kind !== "borrow" && receipt.kind !== "repay")) return undefined
+  const token = receipt.marketSlug?.split("-").at(-1)?.trim()
+  return token || undefined
+}
+
 /**
  * Shared swap-receipt builder so the in-session record and the durable Convex row
  * render an identical breakdown. `succeeded` picks the summary line; optional economics
@@ -131,7 +137,8 @@ export function toReceiptData(receipt: {
   // Prefer the traded asset for the icon/title, then fall back to the market slug so a
   // row that only recorded its market (common for lend deposits) still resolves a real
   // token icon instead of the "?" placeholder + a missing-asset 404.
-  const symbol = (receipt.assetId ?? receipt.marketSlug ?? "").toUpperCase() || "Asset"
+  const assetId = receipt.assetId ?? inferLegacyDebtAssetId(receipt)
+  const symbol = (assetId ?? receipt.marketSlug ?? "").toUpperCase() || "Asset"
   const verb = receipt.kind ? prettyKind(receipt.kind) : "Transaction"
   return {
     title: symbol !== "Asset" ? `${verb} ${symbol}` : verb,

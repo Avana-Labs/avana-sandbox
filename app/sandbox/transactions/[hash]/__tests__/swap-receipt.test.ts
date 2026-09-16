@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 import {
+  inferLegacyDebtAssetId,
   swapTransactionToReceiptData,
   toReceiptData,
 } from "@/app/sandbox/transactions/[hash]/synthetic-transaction-client"
@@ -138,5 +139,12 @@ describe("toReceiptData — synthetic (non-swap) row", () => {
     const data = toReceiptData({ ...baseRow, assetId: "weth", marketSlug: "usdc" })
     expect(data.symbol).toBe("WETH")
     expect(data.marketValue).toBe("USDC")
+  })
+
+  it("recovers the debt asset for legacy borrow and repay receipts", () => {
+    const legacy = { product: "borrow", kind: "repay", marketSlug: "aero-slipstream-bluechip-cbbtc-usdc" }
+    expect(inferLegacyDebtAssetId(legacy)).toBe("usdc")
+    expect(toReceiptData({ ...baseRow, ...legacy }).title).toBe("Repay USDC")
+    expect(inferLegacyDebtAssetId({ ...legacy, kind: "deposit" })).toBeUndefined()
   })
 })
