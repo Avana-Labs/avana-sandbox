@@ -115,16 +115,24 @@ function UmbrellaApyBreakdownRows({ market }: { market: UmbrellaMarket }) {
   )
 }
 
-/** Compact action-page details: metrics, then APY, with generic risk and fee cards following it. */
-export function UmbrellaMarketRiskMetricsCard({ market }: { market: UmbrellaMarket }) {
+/** Compact action-page details: primary metrics first, then optional expanded APY details. */
+export function UmbrellaMarketRiskMetricsCard({
+  market,
+  showExpandedDetails = false,
+}: {
+  market: UmbrellaMarket
+  showExpandedDetails?: boolean
+}) {
   return (
     <div className="space-y-3">
       <div className="rounded-radius-md bg-card px-4 py-4">
         <UmbrellaMarketRiskMetrics market={market} />
       </div>
-      <div className="rounded-radius-md bg-card px-4 py-4">
-        <UmbrellaApyBreakdownRows market={market} />
-      </div>
+      {showExpandedDetails ? (
+        <div className="rounded-radius-md bg-card px-4 py-4">
+          <UmbrellaApyBreakdownRows market={market} />
+        </div>
+      ) : null}
     </div>
   )
 }

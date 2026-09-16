@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
@@ -58,9 +58,9 @@ describe("Umbrella page", () => {
     expect(screen.getAllByText("$12.0M").length).toBeGreaterThanOrEqual(2)
     expect(screen.getByText("Coverage ratio")).toBeInTheDocument()
     expect(screen.getByText("120%")).toBeInTheDocument()
-    // APY breakdown belongs to the action page's dedicated APY box, not the
-    // large main-page Surface details section.
-    expect(screen.getAllByText("APY breakdown")).toHaveLength(1)
+    // The action page keeps secondary details hidden until an amount is entered;
+    // the large main-page Surface details section does not include APY breakdown.
+    expect(screen.queryByText("APY breakdown")).not.toBeInTheDocument()
     expect(screen.getByLabelText("More information about Local deductible")).toBeInTheDocument()
     expect(screen.getByLabelText("More information about DAO first-loss offset")).toBeInTheDocument()
     expect(screen.getByLabelText("More information about Hub tail target")).toBeInTheDocument()
@@ -71,6 +71,32 @@ describe("Umbrella page", () => {
     renderUmbrellaPage()
 
     expect(screen.getByText("Cooldown: 20 days · Unstake window: 2 days")).toBeInTheDocument()
+  })
+
+  it("reveals secondary action details after an amount is entered", () => {
+    renderUmbrellaPage()
+
+    expect(screen.queryByText("APY breakdown")).not.toBeInTheDocument()
+    expect(screen.queryByText("Slashable stake")).not.toBeInTheDocument()
+    expect(screen.queryByText("Network fee")).not.toBeInTheDocument()
+
+    fireEvent.change(screen.getByRole("textbox", { name: /amount/i }), { target: { value: "1000" } })
+
+    expect(screen.getByText("APY breakdown")).toBeInTheDocument()
+    expect(screen.getByText("Slashable stake")).toBeInTheDocument()
+    expect(screen.getByText("Network fee")).toBeInTheDocument()
+  })
+
+  it("places cooldown immediately after positions and before market-level risk", () => {
+    renderUmbrellaPage()
+
+    const headings = screen.getAllByRole("heading").map((heading) => heading.textContent)
+    const positionsIndex = headings.indexOf("Umbrella positions")
+    const cooldownIndex = headings.indexOf("Umbrella Cooldown")
+    const marketRiskIndex = headings.indexOf("Market Level Risk")
+
+    expect(cooldownIndex).toBe(positionsIndex + 1)
+    expect(marketRiskIndex).toBe(cooldownIndex + 1)
   })
 
   it("never renders an Unstake CTA in the positions table (Claim is the only row action)", () => {

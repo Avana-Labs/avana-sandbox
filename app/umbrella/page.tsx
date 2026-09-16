@@ -54,16 +54,15 @@ function UmbrellaPageInner() {
         <div className="mx-auto max-w-[1152px]">
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-x-20">
             <div className={cn(detailSectionStackClass, "min-w-0")}>
-              {/* Hero + positions share one block so no divider falls between them
-                  (the section dividers resume from Cooldown down), but keep a
-                  comfortable gap so the two aren't cramped together. */}
+              {/* Hero + positions share one block so no divider falls between them;
+                  the cooldown queue follows immediately after positions. */}
               <div className="space-y-10">
                 <UmbrellaHero />
                 <UmbrellaPositions onSelectMarket={setSelectedMarket} />
               </div>
+              <UmbrellaCooldown />
               <UmbrellaStress />
               <UmbrellaSurfaceDetails market={umbrella.markets[selectedMarket]} />
-              <UmbrellaCooldown />
               <UmbrellaLearn />
             </div>
 
