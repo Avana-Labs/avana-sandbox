@@ -1235,8 +1235,8 @@ export function BorrowActionPageClient({
                 ? "You have no claimable rewards right now. Supply collateral and earn fees before claiming."
                 : kind === "remove"
                   ? "Pledge collateral before trying to remove it."
-                  : kind === "supply"
-                    ? "Try adjusting your search — every market is available to pledge in the sandbox."
+                : kind === "supply"
+                    ? "No unpledged LP collateral is available in this wallet."
                     : "Try adjusting your search"
           }
           onSelect={(id) => {
