@@ -2,12 +2,15 @@
 
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { AnimatedTextValue } from "@/app/components/action-page/action-live-value"
+import { useOptionalDisplayPreferences } from "@/app/components/display-preferences"
 import { TokenIcon } from "@/app/components/token-icon"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { UmbrellaMarket, UmbrellaMarketId } from "@/app/lib/umbrella-system/use-umbrella-session"
 import { formatCompactUsd, formatPct, formatUsd } from "../format"
 import type { ReactNode } from "react"
+
+const MASK = "••••"
 
 type MetricLabelProps = { label: string; tooltip: string; dense?: boolean }
 
@@ -80,44 +83,50 @@ function explainSurface(t: (key: string) => string, market: UmbrellaMarket, text
 /** The compact first box used by Umbrella action pages. */
 export function UmbrellaMarketRiskMetrics({ market }: { market: UmbrellaMarket }) {
   const { t } = useTranslation()
+  const showDollarAmounts = useOptionalDisplayPreferences()?.showDollarAmounts ?? true
   const coverageRatioPct = market.targetCoverageUsd > 0 ? (market.totalStakedUsd / market.targetCoverageUsd) * 100 : 0
+  const display = (value: string) => (showDollarAmounts ? value : MASK)
 
   return (
     <div className="space-y-3">
       <SurfaceMetricRow
         label={t("Coverage")}
-        value={formatCompactUsd(market.totalStakedUsd)}
+        value={display(formatCompactUsd(market.totalStakedUsd))}
         tooltip={t("Active Umbrella capital currently available to absorb eligible deficits for this asset.")}
-        animateValue
+        animateValue={showDollarAmounts}
       />
       <SurfaceMetricRow
         label={t("Target")}
         value={
-          <span className="inline-flex items-center gap-1.5">
-            <AnimatedTextValue text={formatCompactUsd(market.targetCoverageUsd)} animateOnMount />
-            <span aria-hidden>·</span>
-            <AnimatedTextValue text={`${formatPct(coverageRatioPct)}%`} animateOnMount />
-          </span>
+          showDollarAmounts ? (
+            <span className="inline-flex items-center gap-1.5">
+              <AnimatedTextValue text={formatCompactUsd(market.targetCoverageUsd)} animateOnMount />
+              <span aria-hidden>·</span>
+              <AnimatedTextValue text={`${formatPct(coverageRatioPct)}%`} animateOnMount />
+            </span>
+          ) : (
+            MASK
+          )
         }
         tooltip={t("Desired coverage amount for this asset, followed by the current active-capital coverage ratio.")}
       />
       <SurfaceMetricRow
         label={t("Deficit Offset")}
-        value={formatCompactUsd(market.deficitOffsetUsd)}
+        value={display(formatCompactUsd(market.deficitOffsetUsd))}
         valueClassName="text-brand"
         tooltip={t(
           "Amount covered first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.",
         )}
-        animateValue
+        animateValue={showDollarAmounts}
       />
       <SurfaceMetricRow
         label={t("Active Deficit")}
-        value={formatCompactUsd(market.currentDeficitUsd)}
+        value={display(formatCompactUsd(market.currentDeficitUsd))}
         valueClassName="text-danger"
         tooltip={t(
           "Current realized shortfall in {symbol}. Staker exposure is the active deficit remaining after the deficit offset.",
         ).replace("{symbol}", market.symbol)}
-        animateValue
+        animateValue={showDollarAmounts}
       />
     </div>
   )
@@ -133,6 +142,7 @@ function UmbrellaApyBreakdownRows({
   earnedRewardsUsd?: number
 }) {
   const { t } = useTranslation()
+  const showDollarAmounts = useOptionalDisplayPreferences()?.showDollarAmounts ?? true
   const showingEarnedRewards = earnedRewardsUsd !== undefined
   const apyRows = [
     {
@@ -184,8 +194,14 @@ function UmbrellaApyBreakdownRows({
             />
           </div>
           <AnimatedTextValue
-            text={showingEarnedRewards ? formatUsd(earnedRewardsUsd) : `${formatPct(market.apy)}%`}
-            animateOnMount
+            text={
+              showDollarAmounts
+                ? showingEarnedRewards
+                  ? formatUsd(earnedRewardsUsd)
+                  : `${formatPct(market.apy)}%`
+                : MASK
+            }
+            animateOnMount={showDollarAmounts}
             className={`mt-2 font-data text-[30px] font-medium leading-none tracking-[-0.04em] ${showingEarnedRewards ? "text-brand" : "text-foreground"}`}
           />
         </div>
@@ -213,8 +229,14 @@ function UmbrellaApyBreakdownRows({
               <ActionMetricHelp text={row.tooltip} topic={row.label} />
             </div>
             <AnimatedTextValue
-              text={showingEarnedRewards ? formatUsd(valueForRow(row.value)) : `${formatPct(row.value)}%`}
-              animateOnMount
+              text={
+                showDollarAmounts
+                  ? showingEarnedRewards
+                    ? formatUsd(valueForRow(row.value))
+                    : `${formatPct(row.value)}%`
+                  : MASK
+              }
+              animateOnMount={showDollarAmounts}
               className="shrink-0 font-data text-[14px] font-medium tabular-nums text-foreground"
             />
           </div>
@@ -234,8 +256,8 @@ function UmbrellaApyBreakdownRows({
             <p className="mt-0.5 text-[12px] text-muted-foreground">Based on amount entered</p>
           </div>
           <AnimatedTextValue
-            text={formatUsd(estimatedAnnualRewardsUsd)}
-            animateOnMount
+            text={showDollarAmounts ? formatUsd(estimatedAnnualRewardsUsd) : MASK}
+            animateOnMount={showDollarAmounts}
             className="shrink-0 font-data text-[16px] font-medium tabular-nums text-brand"
           />
         </div>
@@ -276,14 +298,16 @@ export function UmbrellaMarketRiskMetricsCard({
 
 function UmbrellaSurfaceDetailsRows({ market }: { market: UmbrellaMarket }) {
   const { t } = useTranslation()
+  const showDollarAmounts = useOptionalDisplayPreferences()?.showDollarAmounts ?? true
   const explain = (text: string) => explainSurface(t, market, text)
   const coverageRatioPct = market.targetCoverageUsd > 0 ? (market.totalStakedUsd / market.targetCoverageUsd) * 100 : 0
+  const display = (value: string) => (showDollarAmounts ? value : MASK)
 
   return (
     <div className="grid grid-cols-2 gap-x-6 gap-y-6 lg:grid-cols-4 lg:gap-x-8">
       <SurfaceMetricRow
         label={t("Local deductible")}
-        value={formatCompactUsd(market.localDeductibleUsd)}
+        value={display(formatCompactUsd(market.localDeductibleUsd))}
         dense
         tooltip={explain(
           "The amount of loss this Spoke is expected to absorb before DAO-level or Umbrella coverage is used for the {surface} surface. Why it matters: it keeps the first layer of risk local instead of immediately passing losses to the Hub or Umbrella stakers.",
@@ -291,7 +315,7 @@ function UmbrellaSurfaceDetailsRows({ market }: { market: UmbrellaMarket }) {
       />
       <SurfaceMetricRow
         label={t("DAO first-loss offset")}
-        value={formatCompactUsd(market.deficitOffsetUsd)}
+        value={display(formatCompactUsd(market.deficitOffsetUsd))}
         valueClassName="text-brand"
         dense
         tooltip={explain(
@@ -300,7 +324,7 @@ function UmbrellaSurfaceDetailsRows({ market }: { market: UmbrellaMarket }) {
       />
       <SurfaceMetricRow
         label={t("Hub tail target")}
-        value={formatCompactUsd(market.hubTailTargetUsd)}
+        value={display(formatCompactUsd(market.hubTailTargetUsd))}
         dense
         tooltip={explain(
           "The maximum amount of catastrophic residual loss this Hub is designed to support for the {surface} surface after the local deductible and DAO first-loss layers are exhausted. Why it matters: it caps how much risk can flow back to the Hub and helps prevent one Spoke from consuming unlimited shared protection.",
@@ -308,7 +332,7 @@ function UmbrellaSurfaceDetailsRows({ market }: { market: UmbrellaMarket }) {
       />
       <SurfaceMetricRow
         label={t("Active staker capital")}
-        value={formatCompactUsd(market.totalStakedUsd)}
+        value={display(formatCompactUsd(market.totalStakedUsd))}
         dense
         tooltip={explain(
           "The amount of Umbrella capital currently staked and available to absorb eligible deficits for the {surface} surface. Why it matters: this is the actual slashable capital standing behind the surface after earlier protection layers are exhausted.",
@@ -316,7 +340,7 @@ function UmbrellaSurfaceDetailsRows({ market }: { market: UmbrellaMarket }) {
       />
       <SurfaceMetricRow
         label={t("Target coverage")}
-        value={formatCompactUsd(market.targetCoverageUsd)}
+        value={display(formatCompactUsd(market.targetCoverageUsd))}
         dense
         tooltip={explain(
           "The target amount of active Umbrella capital for the {surface} surface. Why it matters: it provides the funding benchmark used to judge whether the surface is adequately protected.",
@@ -324,7 +348,7 @@ function UmbrellaSurfaceDetailsRows({ market }: { market: UmbrellaMarket }) {
       />
       <SurfaceMetricRow
         label={t("Coverage ratio")}
-        value={`${formatPct(coverageRatioPct)}%`}
+        value={display(`${formatPct(coverageRatioPct)}%`)}
         dense
         tooltip={explain(
           "The ratio between active Umbrella capital and the target coverage amount for the {surface} surface. Why it matters: above 100% means the surface is funded above target; below 100% means coverage is under target and may require higher incentives or tighter limits.",
@@ -332,7 +356,7 @@ function UmbrellaSurfaceDetailsRows({ market }: { market: UmbrellaMarket }) {
       />
       <SurfaceMetricRow
         label={t("APY")}
-        value={`${formatPct(market.apy)}%`}
+        value={display(`${formatPct(market.apy)}%`)}
         dense
         tooltip={explain(
           "The current estimated annual yield for staking into the {surface} surface. APY can vary by Hub, Spoke, reserve, coverage utilization, incentives, and risk. Why it matters: higher-risk or under-covered surfaces may need higher APY to attract enough protection capital.",
@@ -340,7 +364,7 @@ function UmbrellaSurfaceDetailsRows({ market }: { market: UmbrellaMarket }) {
       />
       <SurfaceMetricRow
         label={t("Cooldown queue")}
-        value={formatCompactUsd(market.amountInCooldownUsd)}
+        value={display(formatCompactUsd(market.amountInCooldownUsd))}
         valueClassName="text-warning"
         dense
         tooltip={explain(
@@ -398,6 +422,7 @@ export function UmbrellaSurfaceDetails({
 
 export function UmbrellaStress() {
   const { t } = useTranslation()
+  const showDollarAmounts = useOptionalDisplayPreferences()?.showDollarAmounts ?? true
   const umbrella = useUmbrellaSessionContext()
   const umbrellaAssetSummaries = umbrella.marketOrder.map((id) => umbrella.markets[id])
   const totalStakedUsd = umbrellaAssetSummaries.reduce((sum, market) => sum + market.totalStakedUsd, 0)
@@ -419,7 +444,7 @@ export function UmbrellaStress() {
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <p className="text-[13px] text-muted-foreground">{t("Total coverage")}</p>
           <p className="font-data text-[22px] font-medium leading-none tracking-tight text-foreground md:text-[26px]">
-            {formatCompactUsd(totalStakedUsd)}
+            {showDollarAmounts ? formatCompactUsd(totalStakedUsd) : MASK}
           </p>
         </div>
 
@@ -443,27 +468,33 @@ export function UmbrellaStress() {
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
             <div className="text-[18px] font-semibold tracking-[-0.04em] text-brand">
-              {t("{pct}% of target").replace(
-                "{pct}",
-                formatPct(targetCoverageUsd > 0 ? (totalStakedUsd / targetCoverageUsd) * 100 : 0),
-              )}
+              {showDollarAmounts
+                ? t("{pct}% of target").replace(
+                    "{pct}",
+                    formatPct(targetCoverageUsd > 0 ? (totalStakedUsd / targetCoverageUsd) * 100 : 0),
+                  )
+                : MASK}
             </div>
             <div className="mt-2 whitespace-pre-line text-[14px] font-medium leading-5 text-muted-foreground">
-              {t("{staked} staked · {target} target")
-                .replace("{staked}", formatCompactUsd(totalStakedUsd))
-                .replace("{target}", formatCompactUsd(targetCoverageUsd))
-                .replace(" · ", "\n")}
+              {showDollarAmounts
+                ? t("{staked} staked · {target} target")
+                    .replace("{staked}", formatCompactUsd(totalStakedUsd))
+                    .replace("{target}", formatCompactUsd(targetCoverageUsd))
+                    .replace(" · ", "\n")
+                : MASK}
             </div>
           </div>
           <div className="text-left sm:text-right">
             <div className="text-[18px] font-semibold tracking-[-0.04em] text-warning">
-              {t("{amount} in cooldown").replace("{amount}", formatCompactUsd(cooldownUsd))}
+              {showDollarAmounts ? t("{amount} in cooldown").replace("{amount}", formatCompactUsd(cooldownUsd)) : MASK}
             </div>
             <div className="mt-2 whitespace-pre-line text-[14px] font-medium leading-5 text-muted-foreground">
-              {t("{pct}% of coverage cooling · {deficits} deficits absorbed")
-                .replace("{pct}", formatPct(totalStakedUsd > 0 ? (cooldownUsd / totalStakedUsd) * 100 : 0))
-                .replace("{deficits}", formatCompactUsd(activeDeficitsUsd))
-                .replace(" · ", "\n")}
+              {showDollarAmounts
+                ? t("{pct}% of coverage cooling · {deficits} deficits absorbed")
+                    .replace("{pct}", formatPct(totalStakedUsd > 0 ? (cooldownUsd / totalStakedUsd) * 100 : 0))
+                    .replace("{deficits}", formatCompactUsd(activeDeficitsUsd))
+                    .replace(" · ", "\n")
+                : MASK}
             </div>
           </div>
         </div>

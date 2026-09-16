@@ -114,6 +114,18 @@ describe("Umbrella page", () => {
     expect(screen.getByText("Cooldown: 20 days · Unstake window: 2 days")).toBeInTheDocument()
   })
 
+  it("hides Umbrella page values when the Your Umbrella eye is toggled", () => {
+    renderUmbrellaPage()
+
+    fireEvent.click(screen.getByRole("button", { name: "Hide Numbers" }))
+
+    expect(screen.getByRole("button", { name: "Show Numbers" })).toBeInTheDocument()
+    expect(screen.queryByText("$55.0M")).not.toBeInTheDocument()
+    expect(screen.queryByText("$12.0M")).not.toBeInTheDocument()
+    expect(screen.queryByText("6.4%")).not.toBeInTheDocument()
+    expect(screen.getAllByText("••••").length).toBeGreaterThan(10)
+  })
+
   it("reveals secondary action details after an amount is entered", () => {
     renderUmbrellaPage()
 

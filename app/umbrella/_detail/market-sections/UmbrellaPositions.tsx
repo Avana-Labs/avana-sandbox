@@ -19,6 +19,7 @@ import { TokenIcon } from "@/app/components/token-icon"
 import { Button } from "@/components/ui/button"
 import { actionPagePath } from "@/app/lib/action-system/contracts"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
+import { useOptionalDisplayPreferences } from "@/app/components/display-preferences"
 import { LiveInterestEarnedUsd } from "@/app/dashboard/live-accrual"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { UmbrellaMarketId } from "@/app/lib/umbrella-system/use-umbrella-session"
@@ -33,6 +34,8 @@ import {
 } from "@/app/lib/ui/table-row-hover"
 import { cn } from "@/lib/utils"
 import { formatPct, formatUnits, formatUsd } from "../format"
+
+const MASK = "••••"
 
 type PositionRow = {
   id: UmbrellaMarketId
@@ -75,6 +78,7 @@ const COVERED_RESERVE_LABELS: Record<UmbrellaMarketId, string> = {
 export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (marketId: UmbrellaMarketId) => void }) {
   const { t } = useTranslation()
   const umbrella = useUmbrellaSessionContext()
+  const showDollarAmounts = useOptionalDisplayPreferences()?.showDollarAmounts ?? true
   const rows: PositionRow[] = umbrella.marketOrder.map((id) => {
     const market = umbrella.markets[id]
     const position = umbrella.positions[id]
@@ -205,15 +209,17 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                     <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
                       <div className="flex flex-col items-end">
                         <span className={cn(TABLE_CELL_NUMERIC, "tracking-[-0.03em]")}>
-                          {row.activeStakeAmountLabel}
+                          {showDollarAmounts ? row.activeStakeAmountLabel : MASK}
                         </span>
-                        <span className={TABLE_CELL_SECONDARY}>{row.activeStakeUsdLabel}</span>
+                        <span className={TABLE_CELL_SECONDARY}>
+                          {showDollarAmounts ? row.activeStakeUsdLabel : MASK}
+                        </span>
                       </div>
                     </td>
                     <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
                       <div className="flex flex-col items-end">
                         <span className={cn(TABLE_CELL_NUMERIC, row.coolingUsd > 0 && "text-warning")}>
-                          {row.coolingLabel}
+                          {showDollarAmounts ? row.coolingLabel : MASK}
                         </span>
                         {row.coolingUsd > 0 ? (
                           <span className="mt-0.5 text-[12px] text-warning">{t("In cooldown")}</span>
@@ -222,15 +228,21 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                     </td>
                     <td className={cn("py-3.5 px-4 text-right", TABLE_ROW_HOVER_BG)}>
                       <div className="flex flex-col items-end">
-                        <span className={TABLE_CELL_NUMERIC}>{row.apyReward}</span>
+                        <span className={TABLE_CELL_NUMERIC}>{showDollarAmounts ? row.apyReward : MASK}</span>
                         <span className={cn(TABLE_CELL_SECONDARY_UNCOLORED, "text-success")}>
-                          +
-                          <LiveInterestEarnedUsd
-                            anchorMs={row.rewardAnchorMs}
-                            ratePerYearUsd={(row.rewardPrincipalUsd * row.rewardApyPct) / 100}
-                            baseUsd={row.pendingRewards}
-                            fractionDigits={4}
-                          />
+                          {showDollarAmounts ? (
+                            <>
+                              +
+                              <LiveInterestEarnedUsd
+                                anchorMs={row.rewardAnchorMs}
+                                ratePerYearUsd={(row.rewardPrincipalUsd * row.rewardApyPct) / 100}
+                                baseUsd={row.pendingRewards}
+                                fractionDigits={4}
+                              />
+                            </>
+                          ) : (
+                            MASK
+                          )}
                         </span>
                       </div>
                     </td>
@@ -283,34 +295,46 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                     <MarketMobileIdentityText title={row.asset} subtitle={row.coverage} />
                   </div>
                 }
-                metric={<MarketMobileMetric value={row.apyTotal} label={t("APY")} />}
+                metric={<MarketMobileMetric value={showDollarAmounts ? row.apyTotal : MASK} label={t("APY")} />}
               />
               <MarketMobileStatList>
                 <MarketMobileStatRow
                   label={t("Active stake")}
                   value={
                     <div className="flex flex-col items-end">
-                      <span>{row.activeStakeAmountLabel}</span>
-                      <MarketMobileSupportingValue>{row.activeStakeUsdLabel}</MarketMobileSupportingValue>
+                      <span>{showDollarAmounts ? row.activeStakeAmountLabel : MASK}</span>
+                      <MarketMobileSupportingValue>
+                        {showDollarAmounts ? row.activeStakeUsdLabel : MASK}
+                      </MarketMobileSupportingValue>
                     </div>
                   }
                 />
                 {row.coolingUsd > 0 ? (
-                  <MarketMobileStatRow label={t("Cooling")} value={row.coolingLabel} valueClassName="text-warning" />
+                  <MarketMobileStatRow
+                    label={t("Cooling")}
+                    value={showDollarAmounts ? row.coolingLabel : MASK}
+                    valueClassName="text-warning"
+                  />
                 ) : null}
                 <MarketMobileStatRow
                   label={t("Rewards")}
                   value={
                     <div className="flex flex-col items-end">
-                      <span>{row.apyReward}</span>
+                      <span>{showDollarAmounts ? row.apyReward : MASK}</span>
                       <MarketMobileSupportingValue>
-                        +
-                        <LiveInterestEarnedUsd
-                          anchorMs={row.rewardAnchorMs}
-                          ratePerYearUsd={(row.rewardPrincipalUsd * row.rewardApyPct) / 100}
-                          baseUsd={row.pendingRewards}
-                          fractionDigits={4}
-                        />
+                        {showDollarAmounts ? (
+                          <>
+                            +
+                            <LiveInterestEarnedUsd
+                              anchorMs={row.rewardAnchorMs}
+                              ratePerYearUsd={(row.rewardPrincipalUsd * row.rewardApyPct) / 100}
+                              baseUsd={row.pendingRewards}
+                              fractionDigits={4}
+                            />
+                          </>
+                        ) : (
+                          MASK
+                        )}
                       </MarketMobileSupportingValue>
                       {row.claimedRewardsUsd > 0 ? (
                         <MarketMobileSupportingValue>
