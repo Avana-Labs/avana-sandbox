@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { ActionIcon } from "@/app/components/action-icon"
+import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import {
   MarketMobileActionFooter,
   MarketMobileCard,
@@ -53,6 +54,15 @@ type PositionRow = {
   claimedRewardsLabel: string
   cooldownStatus: "idle" | "cooling" | "ready" | "expired"
   hasClaim: boolean
+}
+
+function PositionHeader({ label, tooltip }: { label: string; tooltip: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      {label}
+      <ActionMetricHelp text={tooltip} topic={label} />
+    </span>
+  )
 }
 
 const COVERED_RESERVE_LABELS: Record<UmbrellaMarketId, string> = {
@@ -122,10 +132,38 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
             </colgroup>
             <thead>
               <tr className="text-left">
-                <th className={cn(TABLE_HEADER_CELL, "pl-5")}>{t("Covered reserve")}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("Active stake")}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("Cooling")}</th>
-                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("Rewards")}</th>
+                <th className={cn(TABLE_HEADER_CELL, "pl-5")}>
+                  <PositionHeader
+                    label={t("Covered reserve")}
+                    tooltip={t(
+                      "The Hub asset this Umbrella market protects. Deficits from any eligible Spoke borrowing this reserve can be covered by this market.",
+                    )}
+                  />
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                  <PositionHeader
+                    label={t("Active stake")}
+                    tooltip={t(
+                      "The amount of Umbrella capital currently active and available to absorb deficits for this covered reserve. Capital in cooldown is no longer counted as fully available protection.",
+                    )}
+                  />
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                  <PositionHeader
+                    label={t("Cooling")}
+                    tooltip={t(
+                      "The amount of staked capital currently in the cooldown period before it can be withdrawn. A larger cooling balance means less protection may remain available if those funds exit.",
+                    )}
+                  />
+                </th>
+                <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                  <PositionHeader
+                    label={t("Rewards")}
+                    tooltip={t(
+                      "The staking rewards you have earned for providing Umbrella coverage. Rewards may include protocol incentives and other compensation for taking slashing and lockup risk.",
+                    )}
+                  />
+                </th>
                 <SilentActionHeader className="!rounded-none pr-5" />
               </tr>
             </thead>

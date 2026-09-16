@@ -50,6 +50,9 @@ describe("Umbrella page", () => {
 
     const positions = within(screen.getByRole("region", { name: "Umbrella positions" }))
     expect(positions.getAllByText("Covered reserve").length).toBeGreaterThan(0)
+    for (const label of ["Covered reserve", "Active stake", "Cooling", "Rewards"]) {
+      expect(positions.getByLabelText(`More information about ${label}`)).toBeInTheDocument()
+    }
 
     expect(positions.getByRole("columnheader", { name: "Cooling" })).toBeInTheDocument()
     expect(positions.queryByRole("columnheader", { name: "APY" })).not.toBeInTheDocument()
