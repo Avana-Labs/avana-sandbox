@@ -392,6 +392,7 @@ export function UmbrellaActionPageClient({
   const hasAmountEntered = enteredAmount != null
   const estimatedAnnualRewardsUsd =
     kind === "stake" && enteredAmount != null ? enteredAmount * livePriceUsd * (market.apy / 100) : undefined
+  const earnedRewardsUsd = kind === "stake" ? undefined : position.pendingRewardsUsd
 
   return (
     <ActionPageShell
@@ -456,6 +457,7 @@ export function UmbrellaActionPageClient({
               market={market}
               showExpandedDetails={hasAmountEntered}
               estimatedAnnualRewardsUsd={estimatedAnnualRewardsUsd}
+              earnedRewardsUsd={earnedRewardsUsd}
             />
           }
           deferDetailsUntilAmount

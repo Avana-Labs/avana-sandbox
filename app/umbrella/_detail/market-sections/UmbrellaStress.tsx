@@ -126,11 +126,14 @@ export function UmbrellaMarketRiskMetrics({ market }: { market: UmbrellaMarket }
 function UmbrellaApyBreakdownRows({
   market,
   estimatedAnnualRewardsUsd,
+  earnedRewardsUsd,
 }: {
   market: UmbrellaMarket
   estimatedAnnualRewardsUsd?: number
+  earnedRewardsUsd?: number
 }) {
   const { t } = useTranslation()
+  const showingEarnedRewards = earnedRewardsUsd !== undefined
   const apyRows = [
     {
       label: t("Base"),
@@ -156,27 +159,42 @@ function UmbrellaApyBreakdownRows({
     },
   ]
   const contributionTotal = apyRows.reduce((sum, row) => sum + Math.max(row.value, 0), 0)
+  const valueForRow = (value: number) =>
+    showingEarnedRewards
+      ? contributionTotal > 0
+        ? (earnedRewardsUsd * Math.max(value, 0)) / contributionTotal
+        : 0
+      : value
 
   return (
     <div>
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-1.5">
-            <h3 className="text-[15px] font-semibold tracking-[-0.03em] text-foreground">{t("APY breakdown")}</h3>
+            <h3 className="text-[15px] font-semibold tracking-[-0.03em] text-foreground">
+              {showingEarnedRewards ? t("Earnings") : t("APY breakdown")}
+            </h3>
             <ActionMetricHelp
-              topic={t("APY breakdown")}
-              text="The estimated annual yield for keeping Umbrella capital available as coverage for this market."
+              topic={showingEarnedRewards ? t("Earnings") : t("APY breakdown")}
+              text={
+                showingEarnedRewards
+                  ? "The rewards currently earned by this Umbrella position, allocated across the underlying APY sources."
+                  : "The estimated annual yield for keeping Umbrella capital available as coverage for this market."
+              }
             />
           </div>
           <AnimatedTextValue
-            text={`${formatPct(market.apy)}%`}
+            text={showingEarnedRewards ? formatUsd(earnedRewardsUsd) : `${formatPct(market.apy)}%`}
             animateOnMount
-            className="mt-2 font-data text-[30px] font-medium leading-none tracking-[-0.04em] text-foreground"
+            className={`mt-2 font-data text-[30px] font-medium leading-none tracking-[-0.04em] ${showingEarnedRewards ? "text-brand" : "text-foreground"}`}
           />
         </div>
       </div>
 
-      <div className="mt-5 flex h-2.5 overflow-hidden rounded-full bg-muted/60" aria-label="APY contribution bar">
+      <div
+        className="mt-5 flex h-2.5 overflow-hidden rounded-full bg-muted/60"
+        aria-label={showingEarnedRewards ? "Earnings contribution bar" : "APY contribution bar"}
+      >
         {apyRows.map((row) => (
           <div
             key={row.label}
@@ -195,7 +213,7 @@ function UmbrellaApyBreakdownRows({
               <ActionMetricHelp text={row.tooltip} topic={row.label} />
             </div>
             <AnimatedTextValue
-              text={`${formatPct(row.value)}%`}
+              text={showingEarnedRewards ? formatUsd(valueForRow(row.value)) : `${formatPct(row.value)}%`}
               animateOnMount
               className="shrink-0 font-data text-[14px] font-medium tabular-nums text-foreground"
             />
@@ -231,10 +249,12 @@ export function UmbrellaMarketRiskMetricsCard({
   market,
   showExpandedDetails = false,
   estimatedAnnualRewardsUsd,
+  earnedRewardsUsd,
 }: {
   market: UmbrellaMarket
   showExpandedDetails?: boolean
   estimatedAnnualRewardsUsd?: number
+  earnedRewardsUsd?: number
 }) {
   return (
     <div className="space-y-3">
@@ -243,7 +263,11 @@ export function UmbrellaMarketRiskMetricsCard({
       </div>
       {showExpandedDetails ? (
         <div className="rounded-radius-md bg-card px-4 py-4">
-          <UmbrellaApyBreakdownRows market={market} estimatedAnnualRewardsUsd={estimatedAnnualRewardsUsd} />
+          <UmbrellaApyBreakdownRows
+            market={market}
+            estimatedAnnualRewardsUsd={estimatedAnnualRewardsUsd}
+            earnedRewardsUsd={earnedRewardsUsd}
+          />
         </div>
       ) : null}
     </div>

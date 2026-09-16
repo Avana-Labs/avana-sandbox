@@ -1,6 +1,9 @@
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { UmbrellaMarketRiskMetrics } from "@/app/umbrella/_detail/market-sections/UmbrellaStress"
+import {
+  UmbrellaMarketRiskMetrics,
+  UmbrellaMarketRiskMetricsCard,
+} from "@/app/umbrella/_detail/market-sections/UmbrellaStress"
 import { buildDefaultUmbrellaState, UMBRELLA_MARKET_ORDER } from "@/app/lib/umbrella-system/use-umbrella-session"
 
 // jsdom does not advance performance.now() inside its rAF loop. Advance the
@@ -40,6 +43,22 @@ describe("Umbrella action market metrics", () => {
       expect(within(screen.getByTestId("market-usdc")).getByText("$12.0M")).toBeInTheDocument()
       expect(within(screen.getByTestId("market-usdt")).getByText("$9.5M")).toBeInTheDocument()
       expect(within(screen.getByTestId("market-weth")).getByText("$7.0M")).toBeInTheDocument()
+    })
+  })
+
+  it("shows earned reward dollars instead of APY for post-stake actions", async () => {
+    const market = buildDefaultUmbrellaState("earnings-test-wallet").markets.gho
+
+    render(<UmbrellaMarketRiskMetricsCard market={market} showExpandedDetails earnedRewardsUsd={11.4} />)
+
+    expect(screen.getByText("Earnings")).toBeInTheDocument()
+    expect(screen.queryByText("6.4%")).not.toBeInTheDocument()
+    expect(screen.getByLabelText("Earnings contribution bar")).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText("$11.4")).toBeInTheDocument()
+      expect(screen.getByText("$0")).toBeInTheDocument()
+      expect(screen.getByText("$4.01")).toBeInTheDocument()
+      expect(screen.getByText("$7.39")).toBeInTheDocument()
     })
   })
 })
