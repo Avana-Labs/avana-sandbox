@@ -79,11 +79,14 @@ const MASK = "••••"
 export function ProductAvailableCard({
   walletId,
   sourceTypes,
+  allowedAssetIds,
   title,
   action,
 }: {
   walletId: string
   sourceTypes: ReadonlyArray<UserAssetBalance["sourceType"]>
+  /** Optional product catalog filter for shared wallet rows. */
+  allowedAssetIds?: ReadonlySet<string>
   /** Already-translated heading (translate at the call site so i18n parity can see the key). */
   title: string
   /** Optional per-row CTA (e.g. Deposit / Multiply). */
@@ -95,9 +98,16 @@ export function ProductAvailableCard({
   const priceFor = useCanonicalPriceFor()
   const balances = useConvexProductWalletBalances(walletId)
   const allow = new Set(sourceTypes)
-  const rows = buildDashboardWalletBalanceRows({ walletId, balances: balances ?? undefined, priceFor }).filter((row) =>
-    allow.has(row.sourceType),
+  const matchingRows = buildDashboardWalletBalanceRows({ walletId, balances: balances ?? undefined, priceFor }).filter(
+    (row) => allow.has(row.sourceType) && (!allowedAssetIds || allowedAssetIds.has(row.assetId)),
   )
+  // Prefer canonical unallocated wallet rows when a legacy product-available row for
+  // the same asset still exists. This prevents one balance from appearing twice and
+  // prevents stale product buckets from masking the real wallet amount.
+  const canonicalAssetIds = new Set(
+    matchingRows.filter((row) => row.sourceType === "wallet").map((row) => row.assetId),
+  )
+  const rows = matchingRows.filter((row) => row.sourceType === "wallet" || !canonicalAssetIds.has(row.assetId))
   if (rows.length === 0) return null
   const total = rows.reduce((sum, row) => sum + row.valueUsd, 0)
   const m = (value: string) => (showDollarAmounts ? value : MASK)
