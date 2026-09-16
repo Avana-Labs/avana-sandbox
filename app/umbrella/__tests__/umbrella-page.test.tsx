@@ -1,5 +1,5 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react"
-import { afterEach, describe, expect, it } from "vitest"
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
 import { AvanaSessionsProvider } from "@/app/lib/avana-session/avana-sessions-provider"
 import { pendingUmbrellaPersistAction } from "@/app/lib/umbrella-system/use-umbrella-session"
@@ -15,12 +15,20 @@ function renderUmbrellaPage() {
   )
 }
 
+beforeEach(() => {
+  vi.stubGlobal(
+    "requestAnimationFrame",
+    (callback: FrameRequestCallback) => setTimeout(() => callback(performance.now() + 100000), 0) as unknown as number,
+  )
+  vi.stubGlobal("cancelAnimationFrame", (id: number) => clearTimeout(id as unknown as ReturnType<typeof setTimeout>))
+})
+
 afterEach(() => {
   cleanup()
 })
 
 describe("Umbrella page", () => {
-  it("renders each seeded market with its APY breakdown", () => {
+  it("renders each seeded market with its APY breakdown", async () => {
     renderUmbrellaPage()
 
     expect(screen.getByText("Total position value")).toBeInTheDocument()
@@ -55,9 +63,11 @@ describe("Umbrella page", () => {
     expect(screen.getAllByText("Surface details")).toHaveLength(1)
     expect(screen.getByText("Stable Hub → USDC Spoke → USDC Reserve")).toBeInTheDocument()
     expect(screen.getByText("Active staker capital")).toBeInTheDocument()
-    expect(screen.getAllByText("$12.0M").length).toBeGreaterThanOrEqual(2)
-    expect(screen.getByText("Coverage ratio")).toBeInTheDocument()
-    expect(screen.getByText("120%")).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getAllByText("$12.0M").length).toBeGreaterThanOrEqual(2)
+      expect(screen.getByText("Coverage ratio")).toBeInTheDocument()
+      expect(screen.getAllByText("120%").length).toBeGreaterThanOrEqual(2)
+    })
     // The action page keeps secondary details hidden until an amount is entered;
     // the large main-page Surface details section does not include APY breakdown.
     expect(screen.queryByText("APY breakdown")).not.toBeInTheDocument()
