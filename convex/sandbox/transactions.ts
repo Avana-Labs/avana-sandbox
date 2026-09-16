@@ -1600,6 +1600,25 @@ async function applyProductBucketDelta(
       args.position.status === "closed" ? 0 : (args.position.collateralAmount ?? collateralValueUsd)
     const previousEquityUsd = Math.max(0, (priorPosition?.collateralValueUsd ?? 0) - (priorPosition?.debtValueUsd ?? 0))
     const nextEquityUsd = Math.max(0, collateralValueUsd - debtValueUsd)
+    // `deltaUsd` is a USD ledger change, but walletMultiplyBalances.amount is a
+    // token quantity. A missing price used to make a newly-created available row
+    // default to $1/token, so closing a $41,666.67 WSTETH position persisted
+    // 41,666.67 WSTETH and the dashboard valued it at over $123M. Prefer the
+    // market's canonical collateral-token price; fall back to the wallet's live
+    // holding price only when the market row is unavailable.
+    const [multiplyMarket, liquid] = await Promise.all([
+      ctx.db
+        .query("markets")
+        .withIndex("by_scope_slug", (q) => q.eq("scope", "multiply").eq("slug", marketSlug))
+        .unique(),
+      readWalletLiquidBalance(ctx, wallet, baseAsset),
+    ])
+    const multiplyPriceUsd =
+      multiplyMarket?.priceUsd && Number.isFinite(multiplyMarket.priceUsd) && multiplyMarket.priceUsd > 0
+        ? multiplyMarket.priceUsd
+        : liquid && liquid.amount > 0 && liquid.valueUsd > 0
+          ? liquid.valueUsd / liquid.amount
+          : undefined
     await adjustProductBalanceUsd(
       ctx,
       "walletMultiplyBalances",
@@ -1608,6 +1627,7 @@ async function applyProductBucketDelta(
       baseAsset.toUpperCase(),
       previousEquityUsd - nextEquityUsd,
       now,
+      multiplyPriceUsd,
     )
     await upsertProductBalanceValue(ctx, "walletMultiplyBalances", wallet, {
       marketId: marketSlug,

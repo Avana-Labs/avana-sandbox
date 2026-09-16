@@ -142,13 +142,19 @@ export function buildDashboardWalletBalanceRows({
       // and never pinned to a frozen stored value. LP rows keep the canonical stored basis.
       const isLpToken = asset?.isLpToken ?? false
       const livePrice = !isLpToken ? priceFor?.(asset?.symbol ?? balance.assetId) : undefined
-      const valueUsd = livePrice != null && Number.isFinite(livePrice) ? balance.amount * livePrice : storedValueUsd
+      // Multiply available buckets are USD ledgers. Their token amount may be a
+      // legacy USD-denominated value, so never revalue them as `amount × price`.
+      // Derive the display quantity from the canonical stored USD value instead.
+      const isMultiplyAvailable = balance.sourceType === "multiply_available"
+      const hasLivePrice = livePrice != null && Number.isFinite(livePrice) && livePrice > 0
+      const valueUsd = isMultiplyAvailable ? storedValueUsd : hasLivePrice ? balance.amount * livePrice : storedValueUsd
+      const amount = isMultiplyAvailable && hasLivePrice ? valueUsd / livePrice : balance.amount
       return {
         id: balance.id,
         assetId: balance.assetId,
         symbol: asset?.symbol ?? formatTokenDisplaySymbol(balance.assetId),
         name: asset?.name ?? formatTokenDisplaySymbol(balance.assetId),
-        amount: balance.amount,
+        amount,
         valueUsd,
         sourceType: balance.sourceType,
         sourceLabel: sourceLabel(balance.sourceType),

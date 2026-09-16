@@ -59,7 +59,15 @@ export function aggregateNetValueUsd(
     const asset = getSwapAsset(row.assetId)
     const isLp = asset?.isLpToken ?? false
     const live = isLp ? undefined : priceFor(asset?.symbol ?? row.assetId)
-    const magnitude = live != null && Number.isFinite(live) ? row.amount * live : Math.abs(stored)
+    // Multiply available buckets store a USD budget. Legacy rows can contain
+    // that USD budget again in `amount`, so valuing them as `amount × price`
+    // inflates Net Value into the millions. Their stored USD value is canonical.
+    const isMultiplyAvailable = row.sourceType === "multiply_available"
+    const magnitude = isMultiplyAvailable
+      ? Math.abs(stored)
+      : live != null && Number.isFinite(live)
+        ? row.amount * live
+        : Math.abs(stored)
     // productBalances encodes debt as a negative stored valueUsd; preserve that sign.
     total += (stored < 0 ? -1 : 1) * magnitude
   }

@@ -127,7 +127,7 @@ export const listForWallet = query({
   args: { wallet: v.string() },
   handler: async (ctx, { wallet }) => {
     const authed = await requireSandboxWallet(ctx, wallet)
-    const [lend, rawBorrow, multiply, liquid, borrowPositions] = await Promise.all([
+    const [lend, rawBorrow, rawMultiply, liquid, borrowPositions] = await Promise.all([
       ctx.db
         .query("walletLendBalances")
         .withIndex("by_wallet", (q) => q.eq("wallet", authed))
@@ -149,6 +149,34 @@ export const listForWallet = query({
         .withIndex("by_wallet_product", (q) => q.eq("wallet", authed).eq("product", "borrow"))
         .collect(),
     ])
+
+    const multiplySlugs = [
+      ...new Set(rawMultiply.map((row) => row.marketId).filter((slug): slug is string => Boolean(slug))),
+    ]
+    const multiplyMarkets = await Promise.all(
+      multiplySlugs.map((slug) =>
+        ctx.db
+          .query("markets")
+          .withIndex("by_scope_slug", (q) => q.eq("scope", "multiply").eq("slug", slug))
+          .unique(),
+      ),
+    )
+    const multiplyPriceBySlug = new Map(
+      multiplyMarkets
+        .filter((market): market is NonNullable<typeof market> => market !== null)
+        .filter(
+          (market) => typeof market.priceUsd === "number" && Number.isFinite(market.priceUsd) && market.priceUsd > 0,
+        )
+        .map((market) => [market.slug, market.priceUsd!] as const),
+    )
+    // Available Multiply buckets are USD ledgers plus a display token quantity. Normalize
+    // the quantity at read time as well as at write time so legacy rows created with the
+    // old $1/token fallback cannot inflate the dashboard or action pages after reload.
+    const multiply = rawMultiply.map((row) => {
+      if (row.state !== "available" || !row.marketId) return row
+      const priceUsd = multiplyPriceBySlug.get(row.marketId)
+      return priceUsd ? { ...row, amount: row.valueUsd / priceUsd } : row
+    })
 
     const pledgedByMarket = new Map<string, { valueUsd: number; updatedAt: number }>()
     for (const position of borrowPositions) {

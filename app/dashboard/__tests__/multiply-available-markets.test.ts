@@ -26,7 +26,30 @@ describe("Multiply dashboard available markets", () => {
     expect(row?.market.id).toBe("wsteth-eth")
     expect(row?.market.collateralAsset.symbol).toBe("WSTETH")
     expect(row?.market.borrowAsset.symbol).toBe("ETH")
+    expect(row?.amount).toBeCloseTo(2, 6)
     expect(row?.valueUsd).toBeCloseTo(5_964.36, 6)
+  })
+
+  it("does not treat a USD-denominated legacy bucket as token units", () => {
+    const [row] = buildMultiplyAvailableMarketRows({
+      balances: [
+        {
+          id: "multiply-wsteth-legacy",
+          walletId: "wallet-1",
+          assetId: "wsteth",
+          amount: 41_666.67,
+          valueUsd: 41_666.67,
+          sourceType: "multiply_available",
+          sourcePositionId: "wsteth-eth",
+        },
+      ],
+      markets: buildMultiplyCatalogMarketsRecord(),
+      priceFor: () => 2_982.18,
+    })
+
+    expect(row?.amount).toBeCloseTo(41_666.67 / 2_982.18, 6)
+    expect(row?.valueUsd).toBeCloseTo(41_666.67, 6)
+    expect(row?.amount).toBeLessThan(20)
   })
 
   it("does not duplicate an available bucket across every market sharing a token", () => {

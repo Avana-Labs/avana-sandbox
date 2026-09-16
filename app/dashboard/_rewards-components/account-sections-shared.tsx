@@ -261,7 +261,7 @@ export function buildMultiplyAvailableMarketRows({
   const grouped = new Map<string, MultiplyAvailableMarketRow>()
 
   for (const balance of balances) {
-    if (balance.sourceType !== "multiply_available" || balance.amount <= 0) continue
+    if (balance.sourceType !== "multiply_available") continue
     const explicitMarket = balance.sourcePositionId ? byId.get(balance.sourcePositionId.toLowerCase()) : undefined
     const market =
       explicitMarket ??
@@ -271,16 +271,20 @@ export function buildMultiplyAvailableMarketRows({
     if (!market) continue
 
     const livePrice = priceFor?.(market.collateralAsset.symbol)
-    const valueUsd =
+    const priceUsd =
       livePrice !== undefined && Number.isFinite(livePrice) && livePrice > 0
-        ? balance.amount * livePrice
-        : Math.max(0, balance.valueUsd ?? balance.amount * market.collateralAsset.priceUsd)
+        ? livePrice
+        : market.collateralAsset.priceUsd
+    const storedValueUsd = balance.valueUsd
+    const hasStoredValue = typeof storedValueUsd === "number" && Number.isFinite(storedValueUsd) && storedValueUsd > 0
+    const valueUsd = hasStoredValue ? storedValueUsd : Math.max(0, balance.amount * priceUsd)
+    const amount = priceUsd > 0 ? valueUsd / priceUsd : balance.amount
     if (!(valueUsd > 0)) continue
 
     const existing = grouped.get(market.id)
     grouped.set(market.id, {
       market,
-      amount: (existing?.amount ?? 0) + balance.amount,
+      amount: (existing?.amount ?? 0) + amount,
       valueUsd: (existing?.valueUsd ?? 0) + valueUsd,
     })
   }

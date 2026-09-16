@@ -50,6 +50,27 @@ describe("swap wallet balance classification", () => {
     expect(row?.name).not.toBe("Unsupported asset")
   })
 
+  it("keeps legacy Multiply available buckets in USD instead of inflating token quantity", () => {
+    const [row] = buildDashboardWalletBalanceRows({
+      walletId: "w1",
+      balances: [
+        {
+          id: "multiply-wsteth-legacy",
+          walletId: "w1",
+          assetId: "wsteth",
+          amount: 41_666.67,
+          valueUsd: 41_666.67,
+          sourceType: "multiply_available",
+        },
+      ],
+      priceFor: () => 2_982.18,
+    })
+
+    expect(row?.amount).toBeCloseTo(41_666.67 / 2_982.18, 6)
+    expect(row?.valueUsd).toBeCloseTo(41_666.67, 6)
+    expect(row?.amount).toBeLessThan(20)
+  })
+
   it("keeps regular wallet tokens swappable while product-held rows stay restricted", () => {
     const rows = buildDashboardWalletBalanceRows({ walletId: "w1", balances })
     const walletEth = rows.find((row) => row.id === "wallet-eth")

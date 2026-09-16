@@ -3,6 +3,7 @@ import { convexTest } from "convex-test"
 import { describe, expect, test } from "vitest"
 import schema from "./schema"
 import { api } from "./_generated/api"
+import { adjustProductBalanceUsd } from "./sandbox/transactions"
 import { COLLATERAL_REPRICE_DRIFT_BAND, resolveCollateralRepriceScale } from "./wallet/productBalances"
 
 const modules = import.meta.glob("./**/*.*s")
@@ -162,6 +163,74 @@ describe("borrow product balances", () => {
     const collateral = balances.borrow.find((row) => row.marketId === MARKET && row.state === "collateral")
     expect(collateral?.valueUsd).toBeCloseTo(43_750, 6) // frozen claim USD — NOT 43,750 × 40,000
     expect(collateral?.valueUsd).toBeLessThan(1_000_000)
+  })
+})
+
+describe("multiply product balances", () => {
+  test("writes a USD delta as token units when the market price is known", async () => {
+    const t = convexTest(schema, modules)
+    const wallet = WALLET.toLowerCase()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("markets", {
+        scope: "multiply",
+        slug: "reth-eth",
+        chainId: 1,
+        name: "RETH / ETH",
+        symbol: "RETH",
+        priceUsd: 2_386,
+        createdAt: 1,
+      })
+      await adjustProductBalanceUsd(
+        ctx,
+        "walletMultiplyBalances",
+        wallet,
+        { marketId: "reth-eth", assetId: "reth", state: "available" },
+        "RETH",
+        41_666.67,
+        1,
+        2_386,
+      )
+    })
+
+    const raw = await t.run(async (ctx) => ctx.db.query("walletMultiplyBalances").collect())
+    expect(raw[0]?.amount).toBeCloseTo(41_666.67 / 2_386, 10)
+    expect(raw[0]?.valueUsd).toBeCloseTo(41_666.67, 6)
+  })
+
+  test("normalizes legacy USD-denominated available buckets to token units", async () => {
+    const t = convexTest(schema, modules)
+    const wallet = WALLET.toLowerCase()
+    await t.run(async (ctx) => {
+      await ctx.db.insert("markets", {
+        scope: "multiply",
+        slug: "wsteth-eth",
+        chainId: 1,
+        name: "WSTETH / ETH",
+        symbol: "WSTETH",
+        priceUsd: 2_982.18,
+        createdAt: 1,
+      })
+      // Legacy close/deleverage writes stored the USD amount as `amount` when
+      // no existing token-price sibling was available.
+      await ctx.db.insert("walletMultiplyBalances", {
+        wallet,
+        marketId: "wsteth-eth",
+        assetId: "wsteth",
+        symbol: "WSTETH",
+        amount: 41_666.67,
+        valueUsd: 41_666.67,
+        state: "available",
+        updatedAt: 1,
+      })
+    })
+
+    const asUser = t.withIdentity({ subject: WALLET })
+    const balances = await asUser.query(api.wallet.productBalances.listForWallet, { wallet: WALLET })
+    const available = balances.multiply.find((row) => row.marketId === "wsteth-eth" && row.state === "available")
+
+    expect(available?.amount).toBeCloseTo(41_666.67 / 2_982.18, 10)
+    expect((available?.amount ?? 0) * 2_982.18).toBeCloseTo(available?.valueUsd ?? 0, 6)
+    expect(available?.amount).toBeLessThan(20)
   })
 })
 
