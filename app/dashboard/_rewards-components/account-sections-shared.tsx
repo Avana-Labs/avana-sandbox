@@ -4,9 +4,10 @@ import { Suspense, useMemo, type ReactNode } from "react"
 import Link from "next/link"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ActionIcon } from "@/app/components/action-icon"
+import { ChevronRight } from "@/app/components/icons"
 import { Button } from "@/components/ui/button"
 import { TokenIcon } from "@/app/components/token-icon"
-import { DesktopTableSurface } from "@/app/components/market-table-primitives"
+import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import {
   MarketMobileActionFooter,
@@ -325,12 +326,12 @@ export function MultiplyAvailableMarketsCard({
       </div>
 
       <DesktopTableSurface className="hidden !rounded-none md:block">
-        <table className={`w-full min-w-[760px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
+        <table className={`w-full min-w-[700px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
           <colgroup>
-            <col className="w-[25%]" />
+            <col className="w-[31%]" />
             <col className="w-[24%]" />
-            <col className="w-[18%]" />
-            <col className="w-[24%]" />
+            <col className="w-[17%]" />
+            <col className="w-[19%]" />
             <col className="w-[9%]" />
           </colgroup>
           <thead>
@@ -374,11 +375,21 @@ export function MultiplyAvailableMarketsCard({
                   </div>
                 </td>
                 <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
-                  <AvailableActionButton
-                    href={actionPagePath("multiply", "multiply", { market: row.market.id })}
-                    label={t("Multiply")}
-                    icon="multiply"
-                  />
+                  <HoverActionGroup>
+                    <Button
+                      asChild
+                      type="button"
+                      size="table"
+                      variant="table-secondary"
+                      aria-label={t("Multiply")}
+                      title={t("Multiply")}
+                      className="size-9 px-0 py-0"
+                    >
+                      <Link href={actionPagePath("multiply", "multiply", { market: row.market.id })}>
+                        <ChevronRight />
+                      </Link>
+                    </Button>
+                  </HoverActionGroup>
                 </td>
               </tr>
             ))}
