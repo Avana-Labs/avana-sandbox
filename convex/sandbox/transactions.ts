@@ -1645,10 +1645,23 @@ async function applyProductBucketDelta(
       valueUsd: collateralValueUsd,
       state: "collateral",
     })
+    // The borrowed (debt) asset is not encoded in every market slug — reth-eth / wsteth-eth /
+    // steth-eth multiply positions borrow USDC, but `liquidAssetIdFromArgs` guesses "eth" from the
+    // slug's last segment. A wrong guess makes this upsert miss the real debt row: on close it writes
+    // a $0 row under the wrong asset (pruned by upsertProductBalanceValue) and leaves the genuine debt
+    // ORPHANED — collateral/position go to 0 while the debt lingers forever, permanently inflating
+    // portfolio debt for that wallet. Anchor to whatever asset the stored debt row actually uses so
+    // close/repay always hit it; fall back to the slug-derived id only when opening a brand-new row.
+    const existingMultiplyDebt = (
+      await ctx.db
+        .query("walletMultiplyBalances")
+        .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
+        .collect()
+    ).find((row) => row.marketId === marketSlug && row.state === "debt")
     await upsertProductBalanceValue(ctx, "walletMultiplyBalances", wallet, {
       marketId: marketSlug,
-      assetId,
-      symbol: assetId.toUpperCase(),
+      assetId: existingMultiplyDebt?.assetId ?? assetId,
+      symbol: existingMultiplyDebt?.symbol ?? assetId.toUpperCase(),
       amount: debtValueUsd,
       valueUsd: debtValueUsd,
       state: "debt",
