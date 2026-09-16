@@ -49,6 +49,20 @@ describe("Umbrella page", () => {
     expect(screen.getAllByText("4.84%").length).toBeGreaterThan(0)
     expect(screen.getAllByText("4.19%").length).toBeGreaterThan(0)
     expect(screen.getAllByText("5.05%").length).toBeGreaterThan(0)
+
+    // The selected USDC surface exposes its protection layers and APY sources
+    // in the sidebar before the aggregate Market Level Risk section.
+    expect(screen.getByText("Surface details")).toBeInTheDocument()
+    expect(screen.getByText("Stable Hub → USDC Spoke → USDC Reserve")).toBeInTheDocument()
+    expect(screen.getByText("Active staker capital")).toBeInTheDocument()
+    expect(screen.getByText("$12.0M")).toBeInTheDocument()
+    expect(screen.getByText("Coverage ratio")).toBeInTheDocument()
+    expect(screen.getByText("120%")).toBeInTheDocument()
+    expect(screen.getByText("APY breakdown")).toBeInTheDocument()
+    expect(screen.getByLabelText("More information about Local deductible")).toBeInTheDocument()
+    expect(screen.getByLabelText("More information about DAO first-loss offset")).toBeInTheDocument()
+    expect(screen.getByLabelText("More information about Hub tail target")).toBeInTheDocument()
+    expect(screen.getByLabelText("More information about Cooldown queue")).toBeInTheDocument()
   })
 
   it("shows the 20-day cooldown and 2-day unstake window", () => {

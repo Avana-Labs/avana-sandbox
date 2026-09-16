@@ -12,13 +12,19 @@ export type UmbrellaMarket = {
   id: UmbrellaMarketId
   asset: string
   symbol: string
+  hubLabel: string
   coverage: string
   totalStakedUsd: number
   apy: number
   baseApy: number
+  liquidationRecaptureApy: number
+  incentiveApy: number
   rewardApy: number
   priceUsd: number
   targetCoverageUsd: number
+  localDeductibleUsd: number
+  hubTailTargetUsd: number
+  coverageMode: string
   currentDeficitUsd: number
   deficitOffsetUsd: number
   amountInCooldownUsd: number
@@ -184,13 +190,19 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
       id: "gho",
       asset: "Stake GHO",
       symbol: "GHO",
+      hubLabel: "Stable Hub",
       coverage: "GHO deficits",
       totalStakedUsd: 25_000_000,
       apy: 6.4,
       baseApy: 0,
+      liquidationRecaptureApy: 2.25,
+      incentiveApy: 4.15,
       rewardApy: 6.4,
       priceUsd: sandboxBaselinePriceUsd("GHO"),
       targetCoverageUsd: 22_000_000,
+      localDeductibleUsd: 250_000,
+      hubTailTargetUsd: 30_000_000,
+      coverageMode: "Live Umbrella",
       currentDeficitUsd: 146,
       deficitOffsetUsd: 1_000_000,
       amountInCooldownUsd: 2_500_000,
@@ -199,13 +211,19 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
       id: "usdc",
       asset: "Stake USDC",
       symbol: "USDC",
+      hubLabel: "Stable Hub",
       coverage: "USDC deficits",
       totalStakedUsd: 12_000_000,
       apy: 4.84,
       baseApy: 1.72,
+      liquidationRecaptureApy: 1.25,
+      incentiveApy: 1.87,
       rewardApy: 3.12,
       priceUsd: sandboxBaselinePriceUsd("USDC"),
       targetCoverageUsd: 10_000_000,
+      localDeductibleUsd: 100_000,
+      hubTailTargetUsd: 15_000_000,
+      coverageMode: "Live Umbrella",
       currentDeficitUsd: 51_371,
       deficitOffsetUsd: 500_000,
       amountInCooldownUsd: 1_150_000,
@@ -214,13 +232,19 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
       id: "usdt",
       asset: "Stake USDT",
       symbol: "USDT",
+      hubLabel: "Correlated Hub",
       coverage: "USDT deficits",
       totalStakedUsd: 11_000_000,
       apy: 4.19,
       baseApy: 1.34,
+      liquidationRecaptureApy: 1.15,
+      incentiveApy: 1.7,
       rewardApy: 2.85,
       priceUsd: sandboxBaselinePriceUsd("USDT"),
       targetCoverageUsd: 9_500_000,
+      localDeductibleUsd: 100_000,
+      hubTailTargetUsd: 14_000_000,
+      coverageMode: "Live Umbrella",
       currentDeficitUsd: 32_420,
       deficitOffsetUsd: 400_000,
       amountInCooldownUsd: 980_000,
@@ -229,16 +253,22 @@ export function buildDefaultUmbrellaState(walletId: string): UmbrellaState {
       id: "weth",
       asset: "Stake WETH",
       symbol: "WETH",
+      hubLabel: "Correlated Hub",
       coverage: "WETH deficits",
       totalStakedUsd: 7_000_000,
       apy: 5.05,
       baseApy: 2.65,
+      liquidationRecaptureApy: 1.2,
+      incentiveApy: 1.2,
       rewardApy: 2.4,
       // WETH priced from the app-wide baseline (1934); the seeded WETH position value
       // below is amount × this, so valueUsd === amount × priceUsd (how the session
       // recomputes displayed value after every action).
       priceUsd: sandboxBaselinePriceUsd("WETH"),
       targetCoverageUsd: 6_250_000,
+      localDeductibleUsd: 150_000,
+      hubTailTargetUsd: 10_000_000,
+      coverageMode: "Live Umbrella",
       currentDeficitUsd: 52_973,
       deficitOffsetUsd: 250_000,
       amountInCooldownUsd: 520_000,
@@ -467,7 +497,16 @@ function trancheLabels(
 
 function stateFromConvex(walletId: string, remote: ConvexUmbrellaSessionState): UmbrellaState {
   const fallback = buildDefaultUmbrellaState(walletId)
-  const markets = remote.markets ?? fallback.markets
+  // Convex deployments can briefly return an older market shape while the
+  // client and server roll forward independently. Merge each remote row over
+  // the local catalog so newly added surface metadata remains available without
+  // changing any live wallet or risk values from Convex.
+  const markets = Object.fromEntries(
+    UMBRELLA_MARKET_ORDER.map((marketId) => [
+      marketId,
+      { ...fallback.markets[marketId], ...remote.markets?.[marketId] },
+    ]),
+  ) as Record<UmbrellaMarketId, UmbrellaMarket>
   const now = Date.now()
   // Positions and balances come from Convex — never fold in the demo seed here or the UI
   // shows fake stakes for a real wallet that hasn't onboarded. Start every market at idle
