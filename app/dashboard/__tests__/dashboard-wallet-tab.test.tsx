@@ -56,26 +56,26 @@ describe("DashboardWalletTab", () => {
             sourceType: "borrow_collateral_unpledged",
             symbol: "AURA / WETH LP",
             isLpToken: true,
-            ltvPct: 65,
+            sourcePositionId: "bal-weighted-80-20-aura-weth",
           },
           {
             id: "pool-b",
             walletId: "wallet-live",
-            assetId: "eth-usdc-lp",
+            assetId: "wbtc-eth-lp",
             amount: 2,
             valueUsd: 200,
             sourceType: "borrow_collateral_unpledged",
-            symbol: "ETH / USDC LP",
+            symbol: "WBTC / ETH LP",
             isLpToken: true,
-            ltvPct: 72.5,
+            sourcePositionId: "curve-crypto-wbtc-eth",
           },
         ]}
       />,
     )
 
     expect(screen.getByText("2 pools")).toBeInTheDocument()
-    expect(screen.getAllByText("65%").length).toBeGreaterThan(0)
-    expect(screen.getAllByText("72.5%").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("58.5%").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("70%").length).toBeGreaterThan(0)
   })
 
   it("renders a per-row Swap action that deep-links to the swap flow", { timeout: 20_000 }, () => {

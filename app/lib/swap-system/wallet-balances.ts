@@ -1,6 +1,7 @@
 import { SWAP_CHAIN_ID, getSwapAsset } from "./catalog"
 import { getSwapEligibility } from "./eligibility"
 import { formatTokenDisplaySymbol } from "@/app/lib/token-icons"
+import { BORROW_POOL_CATALOG } from "@/app/lib/borrow-sim"
 import type { SwapContext, SwapRestrictionReason, UserAssetBalance } from "./contracts"
 
 export type DashboardWalletBalanceRow = {
@@ -153,6 +154,9 @@ export function buildDashboardWalletBalanceRows({
       const hasLivePrice = livePrice != null && Number.isFinite(livePrice) && livePrice > 0
       const valueUsd = isMultiplyAvailable ? storedValueUsd : hasLivePrice ? balance.amount * livePrice : storedValueUsd
       const amount = isMultiplyAvailable && hasLivePrice ? valueUsd / livePrice : balance.amount
+      const catalogPool = balance.sourcePositionId
+        ? BORROW_POOL_CATALOG.find((pool) => pool.id === balance.sourcePositionId)
+        : undefined
       return {
         id: balance.id,
         assetId: balance.assetId,
@@ -165,7 +169,7 @@ export function buildDashboardWalletBalanceRows({
         isLpToken,
         isWalletHeld: balance.sourceType === "wallet",
         unitPriceUsd: balance.unitPriceUsd,
-        ltvPct: balance.ltvPct,
+        ltvPct: balance.ltvPct ?? catalogPool?.ltv,
         swappable: eligibility.eligible,
         restrictionReason: eligibility.eligible ? null : eligibility.reason,
         sourcePositionId: balance.sourcePositionId,

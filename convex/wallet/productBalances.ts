@@ -219,6 +219,14 @@ export const listForWallet = query({
           .unique(),
       ),
     )
+    const collateralPools = await Promise.all(
+      poolSlugs.map((slug) =>
+        ctx.db
+          .query("pools")
+          .withIndex("by_slug", (q) => q.eq("slug", slug))
+          .unique(),
+      ),
+    )
     const liveLpBySlug = new Map<string, number>()
     const ltvPctBySlug = new Map<string, number>()
     for (const market of poolMarkets) {
@@ -227,6 +235,16 @@ export const listForWallet = query({
       }
       if (market && typeof market.maxLtvPct === "number" && Number.isFinite(market.maxLtvPct)) {
         ltvPctBySlug.set(market.slug, market.maxLtvPct)
+      }
+    }
+    for (const pool of collateralPools) {
+      if (
+        pool &&
+        !ltvPctBySlug.has(pool.slug) &&
+        typeof pool.maxLtvPct === "number" &&
+        Number.isFinite(pool.maxLtvPct)
+      ) {
+        ltvPctBySlug.set(pool.slug, pool.maxLtvPct)
       }
     }
     const claimLpBySlug = new Map<string, number>()
