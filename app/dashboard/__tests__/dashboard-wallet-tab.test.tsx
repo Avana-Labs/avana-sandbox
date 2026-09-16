@@ -2,7 +2,8 @@ import type { ReactNode } from "react"
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 import { DisplayPreferencesProvider } from "@/app/components/display-preferences"
-import { DashboardWalletTab } from "@/app/dashboard/dashboard-wallet-tab"
+import { DashboardWalletTab, resolvePoolRiskPremiumBps } from "@/app/dashboard/dashboard-wallet-tab"
+import { BORROW_POOL_CATALOG, formatRiskPremium } from "@/app/lib/borrow-sim"
 
 vi.mock("@/app/lib/i18n/use-translation", () => ({
   useTranslation: () => ({ t: (value: string) => value }),
@@ -40,6 +41,51 @@ describe("DashboardWalletTab", () => {
     expect(screen.getAllByRole("link").some((link) => link.getAttribute("href") === "/borrow/markets/eth-usdc")).toBe(
       true,
     )
+  })
+
+  it("renders the pool risk premium from the canonical pool catalog", { timeout: 20_000 }, () => {
+    renderWalletTab(
+      <DashboardWalletTab
+        walletId="wallet-live"
+        balances={[
+          {
+            id: "pool-a",
+            walletId: "wallet-live",
+            assetId: "aura-weth-lp",
+            amount: 1,
+            valueUsd: 100,
+            sourceType: "borrow_collateral_unpledged",
+            symbol: "AURA / WETH LP",
+            isLpToken: true,
+            sourcePositionId: "bal-weighted-80-20-aura-weth",
+          },
+        ]}
+      />,
+    )
+
+    const pool = BORROW_POOL_CATALOG.find((row) => row.id === "bal-weighted-80-20-aura-weth")
+    expect(pool).toBeDefined()
+    expect(screen.getAllByText("Risk Premium").length).toBeGreaterThan(0)
+    expect(screen.getAllByText(formatRiskPremium(pool!.riskPremiumBps)).length).toBeGreaterThan(0)
+  })
+
+  it("prefers the hydrated market premium for pools added after the catalog", () => {
+    const row = {
+      id: "future-pool-row",
+      assetId: "future-pool-lp",
+      symbol: "FUTURE / WETH",
+      name: "FUTURE / WETH LP",
+      amount: 1,
+      valueUsd: 100,
+      sourceType: "borrow_collateral_unpledged" as const,
+      sourceLabel: "Borrow collateral",
+      isLpToken: true,
+      isWalletHeld: false,
+      swappable: false,
+      restrictionReason: null,
+    }
+
+    expect(resolvePoolRiskPremiumBps(row, { "future-pool": { listPremiumBps: 137 } })).toBe(137)
   })
 
   it("renders the authoritative LTV for every pool row", { timeout: 20_000 }, () => {
