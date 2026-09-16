@@ -73,17 +73,14 @@ export function mapLendDepositPreviewToActionUi(
     assetPriceUsd?: number
   },
 ): ActionPreviewUi {
-  const beforeSupplied = options.assetPriceUsd
-    ? preview.before.suppliedAmount * options.assetPriceUsd
-    : preview.before.suppliedValueUsd
-  const afterSupplied = options.assetPriceUsd
-    ? preview.after.suppliedAmount * options.assetPriceUsd
-    : preview.after.suppliedValueUsd
+  // The engine preview already carries USD-valued snapshots. Do not reprice those
+  // snapshots with a separately refreshed UI oracle: that can make the amount card
+  // use one price while the before/after position metrics use another.
+  const beforeSupplied = preview.before.suppliedValueUsd
+  const afterSupplied = preview.after.suppliedValueUsd
   const beforeApy = preview.before.currentApy
   const afterApy = preview.after.currentApy
-  const afterEarned = options.assetPriceUsd
-    ? preview.after.interestEarned * options.assetPriceUsd + preview.after.rewardsEarnedUsd
-    : preview.after.totalEarnedUsd
+  const afterEarned = preview.after.totalEarnedUsd
   const beforeRewards = preview.before.rewardsEarnedUsd
   const afterRewards = preview.after.rewardsEarnedUsd
 
@@ -148,20 +145,12 @@ export function mapLendWithdrawPreviewToActionUi(
     liveAccrual?: boolean
   },
 ): ActionPreviewUi {
-  const beforeSupplied = options.assetPriceUsd
-    ? preview.before.suppliedAmount * options.assetPriceUsd
-    : preview.before.suppliedValueUsd
-  const afterSupplied = options.assetPriceUsd
-    ? preview.after.suppliedAmount * options.assetPriceUsd
-    : preview.after.suppliedValueUsd
+  const beforeSupplied = preview.before.suppliedValueUsd
+  const afterSupplied = preview.after.suppliedValueUsd
   const beforeApy = preview.before.currentApy
   const afterApy = preview.after.currentApy
-  const beforeEarned = options.assetPriceUsd
-    ? preview.before.interestEarned * options.assetPriceUsd + preview.before.rewardsEarnedUsd
-    : preview.before.totalEarnedUsd
-  const afterEarned = options.assetPriceUsd
-    ? preview.after.interestEarned * options.assetPriceUsd + preview.after.rewardsEarnedUsd
-    : preview.after.totalEarnedUsd
+  const beforeEarned = preview.before.totalEarnedUsd
+  const afterEarned = preview.after.totalEarnedUsd
   const maxWithdrawable = preview.maxWithdrawable ?? options.balanceAmount
   const liveUsd =
     options.liveAccrual && options.accrualSinceMs != null
