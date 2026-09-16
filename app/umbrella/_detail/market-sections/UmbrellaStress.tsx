@@ -106,35 +106,35 @@ export function UmbrellaMarketRiskWaterfall({ market }: { market: UmbrellaMarket
         )
       })()}
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <div>
-          <div className="inline-flex items-center gap-1.5 text-[16px] font-semibold tracking-[-0.04em] text-brand">
-            {t("{amount} deficit offset").replace("{amount}", formatCompactUsd(market.deficitOffsetUsd))}
-            <ActionMetricHelp
-              text={t(
-                "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.",
-              )}
-              topic={t("Deficit Offset")}
-            />
-          </div>
+      <div className="mt-4 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <MetricLabel
+            label={t("Deficit Offset")}
+            tooltip={t(
+              "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.",
+            )}
+          />
+          <span className="text-[15px] font-semibold tabular-nums text-brand">
+            {formatCompactUsd(market.deficitOffsetUsd)}
+          </span>
         </div>
-        <div className="text-left sm:text-right">
-          <div className="inline-flex items-center gap-1.5 text-[16px] font-semibold tracking-[-0.04em] text-danger sm:flex-row-reverse">
-            {t("{amount} active deficit").replace("{amount}", formatCompactUsd(market.currentDeficitUsd))}
-            <ActionMetricHelp
-              text={t(
-                "Current realized shortfall in {symbol}. Staker Exposure = max(Active Deficit − Deficit Offset, 0). Current staker exposure: {exposure}.",
-              )
-                .replace("{symbol}", market.symbol)
-                .replace("{exposure}", formatCompactUsd(stakerExposure))}
-              topic={t("Active Deficit")}
-            />
-          </div>
+        <div className="flex items-center justify-between gap-3">
+          <MetricLabel
+            label={t("Active Deficit")}
+            tooltip={t(
+              "Current realized shortfall in {symbol}. Staker Exposure = max(Active Deficit − Deficit Offset, 0). Current staker exposure: {exposure}.",
+            )
+              .replace("{symbol}", market.symbol)
+              .replace("{exposure}", formatCompactUsd(stakerExposure))}
+          />
+          <span className="text-[15px] font-semibold tabular-nums text-danger">
+            {formatCompactUsd(market.currentDeficitUsd)}
+          </span>
         </div>
-      </div>
-
-      <div className="mt-2 text-[12px] text-muted-foreground">
-        {t("{pct}% of target coverage.").replace("{pct}", formatPct(coverageRatioPct))}
+        <div className="flex items-center justify-between gap-3">
+          <MetricLabel label={t("Target")} tooltip={t("Desired amount of user-staked coverage for this asset.")} />
+          <span className="text-[15px] font-semibold tabular-nums">{formatPct(coverageRatioPct)}%</span>
+        </div>
       </div>
     </div>
   )

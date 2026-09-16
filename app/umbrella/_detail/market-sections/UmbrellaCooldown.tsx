@@ -141,9 +141,14 @@ export function UmbrellaCooldown() {
   return (
     <section>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
-          {t("Umbrella Cooldown")}
-        </h2>
+        <div>
+          <h2 className="text-[22px] font-medium leading-none tracking-[-0.03em] text-foreground md:text-[24px]">
+            {t("Umbrella Cooldown")}
+          </h2>
+          <p className="mt-2 text-[13px] text-muted-foreground">
+            {t("Cooldown")}: 20 days · {t("Unstake window")}: 2 days
+          </p>
+        </div>
         {canPrev || canNext ? (
           <CarouselArrowButtons
             canPrev={canPrev}

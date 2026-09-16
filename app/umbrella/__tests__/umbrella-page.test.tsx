@@ -51,6 +51,12 @@ describe("Umbrella page", () => {
     expect(screen.getAllByText("5.05%").length).toBeGreaterThan(0)
   })
 
+  it("shows the 20-day cooldown and 2-day unstake window", () => {
+    renderUmbrellaPage()
+
+    expect(screen.getByText("Cooldown: 20 days · Unstake window: 2 days")).toBeInTheDocument()
+  })
+
   it("never renders an Unstake CTA in the positions table (Claim is the only row action)", () => {
     renderUmbrellaPage()
 
