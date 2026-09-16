@@ -7,11 +7,12 @@ import type { DesktopMenuId } from "@/app/components/header-desktop-menu-data"
 import { LEND_ASSET_GROUPS } from "@/app/lib/data/catalog/lend"
 import { resolveLendMarketId } from "@/app/lib/lend-system/catalog"
 import { BORROW_POOL_CATALOG, type BorrowPoolRow } from "@/app/lib/data/borrow-domain"
-import { formatLtvPct } from "@/app/lib/borrow-sim"
 import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import { MULTIPLY_MARKET_ROWS } from "@/app/lib/data/catalog/multiply"
 import { categorizeMarket, type MarketCategory } from "@/app/lib/markets/category"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
+import { buildSparklineLinePath, getSparklineColor } from "@/app/lib/sparkline"
+import { createSeededRandom } from "@/app/lib/deterministic"
 
 interface PanelRow {
   /** Symbol used for the (primary) token icon. */
@@ -77,7 +78,7 @@ function lendColumns(): PanelColumn[] {
       rows: rows.map((row) => ({
         symbol: row.symbol,
         name: row.name,
-        metric: row.apy,
+        metric: `${row.apyValue.toFixed(2)}%`,
         metricTone: "positive" as const,
         href: `/lend/markets/${resolveLendMarketId(row.symbol)}`,
       })),
@@ -164,7 +165,9 @@ function borrowColumns(): PanelColumn[] {
       symbol: pool.visuals[0].symbol,
       symbol2: pool.visuals[1].symbol,
       label: `${pool.visuals[0].symbol}/${pool.visuals[1].symbol}`,
-      metric: formatLtvPct(pool.ltv),
+      metric: `${((pool.aprMin + pool.aprMax) / 2).toFixed(1)}%`,
+      // Deterministic recent-momentum tone so the APR colour matches its sparkline.
+      metricTone: createSeededRandom(pool.id)() > 0.42 ? ("positive" as const) : ("negative" as const),
       href: borrowMarketDetailPath(pool.id),
     })),
   }))
@@ -215,7 +218,7 @@ function usePanelConfig(menuId: DesktopMenuId): PanelConfig | null {
       ),
       browseHref: "/borrow",
       browseLabel: t("Browse Borrow Page"),
-      metricLabel: t("LTV"),
+      metricLabel: t("APR"),
       columns: borrowColumns(),
     }
   }
@@ -240,6 +243,45 @@ interface HeaderDesktopMenuPanelProps {
   onClose: () => void
   onExited: () => void
   focusOnOpen: boolean
+}
+
+// Small colour sparkline before the metric — the same deterministic mock the Featured cards use.
+function RowSparkline({ seed, isPositive }: { seed: string; isPositive: boolean }) {
+  const total = 40
+  const random = createSeededRandom(seed)
+  // Realistic mock series: a mean-reverting random walk plus a gentle up/down drift, then
+  // min-max normalised so the line fills the box instead of saturating into a flat line.
+  const series: number[] = []
+  let level = 0
+  for (let index = 0; index < total; index++) {
+    level = level * 0.85 + (random() - 0.5) * 12
+    const drift = (isPositive ? 1 : -1) * (index / (total - 1)) * 22
+    series.push(drift + level + (random() - 0.5) * 6)
+  }
+  const min = Math.min(...series)
+  const max = Math.max(...series)
+  const range = Math.max(max - min, 0.0001)
+  const points = series.map((value, index) => ({
+    x: (index / (total - 1)) * 100,
+    y: 88 - ((value - min) / range) * 76,
+  }))
+  const linePath = buildSparklineLinePath(points)
+  const color = getSparklineColor(isPositive)
+  return (
+    <span aria-hidden="true" className="block h-6 w-16 shrink-0">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="h-full w-full">
+        <path
+          d={linePath}
+          fill="none"
+          stroke={color}
+          strokeWidth="1.25"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+    </span>
+  )
 }
 
 export default function HeaderDesktopMenuPanel({
@@ -366,8 +408,9 @@ export default function HeaderDesktopMenuPanel({
                                 <span className="truncate text-[12px] text-muted-foreground">{row.name}</span>
                               ) : null}
                             </span>
+                            <RowSparkline seed={row.href} isPositive={row.metricTone !== "negative"} />
                             <span
-                              className={`shrink-0 text-[13px] font-medium tabular-nums ${
+                              className={`w-14 shrink-0 text-right text-[13px] font-medium tabular-nums ${
                                 row.metricTone === "negative"
                                   ? "text-rose-500"
                                   : row.metricTone === "positive"
