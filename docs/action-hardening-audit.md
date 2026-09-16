@@ -3,17 +3,19 @@
 Audit date: 2026-09-16  
 Branch: `feat/desktop-mega-menu`  
 Base commit before this audit: `6dced0e1`  
-Audit commits: `3f89317b`, `8a1266b3`, `b25e0fbd`
+Audit commits: `3f89317b`, `8a1266b3`, `b25e0fbd`, `a7cc3ee7`, `bca3c2d1`, `ce3f42e2`
 
 ## Release verdict
 
 **BLOCKED — do not public-launch the action system.**
 
-The current application wires the live-looking action pages to sandbox read and write
-adapters by default. The production adapters exist only as dependency-injection seams and
-throw `Production ... adapter is not implemented` when no external implementation is supplied.
-The Convex provider persists sandbox receipts through `convex/sandbox/*`; it does not submit
-wallet transactions. This is a P0 launch blocker for a product advertised as onchain.
+The localhost open-gate path is Convex-backed after `/api/siwe/dev-token` authentication: wallet
+balances, positions, activity, and action results are read from and persisted to Convex. Those
+actions currently use sandbox adapters and `sim-*` receipts; they do not submit wallet
+transactions. The production adapters exist only as dependency-injection seams and throw
+`Production ... adapter is not implemented` when no external implementation is supplied. This
+remains a P0 launch blocker for a product advertised as onchain, but it is distinct from the
+Convex data source.
 
 The standalone Swap flow also remained stuck at `Loading quote` in deterministic Playwright
 mode after the indicative quote appeared. No final financial CTA was clicked in the browser:
@@ -105,15 +107,16 @@ oracle price before creating the intent.
 borrow-token units. Health factor and capacity come from the bigint credit engine.
 
 **Execution / Expected Result / Actual Result**  
-Browser final submit: BLOCKED. Deterministic preview/execute suites pass. Expected wallet receipt
-equals token input, debt increases by token input × price, and all dependent risk metrics update.
-No production receipt was observed.
+Convex sandbox execution: PASS for a 1,000 USDC borrow. Persisted receipt
+`sim-borrow-borrow-intent-t-mu43te0x`; after reload Dashboard showed `1,000 USDC` debt and the
+borrow activity row. Expected debt delta and liquidity delta matched the sandbox result. Onchain
+execution remains BLOCKED by the missing production adapter.
 
 **Dashboard Reconciliation / Position Reconciliation / Market Reconciliation / Activity Reconciliation**  
-BLOCKED for live execution; static borrow dashboard/read-model tests passed.
+Convex sandbox: PASS after reload. Onchain: BLOCKED.
 
 **Refresh/Reconnect Test / Cache/Staleness Test**  
-Hydration/revision guards are present; production read adapter prevents live verification.
+Convex refresh: PASS for the observed borrow. Production wallet reconnect: BLOCKED.
 
 **Edge Cases**  
 Near-cap borrow, zero/invalid amounts, liquidity blocks, and health-factor bands are covered by
@@ -138,8 +141,10 @@ Asset detail sidebar, dashboard Borrow tab, dashboard health-risk banner, mobile
 and repay links from position cards.
 
 **Visual Inspection**  
-PASS after hardening. Browser USDC preview showed outstanding debt `$1,200`, remaining debt
-`$1,200 → $1,100`, and health factor `4.98`; the flow blocks over-repay.
+FAIL then fixed in code. The browser preview correctly priced the typed USDC amount using the
+USDC oracle, but the first post-refresh action accrued from the catalog seed timestamp instead
+of Convex hydration time. The refreshed preview now holds the Convex debt at `$913.37` instead
+of adding another historical accrual before submission.
 
 **Input Values**  
 Token quantity. The engine takes USD6, so the action now multiplies the typed amount by the
@@ -150,31 +155,40 @@ selected debt asset’s oracle price.
 by the credit engine. Max is outstanding USD debt converted to debt-token units.
 
 **Execution / Expected Result / Actual Result**  
-The pre-audit code passed the raw token input as USD, so 1 ETH could repay $1. Fixed in `8a1266b3`.
-Browser final submit was not performed; deterministic conversion and client tests pass.
+Convex sandbox execution exposed a real reconciliation defect: a 100 USDC repayment was recorded
+as `-$100`, but the next Dashboard debt was about `$913` rather than the expected `$900` because
+approximately three months of phantom interest accrued during hydration. The engine clock fix is
+in `ce3f42e2`; a new repayment must still be submitted to complete browser confirmation. The
+same fix also preserves the selected debt asset in new repayment history/receipts.
 
 **Dashboard Reconciliation / Position Reconciliation / Market Reconciliation / Activity Reconciliation**  
-Deterministic engine/adapter coverage: PASS. Live/onchain reconciliation: BLOCKED by missing
-production adapters.
+FAIL for the first Convex sandbox repayment due to the hydration-clock discrepancy. The defect is
+covered by regression tests and the refreshed preview is stable; final post-fix browser
+reconciliation is pending. Onchain reconciliation is BLOCKED.
 
 **Refresh/Reconnect Test / Cache/Staleness Test**  
-Revision/hydration mechanisms exist; live test BLOCKED.
+The stale-clock failure reproduced across refresh and is fixed at hydration. Post-fix action
+confirmation remains pending.
 
 **Edge Cases**  
 Over-repay, full repay, partial repay, and volatile-asset unit conversion are covered.
 
 **Issues Found**  
-Resolved P1: token/USD unit mismatch. Open P0: production path absent.
+Resolved P1: token/USD unit mismatch. Resolved in code: hydration used the historical catalog
+clock and inflated debt on the next action. Resolved in code: repayment activity now carries the
+borrowed asset ID. Open P1: the already-persisted historical receipt lacks that asset ID and
+still renders its old market-slug label. Open P0: production path absent.
 
 **Code Changes**  
 `app/components/action-page/borrow-action-page-client.tsx`,
-`app/lib/action-system/adapters/borrow-preview-mapper.ts` — `8a1266b3`.
+`app/lib/action-system/adapters/borrow-preview-mapper.ts` — `8a1266b3`; hydration clock and
+repayment asset propagation — `ce3f42e2`.
 
 **Regression Tests Added**  
 ETH at $2,000 with a $500 USD repay now maps to `0.25 ETH` and Max converts to token units.
 
 **Final Status**  
-BLOCKED by production execution/read path; unit bug fixed.
+FAIL pending post-fix browser reconciliation; also BLOCKED by production execution/read path.
 
 ### Action: Borrow → Remove collateral
 
@@ -264,8 +278,10 @@ BLOCKED.
 dashboard rewards/lend account section, and borrowable-assets table.
 
 **Visual Inspection**  
-PASS. Browser showed USDC wallet balance `8,200`, 4.85% APY, supplied value before/after, rewards,
-lifetime earnings, and network fee.
+PASS after Convex hydration fix. The Swap Wallet surface has eight liquid assets, but only six
+have Lend markets in `LEND_MARKET_CATALOG`: ETH, WBTC, AAVE, USDC, USDT, and GHO. WETH and LINK
+are correctly excluded because no corresponding Lend market exists; they are not missing wallet
+balances.
 
 **Input Values**  
 Token quantity. The local fixture showed a 4,000 USDC deposit.
@@ -275,32 +291,37 @@ Lend engine preview supplies engine USD snapshots and interest/reward fields. Th
 those snapshots directly instead of applying a second, independently refreshed UI price.
 
 **Execution / Expected Result / Actual Result**  
-Browser final submit: BLOCKED. Deterministic sandbox deposit lifecycle passes. Expected wallet token
-delta = `-deposit`, supplied amount = `+deposit`, and dashboard/position/activity use the same
-engine result.
+Convex sandbox execution: PASS for a 100 USDC deposit. Receipt
+`sim-lend-deposit-intent-s-mu43lokf`; after reload the Dashboard Lend position showed `100 USDC`
+(`$99.97`), the liquid USDC balance fell by the same token amount, and Activity recorded the
+supply. Onchain execution remains BLOCKED.
 
 **Dashboard Reconciliation / Position Reconciliation / Market Reconciliation / Activity Reconciliation**  
-Deterministic adapter/read-model coverage: PASS. Live coverage: BLOCKED.
+Convex sandbox: PASS after reload. Lend Deposit now uses canonical `productBalances.liquid` rows;
+Dashboard and the action picker agree. Onchain: BLOCKED.
 
 **Refresh/Reconnect Test / Cache/Staleness Test**  
-Local persistence/hydration tests pass; live test BLOCKED.
+Convex refresh: PASS for the observed deposit. Local hydration regression test passes. Onchain
+wallet reconnect: BLOCKED.
 
 **Edge Cases**  
 Balance checks, second deposits, accrued earnings, and failure-without-state-mutation are covered.
 
 **Issues Found**  
-Resolved P1: UI oracle repricing could disagree with engine before/after USD values. Open P0:
-production path absent.
+Resolved P1: action picker read a partial legacy basket while Dashboard read canonical Convex
+liquid balances. The eight-wallet-assets/six-Lend-markets difference is legitimate and now
+explicit in the source. Open P0: production path absent.
 
 **Code Changes**  
-`app/lib/action-system/adapters/lend-preview-mapper.ts` — `b25e0fbd`.
+`app/lib/action-system/adapters/lend-preview-mapper.ts` — `b25e0fbd`; canonical wallet hydration
+and supported-market filtering — `bca3c2d1`.
 
 **Regression Tests Added**  
 Price divergence test asserts engine `$100 → $150` remains unchanged even when a UI price of $1,800
 is supplied.
 
 **Final Status**  
-BLOCKED by production execution/read path; preview drift fixed.
+PASS for Convex sandbox reconciliation; BLOCKED for production execution/read path.
 
 ### Action: Lend → Withdraw
 
@@ -320,28 +341,34 @@ Withdraw uses the lend engine preview; supplied and earnings USD metrics are rea
 before/after snapshots as Deposit.
 
 **Execution / Expected Result / Actual Result**  
-Browser final submit: BLOCKED. Deterministic withdraw/partial/full/dust-close suites pass.
+Convex sandbox execution: PASS for a 50 USDC partial withdrawal. Receipt
+`sim-lend-withdraw-intent-n-mu43otmc`; after reload the Dashboard Lend position showed `50 USDC`
+(`$49.99`) and Activity recorded the withdrawal. The inline success screen still displayed the
+pre-action `Wallet withdrawable 100 USDC`, which is a P2 stale/ambiguous success metric even though
+the persisted Dashboard state reconciled.
 
 **Dashboard Reconciliation / Position Reconciliation / Market Reconciliation / Activity Reconciliation**  
-Deterministic coverage: PASS. Live coverage: BLOCKED.
+Convex sandbox: PASS after reload; success-screen withdrawable metric: FAIL/P2. Onchain: BLOCKED.
 
 **Refresh/Reconnect Test / Cache/Staleness Test**  
-Local persistence and lazy accrual tests exist; live coverage BLOCKED.
+Convex refresh: PASS for the persisted position; success-screen metric needs post-action refresh.
+Onchain wallet reconnect: BLOCKED.
 
 **Edge Cases**  
 Partial/full withdraw, accrued interest, insufficient liquidity, and dust closure are covered.
 
 **Issues Found**  
-Resolved P1: independent UI repricing. Open P0: production path absent.
+Resolved P1: independent UI repricing. Open P2: success screen retains the pre-withdraw
+withdrawable amount. Open P0: production path absent.
 
 **Code Changes**  
-`b25e0fbd` mapper fix; `3f89317b` disclosure.
+`b25e0fbd` mapper fix; `bca3c2d1` canonical wallet hydration.
 
 **Regression Tests Added**  
 Lend mapper and sandbox adapter lifecycle suites.
 
 **Final Status**  
-BLOCKED.
+PASS for Convex sandbox reconciliation with P2 open; BLOCKED for production execution/read path.
 
 ### Action: Multiply
 
