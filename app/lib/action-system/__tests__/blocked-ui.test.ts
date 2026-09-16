@@ -43,4 +43,12 @@ describe("blockedCtaLabel", () => {
     expect(blockedCtaLabel("Select rewards to claim").label).toBe("Select rewards")
     expect(blockedCtaLabel("Amount must be positive.").label).toBe("Enter an amount")
   })
+
+  it("uses state-specific labels for Umbrella cooldown blocks", () => {
+    expect(blockedCtaLabel("Withdrawal window expired — restart cooldown.").label).toBe("Window expired")
+    expect(blockedCtaLabel("Cooldown is not ready").label).toBe("Cooldown not ready")
+    expect(blockedCtaLabel("Finish or unstake the current cooldown before starting a new one.").label).toBe(
+      "Cooldown active",
+    )
+  })
 })
