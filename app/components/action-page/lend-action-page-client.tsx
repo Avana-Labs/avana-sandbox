@@ -35,6 +35,20 @@ import { parsePositiveActionAmount } from "@/app/lib/action-system/amount-input"
 import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { humanizeBlockedReason } from "@/app/lib/action-system/blocked-reason"
 
+export function lendSuccessMetrics(
+  metrics: ActionPreviewUi["metrics"],
+  kind: "deposit" | "withdraw",
+  amount: number,
+  symbol: string,
+) {
+  if (kind !== "withdraw") return metrics
+  return metrics.map((metric) =>
+    metric.id === "withdrawable-balance"
+      ? { ...metric, label: "Wallet received", value: formatActionAmount(amount, symbol, 4) }
+      : metric,
+  )
+}
+
 export function LendActionPageClient({
   kind,
   closeHref = "/lend",
@@ -374,7 +388,7 @@ export function LendActionPageClient({
           title: `${descriptor.primaryVerb} successful`,
           description: `${parsed.toFixed(4)} ${market.asset.symbol} processed.`,
           receiptHash: result.receipt.hash ?? null,
-          metrics: executionPreviewUi.metrics,
+          metrics: lendSuccessMetrics(executionPreviewUi.metrics, kind, parsed, market.asset.symbol),
           href: dashboardHrefForProduct("lend"),
           primaryCtaLabel: successDashboardCtaLabel("lend"),
           preview: executionPreviewUi,
