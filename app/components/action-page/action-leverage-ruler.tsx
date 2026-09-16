@@ -66,7 +66,7 @@ function snapToStep(value: number, min: number, max: number, step: number) {
 }
 
 function buildScaleTicks(min: number, max: number, count = SCALE_TICK_COUNT): number[] {
-  if (!(max > min) || count < 2) return [min, max]
+  if (!(max > min) || count < 2) return min === max ? [min] : [min, max]
   const span = max - min
   return Array.from({ length: count }, (_, index) => {
     const raw = min + (span * index) / (count - 1)
