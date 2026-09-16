@@ -28,6 +28,7 @@ import { mapBorrowRewardsClaimPreviewToActionUi } from "@/app/lib/action-system/
 import { ActionBorrowContextBar } from "@/app/components/action-page/action-borrow-context-bar"
 import { ActionPageShell } from "@/app/components/action-page/action-page-shell"
 import { ActionConfigureStage, ActionConfigureAmountSection } from "@/app/components/action-page/action-configure-stage"
+import { ActionLeverageRuler } from "@/app/components/action-page/action-leverage-ruler"
 import { ActionSelectStage } from "@/app/components/action-page/action-select-stage"
 import { ActionSuccessStage } from "@/app/components/action-page/action-success-stage"
 import { ActionProcessingStage } from "@/app/components/action-page/action-processing-stage"
@@ -1383,8 +1384,22 @@ export function BorrowActionPageClient({
           isPending={isPending}
           outcome={outcome}
           hideAmountInput={kind === "claim" || Boolean(useWorkspaceFields)}
+          amountReadOnly={kind === "remove"}
           amountVariant="card"
           amountPlacement={useWorkspaceFields ? "stacked" : "inline"}
+          amountFooter={
+            kind === "remove" ? (
+              <ActionLeverageRuler
+                value={percent}
+                onChange={setPercent}
+                min={0}
+                max={100}
+                step={1}
+                label="Percentage to remove"
+                valueSuffix="%"
+              />
+            ) : undefined
+          }
           showBalance={showActionMax}
           onMax={showActionMax ? handleActionMax : undefined}
           amountUnitLabel={kind === "remove" ? "%" : undefined}

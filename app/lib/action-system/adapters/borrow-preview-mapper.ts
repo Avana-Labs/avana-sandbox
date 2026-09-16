@@ -380,7 +380,13 @@ export function mapBorrowRemovePreviewToActionUi(
 ): ActionPreviewUi {
   const beforeCollateral = fixedToNumber(preview.before.collateralValueUsd6, 6)
   const afterCollateral = fixedToNumber(preview.after.collateralValueUsd6, 6)
-  const removeUsd = Math.max(0, beforeCollateral - afterCollateral)
+  // Blocked simulations intentionally keep `after` equal to `before`. In that
+  // case, deriving the amount from the state delta renders an unsafe request as
+  // $0.00, which hides the actual amount the user entered. Use the canonical
+  // requested amount for blocked previews and the simulated delta only after a
+  // removal is allowed.
+  const simulatedRemoveUsd = Math.max(0, beforeCollateral - afterCollateral)
+  const removeUsd = preview.allowed ? simulatedRemoveUsd : Math.max(0, options.removeUsd)
   const annualBefore = (beforeCollateral * options.positionApyPct) / 100
   const annualAfter = (afterCollateral * options.positionApyPct) / 100
   const healthBefore = hfToNumber(preview.before.healthFactorWad)

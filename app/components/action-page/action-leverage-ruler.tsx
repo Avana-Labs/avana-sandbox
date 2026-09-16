@@ -21,6 +21,15 @@ function formatMultiplier(value: number) {
   return `${fixed}x`
 }
 
+function formatRulerValue(value: number, suffix?: string) {
+  if (!suffix) return formatMultiplier(value)
+  const rounded = Math.round(value * 100) / 100
+  const formatted = Number.isInteger(rounded)
+    ? String(rounded)
+    : rounded.toFixed(2).replace(/0+$/, "").replace(/\.$/, "")
+  return `${formatted}${suffix}`
+}
+
 /** Scale labels — same rounding as the mock (3.25x, 5.5x, 7.74x, 9.99x). */
 function formatTickLabel(value: number) {
   if (!Number.isFinite(value)) return "—"
@@ -29,6 +38,15 @@ function formatTickLabel(value: number) {
   const asOne = Math.round(rounded * 10) / 10
   if (Math.abs(asOne - rounded) < 1e-9) return `${asOne.toFixed(1)}x`
   return `${rounded.toFixed(2)}x`
+}
+
+function formatRulerTickLabel(value: number, suffix?: string) {
+  if (!suffix) return formatTickLabel(value)
+  const rounded = Math.round(value * 100) / 100
+  if (Number.isInteger(rounded)) return `${rounded}${suffix}`
+  const oneDecimal = Math.round(rounded * 10) / 10
+  const formatted = Math.abs(oneDecimal - rounded) < 1e-9 ? oneDecimal.toFixed(1) : rounded.toFixed(2)
+  return `${formatted}${suffix}`
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -63,6 +81,7 @@ export function ActionLeverageRuler({
   max = MULTIPLY_ACTION_SLIDER_MAX,
   step = MULTIPLY_ACTION_SLIDER_STEP,
   label = "Multiplier",
+  valueSuffix,
   variant = "embedded",
 }: {
   value: string
@@ -71,6 +90,7 @@ export function ActionLeverageRuler({
   max?: number
   step?: number
   label?: string
+  valueSuffix?: string
   /** Spacing only — never wraps in a card. */
   variant?: "card" | "embedded"
 }) {
@@ -97,7 +117,7 @@ export function ActionLeverageRuler({
           aria-atomic="true"
           data-testid="action-leverage-pill"
         >
-          {formatMultiplier(currentValue)}
+          {formatRulerValue(currentValue, valueSuffix)}
         </div>
       </div>
 
@@ -135,7 +155,7 @@ export function ActionLeverageRuler({
               index === 0 ? "text-left" : index === ticks.length - 1 ? "text-right" : "text-center",
             )}
           >
-            {formatTickLabel(tick)}
+            {formatRulerTickLabel(tick, valueSuffix)}
           </span>
         ))}
       </div>

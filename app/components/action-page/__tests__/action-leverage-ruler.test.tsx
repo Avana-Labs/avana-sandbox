@@ -35,6 +35,17 @@ describe("ActionLeverageRuler", () => {
     expect(screen.getByRole("slider", { name: "Multiplier" })).toBeInTheDocument()
   })
 
+  it("supports percentage formatting for bounded action controls", () => {
+    render(<ActionLeverageRuler value="25" onChange={() => {}} label="Percentage to remove" valueSuffix="%" min={0} max={100} step={1} />)
+
+    expect(screen.getByTestId("action-leverage-pill")).toHaveTextContent("25%")
+    expect(screen.getByTestId("action-leverage-ticks")).toHaveTextContent("0%")
+    expect(screen.getByTestId("action-leverage-ticks")).toHaveTextContent("25%")
+    expect(screen.getByTestId("action-leverage-ticks")).toHaveTextContent("50%")
+    expect(screen.getByTestId("action-leverage-ticks")).toHaveTextContent("75%")
+    expect(screen.getByTestId("action-leverage-ticks")).toHaveTextContent("100%")
+  })
+
   it("does not render number input, recommended copy, or USD endpoints", () => {
     render(<ActionLeverageRuler value="2" onChange={() => {}} />)
 

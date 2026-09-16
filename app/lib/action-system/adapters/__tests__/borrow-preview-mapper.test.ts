@@ -258,4 +258,25 @@ describe("borrow preview mappers", () => {
     expect(ui.balanceValue).toBe("$2,500.00")
     expect(ui.maxAmount).toBe(60)
   })
+
+  it("keeps the requested removal amount visible when the engine blocks the action", () => {
+    const blockedPreview = {
+      ...preview,
+      allowed: false,
+      after: { ...preview.after, collateralValueUsd6: preview.before.collateralValueUsd6 },
+      validationErrors: ["Removal would make the position unsafe."],
+    }
+    const ui = mapBorrowRemovePreviewToActionUi(blockedPreview, {
+      percent: 100,
+      safePercent: 76,
+      removeUsd: 43_596,
+      marketLabel: "cbBTC / USDC",
+      positionApyPct: 2.85,
+    })
+
+    expect(ui.amountUsd).toBe(43_596)
+    expect(ui.amountUsdLabel).toBe("$43,596.00")
+    expect(ui.balanceValue).toBe("$43,596.00")
+    expect(ui.allowed).toBe(false)
+  })
 })
