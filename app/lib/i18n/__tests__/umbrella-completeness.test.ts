@@ -14,7 +14,6 @@ import { TRANSLATIONS } from "@/app/lib/i18n/translations"
 export const UMBRELLA_TRANSLATION_KEYS: readonly string[] = [
   "APY",
   "Active Deficit",
-  "Active stake",
   "Amount Avana covers first before user-staked coverage is exposed. Stakers only take losses once realized deficits exceed this offset.",
   "Asset",
   "Back to Umbrella",
@@ -27,6 +26,7 @@ export const UMBRELLA_TRANSLATION_KEYS: readonly string[] = [
   "Coverage currently in cooldown across all stakers of this asset. Cooldown positions still absorb losses until they finish the 20-day wait and are unstaked.",
   "Current realized shortfall in {symbol}. Staker Exposure = max(Active Deficit − Deficit Offset, 0). Current staker exposure: {exposure}.",
   "Deficit Offset",
+  "Deposited",
   "Desired amount of user-staked coverage for this asset.",
   "Dynamic rewards",
   "Earning",

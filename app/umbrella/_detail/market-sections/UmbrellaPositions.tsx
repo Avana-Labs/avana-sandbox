@@ -146,9 +146,9 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
                 </th>
                 <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
                   <PositionHeader
-                    label={t("Active stake")}
+                    label={t("Deposited")}
                     tooltip={t(
-                      "The amount of Umbrella capital currently active and available to absorb deficits for this covered reserve. Capital in cooldown is no longer counted as fully available protection.",
+                      "The amount of Umbrella capital currently deposited and available to absorb deficits for this covered reserve. Capital in cooldown is no longer counted as fully available protection.",
                     )}
                   />
                 </th>
@@ -299,7 +299,7 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
               />
               <MarketMobileStatList>
                 <MarketMobileStatRow
-                  label={t("Active stake")}
+                  label={t("Deposited")}
                   value={
                     <div className="flex flex-col items-end">
                       <span>{showDollarAmounts ? row.activeStakeAmountLabel : MASK}</span>

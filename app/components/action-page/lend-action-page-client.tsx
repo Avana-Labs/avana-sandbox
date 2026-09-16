@@ -139,6 +139,27 @@ export function LendActionPageClient({
     [market?.marketId, session.state.positions, walletId],
   )
 
+  // The Convex ledger materializes earned interest lazily. Use the same supply-time anchor as
+  // the dashboard's Lend Assets counter so a fresh server snapshot does not render accrued
+  // earnings as $0 until the next ledger write.
+  const accrualSinceMs = useMemo(() => {
+    const anchors = [
+      position?.openedAt,
+      ...session.transactionHistory
+        .filter((entry) => {
+          const kind = entry.kind as string
+          const status = entry.status as string
+          return (
+            entry.marketId === market?.marketId &&
+            (kind === "deposit" || kind === "supply") &&
+            (status === "success" || status === "confirmed")
+          )
+        })
+        .map((entry) => entry.timestamp),
+    ].filter((value): value is number => typeof value === "number" && Number.isFinite(value) && value > 0)
+    return anchors.length > 0 ? Math.min(...anchors) : null
+  }, [market?.marketId, position?.openedAt, session.transactionHistory])
+
   useEffect(() => {
     if (!market) return
     let cancelled = false
@@ -212,6 +233,8 @@ export function LendActionPageClient({
             balanceAmount: position?.currentSuppliedAmount ?? 0,
             assetPriceUsd,
             poolAvailableLiquidity: market.availableLiquidity,
+            accrualSinceMs,
+            liveAccrual: true,
           }),
         )
       })
@@ -221,7 +244,7 @@ export function LendActionPageClient({
     return () => {
       cancelled = true
     }
-  }, [deferredAmount, assetPriceUsd, kind, market, position, session, walletId])
+  }, [accrualSinceMs, deferredAmount, assetPriceUsd, kind, market, position, session, walletId])
 
   useEffect(() => {
     // Editing inputs after a failed submit clears the stale error banner and returns to

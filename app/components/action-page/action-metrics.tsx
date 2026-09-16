@@ -7,6 +7,7 @@ import { ActionHealthFactorBar } from "@/app/components/action-page/action-healt
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
 import { ActionTokenIcon } from "@/app/components/action-page/action-token-icon"
 import { AnimatedTextValue } from "@/app/components/action-page/action-live-value"
+import { LiveInterestEarnedUsd } from "@/app/dashboard/live-accrual"
 import type { ActionMetricRow, ActionMetricTone } from "@/app/lib/action-system/contracts"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { ACTION_INFO_TOOLTIPS, resolveMetricTooltip } from "@/app/lib/action-system/metric-tooltips"
@@ -96,6 +97,7 @@ function MetricValue({
   tone = "default",
   id,
   tokenSymbols,
+  liveUsd,
 }: {
   label: string
   value: string
@@ -104,6 +106,7 @@ function MetricValue({
   tone?: ActionMetricTone
   id?: string
   tokenSymbols?: string[]
+  liveUsd?: ActionMetricRow["liveUsd"]
 }) {
   if (tokenSymbols && tokenSymbols.length > 0) {
     return <TokenSymbolRow symbols={tokenSymbols} />
@@ -115,13 +118,33 @@ function MetricValue({
   if (before && after) {
     return (
       <div className={cn("inline-flex items-center gap-1.5 font-medium tabular-nums", toneClassName(resolvedTone))}>
-        <span className="text-muted-foreground">{before}</span>
+        <span className="text-muted-foreground">
+          {liveUsd ? (
+            <LiveInterestEarnedUsd
+              anchorMs={liveUsd.anchorMs}
+              ratePerYearUsd={liveUsd.before.ratePerYearUsd}
+              baseUsd={liveUsd.before.baseUsd}
+              fractionDigits={liveUsd.fractionDigits}
+            />
+          ) : (
+            before
+          )}
+        </span>
         <span className="text-muted-foreground/70">→</span>
         <span className={cn("inline-flex items-center gap-1", toneClassName(resolvedTone))}>
           {showHeart ? (
             <Heart className={cn("size-3.5", resolvedTone === "positive" && "fill-emerald-500")} aria-hidden />
           ) : null}
-          <AnimatedTextValue text={after} animateOnMount />
+          {liveUsd ? (
+            <LiveInterestEarnedUsd
+              anchorMs={liveUsd.anchorMs}
+              ratePerYearUsd={liveUsd.after.ratePerYearUsd}
+              baseUsd={liveUsd.after.baseUsd}
+              fractionDigits={liveUsd.fractionDigits}
+            />
+          ) : (
+            <AnimatedTextValue text={after} animateOnMount />
+          )}
         </span>
       </div>
     )
@@ -146,6 +169,7 @@ export function ActionMetricRow({
   tooltip,
   id,
   tokenSymbols,
+  liveUsd,
 }: ActionMetricRow) {
   const { t } = useTranslation()
   const tip = resolveMetricTooltip(id, label, tooltip)
@@ -165,6 +189,7 @@ export function ActionMetricRow({
             tone={tone}
             id={id}
             tokenSymbols={tokenSymbols}
+            liveUsd={liveUsd}
           />
         </div>
       </div>
@@ -201,6 +226,7 @@ export function ActionMetricsBlock({ rows }: { rows: ActionMetricRow[] }) {
                 tone={row.tone}
                 tokenSymbols={row.tokenSymbols}
                 tooltip={row.tooltip}
+                liveUsd={row.liveUsd}
               />
             ))}
           </div>

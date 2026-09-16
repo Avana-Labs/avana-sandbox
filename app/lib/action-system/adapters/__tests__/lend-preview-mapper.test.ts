@@ -66,4 +66,26 @@ describe("lend preview mappers", () => {
     expect(ui.amountUsdLabel).toBe("$25.00")
     expect(ui.maxAmount).toBe(10)
   })
+
+  it("adds the same live accrual inputs used by the dashboard to withdraw earnings", () => {
+    const openedAt = Date.now() - 14 * 24 * 60 * 60 * 1000
+    const ui = mapLendWithdrawPreviewToActionUi(preview, {
+      symbol: "GHO",
+      amount: 25,
+      marketLabel: "GHO · Core",
+      balanceAmount: 100,
+      assetPriceUsd: 1,
+      accrualSinceMs: openedAt,
+      liveAccrual: true,
+    })
+
+    expect(ui.metrics.find((row) => row.id === "earnings")).toMatchObject({
+      liveUsd: {
+        anchorMs: openedAt,
+        before: { baseUsd: 7, ratePerYearUsd: 420 },
+        after: { baseUsd: 10.5, ratePerYearUsd: 630 },
+        fractionDigits: 4,
+      },
+    })
+  })
 })

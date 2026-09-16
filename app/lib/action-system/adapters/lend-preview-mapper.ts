@@ -144,6 +144,8 @@ export function mapLendWithdrawPreviewToActionUi(
     balanceAmount: number
     assetPriceUsd?: number
     poolAvailableLiquidity?: number
+    accrualSinceMs?: number | null
+    liveAccrual?: boolean
   },
 ): ActionPreviewUi {
   const beforeSupplied = options.assetPriceUsd
@@ -161,6 +163,21 @@ export function mapLendWithdrawPreviewToActionUi(
     ? preview.after.interestEarned * options.assetPriceUsd + preview.after.rewardsEarnedUsd
     : preview.after.totalEarnedUsd
   const maxWithdrawable = preview.maxWithdrawable ?? options.balanceAmount
+  const liveUsd =
+    options.liveAccrual && options.accrualSinceMs != null
+      ? {
+          anchorMs: options.accrualSinceMs,
+          before: {
+            baseUsd: beforeEarned,
+            ratePerYearUsd: beforeSupplied * beforeApy,
+          },
+          after: {
+            baseUsd: afterEarned,
+            ratePerYearUsd: afterSupplied * afterApy,
+          },
+          fractionDigits: 4,
+        }
+      : undefined
 
   return {
     ...basePreviewFields(preview, {
@@ -195,6 +212,7 @@ export function mapLendWithdrawPreviewToActionUi(
         value: formatActionUsdBeforeAfter(beforeEarned, afterEarned),
         before: formatActionUsd(beforeEarned),
         after: formatActionUsd(afterEarned),
+        liveUsd,
       },
       {
         id: "withdrawable-balance",
