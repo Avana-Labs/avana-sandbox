@@ -26,6 +26,18 @@ function renderSwap() {
 }
 
 describe("SwapPageClient", () => {
+  it("starts with no assets selected on the standalone swap route", () => {
+    render(
+      <AvanaSessionsProvider walletId="demo-wallet" persistLocalState={false}>
+        <SwapPageClient />
+      </AvanaSessionsProvider>,
+    )
+
+    expect(screen.getByRole("button", { name: "Sell asset" })).toHaveTextContent("Select asset")
+    expect(screen.getByRole("button", { name: "Buy asset" })).toHaveTextContent("Select asset")
+    expect(screen.getByRole("button", { name: "Select assets" })).toBeDisabled()
+  })
+
   it("renders the canonical swap page", () => {
     renderSwap()
 

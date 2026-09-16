@@ -81,9 +81,9 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
   const networkGuard = useActionNetworkGuard()
   const canonicalPriceFor = useCanonicalPriceFor()
   const swappableAssets = SWAP_ASSETS.filter((asset) => asset.isSwapEnabled && !asset.isLpToken)
-  const [inputAssetId, setInputAssetId] = useState(initialFrom ?? "eth")
+  const [inputAssetId, setInputAssetId] = useState(initialFrom ?? "")
   const [outputAssetId, setOutputAssetId] = useState(
-    initialTo && initialTo !== inputAssetId ? initialTo : fallbackOutput(inputAssetId),
+    initialTo && initialTo !== initialFrom ? initialTo : initialFrom ? fallbackOutput(initialFrom) : "",
   )
   const [amount, setAmount] = useState("")
   const slippageBps = 50
@@ -97,13 +97,13 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
   const [acceptedPriceImpact, setAcceptedPriceImpact] = useState(false)
   const [outcome, setOutcome] = useState<{ tone: "success" | "error"; message: string } | null>(null)
 
-  const inputAsset = SWAP_ASSETS.find((asset) => asset.id === inputAssetId) ?? swappableAssets[0]!
-  const outputAsset = SWAP_ASSETS.find((asset) => asset.id === outputAssetId) ?? swappableAssets[1]!
-  const inputPriceUsd = canonicalPriceFor(inputAsset.symbol) ?? inputAsset.priceUsd
-  const outputPriceUsd = canonicalPriceFor(outputAsset.symbol) ?? outputAsset.priceUsd
-  const inputBalance = swap.walletBalances.find(
-    (balance) => balance.assetId === inputAsset.id && balance.sourceType === "wallet",
-  )
+  const inputAsset = SWAP_ASSETS.find((asset) => asset.id === inputAssetId)
+  const outputAsset = SWAP_ASSETS.find((asset) => asset.id === outputAssetId)
+  const inputPriceUsd = inputAsset ? (canonicalPriceFor(inputAsset.symbol) ?? inputAsset.priceUsd) : 0
+  const outputPriceUsd = outputAsset ? (canonicalPriceFor(outputAsset.symbol) ?? outputAsset.priceUsd) : 0
+  const inputBalance = inputAsset
+    ? swap.walletBalances.find((balance) => balance.assetId === inputAsset.id && balance.sourceType === "wallet")
+    : undefined
   const maxAmount = inputBalance
     ? getMaxSwapInputAmount(inputBalance, { originProduct: "wallet", chainId: SWAP_CHAIN_ID, outputAssetId })
     : 0
@@ -118,10 +118,10 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
         : ({ valid: false, reason: "insufficient_balance", amount: null, maxAmount: 0 } as const),
     [amount, inputBalance, outputAssetId],
   )
-  const approvalRequired = validation.valid && swap.requiresApproval(inputAsset.id, validation.amount)
+  const approvalRequired = validation.valid && inputAsset ? swap.requiresApproval(inputAsset.id, validation.amount) : false
   const getQuote = swap.getQuote
   useEffect(() => {
-    if (!validation.valid) {
+    if (!inputAssetId || !outputAssetId || !validation.valid) {
       setQuote(null)
       setQuoteState("idle")
       return
@@ -163,7 +163,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
   }, [amount, inputAssetId, outputAssetId, slippageBps])
 
   const previewUi = useMemo<ActionPreviewUi | null>(() => {
-    if (!quote || !validation.valid) return null
+    if (!quote || !validation.valid || !inputAsset || !outputAsset) return null
     const receiveLabel = `${formatAmount(quote.estimatedOutputAmount)} ${outputAsset.symbol}`
     return {
       allowed: true,
@@ -234,7 +234,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
   ])
 
   const submitSwap = useCallback(async () => {
-    if (!quote || !previewUi || !validation.valid || isPending) return
+    if (!quote || !previewUi || !validation.valid || !inputAsset || !outputAsset || isPending) return
     if (networkGuard.isWrongNetwork) return
     if (quote.priceImpactPct >= 3 && !acceptedPriceImpact) return
     setIsPending(true)
@@ -341,8 +341,10 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
     setStage("configure")
   }, [])
 
-  const primaryLabel = !inputBalance
-    ? "Insufficient balance"
+  const primaryLabel = !inputAsset || !outputAsset
+    ? "Select assets"
+    : !inputBalance
+      ? "Insufficient balance"
     : !validation.valid
       ? validation.reason === "invalid_amount"
         ? "Enter an amount"
@@ -426,7 +428,7 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
             />
           </div>
 
-          {amount.trim() && !validation.valid && validation.reason ? (
+          {amount.trim() && inputAsset && !validation.valid && validation.reason ? (
             <div
               className="rounded-radius-lg border border-danger/30 bg-danger/10 px-4 py-3 text-[14px] text-foreground"
               data-testid="swap-validation-message"
@@ -502,7 +504,7 @@ function SwapAssetField({
   label: string
   amount: string
   onAmountChange?: (value: string) => void
-  assetId: string
+  assetId?: string
   onOpenAssetPicker: () => void
   balanceLabel?: string
   onBalanceClick?: () => void
@@ -510,7 +512,7 @@ function SwapAssetField({
   tone: "raised" | "inset"
   readOnly?: boolean
 }) {
-  const asset = SWAP_ASSETS.find((item) => item.id === assetId)!
+  const asset = SWAP_ASSETS.find((item) => item.id === assetId)
   return (
     <SwapStyleField label={label} tone={tone} className="py-3">
       <div className="mt-1.5 flex min-h-10 items-center justify-between gap-3 max-[360px]:flex-col max-[360px]:items-stretch">
@@ -533,10 +535,14 @@ function SwapAssetField({
           aria-label={`${label} asset`}
           className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full border border-border bg-surface-raised px-3 text-[14px] font-medium text-foreground hover:bg-surface-hover max-[360px]:self-end"
         >
-          <span className="inline-flex min-w-0 items-center gap-2">
-            <SwapAssetIcon asset={asset} size="pill" />
-            <span className="truncate">{asset.symbol}</span>
-          </span>
+          {asset ? (
+            <span className="inline-flex min-w-0 items-center gap-2">
+              <SwapAssetIcon asset={asset} size="pill" />
+              <span className="truncate">{asset.symbol}</span>
+            </span>
+          ) : (
+            <span className="truncate text-muted-foreground">Select asset</span>
+          )}
           <span aria-hidden className="shrink-0 text-muted-foreground">
             ▾
           </span>
