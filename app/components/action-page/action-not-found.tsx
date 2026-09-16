@@ -15,7 +15,7 @@ export function ActionNotFound({
 }) {
   const { t } = useTranslation()
   return (
-    <ActionPageShell title={title} subtitle={undefined} closeHref={closeHref} simulated={false}>
+    <ActionPageShell title={title} subtitle={undefined} closeHref={closeHref}>
       <div className="rounded-radius-md border-0 bg-card p-6 text-center" data-testid="action-not-found">
         <h2 className="text-[18px] font-medium text-foreground">{t(title)}</h2>
         <p className="mt-2 text-[14px] text-muted-foreground">{t(message)}</p>

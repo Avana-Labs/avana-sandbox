@@ -424,7 +424,6 @@ export function LendActionPageClient({
         hideTitle={embedded || sidebar}
         hideClose={embedded}
         flowHeaderStage={!embedded ? stage : undefined}
-        simulated
       >
         <ActionSessionLoading />
       </ActionPageShell>
@@ -457,7 +456,6 @@ export function LendActionPageClient({
       hideClose={embedded}
       closeHref={closeHref}
       flowHeaderStage={!embedded ? stage : undefined}
-      simulated={session.readAdapter.mode === "sandbox"}
     >
       {stage === "select" && !embedded ? (
         <ActionSelectStage

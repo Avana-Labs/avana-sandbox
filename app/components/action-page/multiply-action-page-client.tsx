@@ -722,7 +722,6 @@ export function MultiplyActionPageClient({
       hideClose={embedded}
       closeHref={closeHref}
       flowHeaderStage={!embedded ? stage : undefined}
-      simulated={session.readAdapter.mode === "sandbox"}
     >
       {useWorkspaceFields ? stackedAmountField : null}
 

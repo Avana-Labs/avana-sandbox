@@ -60,16 +60,14 @@ describe("ActionPageShell", () => {
     expect(screen.getByText("Action page body")).toBeInTheDocument()
   })
 
-  it("renders a clear sandbox disclosure when simulated", () => {
+  it("does not render a simulation disclosure", () => {
     renderShell(
-      <ActionPageShell title="Borrow" subtitle="Configure and review your loan." simulated>
+      <ActionPageShell title="Borrow" subtitle="Configure and review your loan.">
         <div>Body</div>
       </ActionPageShell>,
     )
 
-    expect(screen.getByTestId("action-simulation-banner")).toHaveTextContent(
-      "Simulated transaction — no real funds move",
-    )
+    expect(screen.queryByTestId("action-simulation-banner")).not.toBeInTheDocument()
   })
 
   it("renders the action flow header when a flow stage is provided", () => {

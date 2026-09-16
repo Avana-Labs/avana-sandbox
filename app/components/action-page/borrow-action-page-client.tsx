@@ -1179,7 +1179,6 @@ export function BorrowActionPageClient({
       hideClose={embedded}
       closeHref={closeHref}
       flowHeaderStage={!embedded ? stage : undefined}
-      simulated={session.readAdapter.mode === "sandbox"}
     >
       {useSupplyWorkspace && activePool ? (
         <ActionBorrowContextBar
