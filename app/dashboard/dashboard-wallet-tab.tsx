@@ -187,7 +187,9 @@ function PoolIdentity({ row, markets }: { row: DashboardWalletBalanceRow; market
     )
   }
 
-  return <TokenPairCell visuals={visuals} name={row.name} subtitle={detail.protocol} size="md" />
+  return (
+    <TokenPairCell visuals={visuals} name={row.name} subtitle={detail.protocol} size="md" subtitleTruncate={false} />
+  )
 }
 
 function poolDetailHref(row: DashboardWalletBalanceRow) {
@@ -623,13 +625,13 @@ function PoolsBalanceSection({
         <p className="mt-1 text-[13px] text-muted-foreground">{sectionCount(rows.length, "pool", "pools")}</p>
       </div>
 
-      <DesktopTableSurface className="hidden overflow-x-auto !rounded-none md:block">
-        <table className={`w-full min-w-[760px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
+      <DesktopTableSurface className="hidden !rounded-none md:block">
+        <table className={`w-full table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
           <colgroup>
-            <col className="w-[38%]" />
-            <col className="w-[14%]" />
-            <col className="w-[18%]" />
-            <col className="w-[30%]" />
+            <col className="w-[36%]" />
+            <col className="w-[21%]" />
+            <col className="w-[21%]" />
+            <col className="w-[22%]" />
           </colgroup>
           <thead>
             <tr className={TABLE_HEADER_ROW}>
