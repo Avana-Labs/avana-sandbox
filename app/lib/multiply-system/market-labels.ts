@@ -1,4 +1,5 @@
 import { formatTokenDisplaySymbol } from "@/app/lib/token-icons"
+import { getMultiplyMarketById } from "./catalog"
 
 function displaySymbol(symbol: string) {
   return formatTokenDisplaySymbol(symbol)
@@ -25,6 +26,28 @@ export function formatMultiplyLoopSupplyLabel(collateralSymbol: string) {
 
 export function formatMultiplyLoopBorrowLabel(borrowSymbol: string) {
   return `${MULTIPLY_LOOP_BORROW_VERB} ${displaySymbol(borrowSymbol)}`
+}
+
+/** Resolve the collateral/borrow roles used by Multiply activity and receipt labels. */
+export function getMultiplyActivityMarketSymbols(marketId?: string) {
+  if (!marketId) return null
+  const normalizedId = marketId.trim().toLowerCase()
+  const market = getMultiplyMarketById(normalizedId)
+  if (market) {
+    return {
+      collateralSymbol: market.collateralAsset.symbol,
+      borrowSymbol: market.borrowAsset.symbol,
+    }
+  }
+
+  const [collateralSymbol, borrowSymbol] = normalizedId.split(/[-_:]/)
+  if (!collateralSymbol || !borrowSymbol) return null
+  return { collateralSymbol, borrowSymbol }
+}
+
+export function formatMultiplyActivityMarketLabel(marketId?: string) {
+  const symbols = getMultiplyActivityMarketSymbols(marketId)
+  return symbols ? formatMultiplyLoopPairLabel(symbols.collateralSymbol, symbols.borrowSymbol) : "Multiply"
 }
 
 function translateLoopRoleLabel(

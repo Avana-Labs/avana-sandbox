@@ -10,7 +10,7 @@ import { resolveMultiplyTokenLogo } from "@/lib/multiply-token-logo"
 import { formatWalletLabel } from "@/app/lib/detail-page/transaction-history"
 import type { MultiplyMarketRow } from "@/app/lib/multiply-sim"
 import { MULTIPLY_MARKET_CATALOG } from "./catalog"
-import { formatMultiplyLoopPairLabel } from "./market-labels"
+import { formatMultiplyActivityMarketLabel, formatMultiplyLoopPairLabel } from "./market-labels"
 import type { MultiplyTransactionHistoryItem, MultiplyTransactionResult, MultiplyWalletReadSnapshot } from "./contracts"
 import { buildMockMultiplyRiskSnapshots } from "./mock"
 
@@ -386,8 +386,8 @@ export function buildMultiplyActivityHistory(
         amountUsd: item.amountUsd,
         primaryLabel: item.kind === "multiply" ? "Multiply" : isClose ? "Close position" : "Deleverage",
         secondaryLabel: isClose
-          ? "Position closed"
-          : `${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
+          ? `${formatMultiplyActivityMarketLabel(item.marketId)} · Position closed`
+          : `${formatMultiplyActivityMarketLabel(item.marketId)} · ${item.multiplierBefore.toFixed(2)}x → ${item.multiplierAfter.toFixed(2)}x`,
         txHash: item.hash,
         marketId: item.marketId,
       }

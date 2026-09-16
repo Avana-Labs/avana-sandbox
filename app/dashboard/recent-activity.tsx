@@ -12,6 +12,7 @@ import { formatCompactUsd } from "@/app/lib/borrow-sim"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import { cn } from "@/lib/utils"
+import { getMultiplyActivityMarketSymbols } from "@/app/lib/multiply-system/market-labels"
 import {
   mapConvexActivityItemsToRows,
   mergeActivityRows,
@@ -66,8 +67,10 @@ export function inferActivityTokenSymbol(row: PortfolioActivityRow): string {
 
   const secondary = row.secondaryLabel.replace(/\s+claimed$/i, "").trim()
   const marketId = row.marketId?.trim()
+  const multiplySymbols = row.product === "multiply" ? getMultiplyActivityMarketSymbols(marketId) : null
   const scopedAsset = marketId?.includes(":") ? marketId.split(":").at(-1) : undefined
   const candidates = [
+    multiplySymbols?.collateralSymbol,
     // A scoped asset id (`aero-slipstream-bluechip:usdc`) identifies the traded
     // token exactly. Checking the whole slug first used to select AERO from the
     // venue prefix, so USDC debt rows rendered with the Aerodrome logo.

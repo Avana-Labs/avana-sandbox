@@ -182,6 +182,19 @@ describe("RecentActivity whole-row navigation", () => {
         }),
       ),
     ).toBe("USDC")
+    expect(
+      inferActivityTokenSymbol(
+        makeRow({
+          id: "4",
+          txHash: "sim-4",
+          product: "multiply",
+          kind: "close",
+          marketId: "wsteth-eth",
+          primaryLabel: "Close position",
+          secondaryLabel: "2.00x → 1.00x",
+        }),
+      ),
+    ).toBe("wstETH")
   })
 })
 
