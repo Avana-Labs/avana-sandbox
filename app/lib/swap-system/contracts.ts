@@ -71,6 +71,8 @@ export type UserAssetBalance = {
   isLpToken?: boolean
   /** Live LP unit price when the server could resolve a trustworthy token basis. */
   unitPriceUsd?: number
+  /** Pool maximum loan-to-value percentage from the canonical market risk config. */
+  ltvPct?: number
 }
 
 export type SwapContext = {

@@ -1644,6 +1644,8 @@ const dict: TranslationDictionary = {
   "Whether the position's price range is active and earning fees.":
     "Indique si la plage de prix de la position est active et perçoit des frais.",
   "The current value of your pooled tokens.": "La valeur actuelle de vos tokens en pool.",
+  "The maximum loan-to-value ratio allowed against this pool as collateral.":
+    "Le ratio prêt-valeur maximal autorisé pour ce pool comme garantie.",
   "Trading fees this position has earned, claimable to your wallet.":
     "Frais de trading gagnés par cette position, réclamables vers votre portefeuille.",
   "The token you've supplied to earn lending yield.": "Le token que vous avez fourni pour gagner un rendement de prêt.",

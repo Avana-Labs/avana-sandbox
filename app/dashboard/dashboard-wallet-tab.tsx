@@ -50,6 +50,7 @@ import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { BorrowAssetVisual } from "@/app/lib/data/borrow-domain"
+import { formatLtvPct } from "@/app/lib/borrow-sim"
 
 const DASH = "\u2014"
 const MASK = "••••"
@@ -203,6 +204,11 @@ function PoolBalanceCell({
   }
 
   return <TokenUsdCell token={mask(exact(row.valueUsd))} />
+}
+
+function PoolLtvCell({ row, mask }: { row: DashboardWalletBalanceRow; mask: (value: string) => string }) {
+  const value = row.ltvPct != null && Number.isFinite(row.ltvPct) ? formatLtvPct(row.ltvPct) : DASH
+  return <span className={cn(TABLE_CELL_NUMERIC)}>{mask(value)}</span>
 }
 
 function WalletMetric({
@@ -570,8 +576,9 @@ function PoolsBalanceSection({
       <DesktopTableSurface className="hidden !rounded-none md:block">
         <table className={`w-full min-w-[640px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
           <colgroup>
-            <col className="w-[58%]" />
-            <col className="w-[42%]" />
+            <col className="w-[46%]" />
+            <col className="w-[18%]" />
+            <col className="w-[36%]" />
           </colgroup>
           <thead>
             <tr className={TABLE_HEADER_ROW}>
@@ -579,6 +586,13 @@ function PoolsBalanceSection({
                 <WalletMetricHeader
                   label={t("Pool")}
                   help={t("A liquidity-pool position you hold, paired tokens supplied to a DEX.")}
+                />
+              </th>
+              <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
+                <WalletMetricHeader
+                  label={t("LTV")}
+                  help={t("The maximum loan-to-value ratio allowed against this pool as collateral.")}
+                  align="right"
                 />
               </th>
               <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
@@ -602,6 +616,11 @@ function PoolsBalanceSection({
                   </td>
                   <td className={cn(TABLE_ROW_HOVER_BG)}>
                     <Link href={href} className={cn("block h-full", TABLE_CELL_PADDING, "text-right")}>
+                      <PoolLtvCell row={row} mask={m} />
+                    </Link>
+                  </td>
+                  <td className={cn(TABLE_ROW_HOVER_BG)}>
+                    <Link href={href} className={cn("block h-full", TABLE_CELL_PADDING, "text-right")}>
                       <PoolBalanceCell row={row} exact={exact} mask={m} />
                     </Link>
                   </td>
@@ -610,7 +629,7 @@ function PoolsBalanceSection({
             })}
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={2} className="px-5 py-8 text-center text-[14px] text-muted-foreground">
+                <td colSpan={3} className="px-5 py-8 text-center text-[14px] text-muted-foreground">
                   {t("No wallet balances found.")}
                 </td>
               </tr>
@@ -625,6 +644,10 @@ function PoolsBalanceSection({
             <MarketMobileCard className="space-y-2">
               <MarketMobileCardHeader identity={<PoolIdentity row={row} />} />
               <MarketMobileStatList>
+                <MarketMobileStatRow
+                  label={t("LTV")}
+                  value={m(row.ltvPct != null && Number.isFinite(row.ltvPct) ? formatLtvPct(row.ltvPct) : DASH)}
+                />
                 <MarketMobileStatRow
                   label={t("Balance")}
                   value={

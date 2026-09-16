@@ -1622,6 +1622,7 @@ const dict: TranslationDictionary = {
   "Whether the position's price range is active and earning fees.":
     "该仓位的价格区间是否处于活跃状态并正在赚取手续费。",
   "The current value of your pooled tokens.": "您已入池代币的当前价值。",
+  "The maximum loan-to-value ratio allowed against this pool as collateral.": "以该池为抵押品时允许的最高贷款价值比。",
   "Trading fees this position has earned, claimable to your wallet.": "该仓位已赚取的交易手续费，可领取至您的钱包。",
   "The token you've supplied to earn lending yield.": "您存入以赚取借出收益的代币。",
   "Your supplied balance in this asset, valued at its live price.": "您在该资产中的供应余额，按其实时价格计价。",

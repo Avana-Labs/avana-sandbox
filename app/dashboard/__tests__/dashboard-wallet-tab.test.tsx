@@ -36,9 +36,46 @@ describe("DashboardWalletTab", () => {
     expect(screen.getByRole("heading", { name: "Pools" })).toBeInTheDocument()
     expect(screen.getAllByText("Ether").length).toBeGreaterThan(0)
     expect(screen.getAllByText("ETH / USDC LP").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("76.5%").length).toBeGreaterThan(0)
     expect(screen.getAllByRole("link").some((link) => link.getAttribute("href") === "/borrow/markets/eth-usdc")).toBe(
       true,
     )
+  })
+
+  it("renders the authoritative LTV for every pool row", { timeout: 20_000 }, () => {
+    renderWalletTab(
+      <DashboardWalletTab
+        walletId="wallet-live"
+        balances={[
+          {
+            id: "pool-a",
+            walletId: "wallet-live",
+            assetId: "aura-weth-lp",
+            amount: 1,
+            valueUsd: 100,
+            sourceType: "borrow_collateral_unpledged",
+            symbol: "AURA / WETH LP",
+            isLpToken: true,
+            ltvPct: 65,
+          },
+          {
+            id: "pool-b",
+            walletId: "wallet-live",
+            assetId: "eth-usdc-lp",
+            amount: 2,
+            valueUsd: 200,
+            sourceType: "borrow_collateral_unpledged",
+            symbol: "ETH / USDC LP",
+            isLpToken: true,
+            ltvPct: 72.5,
+          },
+        ]}
+      />,
+    )
+
+    expect(screen.getByText("2 pools")).toBeInTheDocument()
+    expect(screen.getAllByText("65%").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("72.5%").length).toBeGreaterThan(0)
   })
 
   it("renders a per-row Swap action that deep-links to the swap flow", { timeout: 20_000 }, () => {

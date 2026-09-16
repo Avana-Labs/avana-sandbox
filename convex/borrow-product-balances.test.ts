@@ -86,6 +86,7 @@ describe("borrow product balances", () => {
         chainId: 1,
         name: "ETH / USDC",
         symbol: "ETH / USDC",
+        maxLtvPct: 76.5,
         priceUsd: 62.5, // live LP price = half of the $125 claim price
         createdAt: 1,
       })
@@ -116,6 +117,7 @@ describe("borrow product balances", () => {
     const collateral = balances.borrow.find((row) => row.marketId === MARKET && row.state === "collateral")
     expect(collateral?.valueUsd).toBeCloseTo(500, 6)
     expect(collateral?.amount).toBeCloseTo(8, 6) // units unchanged; only the price moved
+    expect(collateral?.ltvPct).toBe(76.5)
   })
 
   test("does NOT inflate USD-denominated seeded collateral against a live LP unit price", async () => {

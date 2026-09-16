@@ -18,6 +18,7 @@ export type DashboardWalletBalanceRow = {
   restrictionReason: SwapRestrictionReason | null
   sourcePositionId?: string
   unitPriceUsd?: number
+  ltvPct?: number
 }
 
 export const DEMO_SWAP_BALANCES: UserAssetBalance[] = [
@@ -47,6 +48,7 @@ export const DEMO_SWAP_BALANCES: UserAssetBalance[] = [
     walletId: "demo-wallet",
     assetId: "eth-usdc-lp",
     amount: 6.4,
+    ltvPct: 76.5,
     sourceType: "wallet",
   },
   {
@@ -163,6 +165,7 @@ export function buildDashboardWalletBalanceRows({
         isLpToken,
         isWalletHeld: balance.sourceType === "wallet",
         unitPriceUsd: balance.unitPriceUsd,
+        ltvPct: balance.ltvPct,
         swappable: eligibility.eligible,
         restrictionReason: eligibility.eligible ? null : eligibility.reason,
         sourcePositionId: balance.sourcePositionId,

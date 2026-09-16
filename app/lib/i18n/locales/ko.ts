@@ -1562,6 +1562,8 @@ const dict: TranslationDictionary = {
   "Whether the position's price range is active and earning fees.":
     "포지션의 가격 범위가 활성 상태이며 수수료를 획득하고 있는지 여부입니다.",
   "The current value of your pooled tokens.": "풀에 공급한 토큰의 현재 가치입니다.",
+  "The maximum loan-to-value ratio allowed against this pool as collateral.":
+    "이 풀을 담보로 사용할 때 허용되는 최대 담보인정비율입니다.",
   "Trading fees this position has earned, claimable to your wallet.":
     "이 포지션이 획득한 거래 수수료로, 지갑으로 청구할 수 있습니다.",
   "The token you've supplied to earn lending yield.": "예치 수익을 얻기 위해 공급한 토큰입니다.",

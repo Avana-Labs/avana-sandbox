@@ -1595,6 +1595,8 @@ const dict: TranslationDictionary = {
   "Whether the position's price range is active and earning fees.":
     "Pozisyonun fiyat aralığının aktif olup olmadığı ve ücret kazanıp kazanmadığı.",
   "The current value of your pooled tokens.": "Havuzdaki tokenlarınızın güncel değeri.",
+  "The maximum loan-to-value ratio allowed against this pool as collateral.":
+    "Bu havuz teminat olarak kullanıldığında izin verilen azami kredi-değer oranı.",
   "Trading fees this position has earned, claimable to your wallet.":
     "Bu pozisyonun kazandığı, cüzdanınıza talep edilebilir işlem ücretleri.",
   "The token you've supplied to earn lending yield.": "Borç verme getirisi kazanmak için sağladığınız token.",

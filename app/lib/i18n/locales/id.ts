@@ -1591,6 +1591,8 @@ const dict: TranslationDictionary = {
   "Whether the position's price range is active and earning fees.":
     "Apakah rentang harga posisi sedang aktif dan memperoleh biaya.",
   "The current value of your pooled tokens.": "Nilai token pool Anda saat ini.",
+  "The maximum loan-to-value ratio allowed against this pool as collateral.":
+    "Rasio pinjaman terhadap nilai maksimum yang diizinkan untuk pool ini sebagai jaminan.",
   "Trading fees this position has earned, claimable to your wallet.":
     "Biaya trading yang diperoleh posisi ini, dapat diklaim ke dompet Anda.",
   "The token you've supplied to earn lending yield.": "Token yang Anda pasok untuk memperoleh imbal hasil pinjaman.",

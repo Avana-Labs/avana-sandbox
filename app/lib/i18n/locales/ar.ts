@@ -1565,6 +1565,8 @@ const dict: TranslationDictionary = {
     "مركز تحتفظ به في مجمّع سيولة، وهو عبارة عن زوج رموز مُودَع في DEX.",
   "Whether the position's price range is active and earning fees.": "ما إذا كان نطاق سعر المركز نشطًا ويحقق رسومًا.",
   "The current value of your pooled tokens.": "القيمة الحالية لرموزك المجمّعة.",
+  "The maximum loan-to-value ratio allowed against this pool as collateral.":
+    "أقصى نسبة قرض إلى قيمة مسموح بها مقابل هذا التجمع كضمان.",
   "Trading fees this position has earned, claimable to your wallet.":
     "رسوم التداول التي حقّقها هذا المركز، وهي قابلة للمطالبة إلى محفظتك.",
   "The token you've supplied to earn lending yield.": "الرمز الذي أودعته لتحقيق عائد الإقراض.",

@@ -1628,6 +1628,8 @@ const dict: TranslationDictionary = {
   "Whether the position's price range is active and earning fees.":
     "ポジションの価格レンジがアクティブで、手数料を獲得しているかどうか。",
   "The current value of your pooled tokens.": "プールしたトークンの現在価値。",
+  "The maximum loan-to-value ratio allowed against this pool as collateral.":
+    "このプールを担保にした場合に許可される最大ローン・トゥ・バリュー比率。",
   "Trading fees this position has earned, claimable to your wallet.":
     "ウォレットに請求可能な、このポジションが獲得した取引手数料。",
   "The token you've supplied to earn lending yield.": "レンディング利回りを得るために供給したトークン。",

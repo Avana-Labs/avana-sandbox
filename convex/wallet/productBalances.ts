@@ -220,9 +220,13 @@ export const listForWallet = query({
       ),
     )
     const liveLpBySlug = new Map<string, number>()
+    const ltvPctBySlug = new Map<string, number>()
     for (const market of poolMarkets) {
       if (market && typeof market.priceUsd === "number" && Number.isFinite(market.priceUsd) && market.priceUsd > 0) {
         liveLpBySlug.set(market.slug, market.priceUsd)
+      }
+      if (market && typeof market.maxLtvPct === "number" && Number.isFinite(market.maxLtvPct)) {
+        ltvPctBySlug.set(market.slug, market.maxLtvPct)
       }
     }
     const claimLpBySlug = new Map<string, number>()
@@ -232,7 +236,9 @@ export const listForWallet = query({
     }
 
     const borrow = rawBorrow.map((row) => {
-      if (!row.marketId || (row.state !== "poolAvailable" && row.state !== "collateral")) return row
+      if (!row.marketId || (row.state !== "poolAvailable" && row.state !== "collateral")) {
+        return { ...row, ltvPct: row.marketId ? ltvPctBySlug.get(row.marketId) : undefined }
+      }
       const pledgedUsd = Math.min(poolTotals.get(row.marketId) ?? 0, pledgedByMarket.get(row.marketId)?.valueUsd ?? 0)
       const frozenValueUsd =
         row.state === "collateral" ? pledgedUsd : Math.max(0, (poolTotals.get(row.marketId) ?? 0) - pledgedUsd)
@@ -243,12 +249,19 @@ export const listForWallet = query({
       const scale = resolveCollateralRepriceScale(liveLp, claimLp)
       if (scale !== undefined && liveLp !== undefined) {
         const valueUsd = frozenValueUsd * scale
-        return { ...row, valueUsd, amount: valueUsd / liveLp, unitPriceUsd: liveLp }
+        return {
+          ...row,
+          valueUsd,
+          amount: valueUsd / liveLp,
+          unitPriceUsd: liveLp,
+          ltvPct: ltvPctBySlug.get(row.marketId),
+        }
       }
       return {
         ...row,
         valueUsd: frozenValueUsd,
         amount: claimPrice > 0 ? frozenValueUsd / claimPrice : frozenValueUsd,
+        ltvPct: ltvPctBySlug.get(row.marketId),
       }
     })
 
