@@ -1356,6 +1356,12 @@ export const recordRewardsClaim = mutation({
     // can't inflate totals.
     taskIds: v.array(v.string()),
     syntheticTxHash: v.string(),
+    // Optional per-task receipt hashes, parallel to `taskIds`. When present (and
+    // length-matched), each quest is written as its own transaction row carrying
+    // the hash the client engine also stamps on its seed activity row, so the
+    // dashboard Activity feed dedups the durable row into the quest-titled one.
+    // Absent → the legacy single summed row (older clients, direct callers).
+    syntheticTxHashes: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
     const wallet = await requireSandboxWallet(ctx, args.wallet)
@@ -1458,6 +1464,39 @@ export const recordRewardsClaim = mutation({
     }
 
     const now = Date.now()
+
+    // Per-task rows: one transaction per claimed quest so each durable row can
+    // dedup against its quest-titled seed activity row (see the arg comment).
+    // Payout is still catalog-derived per task, never trusted from the client.
+    const perTaskHashes = args.syntheticTxHashes
+    if (perTaskHashes && perTaskHashes.length === taskIds.length) {
+      for (const hash of perTaskHashes) requireBoundedIdentifier(hash, "syntheticTxHash")
+      const insertedIds = []
+      for (let index = 0; index < taskIds.length; index += 1) {
+        const taskId = taskIds[index]
+        const taskAmountUsd = deriveClaimAmountUsd([taskId])
+        insertedIds.push(
+          await ctx.db.insert("transactions", {
+            wallet,
+            intentId: args.intentId,
+            product: "rewards",
+            kind: "claim",
+            status: "success",
+            assetId: "ava",
+            requestedAmountUsd6: String(Math.round(taskAmountUsd * 1_000_000)),
+            executedAmountUsd6: String(Math.round(taskAmountUsd * 1_000_000)),
+            amountUsd: taskAmountUsd,
+            claimedTaskIds: [taskId],
+            syntheticTxHash: perTaskHashes[index],
+            simulated: true,
+            at: now,
+          }),
+        )
+      }
+      await appendPortfolioSnapshot(ctx, wallet, now)
+      return { transactionId: insertedIds[0], idempotent: false, amountUsd }
+    }
+
     const transactionId = await ctx.db.insert("transactions", {
       wallet,
       intentId: args.intentId,

@@ -163,6 +163,54 @@ describe("recordRewardsClaim — server-authoritative payout", () => {
     ).rejects.toThrow(/DUPLICATE_TASK_ID/)
   })
 
+  test("per-task hashes write one row per quest for a claim-all", async () => {
+    const t = convexTest(schema, modules)
+    await seedRewardEvents(t, ["education_completed"])
+    const asUser = t.withIdentity({ subject: WALLET })
+
+    // connect-wallet = 25 AVA, review-risk-basics = 15 AVA.
+    const result = await asUser.mutation(api.sandbox.transactions.recordRewardsClaim, {
+      wallet: WALLET,
+      intentId: "rewards:test:claim-all",
+      taskIds: ["connect-wallet", "review-risk-basics"],
+      syntheticTxHash: "0xrewardsconnect",
+      syntheticTxHashes: ["0xrewardsconnect", "0xrewardsreview"],
+    })
+    expect(result.idempotent).toBe(false)
+    expect(result.amountUsd).toBe(40) // summed total, unchanged contract
+
+    const rows = await t.run(async (ctx) =>
+      (await ctx.db.query("transactions").collect()).filter((r) => r.intentId === "rewards:test:claim-all"),
+    )
+    // One row per quest, each with a single task id, catalog-derived amount, and
+    // its own synthetic receipt hash (the payout is never trusted from the client).
+    expect(rows).toHaveLength(2)
+    expect(rows.map((r) => r.amountUsd).sort((a, b) => a - b)).toEqual([15, 25])
+    expect(rows.every((r) => r.claimedTaskIds?.length === 1)).toBe(true)
+    expect(rows.map((r) => r.syntheticTxHash).sort()).toEqual(["0xrewardsconnect", "0xrewardsreview"])
+  })
+
+  test("mismatched per-task hash length falls back to the legacy summed row", async () => {
+    const t = convexTest(schema, modules)
+    await seedRewardEvents(t, ["education_completed"])
+    const asUser = t.withIdentity({ subject: WALLET })
+
+    await asUser.mutation(api.sandbox.transactions.recordRewardsClaim, {
+      wallet: WALLET,
+      intentId: "rewards:test:mismatch",
+      taskIds: ["connect-wallet", "review-risk-basics"],
+      syntheticTxHash: "0xrewardssummed",
+      syntheticTxHashes: ["0xonly-one"], // length 1 ≠ 2 tasks → legacy path
+    })
+
+    const rows = await t.run(async (ctx) =>
+      (await ctx.db.query("transactions").collect()).filter((r) => r.intentId === "rewards:test:mismatch"),
+    )
+    expect(rows).toHaveLength(1)
+    expect(rows[0]?.amountUsd).toBe(40)
+    expect(rows[0]?.claimedTaskIds).toEqual(["connect-wallet", "review-risk-basics"])
+  })
+
   test("prior intent id still short-circuits idempotently", async () => {
     const t = convexTest(schema, modules)
     await seedRewardEvents(t, ["market_favorited"])

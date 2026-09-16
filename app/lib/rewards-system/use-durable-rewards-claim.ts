@@ -4,15 +4,7 @@ import { useCallback } from "react"
 import { useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import { useAvanaIdentity, useRewardsSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
-
-function claimKey(taskIds: readonly string[]) {
-  let hash = 2_166_136_261
-  for (const character of [...taskIds].sort().join("\u0000")) {
-    hash ^= character.charCodeAt(0)
-    hash = Math.imul(hash, 16_777_619)
-  }
-  return (hash >>> 0).toString(16).padStart(8, "0")
-}
+import { claimKey, rewardsClaimTxHash } from "@/app/lib/rewards-engine"
 
 /** Persist the Convex transaction before changing the client rewards engine. */
 export function useDurableRewardsClaim() {
@@ -24,12 +16,19 @@ export function useDurableRewardsClaim() {
     async (taskIds: readonly string[]) => {
       if (taskIds.length === 0) throw new Error("Nothing to claim")
       const key = claimKey(taskIds)
-      const syntheticTxHash = `0xrewards${key}`
+      // One receipt hash per task, each matching the engine seed row's hash
+      // (rewardsClaimTxHash([taskId])), so every durable row dedups into its
+      // quest-titled seed row — including a multi-quest "claim all".
+      const syntheticTxHashes = taskIds.map((taskId) => rewardsClaimTxHash([taskId]))
+      // Legacy single-hash arg + the receipt link target: the first task's row
+      // (always written, so /sandbox/transactions/<hash> resolves).
+      const syntheticTxHash = syntheticTxHashes[0]
       const persisted = await recordRewardsClaim({
         wallet: walletId,
         intentId: `rewards:${key}:${taskIds.length}`,
         taskIds: [...taskIds],
         syntheticTxHash,
+        syntheticTxHashes,
       })
       const claims = []
       for (const taskId of taskIds) claims.push(await rewards.claimReward(taskId))
