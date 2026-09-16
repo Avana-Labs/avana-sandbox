@@ -528,7 +528,7 @@ describe("DashboardPageClient", () => {
 
     // Combined activity lives in the Activity feed (desktop sidebar + mobile before Learn).
     await waitFor(() => expect(screen.getAllByText("sim_abc123").length).toBeGreaterThan(0))
-    expect(screen.getAllByText("Simulated transaction").length).toBeGreaterThan(0)
+    expect(screen.queryByText("Simulated transaction")).toBeNull()
     expect(screen.getAllByText("0xmultiply").length).toBeGreaterThan(0)
     expect(screen.getAllByText("1250").length).toBeGreaterThan(0)
   })

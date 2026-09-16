@@ -36,6 +36,9 @@ describe("DashboardWalletTab", () => {
     expect(screen.getByRole("heading", { name: "Pools" })).toBeInTheDocument()
     expect(screen.getAllByText("Ether").length).toBeGreaterThan(0)
     expect(screen.getAllByText("ETH / USDC LP").length).toBeGreaterThan(0)
+    expect(screen.getAllByRole("link").some((link) => link.getAttribute("href") === "/borrow/markets/eth-usdc")).toBe(
+      true,
+    )
   })
 
   it("renders a per-row Swap action that deep-links to the swap flow", { timeout: 20_000 }, () => {
@@ -46,11 +49,12 @@ describe("DashboardWalletTab", () => {
     expect(swapLinks.some((link) => link.getAttribute("href")?.startsWith("/swap?from="))).toBe(true)
   })
 
-  it("shows pool status without row-level pool action buttons", { timeout: 20_000 }, () => {
+  it("does not show a pool status column or row-level pool action buttons", { timeout: 20_000 }, () => {
     renderWalletTab(<DashboardWalletTab walletId="demo-wallet" />)
 
-    // Fabricated "In range" LP status removed — honesty over invented analytics.
-    expect(screen.queryByText("In range")).toBeNull()
+    expect(screen.queryByText("Status")).toBeNull()
+    expect(screen.queryByText("Fees")).toBeNull()
+    expect(screen.queryByText("Unclaimed fees")).toBeNull()
     expect(screen.queryByRole("button", { name: "View" })).toBeNull()
   })
 
@@ -66,35 +70,63 @@ describe("DashboardWalletTab", () => {
     expect(screen.getAllByText("123 USDC").length).toBeGreaterThan(0)
   })
 
-  it("excludes product-committed buckets — those live on their own tabs", { timeout: 20_000 }, () => {
+  it(
+    "shows returned Lend assets and unpledged Borrow LPs without showing pledged collateral",
+    { timeout: 20_000 },
+    () => {
+      renderWalletTab(
+        <DashboardWalletTab
+          walletId="wallet-live"
+          balances={[
+            { id: "free-usdc", walletId: "wallet-live", assetId: "usdc", amount: 300, sourceType: "wallet" },
+            {
+              id: "available-lp",
+              walletId: "wallet-live",
+              assetId: "eth-usdc-lp",
+              amount: 5.6,
+              valueUsd: 700,
+              sourceType: "borrow_collateral_unpledged",
+              symbol: "ETH / USDC LP",
+              isLpToken: true,
+            },
+            {
+              id: "pledged-lp",
+              walletId: "wallet-live",
+              assetId: "eth-usdc-lp",
+              amount: 0.8,
+              valueUsd: 100,
+              sourceType: "borrow_collateral_pledged",
+            },
+          ]}
+        />,
+      )
+
+      // Returned/available product balances are visible; pledged collateral remains on Borrow.
+      expect(screen.getAllByText("USD Coin").length).toBeGreaterThan(0)
+      expect(screen.getAllByText("ETH / USDC LP").length).toBeGreaterThan(0)
+      expect(screen.getAllByText("Borrow collateral").length).toBeGreaterThan(0)
+      expect(screen.queryByText("Pledged collateral")).toBeNull()
+    },
+  )
+
+  it("shows a Lend available balance when no liquid mirror exists", { timeout: 20_000 }, () => {
     renderWalletTab(
       <DashboardWalletTab
         walletId="wallet-live"
         balances={[
-          { id: "free-usdc", walletId: "wallet-live", assetId: "usdc", amount: 300, sourceType: "wallet" },
           {
-            id: "available-lp",
+            id: "lend-eth",
             walletId: "wallet-live",
-            assetId: "eth-usdc-lp",
-            amount: 5.6,
-            valueUsd: 700,
-            sourceType: "borrow_collateral_unpledged",
-          },
-          {
-            id: "pledged-lp",
-            walletId: "wallet-live",
-            assetId: "eth-usdc-lp",
-            amount: 0.8,
-            valueUsd: 100,
-            sourceType: "borrow_collateral_pledged",
+            assetId: "eth",
+            amount: 2,
+            valueUsd: 4_000,
+            sourceType: "lend_available",
           },
         ]}
       />,
     )
 
-    // Only the free wallet USDC shows; borrow collateral/pledged belong to the Borrow tab.
-    expect(screen.getAllByText("USD Coin").length).toBeGreaterThan(0)
-    expect(screen.queryByText("Borrow collateral")).toBeNull()
-    expect(screen.queryByText("Pledged collateral")).toBeNull()
+    expect(screen.getAllByText("Ether").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("2 ETH").length).toBeGreaterThan(0)
   })
 })

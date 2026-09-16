@@ -108,6 +108,9 @@ export function useConvexProductWalletBalances(walletId: string | null | undefin
       assetId: row.poolId ?? row.assetId ?? row.marketId ?? row.symbol.toLowerCase(),
       amount: row.amount,
       valueUsd: row.state === "debt" ? -row.valueUsd : row.valueUsd,
+      symbol: row.symbol,
+      isLpToken: row.state === "poolAvailable" || row.state === "collateral",
+      unitPriceUsd: row.unitPriceUsd,
       sourceType:
         row.state === "poolAvailable"
           ? "borrow_collateral_unpledged"

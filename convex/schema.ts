@@ -1647,6 +1647,7 @@ export default defineSchema({
     symbol: v.string(),
     amount: v.number(),
     valueUsd: v.number(),
+    unitPriceUsd: v.optional(v.number()),
     state: v.union(v.literal("poolAvailable"), v.literal("collateral"), v.literal("debt"), v.literal("claimableFees")),
     updatedAt: v.number(),
   })

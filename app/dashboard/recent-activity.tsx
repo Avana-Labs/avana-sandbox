@@ -85,6 +85,34 @@ export function inferActivityTokenSymbol(row: PortfolioActivityRow): string {
   return "ETH"
 }
 
+function activityPairFromLabel(label: string | undefined): [string, string] | null {
+  if (!label?.includes("/")) return null
+  const symbols = label
+    .split("/")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => firstLogoCandidate([part]))
+    .filter((symbol): symbol is string => Boolean(symbol))
+  return symbols.length >= 2 ? [symbols[0]!, symbols[1]!] : null
+}
+
+/** Pool collateral activity represents an LP pair, so show both constituent token icons. */
+export function inferActivityTokenSymbols(row: PortfolioActivityRow): [string, string] | null {
+  const isPoolActivity =
+    row.product === "pool" ||
+    (row.product === "borrow" && ["withdraw", "pledge", "claim", "liquidation"].includes(row.kind))
+  if (!isPoolActivity) return null
+
+  const labeledPair = activityPairFromLabel(row.primaryLabel) ?? activityPairFromLabel(row.secondaryLabel)
+  if (labeledPair) return labeledPair
+
+  const slugParts = row.marketId?.split(/[-_:]/).filter(Boolean) ?? []
+  const slugSymbols = slugParts
+    .map((part) => firstLogoCandidate([part]))
+    .filter((symbol): symbol is string => Boolean(symbol))
+  return slugSymbols.length >= 2 ? [slugSymbols[slugSymbols.length - 2]!, slugSymbols[slugSymbols.length - 1]!] : null
+}
+
 // Amount-column sign convention: user CASH FLOW, read like a bank statement.
 export const AMOUNT_SIGN_BY_KIND: Record<PortfolioActivityRow["kind"], 1 | -1 | 0> = {
   borrow: 1,
@@ -257,7 +285,17 @@ export function RecentActivity({
                       "cursor-pointer transition-colors hover:bg-hover focus-visible:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand/40",
                   )}
                 >
-                  <TokenIcon symbol={inferActivityTokenSymbol(row)} size="md" className="shrink-0" />
+                  {(() => {
+                    const pair = inferActivityTokenSymbols(row)
+                    return pair ? (
+                      <span className="relative inline-flex h-8 w-12 shrink-0 items-center" aria-hidden>
+                        <TokenIcon symbol={pair[0]} size="md" className="absolute left-0 top-0 z-10" />
+                        <TokenIcon symbol={pair[1]} size="md" className="absolute left-4 top-0" />
+                      </span>
+                    ) : (
+                      <TokenIcon symbol={inferActivityTokenSymbol(row)} size="md" className="shrink-0" />
+                    )
+                  })()}
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[14px] font-medium leading-5 tracking-[-0.02em] text-foreground">
                       {row.primaryLabel}

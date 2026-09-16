@@ -177,6 +177,10 @@ export function MultiplyActionPageClient({
   }, [initialAmount, initialMultiplier, kind, market?.id])
 
   useEffect(() => {
+    // executeTransaction updates the shared session while the action is processing. Do not
+    // clear/recompute the preview during that lifecycle; it makes the health-factor bar
+    // oscillate and makes the action look like it refreshed underneath the user.
+    if (stage !== "configure" && stage !== "review" && stage !== "error") return undefined
     if (!market) return
     const parsed = parsePositiveActionAmount(multiplier)
     if (parsed == null) return
@@ -399,6 +403,7 @@ export function MultiplyActionPageClient({
     multiplier,
     position,
     session,
+    stage,
     walletId,
   ])
 

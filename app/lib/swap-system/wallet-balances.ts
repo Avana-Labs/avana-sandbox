@@ -17,6 +17,7 @@ export type DashboardWalletBalanceRow = {
   swappable: boolean
   restrictionReason: SwapRestrictionReason | null
   sourcePositionId?: string
+  unitPriceUsd?: number
 }
 
 export const DEMO_SWAP_BALANCES: UserAssetBalance[] = [
@@ -120,7 +121,8 @@ export function buildDashboardWalletBalanceRows({
     const valueUsd = balance.valueUsd ?? balance.amount * (getSwapAsset(balance.assetId)?.priceUsd ?? 0)
     if (balance.amount <= 0 && valueUsd <= 0) continue
     const asset = getSwapAsset(balance.assetId)
-    const key = asset?.isLpToken ? `${balance.assetId}:${balance.sourceType}` : balance.id
+    const isLpToken = balance.isLpToken ?? asset?.isLpToken ?? false
+    const key = isLpToken ? `${balance.assetId}:${balance.sourceType}` : balance.id
     const existing = merged.get(key)
     if (!existing) {
       merged.set(key, { ...balance, valueUsd })
@@ -140,7 +142,7 @@ export function buildDashboardWalletBalanceRows({
       const storedValueUsd = balance.valueUsd ?? balance.amount * (asset?.priceUsd ?? 0)
       // Reprice NON-LP tokens off the live oracle when available so the wallet is reactive
       // and never pinned to a frozen stored value. LP rows keep the canonical stored basis.
-      const isLpToken = asset?.isLpToken ?? false
+      const isLpToken = balance.isLpToken ?? asset?.isLpToken ?? false
       const livePrice = !isLpToken ? priceFor?.(asset?.symbol ?? balance.assetId) : undefined
       // Multiply available buckets are USD ledgers. Their token amount may be a
       // legacy USD-denominated value, so never revalue them as `amount × price`.
@@ -152,14 +154,15 @@ export function buildDashboardWalletBalanceRows({
       return {
         id: balance.id,
         assetId: balance.assetId,
-        symbol: asset?.symbol ?? formatTokenDisplaySymbol(balance.assetId),
-        name: asset?.name ?? formatTokenDisplaySymbol(balance.assetId),
+        symbol: asset?.symbol ?? balance.symbol ?? formatTokenDisplaySymbol(balance.assetId),
+        name: asset?.name ?? balance.name ?? balance.symbol ?? formatTokenDisplaySymbol(balance.assetId),
         amount,
         valueUsd,
         sourceType: balance.sourceType,
         sourceLabel: sourceLabel(balance.sourceType),
-        isLpToken: asset?.isLpToken ?? false,
+        isLpToken,
         isWalletHeld: balance.sourceType === "wallet",
+        unitPriceUsd: balance.unitPriceUsd,
         swappable: eligibility.eligible,
         restrictionReason: eligibility.eligible ? null : eligibility.reason,
         sourcePositionId: balance.sourcePositionId,

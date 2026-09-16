@@ -511,6 +511,10 @@ export function BorrowActionPageClient({
   }, [embedded, isHomeZeroState, marketId, scopeCollateralToAsset, session.collateralPools, usesCollateralContext])
 
   useEffect(() => {
+    // executeTransaction updates the shared session during reconciliation. Keep the reviewed
+    // preview stable across the submit lifecycle; rerunning here clears it and makes the
+    // health-factor bar visibly jump.
+    if (stage !== "configure" && stage !== "review" && stage !== "error") return undefined
     let cancelled = false
     const safeAmount = parsePositiveActionAmount(deferredAmount) ?? 0
 
@@ -737,6 +741,7 @@ export function BorrowActionPageClient({
     deferredPercent,
     resolvedBorrowAssetId,
     session,
+    stage,
     walletId,
   ])
 

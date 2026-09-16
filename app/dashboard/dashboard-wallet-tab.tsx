@@ -21,6 +21,7 @@ import {
 import { TokenIcon } from "@/app/components/token-icon"
 import { DesktopTableSurface } from "@/app/components/market-table-primitives"
 import { getTokenIconMeta } from "@/app/lib/token-icons"
+import { borrowMarketDetailPath } from "@/app/lib/borrow-routes"
 import {
   TABLE_BASE,
   TABLE_BODY_ROW,
@@ -54,8 +55,6 @@ const DASH = "\u2014"
 const MASK = "••••"
 
 // Do not invent LP fee/status analytics — show dashes until live data exists.
-const LP_UI_DETAILS: Record<string, { feesUsd: number; status: "inactive"; protocol: string }> = {}
-
 function WalletMetricHeader({
   label,
   help,
@@ -134,7 +133,7 @@ function formatMemberSince(sinceMs: number): string {
 }
 
 function poolUiDetail(row: DashboardWalletBalanceRow) {
-  return LP_UI_DETAILS[row.assetId] ?? { feesUsd: 0, status: "inactive" as const, protocol: row.sourceLabel }
+  return { protocol: row.sourceLabel }
 }
 
 function toBorrowVisual(symbol: string): BorrowAssetVisual {
@@ -176,28 +175,34 @@ function PoolIdentity({ row }: { row: DashboardWalletBalanceRow }) {
   return <TokenPairCell visuals={visuals} name={row.name} subtitle={detail.protocol} size="md" />
 }
 
-function PoolSourceStatus({ row }: { row: DashboardWalletBalanceRow }) {
-  const pledged = row.sourceLabel === "Pledged collateral"
-  return (
-    <span
-      className={[
-        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium",
-        pledged ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
-      ].join(" ")}
-    >
-      <span className={["size-1.5 rounded-full", pledged ? "bg-primary" : "bg-muted-foreground/60"].join(" ")} />
-      {row.sourceLabel}
-    </span>
-  )
+function poolDetailHref(row: DashboardWalletBalanceRow) {
+  const poolId = row.sourcePositionId ?? row.assetId.replace(/-lp$/i, "")
+  return borrowMarketDetailPath(poolId)
 }
 
-function TokenUsdCell({ token, usd }: { token: string; usd: string }) {
+function TokenUsdCell({ token, usd }: { token: string; usd?: string }) {
   return (
     <div className="flex flex-col items-end">
       <span className={cn(TABLE_CELL_NUMERIC)}>{token}</span>
-      <span className={TABLE_CELL_SECONDARY}>{usd}</span>
+      {usd ? <span className={TABLE_CELL_SECONDARY}>{usd}</span> : null}
     </div>
   )
+}
+
+function PoolBalanceCell({
+  row,
+  exact,
+  mask,
+}: {
+  row: DashboardWalletBalanceRow
+  exact: (usd: number) => string
+  mask: (value: string) => string
+}) {
+  if (row.unitPriceUsd && row.unitPriceUsd > 0) {
+    return <TokenUsdCell token={mask(`${formatPoolAmount(row.amount)} LP`)} usd={mask(exact(row.valueUsd))} />
+  }
+
+  return <TokenUsdCell token={mask(exact(row.valueUsd))} />
 }
 
 function WalletMetric({
@@ -311,17 +316,24 @@ export function DashboardWalletTab({ walletId, balances }: { walletId: string; b
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const { exact } = useCurrency()
   const { t } = useTranslation()
-  // The Wallet tab shows ONLY unallocated/free funds (sourceType "wallet"). Everything committed
-  // to a product — lend available/deposited, multiply available/active, borrow collateral/pledged —
-  // is shown on that product's own tab, so it's never double-represented here.
+  // The Wallet tab shows unallocated/free funds plus product buckets that are available again
+  // after a withdrawal. Prefer the canonical liquid row when a product also mirrors that asset,
+  // so Lend withdrawals do not appear twice while returned Borrow LPs remain visible as Pools.
   const convexBalances = useConvexProductWalletBalances(balances === undefined ? walletId : null)
   const effectiveBalances = balances ?? convexBalances ?? undefined
   const claimBasis = useConvexClaimBasis(balances === undefined ? walletId : null)
   const basisFor = (assetId: string) => claimBasis?.[assetId.toLowerCase()]
   const priceFor = useCanonicalPriceFor()
-  const rows = buildDashboardWalletBalanceRows({ walletId, balances: effectiveBalances, priceFor }).filter(
-    (row) => row.sourceType === "wallet",
+  const candidateRows = buildDashboardWalletBalanceRows({ walletId, balances: effectiveBalances, priceFor }).filter(
+    (row) =>
+      row.sourceType === "wallet" ||
+      row.sourceType === "lend_available" ||
+      row.sourceType === "borrow_collateral_unpledged",
   )
+  const canonicalWalletAssetIds = new Set(
+    candidateRows.filter((row) => row.sourceType === "wallet").map((row) => row.assetId),
+  )
+  const rows = candidateRows.filter((row) => row.sourceType === "wallet" || !canonicalWalletAssetIds.has(row.assetId))
   const tokens = rows.filter((row) => !row.isLpToken)
   const lps = rows.filter((row) => row.isLpToken)
   const totalWalletUsd = sumWalletValueUsd(rows)
@@ -558,10 +570,8 @@ function PoolsBalanceSection({
       <DesktopTableSurface className="hidden !rounded-none md:block">
         <table className={`w-full min-w-[640px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
           <colgroup>
-            <col className="w-[28%]" />
-            <col className="w-[16%]" />
-            <col className="w-[26%]" />
-            <col className="w-[30%]" />
+            <col className="w-[58%]" />
+            <col className="w-[42%]" />
           </colgroup>
           <thead>
             <tr className={TABLE_HEADER_ROW}>
@@ -571,12 +581,6 @@ function PoolsBalanceSection({
                   help={t("A liquidity-pool position you hold, paired tokens supplied to a DEX.")}
                 />
               </th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4 text-left")}>
-                <WalletMetricHeader
-                  label={t("Status")}
-                  help={t("Whether the position's price range is active and earning fees.")}
-                />
-              </th>
               <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>
                 <WalletMetricHeader
                   label={t("Balance")}
@@ -584,37 +588,29 @@ function PoolsBalanceSection({
                   align="right"
                 />
               </th>
-              <th className={cn(TABLE_HEADER_CELL, "px-4 pr-5 text-right")}>
-                <WalletMetricHeader
-                  label={t("Fees")}
-                  help={t("Trading fees this position has earned, claimable to your wallet.")}
-                  align="right"
-                />
-              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border dark:divide-white/6">
             {rows.map((row) => {
+              const href = poolDetailHref(row)
               return (
                 <tr key={row.id} className={`${TABLE_BODY_ROW} group`}>
-                  <td className={cn(TABLE_CELL_PADDING, "pl-5", TABLE_ROW_HOVER_LEFT)}>
-                    <PoolIdentity row={row} />
+                  <td className={cn(TABLE_ROW_HOVER_LEFT)}>
+                    <Link href={href} className={cn("block h-full", TABLE_CELL_PADDING, "pl-5")}>
+                      <PoolIdentity row={row} />
+                    </Link>
                   </td>
-                  <td className={cn(TABLE_CELL_PADDING, TABLE_ROW_HOVER_BG)}>
-                    <PoolSourceStatus row={row} />
-                  </td>
-                  <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
-                    <TokenUsdCell token={m(formatPoolAmount(row.amount))} usd={m(exact(row.valueUsd))} />
-                  </td>
-                  <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
-                    <TokenUsdCell token={m(exact(poolUiDetail(row).feesUsd))} usd={m(t("Unclaimed fees"))} />
+                  <td className={cn(TABLE_ROW_HOVER_BG)}>
+                    <Link href={href} className={cn("block h-full", TABLE_CELL_PADDING, "text-right")}>
+                      <PoolBalanceCell row={row} exact={exact} mask={m} />
+                    </Link>
                   </td>
                 </tr>
               )
             })}
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-5 py-8 text-center text-[14px] text-muted-foreground">
+                <td colSpan={2} className="px-5 py-8 text-center text-[14px] text-muted-foreground">
                   {t("No wallet balances found.")}
                 </td>
               </tr>
@@ -625,36 +621,26 @@ function PoolsBalanceSection({
 
       <div className="space-y-3 md:hidden">
         {rows.map((row) => (
-          <MarketMobileCard key={row.id} className="space-y-2">
-            <MarketMobileCardHeader
-              identity={<PoolIdentity row={row} />}
-              metric={
-                <div className="shrink-0 text-right">
-                  <PoolSourceStatus row={row} />
-                </div>
-              }
-            />
-            <MarketMobileStatList>
-              <MarketMobileStatRow
-                label={t("Balance")}
-                value={
-                  <span>
-                    {m(formatPoolAmount(row.amount))}
-                    <MarketMobileSupportingValue>{m(exact(row.valueUsd))}</MarketMobileSupportingValue>
-                  </span>
-                }
-              />
-              <MarketMobileStatRow
-                label={t("Fees")}
-                value={
-                  <span>
-                    {m(exact(poolUiDetail(row).feesUsd))}
-                    <MarketMobileSupportingValue>{m(t("Unclaimed fees"))}</MarketMobileSupportingValue>
-                  </span>
-                }
-              />
-            </MarketMobileStatList>
-          </MarketMobileCard>
+          <Link key={row.id} href={poolDetailHref(row)} className="block">
+            <MarketMobileCard className="space-y-2">
+              <MarketMobileCardHeader identity={<PoolIdentity row={row} />} />
+              <MarketMobileStatList>
+                <MarketMobileStatRow
+                  label={t("Balance")}
+                  value={
+                    <span>
+                      {row.unitPriceUsd && row.unitPriceUsd > 0
+                        ? m(`${formatPoolAmount(row.amount)} LP`)
+                        : m(exact(row.valueUsd))}
+                      {row.unitPriceUsd && row.unitPriceUsd > 0 ? (
+                        <MarketMobileSupportingValue>{m(exact(row.valueUsd))}</MarketMobileSupportingValue>
+                      ) : null}
+                    </span>
+                  }
+                />
+              </MarketMobileStatList>
+            </MarketMobileCard>
+          </Link>
         ))}
         {rows.length === 0 ? (
           <MarketMobileCard className="py-5 text-center text-[14px] text-muted-foreground">

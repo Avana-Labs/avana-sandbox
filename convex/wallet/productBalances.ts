@@ -243,9 +243,13 @@ export const listForWallet = query({
       const scale = resolveCollateralRepriceScale(liveLp, claimLp)
       if (scale !== undefined && liveLp !== undefined) {
         const valueUsd = frozenValueUsd * scale
-        return { ...row, valueUsd, amount: valueUsd / liveLp }
+        return { ...row, valueUsd, amount: valueUsd / liveLp, unitPriceUsd: liveLp }
       }
-      return { ...row, valueUsd: frozenValueUsd, amount: claimPrice > 0 ? frozenValueUsd / claimPrice : frozenValueUsd }
+      return {
+        ...row,
+        valueUsd: frozenValueUsd,
+        amount: claimPrice > 0 ? frozenValueUsd / claimPrice : frozenValueUsd,
+      }
     })
 
     return {
