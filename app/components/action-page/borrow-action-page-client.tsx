@@ -1090,7 +1090,6 @@ export function BorrowActionPageClient({
         hideTitle={embedded || sidebar}
         hideClose={embedded}
         flowHeaderStage={!embedded ? stage : undefined}
-        simulated
       >
         <ActionSessionLoading />
       </ActionPageShell>

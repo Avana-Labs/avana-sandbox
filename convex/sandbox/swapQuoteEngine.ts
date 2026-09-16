@@ -37,6 +37,7 @@ export const SWAP_ENGINE_ASSETS: readonly SwapEngineAsset[] = [
   { id: "weth", symbol: "WETH", isLpToken: false, isSwapEnabled: true },
   // Metadata-only (dashboard / multiply collateral); not swap-routed — mirrors client catalog.
   { id: "crvusd", symbol: "crvUSD", isLpToken: false, isSwapEnabled: false },
+  { id: "wsteth", symbol: "WSTETH", isLpToken: false, isSwapEnabled: false },
   { id: "eth-usdc-lp", symbol: "ETH/USDC LP", isLpToken: true, isSwapEnabled: false },
 ]
 

@@ -118,7 +118,8 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
         : ({ valid: false, reason: "insufficient_balance", amount: null, maxAmount: 0 } as const),
     [amount, inputBalance, outputAssetId],
   )
-  const approvalRequired = validation.valid && inputAsset ? swap.requiresApproval(inputAsset.id, validation.amount) : false
+  const approvalRequired =
+    validation.valid && inputAsset ? swap.requiresApproval(inputAsset.id, validation.amount) : false
   const getQuote = swap.getQuote
   useEffect(() => {
     if (!inputAssetId || !outputAssetId || !validation.valid) {
@@ -341,19 +342,20 @@ export function SwapPageClient({ initialFrom, initialTo, origin = "wallet", retu
     setStage("configure")
   }, [])
 
-  const primaryLabel = !inputAsset || !outputAsset
-    ? "Select assets"
-    : !inputBalance
-      ? "Insufficient balance"
-    : !validation.valid
-      ? validation.reason === "invalid_amount"
-        ? "Enter an amount"
-        : "Swap unavailable"
-      : quoteState === "loading"
-        ? "Loading quote"
-        : quoteState === "error"
-          ? "Refresh quote"
-          : "Review swap"
+  const primaryLabel =
+    !inputAsset || !outputAsset
+      ? "Select assets"
+      : !inputBalance
+        ? "Insufficient balance"
+        : !validation.valid
+          ? validation.reason === "invalid_amount"
+            ? "Enter an amount"
+            : "Swap unavailable"
+          : quoteState === "loading"
+            ? "Loading quote"
+            : quoteState === "error"
+              ? "Refresh quote"
+              : "Review swap"
 
   const isTransactionStage = [
     "approve_allowance",

@@ -154,8 +154,7 @@ export function MultiplyActionPageClient({
   const [multiplier, setMultiplier] = useState(() =>
     kind === "close" ? "1" : (initialMultiplier ?? (kind === "deleverage" ? "" : defaultMultiplyMultiplier)),
   )
-  const displayMultiplier =
-    kind === "deleverage" && parsePositiveActionAmount(multiplier) == null ? "1" : multiplier
+  const displayMultiplier = kind === "deleverage" && parsePositiveActionAmount(multiplier) == null ? "1" : multiplier
   const [hasUserInput, setHasUserInput] = useState(() => Boolean(initialAmount || initialMultiplier))
 
   useEffect(() => {
@@ -655,7 +654,6 @@ export function MultiplyActionPageClient({
         hideTitle={embedded || sidebar}
         hideClose={embedded}
         flowHeaderStage={!embedded ? stage : undefined}
-        simulated
       >
         <ActionSessionLoading />
       </ActionPageShell>

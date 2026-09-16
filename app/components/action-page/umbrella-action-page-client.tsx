@@ -370,7 +370,6 @@ export function UmbrellaActionPageClient({
         hideTitle={embedded || sidebar}
         hideClose={embedded}
         flowHeaderStage={!embedded ? stage : undefined}
-        simulated
       >
         <ActionSessionLoading />
       </ActionPageShell>
@@ -404,7 +403,6 @@ export function UmbrellaActionPageClient({
       density={sidebar ? "sidebar" : "default"}
       hideClose={embedded}
       flowHeaderStage={!embedded ? stage : undefined}
-      simulated
     >
       {isProcessingStage(stage) ? (
         <ActionProcessingStage verb={dynamicVerb} preview={preview} closeHref={closeHref} stage={stage} />

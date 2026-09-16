@@ -158,7 +158,7 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
       actionType: normalizeActionType(normalized),
       walletId: normalized.walletId,
       marketId: "marketId" in normalized ? normalized.marketId : undefined,
-      assetId: "assetId" in normalized ? normalized.assetId ?? debtAssetId : debtAssetId,
+      assetId: "assetId" in normalized ? (normalized.assetId ?? debtAssetId) : debtAssetId,
       positionId: "positionId" in normalized ? normalized.positionId : undefined,
       debtPositionId: "debtPositionId" in normalized ? normalized.debtPositionId : undefined,
       amountUsd6: toIntentAmount(normalized),

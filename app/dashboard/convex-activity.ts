@@ -102,7 +102,7 @@ export function mapConvexActivityItemsToRows(items: ConvexActivityItem[]): Portf
       : isStarterAssetGrant
         ? "Sandbox funds received"
         : product === "multiply"
-          ? multiplyMarketLabel
+          ? (multiplyMarketLabel ?? "Multiply")
           : titleCase(legacyUmbrellaKind ?? item.kind)
     return {
       id: item.id,

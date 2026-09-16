@@ -769,9 +769,7 @@ export const getRecentTransactions = query({
         source: "seed",
       })
     }
-    return [...live, ...seeded]
-      .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
-      .slice(0, take)
+    return [...live, ...seeded].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()).slice(0, take)
   },
 })
 

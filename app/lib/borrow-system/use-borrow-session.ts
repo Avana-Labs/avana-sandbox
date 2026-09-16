@@ -367,7 +367,9 @@ export function useBorrowSession({
               // accrued phantom interest before subtracting the repayment. Rebuild only that
               // legacy path from the durable borrow/repay ledger; current rows remain untouched.
               debtSharesUsd6:
-                reconciledPrincipal === undefined ? BigInt(debt.debtSharesUsd6) : assetsToShares(reconciledPrincipal, debtIndexRay),
+                reconciledPrincipal === undefined
+                  ? BigInt(debt.debtSharesUsd6)
+                  : assetsToShares(reconciledPrincipal, debtIndexRay),
               debtIndexRay,
               borrowRateWad: BigInt(debt.borrowRateWad),
               principalBorrowedUsd6: reconciledPrincipal ?? BigInt(debt.principalBorrowedUsd6),
@@ -424,7 +426,12 @@ export function useBorrowSession({
             ...current.accounts,
             [walletId]: {
               ...account,
-              lastUpdatedAt: Math.max(account.lastUpdatedAt, hydrationNow),
+              lastUpdatedAt: Math.max(
+                account.lastUpdatedAt,
+                hydrationNow,
+                ...nextHistory.map((item) => item.timestamp),
+                0,
+              ),
               walletBalanceUsd6: BigInt(
                 Math.round((data.balances ?? []).reduce((sum, balance) => sum + balance.valueUsd, 0) * 1_000_000),
               ),
@@ -446,7 +453,6 @@ export function useBorrowSession({
                   claimableUsd6: remaining < position.claimableUsd6 ? remaining : position.claimableUsd6,
                 }
               }),
-              lastUpdatedAt: Math.max(account.lastUpdatedAt, ...nextHistory.map((item) => item.timestamp), 0),
             },
           },
         }

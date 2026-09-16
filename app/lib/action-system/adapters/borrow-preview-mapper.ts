@@ -86,8 +86,6 @@ export function mapBorrowTransactionPreviewToActionUi(
   options: {
     symbol: string
     amountUsd: number
-    /** Token price used to express the repay input and Max in asset units. */
-    priceUsd?: number
     marketLabel: string
     ratePct: number
     balanceLabel: string
@@ -97,8 +95,8 @@ export function mapBorrowTransactionPreviewToActionUi(
     liquidationThresholdPct?: number
     maxBorrowUsd?: number
     /** Live oracle price of the borrow asset. The amount the user types is a TOKEN
-     *  quantity, so the pill/review label and the Max amount are in tokens while the
-     *  engine (and amountUsd) stay in USD. Omitted → falls back to USD-denominated. */
+     * quantity, so the pill/review label and the Max amount are in tokens while the
+     * engine (and amountUsd) stay in USD. Omitted -> falls back to USD-denominated. */
     priceUsd?: number
   },
 ): ActionPreviewUi {
@@ -209,6 +207,8 @@ export function mapBorrowRepayPreviewToActionUi(
     symbol: string
     amountUsd: number
     marketLabel: string
+    /** Token price used to express the repay input and Max in asset units. */
+    priceUsd?: number
     remainingDebtUsd: number
     yearlyInterestSavedUsd: number
     creditScopeLabel?: string

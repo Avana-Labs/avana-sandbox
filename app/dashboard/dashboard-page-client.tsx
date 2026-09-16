@@ -575,11 +575,20 @@ export function DashboardPageClient({ pageData: _pageData }: { pageData?: Reward
     ...rewardActivityRows,
   ]
   const seenIds = new Set<string>()
-  const allActivityRows = combinedActivityRows.filter((row) => {
-    if (seenIds.has(row.id)) return false
-    seenIds.add(row.id)
-    return true
-  })
+  const allActivityRows = combinedActivityRows
+    .filter((row) => {
+      if (seenIds.has(row.id)) return false
+      seenIds.add(row.id)
+      return true
+    })
+    .map((row) => {
+      const isSimulated = Boolean(row.txHash && !/^0x[0-9a-fA-F]{64}$/.test(row.txHash))
+      if (!isSimulated || row.secondaryLabel.startsWith("Simulated transaction")) return row
+      return {
+        ...row,
+        secondaryLabel: row.secondaryLabel ? `Simulated transaction · ${row.secondaryLabel}` : "Simulated transaction",
+      }
+    })
 
   return (
     <>

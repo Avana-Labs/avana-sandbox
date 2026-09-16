@@ -35,14 +35,16 @@ describe("useBorrowSession", () => {
   it("rebuilds a legacy repay principal from the durable borrow and repay ledger", () => {
     const position = { marketSlug: "aero-slipstream-bluechip-cbbtc-usdc" } as never
     const debt = { assetId: "aero-slipstream-bluechip:usdc", baseAssetId: "usdc" } as never
-    const principal = reconcileLegacyRepayPrincipal(
-      position,
-      debt,
-      [
-        { product: "borrow", kind: "borrow", marketSlug: position.marketSlug, assetId: debt.assetId, executedAmountUsd6: "1000000000" },
-        { product: "borrow", kind: "repay", marketSlug: position.marketSlug, executedAmountUsd6: "100000000" },
-      ] as never,
-    )
+    const principal = reconcileLegacyRepayPrincipal(position, debt, [
+      {
+        product: "borrow",
+        kind: "borrow",
+        marketSlug: position.marketSlug,
+        assetId: debt.assetId,
+        executedAmountUsd6: "1000000000",
+      },
+      { product: "borrow", kind: "repay", marketSlug: position.marketSlug, executedAmountUsd6: "100000000" },
+    ] as never)
     expect(principal).toBe(900_000_000n)
   })
 
