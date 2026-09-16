@@ -49,6 +49,13 @@ type PositionRow = {
   hasClaim: boolean
 }
 
+const COVERED_RESERVE_LABELS: Record<UmbrellaMarketId, string> = {
+  gho: "Stable Hub",
+  usdc: "Stable Hub",
+  usdt: "Correlated Hub",
+  weth: "Correlated Hub",
+}
+
 export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (marketId: UmbrellaMarketId) => void }) {
   const { t } = useTranslation()
   const umbrella = useUmbrellaSessionContext()
@@ -60,7 +67,7 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
       id,
       asset: market.asset,
       symbol: market.symbol,
-      coverage: market.coverage,
+      coverage: COVERED_RESERVE_LABELS[id],
       activeStakeUsd,
       coolingUsd: position.cooldownValueUsd,
       activeStakeLabel: formatUsd(activeStakeUsd),
@@ -78,7 +85,7 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
   })
 
   const idleRow = (row: PositionRow) => row.activeStakeUsd === 0 && row.coolingUsd === 0 && row.pendingRewards === 0
-  const nonIdle = rows.filter((row) => !idleRow(row))
+  const nonIdle = rows.filter((row) => !idleRow(row) || umbrella.walletBalances[row.id] > 0)
   const showEmptyState = nonIdle.length === 0
   const visible = showEmptyState ? [] : nonIdle
 
@@ -106,7 +113,7 @@ export function UmbrellaPositions({ onSelectMarket }: { onSelectMarket?: (market
             </colgroup>
             <thead>
               <tr className="text-left">
-                <th className={cn(TABLE_HEADER_CELL, "pl-5")}>{t("Asset")}</th>
+                <th className={cn(TABLE_HEADER_CELL, "pl-5")}>{t("Covered reserve")}</th>
                 <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("Active stake")}</th>
                 <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("APY")}</th>
                 <th className={cn(TABLE_HEADER_CELL, "px-4 text-right")}>{t("Rewards")}</th>

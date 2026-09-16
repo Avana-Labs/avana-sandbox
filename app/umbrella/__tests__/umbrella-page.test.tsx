@@ -37,6 +37,11 @@ describe("Umbrella page", () => {
     expect(screen.getAllByText("Stake USDC").length).toBeGreaterThan(0)
     expect(screen.getAllByText("Stake USDT").length).toBeGreaterThan(0)
     expect(screen.getAllByText("Stake WETH").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("Stable Hub").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("Correlated Hub").length).toBeGreaterThan(0)
+
+    const positions = within(screen.getByRole("region", { name: "Umbrella positions" }))
+    expect(positions.getAllByText("Covered reserve").length).toBeGreaterThan(0)
 
     // APY column renders the total percent (the base + reward split moved to a tooltip
     // to declutter the table).
