@@ -57,7 +57,13 @@ export function useRewardsSession({
       // best-effort cache written below, but it can never resurrect rejected,
       // forged, or stale claims over the authenticated server snapshot.
       const chosen = remote ?? seededState
-      lastRemoteStateRef.current = remoteState
+      // Seed the guard with the SAME canonical form the persist effect compares against
+      // (`JSON.stringify(state)`), not the raw Convex string. Convex may store the JSON with
+      // different key order/formatting, so comparing the raw string to our re-serialization
+      // never matched → every render re-saved → getState re-fired → re-hydrated → saveState
+      // storm (infinite loop). When there is no remote row yet, keep the raw value (null) so the
+      // seed still gets created once. chosen === remote when remote exists.
+      lastRemoteStateRef.current = remote ? JSON.stringify(chosen) : remoteState
       // Server treats missing revision as 0 (`existing.revision ?? 0`). Mirror that
       // whenever a remote row exists so the next saveState includes expectedRevision.
       // Confirmed-empty remote clears the ref so the next write is a create.
