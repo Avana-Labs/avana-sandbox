@@ -4,6 +4,11 @@ import { assertSameOrigin, clientKey, rateLimitShared } from "../../_lib/request
 
 export const dynamic = "force-dynamic"
 
+// A full product sweep remounts the Convex provider across many routes. Keep the
+// development-only open-gate refresh budget high enough for that workflow while
+// retaining a bounded per-client limit.
+const OPEN_GATE_TOKEN_LIMIT_PER_MINUTE = 120
+
 function isLoopbackIssuer(issuer: string) {
   try {
     const host = new URL(issuer).hostname
@@ -29,7 +34,7 @@ export async function POST(req: Request) {
     return Response.json({ error: "dev token unavailable" }, { status: 404 })
   }
   if (!assertSameOrigin(req)) return Response.json({ error: "origin not allowed" }, { status: 403 })
-  if (!(await rateLimitShared(`siwe-dev-token:${clientKey(req)}`, 30, 60_000))) {
+  if (!(await rateLimitShared(`siwe-dev-token:${clientKey(req)}`, OPEN_GATE_TOKEN_LIMIT_PER_MINUTE, 60_000))) {
     return Response.json({ error: "too many requests" }, { status: 429 })
   }
 
