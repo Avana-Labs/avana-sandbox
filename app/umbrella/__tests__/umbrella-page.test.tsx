@@ -99,6 +99,25 @@ describe("Umbrella page", () => {
     expect(marketRiskIndex).toBe(cooldownIndex + 1)
   })
 
+  it("uses independent surface tabs for the large Surface details section", () => {
+    renderUmbrellaPage()
+
+    const surfaceTabs = screen.getByRole("tablist", { name: "Umbrella surface details" })
+    expect(within(surfaceTabs).getAllByRole("tab")).toHaveLength(4)
+    expect(within(surfaceTabs).getByRole("tab", { name: "View USDC surface details" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    )
+
+    fireEvent.click(within(surfaceTabs).getByRole("tab", { name: "View WETH surface details" }))
+
+    expect(screen.getByText("Correlated Hub → WETH Spoke → WETH Reserve")).toBeInTheDocument()
+    expect(within(surfaceTabs).getByRole("tab", { name: "View WETH surface details" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    )
+  })
+
   it("never renders an Unstake CTA in the positions table (Claim is the only row action)", () => {
     renderUmbrellaPage()
 

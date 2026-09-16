@@ -24,6 +24,18 @@ function isUmbrellaMarketId(value: string | null): value is UmbrellaMarketId {
   return value != null && (VALID_MARKETS as readonly string[]).includes(value)
 }
 
+function defaultUmbrellaMarket(
+  umbrella: ReturnType<typeof useUmbrellaSessionContext>,
+  marketParam: string | null,
+): UmbrellaMarketId {
+  if (isUmbrellaMarketId(marketParam)) return marketParam
+  const withValue = umbrella.marketOrder
+    .map((id) => ({ id, value: umbrella.positions[id]?.valueUsd ?? 0 }))
+    .sort((a, b) => b.value - a.value)
+  if (withValue.length > 0 && withValue[0].value > 0) return withValue[0].id
+  return "usdc"
+}
+
 function UmbrellaPageInner() {
   const { t } = useTranslation()
   const searchParams = useSearchParams()
@@ -32,14 +44,9 @@ function UmbrellaPageInner() {
   // Fallback: if the URL didn't pick a market, choose the one this wallet actually holds
   // most of. Empty state → "usdc". Lazy state initializer runs once on mount so the
   // seed doesn't fight later user selections when positions refresh.
-  const [selectedMarket, setSelectedMarket] = useState<UmbrellaMarketId>(() => {
-    if (isUmbrellaMarketId(marketParam)) return marketParam
-    const withValue = umbrella.marketOrder
-      .map((id) => ({ id, value: umbrella.positions[id]?.valueUsd ?? 0 }))
-      .sort((a, b) => b.value - a.value)
-    if (withValue.length > 0 && withValue[0].value > 0) return withValue[0].id
-    return "usdc"
-  })
+  const initialMarket = defaultUmbrellaMarket(umbrella, marketParam)
+  const [selectedMarket, setSelectedMarket] = useState<UmbrellaMarketId>(initialMarket)
+  const [selectedSurfaceMarket, setSelectedSurfaceMarket] = useState<UmbrellaMarketId>(initialMarket)
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false)
   const [mobileSheetInitialTab, setMobileSheetInitialTab] = useState<UmbrellaMobileSheetTrigger>("stake")
 
@@ -62,7 +69,7 @@ function UmbrellaPageInner() {
               </div>
               <UmbrellaCooldown />
               <UmbrellaStress />
-              <UmbrellaSurfaceDetails market={umbrella.markets[selectedMarket]} />
+              <UmbrellaSurfaceDetails marketId={selectedSurfaceMarket} onMarketChange={setSelectedSurfaceMarket} />
               <UmbrellaLearn />
             </div>
 

@@ -1,9 +1,10 @@
 "use client"
 
 import { ActionMetricHelp } from "@/app/components/action-page/action-metric-help"
+import { TokenIcon } from "@/app/components/token-icon"
 import { useUmbrellaSessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
-import type { UmbrellaMarket } from "@/app/lib/umbrella-system/use-umbrella-session"
+import type { UmbrellaMarket, UmbrellaMarketId } from "@/app/lib/umbrella-system/use-umbrella-session"
 import { formatCompactUsd, formatPct } from "../format"
 
 type MetricLabelProps = { label: string; tooltip: string }
@@ -214,8 +215,16 @@ function UmbrellaSurfaceDetailsRows({ market }: { market: UmbrellaMarket }) {
   )
 }
 
-export function UmbrellaSurfaceDetails({ market }: { market: UmbrellaMarket }) {
+export function UmbrellaSurfaceDetails({
+  marketId,
+  onMarketChange,
+}: {
+  marketId: UmbrellaMarketId
+  onMarketChange: (marketId: UmbrellaMarketId) => void
+}) {
   const { t } = useTranslation()
+  const umbrella = useUmbrellaSessionContext()
+  const market = umbrella.markets[marketId]
 
   return (
     <section>
@@ -225,6 +234,26 @@ export function UmbrellaSurfaceDetails({ market }: { market: UmbrellaMarket }) {
             {t("Surface details")}
           </h2>
           <p className="mt-2 text-[13px] text-muted-foreground">{surfaceLabel(market)}</p>
+          <div className="mt-4 flex items-center gap-2" role="tablist" aria-label={t("Umbrella surface details")}>
+            {umbrella.marketOrder.map((id) => {
+              const tabMarket = umbrella.markets[id]
+              const active = id === marketId
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  aria-label={t("View {symbol} surface details").replace("{symbol}", tabMarket.symbol)}
+                  title={tabMarket.symbol}
+                  onClick={() => onMarketChange(id)}
+                  className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-background transition-colors hover:border-foreground/40 hover:bg-hover aria-selected:border-brand aria-selected:bg-brand/10 aria-selected:ring-2 aria-selected:ring-brand/20"
+                >
+                  <TokenIcon symbol={tabMarket.symbol} size="sm" />
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
 
