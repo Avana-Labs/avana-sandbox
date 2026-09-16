@@ -125,7 +125,7 @@ export function useDashboardPortfolioSummary(walletId: string | undefined): Dash
     }
 
     try {
-      const multiplyTab = buildPortfolioMultiplyData(walletId, multiplySession.state)
+      const multiplyTab = buildPortfolioMultiplyData(walletId, multiplySession.state, [], priceFor)
       const multiply = buildMultiplyBalanceMetrics(multiplySession.state, walletId, multiplyTab)
       if (multiply.netValueUsd > 0) {
         legs.push({ equityUsd: multiply.netValueUsd, netApyPct: multiply.netApyPct })
@@ -135,7 +135,7 @@ export function useDashboardPortfolioSummary(walletId: string | undefined): Dash
     }
 
     return blendEquityWeightedNetApyPct(legs)
-  }, [borrowSession.state, hasMounted, lendSession.state, multiplySession.state, walletId])
+  }, [borrowSession.state, hasMounted, lendSession.state, multiplySession.state, priceFor, walletId])
 
   return {
     walletBalanceUsd,

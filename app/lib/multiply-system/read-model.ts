@@ -10,6 +10,7 @@ import { resolveMultiplyTokenLogo } from "@/lib/multiply-token-logo"
 import { formatWalletLabel } from "@/app/lib/detail-page/transaction-history"
 import type { MultiplyMarketRow } from "@/app/lib/multiply-sim"
 import { MULTIPLY_MARKET_CATALOG } from "./catalog"
+import { resolveMultiplyCollateralPriceUsd } from "./collateral-limits"
 import { formatMultiplyActivityMarketLabel, formatMultiplyLoopPairLabel } from "./market-labels"
 import type { MultiplyTransactionHistoryItem, MultiplyTransactionResult, MultiplyWalletReadSnapshot } from "./contracts"
 import { buildMockMultiplyRiskSnapshots } from "./mock"
@@ -235,9 +236,28 @@ export function buildPortfolioMultiplyData(
   walletId: string,
   state: MultiplySystemState,
   history: MultiplyTransactionHistoryItem[] = [],
+  /**
+   * Live collateral-token price resolver (canonical price context). When supplied, each position's
+   * collateral is valued at `collateralAmount × livePrice` instead of the USD frozen at open — the
+   * SAME basis the dashboard headline uses (aggregateNetValueUsd reprices multiply_active rows at
+   * the live oracle). Omitted → frozen behavior, so other callers are unchanged. Debt stays fixed
+   * (it is a USD-denominated stablecoin borrow).
+   */
+  collateralPriceFor?: (symbol: string) => number | undefined,
 ): PortfolioMultiplyTabData {
   const positions = Object.values(state.positions).filter((position) => position.walletId === walletId)
-  const totalCollateralUsd = positions.reduce((sum, position) => sum + position.collateralValueUsd, 0)
+  const collateralUsdOf = (position: (typeof positions)[number]): number => {
+    if (!collateralPriceFor || !(position.collateralAmount > 0)) return position.collateralValueUsd
+    const market = state.markets[position.marketId]
+    if (!market) return position.collateralValueUsd
+    const priceUsd = resolveMultiplyCollateralPriceUsd(
+      collateralPriceFor(market.collateralAsset.symbol),
+      market.collateralAsset.priceUsd,
+    )
+    const liveUsd = position.collateralAmount * priceUsd
+    return Number.isFinite(liveUsd) && liveUsd > 0 ? liveUsd : position.collateralValueUsd
+  }
+  const totalCollateralUsd = positions.reduce((sum, position) => sum + collateralUsdOf(position), 0)
   const totalDebtUsd = positions.reduce((sum, position) => sum + position.debtValueUsd, 0)
   const mappedHealthFactors = positions.map((position) =>
     position.healthFactor === "infinity" ? Number.POSITIVE_INFINITY : position.healthFactor,
@@ -257,6 +277,7 @@ export function buildPortfolioMultiplyData(
     },
     lpCollaterals: positions.map((position) => {
       const market = state.markets[position.marketId]!
+      const collateralUsd = collateralUsdOf(position)
       return {
         id: position.id,
         marketId: position.marketId,
@@ -268,10 +289,11 @@ export function buildPortfolioMultiplyData(
         // Real value: a zero-debt position is genuinely infinite. The table renders
         // non-finite health factors as "∞" rather than a fabricated number.
         healthFactor: position.healthFactor === "infinity" ? Number.POSITIVE_INFINITY : position.healthFactor,
-        collateralUsd: position.collateralValueUsd,
-        borrowPowerUsd: Math.max(0, position.collateralValueUsd - position.debtValueUsd),
+        collateralUsd,
+        borrowPowerUsd: Math.max(0, collateralUsd - position.debtValueUsd),
         debtUsd: position.debtValueUsd,
-        ltvPct: position.ltv * 100,
+        // LTV off the live-repriced collateral so it stays consistent with the value shown.
+        ltvPct: collateralUsd > 0 ? (position.debtValueUsd / collateralUsd) * 100 : position.ltv * 100,
         liquidationPriceUsd: position.liquidationPrice,
         netApyPct: position.netApy * 100,
         status: "open" as const,
@@ -279,10 +301,11 @@ export function buildPortfolioMultiplyData(
     }),
     positions: positions.map((position) => {
       const market = state.markets[position.marketId]!
+      const collateralUsd = collateralUsdOf(position)
       // PnL = net carry accrued on equity since the position opened. (The previous
       // formula reduced to equity − equity ≡ 0 for every position because
       // collateralValueUsd / multiplier === equity by definition.)
-      const equityUsd = Math.max(0, position.collateralValueUsd - position.debtValueUsd)
+      const equityUsd = Math.max(0, collateralUsd - position.debtValueUsd)
       const elapsedYears = Math.max(0, Date.now() - position.openedAt) / MS_PER_YEAR
       const pnlUsd = equityUsd * position.netApy * elapsedYears
       return {
@@ -291,8 +314,8 @@ export function buildPortfolioMultiplyData(
         label: formatMultiplyLoopPairLabel(market.collateralAsset.symbol, market.borrowAsset.symbol),
         side: "long" as const,
         leverage: position.multiplier,
-        collateralUsd: position.collateralValueUsd,
-        exposureUsd: position.collateralValueUsd,
+        collateralUsd,
+        exposureUsd: collateralUsd,
         pnlUsd,
         pnlPct: equityUsd > 0 ? (pnlUsd / equityUsd) * 100 : 0,
         status: "open" as const,
