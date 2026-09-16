@@ -254,7 +254,7 @@ export function useMultiplySession({
       }
       const liquidHoldings = data.balances ?? []
       for (const position of data.positions) {
-        if (position.product !== "multiply") continue
+        if (position.product !== "multiply" || position.status !== "open") continue
         const id = String(position._id)
         positions[id] = {
           id,
