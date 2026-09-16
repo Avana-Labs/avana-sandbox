@@ -205,7 +205,26 @@ export function MultiplyActionPageClient({
 
     if (kind === "close") {
       if (!position) {
-        setPreviewUi(null)
+        const noPositionReason = "No open position to close in this market."
+        setPreviewUi({
+          allowed: false,
+          amountLabel: "Full close",
+          amountValue: "Full close",
+          amountUsdLabel: "$0",
+          rateLabel: "Final withdrawal",
+          rateValue: "—",
+          marketLabel: translateMultiplyLoopMarketLabel(t, market.collateralAsset.symbol, market.borrowAsset.symbol),
+          marketValue: market.id,
+          balanceLabel: "Position",
+          balanceValue: "None",
+          maxAmount: null,
+          metrics: [],
+          networkFeeLabel: "—",
+          risk: null,
+          blockedReason: noPositionReason,
+          validationErrors: [noPositionReason],
+          warnings: [],
+        })
         return
       }
       const intent = session.createIntent({ type: "close", walletId, positionId: position.id })

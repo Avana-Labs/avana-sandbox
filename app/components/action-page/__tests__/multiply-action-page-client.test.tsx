@@ -223,6 +223,19 @@ describe("MultiplyActionPageClient", () => {
     expect(screen.queryByTestId("action-risk-banner")).not.toBeInTheDocument()
   })
 
+  it("shows an explicit no-position state on the direct close route", async () => {
+    renderWithProviders(
+      <AvanaSessionsProvider>
+        <MultiplyActionPageClient kind="close" initialMarketId="eth-usdt" />
+      </AvanaSessionsProvider>,
+    )
+
+    await waitFor(() => expect(screen.getByRole("button", { name: "No position" })).toBeInTheDocument())
+    expect(screen.getByText("No open position to close in this market.")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Enter an amount" })).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "No position" })).toBeDisabled()
+  })
+
   it("keeps embedded deleverage preview blank while showing the default target multiplier", async () => {
     seedExistingMultiplyPosition()
     renderWithProviders(
