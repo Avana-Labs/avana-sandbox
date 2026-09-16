@@ -1076,6 +1076,120 @@ describe("recordTransaction — server-side solvency re-derivation", () => {
     expect(positions[0]?.closedAt).toBeTruthy()
   })
 
+  test("accepts a persisted Multiply deleverage against the current position revision", async () => {
+    const t = convexTest(schema, modules)
+    await seedMultiplyCollateral(t)
+    const asUser = t.withIdentity({ subject: WALLET })
+
+    await asUser.mutation(
+      api.sandbox.transactions.recordTransaction,
+      borrowIntent("deleverage-open", {
+        product: "multiply",
+        kind: "multiply",
+        marketSlug: "eth-usdc-loop",
+        position: {
+          status: "open",
+          marketSlug: "eth-usdc-loop",
+          assetId: "eth",
+          collateralValueUsd: 2000,
+          debtValueUsd: 1000,
+          multiplier: 2,
+          ltv: 0.5,
+        },
+      }),
+    )
+
+    const result = await asUser.mutation(
+      api.sandbox.transactions.recordTransaction,
+      borrowIntent("deleverage-write", {
+        product: "multiply",
+        kind: "deleverage",
+        marketSlug: "eth-usdc-loop",
+        requestedAmountUsd6: "250000000",
+        executedAmountUsd6: "250000000",
+        amountUsd: 250,
+        expectedRevision: 0,
+        multiplierBefore: 2,
+        multiplierAfter: 1.75,
+        position: {
+          status: "open",
+          marketSlug: "eth-usdc-loop",
+          assetId: "eth",
+          collateralValueUsd: 1750,
+          debtValueUsd: 750,
+          multiplier: 1.75,
+          ltv: 750 / 1750,
+        },
+      }),
+    )
+
+    expect(result.receipt.status).toBe("success")
+    expect(result.revision).toBe(1)
+
+    const positions = await asUser.query(api.sandbox.transactions.getPositions, { wallet: WALLET })
+    expect(positions).toHaveLength(1)
+    expect(positions[0]).toMatchObject({
+      status: "open",
+      collateralValueUsd: 1750,
+      debtValueUsd: 750,
+      multiplier: 1.75,
+      ltv: 750 / 1750,
+      revision: 1,
+    })
+  })
+
+  test("accepts a full 1x deleverage without requiring a second wallet deposit", async () => {
+    const t = convexTest(schema, modules)
+    await seedMultiplyCollateral(t)
+    const asUser = t.withIdentity({ subject: WALLET })
+
+    await asUser.mutation(
+      api.sandbox.transactions.recordTransaction,
+      borrowIntent("full-deleverage-open", {
+        product: "multiply",
+        kind: "multiply",
+        marketSlug: "eth-usdc-loop",
+        position: {
+          status: "open",
+          marketSlug: "eth-usdc-loop",
+          assetId: "eth",
+          collateralValueUsd: 2000,
+          debtValueUsd: 1000,
+          multiplier: 2,
+          ltv: 0.5,
+        },
+      }),
+    )
+
+    const result = await asUser.mutation(
+      api.sandbox.transactions.recordTransaction,
+      borrowIntent("full-deleverage-write", {
+        product: "multiply",
+        kind: "deleverage",
+        marketSlug: "eth-usdc-loop",
+        requestedAmountUsd6: "1000000000",
+        executedAmountUsd6: "1000000000",
+        amountUsd: 1000,
+        expectedRevision: 0,
+        multiplierBefore: 2,
+        multiplierAfter: 1,
+        position: {
+          status: "open",
+          marketSlug: "eth-usdc-loop",
+          assetId: "eth",
+          collateralAmount: 996.990972918756,
+          collateralValueUsd: 996.990972918756,
+          debtValueUsd: 0,
+          multiplier: 1,
+          ltv: 0,
+        },
+      }),
+    )
+
+    expect(result.receipt.status).toBe("success")
+    expect(result.revision).toBe(1)
+  })
+
   test("returns the position revision on create and on idempotent replay (regression: M-12)", async () => {
     const t = convexTest(schema, modules)
     await seedMultiplyCollateral(t)
