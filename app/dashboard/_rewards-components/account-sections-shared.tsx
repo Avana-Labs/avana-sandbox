@@ -1,6 +1,7 @@
 "use client"
 
 import { Suspense, useMemo, type ReactNode } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ActionIcon } from "@/app/components/action-icon"
@@ -304,6 +305,7 @@ export function MultiplyAvailableMarketsCard({
   title: string
 }) {
   const { t } = useTranslation()
+  const router = useRouter()
   const { exact } = useCurrency()
   const { showDollarAmounts } = useAmountDisplayPreferences()
   const priceFor = useCanonicalPriceFor()
@@ -345,9 +347,22 @@ export function MultiplyAvailableMarketsCard({
           </thead>
           <tbody className="divide-y divide-border dark:divide-white/6">
             {rows.map((row) => (
-              <tr key={row.market.id} className={`${TABLE_BODY_ROW} group`}>
+              <tr
+                key={row.market.id}
+                className={`${TABLE_BODY_ROW} group cursor-pointer transition-colors`}
+                role="link"
+                tabIndex={0}
+                aria-label={`${t("Open market")}: ${row.market.collateralAsset.symbol} / ${row.market.borrowAsset.symbol}`}
+                onClick={() => router.push(`/multiply/markets/${row.market.id}`)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault()
+                    router.push(`/multiply/markets/${row.market.id}`)
+                  }
+                }}
+              >
                 <td className={cn(TABLE_CELL_PADDING, "pl-5", TABLE_ROW_HOVER_LEFT)}>
-                  <Link href={`/multiply/markets/${row.market.id}`} className="flex min-w-0 items-center gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
                     <TokenIcon symbol={row.market.collateralAsset.symbol} size="table" />
                     <div className="min-w-0">
                       <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{row.market.collateralAsset.name}</div>
@@ -357,7 +372,7 @@ export function MultiplyAvailableMarketsCard({
                         )}
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 </td>
                 <td className={cn(TABLE_CELL_PADDING, "text-right", TABLE_ROW_HOVER_BG)}>
                   <div className={TABLE_CELL_NUMERIC}>
@@ -391,7 +406,10 @@ export function MultiplyAvailableMarketsCard({
                       title={t("Multiply")}
                       className="size-9 px-0 py-0"
                     >
-                      <Link href={actionPagePath("multiply", "multiply", { market: row.market.id })}>
+                      <Link
+                        href={actionPagePath("multiply", "multiply", { market: row.market.id })}
+                        onClick={(event) => event.stopPropagation()}
+                      >
                         <ChevronRight />
                       </Link>
                     </Button>
@@ -405,10 +423,15 @@ export function MultiplyAvailableMarketsCard({
 
       <div className="space-y-3 md:hidden">
         {rows.map((row) => (
-          <MarketMobileCard key={row.market.id} className="space-y-2">
+          <MarketMobileCard
+            key={row.market.id}
+            clickable
+            className="space-y-2"
+            onClick={() => router.push(`/multiply/markets/${row.market.id}`)}
+          >
             <MarketMobileCardHeader
               identity={
-                <Link href={`/multiply/markets/${row.market.id}`} className="flex min-w-0 items-center gap-2.5">
+                <div className="flex min-w-0 items-center gap-2.5">
                   <TokenIcon symbol={row.market.collateralAsset.symbol} size="table" />
                   <MarketMobileIdentityText
                     title={row.market.collateralAsset.name}
@@ -416,7 +439,7 @@ export function MultiplyAvailableMarketsCard({
                       priceFor?.(row.market.collateralAsset.symbol) ?? row.market.collateralAsset.priceUsd,
                     )}
                   />
-                </Link>
+                </div>
               }
               metric={
                 <MarketMobileMetric
@@ -443,7 +466,10 @@ export function MultiplyAvailableMarketsCard({
             </MarketMobileStatList>
             <MarketMobileActionFooter>
               <Button asChild variant="brand" className={MARKET_MOBILE_CTA_CLASS}>
-                <Link href={actionPagePath("multiply", "multiply", { market: row.market.id })}>
+                <Link
+                  href={actionPagePath("multiply", "multiply", { market: row.market.id })}
+                  onClick={(event) => event.stopPropagation()}
+                >
                   <ActionIcon label="multiply" />
                   {t("Multiply")}
                 </Link>
