@@ -55,7 +55,13 @@ import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import { useCurrency } from "@/app/lib/currency/use-currency"
 import { useTranslation } from "@/app/lib/i18n/use-translation"
 import type { BorrowAssetVisual } from "@/app/lib/data/borrow-domain"
-import { BORROW_POOL_CATALOG, formatLtvPct, formatRiskPremium } from "@/app/lib/borrow-sim"
+import {
+  BORROW_POOL_CATALOG,
+  formatLtvPct,
+  formatRiskPremium,
+  getSpokeById,
+  type BorrowSpokeId,
+} from "@/app/lib/borrow-sim"
 
 const DASH = "\u2014"
 const MASK = "••••"
@@ -71,7 +77,7 @@ function WalletMetricHeader({
   align?: "left" | "right"
 }) {
   return (
-    <span className={cn("inline-flex items-center gap-1", align === "right" && "justify-end")}>
+    <span className={cn("inline-flex items-center gap-1 whitespace-nowrap", align === "right" && "justify-end")}>
       {formatTableHeaderLabel(label)}
       <ActionMetricHelp topic={label} text={help} />
     </span>
@@ -138,9 +144,12 @@ function formatMemberSince(sinceMs: number): string {
   return new Date(sinceMs).toLocaleDateString(undefined, { month: "short", year: "numeric" })
 }
 
-function poolUiDetail(row: DashboardWalletBalanceRow) {
-  return { protocol: row.sourceLabel }
+type DashboardBorrowMarketMeta = {
+  listPremiumBps?: number
+  spokeId?: BorrowSpokeId
 }
+
+type DashboardBorrowMarkets = Readonly<Record<string, DashboardBorrowMarketMeta>>
 
 function toBorrowVisual(symbol: string): BorrowAssetVisual {
   const meta = getTokenIconMeta(symbol)
@@ -163,9 +172,9 @@ function lpPairVisuals(row: DashboardWalletBalanceRow): [BorrowAssetVisual, Borr
   return [toBorrowVisual(parts[0]!), toBorrowVisual(parts[1]!)]
 }
 
-function PoolIdentity({ row }: { row: DashboardWalletBalanceRow }) {
+function PoolIdentity({ row, markets }: { row: DashboardWalletBalanceRow; markets?: DashboardBorrowMarkets }) {
   const visuals = lpPairVisuals(row)
-  const detail = poolUiDetail(row)
+  const detail = poolUiDetail(row, markets)
   if (!visuals) {
     return (
       <div className="flex min-w-0 items-center gap-3">
@@ -182,7 +191,7 @@ function PoolIdentity({ row }: { row: DashboardWalletBalanceRow }) {
 }
 
 function poolDetailHref(row: DashboardWalletBalanceRow) {
-  const poolId = row.sourcePositionId ?? row.assetId.replace(/-lp$/i, "")
+  const poolId = poolIdForRow(row)
   return borrowMarketDetailPath(poolId)
 }
 
@@ -190,9 +199,16 @@ function poolIdForRow(row: DashboardWalletBalanceRow) {
   return row.sourcePositionId ?? row.assetId.replace(/-lp$/i, "")
 }
 
+function poolUiDetail(row: DashboardWalletBalanceRow, markets?: DashboardBorrowMarkets) {
+  const poolId = poolIdForRow(row)
+  const catalogPool = BORROW_POOL_CATALOG.find((pool) => pool.id === poolId)
+  const spokeId = markets?.[poolId]?.spokeId ?? catalogPool?.spoke
+  return { protocol: spokeId ? getSpokeById(spokeId).label : row.sourceLabel }
+}
+
 export function resolvePoolRiskPremiumBps(
   row: DashboardWalletBalanceRow,
-  markets?: Readonly<Record<string, { listPremiumBps?: number }>>,
+  markets?: DashboardBorrowMarkets,
 ): number | undefined {
   const poolId = poolIdForRow(row)
   const livePremium = markets?.[poolId]?.listPremiumBps
@@ -236,7 +252,7 @@ function PoolRiskPremiumCell({
   mask,
 }: {
   row: DashboardWalletBalanceRow
-  markets?: Readonly<Record<string, { listPremiumBps?: number }>>
+  markets?: DashboardBorrowMarkets
   mask: (value: string) => string
 }) {
   const bps = resolvePoolRiskPremiumBps(row, markets)
@@ -597,7 +613,7 @@ function PoolsBalanceSection({
   exact: (usd: number) => string
   t: (key: string) => string
   showBalance: boolean
-  markets?: Readonly<Record<string, { listPremiumBps?: number }>>
+  markets?: DashboardBorrowMarkets
 }) {
   const m = (value: string) => (showBalance ? value : MASK)
   return (
@@ -607,13 +623,13 @@ function PoolsBalanceSection({
         <p className="mt-1 text-[13px] text-muted-foreground">{sectionCount(rows.length, "pool", "pools")}</p>
       </div>
 
-      <DesktopTableSurface className="hidden !rounded-none md:block">
+      <DesktopTableSurface className="hidden overflow-x-auto !rounded-none md:block">
         <table className={`w-full min-w-[760px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
           <colgroup>
-            <col className="w-[40%]" />
-            <col className="w-[16%]" />
+            <col className="w-[38%]" />
+            <col className="w-[14%]" />
             <col className="w-[18%]" />
-            <col className="w-[26%]" />
+            <col className="w-[30%]" />
           </colgroup>
           <thead>
             <tr className={TABLE_HEADER_ROW}>
@@ -653,7 +669,7 @@ function PoolsBalanceSection({
                 <tr key={row.id} className={`${TABLE_BODY_ROW} group`}>
                   <td className={cn(TABLE_ROW_HOVER_LEFT)}>
                     <Link href={href} className={cn("block h-full", TABLE_CELL_PADDING, "pl-5")}>
-                      <PoolIdentity row={row} />
+                      <PoolIdentity row={row} markets={markets} />
                     </Link>
                   </td>
                   <td className={cn(TABLE_ROW_HOVER_BG)}>
@@ -689,7 +705,7 @@ function PoolsBalanceSection({
         {rows.map((row) => (
           <Link key={row.id} href={poolDetailHref(row)} className="block">
             <MarketMobileCard className="space-y-2">
-              <MarketMobileCardHeader identity={<PoolIdentity row={row} />} />
+              <MarketMobileCardHeader identity={<PoolIdentity row={row} markets={markets} />} />
               <MarketMobileStatList>
                 <MarketMobileStatRow
                   label={t("LTV")}

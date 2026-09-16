@@ -122,6 +122,8 @@ describe("DashboardWalletTab", () => {
     expect(screen.getByText("2 pools")).toBeInTheDocument()
     expect(screen.getAllByText("58.5%").length).toBeGreaterThan(0)
     expect(screen.getAllByText("70%").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("Balancer Weighted LPs").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("Curve Crypto LPs").length).toBeGreaterThan(0)
   })
 
   it("renders a per-row Swap action that deep-links to the swap flow", { timeout: 20_000 }, () => {
