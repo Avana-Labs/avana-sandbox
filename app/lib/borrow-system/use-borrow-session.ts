@@ -282,6 +282,11 @@ export function useBorrowSession({
       setState((current) => {
         const account = current.accounts[walletId]
         if (!account) return current
+        // Convex rows are authoritative at hydration time. Leaving the catalog seed's
+        // historical `state.now` in place makes the next action accrue months of phantom
+        // interest before applying the user's request, so the preview and persisted position
+        // disagree after a refresh.
+        const hydrationNow = Date.now()
         const collateralPositions = []
         const debtPositions = []
         for (const position of borrowPositions) {
@@ -367,10 +372,12 @@ export function useBorrowSession({
         }
         return {
           ...current,
+          now: Math.max(current.now, hydrationNow),
           accounts: {
             ...current.accounts,
             [walletId]: {
               ...account,
+              lastUpdatedAt: Math.max(account.lastUpdatedAt, hydrationNow),
               walletBalanceUsd6: BigInt(
                 Math.round((data.balances ?? []).reduce((sum, balance) => sum + balance.valueUsd, 0) * 1_000_000),
               ),

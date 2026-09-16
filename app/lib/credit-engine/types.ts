@@ -206,6 +206,8 @@ export type BorrowAction =
       type: "repay"
       walletId: string
       debtPositionId: string
+      /** Borrowed asset used for activity/receipt labeling; the engine resolves the debt by ID. */
+      assetId?: string
       amountUsd6: bigint
       at?: number
     }

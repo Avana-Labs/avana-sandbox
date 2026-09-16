@@ -629,6 +629,7 @@ export function BorrowActionPageClient({
             type: "repay",
             walletId,
             debtPositionId: debtPosition.id,
+            assetId: debtPosition.assetId,
             amountUsd6: parseFixed(repayAmountUsd.toFixed(6), 6),
           }),
         )
@@ -904,6 +905,7 @@ export function BorrowActionPageClient({
           type: "repay",
           walletId,
           debtPositionId: debtPosition.id,
+          assetId: debtPosition.assetId,
           amountUsd6: parseFixed(safeAmount.toFixed(6), 6),
         })
       } else if (kind === "claim") {

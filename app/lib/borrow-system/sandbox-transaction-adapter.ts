@@ -145,13 +145,20 @@ export class SandboxTransactionAdapter implements TransactionAdapter {
   }
 
   createIntent(action: BorrowAction): TransactionIntent {
-    const normalized = normalizeBorrowAction(this.readStateImpl(), action)
+    const state = this.readStateImpl()
+    const normalized = normalizeBorrowAction(state, action)
+    const debtAssetId =
+      normalized.type === "repay"
+        ? state.accounts[normalized.walletId]?.debtPositions.find(
+            (position) => position.id === normalized.debtPositionId,
+          )?.assetId
+        : undefined
     return {
       id: this.generateId("intent"),
       actionType: normalizeActionType(normalized),
       walletId: normalized.walletId,
       marketId: "marketId" in normalized ? normalized.marketId : undefined,
-      assetId: "assetId" in normalized ? normalized.assetId : undefined,
+      assetId: "assetId" in normalized ? normalized.assetId ?? debtAssetId : debtAssetId,
       positionId: "positionId" in normalized ? normalized.positionId : undefined,
       debtPositionId: "debtPositionId" in normalized ? normalized.debtPositionId : undefined,
       amountUsd6: toIntentAmount(normalized),

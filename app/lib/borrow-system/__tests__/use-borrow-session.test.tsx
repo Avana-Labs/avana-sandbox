@@ -155,6 +155,31 @@ describe("useBorrowSession", () => {
     })
   })
 
+  it("anchors the engine clock to Convex hydration time", async () => {
+    const walletId = "convex-wallet"
+    const sessionSeed = buildBorrowSessionSeed(walletId)
+    const { result } = renderHook(() =>
+      useBorrowSession({
+        walletId,
+        sessionSeed,
+      }),
+    )
+    const seedNow = result.current.state.now
+
+    act(() => {
+      result.current.hydrateWalletData({
+        balances: [],
+        borrowBalances: [],
+        positions: [],
+        transactions: [],
+      })
+    })
+
+    await waitFor(() => {
+      expect(result.current.state.now).toBeGreaterThan(seedNow)
+    })
+  })
+
   it("dedupes concurrent execute calls for the same intent", async () => {
     const walletId = "demo-wallet"
     const { result } = renderHook(() =>
