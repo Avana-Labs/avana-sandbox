@@ -142,7 +142,6 @@ export function TransactionReceipt({ data, className }: { data: TransactionRecei
               <ActionInfoRow label={data.rateLabel} value={data.rateValue} tooltip="rate" />
             ) : null}
             {data.marketValue ? <ActionInfoRow label="Market" value={data.marketValue} tooltip="market" /> : null}
-            {data.quoteId ? <ActionInfoRow label="Quote" value={data.quoteId} /> : null}
             {typeof data.networkFeeUsd === "number" ? (
               <ActionInfoRow label="Network fee" value={exact(data.networkFeeUsd)} />
             ) : null}
