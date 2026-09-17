@@ -15,7 +15,7 @@ import {
 } from "@/app/lib/action-system/health-factor-ui"
 import { HfNumber, TokenPairCell } from "@/app/borrow/components/atoms"
 import { Button } from "@/components/ui/button"
-import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
+import { DesktopTableSurface, ROW_OPEN_ARROW_CLASS, RowOpenArrowIcon } from "@/app/components/market-table-primitives"
 import { ActionIcon } from "@/app/components/action-icon"
 import {
   MarketMobileActionFooter,
@@ -112,11 +112,13 @@ export function SuppliesPanel({
             <DesktopTableSurface className="!rounded-none">
               <div className="overflow-x-auto">
                 <table className={`w-full min-w-[560px] table-fixed border-separate border-spacing-0 ${TABLE_BASE}`}>
+                  {/* The action column held a "Manage" pill; the arrow that replaced it
+                  needs far less room, so the freed width goes back to the data columns. */}
                   <colgroup>
-                    <col className="w-[36%]" />
-                    <col className="w-[22%]" />
+                    <col className="w-[40%]" />
                     <col className="w-[24%]" />
-                    <col className="w-[18%]" />
+                    <col className="w-[26%]" />
+                    <col className="w-[10%]" />
                   </colgroup>
                   <thead>
                     <tr className={TABLE_HEADER_ROW}>
@@ -194,20 +196,21 @@ export function SuppliesPanel({
                             </div>
                           </td>
                           <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
-                            <HoverActionGroup>
-                              <Button
-                                type="button"
-                                size="table"
-                                variant="table-secondary"
-                                className="w-auto min-w-[88px]"
-                                onClick={(event) => {
-                                  event.stopPropagation()
-                                  router.push(detailHref)
-                                }}
-                              >
-                                {t("Manage")}
-                              </Button>
-                            </HoverActionGroup>
+                            {/* Desktop only — the mobile cards below keep their labelled
+                            buttons. The row already opens detailHref on click, so the
+                            arrow points at that rather than offering a rival control. */}
+                            <button
+                              type="button"
+                              aria-label={t("Manage")}
+                              title={t("Manage")}
+                              className={ROW_OPEN_ARROW_CLASS}
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                router.push(detailHref)
+                              }}
+                            >
+                              <RowOpenArrowIcon />
+                            </button>
                           </td>
                         </tr>
                       )

@@ -14,7 +14,12 @@ import {
   MarketMobileStatRow,
   MARKET_MOBILE_CTA_CLASS,
 } from "@/app/components/market-card-primitives"
-import { DesktopTableSurface, HoverActionGroup, SilentActionHeader } from "@/app/components/market-table-primitives"
+import {
+  DesktopTableSurface,
+  ROW_OPEN_ARROW_CLASS,
+  RowOpenArrowIcon,
+  SilentActionHeader,
+} from "@/app/components/market-table-primitives"
 import { TokenIcon } from "@/app/components/token-icon"
 import { pairedLoopBorrowPx, TOKEN_ICON_TABLE_PAIR_WIDTH_PX, TOKEN_ICON_TABLE_PX } from "@/app/lib/token-icon-sizes"
 import { formatCompactUsd, formatUsdExact } from "@/app/lib/borrow-sim"
@@ -170,20 +175,18 @@ export function MultiplyCollateralTable({
                   <NetApyCell apy={apyFor(row)} showDollarAmounts={showDollarAmounts} />
                   <RiskCell row={row} liqPrice={liqPrice} />
                   <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
-                    <HoverActionGroup>
-                      {/* Labelled button, matching the Borrow/Lend row actions; the wider action
-                       * column keeps it from clipping the right edge. Opens the same
-                       * /multiply/markets/{id} detail page the row click does. */}
-                      <Button
-                        type="button"
-                        size="table"
-                        variant="table-secondary"
-                        className="w-auto min-w-[88px]"
-                        onClick={(event) => openManage(event, row)}
-                      >
-                        {t("Manage")}
-                      </Button>
-                    </HoverActionGroup>
+                    {/* Icon-only on desktop: the full "Manage" pill was wide enough to clip
+                     * against the right edge in this fixed-width table. The arrow opens the
+                     * same /multiply/markets/{id} detail page the row click does. */}
+                    <button
+                      type="button"
+                      aria-label={t("Manage")}
+                      title={t("Manage")}
+                      className={ROW_OPEN_ARROW_CLASS}
+                      onClick={(event) => openManage(event, row)}
+                    >
+                      <RowOpenArrowIcon />
+                    </button>
                   </td>
                 </tr>
               ))}

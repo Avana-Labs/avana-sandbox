@@ -7,6 +7,7 @@ import {
   ArrowRight as _ArrowRight,
   ArrowShrinkIcon as _ArrowShrink,
   ArrowUpRight as _ArrowUpRight,
+  ArrowUpRight03Icon as _ArrowUpRightLong,
   ArrowUpRightStackIcon as _ArrowUpRightStack,
   BookOpen as _BookOpen,
   Check as _Check,
@@ -101,6 +102,8 @@ export const ArrowLeft: IconComponent = makeIcon(_ArrowLeft)
 export const ArrowRight: IconComponent = makeIcon(_ArrowRight)
 export const ArrowShrink: IconComponent = makeIcon(_ArrowShrink)
 export const ArrowUpRight: IconComponent = makeIcon(_ArrowUpRight)
+/** Same diagonal as ArrowUpRight with a longer shaft — reads clearly at small sizes. */
+export const ArrowUpRightLong: IconComponent = makeIcon(_ArrowUpRightLong)
 export const ArrowUpRightStack: IconComponent = makeIcon(_ArrowUpRightStack)
 export const BadgeDollarSign: IconComponent = makeIcon(_DollarCircleIcon)
 export const BookOpen: IconComponent = makeIcon(_BookOpen)
