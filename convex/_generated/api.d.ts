@@ -72,6 +72,7 @@ import type * as sandbox_swapQuoteEngine from "../sandbox/swapQuoteEngine.js";
 import type * as sandbox_transactionInvariants from "../sandbox/transactionInvariants.js";
 import type * as sandbox_transactions from "../sandbox/transactions.js";
 import type * as sandbox_umbrella from "../sandbox/umbrella.js";
+import type * as sandbox_writeBackPrice from "../sandbox/writeBackPrice.js";
 import type * as seed from "../seed.js";
 import type * as seedAdmin from "../seedAdmin.js";
 import type * as starterTestMarkets from "../starterTestMarkets.js";
@@ -157,6 +158,7 @@ declare const fullApi: ApiFromModules<{
   "sandbox/transactionInvariants": typeof sandbox_transactionInvariants;
   "sandbox/transactions": typeof sandbox_transactions;
   "sandbox/umbrella": typeof sandbox_umbrella;
+  "sandbox/writeBackPrice": typeof sandbox_writeBackPrice;
   seed: typeof seed;
   seedAdmin: typeof seedAdmin;
   starterTestMarkets: typeof starterTestMarkets;
