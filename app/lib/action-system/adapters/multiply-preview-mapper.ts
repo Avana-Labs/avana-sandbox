@@ -264,9 +264,29 @@ export function mapDeleveragePreviewToActionUi(
 
 export function mapClosePreviewToActionUi(
   preview: MultiplyTransactionPreview,
-  options: { marketLabel: string; collateralSymbol: string },
+  options: {
+    marketLabel: string
+    collateralSymbol: string
+    /**
+     * Collateral USD at the LIVE oracle price (`collateralAmount × livePrice`).
+     *
+     * The multiply session revalues positions against `market.collateralAsset.priceUsd`, which
+     * is the catalog fixture captured at module load — the multiply/deleverage paths already
+     * override it with the live price, but close never did. With AAVE at a $105 fixture and a
+     * $120.18 oracle, a full close reported $95,380 unwound / $53,713 withdrawn against the
+     * dashboard's $109,172 / $67,505: the same position, ~$13.8K apart. Prefer the live figure
+     * and fall back to the preview when no live price is available.
+     */
+    liveCollateralValueUsd?: number
+  },
 ): ActionPreviewUi {
-  const equityUsd = Math.max(0, preview.before.collateralValueUsd - preview.before.debtValueUsd)
+  const collateralValueUsd =
+    options.liveCollateralValueUsd != null &&
+    Number.isFinite(options.liveCollateralValueUsd) &&
+    options.liveCollateralValueUsd > 0
+      ? options.liveCollateralValueUsd
+      : preview.before.collateralValueUsd
+  const equityUsd = Math.max(0, collateralValueUsd - preview.before.debtValueUsd)
   const priceImpactPct = Math.max(0, preview.simulationSummary?.priceImpactPct ?? 0)
   const swapLossUsd = preview.before.debtValueUsd * (priceImpactPct / 100)
   const minimumReceivedUsd = Math.max(0, equityUsd - swapLossUsd)
@@ -294,7 +314,7 @@ export function mapClosePreviewToActionUi(
       {
         id: "collateral-sold",
         label: "Collateral unwound",
-        value: formatActionUsd(preview.before.collateralValueUsd, { exact: true }),
+        value: formatActionUsd(collateralValueUsd, { exact: true }),
       },
       {
         id: "swap-loss",

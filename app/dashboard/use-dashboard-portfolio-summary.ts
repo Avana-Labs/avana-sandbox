@@ -49,12 +49,54 @@ export type DashboardPortfolioSummary = {
  * They should reconcile, but are NOT identical by construction; the aggregation
  * invariant (hero == Σ product nets) is pinned by dashboard-net-value-parity.test.ts.
  */
+/**
+ * Widest gap tolerated between a row's IMPLIED unit price (`valueUsd / amount`) and the live
+ * oracle price before we stop trusting `amount` as a token quantity. Mirrors the LP reprice
+ * drift band in convex/wallet/productBalances.ts: a genuine intra-session price move is
+ * bounded, while a units mismatch is orders of magnitude off.
+ */
+export const AMOUNT_TRUST_DRIFT_BAND = { min: 0.1, max: 10 } as const
+
+/**
+ * True when `row.amount` can be trusted as a TOKEN QUANTITY and repriced live.
+ *
+ * Several writers store a USD figure in `amount` instead of a token count — the multiply debt
+ * row writes `amount: debtValueUsd` outright, and `adjustProductBalanceUsd` falls back to
+ * `priceUsd = 1` whenever it CREATES a row, so the first deposit/borrow into a market with no
+ * existing row lands USD in `amount`. Repricing those as `amount × livePrice` multiplies the
+ * position by the token price: a verified 1 AAVE ($120.18) lend deposit contributed $14,443 to
+ * Net Value. The stored `valueUsd` is correct in every one of those cases, so fall back to it
+ * whenever the implied unit price and the live price disagree beyond a plausible drift band.
+ */
+function amountIsTokenDenominated(amount: number, valueUsd: number, livePriceUsd: number): boolean {
+  if (!(amount > 0) || !(valueUsd > 0)) return false
+  const impliedPriceUsd = valueUsd / amount
+  if (!Number.isFinite(impliedPriceUsd) || impliedPriceUsd <= 0) return false
+  const scale = livePriceUsd / impliedPriceUsd
+  if (!Number.isFinite(scale)) return false
+  return scale >= AMOUNT_TRUST_DRIFT_BAND.min && scale <= AMOUNT_TRUST_DRIFT_BAND.max
+}
+
+/**
+ * Product buckets that MIRROR liquid wallet holdings rather than holding separate capital, so
+ * counting both double-counts the same tokens. Matches `selectDashboardWalletValueRows`, which
+ * already applies this rule on the Wallet tab — Net Value read the raw rows and did not, so a
+ * lend withdrawal (which credits BOTH `walletLiquidBalances` and the lend `available` bucket)
+ * permanently inflated the headline by the withdrawn amount.
+ *
+ * `multiply_available` is deliberately absent: it is a separate equity budget allocated to
+ * Multiply, not a mirror of a liquid row.
+ */
+const LIQUID_MIRROR_SOURCE_TYPES = new Set(["lend_available", "borrow_collateral_unpledged"])
+
 export function aggregateNetValueUsd(
   rows: readonly UserAssetBalance[],
   priceFor: (symbol: string) => number | undefined,
 ): number {
+  const liquidAssetIds = new Set(rows.filter((row) => row.sourceType === "wallet").map((row) => row.assetId))
   let total = 0
   for (const row of rows) {
+    if (LIQUID_MIRROR_SOURCE_TYPES.has(row.sourceType) && liquidAssetIds.has(row.assetId)) continue
     const stored = row.valueUsd ?? 0
     const asset = getSwapAsset(row.assetId)
     const isLp = asset?.isLpToken ?? false
@@ -63,11 +105,12 @@ export function aggregateNetValueUsd(
     // that USD budget again in `amount`, so valuing them as `amount × price`
     // inflates Net Value into the millions. Their stored USD value is canonical.
     const isMultiplyAvailable = row.sourceType === "multiply_available"
-    const magnitude = isMultiplyAvailable
-      ? Math.abs(stored)
-      : live != null && Number.isFinite(live)
-        ? row.amount * live
-        : Math.abs(stored)
+    const magnitude =
+      isMultiplyAvailable || live == null || !Number.isFinite(live)
+        ? Math.abs(stored)
+        : amountIsTokenDenominated(row.amount, Math.abs(stored), live)
+          ? row.amount * live
+          : Math.abs(stored)
     // productBalances encodes debt as a negative stored valueUsd; preserve that sign.
     total += (stored < 0 ? -1 : 1) * magnitude
   }

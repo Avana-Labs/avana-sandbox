@@ -145,4 +145,40 @@ describe("multiply preview mappers", () => {
     ])
     expect(ui.metrics.find((row) => row.id === "remaining-dust")?.value).toBe("$0.00")
   })
+
+  it("closes against the LIVE collateral price, not the stale catalog price", () => {
+    // Observed live: an AAVE/GHO loop held 908.380238986834 AAVE against $41,666.66 of debt.
+    // The multiply session revalues positions at the catalog fixture ($105), so close reported
+    // $95,380 unwound / $53,713 withdrawn while the dashboard (live oracle $120.18240206615957)
+    // showed $109,172 / $67,505 for the same position.
+    const debtValueUsd = 41_666.66
+    const collateralAmount = 908.380238986834
+    const stalePriceUsd = 105
+    const livePriceUsd = 120.18240206615957
+    const livePreview = {
+      ...preview,
+      before: { ...preview.before, collateralValueUsd: collateralAmount * stalePriceUsd, debtValueUsd },
+      simulationSummary: { ...preview.simulationSummary, priceImpactPct: 0 },
+    }
+
+    const stale = mapClosePreviewToActionUi(livePreview, { marketLabel: "AAVE · GHO", collateralSymbol: "AAVE" })
+    const live = mapClosePreviewToActionUi(livePreview, {
+      marketLabel: "AAVE · GHO",
+      collateralSymbol: "AAVE",
+      liveCollateralValueUsd: collateralAmount * livePriceUsd,
+    })
+
+    const unwound = (ui: typeof stale) => ui.metrics.find((row) => row.id === "collateral-sold")?.value
+    // "$95,379.93" is the exact figure the live close page rendered before this fix.
+    expect(unwound(stale)).toBe("$95,379.93")
+    expect(unwound(live)).toBe(
+      `$${(collateralAmount * livePriceUsd).toLocaleString("en-US", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`,
+    )
+    // Final withdrawal is equity at the live price, ~$13.8K higher than the stale figure.
+    expect(live.amountUsd).toBeCloseTo(collateralAmount * livePriceUsd - debtValueUsd, 2)
+    expect(live.amountUsd - stale.amountUsd).toBeGreaterThan(13_000)
+  })
 })

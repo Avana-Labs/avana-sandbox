@@ -442,7 +442,6 @@ export function UmbrellaActionPageClient({
           isPending={isPending}
           outcome={outcome}
           amountReadOnly={amountReadOnly}
-          amountVariant={sidebar ? "raised" : "card"}
           showBalance
           balanceLabel={preview.balanceLabel}
           balanceValue={preview.balanceValue}

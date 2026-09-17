@@ -38,6 +38,15 @@ type ActionConfigureStageProps = {
   amount: string
   onAmountChange: (value: string) => void
   inputLabel?: string
+  /** Override the "~ USD" line under the amount. Used where the field shows a quantity the
+   *  preview's own amountUsd does not describe (Multiply close/deleverage show COLLATERAL,
+   *  while the preview's amount is the withdrawal / target leverage). */
+  amountUsdLabel?: string
+  /** Render this in the amount field INSTEAD of `amount`, without touching validation.
+   *  `amount` still drives amountEntered / CTA state, so a read-only informational value
+   *  (Multiply close/deleverage show the position's collateral) cannot make an empty,
+   *  invalid form look filled in. */
+  displayAmount?: string
   preview: ActionPreviewUi | null
   assetSymbol?: string
   borrowSymbol?: string
@@ -116,7 +125,7 @@ export function ActionConfigureAmountSection({
   selectedAssetId,
   onAssetSelect,
   amountReadOnly = false,
-  amountVariant = "card",
+  amountVariant = "raised",
   hideAssetSelector = false,
   assetPickerVariant = "menu",
   pickerTokens,
@@ -131,6 +140,8 @@ export function ActionConfigureAmountSection({
   assetLabel,
   amountUnitLabel,
   inputLabel,
+  amountUsdLabel,
+  displayAmount,
   allowAssetSwitchWhenReadOnly,
 }: Pick<
   ActionConfigureStageProps,
@@ -138,6 +149,8 @@ export function ActionConfigureAmountSection({
   | "amount"
   | "onAmountChange"
   | "inputLabel"
+  | "amountUsdLabel"
+  | "displayAmount"
   | "preview"
   | "assetSymbol"
   | "borrowSymbol"
@@ -170,9 +183,9 @@ export function ActionConfigureAmountSection({
   return (
     <ActionAmountCard
       label={inputLabel ?? verb}
-      amount={amount}
+      amount={displayAmount ?? amount}
       onAmountChange={onAmountChange}
-      approxUsdLabel={preview?.amountUsdLabel ?? exact(0)}
+      approxUsdLabel={amountUsdLabel ?? preview?.amountUsdLabel ?? exact(0)}
       assetLabel={pillLabel}
       unitLabel={amountUnitLabel}
       footer={amountFooter}
@@ -230,7 +243,7 @@ export function ActionConfigureStage({
   canGoBack = false,
   hideAmountInput = false,
   amountReadOnly = false,
-  amountVariant = "card",
+  amountVariant = "raised",
   hideAssetSelector = false,
   homeLayout = false,
   singlePrimaryCta = false,
@@ -246,6 +259,8 @@ export function ActionConfigureStage({
   assetLabel,
   amountUnitLabel,
   inputLabel,
+  amountUsdLabel,
+  displayAmount,
   detailsSlot,
   deferDetailsUntilAmount = false,
   animateDetails = true,
@@ -344,6 +359,8 @@ export function ActionConfigureStage({
           assetLabel={assetLabel}
           amountUnitLabel={amountUnitLabel}
           inputLabel={inputLabel}
+          amountUsdLabel={amountUsdLabel}
+          displayAmount={displayAmount}
           allowAssetSwitchWhenReadOnly={allowAssetSwitchWhenReadOnly}
         />
       ) : null}
