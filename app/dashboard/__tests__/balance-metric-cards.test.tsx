@@ -90,7 +90,7 @@ describe("Multiply Balance metric cards", () => {
 
     for (const label of [
       "Net Value",
-      "Position Value",
+      "Gross Exposure",
       "Total Borrowed",
       "Leverage",
       "Net APY",

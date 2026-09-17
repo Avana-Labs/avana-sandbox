@@ -244,7 +244,7 @@ export function DashboardMultiplyBalanceSection({
       description: t("Total value of your positions minus outstanding loans"),
     },
     {
-      label: t("Position Value"),
+      label: t("Gross Exposure"),
       value: m(formatUsdExact(metrics.positionValueUsd)),
       description: t("Gross Multiply exposure after looping across all positions"),
     },

@@ -280,15 +280,27 @@ export function SuppliesPanel({
 export function SuppliesHealthFactorCard({
   averageHealthFactor,
   showBalance,
+  title,
+  helpText,
 }: {
   averageHealthFactor: number | null
   showBalance: boolean
+  /** Card title; defaults to the wallet-wide "Credit Health" used on the Borrow tab. */
+  title?: string
+  /** Help tooltip; defaults to the wallet-wide aggregate description. */
+  helpText?: string
 }) {
   const { t } = useTranslation()
   const status = healthFactorStatusLabel(averageHealthFactor)
   const hfLabel = formatHealthFactor(averageHealthFactor)
   const masked = !showBalance
   const activeZoneIdx = activeHealthFactorZoneIndex(averageHealthFactor)
+  const cardTitle = title ?? t("Credit Health")
+  const cardHelp =
+    helpText ??
+    t(
+      "Wallet-wide health factor: total liquidation value divided by total borrowed. 2.5 and above is comfortable; below 1.2 risks liquidation.",
+    )
 
   return (
     <div className={`${DASHBOARD_SNAPSHOT_SURFACE_CLASS} px-5 py-4 md:px-6 md:py-5`}>
@@ -297,13 +309,8 @@ export function SuppliesHealthFactorCard({
           <span className="font-data text-[20px] font-normal leading-none tracking-tight text-foreground">
             {masked ? "••" : hfLabel}
           </span>
-          <span className="text-[13px] font-normal text-foreground">{t("Credit Health")}</span>
-          <ActionMetricHelp
-            topic="Credit Health"
-            text={t(
-              "Wallet-wide health factor: total liquidation value divided by total borrowed. 2.5 and above is comfortable; below 1.2 risks liquidation.",
-            )}
-          />
+          <span className="text-[13px] font-normal text-foreground">{cardTitle}</span>
+          <ActionMetricHelp topic={cardTitle} text={cardHelp} />
         </div>
         <span
           className={cn(

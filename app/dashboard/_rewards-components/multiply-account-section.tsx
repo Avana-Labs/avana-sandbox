@@ -95,6 +95,10 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
           <SuppliesHealthFactorCard
             averageHealthFactor={multiplySnapshot.averageHealthFactor}
             showBalance={showDollarAmounts}
+            title={t("Lowest Position Health")}
+            helpText={t(
+              "The health factor of your closest-to-liquidation Multiply position — the lowest across your open loops, not the portfolio blend. Below 1.0 triggers liquidation.",
+            )}
           />
           <CurrentLtvCard
             borrowedUsd={multiplySnapshot.totalBorrowedUsd}

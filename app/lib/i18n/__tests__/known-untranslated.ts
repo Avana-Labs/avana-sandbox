@@ -58,7 +58,12 @@ export const KNOWN_UNTRANSLATED: readonly string[] = [
   "Explorer",
   "Exposure",
   "Exposure · Net APY",
+  // Multiply tab — Gross Exposure tile + worst-position "Lowest Position Health" card
+  // (title + tooltip) awaiting the locale backfill.
+  "Gross Exposure",
   "Health Factor",
+  "Lowest Position Health",
+  "The health factor of your closest-to-liquidation Multiply position — the lowest across your open loops, not the portfolio blend. Below 1.0 triggers liquidation.",
   "Help",
   "HF",
   "In cooldown",
@@ -87,7 +92,6 @@ export const KNOWN_UNTRANSLATED: readonly string[] = [
   "pools",
   "Pools",
   "Position",
-  "Position Value",
   "Premium",
   "PREMIUM",
   "Preview {product}",
