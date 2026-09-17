@@ -48,14 +48,6 @@ const isVercelPreview = process.env.VERCEL_ENV === "preview"
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   poweredByHeader: false,
-  eslint: {
-    // Build CPU is the largest line on the Vercel invoice, and `next build` re-runs ESLint
-    // over the whole repo on every deploy. CI already gates lint on every path into
-    // production — `.github/workflows/ci.yml` runs `npm run lint` on both `push: [main]`
-    // and `pull_request: [main]` — and a lint error cannot change the built output, so
-    // repeating it per deploy buys nothing.
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     // Same duplication for `tsc`, but a type error CAN change behaviour, so this is only
     // skipped on preview builds — the feature-branch pushes that make up most of the build
