@@ -344,6 +344,19 @@ export function BorrowActionPageClient({
     return options.length > 1 ? options : undefined
   }, [debtPosition, debtPositions, kind, session.state.assets])
 
+  // Outstanding debt for the selected repay position, resolved off the state (not the
+  // async preview) so the "Outstanding debt" hint and Max show on the empty step too.
+  const repayDebtHint = useMemo(() => {
+    if (kind !== "repay" || !debtPosition) return null
+    const priceUsd = usd6ToNumber(session.state.assets[debtPosition.assetId]?.snapshot.priceUsd6 ?? 0n)
+    const debtUsd = usd6ToNumber(currentDebtValueUsd6(debtPosition))
+    return {
+      debtUsd,
+      valueLabel: formatActionUsd(debtUsd, { exact: true }),
+      maxTokens: priceUsd > 0 ? debtUsd / priceUsd : debtUsd,
+    }
+  }, [kind, debtPosition, session.state.assets])
+
   const claimAssetOptions = useMemo(() => {
     if (kind !== "claim") return undefined
     const options = claimSelectItemsForWallet(session, walletId).map((item) => ({
@@ -1077,13 +1090,15 @@ export function BorrowActionPageClient({
   // Borrow fills the safe credit cap; Repay fills the selected debt exactly.
   const showActionMax = kind === "borrow" || kind === "repay"
   const handleActionMax = useCallback(() => {
-    if (previewUi?.maxAmount == null || previewUi.maxAmount <= 0) return
+    // Repay can fill Max before a preview exists, so fall back to the outstanding debt.
+    const max = previewUi?.maxAmount ?? repayDebtHint?.maxTokens ?? null
+    if (max == null || max <= 0) return
     // Borrow's max is a TOKEN quantity (capacity ÷ price) and repay's is the exact
     // debt; floor both to 6 dp so the fill never rounds above the available
     // capacity/debt and trips "insufficient".
-    const next = Math.floor(previewUi.maxAmount * 1e6) / 1e6
+    const next = Math.floor(max * 1e6) / 1e6
     setAmount(String(next))
-  }, [kind, previewUi?.maxAmount])
+  }, [previewUi?.maxAmount, repayDebtHint?.maxTokens])
 
   if (shouldShowActionSessionLoading(session.isHydrated)) {
     return (
@@ -1186,6 +1201,8 @@ export function BorrowActionPageClient({
           pickerTokens={useDialogAssetPicker ? pickerTokens : undefined}
           assetPickerDisabled={borrowNeedsCollateral}
           showBalance={showActionMax}
+          balanceLabel={repayDebtHint ? "Outstanding debt" : undefined}
+          balanceValue={previewUi ? undefined : repayDebtHint?.valueLabel}
           onMax={showActionMax ? handleActionMax : undefined}
         />
       )
@@ -1415,6 +1432,8 @@ export function BorrowActionPageClient({
             kind === "remove" && previewUi ? `Estimated removal · ${previewUi.amountUsdLabel}` : undefined
           }
           showBalance={showActionMax}
+          balanceLabel={repayDebtHint ? "Outstanding debt" : undefined}
+          balanceValue={previewUi ? undefined : repayDebtHint?.valueLabel}
           onMax={showActionMax ? handleActionMax : undefined}
           amountUnitLabel={kind === "remove" ? "%" : undefined}
           homeLayout={isHomeLayout}

@@ -21,6 +21,11 @@ function healthFactorToNumber(value: bigint | null) {
   return value == null ? null : fixedToNumber(value, 18)
 }
 
+// Repaying the displayed Max can land a hair off the true debt: the outstanding
+// figure is shown rounded to cents and the token Max is floored to 6 dp. Treat any
+// amount within a cent of the debt as a full repay so the position closes cleanly.
+const REPAY_FULL_CLOSE_EPSILON_USD = 0.01
+
 export function buildBorrowPreviewModel(
   state: BorrowSystemState,
   walletId: string,
@@ -90,23 +95,29 @@ export function buildRepayPreviewModel(
     }
   }
 
+  // Within a cent of the outstanding debt counts as a full repay: clamp to the exact
+  // debt so the displayed Max closes the position rather than tripping "exceeds debt"
+  // (2-dp display vs full-precision guard) or leaving dust behind.
+  const effectiveAmountUsd =
+    Math.abs(amountUsd - currentDebtUsd) <= REPAY_FULL_CLOSE_EPSILON_USD ? currentDebtUsd : amountUsd
+
   const preview = simulateRepay(state, {
     type: "repay",
     walletId,
     debtPositionId: debtPosition.id,
-    amountUsd6: parseFixed(amountUsd.toFixed(6), 6),
+    amountUsd6: parseFixed(effectiveAmountUsd.toFixed(6), 6),
   })
   const nextPosition =
     preview.after.state.accounts[walletId]?.debtPositions.find((position) => position.id === debtPosition.id) ?? null
 
   return {
     isEmpty: false,
-    isValid: preview.allowed && amountUsd <= currentDebtUsd,
-    exceedsDebt: amountUsd > currentDebtUsd,
+    isValid: preview.allowed && effectiveAmountUsd <= currentDebtUsd,
+    exceedsDebt: effectiveAmountUsd > currentDebtUsd,
     remainingDebtUsd: nextPosition ? fixedToNumber(currentDebtValueUsd6(nextPosition), 6) : 0,
     healthFactorAfter: healthFactorToNumber(preview.after.metrics.healthFactorWad),
     yearlyInterestSavedUsd: debtPosition
-      ? Math.min(amountUsd, currentDebtUsd) * fixedToNumber(debtPosition.borrowRateWad, 18)
+      ? Math.min(effectiveAmountUsd, currentDebtUsd) * fixedToNumber(debtPosition.borrowRateWad, 18)
       : 0,
     warningMessage: preview.validationErrors[0] ?? preview.warnings[0] ?? null,
   }
