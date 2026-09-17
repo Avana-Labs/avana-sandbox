@@ -86,6 +86,7 @@ import type * as wallet_lpTokenPrices from "../wallet/lpTokenPrices.js";
 import type * as wallet_productBalances from "../wallet/productBalances.js";
 import type * as wallet_profiles from "../wallet/profiles.js";
 import type * as wallet_sessions from "../wallet/sessions.js";
+import type * as writeRateLimit from "../writeRateLimit.js";
 
 import type {
   ApiFromModules,
@@ -172,6 +173,7 @@ declare const fullApi: ApiFromModules<{
   "wallet/productBalances": typeof wallet_productBalances;
   "wallet/profiles": typeof wallet_profiles;
   "wallet/sessions": typeof wallet_sessions;
+  writeRateLimit: typeof writeRateLimit;
 }>;
 
 /**
