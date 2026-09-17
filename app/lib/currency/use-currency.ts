@@ -7,6 +7,7 @@ import {
   currencyContext,
   formatCompactCurrency,
   formatExactCurrency,
+  formatPriceCurrency,
   type CurrencyContext,
 } from "@/app/lib/currency/format"
 
@@ -16,6 +17,8 @@ export type CurrencyFormatter = {
   compact: (usd: number) => string
   /** USD → active currency, exact with decimals. */
   exact: (usd: number) => string
+  /** USD → active currency, per-unit price with adaptive precision (amount × price reconciles). */
+  price: (usd: number) => string
   /** Raw converted number, if a caller needs to format itself. */
   convert: (usd: number) => number
   isUsd: boolean
@@ -37,6 +40,7 @@ export function useCurrency(): CurrencyFormatter {
       ctx,
       compact: (usd: number) => formatCompactCurrency(usd, ctx),
       exact: (usd: number) => formatExactCurrency(usd, ctx),
+      price: (usd: number) => formatPriceCurrency(usd, ctx),
       convert: (usd: number) => convertFromUsd(usd, ctx),
       isUsd: currency === "USD",
     }

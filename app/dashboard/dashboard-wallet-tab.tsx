@@ -369,7 +369,7 @@ export function sumWalletValueUsd(rows: ReadonlyArray<{ valueUsd: number; source
 
 export function DashboardWalletTab({ walletId, balances }: { walletId: string; balances?: UserAssetBalance[] }) {
   const { showDollarAmounts } = useAmountDisplayPreferences()
-  const { exact } = useCurrency()
+  const { exact, price } = useCurrency()
   const { t } = useTranslation()
   const borrowSession = useBorrowSessionContextOptional()
   // The Wallet tab shows unallocated/free funds plus product buckets that are available again
@@ -437,6 +437,7 @@ export function DashboardWalletTab({ walletId, balances }: { walletId: string; b
         title={t("Tokens")}
         rows={tokens}
         exact={exact}
+        price={price}
         t={t}
         showBalance={showDollarAmounts}
         basisFor={basisFor}
@@ -457,6 +458,7 @@ function WalletBalanceSection({
   title,
   rows,
   exact,
+  price,
   t,
   showBalance,
   basisFor,
@@ -464,6 +466,7 @@ function WalletBalanceSection({
   title: string
   rows: DashboardWalletBalanceRow[]
   exact: (usd: number) => string
+  price: (usd: number) => string
   t: (key: string) => string
   showBalance: boolean
   basisFor: (assetId: string) => number | undefined
@@ -515,7 +518,7 @@ function WalletBalanceSection({
                     <div className="min-w-0">
                       <div className={cn("truncate", TABLE_CELL_PRIMARY)}>{row.name}</div>
                       <div className={cn(TABLE_CELL_SECONDARY, "tabular-nums")}>
-                        {row.valueUsd > 0 && row.amount > 0 ? m(exact(row.valueUsd / row.amount)) : row.symbol}
+                        {row.valueUsd > 0 && row.amount > 0 ? m(price(row.valueUsd / row.amount)) : row.symbol}
                       </div>
                     </div>
                   </div>
@@ -558,7 +561,7 @@ function WalletBalanceSection({
                     <TokenIcon symbol={row.symbol} size="table" />
                     <MarketMobileIdentityText
                       title={row.name}
-                      subtitle={row.valueUsd > 0 && row.amount > 0 ? m(exact(row.valueUsd / row.amount)) : row.symbol}
+                      subtitle={row.valueUsd > 0 && row.amount > 0 ? m(price(row.valueUsd / row.amount)) : row.symbol}
                     />
                   </div>
                 }

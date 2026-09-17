@@ -94,6 +94,24 @@ export function formatExactCurrency(usd: number, ctx: CurrencyContext): string {
   })}`
 }
 
+/**
+ * Per-unit price with adaptive precision, so `amount × displayed price` reconciles with the
+ * displayed value instead of rounding a near-$1 token to a flat "$1.00" (13,349.72 USDC @ "$1.00"
+ * would read "$13,343.63"). Large prices keep two decimals (unchanged for blue-chips), mid prices
+ * show up to four, and sub-$1 prices up to six — capped so nothing runs long, and never fewer than
+ * the currency's usual decimals.
+ */
+export function formatPriceCurrency(usd: number, ctx: CurrencyContext): string {
+  const value = convertFromUsd(usd, ctx)
+  const abs = Math.abs(value)
+  const minDecimals = ZERO_DECIMAL_CURRENCIES.has(ctx.currency) ? 0 : 2
+  const maxDecimals = ZERO_DECIMAL_CURRENCIES.has(ctx.currency) ? 0 : abs >= 100 ? 2 : abs >= 1 ? 4 : 6
+  return `${value < 0 ? "-" : ""}${ctx.symbol}${formatNumber(abs, {
+    minimumFractionDigits: Math.min(minDecimals, maxDecimals),
+    maximumFractionDigits: maxDecimals,
+  })}`
+}
+
 // A compact USD amount as produced by formatCompactUsd/formatCompactCurrency:
 // optional sign, "$", digits (with optional thousands separators / decimals),
 // and an optional B/M/K suffix. Anything else (percentages, plain text, prices
