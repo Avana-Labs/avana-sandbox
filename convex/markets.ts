@@ -990,7 +990,13 @@ async function dailyRowsForScope(
   range: RangeId,
 ): Promise<DailyStatAmounts[]> {
   const days = RANGE_DAYS[range]
-  const start = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10)
+  // Seeded history ends at SANDBOX_NOW, before real "now". Anchor the window END to the
+  // latest available data day (clamped to now) so short ranges slice real history instead
+  // of an empty/flat tail past the last row; markets with current data are unaffected.
+  const latest = await latestDailyStatForScope(ctx, scope, slug)
+  const latestMs = latest ? Date.parse(`${latest.day}T00:00:00Z`) : Date.now()
+  const anchorMs = Math.min(Date.now(), latestMs)
+  const start = new Date(anchorMs - days * 86_400_000).toISOString().slice(0, 10)
   const siloed = await loadSiloedDailyRows(ctx, scope, slug, start)
   if (siloed.length > 0) return siloed
 
