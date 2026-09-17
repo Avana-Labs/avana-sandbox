@@ -126,6 +126,7 @@ async function upsertProductBalanceValue(
     state: string
   },
 ) {
+  const now = Date.now()
   const rows = await ctx.db
     .query(table)
     .withIndex("by_wallet", (q) => q.eq("wallet", wallet))
@@ -137,7 +138,21 @@ async function upsertProductBalanceValue(
       ("assetId" in candidate ? candidate.assetId : undefined) === row.assetId &&
       ("poolId" in candidate ? candidate.poolId : undefined) === row.poolId,
   )
-  const next = { ...row, amount: Math.max(0, row.amount), valueUsd: Math.max(0, row.valueUsd), updatedAt: Date.now() }
+  const valueUsd = Math.max(0, row.valueUsd)
+  // `amount` is a TOKEN QUANTITY. A caller that fell back to USD (amount ≈ valueUsd) writes an implied
+  // unit price of ≈1; validate that against the oracle exactly as adjustProductBalanceUsd does, so a
+  // USD-in-amount row heals to a real token quantity instead of persisting `amount = valueUsd`. A real
+  // (non-$1) implied price is trusted directly — no oracle read (multiply collateral rows already carry
+  // a token amount, so the healthy path stays read-free).
+  const candidateAmount = Math.max(0, row.amount)
+  const impliedPriceUsd = candidateAmount > 0 && valueUsd > 0 ? valueUsd / candidateAmount : null
+  let amount = candidateAmount
+  if (valueUsd > 0 && (impliedPriceUsd == null || Math.abs(impliedPriceUsd - 1) < 1e-4)) {
+    const oraclePriceUsd = await validatedTokenPriceUsd(ctx, row.assetId ?? row.symbol, now)
+    const resolvedPriceUsd = resolveWriteBackPriceUsd(impliedPriceUsd, oraclePriceUsd)
+    if (resolvedPriceUsd && resolvedPriceUsd > 0) amount = valueUsd / resolvedPriceUsd
+  }
+  const next = { ...row, amount, valueUsd, updatedAt: now }
   if (existing) {
     await ctx.db.patch(existing._id, next as never)
     return

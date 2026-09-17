@@ -745,6 +745,13 @@ export const claim = mutation({
       // grantUSD / price-at-grant using the price the token is actually valued with.
       const collateralPriceUsd = resolveGrantPriceUsd(multiplySymbol, catalogBySlug.get(leg.marketSlug)?.priceUsd)
       const collateralAmount = grossExposureUsd / collateralPriceUsd
+      // `amount` is a TOKEN QUANTITY, not USD. The seeded debt asset is a stablecoin today (≈$1), so
+      // writing USD here was latent — but derive the token amount from the same grant price the other
+      // legs use, so a non-$1 debt asset can never make the dashboard's `amount × livePrice` reprice
+      // the debt. Mirrors the executed multiply debt path in transactions.ts (keep USD as valueUsd).
+      const multiplyDebtAssetId = liquidAssetIdForMultiplyDebt(leg.marketSlug)
+      const multiplyDebtPriceUsd = resolveGrantPriceUsd(multiplyDebtAssetId)
+      const multiplyDebtAmount = multiplyDebtPriceUsd > 0 ? debtValueUsd / multiplyDebtPriceUsd : debtValueUsd
       productMultiplyRows.push(
         {
           marketId: leg.marketSlug,
@@ -764,9 +771,9 @@ export const claim = mutation({
         },
         {
           marketId: leg.marketSlug,
-          assetId: liquidAssetIdForMultiplyDebt(leg.marketSlug),
-          symbol: liquidAssetIdForMultiplyDebt(leg.marketSlug).toUpperCase(),
-          amount: debtValueUsd,
+          assetId: multiplyDebtAssetId,
+          symbol: multiplyDebtAssetId.toUpperCase(),
+          amount: multiplyDebtAmount,
           valueUsd: debtValueUsd,
           state: "debt",
         },
