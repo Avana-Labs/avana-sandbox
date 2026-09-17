@@ -41,6 +41,7 @@ export const TOKEN_LLAMA_IDS: Record<string, string> = {
   uni: "coingecko:uniswap",
   crv: "coingecko:curve-dao-token",
   // Governance / L2 tokens — fixture values here are wildly stale, so live coverage matters.
+  link: "ethereum:0x514910771AF9Ca656af840dff83E8264EcF986CA",
   arb: "coingecko:arbitrum",
   op: "coingecko:optimism",
   gno: "ethereum:0x6810e776880C02933D47DB1b9fc05908e5386b96",

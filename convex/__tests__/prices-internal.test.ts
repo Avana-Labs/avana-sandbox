@@ -4,8 +4,17 @@ import { afterEach, describe, expect, test, vi } from "vitest"
 import schema from "../schema"
 import { api } from "../_generated/api"
 import { internal } from "../_generated/api"
+import { TOKEN_LLAMA_IDS } from "../prices"
 
 const modules = import.meta.glob("../**/*.*s")
+
+describe("TOKEN_LLAMA_IDS live coverage", () => {
+  // These are public tokens the app displays; without a live coin id they pin to the stale fixture
+  // (LINK rendered a flat $18 with 0% P/L). Guard against a token silently dropping to the fixture.
+  test.each(["link", "arb", "op", "ldo", "crv", "bal", "aero", "eurc"])("tracks a live price for %s", (symbol) => {
+    expect(TOKEN_LLAMA_IDS[symbol]).toBeTruthy()
+  })
+})
 
 afterEach(() => {
   vi.unstubAllGlobals()
