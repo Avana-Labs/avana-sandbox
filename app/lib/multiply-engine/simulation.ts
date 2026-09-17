@@ -102,6 +102,15 @@ export function simulateMultiply(params: {
     collateralPriceOverrideUsd != null && Number.isFinite(collateralPriceOverrideUsd) && collateralPriceOverrideUsd > 0
       ? collateralPriceOverrideUsd
       : market.collateralAsset.priceUsd
+  // Reprice the existing position at this SAME live collateral price before blending it with
+  // the new deposit. The persisted position can still carry collateralValueUsd from the stale
+  // catalog fixture price (positions aren't re-priced on every hydration tick), so combining
+  // it un-repriced with a live-priced new deposit understated the resulting health factor — a
+  // small top-up barely moved that understated figure and stayed blocked ("Action unavailable"),
+  // while a large one dragged the blended figure back up and passed.
+  const repricedExisting = existingPosition
+    ? revalueMultiplyPosition(existingPosition, market, collateralPriceUsd)
+    : null
   const initialCollateralValueUsd = collateralAmount * collateralPriceUsd
   const priceImpactPct = calculatePriceImpact({
     baseImpact: DEFAULT_BASE_IMPACT,
@@ -128,11 +137,11 @@ export function simulateMultiply(params: {
 
   const newCollateralValueUsd = loop.collateralUsd
   const newDebtValueUsd = loop.debtUsd
-  const existingCollateralValueUsd = existingPosition?.collateralValueUsd ?? 0
-  const existingDebtValueUsd = existingPosition?.debtValueUsd ?? 0
+  const existingCollateralValueUsd = repricedExisting?.collateralValueUsd ?? 0
+  const existingDebtValueUsd = repricedExisting?.debtValueUsd ?? 0
   const finalCollateralValueUsd = existingCollateralValueUsd + newCollateralValueUsd
   const debtValueUsd = existingDebtValueUsd + newDebtValueUsd
-  const finalCollateralAmount = (existingPosition?.collateralAmount ?? 0) + newCollateralValueUsd / collateralPriceUsd
+  const finalCollateralAmount = (repricedExisting?.collateralAmount ?? 0) + newCollateralValueUsd / collateralPriceUsd
   const equityValueUsd = finalCollateralValueUsd - debtValueUsd
   const effectiveMultiplier = equityValueUsd > 0 ? finalCollateralValueUsd / equityValueUsd : loop.achievedMultiplier
   const ltv = calculateMultiplyLtv(debtValueUsd, finalCollateralValueUsd)
@@ -159,14 +168,14 @@ export function simulateMultiply(params: {
     safeMaxMultiplier,
   })
 
-  const before = existingPosition
+  const before = repricedExisting
     ? {
-        collateralValueUsd: existingPosition.collateralValueUsd,
-        debtValueUsd: existingPosition.debtValueUsd,
-        ltv: existingPosition.ltv,
-        healthFactor: existingPosition.healthFactor,
-        multiplier: existingPosition.multiplier,
-        liquidationPrice: existingPosition.liquidationPrice,
+        collateralValueUsd: repricedExisting.collateralValueUsd,
+        debtValueUsd: repricedExisting.debtValueUsd,
+        ltv: repricedExisting.ltv,
+        healthFactor: repricedExisting.healthFactor,
+        multiplier: repricedExisting.multiplier,
+        liquidationPrice: repricedExisting.liquidationPrice,
       }
     : emptyBefore()
 
