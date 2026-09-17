@@ -292,7 +292,8 @@ export function LendActionPageClient({
   const handleMax = useCallback(() => {
     const max = previewUi?.maxAmount ?? spendableBalanceAmount
     if (max == null || max <= 0) return
-    setAmount(String(Number(max.toFixed(6))))
+    // Floor to 6 dp so the fill never rounds above the balance and trips "insufficient".
+    setAmount(String(Math.floor(max * 1e6) / 1e6))
   }, [previewUi?.maxAmount, spendableBalanceAmount])
 
   const handleBack = useCallback(() => {

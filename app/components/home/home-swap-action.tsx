@@ -350,7 +350,7 @@ export function HomeSwapAction() {
               onBalanceClick={
                 inputBalance
                   ? () => {
-                      setAmount(String(Number(inputBalance.amount.toFixed(6))))
+                      setAmount(String(Math.floor(inputBalance.amount * 1e6) / 1e6))
                     }
                   : undefined
               }

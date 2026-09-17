@@ -1078,9 +1078,10 @@ export function BorrowActionPageClient({
   const showActionMax = kind === "borrow" || kind === "repay"
   const handleActionMax = useCallback(() => {
     if (previewUi?.maxAmount == null || previewUi.maxAmount <= 0) return
-    // Borrow's max is now a TOKEN quantity (capacity ÷ price); floor to 6 dp so it
-    // never rounds above the available capacity. Repay stays an exact 6-dp fill.
-    const next = kind === "repay" ? Number(previewUi.maxAmount.toFixed(6)) : Math.floor(previewUi.maxAmount * 1e6) / 1e6
+    // Borrow's max is a TOKEN quantity (capacity ÷ price) and repay's is the exact
+    // debt; floor both to 6 dp so the fill never rounds above the available
+    // capacity/debt and trips "insufficient".
+    const next = Math.floor(previewUi.maxAmount * 1e6) / 1e6
     setAmount(String(next))
   }, [kind, previewUi?.maxAmount])
 
