@@ -470,14 +470,12 @@ export function ActionConfigureStage({
             disabled={primaryDisabled}
             className={primaryCtaClass({
               disabled: primaryDisabled,
-              pending: isPending || stage === "wallet_sign" || stage === "approve_allowance",
+              pending: isPending,
               className: "mt-1",
             })}
             data-testid="action-footer-primary"
           >
-            {isPending || stage === "wallet_sign" || stage === "approve_allowance"
-              ? t("Processing…")
-              : t(primaryLabel).replace("{symbol}", assetSymbol ?? "")}
+            {isPending ? t("Processing…") : t(primaryLabel).replace("{symbol}", assetSymbol ?? "")}
           </button>
         ) : (
           <ActionFooter
@@ -488,7 +486,7 @@ export function ActionConfigureStage({
             onSecondary={onSecondary}
             secondaryHref={secondaryHref}
             primaryDisabled={primaryDisabled}
-            primaryPending={isPending || stage === "wallet_sign" || stage === "approve_allowance"}
+            primaryPending={isPending}
             sticky
           />
         )
