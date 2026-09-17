@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { ArrowUpRight } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 
 export function DesktopTableSurface({ children, className }: { children: ReactNode; className?: string }) {
@@ -34,4 +35,19 @@ export function HoverActionGroup({
       {children}
     </div>
   )
+}
+
+/**
+ * Shared classes for the bare "open this row" affordance at the end of a desktop
+ * table row: a long diagonal arrow that rests muted and sharpens to full
+ * contrast on row hover or keyboard focus (same read as the borrow detail
+ * tables). Replaces the round chevron chip, which looked like a control rather
+ * than a pointer to the detail page the whole row already opens.
+ */
+export const ROW_OPEN_ARROW_CLASS =
+  "inline-flex size-9 items-center justify-center rounded-full text-muted-foreground/60 transition-colors duration-200 ease-out hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background group-hover:text-foreground group-focus-within:text-foreground"
+
+/** The arrow itself, sized for the row-end affordance above. */
+export function RowOpenArrowIcon({ className }: { className?: string }) {
+  return <ArrowUpRight className={cn("!size-[18px]", className)} aria-hidden />
 }

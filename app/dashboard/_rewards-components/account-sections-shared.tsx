@@ -5,10 +5,9 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ActionIcon } from "@/app/components/action-icon"
-import { ChevronRight } from "@/app/components/icons"
 import { Button } from "@/components/ui/button"
 import { TokenIcon } from "@/app/components/token-icon"
-import { DesktopTableSurface, HoverActionGroup } from "@/app/components/market-table-primitives"
+import { DesktopTableSurface, ROW_OPEN_ARROW_CLASS, RowOpenArrowIcon } from "@/app/components/market-table-primitives"
 import { useAmountDisplayPreferences } from "@/app/components/display-preferences"
 import {
   MarketMobileActionFooter,
@@ -396,24 +395,15 @@ export function MultiplyAvailableMarketsCard({
                   </div>
                 </td>
                 <td className={cn(TABLE_CELL_PADDING_TRAILING, "text-right", TABLE_ROW_HOVER_RIGHT)}>
-                  <HoverActionGroup>
-                    <Button
-                      asChild
-                      type="button"
-                      size="table"
-                      variant="table-secondary"
-                      aria-label={t("Multiply")}
-                      title={t("Multiply")}
-                      className="size-9 px-0 py-0"
-                    >
-                      <Link
-                        href={actionPagePath("multiply", "multiply", { market: row.market.id })}
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        <ChevronRight />
-                      </Link>
-                    </Button>
-                  </HoverActionGroup>
+                  <Link
+                    href={actionPagePath("multiply", "multiply", { market: row.market.id })}
+                    aria-label={t("Multiply")}
+                    title={t("Multiply")}
+                    className={ROW_OPEN_ARROW_CLASS}
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    <RowOpenArrowIcon />
+                  </Link>
                 </td>
               </tr>
             ))}
