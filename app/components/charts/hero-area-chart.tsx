@@ -137,9 +137,21 @@ export function buildHeroAreaGeometry(
     y: top + ((max - value) / range) * plotHeight,
     label: formatYAxis(value),
   }))
+  // Position points by timestamp so a gap in the data (e.g. a stale tail) shows as real
+  // spacing rather than being evenly compressed by index. Falls back to index spacing when
+  // every point shares a timestamp (zero span) or there is only a single point.
+  const times = data.map((point) => point.time)
+  const minTime = Math.min(...times)
+  const maxTime = Math.max(...times)
+  const timeSpan = maxTime - minTime
   const points = data.map((point, index) => ({
     ...point,
-    x: data.length === 1 ? left + plotWidth / 2 : left + (index / (data.length - 1)) * plotWidth,
+    x:
+      data.length === 1
+        ? left + plotWidth / 2
+        : timeSpan > 0
+          ? left + ((point.time - minTime) / timeSpan) * plotWidth
+          : left + (index / (data.length - 1)) * plotWidth,
     y: top + ((max - point.value) / range) * plotHeight,
   }))
   const uniqueLabelIndexes: number[] = []

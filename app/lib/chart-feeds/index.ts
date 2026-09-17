@@ -43,7 +43,9 @@ function formatConvexPointLabel(value: string, range: ChartRangeOption): string 
   const date = new Date(`${value}T00:00:00Z`)
   if (Number.isNaN(date.getTime())) return value
   if (range === "1Y" || range === "All") {
-    return new Intl.DateTimeFormat("en-US", { month: "short", year: "2-digit", timeZone: "UTC" }).format(date)
+    // Full year ("Sep 2026"), never "Sep 26" — a 2-digit year reads as a day-of-month
+    // next to the shorter ranges' "Sep 16" labels.
+    return new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric", timeZone: "UTC" }).format(date)
   }
   return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).format(date)
 }
