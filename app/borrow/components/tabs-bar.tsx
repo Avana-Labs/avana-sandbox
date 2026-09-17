@@ -36,7 +36,7 @@ export function TabsBar({ currentTab, onTabChange, search, onSearchChange }: Tab
         onTabChange={(id) => onTabChange(id as BorrowTabId)}
         search={search}
         onSearchChange={onSearchChange}
-        searchPlaceholder={t("Search markets")}
+        searchPlaceholder={t("Filter markets")}
       />
     </div>
   )
