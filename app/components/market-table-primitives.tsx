@@ -1,7 +1,7 @@
 "use client"
 
 import type { ReactNode } from "react"
-import { ArrowUpRight } from "@/app/components/icons"
+import { ArrowUpRightLong } from "@/app/components/icons"
 import { cn } from "@/lib/utils"
 
 export function DesktopTableSurface({ children, className }: { children: ReactNode; className?: string }) {
@@ -47,7 +47,11 @@ export function HoverActionGroup({
 export const ROW_OPEN_ARROW_CLASS =
   "inline-flex size-9 items-center justify-center rounded-full text-muted-foreground/60 transition-colors duration-200 ease-out hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background group-hover:text-foreground group-focus-within:text-foreground"
 
-/** The arrow itself, sized for the row-end affordance above. */
+/**
+ * The arrow itself. Rendered well above the 14px table-icon default: hugeicons
+ * draws the diagonal inside the middle ~13 units of its 24-unit box, so the
+ * glyph has to be sized up before the shaft reads as long rather than stubby.
+ */
 export function RowOpenArrowIcon({ className }: { className?: string }) {
-  return <ArrowUpRight className={cn("!size-[18px]", className)} aria-hidden />
+  return <ArrowUpRightLong className={cn("!size-[26px]", className)} strokeWidth={1.5} aria-hidden />
 }
