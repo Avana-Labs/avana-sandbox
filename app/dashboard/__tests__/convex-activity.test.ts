@@ -5,6 +5,9 @@ import {
   type ConvexActivityItem,
 } from "@/app/dashboard/convex-activity"
 import type { PortfolioActivityRow } from "@/app/lib/data/providers/portfolio"
+import { buildRewardsActivityHistory } from "@/app/lib/rewards-system"
+import { rewardsClaimTxHash } from "@/app/lib/rewards-engine"
+import type { RewardClaim } from "@/app/lib/rewards-engine"
 
 function makeConvex(
   overrides: Partial<ConvexActivityItem> & Pick<ConvexActivityItem, "id" | "hash">,
@@ -172,5 +175,48 @@ describe("mergeActivityRows", () => {
 
     const merged = mergeActivityRows(seed, convex)
     expect(merged.map((row) => row.id).sort()).toEqual(["durable-usdc", "session-weth"])
+  })
+
+  it("collapses a rewards claim into its quest-titled seed row (no 'Avana rewards' duplicate)", () => {
+    const wallet = "0xabc"
+    const taskId = "first-lend-deposit"
+    // The engine now stamps the seed claim with the shared rewardsClaimTxHash; the
+    // durable Convex write uses the same value, so the two records must dedup.
+    const claim: RewardClaim = {
+      claimId: `${wallet}:${taskId}:1`,
+      wallet,
+      taskId,
+      amount: 100,
+      rewardSymbol: "AVA",
+      status: "confirmed",
+      syntheticTxHash: rewardsClaimTxHash([taskId]),
+      claimedAt: Date.parse("2026-06-19T12:00:00.000Z"),
+    }
+    const seed = buildRewardsActivityHistory(
+      wallet,
+      [claim],
+      [{ id: taskId, title: "Lend $500 in the sandbox" } as never],
+    )
+    // The generic rewards row getActivity returns for the same claim: no marketSlug,
+    // so it would otherwise render as "Avana rewards" / "Claim · Claim".
+    const convex = mapConvexActivityItemsToRows([
+      {
+        id: "durable-rewards",
+        source: "transaction",
+        product: "rewards",
+        kind: "claim",
+        status: "success",
+        amountUsd: 100,
+        marketSlug: undefined,
+        at: claim.claimedAt,
+        hash: rewardsClaimTxHash([taskId]),
+      },
+    ])
+    expect(convex[0]?.primaryLabel).toBe("Avana rewards") // fallback confirmed
+
+    const merged = mergeActivityRows(seed, convex)
+    expect(merged).toHaveLength(1)
+    expect(merged[0]?.primaryLabel).toBe("Lend $500 in the sandbox")
+    expect(merged[0]?.secondaryLabel).toBe("100 AVA claimed")
   })
 })

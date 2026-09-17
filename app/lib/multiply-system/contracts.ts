@@ -95,7 +95,11 @@ export type MultiplyReadAdapter = {
   readWalletSnapshot(walletId: string): Promise<MultiplyWalletReadSnapshot>
   readMarkets(): Promise<MultiplyMarketRecord[]>
   readMultiplyPage(walletId: string): Promise<MultiplyPageData>
-  readPortfolioMultiply(walletId: string): Promise<PortfolioMultiplyTabData>
+  readPortfolioMultiply(
+    walletId: string,
+    /** Live collateral-token price resolver so the tab values track the oracle like the headline. */
+    collateralPriceFor?: (symbol: string) => number | undefined,
+  ): Promise<PortfolioMultiplyTabData>
 }
 
 export type MultiplyTransactionAdapter = {

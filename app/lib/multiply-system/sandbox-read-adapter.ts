@@ -30,7 +30,7 @@ export class SandboxMultiplyReadAdapter implements MultiplyReadAdapter {
     return buildMultiplyPageData(walletId, this.state)
   }
 
-  async readPortfolioMultiply(walletId: string) {
-    return buildPortfolioMultiplyData(walletId, this.state, this.transactionHistory)
+  async readPortfolioMultiply(walletId: string, collateralPriceFor?: (symbol: string) => number | undefined) {
+    return buildPortfolioMultiplyData(walletId, this.state, this.transactionHistory, collateralPriceFor)
   }
 }

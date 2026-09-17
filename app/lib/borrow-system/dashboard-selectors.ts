@@ -3,7 +3,6 @@ import {
   calculateSpokeCreditMetrics,
   collateralInterestEarnedUsd6,
   currentDebtValueUsd6,
-  debtInterestOwedUsd6,
   formatFixed,
   totalDebtValueUsd6,
   type BorrowSpokeId,
@@ -117,7 +116,12 @@ export function selectPortfolioDebtRows(state: BorrowSystemState, walletId: stri
       liquidationThresholdUsd: pool.liquidationUsd,
       healthFactor: debtHealthFactor(state, walletId, position, walletHealthFactor),
       borrowApr,
-      accruedInterestUsd: fixedToNumber(debtInterestOwedUsd6(position), 6),
+      // Accrue from this debt's own open time at the rate shown in the row, instead of the engine
+      // index (which only advances on read and shares one account clock any action resets). Matches
+      // the Interest Owed tile's per-position basis and the Lend/Multiply counters.
+      accruedInterestUsd:
+        (borrowedUsd * (borrowApr / 100) * Math.max(0, Date.now() - (position.openedAt ?? Date.now()))) /
+        (365 * 24 * 60 * 60 * 1000),
       dailyInterestUsd: (borrowedUsd * (borrowApr / 100)) / 365,
     })
   }

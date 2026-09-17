@@ -169,14 +169,28 @@ export const listForWallet = query({
         )
         .map((market) => [market.slug, market.priceUsd!] as const),
     )
+    // A multiply market with a debt row but no live collateral or position is an ORPHAN — a
+    // closed position whose debt was written under a different asset id than the close zeroed
+    // (legacy data from before the transactions.ts debt-anchor fix). Debt against zero collateral
+    // is economically impossible, and the position's equity has already returned to `available`,
+    // so counting the debt double-subtracts it and drags Net Value below the granted equity.
+    // Exclude these debt rows at read time so existing orphans self-heal without a reseed.
+    const multiplyMarketHasPosition = new Set<string>()
+    for (const row of rawMultiply) {
+      if ((row.state === "collateral" || row.state === "position") && row.valueUsd > 0 && row.marketId) {
+        multiplyMarketHasPosition.add(row.marketId)
+      }
+    }
     // Available Multiply buckets are USD ledgers plus a display token quantity. Normalize
     // the quantity at read time as well as at write time so legacy rows created with the
     // old $1/token fallback cannot inflate the dashboard or action pages after reload.
-    const multiply = rawMultiply.map((row) => {
-      if (row.state !== "available" || !row.marketId) return row
-      const priceUsd = multiplyPriceBySlug.get(row.marketId)
-      return priceUsd ? { ...row, amount: row.valueUsd / priceUsd } : row
-    })
+    const multiply = rawMultiply
+      .filter((row) => !(row.state === "debt" && row.marketId != null && !multiplyMarketHasPosition.has(row.marketId)))
+      .map((row) => {
+        if (row.state !== "available" || !row.marketId) return row
+        const priceUsd = multiplyPriceBySlug.get(row.marketId)
+        return priceUsd ? { ...row, amount: row.valueUsd / priceUsd } : row
+      })
 
     const pledgedByMarket = new Map<string, { valueUsd: number; updatedAt: number }>()
     for (const position of borrowPositions) {

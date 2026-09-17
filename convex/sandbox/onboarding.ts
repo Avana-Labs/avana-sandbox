@@ -127,6 +127,15 @@ async function getOrSeedConfig(ctx: MutationCtx) {
   return (await ctx.db.get(id))!
 }
 
+/**
+ * Version of the cached starter grant manifest. BUMP THIS whenever the set of markets a wallet
+ * can be granted changes (new lend assets, new collateral pools) — the cached singleton is
+ * otherwise kept forever and newly seeded markets never become grantable.
+ * v2: include the tokenized stock lend markets (AAPL/GOOGL/NVDA/TSLA) and the stock collateral
+ * pools (Uniswap Robinhood Stocks, Aerodrome Concentrated Stocks).
+ */
+export const STARTER_CATALOG_VERSION = 2
+
 async function getOrSeedStarterCatalog(ctx: MutationCtx) {
   const existing = await ctx.db
     .query("sandboxStarterCatalog")
@@ -138,7 +147,17 @@ async function getOrSeedStarterCatalog(ctx: MutationCtx) {
   // write to the shared singleton (which serialized concurrent claims and was the onboarding-
   // burst hotspot). Only (re)build below when the catalog is missing or still partial from a
   // cold-start seed (any unpriced row), preserving the late-seed recovery. (#13/S1)
-  if (existing && existing.rows.length > 0 && existing.rows.every((row) => row.priceUsd > 0)) {
+  // …and only while the cached manifest is still the CURRENT version. The cache previously
+  // rebuilt only when missing or unpriced, so any market added to `markets` after the singleton
+  // was first written (the tokenized stock lend markets and stock pools) never entered the grant
+  // pool and could never be handed out. Bump STARTER_CATALOG_VERSION whenever the eligible market
+  // set changes and the next claim rebuilds from the canonical tables.
+  if (
+    existing &&
+    existing.version === STARTER_CATALOG_VERSION &&
+    existing.rows.length > 0 &&
+    existing.rows.every((row) => row.priceUsd > 0)
+  ) {
     return existing.rows
   }
 
@@ -167,7 +186,7 @@ async function getOrSeedStarterCatalog(ctx: MutationCtx) {
   // cold-start catalog forever: refresh the singleton from the canonical market tables
   // so a previously empty/partial deployment becomes claimable after it is seeded.
   if (existing) {
-    await ctx.db.patch(existing._id, { rows, updatedAt: Date.now() })
+    await ctx.db.patch(existing._id, { rows, updatedAt: Date.now(), version: STARTER_CATALOG_VERSION })
     return rows
   }
 
@@ -175,6 +194,7 @@ async function getOrSeedStarterCatalog(ctx: MutationCtx) {
     singleton: "starter",
     rows,
     updatedAt: Date.now(),
+    version: STARTER_CATALOG_VERSION,
   })
   const duplicates = await ctx.db
     .query("sandboxStarterCatalog")
@@ -517,6 +537,23 @@ export const claim = mutation({
     const marketBySlug = new Map(starterCatalog.map((market) => [market.slug, market]))
     const catalogBySlug = new Map(starterCatalog.map((market) => [market.slug, market]))
 
+    // The grant is a fixed USD amount, so every token quantity must be `grantUsd / price` at the
+    // price the position is actually valued with — the LIVE oracle, read at claim time. The
+    // starter catalog caches a price captured when the singleton was written, and
+    // SANDBOX_TOKEN_PRICE_USD is a static fallback; seeding off either sized positions against a
+    // different number than the app displays (AAVE seeded $91.74 vs valued $105 → ~$20k of
+    // phantom gain the moment the grant rendered). tokenPrices is small, so this is one extra
+    // read per claim rather than the full markets scan the catalog cache exists to avoid.
+    const livePriceRows = await ctx.db.query("tokenPrices").collect()
+    const livePriceBySymbol = new Map(livePriceRows.map((row) => [row.symbol.toLowerCase(), row.priceUsd]))
+    const resolveGrantPriceUsd = (symbol: string, fallbackUsd?: number) => {
+      const key = symbol.toLowerCase()
+      const live = livePriceBySymbol.get(key)
+      if (live && Number.isFinite(live) && live > 0) return live
+      const fallback = SANDBOX_TOKEN_PRICE_USD[key] ?? fallbackUsd
+      return fallback && Number.isFinite(fallback) && fallback > 0 ? fallback : 1
+    }
+
     // Fail closed on an incomplete catalog: never mark a wallet "done" with a partial or
     // empty starter portfolio (that permanently locks it out of a real $1M allocation).
     // We resolve each market's price the SAME way the seed does — live oracle first, then
@@ -536,7 +573,7 @@ export const claim = mutation({
     const liquidTokens = SWAP_ENGINE_ASSETS.filter((asset) => asset.isSwapEnabled && !asset.isLpToken)
     const liquidLegs = buildStarterLiquidTokenLegs(
       liquidTokens,
-      (token) => SANDBOX_TOKEN_PRICE_USD[token.id] ?? SANDBOX_TOKEN_PRICE_USD[token.symbol.toLowerCase()] ?? 1,
+      (token) => resolveGrantPriceUsd(token.symbol, SANDBOX_TOKEN_PRICE_USD[token.id]),
       liquidTargetUsd,
     )
     const basketSnapshot = liquidLegs.map((leg) => ({
@@ -699,8 +736,14 @@ export const claim = mutation({
       // (leveraged) collateral so `collateralValueUsd (gross) ≈ collateralAmount * price`.
       const multiplyMarket = marketBySlug.get(leg.marketSlug)
       const multiplySymbol = multiplyMarket?.symbol.toLowerCase() ?? leg.marketSlug
-      const collateralPriceUsd =
-        catalogBySlug.get(leg.marketSlug)?.priceUsd ?? SANDBOX_TOKEN_PRICE_USD[multiplySymbol] ?? 1
+      // Size the position off the COLLATERAL TOKEN's price — the same source the liquid legs use
+      // above, and the same basis every valuation path later prices it at. Preferring the multiply
+      // MARKET's catalog `priceUsd` sized the grant against a DIFFERENT price than it is displayed
+      // with (AAVE seeded at $91.74, valued at $105.02; stETH $1,754 vs $1,930), minting ~$20k of
+      // phantom gain the instant the grant rendered and leaving the headline out of step with the
+      // Multiply tab. The grant is a fixed USD amount, so the token quantity must be
+      // grantUSD / price-at-grant using the price the token is actually valued with.
+      const collateralPriceUsd = resolveGrantPriceUsd(multiplySymbol, catalogBySlug.get(leg.marketSlug)?.priceUsd)
       const collateralAmount = grossExposureUsd / collateralPriceUsd
       productMultiplyRows.push(
         {

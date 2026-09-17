@@ -4,6 +4,7 @@ import { lazy, useMemo } from "react"
 import { detailSectionStackClass } from "@/app/components/detail-page-primitives"
 import { useAvanaIdentity, useMultiplySessionContext } from "@/app/lib/avana-session/avana-sessions-provider"
 import { useDashboardMultiplyLive } from "@/app/dashboard/use-dashboard-multiply-live"
+import { useCanonicalPriceFor } from "@/app/lib/prices/token-prices-context"
 import {
   buildMultiplyBalanceMetrics,
   buildMultiplyPositionLiveApyByMarket,
@@ -52,7 +53,8 @@ export function MultiplyAccountSection({ returnHref = "/dashboard" }: { returnHr
   const { walletId } = useAvanaIdentity()
   const multiplySession = useMultiplySessionContext()
 
-  const portfolioMultiply = useDashboardMultiplyLive(walletId, multiplySession)
+  const collateralPriceFor = useCanonicalPriceFor()
+  const portfolioMultiply = useDashboardMultiplyLive(walletId, multiplySession, collateralPriceFor)
 
   const multiplyTabData = useMemo(
     () => (hasMounted ? (portfolioMultiply ?? EMPTY_MULTIPLY_TAB) : EMPTY_MULTIPLY_TAB),

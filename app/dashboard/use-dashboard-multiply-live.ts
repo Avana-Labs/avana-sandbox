@@ -6,7 +6,12 @@ import type { useMultiplySession } from "@/app/lib/multiply-system/use-multiply-
 
 type MultiplySession = ReturnType<typeof useMultiplySession>
 
-export function useDashboardMultiplyLive(walletId: string, multiplySession: MultiplySession) {
+export function useDashboardMultiplyLive(
+  walletId: string,
+  multiplySession: MultiplySession,
+  /** Live collateral-token price resolver so tab values track the oracle (matches the headline). */
+  collateralPriceFor?: (symbol: string) => number | undefined,
+) {
   const [portfolioMultiply, setPortfolioMultiply] = useState<PortfolioMultiplyTabData | null>(null)
 
   useEffect(() => {
@@ -18,7 +23,7 @@ export function useDashboardMultiplyLive(walletId: string, multiplySession: Mult
     let cancelled = false
 
     void multiplySession.readAdapter
-      .readPortfolioMultiply(walletId)
+      .readPortfolioMultiply(walletId, collateralPriceFor)
       .then((next) => {
         if (!cancelled) {
           setPortfolioMultiply(next)
@@ -33,7 +38,13 @@ export function useDashboardMultiplyLive(walletId: string, multiplySession: Mult
     return () => {
       cancelled = true
     }
-  }, [multiplySession.readAdapter, multiplySession.state, multiplySession.transactionHistory, walletId])
+  }, [
+    collateralPriceFor,
+    multiplySession.readAdapter,
+    multiplySession.state,
+    multiplySession.transactionHistory,
+    walletId,
+  ])
 
   return portfolioMultiply
 }

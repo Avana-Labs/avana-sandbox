@@ -1029,6 +1029,9 @@ export default defineSchema({
       }),
     ),
     updatedAt: v.number(),
+    /** Grant-manifest version; a mismatch rebuilds the cache so newly seeded markets
+     *  become grantable (see STARTER_CATALOG_VERSION). Optional for pre-versioning rows. */
+    version: v.optional(v.number()),
   }).index("by_singleton", ["singleton"]),
 
   /** Per-authenticated-user onboarding + allocation profile. */

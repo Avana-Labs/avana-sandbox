@@ -86,11 +86,14 @@ export function TokenPairCell({
   name,
   subtitle,
   size = "sm",
+  subtitleTruncate = true,
 }: {
   visuals: [BorrowAssetVisual, BorrowAssetVisual]
   name: string
   subtitle?: string
   size?: "sm" | "md" | "lg"
+  /** Truncate the subtitle to a single line with an ellipsis. Off = let short labels show in full. */
+  subtitleTruncate?: boolean
 }) {
   const bubbleSize: TokenBubbleSize = size === "lg" ? "xl" : size === "md" ? "table" : "sm"
   const offset = size === "lg" ? "-ml-3" : size === "md" ? "-ml-2.5" : "-ml-2"
@@ -109,7 +112,11 @@ export function TokenPairCell({
       </div>
       <div className="min-w-0">
         <div className={cn("leading-tight text-foreground dark:text-white", nameCls)}>{name}</div>
-        {subtitle ? <div className={cn("mt-0.5 truncate text-muted-foreground", subtitleCls)}>{subtitle}</div> : null}
+        {subtitle ? (
+          <div className={cn("mt-0.5 text-muted-foreground", subtitleTruncate && "truncate", subtitleCls)}>
+            {subtitle}
+          </div>
+        ) : null}
       </div>
     </div>
   )
